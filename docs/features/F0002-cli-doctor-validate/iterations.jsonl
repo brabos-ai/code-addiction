@@ -1,1 +1,0 @@
-{"ts":"2026-03-02T00:16:12Z","agent":"/dev","type":"add","slug":"implement-diagnostic-commands","what":"Implement doctor, validate, config commands with hash support","files":["cli/src/doctor.js","cli/src/validator.js","cli/src/config.js","cli/src/installer.js","cli/bin/fnd-cli.js","cli/tests/doctor.e2e.test.js","cli/tests/validator.e2e.test.js","cli/tests/config.e2e.test.js"]}
