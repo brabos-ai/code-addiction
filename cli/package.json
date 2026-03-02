@@ -1,0 +1,54 @@
+{
+  "name": "pff",
+  "version": "0.1.0",
+  "description": "CLI installer for Product Flow Factory (PFF)",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xmaiconx/fnd-commands-scripts.git"
+  },
+  "homepage": "https://github.com/xmaiconx/fnd-commands-scripts#readme",
+  "bugs": {
+    "url": "https://github.com/xmaiconx/fnd-commands-scripts/issues"
+  },
+  "bin": {
+    "pff": "./bin/pff.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "adm-zip": "^0.5.10"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.9",
+    "vitest": "^2.0.0"
+  },
+  "keywords": [
+    "pff",
+    "product-flow-factory",
+    "product-development",
+    "product-workflow",
+    "commands",
+    "scripts",
+    "automation",
+    "developer-tools",
+    "claude",
+    "codex",
+    "ai",
+    "cli",
+    "installer"
+  ],
+  "license": "MIT"
+}
