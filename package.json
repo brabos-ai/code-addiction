@@ -1,0 +1,8 @@
+{
+  "name": "product-flow-factory",
+  "private": true,
+  "scripts": {
+    "publish:cli": "cd cli && npm publish",
+    "login": "npm login"
+  }
+}

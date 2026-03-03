@@ -1,18 +1,18 @@
 {
-  "name": "pff",
+  "name": "factoryflow",
   "version": "0.1.0",
   "description": "CLI installer for Product Flow Factory (PFF)",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xmaiconx/fnd-commands-scripts.git"
+    "url": "git+https://github.com/xmaiconx/product-flow-factory.git"
   },
-  "homepage": "https://github.com/xmaiconx/fnd-commands-scripts#readme",
+  "homepage": "https://github.com/xmaiconx/product-flow-factory#readme",
   "bugs": {
-    "url": "https://github.com/xmaiconx/fnd-commands-scripts/issues"
+    "url": "https://github.com/xmaiconx/product-flow-factory/issues"
   },
   "bin": {
-    "pff": "./bin/pff.js"
+    "factoryflow": "./bin/pff.js"
   },
   "files": [
     "bin",
