@@ -6,12 +6,12 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { downloadZip } from './github.js';
 
 /**
- * Read and parse .pff/manifest.json.
+ * Read and parse .add/manifest.json.
  * @param {string} cwd
  * @returns {{ version: string, releaseTag: string, installedAt: string, providers: string[], files: string[], hashes?: object } | null}
  */
 function readManifest(cwd) {
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
     return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -110,19 +110,19 @@ async function repairFiles(cwd, filesToRepair, releaseTag) {
  * @param {boolean} repair  if true, restore missing/modified files
  */
 export async function validate(cwd, repair = false) {
-  intro('PFF CLI - Validate');
+  intro('ADD CLI - Validate');
 
   const manifest = readManifest(cwd);
 
   if (!manifest) {
-    outro('ERROR: PFF not installed. Run `npx pff install` first.');
+    outro('ERROR: ADD not installed. Run `npx add install` first.');
     process.exit(1);
   }
 
   if (!manifest.hashes || Object.keys(manifest.hashes).length === 0) {
     log.warn('');
     log.warn('WARN Hash not available for this install.');
-    log.warn('     Run `npx pff update` to enable validation.');
+    log.warn('     Run `npx add update` to enable validation.');
     log.warn('');
     outro('Validation skipped.');
     process.exit(0);

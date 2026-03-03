@@ -59,18 +59,18 @@ function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
  * @param {string} cwd
  */
 export async function update(cwd) {
-  intro('PFF CLI - Update');
+  intro('ADD CLI - Update');
 
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
   if (!fs.existsSync(manifestPath)) {
-    throw new Error('No PFF installation found. Run `npx pff install` first.');
+    throw new Error('No ADD installation found. Run `npx add install` first.');
   }
 
   let manifest;
   try {
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   } catch {
-    throw new Error('Manifest is corrupted. Run `npx pff install` to reinstall.');
+    throw new Error('Manifest is corrupted. Run `npx add install` to reinstall.');
   }
 
   const currentVersion = manifest.version ?? 'unknown';
@@ -97,9 +97,9 @@ export async function update(cwd) {
   if (!zipRoot) throw new Error('Unexpected zip structure.');
 
   const allFiles = [];
-  const pffDir = path.join(cwd, '.pff');
+  const addDir = path.join(cwd, '.add');
 
-  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.pff', pffDir, cwd);
+  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.add', addDir, cwd);
   allFiles.push(...coreFiles);
 
   const providers = resolveSelected(providerKeys);
@@ -111,10 +111,10 @@ export async function update(cwd) {
 
   s.stop(`Updated ${allFiles.length} files.`);
 
-  fixLineEndings(path.join(pffDir, 'scripts'));
+  fixLineEndings(path.join(addDir, 'scripts'));
 
   writeManifest(cwd, tag, providerKeys, allFiles);
 
   log.success(`Updated from v${currentVersion} to v${newVersion}`);
-  outro('PFF updated successfully!');
+  outro('ADD updated successfully!');
 }

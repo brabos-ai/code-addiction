@@ -42,17 +42,17 @@ function checkGit() {
 }
 
 /**
- * Check if .pff/ directory exists and is non-empty.
+ * Check if .add/ directory exists and is non-empty.
  * @param {string} cwd
  * @returns {{ok: boolean, exists: boolean, hasFiles: boolean}}
  */
-function checkPffDir(cwd) {
-  const pffDir = path.join(cwd, '.pff');
-  const exists = fs.existsSync(pffDir);
+function checkAddDir(cwd) {
+  const addDir = path.join(cwd, '.add');
+  const exists = fs.existsSync(addDir);
   let hasFiles = false;
   if (exists) {
     try {
-      const entries = fs.readdirSync(pffDir);
+      const entries = fs.readdirSync(addDir);
       hasFiles = entries.length > 0;
     } catch {
       // ignore
@@ -71,7 +71,7 @@ function checkPffDir(cwd) {
  * @returns {{ok: boolean, exists: boolean, valid: boolean}}
  */
 function checkManifest(cwd) {
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
   const exists = fs.existsSync(manifestPath);
   let valid = false;
   if (exists) {
@@ -94,14 +94,14 @@ function checkManifest(cwd) {
  * @param {string} cwd
  */
 export async function doctor(cwd) {
-  intro('PFF CLI - Doctor');
+  intro('ADD CLI - Doctor');
 
   const s = spinner();
   s.start('Checking environment...');
 
   const nodeCheck = checkNode();
   const gitCheck = await checkGit();
-  const pffCheck = checkPffDir(cwd);
+  const addCheck = checkAddDir(cwd);
   const manifestCheck = checkManifest(cwd);
 
   s.stop('Checks complete.');
@@ -116,9 +116,9 @@ export async function doctor(cwd) {
   const gitIcon = gitCheck.ok ? 'OK' : 'ERROR';
   log.info(`${gitIcon} Git: ${gitCheck.ok ? gitCheck.version : 'not found'}`);
 
-  const pffIcon = pffCheck.ok ? 'OK' : pffCheck.exists ? 'WARN' : 'ERROR';
-  const pffStatus = pffCheck.ok ? 'present' : pffCheck.exists ? 'empty' : 'missing';
-  log.info(`${pffIcon} .pff/ directory: ${pffStatus}`);
+  const addIcon = addCheck.ok ? 'OK' : addCheck.exists ? 'WARN' : 'ERROR';
+  const addStatus = addCheck.ok ? 'present' : addCheck.exists ? 'empty' : 'missing';
+  log.info(`${addIcon} .add/ directory: ${addStatus}`);
 
   let manifestIcon;
   let manifestStatus;
@@ -136,16 +136,16 @@ export async function doctor(cwd) {
 
   log.info('');
 
-  const allOk = nodeCheck.ok && gitCheck.ok && pffCheck.ok && manifestCheck.ok;
+  const allOk = nodeCheck.ok && gitCheck.ok && addCheck.ok && manifestCheck.ok;
 
   if (allOk) {
-    outro('OK All checks passed! PFF is properly installed.');
+    outro('OK All checks passed! ADD is properly installed.');
     process.exit(0);
   } else {
     const issues = [];
     if (!nodeCheck.ok) issues.push('Node.js >= 18 required');
     if (!gitCheck.ok) issues.push('Git not found');
-    if (!pffCheck.ok) issues.push('.pff/ directory missing or empty');
+    if (!addCheck.ok) issues.push('.add/ directory missing or empty');
     if (!manifestCheck.ok) issues.push('manifest.json missing or invalid');
 
     outro(`ERROR Issues found:\n${issues.map((i) => `  - ${i}`).join('\n')}`);

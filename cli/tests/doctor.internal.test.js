@@ -9,7 +9,7 @@ let originalExit;
 let exitCode;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pff-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
   originalExit = process.exit;
   exitCode = null;
   process.exit = (code) => {
@@ -24,12 +24,12 @@ afterEach(() => {
 });
 
 describe('doctor internal functions', () => {
-  it('handles .pff with only subdirectories', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
-    fs.mkdirSync(path.join(pffDir, 'commands'));
-    fs.mkdirSync(path.join(pffDir, 'scripts'));
-    fs.mkdirSync(path.join(pffDir, 'skills'));
+  it('handles .add with only subdirectories', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
+    fs.mkdirSync(path.join(addDir, 'commands'));
+    fs.mkdirSync(path.join(addDir, 'scripts'));
+    fs.mkdirSync(path.join(addDir, 'skills'));
 
     try {
       await doctor(tmpDir);
@@ -41,10 +41,10 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest.json that is valid JSON but not object', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       '"just a string"',
       'utf8'
     );
@@ -59,10 +59,10 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest.json as array', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       '[1, 2, 3]',
       'utf8'
     );
@@ -77,19 +77,19 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest.json with very long content', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const longManifest = {
       version: '1.0.0',
       installedAt: new Date().toISOString(),
       providers: Array(50).fill('claude'),
-      files: Array(200).fill('.pff/commands/pff.md'),
+      files: Array(200).fill('.add/commands/add.md'),
       hashes: {}
     };
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify(longManifest),
       'utf8'
     );
@@ -104,15 +104,15 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest with unicode content', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0 🎉',
         installedAt: new Date().toISOString(),
         providers: ['claude'],
-        files: ['.pff/commands/日本語.md'],
+        files: ['.add/commands/日本語.md'],
       }),
       'utf8'
     );
@@ -126,10 +126,10 @@ describe('doctor internal functions', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('handles .pff directory with hidden files only', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
-    fs.writeFileSync(path.join(pffDir, '.hidden'), 'hidden', 'utf8');
+  it('handles .add directory with hidden files only', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
+    fs.writeFileSync(path.join(addDir, '.hidden'), 'hidden', 'utf8');
 
     try {
       await doctor(tmpDir);
@@ -140,19 +140,19 @@ describe('doctor internal functions', () => {
     expect(exitCode).toBe(1); // Still needs manifest.json
   });
 
-  it('handles deeply nested .pff structure', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    const deepDir = path.join(pffDir, 'level1', 'level2', 'level3', 'level4');
+  it('handles deeply nested .add structure', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    const deepDir = path.join(addDir, 'level1', 'level2', 'level3', 'level4');
     fs.mkdirSync(deepDir, { recursive: true });
     fs.writeFileSync(path.join(deepDir, 'deep.txt'), 'deep content', 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         installedAt: new Date().toISOString(),
         providers: [],
-        files: ['.pff/level1/level2/level3/level4/deep.txt'],
+        files: ['.add/level1/level2/level3/level4/deep.txt'],
       }),
       'utf8'
     );

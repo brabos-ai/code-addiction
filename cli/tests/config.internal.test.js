@@ -9,7 +9,7 @@ let originalExit;
 let exitCode;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pff-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
   originalExit = process.exit;
   exitCode = null;
   process.exit = (code) => {
@@ -25,10 +25,10 @@ afterEach(() => {
 
 describe('config internal functions', () => {
   it('handles manifest with undefined fields', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: undefined,
         releaseTag: undefined,
@@ -50,10 +50,10 @@ describe('config internal functions', () => {
   });
 
   it('handles very long providers list', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
@@ -75,17 +75,17 @@ describe('config internal functions', () => {
   });
 
   it('handles ISO date string correctly', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         installedAt: '2024-12-25T10:30:00.000Z',
         providers: ['claude'],
-        files: ['.pff/test.md'],
-        hashes: { '.pff/test.md': 'hash123' },
+        files: ['.add/test.md'],
+        hashes: { '.add/test.md': 'hash123' },
       }),
       'utf8'
     );
@@ -100,18 +100,18 @@ describe('config internal functions', () => {
   });
 
   it('handles partial hashes object', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         installedAt: new Date().toISOString(),
         providers: ['claude'],
-        files: ['.pff/file1.txt', '.pff/file2.txt'],
+        files: ['.add/file1.txt', '.add/file2.txt'],
         hashes: {
-          '.pff/file1.txt': 'hash1',
+          '.add/file1.txt': 'hash1',
           // file2.txt intentionally missing from hashes
         },
       }),
@@ -128,10 +128,10 @@ describe('config internal functions', () => {
   });
 
   it('handles whitespace-only providers array', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',

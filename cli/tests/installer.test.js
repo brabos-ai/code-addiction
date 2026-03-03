@@ -12,7 +12,7 @@ import {
 let tmpDir;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pff-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
 });
 
 afterEach(() => {
@@ -74,150 +74,150 @@ describe('fixLineEndings', () => {
 });
 
 describe('writeManifest', () => {
-  it('creates .pff/manifest.json with correct structure', () => {
-    fs.mkdirSync(path.join(tmpDir, '.pff'));
+  it('creates .add/manifest.json with correct structure', () => {
+    fs.mkdirSync(path.join(tmpDir, '.add'));
 
     writeManifest(tmpDir, 'v2.0.1', ['claude', 'kilocode'], [
-      '.pff/commands/pff.md',
-      '.claude/commands/pff.md',
+      '.add/commands/add.md',
+      '.claude/commands/add.md',
     ]);
 
-    const manifestPath = path.join(tmpDir, '.pff', 'manifest.json');
+    const manifestPath = path.join(tmpDir, '.add', 'manifest.json');
     expect(fs.existsSync(manifestPath)).toBe(true);
 
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     expect(manifest.version).toBe('2.0.1');
     expect(manifest.providers).toEqual(['claude', 'kilocode']);
-    expect(manifest.files).toContain('.pff/commands/pff.md');
+    expect(manifest.files).toContain('.add/commands/add.md');
     expect(manifest.installedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('strips leading v from version', () => {
-    fs.mkdirSync(path.join(tmpDir, '.pff'));
+    fs.mkdirSync(path.join(tmpDir, '.add'));
     writeManifest(tmpDir, 'v1.0.0', [], []);
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.pff', 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.add', 'manifest.json'), 'utf8')
     );
     expect(manifest.version).toBe('1.0.0');
   });
 
   it('overwrites existing manifest', () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
 
-    writeManifest(tmpDir, 'v1.0.0', ['claude'], ['.pff/commands/pff.md']);
-    writeManifest(tmpDir, 'v2.0.0', ['codex'], ['.agent/workflows/pff.md']);
+    writeManifest(tmpDir, 'v1.0.0', ['claude'], ['.add/commands/add.md']);
+    writeManifest(tmpDir, 'v2.0.0', ['codex'], ['.agent/workflows/add.md']);
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(pffDir, 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
     expect(manifest.version).toBe('2.0.0');
     expect(manifest.providers).toEqual(['codex']);
   });
 
   it('creates manifest with releaseTag', () => {
-    fs.mkdirSync(path.join(tmpDir, '.pff'));
+    fs.mkdirSync(path.join(tmpDir, '.add'));
 
     writeManifest(tmpDir, 'v2.0.1', ['claude'], [
-      '.pff/commands/pff.md',
+      '.add/commands/add.md',
     ], 'v2.0.1');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.pff', 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.add', 'manifest.json'), 'utf8')
     );
     expect(manifest.releaseTag).toBe('v2.0.1');
   });
 
   it('calculates SHA-256 hashes for all files', () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const content1 = 'test content 1';
     const content2 = 'test content 2';
-    fs.writeFileSync(path.join(tmpDir, '.pff', 'file1.txt'), content1, 'utf8');
-    fs.writeFileSync(path.join(tmpDir, '.pff', 'file2.txt'), content2, 'utf8');
+    fs.writeFileSync(path.join(tmpDir, '.add', 'file1.txt'), content1, 'utf8');
+    fs.writeFileSync(path.join(tmpDir, '.add', 'file2.txt'), content2, 'utf8');
 
     writeManifest(tmpDir, 'v1.0.0', [], [
-      '.pff/file1.txt',
-      '.pff/file2.txt',
+      '.add/file1.txt',
+      '.add/file2.txt',
     ], 'v1.0.0');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(pffDir, 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
     
     expect(manifest.hashes).toBeDefined();
-    expect(manifest.hashes['.pff/file1.txt']).toBe(
+    expect(manifest.hashes['.add/file1.txt']).toBe(
       crypto.createHash('sha256').update(content1).digest('hex')
     );
-    expect(manifest.hashes['.pff/file2.txt']).toBe(
+    expect(manifest.hashes['.add/file2.txt']).toBe(
       crypto.createHash('sha256').update(content2).digest('hex')
     );
   });
 
   it('handles missing files gracefully (no hash entry)', () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
-    fs.writeFileSync(path.join(tmpDir, '.pff', 'exists.txt'), 'content', 'utf8');
+    fs.writeFileSync(path.join(tmpDir, '.add', 'exists.txt'), 'content', 'utf8');
 
     writeManifest(tmpDir, 'v1.0.0', [], [
-      '.pff/exists.txt',
-      '.pff/missing.txt',
+      '.add/exists.txt',
+      '.add/missing.txt',
     ], 'v1.0.0');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(pffDir, 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
     
-    expect(manifest.hashes['.pff/exists.txt']).toBeDefined();
-    expect(manifest.hashes['.pff/missing.txt']).toBeUndefined();
+    expect(manifest.hashes['.add/exists.txt']).toBeDefined();
+    expect(manifest.hashes['.add/missing.txt']).toBeUndefined();
   });
 
   it('calculates correct hash for binary files', () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xFF]);
-    fs.writeFileSync(path.join(tmpDir, '.pff', 'binary.dat'), binaryContent);
+    fs.writeFileSync(path.join(tmpDir, '.add', 'binary.dat'), binaryContent);
 
-    writeManifest(tmpDir, 'v1.0.0', [], ['.pff/binary.dat'], 'v1.0.0');
+    writeManifest(tmpDir, 'v1.0.0', [], ['.add/binary.dat'], 'v1.0.0');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(pffDir, 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
     
-    expect(manifest.hashes['.pff/binary.dat']).toBe(
+    expect(manifest.hashes['.add/binary.dat']).toBe(
       crypto.createHash('sha256').update(binaryContent).digest('hex')
     );
   });
 
   it('calculates correct hash for large files', () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const largeContent = 'x'.repeat(100000);
-    fs.writeFileSync(path.join(tmpDir, '.pff', 'large.txt'), largeContent, 'utf8');
+    fs.writeFileSync(path.join(tmpDir, '.add', 'large.txt'), largeContent, 'utf8');
 
-    writeManifest(tmpDir, 'v1.0.0', [], ['.pff/large.txt'], 'v1.0.0');
+    writeManifest(tmpDir, 'v1.0.0', [], ['.add/large.txt'], 'v1.0.0');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(pffDir, 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
     
-    expect(manifest.hashes['.pff/large.txt']).toBe(
+    expect(manifest.hashes['.add/large.txt']).toBe(
       crypto.createHash('sha256').update(largeContent).digest('hex')
     );
   });
 
   it('handles empty files array', () => {
-    fs.mkdirSync(path.join(tmpDir, '.pff'));
+    fs.mkdirSync(path.join(tmpDir, '.add'));
 
     writeManifest(tmpDir, 'v1.0.0', [], [], 'v1.0.0');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.pff', 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.add', 'manifest.json'), 'utf8')
     );
     
     expect(manifest.hashes).toEqual({});
@@ -225,12 +225,12 @@ describe('writeManifest', () => {
   });
 
   it('uses version as fallback when releaseTag not provided', () => {
-    fs.mkdirSync(path.join(tmpDir, '.pff'));
+    fs.mkdirSync(path.join(tmpDir, '.add'));
 
     writeManifest(tmpDir, 'v2.0.0', [], []);
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.pff', 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.add', 'manifest.json'), 'utf8')
     );
     
     expect(manifest.releaseTag).toBe('v2.0.0');
@@ -238,31 +238,31 @@ describe('writeManifest', () => {
   });
 
   it('handles files in nested directories', () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    const nestedDir = path.join(pffDir, 'commands', 'deep');
+    const addDir = path.join(tmpDir, '.add');
+    const nestedDir = path.join(addDir, 'commands', 'deep');
     fs.mkdirSync(nestedDir, { recursive: true });
     
     const content = 'nested content';
     fs.writeFileSync(path.join(nestedDir, 'file.txt'), content, 'utf8');
 
-    writeManifest(tmpDir, 'v1.0.0', [], ['.pff/commands/deep/file.txt'], 'v1.0.0');
+    writeManifest(tmpDir, 'v1.0.0', [], ['.add/commands/deep/file.txt'], 'v1.0.0');
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(pffDir, 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
     
-    expect(manifest.hashes['.pff/commands/deep/file.txt']).toBe(
+    expect(manifest.hashes['.add/commands/deep/file.txt']).toBe(
       crypto.createHash('sha256').update(content).digest('hex')
     );
   });
 
   it('keeps explicit null releaseTag (branch install)', () => {
-    fs.mkdirSync(path.join(tmpDir, '.pff'));
+    fs.mkdirSync(path.join(tmpDir, '.add'));
 
     writeManifest(tmpDir, 'main', [], [], null, { source: 'branch', ref: 'main' });
 
     const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.pff', 'manifest.json'), 'utf8')
+      fs.readFileSync(path.join(tmpDir, '.add', 'manifest.json'), 'utf8')
     );
 
     expect(manifest.version).toBe('main');

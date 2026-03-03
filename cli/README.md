@@ -1,34 +1,34 @@
-# pff
+# add
 
-CLI installer for [Product Flow Factory (PFF)](https://github.com/brabos-ai/product-flow-factory).
+CLI installer for [Product Flow Factory (ADD)](https://github.com/brabos-ai/product-flow-factory).
 
 ## Install and run
 
 ```bash
 # interactive install
-npx pff install
+npx add install
 
 # install from main branch
-npx pff install --version main
+npx add install --version main
 
 # install from a specific tag
-npx pff install --version v2.0.1
+npx add install --version v2.0.1
 
 # update installed files to latest release
-npx pff update
+npx add update
 
 # environment checks
-npx pff doctor
+npx add doctor
 
 # integrity checks
-npx pff validate
+npx add validate
 
 # repair integrity issues by restoring from release
-npx pff validate --repair
+npx add validate --repair
 
 # remove installed files
-npx pff uninstall
-npx pff uninstall --force
+npx add uninstall
+npx add uninstall --force
 ```
 
 ## Commands
@@ -37,15 +37,15 @@ npx pff uninstall --force
 - `install --version main`: install from GitHub `main` branch
 - `install --version <tag>`: install from a specific GitHub tag
 - `update`: update installed files to latest GitHub release
-- `doctor`: verify Node, Git, and PFF installation health
-- `validate`: verify file hashes from `.pff/manifest.json`
+- `doctor`: verify Node, Git, and ADD installation health
+- `validate`: verify file hashes from `.add/manifest.json`
 - `validate --repair`: restore missing or modified files
-- `config show`: print current PFF installation config
+- `config show`: print current ADD installation config
 - `config show --verbose`: config + release update check
 
 ## What gets installed
 
-- Core (`.pff/`): always installed
+- Core (`.add/`): always installed
 - Provider integration (optional, selected interactively):
   - Claude Code -> `.claude/`
   - Codex (OpenAI) -> `.agent/`

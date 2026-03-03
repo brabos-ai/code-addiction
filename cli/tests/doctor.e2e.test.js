@@ -9,7 +9,7 @@ let originalExit;
 let exitCode;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pff-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
   originalExit = process.exit;
   exitCode = null;
 
@@ -27,10 +27,10 @@ afterEach(() => {
 
 describe('doctor command', () => {
   it('exits 0 when all checks pass', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({ version: '1.0.0', providers: [], files: [] }),
       'utf8'
     );
@@ -44,7 +44,7 @@ describe('doctor command', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('exits 1 when .pff/ is missing', async () => {
+  it('exits 1 when .add/ is missing', async () => {
     try {
       await doctor(tmpDir);
     } catch (err) {
@@ -55,8 +55,8 @@ describe('doctor command', () => {
   });
 
   it('exits 1 when manifest is missing', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
 
     try {
       await doctor(tmpDir);
@@ -68,10 +68,10 @@ describe('doctor command', () => {
   });
 
   it('exits 1 when manifest is corrupted', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       'not valid json',
       'utf8'
     );
@@ -85,9 +85,9 @@ describe('doctor command', () => {
     expect(exitCode).toBe(1);
   });
 
-  it('exits 1 when .pff/ is empty', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+  it('exits 1 when .add/ is empty', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
 
     try {
       await doctor(tmpDir);
@@ -99,10 +99,10 @@ describe('doctor command', () => {
   });
 
   it('detects Node.js version correctly', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({ version: '1.0.0', providers: [], files: [] }),
       'utf8'
     );
@@ -119,9 +119,9 @@ describe('doctor command', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('handles partial .pff directory (exists but empty)', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+  it('handles partial .add directory (exists but empty)', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
 
     try {
       await doctor(tmpDir);
@@ -132,11 +132,11 @@ describe('doctor command', () => {
     expect(exitCode).toBe(1);
   });
 
-  it('handles .pff directory with subdirectories but no files', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
-    fs.mkdirSync(path.join(pffDir, 'commands'));
-    fs.mkdirSync(path.join(pffDir, 'scripts'));
+  it('handles .add directory with subdirectories but no files', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
+    fs.mkdirSync(path.join(addDir, 'commands'));
+    fs.mkdirSync(path.join(addDir, 'scripts'));
 
     try {
       await doctor(tmpDir);
@@ -148,17 +148,17 @@ describe('doctor command', () => {
   });
 
   it('handles valid manifest with multiple providers', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '2.0.0',
         providers: ['claude', 'kilocode', 'codex'],
-        files: ['.pff/commands/pff.md', '.claude/commands/pff.md'],
+        files: ['.add/commands/add.md', '.claude/commands/add.md'],
         hashes: {
-          '.pff/commands/pff.md': 'abc123',
-          '.claude/commands/pff.md': 'def456'
+          '.add/commands/add.md': 'abc123',
+          '.claude/commands/add.md': 'def456'
         }
       }),
       'utf8'
@@ -175,9 +175,9 @@ describe('doctor command', () => {
 });
 
 describe('doctor edge cases', () => {
-  it('detects missing .pff directory', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    expect(fs.existsSync(pffDir)).toBe(false);
+  it('detects missing .add directory', async () => {
+    const addDir = path.join(tmpDir, '.add');
+    expect(fs.existsSync(addDir)).toBe(false);
 
     try {
       await doctor(tmpDir);
@@ -189,10 +189,10 @@ describe('doctor edge cases', () => {
   });
 
   it('detects corrupted JSON in manifest', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       '{ "version": "broken", "files": [}',
       'utf8'
     );
@@ -207,10 +207,10 @@ describe('doctor edge cases', () => {
   });
 
   it('handles manifest with only whitespace', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       '   \n\n   ',
       'utf8'
     );
@@ -225,10 +225,10 @@ describe('doctor edge cases', () => {
   });
 
   it('handles manifest with empty object', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       '{}',
       'utf8'
     );
@@ -243,10 +243,10 @@ describe('doctor edge cases', () => {
   });
 
   it('handles manifest with null values', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: null,
         providers: null,

@@ -4,12 +4,12 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { getLatestTag } from './github.js';
 
 /**
- * Read and parse .pff/manifest.json.
+ * Read and parse .add/manifest.json.
  * @param {string} cwd
  * @returns {{ version: string, releaseTag: string, installedAt: string, providers: string[], files: string[], hashes?: object } | null}
  */
 function readManifest(cwd) {
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
     return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -45,12 +45,12 @@ function formatDate(isoDate) {
  * @param {boolean} verbose  if true, checks for updates
  */
 export async function config(cwd, verbose = false) {
-  intro('PFF CLI - Config');
+  intro('ADD CLI - Config');
 
   const manifest = readManifest(cwd);
 
   if (!manifest) {
-    outro('ERROR: PFF not installed. Run `npx pff install` first.');
+    outro('ERROR: ADD not installed. Run `npx add install` first.');
     process.exit(1);
   }
 
@@ -82,7 +82,7 @@ export async function config(cwd, verbose = false) {
         log.success('OK You are running the latest version!');
       } else {
         log.warn(`WARN Update available: ${latestTag} (current: ${manifest.releaseTag || manifest.version})`);
-        log.info('   Run `npx pff update` to upgrade.');
+        log.info('   Run `npx add update` to upgrade.');
       }
     } catch (err) {
       s.stop('Update check failed.');

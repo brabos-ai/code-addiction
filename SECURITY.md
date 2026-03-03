@@ -8,7 +8,7 @@ Security fixes are applied to the latest released CLI version.
 
 Please report vulnerabilities privately by email:
 
-- `security@pff.dev`
+- `security@add.dev`
 
 Include:
 - Affected component and version

@@ -22,7 +22,7 @@ Project maintainers are responsible for clarifying and enforcing standards of ac
 
 ## Reporting
 
-To report misconduct, contact: `opensource@pff.dev`.
+To report misconduct, contact: `opensource@add.dev`.
 
 All reports will be reviewed and investigated promptly and fairly.
 

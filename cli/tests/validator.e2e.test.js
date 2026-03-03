@@ -10,7 +10,7 @@ let originalExit;
 let exitCode;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pff-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
   originalExit = process.exit;
   exitCode = null;
   process.exit = (code) => {
@@ -31,20 +31,20 @@ function calculateHash(content) {
 
 describe('validate command', () => {
   it('exits 0 when all files are valid', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const content = 'test content';
-    fs.writeFileSync(path.join(pffDir, 'test.txt'), content, 'utf8');
+    fs.writeFileSync(path.join(addDir, 'test.txt'), content, 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/test.txt'],
-        hashes: { '.pff/test.txt': calculateHash(content) },
+        files: ['.add/test.txt'],
+        hashes: { '.add/test.txt': calculateHash(content) },
       }),
       'utf8'
     );
@@ -59,17 +59,17 @@ describe('validate command', () => {
   });
 
   it('exits 1 when file is missing', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/missing.txt'],
-        hashes: { '.pff/missing.txt': 'abc123' },
+        files: ['.add/missing.txt'],
+        hashes: { '.add/missing.txt': 'abc123' },
       }),
       'utf8'
     );
@@ -84,20 +84,20 @@ describe('validate command', () => {
   });
 
   it('exits 1 when file is modified', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const originalContent = 'original';
-    fs.writeFileSync(path.join(pffDir, 'test.txt'), 'modified', 'utf8');
+    fs.writeFileSync(path.join(addDir, 'test.txt'), 'modified', 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/test.txt'],
-        hashes: { '.pff/test.txt': calculateHash(originalContent) },
+        files: ['.add/test.txt'],
+        hashes: { '.add/test.txt': calculateHash(originalContent) },
       }),
       'utf8'
     );
@@ -112,11 +112,11 @@ describe('validate command', () => {
   });
 
   it('exits 0 when manifest has no hashes (backward compat)', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         providers: [],
@@ -145,30 +145,30 @@ describe('validate command', () => {
   });
 
   it('handles multiple files with mixed status', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
-    fs.mkdirSync(path.join(pffDir, 'commands'));
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
+    fs.mkdirSync(path.join(addDir, 'commands'));
     
     // File 1: OK
     const content1 = 'valid content';
-    fs.writeFileSync(path.join(pffDir, 'ok.txt'), content1, 'utf8');
+    fs.writeFileSync(path.join(addDir, 'ok.txt'), content1, 'utf8');
     
     // File 2: Missing (not created)
     
     // File 3: Modified
-    fs.writeFileSync(path.join(pffDir, 'commands', 'modified.txt'), 'wrong content', 'utf8');
+    fs.writeFileSync(path.join(addDir, 'commands', 'modified.txt'), 'wrong content', 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/ok.txt', '.pff/missing.txt', '.pff/commands/modified.txt'],
+        files: ['.add/ok.txt', '.add/missing.txt', '.add/commands/modified.txt'],
         hashes: {
-          '.pff/ok.txt': calculateHash(content1),
-          '.pff/missing.txt': calculateHash('missing'),
-          '.pff/commands/modified.txt': calculateHash('correct content')
+          '.add/ok.txt': calculateHash(content1),
+          '.add/missing.txt': calculateHash('missing'),
+          '.add/commands/modified.txt': calculateHash('correct content')
         },
       }),
       'utf8'
@@ -184,11 +184,11 @@ describe('validate command', () => {
   });
 
   it('handles empty hashes object', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
@@ -209,20 +209,20 @@ describe('validate command', () => {
   });
 
   it('handles binary files correctly', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE]);
-    fs.writeFileSync(path.join(pffDir, 'binary.dat'), binaryContent);
+    fs.writeFileSync(path.join(addDir, 'binary.dat'), binaryContent);
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/binary.dat'],
-        hashes: { '.pff/binary.dat': calculateHash(binaryContent) },
+        files: ['.add/binary.dat'],
+        hashes: { '.add/binary.dat': calculateHash(binaryContent) },
       }),
       'utf8'
     );
@@ -237,21 +237,21 @@ describe('validate command', () => {
   });
 
   it('handles files in nested directories', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    const deepDir = path.join(pffDir, 'commands', 'deep', 'nested');
+    const addDir = path.join(tmpDir, '.add');
+    const deepDir = path.join(addDir, 'commands', 'deep', 'nested');
     fs.mkdirSync(deepDir, { recursive: true });
     
     const content = 'deep content';
     fs.writeFileSync(path.join(deepDir, 'file.txt'), content, 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/commands/deep/nested/file.txt'],
-        hashes: { '.pff/commands/deep/nested/file.txt': calculateHash(content) },
+        files: ['.add/commands/deep/nested/file.txt'],
+        hashes: { '.add/commands/deep/nested/file.txt': calculateHash(content) },
       }),
       'utf8'
     );
@@ -266,17 +266,17 @@ describe('validate command', () => {
   });
 
   it('handles repair mode without releaseTag', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
-    fs.writeFileSync(path.join(pffDir, 'test.txt'), 'modified', 'utf8');
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
+    fs.writeFileSync(path.join(addDir, 'test.txt'), 'modified', 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         providers: [],
-        files: ['.pff/test.txt'],
-        hashes: { '.pff/test.txt': calculateHash('original') },
+        files: ['.add/test.txt'],
+        hashes: { '.add/test.txt': calculateHash('original') },
       }),
       'utf8'
     );
@@ -291,20 +291,20 @@ describe('validate command', () => {
   });
 
   it('handles files with special characters in paths', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const content = 'special content';
-    fs.writeFileSync(path.join(pffDir, 'file-with-dashes.txt'), content, 'utf8');
+    fs.writeFileSync(path.join(addDir, 'file-with-dashes.txt'), content, 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/file-with-dashes.txt'],
-        hashes: { '.pff/file-with-dashes.txt': calculateHash(content) },
+        files: ['.add/file-with-dashes.txt'],
+        hashes: { '.add/file-with-dashes.txt': calculateHash(content) },
       }),
       'utf8'
     );
@@ -319,20 +319,20 @@ describe('validate command', () => {
   });
 
   it('handles large files correctly', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
     const largeContent = 'x'.repeat(100000);
-    fs.writeFileSync(path.join(pffDir, 'large.txt'), largeContent, 'utf8');
+    fs.writeFileSync(path.join(addDir, 'large.txt'), largeContent, 'utf8');
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.pff/large.txt'],
-        hashes: { '.pff/large.txt': calculateHash(largeContent) },
+        files: ['.add/large.txt'],
+        hashes: { '.add/large.txt': calculateHash(largeContent) },
       }),
       'utf8'
     );

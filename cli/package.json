@@ -5,11 +5,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/brabos-ai/product-flow-factory.git"
+    "url": "git+https://github.com/brabos-ai/code-addiction.git"
   },
-  "homepage": "https://github.com/brabos-ai/product-flow-factory#readme",
+  "homepage": "https://github.com/brabos-ai/code-addiction#readme",
   "bugs": {
-    "url": "https://github.com/brabos-ai/product-flow-factory/issues"
+    "url": "https://github.com/brabos-ai/code-addiction/issues"
   },
   "bin": {
     "codeadd": "./bin/codeadd.js"

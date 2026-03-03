@@ -2,8 +2,8 @@
 
 ## Community support
 
-- Use [GitHub Discussions](https://github.com/xmaiconx/pff-commands-scripts/discussions) for questions and ideas.
-- Use [GitHub Issues](https://github.com/xmaiconx/pff-commands-scripts/issues) for bugs and feature requests.
+- Use [GitHub Discussions](https://github.com/xmaiconx/add-commands-scripts/discussions) for questions and ideas.
+- Use [GitHub Issues](https://github.com/xmaiconx/add-commands-scripts/issues) for bugs and feature requests.
 
 ## What to include
 

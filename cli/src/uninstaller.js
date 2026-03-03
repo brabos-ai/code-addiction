@@ -3,17 +3,17 @@ import path from 'node:path';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptConfirm } from './prompt.js';
 
-const PFF_DIRS = ['.pff', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
+const ADD_DIRS = ['.add', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
 
 /**
- * Read and parse .pff/manifest.json.
+ * Read and parse .add/manifest.json.
  * @param {string} cwd
  * @returns {{ version: string, providers: string[], files: string[], corrupted?: boolean } | null}
  *   Returns null if manifest does not exist.
  *   Returns object with corrupted=true if file exists but JSON is invalid.
  */
 export function readManifest(cwd) {
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
     return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -72,32 +72,32 @@ function removeEmptyDirs(dir) {
  * @param {boolean} force  skip confirmation
  */
 export async function uninstall(cwd, force = false) {
-  intro('PFF CLI - Uninstall');
+  intro('ADD CLI - Uninstall');
 
   const manifest = readManifest(cwd);
 
   if (!manifest) {
-    throw new Error('No PFF installation found. Run `npx pff install` first.');
+    throw new Error('No ADD installation found. Run `npx add install` first.');
   }
 
   if (manifest.corrupted) {
     log.warn('Manifest is corrupted. Falling back to directory-based removal.');
 
     const allPresent = [];
-    for (const dir of PFF_DIRS) {
+    for (const dir of ADD_DIRS) {
       allPresent.push(...walkDir(path.join(cwd, dir), cwd));
     }
 
     if (allPresent.length === 0) {
-      outro('No PFF files found. Nothing to remove.');
+      outro('No ADD files found. Nothing to remove.');
       return;
     }
 
-    log.info(`Found ${allPresent.length} file(s) in PFF directories.`);
+    log.info(`Found ${allPresent.length} file(s) in ADD directories.`);
 
     if (!force) {
       await promptConfirm(
-        `Remove all ${allPresent.length} files found in PFF directories? This cannot be undone.`
+        `Remove all ${allPresent.length} files found in ADD directories? This cannot be undone.`
       );
     }
 
@@ -117,31 +117,31 @@ export async function uninstall(cwd, force = false) {
     }
     s.stop(`Removed ${removed} files.`);
 
-    for (const dir of PFF_DIRS) {
+    for (const dir of ADD_DIRS) {
       removeEmptyDirs(path.join(cwd, dir));
     }
 
-    outro('PFF removed successfully.');
+    outro('ADD removed successfully.');
     return;
   }
 
   const manifestFiles = new Set(manifest.files ?? []);
 
   const allPresent = [];
-  for (const dir of PFF_DIRS) {
+  for (const dir of ADD_DIRS) {
     allPresent.push(...walkDir(path.join(cwd, dir), cwd));
   }
 
   const userFiles = allPresent.filter((f) => !manifestFiles.has(f));
 
-  log.info(`Files installed by PFF: ${manifestFiles.size}`);
+  log.info(`Files installed by ADD: ${manifestFiles.size}`);
   if (userFiles.length > 0) {
-    log.warn(`Found ${userFiles.length} file(s) not installed by PFF (will be kept):`);
+    log.warn(`Found ${userFiles.length} file(s) not installed by ADD (will be kept):`);
     for (const f of userFiles) log.warn(`  ${f}`);
   }
 
   if (!force) {
-    await promptConfirm(`Remove ${manifestFiles.size} PFF files? (user files will be kept)`);
+    await promptConfirm(`Remove ${manifestFiles.size} ADD files? (user files will be kept)`);
   }
 
   const s = spinner();
@@ -160,7 +160,7 @@ export async function uninstall(cwd, force = false) {
     }
   }
 
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
   try {
     if (fs.existsSync(manifestPath)) {
       fs.unlinkSync(manifestPath);
@@ -172,9 +172,9 @@ export async function uninstall(cwd, force = false) {
 
   s.stop(`Removed ${removed} files.`);
 
-  for (const dir of PFF_DIRS) {
+  for (const dir of ADD_DIRS) {
     removeEmptyDirs(path.join(cwd, dir));
   }
 
-  outro('PFF removed successfully.');
+  outro('ADD removed successfully.');
 }

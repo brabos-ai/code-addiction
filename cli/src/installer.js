@@ -39,7 +39,7 @@ function calculateHash(filePath) {
 }
 
 /**
- * Write .pff/manifest.json
+ * Write .add/manifest.json
  * @param {string} cwd
  * @param {string} version
  * @param {string[]} providers
@@ -48,7 +48,7 @@ function calculateHash(filePath) {
  * @param {object} [metadata]
  */
 export function writeManifest(cwd, version, providers, files, releaseTag, metadata = {}) {
-  const manifestPath = path.join(cwd, '.pff', 'manifest.json');
+  const manifestPath = path.join(cwd, '.add', 'manifest.json');
 
   const hashes = {};
   for (const file of files) {
@@ -160,7 +160,7 @@ function dirExists(dir) {
  *
  * @param {AdmZip} zip
  * @param {string} zipRoot   top-level folder name inside zip (e.g. "product-flow-factory-2.0.1")
- * @param {string} srcPrefix path inside zip after zipRoot (e.g. "framwork/.pff")
+ * @param {string} srcPrefix path inside zip after zipRoot (e.g. "framwork/.add")
  * @param {string} destDir   absolute destination directory
  * @param {string} cwd       project root
  * @returns {string[]}
@@ -195,7 +195,7 @@ function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
  * @param {{version?: string}} [options]
  */
 export async function install(cwd, options = {}) {
-  intro('PFF CLI - Install');
+  intro('ADD CLI - Install');
 
   const s = spinner();
   s.start('Resolving install source from GitHub...');
@@ -208,9 +208,9 @@ export async function install(cwd, options = {}) {
     s.stop(`Selected tag: ${installSource.downloadValue}`);
   }
 
-  const pffDir = path.join(cwd, '.pff');
-  if (dirExists(pffDir)) {
-    await promptConfirm('.pff/ already exists. Overwrite with latest version?');
+  const addDir = path.join(cwd, '.add');
+  if (dirExists(addDir)) {
+    await promptConfirm('.add/ already exists. Overwrite with latest version?');
   }
 
   const selectedKeys = await promptProviders();
@@ -237,7 +237,7 @@ export async function install(cwd, options = {}) {
 
   const allFiles = [];
 
-  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.pff', pffDir, cwd);
+  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.add', addDir, cwd);
   allFiles.push(...coreFiles);
 
   for (const p of providers) {
@@ -248,7 +248,7 @@ export async function install(cwd, options = {}) {
 
   s.stop(`Installed ${allFiles.length} files.`);
 
-  fixLineEndings(path.join(pffDir, 'scripts'));
+  fixLineEndings(path.join(addDir, 'scripts'));
 
   writeManifest(
     cwd,
@@ -263,9 +263,9 @@ export async function install(cwd, options = {}) {
   log.success(`Providers installed: ${providerList}`);
 
   outro(
-    `PFF installed successfully!\n\n` +
+    `ADD installed successfully!\n\n` +
       `Next steps:\n` +
-      `  1. Open your AI editor and run: /pff-init\n` +
+      `  1. Open your AI editor and run: /add-init\n` +
       `  2. Follow the onboarding to configure your project\n\n` +
       `Docs: https://github.com/brabos-ai/product-flow-factory`
   );

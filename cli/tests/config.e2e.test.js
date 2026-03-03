@@ -9,7 +9,7 @@ let originalExit;
 let exitCode;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pff-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
   originalExit = process.exit;
   exitCode = null;
   process.exit = (code) => {
@@ -26,17 +26,17 @@ afterEach(() => {
 
 describe('config show command', () => {
   it('exits 0 when manifest exists', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         installedAt: new Date().toISOString(),
         providers: ['claude'],
-        files: ['.pff/commands/pff.md'],
-        hashes: { '.pff/commands/pff.md': 'abc123' },
+        files: ['.add/commands/add.md'],
+        hashes: { '.add/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -51,10 +51,10 @@ describe('config show command', () => {
   });
 
   it('exits 0 when manifest has no hashes', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
@@ -85,17 +85,17 @@ describe('config show command', () => {
   });
 
   it('exits 0 in verbose mode with valid manifest', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '0.0.1',
         releaseTag: 'v0.0.1',
         installedAt: new Date().toISOString(),
         providers: ['claude', 'kilocode'],
-        files: ['.pff/commands/pff.md', '.claude/commands/pff.md'],
-        hashes: { '.pff/commands/pff.md': 'abc123' },
+        files: ['.add/commands/add.md', '.claude/commands/add.md'],
+        hashes: { '.add/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -110,25 +110,25 @@ describe('config show command', () => {
   });
 
   it('handles manifest with multiple providers', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '2.0.0',
         releaseTag: 'v2.0.0',
         installedAt: '2024-01-15T10:30:00.000Z',
         providers: ['claude', 'kilocode', 'codex', 'opencode'],
         files: [
-          '.pff/commands/pff.md',
-          '.claude/commands/pff.md',
-          '.kilocode/commands/pff.md',
-          '.codex/commands/pff.md',
-          '.opencode/commands/pff.md'
+          '.add/commands/add.md',
+          '.claude/commands/add.md',
+          '.kilocode/commands/add.md',
+          '.codex/commands/add.md',
+          '.opencode/commands/add.md'
         ],
         hashes: {
-          '.pff/commands/pff.md': 'abc123',
-          '.claude/commands/pff.md': 'def456'
+          '.add/commands/add.md': 'abc123',
+          '.claude/commands/add.md': 'def456'
         },
       }),
       'utf8'
@@ -144,17 +144,17 @@ describe('config show command', () => {
   });
 
   it('handles manifest with empty providers array', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         installedAt: new Date().toISOString(),
         providers: [],
-        files: ['.pff/commands/pff.md'],
-        hashes: { '.pff/commands/pff.md': 'abc123' },
+        files: ['.add/commands/add.md'],
+        hashes: { '.add/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -169,10 +169,10 @@ describe('config show command', () => {
   });
 
   it('handles manifest with no files', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
@@ -194,10 +194,10 @@ describe('config show command', () => {
   });
 
   it('handles manifest with null values', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: null,
         releaseTag: null,
@@ -219,17 +219,17 @@ describe('config show command', () => {
   });
 
   it('handles invalid date format gracefully', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         installedAt: 'invalid-date-string',
         providers: ['claude'],
-        files: ['.pff/commands/pff.md'],
-        hashes: { '.pff/commands/pff.md': 'abc123' },
+        files: ['.add/commands/add.md'],
+        hashes: { '.add/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -244,10 +244,10 @@ describe('config show command', () => {
   });
 
   it('handles corrupted manifest gracefully', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       'not valid json',
       'utf8'
     );
@@ -262,10 +262,10 @@ describe('config show command', () => {
   });
 
   it('handles empty manifest object', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({}),
       'utf8'
     );
@@ -280,17 +280,17 @@ describe('config show command', () => {
   });
 
   it('displays correct file count with many files', async () => {
-    const pffDir = path.join(tmpDir, '.pff');
-    fs.mkdirSync(pffDir);
+    const addDir = path.join(tmpDir, '.add');
+    fs.mkdirSync(addDir);
     
-    const files = Array.from({ length: 100 }, (_, i) => `.pff/file${i}.txt`);
+    const files = Array.from({ length: 100 }, (_, i) => `.add/file${i}.txt`);
     const hashes = {};
     files.forEach((f, i) => {
       hashes[f] = `hash${i}`;
     });
     
     fs.writeFileSync(
-      path.join(pffDir, 'manifest.json'),
+      path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '1.0.0',
         releaseTag: 'v1.0.0',

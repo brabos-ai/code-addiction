@@ -1,4 +1,4 @@
-# Contributing to PFF Commands Scripts
+# Contributing to ADD Commands Scripts
 
 Thanks for contributing.
 

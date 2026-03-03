@@ -11,7 +11,7 @@ export async function getLatestTag(repo = REPO) {
   const res = await fetch(url, {
     headers: {
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'pff-cli',
+      'User-Agent': 'add-cli',
     },
   }).catch(() => {
     throw new Error('Could not reach GitHub. Check your connection.');
@@ -37,7 +37,7 @@ export async function getLatestTag(repo = REPO) {
 export async function downloadTagZip(tag, repo = REPO) {
   const url = `https://github.com/${repo}/archive/refs/tags/${tag}.zip`;
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'pff-cli' },
+    headers: { 'User-Agent': 'add-cli' },
   }).catch(() => {
     throw new Error('Could not reach GitHub. Check your connection.');
   });
@@ -64,7 +64,7 @@ export async function downloadTagZip(tag, repo = REPO) {
 export async function downloadBranchZip(branch, repo = REPO) {
   const url = `https://github.com/${repo}/archive/refs/heads/${branch}.zip`;
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'pff-cli' },
+    headers: { 'User-Agent': 'add-cli' },
   }).catch(() => {
     throw new Error('Could not reach GitHub. Check your connection.');
   });
