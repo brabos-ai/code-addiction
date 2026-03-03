@@ -678,8 +678,12 @@ If `/feature F0018` or `/feature continue`:
    - Only structure? → Complete TodoList
    - about.md filled? → Skip questionnaire
    - discovery.md filled? → Go to validation
-3. Create TodoList with ONLY missing steps
-4. Continue execution
+3. **Load iterations.jsonl** (if exists) for implementation context:
+   - Read `docs/features/${FEATURE_ID}/iterations.jsonl`
+   - Parse entries to understand: what was already implemented, which areas were touched, any pivots
+   - Use this context to avoid re-work and inform questionnaire/documentation
+4. Create TodoList with ONLY missing steps
+5. Continue execution
 
 ---
 

@@ -133,31 +133,14 @@ if [ -n "$FEATURE_ID" ]; then
         echo "FEATURE:$FEATURE_ID PHASE:$PHASE DIR:$FEATURE_DIR"
         [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST"
 
-        # Iterations context (previous /add-dev sessions)
-        ITERATIONS_FILE="$FEATURE_DIR/iterations.md"
+        # Iterations context (previous /add-dev sessions) — JSONL format
+        ITERATIONS_FILE="$FEATURE_DIR/iterations.jsonl"
         if [ -f "$ITERATIONS_FILE" ]; then
-            # Count iterations and get last 3 with full details
-            ITER_COUNT=$(grep -cE '^## I[0-9]+' "$ITERATIONS_FILE" 2>/dev/null || echo "0")
-            if [ "$ITER_COUNT" -gt 0 ]; then
-                # Extract last 3 iterations: header + details line
-                # Using temp file for Windows Git Bash compatibility
-                TEMP_ITER=$(mktemp)
-                awk '
-                    /^## I[0-9]+/ {
-                        if (NR > 1 && header) {
-                            print header "|" details
-                        }
-                        header = $0
-                        getline
-                        details = $0
-                    }
-                    END {
-                        if (header) print header "|" details
-                    }
-                ' "$ITERATIONS_FILE" 2>/dev/null > "$TEMP_ITER"
-
-                LAST_ITERS=$(tail -3 "$TEMP_ITER" | tr '\n' '§' | sed 's/§$//')
-                rm -f "$TEMP_ITER"
+            # Count iterations (each line is a JSON entry)
+            ITER_COUNT=$(wc -l < "$ITERATIONS_FILE" 2>/dev/null | tr -d ' \r\n')
+            if [ "${ITER_COUNT:-0}" -gt 0 ]; then
+                # Last 3 JSONL entries (full lines for agents to parse)
+                LAST_ITERS=$(tail -3 "$ITERATIONS_FILE" 2>/dev/null | tr '\n' '§' | sed 's/§$//')
 
                 echo "ITERATIONS:$ITER_COUNT"
                 echo "LAST_ITERS:$LAST_ITERS"
@@ -204,10 +187,15 @@ if [ -n "$FEATURE_ID" ]; then
             if [ "$TOTAL_FEATURES" -gt 0 ]; then
                 IS_EPIC="true"
 
-                # Count completed features in iterations.md ([FEATURE N COMPLETE] markers)
+                # Count completed features in iterations.jsonl (entries with "type":"add" and slug containing "feature-N")
                 COMPLETED_FEATURES=0
                 if [ -f "$ITERATIONS_FILE" ]; then
-                    COMPLETED_FEATURES=$(grep -cE '\[FEATURE [0-9]+ COMPLETE\]' "$ITERATIONS_FILE" 2>/dev/null || echo "0")
+                    # Legacy: check for [FEATURE N COMPLETE] markers (backwards compat)
+                    COMPLETED_FEATURES=$(grep -cE '"slug":"feature-[0-9]+-complete"' "$ITERATIONS_FILE" 2>/dev/null || echo "0")
+                    # Fallback: count distinct feature slugs with type=add
+                    if [ "$COMPLETED_FEATURES" -eq 0 ]; then
+                        COMPLETED_FEATURES=$(grep -oE '"slug":"feature-[0-9]+' "$ITERATIONS_FILE" 2>/dev/null | sort -u | wc -l | tr -d ' \r\n')
+                    fi
                 fi
 
                 NEXT_FEATURE=$((COMPLETED_FEATURES + 1))
