@@ -1,7 +1,7 @@
 {
-  "name": "productflow",
+  "name": "codeadd",
   "version": "0.1.0",
-  "description": "CLI installer for Product Flow Factory (PFF)",
+  "description": "CLI for Code Addiction framework - AI-powered development workflows",
   "type": "module",
   "repository": {
     "type": "git",
@@ -12,7 +12,7 @@
     "url": "https://github.com/brabos-ai/product-flow-factory/issues"
   },
   "bin": {
-    "productflow": "./bin/pff.js"
+    "codeadd": "./bin/codeadd.js"
   },
   "files": [
     "bin",
@@ -36,19 +36,18 @@
     "vitest": "^2.0.0"
   },
   "keywords": [
-    "pff",
-    "product-flow-factory",
-    "product-development",
-    "product-workflow",
+    "codeadd",
+    "code-addiction",
+    "ai",
+    "cli",
     "commands",
     "scripts",
     "automation",
     "developer-tools",
     "claude",
     "codex",
-    "ai",
-    "cli",
-    "installer"
+    "workflow",
+    "productivity"
   ],
   "license": "MIT"
 }

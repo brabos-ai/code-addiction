@@ -31,31 +31,31 @@ function getArgValue(argv, flag) {
 }
 
 const USAGE = `
-Usage: pff <command>
+Usage: codeadd <command>
 
 Commands:
-  install              Install PFF files into your project
+  install              Install Code Addiction files into your project
   install --version X  Install from version (main branch or specific tag)
-  update               Update installed PFF files to latest version
-  uninstall            Remove PFF files from your project
-  doctor               Check environment health (Node, Git, PFF installation)
+  update               Update installed files to latest version
+  uninstall            Remove Code Addiction files from your project
+  doctor               Check environment health (Node, Git, installation)
   validate             Validate file integrity via SHA-256 hashes
   validate --repair    Restore missing/modified files from release
   config show          Display installation configuration
   config show --verbose  Display config + check for updates
 
 Examples:
-  npx pff install
-  npx pff install --version main
-  npx pff install --version v2.0.1
-  npx pff update
-  npx pff uninstall
-  npx pff uninstall --force
-  npx pff doctor
-  npx pff validate
-  npx pff validate --repair
-  npx pff config show
-  npx pff config show --verbose
+  npx codeadd install
+  npx codeadd install --version main
+  npx codeadd install --version v2.0.1
+  npx codeadd update
+  npx codeadd uninstall
+  npx codeadd uninstall --force
+  npx codeadd doctor
+  npx codeadd validate
+  npx codeadd validate --repair
+  npx codeadd config show
+  npx codeadd config show --verbose
 `;
 
 async function main() {

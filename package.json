@@ -1,5 +1,5 @@
 {
-  "name": "product-flow-factory",
+  "name": "codeadd",
   "private": true,
   "scripts": {
     "test": "npm --prefix cli test",
