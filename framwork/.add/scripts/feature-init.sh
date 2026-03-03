@@ -102,11 +102,11 @@ fi
 FEATURE_ID=$(echo "$CURRENT_BRANCH" | sed -n 's|.*/\(F[0-9]\{4\}-[^/]*\)$|\1|p')
 if [ -n "$FEATURE_ID" ]; then
     DOCS=""
-    [ -f "$FEATURES_DIR/$FEATURE_ID/about.md" ]     && DOCS="${DOCS}about,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/discovery.md" ] && DOCS="${DOCS}discovery,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/design.md" ]    && DOCS="${DOCS}design,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/plan.md" ]      && DOCS="${DOCS}plan,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/changelog.md" ] && DOCS="${DOCS}changelog,"
+    [ -f "$FEATURES_DIR/$FEATURE_ID/about.md" ]     && DOCS="${DOCS}about.md,"
+    [ -f "$FEATURES_DIR/$FEATURE_ID/discovery.md" ] && DOCS="${DOCS}discovery.md,"
+    [ -f "$FEATURES_DIR/$FEATURE_ID/design.md" ]    && DOCS="${DOCS}design.md,"
+    [ -f "$FEATURES_DIR/$FEATURE_ID/plan.md" ]      && DOCS="${DOCS}plan.md,"
+    [ -f "$FEATURES_DIR/$FEATURE_ID/changelog.md" ] && DOCS="${DOCS}changelog.md,"
     DOCS="${DOCS%,}"
 
     if [ -n "$DOCS" ]; then
@@ -174,7 +174,7 @@ if [ -d "$FEATURES_DIR" ]; then
     # fallback to xargs ls -t for non-GNU environments.
     # Use null-delimited output to handle paths with spaces safely.
     CHANGELOGS=$(find "$FEATURES_DIR" -name "changelog.md" -type f -print0 2>/dev/null | \
-        xargs -0 ls -t 2>/dev/null | head -5 || true)
+        xargs -0 -r ls -t 2>/dev/null | head -5 || true)
 
     if [ -n "$CHANGELOGS" ]; then
         echo "RECENT_CHANGELOGS:"
@@ -195,7 +195,7 @@ if [ -d "$FEATURES_DIR" ]; then
                     SUMMARY=$(grep -m1 "^# " "$cl" 2>/dev/null | sed 's/^# //' | head -c 80 || true)
                 fi
 
-                [ -n "$SUMMARY" ] && echo "  $FEAT|$SUMMARY"
+                if [ -n "$SUMMARY" ]; then echo "  $FEAT|$SUMMARY"; fi
             fi
         done <<< "$CHANGELOGS"
         echo "CHANGELOGS_PATH:docs/features/{F*}/changelog.md"

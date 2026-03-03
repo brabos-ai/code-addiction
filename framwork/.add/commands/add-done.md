@@ -203,7 +203,8 @@ Grep for "^## Features" in ${DIR}/plan.md
 
 ```
 TOTAL_FEATURES = count of "^### Feature [0-9]+:" in plan.md
-COMPLETED_FEATURES = count of "\[FEATURE [0-9]+ COMPLETE\]" in iterations.md
+COMPLETED_FEATURES = count of entries with "slug":"feature-N-complete" in iterations.jsonl
+  (fallback: count distinct "slug":"feature-N" entries with "type":"add")
 ```
 
 **IF all complete (COMPLETED >= TOTAL):** Proceed to 4A.2.
@@ -273,16 +274,16 @@ Read ${DIR}/about.md
 
 **Extract:** Objective, Scope (Included/Excluded), Business Rules, Technical Decisions, Acceptance Criteria
 
-**Read iterations.md:**
+**Read iterations.jsonl:**
 ```
-Read ${DIR}/iterations.md
+Read ${DIR}/iterations.jsonl
 ```
 
-**Parse format:** `## I{n}|{date}|{cmd}|{type}` + `{slug}|{what}|{files}`
+**Parse JSONL format:** Each line is `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
 
 **Build:**
-- `HISTORY_FILES` = union of all files across iterations
-- `ITERATION_MAP` = {I1: {slug, files}, I2: {slug, files}, ...}
+- `HISTORY_FILES` = union of all `files` arrays across JSONL entries
+- `ITERATION_MAP` = {entry1: {slug, type, what, files}, entry2: ...} (ordered by `ts`)
 
 ### 4A.5: Intelligent File Analysis
 
@@ -525,7 +526,7 @@ bash .add/scripts/done.sh --merge
 ALWAYS:
 - Run done.sh context mode FIRST
 - Resolve directory from CHANGED_FILES (not Glob)
-- Read about.md + iterations.md BEFORE analyzing (feature only)
+- Read about.md + iterations.jsonl BEFORE analyzing (feature only)
 - Validate files against HISTORY_FILES (feature only)
 - Write changelog BEFORE --merge (feature only)
 - Execute --merge automatically after validations pass

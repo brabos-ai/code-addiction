@@ -216,7 +216,7 @@ echo "SCRIPTS:"
 if [ -f "package.json" ]; then
     grep_safe -A 50 '"scripts"' package.json | \
         grep_safe -E '^\s+"[^"]+":\s*' | \
-        sed 's/.*"\([^"]*\)".*/\1/' | head -15 | while IFS= read -r script; do
+        sed 's/^\s*"\([^"]*\)".*/\1/' | head -15 | while IFS= read -r script; do
         [ -n "$script" ] && echo "  $script"
     done || true
 fi
@@ -259,7 +259,7 @@ if [ -f "package.json" ]; then
     echo "  pkg:"
     grep_safe -A 200 '"dependencies"' package.json | \
         grep_safe -E '^\s+"[^"]+":\s*' | \
-        sed 's/.*"\([^"]*\)".*/\1/' | \
+        sed 's/^\s*"\([^"]*\)".*/\1/' | \
         head -30 | tr '\n' ',' | sed 's/,$//' | sed 's/^/    /' || true
     echo ""
     echo "  dev:"

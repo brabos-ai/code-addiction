@@ -212,7 +212,23 @@ Read docs/features/F[XXXX]-*/changelog.md
 Read docs/features/F[XXXX]-*/about.md
 ```
 
-**⛔ ONLY AFTER READING DOCUMENTATION you can use Grep/Read on code.**
+### 5.3 READ Implementation History (iterations.jsonl)
+
+**Load iterations.jsonl for related features to understand what was implemented and changed:**
+
+```
+Read docs/features/F[XXXX]-*/iterations.jsonl
+```
+
+**Parse JSONL format:** Each line is `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
+
+**Use to:**
+- Identify which files were created/modified during feature implementation (likely bug location)
+- Understand implementation sequence (recent changes = higher bug probability)
+- Check for pivots in `decisions.jsonl` (pivoted areas = higher risk of regression)
+- Narrow investigation scope: start with files from most recent iterations
+
+**⛔ ONLY AFTER READING DOCUMENTATION + ITERATIONS you can use Grep/Read on code.**
 
 ---
 
@@ -389,7 +405,7 @@ bash .add/scripts/log-jsonl.sh "docs/hotfixes/iterations.jsonl" "fix" "/hotfix" 
 - [ ] STEP 2: BRANCH verified
 - [ ] STEP 3: Path decided (Feature Fix or Standalone) with user confirmation
 - [ ] STEP 4: Template read + branch created + hotfix doc written
-- [ ] STEP 5: Changelogs and about.md of related features READ
+- [ ] STEP 5: Changelogs, about.md, and iterations.jsonl of related features READ
 
 ### STEPS 6-7 (INVESTIGATION)
 - [ ] STEP 6: Code investigated (ONLY after STEP 5)

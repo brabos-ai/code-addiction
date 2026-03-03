@@ -64,7 +64,6 @@ $env:OS           # Windows PowerShell → Windows_NT
 | WSL | `wsl -l -v` | `docker-desktop` only = NOT ready |
 | bash | `bash --version` | Must be inside WSL, not Git Bash |
 | git | `git --version` | Inside WSL |
-| jq | `jq --version` | Inside WSL |
 | gh | `gh --version` | Inside WSL |
 | claude | `claude --version` | Optional — check if Claude Code is installed |
 | opencode | `opencode --version` | Optional — check if OpenCode is installed |
@@ -83,7 +82,6 @@ Show what is missing vs already installed:
 ```
 ✅ WSL2: Debian installed
 ❌ git: not found inside WSL
-❌ jq: not found inside WSL
 ✅ gh: installed
 ```
 
@@ -128,7 +126,7 @@ SAY: "Reinicie o Windows. Abra o terminal Debian para completar o setup e me avi
 SAY: "Execute no terminal WSL:"
 
 ```bash
-sudo apt update && sudo apt install -y git jq curl
+sudo apt update && sudo apt install -y git curl
 ```
 
 ⛔ WAIT for user confirmation before proceeding.
@@ -219,7 +217,7 @@ SAY: "Execute no terminal:"
 # Homebrew (if missing)
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-brew install git jq gh
+brew install git gh
 gh auth login
 
 # Check bash version — upgrade if < 4.0
@@ -249,15 +247,15 @@ SAY: "Execute no terminal:"
 
 ```bash
 # Debian/Ubuntu
-sudo apt update && sudo apt install -y git jq curl
+sudo apt update && sudo apt install -y git curl
 # Install gh via official repo (same as Windows/WSL flow above)
 gh auth login
 
 # Fedora/RHEL
-sudo dnf install -y git jq gh && gh auth login
+sudo dnf install -y git gh && gh auth login
 
 # Arch
-sudo pacman -S git jq github-cli && gh auth login
+sudo pacman -S git github-cli && gh auth login
 ```
 
 SAY for AI tools (if confirmed): "Execute no terminal:"
@@ -279,7 +277,7 @@ curl -fsSL https://opencode.ai/install | bash
 ✅ This step CAN use Bash tool — verification commands are non-sudo, non-interactive.
 
 ```bash
-git --version && jq --version && gh --version && echo "✅ All tools ready"
+git --version && gh --version && echo "✅ All tools ready"
 # If AI tools were installed:
 claude --version 2>/dev/null && echo "✅ Claude Code ready" || true
 opencode --version 2>/dev/null && echo "✅ OpenCode ready" || true

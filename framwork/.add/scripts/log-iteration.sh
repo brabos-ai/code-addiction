@@ -58,7 +58,7 @@ CMD="${5:-/dev}"
 FEATURE_NUM=""
 EPIC_NAME=""
 
-shift 5  # Descarta os 5 primeiros args; o restante sao flags opcionais.
+shift $(( $# >= 5 ? 5 : $# ))  # Descarta os 5 primeiros args; o restante sao flags opcionais.
 while [ $# -gt 0 ]; do
     case "$1" in
         --feature)

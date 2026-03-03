@@ -86,7 +86,7 @@ IF user passed "feature N":
   3. IF NOT: BLOCK and inform
 
 IF user did NOT pass flag + plan.md has Features (Epic):
-  1. Detect last completed feature via iterations.md
+  1. Detect last completed feature via iterations.jsonl
   2. Execute ONLY the next pending feature
   3. Inform: "Executing Feature X of Y"
 

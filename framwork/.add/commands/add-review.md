@@ -143,7 +143,12 @@ ls -la "docs/features/${FEATURE_ID}/"
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
 4. `design.md` - UX design (if exists)
-5. Parse `PROJECT_PATHS` from script output and read ALL listed files:
+5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
+   - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
+   - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
+   - Cross-reference with changed files to validate completeness
+6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
+7. Parse `PROJECT_PATHS` from script output and read ALL listed files:
    - Files are named by app (SERVER.md, ADMIN.md, CLI.md, etc)
    - DATABASE.md is cross-app
    - These contain implementation patterns to validate against

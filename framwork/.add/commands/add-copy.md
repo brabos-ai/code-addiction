@@ -112,7 +112,7 @@ cat docs/product.md 2>/dev/null
 ls docs/features/ 2>/dev/null
 
 # 4. Package.json
-cat package.json | jq '{name, description, keywords}'
+cat package.json
 ```
 
 ### 3.2 Extract Information
