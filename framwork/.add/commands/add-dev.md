@@ -326,19 +326,9 @@ IF test files exist for your area (service=test tasks already implemented):
 ```
 
 **DECISION LOGGING (MANDATORY for TASKS MODE subagents):**
-Each subagent MUST append to `docs/features/${FEATURE_ID}/decisions.jsonl`:
-
-- **Before implementing** (choice):
-```bash
-bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "choice" "[area]" '"decision":"[approach chosen]","reason":"[why]","alternatives":["[alt1]"]'
-```
-- **On pivot** (changed approach):
+Each subagent MUST append to `docs/features/${FEATURE_ID}/decisions.jsonl` **only on pivot** (changed approach):
 ```bash
 bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N],"error":"[if any]"'
-```
-- **On success** (result):
-```bash
-bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "result" "[area]" '"decision":"[final]","status":"success","attempt":[N],"files":["[f1]","[f2]"]'
 ```
 
 ---
@@ -405,10 +395,8 @@ Follow ALL patterns from your loaded skill. Key areas:
 - Frontend: Mobile-first, shadcn components, Tailwind v3, Motion animations
 
 ## DECISION LOGGING (MANDATORY — PRD0031)
-Log significant decisions to `docs/features/${FEATURE_ID}/decisions.jsonl` using the log script:
-- CHOICE: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "choice" "[area]" '"decision":"[what]","reason":"[why]","alternatives":["[alt1]"]'`
+Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the log script:
 - PIVOT: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
-- RESULT: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "result" "[area]" '"decision":"[final choice]","status":"success","attempt":[N],"files":["[f1]"]'`
 
 ## Deliverables
 - Report: List of files created/modified + decisions logged

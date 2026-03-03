@@ -1,20 +1,70 @@
 ---
 name: ux-design
-description: |
-  Modern UX/UI: UX Laws, mobile-first, SaaS patterns, micro-interactions. Tailwind v3, shadcn, Motion, Recharts, TanStack.
+description: "Use when building UI components, pages, layouts, dashboards, charts, tables, forms, or any frontend interface. Use when styling, theming, or applying design direction to SaaS products. Triggers: design, UI, UX, component, page, layout, dashboard, mobile, responsive, dark mode, animation, skeleton, empty-state, loading-state, onboarding, settings, billing, auth."
 ---
 
-# UX Design
+# UX Design (Distinctive, Production-Grade)
 
-Skill para criar interfaces **modernas, distintivas e centradas no usuário** para SaaS.
+You are a **UX designer-engineer**, not a layout generator.
 
-**Use para:** Components, pages, layouts, dashboards, charts, tables, forms
-**Não use para:** Backend (backend-development), Database (database-development)
+Your goal is to create **memorable, high-craft SaaS interfaces** that:
+- Express a clear aesthetic point of view
+- Follow UX laws and cognitive psychology
+- Are fully functional, mobile-first, and production-ready
+- Avoid generic "template" patterns
+
+**Use for:** Components, pages, layouts, dashboards, charts, tables, forms
+**NEVER use for:** Backend (backend-development), Database (database-development)
 
 **Support Files:**
+- `.add/skills/ux-design/design-direction.md` - Design Thinking, Quality Score, Output Structure
 - `.add/skills/ux-design/ux-laws-principles.md` - UX Laws, Cognitive Load, Mental Models
 - `.add/skills/ux-design/modern-patterns.md` - Interaction patterns, Visual trends, Performance UX
 - `.add/skills/ux-design/ux-writing.md` - Microcopy, Error messages, Empty states
+
+---
+
+## Design Thinking Phase (MANDATORY — Before ANY Code)
+
+> **Full details:** `design-direction.md`
+
+Before writing code, ALWAYS define:
+
+### 1. Purpose
+What action should this interface enable? Is it persuasive, functional, exploratory?
+
+### 2. Tone (Choose ONE Dominant)
+`Minimal Clean` | `Editorial` | `Luxury Refined` | `Industrial Utilitarian` | `Playful` | `Data-Dense`
+
+⚠️ Do NOT blend more than **two** tones.
+
+### 3. Differentiation Anchor
+> "If this were screenshotted with the logo removed, how would someone recognize it?"
+
+This anchor MUST be visible in the final UI.
+
+### 4. Design Quality Score (DQS)
+
+| Dimension | Score 1-5 |
+|-----------|-----------|
+| **Aesthetic Impact** | How distinctive and memorable? |
+| **Context Fit** | Does it suit the product/audience? |
+| **Implementation Feasibility** | Can it be built cleanly? |
+| **Performance Safety** | Will it remain fast/accessible? |
+| **Consistency Risk** | Can it scale across screens? |
+
+```
+DQS = (Impact + Fit + Feasibility + Performance) − Consistency Risk
+```
+
+| DQS | Action |
+|-----|--------|
+| **12-15** | Execute fully |
+| **8-11** | Proceed with discipline |
+| **4-7** | Reduce scope |
+| **≤3** | Rethink direction |
+
+**NEVER ship with DQS < 8.**
 
 ---
 
@@ -327,20 +377,46 @@ return <DataDisplay data={data} />
 
 ---
 
-## Anti-Patterns (BLOCKED)
+## Anti-Patterns (IMMEDIATE FAILURE)
+
+**Iron Law:** If the design could be mistaken for a template → restart.
 
 | Pattern | Why Bad | Fix |
 |---------|---------|-----|
+| Default shadcn/Tailwind layout | Generic, forgettable | Define aesthetic direction first |
+| Inter/Roboto/system fonts as display | AI cliché, zero personality | Expressive display font + restrained body |
+| Purple gradients on white | Most overused SaaS pattern | Subtle, token-based color story |
+| Symmetrical, predictable sections | Looks auto-generated | Break grid intentionally |
 | Gradients on long text | Hurts readability | Short titles only |
 | Pure black shadows | Look dirty | Tinted shadows (primary/5) |
 | >3 vibrant colors | Distracts from content | 60-30-10 rule |
-| Purple gradients on white | AI cliché | Subtle, token-based |
 | Desktop-first breakpoints | Mobile afterthought | 320px base always |
 | Centered modals on mobile | Bad touch UX | Vaul bottom drawers |
 | Touch targets <44px | Frustrating | Min 44x44px |
 | Inputs <16px font | iOS auto-zoom | text-base minimum |
 | Generic loading text | Feels slow | Contextual messages |
 | No empty states | Confusing | Always design empty |
+| Decoration without intent | Visual noise | Every flourish serves the aesthetic thesis |
+
+### Red Flags — STOP and Rethink
+
+If you catch yourself doing ANY of these, **STOP. Delete. Start over.**
+
+- Using default component styling without customization
+- Skipping the Design Thinking Phase "because it's a small component"
+- Saying "I'll add personality later"
+- Copying a layout from another project without adapting tone
+- Blending 3+ aesthetic tones
+
+### Common Rationalizations (BLOCKED)
+
+| Excuse | Reality |
+|--------|---------|
+| "It's just a simple page" | Simple pages still need aesthetic direction |
+| "The user didn't specify a style" | Default to the project's established tone or define one |
+| "shadcn defaults look fine" | Fine ≠ distinctive. Customize always. |
+| "I'll polish it later" | Later never comes. Design intent goes in first. |
+| "Mobile can wait" | Mobile-first is MANDATORY, not optional |
 
 ---
 
@@ -399,6 +475,7 @@ className="motion-safe:animate-fadeIn"
 {"tanstackTable":".add/skills/ux-design/tanstack-table-docs.md"}
 {"tanstackQuery":".add/skills/ux-design/tanstack-query-docs.md"}
 {"tanstackRouter":".add/skills/ux-design/tanstack-router-docs.md"}
+{"designDirection":".add/skills/ux-design/design-direction.md"}
 {"uxLaws":".add/skills/ux-design/ux-laws-principles.md"}
 {"modernPatterns":".add/skills/ux-design/modern-patterns.md"}
 {"uxWriting":".add/skills/ux-design/ux-writing.md"}
@@ -410,6 +487,38 @@ className="motion-safe:animate-fadeIn"
 {"core":[{"name":"shadcn/ui","for":"components"},{"name":"tailwindcss","for":"styling"},{"name":"motion","for":"animations"}]}
 {"data":[{"name":"recharts","for":"charts"},{"name":"@tanstack/react-table","for":"tables"},{"name":"@tanstack/react-query","for":"data fetching"}]}
 {"ux":[{"name":"sonner","for":"toasts","cmd":"npx shadcn add sonner"},{"name":"vaul","for":"mobile drawers","cmd":"npx shadcn add drawer"},{"name":"cmdk","for":"command palette","cmd":"npx shadcn add command"},{"name":"nuqs","for":"URL state"},{"name":"@tanstack/react-virtual","for":"1000+ items"}]}
+
+---
+
+## Required Output Structure
+
+When generating ANY frontend work, ALWAYS include:
+
+### 1. Design Direction (comment block at top)
+```tsx
+/**
+ * Design Direction: [Aesthetic name, e.g. "Minimal Clean + Data-Dense"]
+ * DQS: [score]/15
+ * Differentiation: "This avoids generic UI by [doing X instead of Y]"
+ */
+```
+
+### 2. Component Implementation
+- Full working code with intentional styling
+- Comments only where intent isn't obvious
+
+### 3. States Coverage
+- Loading, Empty, Error, Success — ALL handled
+
+---
+
+## Questions to Ask (Before Complex Interfaces)
+
+1. Who is this for, emotionally?
+2. Should this feel trustworthy, exciting, calm, or data-rich?
+3. Is memorability or clarity more important?
+4. Will this scale to other pages/components?
+5. What should users *feel* in the first 3 seconds?
 
 ---
 

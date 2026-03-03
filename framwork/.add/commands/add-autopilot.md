@@ -530,10 +530,8 @@ prompt: |
   - Build MUST pass (see CLAUDE.md for build command)
 
   ## DECISION LOGGING (MANDATORY — PRD0031)
-  Log to `docs/features/${FEATURE_ID}/decisions.jsonl` using log script:
-  - CHOICE: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "choice" "database" '"decision":"[approach]","reason":"[why]","alternatives":["[alt]"]'`
+  Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
   - PIVOT: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "database" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
-  - RESULT: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "result" "database" '"decision":"[final]","status":"success","attempt":[N],"files":["[f1]"]'`
 
   ## REPORT FORMAT
   Return:
@@ -586,10 +584,8 @@ prompt: |
   - Build MUST pass (see CLAUDE.md for build command)
 
   ## DECISION LOGGING (MANDATORY — PRD0031)
-  Log to `docs/features/${FEATURE_ID}/decisions.jsonl` using log script:
-  - CHOICE: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "choice" "backend" '"decision":"[approach]","reason":"[why]","alternatives":["[alt]"]'`
+  Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
   - PIVOT: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "backend" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
-  - RESULT: `bash .add/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "result" "backend" '"decision":"[final]","status":"success","attempt":[N],"files":["[f1]"]'`
 
   ## REPORT FORMAT
   Return:

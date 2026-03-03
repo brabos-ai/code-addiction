@@ -13,7 +13,7 @@ Most AI coding setups are fragmented across custom prompts, scripts, and editor-
 Code Addiction standardizes this with:
 - A shared core in `.add/` (commands, scripts, skills, templates)
 - Provider-specific integrations (Claude, Codex, Antigravity, KiloCode, OpenCode)
-- A versioned installer (`codeadd`) with `install`, `update`, `doctor`, and `validate`
+- A versioned installer (`codeadd`) with `install`, `update`, `uninstall`, `doctor`, and `validate`
 
 ## Quickstart
 
@@ -32,6 +32,9 @@ npx codeadd doctor
 
 # validate integrity
 npx codeadd validate
+
+# uninstall Code Addiction files from your project
+npx codeadd uninstall
 ```
 
 ## What gets installed

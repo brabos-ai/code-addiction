@@ -37,6 +37,7 @@ npx codeadd uninstall --force
 - `install --version main`: install from GitHub `main` branch
 - `install --version <tag>`: install from a specific GitHub tag
 - `update`: update installed files to latest GitHub release
+- `uninstall`: remove files installed by ADD from current project
 - `doctor`: verify Node, Git, and ADD installation health
 - `validate`: verify file hashes from `.add/manifest.json`
 - `validate --repair`: restore missing or modified files

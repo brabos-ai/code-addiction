@@ -417,18 +417,16 @@ Located at: `docs/features/${FEATURE_ID}/decisions.jsonl`
 
 ### When to Log
 
+Log **only pivots** — when a subagent changes approach during implementation. `choice` and `result` were removed (no consumer reads them, only pivots are filtered by context mapping).
+
 | Moment | type | Required Fields | Optional |
 |--------|------|-----------------|----------|
-| Before implementing (chose approach) | `choice` | ts, agent, type, decision, reason | alternatives |
 | When pivoting to different approach | `pivot` | ts, agent, type, decision, reason, from | attempt, error |
-| After successful completion | `result` | ts, agent, type, decision, status | attempt, files |
 
 ### Log Format (JSONL — one JSON per line)
 
 ```jsonl
-{"ts":"2026-02-18T14:30:00Z","agent":"backend","type":"choice","decision":"Use Prisma ORM","reason":"Project already has Prisma schema","alternatives":["Drizzle","Raw SQL"]}
 {"ts":"2026-02-18T14:45:00Z","agent":"backend","type":"pivot","from":"Prisma","decision":"Switch to Drizzle","reason":"Prisma migration failed with Supabase edge functions","attempt":1,"error":"Migration timeout on edge runtime"}
-{"ts":"2026-02-18T15:00:00Z","agent":"backend","type":"result","decision":"Drizzle ORM","status":"success","attempt":2,"files":["src/db/schema.ts","src/db/client.ts"]}
 ```
 
 ### Append Command

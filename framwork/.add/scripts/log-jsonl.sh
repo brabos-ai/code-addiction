@@ -7,14 +7,14 @@
 #
 # Args:
 #   file   - target JSONL file path (relative or absolute)
-#   type   - entry type (choice|pivot|result|add|fix|refactor|test|docs)
+#   type   - entry type (pivot|add|fix|refactor|test|docs)
 #   agent  - agent/area identifier (database|backend|frontend|coordinator|/dev|/hotfix|/autopilot)
 #   fields - remaining JSON fields as raw key:value pairs (already quoted)
 #
 # Examples:
 #   bash .add/scripts/log-jsonl.sh "docs/features/F0011-board/decisions.jsonl" \
-#     "choice" "database" \
-#     '"decision":"Junction table","reason":"Simpler","alternatives":["Separate tables"]'
+#     "pivot" "database" \
+#     '"from":"Junction table","decision":"Separate tables","reason":"Better query perf","attempt":1'
 #
 #   bash .add/scripts/log-jsonl.sh "docs/features/F0011-board/iterations.jsonl" \
 #     "add" "/dev" \
