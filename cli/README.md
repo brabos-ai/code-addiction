@@ -1,34 +1,34 @@
 # add
 
-CLI installer for [Product Flow Factory (ADD)](https://github.com/brabos-ai/product-flow-factory).
+CLI installer for [Code Addiction (ADD)](https://github.com/brabos-ai/code-addiction).
 
 ## Install and run
 
 ```bash
 # interactive install
-npx add install
+npx codeadd install
 
 # install from main branch
-npx add install --version main
+npx codeadd install --version main
 
 # install from a specific tag
-npx add install --version v2.0.1
+npx codeadd install --version v2.0.1
 
 # update installed files to latest release
-npx add update
+npx codeadd update
 
 # environment checks
-npx add doctor
+npx codeadd doctor
 
 # integrity checks
-npx add validate
+npx codeadd validate
 
 # repair integrity issues by restoring from release
-npx add validate --repair
+npx codeadd validate --repair
 
 # remove installed files
-npx add uninstall
-npx add uninstall --force
+npx codeadd uninstall
+npx codeadd uninstall --force
 ```
 
 ## Commands
@@ -59,5 +59,5 @@ npx add uninstall --force
 
 ## Links
 
-- Repository: https://github.com/brabos-ai/product-flow-factory
-- Issues: https://github.com/brabos-ai/product-flow-factory/issues
+- Repository: https://github.com/brabos-ai/code-addiction
+- Issues: https://github.com/brabos-ai/code-addiction/issues

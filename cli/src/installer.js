@@ -159,7 +159,7 @@ function dirExists(dir) {
  * Returns array of relative paths (from cwd) of files copied.
  *
  * @param {AdmZip} zip
- * @param {string} zipRoot   top-level folder name inside zip (e.g. "product-flow-factory-2.0.1")
+ * @param {string} zipRoot   top-level folder name inside zip (e.g. "code-addiction-2.0.1")
  * @param {string} srcPrefix path inside zip after zipRoot (e.g. "framwork/.add")
  * @param {string} destDir   absolute destination directory
  * @param {string} cwd       project root
@@ -267,6 +267,6 @@ export async function install(cwd, options = {}) {
       `Next steps:\n` +
       `  1. Open your AI editor and run: /add-init\n` +
       `  2. Follow the onboarding to configure your project\n\n` +
-      `Docs: https://github.com/brabos-ai/product-flow-factory`
+      `Docs: https://github.com/brabos-ai/code-addiction`
   );
 }

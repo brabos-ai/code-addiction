@@ -290,7 +290,7 @@ describe('resolveInstallSource', () => {
 
   it('falls back to main branch when repository has no releases', async () => {
     const latestTagResolver = async () => {
-      throw new Error('Repository brabos-ai/product-flow-factory not found or has no releases.');
+      throw new Error('Repository brabos-ai/code-addiction not found or has no releases.');
     };
 
     const source = await resolveInstallSource(undefined, latestTagResolver);

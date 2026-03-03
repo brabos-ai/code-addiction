@@ -63,14 +63,14 @@ export async function update(cwd) {
 
   const manifestPath = path.join(cwd, '.add', 'manifest.json');
   if (!fs.existsSync(manifestPath)) {
-    throw new Error('No ADD installation found. Run `npx add install` first.');
+    throw new Error('No ADD installation found. Run `npx codeadd install` first.');
   }
 
   let manifest;
   try {
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   } catch {
-    throw new Error('Manifest is corrupted. Run `npx add install` to reinstall.');
+    throw new Error('Manifest is corrupted. Run `npx codeadd install` to reinstall.');
   }
 
   const currentVersion = manifest.version ?? 'unknown';

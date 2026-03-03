@@ -1,6 +1,6 @@
 /**
  * Map of AI provider keys to their source (inside zip) and destination paths.
- * Source is relative to the extracted zip root (e.g. product-flow-factory-2.0.1/framwork/).
+ * Source is relative to the extracted zip root (e.g. code-addiction-2.0.1/framwork/).
  * Destination is relative to the user's project root (cwd).
  */
 export const PROVIDERS = {
