@@ -77,7 +77,7 @@ export async function uninstall(cwd, force = false) {
   const manifest = readManifest(cwd);
 
   if (!manifest) {
-    throw new Error('No ADD installation found. Run `npx add install` first.');
+    throw new Error('No ADD installation found. Run `npx codeadd install` first.');
   }
 
   if (manifest.corrupted) {

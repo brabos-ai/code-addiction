@@ -50,7 +50,7 @@ export async function config(cwd, verbose = false) {
   const manifest = readManifest(cwd);
 
   if (!manifest) {
-    outro('ERROR: ADD not installed. Run `npx add install` first.');
+    outro('ERROR: ADD not installed. Run `npx codeadd install` first.');
     process.exit(1);
   }
 
@@ -82,7 +82,7 @@ export async function config(cwd, verbose = false) {
         log.success('OK You are running the latest version!');
       } else {
         log.warn(`WARN Update available: ${latestTag} (current: ${manifest.releaseTag || manifest.version})`);
-        log.info('   Run `npx add update` to upgrade.');
+        log.info('   Run `npx codeadd update` to upgrade.');
       }
     } catch (err) {
       s.stop('Update check failed.');

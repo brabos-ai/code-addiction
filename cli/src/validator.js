@@ -115,14 +115,14 @@ export async function validate(cwd, repair = false) {
   const manifest = readManifest(cwd);
 
   if (!manifest) {
-    outro('ERROR: ADD not installed. Run `npx add install` first.');
+    outro('ERROR: ADD not installed. Run `npx codeadd install` first.');
     process.exit(1);
   }
 
   if (!manifest.hashes || Object.keys(manifest.hashes).length === 0) {
     log.warn('');
     log.warn('WARN Hash not available for this install.');
-    log.warn('     Run `npx add update` to enable validation.');
+    log.warn('     Run `npx codeadd update` to enable validation.');
     log.warn('');
     outro('Validation skipped.');
     process.exit(0);

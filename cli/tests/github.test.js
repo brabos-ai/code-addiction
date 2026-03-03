@@ -64,7 +64,7 @@ describe('downloadTagZip', () => {
     expect(Buffer.isBuffer(result)).toBe(true);
     expect(result).toEqual(Buffer.from(fakeData));
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://github.com/brabos-ai/product-flow-factory/archive/refs/tags/v2.0.1.zip',
+      'https://github.com/brabos-ai/code-addiction/archive/refs/tags/v2.0.1.zip',
       expect.any(Object)
     );
   });
@@ -103,7 +103,7 @@ describe('downloadBranchZip', () => {
     expect(Buffer.isBuffer(result)).toBe(true);
     expect(result).toEqual(Buffer.from(fakeData));
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://github.com/brabos-ai/product-flow-factory/archive/refs/heads/main.zip',
+      'https://github.com/brabos-ai/code-addiction/archive/refs/heads/main.zip',
       expect.any(Object)
     );
   });
@@ -133,7 +133,7 @@ describe('downloadZip (alias)', () => {
     const result = await downloadZip('v1.2.3');
     expect(result).toEqual(Buffer.from(fakeData));
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://github.com/brabos-ai/product-flow-factory/archive/refs/tags/v1.2.3.zip',
+      'https://github.com/brabos-ai/code-addiction/archive/refs/tags/v1.2.3.zip',
       expect.any(Object)
     );
   });
