@@ -1,15 +1,15 @@
 {
   "name": "codeadd",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI for Code Addiction framework - AI-powered development workflows",
   "type": "module",
-  "repository": {
+"repository": {
     "type": "git",
-    "url": "git+https://github.com/brabos-ai/code-addiction.git"
+    "url": "git+https://github.com/brabos-ai/product-flow-factory.git"
   },
-  "homepage": "https://github.com/brabos-ai/code-addiction#readme",
+  "homepage": "https://github.com/brabos-ai/product-flow-factory#readme",
   "bugs": {
-    "url": "https://github.com/brabos-ai/code-addiction/issues"
+    "url": "https://github.com/brabos-ai/product-flow-factory/issues"
   },
   "bin": {
     "codeadd": "./bin/codeadd.js"
