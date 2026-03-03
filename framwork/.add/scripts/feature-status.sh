@@ -131,7 +131,7 @@ if [ -n "$FEATURE_ID" ]; then
         fi
 
         echo "FEATURE:$FEATURE_ID PHASE:$PHASE DIR:$FEATURE_DIR"
-        [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST"
+        [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST" || true
 
         # Iterations context (previous /add-dev sessions) — JSONL format
         ITERATIONS_FILE="$FEATURE_DIR/iterations.jsonl"
@@ -151,18 +151,18 @@ if [ -n "$FEATURE_ID" ]; then
         # Extract summaries from docs (JSON after ## Summary)
         if [ -f "$FEATURE_DIR/about.md" ]; then
             ABOUT_SUMMARY=$(grep -A1 "^## Summary" "$FEATURE_DIR/about.md" 2>/dev/null | grep "^{" | head -1 || echo "")
-            [ -n "$ABOUT_SUMMARY" ] && echo "ABOUT_SUMMARY:$ABOUT_SUMMARY"
+            [ -n "$ABOUT_SUMMARY" ] && echo "ABOUT_SUMMARY:$ABOUT_SUMMARY" || true
         fi
 
         if [ -f "$FEATURE_DIR/discovery.md" ]; then
             DISC_SUMMARY=$(grep -A1 "^## Summary" "$FEATURE_DIR/discovery.md" 2>/dev/null | grep "^{" | head -1 || echo "")
-            [ -n "$DISC_SUMMARY" ] && echo "DISC_SUMMARY:$DISC_SUMMARY"
+            [ -n "$DISC_SUMMARY" ] && echo "DISC_SUMMARY:$DISC_SUMMARY" || true
         fi
 
         # Extract last update from Updates section
         if [ -f "$FEATURE_DIR/about.md" ]; then
             LAST_UPDATE=$(grep -A1 "^## Updates" "$FEATURE_DIR/about.md" 2>/dev/null | grep "^\[{" | head -1 | sed 's/^\[//;s/\]$//' | awk -F'},{' '{print "{" $NF}' || echo "")
-            [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "{" ] && echo "LAST_UPDATE:$LAST_UPDATE"
+            [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "{" ] && echo "LAST_UPDATE:$LAST_UPDATE" || true
         fi
         # =============================================================================
         # OUTPUT: FEATURES (se plan.md tem seção ## Features - indica Epic)
@@ -175,14 +175,14 @@ if [ -n "$FEATURE_ID" ]; then
             IS_EPIC="false"
 
             # Check for Epic header: ## Epic: [Name]
-            EPIC_LINE=$(grep -E '^## Epic:' "$PLAN_FILE" 2>/dev/null | head -1)
+            EPIC_LINE=$(grep -E '^## Epic:' "$PLAN_FILE" 2>/dev/null | head -1 || true)
             if [ -n "$EPIC_LINE" ]; then
                 IS_EPIC="true"
                 EPIC_NAME=$(echo "$EPIC_LINE" | sed 's/^## Epic:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
             fi
 
             # Count total features in plan.md (### Feature N: patterns)
-            TOTAL_FEATURES=$(grep -cE '^### Feature [0-9]+:' "$PLAN_FILE" 2>/dev/null || echo "0")
+            TOTAL_FEATURES=$(grep -cE '^### Feature [0-9]+:' "$PLAN_FILE" 2>/dev/null || true)
 
             if [ "$TOTAL_FEATURES" -gt 0 ]; then
                 IS_EPIC="true"
@@ -191,17 +191,17 @@ if [ -n "$FEATURE_ID" ]; then
                 COMPLETED_FEATURES=0
                 if [ -f "$ITERATIONS_FILE" ]; then
                     # Legacy: check for [FEATURE N COMPLETE] markers (backwards compat)
-                    COMPLETED_FEATURES=$(grep -cE '"slug":"feature-[0-9]+-complete"' "$ITERATIONS_FILE" 2>/dev/null || echo "0")
+                    COMPLETED_FEATURES=$(grep -cE '"slug":"feature-[0-9]+-complete"' "$ITERATIONS_FILE" 2>/dev/null || true)
                     # Fallback: count distinct feature slugs with type=add
-                    if [ "$COMPLETED_FEATURES" -eq 0 ]; then
-                        COMPLETED_FEATURES=$(grep -oE '"slug":"feature-[0-9]+' "$ITERATIONS_FILE" 2>/dev/null | sort -u | wc -l | tr -d ' \r\n')
+                    if [ "${COMPLETED_FEATURES:-0}" -eq 0 ]; then
+                        COMPLETED_FEATURES=$(grep -oE '"slug":"feature-[0-9]+' "$ITERATIONS_FILE" 2>/dev/null | sort -u | wc -l | tr -d ' \r\n' || true)
                     fi
                 fi
 
                 NEXT_FEATURE=$((COMPLETED_FEATURES + 1))
 
                 # Output Epic info
-                [ -n "$EPIC_NAME" ] && echo "EPIC:$EPIC_NAME"
+                [ -n "$EPIC_NAME" ] && echo "EPIC:$EPIC_NAME" || true
 
                 # Check if all features complete
                 if [ "$NEXT_FEATURE" -gt "$TOTAL_FEATURES" ]; then
@@ -210,8 +210,8 @@ if [ -n "$FEATURE_ID" ]; then
                     echo "FEATURES:$COMPLETED_FEATURES/$TOTAL_FEATURES NEXT:$NEXT_FEATURE"
 
                     # Extract next feature name from plan.md
-                    NEXT_FEATURE_NAME=$(grep -E "^### Feature ${NEXT_FEATURE}:" "$PLAN_FILE" 2>/dev/null | sed 's/^### Feature [0-9]*:[[:space:]]*//' | head -1)
-                    [ -n "$NEXT_FEATURE_NAME" ] && echo "NEXT_FEATURE_NAME:$NEXT_FEATURE_NAME"
+                    NEXT_FEATURE_NAME=$(grep -E "^### Feature ${NEXT_FEATURE}:" "$PLAN_FILE" 2>/dev/null | sed 's/^### Feature [0-9]*:[[:space:]]*//' | head -1 || true)
+                    [ -n "$NEXT_FEATURE_NAME" ] && echo "NEXT_FEATURE_NAME:$NEXT_FEATURE_NAME" || true
                 fi
             fi
         fi
@@ -225,10 +225,10 @@ if [ -n "$FEATURE_ID" ]; then
             echo "HAS_EPIC:true"
 
             # Count total subfeatures (rows in epic.md table: | SF01 | ...)
-            TOTAL_SF=$(grep -cE '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null || echo "0")
+            TOTAL_SF=$(grep -cE '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null || true)
 
             # Count done subfeatures
-            DONE_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | grep -c '\| done \|' || echo "0")
+            DONE_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | grep -c '\| done \|' || true)
 
             echo "EPIC_PROGRESS:$DONE_SF/$TOTAL_SF"
 
@@ -243,7 +243,7 @@ if [ -n "$FEATURE_ID" ]; then
                     grep -oE 'SF[0-9]+' | head -1 || echo "")
             fi
 
-            [ -n "$CURRENT_SF" ] && echo "EPIC_CURRENT_SF:$CURRENT_SF"
+            [ -n "$CURRENT_SF" ] && echo "EPIC_CURRENT_SF:$CURRENT_SF" || true
 
             # tasks.md for current subfeature
             if [ -n "$CURRENT_SF" ]; then
@@ -253,8 +253,8 @@ if [ -n "$FEATURE_ID" ]; then
                 if [ -n "$SF_DIR" ] && [ -f "$SF_DIR/tasks.md" ]; then
                     echo "HAS_TASKS:true"
                     TASKS_FILE="$SF_DIR/tasks.md"
-                    TOTAL_TASKS=$(grep -cE '^\| [0-9]+\.[0-9]+' "$TASKS_FILE" 2>/dev/null || echo "0")
-                    DONE_TASKS=$(grep -E '^\| [0-9]+\.[0-9]+' "$TASKS_FILE" 2>/dev/null | grep -c '✅' || echo "0")
+                    TOTAL_TASKS=$(grep -cE '^\| [0-9]+\.[0-9]+' "$TASKS_FILE" 2>/dev/null || true)
+                    DONE_TASKS=$(grep -E '^\| [0-9]+\.[0-9]+' "$TASKS_FILE" 2>/dev/null | grep -c '✅' || true)
                     echo "TASKS_PROGRESS:$DONE_TASKS/$TOTAL_TASKS"
                     echo "TASKS_FILE:$TASKS_FILE"
                 fi
@@ -264,8 +264,8 @@ if [ -n "$FEATURE_ID" ]; then
             TASKS_FILE_PLAIN="$FEATURE_DIR/tasks.md"
             if [ -f "$TASKS_FILE_PLAIN" ]; then
                 echo "HAS_TASKS:true"
-                TOTAL_TASKS=$(grep -cE '^\| [0-9]+\.[0-9]+' "$TASKS_FILE_PLAIN" 2>/dev/null || echo "0")
-                DONE_TASKS=$(grep -E '^\| [0-9]+\.[0-9]+' "$TASKS_FILE_PLAIN" 2>/dev/null | grep -c '✅' || echo "0")
+                TOTAL_TASKS=$(grep -cE '^\| [0-9]+\.[0-9]+' "$TASKS_FILE_PLAIN" 2>/dev/null || true)
+                DONE_TASKS=$(grep -E '^\| [0-9]+\.[0-9]+' "$TASKS_FILE_PLAIN" 2>/dev/null | grep -c '✅' || true)
                 echo "TASKS_PROGRESS:$DONE_TASKS/$TOTAL_TASKS"
                 echo "TASKS_FILE:$TASKS_FILE_PLAIN"
             fi
@@ -273,7 +273,7 @@ if [ -n "$FEATURE_ID" ]; then
 
         # Last git checkpoint tag for this feature
         LAST_CHECKPOINT=$(git tag -l "${FEATURE_ID}-*-done" "${FEATURE_ID}-done" 2>/dev/null | sort -r | head -1)
-        [ -n "$LAST_CHECKPOINT" ] && echo "LAST_CHECKPOINT:$LAST_CHECKPOINT"
+        [ -n "$LAST_CHECKPOINT" ] && echo "LAST_CHECKPOINT:$LAST_CHECKPOINT" || true
 
     else
         echo "FEATURE:$FEATURE_ID PHASE:none DIR:$FEATURE_DIR (not found)"
@@ -314,7 +314,7 @@ if [ -d "$FEATURES_DIR" ]; then
                         SUMMARY=$(grep -m1 "^# " "$cl" 2>/dev/null | sed 's/^# //' | head -c 80)
                     fi
 
-                    [ -n "$SUMMARY" ] && echo "  $FEAT|$SUMMARY"
+                    if [ -n "$SUMMARY" ]; then echo "  $FEAT|$SUMMARY"; fi
                 fi
             fi
         done <<< "$CHANGELOGS"
@@ -340,8 +340,8 @@ if [ "${MODIFIED:-0}" -gt 0 ] || [ "${STAGED:-0}" -gt 0 ] || [ "${UNTRACKED:-0}"
             AHEAD=$(git rev-list --count "origin/$CURRENT_BRANCH..$CURRENT_BRANCH" 2>/dev/null || echo "0")
             BEHIND=$(git rev-list --count "$CURRENT_BRANCH..origin/$CURRENT_BRANCH" 2>/dev/null || echo "0")
         fi
-        [ "$AHEAD" != "0" ] && GIT_LINE="$GIT_LINE AHEAD:$AHEAD"
-        [ "$BEHIND" != "0" ] && GIT_LINE="$GIT_LINE BEHIND:$BEHIND"
+        [ "$AHEAD" != "0" ] && GIT_LINE="$GIT_LINE AHEAD:$AHEAD" || true
+        [ "$BEHIND" != "0" ] && GIT_LINE="$GIT_LINE BEHIND:$BEHIND" || true
     fi
 
     echo "$GIT_LINE"
@@ -503,7 +503,7 @@ fi
 # P10 - BEHIND ja inicializado com "0" no topo; seguro usar aqui com set -u
 [ "${BEHIND}" != "0" ] && RECS="${RECS:+$RECS | }git pull (behind)"
 
-[ -n "$RECS" ] && echo "REC:$RECS"
+[ -n "$RECS" ] && echo "REC:$RECS" || true
 
 # Ensure clean exit
 exit 0

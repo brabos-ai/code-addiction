@@ -3,8 +3,14 @@
   "private": true,
   "scripts": {
     "test": "npm --prefix cli test",
+    "test:scripts": "npx bats framwork/.add/scripts/tests/*.bats",
     "release": "bash scripts/release.sh",
     "publish": "cd cli && npm publish",
     "login": "npm login"
+  },
+  "devDependencies": {
+    "bats": "^1.13.0",
+    "bats-assert": "^2.2.4",
+    "bats-support": "^0.3.0"
   }
 }

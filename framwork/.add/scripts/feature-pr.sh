@@ -228,7 +228,8 @@ echo "MODE=EXECUTE"
 echo ""
 
 # Guard: ensure there are commits different from main before creating PR
-if [ "$CHANGED_COUNT" -eq 0 ] && [ "$HAS_UNCOMMITTED" = false ]; then
+# Note: untracked files (e.g. changelog.md pre-created) do not count as "changes"
+if [ "$CHANGED_COUNT" -eq 0 ] && [ "$MODIFIED_COUNT" -eq 0 ] && [ "$STAGED_COUNT" -eq 0 ]; then
     echo "STATUS=ERROR"
     echo "ERROR=No commits or changes found relative to $MAIN_BRANCH"
     echo "HINT=Make changes and commit before opening a PR"

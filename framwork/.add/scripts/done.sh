@@ -136,9 +136,9 @@ if [ "$MODE" = "context" ]; then
     if [ "$HAS_UNCOMMITTED" = true ]; then
         echo ""
         echo "UNCOMMITTED_FILES=["
-        [ -n "$MODIFIED" ] && printf '%s\n' "$MODIFIED" | while read -r f; do [ -n "$f" ] && echo "  \"$f\" (modified)"; done
-        [ -n "$STAGED" ] && printf '%s\n' "$STAGED" | while read -r f; do [ -n "$f" ] && echo "  \"$f\" (staged)"; done
-        [ -n "$UNTRACKED" ] && printf '%s\n' "$UNTRACKED" | while read -r f; do [ -n "$f" ] && echo "  \"$f\" (untracked)"; done
+        [ -n "$MODIFIED" ] && printf '%s\n' "$MODIFIED" | while read -r f; do if [ -n "$f" ]; then echo "  \"$f\" (modified)"; fi; done || true
+        [ -n "$STAGED" ] && printf '%s\n' "$STAGED" | while read -r f; do if [ -n "$f" ]; then echo "  \"$f\" (staged)"; fi; done || true
+        [ -n "$UNTRACKED" ] && printf '%s\n' "$UNTRACKED" | while read -r f; do if [ -n "$f" ]; then echo "  \"$f\" (untracked)"; fi; done || true
         echo "]"
     fi
 
@@ -163,7 +163,7 @@ if [ "$MODE" = "context" ]; then
 
     echo "CHANGED_COUNT=$CHANGED_COUNT"
     echo "CHANGED_FILES=["
-    printf '%s\n' "$CHANGED_FILES" | while read -r f; do [ -n "$f" ] && echo "  \"$f\""; done
+    printf '%s\n' "$CHANGED_FILES" | while read -r f; do if [ -n "$f" ]; then echo "  \"$f\""; fi; done || true
     echo "]"
 
     exit 0
