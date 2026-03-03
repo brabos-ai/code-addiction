@@ -1,0 +1,10 @@
+{
+  "name": "product-flow-factory",
+  "private": true,
+  "scripts": {
+    "test": "npm --prefix cli test",
+    "release": "bash scripts/release.sh",
+    "publish": "cd cli && npm publish",
+    "login": "npm login"
+  }
+}
