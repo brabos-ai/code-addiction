@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "npm --prefix cli test",
-    "test:scripts": "npx bats framwork/.add/scripts/tests/*.bats",
+    "test:scripts": "npx bats framwork/.codeadd/scripts/tests/*.bats",
     "release": "bash scripts/release.sh",
     "publish": "cd cli && npm publish",
     "login": "npm login"

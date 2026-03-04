@@ -61,7 +61,7 @@ function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
 export async function update(cwd) {
   intro('ADD CLI - Update');
 
-  const manifestPath = path.join(cwd, '.add', 'manifest.json');
+  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
   if (!fs.existsSync(manifestPath)) {
     throw new Error('No ADD installation found. Run `npx codeadd install` first.');
   }
@@ -97,9 +97,9 @@ export async function update(cwd) {
   if (!zipRoot) throw new Error('Unexpected zip structure.');
 
   const allFiles = [];
-  const addDir = path.join(cwd, '.add');
+  const addDir = path.join(cwd, '.codeadd');
 
-  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.add', addDir, cwd);
+  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.codeadd', addDir, cwd);
   allFiles.push(...coreFiles);
 
   const providers = resolveSelected(providerKeys);

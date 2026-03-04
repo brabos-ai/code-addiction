@@ -173,7 +173,7 @@ Glob: [produto]/.[provider]*/
 **Produto:** [add-xxx]
 **Buscar commands em:** [produto]/.[provider]/commands/ (para cada provider detectado)
 **Buscar skills em:** [produto]/.[provider]/skills/ (para cada provider detectado)
-**Buscar scripts em:** [produto]/.add/scripts/
+**Buscar scripts em:** [produto]/.codeadd/scripts/
 **PRDs relacionados:** docs/prd/PRD[0-9][0-9][0-9][0-9]-[produto].md
 ```
 
@@ -243,7 +243,7 @@ docs/strategy/ADD-MASTER-DOCUMENT-v4.md        # Documento mestre, pirâmide, jo
 ```
 [produto]/.[provider]/commands/    → Commands existentes (por provider)
 [produto]/.[provider]/skills/      → Skills disponíveis (por provider)
-[produto]/.add/scripts/            → Scripts de automação
+[produto]/.codeadd/scripts/            → Scripts de automação
 ```
 
 **Também verificar:**

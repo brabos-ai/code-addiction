@@ -27,7 +27,7 @@ afterEach(() => {
 
 describe('doctor command', () => {
   it('exits 0 when all checks pass', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -44,7 +44,7 @@ describe('doctor command', () => {
     expect(exitCode).toBe(0);
   });
 
-  it('exits 1 when .add/ is missing', async () => {
+  it('exits 1 when .codeadd/ is missing', async () => {
     try {
       await doctor(tmpDir);
     } catch (err) {
@@ -55,7 +55,7 @@ describe('doctor command', () => {
   });
 
   it('exits 1 when manifest is missing', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
 
     try {
@@ -68,7 +68,7 @@ describe('doctor command', () => {
   });
 
   it('exits 1 when manifest is corrupted', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -85,8 +85,8 @@ describe('doctor command', () => {
     expect(exitCode).toBe(1);
   });
 
-  it('exits 1 when .add/ is empty', async () => {
-    const addDir = path.join(tmpDir, '.add');
+  it('exits 1 when .codeadd/ is empty', async () => {
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
 
     try {
@@ -99,7 +99,7 @@ describe('doctor command', () => {
   });
 
   it('detects Node.js version correctly', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -120,7 +120,7 @@ describe('doctor command', () => {
   });
 
   it('handles partial .add directory (exists but empty)', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
 
     try {
@@ -133,7 +133,7 @@ describe('doctor command', () => {
   });
 
   it('handles .add directory with subdirectories but no files', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.mkdirSync(path.join(addDir, 'commands'));
     fs.mkdirSync(path.join(addDir, 'scripts'));
@@ -148,16 +148,16 @@ describe('doctor command', () => {
   });
 
   it('handles valid manifest with multiple providers', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
       JSON.stringify({
         version: '2.0.0',
         providers: ['claude', 'kilocode', 'codex'],
-        files: ['.add/commands/add.md', '.claude/commands/add.md'],
+        files: ['.codeadd/commands/add.md', '.claude/commands/add.md'],
         hashes: {
-          '.add/commands/add.md': 'abc123',
+          '.codeadd/commands/add.md': 'abc123',
           '.claude/commands/add.md': 'def456'
         }
       }),
@@ -176,7 +176,7 @@ describe('doctor command', () => {
 
 describe('doctor edge cases', () => {
   it('detects missing .add directory', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     expect(fs.existsSync(addDir)).toBe(false);
 
     try {
@@ -189,7 +189,7 @@ describe('doctor edge cases', () => {
   });
 
   it('detects corrupted JSON in manifest', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -207,7 +207,7 @@ describe('doctor edge cases', () => {
   });
 
   it('handles manifest with only whitespace', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -225,7 +225,7 @@ describe('doctor edge cases', () => {
   });
 
   it('handles manifest with empty object', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -243,7 +243,7 @@ describe('doctor edge cases', () => {
   });
 
   it('handles manifest with null values', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),

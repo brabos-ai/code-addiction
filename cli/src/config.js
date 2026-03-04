@@ -4,12 +4,12 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { getLatestTag } from './github.js';
 
 /**
- * Read and parse .add/manifest.json.
+ * Read and parse .codeadd/manifest.json.
  * @param {string} cwd
  * @returns {{ version: string, releaseTag: string, installedAt: string, providers: string[], files: string[], hashes?: object } | null}
  */
 function readManifest(cwd) {
-  const manifestPath = path.join(cwd, '.add', 'manifest.json');
+  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
     return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));

@@ -10,7 +10,7 @@ Executor que transforma PRDs em artefatos funcionais (commands, skills, scripts)
 ## Spec
 
 ```json
-{"gates":["product_identified","prd_loaded","design_approved","tests_pass"],"order":["identify_product","load_prd","design","implement","test","document"],"outputs":{"command":"[produto]/.claude/commands/*.md","skill":"[produto]/.claude/skills/*/SKILL.md","script":"[produto]/.add/scripts/*"}}
+{"gates":["product_identified","prd_loaded","design_approved","tests_pass"],"order":["identify_product","load_prd","design","implement","test","document"],"outputs":{"command":"[produto]/.claude/commands/*.md","skill":"[produto]/.claude/skills/*/SKILL.md","script":"[produto]/.codeadd/scripts/*"}}
 ```
 
 ---
@@ -41,7 +41,7 @@ SE PRODUTO NÃO IDENTIFICADO:
 SE PRD/CONTEXTO NÃO CARREGADO:
   ⛔ NÃO USE: Write em [produto]/.claude/commands/
   ⛔ NÃO USE: Write em [produto]/.claude/skills/
-  ⛔ NÃO USE: Write em [produto]/.add/scripts/
+  ⛔ NÃO USE: Write em [produto]/.codeadd/scripts/
   ⛔ NÃO FAÇA: Implementação de qualquer artefato
   ✅ FAÇA: Carregar PRD ou pedir descrição
 
@@ -106,7 +106,7 @@ SE building-commands SKILL NÃO CARREGADA:
 **Produto:** [add-xxx]
 **Commands:** [produto]/.claude/commands/
 **Skills:** [produto]/.claude/skills/
-**Scripts:** [produto]/.add/scripts/
+**Scripts:** [produto]/.codeadd/scripts/
 ```
 
 **⛔ SE PRODUTO NÃO IDENTIFICADO:**
@@ -314,7 +314,7 @@ description: [quando usar - max 20 palavras]
 [checkboxes]
 ```
 
-#### Script ([produto]/.add/scripts/*)
+#### Script ([produto]/.codeadd/scripts/*)
 
 **Estrutura obrigatória:**
 
@@ -324,7 +324,7 @@ description: [quando usar - max 20 palavras]
 # [NOME DO SCRIPT]
 # [Descrição 1 linha]
 # ============================================
-# Usage: bash [produto]/.add/scripts/[nome].sh [args]
+# Usage: bash [produto]/.codeadd/scripts/[nome].sh [args]
 # Dependencies: [lista]
 # ============================================
 

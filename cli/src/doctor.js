@@ -42,12 +42,12 @@ function checkGit() {
 }
 
 /**
- * Check if .add/ directory exists and is non-empty.
+ * Check if .codeadd/ directory exists and is non-empty.
  * @param {string} cwd
  * @returns {{ok: boolean, exists: boolean, hasFiles: boolean}}
  */
 function checkAddDir(cwd) {
-  const addDir = path.join(cwd, '.add');
+  const addDir = path.join(cwd, '.codeadd');
   const exists = fs.existsSync(addDir);
   let hasFiles = false;
   if (exists) {
@@ -71,7 +71,7 @@ function checkAddDir(cwd) {
  * @returns {{ok: boolean, exists: boolean, valid: boolean}}
  */
 function checkManifest(cwd) {
-  const manifestPath = path.join(cwd, '.add', 'manifest.json');
+  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
   const exists = fs.existsSync(manifestPath);
   let valid = false;
   if (exists) {
@@ -118,7 +118,7 @@ export async function doctor(cwd) {
 
   const addIcon = addCheck.ok ? 'OK' : addCheck.exists ? 'WARN' : 'ERROR';
   const addStatus = addCheck.ok ? 'present' : addCheck.exists ? 'empty' : 'missing';
-  log.info(`${addIcon} .add/ directory: ${addStatus}`);
+  log.info(`${addIcon} .codeadd/ directory: ${addStatus}`);
 
   let manifestIcon;
   let manifestStatus;
@@ -145,7 +145,7 @@ export async function doctor(cwd) {
     const issues = [];
     if (!nodeCheck.ok) issues.push('Node.js >= 18 required');
     if (!gitCheck.ok) issues.push('Git not found');
-    if (!addCheck.ok) issues.push('.add/ directory missing or empty');
+    if (!addCheck.ok) issues.push('.codeadd/ directory missing or empty');
     if (!manifestCheck.ok) issues.push('manifest.json missing or invalid');
 
     outro(`ERROR Issues found:\n${issues.map((i) => `  - ${i}`).join('\n')}`);
