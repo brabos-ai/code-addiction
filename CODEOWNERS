@@ -1,0 +1,32 @@
+# Code Addiction - CODEOWNERS
+# This file defines code ownership for the project
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files
+* @xmaiconx
+
+# CLI module
+/cli/ @xmaiconx
+
+# Framework payload
+/framwork/ @xmaiconx
+
+# Scripts
+/scripts/ @xmaiconx
+
+# GitHub workflows and configuration
+/.github/ @xmaiconx
+
+# Builder configurations
+/.add-builder/ @xmaiconx
+
+# Provider integrations
+/.agents/ @xmaiconx
+/.claude/ @xmaiconx
+/.opencode/ @xmaiconx
+
+# Documentation and configuration
+*.md @xmaiconx
+LICENSE @xmaiconx
+package.json @xmaiconx
+.gitignore @xmaiconx

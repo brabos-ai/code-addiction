@@ -280,7 +280,7 @@ git log production --name-status --pretty=format:""
 Group files by:
 - Commands: `.claude/commands/*.md`
 - Skills: `.claude/skills/**`
-- Scripts: `.add/scripts/*`
+- Scripts: `.codeadd/scripts/*`
 - Docs: `docs/**`
 - Other: everything else
 

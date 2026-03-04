@@ -1,7 +1,7 @@
 # 📊 Relatório de Cobertura de Testes - Scripts Bash
 
 **Data:** 2026-03-03  
-**Framework:** ADD (.add/scripts)  
+**Framework:** ADD (.codeadd/scripts)  
 **Test Framework:** BATS (Bash Automated Testing System)
 
 ---
@@ -178,8 +178,8 @@ A seção `RECENT_CHANGELOGS` (linhas 172-202) é significativa e não tem cober
 | **Tags** | Git checkpoint tags | 275 | 🟡 Média |
 | **Git** | AHEAD/BEHIND calculation | 337-345 | 🟡 Média |
 | **Arquivos** | FILES CHANGED seção inteira | 354-433 | 🔴 **Alta** |
-| **Skills** | SKILLS detection (.add/skills/) | 440-453 | 🟡 Média |
-| **Projeto** | PROJECT_PATTERNS (.add/project/) | 460-476 | 🟡 Média |
+| **Skills** | SKILLS detection (.codeadd/skills/) | 440-453 | 🟡 Média |
+| **Projeto** | PROJECT_PATTERNS (.codeadd/project/) | 460-476 | 🟡 Média |
 | **Owner** | OWNER file parsing completo | 84-93 | 🟢 Baixa |
 | **Updates** | Last update extraction | 163-166 | 🟢 Baixa |
 

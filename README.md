@@ -11,7 +11,7 @@ AI-powered development workflows that make you addicted to shipping code. Produc
 Most AI coding setups are fragmented across custom prompts, scripts, and editor-specific conventions.
 
 Code Addiction standardizes this with:
-- A shared core in `.add/` (commands, scripts, skills, templates)
+- A shared core in `.codeadd/` (commands, scripts, skills, templates)
 - Provider-specific integrations (Claude, Codex, Antigravity, KiloCode, OpenCode)
 - A versioned installer (`codeadd`) with `install`, `update`, `uninstall`, `doctor`, and `validate`
 
@@ -39,7 +39,7 @@ npx codeadd uninstall
 
 ## What gets installed
 
-- Core: `.add/`
+- Core: `.codeadd/`
 - Optional providers:
   - Claude Code -> `.claude/`
   - Codex (OpenAI) -> `.agent/`

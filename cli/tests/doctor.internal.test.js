@@ -25,7 +25,7 @@ afterEach(() => {
 
 describe('doctor internal functions', () => {
   it('handles .add with only subdirectories', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.mkdirSync(path.join(addDir, 'commands'));
     fs.mkdirSync(path.join(addDir, 'scripts'));
@@ -41,7 +41,7 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest.json that is valid JSON but not object', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -59,7 +59,7 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest.json as array', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -77,14 +77,14 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest.json with very long content', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     const longManifest = {
       version: '1.0.0',
       installedAt: new Date().toISOString(),
       providers: Array(50).fill('claude'),
-      files: Array(200).fill('.add/commands/add.md'),
+      files: Array(200).fill('.codeadd/commands/add.md'),
       hashes: {}
     };
     
@@ -104,7 +104,7 @@ describe('doctor internal functions', () => {
   });
 
   it('handles manifest with unicode content', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -112,7 +112,7 @@ describe('doctor internal functions', () => {
         version: '1.0.0 🎉',
         installedAt: new Date().toISOString(),
         providers: ['claude'],
-        files: ['.add/commands/日本語.md'],
+        files: ['.codeadd/commands/日本語.md'],
       }),
       'utf8'
     );
@@ -127,7 +127,7 @@ describe('doctor internal functions', () => {
   });
 
   it('handles .add directory with hidden files only', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(path.join(addDir, '.hidden'), 'hidden', 'utf8');
 
@@ -141,7 +141,7 @@ describe('doctor internal functions', () => {
   });
 
   it('handles deeply nested .add structure', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     const deepDir = path.join(addDir, 'level1', 'level2', 'level3', 'level4');
     fs.mkdirSync(deepDir, { recursive: true });
     fs.writeFileSync(path.join(deepDir, 'deep.txt'), 'deep content', 'utf8');
@@ -152,7 +152,7 @@ describe('doctor internal functions', () => {
         version: '1.0.0',
         installedAt: new Date().toISOString(),
         providers: [],
-        files: ['.add/level1/level2/level3/level4/deep.txt'],
+        files: ['.codeadd/level1/level2/level3/level4/deep.txt'],
       }),
       'utf8'
     );

@@ -39,14 +39,14 @@ npx codeadd uninstall --force
 - `update`: update installed files to latest GitHub release
 - `uninstall`: remove files installed by ADD from current project
 - `doctor`: verify Node, Git, and ADD installation health
-- `validate`: verify file hashes from `.add/manifest.json`
+- `validate`: verify file hashes from `.codeadd/manifest.json`
 - `validate --repair`: restore missing or modified files
 - `config show`: print current ADD installation config
 - `config show --verbose`: config + release update check
 
 ## What gets installed
 
-- Core (`.add/`): always installed
+- Core (`.codeadd/`): always installed
 - Provider integration (optional, selected interactively):
   - Claude Code -> `.claude/`
   - Codex (OpenAI) -> `.agent/`

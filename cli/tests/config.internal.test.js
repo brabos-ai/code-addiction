@@ -25,7 +25,7 @@ afterEach(() => {
 
 describe('config internal functions', () => {
   it('handles manifest with undefined fields', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -50,7 +50,7 @@ describe('config internal functions', () => {
   });
 
   it('handles very long providers list', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -75,7 +75,7 @@ describe('config internal functions', () => {
   });
 
   it('handles ISO date string correctly', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -84,8 +84,8 @@ describe('config internal functions', () => {
         releaseTag: 'v1.0.0',
         installedAt: '2024-12-25T10:30:00.000Z',
         providers: ['claude'],
-        files: ['.add/test.md'],
-        hashes: { '.add/test.md': 'hash123' },
+        files: ['.codeadd/test.md'],
+        hashes: { '.codeadd/test.md': 'hash123' },
       }),
       'utf8'
     );
@@ -100,7 +100,7 @@ describe('config internal functions', () => {
   });
 
   it('handles partial hashes object', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -109,9 +109,9 @@ describe('config internal functions', () => {
         releaseTag: 'v1.0.0',
         installedAt: new Date().toISOString(),
         providers: ['claude'],
-        files: ['.add/file1.txt', '.add/file2.txt'],
+        files: ['.codeadd/file1.txt', '.codeadd/file2.txt'],
         hashes: {
-          '.add/file1.txt': 'hash1',
+          '.codeadd/file1.txt': 'hash1',
           // file2.txt intentionally missing from hashes
         },
       }),
@@ -128,7 +128,7 @@ describe('config internal functions', () => {
   });
 
   it('handles whitespace-only providers array', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),

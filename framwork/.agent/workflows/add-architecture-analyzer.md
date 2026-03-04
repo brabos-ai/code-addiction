@@ -2,6 +2,6 @@
 description: Discovery coordinator that classifies apps, dispatches analyzer agents, and consolidates architecture reports
 ---
 
-⚠️ **Wrapper:** Command source in `.add/commands/add-architecture-analyzer.md`
+⚠️ **Wrapper:** Command source in `.codeadd/commands/add-architecture-analyzer.md`
 
-Read and execute `.add/commands/add-architecture-analyzer.md`.
+Read and execute `.codeadd/commands/add-architecture-analyzer.md`.

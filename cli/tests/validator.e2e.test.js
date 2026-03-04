@@ -31,7 +31,7 @@ function calculateHash(content) {
 
 describe('validate command', () => {
   it('exits 0 when all files are valid', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     const content = 'test content';
@@ -43,8 +43,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/test.txt'],
-        hashes: { '.add/test.txt': calculateHash(content) },
+        files: ['.codeadd/test.txt'],
+        hashes: { '.codeadd/test.txt': calculateHash(content) },
       }),
       'utf8'
     );
@@ -59,7 +59,7 @@ describe('validate command', () => {
   });
 
   it('exits 1 when file is missing', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     fs.writeFileSync(
@@ -68,8 +68,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/missing.txt'],
-        hashes: { '.add/missing.txt': 'abc123' },
+        files: ['.codeadd/missing.txt'],
+        hashes: { '.codeadd/missing.txt': 'abc123' },
       }),
       'utf8'
     );
@@ -84,7 +84,7 @@ describe('validate command', () => {
   });
 
   it('exits 1 when file is modified', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     const originalContent = 'original';
@@ -96,8 +96,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/test.txt'],
-        hashes: { '.add/test.txt': calculateHash(originalContent) },
+        files: ['.codeadd/test.txt'],
+        hashes: { '.codeadd/test.txt': calculateHash(originalContent) },
       }),
       'utf8'
     );
@@ -112,7 +112,7 @@ describe('validate command', () => {
   });
 
   it('exits 0 when manifest has no hashes (backward compat)', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     fs.writeFileSync(
@@ -145,7 +145,7 @@ describe('validate command', () => {
   });
 
   it('handles multiple files with mixed status', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.mkdirSync(path.join(addDir, 'commands'));
     
@@ -164,11 +164,11 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/ok.txt', '.add/missing.txt', '.add/commands/modified.txt'],
+        files: ['.codeadd/ok.txt', '.codeadd/missing.txt', '.codeadd/commands/modified.txt'],
         hashes: {
-          '.add/ok.txt': calculateHash(content1),
-          '.add/missing.txt': calculateHash('missing'),
-          '.add/commands/modified.txt': calculateHash('correct content')
+          '.codeadd/ok.txt': calculateHash(content1),
+          '.codeadd/missing.txt': calculateHash('missing'),
+          '.codeadd/commands/modified.txt': calculateHash('correct content')
         },
       }),
       'utf8'
@@ -184,7 +184,7 @@ describe('validate command', () => {
   });
 
   it('handles empty hashes object', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     fs.writeFileSync(
@@ -209,7 +209,7 @@ describe('validate command', () => {
   });
 
   it('handles binary files correctly', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE]);
@@ -221,8 +221,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/binary.dat'],
-        hashes: { '.add/binary.dat': calculateHash(binaryContent) },
+        files: ['.codeadd/binary.dat'],
+        hashes: { '.codeadd/binary.dat': calculateHash(binaryContent) },
       }),
       'utf8'
     );
@@ -237,7 +237,7 @@ describe('validate command', () => {
   });
 
   it('handles files in nested directories', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     const deepDir = path.join(addDir, 'commands', 'deep', 'nested');
     fs.mkdirSync(deepDir, { recursive: true });
     
@@ -250,8 +250,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/commands/deep/nested/file.txt'],
-        hashes: { '.add/commands/deep/nested/file.txt': calculateHash(content) },
+        files: ['.codeadd/commands/deep/nested/file.txt'],
+        hashes: { '.codeadd/commands/deep/nested/file.txt': calculateHash(content) },
       }),
       'utf8'
     );
@@ -266,7 +266,7 @@ describe('validate command', () => {
   });
 
   it('handles repair mode without releaseTag', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(path.join(addDir, 'test.txt'), 'modified', 'utf8');
     
@@ -275,8 +275,8 @@ describe('validate command', () => {
       JSON.stringify({
         version: '1.0.0',
         providers: [],
-        files: ['.add/test.txt'],
-        hashes: { '.add/test.txt': calculateHash('original') },
+        files: ['.codeadd/test.txt'],
+        hashes: { '.codeadd/test.txt': calculateHash('original') },
       }),
       'utf8'
     );
@@ -291,7 +291,7 @@ describe('validate command', () => {
   });
 
   it('handles files with special characters in paths', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     const content = 'special content';
@@ -303,8 +303,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/file-with-dashes.txt'],
-        hashes: { '.add/file-with-dashes.txt': calculateHash(content) },
+        files: ['.codeadd/file-with-dashes.txt'],
+        hashes: { '.codeadd/file-with-dashes.txt': calculateHash(content) },
       }),
       'utf8'
     );
@@ -319,7 +319,7 @@ describe('validate command', () => {
   });
 
   it('handles large files correctly', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
     const largeContent = 'x'.repeat(100000);
@@ -331,8 +331,8 @@ describe('validate command', () => {
         version: '1.0.0',
         releaseTag: 'v1.0.0',
         providers: [],
-        files: ['.add/large.txt'],
-        hashes: { '.add/large.txt': calculateHash(largeContent) },
+        files: ['.codeadd/large.txt'],
+        hashes: { '.codeadd/large.txt': calculateHash(largeContent) },
       }),
       'utf8'
     );

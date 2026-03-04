@@ -3,17 +3,17 @@ import path from 'node:path';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptConfirm } from './prompt.js';
 
-const ADD_DIRS = ['.add', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
+const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
 
 /**
- * Read and parse .add/manifest.json.
+ * Read and parse .codeadd/manifest.json.
  * @param {string} cwd
  * @returns {{ version: string, providers: string[], files: string[], corrupted?: boolean } | null}
  *   Returns null if manifest does not exist.
  *   Returns object with corrupted=true if file exists but JSON is invalid.
  */
 export function readManifest(cwd) {
-  const manifestPath = path.join(cwd, '.add', 'manifest.json');
+  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
     return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -160,7 +160,7 @@ export async function uninstall(cwd, force = false) {
     }
   }
 
-  const manifestPath = path.join(cwd, '.add', 'manifest.json');
+  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
   try {
     if (fs.existsSync(manifestPath)) {
       fs.unlinkSync(manifestPath);

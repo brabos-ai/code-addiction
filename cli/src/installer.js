@@ -39,7 +39,7 @@ function calculateHash(filePath) {
 }
 
 /**
- * Write .add/manifest.json
+ * Write .codeadd/manifest.json
  * @param {string} cwd
  * @param {string} version
  * @param {string[]} providers
@@ -48,7 +48,7 @@ function calculateHash(filePath) {
  * @param {object} [metadata]
  */
 export function writeManifest(cwd, version, providers, files, releaseTag, metadata = {}) {
-  const manifestPath = path.join(cwd, '.add', 'manifest.json');
+  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
 
   const hashes = {};
   for (const file of files) {
@@ -208,9 +208,9 @@ export async function install(cwd, options = {}) {
     s.stop(`Selected tag: ${installSource.downloadValue}`);
   }
 
-  const addDir = path.join(cwd, '.add');
+  const addDir = path.join(cwd, '.codeadd');
   if (dirExists(addDir)) {
-    await promptConfirm('.add/ already exists. Overwrite with latest version?');
+    await promptConfirm('.codeadd/ already exists. Overwrite with latest version?');
   }
 
   const selectedKeys = await promptProviders();
@@ -237,7 +237,7 @@ export async function install(cwd, options = {}) {
 
   const allFiles = [];
 
-  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.add', addDir, cwd);
+  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.codeadd', addDir, cwd);
   allFiles.push(...coreFiles);
 
   for (const p of providers) {

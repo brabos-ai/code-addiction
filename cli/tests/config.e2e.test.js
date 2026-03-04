@@ -26,7 +26,7 @@ afterEach(() => {
 
 describe('config show command', () => {
   it('exits 0 when manifest exists', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -35,8 +35,8 @@ describe('config show command', () => {
         releaseTag: 'v1.0.0',
         installedAt: new Date().toISOString(),
         providers: ['claude'],
-        files: ['.add/commands/add.md'],
-        hashes: { '.add/commands/add.md': 'abc123' },
+        files: ['.codeadd/commands/add.md'],
+        hashes: { '.codeadd/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -51,7 +51,7 @@ describe('config show command', () => {
   });
 
   it('exits 0 when manifest has no hashes', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -85,7 +85,7 @@ describe('config show command', () => {
   });
 
   it('exits 0 in verbose mode with valid manifest', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -94,8 +94,8 @@ describe('config show command', () => {
         releaseTag: 'v0.0.1',
         installedAt: new Date().toISOString(),
         providers: ['claude', 'kilocode'],
-        files: ['.add/commands/add.md', '.claude/commands/add.md'],
-        hashes: { '.add/commands/add.md': 'abc123' },
+        files: ['.codeadd/commands/add.md', '.claude/commands/add.md'],
+        hashes: { '.codeadd/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -110,7 +110,7 @@ describe('config show command', () => {
   });
 
   it('handles manifest with multiple providers', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -120,14 +120,14 @@ describe('config show command', () => {
         installedAt: '2024-01-15T10:30:00.000Z',
         providers: ['claude', 'kilocode', 'codex', 'opencode'],
         files: [
-          '.add/commands/add.md',
+          '.codeadd/commands/add.md',
           '.claude/commands/add.md',
           '.kilocode/commands/add.md',
           '.codex/commands/add.md',
           '.opencode/commands/add.md'
         ],
         hashes: {
-          '.add/commands/add.md': 'abc123',
+          '.codeadd/commands/add.md': 'abc123',
           '.claude/commands/add.md': 'def456'
         },
       }),
@@ -144,7 +144,7 @@ describe('config show command', () => {
   });
 
   it('handles manifest with empty providers array', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -153,8 +153,8 @@ describe('config show command', () => {
         releaseTag: 'v1.0.0',
         installedAt: new Date().toISOString(),
         providers: [],
-        files: ['.add/commands/add.md'],
-        hashes: { '.add/commands/add.md': 'abc123' },
+        files: ['.codeadd/commands/add.md'],
+        hashes: { '.codeadd/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -169,7 +169,7 @@ describe('config show command', () => {
   });
 
   it('handles manifest with no files', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -194,7 +194,7 @@ describe('config show command', () => {
   });
 
   it('handles manifest with null values', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -219,7 +219,7 @@ describe('config show command', () => {
   });
 
   it('handles invalid date format gracefully', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -228,8 +228,8 @@ describe('config show command', () => {
         releaseTag: 'v1.0.0',
         installedAt: 'invalid-date-string',
         providers: ['claude'],
-        files: ['.add/commands/add.md'],
-        hashes: { '.add/commands/add.md': 'abc123' },
+        files: ['.codeadd/commands/add.md'],
+        hashes: { '.codeadd/commands/add.md': 'abc123' },
       }),
       'utf8'
     );
@@ -244,7 +244,7 @@ describe('config show command', () => {
   });
 
   it('handles corrupted manifest gracefully', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -262,7 +262,7 @@ describe('config show command', () => {
   });
 
   it('handles empty manifest object', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
@@ -280,10 +280,10 @@ describe('config show command', () => {
   });
 
   it('displays correct file count with many files', async () => {
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
     
-    const files = Array.from({ length: 100 }, (_, i) => `.add/file${i}.txt`);
+    const files = Array.from({ length: 100 }, (_, i) => `.codeadd/file${i}.txt`);
     const hashes = {};
     files.forEach((f, i) => {
       hashes[f] = `hash${i}`;

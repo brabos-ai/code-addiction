@@ -8,7 +8,7 @@ let tmpDir;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-test-'));
-  fs.mkdirSync(path.join(tmpDir, '.add'));
+  fs.mkdirSync(path.join(tmpDir, '.codeadd'));
 });
 
 afterEach(() => {
@@ -25,10 +25,10 @@ describe('readManifest', () => {
       version: '2.0.1',
       installedAt: '2026-03-01T00:00:00Z',
       providers: ['claude'],
-      files: ['.add/commands/add.md'],
+      files: ['.codeadd/commands/add.md'],
     };
     fs.writeFileSync(
-      path.join(tmpDir, '.add', 'manifest.json'),
+      path.join(tmpDir, '.codeadd', 'manifest.json'),
       JSON.stringify(manifest),
       'utf8'
     );
@@ -37,14 +37,14 @@ describe('readManifest', () => {
     expect(result).toMatchObject({
       version: '2.0.1',
       providers: ['claude'],
-      files: ['.add/commands/add.md'],
+      files: ['.codeadd/commands/add.md'],
     });
     expect(result.corrupted).toBeUndefined();
   });
 
   it('returns corrupted=true for invalid JSON', () => {
     fs.writeFileSync(
-      path.join(tmpDir, '.add', 'manifest.json'),
+      path.join(tmpDir, '.codeadd', 'manifest.json'),
       'not valid json{{{',
       'utf8'
     );
@@ -87,7 +87,7 @@ describe('uninstall', () => {
     }));
 
     // Create fake ADD files
-    const addDir = path.join(tmpDir, '.add');
+    const addDir = path.join(tmpDir, '.codeadd');
     const commandsDir = path.join(addDir, 'commands');
     fs.mkdirSync(commandsDir, { recursive: true });
     fs.writeFileSync(path.join(commandsDir, 'add.md'), '# add');
@@ -96,7 +96,7 @@ describe('uninstall', () => {
       version: '2.0.1',
       installedAt: '2026-03-01T00:00:00Z',
       providers: ['claude'],
-      files: ['.add/commands/add.md'],
+      files: ['.codeadd/commands/add.md'],
     };
     fs.writeFileSync(
       path.join(addDir, 'manifest.json'),
