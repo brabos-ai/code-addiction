@@ -1,7 +1,5 @@
 # Landing Page Builder
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 > **OUTPUT:** Production-ready code, not documentation.
 
 Specialized builder for high-conversion SaaS landing pages. Creates responsive, mobile-first landing pages using templates, copy patterns, and aesthetic frameworks.
@@ -13,6 +11,21 @@ Specialized builder for high-conversion SaaS landing pages. Creates responsive, 
 ```json
 {"gates":["skill_loaded","context_collected","sections_selected","aesthetic_selected"],"order":["load_skill","collect_context","load_templates","generate_code","validate_mobile","output"],"outputs":{"landing_page":"apps/frontend/src/pages/landing.tsx"},"shortcuts":{"minimal":"tech_minimal","tech":"tech_dark","enterprise":"tech_enterprise","bold":"tech_bold","url":"analyze_existing"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

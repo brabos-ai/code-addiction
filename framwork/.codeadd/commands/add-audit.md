@@ -1,7 +1,5 @@
 # Tech Audit - Complete Technical Project Audit
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 > **DOCUMENTATION STYLE:** Follow standards defined in `.codeadd/skills/documentation-style/SKILL.md`
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
@@ -15,6 +13,21 @@ Execute complete technical analysis of the project, identifying security, archit
 ```json
 {"gates":["folder_structure_created","discovery_phase_complete","analysis_phase_complete","all_reports_validated"],"order":["setup","parallel_discovery","wait_discovery","parallel_analysis","wait_analysis","consolidation","completion"],"discovery":["context-discovery","documentation-analyzer","infrastructure-check"],"analysis":["security-analyzer","architecture-analyzer","data-analyzer"],"scoring":{"weights":{"critical":3,"high":2,"medium":1,"low":0.5},"formula":"max(0, 10 - (weighted_sum / 5))"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

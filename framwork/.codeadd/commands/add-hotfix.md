@@ -1,7 +1,5 @@
 # Hotfix - Rapid Bug Fix Workflow (Dual Mode)
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 
 ---
@@ -10,6 +8,21 @@
 ```json
 {"gates":["path_decided","template_read","branch_created","docs_read","root_cause_confirmed"],"investigate":{"order":["RECENT_CHANGELOGS","docs/features/*/changelog.md","docs/features/*/about.md","code"]},"patterns":{"if_exists":".codeadd/projects/*-patterns.md","action":"READ before fix"},"modes":{"feature_fix":"fix/F[XXXX]-[name]","standalone":"fix/H[XXXX]-[name]"},"template":".codeadd/templates/hotfix-template.md"}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

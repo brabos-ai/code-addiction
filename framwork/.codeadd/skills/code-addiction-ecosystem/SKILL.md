@@ -20,6 +20,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-review | Revisao de codigo, auto-correcao | code-review, delivery-validation |
 | add-done | Finalizar feature, gera changelog. Valida features completas em Epics + cobertura de requisitos | documentation-style |
 | add-hotfix | Correcao urgente dual-mode: fix em feature existente (F[XXXX]) ou standalone (H[XXXX]). Usa template (.codeadd/templates/hotfix-template.md) | backend/frontend conforme area |
+| add-init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | product-discovery (optional) |
 | add-brainstorm | Explorar ideias (READ-ONLY) | - |
 | add-audit | Analise tecnica completa do projeto | audit, architecture-discovery |
 | add-pr | Criar PR + changelog automatico | optimizing-git-workflow |
@@ -84,6 +85,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 ## Last Updated
 
+2026-03-05 - update add-init (simplified to 3 questions, flat owner.md, optional product.md) + add OWNER Context to all commands + remove add-update
 2026-02-18 - add skill dev-environment-setup (WSL/git/jq/gh setup, VS Code settings.json merge)
 2026-02-06 - refactor add-hotfix: delete create-hotfix-docs.sh, add template, simplify command
 2026-02-06 - update command add-hotfix (dual-mode: feature fix + standalone)

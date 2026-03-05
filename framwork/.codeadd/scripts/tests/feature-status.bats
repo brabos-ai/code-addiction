@@ -89,12 +89,20 @@ teardown() {
 
 # ─── Owner detection ────────────────────────────────────────────────
 
-@test "detecta owner name e level" {
+@test "detecta owner completo (nome|nivel|idioma)" {
   mkdir -p docs
-  printf 'Nome: João\nNivel: Senior\n' > docs/owner.md
+  printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
   run "$SCRIPTS_DIR/feature-status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:"* ]]
+  [[ "$output" == *"OWNER:Maicon|avancado|pt-br"* ]]
+}
+
+@test "owner usa defaults para campos faltando" {
+  mkdir -p docs
+  printf 'Nome: Ana\n' > docs/owner.md
+  run "$SCRIPTS_DIR/feature-status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OWNER:Ana|intermediario|en-us"* ]]
 }
 
 # ─── Recommendations ────────────────────────────────────────────────

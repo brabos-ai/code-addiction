@@ -1,6 +1,5 @@
 # Branch Completion & Merge
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
 > **MODEL:** Use `haiku` model
 
 Coordinator for branch finalization. Supports features (full changelog flow), feature hotfixes, and standalone hotfixes. Analyzes context, generates documentation, and auto-merges to main.
@@ -12,6 +11,21 @@ Coordinator for branch finalization. Supports features (full changelog flow), fe
 ```json
 {"gates":["branch_valid","dir_resolved","quality_gate_passed_or_force","changelog_written_if_feature","epic_complete_or_force","requirements_covered_or_force"],"order":["script_context","detect_branch_type","resolve_dir","branch_flow","preview","execute_merge"],"outputs":{"changelog":"docs/features/*/changelog.md","about_addendum":"docs/features/*/about.md"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

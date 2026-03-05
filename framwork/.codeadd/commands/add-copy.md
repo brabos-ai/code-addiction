@@ -1,6 +1,5 @@
 # Copy Generator
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
 > **SKILL:** Load `saas-copy` for frameworks and templates
 
 Generates structured copy for SaaS landing pages based on project analysis.
@@ -12,6 +11,21 @@ Generates structured copy for SaaS landing pages based on project analysis.
 ```json
 {"gates":["skill_loaded","context_extracted","user_validated"],"workflow":["detect_number","analyze","validate","generate"],"output":"docs/copy/CXXXX-[objective]/","files":["brief.md","copy.md"]}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

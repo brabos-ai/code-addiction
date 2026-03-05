@@ -1,6 +1,5 @@
 # Feature PR & Changelog Generator
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
 > **MODEL:** Use `haiku` model
 
 Coordinator for PR creation with intelligent changelog generation. Analyzes files, filters POCOs/DTOs, detects out-of-scope implementations, feeds root CHANGELOG.md.
@@ -12,6 +11,21 @@ Coordinator for PR creation with intelligent changelog generation. Analyzes file
 ```json
 {"gates":["gh_cli_installed","gh_authenticated","feature_branch","files_analyzed","changelog_written","user_confirmed"],"order":["check_prerequisites","script_output","classify_files","analyze_high_priority","detect_out_of_scope","generate_feature_changelog","update_about","preview","write_files","execute_script"],"outputs":{"feature_changelog":"docs/features/${FEATURE_ID}/changelog.md","about_addendum":"docs/features/${FEATURE_ID}/about.md","root_changelog":"CHANGELOG.md"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

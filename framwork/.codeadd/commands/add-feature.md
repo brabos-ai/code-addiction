@@ -1,6 +1,5 @@
 # Feature Discovery & Documentation
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
 > **REF:** `CLAUDE.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 
@@ -15,6 +14,21 @@ Full feature discovery command BEFORE implementation.
 ```json
 {"gates":["init_executed","templates_loaded"],"order":["init","discovery","questionnaire_stop","complexity_gate","document","validate"],"write_allowed":"docs/features/","skills":{"mandatory":"feature-discovery, documentation-style, feature-specification"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
