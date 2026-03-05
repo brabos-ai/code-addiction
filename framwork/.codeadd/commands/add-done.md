@@ -29,6 +29,17 @@ Coordinator for branch finalization. Supports features (full changelog flow), fe
 
 ---
 
+## Yolo Mode
+
+If argument contains `--yolo`:
+- Skip ALL [STOP] points
+- Accept --force automatically for incomplete epics/requirements
+- Do NOT ask for confirmation at any gate
+- Execute to completion without human interaction
+- Log all auto-decisions in console output
+
+---
+
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
@@ -546,7 +557,43 @@ Files: [count from CHANGED_FILES]
 
 ## STEP 6: Execute Merge (AUTOMATIC)
 
-**Execute immediately after STEP 5:**
+**Execute immediately after STEP 5.**
+
+### 6.1: Detect Merge Strategy
+
+**Check if repo requires Pull Request:**
+
+```bash
+# Check if branch protection exists on default branch (requires gh CLI)
+command -v gh >/dev/null 2>&1 && gh api repos/{owner}/{repo}/branches/main/protection --silent 2>/dev/null && echo "PR_REQUIRED" || echo "DIRECT_MERGE"
+```
+
+**Routing:**
+
+| Result | Action |
+|--------|--------|
+| `PR_REQUIRED` (branch protection active) | Route to PR flow (6.2A) |
+| `DIRECT_MERGE` (no protection or gh not installed) | Route to direct merge (6.2B) |
+
+### 6.2A: PR Flow (branch protection detected)
+
+**Inform and execute PR creation:**
+
+```
+🔀 Branch protection detected — creating Pull Request instead of direct merge.
+```
+
+1. Read `.codeadd/commands/add-pr.md` as reference for PR creation flow
+2. Follow add-pr STEPs 7-9 (Preview, Write files, Execute --create-pr)
+3. Use `bash .codeadd/scripts/feature-pr.sh --create-pr` for PR creation
+
+**After PR created, inform:**
+```
+✅ PR Created! Merge via GitHub when approved.
+After merge, run: /add-done (will detect merged PR and cleanup)
+```
+
+### 6.2B: Direct Merge (default)
 
 ```bash
 bash .codeadd/scripts/done.sh --merge
@@ -555,6 +602,11 @@ bash .codeadd/scripts/done.sh --merge
 **⛔ DO NOT USE: Bash for git add/commit/push manually. done.sh --merge handles everything (commit, push, merge, checkpoint cleanup, branch cleanup).**
 
 **NOTE:** done.sh --merge automatically deletes all `checkpoint/*` tags for the feature (local + remote). These temporary tags were created by `/add-dev` during implementation and are no longer needed after merge.
+
+**After merge, suggest next command (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- Feature complete → `/add-release` (when ready for release)
+- More features to implement → `/add-feature`
 
 ---
 

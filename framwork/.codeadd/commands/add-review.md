@@ -29,6 +29,17 @@ Coordinator for feature code review. Dispatches specialized reviewers (Frontend 
 
 ---
 
+## Yolo Mode
+
+If argument contains `--yolo`:
+- Skip Pre-Review Setup (STEP 1) — auto-stage all changes
+- Do NOT ask for confirmation at any gate
+- Auto-correct ALL violations without confirmation
+- Execute to completion without human interaction
+- Log all auto-decisions in console output
+
+---
+
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
@@ -890,10 +901,9 @@ Content:
 **📌 Accept corrections:** git add .
 
 **Next Steps:**
-1. Review corrections: git diff
-2. Test functionality manually
-3. Accept corrections: git add .
-4. Run /add-done (reads review.md automatically)
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- If review PASSED → `/add-done`
+- If review BLOCKED → fix issues, then `/add-review` again
 ```
 
 ### Blocked Console Report

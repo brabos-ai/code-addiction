@@ -621,6 +621,11 @@ docs/brainstorm/
 - To continue exploring: continue the conversation
 - To see the document: open the created file
 
+**Next Steps (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- Ready to formalize → `/add-feature`
+- Need strategic analysis → `/add-strategy`
+
 ---
 
 Can I help with anything else?

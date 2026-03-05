@@ -131,6 +131,25 @@ export async function update(cwd, options = {}) {
 
   s.stop(`Updated ${allFiles.length} files.`);
 
+  // Remove files that existed in the previous installation but are no longer in the new version
+  const oldFiles = new Set(manifest.files ?? []);
+  const newFiles = new Set(allFiles);
+  let removed = 0;
+  for (const old of oldFiles) {
+    if (!newFiles.has(old) && !shouldPreserve(old)) {
+      const full = path.join(cwd, old);
+      try {
+        if (fs.existsSync(full)) {
+          fs.unlinkSync(full);
+          removed++;
+        }
+      } catch {
+        // ignore removal errors
+      }
+    }
+  }
+  if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
+
   fixLineEndings(path.join(addDir, 'scripts'));
 
   writeManifest(

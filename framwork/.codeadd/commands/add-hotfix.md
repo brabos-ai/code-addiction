@@ -418,6 +418,10 @@ bash .codeadd/scripts/log-jsonl.sh "docs/hotfixes/iterations.jsonl" "fix" "/hotf
 1. Review changes
 2. Test fix
 3. Execute `/add-done` to finalize
+
+**Suggested next command (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- Hotfix complete → `/add-done`
 ```
 
 ---

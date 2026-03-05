@@ -27,6 +27,17 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 
 ---
 
+## Yolo Mode
+
+If argument contains `--yolo`:
+- Skip ALL [STOP] points
+- Accept DEVELOPMENT mode automatically (no mode confirmation)
+- Do NOT ask for confirmation at any gate
+- Execute to completion without human interaction
+- Log all auto-decisions in console output
+
+---
+
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
@@ -839,6 +850,11 @@ Feature: ${FEATURE_ID}
 2. Start services: `docker-compose -f infra/docker-compose.yml up -d && npm run dev`
 3. Run code review: `/review`
 4. When approved, run `/add-done` to merge
+
+**Suggested next command (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- After development → `/add-review` or `/add-test`
+- After correction → `/add-review`
 ```
 
 ### Feature Completion (when executing `/add-dev feature N` in Epic)
@@ -863,6 +879,11 @@ Feature: ${N} of ${TOTAL_FEATURES}
 2. Validate acceptance criteria
 3. When ready, execute: `/add-dev feature ${N+1}`
 4. Or if all Epic features complete: `/add-done`
+
+**Suggested next command (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- After development → `/add-review` or `/add-test`
+- After correction → `/add-review`
 ```
 
 ### Correction Completion
@@ -886,6 +907,11 @@ Feature: ${FEATURE_ID}
 2. Verify the bug is resolved
 3. Run `/review` when ready
 4. Run `/add-done` to merge
+
+**Suggested next command (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- After development → `/add-review` or `/add-test`
+- After correction → `/add-review`
 ```
 
 ---

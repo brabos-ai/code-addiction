@@ -154,7 +154,8 @@ Task({
 
 **SUBAGENT PROMPT TEMPLATE:**
 - ROLE: You are the [AREA] [agent type] for feature [ID]
-- SELF-BOOTSTRAP: (FIRST STEP) Run discovery script + read feature docs directly
+- COMMAND REFERENCE: (FIRST STEP) Read the relevant `.codeadd/commands/add-*.md` as pattern reference
+- SELF-BOOTSTRAP: Run discovery script + read feature docs directly
 - SKILLS: MANDATORY: [area skill] | ADDITIONAL: [based on context]
 - DECISION LOG: (from previous phases) Accumulated decisions from earlier subagents
 - COORDINATOR NOTES: (intelligent guidance) Warnings, patterns to follow/avoid
@@ -162,23 +163,25 @@ Task({
 - RULES: Autopilot rules - no questions, no commits, etc.
 - REPORT FORMAT: What to return to coordinator
 
-**Self-Bootstrap Block (include in ALL subagent prompts):**
+**Command-as-Reference Block (include in ALL subagent prompts):**
 ```
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-Execute BEFORE any other action:
-
-1. Run: bash .codeadd/scripts/feature-status.sh
-2. Parse FEATURE_ID from output
-3. Read feature docs IN ORDER:
+## MANDATORY: Load Command & Context (FIRST STEP)
+1. Read the relevant command .md as REFERENCE for patterns and conventions:
+   - Planning subagent: `.codeadd/commands/add-plan.md`
+   - Development subagents: `.codeadd/commands/add-dev.md`
+   - Review subagent: `.codeadd/commands/add-review.md`
+   Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
+2. Run: bash .codeadd/scripts/feature-status.sh
+3. Parse FEATURE_ID from output
+4. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md
    - docs/features/${FEATURE_ID}/discovery.md
    - docs/features/${FEATURE_ID}/design.md (if exists)
    - docs/features/${FEATURE_ID}/plan.md (if exists)
-4. Parse PROJECT_PATHS from script output and read ALL listed files
-   - Example output: PROJECT_PATHS:.codeadd/project/SERVER.md,.codeadd/project/ADMIN.md,.codeadd/project/DATABASE.md
+5. Parse PROJECT_PATHS from script output and read ALL listed files
    - These contain implementation patterns (logging, validation, state, components, etc)
    - Read the file(s) relevant to your area (match app name you're modifying)
-5. Read your area's skill file (see SKILLS section)
+6. Read your area's skill file (see SKILLS section)
 ```
 
 ---
@@ -367,97 +370,25 @@ prompt: |
   You are the PLANNING agent for feature ${FEATURE_ID}.
   Your job is to coordinate specialized subagents AND consolidate a complete technical plan.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  Execute BEFORE any other action:
-
-  1. Run: bash .codeadd/scripts/feature-status.sh
-  2. Parse FEATURE_ID from output
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md
-     - docs/features/${FEATURE_ID}/discovery.md
-     - docs/features/${FEATURE_ID}/design.md (if exists)
-
-  ## SKILLS
-  MANDATORY - Read BEFORE planning:
-  - .codeadd/skills/backend-development/SKILL.md (if backend scope)
-  - .codeadd/skills/database-development/SKILL.md (if database scope)
-  - .codeadd/skills/frontend-development/SKILL.md (if frontend scope)
+  ## MANDATORY: Load Command Reference (FIRST STEP)
+  1. Read `.codeadd/commands/add-plan.md` — this is your PRIMARY reference.
+     Follow its step structure, skill loading, consolidation rules, and output format.
+     Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
+  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  3. Read feature docs as specified in add-plan.md
 
   ## DECISION LOG (from coordinator)
   ${DECISION_LOG}
 
-  ## TASK
-  Create: docs/features/${FEATURE_ID}/plan.md
+  ## COORDINATOR NOTES
+  ${COORDINATOR_NOTES}
 
-  **WORKFLOW:**
-  1. Dispatch specialized subagents (Database, Backend, Frontend) per scope
-  2. Each subagent writes its plan-[area].md
-  3. CONSOLIDATE following APPEND + VALIDATE + FILL GAPS philosophy
-
-  **CONSOLIDATION RULES (CRITICAL):**
-
-  1. **APPEND FIRST** - Concatenate subagent outputs WITHOUT rewriting:
-     - plan-database.md → plan.md
-     - plan-backend.md → plan.md
-     - plan-frontend.md → plan.md
-
-  2. **VALIDATE COMPLETENESS** - Compare discovery.md/design.md with plan:
-     | Source | Verify | Must exist in plan |
-     |--------|--------|--------------------|
-     | discovery | Tables/entities | Complete SQL Schema |
-     | discovery | JSONB fields | Detailed TypeScript interface |
-     | discovery | Endpoints | Complete Request/Response DTOs |
-     | design | UI Components | Mapped with props/state |
-
-  3. **FILL GAPS** - If discovery has info not in plan, ADD:
-     - Missing SQL Schema → add CREATE TABLE
-     - Missing JSONB interface → add TypeScript interface
-     - Incomplete API contract → add DTO fields
-     - Missing frontend types → mirror backend DTOs
-
-  4. **ADD NAVIGATION** - At the end: Overview, Main Flow, Implementation Order
-
-  5. **GENERATE SPEC CHECKLIST (PRD0034)** - At the end of plan.md, add `## Spec Checklist`:
-     Extract ALL verifiable items from about.md + discovery.md + design.md:
-     - Routes: method, path, params, controller
-     - Services: name, interface, generic vs provider-specific
-     - DTOs: name, fields with types
-     - Guards: name, scope, applied where
-     - Repositories: name, entity, methods
-     - Migrations: table name, columns
-     - Frontend: components, hooks, types
-     - Queues/Workers: name, event, processor
-
-     Format each item as a checkable row:
-     ```markdown
-     ## Spec Checklist
-
-     ### Database
-     - [ ] Migration: create_payments_table (columns: id, amount, provider, status, account_id)
-     - [ ] Entity: Payment (fields match migration)
-     - [ ] Repository: PaymentRepository (methods: create, findByAccount, updateStatus)
-
-     ### Backend
-     - [ ] Route: POST /payments/webhook/:provider → WebhookController.handle()
-     - [ ] Service: WebhookNormalizerService (generic, provider-agnostic)
-     - [ ] DTO: WebhookEventDto {provider: string, payload: object, signature: string}
-     - [ ] Guard: WebhookSignatureGuard (validates provider signature)
-
-     ### Frontend
-     - [ ] Component: PaymentStatusBadge (props: status, amount)
-     - [ ] Hook: usePaymentHistory (TanStack Query, endpoint: GET /payments)
-     ```
-
-     **RULE:** Each RF/RN from about.md MUST map to at least one Spec Checklist item.
-     If an RF/RN has no corresponding item → add one (gap filling).
-
-  **GOLDEN RULE:** If discovery.md has the information, it MUST appear in plan.md in an actionable form for the developer.
-
-  ## RULES
+  ## AUTOPILOT-SPECIFIC RULES (override add-plan.md where conflicting)
   - NO questions - use KISS/YAGNI for decisions
   - NO commits - just create plan.md
+  - 100% autonomous - never stop for confirmation
+  - MUST generate Spec Checklist (PRD0034) at end of plan.md
   - Preserve subagent work - don't rewrite, just append
-  - Fill gaps with detailed specs (schemas, contracts, types)
 
   ## REPORT FORMAT
   Return:
@@ -509,21 +440,15 @@ prompt: |
   ## ROLE
   You are the DATABASE developer for feature ${FEATURE_ID}.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  Execute BEFORE any other action:
-
-  1. Run: bash .codeadd/scripts/feature-status.sh
-  2. Parse FEATURE_ID from output
+  ## MANDATORY: Load Command & Context (FIRST STEP)
+  1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
+     Your scope is LIMITED to DATABASE area only.
+  2. Run: `bash .codeadd/scripts/feature-status.sh`
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
      - docs/features/${FEATURE_ID}/plan.md (PRIMARY - contains DB specs)
-
-  ## SKILLS
-  MANDATORY - Read BEFORE implementing:
-  - .codeadd/skills/database-development/SKILL.md
-  - Follow: Entities, Kysely Types, Migrations, Repository patterns
-  - Verify against: Checklist at end of skill
+  4. Read: `.codeadd/skills/database-development/SKILL.md` (MANDATORY)
 
   ## DECISION LOG (from planning)
   ${DECISION_LOG}
@@ -540,6 +465,7 @@ prompt: |
   ## RULES
   - 100% of plan.md database specs
   - NO deferrals - implement everything
+  - NO questions - 100% autonomous
   - Build MUST pass (see CLAUDE.md for build command)
 
   ## DECISION LOGGING (MANDATORY — PRD0031)
@@ -564,20 +490,15 @@ prompt: |
   ## ROLE
   You are the BACKEND developer for feature ${FEATURE_ID}.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  Execute BEFORE any other action:
-
-  1. Run: bash .codeadd/scripts/feature-status.sh
-  2. Parse FEATURE_ID from output
+  ## MANDATORY: Load Command & Context (FIRST STEP)
+  1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
+     Your scope is LIMITED to BACKEND area only.
+  2. Run: `bash .codeadd/scripts/feature-status.sh`
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
      - docs/features/${FEATURE_ID}/plan.md (PRIMARY - contains API specs)
-
-  ## SKILLS
-  MANDATORY - Read BEFORE implementing:
-  - .codeadd/skills/backend-development/SKILL.md
-  - Follow: Clean Arch, RESTful, IoC/DI, DTOs, CQRS patterns
+  4. Read: `.codeadd/skills/backend-development/SKILL.md` (MANDATORY)
 
   ## DECISION LOG (accumulated)
   ${DECISION_LOG}
@@ -594,6 +515,7 @@ prompt: |
   ## RULES
   - 100% of plan.md backend specs
   - NO deferrals
+  - NO questions - 100% autonomous
   - Build MUST pass (see CLAUDE.md for build command)
 
   ## DECISION LOGGING (MANDATORY — PRD0031)
@@ -619,22 +541,17 @@ prompt: |
   ## ROLE
   You are the FRONTEND developer for feature ${FEATURE_ID}.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  Execute BEFORE any other action:
-
-  1. Run: bash .codeadd/scripts/feature-status.sh
-  2. Parse FEATURE_ID from output
+  ## MANDATORY: Load Command & Context (FIRST STEP)
+  1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
+     Your scope is LIMITED to FRONTEND area only.
+  2. Run: `bash .codeadd/scripts/feature-status.sh`
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
      - docs/features/${FEATURE_ID}/design.md (if exists - PRIMARY for UI)
      - docs/features/${FEATURE_ID}/plan.md (contains frontend specs + backend DTOs)
-
-  ## SKILLS (MANDATORY)
-  BEFORE writing ANY frontend code:
-  1. Read: .codeadd/skills/frontend-development/SKILL.md (FIRST - handles types, hooks, state, API)
-  2. If NO design.md: Load .codeadd/skills/ux-design/SKILL.md for SaaS UX patterns
-  3. If design.md EXISTS: Follow its specs + use ux-design for implementation details
+  4. Read: `.codeadd/skills/frontend-development/SKILL.md` (MANDATORY)
+  5. If NO design.md: Also load `.codeadd/skills/ux-design/SKILL.md` for SaaS UX patterns
 
   For specific components, use Grep on skill docs:
   - shadcn: .codeadd/skills/ux-design/shadcn-docs.md
@@ -660,6 +577,7 @@ prompt: |
   - 100% of design.md components (if exists)
   - 100% of plan.md frontend specs
   - NO deferrals
+  - NO questions - 100% autonomous
   - Build MUST pass (see CLAUDE.md for build command)
 
   ## REPORT FORMAT
@@ -873,28 +791,13 @@ prompt: |
   You are the CODE REVIEWER for feature ${FEATURE_ID}.
   Your job is to validate code AND product (requirements 100% implemented).
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  Execute BEFORE any other action:
-
-  1. Run: bash .codeadd/scripts/feature-status.sh
-  2. Parse FEATURE_ID from output
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md (EXTRACT: RF, RN, Acceptance Criteria)
-     - docs/features/${FEATURE_ID}/discovery.md (CHECK: Prerequisites Analysis)
-     - docs/features/${FEATURE_ID}/plan.md (PRIMARY - verification checklist)
-     - docs/features/${FEATURE_ID}/design.md (if exists)
-     - docs/features/${FEATURE_ID}/decisions.jsonl (PRD0031 — check for pivots: areas with multiple pivots need extra review attention)
-
-  ## SKILLS
-  MANDATORY - Read BEFORE reviewing:
-  - .codeadd/skills/code-review/SKILL.md (CODE validation)
-  - .codeadd/skills/delivery-validation/SKILL.md (PRODUCT validation)
-
-  REFERENCE:
-  - Backend patterns: .codeadd/skills/backend-development/SKILL.md
-  - Database patterns: .codeadd/skills/database-development/SKILL.md
-  - Frontend patterns: .codeadd/skills/frontend-development/SKILL.md
-  - Security: .codeadd/skills/security-audit/SKILL.md
+  ## MANDATORY: Load Command Reference (FIRST STEP)
+  1. Read `.codeadd/commands/add-review.md` — this is your PRIMARY reference.
+     Follow its step structure, skill loading, validation patterns, and output format.
+     Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
+  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  3. Read feature docs as specified in add-review.md
+  4. ALSO read: `docs/features/${FEATURE_ID}/decisions.jsonl` (PRD0031 — areas with multiple pivots need extra review attention)
 
   ## DECISION LOG (from previous phases)
   ${COMPLETE_DECISION_LOG}
@@ -904,43 +807,25 @@ prompt: |
   ## COORDINATOR NOTES
   ${COORDINATOR_NOTES}
 
-  ## TASK
-  ### Part 1: Spec Compliance Audit (PRD0034 — BEFORE technical review)
+  ## AUTOPILOT-SPECIFIC ADDITIONS (extend add-review.md)
+  Beyond what add-review.md specifies, ALSO do:
+
+  ### Spec Compliance Audit (PRD0034 — BEFORE technical review)
   1. READ `## Spec Checklist` from plan.md (all areas)
      IF no Spec Checklist: extract contracts from plan.md prose (routes, services, DTOs)
   2. For EACH item: locate implementation with file:line, validate existence AND behavior
   3. Cross-reference: items cover ALL RF/RN from about.md?
-  4. Status per item: ✅ COMPLIANT | ⚠️ DIVERGENT | ❌ MISSING
+  4. Status per item: COMPLIANT | DIVERGENT | MISSING
   5. Compute SPEC_AUDIT_STATUS: COMPLIANT | DIVERGENT | INCOMPLETE
 
-  ### Part 2: Code Review (Technical - Validators already ran)
-  NOTE: Validators already validated skill checklists. Focus on CROSS-AREA issues:
-  6. Read ALL files from FILES_CREATED/FILES_MODIFIED in Decision Log
-  7. Validate against plan.md specifications (contracts match between areas)
-  8. Check integration points (frontend calls match backend endpoints)
-  9. AUTO-FIX any remaining violations
-  10. Verify build passes
-
-  ### Part 3: Product Validation (CRITICAL - PRIMARY FOCUS)
-  11. Extract RF/RN from about.md
-  12. For EACH requirement:
-      - Verify implementation exists
-      - Check prerequisites were created (not just assumed)
-      - Validate business logic is correct
-  13. If ANY requirement missing → report as BLOCKED
-
-  ### Part 4: Generate Quality Gate Report (PRD0034)
-  14. Create docs/features/${FEATURE_ID}/review.md with:
-      - Quality Gate table (Build, Spec Compliance, Code Review Score, Product Validation, Startup Test, Overall)
-      - Spec Compliance Audit results
-      - Code Review summary
-      - Product Validation status
-  15. Overall = PASSED only if ALL gates are PASSED or SKIPPED
+  ### Generate Quality Gate Report (PRD0034)
+  Create docs/features/${FEATURE_ID}/review.md with:
+  - Quality Gate table (Build, Spec Compliance, Code Review Score, Product Validation, Startup Test, Overall)
+  - Overall = PASSED only if ALL gates are PASSED or SKIPPED
 
   ## RULES
-  - NO questions - fix issues automatically
+  - NO questions - fix issues automatically, 100% autonomous
   - Missing components from plan = CRITICAL
-  - Missing prerequisites = CRITICAL (e.g.: "check tier" without tier field)
   - Build MUST pass after fixes
   - ALL requirements MUST be implemented
   - review.md MUST be created (merge prerequisite for /add-done)
@@ -1108,9 +993,11 @@ Required Actions:
 
 ## Critical Rules - AUTOPILOT SPECIFIC
 
-### SELF-BOOTSTRAP ARCHITECTURE (v3)
+### COMMAND-AS-REFERENCE ARCHITECTURE (v4)
 
 **ALWAYS:**
+- Each subagent reads the relevant command .md (add-plan, add-dev, add-review) as REFERENCE
+- Subagent follows command patterns with `--yolo` mode (no confirmations)
 - Each subagent runs discovery script + reads feature docs directly
 - Subagent has full autonomy to load context it needs
 - Coordinator passes DECISION LOG only (accumulated decisions)
@@ -1119,7 +1006,8 @@ Required Actions:
 **NEVER:**
 - Pass "digest" or pre-processed context to subagent
 - Assume subagent knows context without reading docs
-- Skip Self-Bootstrap section in subagent prompt
+- Skip command reference loading in subagent prompt
+- Duplicate logic that already exists in command .md files
 
 ### AUTONOMOUS EXECUTION
 
@@ -1178,20 +1066,12 @@ When creating subagent prompts, always include:
 ## ROLE
 [Who the subagent is]
 
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-Execute BEFORE any other action:
-1. Run: bash .codeadd/scripts/feature-status.sh
-2. Parse FEATURE_ID from output
-3. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
-   - docs/features/${FEATURE_ID}/design.md (if exists)
-   - docs/features/${FEATURE_ID}/plan.md (if exists)
+## MANDATORY: Load Command & Context (FIRST STEP)
+1. Read the relevant `.codeadd/commands/add-*.md` as REFERENCE (add-plan, add-dev, or add-review).
+   Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
+2. Run: bash .codeadd/scripts/feature-status.sh
+3. Read feature docs as specified in the command reference
 4. Read your area's skill file
-
-## SKILLS
-MANDATORY: [area skill]
-ADDITIONAL: [if needed]
 
 ## DECISION LOG
 [Accumulated decisions from previous phases]
@@ -1202,8 +1082,8 @@ ADDITIONAL: [if needed]
 ## TASK
 [What to create/do]
 
-## RULES
-[Autopilot rules]
+## AUTOPILOT-SPECIFIC RULES
+[Override/extend command where needed]
 
 ## REPORT FORMAT
 [What to return]

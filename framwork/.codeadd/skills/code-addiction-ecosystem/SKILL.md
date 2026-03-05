@@ -18,14 +18,15 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-dev | Implementacao guiada (coordena subagentes). Suporta `/add-dev feature N` para Epics | backend/frontend/database + subagent-driven |
 | add-autopilot | Implementacao autonoma sem interacao. Suporta `/autopilot feature N` para Epics | backend/frontend/database |
 | add-review | Revisao de codigo, auto-correcao | code-review, delivery-validation |
-| add-done | Finalizar feature, gera changelog. Valida features completas em Epics + cobertura de requisitos | documentation-style |
+| add-done | Finalizar feature, gera changelog. Valida epics + requisitos. Detecta branch protection e roteia para PR ou merge direto | documentation-style |
 | add-hotfix | Correcao urgente dual-mode: fix em feature existente (F[XXXX]) ou standalone (H[XXXX]). Usa template (.codeadd/templates/hotfix-template.md) | backend/frontend conforme area |
 | add-init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | product-discovery (optional) |
 | add-brainstorm | Explorar ideias (READ-ONLY) | - |
 | add-audit | Analise tecnica completa do projeto | audit, architecture-discovery |
-| add-pr | Criar PR + changelog automatico | optimizing-git-workflow |
+| add-pr | Criar PR para code review (sem finalizar feature). Usado standalone ou referenciado pelo add-done quando branch protection ativo | optimizing-git-workflow |
 | add-landing | Builder de landing pages SaaS | landing-page-saas |
 | add-architecture-analyzer | Mapear arquitetura do projeto | architecture-discovery |
+| add-sync | Validar consistencia do ecossistema - cross-reference commands/skills, parity providers, regenerar mapa | code-addiction-ecosystem |
 
 ## Skills add-pro
 
@@ -51,7 +52,6 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | subagent-driven-development | Coordenacao de subagentes | add-dev |
 | token-efficiency | Compressao, JSON compacto | Todas (best practice) |
 | updating-claude-documentation | Atualizar CLAUDE.md | add-done (quando altera arquitetura) |
-| using-git-worktrees | Git worktrees para paralelismo | Uso manual |
 | ux-design | Componentes, mobile-first, SaaS patterns | add-design |
 | write-skill | Testar commands com pressao | Validacao de commands |
 | dev-environment-setup | Detectar SO, diagnosticar tools ausentes, instalar WSL/git/jq/gh, configurar VS Code settings.json | add, add-init |
@@ -85,6 +85,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 ## Last Updated
 
+2026-03-05 - PRD0003: add /add-sync command, add --yolo + next steps to all commands, refactor add-autopilot (command-as-reference v4), add-done absorbs PR detection, remove orphan using-git-worktrees
 2026-03-05 - update add-init (simplified to 3 questions, flat owner.md, optional product.md) + add OWNER Context to all commands + remove add-update
 2026-02-18 - add skill dev-environment-setup (WSL/git/jq/gh setup, VS Code settings.json merge)
 2026-02-06 - refactor add-hotfix: delete create-hotfix-docs.sh, add template, simplify command

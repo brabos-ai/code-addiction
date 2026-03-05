@@ -691,6 +691,11 @@ Design Complete!
 - Entry Points: [N screens mapped]
 
 **Next:** `/plan` | `/dev` | `/autopilot`
+
+**Next Steps (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- Design complete → `/plan` (technical planning)
+- Simple feature → `/add-dev` (skip planning)
 ```
 
 ---

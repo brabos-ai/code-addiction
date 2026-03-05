@@ -162,6 +162,56 @@ describe('update command', () => {
     expect(manifest.source).toBe('tag');
   });
 
+  it('removes obsolete files that existed in old manifest but not in new zip', async () => {
+    // Create an orphan file that was installed by a previous version
+    const orphanPath = path.join(tmpDir, '.codeadd', 'commands', 'old-command.md');
+    fs.mkdirSync(path.dirname(orphanPath), { recursive: true });
+    fs.writeFileSync(orphanPath, '# old command');
+
+    // Manifest lists the orphan as an installed file
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      files: ['.codeadd/commands/old-command.md'],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    // New zip does NOT contain old-command.md
+    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+
+    await update(tmpDir);
+
+    expect(fs.existsSync(orphanPath)).toBe(false);
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.files).not.toContain('.codeadd/commands/old-command.md');
+  });
+
+  it('preserves history and .local.json files even if listed in old manifest', async () => {
+    const historyFile = path.join(tmpDir, '.codeadd', 'history', 'session.json');
+    const localFile = path.join(tmpDir, '.codeadd', 'my.local.json');
+    fs.mkdirSync(path.dirname(historyFile), { recursive: true });
+    fs.writeFileSync(historyFile, '{}');
+    fs.writeFileSync(localFile, '{}');
+
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      files: ['.codeadd/history/session.json', '.codeadd/my.local.json'],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+
+    await update(tmpDir);
+
+    expect(fs.existsSync(historyFile)).toBe(true);
+    expect(fs.existsSync(localFile)).toBe(true);
+  });
+
   it('does not skip update when targeting branch (always re-pulls)', async () => {
     writeManifestFile(tmpDir, { version: 'main', source: 'branch', ref: 'main', providers: [] });
     mocks.downloadBranchZip.mockResolvedValue(buildZip('code-addiction-main'));

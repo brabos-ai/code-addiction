@@ -298,22 +298,10 @@ Filter PRDs where:
 - Created/updated date is on or after `LATEST_TAG` date.
 - If first release, include all non-draft PRDs.
 
-### 7.3 User summary
-
-Ask user:
-```text
-Resumo da release (o que mudou e por que):
-```
-
-Store as `USER_SUMMARY`.
-
-### 7.4 Assemble changelog/release notes
+### 7.3 Assemble changelog/release notes
 
 Format (omit empty sections):
 ```markdown
-## What Changed
-[USER_SUMMARY]
-
 ## Commands
 - Added: [list]
 - Modified: [list]

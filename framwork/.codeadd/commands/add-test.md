@@ -654,6 +654,11 @@ SUGGESTIONS FOR MANUAL IMPROVEMENT:
 ═══════════════════════════════════════
 ```
 
+**Next Steps (from ecosystem map):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+- Tests passing → `/add-review`
+- Tests failing → fix and re-run `/add-test`
+
 ### 7.2 Log Iteration
 
 IF `.codeadd/scripts/log-iteration.sh` exists:

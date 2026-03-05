@@ -29,6 +29,17 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ---
 
+## Yolo Mode
+
+If argument contains `--yolo`:
+- Skip ALL [STOP] points and clarification questions (STEP 6)
+- Accept default scope automatically
+- Do NOT ask for confirmation at any gate
+- Execute to completion without human interaction
+- Log all auto-decisions in console output
+
+---
+
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
@@ -888,7 +899,12 @@ rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
 - [X] Module structure
 - [X] References to similar files
 
-**Next step:** Review the plan and execute `/dev` to implement.
+**Next Steps (load code-addiction-ecosystem skill for context):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Based on what was planned, suggest the logical next command:
+- Standard flow → `/add-dev`
+- Autonomous flow → `/autopilot`
+- If design is missing and feature has UI → `/design` first
 ```
 
 ---

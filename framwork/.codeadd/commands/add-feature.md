@@ -32,6 +32,17 @@ Full feature discovery command BEFORE implementation.
 
 ---
 
+## Yolo Mode
+
+If argument contains `--yolo`:
+- Skip ALL [STOP] points
+- Use Recommendation options automatically at every question
+- Do NOT ask for confirmation at any gate
+- Execute to completion without human interaction
+- Log all auto-decisions in console output
+
+---
+
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **⛔ FIRST ACTION: VALIDATE SCOPE**
@@ -131,6 +142,13 @@ bash .codeadd/scripts/feature-init.sh
 ```
 
 **Parse RECENT_CHANGELOGS from output** - latest completed features with summaries.
+
+**Load Product Context (if exists):**
+```
+Read docs/product.md (if exists).
+Use product context to analyze if the proposed feature aligns with the product vision.
+If misalignment detected, flag it in the questionnaire (STEP 3).
+```
 
 **Smart changelog reading rule:**
 
@@ -720,7 +738,13 @@ If `/feature F0018` or `/feature continue`:
 ```
 Feature Discovery Complete!
 Docs: docs/features/F[XXXX]-[name]/
-Next: /design | /plan | /add-dev | /autopilot
+**Next Steps (load code-addiction-ecosystem skill for context):**
+Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Based on what was discovered, suggest the logical next command:
+- If feature has UI components → `/design`
+- If feature is ready for technical planning → `/plan`
+- If feature is simple enough → `/add-dev`
+- If user wants autonomous execution → `/autopilot`
 ```
 
 ---
