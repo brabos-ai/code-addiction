@@ -56,13 +56,17 @@ if [ -z "$MAIN_BRANCH" ]; then
     exit 1
 fi
 
-# Branch type detection
-case "$CURRENT_BRANCH" in
-    feature/F[0-9][0-9][0-9][0-9]-*) BRANCH_TYPE="feature" ;;
-    fix/F[0-9][0-9][0-9][0-9]-*)     BRANCH_TYPE="hotfix_feature" ;;
-    fix/H[0-9][0-9][0-9][0-9]-*)     BRANCH_TYPE="hotfix_standalone" ;;
-    *)                                 BRANCH_TYPE="unknown" ;;
-esac
+# Branch type detection (ID-based: F[XXXX] = feature flow, H[XXXX] = hotfix flow)
+# Priority: fix/F* checked first to preserve hotfix_feature distinction
+if echo "$CURRENT_BRANCH" | grep -qE '^fix/F[0-9]{4}-'; then
+    BRANCH_TYPE="hotfix_feature"
+elif echo "$CURRENT_BRANCH" | grep -qE '^[^/]+/H[0-9]{4}-'; then
+    BRANCH_TYPE="hotfix_standalone"
+elif echo "$CURRENT_BRANCH" | grep -qE '^[^/]+/F[0-9]{4}-'; then
+    BRANCH_TYPE="feature"
+else
+    BRANCH_TYPE="unknown"
+fi
 
 # Extract feature/hotfix number
 case "$BRANCH_TYPE" in
@@ -75,11 +79,17 @@ esac
 # do commit inválida (ex: "feat(): ..."). Garante fallback para string segura.
 FEATURE_NUMBER="${FEATURE_NUMBER:-UNKNOWN}"
 
-# Commit type for git
-case "$BRANCH_TYPE" in
-    feature)                          COMMIT_TYPE="feat" ;;
-    hotfix_feature|hotfix_standalone) COMMIT_TYPE="fix" ;;
-    *)                                COMMIT_TYPE="chore" ;;
+# Commit type extracted from branch prefix (supports conventional commit types)
+BRANCH_PREFIX=$(echo "$CURRENT_BRANCH" | cut -d'/' -f1)
+case "$BRANCH_PREFIX" in
+    feature)  COMMIT_TYPE="feat" ;;
+    fix)      COMMIT_TYPE="fix" ;;
+    refactor) COMMIT_TYPE="refactor" ;;
+    chore)    COMMIT_TYPE="chore" ;;
+    docs)     COMMIT_TYPE="docs" ;;
+    perf)     COMMIT_TYPE="perf" ;;
+    test)     COMMIT_TYPE="test" ;;
+    *)        COMMIT_TYPE="$BRANCH_PREFIX" ;;
 esac
 
 # ============================================

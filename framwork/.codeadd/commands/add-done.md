@@ -63,6 +63,7 @@ IF STATUS=ERROR from script:
 IF BRANCH_TYPE = unknown:
   ⛔ DO NOT USE: Write to create any docs
   ⛔ DO NOT USE: Bash for git operations
+  ⛔ DO NOT USE: Bash to rename the branch (git branch -m) to make it match expected patterns
   ⛔ DO: Show error and stop
 
 IF BRANCH_TYPE = feature AND REVIEW_MD NOT FOUND AND NOT --force:
@@ -120,12 +121,19 @@ bash .codeadd/scripts/done.sh
 
 **Parse `BRANCH_TYPE` from script output:**
 
-| BRANCH_TYPE | Flow | Description |
-|-------------|------|-------------|
-| `feature` | Full (STEP 4A) | Changelog + about.md + iterations analysis |
-| `hotfix_feature` | Simplified (STEP 4B) | Hotfix doc is the record |
-| `hotfix_standalone` | Simplified (STEP 4C) | Hotfix doc is the record |
-| `unknown` | ⛔ STOP | Show error |
+| BRANCH_TYPE | Flow | Description | Branch pattern |
+|-------------|------|-------------|----------------|
+| `feature` | Full (STEP 4A) | Changelog + about.md + iterations analysis | `*/F[XXXX]-*` (any prefix) |
+| `hotfix_feature` | Simplified (STEP 4B) | Hotfix doc is the record | `fix/F[XXXX]-*` |
+| `hotfix_standalone` | Simplified (STEP 4C) | Hotfix doc is the record | `*/H[XXXX]-*` (any prefix) |
+| `unknown` | ⛔ STOP | Show error | no F/H ID found |
+
+**Examples of valid branches:**
+- `feature/F0001-login` → feature
+- `refactor/F0002-extract-db` → feature (COMMIT_TYPE=refactor)
+- `chore/F0005-cleanup` → feature (COMMIT_TYPE=chore)
+- `fix/F0003-bug` → hotfix_feature
+- `fix/H0001-urgent` → hotfix_standalone
 
 ---
 
