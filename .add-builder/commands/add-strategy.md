@@ -11,7 +11,7 @@ Gera PRD (Product Requirements Document) para execução via `/add-build`.
 ## Spec
 
 ```json
-{"role":"strategic-consultant","output":"docs/prd/PRD[NNNN]-[produto].md","output_scope":"docs/prd/ ONLY","allowed_tools":["Read","Glob","Grep","Write(docs/prd/ ONLY)","Task(Explore)"],"forbidden_actions":["Edit any file","Write outside docs/prd/","Bash for implementation","Create branches","Run build/test commands"],"triggers":["/add-strategy [produto] [ideia]","/add-strategy PRD[NNNN]-[produto]"],"phases":["identify_product","context","analyze","consult","document"],"mindset":"question-first"}
+{"role":"strategic-consultant","output":"docs/prd/PRD[NNNN]-[slug].md","output_scope":"docs/prd/ ONLY","allowed_tools":["Read","Glob","Grep","Write(docs/prd/ ONLY)","Task(Explore)"],"forbidden_actions":["Edit any file","Write outside docs/prd/","Bash for implementation","Create branches","Run build/test commands"],"triggers":["/add-strategy [ideia]","/add-strategy PRD[NNNN]"],"phases":["context","analyze","consult","document"],"mindset":"question-first"}
 ```
 
 ---
@@ -102,90 +102,54 @@ SE IDEIA É RUIM OU DESNECESSÁRIA:
 ## Modo de Operação
 
 ```
-/add-strategy [produto] [ideia]        → Nova análise estratégica
-/add-strategy PRD[NNNN]-[produto]      → Continuar PRD existente (ex: PRD0001-add-pro)
-/add-strategy                          → Listar PRDs em draft + produtos disponíveis
+/add-strategy [ideia]                  → Nova análise estratégica
+/add-strategy PRD[NNNN]               → Continuar PRD existente (ex: PRD0001)
+/add-strategy                          → Listar PRDs em draft
 ```
 
 **Exemplos:**
 ```
-/add-strategy add-pro "melhorar fluxo de hotfix"
-/add-strategy add-free "adicionar comando de diagnóstico"
-/add-strategy add-quick-launch "criar onboarding"
+/add-strategy "melhorar fluxo de hotfix"
+/add-strategy "adicionar comando de diagnóstico"
+/add-strategy PRD0001
 ```
 
 ---
 
-## STEP 0: Identificar Produto e Carregar Contexto (OBRIGATÓRIO)
+## STEP 0: Carregar Contexto do Framework (OBRIGATÓRIO)
 
-### 0.1 Descobrir Produtos Disponíveis
+### 0.1 Detectar Providers no Framework
 
-**EXECUTAR:** Listar diretórios `add-*` na raiz do projeto.
-
-```bash
-# Produtos são diretórios na raiz que começam com add-
-ls -d add-*/
-```
-
-**Produtos conhecidos:**
-| Produto | Tier | Descrição |
-|---------|------|-----------|
-| `add-free` | Free | Comandos gratuitos, entrada do funil |
-| `add-pro` | Pro | Comandos avançados, alunos pagantes |
-| `add-experimental` | Lab | Experimentos, features em teste |
-| `add-quick-launch` | Produto | Aplicação standalone |
-
-### 0.2 Identificar Produto Alvo [STOP se não especificado]
-
-**SE produto NÃO especificado na invocação:**
-
-```markdown
-## Qual produto é o contexto?
-
-Produtos disponíveis:
-- `add-free` → Tier gratuito
-- `add-pro` → Tier pago
-- `add-experimental` → Laboratório
-- `add-quick-launch` → App standalone
-- [outros detectados]
-
-**Responda:** `add-[produto]` ou descreva para qual público/contexto
-```
-
-**AGUARDAR resposta antes de prosseguir.**
-
-### 0.3 Definir Escopo de Busca
-
-**Provider Directories:** O ecossistema ADD é provider-agnostic. Cada AI coding tool usa sua própria estrutura de diretórios:
+**Provider Directories:** O ecossistema ADD é provider-agnostic. Cada AI coding tool usa sua própria estrutura:
 
 | Provider | Commands | Skills |
 |----------|----------|--------|
-| Claude Code | `.[provider]/commands/` | `.[provider]/skills/` |
-| Codex | `.[provider]/skills/` | `.[provider]/skills/` |
-| Gemini | `.[provider]/` | `.[provider]/` |
+| Claude Code | `.claude/commands/` | `.claude/skills/` |
+| CodeADD | `.codeadd/commands/` | `.codeadd/skills/` |
+| Agent | `.agent/workflows/` | `.agents/skills/` |
 
-**EXECUTAR:** Detectar quais provider dirs existem no produto:
+**EXECUTAR:** Detectar quais provider dirs existem no framwork/:
 ```
-Glob: [produto]/.[provider]*/
+Glob: framwork/.*/
 ```
 
 ```markdown
-**Produto:** [add-xxx]
-**Buscar commands em:** [produto]/.[provider]/commands/ (para cada provider detectado)
-**Buscar skills em:** [produto]/.[provider]/skills/ (para cada provider detectado)
-**Buscar scripts em:** [produto]/.codeadd/scripts/
-**PRDs relacionados:** docs/prd/PRD[0-9][0-9][0-9][0-9]-[produto].md
+**Buscar commands em:** framwork/.claude/commands/, framwork/.codeadd/commands/
+**Buscar workflows em:** framwork/.agent/workflows/
+**Buscar skills em:** framwork/.codeadd/skills/, framwork/.agents/skills/
+**Buscar scripts em:** framwork/.codeadd/scripts/
+**PRDs relacionados:** docs/prd/PRD[0-9][0-9][0-9][0-9]-*.md
 ```
 
-### 0.4 Carregar Contexto Estratégico
+### 0.2 Carregar Contexto Estratégico
 
 **LER (se existirem):**
 
 ```
-.[provider]/skills/code-addiction-ecosystem/SKILL.md  # Visão consolidada do add-pro (commands, skills, dependências)
-docs/strategy/ADD-ECOSYSTEM-STRATEGY.md        # Estratégia, tiers, anti-pirataria
-docs/strategy/ADD-MASTER-DOCUMENT-v4.md        # Documento mestre, pirâmide, jornada
-[produto]/README.md                            # Contexto específico do produto
+.claude/skills/code-addiction-ecosystem/SKILL.md  # Visão consolidada (commands, skills, dependências)
+docs/strategy/ADD-ECOSYSTEM-STRATEGY.md           # Estratégia do ecossistema
+docs/strategy/ADD-MASTER-DOCUMENT-v4.md           # Documento mestre, pirâmide, jornada
+framwork/README.md                                # Contexto do framework
 ```
 
 **Ecosystem Map:** Carregue SEMPRE para ter visão das relações entre commands e skills.
@@ -237,17 +201,20 @@ docs/strategy/ADD-MASTER-DOCUMENT-v4.md        # Documento mestre, pirâmide, jo
 □ Isso beneficia o aluno final?
 ```
 
-### 2.2 Investigar Ecossistema do Produto
+### 2.2 Investigar Ecossistema do Framework
 
-**Buscar NO PRODUTO IDENTIFICADO (em TODOS os provider dirs detectados):**
+**Buscar em TODOS os provider dirs de framwork/:**
 ```
-[produto]/.[provider]/commands/    → Commands existentes (por provider)
-[produto]/.[provider]/skills/      → Skills disponíveis (por provider)
-[produto]/.codeadd/scripts/            → Scripts de automação
+framwork/.claude/commands/         → Commands Claude
+framwork/.codeadd/commands/        → Commands CodeADD
+framwork/.agent/workflows/         → Workflows Agent
+framwork/.codeadd/skills/          → Skills CodeADD
+framwork/.agents/skills/           → Skills Agent
+framwork/.codeadd/scripts/         → Scripts de automação
 ```
 
 **Também verificar:**
-- Commands/skills similares em OUTROS produtos (para reusar ou evitar duplicação)
+- Commands/skills similares (para reusar ou evitar duplicação)
 - Padrões já estabelecidos no ecossistema
 - Decisões anteriores relacionadas (PRDs em docs/prd/)
 - Gaps que essa ideia poderia preencher
@@ -394,13 +361,13 @@ ls docs/prd/PRD[0-9][0-9][0-9][0-9]-*.md 2>/dev/null | sort -r | head -1
 
 **Path:**
 ```
-docs/prd/PRD[NNNN]-[produto].md
+docs/prd/PRD[NNNN]-[slug].md
 ```
 
 **Exemplos:**
-- `docs/prd/PRD0001-add-pro.md`
-- `docs/prd/PRD0002-add-free.md`
-- `docs/prd/PRD0003-add-quick-launch.md`
+- `docs/prd/PRD0001-hotfix-optimization.md`
+- `docs/prd/PRD0002-diagnostic-command.md`
+- `docs/prd/PRD0003-onboarding-flow.md`
 
 ### Estrutura do PRD
 
@@ -408,7 +375,6 @@ docs/prd/PRD[NNNN]-[produto].md
 # PRD: [Nome]
 
 > **Status:** draft | approved | implemented
-> **Produto:** add-free | add-pro | add-experimental | add-quick-launch
 > **Tipo:** command | skill | script | workflow
 > **Criado:** YYYY-MM-DD
 > **Autor:** Maicon + Claude (ADD Strategy)
@@ -472,7 +438,7 @@ docs/prd/PRD[NNNN]-[produto].md
 ## Próximos Passos
 
 ```
-/add-build PRD[NNNN]-[produto]
+/add-build PRD[NNNN]-[slug]
 ```
 
 ---
@@ -495,26 +461,26 @@ docs/prd/PRD[NNNN]-[produto].md
 ```markdown
 ## PRD Gerado!
 
-**Arquivo:** docs/prd/PRD[NNNN]-[produto].md
+**Arquivo:** docs/prd/PRD[NNNN]-[slug].md
 **Status:** draft
 
 ### Para implementar (USUÁRIO decide):
-/add-build PRD[NNNN]-[produto]
+/add-build PRD[NNNN]-[slug]
 
 ### Para revisar/ajustar:
-/add-strategy PRD[NNNN]-[produto]
+/add-strategy PRD[NNNN]
 ```
 
 ⛔ NÃO prossiga com implementação. NÃO edite código. NÃO crie branches.
 O add-strategy encerra aqui. A execução é responsabilidade do `/add-build`.
 
-→ ⛔ ENCERRADO. NÃO implementar. Próximo passo é do USUÁRIO: /add-build PRD[NNNN]-[produto]
+→ ⛔ ENCERRADO. NÃO implementar. Próximo passo é do USUÁRIO: /add-build PRD[NNNN]-[slug]
 
 ---
 
 ## Modo Continue (PRD existente)
 
-Se `/add-strategy PRD[NNNN]-[produto]` (ex: `/add-strategy PRD0001-add-pro`):
+Se `/add-strategy PRD[NNNN]` (ex: `/add-strategy PRD0001`):
 
 1. Carregar PRD existente
 2. Mostrar resumo do que já foi decidido

@@ -3,14 +3,14 @@
 > **LANG:** PT-BR (texto) | EN (código, git)
 > **SKILL:** Aplicar `building-commands` em TODOS os outputs
 
-Executor que transforma PRDs em artefatos funcionais (commands, skills, scripts).
+Executor que transforma PRDs em artefatos funcionais (commands, skills, scripts) dentro do framework code-addiction (`framwork/`).
 
 ---
 
 ## Spec
 
 ```json
-{"gates":["product_identified","prd_loaded","design_approved","tests_pass"],"order":["identify_product","load_prd","design","implement","test","document"],"outputs":{"command":"[produto]/.claude/commands/*.md","skill":"[produto]/.claude/skills/*/SKILL.md","script":"[produto]/.codeadd/scripts/*"}}
+{"gates":["prd_loaded","design_approved","tests_pass"],"order":["load_prd","design","implement","test","document"],"outputs":{"command":"framwork/.claude/commands/*.md","skill":"framwork/.codeadd/skills/*/SKILL.md","script":"framwork/.codeadd/scripts/*","codeadd_command":"framwork/.codeadd/commands/*.md","agent_workflow":"framwork/.agent/workflows/*.md","agent_skill":"framwork/.agents/skills/*/SKILL.md"}}
 ```
 
 ---
@@ -22,32 +22,23 @@ Executor que transforma PRDs em artefatos funcionais (commands, skills, scripts)
 STEP 1: Carregar PRD/Contexto    → LER PRIMEIRO
 STEP 2: Design aprovado?         → SE NÃO: PARAR E APRESENTAR
 STEP 3: Carregar skills          → building-commands + ecosystem-map
-STEP 4: Implementar              → SOMENTE APÓS 1-3
+STEP 4: Implementar              → SOMENTE APÓS 1-3 (em framwork/)
 STEP 5: Testar                   → SOMENTE APÓS implementar
 STEP 6: Documentar               → SOMENTE APÓS testes passarem
-STEP 7: Atualizar ecosystem-map  → SE add-pro
-STEP 8: Completion               → Resumo final
+STEP 7: Completion               → Resumo final
 ```
 
 **⛔ PROIBIÇÕES ABSOLUTAS:**
 
 ```
-SE PRODUTO NÃO IDENTIFICADO:
-  ⛔ NÃO USE: Write em QUALQUER diretório
-  ⛔ NÃO USE: Edit em QUALQUER artefato
-  ⛔ NÃO FAÇA: Qualquer implementação
-  ✅ FAÇA: Identificar produto (listar add-*/ e perguntar)
-
 SE PRD/CONTEXTO NÃO CARREGADO:
-  ⛔ NÃO USE: Write em [produto]/.claude/commands/
-  ⛔ NÃO USE: Write em [produto]/.claude/skills/
-  ⛔ NÃO USE: Write em [produto]/.codeadd/scripts/
+  ⛔ NÃO USE: Write em framwork/
   ⛔ NÃO FAÇA: Implementação de qualquer artefato
   ✅ FAÇA: Carregar PRD ou pedir descrição
 
 SE DESIGN NÃO APROVADO:
-  ⛔ NÃO USE: Write para criar artefatos
-  ⛔ NÃO USE: Edit em artefatos existentes
+  ⛔ NÃO USE: Write para criar artefatos em framwork/
+  ⛔ NÃO USE: Edit em artefatos existentes em framwork/
   ⛔ NÃO FAÇA: Implementação
   ✅ FAÇA: Apresentar design e aguardar aprovação
 
@@ -62,73 +53,51 @@ SE building-commands SKILL NÃO CARREGADA:
 ## Modo de Operação
 
 ```
-/add-build PRD-[produto]-[slug]       → Executar PRD específico (produto no nome)
-/add-build [produto] [tipo] [nome]    → Build direto (sem PRD, para simples)
-/add-build --optimize [path]          → Otimizar artefato existente
+/add-build PRD-[slug]                 → Executar PRD específico
+/add-build [tipo] [nome]             → Build direto (sem PRD, para simples)
+/add-build --optimize [path]          → Otimizar artefato existente em framwork/
 ```
 
 **Exemplos:**
 ```
-/add-build PRD-add-pro-hotfix-optimization
-/add-build add-free command add-diagnose
-/add-build --optimize add-pro/.claude/commands/add-feature.md
+/add-build PRD-hotfix-optimization
+/add-build command add-diagnose
+/add-build --optimize framwork/.claude/commands/add-feature.md
 ```
 
-**Tipos válidos:** `command` | `skill` | `script`
+**Tipos válidos:** `command` | `skill` | `script` | `workflow`
 
----
-
-## STEP 0: Identificar Produto Alvo (OBRIGATÓRIO)
-
-### 0.1 Descobrir Produtos Disponíveis
-
-**EXECUTAR:** Listar diretórios `add-*` na raiz do projeto.
-
-**Produtos conhecidos:**
-| Produto | Descrição |
-|---------|-----------|
-| `add-free` | Tier gratuito |
-| `add-pro` | Tier pago |
-| `add-experimental` | Laboratório |
-| `add-quick-launch` | App standalone |
-
-### 0.2 Extrair Produto do Contexto
-
-**Se PRD especificado:** Extrair produto do nome do PRD (`PRD-[produto]-[slug]`)
-
-**Se build direto:** Produto é o primeiro argumento
-
-**Se --optimize:** Extrair produto do path do artefato
-
-### 0.3 Definir Paths de Output
-
-```markdown
-**Produto:** [add-xxx]
-**Commands:** [produto]/.claude/commands/
-**Skills:** [produto]/.claude/skills/
-**Scripts:** [produto]/.codeadd/scripts/
-```
-
-**⛔ SE PRODUTO NÃO IDENTIFICADO:**
-```
-⛔ NÃO USE: Write em qualquer diretório
-✅ FAÇA: Perguntar qual produto é o contexto
-```
+**Paths do framework:**
+| Tipo | Path |
+|------|------|
+| Command (Claude) | `framwork/.claude/commands/*.md` |
+| Command (CodeADD) | `framwork/.codeadd/commands/*.md` |
+| Workflow (Agent) | `framwork/.agent/workflows/*.md` |
+| Skill (CodeADD) | `framwork/.codeadd/skills/*/SKILL.md` |
+| Skill (Agent) | `framwork/.agents/skills/*/SKILL.md` |
+| Script | `framwork/.codeadd/scripts/*` |
 
 ---
 
 ## STEP 1: Carregar Contexto (OBRIGATÓRIO)
 
+### 1.0 Verificar Estrutura do Framework
+
+**EXECUTAR:** Verificar que `framwork/` existe e listar sua estrutura:
+
+```bash
+ls framwork/.claude/commands/ framwork/.codeadd/commands/ framwork/.codeadd/skills/ framwork/.agents/skills/ framwork/.agent/workflows/ framwork/.codeadd/scripts/ 2>/dev/null
+```
+
 ### 1.1 Se PRD especificado
 
 ```bash
-# Ler PRD (produto está no nome)
-docs/prd/PRD-[produto]-[slug].md
+# Ler PRD
+docs/prd/PRD-[slug].md
 ```
 
 **Extrair do PRD:**
-- Produto alvo
-- Tipo de artefato (command/skill/script)
+- Tipo de artefato (command/skill/script/workflow)
 - Escopo (inclui/não inclui)
 - Decisões validadas
 - Trade-offs aceitos
@@ -138,23 +107,22 @@ docs/prd/PRD-[produto]-[slug].md
 **Somente para builds SIMPLES.** Coletar:
 
 ```markdown
-**Produto:** [add-xxx]
-**Tipo:** [command|skill|script]
+**Tipo:** [command|skill|script|workflow]
 **Nome:** [kebab-case]
 **Propósito:** [1 linha]
 **Escopo:** [o que faz / o que NÃO faz]
+**Providers:** [claude|codeadd|agent] (em quais provider dirs criar)
 ```
 
-**Se complexo:** Recomendar `/add-strategy [produto]` primeiro.
+**Se complexo:** Recomendar `/add-strategy` primeiro.
 
 ### 1.3 Se --optimize
 
 ```markdown
-1. Extrair produto do path do artefato
-2. Ler artefato atual
-3. Ler building-commands skill
-4. Identificar gaps vs skill
-5. Listar melhorias propostas
+1. Ler artefato atual em framwork/
+2. Ler building-commands skill
+3. Identificar gaps vs skill
+4. Listar melhorias propostas
 ```
 
 ---
@@ -168,9 +136,8 @@ docs/prd/PRD-[produto]-[slug].md
 ```markdown
 ## Design: [Nome do Artefato]
 
-**Produto:** [add-xxx]
-**Tipo:** [command|skill|script]
-**Path:** [produto]/[caminho final]
+**Tipo:** [command|skill|script|workflow]
+**Path:** framwork/[caminho final]
 
 ### Estrutura Proposta
 
@@ -218,6 +185,7 @@ Aprova esse design?
 .claude/skills/code-addiction-ecosystem/SKILL.md    # SEMPRE (visão do ecossistema)
 .claude/skills/token-efficiency/             # SEMPRE
 .claude/skills/documentation-style/          # Se gerar docs
+framwork/.codeadd/skills/                    # Referência de skills existentes
 ```
 
 ### Checklist building-commands (APLICAR)
@@ -250,7 +218,7 @@ SE precisar inserir passo entre existentes:
 
 ### 4.1 Por Tipo de Artefato
 
-#### Command ([produto]/.claude/commands/*.md)
+#### Command (framwork/.claude/commands/*.md + framwork/.codeadd/commands/*.md)
 
 **Estrutura obrigatória:**
 
@@ -287,7 +255,12 @@ SE precisar inserir passo entre existentes:
 {json do/dont}
 ```
 
-#### Skill ([produto]/.claude/skills/*/SKILL.md)
+**NOTA:** Criar em TODOS os provider dirs relevantes:
+- `framwork/.claude/commands/` (Claude Code)
+- `framwork/.codeadd/commands/` (CodeADD)
+- `framwork/.agent/workflows/` (Agent - se aplicável)
+
+#### Skill (framwork/.codeadd/skills/*/SKILL.md + framwork/.agents/skills/*/SKILL.md)
 
 **Estrutura obrigatória:**
 
@@ -314,7 +287,7 @@ description: [quando usar - max 20 palavras]
 [checkboxes]
 ```
 
-#### Script ([produto]/.codeadd/scripts/*)
+#### Script (framwork/.codeadd/scripts/*)
 
 **Estrutura obrigatória:**
 
@@ -324,7 +297,7 @@ description: [quando usar - max 20 palavras]
 # [NOME DO SCRIPT]
 # [Descrição 1 linha]
 # ============================================
-# Usage: bash [produto]/.codeadd/scripts/[nome].sh [args]
+# Usage: bash framwork/.codeadd/scripts/[nome].sh [args]
 # Dependencies: [lista]
 # ============================================
 
@@ -410,13 +383,7 @@ docs/changelog/YYYY-MM-DD-[action]-[what].md
 
 **Status:** `draft` → `implemented`
 
----
-
-## STEP 7: Atualizar Ecosystem Map (SE add-pro)
-
-**Condição:** Apenas se o artefato criado/modificado é do **add-pro**.
-
-**SE produto = add-pro E tipo = command ou skill:**
+### 6.3 Atualizar Ecosystem Map (SE command ou skill)
 
 1. Ler `.claude/skills/code-addiction-ecosystem/SKILL.md`
 2. Verificar se o artefato já está listado
@@ -427,21 +394,18 @@ docs/changelog/YYYY-MM-DD-[action]-[what].md
 **Formato de atualização:**
 ```markdown
 ## Last Updated
-YYYY-MM-DD - [add|update|remove] [command|skill] [nome]
+YYYY-MM-DD - [add|update|remove] [command|skill] [nome] in framwork/
 ```
-
-**SE produto ≠ add-pro:** Pular este step.
 
 ---
 
-## STEP 8: Completion
+## STEP 7: Completion
 
 ```markdown
 ## Build Complete!
 
-**Produto:** [add-xxx]
-**Artefato:** [produto]/[path]
-**Tipo:** [command|skill|script]
+**Artefato:** framwork/[path]
+**Tipo:** [command|skill|script|workflow]
 **PRD:** [link se existir]
 
 ### Criado/Atualizado:
@@ -485,12 +449,12 @@ Se `/add-build --optimize [path]`:
 Aplicar otimizações?
 ```
 
-### STEP 2-7: Seguir fluxo normal
+### STEP 2-6: Seguir fluxo normal
 
 ---
 
 ## Rules
 
 ```json
-{"do":["Carregar PRD/contexto PRIMEIRO","Apresentar design ANTES de implementar","Carregar building-commands skill SEMPRE","Aplicar TODOS os padrões da skill","Testar mentalmente ANTES de finalizar","Documentar mudanças","Usar numeração sequencial INTEIRA (1,2,3)","Renumerar passos se inserir novo"],"dont":["Implementar sem PRD/contexto","Pular aprovação de design","Ignorar building-commands skill","Usar linguagem informativa","Criar gates genéricos (sem ferramentas)","Usar Phase em vez de STEP","Finalizar sem teste mental","Usar numeração fracionada (2.5, 6.5)","Encaixar passos sem renumerar"]}
+{"do":["Carregar PRD/contexto PRIMEIRO","Apresentar design ANTES de implementar","Carregar building-commands skill SEMPRE","Aplicar TODOS os padrões da skill","Testar mentalmente ANTES de finalizar","Documentar mudanças e atualizar ecosystem map","Usar numeração sequencial INTEIRA (1,2,3)","Renumerar passos se inserir novo","Criar artefatos em TODOS os provider dirs relevantes de framwork/"],"dont":["Implementar sem PRD/contexto","Pular aprovação de design","Ignorar building-commands skill","Usar linguagem informativa","Criar gates genéricos (sem ferramentas)","Usar Phase em vez de STEP","Finalizar sem teste mental","Usar numeração fracionada (2.5, 6.5)","Encaixar passos sem renumerar","Escrever fora de framwork/"]}
 ```

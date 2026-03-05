@@ -278,9 +278,12 @@ git log production --name-status --pretty=format:""
 ```
 
 Group files by:
-- Commands: `.claude/commands/*.md`
-- Skills: `.claude/skills/**`
-- Scripts: `.codeadd/scripts/*`
+- Commands (Claude): `framwork/.claude/commands/*.md`
+- Commands (CodeADD): `framwork/.codeadd/commands/*.md`
+- Workflows (Agent): `framwork/.agent/workflows/*.md`
+- Skills (CodeADD): `framwork/.codeadd/skills/**`
+- Skills (Agent): `framwork/.agents/skills/**`
+- Scripts: `framwork/.codeadd/scripts/*`
 - Docs: `docs/**`
 - Other: everything else
 
@@ -315,6 +318,10 @@ Format (omit empty sections):
 - Added: [list]
 - Modified: [list]
 - Removed: [list]
+
+## Workflows
+- Added: [list]
+- Modified: [list]
 
 ## Skills
 - Added: [list]
