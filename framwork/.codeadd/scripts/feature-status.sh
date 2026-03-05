@@ -83,13 +83,13 @@ echo "BRANCH:$CURRENT_BRANCH TYPE:$BRANCH_TYPE MAIN:$MAIN_BRANCH"
 
 OWNER_FILE="docs/owner.md"
 if [ -f "$OWNER_FILE" ]; then
-    # Extract name and level (compact format)
-    OWNER_NAME=$(grep -i "^Nome:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nome:[[:space:]]*//' | head -1 || echo "")
-    OWNER_LEVEL=$(grep -i "^Nivel:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || echo "")
-
-    if [ -n "$OWNER_NAME" ] || [ -n "$OWNER_LEVEL" ]; then
-        echo "OWNER:${OWNER_NAME}|${OWNER_LEVEL}"
-    fi
+    OWNER_NAME=$(grep -i "^Nome:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nome:[[:space:]]*//' | head -1 || echo "unknown")
+    OWNER_NIVEL=$(grep -i "^Nivel:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || echo "intermediario")
+    OWNER_IDIOMA=$(grep -i "^Idioma:" "$OWNER_FILE" 2>/dev/null | sed 's/^Idioma:[[:space:]]*//' | head -1 || echo "en-us")
+    [ -z "$OWNER_NAME" ] && OWNER_NAME="unknown"
+    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediario"
+    [ -z "$OWNER_IDIOMA" ] && OWNER_IDIOMA="en-us"
+    echo "OWNER:${OWNER_NAME}|${OWNER_NIVEL}|${OWNER_IDIOMA}"
 fi
 
 # =============================================================================
@@ -271,8 +271,8 @@ if [ -n "$FEATURE_ID" ]; then
             fi
         fi
 
-        # Last git checkpoint tag for this feature
-        LAST_CHECKPOINT=$(git tag -l "${FEATURE_ID}-*-done" "${FEATURE_ID}-done" 2>/dev/null | sort -r | head -1)
+        # Last git checkpoint tag for this feature (checkpoint/ prefix)
+        LAST_CHECKPOINT=$(git tag -l "checkpoint/${FEATURE_ID}-*-done" "checkpoint/${FEATURE_ID}-done" 2>/dev/null | sort -r | head -1)
         [ -n "$LAST_CHECKPOINT" ] && echo "LAST_CHECKPOINT:$LAST_CHECKPOINT" || true
 
     else

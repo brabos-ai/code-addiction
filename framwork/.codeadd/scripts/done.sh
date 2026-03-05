@@ -278,7 +278,21 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     git push origin "$MAIN_BRANCH"
     echo "PUSH_MAIN=OK"
 
-    # Step 7: Cleanup branches
+    # Step 7: Cleanup checkpoint tags for this feature
+    echo "STEP=Cleaning up checkpoint tags..."
+    CHECKPOINT_TAGS=$(git tag -l "checkpoint/${FEATURE_NUMBER}-*" 2>/dev/null || true)
+    if [ -n "$CHECKPOINT_TAGS" ]; then
+        echo "$CHECKPOINT_TAGS" | while read -r tag; do
+            git tag -d "$tag" 2>/dev/null || true
+            git push origin --delete "$tag" 2>/dev/null || true
+        done
+        CHECKPOINT_COUNT=$(echo "$CHECKPOINT_TAGS" | grep -c '[^[:space:]]' || true)
+        echo "CHECKPOINT_CLEANUP=${CHECKPOINT_COUNT} tags removed"
+    else
+        echo "CHECKPOINT_CLEANUP=SKIPPED (no checkpoint tags found)"
+    fi
+
+    # Step 8: Cleanup branches
     echo "STEP=Cleaning up branches..."
     git branch -d "$CURRENT_BRANCH" 2>/dev/null || echo "LOCAL_DELETE=SKIPPED"
     git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || echo "REMOTE_DELETE=SKIPPED"

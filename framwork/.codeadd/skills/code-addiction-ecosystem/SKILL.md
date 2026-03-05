@@ -1,5 +1,5 @@
 ---
-name: add-ecosystem-map
+name: code-addiction-ecosystem
 description: Visao consolidada do add-pro - commands, skills, relacoes e dependencias. Carregada pelo /add como source of truth.
 ---
 
@@ -11,7 +11,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 | Command | Proposito | Skills que carrega |
 |---------|-----------|-------------------|
-| add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | add-ecosystem-map (source of truth) |
+| add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | code-addiction-ecosystem (source of truth) |
 | add-feature | Discovery de funcionalidade, cria about.md | feature-discovery, feature-specification |
 | add-design | Especificacao UX mobile-first | ux-design |
 | add-plan | Planejamento tecnico, cria plan.md. Detecta Epic vs Feature por fluxos de usuario. Checklist cobertura obrigatorio | planning, plan-based-features |
@@ -20,6 +20,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-review | Revisao de codigo, auto-correcao | code-review, delivery-validation |
 | add-done | Finalizar feature, gera changelog. Valida features completas em Epics + cobertura de requisitos | documentation-style |
 | add-hotfix | Correcao urgente dual-mode: fix em feature existente (F[XXXX]) ou standalone (H[XXXX]). Usa template (.codeadd/templates/hotfix-template.md) | backend/frontend conforme area |
+| add-init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | product-discovery (optional) |
 | add-brainstorm | Explorar ideias (READ-ONLY) | - |
 | add-audit | Analise tecnica completa do projeto | audit, architecture-discovery |
 | add-pr | Criar PR + changelog automatico | optimizing-git-workflow |
@@ -68,7 +69,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-dev | add-autopilot (compartilham logica de implementacao) |
 | feature-specification | add-feature, add-plan (le about.md) |
 | subagent-driven-development | add-dev, add-autopilot, add-review |
-| add-ecosystem-map | /add (perde visao do todo) |
+| code-addiction-ecosystem | /add (perde visao do todo) |
 
 ## Main Flows
 
@@ -84,6 +85,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 ## Last Updated
 
+2026-03-05 - update add-init (simplified to 3 questions, flat owner.md, optional product.md) + add OWNER Context to all commands + remove add-update
 2026-02-18 - add skill dev-environment-setup (WSL/git/jq/gh setup, VS Code settings.json merge)
 2026-02-06 - refactor add-hotfix: delete create-hotfix-docs.sh, add template, simplify command
 2026-02-06 - update command add-hotfix (dual-mode: feature fix + standalone)

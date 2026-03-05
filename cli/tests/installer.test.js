@@ -276,7 +276,7 @@ describe('resolveInstallSource', () => {
   it('uses latest release when version is not provided', async () => {
     const latestTagResolver = async () => 'v9.9.9';
 
-    const source = await resolveInstallSource(undefined, latestTagResolver);
+    const source = await resolveInstallSource(undefined, undefined, latestTagResolver);
 
     expect(source).toEqual({
       source: 'release',
@@ -293,7 +293,7 @@ describe('resolveInstallSource', () => {
       throw new Error('Repository brabos-ai/code-addiction not found or has no releases.');
     };
 
-    const source = await resolveInstallSource(undefined, latestTagResolver);
+    const source = await resolveInstallSource(undefined, undefined, latestTagResolver);
 
     expect(source).toEqual({
       source: 'branch',
@@ -310,13 +310,13 @@ describe('resolveInstallSource', () => {
       throw new Error('GitHub API error: 500 Internal Server Error');
     };
 
-    await expect(resolveInstallSource(undefined, latestTagResolver)).rejects.toThrow(
+    await expect(resolveInstallSource(undefined, undefined, latestTagResolver)).rejects.toThrow(
       'GitHub API error: 500'
     );
   });
 
   it('uses main branch when version is main', async () => {
-    const source = await resolveInstallSource('main');
+    const source = await resolveInstallSource('main', undefined);
 
     expect(source).toEqual({
       source: 'branch',
@@ -329,7 +329,7 @@ describe('resolveInstallSource', () => {
   });
 
   it('normalizes explicit tag when version does not start with v', async () => {
-    const source = await resolveInstallSource('2.3.4');
+    const source = await resolveInstallSource('2.3.4', undefined);
 
     expect(source).toEqual({
       source: 'tag',
@@ -338,6 +338,32 @@ describe('resolveInstallSource', () => {
       ref: null,
       downloadType: 'tag',
       downloadValue: 'v2.3.4',
+    });
+  });
+
+  it('uses explicit branch when requestedBranch is provided', async () => {
+    const source = await resolveInstallSource(undefined, 'feature-xyz');
+
+    expect(source).toEqual({
+      source: 'branch',
+      manifestVersion: 'feature-xyz',
+      releaseTag: null,
+      ref: 'feature-xyz',
+      downloadType: 'branch',
+      downloadValue: 'feature-xyz',
+    });
+  });
+
+  it('requestedBranch takes precedence over requestedVersion', async () => {
+    const source = await resolveInstallSource('v2.0.0', 'develop');
+
+    expect(source).toEqual({
+      source: 'branch',
+      manifestVersion: 'develop',
+      releaseTag: null,
+      ref: 'develop',
+      downloadType: 'branch',
+      downloadValue: 'develop',
     });
   });
 });

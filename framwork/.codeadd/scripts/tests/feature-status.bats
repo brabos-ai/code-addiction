@@ -89,12 +89,20 @@ teardown() {
 
 # ─── Owner detection ────────────────────────────────────────────────
 
-@test "detecta owner name e level" {
+@test "detecta owner completo (nome|nivel|idioma)" {
   mkdir -p docs
-  printf 'Nome: João\nNivel: Senior\n' > docs/owner.md
+  printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
   run "$SCRIPTS_DIR/feature-status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:"* ]]
+  [[ "$output" == *"OWNER:Maicon|avancado|pt-br"* ]]
+}
+
+@test "owner usa defaults para campos faltando" {
+  mkdir -p docs
+  printf 'Nome: Ana\n' > docs/owner.md
+  run "$SCRIPTS_DIR/feature-status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OWNER:Ana|intermediario|en-us"* ]]
 }
 
 # ─── Recommendations ────────────────────────────────────────────────
@@ -271,8 +279,8 @@ teardown() {
 @test "exibe LAST_CHECKPOINT quando tag de checkpoint existe" {
   mkdir -p docs/features/F0001-test
   git checkout -b feature/F0001-test -q
-  git tag "F0001-test-v1-done"
+  git tag "checkpoint/F0001-test-v1-done"
   run "$SCRIPTS_DIR/feature-status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"LAST_CHECKPOINT:F0001-test-v1-done"* ]]
+  [[ "$output" == *"LAST_CHECKPOINT:checkpoint/F0001-test-v1-done"* ]]
 }

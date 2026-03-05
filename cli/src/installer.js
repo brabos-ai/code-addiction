@@ -89,7 +89,18 @@ export function writeManifest(cwd, version, providers, files, releaseTag, metada
  *   downloadValue: string
  * }>}
  */
-export async function resolveInstallSource(requestedVersion, latestTagResolver = getLatestTag) {
+export async function resolveInstallSource(requestedVersion, requestedBranch, latestTagResolver = getLatestTag) {
+  if (requestedBranch) {
+    return {
+      source: 'branch',
+      manifestVersion: requestedBranch,
+      releaseTag: null,
+      ref: requestedBranch,
+      downloadType: 'branch',
+      downloadValue: requestedBranch,
+    };
+  }
+
   if (!requestedVersion) {
     try {
       const tag = await latestTagResolver();
@@ -199,7 +210,7 @@ export async function install(cwd, options = {}) {
 
   const s = spinner();
   s.start('Resolving install source from GitHub...');
-  const installSource = await resolveInstallSource(options.version);
+  const installSource = await resolveInstallSource(options.version, options.branch);
   if (installSource.source === 'release') {
     s.stop(`Latest release: ${installSource.downloadValue}`);
   } else if (installSource.source === 'branch') {

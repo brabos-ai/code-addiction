@@ -1,7 +1,5 @@
 # ADD - Intelligent Ecosystem Gateway
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests next command.
 
 **IMPORTANT:** This command is READ-ONLY for project code. May create analysis documentation in `docs/analysis/` when the response is complex or the user requests it.
@@ -13,6 +11,21 @@ Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests 
 ```json
 {"gates":["ecosystem_loaded"],"order":["ecosystem_map","classify","context_if_needed","respond","suggest"],"write_allowed":"docs/analysis/","skills":{"on_demand":"dev-environment-setup (load when type=Setup or env tools missing)"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -53,7 +66,7 @@ IF ECOSYSTEM-MAP NOT LOADED:
 **EXECUTE BEFORE any response:**
 
 ```bash
-cat .codeadd/skills/add-ecosystem-map/SKILL.md
+cat .codeadd/skills/code-addiction-ecosystem/SKILL.md
 ```
 
 This file contains:

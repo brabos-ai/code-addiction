@@ -41,9 +41,81 @@ cat docs/features/[FEATURE_ID]/discovery.md
 |Vazio/template|Phase 2 (análise completa)|
 |Desatualizado|Phase 2 com foco nas mudanças|
 
+### Phase 1.5: Past Features Discovery (NOVO)
+
+**Objetivo:** Identificar features com relação direta ou indireta com a feature atual.
+
+**EXECUTE como subagente separado [read-only, light] ANTES da Phase 2.**
+
+**Input obrigatório:**
+- `RECENT_CHANGELOGS` (output do `feature-init.sh` ou `feature-status.sh`)
+- `about.md` da feature atual
+
+**Processo:**
+```
+1. Extrair keywords do about.md (domínio, entidades, ações)
+2. Para cada feature em RECENT_CHANGELOGS:
+   a. Ler seção "## Quick Ref" do changelog.md (se existir) → match por domain, keywords, touched
+   b. SE Quick Ref não existe: ler primeiros 30 lines do changelog.md como fallback
+3. Para cada match encontrado:
+   a. Ler iterations.jsonl completo da feature
+   b. Ler about.md da feature (escopo, requisitos)
+   c. Classificar relação: extends | depends | conflicts | shares-pattern | shares-domain
+4. Gerar past-features.md
+```
+
+**Critérios de match (em ordem de relevância):**
+| Critério | Peso |
+|----------|------|
+| Mesmo domínio (Quick Ref `domain`) | Alto |
+| Arquivos em comum (Quick Ref `touched`) | Alto |
+| Keywords em comum (Quick Ref `keywords`) | Médio |
+| Padrões em comum (Quick Ref `patterns`) | Médio |
+| Mesmo módulo/package | Baixo |
+
+**Output:** `docs/features/${FEATURE_ID}/past-features.md`
+
+**Formato do past-features.md:**
+```markdown
+# Past Features Analysis: [Feature Name]
+
+## Matches
+
+### F[XXXX]-[name] ([relation-type])
+- **Domain:** [domain1, domain2]
+- **Shared files:** `src/path/file.ts`
+- **Patterns used:** [pattern1, pattern2]
+- **Key decisions:** [decisão mais relevante]
+- **Iterations summary:** N iterations, N pivots
+- **Relevance:** [por que importa para a feature atual]
+
+## No Match
+- F[XXXX]-[name] — [motivo em 1 linha]
+
+## Metadata
+{"updated":"YYYY-MM-DD","feature":"F[XXXX]-[name]","matches":N,"total_analyzed":N,"by":"past-features-agent"}
+```
+
+**Cache check:** SE `past-features.md` existe E `metadata.updated` = hoje → usar como cache, skip Phase 1.5.
+
+---
+
 ### Phase 2: Análise Focada
 
 **Objetivo:** Analisar APENAS o que é relevante para a feature.
+
+**EXECUTE como subagente separado [read-write, standard] APÓS Phase 1.5.**
+
+**ANTES de analisar o codebase:**
+```
+1. Ler docs/features/${FEATURE_ID}/past-features.md (gerado pela Phase 1.5)
+2. Usar como contexto:
+   - Arquivos já tocados por features relacionadas → priorizar na busca
+   - Padrões usados → seguir os mesmos
+   - Decisões passadas → não contradizer
+   - Conflitos potenciais → mapear
+3. Incluir seção "Related Features" no discovery.md
+```
 
 ```
 1. Ler about.md → entender requisitos
@@ -253,8 +325,13 @@ cat .codeadd/skills/documentation-style/business.md
 ## Checklist
 
 - [ ] Verificou discovery.md existente?
+- [ ] Verificou past-features.md existente (cache check)?
+- [ ] **Phase 1.5 executada?** Past features analisadas com RECENT_CHANGELOGS?
+- [ ] past-features.md gerado com matches + no-matches + metadata?
 - [ ] Leu about.md para entender requisitos?
+- [ ] Leu past-features.md ANTES de analisar codebase?
 - [ ] Identificou features similares?
+- [ ] **Seção "Related Features" incluída no discovery.md?** (com tabela + `<!-- refs: ... -->`)
 - [ ] Mapeou arquivos a criar/modificar?
 - [ ] **Analisou prerequisites para CADA requisito?** (CRÍTICO)
 - [ ] Prerequisites faltantes estão no escopo da feature?

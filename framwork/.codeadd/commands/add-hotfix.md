@@ -1,7 +1,5 @@
 # Hotfix - Rapid Bug Fix Workflow (Dual Mode)
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 
 ---
@@ -10,6 +8,21 @@
 ```json
 {"gates":["path_decided","template_read","branch_created","docs_read","root_cause_confirmed"],"investigate":{"order":["RECENT_CHANGELOGS","docs/features/*/changelog.md","docs/features/*/about.md","code"]},"patterns":{"if_exists":".codeadd/projects/*-patterns.md","action":"READ before fix"},"modes":{"feature_fix":"fix/F[XXXX]-[name]","standalone":"fix/H[XXXX]-[name]"},"template":".codeadd/templates/hotfix-template.md"}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -212,23 +225,36 @@ Read docs/features/F[XXXX]-*/changelog.md
 Read docs/features/F[XXXX]-*/about.md
 ```
 
-### 5.3 READ Implementation History (iterations.jsonl)
+### 5.3 Discovery via Skill (Past Features Agent)
 
-**Load iterations.jsonl for related features to understand what was implemented and changed:**
+**Dispatch Past Features Discovery Agent** (feature-discovery/SKILL.md Phase 1.5):
 
 ```
-Read docs/features/F[XXXX]-*/iterations.jsonl
+Input: about.md da feature relacionada ao hotfix + RECENT_CHANGELOGS (já disponível do Step 1)
+Skill: .codeadd/skills/feature-discovery/SKILL.md Phase 1.5
+Output: docs/features/${FEATURE_ID}/past-features.md
 ```
 
-**Parse JSONL format:** Each line is `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
+**Prompt do agente:**
+```
+Read .codeadd/skills/feature-discovery/SKILL.md Phase 1.5.
+Feature context: about.md de F[XXXX] (feature relacionada ao bug).
+RECENT_CHANGELOGS: [output do Step 1].
+Execute análise de features passadas para identificar dependências e histórico relevante ao bug.
+Write output to docs/features/${FEATURE_ID}/past-features.md.
+```
 
-**Use to:**
-- Identify which files were created/modified during feature implementation (likely bug location)
-- Understand implementation sequence (recent changes = higher bug probability)
-- Check for pivots in `decisions.jsonl` (pivoted areas = higher risk of regression)
-- Narrow investigation scope: start with files from most recent iterations
+**SE hotfix não tem feature associada (standalone):**
+- Usar keywords do bug description como input no lugar do about.md
+- Output: `docs/hotfixes/past-features-[slug].md` (temporário)
 
-**⛔ ONLY AFTER READING DOCUMENTATION + ITERATIONS you can use Grep/Read on code.**
+**Usar output para:**
+- Identificar quais arquivos foram tocados por features relacionadas (alta probabilidade de ser local do bug)
+- Entender sequência de implementação (mudanças recentes = maior probabilidade de regressão)
+- Verificar pivots em `decisions.jsonl` de features relacionadas (áreas pivotadas = maior risco)
+- Narring de escopo: começar pelos arquivos das iterações mais recentes
+
+**⛔ ONLY AFTER READING DOCUMENTATION + past-features.md you can use Grep/Read on code.**
 
 ---
 
@@ -405,7 +431,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/hotfixes/iterations.jsonl" "fix" "/hotf
 - [ ] STEP 2: BRANCH verified
 - [ ] STEP 3: Path decided (Feature Fix or Standalone) with user confirmation
 - [ ] STEP 4: Template read + branch created + hotfix doc written
-- [ ] STEP 5: Changelogs, about.md, and iterations.jsonl of related features READ
+- [ ] STEP 5: Changelogs, about.md of related features READ + Past Features Agent dispatched (5.3) + past-features.md gerado
 
 ### STEPS 6-7 (INVESTIGATION)
 - [ ] STEP 6: Code investigated (ONLY after STEP 5)

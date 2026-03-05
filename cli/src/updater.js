@@ -3,8 +3,8 @@ import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
-import { getLatestTag, downloadZip } from './github.js';
-import { fixLineEndings, writeManifest } from './installer.js';
+import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
+import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
 
 const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
 
@@ -57,8 +57,9 @@ function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
 /**
  * Main update flow.
  * @param {string} cwd
+ * @param {{version?: string, branch?: string}} [options]
  */
-export async function update(cwd) {
+export async function update(cwd, options = {}) {
   intro('ADD CLI - Update');
 
   const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
@@ -74,21 +75,40 @@ export async function update(cwd) {
   }
 
   const currentVersion = manifest.version ?? 'unknown';
+  const currentSource = manifest.source ?? 'release';
+  const currentRef = manifest.ref ?? null;
   const providerKeys = manifest.providers ?? [];
 
   const s = spinner();
-  s.start('Fetching latest release from GitHub...');
-  const tag = await getLatestTag();
-  const newVersion = tag.replace(/^v/, '');
-  s.stop(`Current: v${currentVersion} -> Latest: ${tag}`);
 
-  if (currentVersion === newVersion) {
-    outro(`Already up to date (v${currentVersion}).`);
-    return;
+  // Determine target source:
+  // - explicit --branch or --version → use that
+  // - no flags + currently on a branch → stay on same branch (re-pull)
+  // - no flags + currently on release/tag → fetch latest release
+  let targetVersion = options.version;
+  let targetBranch = options.branch;
+
+  if (!targetVersion && !targetBranch && currentSource === 'branch' && currentRef) {
+    targetBranch = currentRef;
+  }
+
+  s.start('Resolving update target...');
+  const installSource = await resolveInstallSource(targetVersion, targetBranch, getLatestTag);
+  s.stop(`Source: ${installSource.source} (${installSource.downloadValue})`);
+
+  // For release/tag updates, skip if already on same version
+  if (installSource.source !== 'branch') {
+    const newVersion = installSource.manifestVersion.replace(/^v/, '');
+    if (currentVersion === newVersion) {
+      outro(`Already up to date (v${currentVersion}).`);
+      return;
+    }
   }
 
   s.start('Downloading...');
-  const zipBuffer = await downloadZip(tag);
+  const zipBuffer = installSource.downloadType === 'branch'
+    ? await downloadBranchZip(installSource.downloadValue)
+    : await downloadTagZip(installSource.downloadValue);
   s.stop('Downloaded.');
 
   s.start('Updating...');
@@ -113,8 +133,19 @@ export async function update(cwd) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
-  writeManifest(cwd, tag, providerKeys, allFiles);
+  writeManifest(
+    cwd,
+    installSource.manifestVersion,
+    providerKeys,
+    allFiles,
+    installSource.releaseTag,
+    { source: installSource.source, ref: installSource.ref }
+  );
 
-  log.success(`Updated from v${currentVersion} to v${newVersion}`);
+  const fromLabel = currentSource === 'branch' ? currentRef ?? currentVersion : `v${currentVersion}`;
+  const toLabel = installSource.source === 'branch'
+    ? installSource.ref
+    : installSource.manifestVersion;
+  log.success(`Updated from ${fromLabel} to ${toLabel}`);
   outro('ADD updated successfully!');
 }

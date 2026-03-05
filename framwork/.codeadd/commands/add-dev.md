@@ -1,7 +1,5 @@
 # Development Execution Specialist
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 Coordinator for feature implementation, bug fixes, and epic feature execution. Detects context automatically, coordinates subagents, validates against skill checklists, and ensures 100% compilation.
 
 ---
@@ -11,6 +9,21 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 ```json
 {"gates":["feature_identified","docs_loaded","mode_determined","execution_decided","validator_executed"],"order":["context_mapper","parse_variables","determine_mode","load_docs","load_patterns","scope_detection","execution_decision","implementation","area_validation","integration_verification","log_iteration","completion"],"modes":{"development":"pending tasks in plan.md/about.md","correction":"feature implemented + user describes bug","feature":"epic feature N"},"patterns":{"if_exists":".codeadd/project/*.md","action":"READ before implementation"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -782,17 +795,19 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 
 ### 12.2 Git Tag Checkpoint (PRD0032 — Universal)
 
-**ALWAYS create a git tag after successful implementation:**
+**ALWAYS create a checkpoint tag after successful implementation:**
 
 ```bash
 # Feature simples
-git tag "${FEATURE_ID}-done"
+git tag "checkpoint/${FEATURE_ID}-done"
 
 # Subfeature in epic (HAS_EPIC=true)
-git tag "${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
+git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 ```
 
 **⛔ DO NOT skip tag creation. This enables rollback and progress tracking.**
+
+**NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add-done` during merge.
 
 ### 12.3 Update epic.md (IF HAS_EPIC=true)
 

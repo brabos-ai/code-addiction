@@ -37,6 +37,60 @@ npx codeadd validate
 npx codeadd uninstall
 ```
 
+## How it works
+
+Code Addiction turns complex development into a guided, repeatable flow. Instead of figuring out *how* to build, you just follow the next command. The AI does the heavy lifting — you stay in control.
+
+### The Development Trail
+
+Every feature follows a clear path from idea to delivery. Pick the trail that fits your task:
+
+```
+Step        Command             What happens                        Output
+───────────────────────────────────────────────────────────────────────────────
+0. Explore  /add-brainstorm     Brainstorm ideas (read-only)        Initial concept
+1. Discover /add-feature        AI-guided feature discovery          about.md
+2. Design   /add-design         UX spec, mobile-first               UI/UX specification
+3. Plan     /add-plan           Technical planning + checklist       plan.md
+4. Code     /add-dev            Subagent-driven implementation       Working code
+5. Review   /add-review         Automated code review + validation   Quality gate
+6. Ship     /add-done           Changelog, docs, finalization        Ready to merge
+```
+
+### Choose your flow
+
+Pick the shortest path that fits. Less ceremony, same quality.
+
+```
+COMPLETE  (complex features with UI)
+  brainstorm --> feature --> design --> plan --> dev --> review --> done
+
+STANDARD  (features without complex UI)
+  feature --> plan --> dev --> done
+
+LEAN      (small changes, quick tasks)
+  feature --> dev --> done
+
+AUTONOMOUS  (full AI implementation, no interaction)
+  feature --> autopilot --> done
+
+EXPLORATION  (don't know where to start?)
+  brainstorm --> feature --> ...pick your flow above
+
+EMERGENCY  (critical bug in production)
+  hotfix --> done
+```
+
+> **That's it.** No config files to tweak, no boilerplate to write, no decision fatigue.
+> Type the command, follow the AI, ship the feature. Repeat.
+
+### Why teams get addicted
+
+- **Zero ramp-up** — new devs ship on day one by following the flow
+- **10x fewer decisions** — the framework already made the boring ones for you
+- **Consistent output** — every feature gets discovery, planning, review, and docs automatically
+- **Works with your stack** — NestJS, React, any database, any provider
+
 ## What gets installed
 
 - Core: `.codeadd/`
@@ -51,7 +105,6 @@ npx codeadd uninstall
 
 - `cli/`: installer CLI published as `codeadd`
 - `framwork/`: framework payload copied into target projects by the installer
-- `docs/`: internal product and feature docs
 
 ## Compatibility
 

@@ -1,17 +1,29 @@
 # ADD Init - Project Onboarding
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-> **MODEL:** Use `haiku` model
-
-Collects founder profile and product blueprint in 5-10 minutes, creating initial documentation for personalized communication. Applies product-discovery throughout the entire flow.
+Collects owner profile in 1 minute (3 direct questions) and optionally creates product blueprint.
 
 ---
 
 ## Spec
 
 ```json
-{"gates":["skill_loaded","phase1_complete"],"order":["load_skill","phase1_founder","commit_owner","phase2_product","commit_product","suggest_next"],"creates":["docs/owner.md","docs/product.md"]}
+{"gates":["context_checked","questions_answered","owner_created"],"order":["check_context","ask_3_questions","create_owner","ask_product","optional_product","suggest_next"],"creates":["docs/owner.md","docs/product.md (opt)"]}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -19,58 +31,39 @@ Collects founder profile and product blueprint in 5-10 minutes, creating initial
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Load skill product-discovery      → FIRST
-STEP 2: Check existing docs               → Ask whether to update
-STEP 3: Phase1 - Founder Profile           → 3 questions → docs/owner.md
-STEP 4: Commit owner.md                    → Automatic
-STEP 5: Phase2 - Product Blueprint         → Open question + inference → docs/product.md
-STEP 6: Commit product.md                  → Automatic
-STEP 7: Suggest next step                  → /add-feature
+STEP 1: Check context              → owner.md exists? product.md exists?
+STEP 2: 3 Direct questions         → name, level, language
+STEP 3: Create docs/owner.md       → flat key-value format
+STEP 4: Commit owner.md            → automatic
+STEP 5: Ask about product.md       → optional
+STEP 6: If yes → product flow      → load skill product-discovery
+STEP 7: Onboarding Complete        → suggest /add-feature
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
 ```
-IF SKILL product-discovery NOT LOADED:
+IF CONTEXT NOT CHECKED:
   ⛔ DO NOT USE: Write to docs/owner.md
-  ⛔ DO NOT USE: Write to docs/product.md
-  ⛔ DO NOT: Run questionnaire questions
-  ✅ DO: Load .codeadd/skills/product-discovery/SKILL.md
+  ⛔ DO NOT: Ask questions before checking existing docs
+  ✅ DO: Check docs/owner.md and docs/product.md
 
-IF PHASE1 NOT COMPLETE (docs/owner.md not created):
-  ⛔ DO NOT USE: Write to docs/product.md
-  ⛔ DO NOT: Start Phase2
-  ⛔ DO NOT: Ask about product
-  ✅ DO: Complete Phase1 first
+IF 3 QUESTIONS NOT ANSWERED:
+  ⛔ DO NOT USE: Write to docs/owner.md
+  ⛔ DO NOT: Create owner without complete answers
+  ✅ DO: Collect name, level and language
 
-IF USER HAS NOT VALIDATED INFERENCE:
+IF OWNER NOT CREATED:
   ⛔ DO NOT USE: Write to docs/product.md
-  ⛔ DO NOT: Commit product.md
-  ✅ DO: Present inference and iterate until approval
+  ⛔ DO NOT: Start product flow
+  ✅ DO: Create owner.md first
 ```
 
 ---
 
-## STEP 1: Load Skill (MANDATORY)
+## STEP 1: Check Context
 
-**RUN FIRST:**
-
-```bash
-cat .codeadd/skills/product-discovery/SKILL.md
-```
-
-**Extract from skill:**
-- Phase1_FounderProfile questions
-- Technical level inference rules
-- Phase2_ProductBlueprint structure
-- Market patterns for inference
-- Documentation format
-
----
-
-## STEP 2: Check Existing Docs
-
-### 2.1 Check owner.md
+### 1.1 Check owner.md
 
 ```bash
 cat docs/owner.md 2>/dev/null
@@ -78,321 +71,162 @@ cat docs/owner.md 2>/dev/null
 
 **IF EXISTS:**
 ```markdown
-Found an existing founder profile:
+Found an existing profile:
 - Name: [extract]
 - Level: [extract]
+- Language: [extract]
 
 Do you want to update or keep the current one?
 ```
+- If keep: skip to STEP 5
+- If update: continue to STEP 2
 
-### 2.2 Check product.md
+### 1.2 Check product.md
 
 ```bash
 cat docs/product.md 2>/dev/null
 ```
 
-**IF EXISTS:**
-```markdown
-Found an existing product blueprint:
-- Product: [extract]
-- MVP Features: [extract count]
-
-Do you want to update or keep the current one?
-```
+Store whether it exists (used in STEP 5).
 
 ---
 
-## STEP 3: Phase1 - Founder Profile (2-3 min)
+## STEP 2: 3 Direct Questions
 
-**FOLLOW skill product-discovery Phase1_FounderProfile.**
-
-### 3.1 Ask 3 Questions
-
-**Question 1 - Experience:**
+**Question 1 - Name:**
 ```markdown
-What is your experience with software development?
-
-a) None - I'm a complete beginner
-b) Basic - I understand concepts but don't code
-c) Intermediate - I code or have coded before
-d) Advanced - I'm a professional developer
+What is your name?
 ```
 
-**Question 2 - Explanation Preference:**
+**Question 2 - Technical level:**
 ```markdown
-How do you prefer I explain things?
+What is your technical level?
 
-a) Simplified - no technical terms, everyday analogies
-b) Balanced - technical terms when needed, with explanation
-c) Technical - you can use jargon, I understand the language
+a) Beginner - I'm just starting out
+b) Intermediate - I have some experience
+c) Advanced - I'm a professional developer
 ```
 
-**Question 3 - Role in Project:**
+**Question 3 - Preferred language:**
 ```markdown
-What will be your main role in this project?
+What is your preferred language?
 
-a) Ideator - I have the idea, others will implement
-b) Manager - I will coordinate development
-c) Developer - I will code alongside
-d) Solo - I will do everything myself
+a) Portugues (pt-br)
+b) English (en-us)
+c) Other (specify)
 ```
 
-### 3.2 Infer Technical Level
+**Response mapping:**
 
-**Use skill rules:**
-- `beginner`: Q1=a AND Q3=a,b
-- `basic`: Q1=b AND Q3=a,b
-- `intermediate`: Q1=c AND Q3=a,b
-- `technical`: Q1=d OR Q3=c,d
+| Question | a | b | c |
+|----------|---|---|---|
+| Level | iniciante | intermediario | avancado |
+| Language | pt-br | en-us | [specified] |
 
-### 3.3 Create docs/owner.md
+---
 
-**Load documentation-style:**
-```bash
-cat .codeadd/skills/documentation-style/SKILL.md
+## STEP 3: Create docs/owner.md
+
+**Flat key-value format (MANDATORY):**
+
+```
+Nome: [name]
+Nivel: [iniciante|intermediario|avancado]
+Idioma: [pt-br|en-us|other]
+Data: [YYYY-MM-DD]
+Criado por: /add-init
 ```
 
-**Structure:**
-```markdown
-# Founder Profile
-
-## Identification
-- **Name:** [ask if unknown]
-- **Role:** [Q3]
-
-## Technical Level
-- **Classification:** [inferred]
-- **Base:** [Q1]
-
-## Communication Preferences
-- **Style:** [Q2]
-- **Detail Level:** [simplified|balanced|technical]
-
-## Context
-- **Date:** [YYYY-MM-DD]
-- **Created by:** /add-init
-```
+**⛔ NO markdown headers. NO sections. Pure key-value.**
 
 ---
 
 ## STEP 4: Commit owner.md
 
-**RUN IMMEDIATELY after creating owner.md:**
-
 ```bash
-git add docs/owner.md && git commit -m "docs: create founder profile
+git add docs/owner.md && git commit -m "docs: create owner profile
 
-- Technical level: [level]
-- Communication style: [style]
-- Role: [role]
+- Name: [name]
+- Level: [level]
+- Language: [language]
 
 Created by /add-init"
 ```
 
 ---
 
-## STEP 5: Phase2 - Product Blueprint (5-10 min)
+## STEP 5: Ask About product.md
 
-**FOLLOW skill product-discovery Phase2_ProductBlueprint.**
+**IF product.md ALREADY EXISTS:** Skip to STEP 7.
 
-### 5.1 Open Question
-
+**IF NOT:**
 ```markdown
-Now let's talk about your product.
+Do you want to create a product blueprint? (recommended for new projects)
 
-**What do you want to build?**
-
-(Feel free to describe in detail - the more details, the better the inference)
+a) Yes - let's create it
+b) No - skip
 ```
 
-### 5.2 Assess Depth
-
-| Depth | Criteria | Action |
-|-------|----------|--------|
-| Shallow | < 20 words | Ask 3 follow-up questions |
-| Medium | 20-100 words | Targeted questions |
-| Rich | > 100 words | Go to inference |
-
-**If shallow, ask:**
-1. Who will use it? (target audience)
-2. What problem does it solve?
-3. What differentiates it from competitors?
-
-### 5.3 Infer Using Market Patterns
-
-**Consult skill for patterns:**
-- scheduling → 2 users, calendar
-- ecommerce → 2 users, payments
-- saas-b2b → multi-tenant, 3 users
-- marketplace → 3 users, payments
-- internal-management → 1-2 users
-- courses → 2-3 users, payments
-- delivery → 3 users, geolocation
-
-**Infer EVERYTHING:**
-- Product description
-- Target audience
-- Problem it solves
-- MVP Features (max 6)
-- Cut features (for later)
-- User types
-- Required integrations
-- Roadmap phases
-
-### 5.4 Validate with User
-
-```markdown
-## Blueprint Validation
-
-Based on what you described, I inferred:
-
-**Product:** [1-line description]
-
-**For whom:** [target audience]
-
-**Problem:** [pain point it solves]
-
-**MVP Features:**
-1. [feature 1]
-2. [feature 2]
-3. [feature 3]
-4. [feature 4]
-
-**Cut (for later):**
-- [cut feature 1]
-- [cut feature 2]
-
-**User Types:**
-- [user type 1]: [what they do]
-- [user type 2]: [what they do]
-
-**Integrations:**
-- [integration 1]: [purpose]
-
-**Roadmap:**
-- Phase 1: [core]
-- Phase 2: [essential]
-- Phase 3: [nice-to-have]
+- If yes: go to STEP 6
+- If no: go to STEP 7
 
 ---
 
-Is this correct? Do you want to adjust anything?
-```
+## STEP 6: Product Flow (OPTIONAL)
 
-**⛔ DO NOT PROCEED without user approval.**
-
-### 5.5 Create docs/product.md
-
-**Structure:**
-```markdown
-# Product Blueprint
-
-## What It Is
-[validated description]
-
-## For Whom
-[target audience]
-
-## Problem It Solves
-[main pain point]
-
-## MVP Features
-1. [feature 1]
-2. [feature 2]
-3. [feature 3]
-4. [feature 4]
-
-## Cut Features (Post-MVP)
-- [cut feature 1]
-- [cut feature 2]
-
-## User Types
-| Type | Description | Permissions |
-|------|-------------|------------|
-| [type 1] | [desc] | [permissions] |
-| [type 2] | [desc] | [permissions] |
-
-## Integrations
-| Service | Purpose | Priority |
-|---------|---------|----------|
-| [service] | [purpose] | MVP/Post-MVP |
-
-## Roadmap
-### Phase 1: Core
-- [item 1]
-
-### Phase 2: Essential
-- [item 2]
-
-### Phase 3: Nice-to-have
-- [item 3]
-
----
-
-**Created by:** /add-init
-**Date:** [YYYY-MM-DD]
-```
-
----
-
-## STEP 6: Commit product.md
-
-**RUN IMMEDIATELY after creating product.md:**
+### 6.1 Load Skill
 
 ```bash
-git add docs/product.md && git commit -m "docs: create product blueprint for MVP
+cat .codeadd/skills/product-discovery/SKILL.md
+```
+
+### 6.2 Follow Phase2_ProductBlueprint from Skill
+
+- Open question: "What do you want to build?"
+- Infer based on market patterns
+- Validate with user
+- Create docs/product.md
+- Automatic commit
+
+### 6.3 Commit product.md
+
+```bash
+git add docs/product.md && git commit -m "docs: create product blueprint
 
 - Product: [short name]
 - MVP Features: [count]
-- User Types: [count]
-- Target: [summarized audience]
 
 Created by /add-init"
 ```
 
 ---
 
-## STEP 7: Suggest Next Step
+## STEP 7: Onboarding Complete
 
 ```markdown
 ## Onboarding Complete!
 
 Created:
 - `docs/owner.md` - Your communication profile
+
+[IF product.md created:]
 - `docs/product.md` - Product blueprint
 
-From now on, I will adapt my communication to your level ([level]) and style ([style]).
+From now on, I will adapt my communication to your level ([level]) and language ([language]).
 
 ---
 
 ### Next Step
 
-Now that we have the blueprint, you can:
+**`/add-feature`** → Create your first feature
 
-**`/add-feature`** → Create the first MVP feature
-
-Which feature from the roadmap do you want to start with?
+Which feature do you want to start with?
 ```
 
 ---
 
 ## Rules
 
-ALWAYS:
-- Load skill FIRST before any action
-- Ask 3 questions in Phase1
-- Use open question in Phase2
-- Infer based on market patterns
-- Validate BEFORE documenting
-- Commit automatically after each doc
-- Suggest /add-feature at the end
-- Adapt language to user's level
-
-NEVER:
-- Skip skill loading step
-- Ask more than 3 questions in Phase1
-- Include more than 6 features in MVP
-- Document without user validation
-- Use technical jargon with beginners
-- Forget automatic commits
-- Ask about stack or architecture
+```json
+{"do":["Check existing docs FIRST","Ask exactly 3 questions (name, level, language)","Use flat key-value format for owner.md","Automatic commit after each doc","Ask about product.md (do not force)","Suggest /add-feature at the end","Adapt language to owner's choice"],"dont":["Load skill product-discovery before needed","Force product.md on legacy projects","Ask more than 3 questions for profile","Use markdown headers in owner.md","Infer level (ask directly)","Skip automatic commit"]}
+```

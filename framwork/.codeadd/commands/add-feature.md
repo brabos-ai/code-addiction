@@ -1,6 +1,5 @@
 # Feature Discovery & Documentation
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
 > **REF:** `CLAUDE.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 
@@ -15,6 +14,21 @@ Full feature discovery command BEFORE implementation.
 ```json
 {"gates":["init_executed","templates_loaded"],"order":["init","discovery","questionnaire_stop","complexity_gate","document","validate"],"write_allowed":"docs/features/","skills":{"mandatory":"feature-discovery, documentation-style, feature-specification"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -175,49 +189,60 @@ When this step instructs you to DISPATCH AGENT:
 1. Read the **Capability** required (read-only, read-write, full-access)
 2. Read the **Complexity** hint (light, standard, heavy)
 3. Choose the best available agent/task mechanism in your engine that satisfies the capability
-4. If your engine supports parallel dispatch and mode is `parallel`, dispatch all simultaneously
-5. Verify output exists before proceeding past any WAIT or GATE CHECK
+4. Verify output exists before proceeding past any WAIT or GATE CHECK
 
-**DISPATCH 2 AGENTS IN PARALLEL:**
+**DISPATCH SEQUENTIAL (obrigatório — agente 2 depende do output do agente 1):**
 
-1. **Features Context Agent** [read-only, light]
+1. **Past Features Discovery Agent** [read-only, light]
+   - **Skill:** `feature-discovery/SKILL.md` Phase 1.5
+   - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
    - **Prompt:**
-     Read the RECENT_CHANGELOGS output from feature-status.sh (already available).
-     For each feature that matches the current request (keyword overlap, related domain):
-       - Read `docs/features/{FEAT_ID}/changelog.md`
-       - Read `docs/features/{FEAT_ID}/about.md`
-     Identify: past decisions, patterns used, edge cases encountered, gotchas, technology choices.
-     Return a compact internal summary: "relevant context from previous features"
+     Read `.codeadd/skills/feature-discovery/SKILL.md` Phase 1.5.
+     Input: RECENT_CHANGELOGS (já disponível do Step 1) + about.md da feature atual.
+     Execute a análise de features passadas conforme Phase 1.5:
+     - Extrair keywords do about.md
+     - Para cada feature em RECENT_CHANGELOGS: verificar Quick Ref do changelog.md (fallback: 30 primeiras linhas)
+     - Para matches: ler iterations.jsonl + about.md, classificar relação
+     Write `docs/features/${FEATURE_ID}/past-features.md`.
+
+   **WAIT:** past-features.md deve existir antes de continuar.
 
 2. **Codebase Discovery Agent** [read-write, standard]
+   - **Skill:** `feature-discovery/SKILL.md` Phase 2-4
    - **Output:** Write `docs/features/${FEATURE_ID}/discovery.md`
    - **Prompt:**
-     Read `.codeadd/skills/feature-discovery/SKILL.md` and `.codeadd/skills/documentation-style/SKILL.md`.
+     Read `.codeadd/skills/feature-discovery/SKILL.md` e `.codeadd/skills/documentation-style/SKILL.md`.
+     ANTES de analisar o codebase, ler `docs/features/${FEATURE_ID}/past-features.md`.
+     Usar past-features.md como contexto:
+     - Arquivos já tocados por features relacionadas → priorizar na busca
+     - Padrões usados → seguir os mesmos
+     - Decisões passadas → não contradizer
      Perform deep codebase analysis for the current feature request:
      - Similar/related functionality that can be reused or extended
      - Existing patterns (controllers, services, entities, hooks)
      - Where new feature integrates (modules, routes, stores)
      - Potential conflicts or breaking changes in existing code
      - Missing prerequisites (fields, models, services not yet created)
-     - Similar feature as reference with file paths
+     Incluir seção "Related Features" no discovery.md (tabela + `<!-- refs: ... -->`).
      Write `docs/features/${FEATURE_ID}/discovery.md` using the discovery template.
-
-**WAIT-ALL:** Both agents must complete before proceeding.
 
 ### 2.3 Deep Thinking (coordinator, BEFORE questionnaire)
 
 After both agents complete, coordinator performs deep thinking using their outputs:
 
 **DEEP THINKING CHECKLIST (evaluate ALL):**
-- [ ] Impact on existing features? (from Features Context Agent)
+- [ ] Impact on existing features? (from past-features.md)
 - [ ] Edge cases per functional requirement? (from discovery + request)
 - [ ] Complete error flows? (timeout, conflict, partial failure)
 - [ ] Consistency between requirements in the request?
 - [ ] Missing UX gaps not mentioned by user?
 - [ ] "What if...?" questions — non-obvious scenarios
 - [ ] Implicit assumptions that need validation (auth, permissions, ordering)
-- [ ] Past decisions (from Features Context Agent) that guide current choices
+- [ ] Past decisions (from past-features.md) that guide current choices
 - [ ] Technology/library decisions — anything pre-decided by codebase?
+- [ ] Past features analysis incorporated? (from past-features.md)
+- [ ] Related features mapped with correct relation types?
+- [ ] Past decisions that constrain current choices identified?
 
 → Generate rich, concrete questionnaire based on data, not generic questions.
 
@@ -678,7 +703,10 @@ If `/feature F0018` or `/feature continue`:
    - Only structure? → Complete TodoList
    - about.md filled? → Skip questionnaire
    - discovery.md filled? → Go to validation
-3. **Load iterations.jsonl** (if exists) for implementation context:
+3. **Past Features cache check:**
+   - SE `past-features.md` existe E `discovery.md` tem seção "Related Features" → Skip Phase 1.5, usar cache
+   - SE `past-features.md` não existe → Rodar Phase 1.5 (Past Features Discovery Agent) antes da Phase 2
+4. **Load iterations.jsonl** (if exists) for implementation context:
    - Read `docs/features/${FEATURE_ID}/iterations.jsonl`
    - Parse entries to understand: what was already implemented, which areas were touched, any pivots
    - Use this context to avoid re-work and inform questionnaire/documentation

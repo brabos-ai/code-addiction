@@ -100,4 +100,37 @@ describe('install command e2e', () => {
     expect(manifest.source).toBe('branch');
     expect(manifest.ref).toBe('main');
   });
+
+  it('installs from explicit branch via --branch flag', async () => {
+    mocks.downloadBranchZip.mockResolvedValue(buildInstallZip('code-addiction-feature-xyz'));
+
+    await install(tmpDir, { branch: 'feature-xyz' });
+
+    expect(mocks.getLatestTag).not.toHaveBeenCalled();
+    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('feature-xyz');
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.version).toBe('feature-xyz');
+    expect(manifest.releaseTag).toBeNull();
+    expect(manifest.source).toBe('branch');
+    expect(manifest.ref).toBe('feature-xyz');
+  });
+
+  it('installs from explicit tag via --version flag', async () => {
+    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-2.0.0'));
+
+    await install(tmpDir, { version: 'v2.0.0' });
+
+    expect(mocks.getLatestTag).not.toHaveBeenCalled();
+    expect(mocks.downloadTagZip).toHaveBeenCalledWith('v2.0.0');
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.version).toBe('2.0.0');
+    expect(manifest.releaseTag).toBe('v2.0.0');
+    expect(manifest.source).toBe('tag');
+  });
 });

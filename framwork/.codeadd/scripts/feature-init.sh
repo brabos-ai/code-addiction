@@ -21,12 +21,15 @@ fi
 # =============================================================================
 
 if [ -f "docs/owner.md" ]; then
-    # Extract nivel only (compact)
-    NIVEL=$(grep -i "nivel\|nível" docs/owner.md 2>/dev/null | head -1 | sed 's/.*: *//' || true)
-    [ -z "$NIVEL" ] && NIVEL="INTERMEDIARIO"
-    echo "OWNER:$NIVEL"
+    OWNER_NAME=$(grep -i "^Nome:" docs/owner.md 2>/dev/null | sed 's/^Nome:[[:space:]]*//' | head -1 || true)
+    OWNER_NIVEL=$(grep -i "^Nivel:" docs/owner.md 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || true)
+    OWNER_IDIOMA=$(grep -i "^Idioma:" docs/owner.md 2>/dev/null | sed 's/^Idioma:[[:space:]]*//' | head -1 || true)
+    [ -z "$OWNER_NAME" ] && OWNER_NAME="unknown"
+    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediario"
+    [ -z "$OWNER_IDIOMA" ] && OWNER_IDIOMA="en-us"
+    echo "OWNER:$OWNER_NAME|$OWNER_NIVEL|$OWNER_IDIOMA"
 else
-    echo "OWNER:INTERMEDIARIO (default)"
+    echo "OWNER:unknown|intermediario|en-us (default)"
 fi
 
 # =============================================================================

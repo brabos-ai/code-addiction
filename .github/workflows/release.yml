@@ -14,8 +14,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for CLI changes
+        id: cli_changes
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$PREV_TAG"..HEAD -- cli/ | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in cli/ since $PREV_TAG — skipping publish"
+          fi
+        working-directory: .
 
       - name: Setup Node.js
+        if: steps.cli_changes.outputs.changed == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 20
@@ -24,12 +41,15 @@ jobs:
           cache-dependency-path: cli/package-lock.json
 
       - name: Install dependencies
+        if: steps.cli_changes.outputs.changed == 'true'
         run: npm ci
 
       - name: Run tests
+        if: steps.cli_changes.outputs.changed == 'true'
         run: npm test
 
       - name: Publish to npm
+        if: steps.cli_changes.outputs.changed == 'true'
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

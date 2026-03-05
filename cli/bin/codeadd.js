@@ -34,21 +34,26 @@ const USAGE = `
 Usage: codeadd <command>
 
 Commands:
-  install              Install Code Addiction files into your project
-  install --version X  Install from version (main branch or specific tag)
-  update               Update installed files to latest version
-  uninstall            Remove Code Addiction files from your project
-  doctor               Check environment health (Node, Git, installation)
-  validate             Validate file integrity via SHA-256 hashes
-  validate --repair    Restore missing/modified files from release
-  config show          Display installation configuration
-  config show --verbose  Display config + check for updates
+  install                    Install Code Addiction files into your project
+  install --version <tag>    Install a specific release tag (e.g. v2.0.1)
+  install --branch <name>    Install from a specific branch (e.g. feature-xyz)
+  update                     Update to latest release (or re-pull current branch)
+  update --version <tag>     Update to a specific release tag
+  update --branch <name>     Update to a specific branch
+  uninstall                  Remove Code Addiction files from your project
+  doctor                     Check environment health (Node, Git, installation)
+  validate                   Validate file integrity via SHA-256 hashes
+  validate --repair           Restore missing/modified files from release
+  config show                Display installation configuration
+  config show --verbose       Display config + check for updates
 
 Examples:
   npx codeadd install
-  npx codeadd install --version main
   npx codeadd install --version v2.0.1
+  npx codeadd install --branch feature-xyz
   npx codeadd update
+  npx codeadd update --branch main
+  npx codeadd update --version v2.0.0
   npx codeadd uninstall
   npx codeadd uninstall --force
   npx codeadd doctor
@@ -64,9 +69,12 @@ async function main() {
   try {
     if (subcommand === 'install') {
       const version = getArgValue(args, '--version');
-      await install(cwd, { version });
+      const branch = getArgValue(args, '--branch');
+      await install(cwd, { version, branch });
     } else if (subcommand === 'update') {
-      await update(cwd);
+      const version = getArgValue(args, '--version');
+      const branch = getArgValue(args, '--branch');
+      await update(cwd, { version, branch });
     } else if (subcommand === 'uninstall') {
       const force = args.includes('--force');
       await uninstall(cwd, force);

@@ -1,7 +1,5 @@
 # add-test — Automated Test Generation
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 Analyzes developed code and generates automated tests targeting 80% coverage. Uses parallel subagents per area (Backend, Frontend, Workers) and a dedicated Startup Test subagent. Iterates until coverage target or max 5 iterations.
 
 ---
@@ -16,6 +14,21 @@ Analyzes developed code and generates automated tests targeting 80% coverage. Us
   "patterns": {"if_exists": ".codeadd/project/*.md", "action": "READ for project context"}
 }
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

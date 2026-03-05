@@ -11,18 +11,26 @@ teardown() {
 
 # ─── Owner detection ────────────────────────────────────────────────
 
-@test "detecta owner de docs/owner.md" {
+@test "detecta owner completo de docs/owner.md (nome|nivel|idioma)" {
   mkdir -p docs
-  echo "Nivel: Senior" > docs/owner.md
+  printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
   run "$SCRIPTS_DIR/feature-init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Senior"* ]]
+  [[ "$output" == *"OWNER:Maicon|avancado|pt-br"* ]]
 }
 
-@test "usa INTERMEDIARIO como default quando owner.md não existe" {
+@test "usa defaults quando owner.md nao existe" {
   run "$SCRIPTS_DIR/feature-init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:INTERMEDIARIO"* ]]
+  [[ "$output" == *"OWNER:unknown|intermediario|en-us"* ]]
+}
+
+@test "usa defaults parciais quando owner.md tem campos faltando" {
+  mkdir -p docs
+  printf 'Nome: Ana\n' > docs/owner.md
+  run "$SCRIPTS_DIR/feature-init.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OWNER:Ana|intermediario|en-us"* ]]
 }
 
 # ─── Git info ────────────────────────────────────────────────────────

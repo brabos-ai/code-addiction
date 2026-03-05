@@ -53,8 +53,23 @@
 ### Documentation
 - [links relevantes]
 
-### Related Features
+### Related Features (histórico)
 - F[XXXX]-[name] - [relação]
+
+## Related Features
+
+| Feature | Relation | Key Files | Impact |
+|---------|----------|-----------|--------|
+| F[XXXX]-[name] | extends\|depends\|conflicts\|shares-pattern\|shares-domain | `src/path/` | [ação esperada] |
+
+<!-- refs: F[XXXX] -->
+
+**Tipos de relação:**
+- `extends` — reusar código, seguir padrão
+- `depends` — verificar que dependência existe e está estável
+- `conflicts` — mapear áreas de conflito
+- `shares-pattern` — seguir padrão para consistência
+- `shares-domain` — revisar para não duplicar
 
 ## Summary for Planning
 

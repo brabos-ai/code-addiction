@@ -1,6 +1,5 @@
 # Design UX Specialist for SaaS
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
 > **MODE:** AUTONOMOUS for features (infer->confirm->execute). INVESTIGATIVE only for foundations.
 > **DOCS:** Feature design -> `docs/features/${FEATURE_ID}/design.md`. Foundations only when user requests.
 
@@ -15,6 +14,21 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 ```json
 {"gates":["skill_loaded","inspection_complete","gate_evaluated","flow_complete","design_confirmed"],"order":["load_skills","detect_context","inspect_design_system","complexity_gate","flow_analysis","layout_spec","confirm_design","write_documentation","completion"],"outputs":{"design":"docs/features/${FEATURE_ID}/design.md","temp":["design-context.md","design-flow.md","design-layout.md"]},"mode":{"inline":"<3 screens","subagent":">=3 screens OR complexity keywords"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 

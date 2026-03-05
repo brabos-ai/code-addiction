@@ -1,7 +1,5 @@
 # Technical Planning Orchestrator
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 
 Coordinator for technical planning. Loads context, dispatches specialized subagents (Database, Backend, Frontend), consolidates plan with APPEND + VALIDATE + FILL GAPS, and validates 100% requirements coverage.
@@ -13,6 +11,21 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 ```json
 {"gates":["feature_identified","docs_loaded","scope_determined","coverage_validated"],"order":["load_profile","run_context_mapper","load_recent_context","parse_variables","load_feature_docs","clarification","analyze_scope","execute_subagents","consolidate_plan","validate_requirements","completion"],"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md","temp":["plan-database.md","plan-backend.md","plan-frontend.md"]},"patterns":{"skills":["backend-development","database-development","frontend-development","ux-design"],"action":"READ SKILL.md before subagent dispatch"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -117,37 +130,62 @@ This script provides ALL context needed:
 
 ---
 
-## STEP 3: Load Recent Context (INTELLIGENT)
+## STEP 3: Load Recent Context + Past Features Discovery (INTELLIGENT)
 
 **The script returns RECENT_CHANGELOGS with summaries of the last completed features.**
 
-**Intelligent reading rules:**
+### 3.1 Past Features Cache Check
 
-1. **Analyze RECENT_CHANGELOGS** from script output
-2. **Identify matches** between current feature and summaries:
-   - Keywords in common (e.g.: "logging", "metrics", "auth")
-   - Related domain
-   - Potential dependencies
-3. **IF relevant match found:**
-   - Check if current feature's `discovery.md` already references that feature
-   - IF NOT referenced → Read full changelog: `docs/features/{FEAT_ID}/changelog.md`
-   - IF already referenced → Skip (avoid token redundancy)
-4. **Extract useful context for planning:**
-   - Files that can be reused
-   - Recently established patterns
-   - Relevant technical decisions
-   - Correct terminology for finding similar code
-
-**Example:**
 ```
-Current feature: F0020-api-rate-limiting
-RECENT_CHANGELOGS shows: F0018-api-authentication|Implemented auth system...
+SE docs/features/${FEATURE_ID}/past-features.md existe:
+  → Ler past-features.md (cache)
+  → Verificar se discovery.md tem seção "Related Features"
+  → SE tem: usar como contexto, pular 3.2
+  → SE não tem: pular 3.2 (past-features.md é suficiente)
 
-→ Match: both are about API
-→ discovery.md mentions F0018? NO
-→ Read docs/features/F0018-api-authentication/changelog.md
-→ Extract: middleware pattern, guard files, etc.
+SE past-features.md NÃO existe:
+  → Executar STEP 3.2 (dispatch do Past Features Agent)
 ```
+
+### 3.2 Dispatch Past Features Discovery Agent (SE necessário)
+
+**Dispatch Past Features Discovery Agent** [read-only, light]:
+
+```
+Skill: .codeadd/skills/feature-discovery/SKILL.md Phase 1.5
+Input: about.md da feature atual + RECENT_CHANGELOGS
+Output: docs/features/${FEATURE_ID}/past-features.md
+```
+
+**Prompt do agente:**
+```
+Read .codeadd/skills/feature-discovery/SKILL.md Phase 1.5.
+Feature: ${FEATURE_ID}.
+Input: docs/features/${FEATURE_ID}/about.md + RECENT_CHANGELOGS abaixo.
+[RECENT_CHANGELOGS]
+Execute análise de features passadas e write past-features.md.
+```
+
+**WAIT:** past-features.md deve existir antes de continuar.
+
+### 3.3 Usar Context para Planning
+
+Com past-features.md disponível (cache ou gerado):
+
+1. **Extrair de past-features.md:**
+   - Arquivos que podem ser reutilizados
+   - Padrões recentemente estabelecidos
+   - Decisões técnicas relevantes
+   - Terminologia correta para busca no codebase
+
+2. **Usar no planejamento:**
+   - Ordem de implementação respeitando dependências (`depends`)
+   - Padrões a seguir (features com relação `shares-pattern`)
+   - Conflitos potenciais (features com relação `conflicts`)
+
+**Intelligent fallback (se past-features.md não tem matches relevantes):**
+- Analisar RECENT_CHANGELOGS manualmente para matches por keyword
+- Se match encontrado e discovery.md não referencia → ler changelog completo da feature
 
 **Goal:** Use knowledge from recent deliveries to plan better, avoiding reinventing the wheel.
 

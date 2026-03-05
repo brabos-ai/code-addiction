@@ -1,5 +1,5 @@
 ---
-name: add-ecosystem-map
+name: code-addiction-ecosystem
 description: Visao consolidada do add-pro - commands, skills, relacoes e dependencias. Carregada pelo /add como source of truth.
 ---
 
@@ -11,7 +11,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 | Command | Proposito | Skills que carrega |
 |---------|-----------|-------------------|
-| add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | add-ecosystem-map (source of truth) |
+| add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | code-addiction-ecosystem (source of truth) |
 | add-feature | Discovery de funcionalidade, cria about.md | feature-discovery, feature-specification |
 | add-design | Especificacao UX mobile-first | ux-design |
 | add-plan | Planejamento tecnico, cria plan.md. Detecta Epic vs Feature por fluxos de usuario. Checklist cobertura obrigatorio | planning, plan-based-features |
@@ -68,7 +68,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-dev | add-autopilot (compartilham logica de implementacao) |
 | feature-specification | add-feature, add-plan (le about.md) |
 | subagent-driven-development | add-dev, add-autopilot, add-review |
-| add-ecosystem-map | /add (perde visao do todo) |
+| code-addiction-ecosystem | /add (perde visao do todo) |
 
 ## Main Flows
 

@@ -1,7 +1,5 @@
 # Architecture Analyzer
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Documents in user's language.
-
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates reports.
 
 > **KEY PRINCIPLE**: Classification drives dispatch. SKILL.md contains the intelligence. Coordinator only orchestrates.
@@ -13,6 +11,21 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 ```json
 {"gates":["discovery_script_run","apps_classified","all_analyzers_complete","context_files_updated"],"order":["discovery_script","classify_apps","dispatch_specialists","consolidate_reports","update_claude_md","copy_context_files","report_cleanup"],"specialists":{"backend":"backend-analyzer.md","frontend":"frontend-analyzer.md","database":"database-analyzer.md","code_quality":"code-quality-analyzer.md","generic":"GenericAppTemplate"},"outputs":{".codeadd/project":"APP-*.md|LIB-*.md","docs":"code-quality-review.md","root":"CLAUDE.md|AGENTS.md|GEMINI.md"}}
 ```
+
+---
+
+## OWNER Context
+
+**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+
+| Level | Communication | Detail |
+|-------|--------------|--------|
+| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
+| intermediario | Technical terms with context when needed | Moderate - explain decisions |
+| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
+
+**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
+**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
