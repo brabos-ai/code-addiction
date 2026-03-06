@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { getLatestTag } from './github.js';
+import { getFeatureStates } from './features.js';
 
 /**
  * Read and parse .codeadd/manifest.json.
@@ -65,6 +66,16 @@ export async function config(cwd, verbose = false) {
 
   const hasHashes = manifest.hashes && Object.keys(manifest.hashes).length > 0;
   log.info(`Hash Support:   ${hasHashes ? 'OK enabled' : 'WARN not available (run update to enable)'}`);
+
+  const featureStates = getFeatureStates(cwd);
+  if (featureStates.length > 0) {
+    log.info('');
+    log.info('Features:');
+    for (const f of featureStates) {
+      const status = f.enabled ? 'ON' : 'OFF';
+      log.info(`  ${status}  ${f.name} — ${f.description}`);
+    }
+  }
 
   if (verbose) {
     log.info('');

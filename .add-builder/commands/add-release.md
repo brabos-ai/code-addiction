@@ -338,6 +338,8 @@ Tag:    [NEXT_VERSION]
 From:   [LATEST_TAG or "(first release)"]
 Target: production
 
+[Text summary about changes]
+
 [ASSEMBLED CHANGELOG]
 ```
 

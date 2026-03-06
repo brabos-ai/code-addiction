@@ -27,7 +27,7 @@ vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-  log: { success: vi.fn() },
+  log: { success: vi.fn(), info: vi.fn() },
 }));
 
 import { install } from '../src/installer.js';
