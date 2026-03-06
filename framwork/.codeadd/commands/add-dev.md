@@ -14,7 +14,7 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -42,7 +42,7 @@ If argument contains `--yolo`:
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Run context mapper         → FIRST COMMAND (feature-status.sh)
+STEP 1: Run context mapper         → FIRST COMMAND (status.sh)
 STEP 2: Detect feature flag        → IF "feature N" passed
 STEP 3: Parse key variables        → Extract FEATURE_ID, flags, phase
 STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE
@@ -70,7 +70,7 @@ IF FEATURE N REQUESTED BUT DEPENDENCY NOT MET:
 IF FEATURE NOT IDENTIFIED:
   ⛔ DO NOT USE: Task for subagent dispatch
   ⛔ DO NOT USE: Edit on code files
-  ⛔ DO: Run feature-status.sh and identify feature
+  ⛔ DO: Run status.sh and identify feature
 
 IF DOCS NOT LOADED:
   ⛔ DO NOT USE: Task for implementation subagents
@@ -98,7 +98,7 @@ ALWAYS:
 ## STEP 1: Run Context Mapper (FIRST COMMAND)
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 This script provides ALL context needed:
@@ -187,7 +187,7 @@ This command detects automatically:
 
 ### 4.2 Detection Flow
 
-1. Run feature-status.sh
+1. Run status.sh
 2. Check state (priority order):
    - User described PROBLEM/BUG? → YES + Feature implemented = CORRECTION MODE
    - `HAS_TASKS=true`? → YES = TASKS MODE (execute by tasks.md structure)
@@ -196,7 +196,7 @@ This command detects automatically:
    - about.md exists but no plan.md? → YES = DEVELOPMENT MODE (from about.md)
    - None of the above? → Inform user to run /feature first
 3. **IF plan.md has `## Features` (Legacy Epic) AND user did NOT pass flag:**
-   - Check FEATURES output from feature-status.sh
+   - Check FEATURES output from status.sh
    - IF incomplete features: ask "Feature X complete. Execute feature X+1?"
    - IF all complete: inform all Epic features already implemented
 4. Output detected mode and execute
@@ -249,7 +249,7 @@ cat "docs/design-system.md" 2>/dev/null        # If HAS_FOUNDATIONS=true
 ## STEP 6: Load Project Patterns (IF exist)
 
 ```bash
-# Parse PROJECT_PATHS from feature-status.sh output
+# Parse PROJECT_PATHS from status.sh output
 # Example: PROJECT_PATHS:.codeadd/project/SERVER.md,.codeadd/project/ADMIN.md,.codeadd/project/DATABASE.md
 
 # Read ALL project pattern files listed in PROJECT_PATHS
@@ -391,7 +391,7 @@ You are implementing the ${AREA} for feature ${FEATURE_ID}.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Parse FEATURE_ID from output
 3. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md
@@ -453,7 +453,7 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the l
 **Subagent Prompt MUST include (in this order):**
 ```
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Read feature docs: about.md, discovery.md, design.md, plan.md
 
 ## MANDATORY: Load Development Skill
@@ -476,7 +476,7 @@ When dispatching a frontend subagent, ALWAYS include Self-Bootstrap + skills in 
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Parse FEATURE_ID from output
 3. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md
@@ -622,7 +622,7 @@ prompt: |
   Your job is to validate implemented code against the skill checklist and auto-correct violations.
 
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  1. Run: bash .codeadd/scripts/feature-status.sh
+  1. Run: bash .codeadd/scripts/status.sh
   2. Parse FEATURE_ID from output
   3. Read skill: .codeadd/skills/${AREA}-development/SKILL.md
 

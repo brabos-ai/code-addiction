@@ -19,7 +19,7 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -99,7 +99,7 @@ cat .codeadd/skills/ux-design/SKILL.md
 ### 1.2: Load Feature Context
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 cat "docs/features/${FEATURE_ID}/about.md"
 cat "docs/features/${FEATURE_ID}/discovery.md" 2>/dev/null
 ```

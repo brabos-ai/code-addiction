@@ -18,7 +18,7 @@ Execute complete technical analysis of the project, identifying security, archit
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|

@@ -6,7 +6,7 @@ Lightweight UX loader. Loads ux-design skill, discovers project design patterns,
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -49,7 +49,7 @@ IF PROJECT DESIGN PATTERNS NOT DISCOVERED:
 ## STEP 1: Run Feature Status (CONTEXT)
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 Parse the output to understand project context (branch, feature, recent changes).
@@ -115,7 +115,7 @@ Output a brief summary of what was done and which UX considerations were applied
 ## Rules
 
 ALWAYS:
-- Run feature-status.sh for context before anything
+- Run status.sh for context before anything
 - Load ux-design skill before proposing any changes
 - Discover project design patterns before editing code
 - Reuse existing components instead of recreating them

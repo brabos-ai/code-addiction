@@ -397,7 +397,7 @@ Maintain throughout session:
 - **Context Digest** - Pre-processed for every subagent
 
 **Reference scripts:**
-- `bash .codeadd/scripts/feature-status.sh` - Get feature context
+- `bash .codeadd/scripts/status.sh` - Get feature context
 - `bash .codeadd/scripts/architecture-discover.sh` - Codebase structure overview
 
 **Skills to compose:**

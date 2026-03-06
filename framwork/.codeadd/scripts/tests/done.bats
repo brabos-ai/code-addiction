@@ -62,27 +62,53 @@ teardown() {
   [[ "$output" == *"detached"* ]]
 }
 
-@test "context mode: falha em branch unknown" {
+@test "context mode: falha em branch sem ID" {
   git checkout -b random-branch -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 1 ]
   [[ "$output" == *"STATUS=ERROR"* ]]
-  [[ "$output" == *"Unsupported branch type"* ]]
+  [[ "$output" == *"No feature/hotfix ID found"* ]]
+}
+
+# ─── Generic branch prefixes (PRD0006) ───────────────────────────────
+
+@test "context mode: refactor/F0002-cleanup detectado como feature" {
+  git checkout -b refactor/F0002-cleanup -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=F0002"* ]]
+}
+
+@test "context mode: chore/F0003-deps detectado como feature" {
+  git checkout -b chore/F0003-deps -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=F0003"* ]]
+}
+
+@test "context mode: docs/F0004-readme detectado como feature" {
+  git checkout -b docs/F0004-readme -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=F0004"* ]]
 }
 
 # ─── Merge mode guards ──────────────────────────────────────────────
 
-@test "merge mode: falha quando já está em main" {
+@test "merge mode: falha quando já está em main (no F/H ID)" {
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Already on main"* ]]
+  [[ "$output" == *"STATUS=ERROR"* ]]
 }
 
-@test "merge mode: falha em branch unknown" {
+@test "merge mode: falha em branch sem ID" {
   git checkout -b random-branch -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Unsupported branch type"* ]]
+  [[ "$output" == *"No feature/hotfix ID found"* ]]
 }
 
 # ─── Context mode: edge cases ────────────────────────────────────────

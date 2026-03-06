@@ -16,7 +16,7 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -106,7 +106,7 @@ cat docs/owner.md
 ## STEP 2: Run Context Mapper (FIRST COMMAND)
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 This script provides ALL context needed:
@@ -361,7 +361,7 @@ You are the DATABASE SPECIALIST planning for feature ${FEATURE_ID}.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Parse FEATURE_ID from output
 3. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md
@@ -412,7 +412,7 @@ You are the BACKEND SPECIALIST planning for feature ${FEATURE_ID}.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Parse FEATURE_ID from output
 3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
 4. Read feature docs IN ORDER:
@@ -494,7 +494,7 @@ You are the FRONTEND SPECIALIST planning for feature ${FEATURE_ID}.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Parse FEATURE_ID from output
 3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
 4. Read feature docs IN ORDER:
@@ -558,7 +558,7 @@ READ: .codeadd/skills/test-specification/SKILL.md — follow ALL rules.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/feature-status.sh
+1. Run: bash .codeadd/scripts/status.sh
 2. Parse FEATURE_ID from output
 3. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md (PRIMARY — RFs, RNs, RNFs)
@@ -1009,6 +1009,6 @@ Reference: `[search codebase for similar controller]`
 |-------|--------|
 | about.md not found | STOP - inform user, cannot plan without scope |
 | discovery.md not found | STOP - inform user, cannot plan without requirements |
-| feature-status.sh fails | STOP - show error, check .add setup |
+| status.sh fails | STOP - show error, check .add setup |
 | Subagent fails to write output | Re-dispatch subagent once, then plan manually |
 | >5 features in Epic | Split into multiple Epics, inform user |

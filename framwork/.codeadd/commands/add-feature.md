@@ -19,7 +19,7 @@ Full feature discovery command BEFORE implementation.
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -67,7 +67,7 @@ READ-ONLY FOR CODE:
 ALLOWED:
   ✅ MAY CREATE: docs/features/F[XXXX]-[name]/*.md
   ✅ MAY CREATE: docs/features/F[XXXX]-[name]/subfeatures/*/*.md
-  ✅ MAY RUN: bash .codeadd/scripts/feature-init.sh (Step 1 only)
+  ✅ MAY RUN: bash .codeadd/scripts/init.sh (Step 1 only)
   ✅ MAY RUN: git checkout -b (Step 1 only)
 
 IF USER PROVIDES CODE/SPECS IN ARGUMENTS:
@@ -138,7 +138,7 @@ All marked with `[STOP]`:
 ### 1. Run Init + Create Structure (TEMPLATES MANDATORY)
 
 ```bash
-bash .codeadd/scripts/feature-init.sh
+bash .codeadd/scripts/init.sh
 ```
 
 **Parse RECENT_CHANGELOGS from output** - latest completed features with summaries.

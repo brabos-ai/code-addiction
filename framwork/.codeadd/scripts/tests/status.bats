@@ -12,28 +12,28 @@ teardown() {
 # ─── Branch detection ───────────────────────────────────────────────
 
 @test "output BRANCH com tipo main" {
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"BRANCH:main TYPE:main MAIN:main"* ]]
 }
 
 @test "detecta branch feature" {
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:feature"* ]]
 }
 
 @test "detecta branch fix" {
   git checkout -b fix/F0001-bugfix -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:fix"* ]]
 }
 
 @test "detecta branch docs" {
   git checkout -b docs/readme -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:docs"* ]]
 }
@@ -43,7 +43,7 @@ teardown() {
 @test "phase=created quando feature dir existe mas está vazio" {
   mkdir -p docs/features/F0001-test
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:created"* ]]
 }
@@ -52,7 +52,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   echo "# Feature F0001" > docs/features/F0001-test/about.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:documented"* ]]
 }
@@ -61,7 +61,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   echo "# Plan" > docs/features/F0001-test/plan.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:planned"* ]]
 }
@@ -70,7 +70,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   echo "# Changelog" > docs/features/F0001-test/changelog.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:done"* ]]
 }
@@ -82,7 +82,7 @@ teardown() {
   echo "a" > docs/features/F0001-test/about.md
   echo "p" > docs/features/F0001-test/plan.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"DOCS:about.md,plan.md"* ]]
 }
@@ -92,7 +92,7 @@ teardown() {
 @test "detecta owner completo (nome|nivel|idioma)" {
   mkdir -p docs
   printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"OWNER:Maicon|avancado|pt-br"* ]]
 }
@@ -100,7 +100,7 @@ teardown() {
 @test "owner usa defaults para campos faltando" {
   mkdir -p docs
   printf 'Nome: Ana\n' > docs/owner.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"OWNER:Ana|intermediario|en-us"* ]]
 }
@@ -108,7 +108,7 @@ teardown() {
 # ─── Recommendations ────────────────────────────────────────────────
 
 @test "recomenda /feature quando em main" {
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"REC:/feature to start"* ]]
 }
@@ -117,7 +117,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   echo "# Plan" > docs/features/F0001-test/plan.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"REC:/add-dev to implement"* ]]
 }
@@ -126,7 +126,7 @@ teardown() {
 
 @test "mostra GIT status quando há arquivos modificados" {
   echo "new file" > test.txt
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"GIT:"* ]]
 }
@@ -135,7 +135,7 @@ teardown() {
 
 @test "reporta feature dir not found quando docs não existem" {
   git checkout -b feature/F9999-missing -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"FEATURE:F9999-missing PHASE:none"* ]]
   [[ "$output" == *"not found"* ]]
@@ -144,7 +144,7 @@ teardown() {
 # ─── Exit clean ─────────────────────────────────────────────────────
 
 @test "exit 0 sempre" {
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
 }
 
@@ -154,7 +154,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   echo "# Design" > docs/features/F0001-test/design.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:designed"* ]]
 }
@@ -163,7 +163,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   echo "# Discovery - work in progress" > docs/features/F0001-test/discovery.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:discovering"* ]]
 }
@@ -172,7 +172,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   printf '# Discovery\n\n## Summary for Planning\n{"key":"value"}\n' > docs/features/F0001-test/discovery.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PHASE:discovered"* ]]
 }
@@ -185,7 +185,7 @@ teardown() {
   printf '{"ts":"2026-01-01","type":"fix","slug":"btn","what":"fix button"}\n' >> docs/features/F0001-test/iterations.jsonl
   printf '{"ts":"2026-01-02","type":"add","slug":"form","what":"add form"}\n' >> docs/features/F0001-test/iterations.jsonl
   printf '{"ts":"2026-01-03","type":"enhance","slug":"modal","what":"improve modal"}\n' >> docs/features/F0001-test/iterations.jsonl
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"ITERATIONS:3"* ]]
   [[ "$output" == *"LAST_ITERS:"* ]]
@@ -199,7 +199,7 @@ teardown() {
   git checkout -b feature/F0001-test -q
   printf '# Plan\n\n## Epic: auth-system\n\n### Feature 1: Login\n### Feature 2: Signup\n### Feature 3: Logout\n' \
     > docs/features/F0001-test/plan.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"EPIC:auth-system"* ]]
   [[ "$output" == *"FEATURES:0/3"* ]]
@@ -214,7 +214,7 @@ teardown() {
   # Marca as features como completas via iterations.jsonl
   printf '{"ts":"2026-01-01","type":"add","slug":"feature-1-complete","what":"done"}\n' >> docs/features/F0001-test/iterations.jsonl
   printf '{"ts":"2026-01-02","type":"add","slug":"feature-2-complete","what":"done"}\n' >> docs/features/F0001-test/iterations.jsonl
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"STATUS:all_complete"* ]]
 }
@@ -226,7 +226,7 @@ teardown() {
   git checkout -b feature/F0001-test -q
   printf '| SF01 | Login | done |\n| SF02 | Signup | in_progress |\n| SF03 | Logout | pending |\n' \
     > docs/features/F0001-test/epic.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"HAS_EPIC:true"* ]]
   [[ "$output" == *"EPIC_PROGRESS:"* ]]
@@ -240,7 +240,7 @@ teardown() {
   git checkout -b feature/F0001-test -q
   printf '| 1.1 | Task one | ✅ |\n| 1.2 | Task two | ✅ |\n| 1.3 | Task three | pending |\n' \
     > docs/features/F0001-test/tasks.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"HAS_TASKS:true"* ]]
   [[ "$output" == *"TASKS_PROGRESS:2/3"* ]]
@@ -253,7 +253,7 @@ teardown() {
   git checkout -b feature/F0001-test -q
   printf '# About F0001\n\n## Summary\n{"purpose":"test feature","scope":"minimal"}\n' \
     > docs/features/F0001-test/about.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"ABOUT_SUMMARY:"* ]]
 }
@@ -268,7 +268,7 @@ teardown() {
   mkdir -p docs/features/F0002-signup
   printf '# F0002 Signup\n\n## Summary\nUser registration flow\n' \
     > docs/features/F0002-signup/changelog.md
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"RECENT_CHANGELOGS:"* ]]
   [[ "$output" == *"F0001-login"* ]]
@@ -280,7 +280,7 @@ teardown() {
   mkdir -p docs/features/F0001-test
   git checkout -b feature/F0001-test -q
   git tag "checkpoint/F0001-test-v1-done"
-  run "$SCRIPTS_DIR/feature-status.sh"
+  run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"LAST_CHECKPOINT:checkpoint/F0001-test-v1-done"* ]]
 }

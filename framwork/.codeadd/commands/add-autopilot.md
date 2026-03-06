@@ -18,7 +18,7 @@ You are the **Autopilot Coordinator** - a master orchestrator that coordinates s
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -35,7 +35,7 @@ You are the **Autopilot Coordinator** - a master orchestrator that coordinates s
 
 **STEPS IN ORDER:**
 ```
-STEP 1: feature-status.sh       → RUN FIRST
+STEP 1: status.sh       → RUN FIRST
 STEP 2: Load Recent Context     → INTELLIGENT context loading
 STEP 3: Validate Prerequisites  → about.md + discovery.md MUST exist
 STEP 4: Determine Execution Mode → Epic vs Simple
@@ -171,7 +171,7 @@ Task({
    - Development subagents: `.codeadd/commands/add-dev.md`
    - Review subagent: `.codeadd/commands/add-review.md`
    Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
-2. Run: bash .codeadd/scripts/feature-status.sh
+2. Run: bash .codeadd/scripts/status.sh
 3. Parse FEATURE_ID from output
 4. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md
@@ -189,7 +189,7 @@ Task({
 ## STEP 1: Run Context Mapper (RUN FIRST)
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 **Parse the output to get:**
@@ -271,7 +271,7 @@ Current feature: F0020-audit-trail
 
 ### 4.1: Determine Mode (Epic vs Simple)
 
-**IF `HAS_EPIC=true` (epic.md detected by feature-status.sh — PRD0032 structure):**
+**IF `HAS_EPIC=true` (epic.md detected by status.sh — PRD0032 structure):**
 
 ```markdown
 ## Execution Mode: EPIC (PRD0032)
@@ -374,7 +374,7 @@ prompt: |
   1. Read `.codeadd/commands/add-plan.md` — this is your PRIMARY reference.
      Follow its step structure, skill loading, consolidation rules, and output format.
      Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
-  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs as specified in add-plan.md
 
   ## DECISION LOG (from coordinator)
@@ -443,7 +443,7 @@ prompt: |
   ## MANDATORY: Load Command & Context (FIRST STEP)
   1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
      Your scope is LIMITED to DATABASE area only.
-  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
@@ -493,7 +493,7 @@ prompt: |
   ## MANDATORY: Load Command & Context (FIRST STEP)
   1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
      Your scope is LIMITED to BACKEND area only.
-  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
@@ -544,7 +544,7 @@ prompt: |
   ## MANDATORY: Load Command & Context (FIRST STEP)
   1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
      Your scope is LIMITED to FRONTEND area only.
-  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
@@ -621,7 +621,7 @@ prompt: |
   Your job is to validate implemented code against the skill checklist and auto-correct violations.
 
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  1. Run: bash .codeadd/scripts/feature-status.sh
+  1. Run: bash .codeadd/scripts/status.sh
   2. Parse FEATURE_ID from output
   3. Read skill: .codeadd/skills/${AREA}-development/SKILL.md
 
@@ -795,7 +795,7 @@ prompt: |
   1. Read `.codeadd/commands/add-review.md` — this is your PRIMARY reference.
      Follow its step structure, skill loading, validation patterns, and output format.
      Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
-  2. Run: `bash .codeadd/scripts/feature-status.sh`
+  2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs as specified in add-review.md
   4. ALSO read: `docs/features/${FEATURE_ID}/decisions.jsonl` (PRD0031 — areas with multiple pivots need extra review attention)
 
@@ -1069,7 +1069,7 @@ When creating subagent prompts, always include:
 ## MANDATORY: Load Command & Context (FIRST STEP)
 1. Read the relevant `.codeadd/commands/add-*.md` as REFERENCE (add-plan, add-dev, or add-review).
    Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
-2. Run: bash .codeadd/scripts/feature-status.sh
+2. Run: bash .codeadd/scripts/status.sh
 3. Read feature docs as specified in the command reference
 4. Read your area's skill file
 
@@ -1094,7 +1094,7 @@ When creating subagent prompts, always include:
 ## Rules
 
 ALWAYS:
-- Run feature-status.sh first before any action
+- Run status.sh first before any action
 - Validate prerequisites before dispatching subagents
 - Initialize Decision Log and propagate to all subagents
 - Include Self-Bootstrap block in every subagent prompt

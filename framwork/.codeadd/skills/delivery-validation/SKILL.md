@@ -39,7 +39,7 @@ Skill para validação de PRODUTO - verifica se requisitos foram 100% implementa
 
 ```bash
 # Identificar feature atual
-FEATURE_ID=$(bash .codeadd/scripts/feature-status.sh)
+FEATURE_ID=$(bash .codeadd/scripts/status.sh)
 
 # Carregar especificação
 cat docs/features/${FEATURE_ID}/about.md

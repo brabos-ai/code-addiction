@@ -16,7 +16,7 @@ Coordinator for feature code review. Dispatches specialized reviewers (Frontend 
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -45,7 +45,7 @@ If argument contains `--yolo`:
 **STEPS IN ORDER:**
 ```
 STEP 1: Pre-Review Setup        → CHECK unstaged, ASK user
-STEP 2: Bootstrap Context       → feature-status.sh, load docs, load CLAUDE.md, read changed files
+STEP 2: Bootstrap Context       → status.sh, load docs, load CLAUDE.md, read changed files
 STEP 3: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
 STEP 4: Dispatch Reviewers      → PARALLEL (Frontend + Backend via Task)
 STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
@@ -145,7 +145,7 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 ### 2.1 Detect Current Feature
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 **Parse the output to get:**
@@ -197,7 +197,7 @@ cat CLAUDE.md
 
 ### 2.4 Read ALL Changed Files
 
-From `feature-status.sh` output, read ALL files in `FILES_TO_REVIEW`.
+From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
 
 **IMPORTANT:** Review must cover ALL changed files (committed, staged, unstaged, untracked).
 
@@ -326,7 +326,7 @@ prompt: |
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
   Execute BEFORE any validation:
 
-  1. Run: bash .codeadd/scripts/feature-status.sh
+  1. Run: bash .codeadd/scripts/status.sh
   2. Parse FEATURE_ID from output
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md
@@ -451,7 +451,7 @@ prompt: |
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
   Execute BEFORE any validation:
 
-  1. Run: bash .codeadd/scripts/feature-status.sh
+  1. Run: bash .codeadd/scripts/status.sh
   2. Parse FEATURE_ID from output
   3. Read feature docs IN ORDER:
      - docs/features/${FEATURE_ID}/about.md (EXTRACT: RF, RN, Acceptance Criteria)

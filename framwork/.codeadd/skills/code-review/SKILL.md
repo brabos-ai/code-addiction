@@ -226,7 +226,7 @@ O agente de code-review DEVE criar todos para cada categoria de validação e pa
 ## Process
 
 ### Phase 1: Load Context & Create Todos
-1. `bash .codeadd/scripts/feature-status.sh`
+1. `bash .codeadd/scripts/status.sh`
 2. Read reference skills (backend, database, frontend, security)
 3. Read CLAUDE.md
 4. Identify ALL changed files
@@ -355,7 +355,7 @@ Create `docs/features/${featureId}/review.md`
 - Marcar todo como in_progress antes de começar validação
 - Marcar todo como completed após finalizar validação
 - Load skills BEFORE review
-- Run feature-status.sh FIRST
+- Run status.sh FIRST
 - Auto-fix in autopilot
 - Verify build
 - Document before/after

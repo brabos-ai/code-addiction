@@ -56,31 +56,34 @@ if [ -z "$MAIN_BRANCH" ]; then
     exit 1
 fi
 
-# Branch type detection
-case "$CURRENT_BRANCH" in
-    feature/F[0-9][0-9][0-9][0-9]-*) BRANCH_TYPE="feature" ;;
-    fix/F[0-9][0-9][0-9][0-9]-*)     BRANCH_TYPE="hotfix_feature" ;;
-    fix/H[0-9][0-9][0-9][0-9]-*)     BRANCH_TYPE="hotfix_standalone" ;;
-    *)                                 BRANCH_TYPE="unknown" ;;
-esac
+# Branch type, feature ID and commit type detection via get-branch-metadata.sh
+if [ ! -f "$SCRIPT_DIR/get-branch-metadata.sh" ]; then
+    echo "STATUS=ERROR"
+    echo "ERROR=Dependency not found: $SCRIPT_DIR/get-branch-metadata.sh"
+    exit 1
+fi
+if [ ! -x "$SCRIPT_DIR/get-branch-metadata.sh" ]; then
+    chmod +x "$SCRIPT_DIR/get-branch-metadata.sh"
+fi
 
-# Extract feature/hotfix number
-case "$BRANCH_TYPE" in
-    feature|hotfix_feature)   FEATURE_NUMBER=$(echo "$CURRENT_BRANCH" | grep -oE 'F[0-9]{4}') ;;
-    hotfix_standalone)        FEATURE_NUMBER=$(echo "$CURRENT_BRANCH" | grep -oE 'H[0-9]{4}') ;;
-    *)                        FEATURE_NUMBER="" ;;
-esac
+METADATA_OUTPUT=$("$SCRIPT_DIR/get-branch-metadata.sh" "$CURRENT_BRANCH" 2>&1) || {
+    echo "$METADATA_OUTPUT"
+    exit 1
+}
 
-# [FIX-5] FEATURE_NUMBER vazia para branch do tipo unknown tornava a mensagem
-# do commit inválida (ex: "feat(): ..."). Garante fallback para string segura.
-FEATURE_NUMBER="${FEATURE_NUMBER:-UNKNOWN}"
+eval "$METADATA_OUTPUT"
 
-# Commit type for git
-case "$BRANCH_TYPE" in
-    feature)                          COMMIT_TYPE="feat" ;;
-    hotfix_feature|hotfix_standalone) COMMIT_TYPE="fix" ;;
-    *)                                COMMIT_TYPE="chore" ;;
-esac
+# done.sh requires a feature/hotfix ID to proceed
+if [ -z "$FEATURE_ID" ]; then
+    echo "STATUS=ERROR"
+    echo "ERROR=No feature/hotfix ID found in branch: $CURRENT_BRANCH"
+    echo "HINT=Branch must contain /F[XXXX]-* or /H[XXXX]-* (e.g. feature/F0001-name, refactor/F0002-cleanup)"
+    exit 1
+fi
+
+FEATURE_NUMBER="$FEATURE_ID"
+BRANCH_TYPE="$BRANCH_TYPE"
+COMMIT_TYPE="$COMMIT_TYPE"
 
 # ============================================
 # CONTEXT MODE (default)

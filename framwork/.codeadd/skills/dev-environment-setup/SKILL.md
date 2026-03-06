@@ -16,7 +16,7 @@ Detect OS → diagnose silently → confirm → install → configure VS Code.
 
 - User asks about environment setup or "how do I run the scripts"
 - `bash`, `git`, `jq`, or `gh` not found
-- `feature-status.sh` fails due to missing tool
+- `status.sh` fails due to missing tool
 - VS Code terminal opens PowerShell/Git Bash instead of WSL
 
 ## When NOT to Use

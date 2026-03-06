@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =============================================================================
-# Feature Status (v3 - Token Optimized)
+# Status (v4 - Centralized Metadata)
 # Output compacto para agentes de desenvolvimento
 # =============================================================================
 
@@ -25,16 +25,8 @@ if ! git rev-parse --git-dir &>/dev/null; then
 fi
 
 # =============================================================================
-# DETECTION
+# DETECTION (delegated to get-branch-metadata.sh)
 # =============================================================================
-
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
-
-# P2 - FIX: usar string vazia como sentinela em vez de "unknown" para evitar
-#            colisoes com nomes de branch reais; normalizar verificacoes abaixo
-if [ -z "$CURRENT_BRANCH" ]; then
-    CURRENT_BRANCH="(detached)"
-fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -49,18 +41,20 @@ if [ ! -x "$SCRIPT_DIR/get-main-branch.sh" ]; then
 fi
 MAIN_BRANCH=$("$SCRIPT_DIR/get-main-branch.sh")
 
-# Branch type
-BRANCH_TYPE="other"
-[[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]] && BRANCH_TYPE="main"
-[[ "$CURRENT_BRANCH" == feature/* ]] && BRANCH_TYPE="feature"
-[[ "$CURRENT_BRANCH" == fix/* ]] && BRANCH_TYPE="fix"
-[[ "$CURRENT_BRANCH" == refactor/* ]] && BRANCH_TYPE="refactor"
-[[ "$CURRENT_BRANCH" == hotfix/* ]] && BRANCH_TYPE="hotfix"
-[[ "$CURRENT_BRANCH" == docs/* ]] && BRANCH_TYPE="docs"
+# Branch metadata detection via get-branch-metadata.sh
+if [ ! -f "$SCRIPT_DIR/get-branch-metadata.sh" ]; then
+    echo "ERROR:get-branch-metadata.sh not found at $SCRIPT_DIR/get-branch-metadata.sh" >&2
+    exit 1
+fi
+if [ ! -x "$SCRIPT_DIR/get-branch-metadata.sh" ]; then
+    echo "ERROR:get-branch-metadata.sh is not executable" >&2
+    exit 1
+fi
 
-# Feature ID from branch
-FEATURE_ID=$(echo "$CURRENT_BRANCH" | sed -n 's|.*/\(F[0-9]\{4\}-[^/]*\)$|\1|p')
-FEATURE_DIR="docs/features/${FEATURE_ID}"
+eval "$("$SCRIPT_DIR/get-branch-metadata.sh")"
+CURRENT_BRANCH="$BRANCH_NAME"
+FEATURE_ID="$FEATURE_SLUG"
+FEATURE_DIR="${DOCS_DIR:-docs/features/${FEATURE_ID}}"
 
 # P10 - FIX: inicializar BEHIND e AHEAD no escopo global para evitar "unbound variable"
 #             quando o bloco GIT STATUS nao e executado

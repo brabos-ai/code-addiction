@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =============================================================================
-# feature-init.sh (v2 - Token Optimized)
-# Feature Discovery Initialization - compact output for agents
+# init.sh (v3 - Centralized Metadata)
+# Project Initialization - compact output for agents
 # =============================================================================
 
 set -euo pipefail
@@ -33,14 +33,8 @@ else
 fi
 
 # =============================================================================
-# GIT
+# GIT (detection delegated to get-branch-metadata.sh)
 # =============================================================================
-
-CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || true)
-# git branch --show-current returns empty string (exit 0) in detached HEAD
-if [ -z "$CURRENT_BRANCH" ]; then
-    CURRENT_BRANCH="detached-HEAD"
-fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -56,60 +50,72 @@ fi
 
 MAIN_BRANCH=$("$SCRIPT_DIR/get-main-branch.sh")
 
-# Branch type
-BRANCH_TYPE="other"
-[[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]] && BRANCH_TYPE="main"
-[[ "$CURRENT_BRANCH" == feature/* ]] && BRANCH_TYPE="feature"
-[[ "$CURRENT_BRANCH" == fix/* ]] && BRANCH_TYPE="fix"
-[[ "$CURRENT_BRANCH" == refactor/* ]] && BRANCH_TYPE="refactor"
-[[ "$CURRENT_BRANCH" == hotfix/* ]] && BRANCH_TYPE="hotfix"
+# Branch metadata detection via get-branch-metadata.sh
+if [ ! -f "$SCRIPT_DIR/get-branch-metadata.sh" ]; then
+    echo "ERROR: get-branch-metadata.sh not found at $SCRIPT_DIR/get-branch-metadata.sh" >&2
+    exit 1
+fi
+if [ ! -x "$SCRIPT_DIR/get-branch-metadata.sh" ]; then
+    echo "ERROR: get-branch-metadata.sh is not executable" >&2
+    exit 1
+fi
+
+eval "$("$SCRIPT_DIR/get-branch-metadata.sh")"
+CURRENT_BRANCH="$BRANCH_NAME"
 
 UNCOMMITTED=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' \r\n')
 
 echo "GIT:branch=$CURRENT_BRANCH type=$BRANCH_TYPE main=$MAIN_BRANCH uncommitted=$UNCOMMITTED"
 
 # =============================================================================
-# FEATURES
+# FEATURES (NEW: Global sequential IDs with flat structure)
 # =============================================================================
 
-FEATURES_DIR="docs/features"
+DOCS_DIR="docs"
 
-if [ -d "$FEATURES_DIR" ]; then
-    FEATURE_LIST=$(ls -1 "$FEATURES_DIR" 2>/dev/null | grep -E '^F[0-9]{4}-' | sort || true)
-
-    if [ -z "$FEATURE_LIST" ]; then
-        FEATURE_COUNT=0
-    else
-        FEATURE_COUNT=$(echo "$FEATURE_LIST" | grep -c . || true)
-    fi
-
-    LAST_FEATURE=$(echo "$FEATURE_LIST" | sort -r | head -1 || true)
-    if [ -z "$LAST_FEATURE" ]; then
-        NEXT_NUM="F0001"
-    else
-        LAST_NUM=$(echo "$LAST_FEATURE" | grep -oE '[0-9]{4}' | head -1 || true)
-        if [ -z "$LAST_NUM" ]; then
-            echo "ERROR: Could not extract numeric ID from last feature dir: $LAST_FEATURE" >&2
-            exit 1
-        fi
-        NEXT_NUM="F$(printf "%04d" $((10#$LAST_NUM + 1)))"
-    fi
-
-    echo "FEATURES:count=$FEATURE_COUNT next=$NEXT_NUM"
-else
-    mkdir -p "$FEATURES_DIR"
-    echo "FEATURES:count=0 next=F0001 (created)"
+if [ ! -d "$DOCS_DIR" ]; then
+    mkdir -p "$DOCS_DIR"
 fi
 
+# Count all work items (new format: [NNNN][L]-*)
+FEATURE_LIST=$(find "$DOCS_DIR" -maxdepth 1 -type d -regex "$DOCS_DIR/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
+    basename -a | sort || true)
+
+if [ -z "$FEATURE_LIST" ]; then
+    FEATURE_COUNT=0
+else
+    FEATURE_COUNT=$(echo "$FEATURE_LIST" | grep -c . || true)
+fi
+
+# Calculate next feature ID using next-id.sh script
+if ! command -v bash &>/dev/null; then
+    echo "ERROR: bash is required for next-id.sh" >&2
+    exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ ! -f "$SCRIPT_DIR/next-id.sh" ]; then
+    echo "ERROR: next-id.sh not found at $SCRIPT_DIR/next-id.sh" >&2
+    exit 1
+fi
+
+NEXT_FEATURE=$(bash "$SCRIPT_DIR/next-id.sh" "F" 2>/dev/null || echo "F0001")
+
+echo "FEATURES:count=$FEATURE_COUNT next=$NEXT_FEATURE"
+
 # Current feature (if on feature branch)
-FEATURE_ID=$(echo "$CURRENT_BRANCH" | sed -n 's|.*/\(F[0-9]\{4\}-[^/]*\)$|\1|p')
+FEATURE_ID="$FEATURE_SLUG"
 if [ -n "$FEATURE_ID" ]; then
     DOCS=""
-    [ -f "$FEATURES_DIR/$FEATURE_ID/about.md" ]     && DOCS="${DOCS}about.md,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/discovery.md" ] && DOCS="${DOCS}discovery.md,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/design.md" ]    && DOCS="${DOCS}design.md,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/plan.md" ]      && DOCS="${DOCS}plan.md,"
-    [ -f "$FEATURES_DIR/$FEATURE_ID/changelog.md" ] && DOCS="${DOCS}changelog.md,"
+    # New flat structure: docs/[NNNN][L]-[slug]/
+    WORK_DIR="$DOCS_DIR/$FEATURE_ID"
+    [ -f "$WORK_DIR/about.md" ]     && DOCS="${DOCS}about.md,"
+    [ -f "$WORK_DIR/discovery.md" ] && DOCS="${DOCS}discovery.md,"
+    [ -f "$WORK_DIR/design.md" ]    && DOCS="${DOCS}design.md,"
+    [ -f "$WORK_DIR/plan.md" ]      && DOCS="${DOCS}plan.md,"
+    [ -f "$WORK_DIR/changelog.md" ] && DOCS="${DOCS}changelog.md,"
+    [ -f "$WORK_DIR/hotfix.md" ]    && DOCS="${DOCS}hotfix.md,"
+    [ -f "$WORK_DIR/related.md" ]   && DOCS="${DOCS}related.md,"
     DOCS="${DOCS%,}"
 
     if [ -n "$DOCS" ]; then
@@ -169,40 +175,36 @@ else
 fi
 
 # =============================================================================
-# OUTPUT: RECENT_CHANGELOGS (últimas 5 features finalizadas - contexto cross-feature)
+# OUTPUT: RECENT_CHANGELOGS (últimas 5 items finalizados - contexto cross-feature)
 # =============================================================================
 
-if [ -d "$FEATURES_DIR" ]; then
-    # find + sort by modification time using -printf '%T@ %p\n' (GNU find) with
-    # fallback to xargs ls -t for non-GNU environments.
-    # Use null-delimited output to handle paths with spaces safely.
-    CHANGELOGS=$(find "$FEATURES_DIR" -name "changelog.md" -type f -print0 2>/dev/null | \
-        xargs -0 -r ls -t 2>/dev/null | head -5 || true)
+# New flat structure: docs/[NNNN][L]-*/changelog.md
+CHANGELOGS=$(find "$DOCS_DIR" -maxdepth 2 -name "changelog.md" -type f -print0 2>/dev/null | \
+    xargs -0 -r ls -t 2>/dev/null | head -5 || true)
 
-    if [ -n "$CHANGELOGS" ]; then
-        echo "RECENT_CHANGELOGS:"
-        while IFS= read -r cl; do
-            if [ -f "$cl" ]; then
-                # Extract feature ID from path
-                FEAT=$(echo "$cl" | grep -oE 'F[0-9]{4}-[^/]+' | head -1)
+if [ -n "$CHANGELOGS" ]; then
+    echo "RECENT_CHANGELOGS:"
+    while IFS= read -r cl; do
+        if [ -f "$cl" ]; then
+            # Extract work item ID from path (new format: [NNNN][L]-[slug])
+            WORK_ITEM=$(echo "$cl" | grep -oE '[0-9]{4}[A-Z]-[^/]+' | head -1)
 
-                # Extract summary: content after "## Resumo" or "## Summary"
-                # Skip blockquotes (>) and empty lines
-                SUMMARY=$(awk '
-                    /^## Resumo/ || /^## Summary/ { found=1; next }
-                    found && /^[^#>\[]/ && NF > 0 { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit }
-                ' "$cl" 2>/dev/null | head -c 120 || true)
+            # Extract summary: content after "## Resumo" or "## Summary"
+            # Skip blockquotes (>) and empty lines
+            SUMMARY=$(awk '
+                /^## Resumo/ || /^## Summary/ { found=1; next }
+                found && /^[^#>\[]/ && NF > 0 { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit }
+            ' "$cl" 2>/dev/null | head -c 120 || true)
 
-                # Fallback: get title from first # line (without date/branch metadata)
-                if [ -z "$SUMMARY" ]; then
-                    SUMMARY=$(grep -m1 "^# " "$cl" 2>/dev/null | sed 's/^# //' | head -c 80 || true)
-                fi
-
-                if [ -n "$SUMMARY" ]; then echo "  $FEAT|$SUMMARY"; fi
+            # Fallback: get title from first # line
+            if [ -z "$SUMMARY" ]; then
+                SUMMARY=$(grep -m1 "^# " "$cl" 2>/dev/null | sed 's/^# //' | head -c 80 || true)
             fi
-        done <<< "$CHANGELOGS"
-        echo "CHANGELOGS_PATH:docs/features/{F*}/changelog.md"
-    fi
+
+            if [ -n "$SUMMARY" ]; then echo "  $WORK_ITEM|$SUMMARY"; fi
+        fi
+    done <<< "$CHANGELOGS"
+    echo "CHANGELOGS_PATH:docs/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md"
 fi
 
 # =============================================================================
@@ -210,10 +212,10 @@ fi
 # =============================================================================
 
 if [ "$BRANCH_TYPE" = "main" ]; then
-    echo "REC:create feature branch with /feature"
+    echo "REC:create feature branch with /add-feature"
 elif [ -n "$FEATURE_ID" ]; then
-    if [ -d "$FEATURES_DIR/$FEATURE_ID" ]; then
-        echo "REC:continue discovery for $FEATURE_ID"
+    if [ -d "$DOCS_DIR/$FEATURE_ID" ]; then
+        echo "REC:continue work on $FEATURE_ID"
     else
         echo "REC:create docs for $FEATURE_ID"
     fi

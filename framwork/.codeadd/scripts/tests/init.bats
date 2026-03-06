@@ -14,13 +14,13 @@ teardown() {
 @test "detecta owner completo de docs/owner.md (nome|nivel|idioma)" {
   mkdir -p docs
   printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"OWNER:Maicon|avancado|pt-br"* ]]
 }
 
 @test "usa defaults quando owner.md nao existe" {
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"OWNER:unknown|intermediario|en-us"* ]]
 }
@@ -28,7 +28,7 @@ teardown() {
 @test "usa defaults parciais quando owner.md tem campos faltando" {
   mkdir -p docs
   printf 'Nome: Ana\n' > docs/owner.md
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"OWNER:Ana|intermediario|en-us"* ]]
 }
@@ -36,21 +36,21 @@ teardown() {
 # ─── Git info ────────────────────────────────────────────────────────
 
 @test "detecta branch main e type=main" {
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"GIT:branch=main type=main"* ]]
 }
 
 @test "detecta branch feature e type=feature" {
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"type=feature"* ]]
 }
 
 @test "detecta branch hotfix e type=hotfix" {
   git checkout -b hotfix/urgent -q
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"type=hotfix"* ]]
 }
@@ -58,7 +58,7 @@ teardown() {
 # ─── Features discovery ─────────────────────────────────────────────
 
 @test "cria docs/features se não existe e retorna count=0 next=F0001" {
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"FEATURES:count=0 next=F0001"* ]]
   [ -d "docs/features" ]
@@ -67,7 +67,7 @@ teardown() {
 @test "conta features existentes e calcula next corretamente" {
   mkdir -p docs/features/F0001-login
   mkdir -p docs/features/F0002-signup
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"FEATURES:count=2 next=F0003"* ]]
 }
@@ -77,7 +77,7 @@ teardown() {
   echo "# About" > docs/features/F0001-test/about.md
   echo "# Plan" > docs/features/F0001-test/plan.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"CURRENT:F0001-test docs=[about.md,plan.md]"* ]]
 }
@@ -86,13 +86,13 @@ teardown() {
 
 @test "detecta CLAUDE.md quando existe" {
   echo "# Claude" > CLAUDE.md
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"ARCH:CLAUDE.md"* ]]
 }
 
 @test "reporta ARCH:none quando CLAUDE.md não existe" {
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"ARCH:none"* ]]
 }
@@ -108,7 +108,7 @@ teardown() {
   }
 }
 EOF
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"STACK:"* ]]
   [[ "$output" == *"nestjs"* ]]
@@ -118,7 +118,7 @@ EOF
 # ─── Recommendation ─────────────────────────────────────────────────
 
 @test "recomenda /feature quando em main" {
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"REC:create feature branch with /feature"* ]]
 }
@@ -127,7 +127,7 @@ EOF
   mkdir -p docs/features/F0001-test
   echo "# About" > docs/features/F0001-test/about.md
   git checkout -b feature/F0001-test -q
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"REC:continue discovery for F0001-test"* ]]
 }
@@ -136,7 +136,7 @@ EOF
 
 @test "lida com detached HEAD sem falhar" {
   git checkout --detach -q
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"GIT:branch=detached-HEAD"* ]]
 }
@@ -150,7 +150,7 @@ EOF
   mkdir -p docs/features/F0002-done
   printf '# F0002\n\n## Resumo\nSecond feature completed\n' \
     > docs/features/F0002-done/changelog.md
-  run "$SCRIPTS_DIR/feature-init.sh"
+  run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"RECENT_CHANGELOGS:"* ]]
   [[ "$output" == *"F0001-done"* ]]

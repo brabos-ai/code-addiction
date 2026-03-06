@@ -383,20 +383,6 @@ docs/changelog/YYYY-MM-DD-[action]-[what].md
 
 **Status:** `draft` → `implemented`
 
-### 6.3 Atualizar Ecosystem Map (SE command ou skill)
-
-1. Ler `.claude/skills/code-addiction-ecosystem/SKILL.md`
-2. Verificar se o artefato já está listado
-3. **SE novo:** Adicionar entrada na tabela correspondente
-4. **SE modificado:** Atualizar descrição se necessário
-5. Atualizar "Last Updated" com data e ação
-
-**Formato de atualização:**
-```markdown
-## Last Updated
-YYYY-MM-DD - [add|update|remove] [command|skill] [nome] in framwork/
-```
-
 ---
 
 ## STEP 7: Completion

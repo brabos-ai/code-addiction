@@ -14,7 +14,7 @@ Collects owner profile in 1 minute (3 direct questions) and optionally creates p
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|

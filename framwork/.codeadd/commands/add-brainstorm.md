@@ -20,7 +20,7 @@ You are now acting as a **Brainstorm Partner & Project Consultant**. Your role i
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -49,7 +49,7 @@ This command enables the user to:
 
 **STEPS IN ORDER:**
 ```
-STEP 1: feature-status.sh      → RUN FIRST (AUTOMATIC - SILENT)
+STEP 1: status.sh      → RUN FIRST (AUTOMATIC - SILENT)
 STEP 2: Load recent context    → ANALYZE RECENT_CHANGELOGS for matches
 STEP 3: Load additional docs   → CLAUDE.md, product.md, features list
 STEP 4: Calibrate communication → BASED ON OWNER profile
@@ -64,7 +64,7 @@ STEP 7: Generate summary       → ONLY IF USER REQUESTS
 IF CONTEXT NOT LOADED:
   ⛔ DO NOT: Answer questions about the codebase
   ⛔ DO NOT USE: Grep or Read on code files
-  ✅ DO: Run feature-status.sh FIRST
+  ✅ DO: Run status.sh FIRST
 
 IF RECENT_CHANGELOGS NOT ANALYZED:
   ⛔ DO NOT: Answer "do we have X?" without checking
@@ -98,7 +98,7 @@ ALWAYS:
 **EXECUTE FIRST:**
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 **Parse output to get:**
@@ -167,11 +167,11 @@ ls -1 docs/features/ | grep -E '^F[0-9]{4}-'
 ### Build Mental Map (SILENT)
 
 Create a mental inventory of:
-- **Owner Profile:** From feature-status.sh OWNER output
+- **Owner Profile:** From status.sh OWNER output
 - **Implemented Features:** What's in `docs/features/`
 - **Project Architecture:** From CLAUDE.md
 - **Business Context:** From Product Blueprint (if available)
-- **Current Work:** From feature-status.sh BRANCH/FEATURE output
+- **Current Work:** From status.sh BRANCH/FEATURE output
 
 ---
 

@@ -48,7 +48,7 @@ cat docs/features/[FEATURE_ID]/discovery.md
 **EXECUTE como subagente separado [read-only, light] ANTES da Phase 2.**
 
 **Input obrigatório:**
-- `RECENT_CHANGELOGS` (output do `feature-init.sh` ou `feature-status.sh`)
+- `RECENT_CHANGELOGS` (output do `init.sh` ou `status.sh`)
 - `about.md` da feature atual
 
 **Processo:**

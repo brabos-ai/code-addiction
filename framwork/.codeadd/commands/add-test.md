@@ -19,7 +19,7 @@ Analyzes developed code and generates automated tests targeting 80% coverage. Us
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -189,7 +189,7 @@ IF no changed files:
   ⛔ STOP.
 
 **IF MODE = feature:**
-1. RUN: `bash .codeadd/scripts/feature-status.sh` (if exists)
+1. RUN: `bash .codeadd/scripts/status.sh` (if exists)
 2. READ: `docs/features/F[XXXX]/about.md` — extract RF/RN requirements
 3. READ: `docs/features/F[XXXX]/plan.md` — extract implementation scope
 4. SET `TARGET_FILES` = files referenced in plan.md + files in feature modules

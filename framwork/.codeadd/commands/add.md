@@ -16,7 +16,7 @@ Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests 
 
 ## OWNER Context
 
-**From `OWNER:name|level|language` (feature-status.sh or owner.md):**
+**From `OWNER:name|level|language` (status.sh or owner.md):**
 
 | Level | Communication | Detail |
 |-------|--------------|--------|
@@ -127,10 +127,10 @@ Or, if you prefer to skip, just tell me your question and I'll answer anyway.
 - "Next step"
 - Project/architecture
 
-### 2.1 Execute feature-status.sh
+### 2.1 Execute status.sh
 
 ```bash
-bash .codeadd/scripts/feature-status.sh
+bash .codeadd/scripts/status.sh
 ```
 
 **Parse output:**
@@ -223,7 +223,7 @@ git log --oneline --name-only --grep="[FEATURE_ID]" -- . | head -50
 
 ### Type C: Status/Context
 
-**Use output from STEP 3 (feature-status.sh).**
+**Use output from STEP 3 (status.sh).**
 
 **Format:**
 ```markdown
@@ -384,7 +384,7 @@ Only go down the hierarchy if the previous level does not answer the question.
 ALWAYS:
 - Load ecosystem-map in STEP 0
 - Use ecosystem-map to answer about commands/skills
-- Execute feature-status.sh when question involves context
+- Execute status.sh when question involves context
 - Read changelog before going to code
 - Include smart suggestion at end
 - Be specific about files and paths
