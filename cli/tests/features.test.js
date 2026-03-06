@@ -1,13 +1,31 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+
+const mockPromptFeatures = vi.hoisted(() => vi.fn());
+
+vi.mock('../src/prompt.js', () => ({
+  promptFeatures: mockPromptFeatures,
+}));
+
+vi.mock('@clack/prompts', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    intro: vi.fn(),
+    outro: vi.fn(),
+    log: { success: vi.fn(), info: vi.fn(), error: vi.fn() },
+  };
+});
+
 import {
   FEATURES,
   enableFeature,
   disableFeature,
   applyEnabledFeatures,
   getFeatureStates,
+  features,
 } from '../src/features.js';
 
 let tmpDir;
@@ -356,5 +374,93 @@ describe('getFeatureStates', () => {
     for (const state of states) {
       expect(state.description).toBe(FEATURES[state.name].description);
     }
+  });
+});
+
+describe('features() CLI interactive mode', () => {
+  beforeEach(() => {
+    mockPromptFeatures.mockReset();
+  });
+
+  it('enables a previously disabled feature when user selects it', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false, 'startup-test': false } });
+    setupCommandWithMarkers(tmpDir, '.codeadd/commands', 'add-dev', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD GATE content' });
+
+    mockPromptFeatures.mockResolvedValue(['tdd']);
+
+    await features(tmpDir, []);
+
+    const manifest = readManifest(tmpDir);
+    expect(manifest.features.tdd).toBe(true);
+    const content = fs.readFileSync(path.join(tmpDir, '.codeadd', 'commands', 'add-dev.md'), 'utf8');
+    expect(content).toContain('TDD GATE content');
+  });
+
+  it('disables a previously enabled feature when user deselects it', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': true } });
+
+    const cmdDir = path.join(tmpDir, '.codeadd', 'commands');
+    fs.mkdirSync(cmdDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(cmdDir, 'add-dev.md'),
+      '# Command\n<!-- feature:tdd:gate -->\nTDD content\n<!-- /feature:tdd:gate -->\n',
+      'utf8'
+    );
+
+    mockPromptFeatures.mockResolvedValue(['startup-test']);
+
+    await features(tmpDir, []);
+
+    const manifest = readManifest(tmpDir);
+    expect(manifest.features.tdd).toBe(false);
+    const content = fs.readFileSync(path.join(cmdDir, 'add-dev.md'), 'utf8');
+    expect(content).not.toContain('TDD content');
+  });
+
+  it('makes no changes when selection matches current state', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': false } });
+    setupCommandWithMarkers(tmpDir, '.codeadd/commands', 'add-dev', 'tdd', ['gate']);
+
+    mockPromptFeatures.mockResolvedValue(['tdd']);
+
+    await features(tmpDir, []);
+
+    const manifest = readManifest(tmpDir);
+    expect(manifest.features.tdd).toBe(true);
+    expect(manifest.features['startup-test']).toBe(false);
+  });
+
+  it('passes currently enabled features as initialValues to prompt', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': false } });
+
+    mockPromptFeatures.mockResolvedValue(['tdd']);
+
+    await features(tmpDir, []);
+
+    expect(mockPromptFeatures).toHaveBeenCalledWith(['tdd']);
+  });
+
+  it('still supports enable subcommand with args', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false } });
+    setupCommandWithMarkers(tmpDir, '.codeadd/commands', 'add-dev', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD content' });
+
+    await features(tmpDir, ['enable', 'tdd']);
+
+    expect(mockPromptFeatures).not.toHaveBeenCalled();
+    const manifest = readManifest(tmpDir);
+    expect(manifest.features.tdd).toBe(true);
+  });
+
+  it('still supports disable subcommand with args', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true } });
+    setupCommandWithMarkers(tmpDir, '.codeadd/commands', 'add-dev', 'tdd', ['gate']);
+
+    await features(tmpDir, ['disable', 'tdd']);
+
+    expect(mockPromptFeatures).not.toHaveBeenCalled();
+    const manifest = readManifest(tmpDir);
+    expect(manifest.features.tdd).toBe(false);
   });
 });

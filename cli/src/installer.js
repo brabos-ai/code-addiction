@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { promptProviders, promptConfirm } from './prompt.js';
+import { promptProviders, promptConfirm, promptFeatures } from './prompt.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { resolveSelected } from './providers.js';
 import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
@@ -228,6 +228,8 @@ export async function install(cwd, options = {}) {
   const selectedKeys = await promptProviders();
   const providers = resolveSelected(selectedKeys);
 
+  const selectedFeatures = await promptFeatures();
+
   for (const p of providers) {
     const destDir = path.join(cwd, p.dest);
     if (dirExists(destDir)) {
@@ -262,10 +264,10 @@ export async function install(cwd, options = {}) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
-  // Initialize features with defaults
+  // Initialize features based on user selection
   const defaultFeatures = {};
-  for (const [name, meta] of Object.entries(FEATURES)) {
-    defaultFeatures[name] = meta.default;
+  for (const name of Object.keys(FEATURES)) {
+    defaultFeatures[name] = selectedFeatures.includes(name);
   }
 
   writeManifest(

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { intro, outro, log } from '@clack/prompts';
+import { promptFeatures } from './prompt.js';
 
 /**
  * Feature registry — each optional feature that can be toggled.
@@ -297,19 +298,32 @@ export async function features(cwd, args) {
 
   if (!action || action === 'list') {
     intro('ADD CLI - Features');
-    const states = getFeatureStates(cwd);
 
-    log.info('');
-    log.info('Optional Features:');
-    log.info('');
-    for (const f of states) {
-      const status = f.enabled ? 'ON enabled' : 'OFF disabled';
-      log.info(`  ${status}  ${f.name} — ${f.description}`);
+    const states = getFeatureStates(cwd);
+    const currentlyEnabled = states.filter((f) => f.enabled).map((f) => f.name);
+
+    const selected = await promptFeatures(currentlyEnabled);
+
+    let totalModified = 0;
+    for (const { name } of states) {
+      const wasEnabled = currentlyEnabled.includes(name);
+      const nowEnabled = selected.includes(name);
+      if (nowEnabled && !wasEnabled) {
+        const { modified } = enableFeature(cwd, name);
+        totalModified += modified;
+        log.success(`Feature "${name}" enabled. ${modified} file(s) modified.`);
+      } else if (!nowEnabled && wasEnabled) {
+        const { modified } = disableFeature(cwd, name);
+        totalModified += modified;
+        log.success(`Feature "${name}" disabled. ${modified} file(s) modified.`);
+      }
     }
-    log.info('');
-    log.info('Toggle: codeadd features enable|disable <name>');
-    log.info('');
-    outro('');
+
+    if (totalModified === 0) {
+      log.info('No changes.');
+    }
+
+    outro('Done.');
     return;
   }
 

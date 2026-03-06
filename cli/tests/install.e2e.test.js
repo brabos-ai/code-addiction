@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   downloadBranchZip: vi.fn(),
   promptProviders: vi.fn(),
   promptConfirm: vi.fn(),
+  promptFeatures: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
@@ -21,6 +22,7 @@ vi.mock('../src/github.js', () => ({
 vi.mock('../src/prompt.js', () => ({
   promptProviders: mocks.promptProviders,
   promptConfirm: mocks.promptConfirm,
+  promptFeatures: mocks.promptFeatures,
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -51,6 +53,7 @@ beforeEach(() => {
   mocks.promptConfirm.mockReset();
   mocks.promptProviders.mockResolvedValue(['codex']);
   mocks.promptConfirm.mockResolvedValue(undefined);
+  mocks.promptFeatures.mockResolvedValue(['tdd', 'startup-test']);
 });
 
 afterEach(() => {
@@ -116,6 +119,34 @@ describe('install command e2e', () => {
     expect(manifest.releaseTag).toBeNull();
     expect(manifest.source).toBe('branch');
     expect(manifest.ref).toBe('feature-xyz');
+  });
+
+  it('writes selected features to manifest based on user choice', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.promptFeatures.mockResolvedValue(['tdd']);
+
+    await install(tmpDir);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.features.tdd).toBe(true);
+    expect(manifest.features['startup-test']).toBe(false);
+  });
+
+  it('writes all features disabled when user selects none', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.promptFeatures.mockResolvedValue([]);
+
+    await install(tmpDir);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.features.tdd).toBe(false);
+    expect(manifest.features['startup-test']).toBe(false);
   });
 
   it('installs from explicit tag via --version flag', async () => {
