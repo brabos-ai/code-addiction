@@ -53,7 +53,8 @@ STEP 8: Execution decision         → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP 9: Implementation             → Per mode (development/correction/feature)
 STEP 10: Area validation           → Validator subagents (MANDATORY per area)
 STEP 11: Integration verification  → Build MUST pass
-STEP 12: Application Startup Test  → IoC/DI runtime validation
+<!-- feature:startup-test:step-list -->
+<!-- /feature:startup-test:step-list -->
 STEP 13: Log iteration             → BEFORE informing user
 STEP 14: Completion                → Inform user based on mode
 ```
@@ -311,23 +312,20 @@ done
 
 **Activated when:** `HAS_TASKS=true` and `TASKS_FILE` is set.
 
-**Flow (TDD-aware — PRD0001):**
+**Flow:**
 
 ```
 1. READ tasks.md from TASKS_FILE path
-2. GROUP tasks by service (test, database, backend, frontend)
+2. GROUP tasks by service (database, backend, frontend)
 3. VALIDATE deps: build execution graph (tasks with no deps first)
-4. EXECUTION ORDER (TDD): test tasks FIRST → database → backend → frontend
-5. TDD CYCLE:
-   a. Implement TEST tasks first (create test files with failing tests)
-   b. Implement DATABASE tasks
-   c. Implement BACKEND tasks → run tests as gate (not just build)
-   d. Implement FRONTEND tasks → run tests as gate
-   e. IF tests fail after implementation: iterate until tests pass (max 3 attempts)
-6. AFTER all task groups pass verify + tests pass: proceed to STEP 10 (validation)
+4. EXECUTION ORDER: database → backend → frontend
+5. AFTER all task groups complete: proceed to STEP 10 (validation)
 ```
 
-**⛔ TDD GATE:** After implementing code tasks (database/backend/frontend), run existing test files. If tests fail, iterate on the implementation — do NOT modify test files to make them pass.
+<!-- feature:tdd:tasks-flow -->
+<!-- /feature:tdd:tasks-flow -->
+<!-- feature:tdd:gate -->
+<!-- /feature:tdd:gate -->
 
 **Subagent prompt addition for TASKS MODE:**
 
@@ -339,14 +337,8 @@ Include in each subagent's prompt the relevant tasks from tasks.md:
 | [only tasks for your service area] |
 
 Execute ALL tasks in order. After each task, confirm the verify command passes.
-
-## TDD AWARENESS (PRD0001)
-IF test files exist for your area (service=test tasks already implemented):
-  - After implementing each code task, RUN existing tests
-  - Tests are the SUCCESS GATE — not just build
-  - If tests fail: fix your IMPLEMENTATION (not the tests)
-  - Iterate until tests pass (max 3 attempts per task)
-  - Report: TESTS_PASSED=true/false with test output
+<!-- feature:tdd:awareness -->
+<!-- /feature:tdd:awareness -->
 ```
 
 **DECISION LOGGING (MANDATORY for TASKS MODE subagents):**
@@ -719,71 +711,13 @@ After ALL validators:
 
 1. **Contract Adherence:** Endpoints, events, commands match plan
 2. **Build Verification:** Run project build command (see CLAUDE.md)
-3. **Test Verification (TDD — PRD0001):** IF test files exist (from test tasks in tasks.md), run test suite as additional gate
+<!-- feature:tdd:verification -->
+<!-- /feature:tdd:verification -->
 
-```
-IF test files detected (*.spec.ts, *.test.ts from test service tasks):
-  1. RUN test suite (TEST_COMMAND from project)
-  2. IF tests pass: proceed to STEP 12
-  3. IF tests fail:
-     a. Analyze failures (which contract tests fail)
-     b. Fix IMPLEMENTATION to satisfy tests (not the tests themselves)
-     c. Re-run tests (max 3 iterations)
-     d. IF still failing after 3 iterations: report failures and STOP
-```
+**CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
 
-**CRITICAL:** Code MUST compile 100% AND contract tests MUST pass. Fix errors before proceeding.
-
----
-
-## STEP 12: Application Startup Test (PRD0034)
-
-**Validates IoC/DI at runtime — compilation passing ≠ app starting.**
-
-```
-1. CHECK: does `start:test` exist in package.json scripts?
-2. IF NOT EXISTS:
-   a. ANALYZE project: framework (NestJS, Express, Next.js, Fastify, etc.), entry point, bootstrap method
-   b. CREATE script at ./scripts/bootstrap-check.ts (or .js as appropriate)
-      The script MUST:
-      - Perform complete bootstrap (resolve all DI/IoC)
-      - NOT call listen() / serve() (no port binding, no hang)
-      - exit(0) if bootstrap succeeds
-      - exit(1) with descriptive error message if bootstrap fails
-   c. ADD to package.json: "start:test": "ts-node ./scripts/bootstrap-check.ts" (or equivalent)
-   d. EXAMPLE for NestJS:
-      ```typescript
-      // scripts/bootstrap-check.ts
-      import { NestFactory } from '@nestjs/core';
-      import { AppModule } from '../src/app.module';
-      async function main() {
-        const app = await NestFactory.create(AppModule, { logger: ['error', 'warn'] });
-        await app.init();
-        await app.close();
-        console.log('Bootstrap check passed');
-        process.exit(0);
-      }
-      main().catch((err) => {
-        console.error('Bootstrap check FAILED:', err.message);
-        process.exit(1);
-      });
-      ```
-3. IF EXISTS: proceed directly to execution
-4. EXECUTE: npm run start:test
-5. IF exit code 0: STARTUP_CHECK: PASSED → proceed to STEP 13
-6. IF exit code 1:
-   - Show error output (usually reveals EXACTLY which DI provider is missing)
-   - AUTO-FIX if possible (e.g.: add missing provider to module)
-   - Re-run: npm run start:test
-   - IF still failing: BLOCKED — show error and stop
-```
-
-**⛔ IF STARTUP_CHECK FAILS AND NOT AUTO-FIXABLE:**
-- ⛔ DO NOT: Proceed to STEP 13 (Log Iteration)
-- ⛔ DO NOT: Report completion to user
-- ✅ DO: Fix DI/IoC error, re-run, confirm PASSED
-
-**NOTE:** Script lives in `./scripts/` and is versioned (useful for future CI). If startup fails due to DB/Redis connection (not DI), treat as SKIPPED with note — connection errors are environment-specific, DI errors are code errors.
+<!-- feature:startup-test:step -->
+<!-- /feature:startup-test:step -->
 
 ---
 

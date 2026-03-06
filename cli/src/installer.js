@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptProviders, promptConfirm } from './prompt.js';
+import { applyEnabledFeatures, FEATURES } from './features.js';
 import { resolveSelected } from './providers.js';
 import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
 
@@ -261,14 +262,34 @@ export async function install(cwd, options = {}) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
+  // Initialize features with defaults
+  const defaultFeatures = {};
+  for (const [name, meta] of Object.entries(FEATURES)) {
+    defaultFeatures[name] = meta.default;
+  }
+
   writeManifest(
     cwd,
     installSource.manifestVersion,
     selectedKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref }
+    { source: installSource.source, ref: installSource.ref, features: defaultFeatures }
   );
+
+  // Apply enabled features (inject fragment content into commands)
+  const featuresApplied = applyEnabledFeatures(cwd);
+  if (featuresApplied > 0) {
+    log.success(`Applied ${featuresApplied} feature injection(s).`);
+  }
+
+  const enabledFeatures = Object.entries(defaultFeatures)
+    .filter(([, v]) => v)
+    .map(([k]) => k);
+  if (enabledFeatures.length > 0) {
+    log.info(`Features enabled: ${enabledFeatures.join(', ')}`);
+    log.info('Toggle with: codeadd features enable|disable <name>');
+  }
 
   const providerList = selectedKeys.length > 0 ? selectedKeys.join(', ') : 'none (core only)';
   log.success(`Providers installed: ${providerList}`);

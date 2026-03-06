@@ -6,6 +6,7 @@ import { uninstall } from '../src/uninstaller.js';
 import { doctor } from '../src/doctor.js';
 import { validate } from '../src/validator.js';
 import { config } from '../src/config.js';
+import { features } from '../src/features.js';
 
 const subcommand = process.argv[2];
 const args = process.argv.slice(3);
@@ -44,6 +45,9 @@ Commands:
   doctor                     Check environment health (Node, Git, installation)
   validate                   Validate file integrity via SHA-256 hashes
   validate --repair           Restore missing/modified files from release
+  features list              List optional features and their state
+  features enable <name>     Enable a feature (inject into commands)
+  features disable <name>    Disable a feature (remove from commands)
   config show                Display installation configuration
   config show --verbose       Display config + check for updates
 
@@ -83,6 +87,8 @@ async function main() {
     } else if (subcommand === 'validate') {
       const repair = args.includes('--repair');
       await validate(cwd, repair);
+    } else if (subcommand === 'features') {
+      await features(cwd, args);
     } else if (subcommand === 'config') {
       const subCmd = args[0];
       if (subCmd === 'show') {

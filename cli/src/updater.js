@@ -5,6 +5,7 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
 import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
 import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
+import { applyEnabledFeatures } from './features.js';
 
 const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
 
@@ -152,14 +153,23 @@ export async function update(cwd, options = {}) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
+  // Preserve feature states from previous manifest
+  const previousFeatures = manifest.features ?? {};
+
   writeManifest(
     cwd,
     installSource.manifestVersion,
     providerKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref }
+    { source: installSource.source, ref: installSource.ref, features: previousFeatures }
   );
+
+  // Re-apply enabled features on updated commands
+  const featuresApplied = applyEnabledFeatures(cwd);
+  if (featuresApplied > 0) {
+    log.success(`Re-applied ${featuresApplied} feature injection(s).`);
+  }
 
   const fromLabel = currentSource === 'branch' ? currentRef ?? currentVersion : `v${currentVersion}`;
   const toLabel = installSource.source === 'branch'
