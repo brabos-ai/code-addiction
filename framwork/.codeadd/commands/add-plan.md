@@ -359,14 +359,14 @@ docs/features/${FEATURE_ID}/plan-[area].md
 ```
 You are the DATABASE SPECIALIST planning for feature ${FEATURE_ID}.
 
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+## TASK_DOCUMENTS (read ALL before starting — source of truth)
+${TASK_DOCUMENTS}
+
+## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
 
 1. Run: bash .codeadd/scripts/status.sh
-2. Parse FEATURE_ID from output
-3. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
+2. Read ALL files listed in TASK_DOCUMENTS above
 
 ## Your Task
 Create the database planning section. Search the codebase for similar entities and repositories to use as references.
@@ -410,16 +410,15 @@ Reference: `[search codebase for similar repository]`
 ```
 You are the BACKEND SPECIALIST planning for feature ${FEATURE_ID}.
 
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+## TASK_DOCUMENTS (read ALL before starting — source of truth)
+${TASK_DOCUMENTS}
+
+## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
 
 1. Run: bash .codeadd/scripts/status.sh
-2. Parse FEATURE_ID from output
+2. Read ALL files listed in TASK_DOCUMENTS above
 3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
-4. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/plan-database.md (if exists - entities/tables)
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
 
 ## MANDATORY: Load Backend Development Skill
 BEFORE designing endpoints, read: `.codeadd/skills/backend-development/SKILL.md`
@@ -492,19 +491,16 @@ Reference: `[search codebase for similar module]`
 ```
 You are the FRONTEND SPECIALIST planning for feature ${FEATURE_ID}.
 
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+## TASK_DOCUMENTS (read ALL before starting — source of truth)
+${TASK_DOCUMENTS}
+
+## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
 
 1. Run: bash .codeadd/scripts/status.sh
-2. Parse FEATURE_ID from output
+2. Read ALL files listed in TASK_DOCUMENTS above
 3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
-4. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/plan-database.md (if exists - entities)
-   - docs/features/${FEATURE_ID}/plan-backend.md (if exists - API/DTOs)
-   - docs/features/${FEATURE_ID}/design.md (if exists - UI PRIMARY)
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
-5. Read docs/design-system.md (if exists - tokens)
+4. Read docs/design-system.md (if exists - tokens)
 
 ## Your Task
 Create the frontend planning section.
