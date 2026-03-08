@@ -127,9 +127,9 @@ fi
 # antigas e retorna "HEAD" quando em estado detached (sem branch).
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 
-# Extract feature ID from branch (feature/F0001-name or fix/F0001-name)
+# Extract feature slug from branch (feature/0001F-name or fix/0001H-name)
 FEATURE_ID=""
-if [[ "$CURRENT_BRANCH" =~ (F[0-9]{4}-[^/[:space:]]+)$ ]]; then
+if [[ "$CURRENT_BRANCH" =~ ([0-9]{4}[A-Z]-[^/[:space:]]+)$ ]]; then
     FEATURE_ID="${BASH_REMATCH[1]}"
 fi
 

@@ -77,7 +77,7 @@ eval "$METADATA_OUTPUT"
 if [ -z "$FEATURE_ID" ]; then
     echo "STATUS=ERROR"
     echo "ERROR=No feature/hotfix ID found in branch: $CURRENT_BRANCH"
-    echo "HINT=Branch must contain /F[XXXX]-* or /H[XXXX]-* (e.g. feature/F0001-name, refactor/F0002-cleanup)"
+    echo "HINT=Branch must contain /[NNNN][L]-* (e.g. feature/0001F-name, refactor/0002R-cleanup)"
     exit 1
 fi
 
@@ -104,7 +104,7 @@ if [ "$MODE" = "context" ]; then
     if [ "$BRANCH_TYPE" = "unknown" ]; then
         echo "STATUS=ERROR"
         echo "ERROR=Unsupported branch type: $CURRENT_BRANCH"
-        echo "HINT=Expected: feature/F[XXXX]-*, fix/F[XXXX]-*, or fix/H[XXXX]-*"
+        echo "HINT=Expected: [type]/[NNNN][L]-* (e.g. feature/0001F-name, fix/0002H-urgent)"
         exit 1
     fi
 
@@ -200,7 +200,7 @@ if [ "$MODE" = "merge" ]; then
     if [ "$BRANCH_TYPE" = "unknown" ]; then
         echo "STATUS=ERROR"
         echo "ERROR=Unsupported branch type: $CURRENT_BRANCH"
-        echo "HINT=Expected: feature/F[XXXX]-*, fix/F[XXXX]-*, or fix/H[XXXX]-*"
+        echo "HINT=Expected: [type]/[NNNN][L]-* (e.g. feature/0001F-name, fix/0002H-urgent)"
         exit 1
     fi
 

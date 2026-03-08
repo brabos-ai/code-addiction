@@ -71,15 +71,15 @@ echo "GIT:branch=$CURRENT_BRANCH type=$BRANCH_TYPE main=$MAIN_BRANCH uncommitted
 # FEATURES (NEW: Global sequential IDs with flat structure)
 # =============================================================================
 
-DOCS_DIR="docs"
+DOCS_DIR="docs/features"
 
 if [ ! -d "$DOCS_DIR" ]; then
     mkdir -p "$DOCS_DIR"
 fi
 
-# Count all work items (new format: [NNNN][L]-*)
-FEATURE_LIST=$(find "$DOCS_DIR" -maxdepth 1 -type d -regex "$DOCS_DIR/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
-    basename -a | sort || true)
+# Count all work items (format: [NNNN][L]-*)
+FEATURE_LIST=$(find "$DOCS_DIR" -maxdepth 1 -type d -regex ".*/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
+    xargs -r -n1 basename | sort || true)
 
 if [ -z "$FEATURE_LIST" ]; then
     FEATURE_COUNT=0
@@ -99,7 +99,7 @@ if [ ! -f "$SCRIPT_DIR/next-id.sh" ]; then
     exit 1
 fi
 
-NEXT_FEATURE=$(bash "$SCRIPT_DIR/next-id.sh" "F" 2>/dev/null || echo "F0001")
+NEXT_FEATURE=$(bash "$SCRIPT_DIR/next-id.sh" "F" 2>/dev/null || echo "0001F")
 
 echo "FEATURES:count=$FEATURE_COUNT next=$NEXT_FEATURE"
 
@@ -107,7 +107,7 @@ echo "FEATURES:count=$FEATURE_COUNT next=$NEXT_FEATURE"
 FEATURE_ID="$FEATURE_SLUG"
 if [ -n "$FEATURE_ID" ]; then
     DOCS=""
-    # New flat structure: docs/[NNNN][L]-[slug]/
+    # Nested structure: docs/features/[NNNN][L]-[slug]/
     WORK_DIR="$DOCS_DIR/$FEATURE_ID"
     [ -f "$WORK_DIR/about.md" ]     && DOCS="${DOCS}about.md,"
     [ -f "$WORK_DIR/discovery.md" ] && DOCS="${DOCS}discovery.md,"
@@ -178,7 +178,7 @@ fi
 # OUTPUT: RECENT_CHANGELOGS (últimas 5 items finalizados - contexto cross-feature)
 # =============================================================================
 
-# New flat structure: docs/[NNNN][L]-*/changelog.md
+# Nested structure: docs/features/[NNNN][L]-*/changelog.md
 CHANGELOGS=$(find "$DOCS_DIR" -maxdepth 2 -name "changelog.md" -type f -print0 2>/dev/null | \
     xargs -0 -r ls -t 2>/dev/null | head -5 || true)
 
@@ -204,7 +204,7 @@ if [ -n "$CHANGELOGS" ]; then
             if [ -n "$SUMMARY" ]; then echo "  $WORK_ITEM|$SUMMARY"; fi
         fi
     done <<< "$CHANGELOGS"
-    echo "CHANGELOGS_PATH:docs/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md"
+    echo "CHANGELOGS_PATH:docs/features/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md"
 fi
 
 # =============================================================================

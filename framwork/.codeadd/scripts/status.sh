@@ -54,7 +54,7 @@ fi
 eval "$("$SCRIPT_DIR/get-branch-metadata.sh")"
 CURRENT_BRANCH="$BRANCH_NAME"
 FEATURE_ID="$FEATURE_SLUG"
-FEATURE_DIR="${DOCS_DIR:-docs/features/${FEATURE_ID}}"
+FEATURE_DIR="${DOCS_DIR:-docs/features/${FEATURE_SLUG}}"
 
 # P10 - FIX: inicializar BEHIND e AHEAD no escopo global para evitar "unbound variable"
 #             quando o bloco GIT STATUS nao e executado
@@ -292,7 +292,7 @@ if [ -d "$FEATURES_DIR" ]; then
         while IFS= read -r cl; do
             if [ -f "$cl" ]; then
                 # Extract feature ID from path
-                FEAT=$(echo "$cl" | grep -oE 'F[0-9]{4}-[^/]+' | head -1)
+                FEAT=$(echo "$cl" | grep -oE '[0-9]{4}[A-Z]-[^/]+' | head -1 || true)
 
                 # Skip if it's the current feature (avoid redundancy)
                 if [ "$FEAT" != "$FEATURE_ID" ]; then
@@ -312,7 +312,7 @@ if [ -d "$FEATURES_DIR" ]; then
                 fi
             fi
         done <<< "$CHANGELOGS"
-        echo "CHANGELOGS_PATH:docs/features/{F*}/changelog.md"
+        echo "CHANGELOGS_PATH:docs/features/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md"
     fi
 fi
 

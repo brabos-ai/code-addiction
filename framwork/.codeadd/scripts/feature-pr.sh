@@ -56,7 +56,7 @@ if [ -z "$MAIN_BRANCH" ]; then
     exit 1
 fi
 
-FEATURE_ID=$(echo "$CURRENT_BRANCH" | sed -n 's|.*/\(F[0-9]\{4\}-[^/]*\)$|\1|p')
+FEATURE_ID=$(echo "$CURRENT_BRANCH" | sed -n 's|.*/\([0-9]\{4\}[A-Z]-[^/]*\)$|\1|p')
 FEATURE_DIR="docs/features/${FEATURE_ID}"
 TODAY=$(date +%Y-%m-%d)
 
@@ -73,7 +73,7 @@ echo ""
 if [ -z "$FEATURE_ID" ]; then
     echo "STATUS=ERROR"
     echo "ERROR=Not on a feature branch"
-    echo "HINT=Switch to your feature branch first (feature/F000X-name)"
+    echo "HINT=Switch to your feature branch first (e.g. feature/0001F-name)"
     exit 1
 fi
 
