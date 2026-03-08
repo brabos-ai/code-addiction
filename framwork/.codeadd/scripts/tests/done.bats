@@ -12,32 +12,32 @@ teardown() {
 # ─── Context mode (default) ─────────────────────────────────────────
 
 @test "context mode: mostra info do branch feature" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"CURRENT_BRANCH=feature/F0001-test"* ]]
+  [[ "$output" == *"CURRENT_BRANCH=feature/0001F-test"* ]]
   [[ "$output" == *"MAIN_BRANCH=main"* ]]
   [[ "$output" == *"BRANCH_TYPE=feature"* ]]
-  [[ "$output" == *"FEATURE_NUMBER=F0001"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=0001F"* ]]
 }
 
-@test "context mode: detecta hotfix standalone" {
-  git checkout -b fix/H0001-urgent -q
+@test "context mode: detecta hotfix" {
+  git checkout -b hotfix/0001H-urgent -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_TYPE=hotfix_standalone"* ]]
-  [[ "$output" == *"FEATURE_NUMBER=H0001"* ]]
+  [[ "$output" == *"BRANCH_TYPE=hotfix"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=0001H"* ]]
 }
 
-@test "context mode: detecta hotfix em feature" {
-  git checkout -b fix/F0001-bugfix -q
+@test "context mode: detecta fix" {
+  git checkout -b fix/0001H-bugfix -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_TYPE=hotfix_feature"* ]]
+  [[ "$output" == *"BRANCH_TYPE=fix"* ]]
 }
 
 @test "context mode: reporta pending changes" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   echo "change" > newfile.txt
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -46,7 +46,7 @@ teardown() {
 }
 
 @test "context mode: reporta sem pending changes" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"HAS_UNCOMMITTED=false"* ]]
@@ -70,35 +70,35 @@ teardown() {
   [[ "$output" == *"No feature/hotfix ID found"* ]]
 }
 
-# ─── Generic branch prefixes (PRD0006) ───────────────────────────────
+# ─── Generic branch prefixes (PRD0007) ───────────────────────────────
 
-@test "context mode: refactor/F0002-cleanup detectado como feature" {
-  git checkout -b refactor/F0002-cleanup -q
+@test "context mode: refactor/0002R-cleanup detectado como refactor" {
+  git checkout -b refactor/0002R-cleanup -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
-  [[ "$output" == *"FEATURE_NUMBER=F0002"* ]]
+  [[ "$output" == *"BRANCH_TYPE=refactor"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=0002R"* ]]
 }
 
-@test "context mode: chore/F0003-deps detectado como feature" {
-  git checkout -b chore/F0003-deps -q
+@test "context mode: chore/0003C-deps detectado como chore" {
+  git checkout -b chore/0003C-deps -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
-  [[ "$output" == *"FEATURE_NUMBER=F0003"* ]]
+  [[ "$output" == *"BRANCH_TYPE=chore"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=0003C"* ]]
 }
 
-@test "context mode: docs/F0004-readme detectado como feature" {
-  git checkout -b docs/F0004-readme -q
+@test "context mode: docs/0004D-readme detectado como docs" {
+  git checkout -b docs/0004D-readme -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
-  [[ "$output" == *"FEATURE_NUMBER=F0004"* ]]
+  [[ "$output" == *"BRANCH_TYPE=docs"* ]]
+  [[ "$output" == *"FEATURE_NUMBER=0004D"* ]]
 }
 
 # ─── Merge mode guards ──────────────────────────────────────────────
 
-@test "merge mode: falha quando já está em main (no F/H ID)" {
+@test "merge mode: falha quando já está em main (no ID)" {
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
   [[ "$output" == *"STATUS=ERROR"* ]]
@@ -114,7 +114,7 @@ teardown() {
 # ─── Context mode: edge cases ────────────────────────────────────────
 
 @test "context mode: reporta múltiplas mudanças simultâneas (modified + staged + untracked)" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   echo "original" > existing.txt
   git add existing.txt && git commit -m "add file" -q
   echo "modified" > existing.txt          # modified
@@ -131,7 +131,7 @@ teardown() {
 
 @test "context mode: emite WARNING quando origin/main não existe no remote" {
   # Sem setup_remote — origin/main não existe
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"WARNING=Remote branch origin/main not found"* ]]
@@ -140,7 +140,7 @@ teardown() {
 # ─── Merge mode: execution scenarios ────────────────────────────────
 
 @test "merge mode: falha sem remote configurado (push failure)" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -ne 0 ]
 }
@@ -152,17 +152,17 @@ teardown() {
   git add shared.txt && git commit -m "add shared file" -q
   git push origin main -q
   # Cria feature branch e modifica o arquivo
-  git checkout -b feature/F0001-conflict -q
+  git checkout -b feature/0001F-conflict -q
   echo "feature version" > shared.txt
   git add shared.txt && git commit -m "feature change" -q
-  git push -u origin feature/F0001-conflict -q
+  git push -u origin feature/0001F-conflict -q
   # Conflito: atualiza main com mudança diferente
   git checkout main -q
   echo "main conflicting version" > shared.txt
   git add shared.txt && git commit -m "main change" -q
   git push origin main -q
   # Volta para feature e tenta merge
-  git checkout feature/F0001-conflict -q
+  git checkout feature/0001F-conflict -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
   [[ "$output" == *"Merge conflict detected"* ]]
@@ -170,8 +170,8 @@ teardown() {
 
 @test "merge mode: pula commit quando branch não tem commits além do main" {
   setup_remote
-  git checkout -b feature/F0001-test -q
-  git push -u origin feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
+  git push -u origin feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 0 ]
   [[ "$output" == *"MERGE_COMMIT=SKIPPED"* ]]

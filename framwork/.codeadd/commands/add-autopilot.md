@@ -43,8 +43,9 @@ STEP 5: Planning Subagent       → ONLY AFTER 1-4 (or SKIP if simple)
 STEP 6: Development Subagents   → ONLY AFTER plan exists
 STEP 7: Persist Decisions + Startup Test → Log iteration + bootstrap check
 STEP 8: Review Subagent         → ONLY AFTER build + startup pass
-STEP 9: Final Verification      → Build + docs + review.md check
-STEP 10: Completion Report      → AUTOMATIC after verification
+STEP 9: Compliance Gate          → Cross-reference RF/RN vs implementation
+STEP 10: Final Verification     → Build + docs + review.md check
+STEP 11: Completion Report      → AUTOMATIC after verification
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -155,7 +156,7 @@ Task({
 **SUBAGENT PROMPT TEMPLATE:**
 - ROLE: You are the [AREA] [agent type] for feature [ID]
 - COMMAND REFERENCE: (FIRST STEP) Read the relevant `.codeadd/commands/add-*.md` as pattern reference
-- SELF-BOOTSTRAP: Run discovery script + read feature docs directly
+- TASK_DOCUMENTS: List of doc paths assembled by coordinator (subagent reads directly)
 - SKILLS: MANDATORY: [area skill] | ADDITIONAL: [based on context]
 - DECISION LOG: (from previous phases) Accumulated decisions from earlier subagents
 - COORDINATOR NOTES: (intelligent guidance) Warnings, patterns to follow/avoid
@@ -163,7 +164,7 @@ Task({
 - RULES: Autopilot rules - no questions, no commits, etc.
 - REPORT FORMAT: What to return to coordinator
 
-**Command-as-Reference Block (include in ALL subagent prompts):**
+**Command-as-Reference + TASK_DOCUMENTS Block (include in ALL subagent prompts):**
 ```
 ## MANDATORY: Load Command & Context (FIRST STEP)
 1. Read the relevant command .md as REFERENCE for patterns and conventions:
@@ -172,16 +173,11 @@ Task({
    - Review subagent: `.codeadd/commands/add-review.md`
    Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
 2. Run: bash .codeadd/scripts/status.sh
-3. Parse FEATURE_ID from output
-4. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
-   - docs/features/${FEATURE_ID}/design.md (if exists)
-   - docs/features/${FEATURE_ID}/plan.md (if exists)
-5. Parse PROJECT_PATHS from script output and read ALL listed files
+3. Read ALL files listed in TASK_DOCUMENTS section above
+4. Parse PROJECT_PATHS from script output and read relevant files
    - These contain implementation patterns (logging, validation, state, components, etc)
    - Read the file(s) relevant to your area (match app name you're modifying)
-6. Read your area's skill file (see SKILLS section)
+5. Read your area's skill file (see SKILLS section)
 ```
 
 ---
@@ -288,8 +284,11 @@ IF user did NOT pass flag:
   - Execute EPIC_CURRENT_SF automatically
   - Inform: "Executing subfeature ${EPIC_CURRENT_SF} — loading docs from subfeature dir"
 
-Load: docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md
-      docs/features/${FEATURE_ID}/discovery.md (shared)
+TASK_DOCUMENTS (assemble for subagent prompts):
+  - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md
+  - docs/features/${FEATURE_ID}/discovery.md (shared)
+  - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/plan.md (if exists)
+  - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/tasks.md (if exists)
 ```
 
 **IF plan.md exists AND has section `## Features` (Legacy Epic):**
@@ -341,7 +340,7 @@ IF user did NOT pass flag:
 
 **Update Decision Log with scope.**
 
-**NOTE:** Subagents will load full context themselves. Coordinator only needs high-level scope to dispatch correct subagents.
+**NOTE:** Coordinator assembles TASK_DOCUMENTS with the correct paths (epic-aware). Subagents read these docs directly — no conditional logic needed in subagent prompts.
 
 ---
 
@@ -860,7 +859,24 @@ prompt: |
 
 ---
 
-## STEP 9: Final Verification
+## STEP 9: Coordinator Compliance Gate [HARD STOP]
+
+⛔ GATE: DO NOT report completion without executing this step.
+⛔ DO NOT USE: Write to report/completion files
+⛔ DO NOT: Inform user of completion
+
+1. Re-read TASK_DOCUMENTS (about.md, plan.md) to extract RF/RN list
+2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED from Decision Log
+3. Quick-read relevant implementation files to confirm requirement exists in code
+4. IF any RF/RN has no corresponding implementation:
+   - List missing items
+   - Dispatch fix subagent with missing requirements + TASK_DOCUMENTS
+   - Re-run this gate after fix
+5. IF ALL RF/RN covered: proceed to STEP 10
+
+---
+
+## STEP 10: Final Verification
 
 ```bash
 npm run build
@@ -881,7 +897,7 @@ ls -la "docs/features/${FEATURE_ID}/"
 
 ---
 
-## STEP 10: Completion Report
+## STEP 11: Completion Report
 
 ### Simple Feature Report
 

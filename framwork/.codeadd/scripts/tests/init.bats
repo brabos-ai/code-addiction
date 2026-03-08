@@ -42,14 +42,14 @@ teardown() {
 }
 
 @test "detecta branch feature e type=feature" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"type=feature"* ]]
 }
 
 @test "detecta branch hotfix e type=hotfix" {
-  git checkout -b hotfix/urgent -q
+  git checkout -b hotfix/0001H-urgent -q
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"type=hotfix"* ]]
@@ -57,29 +57,29 @@ teardown() {
 
 # ─── Features discovery ─────────────────────────────────────────────
 
-@test "cria docs/features se não existe e retorna count=0 next=F0001" {
+@test "cria docs/features se não existe e retorna count=0 next=0001F" {
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURES:count=0 next=F0001"* ]]
+  [[ "$output" == *"FEATURES:count=0 next=0001F"* ]]
   [ -d "docs/features" ]
 }
 
 @test "conta features existentes e calcula next corretamente" {
-  mkdir -p docs/features/F0001-login
-  mkdir -p docs/features/F0002-signup
+  mkdir -p docs/features/0001F-login
+  mkdir -p docs/features/0002F-signup
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURES:count=2 next=F0003"* ]]
+  [[ "$output" == *"FEATURES:count=2 next=0003F"* ]]
 }
 
 @test "detecta current feature quando em branch feature" {
-  mkdir -p docs/features/F0001-test
-  echo "# About" > docs/features/F0001-test/about.md
-  echo "# Plan" > docs/features/F0001-test/plan.md
-  git checkout -b feature/F0001-test -q
+  mkdir -p docs/features/0001F-test
+  echo "# About" > docs/features/0001F-test/about.md
+  echo "# Plan" > docs/features/0001F-test/plan.md
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"CURRENT:F0001-test docs=[about.md,plan.md]"* ]]
+  [[ "$output" == *"CURRENT:0001F-test docs=[about.md,plan.md]"* ]]
 }
 
 # ─── Architecture detection ─────────────────────────────────────────
@@ -117,19 +117,19 @@ EOF
 
 # ─── Recommendation ─────────────────────────────────────────────────
 
-@test "recomenda /feature quando em main" {
+@test "recomenda /add-feature quando em main" {
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"REC:create feature branch with /feature"* ]]
+  [[ "$output" == *"REC:create feature branch with /add-feature"* ]]
 }
 
-@test "recomenda continue discovery quando em feature branch com docs" {
-  mkdir -p docs/features/F0001-test
-  echo "# About" > docs/features/F0001-test/about.md
-  git checkout -b feature/F0001-test -q
+@test "recomenda continue work quando em feature branch com docs" {
+  mkdir -p docs/features/0001F-test
+  echo "# About" > docs/features/0001F-test/about.md
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"REC:continue discovery for F0001-test"* ]]
+  [[ "$output" == *"REC:continue work on 0001F-test"* ]]
 }
 
 # ─── Detached HEAD ──────────────────────────────────────────────────
@@ -138,20 +138,20 @@ EOF
   git checkout --detach -q
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"GIT:branch=detached-HEAD"* ]]
+  [[ "$output" == *"GIT:branch=(detached)"* ]]
 }
 
 # ─── RECENT_CHANGELOGS ──────────────────────────────────────────────
 
 @test "exibe RECENT_CHANGELOGS quando há features com changelog.md" {
-  mkdir -p docs/features/F0001-done
-  printf '# F0001\n\n## Resumo\nFeature completed successfully\n' \
-    > docs/features/F0001-done/changelog.md
-  mkdir -p docs/features/F0002-done
-  printf '# F0002\n\n## Resumo\nSecond feature completed\n' \
-    > docs/features/F0002-done/changelog.md
+  mkdir -p docs/features/0001F-done
+  printf '# 0001F\n\n## Resumo\nFeature completed successfully\n' \
+    > docs/features/0001F-done/changelog.md
+  mkdir -p docs/features/0002F-done
+  printf '# 0002F\n\n## Resumo\nSecond feature completed\n' \
+    > docs/features/0002F-done/changelog.md
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"RECENT_CHANGELOGS:"* ]]
-  [[ "$output" == *"F0001-done"* ]]
+  [[ "$output" == *"0001F-done"* ]]
 }

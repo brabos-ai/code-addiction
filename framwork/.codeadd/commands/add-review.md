@@ -324,20 +324,18 @@ prompt: |
   You are the FRONTEND REVIEWER for feature ${FEATURE_ID}.
   Your job is to validate frontend code quality, patterns, and UX implementation.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+  ## TASK_DOCUMENTS (read ALL before reviewing — source of truth)
+  ${TASK_DOCUMENTS}
+
+  ## MANDATORY: Load Context (FIRST STEP)
   Execute BEFORE any validation:
 
   1. Run: bash .codeadd/scripts/status.sh
-  2. Parse FEATURE_ID from output
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md
-     - docs/features/${FEATURE_ID}/discovery.md
-     - docs/features/${FEATURE_ID}/design.md (if exists - PRIMARY for UX validation)
-     - docs/features/${FEATURE_ID}/plan.md (frontend specs)
-  4. Parse PROJECT_PATHS from script output and read relevant files:
+  2. Read ALL files listed in TASK_DOCUMENTS above
+  3. Parse PROJECT_PATHS from script output and read relevant files:
      - Read files matching frontend apps you're reviewing (e.g., ADMIN.md, PORTAL.md)
      - Files are named by app, not by type
-  5. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
+  4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
 
   ## SKILLS (MANDATORY)
   Read BEFORE reviewing:
@@ -449,20 +447,19 @@ prompt: |
   You are the BACKEND REVIEWER for feature ${FEATURE_ID}.
   Your job is to validate backend code quality, architecture, security, database, AND product completeness.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+  ## TASK_DOCUMENTS (read ALL before reviewing — source of truth)
+  ${TASK_DOCUMENTS}
+
+  ## MANDATORY: Load Context (FIRST STEP)
   Execute BEFORE any validation:
 
   1. Run: bash .codeadd/scripts/status.sh
-  2. Parse FEATURE_ID from output
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md (EXTRACT: RF, RN, Acceptance Criteria)
-     - docs/features/${FEATURE_ID}/discovery.md (CHECK: Prerequisites Analysis)
-     - docs/features/${FEATURE_ID}/plan.md (PRIMARY - backend/database specs)
-  4. Parse PROJECT_PATHS from script output and read relevant files:
+  2. Read ALL files listed in TASK_DOCUMENTS above
+  3. Parse PROJECT_PATHS from script output and read relevant files:
      - Read files matching backend apps you're reviewing (e.g., SERVER.md)
      - DATABASE.md is cross-app, always read if database work
      - Files are named by app, not by type
-  5. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
+  4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
 
   ## SKILLS (MANDATORY)
   Read BEFORE reviewing:

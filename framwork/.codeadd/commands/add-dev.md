@@ -52,11 +52,12 @@ STEP 7: Determine scope            → Database, Backend, Workers, Frontend
 STEP 8: Execution decision         → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP 9: Implementation             → Per mode (development/correction/feature)
 STEP 10: Area validation           → Validator subagents (MANDATORY per area)
-STEP 11: Integration verification  → Build MUST pass
+STEP 11: Compliance Gate           → Cross-reference RF/RN vs implementation
+STEP 12: Integration verification  → Build MUST pass
 <!-- feature:startup-test:step-list -->
 <!-- /feature:startup-test:step-list -->
-STEP 13: Log iteration             → BEFORE informing user
-STEP 14: Completion                → Inform user based on mode
+STEP 14: Log iteration             → BEFORE informing user
+STEP 15: Completion                → Inform user based on mode
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -138,6 +139,11 @@ IF HAS_EPIC=true:
   3. SET SF_DIR = docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/
   4. SET TASKS_FILE = ${SF_DIR}/tasks.md (if HAS_TASKS=true)
   5. Inform: "Executing subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}"
+  6. ASSEMBLE TASK_DOCUMENTS for subagent prompts:
+     - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md
+     - docs/features/${FEATURE_ID}/discovery.md
+     - ${SF_DIR}/plan.md (if exists)
+     - ${SF_DIR}/tasks.md (if HAS_TASKS=true)
 ```
 
 **⛔ IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty (all done):**
@@ -165,6 +171,18 @@ IF user passed "feature N" AND HAS_EPIC=false:
 - ⛔ DO NOT USE: Write on code files
 - ⛔ DO NOT: Implement anything
 - ⛔ DO: Inform that feature N-1 must be completed first
+
+### 2C: Simple Mode (no epic, no legacy feature flag)
+
+```
+IF HAS_EPIC=false AND no "feature N" passed:
+  ASSEMBLE TASK_DOCUMENTS for subagent prompts:
+  - docs/features/${FEATURE_ID}/about.md
+  - docs/features/${FEATURE_ID}/discovery.md
+  - docs/features/${FEATURE_ID}/design.md (if exists)
+  - docs/features/${FEATURE_ID}/plan.md (if exists)
+  - docs/features/${FEATURE_ID}/tasks.md (if HAS_TASKS=true)
+```
 
 ---
 
@@ -380,17 +398,15 @@ Contract Tests (if exist) -> Database -> Backend API -> [parallel: Workers, Fron
 ```
 You are implementing the ${AREA} for feature ${FEATURE_ID}.
 
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+## TASK_DOCUMENTS (read ALL before starting — source of truth)
+${TASK_DOCUMENTS}
+
+## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
 
 1. Run: bash .codeadd/scripts/status.sh
-2. Parse FEATURE_ID from output
-3. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
-   - docs/features/${FEATURE_ID}/design.md (if exists)
-   - docs/features/${FEATURE_ID}/plan.md (if exists - PRIMARY for specs)
-4. Parse PROJECT_PATHS from script output and read relevant files:
+2. Read ALL files listed in TASK_DOCUMENTS above
+3. Parse PROJECT_PATHS from script output and read relevant files:
    - Files are named by app (SERVER.md, ADMIN.md, CLI.md, etc)
    - Read the file matching the app you're modifying
    - DATABASE.md is cross-app (read if doing database work)
@@ -707,7 +723,24 @@ After ALL validators:
 
 ---
 
-## STEP 11: Integration Verification
+## STEP 11: Coordinator Compliance Gate [HARD STOP]
+
+⛔ GATE: DO NOT report completion without executing this step.
+⛔ DO NOT USE: Write to report/completion files
+⛔ DO NOT: Inform user of completion
+
+1. Re-read TASK_DOCUMENTS (about.md, plan.md) to extract RF/RN list
+2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED from Decision Log
+3. Quick-read relevant implementation files to confirm requirement exists in code
+4. IF any RF/RN has no corresponding implementation:
+   - List missing items
+   - Dispatch fix subagent with missing requirements + TASK_DOCUMENTS
+   - Re-run this gate after fix
+5. IF ALL RF/RN covered: proceed to STEP 12
+
+---
+
+## STEP 12: Integration Verification
 
 1. **Contract Adherence:** Endpoints, events, commands match plan
 2. **Build Verification:** Run project build command (see CLAUDE.md)
@@ -721,7 +754,7 @@ After ALL validators:
 
 ---
 
-## STEP 13: Log Iteration + Checkpoint (BEFORE informing user)
+## STEP 14: Log Iteration + Checkpoint (BEFORE informing user)
 
 ### 12.1 Log Iteration to iterations.jsonl (PRD0031)
 
@@ -762,7 +795,7 @@ Change `| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT
 
 ---
 
-## STEP 14: Completion (Inform user based on mode)
+## STEP 15: Completion (Inform user based on mode)
 
 ### Development Completion
 

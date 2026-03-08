@@ -1,6 +1,6 @@
 ---
 name: subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session - dispatches fresh subagent for each task with code review between tasks, enabling fast iteration with quality gates
+description: Use when executing implementation plans with independent tasks in the current session - dispatches fresh subagent for each task with code review between tasks, enabling fast iteration with quality gates. Use this skill whenever coordinating multiple subagents for feature implementation, whether from /add-dev, /add-autopilot, or standalone plan execution.
 ---
 
 # Subagent-Driven Development
@@ -8,8 +8,6 @@ description: Use when executing implementation plans with independent tasks in t
 Execute plan by dispatching fresh subagent per task, with code review after each.
 
 **Core principle:** Fresh subagent per task + review between tasks = high quality, fast iteration
-
-**NEW (v2):** Uses Prompt Builder pattern - coordinator processes context and delivers digested information to subagents.
 
 > **Provider-Agnostic:** This skill describes WHAT to dispatch (intent + prompt), not HOW. Use your platform's subagent mechanism (Task tool, sub-process, agent call, etc.).
 
@@ -33,9 +31,41 @@ Execute plan by dispatching fresh subagent per task, with code review after each
 
 ---
 
-## The Prompt Builder Pattern
+## TASK_DOCUMENTS Pattern
 
-**CRITICAL:** All subagent prompts MUST follow this structure:
+Subagents must read original documentation — never work from summaries. The coordinator knows which docs are relevant (feature vs subfeature, epic-aware paths) and passes them as an explicit list. The subagent reads them directly.
+
+**Why this matters:** An LLM summarizing docs for another LLM is a telephone game — information loss is guaranteed. The subagent cannot detect what was omitted from a summary. Reading original docs is the only way to guarantee fidelity to the specification.
+
+**How it works:**
+
+1. **Coordinator** determines which docs the subagent needs (about.md, plan.md, discovery.md, tasks.md, etc.)
+2. **Coordinator** writes a `TASK_DOCUMENTS` section in the subagent prompt with the exact file paths
+3. **Subagent** reads ALL listed files as its first action — these are the source of truth
+
+**Example — simple feature:**
+```
+## TASK_DOCUMENTS (read ALL before starting — source of truth)
+- docs/features/F0005-media-library/about.md
+- docs/features/F0005-media-library/plan.md
+```
+
+**Example — epic with subfeatures:**
+```
+## TASK_DOCUMENTS (read ALL before starting — source of truth)
+- docs/features/F0005-media-library/about.md
+- docs/features/F0005-media-library/discovery.md
+- docs/features/F0005-media-library/subfeatures/SF01-chunked-analysis/about.md
+- docs/features/F0005-media-library/subfeatures/SF01-chunked-analysis/plan.md
+```
+
+The coordinator already knows if it's a simple feature or epic, which subfeature is current, and which docs exist. It assembles the correct list. The subagent has zero conditional logic — just reads what it receives.
+
+---
+
+## Subagent Prompt Template
+
+All subagent prompts follow this structure:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -44,8 +74,8 @@ Execute plan by dispatching fresh subagent per task, with code review after each
 │  ## ROLE                                                        │
 │  You are the [AREA] [agent type] for task [N].                  │
 │                                                                 │
-│  ## CONTEXT DIGEST (pre-processed by coordinator)               │
-│  [Compact summary - NO file reading needed]                     │
+│  ## TASK_DOCUMENTS (read ALL before starting — source of truth) │
+│  [List of file paths — subagent reads these directly]           │
 │                                                                 │
 │  ## DECISION LOG (from previous tasks)                          │
 │  [Accumulated decisions from earlier subagents]                 │
@@ -53,9 +83,6 @@ Execute plan by dispatching fresh subagent per task, with code review after each
 │  ## SKILLS                                                      │
 │  MANDATORY: [always for this area]                              │
 │  ADDITIONAL: [detected from context]                            │
-│                                                                 │
-│  ## REFERENCE FILES (pre-identified)                            │
-│  [Table with exact paths and lines]                             │
 │                                                                 │
 │  ## COORDINATOR NOTES                                           │
 │  [Decisions, warnings, patterns to follow/avoid]                │
@@ -86,22 +113,18 @@ Read plan file, create TodoWrite with all tasks, initialize decision log:
 - Working directory: [path]
 ```
 
-### 2. Pre-Process Context (Coordinator's Job)
+### 2. Pre-Dispatch Preparation (Coordinator's Job)
 
-Before dispatching ANY subagent, the coordinator MUST:
+Before dispatching ANY subagent, the coordinator:
 
-1. **Create Context Digest** - Summary of plan/requirements (~30-50 lines)
-2. **Identify References** - Find similar files in codebase
-3. **Compose Skills** - Determine mandatory + additional skills
-4. **Write Coordinator Notes** - Specific guidance for this task
-
-**Reference Discovery:**
-- `Glob` - find files by pattern (*.service.ts, *.controller.ts)
-- `Grep` - search for string/pattern matches
+1. **Assemble TASK_DOCUMENTS** — list all doc paths the subagent needs (epic-aware)
+2. **Identify Reference Files** — find similar files in codebase via Glob/Grep
+3. **Compose Skills** — determine mandatory + additional skills for this area
+4. **Write Coordinator Notes** — specific guidance, warnings, patterns from previous tasks
 
 ### 3. Execute Task with Subagent
 
-For each task, dispatch with PROCESSED context:
+For each task, dispatch with TASK_DOCUMENTS:
 
 ```
 Dispatch implementation subagent with this prompt:
@@ -109,8 +132,15 @@ Dispatch implementation subagent with this prompt:
     ## ROLE
     You are implementing Task N from [plan-file].
 
-    ## CONTEXT DIGEST (DO NOT re-read files)
-    [Pre-processed summary created by coordinator]
+    ## TASK_DOCUMENTS (read ALL before starting — source of truth)
+    - [path/to/about.md]
+    - [path/to/plan.md]
+    - [path/to/tasks.md]
+
+    ## MANDATORY: Load Context (FIRST STEP)
+    1. Run: bash .codeadd/scripts/status.sh
+    2. Read ALL files listed in TASK_DOCUMENTS above
+    3. Read your area's skill file (see SKILLS section)
 
     ## DECISION LOG (from previous tasks)
     [Accumulated decisions - what was already done]
@@ -121,11 +151,6 @@ Dispatch implementation subagent with this prompt:
 
     ADDITIONAL (detected):
     - [extra skills if needed]
-
-    ## REFERENCE FILES
-    | Pattern | Path | Notes |
-    |---------|------|-------|
-    | [type] | [path] | [why useful] |
 
     ## COORDINATOR NOTES
     - [Specific guidance]
@@ -158,13 +183,16 @@ Dispatch implementation subagent with this prompt:
 
 ### 5. Review Subagent's Work
 
-**Dispatch code-reviewer subagent with accumulated context:**
+Dispatch code-reviewer subagent with accumulated context:
 
 ```
 Dispatch review subagent with this prompt:
 
     ## ROLE
     You are reviewing Task N implementation.
+
+    ## TASK_DOCUMENTS (read ALL before reviewing — source of truth)
+    [Same docs as the implementation subagent received]
 
     ## DECISION LOG (full)
     [All decisions up to this point]
@@ -176,16 +204,17 @@ Dispatch review subagent with this prompt:
     - .codeadd/skills/code-review/SKILL.md
 
     ## COORDINATOR NOTES
-    - Verify implementation matches plan specifications
+    - Verify implementation matches spec from TASK_DOCUMENTS
     - Check for IoC registration (providers, exports)
     - Validate multi-tenancy patterns
 
     ## TASK
-    1. Read all changed files
-    2. Validate against plan
-    3. Check skill patterns
-    4. AUTO-FIX issues found
-    5. Report findings
+    1. Read all files from TASK_DOCUMENTS (spec)
+    2. Read all changed files (implementation)
+    3. Validate implementation against spec
+    4. Check skill patterns
+    5. AUTO-FIX issues found
+    6. Report findings
 
     ## REPORT FORMAT
     Return:
@@ -222,19 +251,44 @@ Dispatch review subagent with this prompt:
 - Move to next task
 - Repeat steps 3-6
 
-### 8. Final Review
+### 8. Coordinator Compliance Gate
 
-After all tasks complete, dispatch final code-reviewer with COMPLETE decision log:
+After ALL tasks complete and BEFORE reporting completion, the coordinator verifies the implementation matches the specification. This is not a review — it's a cross-reference check.
+
+**Why this exists:** Subagents may complete their tasks and pass code review, but still miss requirements from the spec. The coordinator is the only actor who has both the full spec and the full Decision Log. This gate catches gaps before they reach the user.
+
+**Steps:**
+
+1. **Re-read TASK_DOCUMENTS** (about.md, plan.md) to extract RF/RN list
+2. **Cross-reference** each RF/RN against FILES_CREATED/FILES_MODIFIED from the Decision Log
+3. **Quick-read** relevant implementation files to confirm the requirement exists in code
+4. **If any RF/RN has no corresponding implementation:**
+   - List missing items
+   - Dispatch fix subagent with the missing requirements + TASK_DOCUMENTS
+   - Re-run this gate after fix
+5. **If ALL RF/RN are covered:** proceed to Final Review
+
+```
+⛔ DO NOT report completion without executing this gate.
+⛔ DO NOT skip quick-read — file existence alone does not confirm implementation.
+```
+
+### 9. Final Review
+
+After Compliance Gate passes, dispatch final code-reviewer with COMPLETE decision log:
 
 ```
 ## FULL DECISION LOG
 [All tasks, all decisions, all files]
 
+## TASK_DOCUMENTS
+[All feature/subfeature docs]
+
 ## VERIFICATION CHECKLIST
 [From plan - what should exist]
 
 ## TASK
-- Review entire implementation
+- Review entire implementation against TASK_DOCUMENTS
 - Verify all plan requirements met
 - Check overall architecture
 - Final build verification
@@ -245,15 +299,13 @@ After all tasks complete, dispatch final code-reviewer with COMPLETE decision lo
 ## Example Workflow
 
 ```
-You: I'm using Subagent-Driven Development with Prompt Builder pattern.
-
-[Load plan, create TodoWrite, initialize Decision Log]
+Coordinator: Loading plan, creating TodoWrite, initializing Decision Log.
 
 === Task 1: Hook installation script ===
 
-[Pre-process: create context digest, find references]
+[Assemble TASK_DOCUMENTS, find references, compose skills]
 
-[Dispatch subagent with processed context]
+[Dispatch subagent with TASK_DOCUMENTS — subagent reads docs directly]
 Subagent:
   FILES_CREATED: [scripts/install-hook.sh]
   DECISIONS_MADE: [Used POSIX sh for compatibility]
@@ -261,16 +313,16 @@ Subagent:
 
 [Update Decision Log with Task 1 results]
 
-[Dispatch review subagent with full decision log]
+[Dispatch review subagent with same TASK_DOCUMENTS + decision log]
 Reviewer: Strengths: Good coverage. Issues: None. Score: 9/10
 
 [Mark Task 1 complete]
 
 === Task 2: Recovery modes ===
 
-[Pre-process with updated decision log]
+[Assemble TASK_DOCUMENTS with updated decision log]
 
-[Dispatch subagent - receives Task 1 decisions]
+[Dispatch subagent — reads docs + receives Task 1 decisions]
 Subagent:
   FILES_CREATED: [src/recovery.ts]
   DECISIONS_MADE: [Added verify/repair modes]
@@ -286,36 +338,19 @@ Fix subagent: Added progress every 100 items
 
 ...
 
-[After all tasks - Final review with complete decision log]
+=== Coordinator Compliance Gate ===
+
+[Re-read about.md + plan.md → extract RF/RN]
+[Cross-reference against Decision Log → all 8 RF covered]
+[Quick-read key files → implementations confirmed]
+Gate: PASS
+
+=== Final Review ===
+
+[Dispatch final reviewer with complete decision log + TASK_DOCUMENTS]
 Final reviewer: All requirements met, ready to merge
 
 Done!
-```
-
----
-
-## Context Digest Template
-
-When creating context digest for subagents:
-
-```markdown
-### CONTEXT DIGEST
-
-#### Plan Summary
-- Feature: [name/ID]
-- Goal: [2-3 sentences]
-- Total Tasks: [N]
-- Current Task: [N of M]
-
-#### Task Details
-[Relevant section from plan for this specific task]
-
-#### Dependencies
-- Requires: [what must exist before this task]
-- Provides: [what this task creates for later tasks]
-
-#### Technical Constraints
-- [From plan/architecture]
 ```
 
 ---
@@ -352,35 +387,16 @@ Maintain throughout session:
 
 ---
 
-## Advantages
-
-**vs. Manual execution:**
-- Subagents receive processed context (no re-discovery)
-- Decision log propagates knowledge
-- Reference files pre-identified
-- Coordinator notes provide intelligent guidance
-
-**vs. Old Pattern (file paths):**
-- Subagents don't waste time reading docs
-- Coordinator can inject specific warnings
-- Better skill composition (detects what's needed)
-- References are exact (not "find similar")
-
-**Cost:**
-- Coordinator does more upfront work
-- But subagents are faster and more accurate
-
----
-
 ## Red Flags
 
 **Never:**
-- Skip pre-processing context
-- Pass file paths instead of content digest
+- Pass summaries/digests instead of file paths — subagents must read original docs
+- Skip assembling TASK_DOCUMENTS (coordinator must always provide doc paths)
 - Forget to update decision log
 - Skip code review between tasks
 - Proceed with unfixed Critical issues
 - Dispatch multiple implementation subagents in parallel (conflicts)
+- Skip Coordinator Compliance Gate before reporting completion
 
 **If subagent fails task:**
 - Add failure to decision log
@@ -392,9 +408,9 @@ Maintain throughout session:
 ## Integration
 
 **Required patterns:**
-- **Prompt Builder** - All prompts use modular structure
+- **TASK_DOCUMENTS** - Coordinator assembles doc paths, subagent reads originals
 - **Decision Log** - Maintained throughout session
-- **Context Digest** - Pre-processed for every subagent
+- **Coordinator Compliance Gate** - Cross-reference spec vs implementation before completion
 
 **Reference scripts:**
 - `bash .codeadd/scripts/status.sh` - Get feature context
@@ -405,8 +421,6 @@ Maintain throughout session:
 - Database: `.codeadd/skills/database-development/SKILL.md`
 - Frontend: `.codeadd/skills/frontend-development/SKILL.md` + `.codeadd/skills/ux-design/SKILL.md`
 - Review: `.codeadd/skills/code-review/SKILL.md`
-
-See also: `.claude/commands/autopilot.md` for full autonomous workflow
 
 ---
 

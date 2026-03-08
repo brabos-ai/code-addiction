@@ -4,8 +4,8 @@ setup() {
   load 'test_helper/common-setup'
   common_setup
   # Criar estrutura de feature
-  mkdir -p docs/features/F0001-test
-  git checkout -b feature/F0001-test -q
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
 }
 
 teardown() {
@@ -18,8 +18,8 @@ teardown() {
   run "$SCRIPTS_DIR/log-iteration.sh" fix save-btn "fix validation" "api/ctrl.ts"
   [ "$status" -eq 0 ]
   [[ "$output" == *"LOGGED:I1"* ]]
-  [[ "$output" == *"FEATURE:F0001-test"* ]]
-  [ -f "docs/features/F0001-test/iterations.md" ]
+  [[ "$output" == *"FEATURE:0001F-test"* ]]
+  [ -f "docs/features/0001F-test/iterations.md" ]
 }
 
 @test "incrementa número de iteração" {
@@ -32,7 +32,7 @@ teardown() {
 @test "grava conteúdo correto no arquivo" {
   "$SCRIPTS_DIR/log-iteration.sh" fix save-btn "fix validation" "api/ctrl.ts"
   local content
-  content=$(cat docs/features/F0001-test/iterations.md)
+  content=$(cat docs/features/0001F-test/iterations.md)
   [[ "$content" == *"## I1|"* ]]
   [[ "$content" == *"|/dev|fix"* ]]
   [[ "$content" == *"save-btn|fix validation|api/ctrl.ts"* ]]
@@ -42,7 +42,7 @@ teardown() {
   run "$SCRIPTS_DIR/log-iteration.sh" add feat "new feat" "src.ts" "/hotfix"
   [ "$status" -eq 0 ]
   local content
-  content=$(cat docs/features/F0001-test/iterations.md)
+  content=$(cat docs/features/0001F-test/iterations.md)
   [[ "$content" == *"|/hotfix|add"* ]]
 }
 
@@ -53,7 +53,7 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"FEATURE_COMPLETE:1"* ]]
   local content
-  content=$(cat docs/features/F0001-test/iterations.md)
+  content=$(cat docs/features/0001F-test/iterations.md)
   [[ "$content" == *"[FEATURE 1 COMPLETE]"* ]]
   [[ "$content" == *"|feature:1"* ]]
 }
@@ -63,7 +63,7 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"EPIC:auth-system"* ]]
   local content
-  content=$(cat docs/features/F0001-test/iterations.md)
+  content=$(cat docs/features/0001F-test/iterations.md)
   [[ "$content" == *"|epic:auth-system"* ]]
 }
 
@@ -74,10 +74,10 @@ teardown() {
   run "$SCRIPTS_DIR/log-iteration.sh" fix slug "$long_what" "f.ts"
   [ "$status" -eq 0 ]
   local content
-  content=$(cat docs/features/F0001-test/iterations.md)
+  content=$(cat docs/features/0001F-test/iterations.md)
   # O conteúdo gravado deve ter no máximo 60 chars na parte do what
   local what_part
-  what_part=$(grep "^slug|" docs/features/F0001-test/iterations.md | cut -d'|' -f2)
+  what_part=$(grep "^slug|" docs/features/0001F-test/iterations.md | cut -d'|' -f2)
   [ "${#what_part}" -le 60 ]
 }
 
@@ -103,7 +103,7 @@ teardown() {
 }
 
 @test "falha quando feature dir não existe" {
-  git checkout -b feature/F9999-missing -q
+  git checkout -b feature/9999F-missing -q
   run "$SCRIPTS_DIR/log-iteration.sh" fix slug "what" "files"
   [ "$status" -eq 1 ]
   [[ "$output" == *"ERROR:feature_dir_not_found"* ]]
@@ -125,11 +125,11 @@ teardown() {
 # ─── Arquivo vazio / existente ───────────────────────────────────────
 
 @test "funciona corretamente quando iterations.md já existe mas está vazio" {
-  touch docs/features/F0001-test/iterations.md
+  touch docs/features/0001F-test/iterations.md
   run "$SCRIPTS_DIR/log-iteration.sh" fix save-btn "fix validation" "api/ctrl.ts"
   [ "$status" -eq 0 ]
   [[ "$output" == *"LOGGED:I1"* ]]
-  [ -s "docs/features/F0001-test/iterations.md" ]
+  [ -s "docs/features/0001F-test/iterations.md" ]
 }
 
 # ─── Caracteres especiais / UTF-8 ────────────────────────────────────
@@ -139,6 +139,6 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"LOGGED:I1"* ]]
   local content
-  content=$(cat docs/features/F0001-test/iterations.md)
+  content=$(cat docs/features/0001F-test/iterations.md)
   [[ "$content" == *"btn"* ]]
 }
