@@ -12,7 +12,7 @@ export const PROVIDERS = {
   },
   codex: {
     label: 'Codex (OpenAI)',
-    hint: '.agent/workflows/',
+    hint: '.agent/workflows/ + .agent/skills/',
     src: 'framwork/.agent',
     dest: '.agent',
   },

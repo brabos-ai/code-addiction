@@ -3,7 +3,7 @@
 # GET BRANCH METADATA
 # Extract complete metadata from any branch
 # ============================================
-# Usage: eval "$(bash framwork/.codeadd/scripts/get-branch-metadata.sh [branch])"
+# Usage: eval "$(bash .codeadd/scripts/get-branch-metadata.sh [branch])"
 # Output:
 #   BRANCH_NAME=feature/0001F-auth-system
 #   BRANCH_PREFIX=feature

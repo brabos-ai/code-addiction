@@ -58,3 +58,38 @@ export function writeGitignoreBlock(cwd, dirs) {
 
   fs.writeFileSync(gitignorePath, newContent, 'utf8');
 }
+
+/**
+ * Remove the ADD-managed block from .gitignore if present.
+ * Leaves user content outside the block untouched.
+ * Deletes .gitignore if the file becomes empty after removal.
+ * @param {string} cwd
+ */
+export function removeGitignoreBlock(cwd) {
+  const gitignorePath = path.join(cwd, '.gitignore');
+  if (!fs.existsSync(gitignorePath)) return;
+
+  const existing = fs.readFileSync(gitignorePath, 'utf8');
+  const blockRegex = new RegExp(
+    `(?:^|\\n)${escapeRegex(BLOCK_START)}\\n[\\s\\S]*?\\n${escapeRegex(BLOCK_END)}\\n?`,
+    'm'
+  );
+
+  if (!blockRegex.test(existing)) return;
+
+  const updated = existing
+    .replace(blockRegex, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  if (updated.length === 0) {
+    fs.unlinkSync(gitignorePath);
+    return;
+  }
+
+  fs.writeFileSync(gitignorePath, `${updated}\n`, 'utf8');
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
