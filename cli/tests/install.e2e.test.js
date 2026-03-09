@@ -41,6 +41,7 @@ function buildInstallZip(zipRoot) {
   zip.addFile(`${zipRoot}/framwork/.codeadd/commands/add.md`, Buffer.from('# add\n'));
   zip.addFile(`${zipRoot}/framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
   zip.addFile(`${zipRoot}/framwork/.agent/workflows/add.md`, Buffer.from('name: add\n'));
+  zip.addFile(`${zipRoot}/framwork/.agent/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
   return zip.toBuffer();
 }
 
@@ -74,6 +75,7 @@ describe('install command e2e', () => {
     expect(mocks.downloadTagZip).toHaveBeenCalledWith('v1.2.3');
     expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'commands', 'add.md'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, '.agent', 'workflows', 'add.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.agent', 'skills', 'backend-development', 'SKILL.md'))).toBe(true);
 
     const sh = fs.readFileSync(path.join(tmpDir, '.codeadd', 'scripts', 'health.sh'), 'utf8');
     expect(sh).toBe('echo ok\n');

@@ -3,7 +3,7 @@
 # NEXT-ID - Global Sequential ID Calculator
 # Calculate next global ID with type suffix
 # ============================================
-# Usage: bash framwork/.codeadd/scripts/next-id.sh [TYPE_LETTER]
+# Usage: bash .codeadd/scripts/next-id.sh [TYPE_LETTER]
 # Examples:
 #   bash next-id.sh F  → 0001F
 #   bash next-id.sh H  → 0002H

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptConfirm } from './prompt.js';
+import { removeGitignoreBlock } from './gitignore.js';
 
 const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
 
@@ -121,6 +122,8 @@ export async function uninstall(cwd, force = false) {
       removeEmptyDirs(path.join(cwd, dir));
     }
 
+    removeGitignoreBlock(cwd);
+
     outro('ADD removed successfully.');
     return;
   }
@@ -175,6 +178,8 @@ export async function uninstall(cwd, force = false) {
   for (const dir of ADD_DIRS) {
     removeEmptyDirs(path.join(cwd, dir));
   }
+
+  removeGitignoreBlock(cwd);
 
   outro('ADD removed successfully.');
 }
