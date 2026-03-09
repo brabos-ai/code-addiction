@@ -221,4 +221,56 @@ describe('update command', () => {
     // Should always download, even if version matches, because branches can have new commits
     expect(mocks.downloadBranchZip).toHaveBeenCalledTimes(1);
   });
+
+  it('syncs .gitignore block when manifest.gitignore is true', async () => {
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: ['claude'],
+      gitignore: true,
+    });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+
+    await update(tmpDir);
+
+    const gitignore = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
+    expect(gitignore).toContain('# ADD - managed by code-addiction');
+    expect(gitignore).toContain('.codeadd/');
+    expect(gitignore).toContain('.claude/');
+    expect(gitignore).toContain('# END ADD');
+  });
+
+  it('does not create .gitignore when manifest.gitignore is false', async () => {
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: ['claude'],
+      gitignore: false,
+    });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+
+    await update(tmpDir);
+
+    expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+  });
+
+  it('does not create .gitignore when manifest.gitignore is absent (backward compat)', async () => {
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: ['claude'],
+      // no gitignore key — pre-PRD0012 install
+    });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+
+    await update(tmpDir);
+
+    expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+  });
 });

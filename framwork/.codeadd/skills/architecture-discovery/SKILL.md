@@ -93,6 +93,28 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 {"doNOT":["include logging patterns in CLAUDE.md","include validation patterns in CLAUDE.md","include state management details in CLAUDE.md","include styling patterns in CLAUDE.md","duplicate info already in .codeadd/project/*.md"]}
 {"reference":"List ALL .codeadd/project/*.md files dynamically - don't hardcode names"}
 
+### StackContextGeneration
+{"purpose":"Generate .codeadd/project/stack-context.md from discovered architecture","when":"stack-context.md does not exist OR is outdated","source":"Phase0 discovery document + package.json analysis"}
+
+{"detection":{
+  "framework":{"express":"express in deps","fastify":"fastify in deps","nestjs":"@nestjs/core in deps","bun-hono":"hono in deps + bun runtime","bun-elysia":"elysia in deps + bun runtime"},
+  "orm":{"prisma":"prisma in deps","drizzle":"drizzle-orm in deps","kysely":"kysely in deps","typeorm":"typeorm in deps"},
+  "database":{"postgresql":"pg in deps OR DATABASE_URL contains postgres","mysql":"mysql2 in deps","sqlite":"better-sqlite3 in deps","mongodb":"mongodb OR mongoose in deps"},
+  "frontend":{"react":"react in deps","vue":"vue in deps","svelte":"svelte in deps"},
+  "state":{"zustand":"zustand in deps","pinia":"pinia in deps","svelte-stores":"svelte in deps"},
+  "forms":{"react-hook-form":"react-hook-form in deps","vee-validate":"vee-validate in deps","superforms":"sveltekit-superforms in deps"}
+}}
+
+{"output_path":".codeadd/project/stack-context.md","format":"See project-scaffolding skill for exact format","fields":["framework","language","runtime","orm","database","migrations","frontend framework","build-tool","ui-library","state","forms","tier","pattern","monorepo","workspace-tool"]}
+
+{"rules":[
+  "Detect from actual dependencies, never assume",
+  "If field cannot be determined, use 'none' or omit",
+  "tier: 'scale' if monorepo with apps/ + packages/, 'starter' otherwise",
+  "monorepo: true if turbo.json OR nx.json OR workspaces in package.json",
+  "pattern: 'clean-architecture' if domain/interfaces/database layers detected"
+]}
+
 ### Cleanup
 {"action":"rm .claude/temp/architecture-discovery.md","verify":"ls -la .claude/temp/ || echo cleanup complete"}
 
@@ -195,6 +217,7 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 4. Deep Understanding: read 1-2 files per area ONLY if STRUCTURE unclear
 5. **Update CLAUDE.md → ## Architecture Contract** (hierarquia, packages, imports, placement)
 6. Update CLAUDE.md → ## Technical Spec (token-efficient, STRUCTURE only)
-7. **Check if .codeadd/project/*.md exist** → add Implementation Patterns Reference section
-8. Cleanup: `rm .claude/temp/architecture-discovery.md`
-9. Report discoveries + suggest `/architecture-analyzer` if .codeadd/project/*.md don't exist
+7. **Generate `.codeadd/project/stack-context.md`** if it doesn't exist (detect stack from deps, structure, configs)
+8. **Check if .codeadd/project/*.md exist** → add Implementation Patterns Reference section
+9. Cleanup: `rm .claude/temp/architecture-discovery.md`
+10. Report discoveries + suggest `/architecture-analyzer` if .codeadd/project/*.md don't exist

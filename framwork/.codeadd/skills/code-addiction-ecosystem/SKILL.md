@@ -34,18 +34,20 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 | Skill | Proposito | Usada por |
 |-------|-----------|-----------|
+| add-commit | Commit mid-workflow com mensagem Conventional Commits adaptativa: ≤3 arquivos → linha unica, >3 → lista por modulo. Auto-staging, flags --push e --confirm, deteccao de .env | - |
 | add-ecosystem-map | [DUPLICATE] Mesmo conteudo que code-addiction-ecosystem - consolidar | - |
-| architecture-discovery | Mapear arquitetura, detectar patterns | add-audit, add-architecture-analyzer |
-| backend-development | Patterns NestJS, Clean Arch, DI, DTOs | add-dev, add-autopilot, add-plan, add-review, add-test |
+| architecture-discovery | Mapear arquitetura, detectar patterns, gerar stack-context.md | add-audit, add-architecture-analyzer |
+| backend-development | Arquitetura backend: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add-dev, add-autopilot, add-plan, add-review, add-test |
 | code-addiction-ecosystem | Visao consolidada do ecossistema add-pro (source of truth) | add, add-feature, add-design, add-plan, add-dev, add-review, add-done, add-hotfix, add-brainstorm, add-test |
 | code-review | Validacao de codigo, auto-correcao | add-review |
-| database-development | Entities, migrations, Kysely, repositories | add-dev, add-autopilot, add-plan, add-review |
+| database-development | Arquitetura de dados: entities, repositories, migrations, naming — stack-agnostic | add-dev, add-autopilot, add-plan, add-review |
 | delivery-validation | Validar RF/RN implementados, criterios de aceite | add-review |
 | dev-environment-setup | Detectar SO, diagnosticar tools ausentes, instalar WSL/git/jq/gh, configurar VS Code | add |
 | documentation-style | Padroes de documentacao ADD-pro | add-feature, add-design, add-brainstorm, add-audit |
 | feature-discovery | Processo de discovery de features, analise de codebase | add-feature, add-plan |
 | feature-specification | Estrutura do about.md com RFs, RNs, criterios de aceite | add-feature |
-| frontend-development | Patterns React, shadcn, Tailwind, hooks, state, API | add-dev, add-autopilot, add-plan, add-review, add-test |
+| frontend-development | Arquitetura frontend: state, data fetching, components, forms, routing — stack-agnostic | add-dev, add-autopilot, add-plan, add-review, add-test |
+| project-scaffolding | Criar projetos do zero: Starter/Scale, multi-stack Node.js, stack-context.md | add-init (futuro) |
 | health-check | Health check de ambiente e dependencias do projeto | - |
 | landing-page-saas | Framework para landing pages de alta conversao SaaS | add-landing |
 | optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
@@ -78,6 +80,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | architecture-discovery | add-audit, add-architecture-analyzer |
 | code-addiction-ecosystem | add (perde visao do todo) |
 | add-dev | add-autopilot (compartilham logica de implementacao) |
+| project-scaffolding | stack-context.md (consultado por backend/database/frontend-development) |
 | subagent-driven-development | add-dev, add-autopilot, add-review |
 
 ## Main Flows
@@ -90,4 +93,11 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Autonomo | feature -> autopilot -> done | Quer implementacao sem interacao |
 | Emergencia | hotfix -> done | Bug critico em producao |
 | Exploracao | brainstorm -> feature -> ... | Nao sabe por onde comecar |
+| Novo Projeto | init -> scaffold -> dev -> done | Criar projeto do zero |
 | Analise | audit | Verificar saude do projeto |
+
+## Last Updated
+
+| Data | Acao |
+|------|------|
+| 2026-03-09 | sync: regenerated ecosystem map via /add-sync |

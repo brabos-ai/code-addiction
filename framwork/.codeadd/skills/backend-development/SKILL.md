@@ -1,29 +1,41 @@
 ---
 name: backend-development
 description: |
-  Padrões de Backend API: RESTful, IoC/DI, CQRS, DTOs, Clean Architecture.
+  Backend architecture: SOLID, Clean Architecture, DTOs, Services, Repository Pattern, RESTful standards — stack-agnostic. Consult stack-context.md for framework. Use when implementing backend features.
 ---
 
 # Backend Development
 
-Skill para implementação de Backend API seguindo padrões do projeto.
+Skill for backend API implementation following universal architectural principles.
 
-**Use para:** Controllers, Services, DTOs, Commands/Events, IoC config
-**Não use para:** Frontend (ux-design), Database (database-development), Security (security-audit)
+**Use for:** Routes/Controllers, Services, DTOs, Domain logic, Data access, Error handling
+**Not for:** Frontend (ux-design), Database migrations (database-development), Security (security-audit)
 
-**Referência:** Sempre consultar `CLAUDE.md` para padrões gerais do projeto.
+**Stack resolution:** Consult `.codeadd/project/stack-context.md` for the framework in use (Express, Fastify, NestJS, Hono, Elysia, etc.). Apply these principles using the framework's idiomatic patterns. The AI already knows each framework's syntax — this skill teaches architecture, not framework tutorials.
+
+**Reference:** Always consult `CLAUDE.md` for general project standards.
 
 ---
 
 ## Clean Architecture
 
 ```
-domain → interfaces → database → api
+domain → application → infrastructure → presentation
 ```
 
-{"layers":[{"name":"domain","deps":"zero","content":"entities,enums,types"},{"name":"interfaces","deps":"domain","content":"service contracts"},{"name":"database","deps":"domain,interfaces","content":"repositories"},{"name":"api","deps":"all","content":"controllers,services,handlers"}]}
+{"layers":[{"name":"domain","deps":"zero","content":"entities,value objects,enums,types,domain errors"},{"name":"application","deps":"domain only","content":"service interfaces,use cases,DTOs"},{"name":"infrastructure","deps":"domain,application","content":"repository implementations,external services,config"},{"name":"presentation","deps":"all","content":"routes/controllers,middleware,error mapping"}]}
 
-**Rules:** Lower layers NUNCA importam upper | Domain sem I/O | Interfaces=ports | Database=adapters
+**Rules:**
+- Lower layers NEVER import from upper layers
+- Domain has ZERO I/O, ZERO framework dependencies — pure business logic
+- Application layer defines interfaces (ports) — infrastructure implements them (adapters)
+- Presentation layer is the only place aware of HTTP
+
+---
+
+## SOLID Principles
+
+{"solid":[{"p":"SRP","rule":"Each class/module has one reason to change. Services don't handle HTTP. Repositories don't validate."},{"p":"OCP","rule":"Extend behavior via new implementations, not modifying existing code. Strategy/plugin patterns."},{"p":"LSP","rule":"Implementations must be substitutable for their interfaces without breaking behavior."},{"p":"ISP","rule":"Prefer small, focused interfaces. Don't force consumers to depend on methods they don't use."},{"p":"DIP","rule":"Services depend on interfaces, not implementations. Inject abstractions, never concrete classes."}]}
 
 ---
 
@@ -39,23 +51,25 @@ domain → interfaces → database → api
 
 ---
 
-## IoC / DI
+## Dependency Injection / IoC
 
-**EVERY component MUST register in container.**
+**EVERY service, repository, and handler MUST be registered in the framework's DI container.**
 
-{"registration":[{"type":"Service","where":"providers in feature module"},{"type":"Repository","where":"providers+exports in db module"},{"type":"Guard","where":"providers in feature/global"},{"type":"Handler","where":"providers in feature module"},{"type":"Controller","where":"controllers array"}]}
+{"principles":["Services receive dependencies via constructor injection","Depend on interfaces/abstractions, never concrete implementations","Register all components in the framework's container/module system","Cross-module dependencies must be explicitly exported/shared"]}
 
-{"checklist":["create with @Injectable","register in providers","import module in AppModule","export in index.ts if libs/"]}
+{"checklist":["Component created with proper DI registration for the framework","Registered in the DI container/module","Imported/available where consumed","Exported if shared across modules"]}
 
-{"errors":[{"err":"Can't resolve dependencies","fix":"add to providers"},{"err":"Can't resolve (cross-module)","fix":"add to exports"},{"err":"Controller 404","fix":"import module in AppModule"}]}
+**Common DI errors:** Unresolved dependency = not registered. Cross-module failure = not exported. Route 404 = module not loaded. Consult framework docs for idiomatic registration.
 
 ---
 
 ## Naming Conventions
 
-{"files":{"controller":"kebab.controller.ts","service":"kebab.service.ts","repo":"PascalRepository.ts","interface":"IPascalRepository.ts","entity":"Pascal.ts","enum":"PascalCase.ts","dto":"PascalDto.ts","command":"PascalCommand.ts","handler":"PascalHandler.ts","event":"PascalEvent.ts"}}
+{"files":{"controller/route":"kebab.controller.ts or kebab.routes.ts","service":"kebab.service.ts","repository":"PascalRepository.ts","interface":"IPascalRepository.ts","entity":"Pascal.ts","enum":"PascalCase.ts","dto":"PascalDto.ts"}}
 
-{"rules":{"files":"kebab-case or PascalCase","classes":"PascalCase","interfaces":"I+PascalCase","dbColumns":"snake_case","variables":"camelCase","packages":"@add/[name]"}}
+{"rules":{"files":"kebab-case or PascalCase (follow project convention)","classes":"PascalCase","interfaces":"I+PascalCase","dbColumns":"snake_case","variables":"camelCase"}}
+
+**Paths and aliases:** Follow the project's existing import aliases and directory structure. Do not invent new aliases — check `tsconfig.json` paths and existing code.
 
 ---
 
@@ -63,55 +77,94 @@ domain → interfaces → database → api
 
 {"naming":[{"action":"create","pattern":"Create[Entity]Dto"},{"action":"update","pattern":"Update[Entity]Dto"},{"action":"patch","pattern":"Patch[Entity]Dto"},{"action":"response","pattern":"[Entity]ResponseDto"},{"action":"list","pattern":"[Entity]ListResponseDto"},{"action":"query","pattern":"[Entity]QueryDto"}]}
 
-{"validation":["@IsNotEmpty()=required","@IsOptional()=optional","@IsEmail()","@IsEnum(E)","@IsUUID()","@MinLength(n)","@MaxLength(n)","@IsInt()","@Min(n)/@Max(n)"]}
+**Rules:**
+- Input DTOs (create/update/patch) are SEPARATE from response DTOs
+- Validation happens at the presentation layer entry point, NEVER in domain
+- Use the project's validation library (class-validator, zod, typebox, valibot, joi, etc.)
+- Every input field must have validation rules defined
+- Response DTOs control what leaves the API — never expose raw entities
 
 ---
 
-## CQRS
+## Services
+
+{"rules":["Business logic lives here — NO HTTP concepts (no req/res, no status codes, no headers)","Receives pure data (DTOs or primitives), returns pure data (entities or response DTOs)","Depends on repository interfaces, not implementations","Orchestrates domain logic — does not contain persistence logic","One service per bounded context / feature area"]}
+
+---
+
+## Repository Pattern
+
+{"rules":["Interface defined in application/domain layer","Implementation in infrastructure layer","Services depend on the interface, never the implementation","Returns domain entities, not raw rows or ORM-specific objects","All data access goes through repositories — no direct DB calls in services"]}
+
+---
+
+## CQRS (When Applicable)
+
+**IMPORTANT:** Only apply CQRS if the project already uses it. If the project uses simple service calls, follow that pattern. Do NOT impose CQRS on projects that don't use it.
 
 {"commands":{"return":"void or ID (NEVER full objects)","naming":"[Action][Subject]Command","handler":"[Command]Handler"}}
 
-{"events":{"naming":"[Subject][PastTense]Event (UserCreated)","handlers":"MUST be idempotent","export":"handlers NOT in index.ts"}}
+{"events":{"naming":"[Subject][PastTense]Event (UserCreated)","handlers":"MUST be idempotent"}}
 
-{"rules":["write ops → Commands","read ops → direct Repository (no QueryHandlers)"]}
+{"rules":["Write operations → Commands","Read operations → direct service/repository calls","Event handlers can be re-executed safely (idempotent)"]}
 
 ---
 
-## Module Structure
+## Error Handling
+
+{"layers":{"domain":"Throw domain-specific errors (NotFoundError, BusinessRuleViolationError, ConflictError). No HTTP concepts.","application":"Let domain errors propagate. Add application-level errors if needed (ValidationError).","presentation":"Map domain/application errors to HTTP status codes. This is the ONLY layer that knows about HTTP."}}
+
+{"mapping":[{"domain":"NotFoundError","http":404},{"domain":"ValidationError","http":400},{"domain":"UnauthorizedError","http":401},{"domain":"ForbiddenError","http":403},{"domain":"ConflictError","http":409},{"domain":"BusinessRuleViolationError","http":422}]}
+
+**Rule:** Services throw domain errors. The presentation layer (middleware, error handler, or framework mechanism) maps them to HTTP responses. Never import HTTP concepts into services.
+
+---
+
+## Module / Feature Structure
+
+Organize code by domain/feature, not by technical role. Each feature module contains its own controllers, services, DTOs, and domain logic.
 
 ```
-modules/[feature]/
-├── dtos/{Create,Update,[Feature]Response}Dto.ts
-├── commands/{Create[Feature]Command.ts,handlers/}
-├── events/{[Feature]CreatedEvent.ts,handlers/}
-├── [feature].controller.ts
+[feature]/
+├── dtos/
+│   ├── Create[Feature]Dto.ts
+│   ├── Update[Feature]Dto.ts
+│   └── [Feature]ResponseDto.ts
+├── [feature].controller.ts (or routes.ts)
 ├── [feature].service.ts
-└── [feature].module.ts
+└── [feature].module.ts (or index.ts)
 ```
+
+**DDD-lite principles:**
+- Entities encapsulate behavior (methods, not just data bags)
+- Value objects for concepts with no identity (Money, Email, DateRange)
+- Organize by bounded context, not by technical layer
+- Keep domain logic in entities/services, not in controllers or repositories
 
 ---
 
 ## Multi-Tenancy
 
-{"rules":["ALWAYS filter by account_id","account_id from JWT (NEVER body)","Super Admin cross-tenant","NEVER trust client account_id"]}
+{"rules":["ALWAYS filter by tenant identifier (e.g., account_id) at repository level","Tenant ID extracted from auth context (JWT/session), NEVER from request body","Super Admin may access cross-tenant data — explicitly guard this","NEVER trust client-provided tenant ID"]}
 
 ---
 
-## Config Access
+## Configuration
 
-**NEVER** `process.env` → **ALWAYS** `IConfigurationService`
+**NEVER** access env vars directly in services (`process.env`, `Bun.env`, etc.)
+**ALWAYS** use a centralized, typed configuration service/module.
 
----
-
-## Imports
-
-{"patterns":[{"type":"DTOs local","style":"./dtos"},{"type":"Entities/Enums","style":"@add/domain"},{"type":"Repositories","style":"@add/database"},{"type":"Shared services","style":"../../shared/services"}]}
+{"rules":["Define a configuration interface with typed properties","Load and validate config at startup","Inject config service into consumers","Fail fast on missing required config"]}
 
 ---
 
-## Exceptions
+## KISS and YAGNI
 
-{"types":[{"ex":"BadRequestException","code":400,"use":"validation"},{"ex":"UnauthorizedException","code":401,"use":"no auth"},{"ex":"ForbiddenException","code":403,"use":"no permission"},{"ex":"NotFoundException","code":404,"use":"not found"},{"ex":"ConflictException","code":409,"use":"duplicate/business rule"}]}
+- Don't add abstraction layers you don't need yet
+- Don't implement patterns the project doesn't use
+- Prefer simple, readable code over clever code
+- Add complexity only when requirements demand it
+- Follow existing project patterns — consistency over personal preference
 
 ---
 
@@ -119,58 +172,54 @@ modules/[feature]/
 
 ### RESTful Standards
 - [ ] URLs use nouns, not verbs (no `/getUsers`, `/createOrder`)
-  → Check: routes don't contain verbs (get, create, update, delete, fetch)
+  -> Check: routes don't contain verbs (get, create, update, delete, fetch)
 - [ ] Correct HTTP methods (GET=read, POST=create, PUT=full update, PATCH=partial, DELETE=remove)
-  → Check: controller decorators match operation type
-- [ ] Correct status codes (POST→201, DELETE→204, GET/PUT/PATCH→200)
-  → Check: POST handlers have `@HttpCode(201)`, DELETE have `@HttpCode(204)`
+  -> Check: route definitions match operation type
+- [ ] Correct status codes (POST->201, DELETE->204, GET/PUT/PATCH->200)
+  -> Check: response status codes match the method table above
 - [ ] URL pattern follows `/api/v1/resource`
-  → Check: controller `@Controller()` path uses versioned nouns
+  -> Check: route paths use versioned plural nouns
 
 ### Clean Architecture
-- [ ] Layer dependencies respected (domain→interfaces→database→api)
-  → Check: domain files have zero imports from upper layers
-- [ ] Domain has zero I/O dependencies
-  → Check: no database/http imports in domain layer
+- [ ] Layer dependencies respected (domain->application->infrastructure->presentation)
+  -> Check: domain files have zero imports from upper layers
+- [ ] Domain has zero I/O or framework dependencies
+  -> Check: no database/http/framework imports in domain layer
 - [ ] Repositories return domain entities, not DTOs or raw rows
-  → Check: repository methods return entity interfaces
+  -> Check: repository methods return entity types
 
-### IoC/DI Registration
-- [ ] Service/Handler/Repository decorated with `@Injectable()`
-  → Check: `grep @Injectable` in every service/handler/repository file
-- [ ] Component registered in module `providers` array
-  → Check: module file lists component in providers
-- [ ] Module imported in AppModule (if feature module)
-  → Check: `app.module.ts` imports the feature module
-- [ ] Barrel export added (if in libs/)
-  → Check: `index.ts` exports the component
+### Dependency Injection
+- [ ] All services/repositories/handlers registered in DI container
+  -> Check: every component is registered per framework convention
+- [ ] Dependencies injected via constructor, not instantiated directly
+  -> Check: no `new ConcreteService()` in business logic
+- [ ] Services depend on interfaces, not concrete implementations
+  -> Check: constructor parameters reference abstractions
 
 ### DTOs
 - [ ] Naming follows convention (Create/Update/Patch/Response + EntityDto)
-  → Check: DTO class names match pattern
-- [ ] Validation decorators on all fields (`@IsNotEmpty`, `@IsOptional`, etc.)
-  → Check: every DTO field has at least one validation decorator
+  -> Check: DTO class names match pattern
+- [ ] Validation rules on all input DTO fields
+  -> Check: every input field has validation defined
 - [ ] Response DTOs exist for read operations
-  → Check: GET endpoints return typed response DTOs
+  -> Check: GET endpoints return typed response DTOs, not raw entities
 
-### CQRS
-- [ ] Write operations use Commands (not direct service calls)
-  → Check: POST/PUT/PATCH/DELETE use command bus
-- [ ] Events emitted after state changes
-  → Check: command handlers emit domain events
-- [ ] Event handlers are idempotent
-  → Check: handlers can be re-executed safely
-- [ ] Event handlers NOT exported in index.ts
-  → Check: barrel exports don't include event handlers
+### Error Handling
+- [ ] Services throw domain errors, not HTTP exceptions
+  -> Check: no HTTP status codes or framework exception classes in service layer
+- [ ] Presentation layer maps domain errors to HTTP responses
+  -> Check: error mapping exists in controller/middleware/error handler
+- [ ] Domain errors are descriptive and typed
+  -> Check: custom error classes with meaningful names
 
 ### Multi-Tenancy
-- [ ] Every query filters by `account_id`
-  → Check: repository methods receive and filter by accountId
-- [ ] `account_id` extracted from JWT (never from request body)
-  → Check: controller gets accountId from auth context, not body
-- [ ] Client-provided account_id never trusted
-  → Check: no `req.body.accountId` usage
+- [ ] Every query filters by tenant identifier
+  -> Check: repository methods receive and filter by tenant ID
+- [ ] Tenant ID extracted from auth context, never from request body
+  -> Check: controller gets tenant ID from auth middleware/context
+- [ ] Client-provided tenant ID never trusted
+  -> Check: no `req.body.tenantId` usage for authorization
 
-### Config
-- [ ] Uses `IConfigurationService`, never `process.env`
-  → Check: no `process.env` in feature code
+### Configuration
+- [ ] Uses centralized config service, never direct env var access
+  -> Check: no `process.env` / `Bun.env` in feature code
