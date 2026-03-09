@@ -55,17 +55,18 @@ SE building-commands SKILL NÃO CARREGADA:
 ```
 /add-build PRD-[slug]                 → Executar PRD específico
 /add-build [tipo] [nome]             → Build direto (sem PRD, para simples)
-/add-build --optimize [path]          → Otimizar artefato existente em framwork/
 ```
 
 **Exemplos:**
 ```
 /add-build PRD-hotfix-optimization
 /add-build command add-diagnose
-/add-build --optimize framwork/.claude/commands/add-feature.md
+/add-build skill skill-creator
 ```
 
 **Tipos válidos:** `command` | `skill` | `script` | `workflow`
+
+> Para otimizar artefato existente: usar `/add-build [tipo] [nome]` → o design phase detecta que o artefato já existe e apresenta análise vs building-commands antes de editar.
 
 **Paths do framework:**
 | Tipo | Path |
@@ -116,13 +117,14 @@ docs/prd/PRD-[slug].md
 
 **Se complexo:** Recomendar `/add-strategy` primeiro.
 
-### 1.3 Se --optimize
+### 1.3 Worktree para Builds com Risco
 
-```markdown
-1. Ler artefato atual em framwork/
-2. Ler building-commands skill
-3. Identificar gaps vs skill
-4. Listar melhorias propostas
+```
+SE build envolve múltiplos artefatos OU modifica commands/skills existentes:
+  → RECOMENDAR ao usuário criar branch + worktree antes de implementar
+  → Motivo: isolamento limpo, descarte fácil se algo der errado
+  → Em caso de problema: descartar worktree (não fazer rollback manual)
+  → Após implementar: /add-sync para validar consistência do ecossistema
 ```
 
 ---
@@ -181,11 +183,12 @@ Aprova esse design?
 **ANTES de implementar, LER:**
 
 ```
-.claude\skills\building-commands\SKILL.md           # SEMPRE
-.claude/skills/code-addiction-ecosystem/SKILL.md    # SEMPRE (visão do ecossistema)
-.claude/skills/token-efficiency/             # SEMPRE
-.claude/skills/documentation-style/          # Se gerar docs
-framwork/.codeadd/skills/                    # Referência de skills existentes
+.claude/skills/building-commands/SKILL.md                    # SEMPRE
+framwork/.codeadd/skills/add-ecosystem-map/SKILL.md          # SEMPRE (visão do ecossistema)
+framwork/.codeadd/skills/token-efficiency/SKILL.md           # SEMPRE
+framwork/.codeadd/skills/documentation-style/SKILL.md        # Se gerar docs
+framwork/.codeadd/skills/skill-creator/SKILL.md              # SE tipo=skill
+framwork/.codeadd/skills/                                     # Referência de skills existentes
 ```
 
 ### Checklist building-commands (APLICAR)
@@ -406,36 +409,6 @@ docs/changelog/YYYY-MM-DD-[action]-[what].md
 ### Para usar:
 [instrução de uso do artefato]
 ```
-
----
-
-## Modo Optimize
-
-Se `/add-build --optimize [path]`:
-
-### STEP 1: Analisar Artefato
-
-```markdown
-## Análise: [path]
-
-### vs building-commands skill:
-
-| Critério | Status | Problema |
-|----------|--------|----------|
-| Top-of-file blocking | ✅/❌ | [se ❌, o que falta] |
-| STEP vs Phase | ✅/❌ | [se ❌, o que falta] |
-| Linguagem imperativa | ✅/❌ | [se ❌, exemplos] |
-| Gates com ferramentas | ✅/❌ | [se ❌, o que falta] |
-| Ordem obrigatória | ✅/❌ | [se ❌, o que falta] |
-
-### Melhorias Propostas:
-1. [melhoria 1]
-2. [melhoria 2]
-
-Aplicar otimizações?
-```
-
-### STEP 2-6: Seguir fluxo normal
 
 ---
 

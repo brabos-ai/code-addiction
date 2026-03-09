@@ -52,7 +52,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | token-efficiency | Compressao, JSON compacto | Todas (best practice) |
 | updating-claude-documentation | Atualizar CLAUDE.md | add-done (quando altera arquitetura) |
 | ux-design | Componentes, mobile-first, SaaS patterns | add-design |
-| write-skill | Testar commands com pressao | Validacao de commands |
+| skill-creator | Criar e melhorar skills (tier, CSO, anti-rationalization) | add-build (builds de skill) |
 | dev-environment-setup | Detectar SO, diagnosticar tools ausentes, instalar WSL/git/jq/gh, configurar VS Code settings.json | add, add-init |
 
 ## Dependency Index

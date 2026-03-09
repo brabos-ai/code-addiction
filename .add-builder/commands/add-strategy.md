@@ -146,7 +146,7 @@ Glob: framwork/.*/
 **LER (se existirem):**
 
 ```
-.claude/skills/code-addiction-ecosystem/SKILL.md  # Visão consolidada (commands, skills, dependências)
+framwork/.codeadd/skills/add-ecosystem-map/SKILL.md  # Visão consolidada (commands, skills, dependências)
 docs/strategy/ADD-ECOSYSTEM-STRATEGY.md           # Estratégia do ecossistema
 docs/strategy/ADD-MASTER-DOCUMENT-v4.md           # Documento mestre, pirâmide, jornada
 framwork/README.md                                # Contexto do framework
@@ -228,6 +228,37 @@ framwork/.codeadd/scripts/         → Scripts de automação
 ## STEP 3: Questionário Consultivo [STOP]
 
 **IMPORTANTE:** Este é um STOP POINT. Apresentar e AGUARDAR resposta.
+
+### Roteamento por Tipo
+
+Adaptar perguntas e foco conforme tipo identificado no STEP 1:
+
+```
+SE tipo=COMMAND:
+  → Priorizar: gates, ordem de execução, proibições de ferramentas, output path
+  → Perguntas-chave: "Quais etapas podem ser puladas?" / "Quais ferramentas bloquear?"
+  → Seção 3 deve ter: gate violation scenario, providers alvo
+
+SE tipo=SKILL:
+  → Priorizar: triggers CSO, tier (1/2/3), when-to-use vs when-NOT-to-use
+  → Perguntas-chave: "Qual symptom dispara essa skill?" / "Tier 1 (simples) ou Tier 2 (expandida)?"
+  → Seção 3 deve ter: exemplo de trigger keyword, skills similares existentes
+
+SE tipo=SCRIPT:
+  → Priorizar: SO alvo, dependências, modo de invocação
+  → Perguntas-chave: "Roda em Windows/Mac/Linux?" / "Quais tools precisam estar instaladas?"
+  → Seção 3 deve ter: compatibilidade de ambiente
+
+SE tipo=WORKFLOW:
+  → Priorizar: handoffs entre etapas, quem dispara, integração com commands existentes
+  → Perguntas-chave: "O que entra? O que sai?" / "Automatiza fluxo existente ou cria novo?"
+  → Seção 3 deve ter: sequência de commands envolvidos
+
+SE tipo=PRODUTO ou ARQUITETURA:
+  → Priorizar: impacto no ecossistema, migração, backwards compatibility
+  → Perguntas-chave: "O que quebra?" / "Quais commands/skills precisam ser atualizados?"
+  → Seção 3 deve ter: dependency index (o que depende do que muda)
+```
 
 ### Estrutura do Questionário
 

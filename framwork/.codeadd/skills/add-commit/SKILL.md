@@ -133,3 +133,19 @@ NEVER:
 - Force push
 - Create PRs (that's `/add-pr`)
 - Replace `/add-done` for branch finalization
+
+## Completion [HARD STOP]
+
+Commit realizado com sucesso. A skill add-commit encerra aqui.
+
+**Se usou `--push`:** push foi executado no STEP 6 — não há próximo passo de push separado.
+
+### Próximos passos (você decide):
+
+| Intenção | Comando |
+|----------|---------|
+| Continuar desenvolvendo | Mais commits → `/add-commit` |
+| Finalizar a branch + push | `/add-done` |
+| Criar PR agora | `/add-pr` |
+
+⛔ **NÃO sugerir `/add-push`** — não existe. Push é coberto pelo `--push` flag ou pelo `/add-done`.
