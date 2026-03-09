@@ -72,3 +72,22 @@ export async function promptConfirm(message) {
     throw new Error('USER_CANCEL');
   }
 }
+
+/**
+ * Ask user whether to add installed directories to .gitignore.
+ * Returns boolean. Defaults to true (opt-out model).
+ * Throws with message 'USER_CANCEL' if user cancels.
+ * @returns {Promise<boolean>}
+ */
+export async function promptGitignore() {
+  const result = await confirm({
+    message: 'Add installed directories to .gitignore?',
+    initialValue: true,
+  });
+
+  if (isCancel(result)) {
+    throw new Error('USER_CANCEL');
+  }
+
+  return result;
+}

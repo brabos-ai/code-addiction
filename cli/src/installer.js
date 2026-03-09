@@ -3,7 +3,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { promptProviders, promptConfirm, promptFeatures } from './prompt.js';
+import { promptProviders, promptConfirm, promptFeatures, promptGitignore } from './prompt.js';
+import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { resolveSelected } from './providers.js';
 import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
@@ -229,6 +230,7 @@ export async function install(cwd, options = {}) {
   const providers = resolveSelected(selectedKeys);
 
   const selectedFeatures = await promptFeatures();
+  const addToGitignore = await promptGitignore();
 
   for (const p of providers) {
     const destDir = path.join(cwd, p.dest);
@@ -264,6 +266,11 @@ export async function install(cwd, options = {}) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
+  if (addToGitignore) {
+    writeGitignoreBlock(cwd, getInstalledDirs(selectedKeys));
+    log.success('.gitignore updated.');
+  }
+
   // Initialize features based on user selection
   const defaultFeatures = {};
   for (const name of Object.keys(FEATURES)) {
@@ -276,7 +283,7 @@ export async function install(cwd, options = {}) {
     selectedKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, features: defaultFeatures }
+    { source: installSource.source, ref: installSource.ref, features: defaultFeatures, gitignore: addToGitignore }
   );
 
   // Apply enabled features (inject fragment content into commands)

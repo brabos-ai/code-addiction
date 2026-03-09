@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   promptProviders: vi.fn(),
   promptConfirm: vi.fn(),
   promptFeatures: vi.fn(),
+  promptGitignore: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
@@ -23,6 +24,7 @@ vi.mock('../src/prompt.js', () => ({
   promptProviders: mocks.promptProviders,
   promptConfirm: mocks.promptConfirm,
   promptFeatures: mocks.promptFeatures,
+  promptGitignore: mocks.promptGitignore,
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -54,6 +56,7 @@ beforeEach(() => {
   mocks.promptProviders.mockResolvedValue(['codex']);
   mocks.promptConfirm.mockResolvedValue(undefined);
   mocks.promptFeatures.mockResolvedValue(['tdd', 'startup-test']);
+  mocks.promptGitignore.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -163,5 +166,39 @@ describe('install command e2e', () => {
     expect(manifest.version).toBe('2.0.0');
     expect(manifest.releaseTag).toBe('v2.0.0');
     expect(manifest.source).toBe('tag');
+  });
+
+  it('writes gitignore: true to manifest and creates .gitignore block when user opts in', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.promptProviders.mockResolvedValue(['claude']);
+    mocks.promptGitignore.mockResolvedValue(true);
+
+    await install(tmpDir);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.gitignore).toBe(true);
+
+    const gitignore = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
+    expect(gitignore).toContain('# ADD - managed by code-addiction');
+    expect(gitignore).toContain('.codeadd/');
+    expect(gitignore).toContain('.claude/');
+    expect(gitignore).toContain('# END ADD');
+  });
+
+  it('writes gitignore: false to manifest and does not create .gitignore when user opts out', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.promptGitignore.mockResolvedValue(false);
+
+    await install(tmpDir);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.gitignore).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
   });
 });
