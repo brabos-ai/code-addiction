@@ -59,10 +59,19 @@ When ambiguous, show the inferred type and ask the user to confirm.
 
 **STEP 1 — Analyze changeset:**
 ```bash
-git diff --stat HEAD
-git diff --stat --cached HEAD  # also check staged
+git status --short
 ```
-Count total changed files (N). Read the diff to understand what changed.
+Count ALL lines in the output as N — this includes:
+- Tracked modified files (`M`, ` M`)
+- Staged files (`A`, `M `)
+- **Untracked files (`??`)** ← critical: `git diff` misses these
+
+Then read diff content to understand what changed:
+```bash
+git diff HEAD               # unstaged tracked changes
+git diff --cached HEAD      # staged changes
+git status --short          # untracked file names (use paths for context)
+```
 
 **STEP 2 — Infer commit type and scope:**
 Based on diff content, determine the Conventional Commits type.
@@ -70,20 +79,20 @@ Scope = the main module/directory affected (optional, use when clear).
 
 **STEP 3 — Generate message:**
 Apply adaptive logic (≤ 3 vs > 3 files).
-Present the generated message to the user for confirmation or adjustment.
+- **Default:** present the generated message and wait for confirmation or adjustment.
+- **`--silent` flag:** skip confirmation — commit immediately with generated message.
 
 **STEP 4 — Handle staging:**
-```bash
-git status
-```
 - If staged changes exist → use them as-is
-- If nothing staged → run `git add -A` and inform the user
+- If nothing staged → run `git add -A`
+  - **Default:** inform the user before running
+  - **`--silent`:** run without asking
 
-**⚠️ Security check before staging:**
-If `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12` appear in the diff, WARN the user before proceeding.
+**⚠️ Security check (ALWAYS — even with `--silent`):**
+If `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12` appear in the output of `git status --short`, STOP and warn — never auto-stage sensitive files silently.
 ```
 ⚠️ Sensitive files detected: [list files]
-Proceed with git add -A? (y/n)
+Remove them from the changeset or add to .gitignore before proceeding.
 ```
 
 **STEP 5 — Commit:**
@@ -116,8 +125,8 @@ refactor: extract service layer from controllers
 ## Rules
 
 ALWAYS:
-- Show the generated message before committing — never commit silently
-- Warn about sensitive files before `git add -A`
+- Show the generated message before committing — unless `--silent` flag is set
+- Warn about sensitive files before staging — even with `--silent`, NEVER auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`
 - Clarify to the user: this is for mid-workflow commits, use `/add-done` to finalize the branch
 
 NEVER:
