@@ -19,6 +19,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-copy | Gerador de copy estruturado para landing pages SaaS | saas-copy |
 | add-design | Especificacao UX mobile-first, coordena subagentes para features complexas | ux-design, documentation-style |
 | add-dev | Implementacao guiada (coordena subagentes). Suporta `/add-dev feature N` para Epics | backend-development, database-development, frontend-development, ux-design |
+| add-commit | Commit mid-workflow com mensagem adaptativa (Conventional Commits). Uso: /add-commit ou /add-commit --push | add-commit (skill) |
 | add-done | Finalizar feature, gera changelog. Valida epics + requisitos. Detecta branch protection e roteia para PR ou merge direto | - |
 | add-feature | Discovery de funcionalidade, cria about.md | feature-discovery, feature-specification, documentation-style |
 | add-hotfix | Correcao urgente com ID global (H[NNNN]). Cria doc isolado em docs/[NNNN]H-*, documenta relacoes em related.md | ux-design |
@@ -34,6 +35,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 | Skill | Proposito | Usada por |
 |-------|-----------|-----------|
+| add-commit | Commit mid-workflow com mensagem Conventional Commits adaptativa: ≤3 arquivos → linha unica, >3 → lista por modulo. Auto-staging, flag --push, deteccao de .env | add-commit (command) |
 | add-ecosystem-map | [DUPLICATE] Mesmo conteudo que code-addiction-ecosystem - consolidar | - |
 | architecture-discovery | Mapear arquitetura, detectar patterns, gerar stack-context.md | add-audit, add-architecture-analyzer |
 | backend-development | Arquitetura backend: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add-dev, add-autopilot, add-plan, add-review, add-test |
