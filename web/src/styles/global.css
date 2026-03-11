@@ -1,8 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #050505;
+  --color-accent: #00ff88;
+  --color-accent-dim: #00cc6a;
+  --color-muted: #666666;
+  --color-muted-light: #999999;
+  --color-foreground: #e8e8e8;
+
+  --font-family-display: "Syne", sans-serif;
+  --font-family-body: "Outfit", sans-serif;
+  --font-family-mono: "JetBrains Mono", monospace;
+}
 
 html {
   scroll-behavior: smooth;
