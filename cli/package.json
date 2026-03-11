@@ -1,6 +1,6 @@
 {
   "name": "codeadd",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "CLI for Code Addiction framework - AI-powered development workflows",
   "type": "module",
 "repository": {
@@ -28,12 +28,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@clack/prompts": "^0.10.0",
+    "@clack/prompts": "^1.1.0",
     "adm-zip": "^0.5.10"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.9",
-    "vitest": "^2.0.0"
+    "@vitest/coverage-v8": "^4.0.18",
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "codeadd",
