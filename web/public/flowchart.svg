@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" fill="none">
+  <style>
+    .node-bg { fill: #111; stroke: #222; stroke-width: 1.5; }
+    .node-bg-active { fill: #0a1f14; stroke: #00ff88; stroke-width: 1.5; }
+    .node-text { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; }
+    .node-cmd { fill: #00ff88; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+    .node-step { fill: #666; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+    .arrow { stroke: #333; stroke-width: 1.5; fill: none; marker-end: url(#arrowGray); }
+    .arrow-active { stroke: #00ff88; stroke-width: 1.5; fill: none; marker-end: url(#arrowGreen); opacity: 0.7; }
+    .flow-label { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+    .flow-desc { fill: #666; font-family: 'Outfit', sans-serif; font-size: 11px; }
+    .flow-dot { fill: #00ff88; }
+    .flow-dot-off { fill: #222; }
+    .section-title { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 0.05em; }
+    .divider { stroke: #1a1a1a; stroke-width: 1; }
+  </style>
+
+  <defs>
+    <marker id="arrowGray" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00ff88"/>
+    </marker>
+  </defs>
+
+  <!-- Section: The Development Trail -->
+  <text x="600" y="30" text-anchor="middle" class="section-title">THE DEVELOPMENT TRAIL</text>
+
+  <!-- Main trail nodes -->
+  <!-- 0. Brainstorm -->
+  <g transform="translate(40, 55)">
+    <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
+    <text x="65" y="18" text-anchor="middle" class="node-step">STEP 0</text>
+    <text x="65" y="35" text-anchor="middle" class="node-text">Brainstorm</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-brainstorm</text>
+  </g>
+
+  <!-- Arrow -->
+  <line x1="175" y1="85" x2="202" y2="85" class="arrow-active"/>
+
+  <!-- 1. Feature -->
+  <g transform="translate(207, 55)">
+    <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
+    <text x="65" y="18" text-anchor="middle" class="node-step">STEP 1</text>
+    <text x="65" y="35" text-anchor="middle" class="node-text">Discover</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-feature</text>
+  </g>
+
+  <line x1="342" y1="85" x2="369" y2="85" class="arrow-active"/>
+
+  <!-- 2. Design -->
+  <g transform="translate(374, 55)">
+    <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
+    <text x="65" y="18" text-anchor="middle" class="node-step">STEP 2</text>
+    <text x="65" y="35" text-anchor="middle" class="node-text">Design</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-design</text>
+  </g>
+
+  <line x1="509" y1="85" x2="536" y2="85" class="arrow-active"/>
+
+  <!-- 3. Plan -->
+  <g transform="translate(541, 55)">
+    <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
+    <text x="65" y="18" text-anchor="middle" class="node-step">STEP 3</text>
+    <text x="65" y="35" text-anchor="middle" class="node-text">Plan</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-plan</text>
+  </g>
+
+  <line x1="676" y1="85" x2="703" y2="85" class="arrow-active"/>
+
+  <!-- 4. Dev -->
+  <g transform="translate(708, 55)">
+    <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
+    <text x="65" y="18" text-anchor="middle" class="node-step">STEP 4</text>
+    <text x="65" y="35" text-anchor="middle" class="node-text">Code</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-dev</text>
+  </g>
+
+  <line x1="843" y1="85" x2="870" y2="85" class="arrow-active"/>
+
+  <!-- 5. Review -->
+  <g transform="translate(875, 55)">
+    <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
+    <text x="65" y="18" text-anchor="middle" class="node-step">STEP 5</text>
+    <text x="65" y="35" text-anchor="middle" class="node-text">Review</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-review</text>
+  </g>
+
+  <line x1="1010" y1="85" x2="1037" y2="85" class="arrow-active"/>
+
+  <!-- 6. Done -->
+  <g transform="translate(1042, 55)">
+    <rect x="0" y="0" width="120" height="60" rx="8" class="node-bg-active"/>
+    <text x="60" y="18" text-anchor="middle" class="node-step">STEP 6</text>
+    <text x="60" y="35" text-anchor="middle" class="node-text">Ship</text>
+    <text x="60" y="50" text-anchor="middle" class="node-cmd">/add-done</text>
+  </g>
+
+  <!-- Divider -->
+  <line x1="40" y1="145" x2="1162" y2="145" class="divider"/>
+
+  <!-- Section: Choose Your Flow -->
+  <text x="600" y="175" text-anchor="middle" class="section-title">CHOOSE YOUR FLOW</text>
+
+  <!-- Flow rows - dot indicators showing which steps are active -->
+  <!-- Column headers (step numbers) -->
+  <g transform="translate(440, 195)">
+    <text x="0" y="0" text-anchor="middle" class="node-step">BRN</text>
+    <text x="70" y="0" text-anchor="middle" class="node-step">FEA</text>
+    <text x="140" y="0" text-anchor="middle" class="node-step">DES</text>
+    <text x="210" y="0" text-anchor="middle" class="node-step">PLN</text>
+    <text x="280" y="0" text-anchor="middle" class="node-step">DEV</text>
+    <text x="350" y="0" text-anchor="middle" class="node-step">REV</text>
+    <text x="420" y="0" text-anchor="middle" class="node-step">DON</text>
+  </g>
+
+  <!-- COMPLETE flow -->
+  <g transform="translate(100, 220)">
+    <text x="0" y="12" class="flow-label">COMPLETE</text>
+    <text x="0" y="28" class="flow-desc">Complex features with UI</text>
+    <circle cx="340" cy="16" r="5" class="flow-dot"/>
+    <circle cx="410" cy="16" r="5" class="flow-dot"/>
+    <circle cx="480" cy="16" r="5" class="flow-dot"/>
+    <circle cx="550" cy="16" r="5" class="flow-dot"/>
+    <circle cx="620" cy="16" r="5" class="flow-dot"/>
+    <circle cx="690" cy="16" r="5" class="flow-dot"/>
+    <circle cx="760" cy="16" r="5" class="flow-dot"/>
+    <!-- connecting line -->
+    <line x1="345" y1="16" x2="755" y2="16" stroke="#00ff88" stroke-width="1" opacity="0.3"/>
+  </g>
+
+  <!-- STANDARD flow -->
+  <g transform="translate(100, 268)">
+    <text x="0" y="12" class="flow-label">STANDARD</text>
+    <text x="0" y="28" class="flow-desc">Features without complex UI</text>
+    <circle cx="340" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="410" cy="16" r="5" class="flow-dot"/>
+    <circle cx="480" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="550" cy="16" r="5" class="flow-dot"/>
+    <circle cx="620" cy="16" r="5" class="flow-dot"/>
+    <circle cx="690" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="760" cy="16" r="5" class="flow-dot"/>
+    <line x1="415" y1="16" x2="755" y2="16" stroke="#00ff88" stroke-width="1" opacity="0.3"/>
+  </g>
+
+  <!-- LEAN flow -->
+  <g transform="translate(100, 316)">
+    <text x="0" y="12" class="flow-label">LEAN</text>
+    <text x="0" y="28" class="flow-desc">Small changes, quick tasks</text>
+    <circle cx="340" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="410" cy="16" r="5" class="flow-dot"/>
+    <circle cx="480" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="550" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="620" cy="16" r="5" class="flow-dot"/>
+    <circle cx="690" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="760" cy="16" r="5" class="flow-dot"/>
+    <line x1="415" y1="16" x2="755" y2="16" stroke="#00ff88" stroke-width="1" opacity="0.3"/>
+  </g>
+
+  <!-- AUTONOMOUS flow -->
+  <g transform="translate(100, 364)">
+    <text x="0" y="12" class="flow-label">AUTONOMOUS</text>
+    <text x="0" y="28" class="flow-desc">Full AI, no interaction</text>
+    <circle cx="340" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="410" cy="16" r="5" class="flow-dot"/>
+    <circle cx="480" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="550" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="620" cy="16" r="5" class="flow-dot" style="fill:#ffaa00"/>
+    <circle cx="690" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="760" cy="16" r="5" class="flow-dot"/>
+    <line x1="415" y1="16" x2="755" y2="16" stroke="#ffaa00" stroke-width="1" opacity="0.3"/>
+    <text x="620" y="40" text-anchor="middle" class="node-cmd" style="fill:#ffaa00;font-size:9px">/add-autopilot</text>
+  </g>
+
+  <!-- EMERGENCY flow -->
+  <g transform="translate(100, 420)">
+    <text x="0" y="12" class="flow-label" style="fill:#ff4444">EMERGENCY</text>
+    <text x="0" y="28" class="flow-desc">Critical bug in production</text>
+    <circle cx="340" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="410" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="480" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="550" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="620" cy="16" r="5" class="flow-dot" style="fill:#ff4444"/>
+    <circle cx="690" cy="16" r="5" class="flow-dot-off"/>
+    <circle cx="760" cy="16" r="5" class="flow-dot"/>
+    <line x1="625" y1="16" x2="755" y2="16" stroke="#ff4444" stroke-width="1" opacity="0.3"/>
+    <text x="620" y="40" text-anchor="middle" class="node-cmd" style="fill:#ff4444;font-size:9px">/add-hotfix</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(40, 490)">
+    <circle cx="0" cy="0" r="4" class="flow-dot"/>
+    <text x="10" y="4" class="flow-desc">Active step</text>
+    <circle cx="110" cy="0" r="4" class="flow-dot-off"/>
+    <text x="120" y="4" class="flow-desc">Skipped</text>
+  </g>
+</svg>

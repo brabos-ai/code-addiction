@@ -1,0 +1,617 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+---
+
+<Layout title="Docs — Code Addiction">
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="/" class="font-display font-bold text-foreground tracking-tight text-lg">
+        <span class="text-accent">+</span> code addiction
+      </a>
+      <div class="flex items-center gap-6">
+        <a href="/" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Home</a>
+        <a href="#commands" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Commands</a>
+        <a href="#flows" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Flows</a>
+        <a
+          href="https://github.com/brabos-ai/code-addiction"
+          target="_blank"
+          rel="noopener"
+          class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors"
+        >
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex pt-14">
+    <!-- Sidebar -->
+    <aside class="hidden lg:block fixed top-14 left-0 w-64 h-[calc(100vh-3.5rem)] overflow-y-auto border-r border-white/5 px-6 py-8">
+      <nav class="space-y-6 text-sm">
+        <div>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Getting Started</p>
+          <ul class="space-y-2">
+            <li><a href="#about" class="text-muted-light hover:text-foreground transition-colors">About</a></li>
+            <li><a href="#install" class="text-muted-light hover:text-foreground transition-colors">Installation</a></li>
+            <li><a href="#quickstart" class="text-muted-light hover:text-foreground transition-colors">Quickstart</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Reference</p>
+          <ul class="space-y-2">
+            <li><a href="#commands" class="text-muted-light hover:text-foreground transition-colors">Commands</a></li>
+            <li><a href="#flows" class="text-muted-light hover:text-foreground transition-colors">Flows</a></li>
+            <li><a href="#scenarios" class="text-muted-light hover:text-foreground transition-colors">Scenarios</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Deep Dive</p>
+          <ul class="space-y-2">
+            <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
+            <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
+            <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
+            <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">Project Structure</a></li>
+          </ul>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="flex-1 lg:ml-64 px-6 sm:px-12 py-12 max-w-4xl">
+
+      <!-- ABOUT -->
+      <section id="about" class="mb-20">
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Getting Started</p>
+        <h1 class="font-display font-extrabold text-4xl sm:text-5xl mb-6">
+          What is Code<br/><span class="text-accent glow">Addiction</span>?
+        </h1>
+        <p class="text-muted-light text-lg leading-relaxed mb-6">
+          Code Addiction is a spec-driven framework for AI coding assistants.
+          It standardizes how features go from idea to production through structured,
+          repeatable workflows — installed in any project with a single command.
+        </p>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <div class="text-accent font-mono text-sm mb-2">.codeadd/</div>
+            <p class="text-muted-light text-sm">Shared core: commands, scripts, skills, templates</p>
+          </div>
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <div class="text-accent font-mono text-sm mb-2">Provider adapters</div>
+            <p class="text-muted-light text-sm">Claude, Codex, Antigravity, KiloCode, OpenCode</p>
+          </div>
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <div class="text-accent font-mono text-sm mb-2">codeadd CLI</div>
+            <p class="text-muted-light text-sm">install, update, uninstall, doctor, validate, features, config</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- INSTALL -->
+      <section id="install" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
+        <p class="text-muted-light mb-6">Requires Node.js 18+. Works on Windows, macOS, and Linux.</p>
+
+        <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
+          <div><span class="text-muted select-none"># install in your project</span></div>
+          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span></div>
+          <div class="pt-2"><span class="text-muted select-none"># install specific version</span></div>
+          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install --version v2.0.1</span></div>
+          <div class="pt-2"><span class="text-muted select-none"># install from a specific branch</span></div>
+          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install --branch feature-xyz</span></div>
+        </div>
+
+        <h3 class="font-display font-semibold text-lg mt-8 mb-4">What gets installed</h3>
+        <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm leading-relaxed">
+          <span class="text-muted">your-project/</span><br/>
+          <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← core (always)</span><br/>
+          <span class="text-foreground">├── .claude/</span><span class="text-muted ml-8">← Claude Code</span><br/>
+          <span class="text-foreground">├── .agent/</span><span class="text-muted ml-8">← Codex (OpenAI)</span><br/>
+          <span class="text-foreground">├── .agents/</span><span class="text-muted ml-7">← Antigravity</span><br/>
+          <span class="text-foreground">├── .kilocode/</span><span class="text-muted ml-4">← KiloCode</span><br/>
+          <span class="text-foreground">└── .opencode/</span><span class="text-muted ml-4">← OpenCode</span>
+        </div>
+      </section>
+
+      <!-- QUICKSTART -->
+      <section id="quickstart" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Quickstart</h2>
+        <p class="text-muted-light mb-6">After installing, use these CLI commands to manage your setup:</p>
+
+        <div class="space-y-3">
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd doctor</code>
+            <span class="text-muted-light text-sm">Check environment health — Node, Git, installation status</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd validate</code>
+            <span class="text-muted-light text-sm">Validate file integrity via SHA-256 hashes</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd validate --repair</code>
+            <span class="text-muted-light text-sm">Restore missing or modified files from the release</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd update</code>
+            <span class="text-muted-light text-sm">Update to latest release, or re-pull current branch</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd uninstall</code>
+            <span class="text-muted-light text-sm">Clean removal of all Code Addiction files (user files are kept)</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd uninstall --force</code>
+            <span class="text-muted-light text-sm">Skip confirmation prompt during uninstall</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd features</code>
+            <span class="text-muted-light text-sm">List, enable, or disable optional features (e.g. TDD, Startup Test)</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd config show</code>
+            <span class="text-muted-light text-sm">Display installation configuration. Add <code class="text-foreground">--verbose</code> to check for updates</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div class="border-t border-white/5 my-16"></div>
+
+      <!-- COMMANDS -->
+      <section id="commands" class="mb-20">
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Commands</h2>
+        <p class="text-muted-light mb-8">
+          Every command is a slash command you type in your AI coding assistant.
+          They orchestrate discovery, planning, implementation, and delivery.
+        </p>
+
+        <!-- Commands Map -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-12">
+          <!-- Discovery -->
+          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Discovery</h3>
+            <div class="space-y-2.5">
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-brainstorm</code>
+                <p class="text-muted text-xs mt-0.5">Explore ideas (read-only)</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-feature</code>
+                <p class="text-muted text-xs mt-0.5">AI-guided feature discovery → <code class="text-foreground">about.md</code></p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-init</code>
+                <p class="text-muted text-xs mt-0.5">Project onboarding → <code class="text-foreground">owner.md</code></p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-architecture-analyzer</code>
+                <p class="text-muted text-xs mt-0.5">Map architecture, classify apps</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Planning -->
+          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Planning</h3>
+            <div class="space-y-2.5">
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-design</code>
+                <p class="text-muted text-xs mt-0.5">UX spec, mobile-first. Coordinates subagents</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-plan</code>
+                <p class="text-muted text-xs mt-0.5">Technical planning → <code class="text-foreground">plan.md</code>. Epic vs Feature detection</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Implementation -->
+          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Implementation</h3>
+            <div class="space-y-2.5">
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-dev</code>
+                <p class="text-muted text-xs mt-0.5">Subagent-driven implementation. Supports Epics</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-autopilot</code>
+                <p class="text-muted text-xs mt-0.5">Full autonomous implementation, no interaction</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quality -->
+          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Quality</h3>
+            <div class="space-y-2.5">
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-review</code>
+                <p class="text-muted text-xs mt-0.5">Code review + auto-correction</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-test</code>
+                <p class="text-muted text-xs mt-0.5">Generate tests (80% coverage target)</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-audit</code>
+                <p class="text-muted text-xs mt-0.5">Full project health analysis</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery -->
+          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Delivery</h3>
+            <div class="space-y-2.5">
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-done</code>
+                <p class="text-muted text-xs mt-0.5">Changelog, docs, finalize. Routes to PR or merge</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-pr</code>
+                <p class="text-muted text-xs mt-0.5">Create PR for code review</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm" style="color:#ff4444">/add-hotfix</code>
+                <p class="text-muted text-xs mt-0.5">Emergency fix with global ID (H[NNNN])</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Utility -->
+          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Utilities</h3>
+            <div class="space-y-2.5">
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add</code>
+                <p class="text-muted text-xs mt-0.5">Smart gateway — answers questions, guides flow</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-copy</code>
+                <p class="text-muted text-xs mt-0.5">SaaS copy generator</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-landing</code>
+                <p class="text-muted text-xs mt-0.5">High-conversion SaaS landing page builder</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-ux</code>
+                <p class="text-muted text-xs mt-0.5">Quick UX — loads ux-design for free context</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div class="border-t border-white/5 my-16"></div>
+
+      <!-- FLOWS -->
+      <section id="flows" class="mb-20">
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Flows</h2>
+        <p class="text-muted-light mb-8">
+          Pick the shortest path that fits. Less ceremony, same quality.
+        </p>
+
+        <!-- Flows HTML -->
+        <div class="space-y-10">
+
+          <!-- Complete -->
+          <div>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Complete Flow</h3>
+            <p class="text-muted text-xs mb-4">Complex features with UI — full discovery, design, planning, implementation, review</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add-brainstorm</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Feature<br/><span class="flow-cmd">/add-feature</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Design<br/><span class="flow-cmd">/add-design</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Plan<br/><span class="flow-cmd">/add-plan</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Code<br/><span class="flow-cmd">/add-dev</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Review<br/><span class="flow-cmd">/add-review</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add-done</span></span>
+            </div>
+          </div>
+
+          <!-- Standard -->
+          <div>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Standard Flow</h3>
+            <p class="text-muted text-xs mb-4">Features without complex UI — skip brainstorm and design</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node">Feature<br/><span class="flow-cmd">/add-feature</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Plan<br/><span class="flow-cmd">/add-plan</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Code<br/><span class="flow-cmd">/add-dev</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add-done</span></span>
+            </div>
+          </div>
+
+          <!-- Lean -->
+          <div>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Lean Flow</h3>
+            <p class="text-muted text-xs mb-4">Small changes, quick tasks — minimal ceremony</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node">Feature<br/><span class="flow-cmd">/add-feature</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Code<br/><span class="flow-cmd">/add-dev</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add-done</span></span>
+            </div>
+          </div>
+
+          <!-- Autonomous -->
+          <div>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Autonomous Flow</h3>
+            <p class="text-muted text-xs mb-4">Full AI implementation, no human interaction needed</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node">Feature<br/><span class="flow-cmd">/add-feature</span></span>
+              <span class="flow-arrow" style="color:#ffaa00">→</span>
+              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Autopilot<br/><span class="flow-cmd" style="color:#ffaa00">/add-autopilot</span></span>
+              <span class="flow-arrow" style="color:#ffaa00">→</span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add-done</span></span>
+            </div>
+          </div>
+
+          <!-- Emergency -->
+          <div>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ff4444">Emergency Flow</h3>
+            <p class="text-muted text-xs mb-4">Critical bug in production — fast track to fix</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node" style="border-color:#ff4444;background:rgba(255,68,68,0.05)">Hotfix<br/><span class="flow-cmd" style="color:#ff4444">/add-hotfix</span></span>
+              <span class="flow-arrow" style="color:#ff4444">→</span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add-done</span></span>
+            </div>
+          </div>
+
+          <!-- Exploration -->
+          <div>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Exploration Flow</h3>
+            <p class="text-muted text-xs mb-4">Don't know where to start? Brainstorm first, then pick any flow above</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add-brainstorm</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="flow-node">Feature<br/><span class="flow-cmd">/add-feature</span></span>
+              <span class="flow-arrow">→</span>
+              <span class="text-muted text-sm italic">...pick your flow</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div class="border-t border-white/5 my-16"></div>
+
+      <!-- SCENARIOS -->
+      <section id="scenarios" class="mb-20">
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Scenarios</h2>
+        <p class="text-muted-light mb-8">Real-world examples of when to use each flow.</p>
+
+        <div class="space-y-6">
+          <!-- Scenario 1 -->
+          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">COMPLETE</span>
+              <h3 class="font-display font-semibold">"Build a user dashboard with charts and filters"</h3>
+            </div>
+            <p class="text-muted-light text-sm mb-4">Complex feature with UI, multiple user flows, needs discovery and design.</p>
+            <div class="font-mono text-sm text-muted-light">
+              <span class="text-accent">/add-brainstorm</span> → explore scope and requirements<br/>
+              <span class="text-accent">/add-feature</span> → define requirements, acceptance criteria<br/>
+              <span class="text-accent">/add-design</span> → UX spec, mobile-first layouts<br/>
+              <span class="text-accent">/add-plan</span> → technical architecture, task breakdown<br/>
+              <span class="text-accent">/add-dev</span> → subagent-driven implementation<br/>
+              <span class="text-accent">/add-review</span> → automated code review<br/>
+              <span class="text-accent">/add-done</span> → changelog, docs, merge
+            </div>
+          </div>
+
+          <!-- Scenario 2 -->
+          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">STANDARD</span>
+              <h3 class="font-display font-semibold">"Add email notifications for order status"</h3>
+            </div>
+            <p class="text-muted-light text-sm mb-4">Backend feature, no complex UI. Needs planning but no design phase.</p>
+            <div class="font-mono text-sm text-muted-light">
+              <span class="text-accent">/add-feature</span> → define notification triggers, templates<br/>
+              <span class="text-accent">/add-plan</span> → service architecture, queue strategy<br/>
+              <span class="text-accent">/add-dev</span> → implement<br/>
+              <span class="text-accent">/add-done</span> → finalize
+            </div>
+          </div>
+
+          <!-- Scenario 3 -->
+          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">LEAN</span>
+              <h3 class="font-display font-semibold">"Add a loading spinner to the submit button"</h3>
+            </div>
+            <p class="text-muted-light text-sm mb-4">Small, well-defined change. Minimal ceremony.</p>
+            <div class="font-mono text-sm text-muted-light">
+              <span class="text-accent">/add-feature</span> → quick spec<br/>
+              <span class="text-accent">/add-dev</span> → implement<br/>
+              <span class="text-accent">/add-done</span> → ship it
+            </div>
+          </div>
+
+          <!-- Scenario 4 -->
+          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ffaa00;background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.2)">AUTONOMOUS</span>
+              <h3 class="font-display font-semibold">"Implement the 5 API endpoints from the spec"</h3>
+            </div>
+            <p class="text-muted-light text-sm mb-4">Well-specified work. Let the AI handle it end-to-end with no interaction.</p>
+            <div class="font-mono text-sm text-muted-light">
+              <span style="color:#ffaa00">/add-feature</span> → define scope<br/>
+              <span style="color:#ffaa00">/add-autopilot</span> → AI implements everything autonomously<br/>
+              <span class="text-accent">/add-done</span> → finalize
+            </div>
+          </div>
+
+          <!-- Scenario 5 -->
+          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ff4444;background:rgba(255,68,68,0.1);border-color:rgba(255,68,68,0.2)">EMERGENCY</span>
+              <h3 class="font-display font-semibold">"Users can't login — auth token validation is broken"</h3>
+            </div>
+            <p class="text-muted-light text-sm mb-4">Critical production bug. Fast-track fix with tracking.</p>
+            <div class="font-mono text-sm text-muted-light">
+              <span style="color:#ff4444">/add-hotfix</span> → diagnose, fix, document with global ID<br/>
+              <span class="text-accent">/add-done</span> → deploy
+            </div>
+          </div>
+
+          <!-- Scenario 6 -->
+          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">EXPLORATION</span>
+              <h3 class="font-display font-semibold">"I want to add AI to the product but don't know where to start"</h3>
+            </div>
+            <p class="text-muted-light text-sm mb-4">Unclear scope. Start with brainstorming, then pick a flow.</p>
+            <div class="font-mono text-sm text-muted-light">
+              <span class="text-accent">/add-brainstorm</span> → explore possibilities, no commitment<br/>
+              <span class="text-accent">/add-feature</span> → lock in what you'll build<br/>
+              <span class="text-muted">→ ...pick Complete, Standard, or Lean from here</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Divider -->
+      <div class="border-t border-white/5 my-16"></div>
+
+      <!-- SKILLS -->
+      <section id="skills" class="mb-20">
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Deep Dive</p>
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Skills</h2>
+        <p class="text-muted-light mb-8">
+          Skills are specialized knowledge modules loaded by commands.
+          They provide domain expertise for backend, frontend, database, UX, security, and more.
+        </p>
+
+        <div class="grid sm:grid-cols-2 gap-3">
+          {[
+            { name: "backend-development", desc: "SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic" },
+            { name: "frontend-development", desc: "State, data fetching, components, forms, routing — stack-agnostic" },
+            { name: "database-development", desc: "Entities, repositories, migrations, naming — stack-agnostic" },
+            { name: "ux-design", desc: "Components, mobile-first, SaaS patterns, shadcn, Tailwind" },
+            { name: "security-audit", desc: "OWASP checklist, RLS, secrets, multi-tenancy" },
+            { name: "code-review", desc: "Validation, auto-correction, quality gates" },
+            { name: "feature-discovery", desc: "Discovery process, codebase analysis" },
+            { name: "feature-specification", desc: "Structured about.md with RFs, RNs, criteria" },
+            { name: "documentation-style", desc: "Documentation standards across all outputs" },
+            { name: "architecture-discovery", desc: "Map architecture, detect patterns, stack-context.md" },
+            { name: "delivery-validation", desc: "Validate RF/RN implemented, acceptance criteria" },
+            { name: "subagent-driven-development", desc: "Coordinate subagents with quality gates" },
+            { name: "landing-page-saas", desc: "High-conversion landing page framework" },
+            { name: "saas-copy", desc: "Copy frameworks and templates for SaaS" },
+            { name: "stripe", desc: "Stripe integration, price versioning, grandfathering" },
+            { name: "token-efficiency", desc: "Compression, compact JSON, minimal tokens" },
+          ].map(s => (
+            <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
+              <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
+              <span class="text-muted-light text-xs">{s.desc}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- OPTIONAL FEATURES -->
+      <section id="features" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Optional Features</h2>
+        <p class="text-muted-light mb-6">
+          Features are toggleable behaviors injected into commands via fragment files.
+          Enable or disable them with <code class="text-accent font-mono text-xs">npx codeadd features enable|disable &lt;name&gt;</code>.
+        </p>
+
+        <div class="space-y-3">
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">tdd</code>
+              <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">TDD Pipeline (test-first development)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-plan</code>, <code class="font-mono">add-dev</code></p>
+          </div>
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">startup-test</code>
+              <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Application Startup Test (IoC/DI validation)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-dev</code>, <code class="font-mono">add-review</code></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROVIDERS -->
+      <section id="providers" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Providers</h2>
+        <p class="text-muted-light mb-8">
+          Code Addiction generates provider-specific files so the same commands work across AI assistants.
+        </p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 pr-4 font-display font-semibold text-foreground">Provider</th>
+                <th class="text-left py-3 pr-4 font-display font-semibold text-foreground">Directory</th>
+                <th class="text-left py-3 font-display font-semibold text-foreground">Format</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <tr><td class="py-3 pr-4 text-muted-light">Claude Code</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.claude/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
+              <tr><td class="py-3 pr-4 text-muted-light">Codex (OpenAI)</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agent/</code></td><td class="py-3 text-muted-light">workflows/ + skills/</td></tr>
+              <tr><td class="py-3 pr-4 text-muted-light">Google Antigravity</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agents/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
+              <tr><td class="py-3 pr-4 text-muted-light">KiloCode</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.kilocode/</code></td><td class="py-3 text-muted-light">workflows/</td></tr>
+              <tr><td class="py-3 pr-4 text-muted-light">OpenCode</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.opencode/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- STRUCTURE -->
+      <section id="structure" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Project Structure</h2>
+        <p class="text-muted-light mb-6">
+          The Code Addiction repository is organized as follows:
+        </p>
+
+        <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm leading-loose">
+          <span class="text-accent">code-addiction/</span><br/>
+          <span class="text-foreground">├── cli/</span><span class="text-muted ml-12">← installer CLI (npm: codeadd)</span><br/>
+          <span class="text-foreground">├── framwork/</span><span class="text-muted ml-6">← framework payload</span><br/>
+          <span class="text-foreground">│   └── .codeadd/</span><span class="text-muted ml-2">← core: commands, skills, scripts</span><br/>
+          <span class="text-foreground">├── web/</span><span class="text-muted ml-14">← this website</span><br/>
+          <span class="text-foreground">├── scripts/</span><span class="text-muted ml-8">← build and release scripts</span><br/>
+          <span class="text-foreground">└── docs/</span><span class="text-muted ml-12">← project documentation</span>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="border-t border-white/5 pt-8 mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted">
+        <div class="flex items-center gap-2">
+          <span class="font-display font-bold text-foreground"><span class="text-accent">+</span> code addiction</span>
+          <span class="ml-2">by brabos.ai</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="hover:text-accent transition-colors">GitHub</a>
+          <a href="https://www.linkedin.com/in/maiconmatsubara/" target="_blank" rel="noopener" class="hover:text-accent transition-colors">LinkedIn</a>
+          <a href="https://www.npmjs.com/package/codeadd" target="_blank" rel="noopener" class="hover:text-accent transition-colors">npm</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+</Layout>
