@@ -1,5 +1,5 @@
 # Code Addiction (ADD)
-
+ 
 [![CI](https://github.com/brabos-ai/code-addiction/actions/workflows/ci.yml/badge.svg)](https://github.com/brabos-ai/code-addiction/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/codeadd.svg)](https://www.npmjs.com/package/codeadd)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
