@@ -1,0 +1,233 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
+---
+
+<Layout title="Code Addiction — Spec-driven AI development framework">
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="#" class="font-display font-bold text-foreground tracking-tight text-lg">
+        <span class="text-accent">+</span> code addiction
+      </a>
+      <div class="flex items-center gap-6">
+        <a href="#trail" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">How it works</a>
+        <a href="#flows" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Flows</a>
+        <a href="#start" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Get started</a>
+        <a href="/docs" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Docs</a>
+        <a
+          href="https://github.com/brabos-ai/code-addiction"
+          target="_blank"
+          rel="noopener"
+          class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors"
+        >
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-14 relative">
+    <!-- Radial gradient glow behind hero -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+    <div class="relative text-center max-w-3xl">
+      <p class="font-mono text-accent text-sm mb-6 fade-up tracking-widest uppercase">Spec-driven framework</p>
+
+      <h1 class="font-display font-extrabold text-5xl sm:text-7xl md:text-8xl leading-[0.9] tracking-tight fade-up fade-up-delay-1">
+        Code<br/>
+        <span class="glow text-accent">Addiction</span>
+      </h1>
+
+      <p class="mt-8 text-lg sm:text-xl text-muted-light max-w-xl mx-auto leading-relaxed fade-up fade-up-delay-2 font-light">
+        Structured workflows from discovery to delivery.<br class="hidden sm:block"/>
+        Installed in seconds. Addictive to use.
+      </p>
+
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 fade-up fade-up-delay-3">
+        <!-- Install command -->
+        <div class="group relative bg-white/5 border border-white/10 rounded-lg px-5 py-3 font-mono text-sm hover:border-accent/30 transition-colors cursor-pointer"
+             onclick="navigator.clipboard.writeText('npx codeadd install')">
+          <span class="text-muted">$</span>
+          <span class="text-foreground ml-2">npx codeadd install</span>
+          <span class="ml-3 text-muted text-xs group-hover:text-accent transition-colors">copy</span>
+        </div>
+
+        <a
+          href="https://github.com/brabos-ai/code-addiction"
+          target="_blank"
+          rel="noopener"
+          class="flex items-center gap-2 bg-accent text-surface font-medium px-6 py-3 rounded-lg hover:bg-accent-dim transition-colors text-sm"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+    </div>
+
+    <!-- Scroll hint -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 fade-up fade-up-delay-5">
+      <div class="w-5 h-8 border border-white/20 rounded-full flex items-start justify-center p-1">
+        <div class="w-1 h-2 bg-accent rounded-full animate-bounce"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The Development Trail -->
+  <section id="trail" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">How it works</p>
+      <h2 class="font-display font-bold text-3xl sm:text-4xl mb-4">The Development Trail</h2>
+      <p class="text-muted-light text-lg mb-12 max-w-2xl">
+        Every feature follows a clear path from idea to delivery.
+        Pick the trail that fits your task.
+      </p>
+
+      <!-- Flowchart SVG -->
+      <div class="w-full overflow-x-auto pb-4">
+        <img src="/flowchart.svg" alt="Code Addiction Development Trail Flowchart" class="w-full min-w-[900px]"/>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why section -->
+  <section id="flows" class="py-24 px-6 border-t border-white/5">
+    <div class="max-w-6xl mx-auto">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Why teams get addicted</p>
+      <h2 class="font-display font-bold text-3xl sm:text-4xl mb-16">Less ceremony. Same quality.</h2>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+          <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">00</div>
+          <h3 class="font-display font-semibold text-lg mb-2">Zero ramp-up</h3>
+          <p class="text-muted-light text-sm leading-relaxed">New devs ship on day one by following the flow. No wikis to read, no setup guides.</p>
+        </div>
+
+        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+          <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">01</div>
+          <h3 class="font-display font-semibold text-lg mb-2">10x fewer decisions</h3>
+          <p class="text-muted-light text-sm leading-relaxed">The framework already made the boring ones. You focus on what matters.</p>
+        </div>
+
+        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+          <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">02</div>
+          <h3 class="font-display font-semibold text-lg mb-2">Consistent output</h3>
+          <p class="text-muted-light text-sm leading-relaxed">Every feature gets discovery, planning, review, and docs. Automatically.</p>
+        </div>
+
+        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+          <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">03</div>
+          <h3 class="font-display font-semibold text-lg mb-2">Works with your stack</h3>
+          <p class="text-muted-light text-sm leading-relaxed">NestJS, React, any database. Claude, Codex, Antigravity, KiloCode, OpenCode.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Providers -->
+  <section class="py-24 px-6 border-t border-white/5">
+    <div class="max-w-6xl mx-auto text-center">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">One install, every provider</p>
+      <h2 class="font-display font-bold text-3xl sm:text-4xl mb-12">Runs everywhere</h2>
+
+      <div class="flex flex-wrap items-center justify-center gap-8 text-muted">
+        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
+          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.claude/</span>
+          <span class="text-xs">Claude Code</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
+          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.agent/</span>
+          <span class="text-xs">Codex (OpenAI)</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
+          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.agents/</span>
+          <span class="text-xs">Antigravity</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
+          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.kilocode/</span>
+          <span class="text-xs">KiloCode</span>
+        </div>
+        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
+          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.opencode/</span>
+          <span class="text-xs">OpenCode</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Started -->
+  <section id="start" class="py-24 px-6 border-t border-white/5">
+    <div class="max-w-3xl mx-auto text-center">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Get started</p>
+      <h2 class="font-display font-bold text-3xl sm:text-5xl mb-6">One command away</h2>
+      <p class="text-muted-light text-lg mb-10">Install Code Addiction in any project. No config needed.</p>
+
+      <div class="bg-white/[0.03] border border-white/10 rounded-xl p-8 text-left font-mono text-sm space-y-3">
+        <div>
+          <span class="text-muted select-none"># install in your project</span>
+        </div>
+        <div>
+          <span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span>
+        </div>
+        <div class="pt-2">
+          <span class="text-muted select-none"># check environment health</span>
+        </div>
+        <div>
+          <span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd doctor</span>
+        </div>
+        <div class="pt-2">
+          <span class="text-muted select-none"># validate integrity</span>
+        </div>
+        <div>
+          <span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd validate</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-12 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-bold text-foreground"><span class="text-accent">+</span> code addiction</span>
+        <span class="text-muted text-sm ml-2">by brabos.ai</span>
+      </div>
+
+      <div class="flex items-center gap-6">
+        <!-- GitHub -->
+        <a
+          href="https://github.com/brabos-ai/code-addiction"
+          target="_blank"
+          rel="noopener"
+          class="text-muted hover:text-accent transition-colors"
+          aria-label="GitHub"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        </a>
+
+        <!-- LinkedIn -->
+        <a
+          href="https://www.linkedin.com/in/maiconmatsubara/"
+          target="_blank"
+          rel="noopener"
+          class="text-muted hover:text-accent transition-colors"
+          aria-label="LinkedIn"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        </a>
+
+        <!-- npm -->
+        <a
+          href="https://www.npmjs.com/package/codeadd"
+          target="_blank"
+          rel="noopener"
+          class="text-muted hover:text-accent transition-colors"
+          aria-label="npm"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></svg>
+        </a>
+      </div>
+    </div>
+  </footer>
+</Layout>
