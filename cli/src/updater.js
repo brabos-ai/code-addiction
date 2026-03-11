@@ -6,6 +6,7 @@ import { resolveSelected } from './providers.js';
 import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
 import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
 import { applyEnabledFeatures } from './features.js';
+import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 
 const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
 
@@ -169,6 +170,12 @@ export async function update(cwd, options = {}) {
   const featuresApplied = applyEnabledFeatures(cwd);
   if (featuresApplied > 0) {
     log.success(`Re-applied ${featuresApplied} feature injection(s).`);
+  }
+
+  // Sync .gitignore block if opted-in during install (backward compat: skip if key absent)
+  if (manifest.gitignore === true) {
+    writeGitignoreBlock(cwd, getInstalledDirs(providerKeys));
+    log.success('.gitignore synced.');
   }
 
   const fromLabel = currentSource === 'branch' ? currentRef ?? currentVersion : `v${currentVersion}`;

@@ -12,11 +12,11 @@
 #   fields - remaining JSON fields as raw key:value pairs (already quoted)
 #
 # Examples:
-#   bash .codeadd/scripts/log-jsonl.sh "docs/features/F0011-board/decisions.jsonl" \
+#   bash .codeadd/scripts/log-jsonl.sh "docs/features/0011F-board/decisions.jsonl" \
 #     "pivot" "database" \
 #     '"from":"Junction table","decision":"Separate tables","reason":"Better query perf","attempt":1'
 #
-#   bash .codeadd/scripts/log-jsonl.sh "docs/features/F0011-board/iterations.jsonl" \
+#   bash .codeadd/scripts/log-jsonl.sh "docs/features/0011F-board/iterations.jsonl" \
 #     "add" "/dev" \
 #     '"slug":"board-crud","what":"Board CRUD endpoints","files":["src/board.ts"]'
 # ============================================

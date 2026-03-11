@@ -4,6 +4,7 @@
 > **OUTPUT:** Respostas concisas. Tabelas para comparações. Direto ao ponto.
 
 Consultor estratégico para decisões de produto, arquitetura e evolução do ecossistema ADD.
+Este é um projeto **open-source para a comunidade** (além de uso próprio). Cada decisão deve considerar: solidez técnica, clareza para contribuidores externos, e valor real para quem consome o framework.
 Gera PRD (Product Requirements Document) para execução via `/add-build`.
 
 ---
@@ -146,7 +147,7 @@ Glob: framwork/.*/
 **LER (se existirem):**
 
 ```
-.claude/skills/code-addiction-ecosystem/SKILL.md  # Visão consolidada (commands, skills, dependências)
+framwork/.codeadd/skills/add-ecosystem-map/SKILL.md  # Visão consolidada (commands, skills, dependências)
 docs/strategy/ADD-ECOSYSTEM-STRATEGY.md           # Estratégia do ecossistema
 docs/strategy/ADD-MASTER-DOCUMENT-v4.md           # Documento mestre, pirâmide, jornada
 framwork/README.md                                # Contexto do framework
@@ -170,7 +171,7 @@ framwork/README.md                                # Contexto do framework
 | **SKILL** | "skill", "conhecimento", "padrão" | "skill de code review" |
 | **SCRIPT** | "script", "bash", "automação" | "script de setup" |
 | **WORKFLOW** | "processo", "fluxo", "integração" | "fluxo de hotfix" |
-| **PRODUTO** | "feature", "funcionalidade", "aluno" | "nova feature pro aluno" |
+| **PRODUTO** | "feature", "funcionalidade", "usuário" | "nova feature pro consumidor do framework" |
 | **ARQUITETURA** | "refatorar", "migrar", "estrutura" | "reorganizar commands" |
 
 ### 1.2 Extrair Contexto Inicial
@@ -198,7 +199,7 @@ framwork/README.md                                # Contexto do framework
 □ Existem alternativas melhores? (pelo menos 2)
 □ Quais os trade-offs de cada abordagem?
 □ O que pode quebrar se implementarmos?
-□ Isso beneficia o aluno final?
+□ Isso beneficia a comunidade e os consumidores do framework?
 ```
 
 ### 2.2 Investigar Ecossistema do Framework
@@ -228,6 +229,37 @@ framwork/.codeadd/scripts/         → Scripts de automação
 ## STEP 3: Questionário Consultivo [STOP]
 
 **IMPORTANTE:** Este é um STOP POINT. Apresentar e AGUARDAR resposta.
+
+### Roteamento por Tipo
+
+Adaptar perguntas e foco conforme tipo identificado no STEP 1:
+
+```
+SE tipo=COMMAND:
+  → Priorizar: gates, ordem de execução, proibições de ferramentas, output path
+  → Perguntas-chave: "Quais etapas podem ser puladas?" / "Quais ferramentas bloquear?"
+  → Seção 3 deve ter: gate violation scenario, providers alvo
+
+SE tipo=SKILL:
+  → Priorizar: triggers CSO, tier (1/2/3), when-to-use vs when-NOT-to-use
+  → Perguntas-chave: "Qual symptom dispara essa skill?" / "Tier 1 (simples) ou Tier 2 (expandida)?"
+  → Seção 3 deve ter: exemplo de trigger keyword, skills similares existentes
+
+SE tipo=SCRIPT:
+  → Priorizar: SO alvo, dependências, modo de invocação
+  → Perguntas-chave: "Roda em Windows/Mac/Linux?" / "Quais tools precisam estar instaladas?"
+  → Seção 3 deve ter: compatibilidade de ambiente
+
+SE tipo=WORKFLOW:
+  → Priorizar: handoffs entre etapas, quem dispara, integração com commands existentes
+  → Perguntas-chave: "O que entra? O que sai?" / "Automatiza fluxo existente ou cria novo?"
+  → Seção 3 deve ter: sequência de commands envolvidos
+
+SE tipo=PRODUTO ou ARQUITETURA:
+  → Priorizar: impacto no ecossistema, migração, backwards compatibility
+  → Perguntas-chave: "O que quebra?" / "Quais commands/skills precisam ser atualizados?"
+  → Seção 3 deve ter: dependency index (o que depende do que muda)
+```
 
 ### Estrutura do Questionário
 
@@ -284,7 +316,7 @@ framwork/.codeadd/scripts/         → Scripts de automação
 #### 💡 Oportunidade: [Nome]
 - **O que:** [descrição]
 - **Por que:** [benefício alinhado com estratégia]
-- **Impacto:** [no ecossistema / nos alunos]
+- **Impacto:** [no ecossistema / na comunidade]
 - → Incluir? `Sim` / `Não` / `Depois`
 
 #### ⚠️ Risco Identificado: [Nome]
@@ -306,7 +338,7 @@ framwork/.codeadd/scripts/         → Scripts de automação
 |------|---------|-----------------|
 | [Commands existentes] | [afeta/não afeta] | [atualizar X] |
 | [Skills relacionadas] | [afeta/não afeta] | [revisar Y] |
-| [Experiência do aluno] | [melhora/neutro] | [comunicar Z] |
+| [Experiência do consumidor] | [melhora/neutro] | [comunicar Z] |
 
 ---
 
@@ -502,5 +534,5 @@ Se `/add-strategy` sem argumentos:
 ## Rules
 
 ```json
-{"do":["Questionar antes de aceitar","Analisar contexto estratégico","Propor alternativas (mín 2)","Mostrar trade-offs claros","Identificar impacto no ecossistema","Pensar no aluno final","Gerar PRD completo e acionável","Conectar com estratégia existente"],"dont":["Aceitar ideias sem questionar","Ignorar o que já existe","Pular análise de impacto","Gerar PRD sem validação","Ser passivo/executor"]}
+{"do":["Questionar antes de aceitar","Analisar contexto estratégico","Propor alternativas (mín 2)","Mostrar trade-offs claros","Identificar impacto no ecossistema","Pensar na comunidade e nos consumidores do framework","Gerar PRD completo e acionável","Conectar com estratégia existente"],"dont":["Aceitar ideias sem questionar","Ignorar o que já existe","Pular análise de impacto","Gerar PRD sem validação","Ser passivo/executor"]}
 ```

@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" fill="none">
+  <style>
+    .title { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; }
+    .cmd { fill: #00ff88; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+    .desc { fill: #666; font-family: 'Outfit', sans-serif; font-size: 9px; }
+    .node { fill: #111; stroke: #222; stroke-width: 1.2; }
+    .node-on { fill: #0a1f14; stroke: #00ff88; stroke-width: 1.2; }
+    .node-warn { fill: #1f1a0a; stroke: #ffaa00; stroke-width: 1.2; }
+    .node-err { fill: #1f0a0a; stroke: #ff4444; stroke-width: 1.2; }
+    .ntxt { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 600; }
+    .arrow { stroke: #00ff88; stroke-width: 1.2; fill: none; marker-end: url(#ag); opacity: 0.6; }
+    .arrow-w { stroke: #ffaa00; stroke-width: 1.2; fill: none; marker-end: url(#aw); opacity: 0.6; }
+    .arrow-e { stroke: #ff4444; stroke-width: 1.2; fill: none; marker-end: url(#ae); opacity: 0.6; }
+    .arrow-dim { stroke: #333; stroke-width: 1; fill: none; stroke-dasharray: 4 3; opacity: 0.4; }
+    .label { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: 0.05em; }
+    .sublabel { fill: #666; font-family: 'Outfit', sans-serif; font-size: 10px; }
+    .badge { fill: #00ff88; font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 600; }
+    .badge-bg { fill: #0a1f14; stroke: #00ff88; stroke-width: 0.8; rx: 4; }
+  </style>
+  <defs>
+    <marker id="ag" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="7" markerHeight="5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00ff88"/></marker>
+    <marker id="aw" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="7" markerHeight="5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#ffaa00"/></marker>
+    <marker id="ae" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="7" markerHeight="5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#ff4444"/></marker>
+  </defs>
+
+  <!-- ============ COMPLETE FLOW ============ -->
+  <text x="40" y="30" class="label">COMPLETE FLOW</text>
+  <text x="40" y="44" class="sublabel">Complex features with UI — full discovery, design, planning, implementation, review</text>
+
+  <g transform="translate(40, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Brainstorm</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-brainstorm</text>
+  </g>
+  <line x1="144" y1="82" x2="168" y2="82" class="arrow"/>
+  <g transform="translate(172, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+  </g>
+  <line x1="276" y1="82" x2="300" y2="82" class="arrow"/>
+  <g transform="translate(304, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Design</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-design</text>
+  </g>
+  <line x1="408" y1="82" x2="432" y2="82" class="arrow"/>
+  <g transform="translate(436, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Plan</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-plan</text>
+  </g>
+  <line x1="540" y1="82" x2="564" y2="82" class="arrow"/>
+  <g transform="translate(568, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Code</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-dev</text>
+  </g>
+  <line x1="672" y1="82" x2="696" y2="82" class="arrow"/>
+  <g transform="translate(700, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Review</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-review</text>
+  </g>
+  <line x1="804" y1="82" x2="828" y2="82" class="arrow"/>
+  <g transform="translate(832, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+  </g>
+
+  <!-- ============ STANDARD FLOW ============ -->
+  <text x="40" y="150" class="label">STANDARD FLOW</text>
+  <text x="40" y="164" class="sublabel">Features without complex UI — skip brainstorm and design</text>
+
+  <g transform="translate(40, 178)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+  </g>
+  <line x1="144" y1="200" x2="168" y2="200" class="arrow"/>
+  <g transform="translate(172, 178)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Plan</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-plan</text>
+  </g>
+  <line x1="276" y1="200" x2="300" y2="200" class="arrow"/>
+  <g transform="translate(304, 178)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Code</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-dev</text>
+  </g>
+  <line x1="408" y1="200" x2="432" y2="200" class="arrow"/>
+  <g transform="translate(436, 178)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+  </g>
+
+  <!-- ============ LEAN FLOW ============ -->
+  <text x="40" y="268" class="label">LEAN FLOW</text>
+  <text x="40" y="282" class="sublabel">Small changes, quick tasks — minimal ceremony</text>
+
+  <g transform="translate(40, 296)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+  </g>
+  <line x1="144" y1="318" x2="168" y2="318" class="arrow"/>
+  <g transform="translate(172, 296)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Code</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-dev</text>
+  </g>
+  <line x1="276" y1="318" x2="300" y2="318" class="arrow"/>
+  <g transform="translate(304, 296)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+  </g>
+
+  <!-- ============ AUTONOMOUS FLOW ============ -->
+  <text x="40" y="386" class="label" style="fill:#ffaa00">AUTONOMOUS FLOW</text>
+  <text x="40" y="400" class="sublabel">Full AI implementation, no human interaction needed</text>
+
+  <g transform="translate(40, 414)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+  </g>
+  <line x1="144" y1="436" x2="168" y2="436" class="arrow-w"/>
+  <g transform="translate(172, 414)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-warn"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Autopilot</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add-autopilot</text>
+  </g>
+  <line x1="276" y1="436" x2="300" y2="436" class="arrow-w"/>
+  <g transform="translate(304, 414)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+  </g>
+
+  <!-- ============ EMERGENCY FLOW ============ -->
+  <text x="40" y="504" class="label" style="fill:#ff4444">EMERGENCY FLOW</text>
+  <text x="40" y="518" class="sublabel">Critical bug in production — fast track to fix</text>
+
+  <g transform="translate(40, 532)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-err"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Hotfix</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ff4444">/add-hotfix</text>
+  </g>
+  <line x1="144" y1="554" x2="168" y2="554" class="arrow-e"/>
+  <g transform="translate(172, 532)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+  </g>
+
+  <!-- ============ EXPLORATION FLOW ============ -->
+  <text x="40" y="622" class="label">EXPLORATION FLOW</text>
+  <text x="40" y="636" class="sublabel">Don't know where to start? Brainstorm first, then pick any flow above</text>
+
+  <g transform="translate(40, 648)">
+    <rect x="0" y="0" width="100" height="26" rx="6" class="node-on"/>
+    <text x="50" y="17" text-anchor="middle" class="cmd">/add-brainstorm</text>
+  </g>
+  <line x1="144" y1="661" x2="168" y2="661" class="arrow"/>
+  <g transform="translate(172, 648)">
+    <rect x="0" y="0" width="100" height="26" rx="6" class="node-on"/>
+    <text x="50" y="17" text-anchor="middle" class="cmd">/add-feature</text>
+  </g>
+  <line x1="276" y1="661" x2="300" y2="661" class="arrow-dim"/>
+  <text x="320" y="665" class="sublabel" style="fill:#999">...pick your flow</text>
+</svg>

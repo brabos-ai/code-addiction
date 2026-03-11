@@ -396,7 +396,7 @@ Desirable improvements for code quality.
 1. **Create features for fixes:**
    ```bash
    # For each critical issue, create a feature
-   git checkout -b feature/FXXXX-fix-[issue-id]
+   git checkout -b feature/[XXXX]F-fix-[issue-id]
    ```
 
 2. **Use /feature command with context:**

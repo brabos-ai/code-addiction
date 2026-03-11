@@ -65,8 +65,8 @@ READ-ONLY FOR CODE:
   ⛔ DO NOT: Write code, implement features, or make source changes
 
 ALLOWED:
-  ✅ MAY CREATE: docs/features/F[XXXX]-[name]/*.md
-  ✅ MAY CREATE: docs/features/F[XXXX]-[name]/subfeatures/*/*.md
+  ✅ MAY CREATE: docs/features/[XXXX]F-[name]/*.md
+  ✅ MAY CREATE: docs/features/[XXXX]F-[name]/subfeatures/*/*.md
   ✅ MAY RUN: bash .codeadd/scripts/init.sh (Step 1 only)
   ✅ MAY RUN: git checkout -b (Step 1 only)
 
@@ -188,12 +188,12 @@ Read .codeadd/templates/feature-discovery-template.md
 - Name: kebab-case, 2-4 words
 
 **MANDATORY SEQUENCE:**
-1. `git checkout -b [type]/F[XXXX]-[name]` ← Create branch
-2. `mkdir docs/features/F[XXXX]-[name]/` ← Create directory
+1. `git checkout -b [type]/[XXXX]F-[name]` ← Create branch
+2. `mkdir docs/features/[XXXX]F-[name]/` ← Create directory
 3. `Write` about.md with templates filled ← Create docs
 4. `Write` discovery.md with templates filled ← Create docs
 
-**Expected output:** Feature ID (F000X), branch created, directory created, templates filled.
+**Expected output:** Feature ID (000XF), branch created, directory created, templates filled.
 
 ---
 
@@ -301,7 +301,7 @@ After both agents complete, coordinator performs deep thinking using their outpu
 #### Questionnaire Structure (5 Sections)
 
 ```markdown
-## Consultant Validation - [Feature Name] (F000X)
+## Consultant Validation - [Feature Name] (000XF)
 
 ---
 
@@ -673,12 +673,12 @@ If validated "user chooses type" → CANNOT exclude frontend.
 **Apply cache technique:** Read → Preserve → Complement → Metadata
 
 #### about.md
-- Path: `docs/features/F[XXXX]-[name]/about.md`
+- Path: `docs/features/[XXXX]F-[name]/about.md`
 - Content: Feature SPECIFICATION (WHAT + WHY)
 - Use validated questionnaire answers
 
 #### discovery.md
-- Path: `docs/features/F[XXXX]-[name]/discovery.md`
+- Path: `docs/features/[XXXX]F-[name]/discovery.md`
 - Content: CODEBASE ANALYSIS (WHAT ALREADY EXISTS)
 - **Use subagent** for deep analysis:
 
@@ -737,7 +737,7 @@ If `/feature F0018` or `/feature continue`:
 
 ```
 Feature Discovery Complete!
-Docs: docs/features/F[XXXX]-[name]/
+Docs: docs/features/[XXXX]F-[name]/
 **Next Steps (load code-addiction-ecosystem skill for context):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
 Based on what was discovered, suggest the logical next command:

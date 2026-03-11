@@ -190,8 +190,8 @@ IF no changed files:
 
 **IF MODE = feature:**
 1. RUN: `bash .codeadd/scripts/status.sh` (if exists)
-2. READ: `docs/features/F[XXXX]/about.md` — extract RF/RN requirements
-3. READ: `docs/features/F[XXXX]/plan.md` — extract implementation scope
+2. READ: `docs/features/[XXXX]F/about.md` — extract RF/RN requirements
+3. READ: `docs/features/[XXXX]F/plan.md` — extract implementation scope
 4. SET `TARGET_FILES` = files referenced in plan.md + files in feature modules
 
 **IF MODE = path:**

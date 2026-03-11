@@ -161,7 +161,7 @@ cat CLAUDE.md
 if [ -f "docs/product.md" ]; then cat docs/product.md; fi
 
 # 3. List all implemented features
-ls -1 docs/features/ | grep -E '^F[0-9]{4}-'
+ls -1 docs/features/ | grep -E '^[0-9]{4}[A-Z]-'
 ```
 
 ### Build Mental Map (SILENT)
@@ -383,7 +383,7 @@ Structure based on question type and founder level:
 
 ```bash
 # Load specific feature documentation
-FEATURE_DIR="docs/features/F[XXXX]-[name]"
+FEATURE_DIR="docs/features/[XXXX]F-[name]"
 cat "${FEATURE_DIR}/about.md"
 cat "${FEATURE_DIR}/discovery.md"
 cat "${FEATURE_DIR}/plan.md"        # if exists
@@ -500,7 +500,7 @@ docs/brainstorm/
 
 **Naming rules:**
 - ✅ CORRECT: `docs/brainstorm/2025-02-10-push-notifications.md`
-- ❌ WRONG: `docs/features/F[XXXX]-[name]/` (that's for `/feature` command)
+- ❌ WRONG: `docs/features/[XXXX]F-[name]/` (that's for `/feature` command)
 - ❌ WRONG: `docs/brainstorm/notifications.md` (no date)
 - ❌ WRONG: `docs/brainstorm/10-02-2025-notifications.md` (wrong date format)
 

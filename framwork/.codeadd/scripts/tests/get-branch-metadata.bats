@@ -11,93 +11,98 @@ teardown() {
 
 # ─── Standard branch types ───────────────────────────────────────────
 
-@test "feature/F0001-test → feature, feat, slug, docs_dir" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "feature/F0001-test"
+@test "feature/0001F-test → feature, feat, slug, docs_dir" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "feature/0001F-test"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_NAME=feature/F0001-test"* ]]
+  [[ "$output" == *"BRANCH_NAME=feature/0001F-test"* ]]
   [[ "$output" == *"BRANCH_PREFIX=feature"* ]]
   [[ "$output" == *"BRANCH_TYPE=feature"* ]]
   [[ "$output" == *"COMMIT_TYPE=feat"* ]]
-  [[ "$output" == *"FEATURE_ID=F0001"* ]]
-  [[ "$output" == *"FEATURE_SLUG=F0001-test"* ]]
-  [[ "$output" == *"DOCS_DIR=docs/features/F0001-test"* ]]
+  [[ "$output" == *"FEATURE_ID=0001F"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0001F-test"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0001F-test"* ]]
 }
 
-@test "fix/F0001-bugfix → hotfix_feature, fix" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "fix/F0001-bugfix"
+@test "fix/0001H-bugfix → fix, fix" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "fix/0001H-bugfix"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0001"* ]]
-  [[ "$output" == *"BRANCH_TYPE=hotfix_feature"* ]]
+  [[ "$output" == *"FEATURE_ID=0001H"* ]]
+  [[ "$output" == *"BRANCH_TYPE=fix"* ]]
   [[ "$output" == *"COMMIT_TYPE=fix"* ]]
-  [[ "$output" == *"FEATURE_SLUG=F0001-bugfix"* ]]
-  [[ "$output" == *"DOCS_DIR=docs/features/F0001-bugfix"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0001H-bugfix"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0001H-bugfix"* ]]
 }
 
-@test "fix/H0001-urgent → hotfix_standalone, fix, docs/hotfixes" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "fix/H0001-urgent"
+@test "hotfix/0002H-urgent → hotfix, fix" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "hotfix/0002H-urgent"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=H0001"* ]]
-  [[ "$output" == *"BRANCH_TYPE=hotfix_standalone"* ]]
-  [[ "$output" == *"COMMIT_TYPE=fix"* ]]
-  [[ "$output" == *"FEATURE_SLUG=H0001-urgent"* ]]
-  [[ "$output" == *"DOCS_DIR=docs/hotfixes/H0001-urgent"* ]]
+  [[ "$output" == *"FEATURE_ID=0002H"* ]]
+  [[ "$output" == *"BRANCH_TYPE=hotfix"* ]]
+  [[ "$output" == *"COMMIT_TYPE=hotfix"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0002H-urgent"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0002H-urgent"* ]]
 }
 
 # ─── Generic prefixes ────────────────────────────────────────────────
 
-@test "refactor/F0002-cleanup → feature, refactor" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "refactor/F0002-cleanup"
+@test "refactor/0002R-cleanup → refactor, refactor" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "refactor/0002R-cleanup"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0002"* ]]
-  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
+  [[ "$output" == *"FEATURE_ID=0002R"* ]]
+  [[ "$output" == *"BRANCH_TYPE=refactor"* ]]
   [[ "$output" == *"COMMIT_TYPE=refactor"* ]]
-  [[ "$output" == *"FEATURE_SLUG=F0002-cleanup"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0002R-cleanup"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0002R-cleanup"* ]]
 }
 
-@test "chore/F0003-deps → feature, chore" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "chore/F0003-deps"
+@test "chore/0003C-deps → chore, chore" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "chore/0003C-deps"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0003"* ]]
-  [[ "$output" == *"BRANCH_TYPE=feature"* ]]
+  [[ "$output" == *"FEATURE_ID=0003C"* ]]
+  [[ "$output" == *"BRANCH_TYPE=chore"* ]]
   [[ "$output" == *"COMMIT_TYPE=chore"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0003C-deps"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0003C-deps"* ]]
 }
 
-@test "docs/F0004-readme → feature, docs" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "docs/F0004-readme"
+@test "docs/0004D-readme → docs, docs" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "docs/0004D-readme"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0004"* ]]
+  [[ "$output" == *"FEATURE_ID=0004D"* ]]
+  [[ "$output" == *"BRANCH_TYPE=docs"* ]]
   [[ "$output" == *"COMMIT_TYPE=docs"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0004D-readme"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0004D-readme"* ]]
 }
 
-@test "perf/F0005-optimize → feature, perf" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "perf/F0005-optimize"
+@test "perf/0005F-optimize → perf, perf" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "perf/0005F-optimize"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0005"* ]]
+  [[ "$output" == *"FEATURE_ID=0005F"* ]]
+  [[ "$output" == *"BRANCH_TYPE=perf"* ]]
   [[ "$output" == *"COMMIT_TYPE=perf"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0005F-optimize"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0005F-optimize"* ]]
 }
 
-@test "test/F0006-coverage → feature, test" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "test/F0006-coverage"
+@test "test/0006F-coverage → test, test" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "test/0006F-coverage"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0006"* ]]
+  [[ "$output" == *"FEATURE_ID=0006F"* ]]
+  [[ "$output" == *"BRANCH_TYPE=test"* ]]
   [[ "$output" == *"COMMIT_TYPE=test"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0006F-coverage"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0006F-coverage"* ]]
 }
 
-@test "custom/F0007-whatever → feature, custom (fallback)" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "custom/F0007-whatever"
+@test "custom/0007F-whatever → custom (generic fallback)" {
+  run "$SCRIPTS_DIR/get-branch-metadata.sh" "custom/0007F-whatever"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0007"* ]]
+  [[ "$output" == *"FEATURE_ID=0007F"* ]]
+  [[ "$output" == *"BRANCH_TYPE=custom"* ]]
   [[ "$output" == *"COMMIT_TYPE=custom"* ]]
-}
-
-# ─── Generic prefixes with H[XXXX] ──────────────────────────────────
-
-@test "chore/H0001-cleanup → hotfix_standalone, chore" {
-  run "$SCRIPTS_DIR/get-branch-metadata.sh" "chore/H0001-cleanup"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=H0001"* ]]
-  [[ "$output" == *"BRANCH_TYPE=hotfix_standalone"* ]]
-  [[ "$output" == *"COMMIT_TYPE=chore"* ]]
+  [[ "$output" == *"FEATURE_SLUG=0007F-whatever"* ]]
+  [[ "$output" == *"DOCS_DIR=docs/features/0007F-whatever"* ]]
 }
 
 # ─── Branches without ID (exit 0, empty fields) ─────────────────────
@@ -132,7 +137,7 @@ teardown() {
   git checkout --detach -q
   run "$SCRIPTS_DIR/get-branch-metadata.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"BRANCH_NAME=(detached)"* ]]
+  [[ "$output" == *"BRANCH_NAME='(detached)'"* ]]
   [[ "$output" == *"BRANCH_TYPE=detached"* ]]
   [[ "$output" == *"FEATURE_ID="* ]]
 }

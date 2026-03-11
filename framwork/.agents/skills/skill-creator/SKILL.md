@@ -1,5 +1,6 @@
+<!-- AUTO-GENERATED - DO NOT EDIT. Source: framwork/.codeadd/skills/skill-creator/SKILL.md -->
 ---
-name: writing-skills
+name: skill-creator
 description: "Use when creating, updating, or improving agent skills."
 category: meta
 risk: unknown
@@ -7,7 +8,7 @@ source: community
 date_added: "2026-02-27"
 ---
 
-# Writing Skills (Excellence)
+# Skill Creator (Excellence)
 
 Dispatcher for skill creation excellence. Use the decision tree below to find the right template and standards.
 
@@ -103,8 +104,7 @@ Before deploying any skill:
 
 ## 🔗 Related Skills
 
-- **opencode-expert**: For OpenCode environment configuration
-- Use `/write-skill` command for guided skill creation
+- Use `/add-build skill [nome]` para criar skill via fluxo guiado
 
 ## Examples
 

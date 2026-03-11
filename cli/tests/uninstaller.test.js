@@ -110,4 +110,87 @@ describe('uninstall', () => {
     expect(fs.existsSync(path.join(commandsDir, 'add.md'))).toBe(false);
     expect(fs.existsSync(path.join(addDir, 'manifest.json'))).toBe(false);
   });
+
+  it('removes the ADD-managed .gitignore block and preserves user entries', async () => {
+    vi.mock('../src/prompt.js', () => ({
+      promptConfirm: vi.fn().mockResolvedValue(undefined),
+    }));
+    vi.mock('@clack/prompts', () => ({
+      intro: vi.fn(),
+      outro: vi.fn(),
+      spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
+      log: { info: vi.fn(), warn: vi.fn(), success: vi.fn() },
+    }));
+
+    const addDir = path.join(tmpDir, '.codeadd');
+    const commandsDir = path.join(addDir, 'commands');
+    fs.mkdirSync(commandsDir, { recursive: true });
+    fs.writeFileSync(path.join(commandsDir, 'add.md'), '# add');
+    fs.writeFileSync(
+      path.join(tmpDir, '.gitignore'),
+      'node_modules/\n\n# ADD - managed by code-addiction\n.codeadd/\n.claude/\n.agent/\n.agents/\n.opencode/\n# END ADD\n\ndist/\n',
+      'utf8'
+    );
+
+    const manifest = {
+      version: '2.0.1',
+      installedAt: '2026-03-01T00:00:00Z',
+      providers: ['claude', 'codex', 'antigrav', 'opencode'],
+      files: ['.codeadd/commands/add.md'],
+      gitignore: true,
+    };
+    fs.writeFileSync(
+      path.join(addDir, 'manifest.json'),
+      JSON.stringify(manifest),
+      'utf8'
+    );
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+
+    const gitignore = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
+    expect(gitignore).toBe('node_modules/\n\ndist/\n');
+    expect(gitignore).not.toContain('# ADD - managed by code-addiction');
+    expect(gitignore).not.toContain('# END ADD');
+  });
+
+  it('deletes .gitignore when it only contains the ADD-managed block', async () => {
+    vi.mock('../src/prompt.js', () => ({
+      promptConfirm: vi.fn().mockResolvedValue(undefined),
+    }));
+    vi.mock('@clack/prompts', () => ({
+      intro: vi.fn(),
+      outro: vi.fn(),
+      spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
+      log: { info: vi.fn(), warn: vi.fn(), success: vi.fn() },
+    }));
+
+    const addDir = path.join(tmpDir, '.codeadd');
+    const commandsDir = path.join(addDir, 'commands');
+    fs.mkdirSync(commandsDir, { recursive: true });
+    fs.writeFileSync(path.join(commandsDir, 'add.md'), '# add');
+    fs.writeFileSync(
+      path.join(tmpDir, '.gitignore'),
+      '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n.agent/\n.agents/\n.opencode/\n# END ADD\n',
+      'utf8'
+    );
+
+    const manifest = {
+      version: '2.0.1',
+      installedAt: '2026-03-01T00:00:00Z',
+      providers: ['claude'],
+      files: ['.codeadd/commands/add.md'],
+      gitignore: true,
+    };
+    fs.writeFileSync(
+      path.join(addDir, 'manifest.json'),
+      JSON.stringify(manifest),
+      'utf8'
+    );
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+
+    expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+  });
 });

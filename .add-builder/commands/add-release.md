@@ -9,7 +9,7 @@ Coordinates release flow with mandatory `main -> production` merge, optional tag
 ## Spec
 
 ```json
-{"gates":["response_lang_set","gh_authenticated","branch_is_main","tag_choice_defined","version_confirmed_if_tag","preview_approved_if_tag","production_merge_completed"],"modes":{"create":"STEP 0-10","list":"STEP 0 + STEP 11"},"order":["prerequisites","branch_check","ask_tag","detect_tag","choose_version","update_cli_version","merge_to_production","release_notes","preview","confirm","create_release"]}
+{"gates":["response_lang_set","gh_authenticated","branch_is_main","tag_choice_defined","version_confirmed_if_tag","preview_approved_if_tag","build_passed","production_merge_completed"],"modes":{"create":"STEP 0-11","list":"STEP 0 + STEP 12"},"order":["prerequisites","branch_check","ask_tag","detect_tag","choose_version","update_cli_version","build_provider_files","merge_to_production","release_notes","preview","confirm","create_release"]}
 ```
 
 ---
@@ -28,8 +28,8 @@ If language is not clear:
 - Set `RESPONSE_LANG = pt-BR`.
 
 DETECT MODE:
-- If argument contains `--list`: execute STEP 0 and STEP 11 only.
-- If no `--list`: execute STEP 0-10 in order.
+- If argument contains `--list`: execute STEP 0 and STEP 12 only.
+- If no `--list`: execute STEP 0-11 in order.
 
 STEPS IN ORDER (create mode):
 ```
@@ -39,12 +39,13 @@ STEP 2: Ask tag creation                -> yes/no
 STEP 3: Detect latest tag               -> git tag
 STEP 4: Choose next version             -> patch/minor/major
 STEP 5: Update CLI Package Version      -> update cli/package.json + commit + push
-STEP 6: Merge main into production      -> push production
-STEP 7: Generate changelog              -> compare previous release vs production
-STEP 8: Preview                         -> show tag + changelog
-STEP 9: Confirm release creation        -> explicit approval
-STEP 10: Create tag + GitHub Release    -> git tag + gh release create
-STEP 11: List Releases (--list mode)    -> list all releases
+STEP 6: Build Provider Files            -> node scripts/build.js
+STEP 7: Merge main into production      -> push production
+STEP 8: Generate changelog              -> compare previous release vs production
+STEP 9: Preview                         -> show tag + changelog
+STEP 10: Confirm release creation       -> explicit approval
+STEP 11: Create tag + GitHub Release    -> git tag + gh release create
+STEP 12: List Releases (--list mode)    -> list all releases
 ```
 
 ABSOLUTE PROHIBITIONS:
@@ -56,6 +57,10 @@ If gh CLI is missing or not authenticated:
 If current branch is not `main`:
 - Do not use Bash for merge, tag, push, or `gh release`.
 - Instruct user to switch to `main` and stop.
+
+If `node scripts/build.js` exits with non-zero code:
+- Do not use Bash for `git merge`, `git checkout production`, `git tag`, `git push`, or `gh release`.
+- Show build error output and stop.
 
 If merge to `production` fails or was not completed:
 - Do not use Bash for `git tag`, `git push` (tag), or `gh release`.
@@ -153,10 +158,10 @@ Do you want to create a release tag after merging to production?
 
 Options:
 - Yes: continue to STEP 3.
-- No: continue to STEP 6 (merge only, no tag/release).
+- No: continue to STEP 6 (build) then STEP 7 (merge only, no tag/release).
 
 If user chooses `No`, proceed with merge-only flow:
-- Execute STEP 6 (Merge main into production).
+- Execute STEP 6 (Build Provider Files) then STEP 7 (Merge main into production).
 - Display completion message.
 - Stop execution (no tag/release created).
 
@@ -240,7 +245,36 @@ Committed and pushed to main.
 
 ---
 
-## STEP 6: Merge Main Into Production
+## STEP 6: Build Provider Files
+
+### 6.1 Run build
+
+Execute:
+```bash
+node scripts/build.js
+```
+
+If exit code is non-zero:
+- Display full error output.
+- Stop execution.
+
+### 6.2 Commit generated files
+
+Execute:
+```bash
+git add framwork/.claude framwork/.agent framwork/.agents framwork/.kilocode framwork/.opencode
+git commit -m "chore: regenerate provider files for release [NEXT_VERSION]"
+git push origin main
+```
+
+On success, display:
+```text
+Provider files built and committed.
+```
+
+---
+
+## STEP 7: Merge Main Into Production
 
 Execute:
 ```bash
@@ -261,11 +295,11 @@ If merge fails:
 
 ---
 
-## STEP 7: Generate Changelog
+## STEP 8: Generate Changelog
 
-Use `production` as source of truth after STEP 6 merge.
+Use `production` as source of truth after STEP 7 merge.
 
-### 7.1 File diff
+### 8.1 File diff
 
 If `LATEST_TAG` exists, execute:
 ```bash
@@ -289,7 +323,7 @@ Group files by:
 
 Classify each file as Added (`A`), Modified (`M`), Deleted (`D`).
 
-### 7.2 PRD scan
+### 8.2 PRD scan
 
 Read `docs/prd/` when directory exists.
 
@@ -298,7 +332,7 @@ Filter PRDs where:
 - Created/updated date is on or after `LATEST_TAG` date.
 - If first release, include all non-draft PRDs.
 
-### 7.3 Assemble changelog/release notes
+### 8.3 Assemble changelog/release notes
 
 Format (omit empty sections):
 ```markdown
@@ -328,7 +362,7 @@ X files changed, Y added, Z removed
 
 ---
 
-## STEP 8: Preview
+## STEP 9: Preview
 
 Display:
 ```text
@@ -345,7 +379,7 @@ Target: production
 
 ---
 
-## STEP 9: Confirm Release Creation
+## STEP 10: Confirm Release Creation
 
 Ask user:
 ```text
@@ -353,12 +387,12 @@ Create this release tag and GitHub Release?
 ```
 
 Options:
-- Yes: continue to STEP 10.
+- Yes: continue to STEP 11.
 - No: display `Release cancelled after preview.` and stop.
 
 ---
 
-## STEP 10: Create Tag and GitHub Release
+## STEP 11: Create Tag and GitHub Release
 
 Execute:
 ```bash
@@ -386,7 +420,7 @@ View:
 
 ---
 
-## STEP 11: List Releases (`--list` mode)
+## STEP 12: List Releases (`--list` mode)
 
 Execute in parallel:
 ```bash
@@ -409,5 +443,30 @@ No releases found. Run /add-release to create the first one.
 ## Rules
 
 ```json
-{"do":["Check gh CLI first","Stop if gh is missing or unauthenticated","Require execution from main branch","Update CLI package version before production merge","Commit and push version bump to main","Merge main into production after version update","Ask explicitly whether to create tag/release","Generate changelog by comparing previous tag against production","Show preview before creating tag/release","Use annotated tags","Use gh release with --notes-file and --target production","Omit empty changelog sections"],"dont":["Create tag/release before production merge","Skip user choice about tag creation","Create release outside production","Use lightweight tags","Generate notes only from commit messages","Proceed after merge failure","Push tags without explicit approval","Create CHANGELOG.md files in this command"]}
+ALWAYS:
+- Check gh CLI before any git/gh operation
+- Stop if gh is missing or unauthenticated
+- Require execution from main branch
+- Update CLI package version before build step
+- Run build (node scripts/build.js) before merging to production
+- Stop if build exits with non-zero code
+- Commit and push version bump to main
+- Merge main into production after successful build
+- Ask explicitly whether to create tag/release
+- Generate changelog by comparing previous tag against production
+- Show preview before creating tag/release
+- Use annotated tags
+- Use gh release with --notes-file and --target production
+- Omit empty changelog sections
+
+NEVER:
+- Create tag/release before production merge
+- Skip build step before merge
+- Skip user choice about tag creation
+- Create release outside production
+- Use lightweight tags
+- Generate notes only from commit messages
+- Proceed after merge failure or build failure
+- Push tags without explicit approval
+- Create CHANGELOG.md files in this command
 ```

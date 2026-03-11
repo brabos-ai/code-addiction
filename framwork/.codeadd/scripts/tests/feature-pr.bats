@@ -25,7 +25,7 @@ teardown() {
 }
 
 @test "falha quando feature dir não existe (create-pr mode)" {
-  git checkout -b feature/F0001-test -q
+  git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/feature-pr.sh" --create-pr
   [ "$status" -eq 1 ]
   [[ "$output" == *"Feature directory not found"* ]]
@@ -34,8 +34,8 @@ teardown() {
 # ─── Preview mode ───────────────────────────────────────────────────
 
 @test "preview mode: mostra ações que serão executadas" {
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
   run "$SCRIPTS_DIR/feature-pr.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"MODE=PREVIEW"* ]]
@@ -44,16 +44,16 @@ teardown() {
 }
 
 @test "preview mode: detecta feature ID corretamente" {
-  git checkout -b feature/F0042-login -q
-  mkdir -p docs/features/F0042-login
+  git checkout -b feature/0042F-login -q
+  mkdir -p docs/features/0042F-login
   run "$SCRIPTS_DIR/feature-pr.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"FEATURE_ID=F0042-login"* ]]
+  [[ "$output" == *"FEATURE_ID=0042F-login"* ]]
 }
 
 @test "preview mode: conta pending changes" {
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
   echo "new" > newfile.txt
   run "$SCRIPTS_DIR/feature-pr.sh"
   [ "$status" -eq 0 ]
@@ -64,8 +64,8 @@ teardown() {
 # ─── Create PR mode guards ──────────────────────────────────────────
 
 @test "create-pr mode: falha sem changelog.md" {
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
   echo "change" > src.txt
   git add src.txt && git commit -m "feat" -q
   run "$SCRIPTS_DIR/feature-pr.sh" --create-pr
@@ -74,9 +74,9 @@ teardown() {
 }
 
 @test "create-pr mode: falha sem changes e sem uncommitted" {
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
-  echo "# Changelog" > docs/features/F0001-test/changelog.md
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "# Changelog" > docs/features/0001F-test/changelog.md
   run "$SCRIPTS_DIR/feature-pr.sh" --create-pr
   [ "$status" -eq 1 ]
   [[ "$output" == *"No commits or changes found"* ]]
@@ -85,9 +85,9 @@ teardown() {
 # ─── Create PR mode: push/gh failures ──────────────────────────────
 
 @test "create-pr mode: falha ao fazer push quando não há remote configurado" {
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
-  echo "# Changelog" > docs/features/F0001-test/changelog.md
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "# Changelog" > docs/features/0001F-test/changelog.md
   echo "change" > src.txt
   git add . && git commit -m "feat" -q
   run "$SCRIPTS_DIR/feature-pr.sh" --create-pr
@@ -97,11 +97,11 @@ teardown() {
 
 @test "create-pr mode: falha quando gh não está autenticado" {
   setup_remote
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
   echo "change" > src.txt
   git add . && git commit -m "feat" -q
-  echo "# Changelog" > docs/features/F0001-test/changelog.md
+  echo "# Changelog" > docs/features/0001F-test/changelog.md
   local mock_bin
   mock_bin=$(mktemp -d)
   cat > "$mock_bin/gh" << 'GHEOF'
@@ -118,11 +118,11 @@ GHEOF
 
 @test "create-pr mode: falha quando PR já existe para o branch" {
   setup_remote
-  git checkout -b feature/F0001-test -q
-  mkdir -p docs/features/F0001-test
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
   echo "change" > src.txt
   git add . && git commit -m "feat" -q
-  echo "# Changelog" > docs/features/F0001-test/changelog.md
+  echo "# Changelog" > docs/features/0001F-test/changelog.md
   local mock_bin
   mock_bin=$(mktemp -d)
   cat > "$mock_bin/gh" << 'GHEOF'

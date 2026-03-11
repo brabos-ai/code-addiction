@@ -2,6 +2,7 @@
   "name": "codeadd",
   "private": true,
   "scripts": {
+    "build": "node scripts/build.js",
     "test": "npm --prefix cli test",
     "test:scripts": "npx bats framwork/.codeadd/scripts/tests/*.bats",
     "release": "bash scripts/release.sh",

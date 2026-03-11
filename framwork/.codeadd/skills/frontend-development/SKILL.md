@@ -1,17 +1,19 @@
 ---
 name: frontend-development
 description: |
-  Frontend patterns: State, API, Types, Hooks, Forms, Routing. Integrates with ux-design for UI patterns.
+  Frontend architecture: state management, data fetching, components, forms, routing — stack-agnostic. Consult stack-context.md for framework. Use when implementing frontend features.
 ---
 
 # Frontend Development
 
-Skill para implementação de Frontend seguindo padrões do projeto.
+Stack-agnostic skill for frontend architecture and implementation patterns.
 
-**Use para:** Pages, Hooks, State, Types, API integration, Forms, Routing
-**Não use para:** UI/Design (ux-design), Backend (backend-development)
+**Use for:** Pages, State, Data Fetching, Types, API integration, Forms, Routing, Components
+**Do not use for:** UI/Design (ux-design), Backend (backend-development)
 
-**Referência:** Sempre consultar `CLAUDE.md` para padrões gerais do projeto.
+**Stack orientation:** Consult `.codeadd/project/stack-context.md` for the frontend framework, UI library, state management, and data-fetching tool. Apply the principles below using that framework's APIs.
+
+**Reference:** Always consult `CLAUDE.md` for general project standards.
 
 ---
 
@@ -19,17 +21,9 @@ Skill para implementação de Frontend seguindo padrões do projeto.
 
 **BEFORE implementing any frontend component:**
 
-1. **Check for design.md:**
-```bash
-cat "docs/features/${FEATURE_ID}/design.md" 2>/dev/null
-```
-
+1. **Check for design.md** in the feature docs directory
 2. **If design.md exists:** Follow the specs exactly (components, props, states, layout)
-
-3. **If design.md NOT exists:** Load and follow UX Design skill:
-```bash
-cat .codeadd/skills/ux-design/SKILL.md
-```
+3. **If design.md does NOT exist:** Load and follow the UX Design skill (`.codeadd/skills/ux-design/SKILL.md`)
 
 **The ux-design skill provides:**
 - SaaS UX Pattern Library (Dashboard, Settings, Billing, Auth, etc.)
@@ -44,238 +38,129 @@ cat .codeadd/skills/ux-design/SKILL.md
 
 ## Structure
 
+Organize source files by concern. Exact paths and extensions depend on the framework (see `stack-context.md`).
+
 ```
-apps/frontend/src/
-├── pages/[page-name].tsx
+[frontend-src]/
+├── pages/[page-name].*          # Route-level page components
 ├── components/
-│   ├── features/[feature]/[Component].tsx
-│   └── ui/[component].tsx
-├── hooks/use-[feature].ts
-├── stores/[feature]-store.ts
-├── types/index.ts
-├── lib/api.ts
-└── routes.tsx
+│   ├── features/[feature]/      # Domain components (logic + presentation)
+│   └── ui/                      # Design system / reusable primitives
+├── composables|hooks/           # Data-fetching and reusable logic
+├── stores/[feature]-store.*     # UI state stores
+├── types/                       # Shared TypeScript interfaces/types
+├── lib/api.*                    # Centralized API client
+└── routes.*                     # Route definitions
 ```
 
 ---
 
 ## Types (Mirror Backend DTOs)
 
-{"location":"apps/frontend/src/types/index.ts"}
+{"rules":["interfaces not classes","Date fields -> string (JSON serialization)","Enums -> union types (no backend imports)","sync with backend DTOs","never use `any`"]}
 
-```typescript
-// Backend DTO → Frontend Interface
-// Date → string (JSON serialization)
-// Enum → union type (no backend import)
-
-export interface User {
-  id: string;
-  email: string;
-  role: 'owner' | 'admin' | 'member';  // NOT enum import
-  createdAt: string;  // NOT Date
-}
-```
-
-{"rules":["interfaces not classes","Date→string","Enum→union type","no @add/domain imports","sync with backend DTOs"]}
+Principles:
+- Frontend interfaces must mirror backend response DTOs field-by-field
+- `Date` fields become `string` (JSON serialization)
+- Backend enums become union types — no cross-boundary imports
+- Use `interface`, not `class`, for data shapes
+- Keep types in a centralized location and import everywhere
 
 ---
 
-## Hooks (Data Fetching)
+## Data Fetching
 
-{"location":"apps/frontend/src/hooks/use-[feature].ts"}
+{"separation":"UI state (local, ephemeral) vs Server state (cache of backend data) — NEVER mix them"}
 
-```typescript
-// Query hook
-export function useUsers() {
-  return useQuery({
-    queryKey: ['users'],
-    queryFn: () => api.get<User[]>('/users').then(r => r.data),
-  });
-}
+Use the project's data-fetching library (see `stack-context.md`) to handle server state. Every data-fetch must address:
 
-// Single resource
-export function useUser(id: string) {
-  return useQuery({
-    queryKey: ['users', id],
-    queryFn: () => api.get<User>(`/users/${id}`).then(r => r.data),
-    enabled: !!id,
-  });
-}
+1. **Cache keys** — consistent, hierarchical (e.g. `['resource']`, `['resource', id]`)
+2. **Loading state** — always show a loading indicator while fetching
+3. **Error state** — always handle and display errors
+4. **Cache invalidation** — after mutations, invalidate related cached data
+5. **Conditional fetching** — only fetch when prerequisites are met (e.g. ID exists)
 
-// Mutation
-export function useCreateUser() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateUserRequest) =>
-      api.post<User>('/users', data).then(r => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
-  });
-}
-```
-
-{"patterns":["queryKey consistent","enabled for conditional","invalidate on mutation","return mutation not wrapped"]}
+{"patterns":["cache keys consistent and hierarchical","invalidate cache on mutation","conditional fetching when prerequisites missing","return the library's primitives directly — do not wrap unnecessarily"]}
 
 ---
 
 ## State Management
 
-{"location":"apps/frontend/src/stores/[feature]-store.ts"}
+Separate state into two categories — never mix them:
 
-```typescript
-interface UIState {
-  sidebarOpen: boolean;
-  selectedUserId: string | null;
-  toggleSidebar: () => void;
-  selectUser: (id: string | null) => void;
-}
+| Category | What belongs here | Where it lives |
+|----------|-------------------|----------------|
+| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see `stack-context.md`) |
+| **Server state** | Data from the backend, CRUD results, cached responses | Data-fetching library cache |
 
-export const useUIStore = create<UIState>((set) => ({
-  sidebarOpen: true,
-  selectedUserId: null,
-  toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
-  selectUser: (id) => set({ selectedUserId: id }),
-}));
-```
-
-{"useLocalState":["UI state","modal/sidebar toggles","selections","filters"]}
-{"useServerState":["server data","CRUD operations","cache management"]}
+Principles:
+- UI state is local and ephemeral — losing it on refresh is acceptable
+- Server state is a cache of the backend — the backend is the source of truth
+- Never store fetched data in a UI store; let the data-fetching library manage it
 
 ---
 
-## API Integration
+## API Client
 
-{"location":"apps/frontend/src/lib/api.ts"}
+{"rules":["single centralized instance","base URL from environment variable","interceptors for auth token injection","interceptors for global error handling (401 -> logout, 5xx -> notification)"]}
 
-```typescript
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1',
-  headers: { 'Content-Type': 'application/json' },
-});
-
-// Auth interceptor
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-```
-
-{"rules":["use api instance","baseURL from env","interceptors for auth"]}
+Principles:
+- Create ONE API client instance for the entire app
+- Base URL comes from an environment variable — never hard-code
+- Add request interceptors to attach auth tokens automatically
+- Add response interceptors for global error handling (e.g. 401 triggers logout)
+- All data-fetching composables/hooks use this client
 
 ---
 
 ## Forms
 
-```typescript
-const schema = z.object({
-  email: z.string().email('Email inválido'),
-  name: z.string().min(2, 'Mínimo 2 caracteres'),
-  role: z.enum(['owner', 'admin', 'member']).optional(),
-});
+{"patterns":["schema-based validation (Zod or equivalent)","form data type inferred from schema","validate on client AND server","immediate user feedback on validation errors"]}
 
-type FormData = z.infer<typeof schema>;
-
-export function UserForm({ onSubmit }: { onSubmit: (data: FormData) => void }) {
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: '', name: '' },
-  });
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Input {...form.register('email')} />
-      {form.formState.errors.email && <span>{form.formState.errors.email.message}</span>}
-    </form>
-  );
-}
-```
-
-{"patterns":["schema mirrors DTO","typed FormData","error messages in PT-BR"]}
+Principles:
+- Define a validation schema (Zod recommended) for every form
+- Infer the form data type from the schema — no manual type duplication
+- Schema should mirror the backend DTO for the endpoint
+- Show validation errors inline, immediately on blur or submit
+- Validate on client for UX, validate on server for security — both are mandatory
+- Error messages should match the project's language/locale
 
 ---
 
-## Pages
+## Pages / Views
 
-{"location":"apps/frontend/src/pages/[page-name].tsx"}
+Every page that displays data MUST handle three states:
 
-```typescript
-export function UsersPage() {
-  const { data: users, isLoading, error } = useUsers();
-  const deleteUser = useDeleteUser();
+1. **Loading** — show a spinner or skeleton while data loads
+2. **Error** — show an error message with retry option
+3. **Empty** — show an empty-state message when data is an empty collection
 
-  // MANDATORY: Handle all states (from ux-design skill)
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage error={error} />;
-  if (!users?.length) return <EmptyState title="Nenhum usuário" />;
-
-  return (
-    <div className="container py-6">
-      <h1 className="text-2xl font-bold mb-6">Usuários</h1>
-      <DataTable
-        columns={columns}
-        data={users}
-        onDelete={(id) => deleteUser.mutate(id)}
-      />
-    </div>
-  );
-}
-```
-
-{"patterns":["hooks at top","loading/error/empty states MANDATORY","container layout","data ?? [] fallback"]}
+{"patterns":["loading/error/empty states MANDATORY for every data page","data-fetching logic at top of component","container/layout wrapper for consistent spacing","fallback to empty array for list data"]}
 
 ---
 
 ## Routing
 
-{"location":"apps/frontend/src/routes.tsx"}
+{"patterns":["routes reflect feature architecture","protected routes for authenticated sections","lazy loading per route for performance","nested routes for layout inheritance","dynamic params for detail views"]}
 
-```typescript
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <RootLayout />,
-    children: [
-      { index: true, element: <HomePage /> },
-      {
-        path: 'users',
-        element: <ProtectedRoute><UsersPage /></ProtectedRoute>,
-      },
-      { path: 'users/:id', element: <UserDetailPage /> },
-    ],
-  },
-]);
-```
-
-{"patterns":["nested routes","ProtectedRoute wrapper","dynamic :id params"]}
+Principles:
+- Route structure mirrors the feature architecture
+- Auth-required routes are wrapped in a protected-route guard
+- Each route is lazy-loaded to reduce initial bundle size
+- Use nested routes for shared layouts (sidebar, header)
+- Detail routes use dynamic parameters (e.g. `/users/:id`)
 
 ---
 
-## Auth Store
+## Auth
 
-{"location":"apps/frontend/src/stores/auth-store.ts"}
-
-```typescript
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  setAuth: (user: User, token: string) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
-}
-
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      setAuth: (user, token) => set({ user, token }),
-      logout: () => set({ user: null, token: null }),
-      get isAuthenticated() { return !!get().token; },
-    }),
-    { name: 'auth-storage' }
-  )
-);
-```
+Principles:
+- Centralized auth state (current user, token, isAuthenticated)
+- Token stored securely (consider httpOnly cookies vs localStorage based on threat model)
+- Auth state persisted across page refreshes
+- API client automatically attaches token to requests
+- Protected route guard redirects unauthenticated users to login
+- Logout clears auth state and cached data
 
 ---
 
@@ -283,14 +168,43 @@ export const useAuthStore = create<AuthState>()(
 
 ```
 components/
-├── features/[feature]/
-│   ├── [feature]-card.tsx
-│   ├── [feature]-form.tsx
-│   ├── [feature]-table.tsx
-│   └── columns.tsx
-├── ui/ (design system - shadcn)
-└── layout/ (header, sidebar, footer)
+├── features/[feature]/          # Domain-specific components
+│   ├── [feature]-card.*
+│   ├── [feature]-form.*
+│   ├── [feature]-table.*
+│   └── [feature]-columns.*
+├── ui/                          # Design system primitives (from UI library)
+└── layout/                      # Structural components (header, sidebar, footer)
 ```
+
+Principles:
+- **Feature components** contain domain logic and compose UI components
+- **UI components** are presentational, reusable, and domain-agnostic
+- **Layout components** define page structure (header, sidebar, footer)
+- KISS: if a component is used in only one place, keep it inline — do not prematurely abstract into a shared component or utility
+
+---
+
+## Naming Conventions
+
+| What | Convention | Example |
+|------|-----------|---------|
+| Files | kebab-case | `user-profile-card.*` |
+| Components | PascalCase | `UserProfileCard` |
+| Functions/variables | camelCase | `getUserById`, `isLoading` |
+| Types/interfaces | PascalCase | `UserProfile`, `CreateUserRequest` |
+| Stores | camelCase with domain prefix | `useAuthStore`, `uiStore` |
+| Constants | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+
+---
+
+## Performance
+
+- **Lazy loading:** routes and heavy components loaded on demand
+- **Memoization:** only where measurements show a performance gain — never premature
+- **Bundle size:** monitor and avoid unnecessary dependencies
+- **Images:** use optimized formats and lazy loading
+- KISS: do not optimize without evidence of a problem
 
 ---
 
@@ -300,12 +214,12 @@ components/
 
 | Keywords in feature | Context | Pattern to use |
 |---------------------|---------|----------------|
-| dashboard,metrics,KPIs | Dashboard | KPIs→Charts→Activity |
-| settings,preferences | Settings | sidebar→forms |
-| billing,pricing,plans | Billing | pricing cards, usage meters |
-| list,table,CRUD | DataTables | filters→table→pagination |
-| login,signup,auth | Auth | split screen, social buttons |
-| team,members,workspace | Workspace | members list, invite flow |
+| dashboard, metrics, KPIs | Dashboard | KPIs > Charts > Activity |
+| settings, preferences | Settings | sidebar > forms |
+| billing, pricing, plans | Billing | pricing cards, usage meters |
+| list, table, CRUD | DataTables | filters > table > pagination |
+| login, signup, auth | Auth | split screen, social buttons |
+| team, members, workspace | Workspace | members list, invite flow |
 
 **Always apply from ux-design:**
 - Mobile-first breakpoints
@@ -318,65 +232,45 @@ components/
 ## Validation Checklist
 
 ### Types
-- [ ] Interfaces defined in `types/index.ts` (not classes)
-  → Check: `export interface` used, not `export class`
-- [ ] `Date` fields mapped to `string` (JSON serialization)
-  → Check: no `Date` type in frontend interfaces, use `string`
-- [ ] Enums mapped to union types (no backend enum imports)
-  → Check: `'value1' | 'value2'` instead of imported enum
+- [ ] Interfaces defined centrally (not classes)
+- [ ] `Date` fields mapped to `string`
+- [ ] Enums mapped to union types (no backend imports)
 - [ ] Types synced with backend DTOs
-  → Check: frontend interfaces match backend response DTO fields
+- [ ] No use of `any`
 
-### Hooks
-- [ ] Hook files follow `use-[feature].ts` naming
-  → Check: hook filenames use correct pattern
-- [ ] `queryKey` is consistent and hierarchical
-  → Check: query keys follow `['resource', id?]` pattern
-- [ ] Mutations invalidate related queries on success
-  → Check: `onSuccess` calls `queryClient.invalidateQueries`
+### Data Fetching
+- [ ] Cache keys consistent and hierarchical
+- [ ] Mutations invalidate related cached data
+- [ ] Conditional fetching when prerequisites missing
+- [ ] Server data managed by data-fetching library, not UI store
 
 ### State Management
-- [ ] Local/UI state uses Zustand store (sidebars, modals, selections)
-  → Check: UI toggles use `create<State>()`, not useState
-- [ ] Server data uses React Query (CRUD, cache)
-  → Check: data fetching uses `useQuery`/`useMutation`, not local state
+- [ ] UI state (toggles, selections, filters) in client-side store
+- [ ] Server data in data-fetching library cache — never in UI store
 
 ### Forms
-- [ ] Zod schema validates all fields
-  → Check: schema covers every form field with proper validators
-- [ ] `FormData` type inferred from schema (`z.infer<typeof schema>`)
-  → Check: no manual form type, uses Zod inference
-- [ ] Error messages in PT-BR
-  → Check: validation messages use Portuguese text
+- [ ] Schema-based validation for all fields
+- [ ] Form data type inferred from schema
+- [ ] Validation on client AND server
+- [ ] Error messages match project locale
 
-### Pages
-- [ ] Loading state handled (`if (isLoading) return <LoadingSpinner />`)
-  → Check: loading guard exists before data render
-- [ ] Error state handled (`if (error) return <ErrorMessage />`)
-  → Check: error guard exists before data render
-- [ ] Empty state handled (`if (!data?.length) return <EmptyState />`)
-  → Check: empty guard exists for list pages
-- [ ] Container layout applied
-  → Check: page uses `container` class or layout wrapper
-- [ ] Hooks called at top of component (before conditionals)
-  → Check: all hooks before any `if` returns
+### Pages / Views
+- [ ] Loading state handled
+- [ ] Error state handled
+- [ ] Empty state handled for list views
+- [ ] Layout wrapper applied for consistent spacing
+- [ ] Data-fetching logic at top of component, before conditionals
 
 ### Routing
-- [ ] Protected routes wrapped with `<ProtectedRoute>`
-  → Check: auth-required routes use wrapper component
-- [ ] Nested routes structure maintained
-  → Check: routes use `children` array for nesting
-- [ ] Dynamic params use `:id` pattern
-  → Check: detail routes use `path: 'resource/:id'`
+- [ ] Protected routes guard authenticated sections
+- [ ] Routes lazy-loaded
+- [ ] Nested routes for shared layouts
+- [ ] Dynamic params for detail views
 
 ### UX Integration
 - [ ] UX design skill loaded if no `design.md`
-  → Check: `.codeadd/skills/ux-design/SKILL.md` read when design.md absent
 - [ ] Mobile-first responsive design
-  → Check: components use responsive breakpoints (sm, md, lg)
 - [ ] SaaS context patterns applied
-  → Check: feature matches SaaS pattern table in skill
 
 ### Build
-- [ ] Build passes: `npm run build -w @add/frontend`
-  → Check: run build command, zero errors
+- [ ] Build passes with zero errors (run project's build command)

@@ -3,15 +3,15 @@
 # GET BRANCH METADATA
 # Extract complete metadata from any branch
 # ============================================
-# Usage: eval "$(bash framwork/.codeadd/scripts/get-branch-metadata.sh [branch])"
+# Usage: eval "$(bash .codeadd/scripts/get-branch-metadata.sh [branch])"
 # Output:
-#   BRANCH_NAME=feature/F0001-auth-system
+#   BRANCH_NAME=feature/0001F-auth-system
 #   BRANCH_PREFIX=feature
 #   BRANCH_TYPE=feature
 #   COMMIT_TYPE=feat
-#   FEATURE_ID=F0001
-#   FEATURE_SLUG=F0001-auth-system
-#   DOCS_DIR=docs/features/F0001-auth-system
+#   FEATURE_ID=0001F
+#   FEATURE_SLUG=0001F-auth-system
+#   DOCS_DIR=docs/features/0001F-auth-system
 # Dependencies: git
 # ============================================
 
@@ -22,7 +22,7 @@ set -euo pipefail
 BRANCH_NAME="${1:-$(git branch --show-current 2>/dev/null || echo "")}"
 
 if [ -z "$BRANCH_NAME" ]; then
-    echo "BRANCH_NAME=(detached)"
+    echo "BRANCH_NAME='(detached)'"
     echo "BRANCH_PREFIX="
     echo "BRANCH_TYPE=detached"
     echo "COMMIT_TYPE="
@@ -38,16 +38,20 @@ echo "BRANCH_NAME=$BRANCH_NAME"
 BRANCH_PREFIX="${BRANCH_NAME%%/*}"
 echo "BRANCH_PREFIX=$BRANCH_PREFIX"
 
-# --- BRANCH_TYPE detection (order matters: new [NNNN][L] format prioritized) ---
+# --- BRANCH_TYPE detection (format: [type]/[NNNN][L]-[slug]) ---
 
 FEATURE_ID=""
 BRANCH_TYPE=""
 
 case "$BRANCH_NAME" in
-    # New format: [type]/[NNNN][L]-[slug] (e.g., feature/0001F-auth-system)
+    # Format: [type]/[NNNN][L]-[slug] (e.g., feature/0001F-auth-system)
     feature/[0-9][0-9][0-9][0-9][A-Z]-*)
         FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
         BRANCH_TYPE="feature"
+        ;;
+    fix/[0-9][0-9][0-9][0-9][A-Z]-*)
+        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
+        BRANCH_TYPE="fix"
         ;;
     hotfix/[0-9][0-9][0-9][0-9][A-Z]-*)
         FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
@@ -65,22 +69,18 @@ case "$BRANCH_NAME" in
         FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
         BRANCH_TYPE="docs"
         ;;
-    # Fallback: old format F[NNNN] or H[NNNN] (legacy support during transition)
-    fix/F[0-9][0-9][0-9][0-9]-*)
-        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE 'F[0-9]{4}')
-        BRANCH_TYPE="hotfix_feature"
+    perf/[0-9][0-9][0-9][0-9][A-Z]-*)
+        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
+        BRANCH_TYPE="perf"
         ;;
-    fix/H[0-9][0-9][0-9][0-9]-*)
-        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE 'H[0-9]{4}')
-        BRANCH_TYPE="hotfix_standalone"
+    test/[0-9][0-9][0-9][0-9][A-Z]-*)
+        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
+        BRANCH_TYPE="test"
         ;;
-    */F[0-9][0-9][0-9][0-9]-*)
-        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE 'F[0-9]{4}')
-        BRANCH_TYPE="feature"
-        ;;
-    */H[0-9][0-9][0-9][0-9]-*)
-        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE 'H[0-9]{4}')
-        BRANCH_TYPE="hotfix_standalone"
+    # Generic: any prefix with [NNNN][L] ID
+    */[0-9][0-9][0-9][0-9][A-Z]-*)
+        FEATURE_ID=$(echo "$BRANCH_NAME" | grep -oE '[0-9]{4}[A-Z]' | head -1)
+        BRANCH_TYPE="$BRANCH_PREFIX"
         ;;
     main|master)
         BRANCH_TYPE="main"
@@ -119,8 +119,8 @@ if [ -n "$FEATURE_ID" ]; then
     # Extract slug: everything after the first / (e.g. 0001F-auth-system)
     FEATURE_SLUG="${BRANCH_NAME#*/}"
 
-    # Flat structure: docs/[NNNN][L]-[slug]/
-    DOCS_DIR="docs/$FEATURE_SLUG"
+    # Nested structure: docs/features/[NNNN][L]-[slug]/
+    DOCS_DIR="docs/features/$FEATURE_SLUG"
 fi
 
 # --- Output ---
