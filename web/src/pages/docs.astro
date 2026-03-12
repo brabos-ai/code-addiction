@@ -6,30 +6,44 @@ import "../styles/global.css";
 <Layout title="Docs — Code Addiction">
   <!-- Nav -->
   <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
-    <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-      <a href="/" class="font-display font-bold text-foreground tracking-tight text-lg">
-        <span class="text-accent">+</span> code addiction
-      </a>
-      <div class="flex items-center gap-6">
-        <a href="/" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Home</a>
-        <a href="#commands" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Commands</a>
-        <a href="#flows" class="text-sm text-muted-light hover:text-accent transition-colors hidden sm:block">Flows</a>
-        <a
-          href="https://github.com/brabos-ai/code-addiction"
-          target="_blank"
-          rel="noopener"
-          class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors"
-        >
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle sidebar">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <a href="/" class="font-display font-bold text-foreground tracking-tight text-lg">
+          <span class="text-accent">+</span> code addiction
+        </a>
+      </div>
+      <div class="hidden md:flex items-center gap-6">
+        <a href="/" class="text-sm text-muted-light hover:text-accent transition-colors">Home</a>
+        <a href="#commands" class="text-sm text-muted-light hover:text-accent transition-colors">Commands</a>
+        <a href="#flows" class="text-sm text-muted-light hover:text-accent transition-colors">Flows</a>
+        <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
+          GitHub
+        </a>
+      </div>
+      <div class="flex md:hidden items-center">
+        <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-3 py-1.5 rounded-md transition-colors">
           GitHub
         </a>
       </div>
     </div>
   </nav>
 
+  <!-- Mobile Backdrop -->
+  <div id="docs-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
   <div class="flex pt-14">
     <!-- Sidebar -->
-    <aside class="hidden lg:block fixed top-14 left-0 w-64 h-[calc(100vh-3.5rem)] overflow-y-auto border-r border-white/5 px-6 py-8">
+    <aside id="docs-sidebar" class="fixed top-14 left-0 w-64 h-[calc(100vh-3.5rem)] overflow-y-auto border-r border-white/5 bg-surface z-50 px-6 py-8 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
       <nav class="space-y-6 text-sm">
+        <div class="lg:hidden pb-2 mb-2">
+          <a href="/" class="flex items-center gap-2 text-accent hover:text-accent-dim transition-colors font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Home
+          </a>
+        </div>
         <div>
           <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Getting Started</p>
           <ul class="space-y-2">
@@ -614,4 +628,37 @@ import "../styles/global.css";
       </footer>
     </main>
   </div>
+
+  <script is:inline>
+    const sidebarToggle = document.getElementById('docs-sidebar-toggle');
+    const sidebar = document.getElementById('docs-sidebar');
+    const backdrop = document.getElementById('docs-backdrop');
+    const sidebarLinks = sidebar.querySelectorAll('a');
+
+    function toggleSidebar() {
+      const isClosed = sidebar.classList.contains('-translate-x-full');
+      if (isClosed) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+      }
+    }
+
+    if (sidebarToggle && sidebar && backdrop) {
+      sidebarToggle.addEventListener('click', toggleSidebar);
+      backdrop.addEventListener('click', toggleSidebar);
+
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 1024) {
+            toggleSidebar();
+          }
+        });
+      });
+    }
+  </script>
 </Layout>
