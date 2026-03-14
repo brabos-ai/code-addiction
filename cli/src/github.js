@@ -29,13 +29,16 @@ export async function getLatestTag(repo = REPO) {
 }
 
 /**
- * Download a tag zipball as a Buffer.
+ * Download the framework release asset ZIP for a given tag.
+ * Asset URL: https://github.com/{repo}/releases/download/{tag}/code-addiction-{tag}.zip
  * @param {string} tag  e.g. "v2.0.1"
  * @param {string} [repo]
  * @returns {Promise<Buffer>}
  */
-export async function downloadTagZip(tag, repo = REPO) {
-  const url = `https://github.com/${repo}/archive/refs/tags/${tag}.zip`;
+export async function downloadReleaseAsset(tag, repo = REPO) {
+  const version = tag.startsWith('v') ? tag : `v${tag}`;
+  const assetName = `code-addiction-${version}.zip`;
+  const url = `https://github.com/${repo}/releases/download/${version}/${assetName}`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'add-cli' },
   }).catch(() => {
@@ -44,7 +47,7 @@ export async function downloadTagZip(tag, repo = REPO) {
 
   if (res.status === 404) {
     throw new Error(
-      `Release ${tag} not found. Try without version for latest.`
+      `Release asset for ${tag} not found. Try without version for latest.`
     );
   }
   if (!res.ok) {
@@ -53,39 +56,4 @@ export async function downloadTagZip(tag, repo = REPO) {
 
   const arrayBuffer = await res.arrayBuffer();
   return Buffer.from(arrayBuffer);
-}
-
-/**
- * Download a branch zipball as a Buffer.
- * @param {string} branch e.g. "main"
- * @param {string} [repo]
- * @returns {Promise<Buffer>}
- */
-export async function downloadBranchZip(branch, repo = REPO) {
-  const url = `https://github.com/${repo}/archive/refs/heads/${branch}.zip`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'add-cli' },
-  }).catch(() => {
-    throw new Error('Could not reach GitHub. Check your connection.');
-  });
-
-  if (res.status === 404) {
-    throw new Error(`Branch ${branch} not found.`);
-  }
-  if (!res.ok) {
-    throw new Error(`Download failed: ${res.status} ${res.statusText}`);
-  }
-
-  const arrayBuffer = await res.arrayBuffer();
-  return Buffer.from(arrayBuffer);
-}
-
-/**
- * Backward-compatible alias for tag downloads.
- * @param {string} tag
- * @param {string} [repo]
- * @returns {Promise<Buffer>}
- */
-export async function downloadZip(tag, repo = REPO) {
-  return downloadTagZip(tag, repo);
 }

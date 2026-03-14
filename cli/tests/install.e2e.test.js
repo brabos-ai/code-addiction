@@ -6,8 +6,7 @@ import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
-  downloadTagZip: vi.fn(),
-  downloadBranchZip: vi.fn(),
+  downloadReleaseAsset: vi.fn(),
   promptProviders: vi.fn(),
   promptConfirm: vi.fn(),
   promptFeatures: vi.fn(),
@@ -16,8 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../src/github.js', () => ({
   getLatestTag: mocks.getLatestTag,
-  downloadTagZip: mocks.downloadTagZip,
-  downloadBranchZip: mocks.downloadBranchZip,
+  downloadReleaseAsset: mocks.downloadReleaseAsset,
 }));
 
 vi.mock('../src/prompt.js', () => ({
@@ -36,12 +34,14 @@ vi.mock('@clack/prompts', () => ({
 
 import { install } from '../src/installer.js';
 
-function buildInstallZip(zipRoot) {
+/**
+ * Build a release asset zip (framwork/ prefix, no commands in .codeadd/).
+ */
+function buildInstallZip() {
   const zip = new AdmZip();
-  zip.addFile(`${zipRoot}/framwork/.codeadd/commands/add.md`, Buffer.from('# add\n'));
-  zip.addFile(`${zipRoot}/framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
-  zip.addFile(`${zipRoot}/framwork/.agent/workflows/add.md`, Buffer.from('name: add\n'));
-  zip.addFile(`${zipRoot}/framwork/.agent/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
+  zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
+  zip.addFile(`framwork/.agent/workflows/add.md`, Buffer.from('name: add\n'));
+  zip.addFile(`framwork/.agent/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
   return zip.toBuffer();
 }
 
@@ -50,8 +50,7 @@ let tmpDir;
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-e2e-'));
   mocks.getLatestTag.mockReset();
-  mocks.downloadTagZip.mockReset();
-  mocks.downloadBranchZip.mockReset();
+  mocks.downloadReleaseAsset.mockReset();
   mocks.promptProviders.mockReset();
   mocks.promptConfirm.mockReset();
   mocks.promptProviders.mockResolvedValue(['codex']);
@@ -68,12 +67,11 @@ afterEach(() => {
 describe('install command e2e', () => {
   it('installs from latest release and writes release manifest', async () => {
     mocks.getLatestTag.mockResolvedValue('v1.2.3');
-    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.2.3'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
 
     await install(tmpDir);
 
-    expect(mocks.downloadTagZip).toHaveBeenCalledWith('v1.2.3');
-    expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'commands', 'add.md'))).toBe(true);
+    expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v1.2.3');
     expect(fs.existsSync(path.join(tmpDir, '.agent', 'workflows', 'add.md'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, '.agent', 'skills', 'backend-development', 'SKILL.md'))).toBe(true);
 
@@ -90,45 +88,17 @@ describe('install command e2e', () => {
     expect(manifest.providers).toEqual(['codex']);
   });
 
-  it('falls back to main branch when repository has no releases', async () => {
+  it('throws when repository has no releases', async () => {
     mocks.getLatestTag.mockRejectedValue(
       new Error('Repository brabos-ai/code-addiction not found or has no releases.')
     );
-    mocks.downloadBranchZip.mockResolvedValue(buildInstallZip('code-addiction-main'));
 
-    await install(tmpDir);
-
-    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('main');
-
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
-    );
-    expect(manifest.version).toBe('main');
-    expect(manifest.releaseTag).toBeNull();
-    expect(manifest.source).toBe('branch');
-    expect(manifest.ref).toBe('main');
-  });
-
-  it('installs from explicit branch via --branch flag', async () => {
-    mocks.downloadBranchZip.mockResolvedValue(buildInstallZip('code-addiction-feature-xyz'));
-
-    await install(tmpDir, { branch: 'feature-xyz' });
-
-    expect(mocks.getLatestTag).not.toHaveBeenCalled();
-    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('feature-xyz');
-
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
-    );
-    expect(manifest.version).toBe('feature-xyz');
-    expect(manifest.releaseTag).toBeNull();
-    expect(manifest.source).toBe('branch');
-    expect(manifest.ref).toBe('feature-xyz');
+    await expect(install(tmpDir)).rejects.toThrow('not found or has no releases');
   });
 
   it('writes selected features to manifest based on user choice', async () => {
     mocks.getLatestTag.mockResolvedValue('v1.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
     mocks.promptFeatures.mockResolvedValue(['tdd']);
 
     await install(tmpDir);
@@ -142,7 +112,7 @@ describe('install command e2e', () => {
 
   it('writes all features disabled when user selects none', async () => {
     mocks.getLatestTag.mockResolvedValue('v1.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
     mocks.promptFeatures.mockResolvedValue([]);
 
     await install(tmpDir);
@@ -155,12 +125,12 @@ describe('install command e2e', () => {
   });
 
   it('installs from explicit tag via --version flag', async () => {
-    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-2.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
 
     await install(tmpDir, { version: 'v2.0.0' });
 
     expect(mocks.getLatestTag).not.toHaveBeenCalled();
-    expect(mocks.downloadTagZip).toHaveBeenCalledWith('v2.0.0');
+    expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v2.0.0');
 
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
@@ -172,7 +142,7 @@ describe('install command e2e', () => {
 
   it('writes gitignore: true to manifest and creates .gitignore block when user opts in', async () => {
     mocks.getLatestTag.mockResolvedValue('v1.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
     mocks.promptProviders.mockResolvedValue(['claude']);
     mocks.promptGitignore.mockResolvedValue(true);
 
@@ -192,7 +162,7 @@ describe('install command e2e', () => {
 
   it('writes gitignore: false to manifest and does not create .gitignore when user opts out', async () => {
     mocks.getLatestTag.mockResolvedValue('v1.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildInstallZip('code-addiction-1.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
     mocks.promptGitignore.mockResolvedValue(false);
 
     await install(tmpDir);

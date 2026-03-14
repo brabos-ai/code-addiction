@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: cli
@@ -32,7 +34,6 @@ jobs:
         working-directory: .
 
       - name: Setup Node.js
-        if: steps.cli_changes.outputs.changed == 'true'
         uses: actions/setup-node@v6
         with:
           node-version: 20
@@ -47,6 +48,32 @@ jobs:
       - name: Run tests
         if: steps.cli_changes.outputs.changed == 'true'
         run: npm test
+
+      - name: Build framework
+        working-directory: .
+        run: node scripts/build.js
+
+      - name: Package framework zip
+        working-directory: .
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          DIRS=""
+          for subdir in .codeadd/scripts .codeadd/fragments .codeadd/templates .claude .agent .agents .kilocode .opencode; do
+            [ -d "framwork/$subdir" ] && DIRS="$DIRS framwork/$subdir"
+          done
+          zip -r "code-addiction-${TAG}.zip" $DIRS
+          echo "ASSET_NAME=code-addiction-${TAG}.zip" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release and upload asset
+        working-directory: .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            "${{ env.ASSET_NAME }}"
 
       - name: Publish to npm
         if: steps.cli_changes.outputs.changed == 'true'

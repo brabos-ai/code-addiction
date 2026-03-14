@@ -7,7 +7,7 @@ import { promptProviders, promptConfirm, promptFeatures, promptGitignore } from 
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { resolveSelected } from './providers.js';
-import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
+import { getLatestTag, downloadReleaseAsset } from './github.js';
 
 /**
  * Force LF line endings on all .sh files under a directory.
@@ -77,67 +77,27 @@ export function writeManifest(cwd, version, providers, files, releaseTag, metada
 /**
  * Resolve installation source from requested version.
  * - no version: latest GitHub release tag
- * - "main": GitHub main branch
  * - any other value: explicit tag
  *
  * @param {string | undefined} requestedVersion
  * @param {() => Promise<string>} [latestTagResolver]
  * @returns {Promise<{
- *   source: 'release' | 'branch' | 'tag',
+ *   source: 'release' | 'tag',
  *   manifestVersion: string,
- *   releaseTag: string | null,
- *   ref: string | null,
- *   downloadType: 'tag' | 'branch',
+ *   releaseTag: string,
+ *   ref: null,
  *   downloadValue: string
  * }>}
  */
-export async function resolveInstallSource(requestedVersion, requestedBranch, latestTagResolver = getLatestTag) {
-  if (requestedBranch) {
-    return {
-      source: 'branch',
-      manifestVersion: requestedBranch,
-      releaseTag: null,
-      ref: requestedBranch,
-      downloadType: 'branch',
-      downloadValue: requestedBranch,
-    };
-  }
-
+export async function resolveInstallSource(requestedVersion, latestTagResolver = getLatestTag) {
   if (!requestedVersion) {
-    try {
-      const tag = await latestTagResolver();
-      return {
-        source: 'release',
-        manifestVersion: tag,
-        releaseTag: tag,
-        ref: null,
-        downloadType: 'tag',
-        downloadValue: tag,
-      };
-    } catch (error) {
-      // Repositories without releases should still be installable via main branch.
-      if (error instanceof Error && /not found or has no releases/i.test(error.message)) {
-        return {
-          source: 'branch',
-          manifestVersion: 'main',
-          releaseTag: null,
-          ref: 'main',
-          downloadType: 'branch',
-          downloadValue: 'main',
-        };
-      }
-      throw error;
-    }
-  }
-
-  if (requestedVersion === 'main') {
+    const tag = await latestTagResolver();
     return {
-      source: 'branch',
-      manifestVersion: 'main',
-      releaseTag: null,
-      ref: 'main',
-      downloadType: 'branch',
-      downloadValue: 'main',
+      source: 'release',
+      manifestVersion: tag,
+      releaseTag: tag,
+      ref: null,
+      downloadValue: tag,
     };
   }
 
@@ -149,7 +109,6 @@ export async function resolveInstallSource(requestedVersion, requestedBranch, la
     manifestVersion: tag,
     releaseTag: tag,
     ref: null,
-    downloadType: 'tag',
     downloadValue: tag,
   };
 }
@@ -169,18 +128,18 @@ function dirExists(dir) {
 
 /**
  * Copy entries from zip that match a source prefix to a destination directory.
+ * The release asset zip uses `framwork/` prefix (e.g. "framwork/.claude/commands/add.md").
  * Returns array of relative paths (from cwd) of files copied.
  *
  * @param {AdmZip} zip
- * @param {string} zipRoot   top-level folder name inside zip (e.g. "code-addiction-2.0.1")
- * @param {string} srcPrefix path inside zip after zipRoot (e.g. "framwork/.add")
+ * @param {string} srcPrefix path inside zip (e.g. "framwork/.codeadd")
  * @param {string} destDir   absolute destination directory
  * @param {string} cwd       project root
  * @returns {string[]}
  */
-function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
+function copyFromZip(zip, srcPrefix, destDir, cwd) {
   const copied = [];
-  const prefix = `${zipRoot}/${srcPrefix}/`;
+  const prefix = `${srcPrefix}/`;
 
   for (const entry of zip.getEntries()) {
     if (!entry.entryName.startsWith(prefix)) continue;
@@ -212,11 +171,9 @@ export async function install(cwd, options = {}) {
 
   const s = spinner();
   s.start('Resolving install source from GitHub...');
-  const installSource = await resolveInstallSource(options.version, options.branch);
+  const installSource = await resolveInstallSource(options.version);
   if (installSource.source === 'release') {
     s.stop(`Latest release: ${installSource.downloadValue}`);
-  } else if (installSource.source === 'branch') {
-    s.stop(`Selected branch: ${installSource.downloadValue}`);
   } else {
     s.stop(`Selected tag: ${installSource.downloadValue}`);
   }
@@ -240,25 +197,20 @@ export async function install(cwd, options = {}) {
   }
 
   s.start('Downloading...');
-  const zipBuffer = installSource.downloadType === 'branch'
-    ? await downloadBranchZip(installSource.downloadValue)
-    : await downloadTagZip(installSource.downloadValue);
+  const zipBuffer = await downloadReleaseAsset(installSource.downloadValue);
   s.stop('Downloaded.');
 
   s.start('Installing...');
   const zip = new AdmZip(zipBuffer);
 
-  const zipRoot = zip.getEntries()[0]?.entryName.split('/')[0] ?? '';
-  if (!zipRoot) throw new Error('Unexpected zip structure.');
-
   const allFiles = [];
 
-  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.codeadd', addDir, cwd);
+  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, cwd);
   allFiles.push(...coreFiles);
 
   for (const p of providers) {
     const destDir = path.join(cwd, p.dest);
-    const pFiles = copyFromZip(zip, zipRoot, p.src, destDir, cwd);
+    const pFiles = copyFromZip(zip, p.src, destDir, cwd);
     allFiles.push(...pFiles);
   }
 

@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { intro, outro, log } from '@clack/prompts';
 import { promptFeatures } from './prompt.js';
+import { resolveSelected } from './providers.js';
 
 /**
  * Feature registry — each optional feature that can be toggled.
@@ -118,17 +119,19 @@ function escapeRegex(str) {
 
 /**
  * Get all installed command file paths that have markers for a feature.
- * Searches .codeadd/commands/ and provider command directories.
+ * Searches provider command directories based on manifest.providers.
  * @param {string} cwd
  * @param {string} featureName
  * @returns {string[]} absolute paths
  */
 function findCommandsWithMarkers(cwd, featureName) {
-  const commandDirs = [
-    path.join(cwd, '.codeadd', 'commands'),
-    path.join(cwd, '.claude', 'commands'),
-    path.join(cwd, '.agent', 'workflows'),
-  ];
+  const manifest = readManifest(cwd);
+  const providerKeys = manifest?.providers ?? [];
+  const providers = resolveSelected(providerKeys);
+
+  const commandDirs = providers
+    .filter((p) => p.commandsSubdir)
+    .map((p) => path.join(cwd, p.dest, p.commandsSubdir));
 
   const files = [];
   const marker = `feature:${featureName}:`;
