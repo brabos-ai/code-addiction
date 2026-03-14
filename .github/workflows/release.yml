@@ -58,7 +58,7 @@ jobs:
         run: |
           TAG=${GITHUB_REF#refs/tags/}
           DIRS=""
-          for subdir in .codeadd/scripts .codeadd/fragments .codeadd/templates .claude .agent .agents .kilocode .opencode; do
+          for subdir in .codeadd/scripts .codeadd/fragments .codeadd/templates .agent .agents .augment .bob .claude .cursor .gemini .github .kilocode .kiro .opencode .qwen .roo .shai .windsurf; do
             [ -d "framwork/$subdir" ] && DIRS="$DIRS framwork/$subdir"
           done
           zip -r "code-addiction-${TAG}.zip" $DIRS
