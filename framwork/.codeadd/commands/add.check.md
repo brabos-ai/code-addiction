@@ -770,7 +770,7 @@ npm run build
 
 ## STEP 8: Quality Gate Report (PRD0034)
 
-**Consolidate all gates into review.md. This file is the merge prerequisite for /add-done.**
+**Consolidate all gates into review.md. This file is the merge prerequisite for /add.ship.**
 
 ### 8.1 Build Quality Gate Report
 
@@ -790,7 +790,7 @@ Collect results from all previous steps:
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 
 > Reviewed at: ${TIMESTAMP}
-> Reviewed by: /add-review (model: ${MODEL})
+> Reviewed by: /add.check (model: ${MODEL})
 ```
 
 **Overall = PASSED** only if ALL gates are PASSED or SKIPPED.
@@ -878,8 +878,8 @@ Content:
 
 **Next Steps:**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
-- If review PASSED → `/add-done`
-- If review BLOCKED → fix issues, then `/add-review` again
+- If review PASSED → `/add.ship`
+- If review BLOCKED → fix issues, then `/add.check` again
 ```
 
 ### Blocked Console Report
@@ -900,7 +900,7 @@ Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
 **Required Actions:**
 1. Fix DIVERGENT: refactor POST /webhook → POST /webhook/:provider
 2. Implement RF03: [description]
-3. Run /add-review again after corrections
+3. Run /add.check again after corrections
 
 **📄 Report saved:** docs/features/${FEATURE_ID}/review.md
 ```

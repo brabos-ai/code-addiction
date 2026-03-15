@@ -148,11 +148,11 @@ IF HAS_EPIC=true:
 
 **⛔ IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty (all done):**
 - ⛔ DO NOT: Start implementation
-- ⛔ DO: Inform user all subfeatures complete → run `/add-done`
+- ⛔ DO: Inform user all subfeatures complete → run `/add.ship`
 
 ### 2B: Legacy Feature Flag ("feature N" passed)
 
-**Syntax:** `/add-dev feature N` or `/add-dev feature 1`
+**Syntax:** `/add.build feature N` or `/add.build feature 1`
 
 ```
 IF user passed "feature N" AND HAS_EPIC=false:
@@ -281,9 +281,9 @@ done
 ```
 
 **If files exist:** Follow patterns documented. These are project-specific conventions.
-**If files don't exist:** Run `/architecture-analyzer` to generate, or continue with generic best practices.
+**If files don't exist:** Run `/add.xray` to generate, or continue with generic best practices.
 
-**If ITERATIONS output exists from script:** Previous /add-dev sessions context - avoid repeating fixes.
+**If ITERATIONS output exists from script:** Previous /add.build sessions context - avoid repeating fixes.
 
 ---
 
@@ -785,7 +785,7 @@ git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 
 **⛔ DO NOT skip tag creation. This enables rollback and progress tracking.**
 
-**NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add-done` during merge.
+**NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add.ship` during merge.
 
 ### 12.3 Update epic.md (IF HAS_EPIC=true)
 
@@ -815,16 +815,16 @@ Feature: ${FEATURE_ID}
 **Next Steps:**
 1. Execute migration: `npm run migrate:latest`
 2. Start services: `docker-compose -f infra/docker-compose.yml up -d && npm run dev`
-3. Run code review: `/review`
-4. When approved, run `/add-done` to merge
+3. Run code review: `/add.check`
+4. When approved, run `/add.ship` to merge
 
 **Suggested next command (from ecosystem map):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
-- After development → `/add-review` or `/add-test`
-- After correction → `/add-review`
+- After development → `/add.check` or `/add.test`
+- After correction → `/add.check`
 ```
 
-### Feature Completion (when executing `/add-dev feature N` in Epic)
+### Feature Completion (when executing `/add.build feature N` in Epic)
 
 ```
 Feature ${N} Complete!
@@ -844,13 +844,13 @@ Feature: ${N} of ${TOTAL_FEATURES}
 **Next Steps:**
 1. Test the feature ${N} functionality
 2. Validate acceptance criteria
-3. When ready, execute: `/add-dev feature ${N+1}`
-4. Or if all Epic features complete: `/add-done`
+3. When ready, execute: `/add.build feature ${N+1}`
+4. Or if all Epic features complete: `/add.ship`
 
 **Suggested next command (from ecosystem map):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
-- After development → `/add-review` or `/add-test`
-- After correction → `/add-review`
+- After development → `/add.check` or `/add.test`
+- After correction → `/add.check`
 ```
 
 ### Correction Completion
@@ -872,13 +872,13 @@ Feature: ${FEATURE_ID}
 **Next Steps:**
 1. Test the fix manually
 2. Verify the bug is resolved
-3. Run `/review` when ready
-4. Run `/add-done` to merge
+3. Run `/add.check` when ready
+4. Run `/add.ship` to merge
 
 **Suggested next command (from ecosystem map):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
-- After development → `/add-review` or `/add-test`
-- After correction → `/add-review`
+- After development → `/add.check` or `/add.test`
+- After correction → `/add.check`
 ```
 
 ---
@@ -924,7 +924,7 @@ Dispatching subagents..."
 
 ```bash
 # User executes:
-/add-dev the save button is not working, error 500
+/add.build the save button is not working, error 500
 
 # Agent detects:
 # - Feature F0003-user-preferences active

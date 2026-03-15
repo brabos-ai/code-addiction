@@ -53,20 +53,20 @@ SE building-commands SKILL NÃO CARREGADA:
 ## Modo de Operação
 
 ```
-/add-build PRD-[slug]                 → Executar PRD específico
-/add-build [tipo] [nome]             → Build direto (sem PRD, para simples)
+/add.make PRD-[slug]                 → Executar PRD específico
+/add.make [tipo] [nome]             → Build direto (sem PRD, para simples)
 ```
 
 **Exemplos:**
 ```
-/add-build PRD-hotfix-optimization
-/add-build command add-diagnose
-/add-build skill skill-creator
+/add.make PRD-hotfix-optimization
+/add.make command add-diagnose
+/add.make skill skill-creator
 ```
 
 **Tipos válidos:** `command` | `skill` | `script` | `workflow`
 
-> Para otimizar artefato existente: usar `/add-build [tipo] [nome]` → o design phase detecta que o artefato já existe e apresenta análise vs building-commands antes de editar.
+> Para otimizar artefato existente: usar `/add.make [tipo] [nome]` → o design phase detecta que o artefato já existe e apresenta análise vs building-commands antes de editar.
 
 **Paths do framework:**
 | Tipo | Path |
@@ -115,7 +115,7 @@ docs/prd/PRD-[slug].md
 **Providers:** [claude|codeadd|agent] (em quais provider dirs criar)
 ```
 
-**Se complexo:** Recomendar `/add-strategy` primeiro.
+**Se complexo:** Recomendar `/add.strategy` primeiro.
 
 ### 1.3 Worktree para Builds com Risco
 
@@ -124,7 +124,7 @@ SE build envolve múltiplos artefatos OU modifica commands/skills existentes:
   → RECOMENDAR ao usuário criar branch + worktree antes de implementar
   → Motivo: isolamento limpo, descarte fácil se algo der errado
   → Em caso de problema: descartar worktree (não fazer rollback manual)
-  → Após implementar: /add-sync para validar consistência do ecossistema
+  → Após implementar: /add.sync para validar consistência do ecossistema
 ```
 
 ---
@@ -184,7 +184,7 @@ Aprova esse design?
 
 ```
 .claude/skills/building-commands/SKILL.md                    # SEMPRE
-framwork/.codeadd/skills/add-ecosystem-map/SKILL.md          # SEMPRE (visão do ecossistema)
+framwork/.codeadd/skills/ecosystem-map/SKILL.md              # SEMPRE (visão do ecossistema)
 framwork/.codeadd/skills/token-efficiency/SKILL.md           # SEMPRE
 framwork/.codeadd/skills/documentation-style/SKILL.md        # Se gerar docs
 framwork/.codeadd/skills/skill-creator/SKILL.md              # SE tipo=skill
@@ -402,7 +402,7 @@ docs/changelog/YYYY-MM-DD-[action]-[what].md
 
 | Data | Mudança |
 |------|---------|
-| YYYY-MM-DD | Implementado via /add-build |
+| YYYY-MM-DD | Implementado via /add.make |
 ```
 
 **Status:** `draft` → `implemented`

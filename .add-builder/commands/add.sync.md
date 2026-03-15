@@ -5,7 +5,7 @@
 
 Scans the entire ADD framework ecosystem, validates consistency between commands/skills/wrappers across all providers, and regenerates the ecosystem map from real data.
 
-**Run before `/add-release` to ensure ecosystem is consistent.**
+**Run before `/add.release` to ensure ecosystem is consistent.**
 
 ---
 
@@ -64,9 +64,9 @@ ALWAYS:
 ## Mode Detection
 
 ```
-/add-sync              -> Full mode (STEP 1-7)
-/add-sync --dry-run    -> Scan + report only (STEP 1-4 + STEP 7)
-/add-sync --map-only   -> Regenerate map only (STEP 1-2 + STEP 5 + STEP 7)
+/add.sync              -> Full mode (STEP 1-7)
+/add.sync --dry-run    -> Scan + report only (STEP 1-4 + STEP 7)
+/add.sync --map-only   -> Regenerate map only (STEP 1-2 + STEP 5 + STEP 7)
 ```
 
 ---
@@ -85,7 +85,7 @@ framwork/.agent/workflows/*.md     -> Agent wrappers
 
 **For EACH command file in `.codeadd/commands/`:**
 
-1. Extract filename (e.g., `add-feature.md`)
+1. Extract filename (e.g., `add.new.md`)
 2. Read first 5 lines to get name and description
 3. Search file content for skill references:
    - Grep for `.codeadd/skills/` paths
@@ -101,7 +101,7 @@ framwork/.agent/workflows/*.md     -> Agent wrappers
 
 ```json
 {
-  "name": "add-feature",
+  "name": "add.new",
   "description": "Feature Discovery & Documentation",
   "skills_referenced": ["feature-discovery", "feature-specification", "documentation-style"],
   "has_owner_md": true,
@@ -253,10 +253,10 @@ For EACH command in `.codeadd/commands/`, check:
 |-------|----------|------------|
 | `owner.md` | ALL commands | `[WARN] add-X: does not load owner.md` |
 | `feature-status.sh` | Commands that operate on features* | `[WARN] add-X: does not use feature-status.sh` |
-| `product.md` | `add-feature` only | `[WARN] add-feature: does not load product.md` |
+| `product.md` | `add.new` only | `[WARN] add.new: does not load product.md` |
 | `code-addiction-ecosystem` at completion | ALL commands with completion step | `[WARN] add-X: no next-steps suggestion` |
 
-*Feature-operating commands: `add-feature`, `add-design`, `add-plan`, `add-dev`, `add-autopilot`, `add-review`, `add-done`, `add-test`, `add-hotfix`, `add-brainstorm`, `add-ux`, `add-pr`
+*Feature-operating commands: `add.new`, `add.design`, `add.plan`, `add.build`, `add.autopilot`, `add.check`, `add.ship`, `add.test`, `add.hotfix`, `add.brainstorm`, `add.ux`, `add.pr`
 
 ### 4.3 Phantom References
 
@@ -329,7 +329,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 ## Last Updated
 
-YYYY-MM-DD - sync: regenerated ecosystem map via /add-sync
+YYYY-MM-DD - sync: regenerated ecosystem map via /add.sync
 [PRESERVE previous entries below]
 ```
 
@@ -341,9 +341,9 @@ Before writing, show what changed:
 ## Ecosystem Map Changes
 
 ### Commands
-- [ADDED] add-copy: SaaS copy generator (skills: saas-copy)
+- [ADDED] add.copy: SaaS copy generator (skills: saas-copy)
 - [REMOVED] add-update: no longer exists on disk
-- [CHANGED] add-dev: skills updated (removed stripe reference)
+- [CHANGED] add.build: skills updated (removed stripe reference)
 
 ### Skills
 - [ADDED] saas-copy: SaaS copy framework
@@ -351,8 +351,8 @@ Before writing, show what changed:
 - [REMOVED] using-git-worktrees: deleted
 
 ### Dependencies
-- [ADDED] saas-copy -> add-copy
-- [REMOVED] stripe -> add-dev
+- [ADDED] saas-copy -> add.copy
+- [REMOVED] stripe -> add.build
 ```
 
 ### 5.4 Write Updated Map
@@ -456,7 +456,7 @@ For EACH `EXTRA` wrapper (no source):
 | [MISSING] | Claude wrapper | add-X | [CREATED] or [DRY-RUN] |
 | [MISSING] | Agent workflow | add-X | [CREATED] or [DRY-RUN] |
 | [EXTRA] | Claude wrapper | add-X | Manual review |
-| [OK] | All | add-feature | - |
+| [OK] | All | add.new | - |
 
 ### Orphan Skills
 - [WARN] skill-name: not referenced by any command

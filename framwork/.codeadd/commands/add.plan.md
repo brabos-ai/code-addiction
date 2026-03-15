@@ -139,7 +139,7 @@ This script provides ALL context needed:
 
 **⛔ IF HAS_EPIC=true AND no pending subfeature:**
 - ⛔ DO NOT: Plan anything
-- ⛔ DO: Inform user all subfeatures are complete, run `/add-done`
+- ⛔ DO: Inform user all subfeatures are complete, run `/add.ship`
 
 ---
 
@@ -1016,9 +1016,9 @@ rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
 **Next Steps (load code-addiction-ecosystem skill for context):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
 Based on what was planned, suggest the logical next command:
-- Standard flow → `/add-dev`
-- Autonomous flow → `/autopilot`
-- If design is missing and feature has UI → `/design` first
+- Standard flow → `/add.build`
+- Autonomous flow → `/add.autopilot`
+- If design is missing and feature has UI → `/add.design` first
 ```
 
 ---

@@ -741,10 +741,10 @@ Docs: docs/features/[XXXX]F-[name]/
 **Next Steps (load code-addiction-ecosystem skill for context):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
 Based on what was discovered, suggest the logical next command:
-- If feature has UI components → `/design`
-- If feature is ready for technical planning → `/plan`
-- If feature is simple enough → `/add-dev`
-- If user wants autonomous execution → `/autopilot`
+- If feature has UI components → `/add.design`
+- If feature is ready for technical planning → `/add.plan`
+- If feature is simple enough → `/add.build`
+- If user wants autonomous execution → `/add.autopilot`
 ```
 
 ---

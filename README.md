@@ -62,13 +62,13 @@ Every feature follows a clear path from idea to delivery. Pick the trail that fi
 ```
 Step        Command             What happens                        Output
 ───────────────────────────────────────────────────────────────────────────────
-0. Explore  /add-brainstorm     Brainstorm ideas (read-only)        Initial concept
-1. Discover /add-feature        AI-guided feature discovery          about.md
-2. Design   /add-design         UX spec, mobile-first               UI/UX specification
-3. Plan     /add-plan           Technical planning + checklist       plan.md
-4. Code     /add-dev            Subagent-driven implementation       Working code
-5. Review   /add-review         Automated code review + validation   Quality gate
-6. Ship     /add-done           Changelog, docs, finalization        Ready to merge
+0. Explore  /add.brainstorm     Brainstorm ideas (read-only)        Initial concept
+1. Discover /add.new            AI-guided feature discovery          about.md
+2. Design   /add.design         UX spec, mobile-first               UI/UX specification
+3. Plan     /add.plan           Technical planning + checklist       plan.md
+4. Code     /add.build          Subagent-driven implementation       Working code
+5. Review   /add.check          Automated code review + validation   Quality gate
+6. Ship     /add.ship           Changelog, docs, finalization        Ready to merge
 ```
 
 ### Choose your flow

@@ -16,7 +16,7 @@ This is a **conversation partner**. It DISCUSSES ideas, EXPLORES possibilities, 
 
 ⛔ DO NOT USE: Edit, Bash for implementation, Write outside docs/brainstorm/
 ⛔ DO NOT: List implementation steps, propose technical solutions, plan what to build
-✅ DO: Ask questions, analyze what exists, route to /add-feature or /add-strategy
+✅ DO: Ask questions, analyze what exists, route to /add.new or /add.strategy
 
 ---
 
@@ -309,7 +309,7 @@ Send your question or idea!
 - "How much effort for Z?"
 → Analyze codebase to assess feasibility
 
-> ⛔ READ-ONLY: When you spot gaps or opportunities → explore and route to `/add-feature`. DO NOT plan implementation.
+> ⛔ READ-ONLY: When you spot gaps or opportunities → explore and route to `/add.new`. DO NOT plan implementation.
 
 **Idea Validation:**
 - "I'm thinking of adding X"
@@ -637,8 +637,8 @@ docs/brainstorm/
 
 **Next Steps (from ecosystem map):**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
-- Ready to formalize → `/add-feature`
-- Need strategic analysis → `/add-strategy`
+- Ready to formalize → `/add.new`
+- Need strategic analysis → `/add.strategy`
 
 ---
 
@@ -734,8 +734,8 @@ Want to know more details about any of these functionalities?
 - [Existing resource 2 — how it helps]
 
 **What's missing for full support:**
-- [Gap 1] → route to `/add-feature` to formalize
-- [Gap 2] → route to `/add-feature` to formalize
+- [Gap 1] → route to `/add.new` to formalize
+- [Gap 2] → route to `/add.new` to formalize
 
 **My suggestion:**
 [Honest recommendation based on analysis]

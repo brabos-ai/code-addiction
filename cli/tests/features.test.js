@@ -81,14 +81,14 @@ afterEach(() => {
 describe('FEATURES registry', () => {
   it('defines tdd feature', () => {
     expect(FEATURES.tdd).toBeDefined();
-    expect(FEATURES.tdd.commands).toContain('add-plan');
-    expect(FEATURES.tdd.commands).toContain('add-dev');
+    expect(FEATURES.tdd.commands).toContain('add.plan');
+    expect(FEATURES.tdd.commands).toContain('add.build');
   });
 
   it('defines startup-test feature', () => {
     expect(FEATURES['startup-test']).toBeDefined();
-    expect(FEATURES['startup-test'].commands).toContain('add-dev');
-    expect(FEATURES['startup-test'].commands).toContain('add-review');
+    expect(FEATURES['startup-test'].commands).toContain('add.build');
+    expect(FEATURES['startup-test'].commands).toContain('add.check');
   });
 
   it('both features default to true', () => {
@@ -100,8 +100,8 @@ describe('FEATURES registry', () => {
 describe('enableFeature', () => {
   it('injects fragment content into empty markers in provider dir', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-plan', 'tdd', ['step9', 'step-list']);
-    setupFragment(tmpDir, 'tdd', 'add-plan', {
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.plan', 'tdd', ['step9', 'step-list']);
+    setupFragment(tmpDir, 'tdd', 'add.plan', {
       step9: '## STEP 9: Test-Spec Subagent',
       'step-list': 'STEP 9:  Test-Spec subagent',
     });
@@ -110,15 +110,15 @@ describe('enableFeature', () => {
 
     expect(result.modified).toBe(1);
 
-    const content = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-plan.md'), 'utf8');
+    const content = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.plan.md'), 'utf8');
     expect(content).toContain('## STEP 9: Test-Spec Subagent');
     expect(content).toContain('STEP 9:  Test-Spec subagent');
   });
 
   it('sets manifest.features to true', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', {
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', {
       gate: 'TDD GATE content',
     });
 
@@ -130,24 +130,24 @@ describe('enableFeature', () => {
 
   it('recalculates hashes for modified files', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, hashes: {}, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', {
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', {
       gate: 'TDD GATE content',
     });
 
     enableFeature(tmpDir, 'tdd');
 
     const manifest = readManifest(tmpDir);
-    const hashKey = Object.keys(manifest.hashes).find((k) => k.includes('add-dev'));
+    const hashKey = Object.keys(manifest.hashes).find((k) => k.includes('add.build'));
     expect(hashKey).toBeDefined();
     expect(manifest.hashes[hashKey]).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('injects into multiple provider directories', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude', 'codex'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupCommandWithMarkers(tmpDir, '.agent/workflows', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', {
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.agent/workflows', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', {
       gate: 'TDD GATE injected',
     });
 
@@ -155,15 +155,15 @@ describe('enableFeature', () => {
 
     expect(result.modified).toBe(2);
 
-    const claudeContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
-    const agentContent = fs.readFileSync(path.join(tmpDir, '.agent', 'workflows', 'add-dev.md'), 'utf8');
+    const claudeContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
+    const agentContent = fs.readFileSync(path.join(tmpDir, '.agent', 'workflows', 'add.build.md'), 'utf8');
     expect(claudeContent).toContain('TDD GATE injected');
     expect(agentContent).toContain('TDD GATE injected');
   });
 
   it('returns 0 modified when no matching commands exist', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
-    setupFragment(tmpDir, 'tdd', 'add-plan', { step9: 'content' });
+    setupFragment(tmpDir, 'tdd', 'add.plan', { step9: 'content' });
 
     const result = enableFeature(tmpDir, 'tdd');
 
@@ -172,14 +172,14 @@ describe('enableFeature', () => {
 
   it('is idempotent — enabling twice produces same result', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD content' });
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD content' });
 
     enableFeature(tmpDir, 'tdd');
-    const content1 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
+    const content1 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
 
     enableFeature(tmpDir, 'tdd');
-    const content2 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
+    const content2 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
 
     expect(content1).toBe(content2);
   });
@@ -191,7 +191,7 @@ describe('disableFeature', () => {
 
     const cmdDir = path.join(tmpDir, '.claude', 'commands');
     fs.mkdirSync(cmdDir, { recursive: true });
-    const cmdPath = path.join(cmdDir, 'add-dev.md');
+    const cmdPath = path.join(cmdDir, 'add.build.md');
     fs.writeFileSync(
       cmdPath,
       `# Command\n<!-- feature:tdd:gate -->\nTDD GATE content here\n<!-- /feature:tdd:gate -->\n## End\n`,
@@ -209,7 +209,7 @@ describe('disableFeature', () => {
 
   it('sets manifest.features to false', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true }, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
 
     disableFeature(tmpDir, 'tdd');
 
@@ -222,7 +222,7 @@ describe('disableFeature', () => {
 
     const cmdDir = path.join(tmpDir, '.claude', 'commands');
     fs.mkdirSync(cmdDir, { recursive: true });
-    const cmdPath = path.join(cmdDir, 'add-dev.md');
+    const cmdPath = path.join(cmdDir, 'add.build.md');
     fs.writeFileSync(
       cmdPath,
       [
@@ -249,13 +249,13 @@ describe('disableFeature', () => {
 
   it('is idempotent — disabling already disabled feature is no-op', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
 
     disableFeature(tmpDir, 'tdd');
-    const content1 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
+    const content1 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
 
     disableFeature(tmpDir, 'tdd');
-    const content2 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
+    const content2 = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
 
     expect(content1).toBe(content2);
   });
@@ -264,8 +264,8 @@ describe('disableFeature', () => {
 describe('enable then disable roundtrip', () => {
   it('returns command to original state after enable→disable', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
-    const cmdPath = setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate', 'awareness']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', {
+    const cmdPath = setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate', 'awareness']);
+    setupFragment(tmpDir, 'tdd', 'add.build', {
       gate: 'TDD GATE content',
       awareness: 'TDD AWARENESS content',
     });
@@ -291,16 +291,16 @@ describe('applyEnabledFeatures', () => {
       providers: ['claude'],
     });
 
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-review', 'startup-test', ['step']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD injected' });
-    setupFragment(tmpDir, 'startup-test', 'add-review', { step: 'Startup Test injected' });
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.check', 'startup-test', ['step']);
+    setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD injected' });
+    setupFragment(tmpDir, 'startup-test', 'add.check', { step: 'Startup Test injected' });
 
     const total = applyEnabledFeatures(tmpDir);
 
     expect(total).toBeGreaterThanOrEqual(2);
-    const devContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
-    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-review.md'), 'utf8');
+    const devContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
+    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.check.md'), 'utf8');
     expect(devContent).toContain('TDD injected');
     expect(reviewContent).toContain('Startup Test injected');
   });
@@ -312,15 +312,15 @@ describe('applyEnabledFeatures', () => {
       providers: ['claude'],
     });
 
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-review', 'startup-test', ['step']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD should not appear' });
-    setupFragment(tmpDir, 'startup-test', 'add-review', { step: 'Startup injected' });
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.check', 'startup-test', ['step']);
+    setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD should not appear' });
+    setupFragment(tmpDir, 'startup-test', 'add.check', { step: 'Startup injected' });
 
     applyEnabledFeatures(tmpDir);
 
-    const devContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
-    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-review.md'), 'utf8');
+    const devContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
+    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.check.md'), 'utf8');
     expect(devContent).not.toContain('TDD should not appear');
     expect(reviewContent).toContain('Startup injected');
   });
@@ -328,12 +328,12 @@ describe('applyEnabledFeatures', () => {
   it('uses defaults when manifest has no features field', () => {
     writeManifest(tmpDir, { version: '1.0.0', providers: ['claude'] });
 
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'Default TDD' });
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'Default TDD' });
 
     applyEnabledFeatures(tmpDir);
 
-    const content = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
+    const content = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
     // tdd.default is true, so it should be injected
     expect(content).toContain('Default TDD');
   });
@@ -392,8 +392,8 @@ describe('features() CLI interactive mode', () => {
 
   it('enables a previously disabled feature when user selects it', async () => {
     writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false, 'startup-test': false }, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD GATE content' });
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD GATE content' });
 
     mockPromptFeatures.mockResolvedValue(['tdd']);
 
@@ -401,7 +401,7 @@ describe('features() CLI interactive mode', () => {
 
     const manifest = readManifest(tmpDir);
     expect(manifest.features.tdd).toBe(true);
-    const content = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add-dev.md'), 'utf8');
+    const content = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
     expect(content).toContain('TDD GATE content');
   });
 
@@ -411,7 +411,7 @@ describe('features() CLI interactive mode', () => {
     const cmdDir = path.join(tmpDir, '.claude', 'commands');
     fs.mkdirSync(cmdDir, { recursive: true });
     fs.writeFileSync(
-      path.join(cmdDir, 'add-dev.md'),
+      path.join(cmdDir, 'add.build.md'),
       '# Command\n<!-- feature:tdd:gate -->\nTDD content\n<!-- /feature:tdd:gate -->\n',
       'utf8'
     );
@@ -422,13 +422,13 @@ describe('features() CLI interactive mode', () => {
 
     const manifest = readManifest(tmpDir);
     expect(manifest.features.tdd).toBe(false);
-    const content = fs.readFileSync(path.join(cmdDir, 'add-dev.md'), 'utf8');
+    const content = fs.readFileSync(path.join(cmdDir, 'add.build.md'), 'utf8');
     expect(content).not.toContain('TDD content');
   });
 
   it('makes no changes when selection matches current state', async () => {
     writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': false }, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
 
     mockPromptFeatures.mockResolvedValue(['tdd']);
 
@@ -451,8 +451,8 @@ describe('features() CLI interactive mode', () => {
 
   it('still supports enable subcommand with args', async () => {
     writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false }, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
-    setupFragment(tmpDir, 'tdd', 'add-dev', { gate: 'TDD content' });
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
+    setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD content' });
 
     await features(tmpDir, ['enable', 'tdd']);
 
@@ -463,7 +463,7 @@ describe('features() CLI interactive mode', () => {
 
   it('still supports disable subcommand with args', async () => {
     writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true }, providers: ['claude'] });
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add-dev', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
 
     await features(tmpDir, ['disable', 'tdd']);
 

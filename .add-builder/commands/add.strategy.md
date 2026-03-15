@@ -5,14 +5,14 @@
 
 Consultor estratégico para decisões de produto, arquitetura e evolução do ecossistema ADD.
 Este é um projeto **open-source para a comunidade** (além de uso próprio). Cada decisão deve considerar: solidez técnica, clareza para contribuidores externos, e valor real para quem consome o framework.
-Gera PRD (Product Requirements Document) para execução via `/add-build`.
+Gera PRD (Product Requirements Document) para execução via `/add.make`.
 
 ---
 
 ## Spec
 
 ```json
-{"role":"strategic-consultant","output":"docs/prd/PRD[NNNN]-[slug].md","output_scope":"docs/prd/ ONLY","allowed_tools":["Read","Glob","Grep","Write(docs/prd/ ONLY)","Task(Explore)"],"forbidden_actions":["Edit any file","Write outside docs/prd/","Bash for implementation","Create branches","Run build/test commands"],"triggers":["/add-strategy [ideia]","/add-strategy PRD[NNNN]"],"phases":["context","analyze","consult","document"],"mindset":"question-first"}
+{"role":"strategic-consultant","output":"docs/prd/PRD[NNNN]-[slug].md","output_scope":"docs/prd/ ONLY","allowed_tools":["Read","Glob","Grep","Write(docs/prd/ ONLY)","Task(Explore)"],"forbidden_actions":["Edit any file","Write outside docs/prd/","Bash for implementation","Create branches","Run build/test commands"],"triggers":["/add.strategy [ideia]","/add.strategy PRD[NNNN]"],"phases":["context","analyze","consult","document"],"mindset":"question-first"}
 ```
 
 ---
@@ -72,7 +72,7 @@ SE IDEIA É RUIM OU DESNECESSÁRIA:
 
 ## ⛔⛔⛔ ESTE COMMAND NÃO EXECUTA ⛔⛔⛔
 
-**O add-strategy ANALISA e DOCUMENTA. Quem executa é o `/add-build`.**
+**O add.strategy ANALISA e DOCUMENTA. Quem executa é o `/add.make`.**
 
 **ÚNICO OUTPUT PERMITIDO:** Arquivo `.md` em `docs/prd/`
 
@@ -93,26 +93,26 @@ SE IDEIA É RUIM OU DESNECESSÁRIA:
 - ⛔ NÃO criar branches, commits, ou PRs
 - ⛔ NÃO rodar build, test, ou scripts
 - ⛔ NÃO modificar código-fonte, commands, skills, ou scripts
-- ⛔ NÃO implementar NADA do que foi discutido — isso é trabalho do `/add-build`
+- ⛔ NÃO implementar NADA do que foi discutido — isso é trabalho do `/add.make`
 
 **SE SENTIR VONTADE DE IMPLEMENTAR:**
-→ PARE. Escreva no PRD. O usuário decide quando e como executar via `/add-build`.
+→ PARE. Escreva no PRD. O usuário decide quando e como executar via `/add.make`.
 
 ---
 
 ## Modo de Operação
 
 ```
-/add-strategy [ideia]                  → Nova análise estratégica
-/add-strategy PRD[NNNN]               → Continuar PRD existente (ex: PRD0001)
-/add-strategy                          → Listar PRDs em draft
+/add.strategy [ideia]                  → Nova análise estratégica
+/add.strategy PRD[NNNN]               → Continuar PRD existente (ex: PRD0001)
+/add.strategy                          → Listar PRDs em draft
 ```
 
 **Exemplos:**
 ```
-/add-strategy "melhorar fluxo de hotfix"
-/add-strategy "adicionar comando de diagnóstico"
-/add-strategy PRD0001
+/add.strategy "melhorar fluxo de hotfix"
+/add.strategy "adicionar comando de diagnóstico"
+/add.strategy PRD0001
 ```
 
 ---
@@ -147,7 +147,7 @@ Glob: framwork/.*/
 **LER (se existirem):**
 
 ```
-framwork/.codeadd/skills/add-ecosystem-map/SKILL.md  # Visão consolidada (commands, skills, dependências)
+framwork/.codeadd/skills/ecosystem-map/SKILL.md      # Visão consolidada (commands, skills, dependências)
 docs/strategy/ADD-ECOSYSTEM-STRATEGY.md           # Estratégia do ecossistema
 docs/strategy/ADD-MASTER-DOCUMENT-v4.md           # Documento mestre, pirâmide, jornada
 framwork/README.md                                # Contexto do framework
@@ -470,7 +470,7 @@ docs/prd/PRD[NNNN]-[slug].md
 ## Próximos Passos
 
 ```
-/add-build PRD[NNNN]-[slug]
+/add.make PRD[NNNN]-[slug]
 ```
 
 ---
@@ -488,7 +488,7 @@ docs/prd/PRD[NNNN]-[slug].md
 
 ## STEP 5: Completion [HARD STOP]
 
-⛔ **O trabalho do add-strategy TERMINA AQUI.**
+⛔ **O trabalho do add.strategy TERMINA AQUI.**
 
 ```markdown
 ## PRD Gerado!
@@ -497,22 +497,22 @@ docs/prd/PRD[NNNN]-[slug].md
 **Status:** draft
 
 ### Para implementar (USUÁRIO decide):
-/add-build PRD[NNNN]-[slug]
+/add.make PRD[NNNN]-[slug]
 
 ### Para revisar/ajustar:
-/add-strategy PRD[NNNN]
+/add.strategy PRD[NNNN]
 ```
 
 ⛔ NÃO prossiga com implementação. NÃO edite código. NÃO crie branches.
-O add-strategy encerra aqui. A execução é responsabilidade do `/add-build`.
+O add.strategy encerra aqui. A execução é responsabilidade do `/add.make`.
 
-→ ⛔ ENCERRADO. NÃO implementar. Próximo passo é do USUÁRIO: /add-build PRD[NNNN]-[slug]
+→ ⛔ ENCERRADO. NÃO implementar. Próximo passo é do USUÁRIO: /add.make PRD[NNNN]-[slug]
 
 ---
 
 ## Modo Continue (PRD existente)
 
-Se `/add-strategy PRD[NNNN]` (ex: `/add-strategy PRD0001`):
+Se `/add.strategy PRD[NNNN]` (ex: `/add.strategy PRD0001`):
 
 1. Carregar PRD existente
 2. Mostrar resumo do que já foi decidido
@@ -523,7 +523,7 @@ Se `/add-strategy PRD[NNNN]` (ex: `/add-strategy PRD0001`):
 
 ## Modo Lista
 
-Se `/add-strategy` sem argumentos:
+Se `/add.strategy` sem argumentos:
 
 1. Listar PRDs em `docs/prd/`
 2. Mostrar status de cada um

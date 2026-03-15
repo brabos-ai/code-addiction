@@ -136,7 +136,7 @@ git branch --show-current
 
 If branch is not `main`, display:
 ```text
-You must run /add-release from main.
+You must run /add.release from main.
 
 Current branch: [BRANCH]
 
@@ -435,7 +435,7 @@ Display combined results in table format (`Version`, `Date`, `Title`) and total 
 
 If no releases exist, display:
 ```text
-No releases found. Run /add-release to create the first one.
+No releases found. Run /add.release to create the first one.
 ```
 
 ---

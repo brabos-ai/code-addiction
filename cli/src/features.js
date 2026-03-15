@@ -12,12 +12,12 @@ export const FEATURES = {
   tdd: {
     description: 'TDD Pipeline (test-first development)',
     default: true,
-    commands: ['add-plan', 'add-dev'],
+    commands: ['add.plan', 'add.build'],
   },
   'startup-test': {
     description: 'Application Startup Test (IoC/DI validation)',
     default: true,
-    commands: ['add-dev', 'add-review'],
+    commands: ['add.build', 'add.check'],
   },
 };
 

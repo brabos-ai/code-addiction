@@ -155,7 +155,7 @@ Task({
 
 **SUBAGENT PROMPT TEMPLATE:**
 - ROLE: You are the [AREA] [agent type] for feature [ID]
-- COMMAND REFERENCE: (FIRST STEP) Read the relevant `.codeadd/commands/add-*.md` as pattern reference
+- COMMAND REFERENCE: (FIRST STEP) Read the relevant `.codeadd/commands/add.*.md` as pattern reference
 - TASK_DOCUMENTS: List of doc paths assembled by coordinator (subagent reads directly)
 - SKILLS: MANDATORY: [area skill] | ADDITIONAL: [based on context]
 - DECISION LOG: (from previous phases) Accumulated decisions from earlier subagents
@@ -168,9 +168,9 @@ Task({
 ```
 ## MANDATORY: Load Command & Context (FIRST STEP)
 1. Read the relevant command .md as REFERENCE for patterns and conventions:
-   - Planning subagent: `.codeadd/commands/add-plan.md`
-   - Development subagents: `.codeadd/commands/add-dev.md`
-   - Review subagent: `.codeadd/commands/add-review.md`
+   - Planning subagent: `.codeadd/commands/add.plan.md`
+   - Development subagents: `.codeadd/commands/add.build.md`
+   - Review subagent: `.codeadd/commands/add.check.md`
    Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
 2. Run: bash .codeadd/scripts/status.sh
 3. Read ALL files listed in TASK_DOCUMENTS section above
@@ -370,11 +370,11 @@ prompt: |
   Your job is to coordinate specialized subagents AND consolidate a complete technical plan.
 
   ## MANDATORY: Load Command Reference (FIRST STEP)
-  1. Read `.codeadd/commands/add-plan.md` — this is your PRIMARY reference.
+  1. Read `.codeadd/commands/add.plan.md` — this is your PRIMARY reference.
      Follow its step structure, skill loading, consolidation rules, and output format.
      Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
   2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs as specified in add-plan.md
+  3. Read feature docs as specified in add.plan.md
 
   ## DECISION LOG (from coordinator)
   ${DECISION_LOG}
@@ -440,7 +440,7 @@ prompt: |
   You are the DATABASE developer for feature ${FEATURE_ID}.
 
   ## MANDATORY: Load Command & Context (FIRST STEP)
-  1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
+  1. Read `.codeadd/commands/add.build.md` — reference for development patterns and conventions.
      Your scope is LIMITED to DATABASE area only.
   2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs IN ORDER:
@@ -490,7 +490,7 @@ prompt: |
   You are the BACKEND developer for feature ${FEATURE_ID}.
 
   ## MANDATORY: Load Command & Context (FIRST STEP)
-  1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
+  1. Read `.codeadd/commands/add.build.md` — reference for development patterns and conventions.
      Your scope is LIMITED to BACKEND area only.
   2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs IN ORDER:
@@ -541,7 +541,7 @@ prompt: |
   You are the FRONTEND developer for feature ${FEATURE_ID}.
 
   ## MANDATORY: Load Command & Context (FIRST STEP)
-  1. Read `.codeadd/commands/add-dev.md` — reference for development patterns and conventions.
+  1. Read `.codeadd/commands/add.build.md` — reference for development patterns and conventions.
      Your scope is LIMITED to FRONTEND area only.
   2. Run: `bash .codeadd/scripts/status.sh`
   3. Read feature docs IN ORDER:
@@ -744,7 +744,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 git tag "${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 ```
 
-**Update epic.md subfeature status to `in_progress` (will move to `done` after `/add-done`).**
+**Update epic.md subfeature status to `in_progress` (will move to `done` after `/add.ship`).**
 
 ### 7.2 Application Startup Test (PRD0034)
 
@@ -791,11 +791,11 @@ prompt: |
   Your job is to validate code AND product (requirements 100% implemented).
 
   ## MANDATORY: Load Command Reference (FIRST STEP)
-  1. Read `.codeadd/commands/add-review.md` — this is your PRIMARY reference.
+  1. Read `.codeadd/commands/add.check.md` — this is your PRIMARY reference.
      Follow its step structure, skill loading, validation patterns, and output format.
      Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
   2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs as specified in add-review.md
+  3. Read feature docs as specified in add.check.md
   4. ALSO read: `docs/features/${FEATURE_ID}/decisions.jsonl` (PRD0031 — areas with multiple pivots need extra review attention)
 
   ## DECISION LOG (from previous phases)
@@ -806,8 +806,8 @@ prompt: |
   ## COORDINATOR NOTES
   ${COORDINATOR_NOTES}
 
-  ## AUTOPILOT-SPECIFIC ADDITIONS (extend add-review.md)
-  Beyond what add-review.md specifies, ALSO do:
+  ## AUTOPILOT-SPECIFIC ADDITIONS (extend add.check.md)
+  Beyond what add.check.md specifies, ALSO do:
 
   ### Spec Compliance Audit (PRD0034 — BEFORE technical review)
   1. READ `## Spec Checklist` from plan.md (all areas)
@@ -827,7 +827,7 @@ prompt: |
   - Missing components from plan = CRITICAL
   - Build MUST pass after fixes
   - ALL requirements MUST be implemented
-  - review.md MUST be created (merge prerequisite for /add-done)
+  - review.md MUST be created (merge prerequisite for /add.ship)
 
   ## REPORT FORMAT
   Return:
@@ -946,7 +946,7 @@ Next Steps:
 1. Review the implementation changes
 2. Test the functionality manually
 3. Stage and commit when satisfied
-4. Run /add-done (reads review.md automatically)
+4. Run /add.ship (reads review.md automatically)
 ```
 
 ### Epic Feature Report (Feature N of M)
@@ -972,8 +972,8 @@ Next Steps:
 1. Test the functionality of Feature ${N}
 2. Validate the acceptance criteria
 3. When ready: /autopilot feature ${N+1}
-   OR: /add-dev feature ${N+1} (for manual control)
-4. When all Epic features complete: /add-done
+   OR: /add.build feature ${N+1} (for manual control)
+4. When all Epic features complete: /add.ship
 ```
 
 ### Blocked Report (Product Validation Failed)

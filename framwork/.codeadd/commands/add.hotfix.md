@@ -45,7 +45,7 @@ STEP 9: Implement fix              → ONLY AFTER step 8
 STEP 10: Update hotfix doc         → Fill root cause + solution sections
 STEP 11: Create related.md         → Document feature relationships
 STEP 12: Log iteration             → MANDATORY BEFORE informing user
-STEP 13: Completion                → Inform user, awaiting /add-done
+STEP 13: Completion                → Inform user, awaiting /add.ship
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -362,7 +362,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 
 ## STEP 13: Ready for Review
 
-⛔ **DO NOT commit** - leave for `/add-done`
+⛔ **DO NOT commit** - leave for `/add.ship`
 
 **Output to user:**
 
@@ -394,11 +394,11 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 **Next steps:**
 1. Review changes
 2. Test fix
-3. Execute `/add-done` to finalize
+3. Execute `/add.ship` to finalize
 
 **Suggested next command:**
 Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
-- Hotfix complete → `/add-done`
+- Hotfix complete → `/add.ship`
 ```
 
 ---
@@ -424,7 +424,7 @@ Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
 - [ ] STEP 10: hotfix.md updated with root cause + solution
 - [ ] STEP 11: related.md created (hotfix + feature links)
 - [ ] STEP 12: `iterations.jsonl` entry appended
-- [ ] STEP 13: User informed, awaiting `/add-done`
+- [ ] STEP 13: User informed, awaiting `/add.ship`
 
 ---
 
@@ -454,7 +454,7 @@ Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
     "Implement fix without user confirming root cause",
     "Refactor unrelated code during hotfix",
     "Add new features inside a hotfix",
-    "Commit changes (leave for /add-done)",
+    "Commit changes (leave for /add.ship)",
     "Use bifurcated Path A/Path B logic (always use unified H[NNNN] flow)"
   ]
 }

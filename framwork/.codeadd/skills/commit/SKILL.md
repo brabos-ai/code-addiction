@@ -1,9 +1,9 @@
 ---
-name: add-commit
+name: commit
 description: "Use when committing changes mid-workflow with smart message generation. Triggers: commit, git commit, salvar progresso, checkpoint, conventional commits, push changes, commitar, fazer commit."
 ---
 
-# add-commit — Smart Commit
+# commit — Smart Commit
 
 Smart commit for mid-workflow progress: analyzes the changeset and generates a Conventional Commits message adapted to the number of files changed.
 
@@ -16,8 +16,8 @@ Smart commit for mid-workflow progress: analyzes the changeset and generates a C
 
 ## When NOT to Use
 
-- **Finalizing a branch** → use `/add-done` instead
-- **Creating a PR** → use `/add-pr`
+- **Finalizing a branch** → use `/add.ship` instead
+- **Creating a PR** → use `/add.pr`
 - **Force push, rebase, or amend** → out of scope
 - **Specific file staging** → stage manually first, then use this skill
 
@@ -126,17 +126,17 @@ refactor: extract service layer from controllers
 ALWAYS:
 - Commit immediately by default — show message only if `--confirm` flag is set
 - Warn about sensitive files before staging — regardless of flags, NEVER auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`
-- Clarify to the user: this is for mid-workflow commits, use `/add-done` to finalize the branch
+- Clarify to the user: this is for mid-workflow commits, use `/add.ship` to finalize the branch
 
 NEVER:
 - Amend previous commits
 - Force push
-- Create PRs (that's `/add-pr`)
-- Replace `/add-done` for branch finalization
+- Create PRs (that's `/add.pr`)
+- Replace `/add.ship` for branch finalization
 
 ## Completion [HARD STOP]
 
-Commit realizado com sucesso. A skill add-commit encerra aqui.
+Commit realizado com sucesso. A skill commit encerra aqui.
 
 **Se usou `--push`:** push foi executado no STEP 6 — não há próximo passo de push separado.
 
@@ -144,8 +144,8 @@ Commit realizado com sucesso. A skill add-commit encerra aqui.
 
 | Intenção | Comando |
 |----------|---------|
-| Continuar desenvolvendo | Mais commits → `/add-commit` |
-| Finalizar a branch + push | `/add-done` |
-| Criar PR agora | `/add-pr` |
+| Continuar desenvolvendo | Mais commits → `/commit` |
+| Finalizar a branch + push | `/add.ship` |
+| Criar PR agora | `/add.pr` |
 
-⛔ **NÃO sugerir `/add-push`** — não existe. Push é coberto pelo `--push` flag ou pelo `/add-done`.
+⛔ **NÃO sugerir `/add.push`** — não existe. Push é coberto pelo `--push` flag ou pelo `/add.ship`.

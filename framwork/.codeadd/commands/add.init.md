@@ -37,7 +37,7 @@ STEP 3: Create docs/owner.md       → flat key-value format
 STEP 4: Commit owner.md            → automatic
 STEP 5: Ask about product.md       → optional
 STEP 6: If yes → product flow      → load skill product-discovery
-STEP 7: Onboarding Complete        → suggest /add-feature
+STEP 7: Onboarding Complete        → suggest /add.new
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -134,7 +134,7 @@ Nome: [name]
 Nivel: [iniciante|intermediario|avancado]
 Idioma: [pt-br|en-us|other]
 Data: [YYYY-MM-DD]
-Criado por: /add-init
+Criado por: /add.init
 ```
 
 **⛔ NO markdown headers. NO sections. Pure key-value.**
@@ -150,7 +150,7 @@ git add docs/owner.md && git commit -m "docs: create owner profile
 - Level: [level]
 - Language: [language]
 
-Created by /add-init"
+Created by /add.init"
 ```
 
 ---
@@ -196,7 +196,7 @@ git add docs/product.md && git commit -m "docs: create product blueprint
 - Product: [short name]
 - MVP Features: [count]
 
-Created by /add-init"
+Created by /add.init"
 ```
 
 ---
@@ -218,7 +218,7 @@ From now on, I will adapt my communication to your level ([level]) and language 
 
 ### Next Step
 
-**`/add-feature`** → Create your first feature
+**`/add.new`** → Create your first feature
 
 Which feature do you want to start with?
 ```
@@ -228,5 +228,5 @@ Which feature do you want to start with?
 ## Rules
 
 ```json
-{"do":["Check existing docs FIRST","Ask exactly 3 questions (name, level, language)","Use flat key-value format for owner.md","Automatic commit after each doc","Ask about product.md (do not force)","Suggest /add-feature at the end","Adapt language to owner's choice"],"dont":["Load skill product-discovery before needed","Force product.md on legacy projects","Ask more than 3 questions for profile","Use markdown headers in owner.md","Infer level (ask directly)","Skip automatic commit"]}
+{"do":["Check existing docs FIRST","Ask exactly 3 questions (name, level, language)","Use flat key-value format for owner.md","Automatic commit after each doc","Ask about product.md (do not force)","Suggest /add.new at the end","Adapt language to owner's choice"],"dont":["Load skill product-discovery before needed","Force product.md on legacy projects","Ask more than 3 questions for profile","Use markdown headers in owner.md","Infer level (ask directly)","Skip automatic commit"]}
 ```

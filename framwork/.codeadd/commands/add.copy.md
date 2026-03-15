@@ -65,8 +65,8 @@ IF USER NOT VALIDATED:
 ## Operation Mode
 
 ```bash
-/add-copy [objective]           # Generate copy for specific objective
-/add-copy                       # Ask for objective
+/add.copy [objective]           # Generate copy for specific objective
+/add.copy                       # Ask for objective
 ```
 
 **Required argument:** `[objective]` in kebab-case (e.g., `product-launch`, `feature-x-promo`)
@@ -365,9 +365,9 @@ I need some information that I can't extract from code:
 
 2. **Choose headlines** - Select options that resonate most
 
-3. **Create landing page** - Use the brief with `/add-landing`:
+3. **Create landing page** - Use the brief with `/add.landing`:
    ```
-   /add-landing
+   /add.landing
 
    Product: [value proposition from brief]
    Audience: [target audience from brief]
@@ -383,13 +383,13 @@ I need some information that I can't extract from code:
 
 ```bash
 # Generate copy for product launch
-/add-copy product-launch
+/add.copy product-launch
 
 # Generate copy for feature promotion
-/add-copy feature-api-promo
+/add.copy feature-api-promo
 
 # Generate copy for campaign
-/add-copy black-friday-2025
+/add.copy black-friday-2025
 ```
 
 ---
