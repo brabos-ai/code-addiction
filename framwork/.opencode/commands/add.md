@@ -39,7 +39,7 @@ Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests 
 **STEPS IN ORDER:**
 ```
 STEP 0: Load ecosystem-map       → ALWAYS (source of truth)
-STEP 1: Check onboarding         → IF docs/owner.md does not exist → suggest /add-init
+STEP 1: Check onboarding         → IF docs/owner.md does not exist → suggest /add.init
 STEP 2: Classify question         → Determine response type
 STEP 3: Detect context            → IF question involves project/feature/status
 STEP 4: Respond by type           → Using ecosystem-map knowledge
@@ -100,7 +100,7 @@ cat docs/owner.md 2>/dev/null
 Before we start, I recommend creating your founder profile and product blueprint.
 This helps me adapt communication to your technical level and better understand the project.
 
-**Use:** `/add-init` to run onboarding (5-10 min)
+**Use:** `/add.init` to run onboarding (5-10 min)
 
 Or, if you prefer to skip, just tell me your question and I'll answer anyway.
 ```
@@ -169,7 +169,7 @@ ls .codeadd/projects/ 2>/dev/null
 If specific command details are needed:
 
 ```bash
-cat .claude/commands/add-[command].md
+cat .claude/commands/add.[command].md
 ```
 
 **Response format:**
@@ -339,16 +339,16 @@ cat .codeadd/skills/dev-environment-setup/SKILL.md
 
 | Detected Context | Suggested Command | Rationale |
 |------------------|-------------------|-----------|
-| No docs/owner.md | `/add-init` | Project onboarding |
-| Branch main, no feature | `/feature` | Start new functionality |
-| Feature without plan.md | `/plan` | Next phase of flow |
-| Feature with plan, no implementation | `/dev` or `/autopilot` | Time to implement |
-| Feature implemented, no review | `/review` | Validate before finalizing |
-| Feature reviewed | `/add-done` | Finalize and generate changelog |
-| Epic with pending sub-features | `/add-dev feature N` | Next sub-feature |
+| No docs/owner.md | `/add.init` | Project onboarding |
+| Branch main, no feature | `/add.new` | Start new functionality |
+| Feature without plan.md | `/add.plan` | Next phase of flow |
+| Feature with plan, no implementation | `/add.build` or `/add.autopilot` | Time to implement |
+| Feature implemented, no review | `/add.check` | Validate before finalizing |
+| Feature reviewed | `/add.ship` | Finalize and generate changelog |
+| Epic with pending sub-features | `/add.build feature N` | Next sub-feature |
 | Architecture question | `/health-check` | Technical analysis |
-| Bug in production | `/hotfix` | Urgent fix |
-| Does not know where to start | `/brainstorm` | Explore ideas |
+| Bug in production | `/add.hotfix` | Urgent fix |
+| Does not know where to start | `/add.brainstorm` | Explore ideas |
 | bash/git/jq/gh missing or env errors | Load `dev-environment-setup` skill | Setup dev environment |
 | User asks about WSL or VS Code terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |
 
@@ -367,6 +367,7 @@ Based on your current context:
 **Recommendation:** `/[command]` to [action]
 
 Or use `/add [question]` for more guidance.
+
 ```
 
 ---

@@ -57,10 +57,11 @@ STEP 4:  Parse key variables      → Feature detection
 STEP 5:  Load feature docs        → about.md, discovery.md, design.md
 STEP 6:  Clarification questions  → IF NEEDED ONLY
 STEP 7:  Analyze scope            → Epic subfeature vs full feature
-STEP 8:  Execute subagents        → SEQUENTIAL, by area
+STEP 8:  Execute subagents        → SEQUENTIAL, by area (8.0: cross-SF context for epics)
 <!-- feature:tdd:step-list -->
+STEP 9:  Test-Spec subagent       → AFTER area subagents, generates contract test cases
 <!-- /feature:tdd:step-list -->
-STEP 10: Consolidate plan         → APPEND + VALIDATE + FILL GAPS + tasks.md (architect subagent)
+STEP 10: Consolidate plan         → APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (epic)
 STEP 11: Validate requirements    → Coverage check (GATE)
 STEP 12: Completion               → Inform user
 ```
@@ -357,6 +358,43 @@ docs/features/${FEATURE_ID}/plan-[area].md
 
 ---
 
+### 8.0 Build Cross-SF Context (EPIC ONLY)
+
+**IF HAS_EPIC=true:** Before dispatching any subagent, build the `${CROSS_SF_CONTEXT}` block.
+
+**Steps:**
+1. Read `epic.md` → extract dependency graph (which SF depends on which)
+2. Identify the **consumers** of this SF (SFs that list this one as dependency)
+3. Identify the **providers** for this SF (SFs this one depends on)
+4. Read the `about.md` of each consumer and provider SF
+5. If any consumer/provider already has a `plan.md`, read it too (previous SF plans)
+
+**Build this block and INJECT it into every subagent prompt:**
+
+```
+## Cross-SF Context (EPIC — read for integration awareness)
+
+### This SF provides data consumed by:
+${FOR_EACH_CONSUMER_SF}
+- **${SF_ID}**: ${1-line summary from about.md — what data it needs from this SF}
+${END_FOR}
+
+### This SF consumes data provided by:
+${FOR_EACH_PROVIDER_SF}
+- **${SF_ID}**: ${1-line summary from about.md — what data it provides}
+  ${IF plan.md exists}: Contracts already defined in plan.md: ${key schemas/tables/DTOs}
+${END_FOR}
+
+### Integration rules:
+- Schema fields MUST match the output structure expected by consumer SFs
+- Shared resources (enums, config vars, types) should be defined in the earliest SF that needs them
+- Document jsonb field structures when consumers depend on specific keys
+```
+
+**IF normal feature (no epic.md):** Skip this step. `${CROSS_SF_CONTEXT}` = empty.
+
+---
+
 ### 8.1 Database Specialist
 
 **When to create:** Feature requires new entities, tables, or data changes.
@@ -368,6 +406,8 @@ You are the DATABASE SPECIALIST planning for feature ${FEATURE_ID}.
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
 ${TASK_DOCUMENTS}
 
+${CROSS_SF_CONTEXT}
+
 ## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
 
@@ -376,6 +416,7 @@ Execute BEFORE any other action:
 
 ## Your Task
 Create the database planning section. Search the codebase for similar entities and repositories to use as references.
+When Cross-SF Context is present, ensure schema fields match the data structures expected by consumer SFs.
 
 ## Output Format
 Write to: docs/features/${FEATURE_ID}/plan-database.md
@@ -418,6 +459,8 @@ You are the BACKEND SPECIALIST planning for feature ${FEATURE_ID}.
 
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
 ${TASK_DOCUMENTS}
+
+${CROSS_SF_CONTEXT}
 
 ## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
@@ -500,6 +543,8 @@ You are the FRONTEND SPECIALIST planning for feature ${FEATURE_ID}.
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
 ${TASK_DOCUMENTS}
 
+${CROSS_SF_CONTEXT}
+
 ## MANDATORY: Load Context (FIRST STEP)
 Execute BEFORE any other action:
 
@@ -544,6 +589,78 @@ Reference: `[search codebase for similar pages/hooks]`
 ```
 
 <!-- feature:tdd:step9 -->
+
+---
+
+## STEP 9: Test-Spec Subagent (AFTER area subagents)
+
+**When to create:** ALWAYS — runs after all area subagents complete.
+
+**MANDATORY:** Load skill BEFORE dispatch: `.codeadd/skills/test-specification/SKILL.md`
+
+**Dispatch prompt:**
+```
+You are the TEST SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
+
+## MANDATORY: Load Skill
+READ: .codeadd/skills/test-specification/SKILL.md — follow ALL rules.
+
+## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+Execute BEFORE any other action:
+
+1. Run: bash .codeadd/scripts/status.sh
+2. Parse FEATURE_ID from output
+3. Read feature docs IN ORDER:
+   - docs/features/${FEATURE_ID}/about.md (PRIMARY — RFs, RNs, RNFs)
+   - docs/features/${FEATURE_ID}/discovery.md
+4. Read area planning outputs (contracts):
+   - docs/features/${FEATURE_ID}/plan-database.md (if exists — entities, tables)
+   - docs/features/${FEATURE_ID}/plan-backend.md (if exists — endpoints, DTOs, commands)
+   - docs/features/${FEATURE_ID}/plan-frontend.md (if exists — pages, components)
+
+## Your Task
+Generate contract test cases derived from RFs/RNs in about.md + technical contracts from plan-*.md files.
+
+Rules:
+- Tests validate CONTRACT (input/output), NEVER internal implementation
+- Each RF generates at least 1 test case
+- Each RN generates positive AND negative test cases
+- Use nomenclature: [area]-[RF/RN]-[scenario]
+- Map test cases to test files
+
+## Output Format
+Write to: docs/features/${FEATURE_ID}/plan-test-spec.md
+
+Use the EXACT format from the test-specification skill:
+
+## Test Specification
+
+### Contract Tests (from RFs/RNs)
+
+| ID | Test Case | Area | RF/RN | Input | Expected Output | Verify |
+|----|-----------|------|-------|-------|-----------------|--------|
+| T01 | [max 10 words] | [backend/frontend/database] | [RF/RN ID] | [request/action] | [response/result] | [assertion] |
+
+### Test File Mapping
+
+| Area | Test File | Test IDs |
+|------|-----------|----------|
+| [area] | [path] | [T01, T02...] |
+
+### Coverage vs Requirements
+
+| RF/RN | Test Cases | Covered? |
+|-------|------------|----------|
+| [RF01] | [T01, T03] | ✅ |
+
+## Rules
+- NO implementation code — only test specifications
+- Coverage vs Requirements MUST show 100%
+- Keep under 40 lines
+- Test cases are CONTRACTS: what goes in, what comes out
+```
+
+**⛔ DO NOT skip this subagent. Test specs are MANDATORY for TDD pipeline.**
 <!-- /feature:tdd:step9 -->
 
 ---
@@ -710,7 +827,76 @@ interface [JsonbFieldName] {
 
 ---
 
-### 10.5 Add Navigation Sections
+### 10.5 Cross-SF Integration Review (EPIC ONLY)
+
+**IF HAS_EPIC=true:** After tasks.md is generated, dispatch the Integration Review Agent.
+**IF normal feature:** Skip to 10.6.
+
+**Purpose:** Cross-validate all existing SF plans to catch mismatches that individual subagents cannot see (schema ≠ consumer output, fragmented enums, missing config vars, undocumented handoffs).
+
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard
+- **Prompt:**
+  ```
+  You are the INTEGRATION REVIEWER for epic ${FEATURE_ID}.
+
+  ## CONTEXT
+  Read these files in order:
+  1. docs/features/${FEATURE_ID}/epic.md ← dependency graph
+  2. docs/features/${FEATURE_ID}/discovery.md ← shared requirements
+  3. ALL existing plan.md files: ls docs/features/${FEATURE_ID}/subfeatures/*/plan.md
+  4. ALL existing tasks.md files: ls docs/features/${FEATURE_ID}/subfeatures/*/tasks.md
+
+  ## TASK
+  Cross-validate all SF plans and FIX issues directly in the affected plan.md/tasks.md files.
+
+  ### Check 1: Schema ↔ Consumer Alignment
+  For each table/entity defined in a provider SF:
+  - Find all consumer SFs that read or write this data
+  - Verify column names, jsonb structures, and types match what consumers expect
+  - FIX: update the provider SF plan.md schema to include missing fields or document jsonb structure
+
+  ### Check 2: Shared Resource Centralization
+  Scan all plans for shared resources (enums, config vars, types, barrel exports):
+  - Enums: should be added ONCE in the earliest SF (usually SF01/foundation)
+  - Config vars: all env vars should be declared in the foundation SF, consumed by later SFs
+  - FIX: move fragmented additions to the foundation SF plan, update tasks.md accordingly
+
+  ### Check 3: Cross-SF Handoff Contracts
+  For each dependency edge in epic.md:
+  - Verify the provider SF documents what it produces
+  - Verify the consumer SF documents what it expects
+  - FIX: add "Cross-SF Dependencies" section to plan.md if missing, with explicit contracts
+
+  ### Check 4: Fallback & Degradation
+  For SFs that depend on others not yet implemented:
+  - Verify fallback behavior is documented (e.g., default timezone if SF04 not deployed)
+  - FIX: add fallback notes to the dependent SF plan or task description
+
+  ### Check 5: Worker/DI Registration Completeness
+  For each new service or worker:
+  - Verify DI registration task exists (API cradle AND worker cradle)
+  - Verify barrel export is included in the file list of the task
+  - FIX: add missing DI/barrel tasks
+
+  ## OUTPUT
+  DO NOT create a separate report file.
+  Apply all fixes directly to the affected plan.md and tasks.md files.
+  After all fixes, output a summary of changes made (file + what changed) to stdout.
+
+  ## RULES
+  - ONLY fix integration issues — do not rewrite content or change architecture
+  - Preserve existing content — APPEND or EDIT, never delete sections
+  - If a fix requires a new task, add it at the end of the tasks table
+  - Keep each plan.md under 150 lines after fixes
+  ```
+
+**WAIT:** Integration review must complete before proceeding to 10.6.
+
+---
+
+### 10.6 Add Navigation Sections
 
 Append to the end of plan.md:
 
@@ -805,7 +991,7 @@ Document explicitly in the table:
 
 ---
 
-### 10.6 Cleanup Temporary Files
+### 10.7 Cleanup Temporary Files
 
 ```bash
 cd "docs/features/${FEATURE_ID}"

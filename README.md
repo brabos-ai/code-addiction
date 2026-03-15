@@ -6,6 +6,8 @@
 
 AI-powered development workflows that make you addicted to shipping code. Production-ready commands, scripts, and skills for AI coding assistants, with a single CLI installer.
 
+**Official Framework Site**: [code.brabos.ai](https://code.brabos.ai) — your complete development workflow guide and documentation.
+
 ## Why this project exists
 
 Most AI coding setups are fragmented across custom prompts, scripts, and editor-specific conventions.
@@ -18,23 +20,35 @@ Code Addiction standardizes this with:
 ## Quickstart
 
 ```bash
-# install Code Addiction in your current project
+# install latest release
 npx codeadd install
 
-# install from main branch
-npx codeadd install --version main
-
-# install from a specific tag
-npx codeadd install --version v2.0.1
+# install a specific version (e.g., v0.2.15)
+npx codeadd install --version v0.2.15
 
 # check environment health
 npx codeadd doctor
 
-# validate integrity
+# validate file integrity via SHA-256 hashes
 npx codeadd validate
 
-# uninstall Code Addiction files from your project
+# repair missing or corrupted files
+npx codeadd validate --repair
+
+# update to latest release
+npx codeadd update
+
+# update to a specific version
+npx codeadd update --version v0.2.14
+
+# remove Code Addiction files from your project
 npx codeadd uninstall
+
+# list optional features
+npx codeadd features list
+
+# show installation configuration
+npx codeadd config show
 ```
 
 ## How it works
@@ -48,13 +62,13 @@ Every feature follows a clear path from idea to delivery. Pick the trail that fi
 ```
 Step        Command             What happens                        Output
 ───────────────────────────────────────────────────────────────────────────────
-0. Explore  /add-brainstorm     Brainstorm ideas (read-only)        Initial concept
-1. Discover /add-feature        AI-guided feature discovery          about.md
-2. Design   /add-design         UX spec, mobile-first               UI/UX specification
-3. Plan     /add-plan           Technical planning + checklist       plan.md
-4. Code     /add-dev            Subagent-driven implementation       Working code
-5. Review   /add-review         Automated code review + validation   Quality gate
-6. Ship     /add-done           Changelog, docs, finalization        Ready to merge
+0. Explore  /add.brainstorm     Brainstorm ideas (read-only)        Initial concept
+1. Discover /add.new            AI-guided feature discovery          about.md
+2. Design   /add.design         UX spec, mobile-first               UI/UX specification
+3. Plan     /add.plan           Technical planning + checklist       plan.md
+4. Code     /add.build          Subagent-driven implementation       Working code
+5. Review   /add.check          Automated code review + validation   Quality gate
+6. Ship     /add.ship           Changelog, docs, finalization        Ready to merge
 ```
 
 ### Choose your flow
@@ -125,7 +139,38 @@ Contributions are welcome. Start here:
 - More provider adapters
 - Stronger validation and automated repair flows
 
+## Official Pages
+
+- **Framework**: [code.brabos.ai](https://code.brabos.ai)
+- **Repository**: [github.com/brabos-ai/code-addiction](https://github.com/brabos-ai/code-addiction)
+- **NPM Package**: [@codeadd](https://www.npmjs.com/package/codeadd)
+
+## Recent Releases
+
+Latest releases available via `npx codeadd install --version <tag>`:
+
+### v0.2.15 ✅ **Latest**
+- **Changes**: Version bump with provider architecture improvements
+- **Install**: `npx codeadd install --version v0.2.15`
+
+### v0.2.14
+- **Changes**: Stability and bug fixes
+- **Install**: `npx codeadd install --version v0.2.14`
+
+### v0.2.13
+- **Changes**:
+  - Compile all 15 providers in single build zip
+  - Enhanced provider build system
+  - Updated package dependencies
+
+### v0.2.12 & earlier
+- Provider expansion (10 new providers added)
+- Provider-only install architecture (PRD0018)
+- Priority ordering in installation prompts
+- Full feature list: [See GitHub Releases](https://github.com/brabos-ai/code-addiction/releases)
+
 ## Support
 
+- Official site: [code.brabos.ai](https://code.brabos.ai)
 - Open a [GitHub Issue](https://github.com/brabos-ai/code-addiction/issues)
 - See [SUPPORT.md](./SUPPORT.md)

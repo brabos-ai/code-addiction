@@ -1,0 +1,23 @@
+{
+  "skill_name": "add-commit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Faz um commit pra mim. Mudei só o arquivo src/auth/login.ts pra corrigir um bug no token expiry, e também atualizei o README com a instrução de uso.",
+      "expected_output": "Generates a single-line conventional commit message like 'fix(auth): correct token expiry validation', shows it to the user for confirmation, checks staging, and commits.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Preciso commitar. Refatorei bastante coisa: separei a lógica de negócio dos controllers em services (auth, user, order, product), adicionei um BaseService, e atualizei os testes unitários dos 4 módulos.",
+      "expected_output": "Detects > 3 files changed, generates a list-format commit message starting with 'refactor: extract service layer from controllers' followed by bullet points per module, shows for confirmation, then commits.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "commita as mudanças aí. Mas não rodei git add ainda.",
+      "expected_output": "Checks staging area (empty), runs git diff --stat to understand changes, then informs user it will run git add -A. If sensitive files like .env are in the diff, shows a warning before staging. Generates appropriate commit message and confirms before committing.",
+      "files": []
+    }
+  ]
+}

@@ -78,7 +78,6 @@ describe('writeManifest', () => {
     fs.mkdirSync(path.join(tmpDir, '.codeadd'));
 
     writeManifest(tmpDir, 'v2.0.1', ['claude', 'kilocode'], [
-      '.codeadd/commands/add.md',
       '.claude/commands/add.md',
     ]);
 
@@ -88,7 +87,7 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     expect(manifest.version).toBe('2.0.1');
     expect(manifest.providers).toEqual(['claude', 'kilocode']);
-    expect(manifest.files).toContain('.codeadd/commands/add.md');
+    expect(manifest.files).toContain('.claude/commands/add.md');
     expect(manifest.installedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
@@ -106,7 +105,7 @@ describe('writeManifest', () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
 
-    writeManifest(tmpDir, 'v1.0.0', ['claude'], ['.codeadd/commands/add.md']);
+    writeManifest(tmpDir, 'v1.0.0', ['claude'], ['.claude/commands/add.md']);
     writeManifest(tmpDir, 'v2.0.0', ['codex'], ['.agent/workflows/add.md']);
 
     const manifest = JSON.parse(
@@ -120,7 +119,7 @@ describe('writeManifest', () => {
     fs.mkdirSync(path.join(tmpDir, '.codeadd'));
 
     writeManifest(tmpDir, 'v2.0.1', ['claude'], [
-      '.codeadd/commands/add.md',
+      '.claude/commands/add.md',
     ], 'v2.0.1');
 
     const manifest = JSON.parse(
@@ -132,7 +131,7 @@ describe('writeManifest', () => {
   it('calculates SHA-256 hashes for all files', () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
-    
+
     const content1 = 'test content 1';
     const content2 = 'test content 2';
     fs.writeFileSync(path.join(tmpDir, '.codeadd', 'file1.txt'), content1, 'utf8');
@@ -146,7 +145,7 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
-    
+
     expect(manifest.hashes).toBeDefined();
     expect(manifest.hashes['.codeadd/file1.txt']).toBe(
       crypto.createHash('sha256').update(content1).digest('hex')
@@ -159,7 +158,7 @@ describe('writeManifest', () => {
   it('handles missing files gracefully (no hash entry)', () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
-    
+
     fs.writeFileSync(path.join(tmpDir, '.codeadd', 'exists.txt'), 'content', 'utf8');
 
     writeManifest(tmpDir, 'v1.0.0', [], [
@@ -170,7 +169,7 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
-    
+
     expect(manifest.hashes['.codeadd/exists.txt']).toBeDefined();
     expect(manifest.hashes['.codeadd/missing.txt']).toBeUndefined();
   });
@@ -178,7 +177,7 @@ describe('writeManifest', () => {
   it('calculates correct hash for binary files', () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
-    
+
     const binaryContent = Buffer.from([0x00, 0x01, 0x02, 0x03, 0xFF]);
     fs.writeFileSync(path.join(tmpDir, '.codeadd', 'binary.dat'), binaryContent);
 
@@ -187,7 +186,7 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
-    
+
     expect(manifest.hashes['.codeadd/binary.dat']).toBe(
       crypto.createHash('sha256').update(binaryContent).digest('hex')
     );
@@ -196,7 +195,7 @@ describe('writeManifest', () => {
   it('calculates correct hash for large files', () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);
-    
+
     const largeContent = 'x'.repeat(100000);
     fs.writeFileSync(path.join(tmpDir, '.codeadd', 'large.txt'), largeContent, 'utf8');
 
@@ -205,7 +204,7 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
-    
+
     expect(manifest.hashes['.codeadd/large.txt']).toBe(
       crypto.createHash('sha256').update(largeContent).digest('hex')
     );
@@ -219,7 +218,7 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
     );
-    
+
     expect(manifest.hashes).toEqual({});
     expect(manifest.files).toEqual([]);
   });
@@ -232,43 +231,28 @@ describe('writeManifest', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
     );
-    
+
     expect(manifest.releaseTag).toBe('v2.0.0');
     expect(manifest.version).toBe('2.0.0');
   });
 
   it('handles files in nested directories', () => {
     const addDir = path.join(tmpDir, '.codeadd');
-    const nestedDir = path.join(addDir, 'commands', 'deep');
+    const nestedDir = path.join(addDir, 'scripts', 'deep');
     fs.mkdirSync(nestedDir, { recursive: true });
-    
-    const content = 'nested content';
-    fs.writeFileSync(path.join(nestedDir, 'file.txt'), content, 'utf8');
 
-    writeManifest(tmpDir, 'v1.0.0', [], ['.codeadd/commands/deep/file.txt'], 'v1.0.0');
+    const content = 'nested content';
+    fs.writeFileSync(path.join(nestedDir, 'file.sh'), content, 'utf8');
+
+    writeManifest(tmpDir, 'v1.0.0', [], ['.codeadd/scripts/deep/file.sh'], 'v1.0.0');
 
     const manifest = JSON.parse(
       fs.readFileSync(path.join(addDir, 'manifest.json'), 'utf8')
     );
-    
-    expect(manifest.hashes['.codeadd/commands/deep/file.txt']).toBe(
+
+    expect(manifest.hashes['.codeadd/scripts/deep/file.sh']).toBe(
       crypto.createHash('sha256').update(content).digest('hex')
     );
-  });
-
-  it('keeps explicit null releaseTag (branch install)', () => {
-    fs.mkdirSync(path.join(tmpDir, '.codeadd'));
-
-    writeManifest(tmpDir, 'main', [], [], null, { source: 'branch', ref: 'main' });
-
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
-    );
-
-    expect(manifest.version).toBe('main');
-    expect(manifest.releaseTag).toBeNull();
-    expect(manifest.source).toBe('branch');
-    expect(manifest.ref).toBe('main');
   });
 });
 
@@ -276,33 +260,25 @@ describe('resolveInstallSource', () => {
   it('uses latest release when version is not provided', async () => {
     const latestTagResolver = async () => 'v9.9.9';
 
-    const source = await resolveInstallSource(undefined, undefined, latestTagResolver);
+    const source = await resolveInstallSource(undefined, latestTagResolver);
 
     expect(source).toEqual({
       source: 'release',
       manifestVersion: 'v9.9.9',
       releaseTag: 'v9.9.9',
       ref: null,
-      downloadType: 'tag',
       downloadValue: 'v9.9.9',
     });
   });
 
-  it('falls back to main branch when repository has no releases', async () => {
+  it('throws when repository has no releases', async () => {
     const latestTagResolver = async () => {
       throw new Error('Repository brabos-ai/code-addiction not found or has no releases.');
     };
 
-    const source = await resolveInstallSource(undefined, undefined, latestTagResolver);
-
-    expect(source).toEqual({
-      source: 'branch',
-      manifestVersion: 'main',
-      releaseTag: null,
-      ref: 'main',
-      downloadType: 'branch',
-      downloadValue: 'main',
-    });
+    await expect(resolveInstallSource(undefined, latestTagResolver)).rejects.toThrow(
+      'not found or has no releases'
+    );
   });
 
   it('rethrows unexpected errors from latest tag resolver', async () => {
@@ -310,60 +286,32 @@ describe('resolveInstallSource', () => {
       throw new Error('GitHub API error: 500 Internal Server Error');
     };
 
-    await expect(resolveInstallSource(undefined, undefined, latestTagResolver)).rejects.toThrow(
+    await expect(resolveInstallSource(undefined, latestTagResolver)).rejects.toThrow(
       'GitHub API error: 500'
     );
   });
 
-  it('uses main branch when version is main', async () => {
-    const source = await resolveInstallSource('main', undefined);
-
-    expect(source).toEqual({
-      source: 'branch',
-      manifestVersion: 'main',
-      releaseTag: null,
-      ref: 'main',
-      downloadType: 'branch',
-      downloadValue: 'main',
-    });
-  });
-
   it('normalizes explicit tag when version does not start with v', async () => {
-    const source = await resolveInstallSource('2.3.4', undefined);
+    const source = await resolveInstallSource('2.3.4');
 
     expect(source).toEqual({
       source: 'tag',
       manifestVersion: 'v2.3.4',
       releaseTag: 'v2.3.4',
       ref: null,
-      downloadType: 'tag',
       downloadValue: 'v2.3.4',
     });
   });
 
-  it('uses explicit branch when requestedBranch is provided', async () => {
-    const source = await resolveInstallSource(undefined, 'feature-xyz');
+  it('uses explicit version tag as-is when prefixed with v', async () => {
+    const source = await resolveInstallSource('v2.3.4');
 
     expect(source).toEqual({
-      source: 'branch',
-      manifestVersion: 'feature-xyz',
-      releaseTag: null,
-      ref: 'feature-xyz',
-      downloadType: 'branch',
-      downloadValue: 'feature-xyz',
-    });
-  });
-
-  it('requestedBranch takes precedence over requestedVersion', async () => {
-    const source = await resolveInstallSource('v2.0.0', 'develop');
-
-    expect(source).toEqual({
-      source: 'branch',
-      manifestVersion: 'develop',
-      releaseTag: null,
-      ref: 'develop',
-      downloadType: 'branch',
-      downloadValue: 'develop',
+      source: 'tag',
+      manifestVersion: 'v2.3.4',
+      releaseTag: 'v2.3.4',
+      ref: null,
+      downloadValue: 'v2.3.4',
     });
   });
 });

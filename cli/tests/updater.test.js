@@ -6,14 +6,12 @@ import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
-  downloadTagZip: vi.fn(),
-  downloadBranchZip: vi.fn(),
+  downloadReleaseAsset: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
   getLatestTag: mocks.getLatestTag,
-  downloadTagZip: mocks.downloadTagZip,
-  downloadBranchZip: mocks.downloadBranchZip,
+  downloadReleaseAsset: mocks.downloadReleaseAsset,
 }));
 
 vi.mock('../src/prompt.js', () => ({
@@ -30,10 +28,9 @@ vi.mock('@clack/prompts', () => ({
 
 import { update } from '../src/updater.js';
 
-function buildZip(zipRoot) {
+function buildZip() {
   const zip = new AdmZip();
-  zip.addFile(`${zipRoot}/framwork/.codeadd/commands/add.md`, Buffer.from('# add\n'));
-  zip.addFile(`${zipRoot}/framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
+  zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
   return zip.toBuffer();
 }
 
@@ -48,8 +45,7 @@ let tmpDir;
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-update-'));
   mocks.getLatestTag.mockReset();
-  mocks.downloadTagZip.mockReset();
-  mocks.downloadBranchZip.mockReset();
+  mocks.downloadReleaseAsset.mockReset();
 });
 
 afterEach(() => {
@@ -65,11 +61,11 @@ describe('update command', () => {
   it('updates from release to latest release', async () => {
     writeManifestFile(tmpDir, { version: '1.0.0', source: 'release', ref: null, providers: [] });
     mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir);
 
-    expect(mocks.downloadTagZip).toHaveBeenCalledWith('v2.0.0');
+    expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v2.0.0');
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
     expect(manifest.version).toBe('2.0.0');
     expect(manifest.source).toBe('release');
@@ -82,81 +78,16 @@ describe('update command', () => {
 
     await update(tmpDir);
 
-    expect(mocks.downloadTagZip).not.toHaveBeenCalled();
-    expect(mocks.downloadBranchZip).not.toHaveBeenCalled();
-  });
-
-  it('re-pulls current branch when no flags given and installed from branch', async () => {
-    writeManifestFile(tmpDir, { version: 'main', source: 'branch', ref: 'main', providers: [] });
-    mocks.downloadBranchZip.mockResolvedValue(buildZip('code-addiction-main'));
-
-    await update(tmpDir);
-
-    expect(mocks.getLatestTag).not.toHaveBeenCalled();
-    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('main');
-    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.source).toBe('branch');
-    expect(manifest.ref).toBe('main');
-  });
-
-  it('re-pulls a custom branch when installed from that branch', async () => {
-    writeManifestFile(tmpDir, { version: 'feature-xyz', source: 'branch', ref: 'feature-xyz', providers: [] });
-    mocks.downloadBranchZip.mockResolvedValue(buildZip('code-addiction-feature-xyz'));
-
-    await update(tmpDir);
-
-    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('feature-xyz');
-    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.ref).toBe('feature-xyz');
-  });
-
-  it('migrates from release to branch via --branch flag', async () => {
-    writeManifestFile(tmpDir, { version: '1.0.0', source: 'release', ref: null, providers: [] });
-    mocks.downloadBranchZip.mockResolvedValue(buildZip('code-addiction-main'));
-
-    await update(tmpDir, { branch: 'main' });
-
-    expect(mocks.getLatestTag).not.toHaveBeenCalled();
-    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('main');
-    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.source).toBe('branch');
-    expect(manifest.ref).toBe('main');
-    expect(manifest.releaseTag).toBeNull();
-  });
-
-  it('migrates from branch to release via --version flag', async () => {
-    writeManifestFile(tmpDir, { version: 'main', source: 'branch', ref: 'main', providers: [] });
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
-
-    await update(tmpDir, { version: 'v2.0.0' });
-
-    expect(mocks.downloadTagZip).toHaveBeenCalledWith('v2.0.0');
-    expect(mocks.downloadBranchZip).not.toHaveBeenCalled();
-    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.source).toBe('tag');
-    expect(manifest.version).toBe('2.0.0');
-    expect(manifest.releaseTag).toBe('v2.0.0');
-  });
-
-  it('updates to explicit branch via --branch flag', async () => {
-    writeManifestFile(tmpDir, { version: 'main', source: 'branch', ref: 'main', providers: [] });
-    mocks.downloadBranchZip.mockResolvedValue(buildZip('code-addiction-feature-new'));
-
-    await update(tmpDir, { branch: 'feature-new' });
-
-    expect(mocks.downloadBranchZip).toHaveBeenCalledWith('feature-new');
-    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.ref).toBe('feature-new');
-    expect(manifest.source).toBe('branch');
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
   });
 
   it('updates to specific tag via --version flag', async () => {
     writeManifestFile(tmpDir, { version: '1.0.0', source: 'release', ref: null, providers: [] });
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-1.5.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir, { version: 'v1.5.0' });
 
-    expect(mocks.downloadTagZip).toHaveBeenCalledWith('v1.5.0');
+    expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v1.5.0');
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
     expect(manifest.version).toBe('1.5.0');
     expect(manifest.source).toBe('tag');
@@ -164,9 +95,9 @@ describe('update command', () => {
 
   it('removes obsolete files that existed in old manifest but not in new zip', async () => {
     // Create an orphan file that was installed by a previous version
-    const orphanPath = path.join(tmpDir, '.codeadd', 'commands', 'old-command.md');
+    const orphanPath = path.join(tmpDir, '.codeadd', 'scripts', 'old-script.sh');
     fs.mkdirSync(path.dirname(orphanPath), { recursive: true });
-    fs.writeFileSync(orphanPath, '# old command');
+    fs.writeFileSync(orphanPath, '# old script');
 
     // Manifest lists the orphan as an installed file
     writeManifestFile(tmpDir, {
@@ -174,18 +105,18 @@ describe('update command', () => {
       source: 'release',
       ref: null,
       providers: [],
-      files: ['.codeadd/commands/old-command.md'],
+      files: ['.codeadd/scripts/old-script.sh'],
     });
 
     mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    // New zip does NOT contain old-command.md
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+    // New zip does NOT contain old-script.sh
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir);
 
     expect(fs.existsSync(orphanPath)).toBe(false);
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.files).not.toContain('.codeadd/commands/old-command.md');
+    expect(manifest.files).not.toContain('.codeadd/scripts/old-script.sh');
   });
 
   it('preserves history and .local.json files even if listed in old manifest', async () => {
@@ -204,22 +135,12 @@ describe('update command', () => {
     });
 
     mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir);
 
     expect(fs.existsSync(historyFile)).toBe(true);
     expect(fs.existsSync(localFile)).toBe(true);
-  });
-
-  it('does not skip update when targeting branch (always re-pulls)', async () => {
-    writeManifestFile(tmpDir, { version: 'main', source: 'branch', ref: 'main', providers: [] });
-    mocks.downloadBranchZip.mockResolvedValue(buildZip('code-addiction-main'));
-
-    await update(tmpDir);
-
-    // Should always download, even if version matches, because branches can have new commits
-    expect(mocks.downloadBranchZip).toHaveBeenCalledTimes(1);
   });
 
   it('syncs .gitignore block when manifest.gitignore is true', async () => {
@@ -231,7 +152,7 @@ describe('update command', () => {
       gitignore: true,
     });
     mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir);
 
@@ -251,7 +172,7 @@ describe('update command', () => {
       gitignore: false,
     });
     mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir);
 
@@ -267,7 +188,7 @@ describe('update command', () => {
       // no gitignore key — pre-PRD0012 install
     });
     mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    mocks.downloadTagZip.mockResolvedValue(buildZip('code-addiction-2.0.0'));
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
 
     await update(tmpDir);
 

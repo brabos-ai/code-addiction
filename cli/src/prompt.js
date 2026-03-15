@@ -1,18 +1,25 @@
 import { multiselect, confirm, isCancel } from '@clack/prompts';
-import { PROVIDERS } from './providers.js';
+import { PROVIDERS, PROVIDER_PRIORITY } from './providers.js';
 import { FEATURES } from './features.js';
 
 /**
  * Show interactive multi-select for AI providers.
+ * Priority providers appear first; remaining sorted alphabetically.
  * Returns the selected provider keys.
  * Throws with message 'USER_CANCEL' if user cancels.
  * @returns {Promise<string[]>}
  */
 export async function promptProviders() {
-  const options = Object.entries(PROVIDERS).map(([value, { label, hint }]) => ({
+  const prioritySet = new Set(PROVIDER_PRIORITY);
+  const orderedKeys = [
+    ...PROVIDER_PRIORITY.filter((k) => PROVIDERS[k]),
+    ...Object.keys(PROVIDERS).filter((k) => !prioritySet.has(k)).sort(),
+  ];
+
+  const options = orderedKeys.map((value) => ({
     value,
-    label,
-    hint,
+    label: PROVIDERS[value].label,
+    hint: PROVIDERS[value].hint,
   }));
 
   const selected = await multiselect({

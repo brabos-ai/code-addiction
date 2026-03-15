@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { downloadZip } from './github.js';
+import { downloadReleaseAsset } from './github.js';
 
 /**
  * Read and parse .codeadd/manifest.json.
@@ -68,22 +68,17 @@ async function repairFiles(cwd, filesToRepair, releaseTag) {
   const s = spinner();
   s.start(`Downloading release ${releaseTag}...`);
 
-  const zipBuffer = await downloadZip(releaseTag);
+  const zipBuffer = await downloadReleaseAsset(releaseTag);
   s.stop('Downloaded.');
 
   s.start('Restoring files...');
   const zip = new AdmZip(zipBuffer);
-  const zipRoot = zip.getEntries()[0]?.entryName.split('/')[0] ?? '';
-
-  if (!zipRoot) {
-    throw new Error('Unexpected zip structure.');
-  }
 
   let restored = 0;
   for (const filePath of filesToRepair) {
     const possiblePaths = [
-      `${zipRoot}/framwork/${filePath}`,
-      `${zipRoot}/${filePath}`,
+      `framwork/${filePath}`,
+      filePath,
     ];
 
     let entry = null;

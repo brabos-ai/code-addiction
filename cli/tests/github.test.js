@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getLatestTag,
-  downloadZip,
-  downloadTagZip,
-  downloadBranchZip,
+  downloadReleaseAsset,
 } from '../src/github.js';
 
 beforeEach(() => {
@@ -51,7 +49,7 @@ describe('getLatestTag', () => {
   });
 });
 
-describe('downloadTagZip', () => {
+describe('downloadReleaseAsset', () => {
   it('returns a Buffer on success', async () => {
     const fakeData = new Uint8Array([1, 2, 3, 4]).buffer;
     global.fetch = vi.fn().mockResolvedValue({
@@ -60,11 +58,26 @@ describe('downloadTagZip', () => {
       arrayBuffer: async () => fakeData,
     });
 
-    const result = await downloadTagZip('v2.0.1');
+    const result = await downloadReleaseAsset('v2.0.1');
     expect(Buffer.isBuffer(result)).toBe(true);
     expect(result).toEqual(Buffer.from(fakeData));
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://github.com/brabos-ai/code-addiction/archive/refs/tags/v2.0.1.zip',
+      'https://github.com/brabos-ai/code-addiction/releases/download/v2.0.1/code-addiction-v2.0.1.zip',
+      expect.any(Object)
+    );
+  });
+
+  it('normalizes tag without v prefix', async () => {
+    const fakeData = new Uint8Array([1, 2]).buffer;
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => fakeData,
+    });
+
+    await downloadReleaseAsset('2.0.1');
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://github.com/brabos-ai/code-addiction/releases/download/v2.0.1/code-addiction-v2.0.1.zip',
       expect.any(Object)
     );
   });
@@ -72,7 +85,7 @@ describe('downloadTagZip', () => {
   it('throws on network failure', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('offline'));
 
-    await expect(downloadTagZip('v2.0.1')).rejects.toThrow(
+    await expect(downloadReleaseAsset('v2.0.1')).rejects.toThrow(
       'Could not reach GitHub. Check your connection.'
     );
   });
@@ -84,57 +97,20 @@ describe('downloadTagZip', () => {
       statusText: 'Not Found',
     });
 
-    await expect(downloadTagZip('v9.9.9')).rejects.toThrow(
+    await expect(downloadReleaseAsset('v9.9.9')).rejects.toThrow(
       'Try without version for latest'
     );
   });
-});
 
-describe('downloadBranchZip', () => {
-  it('returns a Buffer on success', async () => {
-    const fakeData = new Uint8Array([8, 9, 10]).buffer;
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      arrayBuffer: async () => fakeData,
-    });
-
-    const result = await downloadBranchZip('main');
-    expect(Buffer.isBuffer(result)).toBe(true);
-    expect(result).toEqual(Buffer.from(fakeData));
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://github.com/brabos-ai/code-addiction/archive/refs/heads/main.zip',
-      expect.any(Object)
-    );
-  });
-
-  it('throws on 404 for missing branch', async () => {
+  it('throws on non-ok non-404 status', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
-      status: 404,
-      statusText: 'Not Found',
+      status: 500,
+      statusText: 'Internal Server Error',
     });
 
-    await expect(downloadBranchZip('does-not-exist')).rejects.toThrow(
-      'Branch does-not-exist not found.'
-    );
-  });
-});
-
-describe('downloadZip (alias)', () => {
-  it('delegates to tag download', async () => {
-    const fakeData = new Uint8Array([1, 1, 2, 3]).buffer;
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      arrayBuffer: async () => fakeData,
-    });
-
-    const result = await downloadZip('v1.2.3');
-    expect(result).toEqual(Buffer.from(fakeData));
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://github.com/brabos-ai/code-addiction/archive/refs/tags/v1.2.3.zip',
-      expect.any(Object)
+    await expect(downloadReleaseAsset('v2.0.1')).rejects.toThrow(
+      'Download failed: 500'
     );
   });
 });

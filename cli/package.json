@@ -1,9 +1,9 @@
 {
   "name": "codeadd",
-  "version": "0.2.12",
+  "version": "0.2.16",
   "description": "CLI for Code Addiction framework - AI-powered development workflows",
   "type": "module",
-"repository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/brabos-ai/code-addiction.git"
   },

@@ -1,17 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, resolveSelected } from '../src/providers.js';
+import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected } from '../src/providers.js';
 
 describe('PROVIDERS', () => {
-  it('has exactly 5 providers', () => {
-    expect(Object.keys(PROVIDERS)).toHaveLength(5);
-  });
-
-  it('contains expected keys', () => {
-    expect(PROVIDERS).toHaveProperty('claude');
-    expect(PROVIDERS).toHaveProperty('codex');
-    expect(PROVIDERS).toHaveProperty('antigrav');
-    expect(PROVIDERS).toHaveProperty('kilocode');
-    expect(PROVIDERS).toHaveProperty('opencode');
+  it('contains all expected provider keys', () => {
+    for (const k of ['claude', 'codex', 'antigrav', 'opencode', 'kilocode',
+      'gemini', 'cursor', 'windsurf', 'copilot', 'auggie', 'roo', 'kiro', 'qwen', 'shai', 'bob']) {
+      expect(PROVIDERS, `missing provider: ${k}`).toHaveProperty(k);
+    }
   });
 
   it('each provider has src, dest, label, hint', () => {
@@ -22,6 +17,18 @@ describe('PROVIDERS', () => {
         src: expect.stringContaining('framwork/'),
         dest: expect.stringMatching(/^\./),
       });
+    }
+  });
+});
+
+describe('PROVIDER_PRIORITY', () => {
+  it('lists claude, codex, antigrav, opencode in that order', () => {
+    expect(PROVIDER_PRIORITY).toEqual(['claude', 'codex', 'antigrav', 'opencode']);
+  });
+
+  it('all priority keys exist in PROVIDERS', () => {
+    for (const k of PROVIDER_PRIORITY) {
+      expect(PROVIDERS).toHaveProperty(k);
     }
   });
 });

@@ -3,7 +3,7 @@ import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
-import { getLatestTag, downloadTagZip, downloadBranchZip } from './github.js';
+import { getLatestTag, downloadReleaseAsset } from './github.js';
 import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
 import { applyEnabledFeatures } from './features.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
@@ -22,17 +22,17 @@ function shouldPreserve(relPath) {
 /**
  * Copy entries from zip that match a source prefix to a destination directory,
  * skipping files matching PRESERVE_PATTERNS.
+ * The release asset zip uses `framwork/` prefix (e.g. "framwork/.claude/commands/add.md").
  *
  * @param {AdmZip} zip
- * @param {string} zipRoot
  * @param {string} srcPrefix
  * @param {string} destDir
  * @param {string} cwd
  * @returns {string[]}
  */
-function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
+function copyFromZip(zip, srcPrefix, destDir, cwd) {
   const copied = [];
-  const prefix = `${zipRoot}/${srcPrefix}/`;
+  const prefix = `${srcPrefix}/`;
 
   for (const entry of zip.getEntries()) {
     if (!entry.entryName.startsWith(prefix)) continue;
@@ -59,7 +59,7 @@ function copyFromZip(zip, zipRoot, srcPrefix, destDir, cwd) {
 /**
  * Main update flow.
  * @param {string} cwd
- * @param {{version?: string, branch?: string}} [options]
+ * @param {{version?: string}} [options]
  */
 export async function update(cwd, options = {}) {
   intro('ADD CLI - Update');
@@ -77,57 +77,37 @@ export async function update(cwd, options = {}) {
   }
 
   const currentVersion = manifest.version ?? 'unknown';
-  const currentSource = manifest.source ?? 'release';
-  const currentRef = manifest.ref ?? null;
   const providerKeys = manifest.providers ?? [];
 
   const s = spinner();
 
-  // Determine target source:
-  // - explicit --branch or --version → use that
-  // - no flags + currently on a branch → stay on same branch (re-pull)
-  // - no flags + currently on release/tag → fetch latest release
-  let targetVersion = options.version;
-  let targetBranch = options.branch;
-
-  if (!targetVersion && !targetBranch && currentSource === 'branch' && currentRef) {
-    targetBranch = currentRef;
-  }
-
   s.start('Resolving update target...');
-  const installSource = await resolveInstallSource(targetVersion, targetBranch, getLatestTag);
+  const installSource = await resolveInstallSource(options.version, getLatestTag);
   s.stop(`Source: ${installSource.source} (${installSource.downloadValue})`);
 
-  // For release/tag updates, skip if already on same version
-  if (installSource.source !== 'branch') {
-    const newVersion = installSource.manifestVersion.replace(/^v/, '');
-    if (currentVersion === newVersion) {
-      outro(`Already up to date (v${currentVersion}).`);
-      return;
-    }
+  const newVersion = installSource.manifestVersion.replace(/^v/, '');
+  if (currentVersion === newVersion) {
+    outro(`Already up to date (v${currentVersion}).`);
+    return;
   }
 
   s.start('Downloading...');
-  const zipBuffer = installSource.downloadType === 'branch'
-    ? await downloadBranchZip(installSource.downloadValue)
-    : await downloadTagZip(installSource.downloadValue);
+  const zipBuffer = await downloadReleaseAsset(installSource.downloadValue);
   s.stop('Downloaded.');
 
   s.start('Updating...');
   const zip = new AdmZip(zipBuffer);
-  const zipRoot = zip.getEntries()[0]?.entryName.split('/')[0] ?? '';
-  if (!zipRoot) throw new Error('Unexpected zip structure.');
 
   const allFiles = [];
   const addDir = path.join(cwd, '.codeadd');
 
-  const coreFiles = copyFromZip(zip, zipRoot, 'framwork/.codeadd', addDir, cwd);
+  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, cwd);
   allFiles.push(...coreFiles);
 
   const providers = resolveSelected(providerKeys);
   for (const p of providers) {
     const destDir = path.join(cwd, p.dest);
-    const pFiles = copyFromZip(zip, zipRoot, p.src, destDir, cwd);
+    const pFiles = copyFromZip(zip, p.src, destDir, cwd);
     allFiles.push(...pFiles);
   }
 
@@ -178,10 +158,6 @@ export async function update(cwd, options = {}) {
     log.success('.gitignore synced.');
   }
 
-  const fromLabel = currentSource === 'branch' ? currentRef ?? currentVersion : `v${currentVersion}`;
-  const toLabel = installSource.source === 'branch'
-    ? installSource.ref
-    : installSource.manifestVersion;
-  log.success(`Updated from ${fromLabel} to ${toLabel}`);
+  log.success(`Updated from v${currentVersion} to ${installSource.manifestVersion}`);
   outro('ADD updated successfully!');
 }
