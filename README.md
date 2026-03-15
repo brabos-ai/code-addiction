@@ -20,23 +20,35 @@ Code Addiction standardizes this with:
 ## Quickstart
 
 ```bash
-# install Code Addiction in your current project
+# install latest release
 npx codeadd install
 
-# install from main branch
-npx codeadd install --version main
-
-# install from a specific tag
-npx codeadd install --version v2.0.1
+# install a specific version (e.g., v0.2.15)
+npx codeadd install --version v0.2.15
 
 # check environment health
 npx codeadd doctor
 
-# validate integrity
+# validate file integrity via SHA-256 hashes
 npx codeadd validate
 
-# uninstall Code Addiction files from your project
+# repair missing or corrupted files
+npx codeadd validate --repair
+
+# update to latest release
+npx codeadd update
+
+# update to a specific version
+npx codeadd update --version v0.2.14
+
+# remove Code Addiction files from your project
 npx codeadd uninstall
+
+# list optional features
+npx codeadd features list
+
+# show installation configuration
+npx codeadd config show
 ```
 
 ## How it works
@@ -135,32 +147,29 @@ Contributions are welcome. Start here:
 
 ## Recent Releases
 
-### v0.2.15
-- **Date**: Latest
-- **Changes**: Version bump with improvements to provider architecture
-- **Status**: Stable
+Latest releases available via `npx codeadd install --version <tag>`:
+
+### v0.2.15 ✅ **Latest**
+- **Changes**: Version bump with provider architecture improvements
+- **Install**: `npx codeadd install --version v0.2.15`
 
 ### v0.2.14
-- **Date**: Recent
-- **Changes**: Stabilization and bug fixes
-- **Status**: Stable
+- **Changes**: Stability and bug fixes
+- **Install**: `npx codeadd install --version v0.2.14`
 
 ### v0.2.13
-- **Date**: Current
 - **Changes**:
-  - Compile all 15 providers in build + zip
-  - Updated package-lock with dependency consolidation
+  - Compile all 15 providers in single build zip
   - Enhanced provider build system
+  - Updated package dependencies
 
-### Provider Expansion (10 New Providers)
-- Added 10 new provider integrations
-- Implemented priority ordering in install prompt
-- Improved provider discovery and selection
+### v0.2.12 & earlier
+- Provider expansion (10 new providers added)
+- Provider-only install architecture (PRD0018)
+- Priority ordering in installation prompts
+- Full feature list: [See GitHub Releases](https://github.com/brabos-ai/code-addiction/releases)
 
-### Provider-Only Install Architecture (PRD0018)
-- New installation architecture for provider-only workflows
-- Reduced installation footprint for users
-- Flexible provider selection during setup
+**Note**: Installation only supports release tags (`v0.2.15`, etc). To install from a specific release, use `npx codeadd install --version <tag>`.
 
 ## Support
 
