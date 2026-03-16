@@ -215,7 +215,7 @@ When this step instructs you to DISPATCH AGENT:
    - **Skill:** `feature-discovery/SKILL.md` Phase 1.5
    - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
    - **Prompt:**
-     Read `.codeadd/skills/feature-discovery/SKILL.md` Phase 1.5.
+     Read `.codeadd/skills/add-feature-discovery/SKILL.md` Phase 1.5.
      Input: RECENT_CHANGELOGS (já disponível do Step 1) + about.md da feature atual.
      Execute a análise de features passadas conforme Phase 1.5:
      - Extrair keywords do about.md
@@ -229,7 +229,7 @@ When this step instructs you to DISPATCH AGENT:
    - **Skill:** `feature-discovery/SKILL.md` Phase 2-4
    - **Output:** Write `docs/features/${FEATURE_ID}/discovery.md`
    - **Prompt:**
-     Read `.codeadd/skills/feature-discovery/SKILL.md` e `.codeadd/skills/documentation-style/SKILL.md`.
+     Read `.codeadd/skills/add-feature-discovery/SKILL.md` e `.codeadd/skills/add-documentation-style/SKILL.md`.
      ANTES de analisar o codebase, ler `docs/features/${FEATURE_ID}/past-features.md`.
      Usar past-features.md como contexto:
      - Arquivos já tocados por features relacionadas → priorizar na busca
@@ -664,10 +664,10 @@ If validated "user chooses type" → CANNOT exclude frontend.
 
 #### Load Skills
 ```
-.codeadd/skills/documentation-style/SKILL.md
-.codeadd/skills/documentation-style/business.md
-.codeadd/skills/feature-specification/SKILL.md
-.codeadd/skills/feature-discovery/SKILL.md
+.codeadd/skills/add-documentation-style/SKILL.md
+.codeadd/skills/add-documentation-style/business.md
+.codeadd/skills/add-feature-specification/SKILL.md
+.codeadd/skills/add-feature-discovery/SKILL.md
 ```
 
 **Apply cache technique:** Read → Preserve → Complement → Metadata
@@ -739,7 +739,7 @@ If `/feature F0018` or `/feature continue`:
 Feature Discovery Complete!
 Docs: docs/features/[XXXX]F-[name]/
 **Next Steps (load code-addiction-ecosystem skill for context):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 Based on what was discovered, suggest the logical next command:
 - If feature has UI components → `/add.design`
 - If feature is ready for technical planning → `/add.plan`

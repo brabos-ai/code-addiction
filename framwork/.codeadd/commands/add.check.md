@@ -339,17 +339,17 @@ prompt: |
 
   ## SKILLS (MANDATORY)
   Read BEFORE reviewing:
-  - .codeadd/skills/frontend-development/SKILL.md (PRIMARY - types, hooks, state, API)
-  - .codeadd/skills/code-review/SKILL.md (validation patterns)
-  - .codeadd/skills/ux-design/SKILL.md (if design.md missing or for implementation details)
+  - .codeadd/skills/add-frontend-development/SKILL.md (PRIMARY - types, hooks, state, API)
+  - .codeadd/skills/add-code-review/SKILL.md (validation patterns)
+  - .codeadd/skills/add-ux-design/SKILL.md (if design.md missing or for implementation details)
 
   Reference for specific components:
-  - shadcn: .codeadd/skills/ux-design/shadcn-docs.md
-  - Tailwind: .codeadd/skills/ux-design/tailwind-v3-docs.md
-  - Motion: .codeadd/skills/ux-design/motion-dev-docs.md
-  - Charts: .codeadd/skills/ux-design/recharts-docs.md
-  - Tables: .codeadd/skills/ux-design/tanstack-table-docs.md
-  - Query: .codeadd/skills/ux-design/tanstack-query-docs.md
+  - shadcn: .codeadd/skills/add-ux-design/shadcn-docs.md
+  - Tailwind: .codeadd/skills/add-ux-design/tailwind-v3-docs.md
+  - Motion: .codeadd/skills/add-ux-design/motion-dev-docs.md
+  - Charts: .codeadd/skills/add-ux-design/recharts-docs.md
+  - Tables: .codeadd/skills/add-ux-design/tanstack-table-docs.md
+  - Query: .codeadd/skills/add-ux-design/tanstack-query-docs.md
 
   ## VALIDATION CATEGORIES
 
@@ -463,11 +463,11 @@ prompt: |
 
   ## SKILLS (MANDATORY)
   Read BEFORE reviewing:
-  - .codeadd/skills/backend-development/SKILL.md (PRIMARY - Clean Arch, RESTful, IoC/DI, DTOs, CQRS)
-  - .codeadd/skills/database-development/SKILL.md (Entities, Migrations, Kysely, Repositories)
-  - .codeadd/skills/code-review/SKILL.md (validation patterns, contracts)
-  - .codeadd/skills/security-audit/SKILL.md (OWASP, multi-tenancy)
-  - .codeadd/skills/delivery-validation/SKILL.md (product validation)
+  - .codeadd/skills/add-backend-development/SKILL.md (PRIMARY - Clean Arch, RESTful, IoC/DI, DTOs, CQRS)
+  - .codeadd/skills/add-database-development/SKILL.md (Entities, Migrations, Kysely, Repositories)
+  - .codeadd/skills/add-code-review/SKILL.md (validation patterns, contracts)
+  - .codeadd/skills/add-security-audit/SKILL.md (OWASP, multi-tenancy)
+  - .codeadd/skills/add-delivery-validation/SKILL.md (product validation)
 
   ## VALIDATION CATEGORIES
 
@@ -616,7 +616,7 @@ prompt: |
 
   **Load Delivery Validation Skill:**
   ```bash
-  cat .codeadd/skills/delivery-validation/SKILL.md
+  cat .codeadd/skills/add-delivery-validation/SKILL.md
   ```
 
   **For EACH requirement in about.md:**
@@ -877,7 +877,7 @@ Content:
 **📌 Accept corrections:** git add .
 
 **Next Steps:**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - If review PASSED → `/add.ship`
 - If review BLOCKED → fix issues, then `/add.check` again
 ```
@@ -983,10 +983,10 @@ NEVER:
 
 ## Skills Reference
 
-- **Code Review:** `.codeadd/skills/code-review/SKILL.md`
-- **Delivery Validation:** `.codeadd/skills/delivery-validation/SKILL.md`
-- **Backend Development:** `.codeadd/skills/backend-development/SKILL.md`
-- **Database Development:** `.codeadd/skills/database-development/SKILL.md`
-- **Frontend Development:** `.codeadd/skills/frontend-development/SKILL.md`
-- **UX Design:** `.codeadd/skills/ux-design/SKILL.md`
-- **Security Audit:** `.codeadd/skills/security-audit/SKILL.md`
+- **Code Review:** `.codeadd/skills/add-code-review/SKILL.md`
+- **Delivery Validation:** `.codeadd/skills/add-delivery-validation/SKILL.md`
+- **Backend Development:** `.codeadd/skills/add-backend-development/SKILL.md`
+- **Database Development:** `.codeadd/skills/add-database-development/SKILL.md`
+- **Frontend Development:** `.codeadd/skills/add-frontend-development/SKILL.md`
+- **UX Design:** `.codeadd/skills/add-ux-design/SKILL.md`
+- **Security Audit:** `.codeadd/skills/add-security-audit/SKILL.md`

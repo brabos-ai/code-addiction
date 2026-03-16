@@ -50,7 +50,7 @@ STEP 9: Cleanup                 → FINAL step
 IF SKILL.md NOT READ:
   ⛔ DO NOT: Classify apps (signals missing)
   ⛔ DO NOT: Dispatch specialists (templates missing)
-  ⛔ DO: Read .codeadd/skills/architecture-discovery/SKILL.md FIRST
+  ⛔ DO: Read .codeadd/skills/add-architecture-discovery/SKILL.md FIRST
 
 IF DISCOVERY SCRIPT NOT RUN:
   ⛔ DO NOT: Classify apps (no structure data)
@@ -126,7 +126,7 @@ You are the coordinator. You know your engine's capabilities. Map the intent to 
 
 **READ:**
 ```bash
-Read: .codeadd/skills/architecture-discovery/SKILL.md
+Read: .codeadd/skills/add-architecture-discovery/SKILL.md
 ```
 
 **Focus on:**
@@ -237,7 +237,7 @@ You are analyzing: [APP_NAME] at [APP_PATH]
 Classification: [TYPE]
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/architecture-discovery/[TYPE]-analyzer.md
+Read: .codeadd/skills/add-architecture-discovery/[TYPE]-analyzer.md
 Follow ALL instructions in that file.
 
 ## CONTEXT
@@ -281,7 +281,7 @@ You are analyzing: [APP_NAME] at [APP_PATH]
 Classification: [TYPE] (no specialist - use generic template)
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/architecture-discovery/SKILL.md
+Read: .codeadd/skills/add-architecture-discovery/SKILL.md
 Focus on: GenericAppTemplate section
 
 ## CONTEXT
@@ -331,7 +331,7 @@ Return summary:
 You are the DATABASE ANALYZER for project discovery.
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/architecture-discovery/database-analyzer.md
+Read: .codeadd/skills/add-architecture-discovery/database-analyzer.md
 Follow ALL instructions in that file.
 
 ## CONTEXT
@@ -372,7 +372,7 @@ Return summary:
 You are the CODE QUALITY ANALYZER for project discovery.
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/architecture-discovery/code-quality-analyzer.md
+Read: .codeadd/skills/add-architecture-discovery/code-quality-analyzer.md
 Follow ALL instructions in that file.
 
 ## CONTEXT
@@ -437,7 +437,7 @@ Return summary:
 You are the CONTEXT FILES UPDATER.
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/architecture-discovery/SKILL.md
+Read: .codeadd/skills/add-architecture-discovery/SKILL.md
 Follow OUTPUT FORMAT and TEMPLATE sections.
 
 ## INPUTS TO READ

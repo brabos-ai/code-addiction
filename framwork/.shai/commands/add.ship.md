@@ -613,7 +613,7 @@ bash .codeadd/scripts/done.sh --merge
 **NOTE:** done.sh --merge automatically deletes all `checkpoint/*` tags for the feature (local + remote). These temporary tags were created by `/add.build` during implementation and are no longer needed after merge.
 
 **After merge, suggest next command (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - Feature complete → `/add.release` (when ready for release)
 - More features to implement → `/add.new`
 

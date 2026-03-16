@@ -418,9 +418,9 @@ Execute BEFORE any other action:
 
 ## MANDATORY: Load Development Skills
 Based on your area, read the corresponding skills BEFORE writing any code:
-- Backend API: .codeadd/skills/backend-development/SKILL.md
-- Database: .codeadd/skills/database-development/SKILL.md
-- Frontend: .codeadd/skills/frontend-development/SKILL.md (auto-loads ux-design if no design.md)
+- Backend API: .codeadd/skills/add-backend-development/SKILL.md
+- Database: .codeadd/skills/add-database-development/SKILL.md
+- Frontend: .codeadd/skills/add-frontend-development/SKILL.md (auto-loads ux-design if no design.md)
 
 ## Your Tasks
 ${TASK_LIST}
@@ -452,7 +452,7 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the l
 **Backend Tasks:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
 **Worker Tasks:** Worker, Processor, queue config, error handling, register in worker.module.ts
 **Frontend Tasks:** Pages, Components, Zustand store, Hooks, mirror DTOs, API integration, forms
-- **MANDATORY:** Load skill `.codeadd/skills/frontend-development/SKILL.md` first
+- **MANDATORY:** Load skill `.codeadd/skills/add-frontend-development/SKILL.md` first
 - **The frontend skill will:** Check for design.md -> if missing, auto-load ux-design/SKILL.md
 - **If design.md exists:** Follow its specs + use ux-design skill for implementation details
 - **Consult skill docs:** shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-*.md
@@ -460,7 +460,7 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the l
 #### 9.3.1 Skills Reference (MANDATORY)
 
 ```json
-{"backend":".codeadd/skills/backend-development/SKILL.md (RESTful,IoC,DTOs,CQRS,Multi-tenancy)","database":".codeadd/skills/database-development/SKILL.md (Entities,Migrations,Kysely,Repositories)","frontend":".codeadd/skills/frontend-development/SKILL.md (Types,Hooks,State,API,Forms,Routing+auto-loads ux-design)"}
+{"backend":".codeadd/skills/add-backend-development/SKILL.md (RESTful,IoC,DTOs,CQRS,Multi-tenancy)","database":".codeadd/skills/add-database-development/SKILL.md (Entities,Migrations,Kysely,Repositories)","frontend":".codeadd/skills/add-frontend-development/SKILL.md (Types,Hooks,State,API,Forms,Routing+auto-loads ux-design)"}
 ```
 
 **Subagent Prompt MUST include (in this order):**
@@ -470,7 +470,7 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the l
 2. Read feature docs: about.md, discovery.md, design.md, plan.md
 
 ## MANDATORY: Load Development Skill
-BEFORE writing code, read: .codeadd/skills/[area]-development/SKILL.md
+BEFORE writing code, read: .codeadd/skills/add-[area]-development/SKILL.md
 For Frontend: The skill will check for design.md and load ux-design/SKILL.md if needed.
 Follow ALL patterns from the loaded skills.
 ```
@@ -499,17 +499,17 @@ Execute BEFORE any other action:
 
 ## Frontend Skills (MANDATORY)
 BEFORE writing ANY frontend code:
-1. Read: .codeadd/skills/frontend-development/SKILL.md (FIRST - handles types, hooks, state, API)
-2. If NO design.md: Load .codeadd/skills/ux-design/SKILL.md for SaaS UX patterns
+1. Read: .codeadd/skills/add-frontend-development/SKILL.md (FIRST - handles types, hooks, state, API)
+2. If NO design.md: Load .codeadd/skills/add-ux-design/SKILL.md for SaaS UX patterns
 3. If design.md EXISTS: Follow its specs + use ux-design for implementation details
 
 For specific components, use Grep on skill docs:
-- shadcn: .codeadd/skills/ux-design/shadcn-docs.md
-- Tailwind: .codeadd/skills/ux-design/tailwind-v3-docs.md
-- Motion: .codeadd/skills/ux-design/motion-dev-docs.md
-- Charts: .codeadd/skills/ux-design/recharts-docs.md
-- Tables: .codeadd/skills/ux-design/tanstack-table-docs.md
-- Query: .codeadd/skills/ux-design/tanstack-query-docs.md
+- shadcn: .codeadd/skills/add-ux-design/shadcn-docs.md
+- Tailwind: .codeadd/skills/add-ux-design/tailwind-v3-docs.md
+- Motion: .codeadd/skills/add-ux-design/motion-dev-docs.md
+- Charts: .codeadd/skills/add-ux-design/recharts-docs.md
+- Tables: .codeadd/skills/add-ux-design/tanstack-table-docs.md
+- Query: .codeadd/skills/add-ux-design/tanstack-query-docs.md
 ```
 
 #### 9.5 Coordination Flow
@@ -593,11 +593,11 @@ Files to investigate (from plan.md/git):
 
 **FRONTEND FIXES (MANDATORY):**
 If the bug is in frontend code:
-1. FIRST, load the UX design skill: Read `.codeadd/skills/ux-design/SKILL.md`
+1. FIRST, load the UX design skill: Read `.codeadd/skills/add-ux-design/SKILL.md`
 2. Follow ALL patterns from the skill (mobile-first, shadcn, Tailwind v3, Motion, etc.)
-3. For component fixes: Grep pattern="[component]" path=".codeadd/skills/ux-design/shadcn-docs.md"
-4. For styling fixes: Grep pattern="[utility]" path=".codeadd/skills/ux-design/tailwind-v3-docs.md"
-5. For animation fixes: Grep pattern="[pattern]" path=".codeadd/skills/ux-design/motion-dev-docs.md"
+3. For component fixes: Grep pattern="[component]" path=".codeadd/skills/add-ux-design/shadcn-docs.md"
+4. For styling fixes: Grep pattern="[utility]" path=".codeadd/skills/add-ux-design/tailwind-v3-docs.md"
+5. For animation fixes: Grep pattern="[pattern]" path=".codeadd/skills/add-ux-design/motion-dev-docs.md"
 6. Read: docs/design-system.md (if exists)
 
 ##### C2.2 Verify Build
@@ -637,11 +637,11 @@ prompt: |
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
   1. Run: bash .codeadd/scripts/status.sh
   2. Parse FEATURE_ID from output
-  3. Read skill: .codeadd/skills/${AREA}-development/SKILL.md
+  3. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md
 
   ## SKILLS
   MANDATORY - Read BEFORE validating:
-  - .codeadd/skills/${AREA}-development/SKILL.md (contains Validation Checklist)
+  - .codeadd/skills/add-${AREA}-development/SKILL.md (contains Validation Checklist)
 
   ## IMPLEMENTED FILES (from ${AREA} Subagent)
   ${FILES_CREATED}
@@ -824,7 +824,7 @@ Feature: ${FEATURE_ID}
 4. When approved, run `/add.ship` to merge
 
 **Suggested next command (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - After development → `/add.check` or `/add.test`
 - After correction → `/add.check`
 ```
@@ -853,7 +853,7 @@ Feature: ${N} of ${TOTAL_FEATURES}
 4. Or if all Epic features complete: `/add.ship`
 
 **Suggested next command (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - After development → `/add.check` or `/add.test`
 - After correction → `/add.check`
 ```
@@ -881,7 +881,7 @@ Feature: ${FEATURE_ID}
 4. Run `/add.ship` to merge
 
 **Suggested next command (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - After development → `/add.check` or `/add.test`
 - After correction → `/add.check`
 ```

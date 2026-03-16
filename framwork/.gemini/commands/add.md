@@ -71,7 +71,7 @@ IF ECOSYSTEM-MAP NOT LOADED:
 **EXECUTE BEFORE any response:**
 
 ```bash
-cat .codeadd/skills/code-addiction-ecosystem/SKILL.md
+cat .codeadd/skills/add-ecosystem/SKILL.md
 ```
 
 This file contains:
@@ -315,7 +315,7 @@ grep -ri "[term]" docs/ --include="*.md" -l | head -10
 **LOAD skill before responding:**
 
 ```bash
-cat .codeadd/skills/dev-environment-setup/SKILL.md
+cat .codeadd/skills/add-dev-environment-setup/SKILL.md
 ```
 
 **EXECUTE skill flow:** Follow STEP 1–6 from the skill (detect OS → diagnose → report → confirm → install → verify).
