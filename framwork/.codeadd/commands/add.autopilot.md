@@ -447,7 +447,7 @@ prompt: |
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
      - docs/features/${FEATURE_ID}/plan.md (PRIMARY - contains DB specs)
-  4. Read: `.codeadd/skills/database-development/SKILL.md` (MANDATORY)
+  4. Read: `.codeadd/skills/add-database-development/SKILL.md` (MANDATORY)
 
   ## DECISION LOG (from planning)
   ${DECISION_LOG}
@@ -497,7 +497,7 @@ prompt: |
      - docs/features/${FEATURE_ID}/about.md
      - docs/features/${FEATURE_ID}/discovery.md
      - docs/features/${FEATURE_ID}/plan.md (PRIMARY - contains API specs)
-  4. Read: `.codeadd/skills/backend-development/SKILL.md` (MANDATORY)
+  4. Read: `.codeadd/skills/add-backend-development/SKILL.md` (MANDATORY)
 
   ## DECISION LOG (accumulated)
   ${DECISION_LOG}
@@ -549,16 +549,16 @@ prompt: |
      - docs/features/${FEATURE_ID}/discovery.md
      - docs/features/${FEATURE_ID}/design.md (if exists - PRIMARY for UI)
      - docs/features/${FEATURE_ID}/plan.md (contains frontend specs + backend DTOs)
-  4. Read: `.codeadd/skills/frontend-development/SKILL.md` (MANDATORY)
-  5. If NO design.md: Also load `.codeadd/skills/ux-design/SKILL.md` for SaaS UX patterns
+  4. Read: `.codeadd/skills/add-frontend-development/SKILL.md` (MANDATORY)
+  5. If NO design.md: Also load `.codeadd/skills/add-ux-design/SKILL.md` for SaaS UX patterns
 
   For specific components, use Grep on skill docs:
-  - shadcn: .codeadd/skills/ux-design/shadcn-docs.md
-  - Tailwind: .codeadd/skills/ux-design/tailwind-v3-docs.md
-  - Motion: .codeadd/skills/ux-design/motion-dev-docs.md
-  - Charts: .codeadd/skills/ux-design/recharts-docs.md
-  - Tables: .codeadd/skills/ux-design/tanstack-table-docs.md
-  - Query: .codeadd/skills/ux-design/tanstack-query-docs.md
+  - shadcn: .codeadd/skills/add-ux-design/shadcn-docs.md
+  - Tailwind: .codeadd/skills/add-ux-design/tailwind-v3-docs.md
+  - Motion: .codeadd/skills/add-ux-design/motion-dev-docs.md
+  - Charts: .codeadd/skills/add-ux-design/recharts-docs.md
+  - Tables: .codeadd/skills/add-ux-design/tanstack-table-docs.md
+  - Query: .codeadd/skills/add-ux-design/tanstack-query-docs.md
 
   ## DECISION LOG (accumulated)
   ${DECISION_LOG}
@@ -622,11 +622,11 @@ prompt: |
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
   1. Run: bash .codeadd/scripts/status.sh
   2. Parse FEATURE_ID from output
-  3. Read skill: .codeadd/skills/${AREA}-development/SKILL.md
+  3. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md
 
   ## SKILLS
   MANDATORY - Read BEFORE validating:
-  - .codeadd/skills/${AREA}-development/SKILL.md (contains Validation Checklist)
+  - .codeadd/skills/add-${AREA}-development/SKILL.md (contains Validation Checklist)
 
   ## IMPLEMENTED FILES (from ${AREA} Subagent)
   ${FILES_CREATED}

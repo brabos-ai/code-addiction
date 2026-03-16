@@ -90,7 +90,8 @@ function buildSkills(map) {
 
     const source = fs.readFileSync(sourcePath, 'utf8');
 
-    for (const key of skill.providers) {
+    const providers = skill.providers ?? Object.keys(map.providers);
+    for (const key of providers) {
       const provider = map.providers[key];
       if (!provider.skills) continue;
 

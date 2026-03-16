@@ -54,7 +54,7 @@ IF UX-DESIGN SKILL NOT LOADED:
   ⛔ DO NOT USE: Write for design.md
   ⛔ DO NOT USE: Task for subagent dispatch
   ⛔ DO NOT: Propose any layouts
-  ⛔ DO: Read .codeadd/skills/ux-design/SKILL.md FIRST
+  ⛔ DO: Read .codeadd/skills/add-ux-design/SKILL.md FIRST
 
 IF DESIGN SYSTEM INSPECTION NOT COMPLETE (STEP 3):
   ⛔ DO NOT USE: Write for design.md
@@ -89,7 +89,7 @@ IF NO FRONTEND EXISTS:
 ### 1.1: Load UX Design Skill (REQUIRED)
 
 ```bash
-cat .codeadd/skills/ux-design/SKILL.md
+cat .codeadd/skills/add-ux-design/SKILL.md
 ```
 
 **Skill provides:** SaaS UX patterns, Context Detection, Mobile-first, States, Typography/Colors/Spacing, Components, Checklist
@@ -110,11 +110,11 @@ cat "docs/features/${FEATURE_ID}/discovery.md" 2>/dev/null
 
 ```bash
 # From ux-design skill - use Grep when needed:
-Grep pattern="[component]" path=".codeadd/skills/ux-design/shadcn-docs.md"
-Grep pattern="[utility]" path=".codeadd/skills/ux-design/tailwind-v3-docs.md"
-Grep pattern="[pattern]" path=".codeadd/skills/ux-design/motion-dev-docs.md"
-Grep pattern="[chart]" path=".codeadd/skills/ux-design/recharts-docs.md"
-Grep pattern="[table]" path=".codeadd/skills/ux-design/tanstack-table-docs.md"
+Grep pattern="[component]" path=".codeadd/skills/add-ux-design/shadcn-docs.md"
+Grep pattern="[utility]" path=".codeadd/skills/add-ux-design/tailwind-v3-docs.md"
+Grep pattern="[pattern]" path=".codeadd/skills/add-ux-design/motion-dev-docs.md"
+Grep pattern="[chart]" path=".codeadd/skills/add-ux-design/recharts-docs.md"
+Grep pattern="[table]" path=".codeadd/skills/add-ux-design/tanstack-table-docs.md"
 ```
 
 **⛔ GATE CHECK:** Is ux-design skill loaded?
@@ -324,8 +324,8 @@ You are the FLOW & INTERACTION ARCHITECT for feature ${FEATURE_ID}.
 1. Read docs/features/${FEATURE_ID}/design-context.md
 2. Read docs/features/${FEATURE_ID}/about.md
 3. Read docs/features/${FEATURE_ID}/discovery.md
-4. Load .codeadd/skills/ux-design/ux-laws-principles.md
-5. Load .codeadd/skills/ux-design/modern-patterns.md
+4. Load .codeadd/skills/add-ux-design/ux-laws-principles.md
+5. Load .codeadd/skills/add-ux-design/modern-patterns.md
 
 ## Task
 - Map ALL screens/pages in this feature
@@ -405,9 +405,9 @@ You are the LAYOUT & COMPONENT SPECIALIST for feature ${FEATURE_ID}.
 2. Read docs/features/${FEATURE_ID}/design-flow.md (MANDATORY — screen flow + action matrix)
 3. Read docs/features/${FEATURE_ID}/about.md
 4. Read docs/features/${FEATURE_ID}/discovery.md
-5. Load .codeadd/skills/ux-design/shadcn-docs.md
-6. Load .codeadd/skills/ux-design/tailwind-v3-docs.md
-7. Load .codeadd/skills/ux-design/motion-dev-docs.md
+5. Load .codeadd/skills/add-ux-design/shadcn-docs.md
+6. Load .codeadd/skills/add-ux-design/tailwind-v3-docs.md
+7. Load .codeadd/skills/add-ux-design/motion-dev-docs.md
 
 ## Task
 - Create ASCII layout for EACH screen listed in design-flow.md
@@ -585,7 +585,7 @@ Confirm?
 
 ## STEP 8: Write Documentation
 
-**Pre-check:** `cat .codeadd/skills/documentation-style/design.md 2>/dev/null`
+**Pre-check:** `cat .codeadd/skills/add-documentation-style/design.md 2>/dev/null`
 
 ### 8A: Subagent Mode — Consolidation
 
@@ -616,7 +616,7 @@ rm docs/features/${FEATURE_ID}/design-layout.md
 # Design: [Feature Name]
 
 **SaaS:** [context] | **Patterns:** [list] | **Mobile:** touch 44px, inputs 16px+
-**Skill:** .codeadd/skills/ux-design/SKILL.md
+**Skill:** .codeadd/skills/add-ux-design/SKILL.md
 **Mode:** [inline | subagent]
 
 ---
@@ -670,7 +670,7 @@ loading→Skeleton | empty→EmptyState | error→Toast
 ## Dev Instructions
 **Order:** [1]→[2]→[3]
 **Patterns:** [SaaS patterns from ux-design]
-**Skill:** .codeadd/skills/ux-design/SKILL.md (MUST load for implementation)
+**Skill:** .codeadd/skills/add-ux-design/SKILL.md (MUST load for implementation)
 ```
 
 ---
@@ -693,7 +693,7 @@ Design Complete!
 **Next:** `/plan` | `/dev` | `/autopilot`
 
 **Next Steps (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - Design complete → `/plan` (technical planning)
 - Simple feature → `/add.build` (skip planning)
 ```

@@ -35,7 +35,7 @@ IF UX-DESIGN SKILL NOT LOADED:
   ⛔ DO NOT USE: Edit on any file
   ⛔ DO NOT USE: Write on any file
   ⛔ DO NOT: Propose UX patterns or create components
-  ✅ DO: Read .codeadd/skills/ux-design/SKILL.md FIRST
+  ✅ DO: Read .codeadd/skills/add-ux-design/SKILL.md FIRST
 
 IF PROJECT DESIGN PATTERNS NOT DISCOVERED:
   ⛔ DO NOT USE: Edit on code files
@@ -58,7 +58,7 @@ Parse the output to understand project context (branch, feature, recent changes)
 
 ## STEP 2: Load UX Design Skill (REQUIRED)
 
-READ `.codeadd/skills/ux-design/SKILL.md` — this is the single source of truth for UX knowledge.
+READ `.codeadd/skills/add-ux-design/SKILL.md` — this is the single source of truth for UX knowledge.
 
 ---
 
@@ -80,7 +80,7 @@ READ `.codeadd/skills/ux-design/SKILL.md` — this is the single source of truth
 
 ## STEP 4: Load Complementary Skill Docs
 
-**ANALYZE** user's `$ARGUMENTS` and load relevant docs from `.codeadd/skills/ux-design/`:
+**ANALYZE** user's `$ARGUMENTS` and load relevant docs from `.codeadd/skills/add-ux-design/`:
 
 **Available docs:**
 | Doc | Covers |

@@ -47,7 +47,7 @@ STEP 6: Suggest next step           → INFORM how to use the output
 IF SKILL NOT LOADED:
   ⛔ DO NOT USE: Write in docs/copy/
   ⛔ DO NOT: Generate copy
-  ✅ DO: cat .codeadd/skills/saas-copy/SKILL.md
+  ✅ DO: cat .codeadd/skills/add-saas-copy/SKILL.md
 
 IF CONTEXT NOT EXTRACTED:
   ⛔ DO NOT USE: Write in docs/copy/
@@ -78,9 +78,9 @@ IF USER NOT VALIDATED:
 **EXECUTE:**
 
 ```bash
-cat .codeadd/skills/saas-copy/SKILL.md
-cat .codeadd/skills/saas-copy/formulas.md
-cat .codeadd/skills/saas-copy/examples.md
+cat .codeadd/skills/add-saas-copy/SKILL.md
+cat .codeadd/skills/add-saas-copy/formulas.md
+cat .codeadd/skills/add-saas-copy/examples.md
 ```
 
 **⛔ IF NOT LOADED:** Do not proceed to analysis.

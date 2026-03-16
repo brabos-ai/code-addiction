@@ -1,6 +1,6 @@
 # Tech Audit - Complete Technical Project Audit
 
-> **DOCUMENTATION STYLE:** Follow standards defined in `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Follow standards defined in `.codeadd/skills/add-documentation-style/SKILL.md`
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
 
@@ -155,7 +155,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/audit/context-discovery.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-audit/context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/context-discovery.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -167,7 +167,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/audit/documentation-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-audit/documentation-analyzer.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/documentation-report.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -179,7 +179,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/audit/infrastructure-check.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-audit/infrastructure-check.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/infrastructure-report.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -214,7 +214,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/audit/security-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-audit/security-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/security-report.md`
 
@@ -227,7 +227,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/audit/architecture-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-audit/architecture-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/architecture-report.md`
 
@@ -240,7 +240,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/audit/data-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-audit/data-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/data-report.md`
 
@@ -501,7 +501,7 @@ NEVER:
 
 ## Dependencies
 
-This command requires the following skills in `.codeadd/skills/audit/`:
+This command requires the following skills in `.codeadd/skills/add-audit/`:
 - `context-discovery.md`
 - `documentation-analyzer.md`
 - `infrastructure-check.md`

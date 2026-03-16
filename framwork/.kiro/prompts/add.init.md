@@ -182,7 +182,7 @@ b) No - skip
 ### 6.1 Load Skill
 
 ```bash
-cat .codeadd/skills/product-discovery/SKILL.md
+cat .codeadd/skills/add-product-discovery/SKILL.md
 ```
 
 ### 6.2 Follow Phase2_ProductBlueprint from Skill

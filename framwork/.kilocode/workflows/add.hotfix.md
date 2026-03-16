@@ -275,7 +275,7 @@ cat .codeadd/projects/*-patterns.md
 
 **FRONTEND FIXES:**
 If bug in frontend:
-1. READ `.codeadd/skills/ux-design/SKILL.md`
+1. READ `.codeadd/skills/add-ux-design/SKILL.md`
 2. Follow patterns (mobile-first, shadcn, Tailwind v3)
 3. Consult specific docs if needed
 
@@ -402,7 +402,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 3. Execute `/add.ship` to finalize
 
 **Suggested next command:**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - Hotfix complete → `/add.ship`
 ```
 

@@ -47,7 +47,7 @@ STEP 6: Output                    → DELIVER complete code
 IF SKILL NOT LOADED:
   ⛔ DO NOT USE: Write to create landing page
   ⛔ DO NOT: Generate code without skill reference
-  ⛔ DO: Execute cat .codeadd/skills/landing-page-saas/SKILL.md FIRST
+  ⛔ DO: Execute cat .codeadd/skills/add-landing-page-saas/SKILL.md FIRST
 
 IF CONTEXT INCOMPLETE:
   ⛔ DO NOT USE: Write without product/audience info
@@ -56,7 +56,7 @@ IF CONTEXT INCOMPLETE:
 
 IF TEMPLATES NOT LOADED:
   ⛔ DO NOT USE: Write code without section templates
-  ⛔ DO: Load templates for selected sections from .codeadd/skills/landing-page-saas/sections/
+  ⛔ DO: Load templates for selected sections from .codeadd/skills/add-landing-page-saas/sections/
 
 IF AESTHETIC NOT SELECTED:
   ⛔ DO NOT: Mix multiple aesthetics in same page
@@ -76,7 +76,7 @@ ALWAYS:
 **Load the landing page skill:**
 
 ```bash
-cat .codeadd/skills/landing-page-saas/SKILL.md
+cat .codeadd/skills/add-landing-page-saas/SKILL.md
 ```
 
 **This skill contains:**
@@ -139,22 +139,22 @@ Need the following information:
 
 ```bash
 # Hero
-cat .codeadd/skills/landing-page-saas/sections/hero.md
+cat .codeadd/skills/add-landing-page-saas/sections/hero.md
 
 # Features
-cat .codeadd/skills/landing-page-saas/sections/features.md
+cat .codeadd/skills/add-landing-page-saas/sections/features.md
 
 # Pricing
-cat .codeadd/skills/landing-page-saas/sections/pricing.md
+cat .codeadd/skills/add-landing-page-saas/sections/pricing.md
 
 # Social Proof
-cat .codeadd/skills/landing-page-saas/sections/social-proof.md
+cat .codeadd/skills/add-landing-page-saas/sections/social-proof.md
 
 # CTA
-cat .codeadd/skills/landing-page-saas/sections/cta.md
+cat .codeadd/skills/add-landing-page-saas/sections/cta.md
 
 # Selected aesthetic
-cat .codeadd/skills/landing-page-saas/aesthetics.md
+cat .codeadd/skills/add-landing-page-saas/aesthetics.md
 ```
 
 **Extract from templates:**

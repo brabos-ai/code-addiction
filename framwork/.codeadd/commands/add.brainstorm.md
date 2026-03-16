@@ -87,7 +87,7 @@ IF USER REQUESTS DOCUMENT:
   ⛔ DO NOT: Document with unresolved questions
   ✅ DO: Resolve ALL questions FIRST
   ✅ DO: Create ONLY in docs/brainstorm/YYYY-MM-DD-[topic].md
-  ✅ DO: Use Business Style format (read .codeadd/skills/documentation-style/business.md)
+  ✅ DO: Use Business Style format (read .codeadd/skills/add-documentation-style/business.md)
 
 ALWAYS:
   ⛔ DO NOT USE: Edit on application code files
@@ -482,7 +482,7 @@ The document can be used as input for `/feature` if you decide to implement some
 
 ```
 1. Read documentation style skill:
-   cat .codeadd/skills/documentation-style/business.md
+   cat .codeadd/skills/add-documentation-style/business.md
 
 2. Apply Business Style format (section "brainstorm/"):
    - Focus on USER needs
@@ -528,7 +528,7 @@ docs/brainstorm/
 
 **IMPORTANT:** Document must be 100% focused on BUSINESS and USER, without technical jargon.
 
-**FORMAT:** Use Business Style (`.codeadd/skills/documentation-style/business.md` - section brainstorm/)
+**FORMAT:** Use Business Style (`.codeadd/skills/add-documentation-style/business.md` - section brainstorm/)
 
 ```markdown
 # Brainstorm: [Topic]
@@ -636,7 +636,7 @@ docs/brainstorm/
 - To see the document: open the created file
 
 **Next Steps (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - Ready to formalize → `/add.new`
 - Need strategic analysis → `/add.strategy`
 

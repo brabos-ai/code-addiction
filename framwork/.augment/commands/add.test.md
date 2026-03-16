@@ -365,7 +365,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 You are the BACKEND TEST GENERATOR for this project.
 
 ## MANDATORY: Load Context
-1. READ .codeadd/skills/backend-development/SKILL.md (if exists) for project patterns
+1. READ .codeadd/skills/add-backend-development/SKILL.md (if exists) for project patterns
 2. READ .codeadd/project/*.md (if exists) for project conventions
 
 ## CONTEXT
@@ -420,7 +420,7 @@ ERRORS: [if any tests still fail after fixes]
 You are the FRONTEND TEST GENERATOR for this project.
 
 ## MANDATORY: Load Context
-1. READ .codeadd/skills/frontend-development/SKILL.md (if exists) for project patterns
+1. READ .codeadd/skills/add-frontend-development/SKILL.md (if exists) for project patterns
 2. READ .codeadd/project/*.md (if exists) for project conventions
 
 ## CONTEXT
@@ -474,7 +474,7 @@ ERRORS: [if any]
 You are the WORKERS TEST GENERATOR for this project.
 
 ## MANDATORY: Load Context
-1. READ .codeadd/skills/backend-development/SKILL.md (if exists)
+1. READ .codeadd/skills/add-backend-development/SKILL.md (if exists)
 2. READ .codeadd/project/*.md (if exists)
 
 ## CONTEXT
@@ -660,7 +660,7 @@ SUGGESTIONS FOR MANUAL IMPROVEMENT:
 ```
 
 **Next Steps (from ecosystem map):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - Tests passing → `/add.check`
 - Tests failing → fix and re-run `/add.test`
 

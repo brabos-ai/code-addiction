@@ -170,14 +170,14 @@ SE past-features.md NÃO existe:
 **Dispatch Past Features Discovery Agent** [read-only, light]:
 
 ```
-Skill: .codeadd/skills/feature-discovery/SKILL.md Phase 1.5
+Skill: .codeadd/skills/add-feature-discovery/SKILL.md Phase 1.5
 Input: about.md da feature atual + RECENT_CHANGELOGS
 Output: docs/features/${FEATURE_ID}/past-features.md
 ```
 
 **Prompt do agente:**
 ```
-Read .codeadd/skills/feature-discovery/SKILL.md Phase 1.5.
+Read .codeadd/skills/add-feature-discovery/SKILL.md Phase 1.5.
 Feature: ${FEATURE_ID}.
 Input: docs/features/${FEATURE_ID}/about.md + RECENT_CHANGELOGS abaixo.
 [RECENT_CHANGELOGS]
@@ -469,7 +469,7 @@ Execute BEFORE any other action:
 3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
 
 ## MANDATORY: Load Backend Development Skill
-BEFORE designing endpoints, read: `.codeadd/skills/backend-development/SKILL.md`
+BEFORE designing endpoints, read: `.codeadd/skills/add-backend-development/SKILL.md`
 
 This skill contains ALL standards for:
 - RESTful API (HTTP methods, status codes, URL patterns)
@@ -525,7 +525,7 @@ Reference: `[search codebase for similar module]`
 - MUST search codebase for similar module as reference (paths from CLAUDE.md)
 - Combine API + Workers in same section
 - Keep it under 60 lines
-- MUST follow `.codeadd/skills/backend-development/SKILL.md` patterns
+- MUST follow `.codeadd/skills/add-backend-development/SKILL.md` patterns
 - Include Status column in Endpoints table
 ```
 
@@ -595,14 +595,14 @@ Reference: `[search codebase for similar pages/hooks]`
 
 **When to create:** ALWAYS — runs after all area subagents complete.
 
-**MANDATORY:** Load skill BEFORE dispatch: `.codeadd/skills/test-specification/SKILL.md`
+**MANDATORY:** Load skill BEFORE dispatch: `.codeadd/skills/add-test-specification/SKILL.md`
 
 **Dispatch prompt:**
 ```
 You are the TEST SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
 
 ## MANDATORY: Load Skill
-READ: .codeadd/skills/test-specification/SKILL.md — follow ALL rules.
+READ: .codeadd/skills/add-test-specification/SKILL.md — follow ALL rules.
 
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
@@ -1019,7 +1019,7 @@ rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
 - [X] References to similar files
 
 **Next Steps (load code-addiction-ecosystem skill for context):**
-Read `.codeadd/skills/code-addiction-ecosystem/SKILL.md` Main Flows section.
+Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 Based on what was planned, suggest the logical next command:
 - Standard flow → `/add.build`
 - Autonomous flow → `/add.autopilot`
@@ -1054,10 +1054,10 @@ NEVER:
 
 ## Skills to Reference
 
-- Backend: `.codeadd/skills/backend-development/SKILL.md`
-- Database: `.codeadd/skills/database-development/SKILL.md`
-- Frontend (Code): `.codeadd/skills/frontend-development/SKILL.md`
-- Frontend (UI): `.codeadd/skills/ux-design/SKILL.md`
+- Backend: `.codeadd/skills/add-backend-development/SKILL.md`
+- Database: `.codeadd/skills/add-database-development/SKILL.md`
+- Frontend (Code): `.codeadd/skills/add-frontend-development/SKILL.md`
+- Frontend (UI): `.codeadd/skills/add-ux-design/SKILL.md`
 
 ---
 
