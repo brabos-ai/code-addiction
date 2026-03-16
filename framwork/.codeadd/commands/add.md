@@ -1,5 +1,8 @@
 # ADD - Intelligent Ecosystem Gateway
 
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante -> explain why; avancado -> essentials only).
+
 Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests next command.
 
 **IMPORTANT:** This command is READ-ONLY for project code. May create analysis documentation in `docs/analysis/` when the response is complex or the user requests it.
@@ -9,49 +12,21 @@ Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests 
 ## Spec
 
 ```json
-{"gates":["ecosystem_loaded"],"order":["ecosystem_map","classify","context_if_needed","respond","suggest"],"write_allowed":"docs/analysis/","skills":{"on_demand":"dev-environment-setup (load when type=Setup or env tools missing)"}}
+{"write_allowed":"docs/analysis/","skills":{"on_demand":"dev-environment-setup (load when type=Setup or env tools missing)"}}
 ```
 
 ---
 
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
-
----
-
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
-
-**STEPS IN ORDER:**
-```
-STEP 0: Load ecosystem-map       → ALWAYS (source of truth)
-STEP 1: Check onboarding         → IF docs/owner.md does not exist → suggest /add.init
-STEP 2: Classify question         → Determine response type
-STEP 3: Detect context            → IF question involves project/feature/status
-STEP 4: Respond by type           → Using ecosystem-map knowledge
-STEP 5: Smart suggestion          → Recommended next command
-```
-
-**⛔ PROHIBITIONS AND PERMISSIONS:**
+## PROHIBITIONS AND PERMISSIONS
 
 ```
 READ-ONLY FOR CODE:
-  ⛔ DO NOT MODIFY: Files in src/, apps/, libs/, packages/
-  ⛔ DO NOT MODIFY: Configs (package.json, .env, tsconfig, etc.)
-  ⛔ DO NOT MODIFY: Existing project files
+  DO NOT MODIFY: Files in src/, apps/, libs/, packages/
+  DO NOT MODIFY: Configs (package.json, .env, tsconfig, etc.)
+  DO NOT MODIFY: Existing project files
 
 ALLOWED - CREATE DOCUMENTATION:
-  ✅ MAY CREATE: docs/analysis/*.md (on-demand analyses)
-  ✅ WHEN: User wants to persist
+  MAY CREATE: docs/analysis/*.md (on-demand analyses)
 
 IF ECOSYSTEM-MAP NOT LOADED:
   ⛔ DO NOT RESPOND: About commands or skills
@@ -63,17 +38,9 @@ IF ECOSYSTEM-MAP NOT LOADED:
 
 ## STEP 0: Load Ecosystem Map (ALWAYS)
 
-**EXECUTE BEFORE any response:**
+Read `.codeadd/skills/add-ecosystem/SKILL.md` before any response.
 
-```bash
-cat .codeadd/skills/add-ecosystem/SKILL.md
-```
-
-This file contains:
-- All add-pro commands with purpose and skills they load
-- All available skills and who uses them
-- Main development flows
-- Dependency index
+This file contains all add-pro commands with purpose/skills, available skills, main flows, and dependency index.
 
 **USE ecosystem-map to answer about commands/skills.** DO NOT use hardcoded knowledge.
 
@@ -81,26 +48,7 @@ This file contains:
 
 ## STEP 1: Check Onboarding
 
-**EXECUTE BEFORE responding:**
-
-```bash
-cat docs/owner.md 2>/dev/null
-```
-
-**IF docs/owner.md DOES NOT EXIST:**
-
-```markdown
-👋 Looks like this is a new project!
-
-Before we start, I recommend creating your founder profile and product blueprint.
-This helps me adapt communication to your technical level and better understand the project.
-
-**Use:** `/add.init` to run onboarding (5-10 min)
-
-Or, if you prefer to skip, just tell me your question and I'll answer anyway.
-```
-
-**IF docs/owner.md EXISTS:** Proceed to STEP 2.
+Read `docs/owner.md`. If it does not exist, suggest `/add.init` for project onboarding (5-10 min) and offer to answer anyway if the user prefers to skip. If it exists, proceed to STEP 2.
 
 ---
 
@@ -108,50 +56,31 @@ Or, if you prefer to skip, just tell me your question and I'll answer anyway.
 
 | Type | Examples | Action |
 |------|----------|--------|
-| **About commands** | "how does /review work?", "when to use /plan?" | → STEP 4A |
-| **About feature** | "what does feature X do?", "how does auth work?" | → STEP 3 + STEP 4B |
-| **Status/Context** | "where am I?", "which feature is active?" | → STEP 3 + STEP 4C |
-| **Compliance** | "does implementation follow the plan?" | → STEP 3 + STEP 4D |
-| **Project** | "does the project have multi-tenancy?" | → STEP 3 + STEP 4E |
-| **Next step** | "what to do now?", "next command?" | → STEP 3 + STEP 5 |
-| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", "configure VS Code terminal", env errors | → STEP 4F |
+| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP 4A |
+| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP 3 + STEP 4B |
+| **Status/Context** | "where am I?", "which feature is active?" | -> STEP 3 + STEP 4C |
+| **Compliance** | "does implementation follow the plan?" | -> STEP 3 + STEP 4D |
+| **Project** | "does the project have multi-tenancy?" | -> STEP 3 + STEP 4E |
+| **Next step** | "what to do now?", "next command?" | -> STEP 3 + STEP 5 |
+| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", env errors | -> STEP 4F |
 
 ---
 
 ## STEP 3: Detect Context (CONDITIONAL)
 
-**EXECUTE IF question involves:**
-- Specific feature
-- Current status
-- "Where am I?"
-- "Next step"
-- Project/architecture
+Execute when question involves a specific feature, current status, "where am I?", next step, or project/architecture.
 
-### 2.1 Execute status.sh
+### 3.1 Execute status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh
 ```
 
-**Parse output:**
+**Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
 
-| Field | Usage |
-|-------|-------|
-| `FEATURE_ID` | Current feature |
-| `CURRENT_PHASE` | Phase (discovered, planned, implementing, etc.) |
-| `IS_EPIC` | If Epic, list sub-features and progress |
-| `HAS_PLAN`, `HAS_REVIEW` | Existing documents |
-| `BRANCH` | Current branch |
+### 3.2 Read additional context (if exists)
 
-### 2.2 Read additional context (if exists)
-
-```bash
-# Project architecture patterns
-cat CLAUDE.md 2>/dev/null
-
-# Project documentation
-ls .codeadd/projects/ 2>/dev/null
-```
+Read `CLAUDE.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
 
 ---
 
@@ -159,28 +88,9 @@ ls .codeadd/projects/ 2>/dev/null
 
 ### Type A: About ADD Commands
 
-**USE ecosystem-map loaded in STEP 0.**
+Use ecosystem-map from STEP 0. If specific command details are needed, read `.claude/commands/add.[command].md`.
 
-If specific command details are needed:
-
-```bash
-cat .claude/commands/add.[command].md
-```
-
-**Response format:**
-
-```markdown
-## /[command]
-
-**What it does:** [from ecosystem-map]
-
-**When to use:** [context]
-
-**Skills loaded:** [from ecosystem-map]
-
-**Flow:**
-[main steps]
-```
+Include: what the command does, when to use it, which skills it loads, and main flow steps.
 
 ---
 
@@ -188,147 +98,60 @@ cat .claude/commands/add.[command].md
 
 **RULE:** Changelog BEFORE code.
 
-**Step 1 - Identify feature:**
-```bash
-ls docs/features/ | grep -i "[term]"
-```
+1. Identify feature directory under `docs/features/`
+2. Read `changelog.md` first (executive summary)
+3. Read `about.md` for context/spec
+4. Only check code if previous levels don't answer the question
 
-**Step 2 - Read changelog first:**
-```bash
-cat docs/features/[FEATURE_ID]/changelog.md
-```
-
-**Step 3 - Read about.md for context:**
-```bash
-cat docs/features/[FEATURE_ID]/about.md
-```
-
-**Step 4 - Code only if necessary:**
-```bash
-git log --oneline --name-only --grep="[FEATURE_ID]" -- . | head -50
-```
-
-**Format:**
-```markdown
-## Feature: [ID] - [Name]
-
-**Summary:** [from changelog]
-
-**What it does:** [explanation]
-
-**Main files:** [if asked about code]
-```
+Include: feature ID, name, summary from changelog, explanation, main files (if asked about code).
 
 ---
 
 ### Type C: Status/Context
 
-**Use output from STEP 3 (status.sh).**
+Use output from STEP 3 (status.sh).
 
-**Format:**
-```markdown
-## Current Status
-
-**Branch:** `[branch]`
-**Feature:** [ID or "none"]
-**Phase:** [current phase]
-**Pending changes:** [N files]
-
-### Documents
-- about.md: ✅/❌
-- plan.md: ✅/❌
-- review.md: ✅/❌
-```
+Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, review.md).
 
 ---
 
 ### Type D: Compliance Check
 
-**Step 1 - Load specs:**
-```bash
-cat docs/features/[FEATURE_ID]/about.md
-cat docs/features/[FEATURE_ID]/plan.md
-```
+1. Read `about.md` and `plan.md` for specs
+2. Read `changelog.md` for what was implemented
+3. Compare: for each plan.md item, verify in changelog
 
-**Step 2 - See implemented:**
-```bash
-cat docs/features/[FEATURE_ID]/changelog.md
-```
-
-**Step 3 - Compare:** For each item in plan.md, verify in changelog.
-
-**Format:**
-```markdown
-## Compliance Check
-
-**Feature:** [ID]
-
-### Summary
-| Aspect | Status |
-|--------|--------|
-| Functional requirements | ✅ X/Y |
-
-### Implemented
-- ✅ [Item]
-
-### Pending
-- ❌ [Item]
-```
+Include: feature ID, requirements summary (X/Y fulfilled), implemented items, pending items.
 
 ---
 
 ### Type E: About the Project
 
-**Step 1 - Check CLAUDE.md:**
-```bash
-cat CLAUDE.md
-```
+1. Read `CLAUDE.md` for architecture patterns
+2. Search relevant docs for the queried term
 
-**Step 2 - Search term:**
-```bash
-grep -ri "[term]" docs/ --include="*.md" -l | head -10
-```
-
-**Format:**
-```markdown
-## [Reformulated question]
-
-**Answer:** [Yes/No/Partially]
-
-### What I found
-[Explanation based on evidence]
-
-### Evidence
-- `CLAUDE.md` - [mention]
-- `path/file` - [what it does]
-```
+Include: reformulated question, answer (Yes/No/Partially), explanation based on evidence, source files as evidence.
 
 ---
 
 ### Type F: Setup/Environment
 
-**LOAD skill before responding:**
+**LOAD skill before responding:** Read `.codeadd/skills/add-dev-environment-setup/SKILL.md`.
 
-```bash
-cat .codeadd/skills/add-dev-environment-setup/SKILL.md
-```
+**EXECUTE skill flow:** Follow STEP 1-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
 
-**EXECUTE skill flow:** Follow STEP 1–6 from the skill (detect OS → diagnose → report → confirm → install → verify).
+**IF user has not granted permission to install:** Show diagnostic report only (STEP 2-3 of skill). Ask for confirmation before installing.
 
-**⛔ IF user has not granted permission to install:**
-→ Show diagnostic report only (STEP 2–3 of skill).
-→ Ask: "Posso instalar os itens em falta? [S/n]"
-
-**⛔ DO NOT:**
+NEVER:
 - Suggest Git Bash as bash alternative
-- Use `apt-get install gh` — use official gh repo
-- Overwrite `.vscode/settings.json` — always merge
+- Use `apt-get install gh` -- use official gh repo
+- Overwrite `.vscode/settings.json` -- always merge
 
 ---
 
 ## STEP 5: Smart Suggestion
 
-**ALWAYS include at end of response** (except if question was only about a specific command).
+ALWAYS include at end of response (except if question was only about a specific command).
 
 ### Suggestion Table
 
@@ -347,23 +170,7 @@ cat .codeadd/skills/add-dev-environment-setup/SKILL.md
 | bash/git/jq/gh missing or env errors | Load `dev-environment-setup` skill | Setup dev environment |
 | User asks about WSL or VS Code terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |
 
-### Suggestion Format
-
-```markdown
----
-
-### 💡 Suggested Next Step
-
-Based on your current context:
-- **Branch:** `[branch]`
-- **Phase:** `[phase]`
-- **Docs:** about.md ✅ | plan.md ✅ | review.md ❌
-
-**Recommendation:** `/[command]` to [action]
-
-Or use `/add [question]` for more guidance.
-
-```
+Base the suggestion on current branch, phase, and document availability.
 
 ---
 
@@ -371,10 +178,10 @@ Or use `/add [question]` for more guidance.
 
 When answering about features, follow this order:
 
-1. **Changelog** → What was done (executive summary)
-2. **About.md** → What it should do (spec)
-3. **Plan.md** → How it should be done (technical)
-4. **Code** → How it was done (implementation)
+1. **Changelog** -> What was done (executive summary)
+2. **About.md** -> What it should do (spec)
+3. **Plan.md** -> How it should be done (technical)
+4. **Code** -> How it was done (implementation)
 
 Only go down the hierarchy if the previous level does not answer the question.
 
@@ -397,18 +204,3 @@ NEVER:
 - Assume without verifying
 - Give generic responses without evidence
 - Leave user without next step
-
-OPTIONALLY:
-- Create docs/analysis/*.md to persist complex analyses
-
----
-
-## Completion
-
-Always finish with:
-
-```markdown
----
-
-Can I help with anything else?
-```

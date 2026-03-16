@@ -6,28 +6,16 @@ Execute complete technical analysis of the project, identifying security, archit
 
 **Output:** `docs/audits/YYYY-MM-DD/`
 
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+
 ---
 
 ## Spec
 
 ```json
-{"gates":["folder_structure_created","discovery_phase_complete","analysis_phase_complete","all_reports_validated"],"order":["setup","parallel_discovery","wait_discovery","parallel_analysis","wait_analysis","consolidation","completion"],"discovery":["context-discovery","documentation-analyzer","infrastructure-check"],"analysis":["security-analyzer","architecture-analyzer","data-analyzer"],"scoring":{"weights":{"critical":3,"high":2,"medium":1,"low":0.5},"formula":"max(0, 10 - (weighted_sum / 5))"}}
+{"scoring":{"weights":{"critical":3,"high":2,"medium":1,"low":0.5},"formula":"max(0, 10 - (weighted_sum / 5))"}}
 ```
-
----
-
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -131,16 +119,10 @@ mkdir -p "docs/audits/${AUDIT_DATE}"
 
 ## STEP 2: Validate Prerequisites (BEFORE discovery)
 
-```bash
-# Check if CLAUDE.md exists
-ls CLAUDE.md 2>/dev/null
-
-# Check project structure
-ls -la apps/ libs/ src/ 2>/dev/null
-```
+Check whether `CLAUDE.md` exists at project root. Detect project layout (look for `apps/`, `libs/`, `src/` or equivalent top-level directories).
 
 **⛔ GATE CHECK: Project structure valid?**
-- If NO apps/ OR libs/ OR src/ → Warn user about non-standard structure
+- If no recognisable source directories → Warn user about non-standard structure
 - If YES → Proceed to STEP 3.
 
 ---
@@ -263,10 +245,7 @@ Each agent MUST read `context-discovery.md` to understand:
 
 ## STEP 7: Consolidation - Read All Reports
 
-```bash
-# Read all generated reports
-cat docs/audits/${AUDIT_DATE}/*.md
-```
+Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 
 **Parse each report for:**
 - Issue severity (Critical, High, Medium, Low)
@@ -442,46 +421,18 @@ For complete technical details, see:
 
 ## STEP 10: Completion - Inform User
 
-**Display to user:**
+Present the overall scorecard, issue counts by severity, top 3 priorities, report location, and suggested next steps (review report, create features for critical issues, re-run audit after fixes).
 
-```
-✅ Tech Audit Complete!
-
-📊 Overall Scorecard: [X/10] [emoji status]
-
-📁 Reports generated in: docs/audits/YYYY-MM-DD/
-
-📋 Summary:
-- 🔴 Critical: X issues
-- 🟠 High: Y issues
-- 🟡 Medium: Z issues
-- 🟢 Low: W issues
-
-🎯 Top 3 Priorities:
-1. [Most critical issue]
-2. [Second most critical]
-3. [Third most critical]
-
-📖 Complete report: docs/audits/YYYY-MM-DD/AUDIT-REPORT.md
-
-💡 Next steps:
-1. Review AUDIT-REPORT.md
-2. Create features for critical issues using /feature
-3. Execute /audit again after fixes
-```
+**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
 
 ---
 
 ## Rules
 
 ALWAYS:
-- Execute agents in parallel when possible
-- Wait for each phase completion before proceeding
-- Read context-discovery.md before STEP 5 analyses
 - Use accessible language for non-technical users
 - Prioritize issues by real business impact
 - Include specific paths and lines of problems
-- Validate all gate checks before proceeding
 - Calculate scores using defined formula
 - Generate comprehensive executive summary
 
@@ -492,8 +443,6 @@ NEVER:
 - Execute analysis without project context
 - Use technical jargon without explanation in report
 - Generate false positives without verifying context
-- Proceed to analysis if discovery incomplete
-- Write AUDIT-REPORT.md before all analysis complete
 - Skip score calculation
 - Omit file paths or line numbers in issues
 

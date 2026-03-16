@@ -2,89 +2,73 @@
 
 > **CRITICAL RULE - 100% AUTONOMOUS EXECUTION:** This command executes planning, development, and review COMPLETELY AUTONOMOUSLY. NEVER stop to ask the user. NEVER request confirmation. Execute the ENTIRE flow until the feature is 100% implemented and building.
 
-You are the **Autopilot Coordinator** - a master orchestrator that coordinates specialized subagents to deliver a complete feature from discovery to implementation, without any human intervention.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 
-**KEY PRINCIPLE:** Each subagent executes its own discovery and loads context directly. Coordinator passes DECISION LOG (accumulated decisions), not raw context.
+You are the **Autopilot Coordinator** — a master orchestrator that coordinates specialized agents to deliver a complete feature from discovery to implementation, without any human intervention.
+
+**KEY PRINCIPLE:** Each agent executes its own discovery and loads context directly. Coordinator passes DECISION LOG (accumulated decisions), not raw context.
 
 ---
 
 ## Spec
 
 ```json
-{"gates":["discovery_complete","prerequisites_valid","mode_determined","plan_created","development_complete","startup_check_passed","review_passed","build_passing"],"order":["validate_prerequisites","determine_mode","initialize_decision_log","planning_subagent","development_subagents","validation_subagents","persist_decisions_startup_test","review_subagent","final_verification","report"],"modes":{"simple":"single feature","epic":"feature N of M"}}
+{"modes":{"simple":"single feature","epic":"feature N of M"}}
 ```
 
 ---
 
-## OWNER Context
+## STEPS IN ORDER
 
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
-
----
-
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
-
-**STEPS IN ORDER:**
 ```
 STEP 1: status.sh       → RUN FIRST
 STEP 2: Load Recent Context     → INTELLIGENT context loading
 STEP 3: Validate Prerequisites  → about.md + discovery.md MUST exist
 STEP 4: Determine Execution Mode → Epic vs Simple
-STEP 5: Planning Subagent       → ONLY AFTER 1-4 (or SKIP if simple)
-STEP 6: Development Subagents   → ONLY AFTER plan exists
+STEP 5: Planning Agent          → ONLY AFTER 1-4 (or SKIP if simple)
+STEP 6: Development Agents      → ONLY AFTER plan exists
 STEP 7: Persist Decisions + Startup Test → Log iteration + bootstrap check
-STEP 8: Review Subagent         → ONLY AFTER build + startup pass
-STEP 9: Compliance Gate          → Cross-reference RF/RN vs implementation
-STEP 10: Final Verification     → Build + docs + review.md check
-STEP 11: Completion Report      → AUTOMATIC after verification
+STEP 8: Review Agent            → ONLY AFTER build + startup pass
+STEP 9: Compliance Gate         → Cross-reference RF/RN vs implementation
+STEP 10: Final Verification    → Build + docs + review.md check
+STEP 11: Completion Report     → AUTOMATIC after verification
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE PROHIBITIONS:**
 
 ```
 IF DISCOVERY NOT COMPLETE (about.md missing):
-  ⛔ DO NOT USE: Task for any subagent dispatch
-  ⛔ DO NOT USE: Edit/Write on code files
-  ⛔ DO NOT: Start any development step
-  ⛔ DO: Inform user to run /feature first
+  ⛔ DO NOT dispatch any agent
+  ⛔ DO NOT Edit/Write code files
+  ⛔ DO NOT start any development step
+  ✅ DO inform user to run /feature first
 
 IF FEATURE N REQUESTED BUT DEPENDENCY NOT MET:
-  ⛔ DO NOT USE: Edit/Write on code files
-  ⛔ DO NOT USE: Task for development subagents
-  ⛔ DO: Inform that feature N-1 must be completed first
+  ⛔ DO NOT Edit/Write code files
+  ⛔ DO NOT dispatch development agents
+  ✅ DO inform that feature N-1 must be completed first
 
 IF PLAN NOT CREATED (and not simple feature):
-  ⛔ DO NOT USE: Task for development subagents
-  ⛔ DO NOT USE: Edit/Write on code files
-  ⛔ DO: Execute planning subagent first
+  ⛔ DO NOT dispatch development agents
+  ⛔ DO NOT Edit/Write code files
+  ✅ DO execute planning agent first
 
 IF BUILD FAILING:
-  ⛔ DO NOT USE: Task for review subagent
-  ⛔ DO NOT: Proceed to review step
-  ⛔ DO: Fix build errors first
+  ⛔ DO NOT dispatch review agent
+  ✅ DO fix build errors first
 
 IF STARTUP TEST FAILS (DI/IoC error, not connection):
-  ⛔ DO NOT USE: Task for review subagent
-  ⛔ DO NOT: Proceed to review step
-  ⛔ DO: Fix DI error, re-run startup test
+  ⛔ DO NOT dispatch review agent
+  ✅ DO fix DI error, re-run startup test
 
 ALWAYS:
-  ⛔ DO NOT: Ask user questions (100% autonomous)
-  ⛔ DO NOT: Wait for user confirmation
-  ⛔ DO NOT: Stop to ask for clarification
-  ⛔ DO NOT USE: Bash for git add/commit/stage/push
-  ⛔ DO: Make all decisions autonomously (KISS/YAGNI)
-  ⛔ DO: Fix errors and continue
-  ⛔ DO: Complete 100% of the work
+  ⛔ DO NOT ask user questions (100% autonomous)
+  ⛔ DO NOT wait for user confirmation
+  ⛔ DO NOT use Bash for git add/commit/stage/push
+  ✅ DO make all decisions autonomously (KISS/YAGNI)
+  ✅ DO fix errors and continue
+  ✅ DO complete 100% of the work
 ```
 
 ---
@@ -110,78 +94,6 @@ IF plan.md does NOT have Features:
 
 ---
 
-## Model Selection (CRITICAL)
-
-**EVERY subagent dispatch MUST specify the appropriate model based on task complexity.**
-
-### Model Selection Table
-
-{"implementation":{"database":"min sonnet (opus if multi-entity)","backend":"min sonnet (opus if CQRS/integration)","frontend":"min sonnet (opus if new design system)"},"validators":{"all":"sonnet"},"fix":{"syntax":"haiku","logic":"sonnet"},"planning":"opus (ALWAYS)","review":"sonnet (opus if critical)","NEVER":"haiku for implementation (database/backend/frontend)"}
-
-### Usage in Task Dispatch
-
-```markdown
-Task({
-  subagent_type: "[see options below]",
-  model: "[haiku|sonnet|opus]",  // <-- MANDATORY
-  prompt: "..."
-})
-```
-
-### Subagent Types (Optional Specialization)
-
-| Phase | Default | Specialized Alternative |
-|-------|---------|------------------------|
-| Planning | general-purpose | feature-dev:code-architect |
-| Database | general-purpose | - |
-| Backend | general-purpose | - |
-| Frontend | general-purpose | - |
-| Review | general-purpose | feature-dev:code-reviewer |
-| Fix | general-purpose | - |
-
-**NOTE:** Specialized agents may provide better results but MUST still follow the Self-Bootstrap pattern and respect the prompt structure defined in this command. If using specialized agents, ensure your prompt does NOT conflict with their built-in behaviors.
-
-### Decision Rules
-
-1. **Default:** `sonnet` (balanced)
-2. **Downgrade to `haiku`:** Trivial tasks, syntax fixes, simple adjustments
-3. **Upgrade to `opus`:** Architectural decisions, critical code, multiple domains
-
----
-
-## PROMPT BUILDER STRUCTURE
-
-**CRITICAL:** All subagent prompts MUST follow this modular structure with SELF-BOOTSTRAP.
-
-**SUBAGENT PROMPT TEMPLATE:**
-- ROLE: You are the [AREA] [agent type] for feature [ID]
-- COMMAND REFERENCE: (FIRST STEP) Read the relevant `.codeadd/commands/add.*.md` as pattern reference
-- TASK_DOCUMENTS: List of doc paths assembled by coordinator (subagent reads directly)
-- SKILLS: MANDATORY: [area skill] | ADDITIONAL: [based on context]
-- DECISION LOG: (from previous phases) Accumulated decisions from earlier subagents
-- COORDINATOR NOTES: (intelligent guidance) Warnings, patterns to follow/avoid
-- TASK: Specific deliverables for this subagent
-- RULES: Autopilot rules - no questions, no commits, etc.
-- REPORT FORMAT: What to return to coordinator
-
-**Command-as-Reference + TASK_DOCUMENTS Block (include in ALL subagent prompts):**
-```
-## MANDATORY: Load Command & Context (FIRST STEP)
-1. Read the relevant command .md as REFERENCE for patterns and conventions:
-   - Planning subagent: `.codeadd/commands/add.plan.md`
-   - Development subagents: `.codeadd/commands/add.build.md`
-   - Review subagent: `.codeadd/commands/add.check.md`
-   Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
-2. Run: bash .codeadd/scripts/status.sh
-3. Read ALL files listed in TASK_DOCUMENTS section above
-4. Parse PROJECT_PATHS from script output and read relevant files
-   - These contain implementation patterns (logging, validation, state, components, etc)
-   - Read the file(s) relevant to your area (match app name you're modifying)
-5. Read your area's skill file (see SKILLS section)
-```
-
----
-
 ## STEP 1: Run Context Mapper (RUN FIRST)
 
 ```bash
@@ -190,75 +102,37 @@ bash .codeadd/scripts/status.sh
 
 **Parse the output to get:**
 - `FEATURE_ID`, `CURRENT_PHASE`
-- `HAS_DESIGN`, `HAS_PLAN`
-- `HAS_FOUNDATIONS`
-- `RECENT_CHANGELOGS` - latest finalized features with summaries
-- `EPIC` - epic name (if detected)
-- `FEATURES` - format `X/Y` where X=completed, Y=total (if plan.md has Features = Epic)
-- `NEXT_FEATURE` - next feature to execute
+- `HAS_DESIGN`, `HAS_PLAN`, `HAS_FOUNDATIONS`
+- `RECENT_CHANGELOGS` — latest finalized features with summaries
+- `EPIC` — epic name (if detected)
+- `FEATURES` — format `X/Y` where X=completed, Y=total
+- `NEXT_FEATURE` — next feature to execute
 
 ---
 
 ## STEP 2: Load Recent Context (INTELLIGENT)
 
-**The script returns RECENT_CHANGELOGS with summaries of the latest finalized features.**
-
-**Intelligent reading rule:**
-
 1. **Analyze RECENT_CHANGELOGS** from script output
-2. **Identify matches** between the current request/feature and the summaries:
-   - Common keywords
-   - Related domain (e.g.: auth, payments, users)
-   - Potential dependencies
+2. **Identify matches** between the current request/feature and the summaries (common keywords, related domain, potential dependencies)
 3. **If relevant match found:**
    - Check if `discovery.md` of current feature already references that feature
    - If NOT referenced: Read full changelog: `docs/features/{FEAT_ID}/changelog.md`
    - If ALREADY referenced: Skip (avoid redundancy)
-4. **Extract useful context:**
-   - Files created/modified
-   - Established patterns
-   - Technical decisions
-   - Correct terminology for searches
+4. **Extract useful context:** files created/modified, established patterns, technical decisions, correct terminology for searches
 
 ### 2.1 Cross-Feature Decisions Context (PRD0031)
 
 **IF `.codeadd/project/decisions.jsonl` exists:**
-1. READ file
-2. FILTER entries where `"type":"pivot"`
-3. TAKE last 20 entries
-4. ADD to Decision Log initialization as: "Previous pivots (avoid repeating):"
+1. Read file, filter entries where `"type":"pivot"`, take last 20 entries
+2. Add to Decision Log initialization as: "Previous pivots (avoid repeating):"
    - Format each: `[agent] pivoted from "[from]" → "[decision]": [reason]`
-
-**Decision example:**
-```
-RECENT_CHANGELOGS:
-  F0017-enhanced-logging|Implemented structured logging system...
-  F0016-user-metrics|Added metrics tracking...
-
-Current feature: F0020-audit-trail
-  → Match with F0017-enhanced-logging (logging related)
-  → Check discovery.md: mentions F0017?
-    → NO: Read docs/features/F0017-enhanced-logging/changelog.md
-    → YES: Skip, already has context
-```
-
-**Expected output:** Relevant context from recent features to inform planning.
 
 ---
 
 ## STEP 3: Validate Prerequisites
 
-**Check if discovery is complete:**
-- `about.md` exists? → If not, inform user to run `/feature`
-- `discovery.md` exists? → If not, inform user to run `/feature`
-
-**⛔ IF about.md OR discovery.md MISSING:**
-- ⛔ DO NOT USE: Task for any subagent dispatch
-- ⛔ DO NOT USE: Edit/Write on code files
-- ⛔ DO: Inform user: "Discovery not found. Use /feature first to complete discovery."
-- ⛔ DO: STOP execution
-
-**Recommend design if frontend:**
+- `about.md` exists? → If not, inform user to run `/feature` and STOP
+- `discovery.md` exists? → If not, inform user to run `/feature` and STOP
 - Feature has frontend components AND `design.md` missing? → Warn user to run `/design`
 
 ---
@@ -269,57 +143,29 @@ Current feature: F0020-audit-trail
 
 **IF `HAS_EPIC=true` (epic.md detected by status.sh — PRD0032 structure):**
 
-```markdown
-## Execution Mode: EPIC (PRD0032)
-
-**FEATURE:** ${FEATURE_ID}
-**CURRENT_SF:** ${EPIC_CURRENT_SF}
-**PROGRESS:** ${EPIC_PROGRESS}
-
-IF user passed "feature SF0N":
-  - Validate it matches EPIC_CURRENT_SF
-  - IF ahead: BLOCK (previous subfeature pending)
-
-IF user did NOT pass flag:
-  - Execute EPIC_CURRENT_SF automatically
-  - Inform: "Executing subfeature ${EPIC_CURRENT_SF} — loading docs from subfeature dir"
-
-TASK_DOCUMENTS (assemble for subagent prompts):
-  - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md
-  - docs/features/${FEATURE_ID}/discovery.md (shared)
-  - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/plan.md (if exists)
-  - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/tasks.md (if exists)
-```
+- Validate requested subfeature matches EPIC_CURRENT_SF (if ahead: BLOCK)
+- If no flag passed: execute EPIC_CURRENT_SF automatically
+- Assemble TASK_DOCUMENTS from subfeature dir:
+  - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
+  - `docs/features/${FEATURE_ID}/discovery.md` (shared)
+  - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/plan.md` (if exists)
+  - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/tasks.md` (if exists)
 
 **IF plan.md exists AND has section `## Features` (Legacy Epic):**
 
-```markdown
-## Execution Mode: EPIC
+- Validate N == NEXT_FEATURE (dependency satisfied)
+- IF N > NEXT_FEATURE: BLOCK. IF N <= completed: BLOCK (already executed)
+- If no flag passed: execute NEXT_FEATURE automatically
 
-**EPIC:** ${EPIC_NAME}
-**FEATURES output:** ${FEATURES} (e.g.: 1/3 = 1 complete of 3 total)
-**NEXT_FEATURE:** ${NEXT_FEATURE}
-
-IF user passed "feature N":
-  - Validate N == NEXT_FEATURE (dependency satisfied)
-  - IF N > NEXT_FEATURE: BLOCK (previous features pending)
-  - IF N <= completed features: BLOCK (feature already executed)
-
-IF user did NOT pass flag:
-  - Execute NEXT_FEATURE automatically
-  - Inform: "Executing Feature ${NEXT_FEATURE} of ${TOTAL_FEATURES}"
-```
-
-**IF plan.md does NOT have Features:**
-- Execution Mode: SIMPLE (simple feature, default behavior)
+**IF plan.md does NOT have Features:** Execution Mode: SIMPLE
 
 ### 4.2: Initialize Decision Log
 
-**Create the Decision Log that will accumulate across steps:**
+Create the Decision Log that will accumulate across steps:
 
 ```markdown
 ### DECISION LOG - ${FEATURE_ID}
-<!-- Coordinator initializes, subagents append -->
+<!-- Coordinator initializes, agents append -->
 
 #### Initialization
 - Feature: ${FEATURE_ID}
@@ -327,403 +173,279 @@ IF user did NOT pass flag:
 - Has Plan: ${HAS_PLAN}
 - Execution Mode: [SIMPLE|EPIC]
 - Target: [feature number or ALL]
-- Scope: [to be determined by Planning Subagent]
+- Scope: [to be determined by Planning Agent]
 ```
 
 ### 4.3: Determine Scope (Quick Check)
 
-**Read about.md briefly to identify scope:**
-- Database needed? (new entities/tables)
-- Backend needed? (API endpoints)
-- Frontend needed? (UI components)
-- Workers needed? (async processing)
+Read about.md briefly to identify scope: Database? Backend? Frontend? Workers?
+Update Decision Log with scope.
 
-**Update Decision Log with scope.**
-
-**NOTE:** Coordinator assembles TASK_DOCUMENTS with the correct paths (epic-aware). Subagents read these docs directly — no conditional logic needed in subagent prompts.
+**NOTE:** Coordinator assembles TASK_DOCUMENTS with the correct paths (epic-aware). Agents read these docs directly.
 
 ---
 
-## STEP 5: Planning Subagent
+## STEP 5: Planning Agent
 
 ### Skip Planning for Simple Features
 
-If feature is very simple (based on about.md analysis):
-- Single component
-- < 5 files to modify
-- No new database entities
+If feature is very simple (single component, < 5 files, no new database entities): SKIP to STEP 6.
 
-**Then:** SKIP this step, go directly to STEP 6 (Development).
+### Dispatch Planning Agent
 
-**Note:** Subagents still Self-Bootstrap even for simple features.
-
-### Dispatch Planning Subagent
-
-**Use Task tool with `subagent_type: "general-purpose"`**
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** heavy
+- **Output:** plan.md with technical plan and Spec Checklist
+- **Prompt:**
 
 ```
-description: "Plan feature ${FEATURE_ID}"
-model: "opus"  # ALWAYS opus - planning requires best architectural reasoning
-prompt: |
-  ## ROLE
-  You are the PLANNING agent for feature ${FEATURE_ID}.
-  Your job is to coordinate specialized subagents AND consolidate a complete technical plan.
+## ROLE
+You are the PLANNING agent for feature ${FEATURE_ID}.
 
-  ## MANDATORY: Load Command Reference (FIRST STEP)
-  1. Read `.codeadd/commands/add.plan.md` — this is your PRIMARY reference.
-     Follow its step structure, skill loading, consolidation rules, and output format.
-     Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
-  2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs as specified in add.plan.md
+## MANDATORY: Load Command Reference (FIRST STEP)
+1. Read `.codeadd/commands/add.plan.md` — PRIMARY reference.
+   Execute as if `--yolo` (skip [STOP] points, no confirmations).
+2. Run: `bash .codeadd/scripts/status.sh`
+3. Read feature docs as specified in add.plan.md
 
-  ## DECISION LOG (from coordinator)
-  ${DECISION_LOG}
+## DECISION LOG (from coordinator)
+${DECISION_LOG}
 
-  ## COORDINATOR NOTES
-  ${COORDINATOR_NOTES}
+## COORDINATOR NOTES
+${COORDINATOR_NOTES}
 
-  ## AUTOPILOT-SPECIFIC RULES (override add-plan.md where conflicting)
-  - NO questions - use KISS/YAGNI for decisions
-  - NO commits - just create plan.md
-  - 100% autonomous - never stop for confirmation
-  - MUST generate Spec Checklist (PRD0034) at end of plan.md
-  - Preserve subagent work - don't rewrite, just append
+## TASK
+Create complete technical plan following add.plan.md patterns.
+MUST generate Spec Checklist (PRD0034) at end of plan.md.
 
-  ## REPORT FORMAT
-  Return:
-  1. Plan file location
-  2. Key technical decisions made (bulleted list)
-  3. Components per area (counts)
-  4. Scope confirmed: [Database|Backend|Frontend|Workers]
-  5. Gaps filled: [list of what was added during validation]
+## RULES
+- NO questions — use KISS/YAGNI for decisions
+- NO commits — just create plan.md
+- 100% autonomous — never stop for confirmation
+
+## REPORT: Plan file location, key decisions, component counts per area, scope confirmed, gaps filled.
 ```
 
 ### Process Planning Output
 
-**After subagent returns:**
-
 1. Read the created plan.md
 2. **VALIDATE** plan has all details from discovery (schemas, contracts, types)
-3. Extract key decisions
-4. Update Decision Log:
-
-```markdown
-#### Planning (from Planning Subagent)
-- Model Used: opus
-- Database: [decisions from plan]
-- Backend: [endpoints, commands, events]
-- Frontend: [pages, components]
-- Implementation order: [sequence]
-- Gaps filled: [what consolidator added]
-```
+3. Extract key decisions, update Decision Log with planning decisions
 
 ---
 
-## STEP 6: Development Subagents
+## STEP 6: Development Agents
 
-### Update Decision Log with Plan
-
-```markdown
-#### Development Start
-- Plan location: docs/features/${FEATURE_ID}/plan.md
-- Dependencies: Database → Backend → [parallel: Workers, Frontend]
-- Models: Database=[model], Backend=[model], Frontend=[model]
-```
-
-### Database Subagent (if needed)
-
-```
-description: "Develop Database for ${FEATURE_ID}"
-model: "sonnet"  # Use "opus" if multiple related entities or complex relationships
-prompt: |
-  ## ROLE
-  You are the DATABASE developer for feature ${FEATURE_ID}.
-
-  ## MANDATORY: Load Command & Context (FIRST STEP)
-  1. Read `.codeadd/commands/add.build.md` — reference for development patterns and conventions.
-     Your scope is LIMITED to DATABASE area only.
-  2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md
-     - docs/features/${FEATURE_ID}/discovery.md
-     - docs/features/${FEATURE_ID}/plan.md (PRIMARY - contains DB specs)
-  4. Read: `.codeadd/skills/add-database-development/SKILL.md` (MANDATORY)
-
-  ## DECISION LOG (from planning)
-  ${DECISION_LOG}
-
-  ## COORDINATOR NOTES
-  ${COORDINATOR_NOTES}
-
-  ## TASK
-  Implement database layer exactly as specified in plan.md:
-  - Entity, Enum, Types, Migration, Repository (paths from CLAUDE.md)
-  - Update all barrel exports
-  - Search codebase for similar files as reference
-
-  ## RULES
-  - 100% of plan.md database specs
-  - NO deferrals - implement everything
-  - NO questions - 100% autonomous
-  - Build MUST pass (see CLAUDE.md for build command)
-
-  ## DECISION LOGGING (MANDATORY — PRD0031)
-  Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
-  - PIVOT: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "database" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
-
-  ## REPORT FORMAT
-  Return:
-  1. FILES_CREATED: [list with paths]
-  2. FILES_MODIFIED: [list with paths]
-  3. MIGRATION_NAME: [filename]
-  4. BUILD_STATUS: [pass/fail]
-  5. DECISIONS_MADE: [any decisions during implementation]
-```
-
-### Backend Subagent
-
-```
-description: "Develop Backend for ${FEATURE_ID}"
-model: "sonnet"  # Use "opus" if external integrations or complex CQRS
-prompt: |
-  ## ROLE
-  You are the BACKEND developer for feature ${FEATURE_ID}.
-
-  ## MANDATORY: Load Command & Context (FIRST STEP)
-  1. Read `.codeadd/commands/add.build.md` — reference for development patterns and conventions.
-     Your scope is LIMITED to BACKEND area only.
-  2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md
-     - docs/features/${FEATURE_ID}/discovery.md
-     - docs/features/${FEATURE_ID}/plan.md (PRIMARY - contains API specs)
-  4. Read: `.codeadd/skills/add-backend-development/SKILL.md` (MANDATORY)
-
-  ## DECISION LOG (accumulated)
-  ${DECISION_LOG}
-
-  ## COORDINATOR NOTES
-  ${COORDINATOR_NOTES}
-
-  ## TASK
-  Implement backend API exactly as specified in plan.md:
-  - Module structure, DTOs, Commands, Events, Controller, Service (paths from CLAUDE.md)
-  - Register module appropriately
-  - Search codebase for similar files as reference
-
-  ## RULES
-  - 100% of plan.md backend specs
-  - NO deferrals
-  - NO questions - 100% autonomous
-  - Build MUST pass (see CLAUDE.md for build command)
-
-  ## DECISION LOGGING (MANDATORY — PRD0031)
-  Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
-  - PIVOT: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "backend" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
-
-  ## REPORT FORMAT
-  Return:
-  1. FILES_CREATED: [list with paths]
-  2. FILES_MODIFIED: [list with paths]
-  3. ENDPOINTS: [list with method + path]
-  4. BUILD_STATUS: [pass/fail]
-  5. DECISIONS_MADE: [any decisions]
-  6. DTO_CONTRACTS: [list DTOs for frontend to mirror]
-```
-
-### Frontend Subagent
-
-```
-description: "Develop Frontend for ${FEATURE_ID}"
-model: "sonnet"  # Use "opus" if new design system or complex UX flows
-prompt: |
-  ## ROLE
-  You are the FRONTEND developer for feature ${FEATURE_ID}.
-
-  ## MANDATORY: Load Command & Context (FIRST STEP)
-  1. Read `.codeadd/commands/add.build.md` — reference for development patterns and conventions.
-     Your scope is LIMITED to FRONTEND area only.
-  2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs IN ORDER:
-     - docs/features/${FEATURE_ID}/about.md
-     - docs/features/${FEATURE_ID}/discovery.md
-     - docs/features/${FEATURE_ID}/design.md (if exists - PRIMARY for UI)
-     - docs/features/${FEATURE_ID}/plan.md (contains frontend specs + backend DTOs)
-  4. Read: `.codeadd/skills/add-frontend-development/SKILL.md` (MANDATORY)
-  5. If NO design.md: Also load `.codeadd/skills/add-ux-design/SKILL.md` for SaaS UX patterns
-
-  For specific components, use Grep on skill docs:
-  - shadcn: .codeadd/skills/add-ux-design/shadcn-docs.md
-  - Tailwind: .codeadd/skills/add-ux-design/tailwind-v3-docs.md
-  - Motion: .codeadd/skills/add-ux-design/motion-dev-docs.md
-  - Charts: .codeadd/skills/add-ux-design/recharts-docs.md
-  - Tables: .codeadd/skills/add-ux-design/tanstack-table-docs.md
-  - Query: .codeadd/skills/add-ux-design/tanstack-query-docs.md
-
-  ## DECISION LOG (accumulated)
-  ${DECISION_LOG}
-
-  ## COORDINATOR NOTES
-  ${COORDINATOR_NOTES}
-
-  ## TASK
-  Implement frontend exactly as specified in plan.md + design.md:
-  - Types, Hooks, Store, Components, Pages (paths from CLAUDE.md)
-  - Update routes if needed
-  - Search codebase for similar files as reference
-
-  ## RULES
-  - 100% of design.md components (if exists)
-  - 100% of plan.md frontend specs
-  - NO deferrals
-  - NO questions - 100% autonomous
-  - Build MUST pass (see CLAUDE.md for build command)
-
-  ## REPORT FORMAT
-  Return:
-  1. FILES_CREATED: [list with paths]
-  2. FILES_MODIFIED: [list with paths]
-  3. ROUTES_ADDED: [list with paths]
-  4. BUILD_STATUS: [pass/fail]
-  5. DECISIONS_MADE: [any decisions]
-```
-
-### Parallel Execution Strategy (WITH VALIDATION)
-
-**CRITICAL:** After EACH area implementation, dispatch a Validator Subagent to validate code against skill checklists and auto-correct violations BEFORE proceeding.
+### Execution Order
 
 ```
 1. Database FIRST (others depend on it)
-   → Wait for completion
-   → Dispatch Database Validator → Wait
-   → Update Decision Log with database outputs + validator results
+   → Wait → Dispatch Database Validator → Wait
+   → Update Decision Log
 
 2. Backend + Frontend in PARALLEL (if both needed)
-   → Send BOTH Task calls in SINGLE message
-   → Wait for both to complete
-   → Dispatch Backend Validator + Frontend Validator in PARALLEL → Wait
-   → Update Decision Log with all outputs + validator results
+   → Send BOTH dispatches in SINGLE message
+   → Wait → Dispatch Backend Validator + Frontend Validator in PARALLEL → Wait
+   → Update Decision Log
 
 3. Build Verification (after ALL validators)
 ```
 
-### Validator Subagent Prompt Template
-
-**Use for EACH area after implementation completes:**
+### Agent Bootstrap Block (include in ALL agent prompts)
 
 ```
-description: "Validate ${AREA} for ${FEATURE_ID}"
-model: "sonnet"
-prompt: |
-  ## ROLE
-  You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
-  Your job is to validate implemented code against the skill checklist and auto-correct violations.
+## MANDATORY: Load Command & Context (FIRST STEP)
+1. Read `.codeadd/commands/add.build.md` — reference for patterns and conventions.
+   Your scope is LIMITED to ${AREA} area only.
+2. Run: `bash .codeadd/scripts/status.sh`
+3. Read ALL files listed in TASK_DOCUMENTS
+4. Parse PROJECT_PATHS from script output and read relevant files
+5. Read your area's skill file (see SKILLS section)
+```
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  1. Run: bash .codeadd/scripts/status.sh
-  2. Parse FEATURE_ID from output
-  3. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md
+### Database Agent (if needed)
 
-  ## SKILLS
-  MANDATORY - Read BEFORE validating:
-  - .codeadd/skills/add-${AREA}-development/SKILL.md (contains Validation Checklist)
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard (upgrade if multi-entity or complex relationships)
+- **Output:** Entity, Enum, Types, Migration, Repository files
+- **Prompt:**
 
-  ## IMPLEMENTED FILES (from ${AREA} Subagent)
-  ${FILES_CREATED}
-  ${FILES_MODIFIED}
+```
+## ROLE
+You are the DATABASE developer for feature ${FEATURE_ID}.
 
-  ## DECISION LOG (accumulated)
-  ${DECISION_LOG}
+[Agent Bootstrap Block — scope: DATABASE]
 
-  ## TASK
-  ### Step 1: Load Checklist
-  Extract the "## Validation Checklist" section from the skill file.
-  Each item has format: `- [ ] Description` + `→ Check: how to validate`
+## DECISION LOG
+${DECISION_LOG}
 
-  ### Step 2: Read ALL Implemented Files
-  Read EVERY file listed in FILES_CREATED and FILES_MODIFIED.
+## COORDINATOR NOTES
+${COORDINATOR_NOTES}
 
-  ### Step 3: Validate Against Checklist
-  For EACH checklist item, verify the implemented files comply.
-  If violated: document the violation and prepare fix.
+## SKILLS: .codeadd/skills/add-database-development/SKILL.md (MANDATORY)
 
-  ### Step 4: Apply Fixes
-  Fix ALL violations found. Do NOT defer to review.
+## TASK
+Implement database layer exactly as specified in plan.md.
+Update all barrel exports. Search codebase for similar files as reference.
 
-  ### Step 5: Verify Build
-  Run build command (from CLAUDE.md) to ensure fixes didn't break anything.
+## RULES
+- 100% of plan.md database specs, NO deferrals, NO questions
+- Build MUST pass
 
-  ## RULES
-  - NO questions - fix violations automatically
-  - Checklist violations = MUST FIX (not optional)
-  - Build MUST pass after fixes
-  - Report ALL issues fixed
+## DECISION LOGGING (PRD0031)
+Log only pivots: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "database" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
 
-  ## SPEC COMPLIANCE CHECK (light — PRD0034)
-  EXECUTE AFTER skill checklist validation, for the CURRENT AREA ONLY:
+## REPORT: FILES_CREATED, FILES_MODIFIED, MIGRATION_NAME, BUILD_STATUS, DECISIONS_MADE
+```
 
-  1. READ `## Spec Checklist` from docs/features/${FEATURE_ID}/plan.md
-     IF no Spec Checklist section: SKIP and add note "No Spec Checklist in plan.md"
-  2. FILTER items for current area (Backend / Database / Frontend)
-  3. For each item:
-     a. Locate in code: file, class, method, route
-     b. Compare: expected name vs implemented, expected type vs implemented
-     c. Status: ✅ MATCH | ⚠️ PARTIAL | ❌ MISSING
-  4. IF ⚠️ PARTIAL: AUTO-FIX to match spec OR document divergence
-  5. IF ❌ MISSING: document as INCOMPLETE
+### Backend Agent
 
-  ## REPORT FORMAT
-  Return:
-  1. CHECKLIST_RESULTS: [each item: pass / fixed]
-  2. VIOLATIONS_FOUND: [count]
-  3. VIOLATIONS_FIXED: [list: file, issue, fix applied]
-  4. FILES_MODIFIED: [files changed during validation]
-  5. BUILD_STATUS: [pass/fail]
-  6. SPEC_COMPLIANCE: [X/Y items matched]
-  7. SPEC_STATUS: [COMPLIANT | DIVERGENT | INCOMPLETE]
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard (upgrade if external integrations or complex CQRS)
+- **Output:** Module structure, DTOs, Commands, Events, Controller, Service
+- **Prompt:**
+
+```
+## ROLE
+You are the BACKEND developer for feature ${FEATURE_ID}.
+
+[Agent Bootstrap Block — scope: BACKEND]
+
+## DECISION LOG
+${DECISION_LOG}
+
+## COORDINATOR NOTES
+${COORDINATOR_NOTES}
+
+## SKILLS: .codeadd/skills/add-backend-development/SKILL.md (MANDATORY)
+
+## TASK
+Implement backend API exactly as specified in plan.md.
+Register module appropriately. Search codebase for similar files as reference.
+
+## RULES
+- 100% of plan.md backend specs, NO deferrals, NO questions
+- Build MUST pass
+
+## DECISION LOGGING (PRD0031)
+Log only pivots: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "backend" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
+
+## REPORT: FILES_CREATED, FILES_MODIFIED, ENDPOINTS, BUILD_STATUS, DECISIONS_MADE, DTO_CONTRACTS
+```
+
+### Frontend Agent
+
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard (upgrade if new design system or complex UX flows)
+- **Output:** Types, Hooks, Store, Components, Pages
+- **Prompt:**
+
+```
+## ROLE
+You are the FRONTEND developer for feature ${FEATURE_ID}.
+
+[Agent Bootstrap Block — scope: FRONTEND]
+If NO design.md: Also load `.codeadd/skills/add-ux-design/SKILL.md`
+
+## DECISION LOG
+${DECISION_LOG}
+
+## COORDINATOR NOTES
+${COORDINATOR_NOTES}
+
+## SKILLS
+MANDATORY: .codeadd/skills/add-frontend-development/SKILL.md
+For specific components, Grep skill docs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md (all in .codeadd/skills/add-ux-design/)
+
+## TASK
+Implement frontend exactly as specified in plan.md + design.md.
+Update routes if needed. Search codebase for similar files as reference.
+
+## RULES
+- 100% of design.md components (if exists) + plan.md frontend specs
+- NO deferrals, NO questions
+- Build MUST pass
+
+## REPORT: FILES_CREATED, FILES_MODIFIED, ROUTES_ADDED, BUILD_STATUS, DECISIONS_MADE
+```
+
+### Validator Agent Template
+
+**Dispatch after EACH area implementation completes:**
+
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard
+- **Output:** Checklist validation results + auto-fixes
+- **Prompt:**
+
+```
+## ROLE
+You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
+Validate implemented code against skill checklist and auto-correct violations.
+
+## BOOTSTRAP
+1. Run: bash .codeadd/scripts/status.sh
+2. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md (contains Validation Checklist)
+
+## IMPLEMENTED FILES (from ${AREA} Agent)
+${FILES_CREATED}
+${FILES_MODIFIED}
+
+## DECISION LOG
+${DECISION_LOG}
+
+## TASK
+1. Extract "## Validation Checklist" from skill file
+2. Read ALL implemented files
+3. Validate each checklist item — if violated: fix immediately
+4. Verify build after fixes
+
+## SPEC COMPLIANCE CHECK (light — PRD0034)
+After skill checklist, for CURRENT AREA ONLY:
+1. Read `## Spec Checklist` from plan.md (skip if absent)
+2. Filter items for current area
+3. For each: locate in code, compare expected vs implemented
+4. Status: MATCH | PARTIAL (auto-fix) | MISSING (document as INCOMPLETE)
+
+## RULES
+- NO questions — fix violations automatically
+- Checklist violations = MUST FIX
+- Build MUST pass after fixes
+
+## REPORT: CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS, SPEC_COMPLIANCE, SPEC_STATUS
 ```
 
 ### Process Validator Output
 
-**After each validator returns, update Decision Log:**
-
-```markdown
-#### Validation - ${AREA}
-- Model Used: sonnet
-- Violations Found: [count]
-- Violations Fixed: [list]
-- Files Modified: [list]
-- Build Status: [pass/fail]
-```
+After each validator returns, update Decision Log with violations found/fixed, files modified, build status.
 
 ### Build Verification After Development + Validation
 
-```bash
-npm run build
+Run project build. If fails: dispatch fix agent with error output and decision log.
+
+### Fix Agent (for build errors)
+
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** light (upgrade if logic errors, not just syntax)
+- **Output:** Fixed build errors
+- **Prompt:**
+
 ```
+## ROLE
+Fix BUILD ERRORS for feature ${FEATURE_ID}.
 
-**If fails:** Dispatch fix subagent with validator outputs + error output and decision log.
+## Error Output
+[paste build error output]
 
-### Fix Subagent (for build errors)
-
-```
-description: "Fix build errors for ${FEATURE_ID}"
-model: "haiku"  # Use "sonnet" only if logic errors, not syntax
-prompt: |
-  ## ROLE
-  You are FIXING BUILD ERRORS for feature ${FEATURE_ID}.
-
-  ## Error Output
-  [paste build error output]
-
-  ## Your Task
-  Fix ALL build errors. Do not stop until build passes 100%.
-  Focus on syntax, imports, types - not logic changes.
-
-  ## RULES
-  - Fix errors only, don't refactor
-  - Run build after each fix
-  - Report what was fixed
+## TASK
+Fix ALL build errors. Focus on syntax, imports, types — not logic changes.
+Run build after each fix. Do not stop until build passes 100%.
 ```
 
 ---
@@ -732,7 +454,7 @@ prompt: |
 
 ### 7.1 Persist Decisions
 
-**After ALL development + validation completes (before review), log iteration to iterations.jsonl:**
+After ALL development + validation completes, log iteration:
 
 ```bash
 bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "add" "/autopilot" '"slug":"<FEATURE_SLUG>","what":"<WHAT max 60 chars>","files":["<list from Decision Log>"]'
@@ -744,133 +466,93 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 git tag "${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 ```
 
-**Update epic.md subfeature status to `in_progress` (will move to `done` after `/add.ship`).**
+Update epic.md subfeature status to `in_progress` (will move to `done` after `/add.ship`).
 
 ### 7.2 Application Startup Test (PRD0034)
 
-**Validates IoC/DI at runtime — build passing ≠ app starting.**
+Validates IoC/DI at runtime — build passing does not mean app starts.
 
 ```
 1. CHECK: does `start:test` exist in package.json scripts?
 2. IF NOT EXISTS:
-   a. ANALYZE project: framework (NestJS, Express, etc.), entry point, bootstrap method
+   a. ANALYZE project: framework, entry point, bootstrap method
    b. CREATE ./scripts/bootstrap-check.ts
-      The script MUST: bootstrap completely, NOT listen()/serve(), exit(0) OK, exit(1) error
+      Must: bootstrap completely, NOT listen()/serve(), exit(0) OK, exit(1) error
    c. ADD to package.json: "start:test": "ts-node ./scripts/bootstrap-check.ts"
 3. EXECUTE: npm run start:test
 4. IF exit code 0: STARTUP_CHECK: PASSED → proceed to STEP 8
 5. IF exit code 1:
-   - DI/IoC error ("can't resolve dependencies", "is not a provider"):
-     → AUTO-FIX (add missing provider to module), re-run
-     → If still failing: BLOCKED — stop and report
-   - Connection error (DB/Redis unavailable):
-     → STARTUP_CHECK: SKIPPED (environment-specific, not code error)
+   - DI/IoC error → AUTO-FIX (add missing provider), re-run. If still failing: BLOCKED
+   - Connection error (DB/Redis unavailable) → STARTUP_CHECK: SKIPPED (environment-specific)
 ```
-
-**⛔ IF STARTUP_CHECK FAILS (DI error, not fixable):**
-- ⛔ DO NOT USE: Task for review subagent
-- ✅ DO: Report DI error with exact provider/module details
 
 ---
 
-## STEP 8: Review Subagent
+## STEP 8: Review Agent
 
-**⛔ GATE CHECK: Build MUST be passing AND Startup Test MUST be PASSED/SKIPPED before dispatching review.**
-- IF build failing: Fix build errors first (use Fix Subagent)
-- IF startup test BLOCKED: Fix DI errors first
-- IF both OK: Proceed
+**GATE CHECK:** Build MUST be passing AND Startup Test MUST be PASSED/SKIPPED before dispatching review.
 
-### Dispatch Review Subagent
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** heavy
+- **Output:** review.md with Quality Gate Report
+- **Prompt:**
 
 ```
-description: "Review feature ${FEATURE_ID}"
-model: "sonnet"  # Use "opus" for critical code review or security-sensitive features
-prompt: |
-  ## ROLE
-  You are the CODE REVIEWER for feature ${FEATURE_ID}.
-  Your job is to validate code AND product (requirements 100% implemented).
+## ROLE
+You are the CODE REVIEWER for feature ${FEATURE_ID}.
+Validate code AND product (requirements 100% implemented).
 
-  ## MANDATORY: Load Command Reference (FIRST STEP)
-  1. Read `.codeadd/commands/add.check.md` — this is your PRIMARY reference.
-     Follow its step structure, skill loading, validation patterns, and output format.
-     Execute it as if you received `--yolo` (skip all [STOP] points, no confirmations).
-  2. Run: `bash .codeadd/scripts/status.sh`
-  3. Read feature docs as specified in add.check.md
-  4. ALSO read: `docs/features/${FEATURE_ID}/decisions.jsonl` (PRD0031 — areas with multiple pivots need extra review attention)
+## MANDATORY: Load Command Reference (FIRST STEP)
+1. Read `.codeadd/commands/add.check.md` — PRIMARY reference.
+   Execute as if `--yolo` (skip [STOP] points, no confirmations).
+2. Run: `bash .codeadd/scripts/status.sh`
+3. Read feature docs as specified in add.check.md
+4. Read: `docs/features/${FEATURE_ID}/decisions.jsonl` (areas with multiple pivots need extra review)
 
-  ## DECISION LOG (from previous phases)
-  ${COMPLETE_DECISION_LOG}
+## DECISION LOG
+${COMPLETE_DECISION_LOG}
+Contains FILES_CREATED and FILES_MODIFIED from all agents.
 
-  Contains FILES_CREATED and FILES_MODIFIED from all subagents.
+## COORDINATOR NOTES
+${COORDINATOR_NOTES}
 
-  ## COORDINATOR NOTES
-  ${COORDINATOR_NOTES}
+## AUTOPILOT-SPECIFIC ADDITIONS (extend add.check.md)
 
-  ## AUTOPILOT-SPECIFIC ADDITIONS (extend add.check.md)
-  Beyond what add.check.md specifies, ALSO do:
+### Spec Compliance Audit (PRD0034 — BEFORE technical review)
+1. Read `## Spec Checklist` from plan.md (all areas)
+   If absent: extract contracts from plan.md prose (routes, services, DTOs)
+2. For EACH item: locate implementation with file:line, validate existence AND behavior
+3. Cross-reference: items cover ALL RF/RN from about.md?
+4. Status per item: COMPLIANT | DIVERGENT | MISSING
 
-  ### Spec Compliance Audit (PRD0034 — BEFORE technical review)
-  1. READ `## Spec Checklist` from plan.md (all areas)
-     IF no Spec Checklist: extract contracts from plan.md prose (routes, services, DTOs)
-  2. For EACH item: locate implementation with file:line, validate existence AND behavior
-  3. Cross-reference: items cover ALL RF/RN from about.md?
-  4. Status per item: COMPLIANT | DIVERGENT | MISSING
-  5. Compute SPEC_AUDIT_STATUS: COMPLIANT | DIVERGENT | INCOMPLETE
+### Generate Quality Gate Report (PRD0034)
+Create docs/features/${FEATURE_ID}/review.md with:
+- Quality Gate table (Build, Spec Compliance, Code Review Score, Product Validation, Startup Test, Overall)
+- Overall = PASSED only if ALL gates are PASSED or SKIPPED
 
-  ### Generate Quality Gate Report (PRD0034)
-  Create docs/features/${FEATURE_ID}/review.md with:
-  - Quality Gate table (Build, Spec Compliance, Code Review Score, Product Validation, Startup Test, Overall)
-  - Overall = PASSED only if ALL gates are PASSED or SKIPPED
+## RULES
+- NO questions — fix issues automatically, 100% autonomous
+- Missing components from plan = CRITICAL
+- Build MUST pass after fixes
+- ALL requirements MUST be implemented
+- review.md MUST be created (merge prerequisite for /add.ship)
 
-  ## RULES
-  - NO questions - fix issues automatically, 100% autonomous
-  - Missing components from plan = CRITICAL
-  - Build MUST pass after fixes
-  - ALL requirements MUST be implemented
-  - review.md MUST be created (merge prerequisite for /add.ship)
-
-  ## REPORT FORMAT
-  Return:
-  ### Spec Compliance Audit
-  1. SPEC_ITEMS: [X total]
-  2. SPEC_COMPLIANT: [X/Y]
-  3. SPEC_DIVERGENT: [list with gaps]
-  4. SPEC_MISSING: [list]
-  5. SPEC_AUDIT_STATUS: [COMPLIANT | DIVERGENT | INCOMPLETE]
-
-  ### Code Review
-  6. FILES_REVIEWED: [count]
-  7. ISSUES_FOUND: [list with severity]
-  8. ISSUES_FIXED: [list]
-  9. BUILD_STATUS: [pass/fail]
-  10. CODE_SCORE: [X/10]
-
-  ### Product Validation
-  11. RF_IMPLEMENTED: [X/Y] - [list]
-  12. RN_IMPLEMENTED: [X/Y] - [list]
-  13. PREREQUISITES_OK: [yes/no] - [details if no]
-  14. PRODUCT_STATUS: [PASSED/BLOCKED]
-
-  ### Quality Gate
-  15. REVIEW_MD_PATH: docs/features/${FEATURE_ID}/review.md
-  16. OVERALL_STATUS: [PASSED/BLOCKED]
-  17. BLOCKED_GATES: [list if any]
+## REPORT: SPEC_ITEMS, SPEC_COMPLIANT, SPEC_DIVERGENT, SPEC_MISSING, FILES_REVIEWED, ISSUES_FOUND, ISSUES_FIXED, BUILD_STATUS, CODE_SCORE, RF_IMPLEMENTED, RN_IMPLEMENTED, PRODUCT_STATUS, REVIEW_MD_PATH, OVERALL_STATUS, BLOCKED_GATES
 ```
 
 ---
 
 ## STEP 9: Coordinator Compliance Gate [HARD STOP]
 
-⛔ GATE: DO NOT report completion without executing this step.
-⛔ DO NOT USE: Write to report/completion files
-⛔ DO NOT: Inform user of completion
+DO NOT report completion without executing this step.
 
 1. Re-read TASK_DOCUMENTS (about.md, plan.md) to extract RF/RN list
 2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED from Decision Log
 3. Quick-read relevant implementation files to confirm requirement exists in code
 4. IF any RF/RN has no corresponding implementation:
    - List missing items
-   - Dispatch fix subagent with missing requirements + TASK_DOCUMENTS
+   - Dispatch fix agent with missing requirements + TASK_DOCUMENTS
    - Re-run this gate after fix
 5. IF ALL RF/RN covered: proceed to STEP 10
 
@@ -878,259 +560,44 @@ prompt: |
 
 ## STEP 10: Final Verification
 
-```bash
-npm run build
-ls -la "docs/features/${FEATURE_ID}/"
-```
+Run project build. Verify expected docs exist in feature directory:
+- `about.md`, `discovery.md`, `plan.md`, `review.md`
+- `design.md` (optional)
 
-**Expected files:**
-- `about.md` - Feature specification
-- `discovery.md` - Discovery record
-- `design.md` - UX design (optional)
-- `plan.md` - Technical plan
-- `review.md` - Quality Gate Report (PRD0034)
-
-- [ ] Build passes
-- [ ] All expected docs exist
-- [ ] review.md exists with Quality Gate Report
-- [ ] Review status is READY (not BLOCKED)
+Checklist: Build passes, all expected docs exist, review.md has Quality Gate Report, review status is READY (not BLOCKED).
 
 ---
 
 ## STEP 11: Completion Report
 
-### Simple Feature Report
+Generate a contextual completion report that includes:
+- **Execution summary:** steps completed, mode (Simple/Epic), feature ID
+- **Components implemented:** file counts per area (Database, Backend, Frontend)
+- **Decision Log highlights:** key decisions made during execution
+- **Validation summary:** Code Review score, Spec Compliance status, Product Validation (RF/RN counts), Startup Test result
+- **Quality Gates:** overall status (PASSED or BLOCKED with details)
+- **Next steps:** review changes, test manually, stage/commit, run /add.ship
 
-```
-AUTOPILOT COMPLETE - Feature ${FEATURE_ID}
-
-Execution Summary:
-1. Prerequisites: Validated
-2. Planning: plan.md created (model: opus)
-3. Development: [X] files created
-   - Database: [model used]
-   - Backend: [model used]
-   - Frontend: [model used]
-4. Startup Test: PASSED / SKIPPED
-5. Code Review: [Y] issues fixed, score [Z/10] (model: [used])
-6. Spec Compliance: [X/Y] items COMPLIANT
-7. Product Validation: RF [X/X], RN [Y/Y], Prerequisites OK
-8. Quality Gate: PASSED
-9. Verification: Build passing
-
-Decision Log Highlights:
-- [Key decision 1]
-- [Key decision 2]
-- [Key decision 3]
-
-Components Implemented:
-- Database: [X files]
-- Backend API: [Y files]
-- Frontend: [Z files]
-
-Validation Summary:
-- Code Review: PASSED (score [Z/10])
-- Spec Compliance: PASSED ([X/Y] COMPLIANT)
-- Product Validation: PASSED
-  - RF implemented: [X/X]
-  - RN implemented: [Y/Y]
-  - Prerequisites: OK
-- Startup Test: PASSED / SKIPPED
-
-Quality Gates: ALL PASSED
-Report: docs/features/${FEATURE_ID}/review.md
-
-Build Status: ALL PASSING
-
-Next Steps:
-1. Review the implementation changes
-2. Test the functionality manually
-3. Stage and commit when satisfied
-4. Run /add.ship (reads review.md automatically)
-```
-
-### Epic Feature Report (Feature N of M)
-
-```
-FEATURE ${N} COMPLETE - Epic ${EPIC_NAME}
-
-Execution Summary:
-- Feature: ${N} of ${TOTAL_FEATURES}
-- Epic: ${EPIC_NAME}
-- Mode: EPIC
-
-Feature ${N} Deliverables:
-- [List of files created/modified in this feature]
-
-Feature Criteria:
-- [x] [Criterion 1 of the feature]
-- [x] [Criterion 2 of the feature]
-
-Build Status: PASSING
-
-Next Steps:
-1. Test the functionality of Feature ${N}
-2. Validate the acceptance criteria
-3. When ready: /autopilot feature ${N+1}
-   OR: /add.build feature ${N+1} (for manual control)
-4. When all Epic features complete: /add.ship
-```
-
-### Blocked Report (Product Validation Failed)
-
-```
-AUTOPILOT BLOCKED - Feature ${FEATURE_ID}
-
-Execution Summary:
-1-6. [steps completed]
-7. Quality Gate: BLOCKED
-
-Quality Gates:
-| Gate | Status |
-|------|--------|
-| Build | ✅ / ❌ |
-| Spec Compliance | ✅ / ⚠️ / ❌ |
-| Code Review | ✅ / ❌ |
-| Product Validation | ✅ / ❌ |
-| Startup Test | ✅ / ⚠️ / ❌ |
-| Overall | ❌ BLOCKED |
-
-Blocked Gates Details:
-- [Gate]: [reason]
-
-Report: docs/features/${FEATURE_ID}/review.md
-
-Required Actions:
-1. [Fix blocked gate issue]
-2. Run /autopilot again after corrections
-```
-
----
-
-## Critical Rules - AUTOPILOT SPECIFIC
-
-### COMMAND-AS-REFERENCE ARCHITECTURE (v4)
-
-**ALWAYS:**
-- Each subagent reads the relevant command .md (add-plan, add-dev, add-review) as REFERENCE
-- Subagent follows command patterns with `--yolo` mode (no confirmations)
-- Each subagent runs discovery script + reads feature docs directly
-- Subagent has full autonomy to load context it needs
-- Coordinator passes DECISION LOG only (accumulated decisions)
-- Coordinator passes COORDINATOR NOTES (specific guidance/warnings)
-
-**NEVER:**
-- Pass "digest" or pre-processed context to subagent
-- Assume subagent knows context without reading docs
-- Skip command reference loading in subagent prompt
-- Duplicate logic that already exists in command .md files
-
-### AUTONOMOUS EXECUTION
-
-**NEVER:**
-- Ask "do you want to continue?"
-- Ask "should I proceed?"
-- Ask for confirmation between steps
-- Stop to ask for clarification
-- Wait for user input
-
-**ALWAYS:**
-- Make decisions autonomously (use KISS/YAGNI principles)
-- Choose recommended/simplest options automatically
-- Fix errors and continue
-- Complete 100% of the work
-
-### DECISION LOG PROPAGATION
-
-**Every subagent receives:**
-1. Self-Bootstrap instructions (load own context)
-2. Decision Log (accumulated from previous steps)
-3. Coordinator Notes (specific guidance)
-
-**After every subagent:**
-1. Extract decisions made + files created/modified
-2. Append to Decision Log
-3. Include in next subagent's prompt
-
-### SUBAGENT COORDINATION
-
-**Parallel Execution:**
-- When dispatching multiple independent subagents, send ALL Task tool calls in a SINGLE message
-- Wait for ALL to complete before proceeding
-
-**Sequential Execution (dependencies):**
-```
-Database → Wait → Update Decision Log → Backend + Frontend (parallel)
-```
-
-### NO COMMITS
-
-**NEVER:**
-- Execute `git add`, `git commit`, `git stage`
-- Ask about committing
-- Push to remote
-
-Leave ALL changes as unstaged for user review.
-
----
-
-## Quick Reference: Prompt Builder
-
-When creating subagent prompts, always include:
-
-```markdown
-## ROLE
-[Who the subagent is]
-
-## MANDATORY: Load Command & Context (FIRST STEP)
-1. Read the relevant `.codeadd/commands/add-*.md` as REFERENCE (add-plan, add-dev, or add-review).
-   Execute as if `--yolo` was passed (skip [STOP] points, no confirmations).
-2. Run: bash .codeadd/scripts/status.sh
-3. Read feature docs as specified in the command reference
-4. Read your area's skill file
-
-## DECISION LOG
-[Accumulated decisions from previous phases]
-
-## COORDINATOR NOTES
-[Your specific guidance, warnings, patterns]
-
-## TASK
-[What to create/do]
-
-## AUTOPILOT-SPECIFIC RULES
-[Override/extend command where needed]
-
-## REPORT FORMAT
-[What to return]
-```
+For Epic mode, also include: feature N of M, epic name, feature-specific deliverables and criteria.
+If BLOCKED: list blocked gates with reasons and required actions.
 
 ---
 
 ## Rules
 
 ALWAYS:
-- Run status.sh first before any action
-- Validate prerequisites before dispatching subagents
-- Initialize Decision Log and propagate to all subagents
-- Include Self-Bootstrap block in every subagent prompt
+- Include Self-Bootstrap block in every agent prompt
 - Dispatch validators after each area implementation
-- Verify build passes before dispatching review subagent
-- Make all decisions autonomously using KISS/YAGNI
-- Fix errors automatically and continue
-- Complete 100% of the work without stopping
+- Propagate Decision Log to all agents (accumulated from previous steps)
+- After every agent: extract decisions + files, append to Decision Log
 - Leave all changes as unstaged for user review
+- When dispatching multiple independent agents, send ALL dispatches in a SINGLE message
 
 NEVER:
-- Ask user questions or wait for confirmation
-- Dispatch development subagents without a plan
-- Dispatch review subagent while build is failing
 - Pass pre-processed context instead of Decision Log
-- Skip Self-Bootstrap section in subagent prompts
+- Skip Self-Bootstrap section in agent prompts
 - Execute git add/commit/stage/push
-- Use haiku for implementation
-- Defer violations to review - fix them in validation
-- Stop execution to ask for clarification
+- Defer violations to review — fix them in validation
 
 ---
 
@@ -1138,11 +605,11 @@ NEVER:
 
 | Error | Action |
 |-------|--------|
-| about.md not found | STOP - inform user to run /feature |
-| discovery.md not found | STOP - inform user to run /feature |
-| plan.md creation fails | Retry planning subagent once, then report error |
-| Build fails after development | Dispatch Fix Subagent automatically |
-| Build fails after fix | Dispatch Fix Subagent with sonnet model |
-| Review reports BLOCKED | Report blocked items to user with required actions |
-| Subagent timeout | Report partial progress and suggest manual continuation |
-| Feature N dependency not met | STOP - inform user which feature must complete first |
+| about.md not found | STOP — inform user to run /feature |
+| discovery.md not found | STOP — inform user to run /feature |
+| plan.md creation fails | Retry planning agent once, then report error |
+| Build fails after development | Dispatch Fix Agent automatically |
+| Build fails after fix | Dispatch Fix Agent with higher complexity |
+| Review reports BLOCKED | Report blocked items with required actions |
+| Agent timeout | Report partial progress, suggest manual continuation |
+| Feature N dependency not met | STOP — inform user which feature must complete first |

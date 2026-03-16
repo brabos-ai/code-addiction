@@ -7,23 +7,13 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 ## Spec
 
 ```json
-{"gates":["feature_identified","docs_loaded","mode_determined","execution_decided","validator_executed"],"order":["context_mapper","parse_variables","determine_mode","load_docs","load_patterns","scope_detection","execution_decision","implementation","area_validation","integration_verification","log_iteration","completion"],"modes":{"development":"pending tasks in plan.md/about.md","correction":"feature implemented + user describes bug","feature":"epic feature N"},"patterns":{"if_exists":".codeadd/project/*.md","action":"READ before implementation"}}
+{"modes":{"development":"pending tasks in plan.md/about.md","correction":"feature implemented + user describes bug","feature":"epic feature N"}}
 ```
 
 ---
 
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 
 ---
 
@@ -60,39 +50,39 @@ STEP 14: Log iteration             → BEFORE informing user
 STEP 15: Completion                → Inform user based on mode
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE PROHIBITIONS:**
 
 ```
 IF FEATURE N REQUESTED BUT DEPENDENCY NOT MET:
   ⛔ DO NOT USE: Edit on code files
   ⛔ DO NOT USE: Write on code files
   ⛔ DO NOT: Implement anything
-  ⛔ DO: Inform that feature N-1 must be completed first
+  ✅ DO: Inform that feature N-1 must be completed first
 
 IF FEATURE NOT IDENTIFIED:
   ⛔ DO NOT USE: Task for subagent dispatch
   ⛔ DO NOT USE: Edit on code files
-  ⛔ DO: Run status.sh and identify feature
+  ✅ DO: Run status.sh and identify feature
 
 IF DOCS NOT LOADED:
   ⛔ DO NOT USE: Task for implementation subagents
   ⛔ DO NOT USE: Edit on code files
-  ⛔ DO: Load about.md, discovery.md, plan.md first
+  ✅ DO: Load about.md, discovery.md, plan.md first
 
 IF EXECUTION DECISION NOT MADE:
   ⛔ DO NOT USE: Task for subagent dispatch
   ⛔ DO NOT: Start implementation
-  ⛔ DO: Output execution decision first
+  ✅ DO: Output execution decision first
 
 IF VALIDATOR NOT EXECUTED (after each area):
   ⛔ DO NOT: Report area completion to user
   ⛔ DO NOT: Advance to next area
-  ⛔ DO: Execute validator subagent immediately
+  ✅ DO: Execute validator subagent immediately
 
 ALWAYS:
   ⛔ DO NOT USE: Bash for git add/commit/stage
   ⛔ DO NOT: Ask if user wants to commit
-  ⛔ DO: Leave ALL files as unstaged changes
+  ✅ DO: Leave ALL files as unstaged changes
 ```
 
 ---
@@ -103,19 +93,7 @@ ALWAYS:
 bash .codeadd/scripts/status.sh
 ```
 
-This script provides ALL context needed:
-- **BRANCH**: Feature ID, branch type, current phase
-- **FEATURE_DOCS**: Which docs exist (HAS_PLAN, HAS_DESIGN, HAS_IMPLEMENTATION)
-- **DESIGN_SYSTEM**: HAS_FOUNDATIONS, FOUNDATIONS_PATH
-- **FRONTEND**: Path, component counts, folder structure
-- **PROJECT_CONTEXT**: ARCHITECTURE_REF (CLAUDE.md)
-- **ALL_FEATURES**: FEATURE_COUNT, list if need to choose
-- **FEATURES**: X/Y (if Legacy Epic in plan.md)
-- **HAS_EPIC**: `true` if epic.md exists (PRD0032 epic structure)
-- **EPIC_CURRENT_SF**: Current subfeature (e.g. `SF02-login`)
-- **HAS_TASKS**: `true` if tasks.md exists
-- **TASKS_FILE**: Path to tasks.md
-- **LAST_CHECKPOINT**: Last git tag checkpoint
+This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_PLAN, HAS_DESIGN, HAS_IMPLEMENTATION), DESIGN_SYSTEM, FRONTEND (path, components), PROJECT_CONTEXT (ARCHITECTURE_REF), ALL_FEATURES (count, list), FEATURES (X/Y if Legacy Epic), HAS_EPIC, EPIC_CURRENT_SF, HAS_TASKS, TASKS_FILE, LAST_CHECKPOINT.
 
 ### 1.1 Cross-Feature Decisions Context (PRD0031)
 
@@ -146,51 +124,34 @@ IF HAS_EPIC=true:
      - ${SF_DIR}/tasks.md (if HAS_TASKS=true)
 ```
 
-**⛔ IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty (all done):**
-- ⛔ DO NOT: Start implementation
-- ⛔ DO: Inform user all subfeatures complete → run `/add.ship`
+**IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty:** DO NOT implement. Inform all subfeatures complete → run `/add.ship`.
 
-### 2B: Legacy Feature Flag ("feature N" passed)
-
-**Syntax:** `/add.build feature N` or `/add.build feature 1`
+### 2B: Legacy Feature Flag (`/add.build feature N`)
 
 ```
 IF user passed "feature N" AND HAS_EPIC=false:
-  1. EXTRACT feature number from command
-  2. READ plan.md and CHECK for "## Features" section (indicates Legacy Epic)
-  3. IF NO Features section: warning + execute normally
-  4. IF Features section exists:
-     - EXTRACT tasks for specified feature N
-     - VALIDATE dependency: feature N-1 complete in iterations.jsonl?
-     - IF dependency NOT met: BLOCK
-     - IF OK: execute only tasks for feature N
+  1. EXTRACT feature number
+  2. READ plan.md → CHECK for "## Features" section (Legacy Epic)
+  3. IF no Features section: warning + execute normally
+  4. IF Features section: extract tasks for feature N, validate dependency (N-1 complete in iterations.jsonl?), BLOCK if not met
 ```
-
-**⛔ PROHIBITIONS IF FEATURE N REQUESTED BUT DEPENDENCY NOT MET:**
-- ⛔ DO NOT USE: Edit on code files
-- ⛔ DO NOT USE: Write on code files
-- ⛔ DO NOT: Implement anything
-- ⛔ DO: Inform that feature N-1 must be completed first
 
 ### 2C: Simple Mode (no epic, no legacy feature flag)
 
-```
-IF HAS_EPIC=false AND no "feature N" passed:
-  ASSEMBLE TASK_DOCUMENTS for subagent prompts:
-  - docs/features/${FEATURE_ID}/about.md
-  - docs/features/${FEATURE_ID}/discovery.md
-  - docs/features/${FEATURE_ID}/design.md (if exists)
-  - docs/features/${FEATURE_ID}/plan.md (if exists)
-  - docs/features/${FEATURE_ID}/tasks.md (if HAS_TASKS=true)
-```
+ASSEMBLE TASK_DOCUMENTS: about.md, discovery.md, design.md (if exists), plan.md (if exists), tasks.md (if HAS_TASKS=true) — all under `docs/features/${FEATURE_ID}/`.
 
 ---
 
 ## STEP 3: Parse Key Variables
 
-```json
-{"FEATURE_ID":"if empty+count=1 use; if multiple ask","CURRENT_PHASE":"discovered|designed|planned","HAS_PLAN":"use plan.md as SOURCE","HAS_DESIGN":"use design.md for UI","HAS_FOUNDATIONS":"use design-system.md for tokens","ARCHITECTURE_REF":"path to patterns","HAS_IMPLEMENTATION":"if true+bug → CORRECTION MODE"}
-```
+Extract from status.sh output:
+- **FEATURE_ID** — if empty and count=1, use it; if multiple, ask
+- **CURRENT_PHASE** — discovered | designed | planned
+- **HAS_PLAN** — use plan.md as SOURCE
+- **HAS_DESIGN** — use design.md for UI
+- **HAS_FOUNDATIONS** — use design-system.md for tokens
+- **ARCHITECTURE_REF** — path to patterns
+- **HAS_IMPLEMENTATION** — if true + bug → CORRECTION MODE
 
 ---
 
@@ -204,27 +165,21 @@ This command detects automatically:
 3. **CORRECTION** - When feature already implemented + user describes a problem
 4. **FEATURE (Epic)** - When user passes flag `feature N` (legacy mode)
 
-### 4.2 Detection Flow
+### 4.2 Detection Flow (priority order)
 
-1. Run status.sh
-2. Check state (priority order):
-   - User described PROBLEM/BUG? → YES + Feature implemented = CORRECTION MODE
-   - `HAS_TASKS=true`? → YES = TASKS MODE (execute by tasks.md structure)
-   - User passed flag `feature N`? → YES = FEATURE MODE (see STEP 2B above)
-   - plan.md has pending tasks? → YES = DEVELOPMENT MODE (implement tasks)
-   - about.md exists but no plan.md? → YES = DEVELOPMENT MODE (from about.md)
-   - None of the above? → Inform user to run /feature first
-3. **IF plan.md has `## Features` (Legacy Epic) AND user did NOT pass flag:**
-   - Check FEATURES output from status.sh
-   - IF incomplete features: ask "Feature X complete. Execute feature X+1?"
-   - IF all complete: inform all Epic features already implemented
-4. Output detected mode and execute
+1. User described PROBLEM/BUG + feature implemented? → CORRECTION MODE
+2. `HAS_TASKS=true`? → TASKS MODE
+3. User passed `feature N`? → FEATURE MODE
+4. plan.md has pending tasks? → DEVELOPMENT MODE
+5. about.md exists but no plan.md? → DEVELOPMENT MODE (from about.md)
+6. None? → Inform user to run /feature first
 
-### 4.3 Bug Detection Keywords
+**Legacy Epic edge case:** IF plan.md has `## Features` AND no flag passed → check FEATURES from status.sh → ask to execute next incomplete feature or inform all complete.
 
-```json
-{"keywords":"bug,erro,error,broke,not working,problem,issue,failure,failed,fix,crash,broken","pattern":"unexpected vs expected"}
-```
+### 4.3 Bug Detection
+
+Keywords: bug, erro, error, broke, not working, problem, issue, failure, failed, fix, crash, broken
+Pattern: unexpected vs expected behavior
 
 ### 4.4 Mode Output (MANDATORY)
 
@@ -243,42 +198,21 @@ Starting...
 
 ## STEP 5: Load Feature Documentation (BEFORE implementation)
 
-```bash
-FEATURE_DIR="docs/features/${FEATURE_ID}"
+Read all relevant feature docs based on status.sh flags:
+- `plan.md` (if HAS_PLAN=true) — use as primary source
+- `design.md` (if HAS_DESIGN=true) — follow mobile-first layouts, component specs, design tokens
+- `about.md` — ALWAYS
+- `discovery.md` — ALWAYS
+- `${ARCHITECTURE_REF}` — from script output
+- `design-system.md` (if HAS_FOUNDATIONS=true)
 
-# Load based on script flags
-cat "${FEATURE_DIR}/plan.md" 2>/dev/null       # If HAS_PLAN=true
-cat "${FEATURE_DIR}/design.md" 2>/dev/null     # If HAS_DESIGN=true
-cat "${FEATURE_DIR}/about.md"                   # ALWAYS
-cat "${FEATURE_DIR}/discovery.md"               # ALWAYS
-cat "${ARCHITECTURE_REF}"                       # From script output
-cat "docs/design-system.md" 2>/dev/null        # If HAS_FOUNDATIONS=true
-```
-
-**Decision based on flags:**
-
-```json
-{"plan_true":"Use plan.md as source","no_plan+design":"Use design.md + about.md","no_plan+no_design":"Use about.md + discovery.md"}
-```
-
-**If HAS_DESIGN=true:** Follow mobile-first layouts, component specs, design tokens
+**Priority:** plan.md > design.md + about.md > about.md + discovery.md
 
 ---
 
 ## STEP 6: Load Project Patterns (IF exist)
 
-```bash
-# Parse PROJECT_PATHS from status.sh output
-# Example: PROJECT_PATHS:.codeadd/project/SERVER.md,.codeadd/project/ADMIN.md,.codeadd/project/DATABASE.md
-
-# Read ALL project pattern files listed in PROJECT_PATHS
-# Files are named by app (SERVER.md, ADMIN.md, CLI.md) not by type (BACKEND.md)
-# Exception: DATABASE.md is cross-app
-
-for file in $(echo "$PROJECT_PATHS" | tr ',' ' '); do
-    cat "$file" 2>/dev/null
-done
-```
+Read ALL project pattern files listed in PROJECT_PATHS from status.sh output. Files are named by app (SERVER.md, ADMIN.md, CLI.md) not by type. Exception: DATABASE.md is cross-app.
 
 **If files exist:** Follow patterns documented. These are project-specific conventions.
 **If files don't exist:** Run `/add.xray` to generate, or continue with generic best practices.
@@ -290,10 +224,10 @@ done
 ## STEP 7: Determine Scope (DEVELOPMENT and FEATURE modes)
 
 **Auto-detect from plan.md/about.md:**
-
-```json
-{"backend":"endpoints,controllers,DTOs,API","workers":"queues,jobs,background","frontend":"pages,components,UI,forms","database":"entities,tables,migrations"}
-```
+- **Backend** — endpoints, controllers, DTOs, API
+- **Workers** — queues, jobs, background
+- **Frontend** — pages, components, UI, forms
+- **Database** — entities, tables, migrations
 
 ---
 
@@ -318,9 +252,7 @@ done
 | **1 area** (only Backend, only Frontend, only Database) | DIRECT | You implement everything |
 | **2+ areas** (Backend+Frontend, Database+Backend, etc) | SUBAGENTS | Dispatch via Task tool |
 
-**Areas:** Database, Backend, Workers, Frontend
-
-**⛔ PROHIBITED:** Skip this decision. If "Execution Decision" does not appear in output, execution is WRONG.
+**PROHIBITED:** Skip this decision. If "Execution Decision" does not appear in output, execution is WRONG.
 
 ---
 
@@ -367,17 +299,12 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl"
 
 ---
 
-### Subagent Strategy
+### Subagent Dispatch Template
 
-```json
-{"general-purpose":"Backend API,Workers,Frontend,Database","Explore":"Quick codebase analysis"}
-```
-
-### Model Selection
-
-```json
-{"implementation":{"database":"min sonnet (opus if multi-entity)","backend":"min sonnet (opus if CQRS/integration)","frontend":"min sonnet (opus if new design system)"},"validators":{"all":"sonnet"},"fix":{"syntax":"haiku","logic":"sonnet"},"planning":"opus","NEVER":"haiku for implementation (database/backend/frontend)"}
-```
+**DISPATCH AGENT:**
+- **Capability:** read-write | full-access
+- **Complexity:** light (single fix/syntax) | standard (single area) | heavy (multi-entity/CQRS/new design system)
+- **Prompt:** [use Universal Subagent Prompt below]
 
 ---
 
@@ -389,45 +316,41 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl"
 Contract Tests (if exist) -> Database -> Backend API -> [parallel: Workers, Frontend]
 ```
 
-```json
-{"db+backend+frontend":"Sequential: DB → Parallel: Backend+Frontend","backend+frontend":"Parallel","single":"Direct (no subagents)"}
-```
+- DB + Backend + Frontend: Sequential DB → Parallel Backend + Frontend
+- Backend + Frontend only: Parallel
+- Single area: Direct (no subagents)
 
 #### 9.2 Universal Subagent Prompt Template
+
+Use this template for ALL area subagents (database, backend, frontend, workers):
 
 ```
 You are implementing the ${AREA} for feature ${FEATURE_ID}.
 
-## TASK_DOCUMENTS (read ALL before starting — source of truth)
-${TASK_DOCUMENTS}
-
-## MANDATORY: Load Context (FIRST STEP)
+## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
 1. Run: bash .codeadd/scripts/status.sh
-2. Read ALL files listed in TASK_DOCUMENTS above
-3. Parse PROJECT_PATHS from script output and read relevant files:
-   - Files are named by app (SERVER.md, ADMIN.md, CLI.md, etc)
-   - Read the file matching the app you're modifying
+2. Read ALL files listed in TASK_DOCUMENTS below
+3. Parse PROJECT_PATHS from script output and read the file matching the app you're modifying
    - DATABASE.md is cross-app (read if doing database work)
 
-## MANDATORY: Load Development Skills
-Based on your area, read the corresponding skills BEFORE writing any code:
-- Backend API: .codeadd/skills/add-backend-development/SKILL.md
-- Database: .codeadd/skills/add-database-development/SKILL.md
-- Frontend: .codeadd/skills/add-frontend-development/SKILL.md (auto-loads ux-design if no design.md)
+## TASK_DOCUMENTS (read ALL — source of truth)
+${TASK_DOCUMENTS}
+
+## MANDATORY: Load Development Skill
+BEFORE writing code, read: .codeadd/skills/add-${AREA}-development/SKILL.md
+- For Frontend: The skill will check for design.md and load ux-design/SKILL.md if needed
+- If design.md EXISTS: Follow its specs + use ux-design for implementation details
+- For specific components, Grep on skill docs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md
+
+Follow ALL patterns from the loaded skills.
 
 ## Your Tasks
 ${TASK_LIST}
 
-## Skill Patterns
-Follow ALL patterns from your loaded skill. Key areas:
-- Backend: RESTful API, IoC/DI, DTOs, CQRS, Multi-tenancy
-- Database: Entities, Kysely types, Migrations, Repositories, Barrel exports
-- Frontend: Mobile-first, shadcn components, Tailwind v3, Motion animations
-
 ## DECISION LOGGING (MANDATORY — PRD0031)
-Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the log script:
+Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
 - PIVOT: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
 
 ## Deliverables
@@ -435,77 +358,30 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl` using the l
 - Status: Build passes (run: ${BUILD_COMMAND})
 ```
 
-#### 9.3 Area-Specific Details
+#### 9.3 Area-Specific Notes
 
-**NOTE:** Paths and build commands are project-specific. Consult CLAUDE.md for exact locations and commands.
+**Paths and build commands are project-specific. Consult CLAUDE.md for exact locations and commands.**
 
-```json
-{"database":"Entities, Types, Migrations, Repositories","backend":"Modules, Controllers, Services, DTOs","workers":"Workers, Processors, Queues","frontend":"Pages, Components, Hooks, Stores"}
-```
+- **Database:** Entities, Kysely types, Knex migration, Repository, barrel exports
+- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
+- **Workers:** Worker, Processor, queue config, error handling, register in worker.module.ts
+- **Frontend:** Pages, Components, Zustand store, Hooks, mirror DTOs, API integration, forms
+  - MANDATORY: Load skill `.codeadd/skills/add-frontend-development/SKILL.md` first
+  - The frontend skill will check for design.md → if missing, auto-load ux-design/SKILL.md
 
-**Database Tasks:** Entities, Kysely types, Knex migration, Repository, barrel exports
-**Backend Tasks:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
-**Worker Tasks:** Worker, Processor, queue config, error handling, register in worker.module.ts
-**Frontend Tasks:** Pages, Components, Zustand store, Hooks, mirror DTOs, API integration, forms
-- **MANDATORY:** Load skill `.codeadd/skills/add-frontend-development/SKILL.md` first
-- **The frontend skill will:** Check for design.md -> if missing, auto-load ux-design/SKILL.md
-- **If design.md exists:** Follow its specs + use ux-design skill for implementation details
-- **Consult skill docs:** shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-*.md
-
-#### 9.3.1 Skills Reference (MANDATORY)
-
-```json
-{"backend":".codeadd/skills/add-backend-development/SKILL.md (RESTful,IoC,DTOs,CQRS,Multi-tenancy)","database":".codeadd/skills/add-database-development/SKILL.md (Entities,Migrations,Kysely,Repositories)","frontend":".codeadd/skills/add-frontend-development/SKILL.md (Types,Hooks,State,API,Forms,Routing+auto-loads ux-design)"}
-```
-
-**Subagent Prompt MUST include (in this order):**
-```
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-1. Run: bash .codeadd/scripts/status.sh
-2. Read feature docs: about.md, discovery.md, design.md, plan.md
-
-## MANDATORY: Load Development Skill
-BEFORE writing code, read: .codeadd/skills/add-[area]-development/SKILL.md
-For Frontend: The skill will check for design.md and load ux-design/SKILL.md if needed.
-Follow ALL patterns from the loaded skills.
-```
+**Skills Reference (MANDATORY):**
+- Backend: `.codeadd/skills/add-backend-development/SKILL.md` (RESTful, IoC, DTOs, CQRS, Multi-tenancy)
+- Database: `.codeadd/skills/add-database-development/SKILL.md` (Entities, Migrations, Kysely, Repositories)
+- Frontend: `.codeadd/skills/add-frontend-development/SKILL.md` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
 
 #### 9.4 Subagent Dispatch
 
-**Use Task tool with `subagent_type: "general-purpose"`**
-
 **CRITICAL:** When dispatching multiple independent subagents, send ALL Task tool calls in a SINGLE message.
 
-**MODEL SELECTION:** Choose model based on complexity (see Model Selection table above).
-
-**FRONTEND SUBAGENT (MANDATORY INSTRUCTION):**
-When dispatching a frontend subagent, ALWAYS include Self-Bootstrap + skills in the prompt:
-```
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-Execute BEFORE any other action:
-
-1. Run: bash .codeadd/scripts/status.sh
-2. Parse FEATURE_ID from output
-3. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md
-   - docs/features/${FEATURE_ID}/discovery.md
-   - docs/features/${FEATURE_ID}/design.md (if exists - PRIMARY for UI)
-   - docs/features/${FEATURE_ID}/plan.md (contains frontend specs + backend DTOs)
-
-## Frontend Skills (MANDATORY)
-BEFORE writing ANY frontend code:
-1. Read: .codeadd/skills/add-frontend-development/SKILL.md (FIRST - handles types, hooks, state, API)
-2. If NO design.md: Load .codeadd/skills/add-ux-design/SKILL.md for SaaS UX patterns
-3. If design.md EXISTS: Follow its specs + use ux-design for implementation details
-
-For specific components, use Grep on skill docs:
-- shadcn: .codeadd/skills/add-ux-design/shadcn-docs.md
-- Tailwind: .codeadd/skills/add-ux-design/tailwind-v3-docs.md
-- Motion: .codeadd/skills/add-ux-design/motion-dev-docs.md
-- Charts: .codeadd/skills/add-ux-design/recharts-docs.md
-- Tables: .codeadd/skills/add-ux-design/tanstack-table-docs.md
-- Query: .codeadd/skills/add-ux-design/tanstack-query-docs.md
-```
+**DISPATCH AGENT:**
+- **Capability:** read-write | full-access
+- **Complexity:** Choose based on task — light for syntax fixes, standard for single-area implementation, heavy for multi-entity/CQRS/new design system
+- **Prompt:** Use Universal Subagent Prompt Template (section 9.2)
 
 #### 9.5 Coordination Flow
 
@@ -534,74 +410,19 @@ Fix ALL build errors. Do not stop until build passes 100%.
 
 > Activated when: Feature implemented + user describes problem/bug
 
-#### STEP C1: Bug Investigation (Autonomous)
+#### C1: Bug Investigation (Autonomous)
 
-##### C1.1 Extract Bug Info from User Message
+1. **Extract** from user message: bug description, error messages, area (frontend/API/worker), repro steps
+   - If critical info missing: Ask ONE consolidated question
+2. **Load context**: about.md, discovery.md, plan.md (if HAS_PLAN), ARCHITECTURE_REF
+3. **Identify files** from plan.md and git changes likely involved in the bug
+4. **Investigate root cause**: READ files → TRACE flow → COMPARE with contracts → CHECK business rules → IDENTIFY specific root cause
 
-**Parse the user's message to extract:**
-- Bug description (what happened vs expected)
-- Error messages (if mentioned)
-- Where it occurred (frontend, API, worker, etc.)
-- Steps to reproduce (if provided)
+#### C2: Fix Implementation
 
-**If critical info is missing:** Ask ONE consolidated question, not multiple.
-
-##### C1.2 Load Implementation Context
-
-```bash
-FEATURE_DIR="docs/features/${FEATURE_ID}"
-
-cat "${FEATURE_DIR}/about.md"              # Expected behavior
-cat "${FEATURE_DIR}/discovery.md"          # Business rules
-cat "${FEATURE_DIR}/plan.md" 2>/dev/null   # Technical contracts (if HAS_PLAN=true)
-cat "${ARCHITECTURE_REF}"                  # Project patterns
-```
-
-##### C1.3 Analyze Implementation Files
-
-From `plan.md` and git changes, identify files likely involved:
-
-```
-Bug area: [extracted from user message]
-Files to investigate (from plan.md/git):
-- [file 1] - [reason]
-- [file 2] - [reason]
-```
-
-##### C1.4 Investigate Root Cause
-
-1. **READ relevant files** from plan.md and git changes
-2. **TRACE the flow** from user action to bug
-3. **COMPARE with contracts** from plan.md
-4. **CHECK business rules** from about.md/discovery.md
-5. **IDENTIFY root cause** - be specific
-
-#### STEP C2: Fix Implementation
-
-##### C2.1 Apply Fix
-
-**Follow project patterns from ARCHITECTURE_REF:**
-- Fix root cause, not symptom
-- Follow existing code patterns
-- Add defensive checks if needed
-- Ensure fix aligns with acceptance criteria
-
-**FRONTEND FIXES (MANDATORY):**
-If the bug is in frontend code:
-1. FIRST, load the UX design skill: Read `.codeadd/skills/add-ux-design/SKILL.md`
-2. Follow ALL patterns from the skill (mobile-first, shadcn, Tailwind v3, Motion, etc.)
-3. For component fixes: Grep pattern="[component]" path=".codeadd/skills/add-ux-design/shadcn-docs.md"
-4. For styling fixes: Grep pattern="[utility]" path=".codeadd/skills/add-ux-design/tailwind-v3-docs.md"
-5. For animation fixes: Grep pattern="[pattern]" path=".codeadd/skills/add-ux-design/motion-dev-docs.md"
-6. Read: docs/design-system.md (if exists)
-
-##### C2.2 Verify Build
-
-```bash
-npm run build
-```
-
-**CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
+- Fix root cause, not symptom. Follow existing code patterns. Add defensive checks if needed.
+- **Frontend fixes:** FIRST load `.codeadd/skills/add-ux-design/SKILL.md`, follow all patterns, Grep skill docs for relevant components/styling/animation. Read design-system.md if exists.
+- **CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
 
 ---
 
@@ -609,133 +430,63 @@ npm run build
 
 **After EACH area is implemented, dispatch a Validator Subagent to validate code against skill checklists and auto-correct violations.**
 
-**⛔ PROHIBITIONS IF VALIDATOR NOT EXECUTED:**
-- ⛔ DO NOT: Report area completion to user
-- ⛔ DO NOT: Advance to next area
-- ⛔ DO: Execute Validator IMMEDIATELY after implementation subagent returns
-
-**⛔ PROHIBITIONS IF SPEC_STATUS = INCOMPLETE:**
-- ⛔ DO NOT: Report area completion to user
-- ⛔ DO NOT: Advance to next area
-- ⛔ DO: Implement missing spec items OR escalate to user if out of scope
+**IF VALIDATOR NOT EXECUTED:** DO NOT report area completion or advance to next area. Execute Validator IMMEDIATELY.
+**IF SPEC_STATUS = INCOMPLETE:** DO NOT report area completion. Implement missing spec items OR escalate to user.
 
 ### 10.1 Validator Subagent Prompt Template
 
+**DISPATCH AGENT:** Capability: read-write | full-access | Complexity: standard
+
 ```
-description: "Validate ${AREA} for ${FEATURE_ID}"
-model: "sonnet"
-prompt: |
-  ## ROLE
-  You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
-  Your job is to validate implemented code against the skill checklist and auto-correct violations.
+You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
+Validate implemented code against skill checklist and auto-correct violations.
 
-  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-  1. Run: bash .codeadd/scripts/status.sh
-  2. Parse FEATURE_ID from output
-  3. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md
+## Self-Bootstrap (FIRST STEP)
+1. Run: bash .codeadd/scripts/status.sh
+2. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md
+3. Read ALL files in FILES_CREATED and FILES_MODIFIED below
 
-  ## SKILLS
-  MANDATORY - Read BEFORE validating:
-  - .codeadd/skills/add-${AREA}-development/SKILL.md (contains Validation Checklist)
+## IMPLEMENTED FILES
+${FILES_CREATED}
+${FILES_MODIFIED}
 
-  ## IMPLEMENTED FILES (from ${AREA} Subagent)
-  ${FILES_CREATED}
-  ${FILES_MODIFIED}
+## TASK
+1. Extract "## Validation Checklist" from skill file
+2. Read EVERY implemented file
+3. Validate each checklist item → if violated, prepare fix
+4. Apply ALL fixes (do NOT defer to review)
+5. Run build command (from CLAUDE.md) → must pass
 
-  ## TASK
-  ### Step 1: Load Checklist
-  Extract the "## Validation Checklist" section from the skill file.
-  Each item has format: `- [ ] Description` + `→ Check: how to validate`
+RULES: No questions. Checklist violations = MUST FIX. Build MUST pass.
 
-  ### Step 2: Read ALL Implemented Files
-  Read EVERY file listed in FILES_CREATED and FILES_MODIFIED.
+## SPEC COMPLIANCE CHECK (PRD0034)
+After skill checklist validation, for CURRENT AREA ONLY:
+1. READ `## Spec Checklist` from plan.md (if no section: SKIP)
+2. FILTER items for current area
+3. For each: locate in code, compare expected vs implemented → MATCH | PARTIAL | MISSING
+4. PARTIAL: AUTO-FIX or document divergence | MISSING: mark INCOMPLETE
+5. UPDATE plan.md Spec Checklist: mark [x] on confirmed items
+IF SPEC_STATUS = INCOMPLETE: DO NOT mark area as complete.
 
-  ### Step 3: Validate Against Checklist
-  For EACH checklist item, verify the implemented files comply.
-  If violated: document the violation and prepare fix.
-
-  ### Step 4: Apply Fixes
-  Fix ALL violations found. Do NOT defer to review.
-
-  ### Step 5: Verify Build
-  Run build command (from CLAUDE.md) to ensure fixes didn't break anything.
-
-  ## RULES
-  - NO questions - fix violations automatically
-  - Checklist violations = MUST FIX (not optional)
-  - Build MUST pass after fixes
-  - Report ALL issues fixed
-
-  ## SPEC COMPLIANCE CHECK (light — PRD0034)
-  EXECUTE AFTER skill checklist validation, for the CURRENT AREA ONLY:
-
-  1. READ `## Spec Checklist` from docs/features/${FEATURE_ID}/plan.md
-     IF no Spec Checklist section: SKIP and add note "No Spec Checklist in plan.md"
-  2. FILTER items for current area (Backend / Database / Frontend)
-  3. For each item:
-     a. Locate in code: file, class, method, route
-     b. Compare: expected name vs implemented, expected type vs implemented
-     c. Status: ✅ MATCH | ⚠️ PARTIAL (exists but differs) | ❌ MISSING
-  4. IF ⚠️ PARTIAL: AUTO-FIX to match spec OR document divergence with reason
-  5. IF ❌ MISSING: document as INCOMPLETE — DO NOT mark area as complete
-  6. UPDATE plan.md Spec Checklist: mark [x] on confirmed items
-
-  SPEC COMPLIANCE OUTPUT (append to report):
-  ```
-  SPEC_COMPLIANCE: X/Y items matched
-  SPEC_PARTIAL: [list of partial items with diff]
-  SPEC_MISSING: [list of missing items]
-  SPEC_STATUS: COMPLIANT | DIVERGENT | INCOMPLETE
-  ```
-
-  ⛔ IF SPEC_STATUS = INCOMPLETE: DO NOT mark area as complete.
-
-  ## REPORT FORMAT
-  Return:
-  1. CHECKLIST_RESULTS: [each item: pass / fixed]
-  2. VIOLATIONS_FOUND: [count]
-  3. VIOLATIONS_FIXED: [list: file, issue, fix applied]
-  4. FILES_MODIFIED: [files changed during validation]
-  5. BUILD_STATUS: [pass/fail]
-  6. SPEC_COMPLIANCE: [X/Y items matched]
-  7. SPEC_STATUS: [COMPLIANT | DIVERGENT | INCOMPLETE]
-  8. SPEC_MISSING: [list if any]
+## REPORT: CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS, SPEC_COMPLIANCE (X/Y), SPEC_STATUS, SPEC_MISSING
 ```
 
 ### 10.2 Validation Dispatch Flow
 
-```
-After DB Subagent returns:
-  → Dispatch Database Validator (if database implemented)
-  → Wait → Parse violations fixed
+Dispatch validator for each area immediately after its implementation subagent returns. After ALL validators complete, run build verification. If build fails, dispatch fix subagent with validator outputs + build errors.
 
-After Backend/Frontend Subagents return:
-  → Dispatch Backend Validator (if backend implemented)
-  → Dispatch Frontend Validator (if frontend implemented)
-  → Wait → Parse violations fixed
-
-After ALL validators:
-  → Run build verification
-  → If build fails: dispatch fix subagent with validator outputs + build errors
-```
-
-**CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each area's implementation subagent to the corresponding validator.
+**CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.
 
 ---
 
 ## STEP 11: Coordinator Compliance Gate [HARD STOP]
 
-⛔ GATE: DO NOT report completion without executing this step.
-⛔ DO NOT USE: Write to report/completion files
-⛔ DO NOT: Inform user of completion
+DO NOT report completion without executing this step.
 
-1. Re-read TASK_DOCUMENTS (about.md, plan.md) to extract RF/RN list
-2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED from Decision Log
-3. Quick-read relevant implementation files to confirm requirement exists in code
-4. IF any RF/RN has no corresponding implementation:
-   - List missing items
-   - Dispatch fix subagent with missing requirements + TASK_DOCUMENTS
-   - Re-run this gate after fix
+1. Re-read TASK_DOCUMENTS to extract RF/RN list
+2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED
+3. Quick-read implementation files to confirm requirement exists in code
+4. IF any RF/RN missing: list items → dispatch fix subagent → re-run gate
 5. IF ALL RF/RN covered: proceed to STEP 12
 
 ---
@@ -756,7 +507,7 @@ After ALL validators:
 
 ## STEP 14: Log Iteration + Checkpoint (BEFORE informing user)
 
-### 12.1 Log Iteration to iterations.jsonl (PRD0031)
+### 14.1 Log Iteration to iterations.jsonl (PRD0031)
 
 **MANDATORY: Append entry to `docs/features/${FEATURE_ID}/iterations.jsonl`:**
 
@@ -771,7 +522,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 
 **Types:** `add | fix | refactor | test | docs`
 
-### 12.2 Git Tag Checkpoint (PRD0032 — Universal)
+### 14.2 Git Tag Checkpoint (PRD0032 — Universal)
 
 **ALWAYS create a checkpoint tag after successful implementation:**
 
@@ -783,11 +534,11 @@ git tag "checkpoint/${FEATURE_ID}-done"
 git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 ```
 
-**⛔ DO NOT skip tag creation. This enables rollback and progress tracking.**
+**DO NOT skip tag creation. This enables rollback and progress tracking.**
 
 **NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add.ship` during merge.
 
-### 12.3 Update epic.md (IF HAS_EPIC=true)
+### 14.3 Update epic.md (IF HAS_EPIC=true)
 
 **IF HAS_EPIC=true, update the subfeature status in `docs/features/${FEATURE_ID}/epic.md`:**
 
@@ -797,89 +548,11 @@ Change `| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT
 
 ## STEP 15: Completion (Inform user based on mode)
 
-### Development Completion
+Inform user of completion including: feature ID, files summary (per area count), build status, and next suggested commands.
 
-```
-Development Complete!
-
-Feature: ${FEATURE_ID}
-
-**Summary:**
-- Backend API: [X files]
-- Workers: [Y files]
-- Frontend: [Z files]
-- Database: [W files]
-
-**Build Status:** Backend + Frontend compiling
-
-**Next Steps:**
-1. Execute migration: `npm run migrate:latest`
-2. Start services: `docker-compose -f infra/docker-compose.yml up -d && npm run dev`
-3. Run code review: `/add.check`
-4. When approved, run `/add.ship` to merge
-
-**Suggested next command (from ecosystem map):**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
+**Always include suggested next command from ecosystem map:** Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 - After development → `/add.check` or `/add.test`
 - After correction → `/add.check`
-```
-
-### Feature Completion (when executing `/add.build feature N` in Epic)
-
-```
-Feature ${N} Complete!
-
-Epic: ${EPIC_NAME}
-Feature: ${N} of ${TOTAL_FEATURES}
-
-**Summary:**
-- [Summary of tasks implemented in this feature]
-
-**Build Status:** Compiling
-
-**Acceptance Criteria for Feature:**
-- [x] [Criterion 1 for feature]
-- [x] [Criterion 2 for feature]
-
-**Next Steps:**
-1. Test the feature ${N} functionality
-2. Validate acceptance criteria
-3. When ready, execute: `/add.build feature ${N+1}`
-4. Or if all Epic features complete: `/add.ship`
-
-**Suggested next command (from ecosystem map):**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-- After development → `/add.check` or `/add.test`
-- After correction → `/add.check`
-```
-
-### Correction Completion
-
-```
-Bug Fix Complete!
-
-Feature: ${FEATURE_ID}
-
-**Bug:** [short description]
-**Root Cause:** [brief explanation]
-
-**Files Modified:**
-- [file 1]
-- [file 2]
-
-**Build Status:** Compiling
-
-**Next Steps:**
-1. Test the fix manually
-2. Verify the bug is resolved
-3. Run `/add.check` when ready
-4. Run `/add.ship` to merge
-
-**Suggested next command (from ecosystem map):**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-- After development → `/add.check` or `/add.test`
-- After correction → `/add.check`
-```
 
 ---
 
@@ -892,77 +565,23 @@ For simple features (single field, small UI change):
 
 ---
 
-## Examples
+## Example: Development Mode (2+ areas = SUBAGENTS)
 
-### Example 1: Development Mode (2+ areas = SUBAGENTS)
+```
+# User executes: /dev
+# Agent detects: F0003-user-preferences active, plan.md with pending tasks
 
-```bash
-# User executes:
-/dev
-
-# Agent detects:
-# - Feature F0003-user-preferences active
-# - plan.md exists with pending tasks
-
-# Output:
 "Detected Mode: DEVELOPMENT
 Feature: F0003-user-preferences
 Context: Implementing tasks from plan.md
 
 ## Execution Decision
-
 **Areas identified:** Database, Backend, Frontend
 **Count:** 3
-
 **Strategy:** SUBAGENTS
 **Justification:** 3 areas = mandatory subagents
 
 Dispatching subagents..."
-```
-
-### Example 2: Correction Mode
-
-```bash
-# User executes:
-/add.build the save button is not working, error 500
-
-# Agent detects:
-# - Feature F0003-user-preferences active
-# - HAS_IMPLEMENTATION=true
-# - Bug keywords: "not working", "error 500"
-
-# Output:
-"Detected Mode: CORRECTION
-Feature: F0003-user-preferences
-Context: Investigating bug on save button (error 500)
-
-Starting investigation..."
-```
-
-### Example 3: Single Area (1 area = DIRECT)
-
-```bash
-# User executes:
-/dev
-
-# Agent detects:
-# - Feature F0004-api-endpoint active
-# - plan.md shows only Backend tasks
-
-# Output:
-"Detected Mode: DEVELOPMENT
-Feature: F0004-api-endpoint
-Context: Implementing tasks from plan.md
-
-## Execution Decision
-
-**Areas identified:** Backend
-**Count:** 1
-
-**Strategy:** DIRECT
-**Justification:** 1 area = implement directly
-
-Starting implementation..."
 ```
 
 ---

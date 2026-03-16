@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx bats framwork/.codeadd/scripts/tests/get-branch-metadata.bats --filter \"detached\")",
+      "Bash(git tag -a v0.2.2 -m \"Release v0.2.2\")",
+      "Bash(gh release create v0.2.2 --target production --title \"v0.2.2\" --notes-file /tmp/release-notes.md)",
+      "Read(//c/Users/maico/.claude/plugins/cache/claude-plugins-official/skill-creator/205b6e0b3036/eval-viewer/**)",
+      "Read(//c/Users/maico/.claude/plugins/cache/claude-plugins-official/skill-creator/**)",
+      "Bash(start \"c:/github/xmaiconx/code-addiction/add-commit-workspace/iteration-1/review.html\")",
+      "Skill(commit-commands:commit)",
+      "Skill(commit-commands:commit:*)",
+      "Bash(grep -l \"owner.md\" *.md)",
+      "Bash(grep -l \"feature-status\" *.md)",
+      "Bash(grep -l \"product.md\" *.md)",
+      "Bash(grep -l \"code-addiction-ecosystem\\\\|next.*step\\\\|next-step\\\\|what.*next\" *.md)",
+      "Bash(grep -l \"security-audit\\\\|\\\\.codeadd/skills/security\" *.md)",
+      "Bash(for f in docs/prd/*.md)",
+      "Read(//c/github/xmaiconx/code-addiction/**)",
+      "Bash(xargs grep -l \"git checkout -b\\\\|git switch -c\")",
+      "Bash(git fetch --tags)",
+      "Bash(node scripts/build.js)",
+      "Read(//c/github/terceiros/spec-kit/**)",
+      "Bash(npx astro:*)",
+      "Bash(git -C c:/github/xmaiconx/code-addiction branch --show-current)"
+    ],
+    "additionalDirectories": [
+      "C:\\github\\xmaiconx\\code-addiction\\framwork\\.claude\\skills",
+      "\\tmp",
+      "c:\\github\\xmaiconx\\code-addiction\\framwork\\.claude\\skills",
+      "c:\\github\\xmaiconx\\code-addiction\\.claude\\skills\\building-commands"
+    ]
+  }
+}

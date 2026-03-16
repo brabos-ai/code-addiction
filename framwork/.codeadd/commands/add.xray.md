@@ -6,77 +6,15 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 
 ---
 
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+
+---
+
 ## Spec
 
 ```json
-{"gates":["discovery_script_run","apps_classified","all_analyzers_complete","context_files_updated"],"order":["discovery_script","classify_apps","dispatch_specialists","consolidate_reports","update_claude_md","copy_context_files","report_cleanup"],"specialists":{"backend":"backend-analyzer.md","frontend":"frontend-analyzer.md","database":"database-analyzer.md","code_quality":"code-quality-analyzer.md","generic":"GenericAppTemplate"},"outputs":{".codeadd/project":"APP-*.md|LIB-*.md","docs":"code-quality-review.md","root":"CLAUDE.md|AGENTS.md|GEMINI.md"}}
-```
-
----
-
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
-
----
-
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
-
-**STEPS IN ORDER:**
-```
-STEP 1: Read SKILL.md           → BOOTSTRAP FIRST
-STEP 2: Run discovery script    → BEFORE classification
-STEP 3: Classify apps           → BEFORE dispatch
-STEP 4: Dispatch specialists    → PARALLEL execution
-STEP 5: Consolidate reports     → WAIT-ALL before consolidation
-STEP 6: Update CLAUDE.md        → AFTER consolidation
-STEP 7: Copy Context Files      → AFTER CLAUDE.md update
-STEP 8: Report to user          → AFTER context files copied
-STEP 9: Cleanup                 → FINAL step
-```
-
-**⛔ ABSOLUTE PROHIBITIONS:**
-
-```
-IF SKILL.md NOT READ:
-  ⛔ DO NOT: Classify apps (signals missing)
-  ⛔ DO NOT: Dispatch specialists (templates missing)
-  ⛔ DO: Read .codeadd/skills/add-architecture-discovery/SKILL.md FIRST
-
-IF DISCOVERY SCRIPT NOT RUN:
-  ⛔ DO NOT: Classify apps (no structure data)
-  ⛔ DO NOT: Dispatch specialists (no context)
-  ⛔ DO: Run architecture-discover.sh FIRST
-
-IF APPS NOT CLASSIFIED:
-  ⛔ DO NOT: Dispatch specialists (wrong analyzer assigned)
-  ⛔ DO: Complete classification BEFORE dispatch
-
-IF SPECIALISTS NOT COMPLETE:
-  ⛔ DO NOT: Update CLAUDE.md (reports missing)
-  ⛔ DO NOT: Copy context files (CLAUDE.md missing)
-  ⛔ DO NOT: Report to user (incomplete data)
-  ⛔ DO: Wait for ALL dispatched agents to return
-
-IF CLAUDE.md NOT UPDATED:
-  ⛔ DO NOT: Copy context files (source missing)
-  ⛔ DO NOT: Report to user (incomplete data)
-  ⛔ DO: Complete STEP 6 FIRST
-
-ALWAYS:
-  ⛔ DO NOT: Analyze code yourself (you are coordinator only)
-  ⛔ DO NOT: Write pattern files directly (specialists do this)
-  ⛔ DO NOT: Skip classification (drives specialist selection)
-  ⛔ DO NOT: Translate directory names (use actual names in UPPERCASE)
+{"specialists":{"backend":"backend-analyzer.md","frontend":"frontend-analyzer.md","database":"database-analyzer.md","code_quality":"code-quality-analyzer.md","generic":"GenericAppTemplate"},"outputs":{".codeadd/project":"APP-*.md|LIB-*.md","docs":"code-quality-review.md","root":"CLAUDE.md|AGENTS.md|GEMINI.md"}}
 ```
 
 ---
@@ -84,24 +22,18 @@ ALWAYS:
 ## Rules
 
 ALWAYS:
-- Read SKILL.md before classification
-- Run discovery script before any analysis
 - Classify apps using SKILL.md signals
 - Dispatch all specialists in parallel
 - Use actual directory names in output files
-- Wait for all dispatched agents before consolidation
 - Preserve all agent prompt templates
 - Preserve coordinator/dispatcher pattern
-- Update CLAUDE.md after all analyzers complete
 - Clean up temp files last
 
 NEVER:
 - Analyze code yourself (coordinator only)
 - Write pattern files directly (specialists do this)
-- Skip SKILL.md bootstrap
 - Translate directory names in output files
 - Execute specialists sequentially (run parallel)
-- Update CLAUDE.md before specialists finish
 - Skip database analyzer if database detected
 - Skip code quality analyzer (always run)
 - Modify specialist agent prompts
@@ -124,10 +56,7 @@ You are the coordinator. You know your engine's capabilities. Map the intent to 
 
 ## STEP 1: Self-Bootstrap (READ FIRST)
 
-**READ:**
-```bash
-Read: .codeadd/skills/add-architecture-discovery/SKILL.md
-```
+Read `.codeadd/skills/add-architecture-discovery/SKILL.md`.
 
 **Focus on:**
 - `AppClassification` section → signals to identify app type (backend, frontend, cli, etc)
@@ -145,25 +74,15 @@ Read: .codeadd/skills/add-architecture-discovery/SKILL.md
 bash .codeadd/scripts/architecture-discover.sh
 ```
 
-**Verify output:**
-```bash
-ls .codeadd/temp/architecture-discovery.md
-```
+Verify `.codeadd/temp/architecture-discovery.md` exists.
 
 **IF script doesn't exist:**
 
 CREATE discovery document manually:
 
-1. Detect project type (monorepo vs single-app):
-   - Check for `turbo.json`, `pnpm-workspace.yaml`, `nx.json`
-
-2. Identify stack:
-   - Read `package.json` for frameworks
-   - Read `tsconfig.json` for TypeScript config
-
-3. Map directory structure:
-   - List `apps/`, `packages/`, `libs/`
-
+1. Detect project type (monorepo vs single-app) — check for `turbo.json`, `pnpm-workspace.yaml`, `nx.json`
+2. Identify stack from `package.json` and `tsconfig.json`
+3. Map directory structure: `apps/`, `packages/`, `libs/`
 4. WRITE findings to `.codeadd/temp/architecture-discovery.md`
 
 ---
@@ -172,18 +91,13 @@ CREATE discovery document manually:
 
 ### 3.1 Detect Apps
 
-**Execute:**
-```bash
-ls apps/ 2>/dev/null
-ls packages/ 2>/dev/null
-ls libs/ 2>/dev/null
-```
+List all directories under `apps/`, `packages/`, `libs/`.
 
 ### 3.2 Classify Each App
 
 **For each detected app:**
 
-1. READ its `package.json`
+1. Read its `package.json`
 
 2. MATCH dependencies against SKILL.md signals:
    ```
@@ -210,12 +124,11 @@ CROSS-APP:
 - libs/database detected → database-analyzer.md → LIB-DATABASE.md
 ```
 
-**⛔ CRITICAL: Use actual directory names in UPPERCASE:**
+**CRITICAL: Use actual directory names in UPPERCASE:**
 - `apps/backend` → `APP-BACKEND.md` (NOT `SERVER.md`)
 - `apps/server` → `APP-SERVER.md` (NOT `BACKEND.md`)
 - `apps/web-client` → `APP-WEB-CLIENT.md` (NOT `FRONTEND.md`)
 - `libs/database` → `LIB-DATABASE.md`
-- `libs/app-database` → `LIB-APP-DATABASE.md`
 
 ---
 
@@ -266,8 +179,6 @@ Return summary:
 
 - **Output:** Write `.codeadd/project/[PREFIX]-[DIR_NAME].md`
 
-⛔ DO NOT proceed until agent output file exists.
-
 ### 4.2 For Apps WITHOUT Specialist (cli, worker, generic)
 
 **DISPATCH AGENT:**
@@ -317,8 +228,6 @@ Return summary:
 
 - **Output:** Write `.codeadd/project/[PREFIX]-[DIR_NAME].md`
 
-⛔ DO NOT proceed until agent output file exists.
-
 ### 4.3 Database Analyzer (Cross-App, Always Run if Detected)
 
 **DISPATCH AGENT:**
@@ -358,8 +267,6 @@ Return summary:
 
 - **Output:** Write `.codeadd/project/LIB-[DIR_NAME].md`
 
-⛔ DO NOT proceed until agent output file exists.
-
 ### 4.4 Code Quality Analyzer (Always Run)
 
 **DISPATCH AGENT:**
@@ -398,9 +305,7 @@ Return summary:
 
 - **Output:** Write `docs/code-quality-review.md`
 
-⛔ DO NOT proceed until agent output file exists.
-
-**⛔ DISPATCH RULES:**
+**DISPATCH RULES:**
 - RUN ALL app analyzers IN PARALLEL
 - Database analyzer runs in same batch (parallel)
 - Code quality analyzer runs in same batch (parallel)
@@ -419,7 +324,7 @@ Return summary:
 - Frameworks/patterns per app
 - Code quality metrics
 
-**⛔ GATE CHECK: All agent outputs exist?**
+**GATE CHECK: All agent outputs exist?**
 - If NO → Wait. Do NOT proceed to STEP 6.
 - If YES → Proceed to STEP 6.
 
@@ -465,7 +370,7 @@ Return summary:
 
 - **Output:** Update `CLAUDE.md`
 
-⛔ DO NOT proceed until CLAUDE.md has been updated.
+WAIT: Do NOT proceed until CLAUDE.md has been updated.
 
 ---
 
@@ -487,52 +392,21 @@ Always execute commands via Git Bash:
 Do not use WSL bash (`bash ...`) directly.
 ```
 
-**⛔ DO NOT rewrite or regenerate content — READ CLAUDE.md and WRITE.**
-**⛔ GEMINI.md = exact copy. AGENTS.md = exact copy + shell policy append.**
+**DO NOT rewrite or regenerate content -- READ CLAUDE.md and WRITE.**
+**GEMINI.md = exact copy. AGENTS.md = exact copy + shell policy append.**
 
-**Verify all 3 files exist before proceeding:**
+Verify all 3 files exist before proceeding:
 - [ ] CLAUDE.md exists
 - [ ] AGENTS.md exists (with shell policy section at the end)
 - [ ] GEMINI.md exists
-
-⛔ DO NOT proceed until all 3 context files exist.
 
 ---
 
 ## STEP 8: Report to User
 
-**Format:**
-```markdown
-## Project Discovery Complete
+Report to user including: context files updated, apps analyzed with types, files generated, code quality scores, next steps.
 
-**Context Files Updated:**
-- ✅ CLAUDE.md (Claude Code)
-- ✅ AGENTS.md (OpenAI Codex / Kilocode / OpenCode) + Shell policy (Windows)
-- ✅ GEMINI.md (Google Gemini)
-
-**CLAUDE.md Sections:**
-- ✅ Architecture Contract
-- ✅ Technical Spec
-- ✅ Implementation Patterns
-
-**Apps Analyzed:**
-| App | Type | Specialist | Output |
-|-----|------|------------|--------|
-| [path] | [type] | [yes/generic] | .codeadd/project/[PREFIX]-[DIR_NAME].md |
-
-**Files Generated:**
-- [list all .codeadd/project/*.md]
-
-**Code Quality:**
-- SOLID: [score]
-- Clean Code: [score]
-- Tech Debt: [level]
-
-**Next Steps:**
-1. Review CLAUDE.md for architecture overview
-2. Review .codeadd/project/*.md for implementation patterns
-3. /dev, /autopilot, /review will use these patterns automatically
-```
+**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
 
 ---
 
@@ -566,43 +440,36 @@ Where:
 | `apps/backend` | `APP-BACKEND.md` |
 | `apps/server` | `APP-SERVER.md` |
 | `apps/web-client` | `APP-WEB-CLIENT.md` |
-| `apps/api-gateway` | `APP-API-GATEWAY.md` |
 | `libs/database` | `LIB-DATABASE.md` |
-| `libs/app-database` | `LIB-APP-DATABASE.md` |
 | `libs/shared-utils` | `LIB-SHARED-UTILS.md` |
 | `packages/core` | `LIB-CORE.md` |
 
-### Special Cases
+**Special:** Database cross-app → `LIB-DATABASE.md` or based on actual lib path. Code Quality → `docs/code-quality-review.md`.
 
-| Type | Output File |
-|------|-------------|
-| Database (cross-app) | `LIB-DATABASE.md` or based on actual lib path |
-| Code Quality | `docs/code-quality-review.md` |
-
-**⚠️ NEVER translate names:** `apps/backend` → `APP-BACKEND.md`, NOT `SERVER.md`
+**NEVER translate names:** `apps/backend` → `APP-BACKEND.md`, NOT `SERVER.md`
 
 ---
 
 ## Example: Monorepo with Mixed Apps
 
-**STEP 3 classification:**
+**Classification:**
 ```
-apps/server  → backend (nestjs detected)   → backend-analyzer.md
-apps/admin   → frontend (react detected)   → frontend-analyzer.md
-apps/portal  → frontend (react detected)   → frontend-analyzer.md
-apps/cli     → cli (commander detected)    → generic template
-apps/site    → frontend (next detected)    → frontend-analyzer.md
-libs/database → prisma detected            → database-analyzer.md
+apps/server  → backend (nestjs)    → backend-analyzer.md
+apps/admin   → frontend (react)    → frontend-analyzer.md
+apps/portal  → frontend (react)    → frontend-analyzer.md
+apps/cli     → cli (commander)     → generic template
+apps/site    → frontend (next)     → frontend-analyzer.md
+libs/database → prisma             → database-analyzer.md
 ```
 
-**STEP 4 dispatches 6 parallel analyzers:**
+**Dispatch (6 parallel):**
 ```
-backend-analyzer  → apps/server    → APP-SERVER.md
-frontend-analyzer → apps/admin     → APP-ADMIN.md
-frontend-analyzer → apps/portal    → APP-PORTAL.md
-generic template  → apps/cli       → APP-CLI.md (discovered: shell client)
-frontend-analyzer → apps/site      → APP-SITE.md
-database-analyzer → libs/database  → LIB-DATABASE.md
+backend-analyzer  → apps/server   → APP-SERVER.md
+frontend-analyzer → apps/admin    → APP-ADMIN.md
+frontend-analyzer → apps/portal   → APP-PORTAL.md
+generic template  → apps/cli      → APP-CLI.md
+frontend-analyzer → apps/site     → APP-SITE.md
+database-analyzer → libs/database → LIB-DATABASE.md
 ```
 
 **Result:** 6 pattern files, each named after actual project structure.

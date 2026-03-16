@@ -1,0 +1,369 @@
+# ADD Build - Command, Skill & Script Executor
+
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **SKILL:** Apply `building-commands` to ALL outputs
+
+Executor that transforms PRDs into functional artefacts (commands, skills, scripts) within the code-addiction framework (`framwork/`).
+
+---
+
+## Spec
+
+```json
+{"outputs":{"command":"framwork/.codeadd/commands/*.md","skill":"framwork/.codeadd/skills/*/SKILL.md","script":"framwork/.codeadd/scripts/*","claude_command":"framwork/.claude/commands/*.md","agent_workflow":"framwork/.agent/workflows/*.md","agent_skill":"framwork/.agents/skills/*/SKILL.md"}}
+```
+
+---
+
+## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
+
+**STEPS IN ORDER:**
+```
+STEP 1: Load PRD/context         → READ FIRST
+STEP 2: Design approved?         → IF NO: STOP AND PRESENT
+STEP 3: Load skills              → building-commands + ecosystem-map
+STEP 4: Implement                → ONLY AFTER 1-3 (in framwork/)
+STEP 5: Test                     → ONLY AFTER implementing
+STEP 6: Document                 → ONLY AFTER tests pass
+STEP 7: Completion               → Final summary
+```
+
+**⛔ ABSOLUTE PROHIBITIONS:**
+
+```
+IF PRD/CONTEXT NOT LOADED:
+  ⛔ DO NOT USE: Write in framwork/
+  ⛔ DO NOT: Implement any artefact
+  ✅ DO: Load PRD or ask for description
+
+IF DESIGN NOT APPROVED:
+  ⛔ DO NOT USE: Write to create artefacts in framwork/
+  ⛔ DO NOT USE: Edit on existing artefacts in framwork/
+  ⛔ DO NOT: Implement
+  ✅ DO: Present design and wait for approval
+
+IF building-commands SKILL NOT LOADED:
+  ⛔ DO NOT USE: Write on commands
+  ⛔ DO NOT: Create command structure
+  ✅ DO: Read .claude/skills/building-commands/SKILL.md
+```
+
+---
+
+## Operation Mode
+
+```
+/add.make PRD-[slug]                 → Execute specific PRD
+/add.make [type] [name]             → Direct build (no PRD, for simple artefacts)
+```
+
+**Examples:**
+```
+/add.make PRD-hotfix-optimization
+/add.make command add-diagnose
+/add.make skill skill-creator
+```
+
+**Valid types:** `command` | `skill` | `script` | `workflow`
+
+> To optimize an existing artefact: use `/add.make [type] [name]` → the design phase detects the artefact already exists and presents analysis vs building-commands before editing.
+
+**Framework paths:**
+
+| Type | Path |
+|------|------|
+| Command (Claude) | `framwork/.claude/commands/*.md` |
+| Command (CodeADD) | `framwork/.codeadd/commands/*.md` |
+| Workflow (Agent) | `framwork/.agent/workflows/*.md` |
+| Skill (CodeADD) | `framwork/.codeadd/skills/*/SKILL.md` |
+| Skill (Agent) | `framwork/.agents/skills/*/SKILL.md` |
+| Script | `framwork/.codeadd/scripts/*` |
+
+---
+
+## STEP 1: Load Context (MANDATORY)
+
+### 1.0 Verify Framework Structure
+
+Verify `framwork/` exists and list its provider directories.
+
+### 1.1 If PRD specified
+
+Read `docs/prd/PRD-[slug].md`.
+
+**Extract from PRD:**
+- Artefact type (command/skill/script/workflow)
+- Scope (includes/excludes)
+- Validated decisions
+- Accepted trade-offs
+
+### 1.2 If direct build (no PRD)
+
+**Only for SIMPLE builds.** Collect:
+
+```markdown
+**Type:** [command|skill|script|workflow]
+**Name:** [kebab-case]
+**Purpose:** [1 line]
+**Scope:** [what it does / what it does NOT]
+**Providers:** [claude|codeadd|agent] (which provider dirs to create in)
+```
+
+**If complex:** Recommend `/add.strategy` first.
+
+### 1.3 Worktree for Risky Builds
+
+```
+IF build involves multiple artefacts OR modifies existing commands/skills:
+  → RECOMMEND user create branch + worktree before implementing
+  → Reason: clean isolation, easy discard if something goes wrong
+  → On problems: discard worktree (no manual rollback)
+  → After implementing: /add.sync to validate ecosystem consistency
+```
+
+---
+
+## STEP 2: Design [STOP]
+
+**⛔ GATE:** Do not implement without design approval.
+
+### 2.1 Present Design
+
+Present a design document showing: artefact type, path, proposed structure, planned gates (if command), and building-commands checklist.
+
+### 2.2 Wait for Approval
+
+**STOP AND WAIT.** Only proceed after explicit approval or requested adjustments.
+
+---
+
+## STEP 3: Load Skills (MANDATORY)
+
+**BEFORE implementing, READ:**
+
+```
+.claude/skills/building-commands/SKILL.md                    # ALWAYS
+framwork/.codeadd/skills/ecosystem-map/SKILL.md              # ALWAYS (ecosystem overview)
+framwork/.codeadd/skills/token-efficiency/SKILL.md           # ALWAYS
+framwork/.codeadd/skills/documentation-style/SKILL.md        # If generating docs
+framwork/.codeadd/skills/skill-creator/SKILL.md              # IF type=skill
+framwork/.codeadd/skills/                                     # Reference of existing skills
+```
+
+### building-commands Checklist (APPLY)
+
+```
+□ Top-of-file blocking section (prohibitions BEFORE instructions)
+□ Uses STEP (imperative) instead of Phase (documentary)
+□ Sequential INTEGER numbering (1, 2, 3... NEVER 2.5, 6.5)
+□ Imperative language (EXECUTE, DO NOT, CONFIRM)
+□ Gates use TOOL-SPECIFIC prohibitions
+□ Condition blocks: IF [condition]: ⛔ DO NOT USE [tool]
+□ Mandatory explicit order
+□ Checklists with checkboxes (not timelines)
+□ Spec JSON only for consultable data (paths, outputs, modes) — not gates/order
+□ Bash blocks only where non-obvious or learned from errors
+□ No fixed display/error message templates
+□ Rules: ALWAYS/NEVER markdown, no duplication of STEP order
+```
+
+**⛔ FRACTIONAL NUMBERING PROHIBITED:**
+```
+❌ WRONG: STEP 6, STEP 6.5, STEP 7
+✅ RIGHT: STEP 6, STEP 7, STEP 8  (renumber the sequence)
+```
+
+---
+
+## STEP 4: Implement
+
+### 4.1 By Artefact Type
+
+#### Command (framwork/.claude/commands/*.md + framwork/.codeadd/commands/*.md)
+
+**Register in `framwork/provider-map.json` (MANDATORY for new commands):**
+
+```json
+"commands": {
+  "[name]": { "description": "[description from command frontmatter]" }
+}
+```
+
+Default providers = all (claude, codex, antigrav, kilocode, opencode). Omit `providers` field to use all.
+
+**Mandatory command structure:**
+
+```markdown
+# [Command Name]
+
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+
+[1-line description]
+
+---
+
+## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
+
+**STEPS IN ORDER:**
+[numbered list]
+
+**⛔ ABSOLUTE PROHIBITIONS:**
+[condition blocks with tools]
+
+---
+
+## STEP 1: ...
+## STEP 2: ...
+
+---
+
+## Rules
+
+ALWAYS:
+- [verb] ...
+
+NEVER:
+- [verb] ...
+```
+
+**NOTE:** Create in ALL relevant provider dirs:
+- `framwork/.claude/commands/` (Claude Code)
+- `framwork/.codeadd/commands/` (CodeADD)
+- `framwork/.agent/workflows/` (Agent - if applicable)
+
+#### Skill (framwork/.codeadd/skills/*/SKILL.md + framwork/.agents/skills/*/SKILL.md)
+
+**Register in `framwork/provider-map.json` (MANDATORY for new skills):**
+
+```json
+"skills": {
+  "[name]": { "providers": ["claude", "antigrav", "kilocode", "opencode"] }
+}
+```
+
+Use `["antigrav"]` for internal skills (not exposed to end user).
+
+**Mandatory structure:**
+
+```markdown
+---
+name: [kebab-case]
+description: [when to use - max 20 words]
+---
+
+# [Name]
+
+## Overview
+[2-3 lines]
+
+## When to Use
+[list]
+
+## When NOT to Use
+[list]
+
+## Core [specific sections]
+
+## Validation Checklist
+[checkboxes]
+```
+
+#### Script (framwork/.codeadd/scripts/*)
+
+**Mandatory structure:**
+
+```bash
+#!/bin/bash
+# ============================================
+# [SCRIPT NAME]
+# [1-line description]
+# ============================================
+# Usage: bash framwork/.codeadd/scripts/[name].sh [args]
+# Dependencies: [list]
+# ============================================
+
+# --- Detection ---
+[detect context]
+
+# --- Execution ---
+[main logic]
+
+# --- Output ---
+[structured output]
+```
+
+### 4.2 Validate During Implementation
+
+At each section written, verify:
+
+```
+□ Imperative language? (not informative)
+□ Gates have tool-specific prohibitions?
+□ Order is mandatory? (not suggested)
+□ Checkboxes? (not timelines)
+```
+
+---
+
+## STEP 5: Test
+
+### 5.1 Mental Test (MANDATORY)
+
+Simulate artefact execution with 3 scenarios: happy path, gate violation, edge case.
+
+### 5.2 Validate vs building-commands
+
+```
+□ Can the agent skip gates? (must be impossible)
+□ Are prohibitions specific? (tools, not generic)
+□ Is the order bypassable? (must not be)
+```
+
+**If fails:** Go back to STEP 4 and fix.
+
+---
+
+## STEP 6: Document
+
+### 6.1 Changelog (MANDATORY if new/major)
+
+```
+docs/changelog/YYYY-MM-DD-[action]-[what].md
+```
+
+**Actions:** `add` | `update` | `refactor` | `remove`
+
+### 6.2 Update PRD (if exists)
+
+Set PRD status: `draft` → `implemented`
+
+---
+
+## STEP 7: Completion
+
+Show summary: artefact path, type, PRD link, files created/updated, validations passed, usage instructions.
+
+---
+
+## Rules
+
+ALWAYS:
+- Load building-commands skill before creating any command
+- Apply ALL patterns from the skill
+- Test mentally before finalizing
+- Document changes and update ecosystem map
+- Use sequential INTEGER numbering (1,2,3)
+- Renumber steps when inserting new ones
+- Register new command/skill in framwork/provider-map.json
+- Create source file in framwork/.codeadd/ (source of truth)
+
+NEVER:
+- Implement without PRD/context loaded
+- Skip design approval
+- Use informative language in commands ("it's recommended")
+- Create generic gates (without tool-specific prohibitions)
+- Use Phase instead of STEP
+- Use fractional numbering (2.5, 6.5)
+- Insert steps without renumbering
+- Create provider files manually (use framwork/.codeadd/ + provider-map.json)
+- Put gates/order in Spec JSON that duplicate STEPs

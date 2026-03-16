@@ -1,6 +1,8 @@
 # Feature Code Review Specialist
 
 > **AUTO-CORRECTION RULE:** The reviewer MUST automatically apply ALL identified corrections. Only finalize when code is 100% correct.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 
 Coordinator for feature code review. Dispatches specialized reviewers (Frontend + Backend) in parallel, consolidates findings, auto-corrects all violations, verifies build, and outputs structured report to console.
 
@@ -9,23 +11,8 @@ Coordinator for feature code review. Dispatches specialized reviewers (Frontend 
 ## Spec
 
 ```json
-{"gates":["implementation_complete","feature_docs_exist","context_loaded","spec_audit_complete","reviewers_complete","build_passing","startup_check_passed_or_skipped"],"order":["pre_review_setup","bootstrap_context","spec_compliance_audit","dispatch_reviewers","consolidate_findings","build_verification","startup_test","quality_gate_report"],"outputs":{"report":"console + docs/features/${FEATURE_ID}/review.md"}}
+{"outputs":{"report":"console + docs/features/${FEATURE_ID}/review.md"}}
 ```
-
----
-
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -52,32 +39,34 @@ STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
 STEP 6: Build Verification      → npm run build, fix until passing
 <!-- feature:startup-test:step-list -->
 <!-- /feature:startup-test:step-list -->
+<!-- feature:tdd:step-list -->
+<!-- /feature:tdd:step-list -->
 STEP 8: Quality Gate Report     → Create review.md + console output
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE PROHIBITIONS:**
 
 ```
 IF IMPLEMENTATION NOT COMPLETE:
   ⛔ DO NOT USE: Task for reviewer subagents
-  ⛔ DO: Inform user to complete development first
+  ✅ DO: Inform user to complete development first
 
 IF CONTEXT NOT LOADED (STEP 2):
   ⛔ DO NOT USE: Write for spec audit output
   ⛔ DO NOT USE: Task for reviewer subagents
-  ⛔ DO: Load all feature docs and CLAUDE.md first
+  ✅ DO: Load all feature docs and CLAUDE.md first
 
 IF SPEC AUDIT NOT COMPLETE (STEP 3):
   ⛔ DO NOT USE: Task for reviewer subagents
-  ⛔ DO: Execute Spec Compliance Audit first
+  ✅ DO: Execute Spec Compliance Audit first
 
 IF BUILD FAILING (after fixes):
   ⛔ DO NOT: Proceed to STEP 7 or STEP 8
-  ⛔ DO: Fix build errors until 100% passing
+  ✅ DO: Fix build errors until 100% passing
 
 IF STARTUP TEST FAILS (exit code 1, non-connection error):
   ⛔ DO NOT USE: Write to create review.md
-  ⛔ DO: Fix DI/IoC error, re-run startup test
+  ✅ DO: Fix DI/IoC error, re-run startup test
 
 ALWAYS:
   ⛔ DO NOT USE: Bash for git commit
@@ -86,23 +75,13 @@ ALWAYS:
 
 ---
 
-## Model Selection
-
-**All reviewers use:** `sonnet`
-
-Review requires complex reasoning about architecture, security, and business logic. Sonnet provides the best balance of quality and cost for code review tasks.
-
----
-
 ## STEP 1: Pre-Review Setup
 
 ### 1.1 Check for Unstaged Changes
 
-```bash
-git status --porcelain
-```
+Check working directory for unstaged/untracked changes.
 
-**If there are unstaged changes (lines starting with ` M`, `??`, etc.):**
+**If there are unstaged changes:**
 
 Use AskUserQuestion tool to ask the user:
 
@@ -130,14 +109,14 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 
 ### 1.2 Validate Implementation Complete
 
-**⛔ GATE: Implementation must exist.**
+**GATE: Implementation must exist.**
 - Feature code exists (committed, staged, or unstaged)
 - `docs/features/${FEATURE_ID}/about.md` exists
 - `docs/features/${FEATURE_ID}/plan.md` exists (recommended)
 
 **IF implementation is NOT complete:**
-- ⛔ DO NOT USE: Task for reviewer subagents
-- ⛔ DO: Inform user and STOP
+- DO NOT USE: Task for reviewer subagents
+- DO: Inform user and STOP
 
 ---
 
@@ -159,11 +138,7 @@ bash .codeadd/scripts/status.sh
 
 ### 2.2 Load Feature Documentation
 
-```bash
-ls -la "docs/features/${FEATURE_ID}/"
-```
-
-**Load ALL documents IN ORDER:**
+List the feature docs directory, then **load ALL documents IN ORDER:**
 1. `about.md` - Feature specification (EXTRACT: RF, RN, Acceptance Criteria)
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
@@ -180,11 +155,7 @@ ls -la "docs/features/${FEATURE_ID}/"
 
 ### 2.3 Load Project Architecture Reference
 
-```bash
-cat CLAUDE.md
-```
-
-**Extract from specification:**
+Read CLAUDE.md and **extract from specification:**
 - Configuration patterns (env vars, configs)
 - DI patterns (service injection)
 - Repository patterns
@@ -202,7 +173,7 @@ From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
 
 **IMPORTANT:** Review must cover ALL changed files (committed, staged, unstaged, untracked).
 
-**⛔ GATE: Context must be fully loaded before dispatching reviewers.**
+**GATE: Context must be fully loaded before dispatching reviewers.**
 
 ---
 
@@ -220,11 +191,11 @@ IF `## Spec Checklist` EXISTS:
 
 IF `## Spec Checklist` NOT FOUND:
   → FALLBACK: Extract contracts from plan.md prose:
-    - Routes: grep for POST/GET/PUT/DELETE + path patterns
-    - Services: grep for Service/Handler/Adapter class definitions
-    - DTOs: grep for Dto/Request/Response class definitions
-    - Guards: grep for Guard class definitions
-    - Queues: grep for queue/processor/worker references
+    - Routes: POST/GET/PUT/DELETE + path patterns
+    - Services: Service/Handler/Adapter class definitions
+    - DTOs: Dto/Request/Response class definitions
+    - Guards: Guard class definitions
+    - Queues: queue/processor/worker references
   → Note: "Spec Checklist absent — audit based on prose extraction (less precise)"
 ```
 
@@ -242,9 +213,9 @@ b. VALIDATE not just existence but BEHAVIOR:
    - Queue: processes events as described?
 c. COMPARE with about.md: does the item satisfy the RF/RN that motivated it?
 d. STATUS per item:
-   ✅ COMPLIANT   — matches spec in name, type, and behavior
-   ⚠️ DIVERGENT   — exists but differs from spec (describe exact gap)
-   ❌ MISSING     — not found in codebase
+   COMPLIANT   — matches spec in name, type, and behavior
+   DIVERGENT   — exists but differs from spec (describe exact gap)
+   MISSING     — not found in codebase
 ```
 
 ### 3.3 Cross-Reference
@@ -257,32 +228,14 @@ Do ALL RF/RN from about.md have at least one Spec Checklist item covering them?
 
 ### 3.4 Spec Audit Output
 
-```
-## Spec Compliance Audit
+Output the audit as a table with columns: Item, Type, Expected, Found at, Status. Include summary counts (COMPLIANT/DIVERGENT/MISSING), RF/RN coverage, and compute SPEC_AUDIT_STATUS (COMPLIANT | DIVERGENT | INCOMPLETE).
 
-**Source:** [Spec Checklist | Prose extraction]
-**Total items:** X
+**GATE: SPEC_AUDIT_STATUS MUST be computed before dispatching reviewers.**
+- DO NOT USE: Task for reviewer subagents if spec audit not complete
+- DO: Include SPEC_AUDIT_STATUS in reviewer prompts as context
 
-| Item | Type | Expected | Found at | Status |
-|------|------|----------|----------|--------|
-| Route: POST /billing/webhook/:provider | Route | WebhookController | POST /webhook (fixed) | ⚠️ DIVERGENT |
-| Service: WebhookNormalizerService | Service | generic, provider-agnostic | StripeWebhookService | ❌ MISSING |
-| DTO: WebhookEventDto {provider,payload,signature} | DTO | 3 fields | WebhookDto {payload} | ⚠️ DIVERGENT |
-
-**COMPLIANT:** X/Y
-**DIVERGENT:** X/Y — [list with exact gaps]
-**MISSING:** X/Y — [list]
-
-**RF/RN Coverage:**
-- RF01: ✅ covered by [item]
-- RF02: ⚠️ no Spec Checklist item
-
-**SPEC_AUDIT_STATUS:** COMPLIANT | DIVERGENT | INCOMPLETE
-```
-
-**⛔ GATE: SPEC_AUDIT_STATUS MUST be computed before dispatching reviewers.**
-- ⛔ DO NOT USE: Task for reviewer subagents if spec audit not complete
-- ✅ DO: Include SPEC_AUDIT_STATUS in reviewer prompts as context
+<!-- feature:tdd:spec-audit -->
+<!-- /feature:tdd:spec-audit -->
 
 ---
 
@@ -291,13 +244,8 @@ Do ALL RF/RN from about.md have at least one Spec Checklist item covering them?
 ### 4.1 Detect Scope
 
 Based on changed files, determine which reviewers to dispatch:
-
-```json
-{
-  "frontend": "apps/frontend/** detected",
-  "backend": "apps/backend/** OR libs/** detected"
-}
-```
+- **frontend**: `apps/frontend/**` detected
+- **backend**: `apps/backend/**` OR `libs/**` detected
 
 ### 4.2 Dispatch Strategy
 
@@ -311,45 +259,30 @@ Based on changed files, determine which reviewers to dispatch:
 
 ---
 
-### Frontend Reviewer
+### DISPATCH AGENT: Frontend Reviewer
 
-**Dispatch with Task tool:**
+**Intent:** Review frontend code quality, patterns, and UX implementation for the feature.
 
 ```
 description: "Review Frontend for ${FEATURE_ID}"
-model: "sonnet"
-subagent_type: "general-purpose"
 prompt: |
   ## ROLE
   You are the FRONTEND REVIEWER for feature ${FEATURE_ID}.
-  Your job is to validate frontend code quality, patterns, and UX implementation.
+  Validate frontend code quality, patterns, and UX implementation.
 
-  ## TASK_DOCUMENTS (read ALL before reviewing — source of truth)
-  ${TASK_DOCUMENTS}
-
-  ## MANDATORY: Load Context (FIRST STEP)
-  Execute BEFORE any validation:
-
+  ## BOOTSTRAP
   1. Run: bash .codeadd/scripts/status.sh
-  2. Read ALL files listed in TASK_DOCUMENTS above
-  3. Parse PROJECT_PATHS from script output and read relevant files:
-     - Read files matching frontend apps you're reviewing (e.g., ADMIN.md, PORTAL.md)
-     - Files are named by app, not by type
+  2. Read ALL files listed in TASK_DOCUMENTS
+  3. Read PROJECT_PATHS files matching frontend apps (e.g., ADMIN.md, PORTAL.md)
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
+  5. Read skills:
+     - .codeadd/skills/add-frontend-development/SKILL.md (PRIMARY)
+     - .codeadd/skills/add-code-review/SKILL.md
+     - .codeadd/skills/add-ux-design/SKILL.md (if design.md missing)
+     - Component refs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md (in .codeadd/skills/add-ux-design/)
 
-  ## SKILLS (MANDATORY)
-  Read BEFORE reviewing:
-  - .codeadd/skills/add-frontend-development/SKILL.md (PRIMARY - types, hooks, state, API)
-  - .codeadd/skills/add-code-review/SKILL.md (validation patterns)
-  - .codeadd/skills/add-ux-design/SKILL.md (if design.md missing or for implementation details)
-
-  Reference for specific components:
-  - shadcn: .codeadd/skills/add-ux-design/shadcn-docs.md
-  - Tailwind: .codeadd/skills/add-ux-design/tailwind-v3-docs.md
-  - Motion: .codeadd/skills/add-ux-design/motion-dev-docs.md
-  - Charts: .codeadd/skills/add-ux-design/recharts-docs.md
-  - Tables: .codeadd/skills/add-ux-design/tanstack-table-docs.md
-  - Query: .codeadd/skills/add-ux-design/tanstack-query-docs.md
+  ## TASK_DOCUMENTS (read ALL — source of truth)
+  ${TASK_DOCUMENTS}
 
   ## VALIDATION CATEGORIES
 
@@ -390,111 +323,54 @@ prompt: |
   - [ ] HTTP client follows documented pattern
   Note: Pattern files are named by app (ADMIN.md, PORTAL.md), not FRONTEND.md
 
-  ## TASK
-  1. Read ALL frontend files from FILES_TO_REVIEW
-  2. Validate against all categories above
-  3. AUTO-FIX all violations found
-  4. Document issues found and fixes applied
-
   ## RULES
-  - NO questions - fix issues automatically
+  - NO questions — fix issues automatically
   - Use skill patterns as source of truth
   - If design.md exists, specs are MANDATORY (not optional)
   - Fix ALL violations (no deferrals)
   - DO NOT run build (coordinator will do it)
 
   ## REPORT FORMAT
-  Return structured report:
-
-  ### Frontend Review Report
-
-  **Files Reviewed:** [count]
-
-  **Issues Found by Category:**
-  - Frontend Patterns: [count]
-  - UX Implementation: [count]
-  - Code Quality: [count]
-  - Security: [count]
-  - Contracts: [count]
-
-  **Issues Fixed:**
-  [List each issue with: file:line, severity (🔴🟡🟠🟢), description, fix applied]
-
-  **Files Modified:**
-  [List all files modified during fixes]
-
-  **Severity Summary:**
-  - 🔴 Critical: [count] fixed
-  - 🟡 High: [count] fixed
-  - 🟠 Medium: [count] fixed
-  - 🟢 Low: [count] fixed
-
-  **Score:** [X/10] (deduct 2 points per critical, 1 per high, 0.5 per medium)
+  Return: Files Reviewed count, Issues Found by Category (Frontend Patterns, UX, Code Quality, Security, Contracts), Issues Fixed (file:line, severity, description, fix), Files Modified, Severity Summary, Score X/10 (deduct 2 per critical, 1 per high, 0.5 per medium).
 ```
 
 ---
 
-### Backend Reviewer
+### DISPATCH AGENT: Backend Reviewer
 
-**Dispatch with Task tool:**
+**Intent:** Review backend code quality, architecture, security, database, and product completeness for the feature.
 
 ```
 description: "Review Backend for ${FEATURE_ID}"
-model: "sonnet"
-subagent_type: "general-purpose"
 prompt: |
   ## ROLE
   You are the BACKEND REVIEWER for feature ${FEATURE_ID}.
-  Your job is to validate backend code quality, architecture, security, database, AND product completeness.
+  Validate backend code quality, architecture, security, database, AND product completeness.
 
-  ## TASK_DOCUMENTS (read ALL before reviewing — source of truth)
-  ${TASK_DOCUMENTS}
-
-  ## MANDATORY: Load Context (FIRST STEP)
-  Execute BEFORE any validation:
-
+  ## BOOTSTRAP
   1. Run: bash .codeadd/scripts/status.sh
-  2. Read ALL files listed in TASK_DOCUMENTS above
-  3. Parse PROJECT_PATHS from script output and read relevant files:
-     - Read files matching backend apps you're reviewing (e.g., SERVER.md)
-     - DATABASE.md is cross-app, always read if database work
-     - Files are named by app, not by type
+  2. Read ALL files listed in TASK_DOCUMENTS
+  3. Read PROJECT_PATHS files matching backend apps (e.g., SERVER.md, DATABASE.md)
   4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
+  5. Read skills:
+     - .codeadd/skills/add-backend-development/SKILL.md (PRIMARY)
+     - .codeadd/skills/add-database-development/SKILL.md
+     - .codeadd/skills/add-code-review/SKILL.md
+     - .codeadd/skills/add-security-audit/SKILL.md
+     - .codeadd/skills/add-delivery-validation/SKILL.md
 
-  ## SKILLS (MANDATORY)
-  Read BEFORE reviewing:
-  - .codeadd/skills/add-backend-development/SKILL.md (PRIMARY - Clean Arch, RESTful, IoC/DI, DTOs, CQRS)
-  - .codeadd/skills/add-database-development/SKILL.md (Entities, Migrations, Kysely, Repositories)
-  - .codeadd/skills/add-code-review/SKILL.md (validation patterns, contracts)
-  - .codeadd/skills/add-security-audit/SKILL.md (OWASP, multi-tenancy)
-  - .codeadd/skills/add-delivery-validation/SKILL.md (product validation)
+  ## TASK_DOCUMENTS (read ALL — source of truth)
+  ${TASK_DOCUMENTS}
 
   ## VALIDATION CATEGORIES
 
   ### 1. Project-Specific Patterns (CRITICAL)
   **IoC/DI Configuration:**
-  ```bash
-  # Check module imports
-  cat apps/backend/src/api/app.module.ts | grep -E "imports:"
-
-  # Check barrel exports
-  cat libs/app-database/src/repositories/index.ts
-  cat libs/app-database/src/interfaces/index.ts
-  cat libs/domain/src/entities/index.ts
-  cat libs/domain/src/enums/index.ts
-  ```
   - [ ] Services in module providers
   - [ ] Modules imported in AppModule
   - [ ] Barrel exports complete (entities, repositories, interfaces)
 
   **RESTful API Compliance:**
-  ```bash
-  # Find verbs in routes (anti-pattern)
-  grep -rE "@(Get|Post|Put|Patch|Delete)\(['\"].*?(get|create|update|delete)" apps/backend/src --include="*.controller.ts"
-
-  # Check HttpCode usage
-  grep -rE "@HttpCode" apps/backend/src --include="*.controller.ts"
-  ```
   - [ ] Noun-based URLs (no verbs like /getUsers)
   - [ ] POST returns 201 (with @HttpCode decorator)
   - [ ] DELETE returns 204 (with @HttpCode decorator)
@@ -529,45 +405,41 @@ prompt: |
   - [ ] No double-parse/stringify for JSONB fields
 
   **JSONB Validation:**
-  ```bash
-  # Check for JSONB misuse
-  grep -rE "JSON\.(parse|stringify)" libs/app-database/src --include="*.ts"
-  ```
   - [ ] No `JSON.parse()` on JSONB fields (Kysely auto-parses)
   - [ ] No `JSON.stringify()` before insert (Kysely auto-stringifies)
 
   ### 5. Security Validation (OWASP)
 
-  **Injection (🔴 Critical):**
+  **Injection (Critical):**
   - [ ] Queries parametrized (no string concatenation)
   - [ ] Inputs validated with class-validator decorators
 
-  **Authentication (🔴 Critical):**
+  **Authentication (Critical):**
   - [ ] Guards applied to protected routes
   - [ ] JWT tokens not exposed in logs/responses
 
-  **Data Exposure (🔴 Critical):**
+  **Data Exposure (Critical):**
   - [ ] Credentials encrypted via IEncryptionService
   - [ ] Logs without sensitive data (passwords, tokens, API keys)
 
-  **Access Control (🔴 Critical - Multi-Tenancy):**
+  **Access Control (Critical - Multi-Tenancy):**
   - [ ] EVERY query filters by `account_id` (if multi-tenancy in CLAUDE.md)
   - [ ] Ownership validated before operations
   - [ ] `account_id` from JWT (NOT from request body)
 
-  **Configuration (🟡 High):**
+  **Configuration (High):**
   - [ ] CORS restricted (not `origin: '*'` in production)
   - [ ] Secrets via environment variables
   - [ ] New env vars documented in `.env.example`
 
-  **XSS (🟡 High):**
+  **XSS (High):**
   - [ ] Outputs sanitized
   - [ ] URLs validated before use
 
-  **Dependencies (🟡 High):**
+  **Dependencies (High):**
   - [ ] No critical/high vulnerabilities (check with `npm audit` if unsure)
 
-  **Mass Assignment (🟠 Medium):**
+  **Mass Assignment (Medium):**
   - [ ] DTOs explicit (no spread of body)
   - [ ] No direct assignment from request to entity
 
@@ -588,20 +460,11 @@ prompt: |
   - [ ] Errors with descriptive messages
 
   ### 8. Contract & Runtime Validation
-  **Backend ↔ Frontend Contracts:**
-  ```bash
-  # Check backend DTOs
-  grep -rE "export (class|interface) \w+(Dto|Response)" apps/backend/src --include="*.ts"
-
-  # Compare with frontend types
-  ls apps/frontend/src/types/
-  ```
   - [ ] Backend DTOs mirrored as frontend interfaces
   - [ ] Enums mirrored with same values
   - [ ] Date fields: Date in backend, string in frontend (JSON serialization)
 
   ### 8.5. Project Patterns Validation (if .codeadd/project/*.md exists)
-  **Backend Patterns (from .codeadd/project/[APP_NAME].md):**
   - [ ] Logging follows documented pattern (library, format, context)
   - [ ] Validation follows documented pattern (library, DTOs)
   - [ ] Error handling follows documented pattern (base class, HTTP mapping)
@@ -614,22 +477,15 @@ prompt: |
 
   ### 9. Product Validation (CRITICAL)
 
-  **Load Delivery Validation Skill:**
-  ```bash
-  cat .codeadd/skills/add-delivery-validation/SKILL.md
-  ```
+  Read `.codeadd/skills/add-delivery-validation/SKILL.md` before validating.
 
   **For EACH requirement in about.md:**
 
   **Functional Requirements (RF):**
-  - [ ] RF01: [description] → Implementation: [file:line] → ✅/❌
-  - [ ] RF02: [description] → Implementation: [file:line] → ✅/❌
-  - [ ] ...
+  - [ ] RF01: [description] → Implementation: [file:line] → status
 
   **Business Rules (RN):**
-  - [ ] RN01: [description] → Logic: [file:line] → ✅/❌
-  - [ ] RN02: [description] → Logic: [file:line] → ✅/❌
-  - [ ] ...
+  - [ ] RN01: [description] → Logic: [file:line] → status
 
   **Prerequisites Validation:**
   For each requirement, check if implicit dependencies exist:
@@ -637,29 +493,12 @@ prompt: |
   - [ ] Does requirement assume another feature exists? Verify endpoint/component exists.
   - [ ] Does requirement assume configuration? Verify env vars/config exists.
 
-  **Example:**
-  ```
-  RF01: "Verificar tier do produto antes de baixar"
-
-  Prerequisites:
-  - [ ] Campo `tier` existe em Product entity? → Check entity
-  - [ ] Tier é atribuído em algum fluxo? → Check endpoints
-  - [ ] Dados de tier populados? → Make sense
-  ```
-
   **Product Status:**
-  - If ALL requirements implemented AND prerequisites OK → ✅ PASSED
-  - If ANY requirement missing OR prerequisite missing → ❌ BLOCKED
-
-  ## TASK
-  1. Read ALL backend/database files from FILES_TO_REVIEW
-  2. Validate against all categories above (1-9)
-  3. Execute Product Validation (category 9) LAST
-  4. AUTO-FIX all violations found (EXCEPT missing requirements - report those)
-  5. Document issues found and fixes applied
+  - If ALL requirements implemented AND prerequisites OK → PASSED
+  - If ANY requirement missing OR prerequisite missing → BLOCKED
 
   ## RULES
-  - NO questions - fix issues automatically
+  - NO questions — fix issues automatically
   - Use skill patterns as source of truth
   - Missing components from plan.md = CRITICAL violation
   - Missing prerequisites = CRITICAL (report, don't assume)
@@ -668,51 +507,7 @@ prompt: |
   - DO NOT run build (coordinator will do it)
 
   ## REPORT FORMAT
-  Return structured report:
-
-  ### Backend Review Report
-
-  **Files Reviewed:** [count]
-
-  **Issues Found by Category:**
-  - Project Patterns (IoC/RESTful/DTOs): [count]
-  - Architecture: [count]
-  - Database: [count]
-  - Security: [count]
-  - Code Quality: [count]
-  - Contracts: [count]
-
-  **Issues Fixed:**
-  [List each issue with: file:line, severity (🔴🟡🟠🟢), description, fix applied]
-
-  **Files Modified:**
-  [List all files modified during fixes]
-
-  **Severity Summary:**
-  - 🔴 Critical: [count] fixed
-  - 🟡 High: [count] fixed
-  - 🟠 Medium: [count] fixed
-  - 🟢 Low: [count] fixed
-
-  **Product Validation:**
-
-  RF Implemented:
-  - RF01: [description] → ✅/❌ [file:line or reason if missing]
-  - RF02: [description] → ✅/❌ [file:line or reason if missing]
-  - ...
-
-  RN Implemented:
-  - RN01: [description] → ✅/❌ [file:line or reason if missing]
-  - RN02: [description] → ✅/❌ [file:line or reason if missing]
-  - ...
-
-  Prerequisites:
-  - ✅/❌ [list prerequisites checked and status]
-
-  **Product Status:** ✅ PASSED / ❌ BLOCKED
-  **Product Issues:** [list missing requirements/prerequisites if BLOCKED]
-
-  **Score:** [X/10] (deduct 2 points per critical, 1 per high, 0.5 per medium, MINUS 5 if product BLOCKED)
+  Return: Files Reviewed count, Issues Found by Category (Project Patterns, Architecture, Database, Security, Code Quality, Contracts), Issues Fixed (file:line, severity, description, fix), Files Modified, Severity Summary, Product Validation (RF status, RN status, Prerequisites), Product Status (PASSED/BLOCKED), Score X/10 (deduct 2 per critical, 1 per high, 0.5 per medium, MINUS 5 if product BLOCKED).
 ```
 
 ---
@@ -721,7 +516,7 @@ prompt: |
 
 ### 5.1 Process Reviewer Outputs
 
-**⛔ GATE: ALL reviewers must return before proceeding.**
+**GATE: ALL reviewers must return before proceeding.**
 
 **After ALL reviewers return:**
 
@@ -732,7 +527,7 @@ prompt: |
 2. **Aggregate metrics:**
    - Total files reviewed
    - Total issues found/fixed
-   - Severity breakdown (🔴🟡🟠🟢)
+   - Severity breakdown
    - Product validation status (from Backend Reviewer)
 
 3. **Calculate overall score:**
@@ -761,10 +556,22 @@ npm run build
 - Re-run build
 - Repeat until build passes
 
-**⛔ GATE: Do NOT proceed to STEP 7 until build passes 100%.**
+**GATE: Do NOT proceed to STEP 7 until build passes 100%.**
 
 <!-- feature:startup-test:step -->
 <!-- /feature:startup-test:step -->
+
+---
+
+## STEP 7.5: Log Iteration (IF corrections applied)
+
+**IF files were modified during review (auto-corrections):**
+
+```bash
+bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "fix" "/check" '"slug":"code-review","what":"Auto-corrected violations from review","files":["<list of modified files>"]'
+```
+
+⛔ DO NOT: Skip iteration logging if files were modified during review.
 
 ---
 
@@ -819,91 +626,13 @@ Content:
 [RF/RN status from Backend Reviewer]
 ```
 
-**⛔ GATE: review.md MUST be written before outputting console report.**
-- ⛔ DO NOT: Output console report if review.md write failed
-- ✅ DO: Write review.md FIRST, then console
+**GATE: review.md MUST be written before outputting console report.**
+- DO NOT: Output console report if review.md write failed
+- DO: Write review.md FIRST, then console
 
 ### 8.3 Console Output
 
-```markdown
-✅ Review Complete - Feature ${FEATURE_ID}
-
-📊 Execution Summary:
-
-**Reviewers:**
-- Frontend Reviewer: ${FRONTEND_FILES_REVIEWED} files
-- Backend Reviewer: ${BACKEND_FILES_REVIEWED} files
-
-**Analysis:**
-- Total files reviewed: ${TOTAL_FILES}
-- Total issues found: ${TOTAL_ISSUES}
-- Total issues fixed: ${TOTAL_FIXED}
-
-**Spec Compliance:**
-- Status: ${SPEC_AUDIT_STATUS}
-- Items: ${COMPLIANT}/${TOTAL} COMPLIANT, ${DIVERGENT} DIVERGENT, ${MISSING} MISSING
-
-**Issues by Severity:**
-- 🔴 Critical: ${CRITICAL_COUNT} fixed
-- 🟡 High: ${HIGH_COUNT} fixed
-- 🟠 Medium: ${MEDIUM_COUNT} fixed
-- 🟢 Low: ${LOW_COUNT} fixed
-
-**Product Validation:**
-- RF implemented: ${RF_IMPLEMENTED}/${RF_TOTAL}
-- RN implemented: ${RN_IMPLEMENTED}/${RN_TOTAL}
-- Prerequisites: ✅ OK
-- Status: ✅ PASSED
-
-**Scores:**
-- Frontend: ${FRONTEND_SCORE}/10
-- Backend: ${BACKEND_SCORE}/10
-- **Overall: ${OVERALL_SCORE}/10**
-
-**Quality Gates:**
-| Gate | Status |
-|------|--------|
-| Build | ✅ / ❌ |
-| Spec Compliance | ✅ / ⚠️ / ❌ |
-| Code Review | ✅ / ❌ |
-| Product Validation | ✅ / ❌ |
-| Startup Test | ✅ / ⚠️ SKIPPED / ❌ |
-| **Overall** | **✅ PASSED / ❌ BLOCKED** |
-
-**📄 Quality Gate Report:** docs/features/${FEATURE_ID}/review.md
-**🔧 Corrections Applied (unstaged):** ${LIST_OF_MODIFIED_FILES}
-
-**📄 View corrections:** git diff
-**📌 Accept corrections:** git add .
-
-**Next Steps:**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-- If review PASSED → `/add.ship`
-- If review BLOCKED → fix issues, then `/add.check` again
-```
-
-### Blocked Console Report
-
-```markdown
-⚠️ Review Partial - Feature ${FEATURE_ID}
-
-**Quality Gates:**
-| Gate | Status | Details |
-|------|--------|---------|
-| Build | ✅ PASSED | |
-| Spec Compliance | ❌ BLOCKED | Route /webhook diverges from spec /webhook/:provider |
-| Code Review | ✅ PASSED | 8.5/10 |
-| Product Validation | ❌ BLOCKED | RF03 not implemented |
-| Startup Test | ✅ PASSED | |
-| **Overall** | **❌ BLOCKED** | |
-
-**Required Actions:**
-1. Fix DIVERGENT: refactor POST /webhook → POST /webhook/:provider
-2. Implement RF03: [description]
-3. Run /add.check again after corrections
-
-**📄 Report saved:** docs/features/${FEATURE_ID}/review.md
-```
+Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps (add.ship if PASSED, fix + re-check if BLOCKED).
 
 ---
 
@@ -912,8 +641,6 @@ Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
 ALWAYS:
 - Check unstaged changes and ask user before staging
 - Load all feature docs and CLAUDE.md before dispatching reviewers
-- Dispatch Frontend and Backend reviewers in parallel
-- Wait for all reviewers to complete before consolidating
 - Auto-fix all violations without deferrals
 - Verify build passes after applying fixes
 - Output report to console only
@@ -923,70 +650,8 @@ NEVER:
 - Create review.md or any documentation files
 - Use Bash for git commit operations
 - Stage files without explicit user permission
-- Dispatch reviewers sequentially instead of parallel
 - Skip product validation for RF, RN, or prerequisites
 - Proceed to report if build is failing
 - Leave code in a non-compiling state
 - Accept "it works" as justification for violations
 - Skip a reviewer if files exist in that area
-
----
-
-## Quick Reference: Review Checklist
-
-**Before starting:**
-- [ ] Feature implemented? (code exists)
-- [ ] Feature docs exist? (about.md, plan.md)
-
-**STEP 1: Setup**
-- [ ] Check for unstaged changes
-- [ ] Ask user if can stage (if unstaged exists)
-- [ ] Stage if user agrees, track STAGED_CHANGES
-
-**STEP 2: Bootstrap**
-- [ ] Feature ID detected
-- [ ] Docs loaded (about, discovery, plan, design if exists)
-- [ ] CLAUDE.md loaded
-- [ ] Changed files identified
-
-**STEP 3: Spec Compliance Audit**
-- [ ] Spec Checklist loaded (or prose extraction fallback)
-- [ ] All items audited (file:line, behavior validation)
-- [ ] RF/RN cross-reference complete
-- [ ] SPEC_AUDIT_STATUS computed
-
-**STEP 4: Reviewers**
-- [ ] Frontend Reviewer dispatched (if frontend files)
-- [ ] Backend Reviewer dispatched (if backend files)
-- [ ] Dispatched in PARALLEL
-- [ ] SPEC_AUDIT_STATUS included in reviewer context
-
-**STEP 5: Consolidate**
-- [ ] Findings merged
-- [ ] Metrics aggregated
-- [ ] Overall score calculated
-
-**STEP 6: Build**
-- [ ] Build passes ✅
-- [ ] All issues fixed
-
-**STEP 7: Startup Test**
-- [ ] start:test script exists (created if not)
-- [ ] npm run start:test → exit 0 (or SKIPPED if connection error)
-
-**STEP 8: Quality Gate Report**
-- [ ] review.md written to docs/features/${FEATURE_ID}/review.md
-- [ ] Overall status computed (PASSED / BLOCKED)
-- [ ] Console report output with gate summary
-
----
-
-## Skills Reference
-
-- **Code Review:** `.codeadd/skills/add-code-review/SKILL.md`
-- **Delivery Validation:** `.codeadd/skills/add-delivery-validation/SKILL.md`
-- **Backend Development:** `.codeadd/skills/add-backend-development/SKILL.md`
-- **Database Development:** `.codeadd/skills/add-database-development/SKILL.md`
-- **Frontend Development:** `.codeadd/skills/add-frontend-development/SKILL.md`
-- **UX Design:** `.codeadd/skills/add-ux-design/SKILL.md`
-- **Security Audit:** `.codeadd/skills/add-security-audit/SKILL.md`

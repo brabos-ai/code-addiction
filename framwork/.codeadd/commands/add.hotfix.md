@@ -1,5 +1,7 @@
 # Hotfix - Rapid Bug Fix Workflow
 
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **ID FORMAT:** Global sequential with type suffix (e.g., `0001H`, `0002H`)
 > **STRUCTURE:** Flat docs in `docs/[NNNN]H-[slug]/` with `related.md` for relationships
@@ -9,23 +11,8 @@
 ## Spec
 
 ```json
-{"gates":["branch_check","template_read","branch_created","docs_created","root_cause_confirmed"],"order":["status_check","branch_verification","template_load","branch_create","docs_create","read_documentation","investigate_code","confirm_root_cause","implement_fix","update_docs","log_iteration","completion"],"patterns":{"if_exists":".codeadd/projects/*-patterns.md","action":"READ before fix"},"template":".codeadd/templates/hotfix.md"}
+{"template":".codeadd/templates/hotfix.md"}
 ```
-
----
-
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -110,12 +97,10 @@ bash .codeadd/scripts/status.sh
 
 ## STEP 3: Load Template (MANDATORY)
 
-```
-Read .codeadd/templates/hotfix.md
-```
+Read the hotfix template from the path in Spec.
 
 **Placeholders to understand:**
-- `{{HOTFIX_ID}}` - Will be filled with global ID (e.g., `0001H`)
+- `{{HOTFIX_ID}}` - Global ID (e.g., `0001H`)
 - `{{BRANCH_NAME}}` - Branch created in STEP 4
 - `{{TITLE}}` - Hotfix title
 - `{{DATETIME}}` - Current date/time (YYYY-MM-DD HH:MM)
@@ -128,8 +113,6 @@ Read .codeadd/templates/hotfix.md
 ⛔ **GATE:** Branch must be created BEFORE investigation.
 
 ### 4.1 Calculate Next Hotfix ID
-
-Use `next-id.sh` script:
 
 ```bash
 bash .codeadd/scripts/next-id.sh H
@@ -145,11 +128,9 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 
 **[hotfix-slug]:** kebab-case descriptive (ex: `screenshot-delete-error`, `login-timeout`)
 
-**Example:** `hotfix/0001H-screenshot-delete-error`
-
 ### 4.3 Create Hotfix Documentation Structure
 
-Create directory and hotfix.md:
+Create directory and hotfix.md using the template from STEP 3:
 
 ```
 docs/[NNNN]H-[hotfix-slug]/
@@ -157,10 +138,6 @@ docs/[NNNN]H-[hotfix-slug]/
 ├── iterations.jsonl (auto-created if needed)
 └── related.md (created in STEP 11)
 ```
-
-**Using Write tool:**
-- Path: `docs/[NNNN]H-[hotfix-slug]/hotfix.md`
-- Fill placeholders from template
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
 
@@ -176,17 +153,10 @@ From `status.sh` output:
 
 ### 5.2 Interview User (if applicable)
 
-**If RECENT_CHANGELOGS suggests related features:**
-
-```
-Analyzed recent items and found potential relationships:
-- [NNNN][L]: [Item title] (mentioned [affected area])
-
-Is this hotfix related to any of these?
-  a) Yes → (inform which)
-  b) No → Standalone fix
-  c) Multiple related → (list them)
-```
+**If RECENT_CHANGELOGS suggests related features**, present them and ask:
+- Yes → inform which
+- No → standalone fix
+- Multiple related → list them
 
 **Store feature relationships for STEP 11.**
 
@@ -194,14 +164,9 @@ Is this hotfix related to any of these?
 
 ## STEP 6: Read Documentation (BEFORE code)
 
-**MANDATORY ORDER - DO NOT SKIP:**
+**MANDATORY ORDER - DO NOT SKIP.**
 
-For each related feature identified in STEP 5:
-
-```
-Read docs/[NNNN]L-*/changelog.md
-Read docs/[NNNN]L-*/about.md
-```
+For each related feature identified in STEP 5, read its `changelog.md` and `about.md`.
 
 **Understand:**
 - Recent changes in affected area
@@ -231,16 +196,9 @@ Use Grep/Read to confirm what documentation indicated:
 ⛔ **GATE CHECK:** DO NOT implement without user confirmation.
 
 **Present to user:**
-
-```
-Found the problem:
-
-**Root Cause:** [1-2 sentences explaining the cause]
-**Solution:** [1-2 sentences describing the fix]
-**Files:** [list of files to modify]
-
-Confirm? (yes/no)
-```
+- **Root Cause:** 1-2 sentences explaining the cause
+- **Solution:** 1-2 sentences describing the fix
+- **Files:** list of files to modify
 
 **WAIT for explicit confirmation before proceeding.**
 
@@ -254,11 +212,7 @@ Confirm? (yes/no)
 
 ### 9.1 Check Project Patterns
 
-**If PROJECT_PATTERNS > 0 (from script output):**
-```bash
-cat .codeadd/projects/*-patterns.md
-```
-→ Follow documented patterns in implementation
+**If PROJECT_PATTERNS > 0 (from script output):** Read project patterns and follow them in implementation.
 
 ### 9.2 Implement
 
@@ -272,7 +226,6 @@ cat .codeadd/projects/*-patterns.md
 If bug in frontend:
 1. READ `.codeadd/skills/add-ux-design/SKILL.md`
 2. Follow patterns (mobile-first, shadcn, Tailwind v3)
-3. Consult specific docs if needed
 
 **DO NOT:**
 - Refactor unrelated code
@@ -281,43 +234,23 @@ If bug in frontend:
 
 ### 9.3 Verify Build
 
-```bash
-# Backend
-cd apps/backend && npm run build
-
-# Frontend (if applicable)
-cd apps/frontend && npm run build
-```
+Verify build passes for affected apps (backend, frontend, or both).
 
 ---
 
 ## STEP 10: Update Documentation
 
-**Update hotfix doc created in STEP 4** (you know the path: `docs/[NNNN]H-[slug]/hotfix.md`).
+**Update hotfix doc created in STEP 4** (`docs/[NNNN]H-[slug]/hotfix.md`).
 
 Fill sections that had placeholders:
-
-```markdown
-### Root Cause Analysis
-[Why the bug was happening - from STEP 8]
-
-### Approach
-[What was done to fix it]
-
-### Files Modified
-- `path/to/file.ts` - [what changed]
-
-### Verification
-- [x] Bug no longer reproduces
-- [x] Build passes (backend + frontend)
-- [x] Related functionality OK
-```
+- **Root Cause Analysis** — why the bug was happening (from STEP 8)
+- **Approach** — what was done to fix it
+- **Files Modified** — path + what changed
+- **Verification** — bug no longer reproduces, build passes, related functionality OK
 
 ---
 
 ## STEP 11: Create Related References
-
-**Create `docs/[NNNN]H-[slug]/related.md` to document relationships:**
 
 ### 11.1 Identify Related Items
 
@@ -325,23 +258,16 @@ From STEP 5 analysis, list all features/items related to this hotfix.
 
 ### 11.2 Create related.md
 
-**Using template:** `.codeadd/templates/related.md`
-
-**Fill:**
-- Which features were affected
+Create `docs/[NNNN]H-[slug]/related.md` containing:
+- Which features were affected by this hotfix
 - Which PRs or issues are related
 - Dependencies or blocking relationships
 
 ### 11.3 Update Feature Documents (if applicable)
 
-**For each related feature `docs/[NNNN][L]-[slug]/`:**
-
-**If `related.md` exists in feature:**
-- ADD hotfix reference to "Hotfixes" section
-
-**If `related.md` does NOT exist in feature:**
-- CREATE `docs/[NNNN][L]-[slug]/related.md`
-- ADD hotfix reference to "Hotfixes" section
+For each related feature `docs/[NNNN][L]-[slug]/`:
+- If `related.md` exists → ADD hotfix reference to "Hotfixes" section
+- If `related.md` does NOT exist → CREATE it and ADD hotfix reference
 
 ---
 
@@ -356,7 +282,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 **Parameters:**
 - `slug`: kebab-case identifier (ex: modal-confirm-btn, null-check-user)
 - `what`: Brief description max 60 chars
-- `files`: Array of affected file paths (full paths)
+- `files`: Array of affected file paths
 
 ---
 
@@ -364,137 +290,56 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 
 ⛔ **DO NOT commit** - leave for `/add.ship`
 
-**Output to user:**
+Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status. Suggest next step: `/add.ship`.
 
-```
-✅ Hotfix Implemented!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔥 Hotfix: [NNNN]H-[name]
-🌿 Branch: hotfix/[NNNN]H-[name]
-📋 ID: [NNNN]H
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**Problem:** [what was broken]
-**Root Cause:** [why it was broken]
-**Solution:** [what was fixed]
-
-**Modified Files:**
-- [file 1]
-- [file 2]
-
-**Build:** ✅ OK
-
-**Documentation:** ✓ hotfix.md + related.md updated
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️ Changes NOT committed (awaiting review)
-
-**Next steps:**
-1. Review changes
-2. Test fix
-3. Execute `/add.ship` to finalize
-
-**Suggested next command:**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-- Hotfix complete → `/add.ship`
-```
-
----
-
-## Sequential Execution Checklist
-
-**MARK EACH ITEM IN ORDER - DO NOT SKIP:**
-
-### STEPS 1-6 (MANDATORY BEFORE CODE)
-- [ ] STEP 1: `status.sh` executed
-- [ ] STEP 2: BRANCH verified (not main)
-- [ ] STEP 3: Template read (hotfix.md)
-- [ ] STEP 4: Branch created + docs structure created
-- [ ] STEP 5: Related features identified from RECENT_CHANGELOGS
-- [ ] STEP 6: Changelogs + about.md READ
-
-### STEPS 7-8 (INVESTIGATION)
-- [ ] STEP 7: Code investigated (ONLY after STEP 6)
-- [ ] STEP 8: Root cause CONFIRMED with user
-
-### STEPS 9-13 (IMPLEMENTATION)
-- [ ] STEP 9: Fix implemented + build OK
-- [ ] STEP 10: hotfix.md updated with root cause + solution
-- [ ] STEP 11: related.md created (hotfix + feature links)
-- [ ] STEP 12: `iterations.jsonl` entry appended
-- [ ] STEP 13: User informed, awaiting `/add.ship`
+**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
 
 ---
 
 ## Rules
 
-```json
-{
-  "do": [
-    "Run status.sh as the very first command",
-    "Use next-id.sh to calculate hotfix ID (global sequential with H suffix)",
-    "Create hotfix branch and docs in flat structure (docs/[NNNN]H-[slug]/)",
-    "Read hotfix template before creating hotfix.md",
-    "Read changelogs and about.md before investigating code",
-    "Identify related features and document in related.md",
-    "Confirm root cause with user before implementing",
-    "Fix root cause, not symptoms",
-    "Keep changes minimal and focused",
-    "Update related.md in both hotfix and affected features",
-    "Log iteration entry before informing user",
-    "Verify build passes after implementing fix"
-  ],
-  "dont": [
-    "Investigate code while on main branch",
-    "Create branch before loading template",
-    "Write hotfix.md without reading template first",
-    "Grep or read code before reading changelogs",
-    "Implement fix without user confirming root cause",
-    "Refactor unrelated code during hotfix",
-    "Add new features inside a hotfix",
-    "Commit changes (leave for /add.ship)",
-    "Use bifurcated Path A/Path B logic (always use unified H[NNNN] flow)"
-  ]
-}
-```
+**ALWAYS:**
+- Use next-id.sh to calculate hotfix ID (global sequential with H suffix)
+- Create hotfix branch and docs in flat structure (`docs/[NNNN]H-[slug]/`)
+- Read hotfix template before creating hotfix.md
+- Read changelogs and about.md before investigating code
+- Identify related features and document in related.md
+- Confirm root cause with user before implementing
+- Fix root cause, not symptoms
+- Keep changes minimal and focused
+- Update related.md in both hotfix and affected features
+- Log iteration entry before informing user
+- Verify build passes after implementing fix
+
+**NEVER:**
+- Investigate code while on main branch
+- Write hotfix.md without reading template first
+- Grep or read code before reading changelogs
+- Implement fix without user confirming root cause
+- Refactor unrelated code during hotfix
+- Add new features inside a hotfix
+- Commit changes (leave for /add.ship)
+- Use bifurcated Path A/Path B logic (always use unified H[NNNN] flow)
 
 ---
 
-## Example Flow: Bug Fix with Feature Relationship
+## Example Flow
 
 ```
 # User: "Screenshot validation bugada!"
 
-# STEP 1: First command ALWAYS
-bash .codeadd/scripts/status.sh
-# Output: BRANCH:main  ← ALERT!
-# Output: RECENT_CHANGELOGS: 0036F-ai-screenshot-validation...
-
-# STEP 2: BRANCH = main → STOP
-
-# STEP 3: Load template
-Read .codeadd/templates/hotfix.md
-
-# STEP 4: Create branch + docs
-bash .codeadd/scripts/next-id.sh H  → 0001H
-git checkout -b hotfix/0001H-screenshot-delete-error
-Glob docs/0001H-screenshot-delete-error/
-Write docs/0001H-screenshot-delete-error/hotfix.md
-
-# STEP 5: Identify relationships
-# "Related to 0036F-ai-screenshot-validation (from RECENT_CHANGELOGS)"
-
-# STEP 6: Read documentation
-Read docs/0036F-ai-screenshot-validation/changelog.md
-Read docs/0036F-ai-screenshot-validation/about.md
-
+# STEP 1-2: status.sh → BRANCH:main → STOP
+# STEP 3: Read hotfix template
+# STEP 4: next-id.sh H → 0001H
+#   git checkout -b hotfix/0001H-screenshot-delete-error
+#   Write docs/0001H-screenshot-delete-error/hotfix.md
+# STEP 5: Related to 0036F-ai-screenshot-validation (from RECENT_CHANGELOGS)
+# STEP 6: Read docs/0036F-ai-screenshot-validation/{changelog,about}.md
 # STEP 7: Investigate code
 # STEP 8: Confirm root cause with user
-# STEP 9: Implement fix
+# STEP 9: Implement fix + verify build
 # STEP 10: Update hotfix.md
 # STEP 11: Create related.md (link 0001H ↔ 0036F)
 # STEP 12: Log iteration
-# STEP 13: Completion
+# STEP 13: Completion → suggest /add.ship
 ```

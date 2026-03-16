@@ -2,34 +2,13 @@
 
 Collects owner profile in 1 minute (3 direct questions) and optionally creates product blueprint.
 
----
-
-## Spec
-
-```json
-{"gates":["context_checked","questions_answered","owner_created"],"order":["check_context","ask_3_questions","create_owner","ask_product","optional_product","suggest_next"],"creates":["docs/owner.md","docs/product.md (opt)"]}
-```
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 
 ---
 
-## OWNER Context
+## STEPS IN ORDER
 
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
-
----
-
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
-
-**STEPS IN ORDER:**
 ```
 STEP 1: Check context              → owner.md exists? product.md exists?
 STEP 2: 3 Direct questions         → name, level, language
@@ -40,24 +19,11 @@ STEP 6: If yes → product flow      → load skill product-discovery
 STEP 7: Onboarding Complete        → suggest /add.new
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**PROHIBITIONS:**
 
-```
-IF CONTEXT NOT CHECKED:
-  ⛔ DO NOT USE: Write to docs/owner.md
-  ⛔ DO NOT: Ask questions before checking existing docs
-  ✅ DO: Check docs/owner.md and docs/product.md
-
-IF 3 QUESTIONS NOT ANSWERED:
-  ⛔ DO NOT USE: Write to docs/owner.md
-  ⛔ DO NOT: Create owner without complete answers
-  ✅ DO: Collect name, level and language
-
-IF OWNER NOT CREATED:
-  ⛔ DO NOT USE: Write to docs/product.md
-  ⛔ DO NOT: Start product flow
-  ✅ DO: Create owner.md first
-```
+- NEVER write docs/owner.md before checking context (STEP 1)
+- NEVER write docs/owner.md before all 3 questions are answered (STEP 2)
+- NEVER start product flow before owner.md is created (STEP 3)
 
 ---
 
@@ -65,27 +31,16 @@ IF OWNER NOT CREATED:
 
 ### 1.1 Check owner.md
 
-```bash
-cat docs/owner.md 2>/dev/null
-```
+Check if docs/owner.md exists and read it.
 
 **IF EXISTS:**
-```markdown
-Found an existing profile:
-- Name: [extract]
-- Level: [extract]
-- Language: [extract]
-
-Do you want to update or keep the current one?
-```
+Show the current profile (name, level, language) and ask: update or keep?
 - If keep: skip to STEP 5
 - If update: continue to STEP 2
 
 ### 1.2 Check product.md
 
-```bash
-cat docs/product.md 2>/dev/null
-```
+Check if docs/product.md exists and read it.
 
 Store whether it exists (used in STEP 5).
 
@@ -93,28 +48,7 @@ Store whether it exists (used in STEP 5).
 
 ## STEP 2: 3 Direct Questions
 
-**Question 1 - Name:**
-```markdown
-What is your name?
-```
-
-**Question 2 - Technical level:**
-```markdown
-What is your technical level?
-
-a) Beginner - I'm just starting out
-b) Intermediate - I have some experience
-c) Advanced - I'm a professional developer
-```
-
-**Question 3 - Preferred language:**
-```markdown
-What is your preferred language?
-
-a) Portugues (pt-br)
-b) English (en-us)
-c) Other (specify)
-```
+Ask the user these three questions (name, technical level, preferred language). Collect all three before proceeding.
 
 **Response mapping:**
 
@@ -137,7 +71,7 @@ Data: [YYYY-MM-DD]
 Criado por: /add.init
 ```
 
-**⛔ NO markdown headers. NO sections. Pure key-value.**
+**NO markdown headers. NO sections. Pure key-value.**
 
 ---
 
@@ -159,13 +93,7 @@ Created by /add.init"
 
 **IF product.md ALREADY EXISTS:** Skip to STEP 7.
 
-**IF NOT:**
-```markdown
-Do you want to create a product blueprint? (recommended for new projects)
-
-a) Yes - let's create it
-b) No - skip
-```
+**IF NOT:** Ask if the user wants to create a product blueprint (recommended for new projects).
 
 - If yes: go to STEP 6
 - If no: go to STEP 7
@@ -203,30 +131,24 @@ Created by /add.init"
 
 ## STEP 7: Onboarding Complete
 
-```markdown
-## Onboarding Complete!
-
-Created:
-- `docs/owner.md` - Your communication profile
-
-[IF product.md created:]
-- `docs/product.md` - Product blueprint
-
-From now on, I will adapt my communication to your level ([level]) and language ([language]).
-
----
-
-### Next Step
-
-**`/add.new`** → Create your first feature
-
-Which feature do you want to start with?
-```
+Summarize what was created (owner.md, and product.md if applicable). Inform the user that communication is now adapted to their level and language. Suggest `/add.new` to create their first feature.
 
 ---
 
 ## Rules
 
-```json
-{"do":["Check existing docs FIRST","Ask exactly 3 questions (name, level, language)","Use flat key-value format for owner.md","Automatic commit after each doc","Ask about product.md (do not force)","Suggest /add.new at the end","Adapt language to owner's choice"],"dont":["Load skill product-discovery before needed","Force product.md on legacy projects","Ask more than 3 questions for profile","Use markdown headers in owner.md","Infer level (ask directly)","Skip automatic commit"]}
-```
+**ALWAYS:**
+- Check existing docs FIRST
+- Ask exactly 3 questions (name, level, language)
+- Use flat key-value format for owner.md (no markdown headers)
+- Automatic commit after each doc
+- Ask about product.md (do not force)
+- Suggest /add.new at the end
+- Adapt language to owner's choice
+
+**NEVER:**
+- Load skill product-discovery before needed
+- Force product.md on legacy projects
+- Ask more than 3 questions for profile
+- Infer level without asking directly
+- Skip automatic commit

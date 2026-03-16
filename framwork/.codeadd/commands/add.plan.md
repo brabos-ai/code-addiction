@@ -1,6 +1,8 @@
 # Technical Planning Orchestrator
 
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante -> explain why; avancado -> essentials only).
 
 Coordinator for technical planning. Loads context, dispatches specialized subagents (Database, Backend, Frontend), consolidates plan with APPEND + VALIDATE + FILL GAPS, and validates 100% requirements coverage.
 
@@ -9,23 +11,8 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 ## Spec
 
 ```json
-{"gates":["feature_identified","docs_loaded","scope_determined","coverage_validated"],"order":["load_profile","run_context_mapper","load_recent_context","parse_variables","load_feature_docs","clarification","analyze_scope","execute_subagents","consolidate_plan","validate_requirements","completion"],"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md","temp":["plan-database.md","plan-backend.md","plan-frontend.md"]},"patterns":{"skills":["backend-development","database-development","frontend-development","ux-design"],"action":"READ SKILL.md before subagent dispatch"}}
+{"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md","temp":["plan-database.md","plan-backend.md","plan-frontend.md"]},"patterns":{"skills":["backend-development","database-development","frontend-development","ux-design"],"action":"READ SKILL.md before subagent dispatch"}}
 ```
-
----
-
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
 
 ---
 
@@ -44,64 +31,57 @@ If argument contains `--yolo`:
 
 **STEPS IN ORDER:**
 ```
-STEP 1:  Load founder profile     → SILENT
-STEP 2:  Run context mapper       → FIRST COMMAND
-STEP 3:  Load recent context      → INTELLIGENT changelog reading
-STEP 4:  Parse key variables      → Feature detection
-STEP 5:  Load feature docs        → about.md, discovery.md, design.md
-STEP 6:  Clarification questions  → IF NEEDED ONLY
-STEP 7:  Analyze scope            → Epic subfeature vs full feature
-STEP 8:  Execute subagents        → SEQUENTIAL, by area (8.0: cross-SF context for epics)
+STEP 1:  Load founder profile     -> SILENT
+STEP 2:  Run context mapper       -> FIRST COMMAND
+STEP 3:  Load recent context      -> INTELLIGENT changelog reading
+STEP 4:  Parse key variables      -> Feature detection
+STEP 5:  Load feature docs        -> about.md, discovery.md, design.md
+STEP 6:  Clarification questions  -> IF NEEDED ONLY
+STEP 7:  Analyze scope            -> Epic subfeature vs full feature
+STEP 8:  Execute subagents        -> SEQUENTIAL, by area (8.0: cross-SF context for epics)
 <!-- feature:tdd:step-list -->
-STEP 9:  Test-Spec subagent       → AFTER area subagents, generates contract test cases
+STEP 9:  Test-Spec subagent       -> AFTER area subagents, generates contract test cases
 <!-- /feature:tdd:step-list -->
-STEP 10: Consolidate plan         → APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (epic)
-STEP 11: Validate requirements    → Coverage check (GATE)
-STEP 12: Completion               → Inform user
+STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (epic)
+STEP 11: Validate requirements    -> Coverage check (GATE)
+STEP 12: Completion               -> Inform user
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE PROHIBITIONS:**
 
 ```
 IF FEATURE NOT IDENTIFIED (Step 4):
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT USE: Write for plan.md
-  ⛔ DO NOT: Proceed past STEP 4
-  ⛔ DO: List features and ask user to choose
+  NEVER dispatch subagents or write plan.md
+  ALWAYS list features and ask user to choose
 
 IF DOCS NOT LOADED (Step 5 incomplete):
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT: Start planning without context
-  ⛔ DO: Read about.md and discovery.md FIRST
+  NEVER dispatch subagents or start planning
+  ALWAYS read about.md and discovery.md FIRST
 
 IF SCOPE NOT DETERMINED (Step 7 incomplete):
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT: Dispatch subagents without knowing which ones are needed
-  ⛔ DO: Complete scope analysis FIRST
+  NEVER dispatch subagents without knowing which ones are needed
+  ALWAYS complete scope analysis FIRST
 
 IF COVERAGE < 100% (Step 11):
-  ⛔ DO NOT USE: Write to finalize plan.md
-  ⛔ DO NOT: Proceed to STEP 12
-  ⛔ DO: Resolve gaps by adding missing tasks or documenting exclusions
+  NEVER finalize plan.md or proceed to STEP 12
+  ALWAYS resolve gaps by adding missing tasks or documenting exclusions
 
 ALWAYS:
-  ⛔ DO NOT: Write implementation code in plan.md
-  ⛔ DO NOT: Create subagents for components not in scope
-  ⛔ DO NOT: Rewrite subagent outputs during consolidation (APPEND only)
+  NEVER write implementation code in plan.md
+  NEVER create subagents for components not in scope
+  NEVER rewrite subagent outputs during consolidation (APPEND only)
 ```
 
 ---
 
 ## STEP 1: Load Founder Profile (SILENT)
 
-```bash
-cat docs/owner.md
-```
+Read `docs/owner.md` to determine communication style.
 
 **IF profile exists:** Adjust communication style accordingly.
 **IF not exists:** Use **Balanced** style as default.
 
-**⛔ DO NOT: Inform the user about this step. Execute SILENTLY.**
+**NEVER inform the user about this step. Execute SILENTLY.**
 
 ---
 
@@ -111,35 +91,15 @@ cat docs/owner.md
 bash .codeadd/scripts/status.sh
 ```
 
-This script provides ALL context needed:
-- **BRANCH**: Feature ID, branch type, current phase
-- **FEATURE_DOCS**: Which docs exist (HAS_DESIGN, HAS_PLAN, etc.)
-- **DESIGN_SYSTEM**: If design-system.md exists
-- **FRONTEND**: Component structure (for scope detection)
-- **ALL_FEATURES**: List of all features if need to choose
-- **RECENT_CHANGELOGS**: Last 5 completed features with summaries
-- **HAS_EPIC**: `true` if `epic.md` exists (PRD0032 epic structure)
-- **EPIC_CURRENT_SF**: Current subfeature ID (e.g. `SF02`)
-- **EPIC_PROGRESS**: `done/total` subfeatures
+Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN), DESIGN_SYSTEM, FRONTEND (component structure), ALL_FEATURES, RECENT_CHANGELOGS (last 5), HAS_EPIC, EPIC_CURRENT_SF, EPIC_PROGRESS.
 
-**⛔ DO NOT: Skip this script. ALL subsequent steps depend on its output.**
+**NEVER skip this script. ALL subsequent steps depend on its output.**
 
 ### 2.1 Epic.md Detection (PRD0032)
 
-**IF `HAS_EPIC=true` (script output):**
+**IF `HAS_EPIC=true`:** Read epic.md, identify next pending SF (EPIC_CURRENT_SF), set scope to that SF only, load its about.md + shared discovery.md, inform user: "Planning subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}".
 
-```
-1. READ docs/features/${FEATURE_ID}/epic.md
-2. IDENTIFY next pending subfeature (EPIC_CURRENT_SF from script)
-3. SET SCOPE = subfeature only (not entire epic)
-4. LOAD: docs/features/${FEATURE_ID}/subfeatures/${SF_DIR}/about.md
-5. LOAD: docs/features/${FEATURE_ID}/discovery.md (shared)
-6. INFORM user: "Planning subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}"
-```
-
-**⛔ IF HAS_EPIC=true AND no pending subfeature:**
-- ⛔ DO NOT: Plan anything
-- ⛔ DO: Inform user all subfeatures are complete, run `/add.ship`
+**IF HAS_EPIC=true AND no pending subfeature:** NEVER plan. Inform user all SFs complete, run `/add.ship`.
 
 ---
 
@@ -150,55 +110,52 @@ This script provides ALL context needed:
 ### 3.1 Past Features Cache Check
 
 ```
-SE docs/features/${FEATURE_ID}/past-features.md existe:
-  → Ler past-features.md (cache)
-  → Verificar se discovery.md tem seção "Related Features"
-  → SE tem: usar como contexto, pular 3.2
-  → SE não tem: pular 3.2 (past-features.md é suficiente)
+IF docs/features/${FEATURE_ID}/past-features.md exists:
+  -> Read past-features.md (cache)
+  -> Check if discovery.md has section "Related Features"
+  -> IF yes: use as context, skip 3.2
+  -> IF no: skip 3.2 (past-features.md is sufficient)
 
-SE past-features.md NÃO existe:
-  → Executar STEP 3.2 (dispatch do Past Features Agent)
+IF past-features.md does NOT exist:
+  -> Execute STEP 3.2 (dispatch Past Features Agent)
 ```
 
-### 3.2 Dispatch Past Features Discovery Agent (SE necessário)
+### 3.2 Dispatch Past Features Discovery Agent (IF needed)
 
-**Dispatch Past Features Discovery Agent** [read-only, light]:
+**DISPATCH AGENT:**
+- **Capability:** read-only, light
+- **Skill:** `.codeadd/skills/add-feature-discovery/SKILL.md` Phase 1.5
+- **Input:** about.md of current feature + RECENT_CHANGELOGS
+- **Output:** `docs/features/${FEATURE_ID}/past-features.md`
+- **Prompt:**
+  ```
+  Read .codeadd/skills/add-feature-discovery/SKILL.md Phase 1.5.
+  Feature: ${FEATURE_ID}.
+  Input: docs/features/${FEATURE_ID}/about.md + RECENT_CHANGELOGS below.
+  [RECENT_CHANGELOGS]
+  Execute past features analysis and write past-features.md.
+  ```
 
-```
-Skill: .codeadd/skills/add-feature-discovery/SKILL.md Phase 1.5
-Input: about.md da feature atual + RECENT_CHANGELOGS
-Output: docs/features/${FEATURE_ID}/past-features.md
-```
+**WAIT:** past-features.md must exist before continuing.
 
-**Prompt do agente:**
-```
-Read .codeadd/skills/add-feature-discovery/SKILL.md Phase 1.5.
-Feature: ${FEATURE_ID}.
-Input: docs/features/${FEATURE_ID}/about.md + RECENT_CHANGELOGS abaixo.
-[RECENT_CHANGELOGS]
-Execute análise de features passadas e write past-features.md.
-```
+### 3.3 Use Context for Planning
 
-**WAIT:** past-features.md deve existir antes de continuar.
+With past-features.md available (cached or generated):
 
-### 3.3 Usar Context para Planning
+1. **Extract from past-features.md:**
+   - Files that can be reused
+   - Recently established patterns
+   - Relevant technical decisions
+   - Correct terminology for codebase search
 
-Com past-features.md disponível (cache ou gerado):
+2. **Use in planning:**
+   - Implementation order respecting dependencies (`depends`)
+   - Patterns to follow (features with `shares-pattern` relation)
+   - Potential conflicts (features with `conflicts` relation)
 
-1. **Extrair de past-features.md:**
-   - Arquivos que podem ser reutilizados
-   - Padrões recentemente estabelecidos
-   - Decisões técnicas relevantes
-   - Terminologia correta para busca no codebase
-
-2. **Usar no planejamento:**
-   - Ordem de implementação respeitando dependências (`depends`)
-   - Padrões a seguir (features com relação `shares-pattern`)
-   - Conflitos potenciais (features com relação `conflicts`)
-
-**Intelligent fallback (se past-features.md não tem matches relevantes):**
-- Analisar RECENT_CHANGELOGS manualmente para matches por keyword
-- Se match encontrado e discovery.md não referencia → ler changelog completo da feature
+**Intelligent fallback (if past-features.md has no relevant matches):**
+- Analyze RECENT_CHANGELOGS manually for matches by keyword
+- If match found and discovery.md does not reference it -> read full changelog of that feature
 
 **Goal:** Use knowledge from recent deliveries to plan better, avoiding reinventing the wheel.
 
@@ -206,66 +163,22 @@ Com past-features.md disponível (cache ou gerado):
 
 ## STEP 4: Parse Key Variables (GATE: feature_identified)
 
-From the script output, extract:
-- `FEATURE_ID` - IF empty → list ALL_FEATURES and ask user
-- `CURRENT_PHASE` - Verify it is `discovered` or `designed`
-- `HAS_DESIGN` - IF true, use design.md as input for frontend planning
-- `HAS_FOUNDATIONS` - IF true, use for design tokens
+Extract from script: `FEATURE_ID` (if empty -> list ALL_FEATURES and ask), `CURRENT_PHASE` (must be `discovered` or `designed`), `HAS_DESIGN`, `HAS_FOUNDATIONS`.
 
 **IF feature identified:** Display and proceed to STEP 5.
-
-**IF no feature identified:**
-
-```
-⛔ GATE: feature_identified = FALSE
-
-Available features:
-[List from ALL_FEATURES output]
-
-Select the feature to plan.
-```
-
-**⛔ IF FEATURE NOT IDENTIFIED:**
-- ⛔ DO NOT USE: Task for subagent dispatch
-- ⛔ DO NOT USE: Write for plan.md
-- ⛔ DO: Show feature list and WAIT for user selection
+**IF not:** Show feature list and WAIT. NEVER dispatch subagents or write plan.md without a feature.
 
 ---
 
 ## STEP 5: Load Feature Documentation (GATE: docs_loaded)
 
-**IF HAS_EPIC=true (epic.md structure):**
-```bash
-FEATURE_DIR="docs/features/${FEATURE_ID}"
-SF_DIR=$(ls -d "${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*" 2>/dev/null | head -1)
+**IF HAS_EPIC=true:** Read `${SF_DIR}/about.md` (PRIMARY), `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists).
 
-cat "${SF_DIR}/about.md"            # Subfeature scope (PRIMARY)
-cat "${FEATURE_DIR}/discovery.md"   # Shared discovery
-cat "${SF_DIR}/plan.md" 2>/dev/null # If already started
-cat "${FEATURE_DIR}/epic.md"        # Epic overview + dependencies
-cat "docs/design-system.md" 2>/dev/null
-```
-
-**IF normal feature:**
-```bash
-FEATURE_DIR="docs/features/${FEATURE_ID}"
-cat "${FEATURE_DIR}/about.md"
-cat "${FEATURE_DIR}/discovery.md"
-cat "${FEATURE_DIR}/design.md" 2>/dev/null  # If HAS_DESIGN=true
-cat "docs/design-system.md" 2>/dev/null  # If HAS_FOUNDATIONS=true
-```
+**IF normal feature:** Read `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS).
 
 **IF HAS_DESIGN=true:** Use design.md to inform backend contracts (endpoints serve the UI needs).
 
-**⛔ GATE: docs_loaded**
-- about.md MUST be read before proceeding
-- discovery.md MUST be read before proceeding
-- IF either file is missing → STOP and inform user
-
-**⛔ IF DOCS NOT LOADED:**
-- ⛔ DO NOT USE: Task for subagent dispatch
-- ⛔ DO NOT: Start planning without context
-- ⛔ DO: Read about.md and discovery.md FIRST
+**GATE:** about.md AND discovery.md MUST be read. IF either missing -> STOP and inform user.
 
 ---
 
@@ -273,24 +186,7 @@ cat "docs/design-system.md" 2>/dev/null  # If HAS_FOUNDATIONS=true
 
 **ONLY ask questions if `about.md` and `discovery.md` leave critical decisions undefined.**
 
-Present questions in structured format with recommendations:
-
-```markdown
-## Clarification Questions
-
----
-
-### 1. [Simple question]
-
-- a) [Option A]
-- b) [Option B]
-
-> **[RECOMMENDED: a]** - [Short justification]
-
----
-
-## Answer: `1a, 2b` or `recommended`
-```
+Present questions with options and a RECOMMENDED default. Format: `### 1. [Question]` with `- a) / - b)` options and `> RECOMMENDED: [x] - [reason]`. User answers with `1a, 2b` or `recommended`.
 
 **IF no clarification needed:** Proceed directly to STEP 7.
 
@@ -300,13 +196,8 @@ Present questions in structured format with recommendations:
 
 ### 7.1 Determine Scope Context
 
-**IF HAS_EPIC=true (epic.md detected in STEP 2.1):**
-- Scope = current subfeature (`EPIC_CURRENT_SF`) only
-- Do NOT plan the entire epic
-- Subagents receive scoped tasks for this subfeature
-
-**IF normal feature (no epic.md):**
-- Scope = entire feature as documented in about.md + discovery.md
+**IF HAS_EPIC=true:** Scope = current subfeature only. Do NOT plan the entire epic.
+**IF normal feature:** Scope = entire feature as documented in about.md + discovery.md.
 
 ### 7.2 Determine Subagents
 
@@ -317,31 +208,19 @@ Present questions in structured format with recommendations:
 ### Decision Rules
 
 - **Only create subagents that the feature actually needs**
-- If feature is backend-only → Only Backend Specialist
-- If feature is full-stack → Database + Backend + Frontend
-- If simple UI change → Only Frontend Specialist
+- If feature is backend-only -> Only Backend Specialist
+- If feature is full-stack -> Database + Backend + Frontend
+- If simple UI change -> Only Frontend Specialist
 
-**Inform the user:**
-```
-Type identified: [Simple FEATURE | EPIC]
-Scope: [list of components]
-Subagents: [list of subagents]
+**Inform user:** Type (FEATURE/EPIC), scope (components), subagents list. Then proceed.
 
-Starting planning...
-```
-
-**⛔ GATE: scope_determined**
-- Epic vs Feature MUST be decided
-- Required subagents MUST be identified
-- User MUST be informed before proceeding
+**GATE:** Epic vs Feature decided, subagents identified, user informed.
 
 ---
 
 ## STEP 8: Execute Subagents (SEQUENTIAL)
 
-For each required subagent, dispatch using the Task tool with `subagent_type: "general-purpose"`.
-
-**⛔ EXECUTE subagents ONE AT A TIME. WAIT for each to complete before dispatching the next.**
+**NEVER execute subagents in parallel. ALWAYS wait for each to complete before dispatching the next.**
 
 ### Subagent Output Location
 
@@ -354,34 +233,21 @@ docs/features/${FEATURE_ID}/plan-[area].md
 
 ### 8.0 Build Cross-SF Context (EPIC ONLY)
 
-**IF HAS_EPIC=true:** Before dispatching any subagent, build the `${CROSS_SF_CONTEXT}` block.
-
-**Steps:**
-1. Read `epic.md` → extract dependency graph (which SF depends on which)
-2. Identify the **consumers** of this SF (SFs that list this one as dependency)
-3. Identify the **providers** for this SF (SFs this one depends on)
-4. Read the `about.md` of each consumer and provider SF
-5. If any consumer/provider already has a `plan.md`, read it too (previous SF plans)
+**IF HAS_EPIC=true:** Before dispatching any subagent, read epic.md dependency graph, identify consumers + providers of this SF, read their about.md (and plan.md if exists), then build `${CROSS_SF_CONTEXT}`:
 
 **Build this block and INJECT it into every subagent prompt:**
 
 ```
-## Cross-SF Context (EPIC — read for integration awareness)
+## Cross-SF Context (EPIC -- read for integration awareness)
+### Consumers (SFs that need data from this SF):
+- **${SF_ID}**: ${1-line — what data it needs}
 
-### This SF provides data consumed by:
-${FOR_EACH_CONSUMER_SF}
-- **${SF_ID}**: ${1-line summary from about.md — what data it needs from this SF}
-${END_FOR}
-
-### This SF consumes data provided by:
-${FOR_EACH_PROVIDER_SF}
-- **${SF_ID}**: ${1-line summary from about.md — what data it provides}
-  ${IF plan.md exists}: Contracts already defined in plan.md: ${key schemas/tables/DTOs}
-${END_FOR}
+### Providers (SFs that supply data to this SF):
+- **${SF_ID}**: ${1-line — what data it provides} | Contracts: ${schemas/DTOs if plan.md exists}
 
 ### Integration rules:
-- Schema fields MUST match the output structure expected by consumer SFs
-- Shared resources (enums, config vars, types) should be defined in the earliest SF that needs them
+- Schema fields MUST match consumer expectations
+- Shared resources (enums, config vars, types) defined in earliest SF
 - Document jsonb field structures when consumers depend on specific keys
 ```
 
@@ -389,57 +255,70 @@ ${END_FOR}
 
 ---
 
-### 8.1 Database Specialist
+### Subagent Bootstrap (shared across 8.1-8.3)
 
-**When to create:** Feature requires new entities, tables, or data changes.
+Every area subagent receives this bootstrap block before its specific task:
 
-**Dispatch prompt:**
 ```
-You are the DATABASE SPECIALIST planning for feature ${FEATURE_ID}.
-
-## TASK_DOCUMENTS (read ALL before starting — source of truth)
+## TASK_DOCUMENTS (read ALL before starting -- source of truth)
 ${TASK_DOCUMENTS}
 
 ${CROSS_SF_CONTEXT}
 
 ## MANDATORY: Load Context (FIRST STEP)
-Execute BEFORE any other action:
-
 1. Run: bash .codeadd/scripts/status.sh
 2. Read ALL files listed in TASK_DOCUMENTS above
-
-## Your Task
-Create the database planning section. Search the codebase for similar entities and repositories to use as references.
-When Cross-SF Context is present, ensure schema fields match the data structures expected by consumer SFs.
-
-## Output Format
-Write to: docs/features/${FEATURE_ID}/plan-database.md
-
-Use this EXACT format:
-
-## Database
-
-### Entities
-| Entity | Table | Key Fields | Reference |
-|--------|-------|------------|-----------|
-| [Name] | [snake_case] | [main fields] | Similar: `[search codebase for similar entity]` |
-
-### Migration
-- [Action]: [table/column] - [type/constraint]
-- Reference: `[search codebase for similar migration]`
-
-### Repository
-| Method | Purpose |
-|--------|---------|
-| [methodName] | [what it does] |
-
-Reference: `[search codebase for similar repository]`
-
-## Rules
-- NO code examples, only structure
-- MUST search codebase for similar files as references (paths from CLAUDE.md)
-- Keep it under 40 lines
+3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
 ```
+
+---
+
+### 8.1 Database Specialist
+
+**When to create:** Feature requires new entities, tables, or data changes.
+
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard
+- **Output:** `docs/features/${FEATURE_ID}/plan-database.md`
+- **Prompt:**
+  ```
+  You are the DATABASE SPECIALIST planning for feature ${FEATURE_ID}.
+
+  ${SUBAGENT_BOOTSTRAP}
+
+  ## Your Task
+  Create the database planning section. Search the codebase for similar entities and repositories to use as references.
+  When Cross-SF Context is present, ensure schema fields match the data structures expected by consumer SFs.
+
+  ## Output Format
+  Write to: docs/features/${FEATURE_ID}/plan-database.md
+
+  Use this EXACT format:
+
+  ## Database
+
+  ### Entities
+  | Entity | Table | Key Fields | Reference |
+  |--------|-------|------------|-----------|
+  | [Name] | [snake_case] | [main fields] | Similar: `[search codebase for similar entity]` |
+
+  ### Migration
+  - [Action]: [table/column] - [type/constraint]
+  - Reference: `[search codebase for similar migration]`
+
+  ### Repository
+  | Method | Purpose |
+  |--------|---------|
+  | [methodName] | [what it does] |
+
+  Reference: `[search codebase for similar repository]`
+
+  ## Rules
+  - NO code examples, only structure
+  - MUST search codebase for similar files as references (paths from CLAUDE.md)
+  - Keep it under 40 lines
+  ```
 
 ---
 
@@ -447,82 +326,69 @@ Reference: `[search codebase for similar repository]`
 
 **When to create:** Feature requires API, business logic, workers, or events.
 
-**Dispatch prompt:**
-```
-You are the BACKEND SPECIALIST planning for feature ${FEATURE_ID}.
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard
+- **Output:** `docs/features/${FEATURE_ID}/plan-backend.md`
+- **Prompt:**
+  ```
+  You are the BACKEND SPECIALIST planning for feature ${FEATURE_ID}.
 
-## TASK_DOCUMENTS (read ALL before starting — source of truth)
-${TASK_DOCUMENTS}
+  ${SUBAGENT_BOOTSTRAP}
 
-${CROSS_SF_CONTEXT}
+  ## MANDATORY: Load Backend Development Skill
+  BEFORE designing endpoints, read `.codeadd/skills/add-backend-development/SKILL.md` (RESTful API, IoC/DI, DTO naming, CQRS, multi-tenancy).
 
-## MANDATORY: Load Context (FIRST STEP)
-Execute BEFORE any other action:
+  ## Your Task
+  Create the backend planning section covering: API, Commands, Events, Workers (if needed).
+  Search the codebase for similar modules to use as references.
 
-1. Run: bash .codeadd/scripts/status.sh
-2. Read ALL files listed in TASK_DOCUMENTS above
-3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
+  ## Output Format
+  Write to: docs/features/${FEATURE_ID}/plan-backend.md
 
-## MANDATORY: Load Backend Development Skill
-BEFORE designing endpoints, read: `.codeadd/skills/add-backend-development/SKILL.md`
+  Use this EXACT format:
 
-This skill contains ALL standards for:
-- RESTful API (HTTP methods, status codes, URL patterns)
-- IoC/DI configuration
-- DTO naming conventions
-- CQRS patterns
-- Multi-tenancy rules
+  ## Backend
 
-## Your Task
-Create the backend planning section covering: API, Commands, Events, Workers (if needed).
-Search the codebase for similar modules to use as references.
+  ### Endpoints
+  | Method | Path | Request DTO | Response DTO | Status | Purpose |
+  |--------|------|-------------|--------------|--------|---------|
+  | [METHOD] | /api/v1/[path] | [DtoName] | [DtoName] | [2xx] | [~10 words] |
 
-## Output Format
-Write to: docs/features/${FEATURE_ID}/plan-backend.md
+  ### DTOs
+  | DTO | Fields | Validations |
+  |-----|--------|-------------|
+  | [CreateXxxDto] | field1: type, field2: type | field1: required |
+  | [XxxResponseDto] | id, field1, createdAt | - |
 
-Use this EXACT format:
+  ### Commands
+  {"CreateXxxCommand":{"triggeredBy":"Controller","actions":"Validate, persist, emit event"}}
 
-## Backend
+  ### Events
+  {"XxxCreatedEvent":{"payload":"id,accountId","consumers":"AuditWorker"}}
 
-### Endpoints
-| Method | Path | Request DTO | Response DTO | Status | Purpose |
-|--------|------|-------------|--------------|--------|---------|
-| [METHOD] | /api/v1/[path] | [DtoName] | [DtoName] | [2xx] | [~10 words] |
+  ### Workers (if applicable)
+  {"queue-name":{"job":"JobName","trigger":"Event/Schedule","action":"what it does"}}
 
-### DTOs
-| DTO | Fields | Validations |
-|-----|--------|-------------|
-| [CreateXxxDto] | field1: type, field2: type | field1: required |
-| [XxxResponseDto] | id, field1, createdAt | - |
+  ### Module Structure
+  [feature]/
+  +-- dtos/
+  +-- commands/handlers/
+  +-- events/handlers/
+  +-- [feature].controller.ts
+  +-- [feature].service.ts
+  +-- [feature].module.ts
 
-### Commands
-{"CreateXxxCommand":{"triggeredBy":"Controller","actions":"Validate, persist, emit event"}}
+  Reference: `[search codebase for similar module]`
 
-### Events
-{"XxxCreatedEvent":{"payload":"id,accountId","consumers":"AuditWorker"}}
-
-### Workers (if applicable)
-{"queue-name":{"job":"JobName","trigger":"Event/Schedule","action":"what it does"}}
-
-### Module Structure
-[feature]/
-├── dtos/
-├── commands/handlers/
-├── events/handlers/
-├── [feature].controller.ts
-├── [feature].service.ts
-└── [feature].module.ts
-
-Reference: `[search codebase for similar module]`
-
-## Rules
-- NO code examples, only contracts
-- MUST search codebase for similar module as reference (paths from CLAUDE.md)
-- Combine API + Workers in same section
-- Keep it under 60 lines
-- MUST follow `.codeadd/skills/add-backend-development/SKILL.md` patterns
-- Include Status column in Endpoints table
-```
+  ## Rules
+  - NO code examples, only contracts
+  - MUST search codebase for similar module as reference (paths from CLAUDE.md)
+  - Combine API + Workers in same section
+  - Keep it under 60 lines
+  - MUST follow `.codeadd/skills/add-backend-development/SKILL.md` patterns
+  - Include Status column in Endpoints table
+  ```
 
 ---
 
@@ -530,57 +396,51 @@ Reference: `[search codebase for similar module]`
 
 **When to create:** Feature requires UI changes.
 
-**Dispatch prompt:**
-```
-You are the FRONTEND SPECIALIST planning for feature ${FEATURE_ID}.
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard
+- **Output:** `docs/features/${FEATURE_ID}/plan-frontend.md`
+- **Prompt:**
+  ```
+  You are the FRONTEND SPECIALIST planning for feature ${FEATURE_ID}.
 
-## TASK_DOCUMENTS (read ALL before starting — source of truth)
-${TASK_DOCUMENTS}
+  ${SUBAGENT_BOOTSTRAP}
+  4. Read docs/design-system.md (if exists - tokens)
 
-${CROSS_SF_CONTEXT}
+  ## Your Task
+  Create the frontend planning section.
+  **If design.md exists:** Follow its layout specs, component inventory, and mobile-first requirements.
+  **If not:** Search the codebase for similar pages/components to use as references.
 
-## MANDATORY: Load Context (FIRST STEP)
-Execute BEFORE any other action:
+  ## Output Format
+  Write to: docs/features/${FEATURE_ID}/plan-frontend.md
 
-1. Run: bash .codeadd/scripts/status.sh
-2. Read ALL files listed in TASK_DOCUMENTS above
-3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
-4. Read docs/design-system.md (if exists - tokens)
+  Use this EXACT format:
 
-## Your Task
-Create the frontend planning section.
-**If design.md exists:** Follow its layout specs, component inventory, and mobile-first requirements.
-**If not:** Search the codebase for similar pages/components to use as references.
+  ## Frontend
 
-## Output Format
-Write to: docs/features/${FEATURE_ID}/plan-frontend.md
+  ### Pages
+  | Route | Page Component | Purpose |
+  |-------|----------------|---------|
+  | /[path] | [PageName] | [~10 words] |
 
-Use this EXACT format:
+  ### Components
+  {"ComponentName":{"location":"components/[folder]/","purpose":"~10 words"}}
 
-## Frontend
+  ### Hooks & State
+  {"hooks":{"use[Feature]":{"type":"TanStack Query","purpose":"CRUD operations"}},"stores":{"[feature]Store":{"type":"Zustand","purpose":"Local UI state (if needed)"}}}
 
-### Pages
-| Route | Page Component | Purpose |
-|-------|----------------|---------|
-| /[path] | [PageName] | [~10 words] |
+  ### Types (mirror from backend)
+  {"TypeName":{"fields":"field1,field2","sourceDTO":"CreateXxxDto"}}
 
-### Components
-{"ComponentName":{"location":"components/[folder]/","purpose":"~10 words"}}
+  Reference: `[search codebase for similar pages/hooks]`
 
-### Hooks & State
-{"hooks":{"use[Feature]":{"type":"TanStack Query","purpose":"CRUD operations"}},"stores":{"[feature]Store":{"type":"Zustand","purpose":"Local UI state (if needed)"}}}
-
-### Types (mirror from backend)
-{"TypeName":{"fields":"field1,field2","sourceDTO":"CreateXxxDto"}}
-
-Reference: `[search codebase for similar pages/hooks]`
-
-## Rules
-- NO code examples, only structure
-- Types MUST mirror backend DTOs
-- MUST search codebase for similar files as references (paths from CLAUDE.md)
-- Keep it under 40 lines
-```
+  ## Rules
+  - NO code examples, only structure
+  - Types MUST mirror backend DTOs
+  - MUST search codebase for similar files as references (paths from CLAUDE.md)
+  - Keep it under 40 lines
+  ```
 
 <!-- feature:tdd:step9 -->
 
@@ -588,73 +448,75 @@ Reference: `[search codebase for similar pages/hooks]`
 
 ## STEP 9: Test-Spec Subagent (AFTER area subagents)
 
-**When to create:** ALWAYS — runs after all area subagents complete.
+**When to create:** ALWAYS -- runs after all area subagents complete.
 
 **MANDATORY:** Load skill BEFORE dispatch: `.codeadd/skills/add-test-specification/SKILL.md`
 
-**Dispatch prompt:**
-```
-You are the TEST SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
+**DISPATCH AGENT:**
+- **Capability:** read-write
+- **Complexity:** standard
+- **Output:** `docs/features/${FEATURE_ID}/plan-test-spec.md`
+- **Prompt:**
+  ```
+  You are the TEST SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
 
-## MANDATORY: Load Skill
-READ: .codeadd/skills/add-test-specification/SKILL.md — follow ALL rules.
+  ## MANDATORY: Load Skill
+  READ: .codeadd/skills/add-test-specification/SKILL.md -- follow ALL rules.
 
-## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-Execute BEFORE any other action:
+  ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
+  1. Run: bash .codeadd/scripts/status.sh
+  2. Parse FEATURE_ID from output
+  3. Read feature docs IN ORDER:
+     - docs/features/${FEATURE_ID}/about.md (PRIMARY -- RFs, RNs, RNFs)
+     - docs/features/${FEATURE_ID}/discovery.md
+  4. Read area planning outputs (contracts):
+     - docs/features/${FEATURE_ID}/plan-database.md (if exists)
+     - docs/features/${FEATURE_ID}/plan-backend.md (if exists)
+     - docs/features/${FEATURE_ID}/plan-frontend.md (if exists)
 
-1. Run: bash .codeadd/scripts/status.sh
-2. Parse FEATURE_ID from output
-3. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md (PRIMARY — RFs, RNs, RNFs)
-   - docs/features/${FEATURE_ID}/discovery.md
-4. Read area planning outputs (contracts):
-   - docs/features/${FEATURE_ID}/plan-database.md (if exists — entities, tables)
-   - docs/features/${FEATURE_ID}/plan-backend.md (if exists — endpoints, DTOs, commands)
-   - docs/features/${FEATURE_ID}/plan-frontend.md (if exists — pages, components)
+  ## Your Task
+  Generate contract test cases derived from RFs/RNs in about.md + technical contracts from plan-*.md files.
 
-## Your Task
-Generate contract test cases derived from RFs/RNs in about.md + technical contracts from plan-*.md files.
+  Rules:
+  - Tests validate CONTRACT (input/output), NEVER internal implementation
+  - Each RF generates at least 1 test case
+  - Each RN generates positive AND negative test cases
+  - Use nomenclature: [area]-[RF/RN]-[scenario]
+  - Map test cases to test files
 
-Rules:
-- Tests validate CONTRACT (input/output), NEVER internal implementation
-- Each RF generates at least 1 test case
-- Each RN generates positive AND negative test cases
-- Use nomenclature: [area]-[RF/RN]-[scenario]
-- Map test cases to test files
+  ## Output Format
+  Write to: docs/features/${FEATURE_ID}/plan-test-spec.md
 
-## Output Format
-Write to: docs/features/${FEATURE_ID}/plan-test-spec.md
+  Use the EXACT format from the test-specification skill:
 
-Use the EXACT format from the test-specification skill:
+  ## Test Specification
 
-## Test Specification
+  ### Contract Tests (from RFs/RNs)
 
-### Contract Tests (from RFs/RNs)
+  | ID | Test Case | Area | RF/RN | Input | Expected Output | Verify |
+  |----|-----------|------|-------|-------|-----------------|--------|
+  | T01 | [max 10 words] | [backend/frontend/database] | [RF/RN ID] | [request/action] | [response/result] | [assertion] |
 
-| ID | Test Case | Area | RF/RN | Input | Expected Output | Verify |
-|----|-----------|------|-------|-------|-----------------|--------|
-| T01 | [max 10 words] | [backend/frontend/database] | [RF/RN ID] | [request/action] | [response/result] | [assertion] |
+  ### Test File Mapping
 
-### Test File Mapping
+  | Area | Test File | Test IDs |
+  |------|-----------|----------|
+  | [area] | [path] | [T01, T02...] |
 
-| Area | Test File | Test IDs |
-|------|-----------|----------|
-| [area] | [path] | [T01, T02...] |
+  ### Coverage vs Requirements
 
-### Coverage vs Requirements
+  | RF/RN | Test Cases | Covered? |
+  |-------|------------|----------|
+  | [RF01] | [T01, T03] | YES |
 
-| RF/RN | Test Cases | Covered? |
-|-------|------------|----------|
-| [RF01] | [T01, T03] | ✅ |
+  ## Rules
+  - NO implementation code -- only test specifications
+  - Coverage vs Requirements MUST show 100%
+  - Keep under 40 lines
+  - Test cases are CONTRACTS: what goes in, what comes out
+  ```
 
-## Rules
-- NO implementation code — only test specifications
-- Coverage vs Requirements MUST show 100%
-- Keep under 40 lines
-- Test cases are CONTRACTS: what goes in, what comes out
-```
-
-**⛔ DO NOT skip this subagent. Test specs are MANDATORY for TDD pipeline.**
+**NEVER skip this subagent. Test specs are MANDATORY for TDD pipeline.**
 <!-- /feature:tdd:step9 -->
 
 ---
@@ -686,80 +548,36 @@ echo "" >> plan.md
 [ -f plan-frontend.md ] && cat plan-frontend.md >> plan.md && echo "" >> plan.md && echo "---" >> plan.md
 ```
 
-**⛔ DO NOT rewrite or summarize subagent content. Append directly.**
+**NEVER rewrite or summarize subagent content. Append directly.**
 
 ---
 
 ### 10.2 Validate Completeness (MANDATORY)
 
-**Read discovery.md and design.md (if exists) and verify:**
-
-| Source | What to Verify | Must Be in Plan |
-|--------|---------------|-----------------|
-| discovery.md | Mentioned entities/tables | Complete SQL schema in plan-database |
-| discovery.md | Complex JSONB fields | Detailed TypeScript structure |
-| discovery.md | Required endpoints | Complete contract (request/response DTOs) |
-| discovery.md | Events/workers | Payload and consumers documented |
-| design.md | UI components | Mapped in plan-frontend |
-| design.md | States/interactions | Hooks and stores defined |
-
-**Validation Checklist:**
-```markdown
-- [ ] All tables have SQL schema? (Complete CREATE TABLE)
-- [ ] JSONB fields have TypeScript structure? (Detailed interface)
-- [ ] All endpoints have request/response DTOs? (Fields and types)
-- [ ] Frontend types mirror backend DTOs?
-- [ ] Main flow is clear? (Who calls whom)
-```
+**Read discovery.md and design.md (if exists). Verify ALL of:**
+- discovery entities/tables -> complete SQL schema in plan-database
+- discovery JSONB fields -> detailed TypeScript structure
+- discovery endpoints -> complete request/response DTOs
+- discovery events/workers -> payload and consumers documented
+- design components -> mapped in plan-frontend
+- design states/interactions -> hooks and stores defined
+- Frontend types mirror backend DTOs
+- Main flow is clear (who calls whom)
 
 ---
 
 ### 10.3 Fill Gaps (IF NEEDED)
 
-**IF validation identifies gaps, ADD directly to plan.md:**
-
-**Common gap examples:**
-
-1. **Missing table schema:**
-```sql
-### Schema: [table_name]
-CREATE TABLE [table_name] (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  account_id UUID NOT NULL REFERENCES accounts(id),
-  [fields from discovery],
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-2. **Missing JSONB structure:**
-```typescript
-### Interface: [JsonbFieldName]
-interface [JsonbFieldName] {
-  [field]: [type];
-  // fields from discovery
-}
-```
-
-3. **Incomplete API contract:**
-```markdown
-### Detailed API Contracts
-
-#### [POST/GET/etc] /api/v1/[path]
-**Request:**
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-
-**Response:**
-| Field | Type | Description |
-|-------|------|-------------|
-```
+**IF validation identifies gaps, ADD directly to plan.md.** Common gaps:
+- **Missing table schema** -> add complete CREATE TABLE with all fields from discovery
+- **Missing JSONB structure** -> add TypeScript interface with detailed field types
+- **Incomplete API contract** -> add Request/Response tables with Field | Type | Required | Description
 
 **RULE:** If discovery.md has the information, it MUST appear in plan.md in an actionable form for the developer.
 
 ---
 
-### 10.4 Dispatch Architect Subagent — Generate tasks.md (PRD0032)
+### 10.4 Dispatch Architect Subagent -- Generate tasks.md (PRD0032)
 
 **AFTER plan.md is consolidated and gaps filled, dispatch the Architect Subagent to generate `tasks.md`.**
 
@@ -773,11 +591,11 @@ interface [JsonbFieldName] {
 
   ## CONTEXT
   Read these files in order:
-  1. ${PLAN_DIR}/plan.md  ← PRIMARY: technical contracts
-  2. ${PLAN_DIR}/about.md ← Scope, acceptance criteria
-  3. docs/features/${FEATURE_ID}/discovery.md ← Constraints
+  1. ${PLAN_DIR}/plan.md  <- PRIMARY: technical contracts
+  2. ${PLAN_DIR}/about.md <- Scope, acceptance criteria
+  3. docs/features/${FEATURE_ID}/discovery.md <- Constraints
 
-  4. ${PLAN_DIR}/plan-test-spec.md ← Test specifications (if exists)
+  4. ${PLAN_DIR}/plan-test-spec.md <- Test specifications (if exists)
 
   ## TASK
   Generate `${PLAN_DIR}/tasks.md` with atomic subtasks in this EXACT format.
@@ -807,17 +625,17 @@ interface [JsonbFieldName] {
 
   ## RULES
   - 1 service per task (database | backend | frontend | test | infra)
-  - Maximum 3 files per task — if more, split
+  - Maximum 3 files per task -- if more, split
   - Deps: comma-separated task IDs, or `-` if none
-  - Verify: MANDATORY — command, curl, or browser check
-  - Order: test (contract tests) → database → backend → frontend
+  - Verify: MANDATORY -- command, curl, or browser check
+  - Order: test (contract tests) -> database -> backend -> frontend
   - Complexity scoring:
-    - SIMPLE: ≤5 tasks
-    - STANDARD: 6–12 tasks
+    - SIMPLE: <=5 tasks
+    - STANDARD: 6-12 tasks
     - COMPLEX: 13+ tasks (warn: should have been split as epic)
   ```
 
-**⛔ DO NOT finalize plan without tasks.md.**
+**NEVER finalize plan without tasks.md.**
 
 ---
 
@@ -826,7 +644,7 @@ interface [JsonbFieldName] {
 **IF HAS_EPIC=true:** After tasks.md is generated, dispatch the Integration Review Agent.
 **IF normal feature:** Skip to 10.6.
 
-**Purpose:** Cross-validate all existing SF plans to catch mismatches that individual subagents cannot see (schema ≠ consumer output, fragmented enums, missing config vars, undocumented handoffs).
+**Purpose:** Cross-validate all existing SF plans to catch mismatches that individual subagents cannot see (schema != consumer output, fragmented enums, missing config vars, undocumented handoffs).
 
 **DISPATCH AGENT:**
 - **Capability:** read-write
@@ -837,52 +655,27 @@ interface [JsonbFieldName] {
 
   ## CONTEXT
   Read these files in order:
-  1. docs/features/${FEATURE_ID}/epic.md ← dependency graph
-  2. docs/features/${FEATURE_ID}/discovery.md ← shared requirements
+  1. docs/features/${FEATURE_ID}/epic.md <- dependency graph
+  2. docs/features/${FEATURE_ID}/discovery.md <- shared requirements
   3. ALL existing plan.md files: ls docs/features/${FEATURE_ID}/subfeatures/*/plan.md
   4. ALL existing tasks.md files: ls docs/features/${FEATURE_ID}/subfeatures/*/tasks.md
 
   ## TASK
   Cross-validate all SF plans and FIX issues directly in the affected plan.md/tasks.md files.
 
-  ### Check 1: Schema ↔ Consumer Alignment
-  For each table/entity defined in a provider SF:
-  - Find all consumer SFs that read or write this data
-  - Verify column names, jsonb structures, and types match what consumers expect
-  - FIX: update the provider SF plan.md schema to include missing fields or document jsonb structure
-
-  ### Check 2: Shared Resource Centralization
-  Scan all plans for shared resources (enums, config vars, types, barrel exports):
-  - Enums: should be added ONCE in the earliest SF (usually SF01/foundation)
-  - Config vars: all env vars should be declared in the foundation SF, consumed by later SFs
-  - FIX: move fragmented additions to the foundation SF plan, update tasks.md accordingly
-
-  ### Check 3: Cross-SF Handoff Contracts
-  For each dependency edge in epic.md:
-  - Verify the provider SF documents what it produces
-  - Verify the consumer SF documents what it expects
-  - FIX: add "Cross-SF Dependencies" section to plan.md if missing, with explicit contracts
-
-  ### Check 4: Fallback & Degradation
-  For SFs that depend on others not yet implemented:
-  - Verify fallback behavior is documented (e.g., default timezone if SF04 not deployed)
-  - FIX: add fallback notes to the dependent SF plan or task description
-
-  ### Check 5: Worker/DI Registration Completeness
-  For each new service or worker:
-  - Verify DI registration task exists (API cradle AND worker cradle)
-  - Verify barrel export is included in the file list of the task
-  - FIX: add missing DI/barrel tasks
+  ### Checks (fix each in-place):
+  1. **Schema <-> Consumer Alignment** - column names, jsonb structures, types match consumer expectations. FIX in provider plan.md.
+  2. **Shared Resource Centralization** - enums/config vars/types added ONCE in earliest SF. FIX by moving to foundation SF.
+  3. **Cross-SF Handoff Contracts** - each dependency edge has documented provider output + consumer expectation. FIX by adding "Cross-SF Dependencies" section.
+  4. **Fallback & Degradation** - SFs depending on unimplemented SFs have fallback behavior documented. FIX in dependent SF plan/tasks.
+  5. **Worker/DI Registration** - DI registration tasks exist for new services (API + worker cradle, barrel exports). FIX by adding missing tasks.
 
   ## OUTPUT
-  DO NOT create a separate report file.
-  Apply all fixes directly to the affected plan.md and tasks.md files.
-  After all fixes, output a summary of changes made (file + what changed) to stdout.
+  Apply all fixes directly to affected files. Output summary of changes (file + what changed) to stdout. NEVER create a separate report file.
 
   ## RULES
-  - ONLY fix integration issues — do not rewrite content or change architecture
-  - Preserve existing content — APPEND or EDIT, never delete sections
-  - If a fix requires a new task, add it at the end of the tasks table
+  - ONLY fix integration issues -- NEVER rewrite content or change architecture
+  - Preserve existing content -- APPEND or EDIT, never delete sections
   - Keep each plan.md under 150 lines after fixes
   ```
 
@@ -892,96 +685,41 @@ interface [JsonbFieldName] {
 
 ### 10.6 Add Navigation Sections
 
-Append to the end of plan.md:
-
-```markdown
-## Overview
-[1-2 paragraphs summarizing the feature - based on about.md]
-
-## Main Flow
-1. [Step 1 - Actor → Action]
-2. [Step 2 - Actor → Action]
-3. [Continue as needed...]
-
-## Implementation Order
-1. **Database**: [list items if applicable]
-2. **Backend**: [list items]
-3. **Frontend**: [list items if applicable]
-
-## Quick Reference
-| Pattern | How to Find |
-|---------|-------------|
-| Entity | Search codebase for similar entity |
-| Repository | Search codebase for similar repository |
-| Controller | Search codebase for similar controller |
-| Command | Search codebase for similar command |
-| Frontend Hook | Search codebase for similar hook |
-| Frontend Page | Search codebase for similar page |
-```
+Append to plan.md: **Overview** (1-2 paragraphs from about.md), **Main Flow** (numbered Actor -> Action steps), **Implementation Order** (Database -> Backend -> Frontend), **Quick Reference** (table mapping patterns to codebase search terms for Entity, Repository, Controller, Command, Hook, Page).
 
 ---
 
 ## STEP 11: Validate Requirements Coverage (GATE: coverage_validated)
 
-**⛔ GATE: coverage_validated - MANDATORY before finalizing**
+**GATE: coverage_validated - MANDATORY before finalizing**
 
 ```
 IF COVERAGE < 100%:
-  ⛔ DO NOT USE: Write to finalize plan.md
-  ⛔ DO NOT: Proceed to STEP 12
-  ⛔ DO: Resolve gaps by adding missing tasks
+  NEVER finalize plan.md or proceed to STEP 12
+  ALWAYS resolve gaps by adding missing tasks
 ```
 
-### 11.1 Extract Requirements from discovery.md
+### 11.1 Process
 
-```markdown
-- [ ] List ALL RFs (Functional Requirements)
-- [ ] List ALL RNs (Business Rules)
-- [ ] List items from Scope/Summary
-```
+1. **Extract** all RFs, RNs, and Scope items from discovery.md
+2. **Map** each requirement to Feature/Area and specific Tasks
+3. **IF no task exists** -> CREATE task or JUSTIFY exclusion
 
-### 11.2 Map Each Requirement
+### 11.2 Generate Coverage Table
 
-For EACH requirement:
-```markdown
-- [ ] Identify which Feature/Area covers it
-- [ ] Identify which specific Tasks implement it
-- [ ] IF no task exists → CREATE task or JUSTIFY exclusion
-```
-
-### 11.3 Generate Coverage Table
-
-Add to plan.md AFTER Features section (or at beginning if not Epic):
-
-```markdown
-## Requirements Coverage
+Add `## Requirements Coverage` to plan.md with this format:
 
 | ID | Requirement | Covered? | Feature/Area | Tasks |
 |----|-------------|----------|--------------|-------|
-| RF01 | User creates account | ✅ | Feature 1 | 1.1, 1.2, 1.3 |
-| RF02 | Confirmation email | ✅ | Feature 2 | 2.1, 2.2 |
-| RN01 | Password min 8 chars | ✅ | Feature 1 | 1.2 |
-| RF05 | Admin toggle RLS | ❌ | - | - |
+| RF01 | User creates account | YES | Feature 1 | 1.1, 1.2, 1.3 |
+| RF05 | Admin toggle RLS | EXCLUDED | - | Out of current scope - validated with user |
 
-**Status:** ✅ 100% covered | ❌ X requirements pending
-```
+**Status:** YES 100% covered | NO X requirements pending
 
-### 11.4 Validate Completeness
+### 11.3 Validate
 
-```markdown
-- [ ] 100% covered → Proceed to STEP 12
-- [ ] < 100% → STOP and resolve gaps:
-  - Add missing tasks
-  - OR document exclusion with justification
-```
-
-### 11.5 If Requirement Will Not Be Implemented
-
-Document explicitly in the table:
-
-```markdown
-| RF05 | Admin toggle RLS | ⏸️ EXCLUDED | - | Out of current scope - validated with user |
-```
+- 100% covered -> Proceed to STEP 12
+- < 100% -> STOP, resolve gaps (add tasks or document exclusion), then re-validate
 
 ---
 
@@ -992,34 +730,17 @@ cd "docs/features/${FEATURE_ID}"
 rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
 ```
 
-**⛔ DO NOT delete temporary files until plan.md is complete AND coverage is validated.**
+**NEVER delete temporary files until plan.md is complete AND coverage is validated.**
 
 ---
 
 ## STEP 12: Completion
 
-### Inform the User
-
-```markdown
-✅ **Technical Planning Complete!**
-
-**Feature:** ${FEATURE_ID}
-**Document:** `docs/features/${FEATURE_ID}/plan.md`
-
-**Contents:**
-- [X] API contracts (Y endpoints)
-- [X] DTOs and validations
-- [X] Commands and Events
-- [X] Module structure
-- [X] References to similar files
-
-**Next Steps (load code-addiction-ecosystem skill for context):**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-Based on what was planned, suggest the logical next command:
-- Standard flow → `/add.build`
-- Autonomous flow → `/add.autopilot`
-- If design is missing and feature has UI → `/add.design` first
-```
+Inform the user with a summary of what was planned:
+- Feature ID and plan path
+- Which areas were planned (Database/Backend/Frontend)
+- Key metrics (endpoint count, task count)
+- Suggest next command based on context: read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section to determine whether `/add.build`, `/add.autopilot`, or `/add.design` is appropriate.
 
 ---
 
@@ -1099,9 +820,9 @@ Reference: `[search codebase for similar controller]`
 ---
 
 ## Main Flow
-1. Client → GET /api/v1/health
-2. Controller → Build response with status/version
-3. Response → HealthResponseDto
+1. Client -> GET /api/v1/health
+2. Controller -> Build response with status/version
+3. Response -> HealthResponseDto
 
 ## Implementation Order
 1. **Backend**: DTO, Controller endpoint, register route

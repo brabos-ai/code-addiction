@@ -83,6 +83,7 @@ describe('FEATURES registry', () => {
     expect(FEATURES.tdd).toBeDefined();
     expect(FEATURES.tdd.commands).toContain('add.plan');
     expect(FEATURES.tdd.commands).toContain('add.build');
+    expect(FEATURES.tdd.commands).toContain('add.check');
   });
 
   it('defines startup-test feature', () => {

@@ -9,153 +9,84 @@ Specialized builder for high-conversion SaaS landing pages. Creates responsive, 
 ## Spec
 
 ```json
-{"gates":["skill_loaded","context_collected","sections_selected","aesthetic_selected"],"order":["load_skill","collect_context","load_templates","generate_code","validate_mobile","output"],"outputs":{"landing_page":"apps/frontend/src/pages/landing.tsx"},"shortcuts":{"minimal":"tech_minimal","tech":"tech_dark","enterprise":"tech_enterprise","bold":"tech_bold","url":"analyze_existing"}}
+{"outputs":{"landing_page":"apps/frontend/src/pages/landing.tsx"},"shortcuts":{"minimal":"tech_minimal","tech":"tech_dark","enterprise":"tech_enterprise","bold":"tech_bold","url":"analyze_existing"}}
 ```
 
 ---
 
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 
 ---
 
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
-```
 STEP 1: Load skill                → EXECUTE FIRST
 STEP 2: Collect context           → IF insufficient: ASK user
 STEP 3: Load templates            → BASED ON selected sections
 STEP 4: Generate code             → APPLY aesthetic + copy patterns
 STEP 5: Validate mobile-first     → VERIFY responsive checklist
 STEP 6: Output                    → DELIVER complete code
-```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
-```
 IF SKILL NOT LOADED:
   ⛔ DO NOT USE: Write to create landing page
   ⛔ DO NOT: Generate code without skill reference
-  ⛔ DO: Execute cat .codeadd/skills/add-landing-page-saas/SKILL.md FIRST
+  ✅ DO: Load .codeadd/skills/add-landing-page-saas/SKILL.md FIRST
 
 IF CONTEXT INCOMPLETE:
   ⛔ DO NOT USE: Write without product/audience info
   ⛔ DO NOT: Generate generic placeholder code
-  ⛔ DO: Collect required information from user
+  ✅ DO: Collect required information from user
 
 IF TEMPLATES NOT LOADED:
   ⛔ DO NOT USE: Write code without section templates
-  ⛔ DO: Load templates for selected sections from .codeadd/skills/add-landing-page-saas/sections/
+  ✅ DO: Load templates for selected sections
 
 IF AESTHETIC NOT SELECTED:
   ⛔ DO NOT: Mix multiple aesthetics in same page
-  ⛔ DO: Apply single consistent aesthetic (Minimal/Tech/Enterprise/Bold)
+  ✅ DO: Apply single consistent aesthetic
 
 ALWAYS:
-  ⛔ DO NOT: Generate documentation or specifications
+  ⛔ DO NOT: Generate documentation instead of code
   ⛔ DO NOT: Create non-responsive code
-  ⛔ DO: Generate production-ready TSX code
-  ⛔ DO: Apply mobile-first principles
-```
+  ✅ DO: Generate production-ready TSX code
+  ✅ DO: Apply mobile-first principles
 
 ---
 
-## STEP 1: Load Skill Reference (EXECUTE FIRST)
+## STEP 1: Load Skill Reference
 
-**Load the landing page skill:**
-
-```bash
-cat .codeadd/skills/add-landing-page-saas/SKILL.md
-```
+Load the landing page skill from `.codeadd/skills/add-landing-page-saas/SKILL.md`.
 
 **This skill contains:**
-- Prompt framework
-- Section vocabulary (Hero, Features, Pricing, etc.)
-- Copy patterns (headlines, CTAs)
-- Conversion checklist
-- Template variations
+- Prompt framework, section vocabulary (Hero, Features, Pricing, etc.)
+- Copy patterns (headlines, CTAs), conversion checklist, template variations
 
-**⛔ IF SKILL FILE MISSING:** Stop and inform user that skill reference is required.
+**IF SKILL FILE MISSING:** Stop and inform user.
 
 ---
 
-## STEP 2: Collect Context (IF insufficient)
+## STEP 2: Collect Context
 
 **IF user provided complete context:** Skip to STEP 3.
 
-**IF context incomplete, collect information:**
+**IF context incomplete, ask user for:**
+- **Product:** Name and value proposition in 1 line
+- **Audience:** Who buys? (role, company, main pain point)
+- **Sections:** Hero, Logo Cloud, Features, Social Proof, Pricing, FAQ, Final CTA
+- **Aesthetic:** Minimal (Notion, Linear) / Tech (Vercel, Supabase) / Enterprise (Salesforce) / Bold (Stripe, Figma)
+- **Differentiator:** What makes it unique vs competitors?
 
-```markdown
-## Let's build your landing page!
-
-Need the following information:
-
-1. **Product:** Name and value proposition in 1 line
-   → Example: "EasyFlow - Process management for SMBs"
-
-2. **Audience:** Who buys? (role, company, main pain point)
-   → Example: "SMB owners who waste time on spreadsheets"
-
-3. **Sections:** Which to include?
-   - [ ] Hero
-   - [ ] Logo Cloud (clients)
-   - [ ] Features
-   - [ ] Social Proof (testimonials/stats)
-   - [ ] Pricing
-   - [ ] FAQ
-   - [ ] Final CTA
-
-4. **Aesthetic:** Which visual direction?
-   - **Minimal** (Notion, Linear) - Clean, professional
-   - **Tech** (Vercel, Supabase) - Dark mode, gradients
-   - **Enterprise** (Salesforce) - Trustworthy blue, structured
-   - **Bold** (Stripe, Figma) - Strong gradients, memorable
-
-5. **Differentiator:** What makes it unique vs competitors?
-```
-
-**⛔ DO NOT proceed without:**
-- Product name + value proposition
-- Target audience
-- Selected sections (minimum: Hero + CTA)
-- Chosen aesthetic
+**DO NOT proceed without:** Product name + value proposition, target audience, selected sections (minimum: Hero + CTA), chosen aesthetic.
 
 ---
 
-## STEP 3: Load Templates (BASED ON selected sections)
+## STEP 3: Load Templates
 
-**For EACH selected section, load the corresponding template:**
-
-```bash
-# Hero
-cat .codeadd/skills/add-landing-page-saas/sections/hero.md
-
-# Features
-cat .codeadd/skills/add-landing-page-saas/sections/features.md
-
-# Pricing
-cat .codeadd/skills/add-landing-page-saas/sections/pricing.md
-
-# Social Proof
-cat .codeadd/skills/add-landing-page-saas/sections/social-proof.md
-
-# CTA
-cat .codeadd/skills/add-landing-page-saas/sections/cta.md
-
-# Selected aesthetic
-cat .codeadd/skills/add-landing-page-saas/aesthetics.md
-```
+For EACH selected section, load the corresponding template from `.codeadd/skills/add-landing-page-saas/sections/` and the aesthetic reference from `aesthetics.md`.
 
 **Extract from templates:**
 - Section variations available
@@ -165,26 +96,15 @@ cat .codeadd/skills/add-landing-page-saas/aesthetics.md
 
 ---
 
-## STEP 4: Generate Code (APPLY aesthetic + copy patterns)
+## STEP 4: Generate Code
 
 ### 4.1 File Structure
 
-**Create landing page file:**
-
-```
-apps/frontend/src/pages/landing.tsx
-```
-
-**OR if separate from main app:**
-
-```
-apps/frontend/src/pages/home.tsx
-```
+Create landing page at `apps/frontend/src/pages/landing.tsx` (or `home.tsx` if separate from main app).
 
 ### 4.2 Code Generation Process
 
-**For EACH selected section:**
-
+For EACH selected section:
 1. **Select variation** most suitable from template
 2. **Adapt copy** using patterns from skill
 3. **Apply aesthetic** (colors, fonts, spacing)
@@ -192,38 +112,7 @@ apps/frontend/src/pages/home.tsx
 
 ### 4.3 Component Structure
 
-```tsx
-// apps/frontend/src/pages/landing.tsx
-
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-// ... other imports
-
-// Sections as internal components or imported
-function HeroSection() { /* ... */ }
-function LogoCloud() { /* ... */ }
-function FeaturesSection() { /* ... */ }
-function TestimonialsSection() { /* ... */ }
-function PricingSection() { /* ... */ }
-function FAQSection() { /* ... */ }
-function CTASection() { /* ... */ }
-function Footer() { /* ... */ }
-
-export function LandingPage() {
-  return (
-    <div className="min-h-screen">
-      <HeroSection />
-      <LogoCloud />
-      <FeaturesSection />
-      <TestimonialsSection />
-      <PricingSection />
-      <FAQSection />
-      <CTASection />
-      <Footer />
-    </div>
-  );
-}
-```
+Build `LandingPage` as a single-file page with internal section components (HeroSection, LogoCloud, FeaturesSection, TestimonialsSection, PricingSection, FAQSection, CTASection, Footer) composed inside a `min-h-screen` container.
 
 ### 4.4 Code Requirements
 
@@ -231,19 +120,13 @@ export function LandingPage() {
 - Responsive layout (mobile-first)
 - shadcn/ui components from `@/components/ui/`
 - Consistent aesthetic (single theme)
-- Clear placeholders for real content
+- Clear placeholders marked with `{/* TODO: ... */}` comments
 - Accessibility attributes
 - Loading optimization (lazy loading images)
 
-**Example placeholder:**
-```tsx
-{/* TODO: Replace with real logo */}
-<img src="/placeholder-logo.svg" alt="Logo" />
-```
-
 ---
 
-## STEP 5: Validate Mobile-First (VERIFY responsive checklist)
+## STEP 5: Validate Mobile-First
 
 **Execute mobile-first checklist:**
 
@@ -271,47 +154,19 @@ export function LandingPage() {
 - [ ] Animations respect prefers-reduced-motion
 ```
 
-**⛔ IF any checklist item fails:**
-- ⛔ DO NOT deliver code
-- ⛔ DO: Fix issues before proceeding to STEP 6
+**IF any checklist item fails:** Fix issues before proceeding to STEP 6.
 
 ---
 
-## STEP 6: Output (DELIVER complete code)
+## STEP 6: Output
 
-**Deliver the complete code:**
+Deliver the complete code. Summarize sections included, aesthetic applied, and list next steps (add route, replace placeholders, configure SEO/analytics).
 
-```markdown
-## ✅ Landing Page Created!
-
-**File:** `apps/frontend/src/pages/landing.tsx`
-
-**Sections included:**
-- Hero (variation: [X])
-- Features (variation: [X])
-- Pricing (variation: [X])
-- ...
-
-**Aesthetic:** [Minimal/Tech/Enterprise/Bold]
-
-**To use:**
-1. Copy code to file
-2. Add route in `routes.tsx`
-3. Replace placeholder images with real ones
-4. Adjust copy for your product
-
-**Suggested next steps:**
-- Add analytics (Google Analytics, Plausible)
-- Configure meta tags for SEO
-- Test on real devices
-- Create A/B test version of hero
-```
+**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
 
 ---
 
 ## Shortcuts
-
-**Shortcut commands trigger preset configurations:**
 
 | Command | Action |
 |---------|--------|
@@ -321,41 +176,18 @@ export function LandingPage() {
 | `/landing bold` | Create with Bold aesthetic |
 | `/landing [url]` | Analyze existing landing and suggest improvements |
 
-**Execution:**
-- Parse shortcut
-- Skip context collection for aesthetic
-- Proceed to STEP 2 with preset aesthetic
+**Execution:** Parse shortcut, skip aesthetic collection, proceed to STEP 2 with preset aesthetic.
 
 ---
 
-## Usage Examples
+## Usage Example
 
-### Basic Usage
-```
-/landing
-
-> Product: TaskFlow - Task manager for remote teams
-> Audience: Remote team managers
-> Sections: Hero, Features, Pricing, CTA
-> Aesthetic: Minimal
-```
-
-### With Context
 ```
 /landing tech
 
-Create a landing page for my analytics SaaS.
-- Name: MetricsPro
-- Audience: CTOs and dev leads
-- Focus on: real-time dashboards, API-first
-```
-
-### Improve Existing
-```
-/landing
-
-Analyze my current landing at apps/frontend/src/pages/home.tsx
-and suggest conversion improvements.
+Create a landing page for MetricsPro - real-time analytics for dev teams.
+Audience: CTOs and dev leads. Sections: Hero, Features, Pricing, CTA.
+Focus on: real-time dashboards, API-first.
 ```
 
 ---
@@ -363,7 +195,6 @@ and suggest conversion improvements.
 ## Rules
 
 ALWAYS:
-- Load skill reference BEFORE generating code
 - Generate production-ready TSX code
 - Apply mobile-first responsive design
 - Use copy patterns from skill for headlines and CTAs
@@ -377,10 +208,7 @@ NEVER:
 - Create non-responsive code
 - Mix multiple aesthetics in same page
 - Use generic placeholders without TODO markers
-- Skip skill loading step
 - Generate code without sufficient context
-- Proceed without selected aesthetic
-- Ignore mobile-first requirements
 
 ---
 

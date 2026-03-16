@@ -9,23 +9,11 @@ Generates structured copy for SaaS landing pages based on project analysis.
 ## Spec
 
 ```json
-{"gates":["skill_loaded","context_extracted","user_validated"],"workflow":["detect_number","analyze","validate","generate"],"output":"docs/copy/CXXXX-[objective]/","files":["brief.md","copy.md"]}
+{"output":"docs/copy/CXXXX-[objective]/","files":["brief.md","copy.md"]}
 ```
 
----
-
-## OWNER Context
-
-**From `OWNER:name|level|language` (status.sh or owner.md):**
-
-| Level | Communication | Detail |
-|-------|--------------|--------|
-| iniciante | No jargon, simple analogies, explain every step | Maximum - explain the "why" |
-| intermediario | Technical terms with context when needed | Moderate - explain decisions |
-| avancado | Straight to the point, jargon allowed | Minimum - essentials only |
-
-**Language:** Use owner's language for ALL communication. Technical terms always in English. Default: en-us.
-**If OWNER not found:** use defaults (intermediario, en-us)
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 
 ---
 
@@ -41,22 +29,19 @@ STEP 5: Generate output             → WRITE brief.md + copy.md
 STEP 6: Suggest next step           → INFORM how to use the output
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE PROHIBITIONS:**
 
 ```
 IF SKILL NOT LOADED:
-  ⛔ DO NOT USE: Write in docs/copy/
-  ⛔ DO NOT: Generate copy
-  ✅ DO: cat .codeadd/skills/add-saas-copy/SKILL.md
+  ⛔ DO NOT: Write in docs/copy/ or generate copy
+  ✅ DO: Load skill first
 
 IF CONTEXT NOT EXTRACTED:
-  ⛔ DO NOT USE: Write in docs/copy/
-  ⛔ DO NOT: Validate with user
-  ✅ DO: Read README.md, docs/, package.json
+  ⛔ DO NOT: Write in docs/copy/ or validate with user
+  ✅ DO: Read project sources first
 
 IF USER NOT VALIDATED:
-  ⛔ DO NOT USE: Write in docs/copy/
-  ⛔ DO NOT: Generate files
+  ⛔ DO NOT: Write in docs/copy/ or generate files
   ✅ DO: Present inferences and ask
 ```
 
@@ -75,25 +60,15 @@ IF USER NOT VALIDATED:
 
 ## STEP 1: Load Skill
 
-**EXECUTE:**
+Read saas-copy skill files: `SKILL.md`, `formulas.md`, `examples.md` from `.codeadd/skills/add-saas-copy/`.
 
-```bash
-cat .codeadd/skills/add-saas-copy/SKILL.md
-cat .codeadd/skills/add-saas-copy/formulas.md
-cat .codeadd/skills/add-saas-copy/examples.md
-```
-
-**⛔ IF NOT LOADED:** Do not proceed to analysis.
+**IF NOT LOADED:** Do not proceed to analysis.
 
 ---
 
 ## STEP 2: Detect Next Number
 
-**EXECUTE:**
-
-```bash
-ls docs/copy/ 2>/dev/null | grep "^C[0-9]" | sort -r | head -1
-```
+Find the highest existing `CXXXX` folder inside `docs/copy/`.
 
 **Logic:**
 - If `docs/copy/` doesn't exist: create with C0001
@@ -111,25 +86,9 @@ ls docs/copy/ 2>/dev/null | grep "^C[0-9]" | sort -r | head -1
 
 ## STEP 3: Automatic Analysis
 
-**EXECUTE:** Read project sources.
+Read project sources: README.md, docs/product.md, docs/features/, package.json.
 
-### 3.1 Sources (in priority order)
-
-```bash
-# 1. README
-cat README.md
-
-# 2. Product docs (if exists)
-cat docs/product.md 2>/dev/null
-
-# 3. Features (if exists)
-ls docs/features/ 2>/dev/null
-
-# 4. Package.json
-cat package.json
-```
-
-### 3.2 Extract Information
+### 3.1 Extract Information
 
 | Field | Source | Fallback |
 |-------|--------|----------|
@@ -139,7 +98,7 @@ cat package.json
 | Stack | package.json dependencies | Infer |
 | Inferred audience | README > docs | Ask |
 
-### 3.3 Present Extracted Context
+### 3.2 Present Extracted Context
 
 ```markdown
 ## Extracted Context
@@ -188,7 +147,7 @@ I need some information that I can't extract from code:
 
 ### 4.2 Wait for Response
 
-**⛔ DO NOT PROCEED** until having answers for at least:
+**DO NOT PROCEED** until having answers for at least:
 - 3 specific pain points
 - 2 differentials
 - 2 objections
@@ -338,69 +297,30 @@ I need some information that I can't extract from code:
 
 | Headline | Urgent | Unique | Ultra-specific | Useful |
 |----------|--------|--------|----------------|--------|
-| Option 1 | ✅/❌ | ✅/❌ | ✅/❌ | ✅/❌ |
-| Option 2 | ✅/❌ | ✅/❌ | ✅/❌ | ✅/❌ |
-| Option 3 | ✅/❌ | ✅/❌ | ✅/❌ | ✅/❌ |
+| Option 1 | Y/N | Y/N | Y/N | Y/N |
+| Option 2 | Y/N | Y/N | Y/N | Y/N |
+| Option 3 | Y/N | Y/N | Y/N | Y/N |
 ```
 
 ---
 
 ## STEP 6: Suggest Next Step
 
-**EXECUTE:** Inform result and next steps.
+Inform the user what was generated (code, folder, files) and suggest reviewing the brief, choosing headlines, using `/add.landing` with the brief, and validating copy with the 4Us table.
 
-```markdown
-## ✅ Copy Generated!
-
-**Code:** C[XXXX]
-**Folder:** docs/copy/C[XXXX]-[objective]/
-
-### Files created:
-- `brief.md` - Structured copy brief
-- `copy.md` - Headlines, CTAs, stats, testimonials
-
-### Next steps:
-
-1. **Review the brief** - Adjust information if needed
-
-2. **Choose headlines** - Select options that resonate most
-
-3. **Create landing page** - Use the brief with `/add.landing`:
-   ```
-   /add.landing
-
-   Product: [value proposition from brief]
-   Audience: [target audience from brief]
-   Aesthetic: [Minimal | Tech | Enterprise | Bold]
-   ```
-
-4. **Validate copy** - Use the 4Us table to ensure sharp headlines
-```
+**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
 
 ---
 
-## Usage Examples
+## Usage
 
-```bash
-# Generate copy for product launch
-/add.copy product-launch
-
-# Generate copy for feature promotion
-/add.copy feature-api-promo
-
-# Generate copy for campaign
-/add.copy black-friday-2025
-```
+`/add.copy product-launch` or `/add.copy black-friday-2025`
 
 ---
 
 ## Rules
 
 ALWAYS:
-- Load saas-copy skill before any other action
-- Detect next sequential number from existing docs
-- Extract context automatically before asking user
-- Validate inferences with user before generating output
 - Apply PAS, BAB, and 4Us frameworks to copy
 - Generate complete brief.md and copy.md files
 
@@ -409,4 +329,3 @@ NEVER:
 - Skip automatic project analysis step
 - Generate output without user validation
 - Use generic or lukewarm copy language
-- Omit next step suggestions after generation
