@@ -9,7 +9,7 @@ Coordinates release flow with mandatory `main -> production` merge, optional tag
 ## Spec
 
 ```json
-{"gates":["response_lang_set","gh_authenticated","branch_is_main","tag_choice_defined","version_confirmed_if_tag","preview_approved_if_tag","build_passed","production_merge_completed"],"modes":{"create":"STEP 0-11","list":"STEP 0 + STEP 12"},"order":["prerequisites","branch_check","ask_tag","detect_tag","choose_version","update_cli_version","build_provider_files","merge_to_production","release_notes","preview","confirm","create_release"]}
+{"gates":["response_lang_set","gh_authenticated","branch_is_main","pipeline_read","tag_choice_defined","version_confirmed_if_tag","preview_approved_if_tag","build_passed","production_merge_completed"],"modes":{"create":"STEP 0-11","list":"STEP 0 + STEP 12"},"order":["prerequisites","read_pipeline","branch_check","ask_tag","detect_tag","choose_version","update_cli_version","build_provider_files","merge_to_production","release_notes","preview","confirm","create_tag_or_release"]}
 ```
 
 ---
@@ -28,24 +28,25 @@ If language is not clear:
 - Set `RESPONSE_LANG = pt-BR`.
 
 DETECT MODE:
-- If argument contains `--list`: execute STEP 0 and STEP 12 only.
-- If no `--list`: execute STEP 0-11 in order.
+- If argument contains `--list`: execute STEP 0 and STEP 13 only.
+- If no `--list`: execute STEP 0-12 in order.
 
 STEPS IN ORDER (create mode):
 ```
-STEP 0: Check prerequisites             -> gh CLI + auth
-STEP 1: Validate source branch          -> must be main
-STEP 2: Ask tag creation                -> yes/no
-STEP 3: Detect latest tag               -> git tag
-STEP 4: Choose next version             -> patch/minor/major
-STEP 5: Update CLI Package Version      -> update cli/package.json + commit + push
-STEP 6: Build Provider Files            -> node scripts/build.js
-STEP 7: Merge main into production      -> push production
-STEP 8: Generate changelog              -> compare previous release vs production
-STEP 9: Preview                         -> show tag + changelog
-STEP 10: Confirm release creation       -> explicit approval
-STEP 11: Create tag + GitHub Release    -> git tag + gh release create
-STEP 12: List Releases (--list mode)    -> list all releases
+STEP 0:  Check prerequisites             -> gh CLI + auth
+STEP 1:  Read release pipeline           -> detect PIPELINE_HANDLES_RELEASE
+STEP 2:  Validate source branch          -> must be main
+STEP 3:  Ask tag creation                -> yes/no
+STEP 4:  Detect latest tag               -> git fetch --tags + git tag
+STEP 5:  Choose next version             -> patch/minor/major
+STEP 6:  Update CLI Package Version      -> update cli/package.json + commit + push
+STEP 7:  Build Provider Files            -> node scripts/build.js
+STEP 8:  Merge main into production      -> push production
+STEP 9:  Generate changelog              -> compare previous release vs production
+STEP 10: Preview                         -> show tag + changelog
+STEP 11: Confirm release creation        -> explicit approval
+STEP 12: Create tag (+ release if no pipeline) -> git tag + push [+ gh release create]
+STEP 13: List Releases (--list mode)     -> list all releases
 ```
 
 ABSOLUTE PROHIBITIONS:
@@ -73,6 +74,10 @@ If user chooses not to create tag:
 If preview is not approved:
 - Do not use Bash for `git tag`, `git push` (tag), or `gh release create`.
 - Wait for confirmation or cancel.
+
+If `PIPELINE_HANDLES_RELEASE = true`:
+- Do not use Bash for `gh release create` in STEP 12.
+- Only create and push the tag — the pipeline handles the rest.
 
 ---
 
@@ -127,7 +132,48 @@ Stop execution.
 
 ---
 
-## STEP 1: Validate Source Branch
+## STEP 1: Read Release Pipeline
+
+**PURPOSE:** Determine if a CI/CD pipeline already handles `gh release create` on tag push. This prevents duplicate release creation conflicts.
+
+### 1.1 Find release workflow files
+
+Execute:
+```bash
+ls .github/workflows/ 2>/dev/null || echo "NO_WORKFLOWS"
+```
+
+If `NO_WORKFLOWS`: set `PIPELINE_HANDLES_RELEASE = false`. Skip to STEP 2.
+
+### 1.2 Read each workflow file that triggers on tag push
+
+For each `.github/workflows/*.yml` file found, Read the file content.
+
+### 1.3 Detect pipeline behavior
+
+Set `PIPELINE_HANDLES_RELEASE = true` if ANY workflow file meets ALL of these:
+- Triggers on `push: tags: v*` (or similar tag pattern)
+- Contains `gh release create` OR `softprops/action-gh-release` OR `goreleaser`
+
+Set `PIPELINE_HANDLES_RELEASE = false` if no workflow handles release creation.
+
+### 1.4 Display result
+
+```text
+Pipeline scan:
+  PIPELINE_HANDLES_RELEASE = [true|false]
+  Reason: [which workflow + which step handles it, or "no release workflow found"]
+```
+
+If `PIPELINE_HANDLES_RELEASE = true`, also display:
+```text
+⚠️  Pipeline handles release creation. STEP 12 will only push the tag.
+    The pipeline will: [list what it does: create release, upload ZIP, publish npm, etc.]
+```
+
+---
+
+## STEP 2: Validate Source Branch
 
 Execute:
 ```bash
@@ -149,7 +195,7 @@ Stop execution.
 
 ---
 
-## STEP 2: Ask Tag Creation
+## STEP 3: Ask Tag Creation
 
 Ask user:
 ```text
@@ -157,20 +203,23 @@ Do you want to create a release tag after merging to production?
 ```
 
 Options:
-- Yes: continue to STEP 3.
-- No: continue to STEP 6 (build) then STEP 7 (merge only, no tag/release).
+- Yes: continue to STEP 4.
+- No: continue to STEP 7 (build) then STEP 8 (merge only, no tag/release).
 
 If user chooses `No`, proceed with merge-only flow:
-- Execute STEP 6 (Build Provider Files) then STEP 7 (Merge main into production).
+- Execute STEP 7 (Build Provider Files) then STEP 8 (Merge main into production).
 - Display completion message.
 - Stop execution (no tag/release created).
 
 ---
 
-## STEP 3: Detect Latest Tag
+## STEP 4: Detect Latest Tag
+
+**CRITICAL:** Always fetch tags from remote before reading local tags.
 
 Execute:
 ```bash
+git fetch --tags
 git tag --sort=-v:refname
 ```
 
@@ -185,7 +234,7 @@ Latest tag: [LATEST_TAG or "none (first release)"]
 
 ---
 
-## STEP 4: Choose Next Version
+## STEP 5: Choose Next Version
 
 If `LATEST_TAG` exists (`vX.Y.Z`):
 - `patch` -> `vX.Y.(Z+1)` for fixes and small changes.
@@ -199,7 +248,7 @@ Ask user to choose bump type (`patch`, `minor`, `major`) and store as `NEXT_VERS
 
 ---
 
-## STEP 5: Update CLI Package Version
+## STEP 6: Update CLI Package Version
 
 **CRITICAL:** Before merging to production, the CLI package version must match the release tag.
 
@@ -245,7 +294,7 @@ Committed and pushed to main.
 
 ---
 
-## STEP 6: Build Provider Files
+## STEP 7: Build Provider Files
 
 ### 6.1 Run build
 
@@ -258,14 +307,20 @@ If exit code is non-zero:
 - Display full error output.
 - Stop execution.
 
-### 6.2 Commit generated files
+### 7.2 Commit generated files
+
+**IMPORTANT:** Stage ALL provider dirs from `framwork/provider-map.json` — not a hardcoded list.
 
 Execute:
 ```bash
-git add framwork/.claude framwork/.agent framwork/.agents framwork/.kilocode framwork/.opencode
-git commit -m "chore: regenerate provider files for release [NEXT_VERSION]"
+git add framwork/.claude framwork/.agent framwork/.agents framwork/.kilocode framwork/.opencode \
+        framwork/.augment framwork/.bob framwork/.github framwork/.cursor framwork/.gemini \
+        framwork/.kiro framwork/.qwen framwork/.roo framwork/.shai framwork/.windsurf
+git diff --cached --quiet && echo "NO_CHANGES" || git commit -m "chore: regenerate provider files for release [NEXT_VERSION]"
 git push origin main
 ```
+
+If `NO_CHANGES`, skip commit — provider files already up to date.
 
 On success, display:
 ```text
@@ -274,7 +329,7 @@ Provider files built and committed.
 
 ---
 
-## STEP 7: Merge Main Into Production
+## STEP 8: Merge Main Into Production
 
 Execute:
 ```bash
@@ -295,9 +350,9 @@ If merge fails:
 
 ---
 
-## STEP 8: Generate Changelog
+## STEP 9: Generate Changelog
 
-Use `production` as source of truth after STEP 7 merge.
+Use `production` as source of truth after STEP 8 merge.
 
 ### 8.1 File diff
 
@@ -362,7 +417,7 @@ X files changed, Y added, Z removed
 
 ---
 
-## STEP 9: Preview
+## STEP 10: Preview
 
 Display:
 ```text
@@ -379,20 +434,22 @@ Target: production
 
 ---
 
-## STEP 10: Confirm Release Creation
+## STEP 11: Confirm Release Creation
 
 Ask user:
 ```text
-Create this release tag and GitHub Release?
+Create this release?
 ```
 
 Options:
-- Yes: continue to STEP 11.
+- Yes: continue to STEP 12.
 - No: display `Release cancelled after preview.` and stop.
 
 ---
 
-## STEP 11: Create Tag and GitHub Release
+## STEP 12: Create Tag (+ Release if no pipeline)
+
+### 12.1 Create and push annotated tag
 
 Execute:
 ```bash
@@ -402,7 +459,27 @@ git tag -a [NEXT_VERSION] -m "Release [NEXT_VERSION]"
 git push origin [NEXT_VERSION]
 ```
 
-Write notes to temp file, then execute:
+### 12.2 Create GitHub Release (conditional)
+
+**IF `PIPELINE_HANDLES_RELEASE = true`:**
+
+Do NOT run `gh release create`. The pipeline triggered by the tag push will:
+- Create the GitHub Release
+- Upload framework ZIP as release asset
+- Publish CLI to npm
+
+Display:
+```text
+Tag [NEXT_VERSION] pushed.
+Pipeline triggered — it will create the release, upload assets, and publish npm.
+
+Monitor:
+  gh run list --limit 5
+```
+
+**IF `PIPELINE_HANDLES_RELEASE = false`:**
+
+Write changelog to temp file, then execute:
 ```bash
 gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_FILE]
 ```
@@ -420,7 +497,7 @@ View:
 
 ---
 
-## STEP 12: List Releases (`--list` mode)
+## STEP 13: List Releases (`--list` mode)
 
 Execute in parallel:
 ```bash
@@ -446,22 +523,28 @@ No releases found. Run /add.release to create the first one.
 ALWAYS:
 - Check gh CLI before any git/gh operation
 - Stop if gh is missing or unauthenticated
+- Read release pipeline workflows in STEP 1 before any other step
+- Set PIPELINE_HANDLES_RELEASE based on workflow scan result
 - Require execution from main branch
+- Run git fetch --tags before reading tags (STEP 4)
 - Update CLI package version before build step
 - Run build (node scripts/build.js) before merging to production
 - Stop if build exits with non-zero code
+- Stage ALL provider dirs when committing provider files (not a hardcoded subset)
 - Commit and push version bump to main
 - Merge main into production after successful build
 - Ask explicitly whether to create tag/release
 - Generate changelog by comparing previous tag against production
 - Show preview before creating tag/release
 - Use annotated tags
-- Use gh release with --notes-file and --target production
+- If PIPELINE_HANDLES_RELEASE = true: only push tag, never call gh release create
+- If PIPELINE_HANDLES_RELEASE = false: create release with --notes-file and --target production
 - Omit empty changelog sections
 
 NEVER:
 - Create tag/release before production merge
 - Skip build step before merge
+- Skip pipeline read (STEP 1)
 - Skip user choice about tag creation
 - Create release outside production
 - Use lightweight tags
@@ -469,4 +552,5 @@ NEVER:
 - Proceed after merge failure or build failure
 - Push tags without explicit approval
 - Create CHANGELOG.md files in this command
+- Call gh release create when pipeline already handles it
 ```
