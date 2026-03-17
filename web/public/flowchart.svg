@@ -33,7 +33,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 0</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Brainstorm</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-brainstorm</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.brainstorm</text>
   </g>
 
   <!-- Arrow -->
@@ -44,7 +44,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 1</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Discover</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-feature</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.new</text>
   </g>
 
   <line x1="342" y1="85" x2="369" y2="85" class="arrow-active"/>
@@ -54,7 +54,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 2</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Design</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-design</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.design</text>
   </g>
 
   <line x1="509" y1="85" x2="536" y2="85" class="arrow-active"/>
@@ -64,7 +64,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 3</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Plan</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-plan</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.plan</text>
   </g>
 
   <line x1="676" y1="85" x2="703" y2="85" class="arrow-active"/>
@@ -74,7 +74,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 4</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Code</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-dev</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.build</text>
   </g>
 
   <line x1="843" y1="85" x2="870" y2="85" class="arrow-active"/>
@@ -84,7 +84,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 5</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Review</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add-review</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.check</text>
   </g>
 
   <line x1="1010" y1="85" x2="1037" y2="85" class="arrow-active"/>
@@ -94,7 +94,7 @@
     <rect x="0" y="0" width="120" height="60" rx="8" class="node-bg-active"/>
     <text x="60" y="18" text-anchor="middle" class="node-step">STEP 6</text>
     <text x="60" y="35" text-anchor="middle" class="node-text">Ship</text>
-    <text x="60" y="50" text-anchor="middle" class="node-cmd">/add-done</text>
+    <text x="60" y="50" text-anchor="middle" class="node-cmd">/add.ship</text>
   </g>
 
   <!-- Divider -->
@@ -170,7 +170,7 @@
     <circle cx="690" cy="16" r="5" class="flow-dot-off"/>
     <circle cx="760" cy="16" r="5" class="flow-dot"/>
     <line x1="415" y1="16" x2="755" y2="16" stroke="#ffaa00" stroke-width="1" opacity="0.3"/>
-    <text x="620" y="40" text-anchor="middle" class="node-cmd" style="fill:#ffaa00;font-size:9px">/add-autopilot</text>
+    <text x="620" y="40" text-anchor="middle" class="node-cmd" style="fill:#ffaa00;font-size:9px">/add.autopilot</text>
   </g>
 
   <!-- EMERGENCY flow -->
@@ -185,7 +185,7 @@
     <circle cx="690" cy="16" r="5" class="flow-dot-off"/>
     <circle cx="760" cy="16" r="5" class="flow-dot"/>
     <line x1="625" y1="16" x2="755" y2="16" stroke="#ff4444" stroke-width="1" opacity="0.3"/>
-    <text x="620" y="40" text-anchor="middle" class="node-cmd" style="fill:#ff4444;font-size:9px">/add-hotfix</text>
+    <text x="620" y="40" text-anchor="middle" class="node-cmd" style="fill:#ff4444;font-size:9px">/add.hotfix</text>
   </g>
 
   <!-- Legend -->
