@@ -23,8 +23,8 @@ Code Addiction standardizes this with:
 # install latest release
 npx codeadd install
 
-# install a specific version (e.g., v0.2.15)
-npx codeadd install --version v0.2.15
+# install a specific version (e.g., v0.2.20)
+npx codeadd install --version v0.2.20
 
 # check environment health
 npx codeadd doctor
@@ -144,30 +144,6 @@ Contributions are welcome. Start here:
 - **Framework**: [code.brabos.ai](https://code.brabos.ai)
 - **Repository**: [github.com/brabos-ai/code-addiction](https://github.com/brabos-ai/code-addiction)
 - **NPM Package**: [@codeadd](https://www.npmjs.com/package/codeadd)
-
-## Recent Releases
-
-Latest releases available via `npx codeadd install --version <tag>`:
-
-### v0.2.15 ✅ **Latest**
-- **Changes**: Version bump with provider architecture improvements
-- **Install**: `npx codeadd install --version v0.2.15`
-
-### v0.2.14
-- **Changes**: Stability and bug fixes
-- **Install**: `npx codeadd install --version v0.2.14`
-
-### v0.2.13
-- **Changes**:
-  - Compile all 15 providers in single build zip
-  - Enhanced provider build system
-  - Updated package dependencies
-
-### v0.2.12 & earlier
-- Provider expansion (10 new providers added)
-- Provider-only install architecture (PRD0018)
-- Priority ordering in installation prompts
-- Full feature list: [See GitHub Releases](https://github.com/brabos-ai/code-addiction/releases)
 
 ## Support
 

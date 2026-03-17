@@ -12,6 +12,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Command | Proposito | Skills que carrega |
 |---------|-----------|-------------------|
 | add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | add-ecosystem, add-dev-environment-setup |
+| add.commit | Mid-workflow smart commit com mensagem Conventional Commits adaptativa: ≤3 arquivos → linha unica, >3 → lista por modulo. Auto-staging, flags --push e --confirm, deteccao de .env | add-commit |
 | add-architecture-analyzer | Mapear arquitetura do projeto, classificar apps, consolidar contexto | add-architecture-discovery |
 | add-audit | Analise tecnica completa do projeto (seguranca, arquitetura, dados, docs) | add-documentation-style, add-architecture-discovery, add-security-audit |
 | add-autopilot | Implementacao autonoma sem interacao. Suporta `/autopilot feature N` para Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design |
@@ -37,7 +38,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-architecture-discovery | Mapear arquitetura, detectar patterns, gerar stack-context.md | add-audit, add-architecture-analyzer |
 | add-backend-development | Arquitetura backend: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add-dev, add-autopilot, add-plan, add-review, add-test |
 | add-code-review | Validacao de codigo, auto-correcao | add-review |
-| add-commit | Commit mid-workflow com mensagem Conventional Commits adaptativa: ≤3 arquivos → linha unica, >3 → lista por modulo. Auto-staging, flags --push e --confirm, deteccao de .env | - |
+| add-commit | Knowledge reference para commits mid-workflow: adaptive message logic, type detection, staging rules | add.commit |
 | add-database-development | Arquitetura de dados: entities, repositories, migrations, naming — stack-agnostic | add-dev, add-autopilot, add-plan, add-review |
 | add-delivery-validation | Validar RF/RN implementados, criterios de aceite | add-review |
 | add-dev-environment-setup | Detectar SO, diagnosticar tools ausentes, instalar WSL/git/jq/gh, configurar VS Code | add |
@@ -100,3 +101,4 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Data | Acao |
 |------|------|
 | 2026-03-16 | PRD0020: add- prefix on all skills, all-providers mapping, merged ecosystem-map + code-addiction-ecosystem |
+| 2026-03-17 | PRD0021: add-commit migrated to add.commit command; skill simplified to knowledge reference |
