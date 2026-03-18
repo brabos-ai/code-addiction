@@ -14,7 +14,7 @@ description: "Knowledge reference for smart mid-workflow commits: adaptive Conve
 
 ## When NOT to Use
 
-- **Finalizing a branch** → use `/add.ship` instead
+- **Finalizing a branch** → use `/add.done` instead
 - **Creating a PR** → use `/add.pr`
 - **Force push, rebase, or amend** → out of scope
 - **Specific file staging** → stage manually first, then use the command

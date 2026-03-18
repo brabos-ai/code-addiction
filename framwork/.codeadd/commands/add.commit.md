@@ -113,12 +113,12 @@ git push
 
 ## Completion
 
-Commit done. Clarify: this is a mid-workflow commit — use `/add.ship` to finalize the branch.
+Commit done. Clarify: this is a mid-workflow commit — use `/add.done` to finalize the branch.
 
 | Intent | Command |
 |--------|---------|
 | Keep developing | More commits → `/add.commit` |
-| Finalize branch + push | `/add.ship` |
+| Finalize branch + push | `/add.done` |
 | Create PR now | `/add.pr` |
 
 ---
@@ -135,4 +135,4 @@ NEVER:
 - Force push
 - Create PRs (use `/add.pr`)
 - Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
-- Reference `/add-push` — does not exist; push is via `--push` flag or `/add.ship`
+- Reference `/add-push` — does not exist; push is via `--push` flag or `/add.done`

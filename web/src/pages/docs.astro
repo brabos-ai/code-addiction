@@ -241,7 +241,7 @@ import "../styles/global.css";
             <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Quality</h3>
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.check</code>
+                <code class="text-accent font-mono text-sm">/add.review</code>
                 <p class="text-muted text-xs mt-0.5">Code review + auto-correction</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
@@ -260,7 +260,7 @@ import "../styles/global.css";
             <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Delivery</h3>
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.ship</code>
+                <code class="text-accent font-mono text-sm">/add.done</code>
                 <p class="text-muted text-xs mt-0.5">Changelog, docs, finalize. Routes to PR or merge</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
@@ -328,9 +328,9 @@ import "../styles/global.css";
               <span class="flow-arrow">→</span>
               <span class="flow-node">Code<br/><span class="flow-cmd">/add.build</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Check<br/><span class="flow-cmd">/add.check</span></span>
+              <span class="flow-node">Check<br/><span class="flow-cmd">/add.review</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.ship</span></span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.done</span></span>
             </div>
           </div>
 
@@ -345,7 +345,7 @@ import "../styles/global.css";
               <span class="flow-arrow">→</span>
               <span class="flow-node">Code<br/><span class="flow-cmd">/add.build</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.ship</span></span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.done</span></span>
             </div>
           </div>
 
@@ -358,7 +358,7 @@ import "../styles/global.css";
               <span class="flow-arrow">→</span>
               <span class="flow-node">Code<br/><span class="flow-cmd">/add.build</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.ship</span></span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.done</span></span>
             </div>
           </div>
 
@@ -371,7 +371,7 @@ import "../styles/global.css";
               <span class="flow-arrow" style="color:#ffaa00">→</span>
               <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Autopilot<br/><span class="flow-cmd" style="color:#ffaa00">/add.autopilot</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.ship</span></span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.done</span></span>
             </div>
           </div>
 
@@ -382,7 +382,7 @@ import "../styles/global.css";
             <div class="flex flex-wrap items-center gap-2">
               <span class="flow-node" style="border-color:#ff4444;background:rgba(255,68,68,0.05)">Hotfix<br/><span class="flow-cmd" style="color:#ff4444">/add.hotfix</span></span>
               <span class="flow-arrow" style="color:#ff4444">→</span>
-              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.ship</span></span>
+              <span class="flow-node">Ship<br/><span class="flow-cmd">/add.done</span></span>
             </div>
           </div>
 
@@ -425,8 +425,8 @@ import "../styles/global.css";
               <span class="text-accent">/add.design</span> → UX spec, mobile-first layouts<br/>
               <span class="text-accent">/add.plan</span> → technical architecture, task breakdown<br/>
               <span class="text-accent">/add.build</span> → subagent-driven implementation<br/>
-              <span class="text-accent">/add.check</span> → automated code review<br/>
-              <span class="text-accent">/add.ship</span> → changelog, docs, merge
+              <span class="text-accent">/add.review</span> → automated code review<br/>
+              <span class="text-accent">/add.done</span> → changelog, docs, merge
             </div>
           </div>
 
@@ -441,7 +441,7 @@ import "../styles/global.css";
               <span class="text-accent">/add.new</span> → define notification triggers, templates<br/>
               <span class="text-accent">/add.plan</span> → service architecture, queue strategy<br/>
               <span class="text-accent">/add.build</span> → implement<br/>
-              <span class="text-accent">/add.ship</span> → finalize
+              <span class="text-accent">/add.done</span> → finalize
             </div>
           </div>
 
@@ -455,7 +455,7 @@ import "../styles/global.css";
             <div class="font-mono text-sm text-muted-light">
               <span class="text-accent">/add.new</span> → quick spec<br/>
               <span class="text-accent">/add.build</span> → implement<br/>
-              <span class="text-accent">/add.ship</span> → ship it
+              <span class="text-accent">/add.done</span> → ship it
             </div>
           </div>
 
@@ -469,7 +469,7 @@ import "../styles/global.css";
             <div class="font-mono text-sm text-muted-light">
               <span style="color:#ffaa00">/add.new</span> → define scope<br/>
               <span style="color:#ffaa00">/add.autopilot</span> → AI implements everything autonomously<br/>
-              <span class="text-accent">/add.ship</span> → finalize
+              <span class="text-accent">/add.done</span> → finalize
             </div>
           </div>
 
@@ -482,7 +482,7 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-4">Critical production bug. Fast-track fix with tracking.</p>
             <div class="font-mono text-sm text-muted-light">
               <span style="color:#ff4444">/add.hotfix</span> → diagnose, fix, document with global ID<br/>
-              <span class="text-accent">/add.ship</span> → deploy
+              <span class="text-accent">/add.done</span> → deploy
             </div>
           </div>
 
@@ -572,7 +572,7 @@ import "../styles/global.css";
               <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
             </div>
             <p class="text-muted-light text-sm mb-1">Application Startup Test (IoC/DI validation)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.build</code>, <code class="font-mono">add.check</code></p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
           </div>
         </div>
       </section>

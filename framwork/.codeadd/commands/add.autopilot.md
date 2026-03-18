@@ -466,7 +466,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 git tag "${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 ```
 
-Update epic.md subfeature status to `in_progress` (will move to `done` after `/add.ship`).
+Update epic.md subfeature status to `in_progress` (will move to `done` after `/add.done`).
 
 ### 7.2 Application Startup Test (PRD0034)
 
@@ -504,10 +504,10 @@ You are the CODE REVIEWER for feature ${FEATURE_ID}.
 Validate code AND product (requirements 100% implemented).
 
 ## MANDATORY: Load Command Reference (FIRST STEP)
-1. Read `.codeadd/commands/add.check.md` — PRIMARY reference.
+1. Read `.codeadd/commands/add.review.md` — PRIMARY reference.
    Execute as if `--yolo` (skip [STOP] points, no confirmations).
 2. Run: `bash .codeadd/scripts/status.sh`
-3. Read feature docs as specified in add.check.md
+3. Read feature docs as specified in add.review.md
 4. Read: `docs/features/${FEATURE_ID}/decisions.jsonl` (areas with multiple pivots need extra review)
 
 ## DECISION LOG
@@ -517,7 +517,7 @@ Contains FILES_CREATED and FILES_MODIFIED from all agents.
 ## COORDINATOR NOTES
 ${COORDINATOR_NOTES}
 
-## AUTOPILOT-SPECIFIC ADDITIONS (extend add.check.md)
+## AUTOPILOT-SPECIFIC ADDITIONS (extend add.review.md)
 
 ### Spec Compliance Audit (PRD0034 — BEFORE technical review)
 1. Read `## Spec Checklist` from plan.md (all areas)
@@ -536,7 +536,7 @@ Create docs/features/${FEATURE_ID}/review.md with:
 - Missing components from plan = CRITICAL
 - Build MUST pass after fixes
 - ALL requirements MUST be implemented
-- review.md MUST be created (merge prerequisite for /add.ship)
+- review.md MUST be created (merge prerequisite for /add.done)
 
 ## REPORT: SPEC_ITEMS, SPEC_COMPLIANT, SPEC_DIVERGENT, SPEC_MISSING, FILES_REVIEWED, ISSUES_FOUND, ISSUES_FIXED, BUILD_STATUS, CODE_SCORE, RF_IMPLEMENTED, RN_IMPLEMENTED, PRODUCT_STATUS, REVIEW_MD_PATH, OVERALL_STATUS, BLOCKED_GATES
 ```
@@ -576,7 +576,7 @@ Generate a contextual completion report that includes:
 - **Decision Log highlights:** key decisions made during execution
 - **Validation summary:** Code Review score, Spec Compliance status, Product Validation (RF/RN counts), Startup Test result
 - **Quality Gates:** overall status (PASSED or BLOCKED with details)
-- **Next steps:** review changes, test manually, stage/commit, run /add.ship
+- **Next steps:** review changes, test manually, stage/commit, run /add.done
 
 For Epic mode, also include: feature N of M, epic name, feature-specific deliverables and criteria.
 If BLOCKED: list blocked gates with reasons and required actions.

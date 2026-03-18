@@ -83,13 +83,13 @@ describe('FEATURES registry', () => {
     expect(FEATURES.tdd).toBeDefined();
     expect(FEATURES.tdd.commands).toContain('add.plan');
     expect(FEATURES.tdd.commands).toContain('add.build');
-    expect(FEATURES.tdd.commands).toContain('add.check');
+    expect(FEATURES.tdd.commands).toContain('add.review');
   });
 
   it('defines startup-test feature', () => {
     expect(FEATURES['startup-test']).toBeDefined();
     expect(FEATURES['startup-test'].commands).toContain('add.build');
-    expect(FEATURES['startup-test'].commands).toContain('add.check');
+    expect(FEATURES['startup-test'].commands).toContain('add.review');
   });
 
   it('both features default to true', () => {
@@ -293,15 +293,15 @@ describe('applyEnabledFeatures', () => {
     });
 
     setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.check', 'startup-test', ['step']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.review', 'startup-test', ['step']);
     setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD injected' });
-    setupFragment(tmpDir, 'startup-test', 'add.check', { step: 'Startup Test injected' });
+    setupFragment(tmpDir, 'startup-test', 'add.review', { step: 'Startup Test injected' });
 
     const total = applyEnabledFeatures(tmpDir);
 
     expect(total).toBeGreaterThanOrEqual(2);
     const devContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
-    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.check.md'), 'utf8');
+    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.review.md'), 'utf8');
     expect(devContent).toContain('TDD injected');
     expect(reviewContent).toContain('Startup Test injected');
   });
@@ -314,14 +314,14 @@ describe('applyEnabledFeatures', () => {
     });
 
     setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
-    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.check', 'startup-test', ['step']);
+    setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.review', 'startup-test', ['step']);
     setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD should not appear' });
-    setupFragment(tmpDir, 'startup-test', 'add.check', { step: 'Startup injected' });
+    setupFragment(tmpDir, 'startup-test', 'add.review', { step: 'Startup injected' });
 
     applyEnabledFeatures(tmpDir);
 
     const devContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
-    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.check.md'), 'utf8');
+    const reviewContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.review.md'), 'utf8');
     expect(devContent).not.toContain('TDD should not appear');
     expect(reviewContent).toContain('Startup injected');
   });

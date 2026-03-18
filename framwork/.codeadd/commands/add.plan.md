@@ -99,7 +99,7 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **IF `HAS_EPIC=true`:** Read epic.md, identify next pending SF (EPIC_CURRENT_SF), set scope to that SF only, load its about.md + shared discovery.md, inform user: "Planning subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}".
 
-**IF HAS_EPIC=true AND no pending subfeature:** NEVER plan. Inform user all SFs complete, run `/add.ship`.
+**IF HAS_EPIC=true AND no pending subfeature:** NEVER plan. Inform user all SFs complete, run `/add.done`.
 
 ---
 

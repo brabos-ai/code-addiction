@@ -577,7 +577,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 
 ## STEP 8: Quality Gate Report (PRD0034)
 
-**Consolidate all gates into review.md. This file is the merge prerequisite for /add.ship.**
+**Consolidate all gates into review.md. This file is the merge prerequisite for /add.done.**
 
 ### 8.1 Build Quality Gate Report
 
@@ -597,7 +597,7 @@ Collect results from all previous steps:
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 
 > Reviewed at: ${TIMESTAMP}
-> Reviewed by: /add.check (model: ${MODEL})
+> Reviewed by: /add.review (model: ${MODEL})
 ```
 
 **Overall = PASSED** only if ALL gates are PASSED or SKIPPED.
@@ -632,7 +632,7 @@ Content:
 
 ### 8.3 Console Output
 
-Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps (add.ship if PASSED, fix + re-check if BLOCKED).
+Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps (add.done if PASSED, fix + re-check if BLOCKED).
 
 ---
 

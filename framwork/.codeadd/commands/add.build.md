@@ -124,7 +124,7 @@ IF HAS_EPIC=true:
      - ${SF_DIR}/tasks.md (if HAS_TASKS=true)
 ```
 
-**IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty:** DO NOT implement. Inform all subfeatures complete → run `/add.ship`.
+**IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty:** DO NOT implement. Inform all subfeatures complete → run `/add.done`.
 
 ### 2B: Legacy Feature Flag (`/add.build feature N`)
 
@@ -536,7 +536,7 @@ git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 
 **DO NOT skip tag creation. This enables rollback and progress tracking.**
 
-**NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add.ship` during merge.
+**NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add.done` during merge.
 
 ### 14.3 Update epic.md (IF HAS_EPIC=true)
 
@@ -551,8 +551,8 @@ Change `| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT
 Inform user of completion including: feature ID, files summary (per area count), build status, and next suggested commands.
 
 **Always include suggested next command from ecosystem map:** Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-- After development → `/add.check` or `/add.test`
-- After correction → `/add.check`
+- After development → `/add.review` or `/add.test`
+- After correction → `/add.review`
 
 ---
 

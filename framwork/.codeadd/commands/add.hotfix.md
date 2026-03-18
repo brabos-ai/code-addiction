@@ -32,7 +32,7 @@ STEP 9: Implement fix              → ONLY AFTER step 8
 STEP 10: Update hotfix doc         → Fill root cause + solution sections
 STEP 11: Create related.md         → Document feature relationships
 STEP 12: Log iteration             → MANDATORY BEFORE informing user
-STEP 13: Completion                → Inform user, awaiting /add.ship
+STEP 13: Completion                → Inform user, awaiting /add.done
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -288,9 +288,9 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 
 ## STEP 13: Ready for Review
 
-⛔ **DO NOT commit** - leave for `/add.ship`
+⛔ **DO NOT commit** - leave for `/add.done`
 
-Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status. Suggest next step: `/add.ship`.
+Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status. Suggest next step: `/add.done`.
 
 **Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
 
@@ -318,7 +318,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 - Implement fix without user confirming root cause
 - Refactor unrelated code during hotfix
 - Add new features inside a hotfix
-- Commit changes (leave for /add.ship)
+- Commit changes (leave for /add.done)
 - Use bifurcated Path A/Path B logic (always use unified H[NNNN] flow)
 
 ---
@@ -341,5 +341,5 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 # STEP 10: Update hotfix.md
 # STEP 11: Create related.md (link 0001H ↔ 0036F)
 # STEP 12: Log iteration
-# STEP 13: Completion → suggest /add.ship
+# STEP 13: Completion → suggest /add.done
 ```

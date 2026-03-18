@@ -84,7 +84,7 @@
     <rect x="0" y="0" width="130" height="60" rx="8" class="node-bg-active"/>
     <text x="65" y="18" text-anchor="middle" class="node-step">STEP 5</text>
     <text x="65" y="35" text-anchor="middle" class="node-text">Review</text>
-    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.check</text>
+    <text x="65" y="50" text-anchor="middle" class="node-cmd">/add.review</text>
   </g>
 
   <line x1="1010" y1="85" x2="1037" y2="85" class="arrow-active"/>
@@ -94,7 +94,7 @@
     <rect x="0" y="0" width="120" height="60" rx="8" class="node-bg-active"/>
     <text x="60" y="18" text-anchor="middle" class="node-step">STEP 6</text>
     <text x="60" y="35" text-anchor="middle" class="node-text">Ship</text>
-    <text x="60" y="50" text-anchor="middle" class="node-cmd">/add.ship</text>
+    <text x="60" y="50" text-anchor="middle" class="node-cmd">/add.done</text>
   </g>
 
   <!-- Divider -->

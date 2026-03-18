@@ -336,7 +336,7 @@ SUGGESTIONS FOR MANUAL IMPROVEMENT:
 
 **Next Steps (from ecosystem map):**
 Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
-- Tests passing -> `/add.check`
+- Tests passing -> `/add.review`
 - Tests failing -> fix and re-run `/add.test`
 
 ### 7.2 Log Iteration

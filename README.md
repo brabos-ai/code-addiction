@@ -67,8 +67,8 @@ Step        Command             What happens                        Output
 2. Design   /add.design         UX spec, mobile-first               UI/UX specification
 3. Plan     /add.plan           Technical planning + checklist       plan.md
 4. Code     /add.build          Subagent-driven implementation       Working code
-5. Review   /add.check          Automated code review + validation   Quality gate
-6. Ship     /add.ship           Changelog, docs, finalization        Ready to merge
+5. Review   /add.review          Automated code review + validation   Quality gate
+6. Ship     /add.done           Changelog, docs, finalization        Ready to merge
 ```
 
 ### Choose your flow
