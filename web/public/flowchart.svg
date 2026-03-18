@@ -93,7 +93,7 @@
   <g transform="translate(1042, 55)">
     <rect x="0" y="0" width="120" height="60" rx="8" class="node-bg-active"/>
     <text x="60" y="18" text-anchor="middle" class="node-step">STEP 6</text>
-    <text x="60" y="35" text-anchor="middle" class="node-text">Ship</text>
+    <text x="60" y="35" text-anchor="middle" class="node-text">Done</text>
     <text x="60" y="50" text-anchor="middle" class="node-cmd">/add.done</text>
   </g>
 

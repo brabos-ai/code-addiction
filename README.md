@@ -68,7 +68,7 @@ Step        Command             What happens                        Output
 3. Plan     /add.plan           Technical planning + checklist       plan.md
 4. Code     /add.build          Subagent-driven implementation       Working code
 5. Review   /add.review          Automated code review + validation   Quality gate
-6. Ship     /add.done           Changelog, docs, finalization        Ready to merge
+6. Done     /add.done           Changelog, docs, finalization        Ready to merge
 ```
 
 ### Choose your flow
