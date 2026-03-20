@@ -2,6 +2,16 @@
 /**
  * build.js - Compile provider files from .codeadd/ + framwork/provider-map.json
  * Usage: node scripts/build.js
+ *
+ * Architecture:
+ *   readMap()          → loads provider-map.json (single source of truth)
+ *   stripHtmlComments  → pure fn, removes <!-- --> + collapses blank lines
+ *   TRANSFORMERS       → registry of format converters (md, toml, ...)
+ *   METADATA           → registry of metadata generators (frontmatter, toml header, ...)
+ *   buildResources()   → generic loop for any resource type (commands, skills)
+ *   resourceStrategies → per-type config (source path, resolve output, post-process)
+ *
+ * Transform references: framwork/.codeadd/transforms/{provider}/{resource}.md
  */
 
 const fs = require('node:fs');
@@ -9,12 +19,21 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 
+// ---------------------------------------------------------------------------
+// I/O helpers (thin wrappers — keep logic out of here)
+// ---------------------------------------------------------------------------
+
 function readMap() {
   return JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
 }
 
-function ensureDir(filePath) {
+function readFile(filePath) {
+  return fs.readFileSync(filePath, 'utf8');
+}
+
+function writeFile(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, 'utf8');
 }
 
 function copyDirRecursive(src, dest) {
@@ -33,94 +52,197 @@ function copyDirRecursive(src, dest) {
   return count;
 }
 
-function isSkillPath(pattern) {
-  return pattern.includes('SKILL.md');
+// ---------------------------------------------------------------------------
+// Pure transforms (no I/O, fully testable)
+// ---------------------------------------------------------------------------
+
+/**
+ * Remove ALL HTML comments and collapse excess blank lines.
+ * Saves tokens when content is sent to the model.
+ */
+function stripHtmlComments(content) {
+  return content
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
-function commandFrontmatter(name, description, skillFormat) {
-  if (skillFormat) {
-    return `---\nname: ${name}\ndescription: ${description}\n---\n\n`;
-  }
-  return `---\ndescription: ${description}\n---\n\n`;
+/**
+ * Escape a string for use as a TOML basic string value (double-quoted).
+ */
+function escapeTomlString(str) {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
 }
 
-function buildCommands(map) {
+// ---------------------------------------------------------------------------
+// Metadata generators (format-specific wrappers around content)
+// ---------------------------------------------------------------------------
+
+const METADATA = {
+  /** YAML frontmatter for markdown-based providers */
+  mdFrontmatter(meta) {
+    return meta.skillFormat
+      ? `---\nname: ${meta.name}\ndescription: ${meta.description}\n---\n\n`
+      : `---\ndescription: ${meta.description}\n---\n\n`;
+  },
+
+  /** TOML header comment for traceability */
+  tomlHeader(meta) {
+    return `# AUTO-GENERATED - source: framwork/.codeadd/commands/${meta.name}.md\n`;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Transformer registry — keyed by nativeFormat from provider capabilities
+//
+// Each transformer: (content, meta) → final file content
+// Reference docs: framwork/.codeadd/transforms/{provider}/{resource}.md
+// ---------------------------------------------------------------------------
+
+const TRANSFORMERS = {
+  /** Identity + frontmatter — most providers accept markdown as-is */
+  md(content, meta) {
+    return METADATA.mdFrontmatter(meta) + content;
+  },
+
+  /**
+   * TOML wrapper for Gemini CLI.
+   * See: framwork/.codeadd/transforms/gemini/commands.md
+   */
+  toml(content, meta) {
+    return [
+      METADATA.tomlHeader(meta),
+      `description = "${escapeTomlString(meta.description)}"`,
+      'prompt = """',
+      content,
+      '"""',
+    ].join('\n');
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Generic resource builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Build all resources of a given type using a strategy object.
+ *
+ * Strategy shape:
+ *   entries(map)                → Object.entries of the resource map
+ *   sourcePath(name)           → absolute path to source file
+ *   providerPattern(provider)  → pattern string from provider config (or null to skip)
+ *   resolveProviders(entry,map)→ array of provider keys
+ *   meta(name, entry, pattern) → metadata object for the transformer
+ *   postWrite(name, entry, provider, outDir) → optional, returns extra file count
+ */
+function buildResources(map, strategy) {
   let count = 0;
-  const allProviders = Object.keys(map.providers);
 
-  for (const [name, cmd] of Object.entries(map.commands)) {
-    const sourcePath = path.join(ROOT, 'framwork', '.codeadd', 'commands', `${name}.md`);
+  for (const [name, entry] of strategy.entries(map)) {
+    const srcPath = strategy.sourcePath(name);
 
-    if (!fs.existsSync(sourcePath)) {
-      console.warn(`  SKIP (not found): framwork/.codeadd/commands/${name}.md`);
+    if (!fs.existsSync(srcPath)) {
+      console.warn(`  SKIP (not found): ${path.relative(ROOT, srcPath)}`);
       continue;
     }
 
-    const source = fs.readFileSync(sourcePath, 'utf8');
-    const providers = cmd.providers ?? allProviders;
+    // Read + clean once per resource (not per provider)
+    const cleaned = stripHtmlComments(readFile(srcPath));
+    const providers = strategy.resolveProviders(entry, map);
 
     for (const key of providers) {
       const provider = map.providers[key];
-      if (!provider.commands) continue;
+      const patternStr = strategy.providerPattern(provider);
+      if (!patternStr) continue;
 
-      const pattern = provider.commands.replace('{name}', name);
-      const outPath = path.join(ROOT, provider.dir, pattern);
-      const header = `<!-- AUTO-GENERATED - DO NOT EDIT. Source: framwork/.codeadd/commands/${name}.md -->\n`;
-      const frontmatter = commandFrontmatter(name, cmd.description, isSkillPath(pattern));
+      const format = provider.capabilities?.nativeFormat || 'md';
+      const transformer = TRANSFORMERS[format];
+      if (!transformer) {
+        console.warn(`  SKIP (unknown format "${format}"): ${key}`);
+        continue;
+      }
 
-      ensureDir(outPath);
-      fs.writeFileSync(outPath, header + frontmatter + source, 'utf8');
-      count++;
-    }
-  }
-  return count;
-}
+      const resolved = patternStr.replace('{name}', name);
+      const outPath = path.join(ROOT, provider.dir, resolved);
+      const meta = strategy.meta(name, entry, resolved);
+      const output = transformer(cleaned, meta);
 
-function buildSkills(map) {
-  let count = 0;
-
-  for (const [name, skill] of Object.entries(map.skills)) {
-    const sourceDir = path.join(ROOT, 'framwork', '.codeadd', 'skills', name);
-    const sourcePath = path.join(sourceDir, 'SKILL.md');
-
-    if (!fs.existsSync(sourcePath)) {
-      console.warn(`  SKIP (not found): framwork/.codeadd/skills/${name}/SKILL.md`);
-      continue;
-    }
-
-    const source = fs.readFileSync(sourcePath, 'utf8');
-
-    const providers = skill.providers ?? Object.keys(map.providers);
-    for (const key of providers) {
-      const provider = map.providers[key];
-      if (!provider.skills) continue;
-
-      const pattern = provider.skills.replace('{name}', name);
-      const outPath = path.join(ROOT, provider.dir, pattern);
-      const outDir = path.dirname(outPath);
-      const header = `<!-- AUTO-GENERATED - DO NOT EDIT. Source: framwork/.codeadd/skills/${name}/SKILL.md -->\n`;
-
-      ensureDir(outPath);
-      fs.writeFileSync(outPath, header + source, 'utf8');
+      writeFile(outPath, output);
       count++;
 
-      // Copy extra files and subdirectories (everything except SKILL.md)
-      for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
-        if (entry.name === 'SKILL.md') continue;
-        const srcEntry = path.join(sourceDir, entry.name);
-        const destEntry = path.join(outDir, entry.name);
-        if (entry.isDirectory()) {
-          count += copyDirRecursive(srcEntry, destEntry);
-        } else {
-          fs.mkdirSync(outDir, { recursive: true });
-          fs.copyFileSync(srcEntry, destEntry);
-          count++;
-        }
+      // Post-write hook (e.g. copy skill extra files)
+      if (strategy.postWrite) {
+        count += strategy.postWrite(name, entry, provider, path.dirname(outPath));
       }
     }
   }
+
   return count;
 }
+
+// ---------------------------------------------------------------------------
+// Resource strategies
+// ---------------------------------------------------------------------------
+
+const commandStrategy = {
+  entries: (map) => Object.entries(map.commands),
+  sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'commands', `${name}.md`),
+  providerPattern: (provider) => provider.commands || null,
+  resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
+  meta: (name, entry, resolvedPattern) => ({
+    name,
+    description: entry.description,
+    skillFormat: resolvedPattern.includes('SKILL.md'),
+  }),
+};
+
+const skillStrategy = {
+  entries: (map) => Object.entries(map.skills),
+  sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'skills', name, 'SKILL.md'),
+  providerPattern: (provider) => provider.skills || null,
+  resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
+  meta: (name) => ({ name, description: '', skillFormat: false }),
+
+  /** Copy extra files/subdirs from skill source (everything except SKILL.md) */
+  postWrite(name, _entry, _provider, outDir) {
+    const sourceDir = path.join(ROOT, 'framwork', '.codeadd', 'skills', name);
+    let extra = 0;
+    for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+      if (entry.name === 'SKILL.md') continue;
+      const srcEntry = path.join(sourceDir, entry.name);
+      const destEntry = path.join(outDir, entry.name);
+      if (entry.isDirectory()) {
+        extra += copyDirRecursive(srcEntry, destEntry);
+      } else {
+        fs.mkdirSync(outDir, { recursive: true });
+        fs.copyFileSync(srcEntry, destEntry);
+        extra++;
+      }
+    }
+    return extra;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Façade functions (preserve public API for tests + external callers)
+// ---------------------------------------------------------------------------
+
+function buildCommands(map) {
+  return buildResources(map, commandStrategy);
+}
+
+function buildSkills(map) {
+  return buildResources(map, skillStrategy);
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
 
 function main() {
   console.log('Building provider files...\n');
@@ -136,4 +258,19 @@ function main() {
   console.log(`  Total    : ${total} files generated`);
 }
 
-main();
+// Export for testing
+module.exports = {
+  stripHtmlComments,
+  escapeTomlString,
+  TRANSFORMERS,
+  METADATA,
+  buildCommands,
+  buildSkills,
+  buildResources,
+  readMap,
+};
+
+// Only run when executed directly
+if (require.main === module) {
+  main();
+}
