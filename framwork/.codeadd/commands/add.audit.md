@@ -137,7 +137,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-audit/context-discovery.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-health-check/context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/context-discovery.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -149,7 +149,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-audit/documentation-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-health-check/documentation-analyzer.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/documentation-report.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -161,7 +161,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-audit/infrastructure-check.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-health-check/infrastructure-check.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/infrastructure-report.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -196,7 +196,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-audit/security-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-health-check/security-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/security-report.md`
 
@@ -209,7 +209,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-audit/architecture-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-health-check/architecture-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/architecture-report.md`
 
@@ -222,7 +222,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-audit/data-analyzer.md`
+- **Prompt:** Content of skill `.codeadd/skills/add-health-check/data-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/data-report.md`
 
@@ -450,7 +450,7 @@ NEVER:
 
 ## Dependencies
 
-This command requires the following skills in `.codeadd/skills/add-audit/`:
+This command requires the following skills in `.codeadd/skills/add-health-check/`:
 - `context-discovery.md`
 - `documentation-analyzer.md`
 - `infrastructure-check.md`

@@ -12,14 +12,14 @@ const BLOCK_END = '# END ADD';
  * @returns {string[]}
  */
 export function getInstalledDirs(selectedKeys) {
-  const dirs = ['.codeadd/'];
+  const dirs = new Set(['.codeadd/']);
   for (const key of selectedKeys) {
     if (PROVIDERS[key]) {
       const dest = PROVIDERS[key].dest;
-      dirs.push(dest.endsWith('/') ? dest : `${dest}/`);
+      dirs.add(dest.endsWith('/') ? dest : `${dest}/`);
     }
   }
-  return dirs;
+  return [...dirs];
 }
 
 /**

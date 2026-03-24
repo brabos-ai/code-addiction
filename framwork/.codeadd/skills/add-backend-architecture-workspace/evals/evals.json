@@ -1,0 +1,81 @@
+{
+  "skill_name": "add-backend-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Estou criando uma API REST simples para um blog pessoal. Vai ter posts, categorias e comentários. Só eu vou usar, sem integrações externas além do banco PostgreSQL. Qual arquitetura devo usar e como organizar as pastas?",
+      "expected_output": "Should recommend Simple Modular. Should NOT recommend Clean Architecture or full Vertical Slice — that would be over-engineering for a personal blog API with 3 entities.",
+      "assertions": [
+        {
+          "name": "recommends-simple-pattern",
+          "type": "contains_concept",
+          "description": "Recommends simple modular or basic module-based structure, not Clean Architecture or full VSA"
+        },
+        {
+          "name": "warns-against-over-engineering",
+          "type": "contains_concept",
+          "description": "Explicitly mentions that more complex architectures would be over-engineering for this case"
+        },
+        {
+          "name": "provides-folder-structure",
+          "type": "contains_concept",
+          "description": "Shows a concrete folder structure example adapted to the blog context"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Tenho um SaaS de gestão de pedidos com ~15 features: cadastro de clientes, produtos, pedidos, faturamento, relatórios, notificações por email, dashboard. O time tem 4 devs. Preciso de uma arquitetura que mantenha as features isoladas mas sem criar complexidade demais. A stack é Node.js com Fastify.",
+      "expected_output": "Should recommend Vertical Slice Architecture. Should explain why VSA fits (medium scale, feature isolation, moderate complexity). Should show folder structure adapted to the order management domain.",
+      "assertions": [
+        {
+          "name": "recommends-vertical-slice",
+          "type": "contains_concept",
+          "description": "Recommends Vertical Slice Architecture as the primary pattern"
+        },
+        {
+          "name": "explains-why-vsa-fits",
+          "type": "contains_concept",
+          "description": "Explains why VSA is appropriate for this specific context (feature count, team size, domain complexity)"
+        },
+        {
+          "name": "addresses-cross-feature",
+          "type": "contains_concept",
+          "description": "Addresses how features like pedidos and faturamento should communicate (contracts, not direct coupling)"
+        },
+        {
+          "name": "domain-specific-structure",
+          "type": "contains_concept",
+          "description": "Shows folder structure with actual feature names from the user's domain (pedidos, clientes, etc.)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Estou construindo uma plataforma de e-commerce que integra com 3 gateways de pagamento (Stripe, MercadoPago, PagSeguro) com fallback entre eles, usa AI para gerar descrições de produtos (pode ser OpenAI ou Claude), envia emails via SendGrid, e tem upload de imagens para S3. O time tem 6 devs e o projeto vai crescer bastante. Como devo estruturar isso?",
+      "expected_output": "Should recommend Combined Strategy (VSA + Clean principles) or full Clean Architecture. Must address provider isolation for payments, AI, email, and storage. Must explain how to handle multi-provider fallback without leaking into business logic.",
+      "assertions": [
+        {
+          "name": "recommends-combined-or-clean",
+          "type": "contains_concept",
+          "description": "Recommends Combined Strategy or Clean Architecture — not Simple Modular or plain VSA"
+        },
+        {
+          "name": "addresses-provider-isolation",
+          "type": "contains_concept",
+          "description": "Explains how to isolate payment, AI, email, and storage providers behind contracts/ports"
+        },
+        {
+          "name": "addresses-multi-provider-fallback",
+          "type": "contains_concept",
+          "description": "Shows how to handle multiple payment gateways with fallback without polluting business slices"
+        },
+        {
+          "name": "technical-module-pattern",
+          "type": "contains_concept",
+          "description": "Shows or references the technical module pattern for managing provider complexity"
+        }
+      ]
+    }
+  ]
+}

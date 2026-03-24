@@ -21,7 +21,7 @@ Comprehensive reference for creating effective agent skills.
 
 **Project-local alternative:**
 ```
-.agent/skills/{skill-name}/SKILL.md
+.agents/skills/{skill-name}/SKILL.md
 ```
 
 ## Naming Rules

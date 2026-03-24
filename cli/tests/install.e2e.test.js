@@ -40,8 +40,8 @@ import { install } from '../src/installer.js';
 function buildInstallZip() {
   const zip = new AdmZip();
   zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
-  zip.addFile(`framwork/.agent/workflows/add.md`, Buffer.from('name: add\n'));
-  zip.addFile(`framwork/.agent/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
+  zip.addFile(`framwork/.agents/skills/add/SKILL.md`, Buffer.from('---\nname: add\n---\n'));
+  zip.addFile(`framwork/.agents/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
   return zip.toBuffer();
 }
 
@@ -72,8 +72,8 @@ describe('install command e2e', () => {
     await install(tmpDir);
 
     expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v1.2.3');
-    expect(fs.existsSync(path.join(tmpDir, '.agent', 'workflows', 'add.md'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, '.agent', 'skills', 'backend-development', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'add', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'backend-development', 'SKILL.md'))).toBe(true);
 
     const sh = fs.readFileSync(path.join(tmpDir, '.codeadd', 'scripts', 'health.sh'), 'utf8');
     expect(sh).toBe('echo ok\n');

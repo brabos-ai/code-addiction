@@ -27,7 +27,7 @@ describe('getInstalledDirs', () => {
   it('includes provider dest dirs for selected keys', () => {
     const dirs = getInstalledDirs(['claude', 'codex']);
     expect(dirs).toContain('.claude/');
-    expect(dirs).toContain('.agent/');
+    expect(dirs).toContain('.agents/');
   });
 
   it('returns only .codeadd/ when no providers selected', () => {
@@ -39,8 +39,8 @@ describe('getInstalledDirs', () => {
     const dirs = getInstalledDirs(['claude', 'codex', 'antigrav', 'kilocode', 'opencode']);
     expect(dirs).toContain('.codeadd/');
     expect(dirs).toContain('.claude/');
-    expect(dirs).toContain('.agent/');
     expect(dirs).toContain('.agents/');
+    expect(dirs).toContain('.agent/');
     expect(dirs).toContain('.kilocode/');
     expect(dirs).toContain('.opencode/');
   });
@@ -55,6 +55,15 @@ describe('getInstalledDirs', () => {
     for (const dir of dirs) {
       expect(dir).toMatch(/\/$/);
     }
+  });
+
+  it('deduplicates when two providers share same dest', () => {
+    const dirs = getInstalledDirs(['claude', 'codex', 'antigrav']);
+    // codex (.agents/) and antigrav (.agent/) are different dirs — no dedup needed
+    // but if same dest were shared, Set would deduplicate
+    expect(dirs).toContain('.agents/');
+    expect(dirs).toContain('.agent/');
+    expect(new Set(dirs).size).toBe(dirs.length);
   });
 });
 
@@ -133,18 +142,18 @@ describe('writeGitignoreBlock', () => {
       'utf8'
     );
 
-    writeGitignoreBlock(tmpDir, ['.codeadd/', '.claude/', '.agent/']);
+    writeGitignoreBlock(tmpDir, ['.codeadd/', '.claude/', '.agents/']);
 
     const content = fs.readFileSync(gitignorePath, 'utf8');
     expect(content).toContain('.claude/');
-    expect(content).toContain('.agent/');
+    expect(content).toContain('.agents/');
   });
 
   it('removes provider from block when removed from installation', () => {
     const gitignorePath = path.join(tmpDir, '.gitignore');
     fs.writeFileSync(
       gitignorePath,
-      '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n.agent/\n# END ADD\n',
+      '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n.agents/\n# END ADD\n',
       'utf8'
     );
 
@@ -152,7 +161,7 @@ describe('writeGitignoreBlock', () => {
 
     const content = fs.readFileSync(gitignorePath, 'utf8');
     expect(content).not.toContain('.claude/');
-    expect(content).not.toContain('.agent/');
+    expect(content).not.toContain('.agents/');
     expect(content).toContain('.codeadd/');
   });
 

@@ -1,20 +1,172 @@
 {
   "providers": {
-    "claude":   { "dir": "framwork/.claude",   "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "codex":    { "dir": "framwork/.agent",    "commands": "workflows/{name}.md",    "skills": "skills/{name}/SKILL.md" },
-    "antigrav": { "dir": "framwork/.agents",   "commands": "skills/{name}/SKILL.md", "skills": "skills/{name}/SKILL.md" },
-    "kilocode": { "dir": "framwork/.kilocode", "commands": "workflows/{name}.md",    "skills": "skills/{name}/SKILL.md" },
-    "opencode": { "dir": "framwork/.opencode", "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "auggie":   { "dir": "framwork/.augment",  "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "bob":      { "dir": "framwork/.bob",      "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "copilot":  { "dir": "framwork/.github",   "commands": "agents/{name}.md",       "skills": "skills/{name}/SKILL.md" },
-    "cursor":   { "dir": "framwork/.cursor",   "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "gemini":   { "dir": "framwork/.gemini",   "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "kiro":     { "dir": "framwork/.kiro",     "commands": "prompts/{name}.md",      "skills": "skills/{name}/SKILL.md" },
-    "qwen":     { "dir": "framwork/.qwen",     "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "roo":      { "dir": "framwork/.roo",      "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "shai":     { "dir": "framwork/.shai",     "commands": "commands/{name}.md",     "skills": "skills/{name}/SKILL.md" },
-    "windsurf": { "dir": "framwork/.windsurf", "commands": "workflows/{name}.md",    "skills": "skills/{name}/SKILL.md" }
+    "claude": {
+      "dir": "framwork/.claude",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://docs.anthropic.com/en/docs/claude-code/hooks",
+        "https://docs.anthropic.com/en/docs/claude-code/mcp",
+        "https://docs.anthropic.com/en/docs/claude-code/slash-commands"
+      ]
+    },
+    "codex": {
+      "dir": "framwork/.agents",
+      "commands": "skills/{name}/SKILL.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": false },
+      "docs": [
+        "https://developers.openai.com/codex/config-advanced",
+        "https://developers.openai.com/codex/mcp",
+        "https://developers.openai.com/codex/subagents",
+        "https://developers.openai.com/codex/skills"
+      ]
+    },
+    "antigrav": {
+      "dir": "framwork/.agent",
+      "commands": "skills/{name}/SKILL.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://antigravity.google/docs/rules-workflows",
+        "https://antigravity.google/docs/mcp",
+        "https://antigravity.google/docs/skills"
+      ]
+    },
+    "kilocode": {
+      "dir": "framwork/.kilocode",
+      "commands": "workflows/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://kilo.ai/docs/features/mcp/overview",
+        "https://kilo.ai/docs/code-with-ai/agents/orchestrator-mode",
+        "https://kilo.ai/docs/features/slash-commands/workflows"
+      ]
+    },
+    "opencode": {
+      "dir": "framwork/.opencode",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://opencode.ai/docs/plugins/",
+        "https://opencode.ai/docs/mcp-servers/",
+        "https://opencode.ai/docs/agents/",
+        "https://opencode.ai/docs/commands/"
+      ]
+    },
+    "auggie": {
+      "dir": "framwork/.augment",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://docs.augmentcode.com/cli/hooks",
+        "https://docs.augmentcode.com/context-services/mcp/overview",
+        "https://www.augmentcode.com/product/CLI"
+      ]
+    },
+    "bob": {
+      "dir": "framwork/.bob",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": false },
+      "docs": [
+        "https://www.ibm.com/think/tutorials/mcp-integration-ibm-bob",
+        "https://developer.ibm.com/tutorials/build-agents-mcp-tools-watsonx-orchestrate-using-bob/",
+        "https://www.ibm.com/products/bob"
+      ]
+    },
+    "copilot": {
+      "dir": "framwork/.github",
+      "commands": "agents/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": false },
+      "docs": [
+        "https://docs.github.com/en/copilot/reference/hooks-configuration",
+        "https://docs.github.com/copilot/customizing-copilot/using-model-context-protocol/extending-copilot-chat-with-mcp",
+        "https://docs.github.com/en/copilot/concepts/agents/copilot-cli/fleet",
+        "https://docs.github.com/en/copilot/reference/chat-cheat-sheet"
+      ]
+    },
+    "cursor": {
+      "dir": "framwork/.cursor",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://cursor.com/docs/hooks",
+        "https://docs.cursor.com/context/model-context-protocol",
+        "https://cursor.com/changelog/2-0",
+        "https://cursor.com/changelog/1-6"
+      ]
+    },
+    "gemini": {
+      "dir": "framwork/.gemini",
+      "commands": "commands/{name}.toml",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": false, "mcp": false, "nativeFormat": "toml", "slashCommands": true },
+      "docs": [
+        "https://geminicli.com/docs/hooks/",
+        "https://geminicli.com/docs/cli/custom-commands/"
+      ]
+    },
+    "kiro": {
+      "dir": "framwork/.kiro",
+      "commands": "prompts/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://kiro.dev/docs/powers/",
+        "https://kiro.dev/docs/mcp/",
+        "https://kiro.dev/blog/introducing-kiro-cli/",
+        "https://kiro.dev/docs/skills/"
+      ]
+    },
+    "qwen": {
+      "dir": "framwork/.qwen",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://qwenlm.github.io/qwen-code-docs/en/developers/tools/mcp-server/",
+        "https://qwenlm.github.io/qwen-code-docs/en/users/features/sub-agents/",
+        "https://qwenlm.github.io/qwen-code-docs/en/users/features/commands/"
+      ]
+    },
+    "roo": {
+      "dir": "framwork/.roo",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://docs.roocode.com/features/boomerang-tasks",
+        "https://docs.roocode.com/features/mcp/using-mcp-in-roo",
+        "https://docs.roocode.com/features/slash-commands"
+      ]
+    },
+    "shai": {
+      "dir": "framwork/.shai",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": false, "agentDispatch": false, "mcp": true, "nativeFormat": "md", "slashCommands": false },
+      "docs": [
+        "https://github.com/ovh/shai",
+        "https://labs.ovhcloud.com/en/shai/"
+      ]
+    },
+    "windsurf": {
+      "dir": "framwork/.windsurf",
+      "commands": "workflows/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": false, "agentDispatch": false, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://docs.windsurf.com/windsurf/cascade/mcp",
+        "https://docs.windsurf.com/windsurf/cascade/workflows"
+      ]
+    }
   },
   "commands": {
     "add":           { "description": "Intelligent ecosystem gateway - answers questions, guides flow, suggests next command" },
@@ -34,10 +186,12 @@
     "add.pr":        { "description": "Feature PR and changelog generator with automatic documentation" },
     "add.review":     { "description": "Feature code review specialist with auto-correction until 100% correct" },
     "add.test":      { "description": "Automated test generation targeting 80% coverage — detects framework, runs startup test, dispatches parallel area agents" },
-    "add.ux":        { "description": "Lightweight UX refinement - loads ux-design skill and applies to free-form instructions" }
+    "add.ux":        { "description": "Lightweight UX refinement - loads ux-design skill and applies to free-form instructions" },
+    "add.commit":    { "description": "Mid-workflow smart commit with adaptive Conventional Commits message based on changeset size" }
   },
   "skills": {
     "add-architecture-discovery":      {},
+    "add-backend-architecture":        {},
     "add-backend-development":         {},
     "add-code-review":                 {},
     "add-commit":                      {},
@@ -48,6 +202,7 @@
     "add-ecosystem":                   {},
     "add-feature-discovery":           {},
     "add-feature-specification":       {},
+    "add-frontend-architecture":       {},
     "add-frontend-development":        {},
     "add-health-check":                {},
     "add-landing-page-saas":           {},

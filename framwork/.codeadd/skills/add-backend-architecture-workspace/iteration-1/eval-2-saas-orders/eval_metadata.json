@@ -1,0 +1,23 @@
+{
+  "eval_id": 2,
+  "eval_name": "saas-order-management",
+  "prompt": "Tenho um SaaS de gestão de pedidos com ~15 features: cadastro de clientes, produtos, pedidos, faturamento, relatórios, notificações por email, dashboard. O time tem 4 devs. Preciso de uma arquitetura que mantenha as features isoladas mas sem criar complexidade demais. A stack é Node.js com Fastify.",
+  "assertions": [
+    {
+      "name": "recommends-vertical-slice",
+      "description": "Recommends Vertical Slice Architecture as the primary pattern"
+    },
+    {
+      "name": "explains-why-vsa-fits",
+      "description": "Explains why VSA is appropriate for this specific context (feature count, team size, domain complexity)"
+    },
+    {
+      "name": "addresses-cross-feature",
+      "description": "Addresses how features like pedidos and faturamento should communicate (contracts, not direct coupling)"
+    },
+    {
+      "name": "domain-specific-structure",
+      "description": "Shows folder structure with actual feature names from the user's domain (pedidos, clientes, etc.)"
+    }
+  ]
+}

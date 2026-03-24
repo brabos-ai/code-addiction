@@ -1,0 +1,23 @@
+{
+  "eval_id": 3,
+  "eval_name": "ecommerce-multi-provider",
+  "prompt": "Estou construindo uma plataforma de e-commerce que integra com 3 gateways de pagamento (Stripe, MercadoPago, PagSeguro) com fallback entre eles, usa AI para gerar descrições de produtos (pode ser OpenAI ou Claude), envia emails via SendGrid, e tem upload de imagens para S3. O time tem 6 devs e o projeto vai crescer bastante. Como devo estruturar isso?",
+  "assertions": [
+    {
+      "name": "recommends-combined-or-clean",
+      "description": "Recommends Combined Strategy or Clean Architecture — not Simple Modular or plain VSA"
+    },
+    {
+      "name": "addresses-provider-isolation",
+      "description": "Explains how to isolate payment, AI, email, and storage providers behind contracts/ports"
+    },
+    {
+      "name": "addresses-multi-provider-fallback",
+      "description": "Shows how to handle multiple payment gateways with fallback without polluting business slices"
+    },
+    {
+      "name": "technical-module-pattern",
+      "description": "Shows or references the technical module pattern for managing provider complexity"
+    }
+  ]
+}

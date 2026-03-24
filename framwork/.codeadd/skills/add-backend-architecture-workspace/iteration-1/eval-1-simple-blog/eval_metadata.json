@@ -1,0 +1,19 @@
+{
+  "eval_id": 1,
+  "eval_name": "simple-blog-api",
+  "prompt": "Estou criando uma API REST simples para um blog pessoal. Vai ter posts, categorias e comentários. Só eu vou usar, sem integrações externas além do banco PostgreSQL. Qual arquitetura devo usar e como organizar as pastas?",
+  "assertions": [
+    {
+      "name": "recommends-simple-pattern",
+      "description": "Recommends simple modular or basic module-based structure, not Clean Architecture or full VSA"
+    },
+    {
+      "name": "warns-against-over-engineering",
+      "description": "Explicitly mentions that more complex architectures would be over-engineering for this case"
+    },
+    {
+      "name": "provides-folder-structure",
+      "description": "Shows a concrete folder structure example adapted to the blog context"
+    }
+  ]
+}

@@ -450,8 +450,6 @@ ${CROSS_SF_CONTEXT}
 
 **When to create:** ALWAYS -- runs after all area subagents complete.
 
-**MANDATORY:** Load skill BEFORE dispatch: `.codeadd/skills/add-test-specification/SKILL.md`
-
 **DISPATCH AGENT:**
 - **Capability:** read-write
 - **Complexity:** standard
@@ -459,9 +457,6 @@ ${CROSS_SF_CONTEXT}
 - **Prompt:**
   ```
   You are the TEST SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
-
-  ## MANDATORY: Load Skill
-  READ: .codeadd/skills/add-test-specification/SKILL.md -- follow ALL rules.
 
   ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
   1. Run: bash .codeadd/scripts/status.sh

@@ -16,16 +16,16 @@ export const PROVIDERS = {
   },
   codex: {
     label: 'Codex (OpenAI)',
-    hint: '.agent/workflows/ + .agent/skills/',
-    src: 'framwork/.agent',
-    dest: '.agent',
-    commandsSubdir: 'workflows',
-  },
-  antigrav: {
-    label: 'Antigravity (Google)',
     hint: '.agents/skills/',
     src: 'framwork/.agents',
     dest: '.agents',
+    commandsSubdir: null,
+  },
+  antigrav: {
+    label: 'Antigravity (Google)',
+    hint: '.agent/skills/',
+    src: 'framwork/.agent',
+    dest: '.agent',
     commandsSubdir: null,
   },
   opencode: {

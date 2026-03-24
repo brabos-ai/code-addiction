@@ -145,9 +145,9 @@ describe('enableFeature', () => {
   });
 
   it('injects into multiple provider directories', () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude', 'codex'] });
+    writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude', 'kilocode'] });
     setupCommandWithMarkers(tmpDir, '.claude/commands', 'add.build', 'tdd', ['gate']);
-    setupCommandWithMarkers(tmpDir, '.agent/workflows', 'add.build', 'tdd', ['gate']);
+    setupCommandWithMarkers(tmpDir, '.kilocode/workflows', 'add.build', 'tdd', ['gate']);
     setupFragment(tmpDir, 'tdd', 'add.build', {
       gate: 'TDD GATE injected',
     });
@@ -157,9 +157,9 @@ describe('enableFeature', () => {
     expect(result.modified).toBe(2);
 
     const claudeContent = fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8');
-    const agentContent = fs.readFileSync(path.join(tmpDir, '.agent', 'workflows', 'add.build.md'), 'utf8');
+    const kilocodeContent = fs.readFileSync(path.join(tmpDir, '.kilocode', 'workflows', 'add.build.md'), 'utf8');
     expect(claudeContent).toContain('TDD GATE injected');
-    expect(agentContent).toContain('TDD GATE injected');
+    expect(kilocodeContent).toContain('TDD GATE injected');
   });
 
   it('returns 0 modified when no matching commands exist', () => {

@@ -49,8 +49,8 @@ npx codeadd uninstall --force
 - Core (`.codeadd/`): always installed
 - Provider integration (optional, selected interactively):
   - Claude Code -> `.claude/`
-  - Codex (OpenAI) -> `.agent/`
-  - Google Antigravity -> `.agents/`
+  - Codex (OpenAI) -> `.agents/`
+  - Google Antigravity -> `.agent/`
   - KiloCode -> `.kilocode/`
   - OpenCode -> `.opencode/`
 

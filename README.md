@@ -110,8 +110,8 @@ EMERGENCY  (critical bug in production)
 - Core: `.codeadd/`
 - Optional providers:
   - Claude Code -> `.claude/`
-  - Codex (OpenAI) -> `.agent/`
-  - Google Antigravity -> `.agents/`
+  - Codex (OpenAI) -> `.agents/`
+  - Google Antigravity -> `.agent/`
   - KiloCode -> `.kilocode/`
   - OpenCode -> `.opencode/`
 

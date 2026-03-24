@@ -36,6 +36,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Skill | Proposito | Usada por |
 |-------|-----------|-----------|
 | add-architecture-discovery | Mapear arquitetura, detectar patterns, gerar stack-context.md | add.audit, add.xray |
+| add-backend-architecture | Consultant de arquitetura backend: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | - |
 | add-backend-development | Arquitetura backend: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-code-review | Validacao de codigo, auto-correcao | add.review |
 | add-commit | Knowledge reference para commits mid-workflow: adaptive message logic, type detection, staging rules | add.commit |
@@ -46,6 +47,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-ecosystem | Visao consolidada do ecossistema add-pro (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.copy, add.landing, add.xray |
 | add-feature-discovery | Processo de discovery de features, analise de codebase | add.new, add.plan |
 | add-feature-specification | Estrutura do about.md com RFs, RNs, criterios de aceite | add.new |
+| add-frontend-architecture | Consultant de arquitetura frontend: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
 | add-frontend-development | Arquitetura frontend: state, data fetching, components, forms, routing — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-health-check | Health check de ambiente e dependencias do projeto | - |
 | add-landing-page-saas | Framework para landing pages de alta conversao SaaS | add.landing |
@@ -95,3 +97,8 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Exploracao | brainstorm -> new -> ... | Nao sabe por onde comecar |
 | Novo Projeto | init -> scaffold -> build -> done | Criar projeto do zero |
 | Analise | xray / audit | Verificar saude do projeto |
+
+## Last Updated
+
+2026-03-23 - sync: registered add.commit command, add-backend-architecture and add-frontend-architecture skills in provider-map; fixed add.audit phantom refs (add-audit→add-health-check); removed phantom add-test-specification from add.plan; updated web pages provider dirs (Codex→.agents/, Antigrav→.agent/)
+2026-03-20 - sync: regenerated ecosystem map via /add.sync (added add-backend-architecture, add-frontend-architecture)
