@@ -34,7 +34,7 @@ STEP 6: Output                    → DELIVER complete code
 IF SKILL NOT LOADED:
   ⛔ DO NOT USE: Write to create landing page
   ⛔ DO NOT: Generate code without skill reference
-  ✅ DO: Load .codeadd/skills/add-landing-page-saas/SKILL.md FIRST
+  ✅ DO: Load skill add-landing-page-saas FIRST
 
 IF CONTEXT INCOMPLETE:
   ⛔ DO NOT USE: Write without product/audience info
@@ -59,7 +59,7 @@ ALWAYS:
 
 ## STEP 1: Load Skill Reference
 
-Load the landing page skill from `.codeadd/skills/add-landing-page-saas/SKILL.md`.
+Load skill `add-landing-page-saas`.
 
 **This skill contains:**
 - Prompt framework, section vocabulary (Hero, Features, Pricing, etc.)
@@ -86,7 +86,7 @@ Load the landing page skill from `.codeadd/skills/add-landing-page-saas/SKILL.md
 
 ## STEP 3: Load Templates
 
-For EACH selected section, load the corresponding template from `.codeadd/skills/add-landing-page-saas/sections/` and the aesthetic reference from `aesthetics.md`.
+For EACH selected section, load the corresponding template from skill `add-landing-page-saas` (`sections/` directory) and the aesthetic reference from `aesthetics.md`.
 
 **Extract from templates:**
 - Section variations available
@@ -162,7 +162,7 @@ Build `LandingPage` as a single-file page with internal section components (Hero
 
 Deliver the complete code. Summarize sections included, aesthetic applied, and list next steps (add route, replace placeholders, configure SEO/analytics).
 
-**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
+**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
 ---
 

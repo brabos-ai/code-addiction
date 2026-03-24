@@ -105,7 +105,7 @@ Created by /add.init"
 ### 6.1 Load Skill
 
 ```bash
-cat .codeadd/skills/add-product-discovery/SKILL.md
+Read skill add-product-discovery
 ```
 
 ### 6.2 Follow Phase2_ProductBlueprint from Skill

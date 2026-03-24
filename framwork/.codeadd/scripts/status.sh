@@ -428,26 +428,6 @@ if [ "$BRANCH_TYPE" != "main" ]; then
 fi
 
 # =============================================================================
-# OUTPUT: SKILLS (available in .codeadd/skills/)
-# =============================================================================
-
-SKILLS_DIR=".claude/skills"
-if [ -d "$SKILLS_DIR" ]; then
-    # List available skills (directories with SKILL.md)
-    SKILL_LIST=$(find "$SKILLS_DIR" -maxdepth 2 -name "SKILL.md" 2>/dev/null | \
-        sed "s|$SKILLS_DIR/||;s|/SKILL.md||" | \
-        sort | \
-        tr '\n' ',' | \
-        sed 's/,$//')
-
-    if [ -n "$SKILL_LIST" ]; then
-        SKILL_COUNT=$(echo "$SKILL_LIST" | tr ',' '\n' | wc -l | tr -d ' \r\n')
-        echo "SKILLS:$SKILL_COUNT"
-        echo "SKILLS_PATH:.codeadd/skills/{$SKILL_LIST}/SKILL.md"
-    fi
-fi
-
-# =============================================================================
 # OUTPUT: PROJECT PATTERNS (from .codeadd/project/*.md)
 # =============================================================================
 

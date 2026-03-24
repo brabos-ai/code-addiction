@@ -208,7 +208,7 @@ All area generators share this structure. DISPATCH one per area that has target 
 
 ```
 ## MANDATORY: Load Context
-1. READ .codeadd/skills/add-[AREA]-development/SKILL.md (if exists) for project patterns
+1. READ skill add-[AREA]-development (if exists) for project patterns
 2. READ .codeadd/project/*.md (if exists) for project conventions
 
 ## CONTEXT
@@ -335,7 +335,7 @@ SUGGESTIONS FOR MANUAL IMPROVEMENT:
 ```
 
 **Next Steps (from ecosystem map):**
-Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
+Read skill `add-ecosystem` Main Flows section.
 - Tests passing -> `/add.review`
 - Tests failing -> fix and re-run `/add.test`
 

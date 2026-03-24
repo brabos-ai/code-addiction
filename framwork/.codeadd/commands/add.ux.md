@@ -18,7 +18,7 @@ STEP 5 → Apply UX to user instruction
 ```
 
 **PROHIBITIONS — until skill is loaded:**
-- NEVER Edit/Write any file before reading `.codeadd/skills/add-ux-design/SKILL.md`
+- NEVER Edit/Write any file before reading skill `add-ux-design`
 - NEVER propose UX patterns, layouts, or components before STEP 3 completes
 
 ---
@@ -35,7 +35,7 @@ Parse output to understand project context (branch, feature, recent changes).
 
 ## STEP 2: Load UX Design Skill
 
-READ `.codeadd/skills/add-ux-design/SKILL.md` — single source of truth for UX knowledge.
+READ skill `add-ux-design` — single source of truth for UX knowledge.
 
 ---
 
@@ -54,7 +54,7 @@ READ `.codeadd/skills/add-ux-design/SKILL.md` — single source of truth for UX 
 
 ## STEP 4: Load Complementary Skill Docs
 
-**ANALYZE** user's `$ARGUMENTS` and load relevant docs from `.codeadd/skills/add-ux-design/`:
+**ANALYZE** user's `$ARGUMENTS` and load relevant docs from skill `add-ux-design`:
 
 | Doc | Covers |
 |-----|--------|

@@ -146,7 +146,7 @@ When conversation reaches valuable insights, offer to generate a summary documen
 
 ### Execution
 
-1. Read style skill: `.codeadd/skills/add-documentation-style/business.md`
+1. Read skill `add-documentation-style` file `business.md`
 2. Apply Business Style format (section "brainstorm/")
 3. Create document with proper naming
 
@@ -257,9 +257,9 @@ Route conversations to the right command:
 | Feature need emerges | `/add.new` | Offer to document first, then formalize |
 | Bug discovered | `/fix` | Route to investigate and fix |
 | Needs planning | `/product` → `/feature` → `/plan` | Suggest appropriate entry point |
-| Ready to formalize | `/add.new` | Reference ecosystem: `.codeadd/skills/add-ecosystem/SKILL.md` |
+| Ready to formalize | `/add.new` | Reference skill `add-ecosystem` |
 
-**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
+**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
 ---
 

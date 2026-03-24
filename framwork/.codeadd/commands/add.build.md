@@ -339,7 +339,7 @@ Execute BEFORE any other action:
 ${TASK_DOCUMENTS}
 
 ## MANDATORY: Load Development Skill
-BEFORE writing code, read: .codeadd/skills/add-${AREA}-development/SKILL.md
+BEFORE writing code, read: skill add-${AREA}-development
 - For Frontend: The skill will check for design.md and load ux-design/SKILL.md if needed
 - If design.md EXISTS: Follow its specs + use ux-design for implementation details
 - For specific components, Grep on skill docs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md
@@ -366,13 +366,13 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
 - **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
 - **Workers:** Worker, Processor, queue config, error handling, register in worker.module.ts
 - **Frontend:** Pages, Components, Zustand store, Hooks, mirror DTOs, API integration, forms
-  - MANDATORY: Load skill `.codeadd/skills/add-frontend-development/SKILL.md` first
+  - MANDATORY: Load skill `add-frontend-development` first
   - The frontend skill will check for design.md → if missing, auto-load ux-design/SKILL.md
 
 **Skills Reference (MANDATORY):**
-- Backend: `.codeadd/skills/add-backend-development/SKILL.md` (RESTful, IoC, DTOs, CQRS, Multi-tenancy)
-- Database: `.codeadd/skills/add-database-development/SKILL.md` (Entities, Migrations, Kysely, Repositories)
-- Frontend: `.codeadd/skills/add-frontend-development/SKILL.md` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
+- Backend: skill `add-backend-development` (RESTful, IoC, DTOs, CQRS, Multi-tenancy)
+- Database: skill `add-database-development` (Entities, Migrations, Kysely, Repositories)
+- Frontend: skill `add-frontend-development` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
 
 #### 9.4 Subagent Dispatch
 
@@ -421,7 +421,7 @@ Fix ALL build errors. Do not stop until build passes 100%.
 #### C2: Fix Implementation
 
 - Fix root cause, not symptom. Follow existing code patterns. Add defensive checks if needed.
-- **Frontend fixes:** FIRST load `.codeadd/skills/add-ux-design/SKILL.md`, follow all patterns, Grep skill docs for relevant components/styling/animation. Read design-system.md if exists.
+- **Frontend fixes:** FIRST load skill `add-ux-design`, follow all patterns, Grep skill docs for relevant components/styling/animation. Read design-system.md if exists.
 - **CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
 
 ---
@@ -443,7 +443,7 @@ Validate implemented code against skill checklist and auto-correct violations.
 
 ## Self-Bootstrap (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
-2. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md
+2. Read skill: add-${AREA}-development
 3. Read ALL files in FILES_CREATED and FILES_MODIFIED below
 
 ## IMPLEMENTED FILES
@@ -550,7 +550,7 @@ Change `| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT
 
 Inform user of completion including: feature ID, files summary (per area count), build status, and next suggested commands.
 
-**Always include suggested next command from ecosystem map:** Read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section.
+**Always include suggested next command from ecosystem map:** Read skill `add-ecosystem` Main Flows section.
 - After development → `/add.review` or `/add.test`
 - After correction → `/add.review`
 

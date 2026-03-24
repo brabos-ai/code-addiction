@@ -60,7 +60,7 @@ IF USER NOT VALIDATED:
 
 ## STEP 1: Load Skill
 
-Read saas-copy skill files: `SKILL.md`, `formulas.md`, `examples.md` from `.codeadd/skills/add-saas-copy/`.
+Read skill `add-saas-copy` files: `SKILL.md`, `formulas.md`, `examples.md`.
 
 **IF NOT LOADED:** Do not proceed to analysis.
 
@@ -308,7 +308,7 @@ I need some information that I can't extract from code:
 
 Inform the user what was generated (code, folder, files) and suggest reviewing the brief, choosing headlines, using `/add.landing` with the brief, and validating copy with the 4Us table.
 
-**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
+**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
 ---
 

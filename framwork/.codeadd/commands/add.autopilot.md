@@ -284,7 +284,7 @@ ${DECISION_LOG}
 ## COORDINATOR NOTES
 ${COORDINATOR_NOTES}
 
-## SKILLS: .codeadd/skills/add-database-development/SKILL.md (MANDATORY)
+## SKILLS: add-database-development (MANDATORY)
 
 ## TASK
 Implement database layer exactly as specified in plan.md.
@@ -320,7 +320,7 @@ ${DECISION_LOG}
 ## COORDINATOR NOTES
 ${COORDINATOR_NOTES}
 
-## SKILLS: .codeadd/skills/add-backend-development/SKILL.md (MANDATORY)
+## SKILLS: add-backend-development (MANDATORY)
 
 ## TASK
 Implement backend API exactly as specified in plan.md.
@@ -349,7 +349,7 @@ Log only pivots: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID
 You are the FRONTEND developer for feature ${FEATURE_ID}.
 
 [Agent Bootstrap Block — scope: FRONTEND]
-If NO design.md: Also load `.codeadd/skills/add-ux-design/SKILL.md`
+If NO design.md: Also load skill `add-ux-design`
 
 ## DECISION LOG
 ${DECISION_LOG}
@@ -358,8 +358,8 @@ ${DECISION_LOG}
 ${COORDINATOR_NOTES}
 
 ## SKILLS
-MANDATORY: .codeadd/skills/add-frontend-development/SKILL.md
-For specific components, Grep skill docs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md (all in .codeadd/skills/add-ux-design/)
+MANDATORY: skill add-frontend-development
+For specific components, Grep skill docs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md (all in skill add-ux-design)
 
 ## TASK
 Implement frontend exactly as specified in plan.md + design.md.
@@ -390,7 +390,7 @@ Validate implemented code against skill checklist and auto-correct violations.
 
 ## BOOTSTRAP
 1. Run: bash .codeadd/scripts/status.sh
-2. Read skill: .codeadd/skills/add-${AREA}-development/SKILL.md (contains Validation Checklist)
+2. Read skill: add-${AREA}-development (contains Validation Checklist)
 
 ## IMPLEMENTED FILES (from ${AREA} Agent)
 ${FILES_CREATED}

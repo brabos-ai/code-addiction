@@ -224,7 +224,7 @@ Use Grep/Read to confirm what documentation indicated:
 
 **FRONTEND FIXES:**
 If bug in frontend:
-1. READ `.codeadd/skills/add-ux-design/SKILL.md`
+1. READ skill `add-ux-design`
 2. Follow patterns (mobile-first, shadcn, Tailwind v3)
 
 **DO NOT:**
@@ -292,7 +292,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" 
 
 Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status. Suggest next step: `/add.done`.
 
-**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
+**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
 ---
 

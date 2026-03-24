@@ -124,12 +124,12 @@ IF past-features.md does NOT exist:
 
 **DISPATCH AGENT:**
 - **Capability:** read-only, light
-- **Skill:** `.codeadd/skills/add-feature-discovery/SKILL.md` Phase 1.5
+- **Skill:** `add-feature-discovery` Phase 1.5
 - **Input:** about.md of current feature + RECENT_CHANGELOGS
 - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
 - **Prompt:**
   ```
-  Read .codeadd/skills/add-feature-discovery/SKILL.md Phase 1.5.
+  Read skill add-feature-discovery Phase 1.5.
   Feature: ${FEATURE_ID}.
   Input: docs/features/${FEATURE_ID}/about.md + RECENT_CHANGELOGS below.
   [RECENT_CHANGELOGS]
@@ -337,7 +337,7 @@ ${CROSS_SF_CONTEXT}
   ${SUBAGENT_BOOTSTRAP}
 
   ## MANDATORY: Load Backend Development Skill
-  BEFORE designing endpoints, read `.codeadd/skills/add-backend-development/SKILL.md` (RESTful API, IoC/DI, DTO naming, CQRS, multi-tenancy).
+  BEFORE designing endpoints, read skill `add-backend-development` (RESTful API, IoC/DI, DTO naming, CQRS, multi-tenancy).
 
   ## Your Task
   Create the backend planning section covering: API, Commands, Events, Workers (if needed).
@@ -386,7 +386,7 @@ ${CROSS_SF_CONTEXT}
   - MUST search codebase for similar module as reference (paths from CLAUDE.md)
   - Combine API + Workers in same section
   - Keep it under 60 lines
-  - MUST follow `.codeadd/skills/add-backend-development/SKILL.md` patterns
+  - MUST follow skill `add-backend-development` patterns
   - Include Status column in Endpoints table
   ```
 
@@ -735,7 +735,7 @@ Inform the user with a summary of what was planned:
 - Feature ID and plan path
 - Which areas were planned (Database/Backend/Frontend)
 - Key metrics (endpoint count, task count)
-- Suggest next command based on context: read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section to determine whether `/add.build`, `/add.autopilot`, or `/add.design` is appropriate.
+- Suggest next command based on context: read skill `add-ecosystem` Main Flows section to determine whether `/add.build`, `/add.autopilot`, or `/add.design` is appropriate.
 
 ---
 
@@ -765,10 +765,10 @@ NEVER:
 
 ## Skills to Reference
 
-- Backend: `.codeadd/skills/add-backend-development/SKILL.md`
-- Database: `.codeadd/skills/add-database-development/SKILL.md`
-- Frontend (Code): `.codeadd/skills/add-frontend-development/SKILL.md`
-- Frontend (UI): `.codeadd/skills/add-ux-design/SKILL.md`
+- Backend: skill `add-backend-development`
+- Database: skill `add-database-development`
+- Frontend (Code): skill `add-frontend-development`
+- Frontend (UI): skill `add-ux-design`
 
 ---
 

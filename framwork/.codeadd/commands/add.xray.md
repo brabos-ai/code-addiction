@@ -56,7 +56,7 @@ You are the coordinator. You know your engine's capabilities. Map the intent to 
 
 ## STEP 1: Self-Bootstrap (READ FIRST)
 
-Read `.codeadd/skills/add-architecture-discovery/SKILL.md`.
+Read skill `add-architecture-discovery`.
 
 **Focus on:**
 - `AppClassification` section → signals to identify app type (backend, frontend, cli, etc)
@@ -150,7 +150,7 @@ You are analyzing: [APP_NAME] at [APP_PATH]
 Classification: [TYPE]
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/add-architecture-discovery/[TYPE]-analyzer.md
+Read: skill add-architecture-discovery file [TYPE]-analyzer.md
 Follow ALL instructions in that file.
 
 ## CONTEXT
@@ -192,7 +192,7 @@ You are analyzing: [APP_NAME] at [APP_PATH]
 Classification: [TYPE] (no specialist - use generic template)
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/add-architecture-discovery/SKILL.md
+Read: skill add-architecture-discovery
 Focus on: GenericAppTemplate section
 
 ## CONTEXT
@@ -240,7 +240,7 @@ Return summary:
 You are the DATABASE ANALYZER for project discovery.
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/add-architecture-discovery/database-analyzer.md
+Read: skill add-architecture-discovery file database-analyzer.md
 Follow ALL instructions in that file.
 
 ## CONTEXT
@@ -279,7 +279,7 @@ Return summary:
 You are the CODE QUALITY ANALYZER for project discovery.
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/add-architecture-discovery/code-quality-analyzer.md
+Read: skill add-architecture-discovery file code-quality-analyzer.md
 Follow ALL instructions in that file.
 
 ## CONTEXT
@@ -342,7 +342,7 @@ Return summary:
 You are the CONTEXT FILES UPDATER.
 
 ## SELF-BOOTSTRAP
-Read: .codeadd/skills/add-architecture-discovery/SKILL.md
+Read: skill add-architecture-discovery
 Follow OUTPUT FORMAT and TEMPLATE sections.
 
 ## INPUTS TO READ
@@ -406,7 +406,7 @@ Verify all 3 files exist before proceeding:
 
 Report to user including: context files updated, apps analyzed with types, files generated, code quality scores, next steps.
 
-**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
+**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
 ---
 

@@ -140,7 +140,7 @@ When dispatching: match **Capability** (read-only/read-write/full-access) and **
    - **Input:** RECENT_CHANGELOGS (from Step 1) + current feature's about.md
    - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
    - **Steps:**
-     - Read `.codeadd/skills/add-feature-discovery/SKILL.md` Phase 1.5
+     - Read skill `add-feature-discovery` Phase 1.5
      - Extract keywords from about.md
      - For each feature in RECENT_CHANGELOGS: check Quick Ref in changelog.md (fallback: first 30 lines)
      - For matches: read iterations.jsonl + about.md, classify relationship
@@ -153,7 +153,7 @@ When dispatching: match **Capability** (read-only/read-write/full-access) and **
    - **Input:** past-features.md + about.md + feature request
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
    - **Steps:**
-     - Read `.codeadd/skills/add-feature-discovery/SKILL.md` and `.codeadd/skills/add-documentation-style/SKILL.md`
+     - Read skill `add-feature-discovery` and skill `add-documentation-style`
      - Read `docs/features/${FEATURE_ID}/past-features.md` BEFORE analyzing codebase
      - Use past-features.md as context: prioritize files touched by related features, follow established patterns, respect past decisions
      - Perform deep codebase analysis: reusable functionality, existing patterns, integration points, potential conflicts, missing prerequisites
@@ -439,10 +439,10 @@ If validated new route/endpoint → Backend MANDATORY. If validated new field/en
 
 #### Load Skills
 ```
-.codeadd/skills/add-documentation-style/SKILL.md
-.codeadd/skills/add-documentation-style/business.md
-.codeadd/skills/add-feature-specification/SKILL.md
-.codeadd/skills/add-feature-discovery/SKILL.md
+skill add-documentation-style (SKILL.md)
+skill add-documentation-style (business.md)
+skill add-feature-specification
+skill add-feature-discovery
 ```
 
 **Apply cache technique:** Read → Preserve → Complement → Metadata
@@ -490,7 +490,7 @@ If `/feature F0018` or `/feature continue`:
 
 ## Completion
 
-After all steps complete, summarize what was created and suggest the logical next command based on what was discovered (read `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows for context): `/add.design` for UI features, `/add.plan` for technical planning, `/add.build` for simple features, or `/add.autopilot` for autonomous execution.
+After all steps complete, summarize what was created and suggest the logical next command based on what was discovered (read skill `add-ecosystem` Main Flows for context): `/add.design` for UI features, `/add.plan` for technical planning, `/add.build` for simple features, or `/add.autopilot` for autonomous execution.
 
 ---
 

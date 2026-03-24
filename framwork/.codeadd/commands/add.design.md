@@ -39,7 +39,7 @@ IF UX-DESIGN SKILL NOT LOADED:
   ⛔ DO NOT USE: Write for design.md
   ⛔ DO NOT USE: Task for subagent dispatch
   ⛔ DO NOT: Propose any layouts
-  ✅ DO: Read .codeadd/skills/add-ux-design/SKILL.md FIRST
+  ✅ DO: Read skill add-ux-design FIRST
 
 IF DESIGN SYSTEM INSPECTION NOT COMPLETE (STEP 3):
   ⛔ DO NOT USE: Write for design.md
@@ -72,7 +72,7 @@ IF NO FRONTEND EXISTS:
 
 ### 1.1: Load UX Design Skill (REQUIRED)
 
-Read `.codeadd/skills/add-ux-design/SKILL.md`.
+Read skill `add-ux-design`.
 
 **Skill provides:** SaaS UX patterns, Context Detection, Mobile-first, States, Typography/Colors/Spacing, Components, Checklist
 
@@ -86,7 +86,7 @@ Run `status.sh`, then read `about.md` and `discovery.md` for the feature.
 
 ### 1.3: Skill Docs Lookup (as needed)
 
-When you need reference docs for specific components, utilities, patterns, charts, or tables, search the corresponding skill doc files under `.codeadd/skills/add-ux-design/`.
+When you need reference docs for specific components, utilities, patterns, charts, or tables, search the corresponding doc files within skill `add-ux-design`.
 
 **GATE CHECK:** Is ux-design skill loaded? IF NO -> STOP. Load skill FIRST.
 
@@ -216,7 +216,7 @@ You are the FLOW & INTERACTION ARCHITECT for feature ${FEATURE_ID}.
 
 ## Bootstrap
 Read: design-context.md, about.md, discovery.md for ${FEATURE_ID}.
-Load: .codeadd/skills/add-ux-design/ux-laws-principles.md, modern-patterns.md.
+Load: skill add-ux-design files ux-laws-principles.md, modern-patterns.md.
 
 ## Task
 - Map ALL screens and create ASCII flow diagram
@@ -256,7 +256,7 @@ You are the LAYOUT & COMPONENT SPECIALIST for feature ${FEATURE_ID}.
 
 ## Bootstrap
 Read: design-context.md, design-flow.md (MANDATORY), about.md, discovery.md for ${FEATURE_ID}.
-Load: .codeadd/skills/add-ux-design/shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md.
+Load: skill add-ux-design files shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md.
 
 ## Task
 - ASCII layout per screen (mobile-first 320px, md/lg breakpoint notes)
@@ -300,7 +300,7 @@ Present consolidated design summary to user. Include: SaaS context, patterns, mo
 
 ## STEP 8: Write Documentation
 
-**Pre-check:** Read `.codeadd/skills/add-documentation-style/design.md` if it exists.
+**Pre-check:** Read skill `add-documentation-style` file `design.md` if it exists.
 
 ### 8A: Subagent Mode -- Consolidation
 
@@ -320,7 +320,7 @@ Write to `docs/features/${FEATURE_ID}/design.md` using output template. Delete d
 # Design: [Feature Name]
 
 **SaaS:** [context] | **Patterns:** [list] | **Mobile:** touch 44px, inputs 16px+
-**Skill:** .codeadd/skills/add-ux-design/SKILL.md
+**Skill:** add-ux-design
 **Mode:** [inline | subagent]
 
 ---
@@ -374,7 +374,7 @@ loading->Skeleton | empty->EmptyState | error->Toast
 ## Dev Instructions
 **Order:** [1]->[2]->[3]
 **Patterns:** [SaaS patterns from ux-design]
-**Skill:** .codeadd/skills/add-ux-design/SKILL.md (MUST load for implementation)
+**Skill:** add-ux-design (MUST load for implementation)
 ```
 
 ---

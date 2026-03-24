@@ -157,24 +157,6 @@ if [ -d "apps/backend/src/api/modules" ]; then
 fi
 
 # =============================================================================
-# LSP DETECTION - PRIORITY RULES
-# =============================================================================
-
-LSP_AVAILABLE=false
-if command -v lsp &>/dev/null; then
-    LSP_AVAILABLE=true
-fi
-
-if [ "$LSP_AVAILABLE" = true ]; then
-    echo "LSP:AVAILABLE"
-    echo "LSP_PRIORITY:MANDATORY"
-    echo "LSP_SKILL:.codeadd/skills/lsp-code-analysis/SKILL.md"
-    echo "LSP_ACTION:Load lsp-code-analysis skill BEFORE any code search"
-else
-    echo "LSP:NOT_INSTALLED"
-fi
-
-# =============================================================================
 # OUTPUT: RECENT_CHANGELOGS (últimas 5 items finalizados - contexto cross-feature)
 # =============================================================================
 

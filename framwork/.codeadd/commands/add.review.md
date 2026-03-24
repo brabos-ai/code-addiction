@@ -276,10 +276,10 @@ prompt: |
   3. Read PROJECT_PATHS files matching frontend apps (e.g., ADMIN.md, PORTAL.md)
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
   5. Read skills:
-     - .codeadd/skills/add-frontend-development/SKILL.md (PRIMARY)
-     - .codeadd/skills/add-code-review/SKILL.md
-     - .codeadd/skills/add-ux-design/SKILL.md (if design.md missing)
-     - Component refs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md (in .codeadd/skills/add-ux-design/)
+     - skill add-frontend-development (PRIMARY)
+     - skill add-code-review
+     - skill add-ux-design (if design.md missing)
+     - Component refs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md (in skill add-ux-design)
 
   ## TASK_DOCUMENTS (read ALL — source of truth)
   ${TASK_DOCUMENTS}
@@ -353,11 +353,11 @@ prompt: |
   3. Read PROJECT_PATHS files matching backend apps (e.g., SERVER.md, DATABASE.md)
   4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
   5. Read skills:
-     - .codeadd/skills/add-backend-development/SKILL.md (PRIMARY)
-     - .codeadd/skills/add-database-development/SKILL.md
-     - .codeadd/skills/add-code-review/SKILL.md
-     - .codeadd/skills/add-security-audit/SKILL.md
-     - .codeadd/skills/add-delivery-validation/SKILL.md
+     - skill add-backend-development (PRIMARY)
+     - skill add-database-development
+     - skill add-code-review
+     - skill add-security-audit
+     - skill add-delivery-validation
 
   ## TASK_DOCUMENTS (read ALL — source of truth)
   ${TASK_DOCUMENTS}
@@ -477,7 +477,7 @@ prompt: |
 
   ### 9. Product Validation (CRITICAL)
 
-  Read `.codeadd/skills/add-delivery-validation/SKILL.md` before validating.
+  Read skill `add-delivery-validation` before validating.
 
   **For EACH requirement in about.md:**
 

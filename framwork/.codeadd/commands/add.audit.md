@@ -1,6 +1,6 @@
 # Tech Audit - Complete Technical Project Audit
 
-> **DOCUMENTATION STYLE:** Follow standards defined in `.codeadd/skills/add-documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Follow standards defined in skill `add-documentation-style`
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
 
@@ -137,7 +137,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-health-check/context-discovery.md`
+- **Prompt:** Content of skill `add-health-check` file `context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/context-discovery.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -149,7 +149,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-health-check/documentation-analyzer.md`
+- **Prompt:** Content of skill `add-health-check` file `documentation-analyzer.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/documentation-report.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -161,7 +161,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-health-check/infrastructure-check.md`
+- **Prompt:** Content of skill `add-health-check` file `infrastructure-check.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/infrastructure-report.md`
 
 ⛔ DO NOT proceed until agent output file exists.
@@ -196,7 +196,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-health-check/security-analyzer.md`
+- **Prompt:** Content of skill `add-health-check` file `security-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/security-report.md`
 
@@ -209,7 +209,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-health-check/architecture-analyzer.md`
+- **Prompt:** Content of skill `add-health-check` file `architecture-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/architecture-report.md`
 
@@ -222,7 +222,7 @@ Each agent MUST read `context-discovery.md` to understand:
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:** Content of skill `.codeadd/skills/add-health-check/data-analyzer.md`
+- **Prompt:** Content of skill `add-health-check` file `data-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/data-report.md`
 
@@ -423,7 +423,7 @@ For complete technical details, see:
 
 Present the overall scorecard, issue counts by severity, top 3 priorities, report location, and suggested next steps (review report, create features for critical issues, re-run audit after fixes).
 
-**Next Steps:** Reference `.codeadd/skills/add-ecosystem/SKILL.md` Main Flows section for context-aware next command suggestion.
+**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
 ---
 
@@ -450,7 +450,7 @@ NEVER:
 
 ## Dependencies
 
-This command requires the following skills in `.codeadd/skills/add-health-check/`:
+This command requires the following files from skill `add-health-check`:
 - `context-discovery.md`
 - `documentation-analyzer.md`
 - `infrastructure-check.md`

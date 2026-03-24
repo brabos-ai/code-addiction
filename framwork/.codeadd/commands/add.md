@@ -38,7 +38,7 @@ IF ECOSYSTEM-MAP NOT LOADED:
 
 ## STEP 0: Load Ecosystem Map (ALWAYS)
 
-Read `.codeadd/skills/add-ecosystem/SKILL.md` before any response.
+Read skill `add-ecosystem` before any response.
 
 This file contains all add-pro commands with purpose/skills, available skills, main flows, and dependency index.
 
@@ -136,7 +136,7 @@ Include: reformulated question, answer (Yes/No/Partially), explanation based on 
 
 ### Type F: Setup/Environment
 
-**LOAD skill before responding:** Read `.codeadd/skills/add-dev-environment-setup/SKILL.md`.
+**LOAD skill before responding:** Read skill `add-dev-environment-setup`.
 
 **EXECUTE skill flow:** Follow STEP 1-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
 
