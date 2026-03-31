@@ -22,7 +22,9 @@
       "Read(//c/github/terceiros/spec-kit/**)",
       "Bash(npx astro:*)",
       "Bash(git -C c:/github/xmaiconx/code-addiction branch --show-current)",
-      "Bash(find c:githubxmaiconxcode-addiction -name *STRATEGY* -o -name *agent-dispatch*)"
+      "Bash(find c:githubxmaiconxcode-addiction -name *STRATEGY* -o -name *agent-dispatch*)",
+      "Edit(/.claude/skills/building-commands/**)",
+      "Bash(curl -sL \"https://code.claude.com/docs/en/sub-agents\")"
     ],
     "additionalDirectories": [
       "C:\\github\\xmaiconx\\code-addiction\\framwork\\.claude\\skills",

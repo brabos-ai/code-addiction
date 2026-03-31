@@ -1,6 +1,6 @@
 # UX Laws & Principles
 
-> Reference file for `.codeadd/skills/ux-design/SKILL.md`
+> Reference file for `{{skill:add-ux-design/SKILL.md}}`
 
 Deep dive into UX laws, cognitive load theory, and mental models for creating intuitive interfaces.
 

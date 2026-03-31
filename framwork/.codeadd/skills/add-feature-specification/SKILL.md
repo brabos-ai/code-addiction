@@ -269,8 +269,8 @@ Quando ADD dispara subagente para especificação:
 ```markdown
 **Skills:**
 ```bash
-cat .codeadd/skills/feature-specification/SKILL.md
-cat .codeadd/skills/documentation-style/business.md
+cat {{skill:add-feature-specification/SKILL.md}}
+cat {{skill:add-documentation-style/business.md}}
 ```
 
 **Contexto:**

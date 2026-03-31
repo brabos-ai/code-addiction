@@ -1,6 +1,6 @@
 # Context Discovery - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
 
 **Objetivo:** Entender arquitetura, multi-tenancy e funcionalidades do projeto para fornecer contexto aos demais subagentes.
 

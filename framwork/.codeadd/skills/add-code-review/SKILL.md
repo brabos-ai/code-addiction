@@ -28,11 +28,11 @@ O agente de code-review DEVE criar todos para cada categoria de validação e pa
 ## Skills de Referência
 
 **Carregar ANTES de revisar:**
-- Backend: `.codeadd/skills/backend-development/SKILL.md`
-- Database: `.codeadd/skills/database-development/SKILL.md`
-- Frontend (Code): `.codeadd/skills/frontend-development/SKILL.md`
-- Frontend (UI): `.codeadd/skills/ux-design/SKILL.md`
-- Security: `.codeadd/skills/security-audit/SKILL.md`
+- Backend: `{{skill:add-backend-development/SKILL.md}}`
+- Database: `{{skill:add-database-development/SKILL.md}}`
+- Frontend (Code): `{{skill:add-frontend-development/SKILL.md}}`
+- Frontend (UI): `{{skill:add-ux-design/SKILL.md}}`
+- Security: `{{skill:add-security-audit/SKILL.md}}`
 
 ---
 

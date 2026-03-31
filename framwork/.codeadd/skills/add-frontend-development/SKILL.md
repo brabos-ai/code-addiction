@@ -23,7 +23,7 @@ Stack-agnostic skill for frontend architecture and implementation patterns.
 
 1. **Check for design.md** in the feature docs directory
 2. **If design.md exists:** Follow the specs exactly (components, props, states, layout)
-3. **If design.md does NOT exist:** Load and follow the UX Design skill (`.codeadd/skills/ux-design/SKILL.md`)
+3. **If design.md does NOT exist:** Load and follow the UX Design skill (`{{skill:add-ux-design/SKILL.md}}`)
 
 **The ux-design skill provides:**
 - SaaS UX Pattern Library (Dashboard, Settings, Billing, Auth, etc.)

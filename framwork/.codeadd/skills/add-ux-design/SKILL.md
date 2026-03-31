@@ -17,10 +17,10 @@ Your goal is to create **memorable, high-craft SaaS interfaces** that:
 **NEVER use for:** Backend (backend-development), Database (database-development)
 
 **Support Files:**
-- `.codeadd/skills/ux-design/design-direction.md` - Design Thinking, Quality Score, Output Structure
-- `.codeadd/skills/ux-design/ux-laws-principles.md` - UX Laws, Cognitive Load, Mental Models
-- `.codeadd/skills/ux-design/modern-patterns.md` - Interaction patterns, Visual trends, Performance UX
-- `.codeadd/skills/ux-design/ux-writing.md` - Microcopy, Error messages, Empty states
+- `{{skill:add-ux-design/design-direction.md}}` - Design Thinking, Quality Score, Output Structure
+- `{{skill:add-ux-design/ux-laws-principles.md}}` - UX Laws, Cognitive Load, Mental Models
+- `{{skill:add-ux-design/modern-patterns.md}}` - Interaction patterns, Visual trends, Performance UX
+- `{{skill:add-ux-design/ux-writing.md}}` - Microcopy, Error messages, Empty states
 
 ---
 
@@ -468,17 +468,17 @@ className="motion-safe:animate-fadeIn"
 
 ## Docs Lookup
 
-{"shadcn":".codeadd/skills/ux-design/shadcn-docs.md"}
-{"tailwind":".codeadd/skills/ux-design/tailwind-v3-docs.md"}
-{"motion":".codeadd/skills/ux-design/motion-dev-docs.md"}
-{"recharts":".codeadd/skills/ux-design/recharts-docs.md"}
-{"tanstackTable":".codeadd/skills/ux-design/tanstack-table-docs.md"}
-{"tanstackQuery":".codeadd/skills/ux-design/tanstack-query-docs.md"}
-{"tanstackRouter":".codeadd/skills/ux-design/tanstack-router-docs.md"}
-{"designDirection":".codeadd/skills/ux-design/design-direction.md"}
-{"uxLaws":".codeadd/skills/ux-design/ux-laws-principles.md"}
-{"modernPatterns":".codeadd/skills/ux-design/modern-patterns.md"}
-{"uxWriting":".codeadd/skills/ux-design/ux-writing.md"}
+{"shadcn":"{{skill:add-ux-design/shadcn-docs.md}}"}
+{"tailwind":"{{skill:add-ux-design/tailwind-v3-docs.md}}"}
+{"motion":"{{skill:add-ux-design/motion-dev-docs.md}}"}
+{"recharts":"{{skill:add-ux-design/recharts-docs.md}}"}
+{"tanstackTable":"{{skill:add-ux-design/tanstack-table-docs.md}}"}
+{"tanstackQuery":"{{skill:add-ux-design/tanstack-query-docs.md}}"}
+{"tanstackRouter":"{{skill:add-ux-design/tanstack-router-docs.md}}"}
+{"designDirection":"{{skill:add-ux-design/design-direction.md}}"}
+{"uxLaws":"{{skill:add-ux-design/ux-laws-principles.md}}"}
+{"modernPatterns":"{{skill:add-ux-design/modern-patterns.md}}"}
+{"uxWriting":"{{skill:add-ux-design/ux-writing.md}}"}
 
 ---
 

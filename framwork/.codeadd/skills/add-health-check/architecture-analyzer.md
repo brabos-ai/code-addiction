@@ -1,6 +1,6 @@
 # Architecture Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
 
 **Objetivo:** Verificar conformidade com padrões arquiteturais e identificar violações.
 

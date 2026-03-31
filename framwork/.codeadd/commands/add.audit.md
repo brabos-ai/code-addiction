@@ -193,9 +193,7 @@ Each agent MUST read `context-discovery.md` to understand:
 
 ### Agent 4: Security Analyzer
 
-**DISPATCH AGENT:**
-- **Capability:** read-write (must write output file)
-- **Complexity:** standard
+**DISPATCH AGENT: @reviewer-agent**
 - **Prompt:** Content of skill `add-health-check` file `security-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/security-report.md`
@@ -206,9 +204,7 @@ Each agent MUST read `context-discovery.md` to understand:
 
 ### Agent 5: Architecture Analyzer
 
-**DISPATCH AGENT:**
-- **Capability:** read-write (must write output file)
-- **Complexity:** standard
+**DISPATCH AGENT: @architecture-agent**
 - **Prompt:** Content of skill `add-health-check` file `architecture-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/architecture-report.md`
@@ -219,9 +215,7 @@ Each agent MUST read `context-discovery.md` to understand:
 
 ### Agent 6: Data Analyzer
 
-**DISPATCH AGENT:**
-- **Capability:** read-write (must write output file)
-- **Complexity:** standard
+**DISPATCH AGENT: @database-agent**
 - **Prompt:** Content of skill `add-health-check` file `data-analyzer.md`
 - **Additional context:** Pass content of `context-discovery.md` and `infrastructure-report.md`
 - **Output:** Write `docs/audits/${AUDIT_DATE}/data-report.md`

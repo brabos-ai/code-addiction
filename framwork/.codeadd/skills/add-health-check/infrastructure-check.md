@@ -1,6 +1,6 @@
 # Infrastructure Check - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
 
 **Objetivo:** Verificar se infraestrutura e ferramentas de análise estão configuradas.
 

@@ -1,6 +1,6 @@
 # Documentation Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
 
 **Objetivo:** Verificar se documentação do projeto existe, está atualizada e segue os padrões esperados.
 
@@ -32,8 +32,8 @@ ls CLAUDE.md 2>/dev/null
 ls docs/features/ 2>/dev/null
 
 # Skills de documentação
-ls .codeadd/skills/documentation-style/SKILL.md 2>/dev/null
-ls .codeadd/skills/updating-claude-documentation/SKILL.md 2>/dev/null
+ls {{skill:add-documentation-style/SKILL.md}} 2>/dev/null
+ls {{skill:add-updating-claude-documentation/SKILL.md}} 2>/dev/null
 ```
 
 ### Classificar
@@ -65,7 +65,7 @@ cat CLAUDE.md
 
 **Verificar conformidade com skill:**
 ```bash
-cat .codeadd/skills/updating-claude-documentation/SKILL.md
+cat {{skill:add-updating-claude-documentation/SKILL.md}}
 ```
 
 **Checklist de conformidade:**
@@ -179,7 +179,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 
 #### [DOC-001] CLAUDE.md não existe
 **Impacto:** Desenvolvimento com IA será inconsistente e de baixa qualidade
-**Correção:** Criar CLAUDE.md seguindo `.codeadd/skills/updating-claude-documentation/SKILL.md`
+**Correção:** Criar CLAUDE.md seguindo `{{skill:add-updating-claude-documentation/SKILL.md}}`
 
 ---
 

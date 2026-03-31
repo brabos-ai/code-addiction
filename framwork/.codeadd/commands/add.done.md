@@ -446,7 +446,7 @@ Check if repo requires Pull Request via `gh api` branch protection check. Route 
 
 Inform user that branch protection was detected -- creating Pull Request instead of direct merge.
 
-1. Read `.codeadd/commands/add.pr.md` as reference for PR creation flow
+1. Read `{{cmd:add.pr}}` as reference for PR creation flow
 2. Follow add.pr STEPs 7-9 (Preview, Write files, Execute --create-pr)
 3. Use `bash .codeadd/scripts/feature-pr.sh --create-pr` for PR creation
 

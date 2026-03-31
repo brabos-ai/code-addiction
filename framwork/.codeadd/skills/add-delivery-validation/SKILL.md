@@ -261,7 +261,7 @@ Feature pronta para merge.
 ## Phase Final: Product Validation
 
 Após code review técnico, executar delivery-validation:
-1. Carregar skill: `cat .codeadd/skills/delivery-validation/SKILL.md`
+1. Carregar skill: `cat {{skill:add-delivery-validation/SKILL.md}}`
 2. Executar validação de produto
 3. Só aprovar se code-review E delivery-validation passarem
 ```

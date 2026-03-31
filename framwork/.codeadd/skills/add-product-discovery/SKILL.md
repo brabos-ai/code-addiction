@@ -26,7 +26,7 @@ Conduz discovery rápido do fundador e produto em 5-10 minutos, criando perfil d
 {"agendamento":"2 users (admin+cliente), integração calendário","ecommerce":"2 users (admin+cliente), pagamentos obrigatório","saas-b2b":"multi-tenant, 3 users (owner,admin,member)","marketplace":"3 users (admin,vendedor,comprador), pagamentos","gestão-interna":"1-2 users (admin,equipe?), sem integração","cursos":"2-3 users (admin,instrutor?,aluno), pagamentos","delivery":"3 users (admin,entregador,cliente), geolocalização"}
 
 ### DocumentationFormat
-{"pre-checkpoint":"load .codeadd/skills/documentation-style/SKILL.md","format":"hybrid (human-readable + token-efficient)","sections":{"owner.md":["identificação","nível técnico","preferências comunicação","contexto projeto"],"product.md":["o que é","para quem","problema que resolve","MVP features","cut features","user types","integrations","roadmap phases"]}}
+{"pre-checkpoint":"load {{skill:add-documentation-style/SKILL.md}}","format":"hybrid (human-readable + token-efficient)","sections":{"owner.md":["identificação","nível técnico","preferências comunicação","contexto projeto"],"product.md":["o que é","para quem","problema que resolve","MVP features","cut features","user types","integrations","roadmap phases"]}}
 
 ### Commit
 {"owner":"git commit -m 'docs: create founder profile...'","product":"git commit -m 'docs: create product blueprint for MVP...'"}

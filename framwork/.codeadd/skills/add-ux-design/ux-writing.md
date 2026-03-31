@@ -1,6 +1,6 @@
 # UX Writing Guide
 
-> Reference file for `.codeadd/skills/ux-design/SKILL.md`
+> Reference file for `{{skill:add-ux-design/SKILL.md}}`
 
 Guidelines for microcopy, error messages, empty states, and all interface text.
 

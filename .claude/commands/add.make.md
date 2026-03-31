@@ -140,12 +140,13 @@ Present a design document showing: artefact type, path, proposed structure, plan
 **BEFORE implementing, READ:**
 
 ```
-.claude/skills/building-commands/SKILL.md                    # ALWAYS
-framwork/.codeadd/skills/ecosystem-map/SKILL.md              # ALWAYS (ecosystem overview)
-framwork/.codeadd/skills/token-efficiency/SKILL.md           # ALWAYS
-framwork/.codeadd/skills/documentation-style/SKILL.md        # If generating docs
-framwork/.codeadd/skills/skill-creator/SKILL.md              # IF type=skill
-framwork/.codeadd/skills/                                     # Reference of existing skills
+.claude/skills/building-commands/SKILL.md                     # ALWAYS
+.claude/skills/add-resource-path-convention/SKILL.md          # ALWAYS (path references)
+framwork/.codeadd/skills/add-ecosystem/SKILL.md               # ALWAYS (ecosystem overview)
+framwork/.codeadd/skills/add-token-efficiency/SKILL.md        # ALWAYS
+framwork/.codeadd/skills/add-documentation-style/SKILL.md     # If generating docs
+framwork/.codeadd/skills/add-skill-creator/SKILL.md           # IF type=skill
+framwork/.codeadd/skills/                                      # Reference of existing skills
 ```
 
 ### building-commands Checklist (APPLY)

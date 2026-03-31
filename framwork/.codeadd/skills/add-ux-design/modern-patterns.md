@@ -1,6 +1,6 @@
 # Modern UX Patterns
 
-> Reference file for `.codeadd/skills/ux-design/SKILL.md`
+> Reference file for `{{skill:add-ux-design/SKILL.md}}`
 
 Deep dive into modern interaction patterns, visual trends 2024/25, and performance UX.
 

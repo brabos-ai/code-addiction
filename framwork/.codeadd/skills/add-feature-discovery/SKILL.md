@@ -305,8 +305,8 @@ Quando ADD dispara subagente para discovery:
 ```markdown
 **Skills:**
 ```bash
-cat .codeadd/skills/feature-discovery/SKILL.md
-cat .codeadd/skills/documentation-style/business.md
+cat {{skill:add-feature-discovery/SKILL.md}}
+cat {{skill:add-documentation-style/business.md}}
 ```
 
 **Contexto:**

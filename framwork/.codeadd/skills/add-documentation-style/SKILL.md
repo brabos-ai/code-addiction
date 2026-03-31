@@ -116,7 +116,7 @@ Business  → "O QUE e POR QUE" (requisitos, decisões, contexto)
 ### Checklist Pré-Documentação
 
 1. Identificar tipo de documento
-2. Carregar estilo correto: `cat .codeadd/skills/documentation-style/[estilo].md`
+2. Carregar estilo correto: `cat {{skill:add-documentation-style/[estilo].md}}`
 3. Aplicar formato do estilo
 4. Validar contra regras universais
 

@@ -96,10 +96,11 @@ IF TEMPTED TO IMPLEMENT:
 Read (if they exist):
 
 ```
-framwork/.codeadd/skills/ecosystem-map/SKILL.md   # Consolidated view (commands, skills, dependencies)
-docs/strategy/ADD-ECOSYSTEM-STRATEGY.md            # Ecosystem strategy
-docs/strategy/ADD-MASTER-DOCUMENT-v4.md            # Master document, pyramid, journey
-framwork/README.md                                 # Framework context
+framwork/.codeadd/skills/add-ecosystem/SKILL.md              # Consolidated view (commands, skills, dependencies)
+framwork/.codeadd/skills/add-resource-path-convention/SKILL.md # Path reference convention for commands/skills
+docs/strategy/ADD-ECOSYSTEM-STRATEGY.md                       # Ecosystem strategy
+docs/strategy/ADD-MASTER-DOCUMENT-v4.md                       # Master document, pyramid, journey
+framwork/README.md                                            # Framework context
 ```
 
 Ecosystem Map: ALWAYS load for relationship visibility between commands and skills.

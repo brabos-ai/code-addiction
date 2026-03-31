@@ -1,6 +1,6 @@
 # Security Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
 
 **Objetivo:** Analisar segurança do projeto por funcionalidade, focando em boundary frontend/backend e multi-tenancy.
 

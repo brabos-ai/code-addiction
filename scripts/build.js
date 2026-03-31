@@ -126,6 +126,70 @@ const TRANSFORMERS = {
 };
 
 // ---------------------------------------------------------------------------
+// Resource path resolution (build-time variable substitution)
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve {{cmd:NAME}}, {{skill:NAME/FILE}} variables for a specific provider.
+ * Scripts (.codeadd/scripts/) are fixed paths — no substitution needed.
+ *
+ * @param {string} content   raw content with variables
+ * @param {object} provider  provider config from provider-map.json
+ * @returns {string}
+ */
+function resolveResourcePaths(content, provider) {
+  const base = provider.dir.replace(/^framwork\//, '');
+
+  // {{cmd:NAME}} → full command path for this provider
+  content = content.replace(/\{\{cmd:([^}]+)\}\}/g, (_, name) => {
+    const resolved = provider.commands.replace('{name}', name);
+    return `${base}/${resolved}`;
+  });
+
+  // {{skill:NAME/FILE}} → full skill file path for this provider
+  content = content.replace(/\{\{skill:([^/}]+)\/([^}]+)\}\}/g, (_, name, file) => {
+    const skillDir = path.dirname(provider.skills.replace('{name}', name));
+    return `${base}/${skillDir}/${file}`;
+  });
+
+  return content;
+}
+
+/**
+ * Warn if source content contains raw .codeadd/commands/ or .codeadd/skills/ paths.
+ * These should use {{cmd:}} or {{skill:}} variables instead.
+ * Skips lines inside fenced code blocks (``` ... ```).
+ *
+ * @param {string} content   source file content
+ * @param {string} srcPath   path for warning messages
+ */
+function lintResourcePaths(content, srcPath) {
+  const relPath = path.relative(ROOT, srcPath);
+
+  // Skip the resource-path-convention skill itself (it documents the patterns)
+  if (relPath.includes('add-resource-path-convention')) return;
+
+  const lines = content.split('\n');
+  let inCodeBlock = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^```/.test(line.trim())) {
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+    if (inCodeBlock) continue;
+
+    if (/\.codeadd\/commands\//.test(line)) {
+      console.warn(`  LINT ${relPath}:${i + 1}: raw .codeadd/commands/ reference — use {{cmd:NAME}}`);
+    }
+    if (/\.codeadd\/skills\//.test(line)) {
+      console.warn(`  LINT ${relPath}:${i + 1}: raw .codeadd/skills/ reference — use {{skill:NAME/FILE}}`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Generic resource builder
 // ---------------------------------------------------------------------------
 
@@ -152,7 +216,9 @@ function buildResources(map, strategy) {
     }
 
     // Read + clean once per resource (not per provider)
-    const cleaned = stripHtmlComments(readFile(srcPath));
+    const raw = readFile(srcPath);
+    lintResourcePaths(raw, srcPath);
+    const cleaned = stripHtmlComments(raw);
     const providers = strategy.resolveProviders(entry, map);
 
     for (const key of providers) {
@@ -161,16 +227,19 @@ function buildResources(map, strategy) {
       if (!patternStr) continue;
 
       const format = provider.capabilities?.nativeFormat || 'md';
-      const transformer = TRANSFORMERS[format];
+      const transformer = strategy.transform || TRANSFORMERS[format];
       if (!transformer) {
         console.warn(`  SKIP (unknown format "${format}"): ${key}`);
         continue;
       }
 
+      // Resolve {{cmd:}}, {{skill:}} variables per provider
+      const withPaths = resolveResourcePaths(cleaned, provider);
+
       const resolved = patternStr.replace('{name}', name);
       const outPath = path.join(ROOT, provider.dir, resolved);
       const meta = strategy.meta(name, entry, resolved);
-      const output = transformer(cleaned, meta);
+      const output = transformer(withPaths, meta);
 
       writeFile(outPath, output);
       count++;
@@ -228,6 +297,16 @@ const skillStrategy = {
   },
 };
 
+const agentStrategy = {
+  entries: (map) => Object.entries(map.agents || {}),
+  sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'agents', `${name}.md`),
+  providerPattern: (provider) => provider.agents || null,
+  resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
+  meta: (name, entry) => ({ name, description: entry.description }),
+  /** Passthrough — agents keep their own frontmatter (name, model, tools, skills, memory) */
+  transform: (content) => content,
+};
+
 // ---------------------------------------------------------------------------
 // Façade functions (preserve public API for tests + external callers)
 // ---------------------------------------------------------------------------
@@ -240,6 +319,10 @@ function buildSkills(map) {
   return buildResources(map, skillStrategy);
 }
 
+function buildAgents(map) {
+  return buildResources(map, agentStrategy);
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -250,11 +333,13 @@ function main() {
   const map = readMap();
   const commandCount = buildCommands(map);
   const skillCount = buildSkills(map);
+  const agentCount = buildAgents(map);
 
-  const total = commandCount + skillCount;
+  const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
   console.log(`  Skills   : ${Object.keys(map.skills).length} skills  → ${skillCount} files`);
+  console.log(`  Agents   : ${Object.keys(map.agents || {}).length} agents  → ${agentCount} files`);
   console.log(`  Total    : ${total} files generated`);
 }
 
@@ -262,10 +347,13 @@ function main() {
 module.exports = {
   stripHtmlComments,
   escapeTomlString,
+  resolveResourcePaths,
+  lintResourcePaths,
   TRANSFORMERS,
   METADATA,
   buildCommands,
   buildSkills,
+  buildAgents,
   buildResources,
   readMap,
 };

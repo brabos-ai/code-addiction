@@ -26,8 +26,8 @@ plans → plan_prices → subscriptions → payment_history
 ## Consultando Documentação
 
 ```bash
-Grep pattern="subscription" path=".codeadd/skills/stripe/stripe-doc.md"
-Grep pattern="price" path=".codeadd/skills/stripe/stripe-doc.md"
+Grep pattern="subscription" path="{{skill:add-stripe/stripe-doc.md}}"
+Grep pattern="price" path="{{skill:add-stripe/stripe-doc.md}}"
 ```
 
 ## Fluxos Essenciais

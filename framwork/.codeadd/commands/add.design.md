@@ -209,7 +209,7 @@ Inform user which mode was selected and why.
 
 ### 5A: Subagent Mode
 
-DISPATCH AGENT:
+DISPATCH AGENT: @ux-agent
 
 ```
 You are the FLOW & INTERACTION ARCHITECT for feature ${FEATURE_ID}.
@@ -249,7 +249,7 @@ Coordinator creates compact Action Classification table directly (no flow diagra
 
 ### 6A: Subagent Mode
 
-DISPATCH AGENT:
+DISPATCH AGENT: @ux-agent
 
 ```
 You are the LAYOUT & COMPONENT SPECIALIST for feature ${FEATURE_ID}.

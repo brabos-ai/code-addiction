@@ -366,6 +366,12 @@ Before deploying command:
 - [ ] Checklists have verification items (not timeline)
 - [ ] Script output parsed as data (table of actions)
 
+### Resource Path References
+- [ ] References to other commands use `{{cmd:NAME}}` (never `.codeadd/commands/`)
+- [ ] References to skills use `{{skill:NAME/FILE}}` (never `.codeadd/skills/`)
+- [ ] References to scripts use `.codeadd/scripts/` (fixed path, no variable)
+- [ ] See `add-resource-path-convention` skill for details
+
 ### Rules Section
 - [ ] Uses ALWAYS/NEVER markdown (NOT JSON `{"do":[],"dont":[]}`)
 - [ ] Each rule starts with verb in infinitive form

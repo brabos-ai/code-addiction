@@ -6,7 +6,7 @@ description: |
 
 # Atualizacao de Documentacao Claude
 
-> **DOCUMENTATION STYLE:** Seguir padroes definidos em `.codeadd/skills/documentation-style/SKILL.md`
+> **DOCUMENTATION STYLE:** Seguir padroes definidos em `{{skill:add-documentation-style/SKILL.md}}`
 
 CLAUDE.md e fonte de verdade arquitetural para onboarding, assistentes IA e alinhamento do time. DEVE ser **self-contained** e refletir estado atual do codebase.
 
