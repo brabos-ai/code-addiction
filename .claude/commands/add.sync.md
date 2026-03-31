@@ -432,12 +432,6 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 [PRESERVE existing flows section - do not regenerate]
 
-## Last Updated
-
-YYYY-MM-DD - sync: regenerated ecosystem map via /add.sync
-[PRESERVE previous entries below]
-```
-
 ### 6.3 Show Diff
 
 Before writing, show what changed (omit empty sections):

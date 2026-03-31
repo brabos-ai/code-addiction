@@ -4,6 +4,7 @@
       "dir": "framwork/.claude",
       "commands": "commands/{name}.md",
       "skills": "skills/{name}/SKILL.md",
+      "agents": "agents/{name}.md",
       "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
       "docs": [
         "https://docs.anthropic.com/en/docs/claude-code/hooks",
@@ -220,5 +221,15 @@
     "add-updating-claude-documentation": {},
     "add-ux-design":                   {},
     "add-resource-path-convention":    {}
+  },
+  "agents": {
+    "ux-agent":            { "description": "UX specialist for design decisions, interface analysis, and interaction patterns" },
+    "backend-agent":       { "description": "Backend implementation specialist for services, repositories, DTOs, and Clean Architecture" },
+    "frontend-agent":      { "description": "Frontend implementation specialist for components, pages, hooks, and state management" },
+    "reviewer-agent":      { "description": "Code review specialist for quality, security (OWASP), and architecture compliance (read-only)" },
+    "discovery-agent":     { "description": "Feature discovery and specification specialist for codebase analysis and scoping (read-only)" },
+    "architecture-agent":  { "description": "Architecture consultant for structural decisions, layers, and module boundaries (read-only)" },
+    "system-design-agent": { "description": "System design specialist for scalable solutions, data flows, and infrastructure decisions" },
+    "database-agent":      { "description": "Database specialist for schema design, migrations, entity modeling, and query optimization" }
   }
 }

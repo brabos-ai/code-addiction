@@ -299,11 +299,20 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl"
 
 ---
 
+### Named Agent Mapping
+
+| Area | Named Agent | Fallback (if agent not installed) |
+|------|-------------|-----------------------------------|
+| Database | `@database-agent` | Generic subagent + skill add-database-development |
+| Backend | `@backend-agent` | Generic subagent + skill add-backend-development |
+| Frontend | `@frontend-agent` | Generic subagent + skill add-frontend-development |
+| Validation | `@reviewer-agent` | Generic subagent + skill add-code-review |
+
+**Named agents have skills preloaded, model optimized, and tool restrictions enforced via their definition.** When dispatching a named agent, skills in the prompt are already loaded — include them as reference for the agent's task, not as load instructions.
+
 ### Subagent Dispatch Template
 
-**DISPATCH AGENT:**
-- **Capability:** read-write | full-access
-- **Complexity:** light (single fix/syntax) | standard (single area) | heavy (multi-entity/CQRS/new design system)
+**DISPATCH AGENT: @${AREA}-agent** (see Named Agent Mapping)
 - **Prompt:** [use Universal Subagent Prompt below]
 
 ---
@@ -378,9 +387,7 @@ Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
 
 **CRITICAL:** When dispatching multiple independent subagents, send ALL Task tool calls in a SINGLE message.
 
-**DISPATCH AGENT:**
-- **Capability:** read-write | full-access
-- **Complexity:** Choose based on task — light for syntax fixes, standard for single-area implementation, heavy for multi-entity/CQRS/new design system
+**DISPATCH AGENT: @${AREA}-agent** (see Named Agent Mapping in section 9)
 - **Prompt:** Use Universal Subagent Prompt Template (section 9.2)
 
 #### 9.5 Coordination Flow
@@ -435,7 +442,7 @@ Fix ALL build errors. Do not stop until build passes 100%.
 
 ### 10.1 Validator Subagent Prompt Template
 
-**DISPATCH AGENT:** Capability: read-write | full-access | Complexity: standard
+**DISPATCH AGENT: @reviewer-agent**
 
 ```
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.

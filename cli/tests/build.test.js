@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
-const { stripHtmlComments, escapeTomlString, TRANSFORMERS, METADATA } = require('../../scripts/build.js');
+const { stripHtmlComments, escapeTomlString, TRANSFORMERS, METADATA, buildAgents, buildResources, readMap } = require('../../scripts/build.js');
 
 // ---------------------------------------------------------------------------
 // stripHtmlComments
@@ -249,5 +249,197 @@ describe('provider-map.json capabilities', () => {
     expect(caps.agentDispatch).toBe(true);
     expect(caps.mcp).toBe(true);
     expect(caps.slashCommands).toBe(true);
+  });
+
+  it('claude provider has agents pattern', () => {
+    expect(map.providers.claude).toHaveProperty('agents');
+    expect(map.providers.claude.agents).toBe('agents/{name}.md');
+  });
+
+  it('providers without agents pattern are skipped by agentStrategy', () => {
+    for (const [key, p] of Object.entries(map.providers)) {
+      if (key === 'claude') continue;
+      expect(p.agents, `provider ${key} should NOT have agents pattern`).toBeUndefined();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// provider-map.json: agents section
+// ---------------------------------------------------------------------------
+
+describe('provider-map.json agents section', () => {
+  const mapPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', 'provider-map.json');
+  const map = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+
+  const expectedAgents = [
+    'ux-agent',
+    'backend-agent',
+    'frontend-agent',
+    'reviewer-agent',
+    'discovery-agent',
+    'architecture-agent',
+    'system-design-agent',
+    'database-agent',
+  ];
+
+  it('has agents section', () => {
+    expect(map).toHaveProperty('agents');
+    expect(typeof map.agents).toBe('object');
+  });
+
+  it('contains all 8 expected agents', () => {
+    const agentNames = Object.keys(map.agents);
+    for (const name of expectedAgents) {
+      expect(agentNames, `missing agent: ${name}`).toContain(name);
+    }
+    expect(agentNames).toHaveLength(8);
+  });
+
+  it('every agent has a description', () => {
+    for (const [name, entry] of Object.entries(map.agents)) {
+      expect(entry, `agent ${name} missing description`).toHaveProperty('description');
+      expect(entry.description.length, `agent ${name} description is empty`).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Agent source files: frontmatter validation
+// ---------------------------------------------------------------------------
+
+describe('agent source files', () => {
+  const agentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.codeadd', 'agents');
+
+  const expectedAgents = [
+    'ux-agent',
+    'backend-agent',
+    'frontend-agent',
+    'reviewer-agent',
+    'discovery-agent',
+    'architecture-agent',
+    'system-design-agent',
+    'database-agent',
+  ];
+
+  it('all agent source files exist', () => {
+    for (const name of expectedAgents) {
+      const filePath = path.join(agentsDir, `${name}.md`);
+      expect(fs.existsSync(filePath), `missing agent source: ${name}.md`).toBe(true);
+    }
+  });
+
+  for (const name of [
+    'ux-agent',
+    'backend-agent',
+    'frontend-agent',
+    'reviewer-agent',
+    'discovery-agent',
+    'architecture-agent',
+    'system-design-agent',
+    'database-agent',
+  ]) {
+    describe(`${name}`, () => {
+      const filePath = path.join(agentsDir, `${name}.md`);
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      it('has YAML frontmatter', () => {
+        expect(content).toMatch(/^---\n/);
+        expect(content.indexOf('---', 3)).toBeGreaterThan(3);
+      });
+
+      it('has name field matching filename', () => {
+        const match = content.match(/^name:\s*(.+)$/m);
+        expect(match, 'missing name field').not.toBeNull();
+        expect(match[1].trim()).toBe(name);
+      });
+
+      it('has description field', () => {
+        expect(content).toMatch(/^description:\s*.+$/m);
+      });
+
+      it('has model field', () => {
+        expect(content).toMatch(/^model:\s*(sonnet|opus|haiku|inherit)/m);
+      });
+
+      it('has memory: project', () => {
+        expect(content).toMatch(/^memory:\s*project$/m);
+      });
+
+      it('has "leaf agent" constraint in body', () => {
+        expect(content).toContain('do NOT dispatch other agents');
+      });
+    });
+  }
+
+  it('read-only agents use disallowedTools', () => {
+    const readOnlyAgents = ['reviewer-agent', 'discovery-agent', 'architecture-agent'];
+    for (const name of readOnlyAgents) {
+      const content = fs.readFileSync(path.join(agentsDir, `${name}.md`), 'utf8');
+      expect(content, `${name} should have disallowedTools`).toMatch(/^disallowedTools:/m);
+      expect(content, `${name} should disallow Write`).toContain('Write');
+      expect(content, `${name} should disallow Edit`).toContain('Edit');
+    }
+  });
+
+  it('implementation agents have skills preloaded', () => {
+    const agentsWithSkills = {
+      'ux-agent': ['add-ux-design'],
+      'backend-agent': ['add-backend-development', 'add-database-development'],
+      'frontend-agent': ['add-frontend-development'],
+      'reviewer-agent': ['add-code-review', 'add-security-audit'],
+      'discovery-agent': ['add-feature-discovery', 'add-feature-specification'],
+      'architecture-agent': ['add-architecture-discovery', 'add-backend-architecture', 'add-frontend-architecture'],
+      'database-agent': ['add-database-development'],
+    };
+
+    for (const [name, skills] of Object.entries(agentsWithSkills)) {
+      const content = fs.readFileSync(path.join(agentsDir, `${name}.md`), 'utf8');
+      for (const skill of skills) {
+        expect(content, `${name} should reference skill ${skill}`).toContain(skill);
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAgents: passthrough transform
+// ---------------------------------------------------------------------------
+
+describe('buildAgents', () => {
+  const map = readMap();
+  const builtDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'agents');
+
+  it('builds agent files to .claude/agents/', () => {
+    const count = buildAgents(map);
+    expect(count).toBe(8);
+  });
+
+  it('built files preserve original frontmatter (passthrough)', () => {
+    const sourcePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.codeadd', 'agents', 'reviewer-agent.md');
+    const builtPath = path.join(builtDir, 'reviewer-agent.md');
+
+    const source = fs.readFileSync(sourcePath, 'utf8');
+    const built = fs.readFileSync(builtPath, 'utf8');
+
+    // Passthrough means content is identical (only HTML comments stripped)
+    expect(built).toContain('name: reviewer-agent');
+    expect(built).toContain('model: sonnet');
+    expect(built).toContain('disallowedTools: Write, Edit, NotebookEdit');
+    expect(built).toContain('memory: project');
+    // Should NOT have the md transformer's frontmatter wrapper
+    expect(built).not.toMatch(/^---\ndescription:/);
+  });
+
+  it('does not build agents for providers without agents pattern', () => {
+    const geminiAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.gemini', 'agents');
+    expect(fs.existsSync(geminiAgentsDir)).toBe(false);
+  });
+
+  it('handles missing agents section gracefully', () => {
+    const mapWithoutAgents = { ...map };
+    delete mapWithoutAgents.agents;
+    const count = buildAgents(mapWithoutAgents);
+    expect(count).toBe(0);
   });
 });

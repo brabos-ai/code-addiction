@@ -12,10 +12,10 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Command | Proposito | Skills que carrega |
 |---------|-----------|-------------------|
 | add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | add-ecosystem, add-dev-environment-setup |
-| add.audit | Analise tecnica completa do projeto (seguranca, arquitetura, dados, docs) | add-documentation-style, add-ecosystem |
+| add.audit | Analise tecnica completa do projeto (seguranca, arquitetura, dados, docs) | add-documentation-style, add-health-check, add-ecosystem |
 | add.autopilot | Implementacao autonoma sem interacao. Suporta `/autopilot feature N` para Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design |
 | add.brainstorm | Explorar ideias (READ-ONLY) | add-documentation-style, add-ecosystem |
-| add.build | Implementacao guiada (coordena subagentes). Suporta `/add.build feature N` para Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-ecosystem |
+| add.build | Implementacao guiada (coordena subagentes). Suporta `/add.build feature N` para Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem |
 | add.review | Revisao de codigo com auto-correcao completa. Cobre frontend, backend, seguranca, delivery validation | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit |
 | add.commit | Mid-workflow smart commit com mensagem Conventional Commits adaptativa: ≤3 arquivos → linha unica, >3 → lista por modulo | add-commit |
 | add.copy | Gerador de copy estruturado para landing pages SaaS | add-saas-copy, add-ecosystem |
@@ -38,7 +38,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-architecture-discovery | Mapear arquitetura, detectar patterns, gerar stack-context.md | add.audit, add.xray |
 | add-backend-architecture | Consultant de arquitetura backend: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | - |
 | add-backend-development | Arquitetura backend: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-code-review | Validacao de codigo, auto-correcao | add.review |
+| add-code-review | Validacao de codigo, auto-correcao | add.review, add.build |
 | add-commit | Knowledge reference para commits mid-workflow: adaptive message logic, type detection, staging rules | add.commit |
 | add-database-development | Arquitetura de dados: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review |
 | add-delivery-validation | Validar RF/RN implementados, criterios de aceite | add.review |
@@ -49,13 +49,14 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-feature-specification | Estrutura do about.md com RFs, RNs, criterios de aceite | add.new |
 | add-frontend-architecture | Consultant de arquitetura frontend: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
 | add-frontend-development | Arquitetura frontend: state, data fetching, components, forms, routing — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-health-check | Health check de ambiente e dependencias do projeto | - |
+| add-health-check | Health check de ambiente e dependencias do projeto | add.audit |
 | add-landing-page-saas | Framework para landing pages de alta conversao SaaS | add.landing |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
 | add-plan-based-features | Implementar features baseadas em planos de subscription | - |
 | add-planning | Orquestracao de planejamento tecnico | - |
 | add-product-discovery | Discovery de produto (nivel macro) | add.init (optional) |
 | add-project-scaffolding | Criar projetos do zero: Starter/Scale, multi-stack Node.js, stack-context.md | - |
+| add-resource-path-convention | Convencao de paths para referenciar commands/skills/scripts entre providers | add.make (build-time) |
 | add-saas-copy | Frameworks e templates de copy para landing pages SaaS | add.copy |
 | add-security-audit | Checklist OWASP, RLS, secrets, multi-tenancy | add.audit, add.review |
 | add-skill-creator | Criar e testar skills com pressao real | - |
@@ -64,6 +65,26 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-token-efficiency | Compressao, JSON compacto, minimo de tokens | Todas (best practice) |
 | add-updating-claude-documentation | Atualizar CLAUDE.md quando arquitetura muda | - |
 | add-ux-design | Componentes, mobile-first, SaaS patterns, shadcn, Tailwind | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan |
+
+## Agents (Specialized Subagents)
+
+| Agent | Model | Skills Preloaded | Tools | Used by |
+|-------|-------|-----------------|-------|---------|
+| @ux-agent | sonnet | add-ux-design | Read,Glob,Grep,Bash,Write,Edit | add.design (flow+layout subagents) |
+| @backend-agent | inherit | add-backend-development, add-database-development | All | add.build, add.autopilot (backend area) |
+| @frontend-agent | inherit | add-frontend-development | All | add.build, add.autopilot (frontend area) |
+| @reviewer-agent | sonnet | add-code-review, add-security-audit | Read-only (no Write/Edit) | add.review, add.build (validators), add.autopilot, add.audit |
+| @discovery-agent | haiku | add-feature-discovery, add-feature-specification | Read-only (no Write/Edit) | add.new (codebase discovery) |
+| @architecture-agent | inherit | add-architecture-discovery, add-backend-architecture, add-frontend-architecture | Read-only (no Write/Edit) | add.plan (architect+integration), add.autopilot (planning), add.audit |
+| @system-design-agent | inherit | add-architecture-discovery | Read,Glob,Grep,Bash,Write,Edit | Standalone (system design proposals) |
+| @database-agent | sonnet | add-database-development | Read,Glob,Grep,Bash,Write,Edit | add.build, add.autopilot (database area), add.plan, add.audit |
+
+**Key distinctions:**
+- **Skill** = knowledge pack (loaded into context)
+- **Agent** = specialist executor (skills preloaded + tool restrictions + model optimized + persistent memory)
+- **Command** = orchestrated workflow (dispatches agents, manages gates)
+
+**Invocation:** `@agent-name` standalone or via command dispatch (`DISPATCH AGENT: @agent-name`)
 
 ## Dependency Index
 
@@ -74,7 +95,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-frontend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-database-development | add.build, add.autopilot, add.plan, add.review |
 | add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan |
-| add-code-review | add.review |
+| add-code-review | add.review, add.build |
 | add-security-audit | add.audit, add.review |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new, add.plan (le about.md) |
@@ -98,7 +119,47 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | Novo Projeto | init -> scaffold -> build -> done | Criar projeto do zero |
 | Analise | xray / audit | Verificar saude do projeto |
 
-## Last Updated
+## Command Next-Steps Routing
 
-2026-03-23 - sync: registered add.commit command, add-backend-architecture and add-frontend-architecture skills in provider-map; fixed add.audit phantom refs (add-audit→add-health-check); removed phantom add-test-specification from add.plan; updated web pages provider dirs (Codex→.agents/, Antigrav→.agent/)
-2026-03-20 - sync: regenerated ecosystem map via /add.sync (added add-backend-architecture, add-frontend-architecture)
+> **Routing table.** After completing a command, look up its row to suggest the next step. Conditions are evaluated top-to-bottom — use the FIRST match.
+
+| After | Condition | Suggest | Why |
+|-------|-----------|---------|-----|
+| add.init | always | `/add.new` | Onboarding done, start first feature |
+| add.brainstorm | idea ready to formalize | `/add.new` | Capture as feature |
+| add.brainstorm | needs more exploration | continue brainstorm | Not ready to commit |
+| add.brainstorm | bug discovered | `/add.hotfix` | Route to urgent fix |
+| add.new | feature has complex UI (3+ screens) | `/add.design` | UX spec needed before planning |
+| add.new | feature needs technical planning | `/add.plan` | Architect before building |
+| add.new | feature is simple (1-2 files) | `/add.build` | Skip planning, build directly |
+| add.new | user wants zero interaction | `/add.autopilot` | Autonomous end-to-end |
+| add.design | always | `/add.plan` or `/add.build` | UX spec done, plan or implement |
+| add.plan | default | `/add.build` | Most common path |
+| add.plan | user wants zero interaction | `/add.autopilot` | Autonomous implementation |
+| add.build | mode=DEVELOPMENT, wants tests | `/add.test` | Validate with automated tests |
+| add.build | mode=DEVELOPMENT, skip tests | `/add.review` | Code review before merge |
+| add.build | mode=CORRECTION | `/add.review` | Re-validate after fixes |
+| add.build | epic, more subfeatures pending | `/add.build feature N` | Next subfeature in epic |
+| add.autopilot | always | `/add.done` | Autopilot includes review; finalize |
+| add.test | tests passing | `/add.review` | Validate code quality |
+| add.test | tests failing | fix + `/add.test` | Iterate until green |
+| add.review | status=PASSED | `/add.done` | All gates green, finalize |
+| add.review | status=BLOCKED | fix + `/add.review` | Iterate until PASSED |
+| add.hotfix | always | `/add.done` | Hotfix ready, finalize branch |
+| add.commit | more work to do | `/add.commit` | Keep developing |
+| add.commit | branch ready to finalize | `/add.done` | Merge to main |
+| add.commit | needs team review | `/add.pr` | PR before merge |
+| add.pr | always | wait for PR review | Human review pending |
+| add.done | was feature, back on main | `/add.new` | Start next feature |
+| add.done | was epic, more subfeatures | `/add.build feature N` | Next subfeature |
+| add.done | was hotfix | `/add.new` | Return to feature work |
+| add.copy | has landing page to build | `/add.landing` | Copy feeds the landing builder |
+| add.copy | standalone copy task | done | Copy delivered |
+| add.landing | always | `/add.commit` or `/add.done` | Landing built, commit or finalize |
+| add.ux | within active feature | return to current flow | UX applied, resume workflow |
+| add.ux | standalone | done | One-off UX task |
+| add.xray | issues found | `/add.audit` | Deep health check |
+| add.xray | context mapped, ready to build | `/add.new` | Start building with context |
+| add.xray | standalone analysis | done | Analysis delivered |
+| add.audit | critical issues found | `/add.new` per issue | Create features to fix findings |
+| add.audit | project healthy | done | No action needed |

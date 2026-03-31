@@ -259,7 +259,7 @@ Based on changed files, determine which reviewers to dispatch:
 
 ---
 
-### DISPATCH AGENT: Frontend Reviewer
+### DISPATCH AGENT: @reviewer-agent — Frontend Review
 
 **Intent:** Review frontend code quality, patterns, and UX implementation for the feature.
 
@@ -336,7 +336,7 @@ prompt: |
 
 ---
 
-### DISPATCH AGENT: Backend Reviewer
+### DISPATCH AGENT: @reviewer-agent — Backend Review
 
 **Intent:** Review backend code quality, architecture, security, database, and product completeness for the feature.
 

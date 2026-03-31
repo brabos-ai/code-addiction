@@ -193,9 +193,7 @@ If feature is very simple (single component, < 5 files, no new database entities
 
 ### Dispatch Planning Agent
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** heavy
+**DISPATCH AGENT: @architecture-agent**
 - **Output:** plan.md with technical plan and Spec Checklist
 - **Prompt:**
 
@@ -266,9 +264,7 @@ MUST generate Spec Checklist (PRD0034) at end of plan.md.
 
 ### Database Agent (if needed)
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard (upgrade if multi-entity or complex relationships)
+**DISPATCH AGENT: @database-agent**
 - **Output:** Entity, Enum, Types, Migration, Repository files
 - **Prompt:**
 
@@ -302,9 +298,7 @@ Log only pivots: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID
 
 ### Backend Agent
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard (upgrade if external integrations or complex CQRS)
+**DISPATCH AGENT: @backend-agent**
 - **Output:** Module structure, DTOs, Commands, Events, Controller, Service
 - **Prompt:**
 
@@ -338,9 +332,7 @@ Log only pivots: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID
 
 ### Frontend Agent
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard (upgrade if new design system or complex UX flows)
+**DISPATCH AGENT: @frontend-agent**
 - **Output:** Types, Hooks, Store, Components, Pages
 - **Prompt:**
 
@@ -377,9 +369,7 @@ Update routes if needed. Search codebase for similar files as reference.
 
 **Dispatch after EACH area implementation completes:**
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard
+**DISPATCH AGENT: @reviewer-agent**
 - **Output:** Checklist validation results + auto-fixes
 - **Prompt:**
 
@@ -492,9 +482,7 @@ Validates IoC/DI at runtime — build passing does not mean app starts.
 
 **GATE CHECK:** Build MUST be passing AND Startup Test MUST be PASSED/SKIPPED before dispatching review.
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** heavy
+**DISPATCH AGENT: @reviewer-agent**
 - **Output:** review.md with Quality Gate Report
 - **Prompt:**
 

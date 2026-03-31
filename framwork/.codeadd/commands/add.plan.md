@@ -122,8 +122,7 @@ IF past-features.md does NOT exist:
 
 ### 3.2 Dispatch Past Features Discovery Agent (IF needed)
 
-**DISPATCH AGENT:**
-- **Capability:** read-only, light
+**DISPATCH AGENT: @discovery-agent**
 - **Skill:** `add-feature-discovery` Phase 1.5
 - **Input:** about.md of current feature + RECENT_CHANGELOGS
 - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
@@ -277,9 +276,7 @@ ${CROSS_SF_CONTEXT}
 
 **When to create:** Feature requires new entities, tables, or data changes.
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard
+**DISPATCH AGENT: @database-agent**
 - **Output:** `docs/features/${FEATURE_ID}/plan-database.md`
 - **Prompt:**
   ```
@@ -326,9 +323,7 @@ ${CROSS_SF_CONTEXT}
 
 **When to create:** Feature requires API, business logic, workers, or events.
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard
+**DISPATCH AGENT: @backend-agent**
 - **Output:** `docs/features/${FEATURE_ID}/plan-backend.md`
 - **Prompt:**
   ```
@@ -396,9 +391,7 @@ ${CROSS_SF_CONTEXT}
 
 **When to create:** Feature requires UI changes.
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard
+**DISPATCH AGENT: @frontend-agent**
 - **Output:** `docs/features/${FEATURE_ID}/plan-frontend.md`
 - **Prompt:**
   ```
@@ -576,9 +569,7 @@ echo "" >> plan.md
 
 **AFTER plan.md is consolidated and gaps filled, dispatch the Architect Subagent to generate `tasks.md`.**
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard
+**DISPATCH AGENT: @architecture-agent**
 - **Output:** Write `${PLAN_DIR}/tasks.md` (where `PLAN_DIR` = feature dir or subfeature dir if epic)
 - **Prompt:**
   ```
@@ -641,9 +632,7 @@ echo "" >> plan.md
 
 **Purpose:** Cross-validate all existing SF plans to catch mismatches that individual subagents cannot see (schema != consumer output, fragmented enums, missing config vars, undocumented handoffs).
 
-**DISPATCH AGENT:**
-- **Capability:** read-write
-- **Complexity:** standard
+**DISPATCH AGENT: @architecture-agent**
 - **Prompt:**
   ```
   You are the INTEGRATION REVIEWER for epic ${FEATURE_ID}.

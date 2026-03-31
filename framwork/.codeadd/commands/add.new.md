@@ -134,7 +134,7 @@ When dispatching: match **Capability** (read-only/read-write/full-access) and **
 
 **DISPATCH SEQUENTIAL (agent 2 depends on output of agent 1):**
 
-1. **DISPATCH AGENT: Past Features Discovery** [read-only, light]
+1. **DISPATCH AGENT: @discovery-agent — Past Features Discovery**
    - **Intent:** Analyze past features for relevance to current request
    - **Skill:** `feature-discovery/SKILL.md` Phase 1.5
    - **Input:** RECENT_CHANGELOGS (from Step 1) + current feature's about.md
@@ -147,7 +147,7 @@ When dispatching: match **Capability** (read-only/read-write/full-access) and **
      - Write `docs/features/${FEATURE_ID}/past-features.md`
    - **WAIT:** past-features.md must exist before continuing.
 
-2. **DISPATCH AGENT: Codebase Discovery** [read-write, standard]
+2. **DISPATCH AGENT: @discovery-agent — Codebase Discovery**
    - **Intent:** Deep codebase analysis informed by past features context
    - **Skill:** `feature-discovery/SKILL.md` Phase 2-4
    - **Input:** past-features.md + about.md + feature request
@@ -456,7 +456,7 @@ skill add-feature-discovery
 - Path: `docs/features/[XXXX]F-[name]/discovery.md`
 - Content: CODEBASE ANALYSIS (WHAT ALREADY EXISTS)
 
-**DISPATCH AGENT: Deep Codebase Analysis** [read-only, standard]
+**DISPATCH AGENT: @discovery-agent — Deep Codebase Analysis**
 - **Intent:** Analyze codebase against feature requirements, map related files, identify prerequisites
 - **Input:** Feature name, about.md path, skills (feature-discovery + documentation-style/business)
 - **Output:** Write `docs/features/${FEATURE_ID}/discovery.md` with Prerequisites Analysis filled

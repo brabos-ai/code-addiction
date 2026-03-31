@@ -227,7 +227,7 @@ function buildResources(map, strategy) {
       if (!patternStr) continue;
 
       const format = provider.capabilities?.nativeFormat || 'md';
-      const transformer = TRANSFORMERS[format];
+      const transformer = strategy.transform || TRANSFORMERS[format];
       if (!transformer) {
         console.warn(`  SKIP (unknown format "${format}"): ${key}`);
         continue;
@@ -297,6 +297,16 @@ const skillStrategy = {
   },
 };
 
+const agentStrategy = {
+  entries: (map) => Object.entries(map.agents || {}),
+  sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'agents', `${name}.md`),
+  providerPattern: (provider) => provider.agents || null,
+  resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
+  meta: (name, entry) => ({ name, description: entry.description }),
+  /** Passthrough — agents keep their own frontmatter (name, model, tools, skills, memory) */
+  transform: (content) => content,
+};
+
 // ---------------------------------------------------------------------------
 // Façade functions (preserve public API for tests + external callers)
 // ---------------------------------------------------------------------------
@@ -309,6 +319,10 @@ function buildSkills(map) {
   return buildResources(map, skillStrategy);
 }
 
+function buildAgents(map) {
+  return buildResources(map, agentStrategy);
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -319,11 +333,13 @@ function main() {
   const map = readMap();
   const commandCount = buildCommands(map);
   const skillCount = buildSkills(map);
+  const agentCount = buildAgents(map);
 
-  const total = commandCount + skillCount;
+  const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
   console.log(`  Skills   : ${Object.keys(map.skills).length} skills  → ${skillCount} files`);
+  console.log(`  Agents   : ${Object.keys(map.agents || {}).length} agents  → ${agentCount} files`);
   console.log(`  Total    : ${total} files generated`);
 }
 
@@ -337,6 +353,7 @@ module.exports = {
   METADATA,
   buildCommands,
   buildSkills,
+  buildAgents,
   buildResources,
   readMap,
 };

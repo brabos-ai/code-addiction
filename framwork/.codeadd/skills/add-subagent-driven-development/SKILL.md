@@ -5,11 +5,26 @@ description: Use when executing implementation plans with independent tasks in t
 
 # Subagent-Driven Development
 
-Execute plan by dispatching fresh subagent per task, with code review after each.
+Execute plan by dispatching named specialist agents per task, with code review after each.
 
-**Core principle:** Fresh subagent per task + review between tasks = high quality, fast iteration
+**Core principle:** Named agent per task + review between tasks = high quality, fast iteration
 
 > **Provider-Agnostic:** This skill describes WHAT to dispatch (intent + prompt), not HOW. Use your platform's subagent mechanism (Task tool, sub-process, agent call, etc.).
+
+## Named Agent Mapping
+
+When dispatching, prefer named agents over generic subagents. Named agents have skills preloaded, model optimized, and tool restrictions enforced.
+
+| Area | Named Agent | Type |
+|------|-------------|------|
+| Database | `@database-agent` | Implementation (read-write) |
+| Backend | `@backend-agent` | Implementation (read-write) |
+| Frontend | `@frontend-agent` | Implementation (read-write) |
+| Review | `@reviewer-agent` | Validation (read-only) |
+| Discovery | `@discovery-agent` | Exploration (read-only) |
+| Architecture | `@architecture-agent` | Advisory (read-only) |
+
+**Fallback:** If named agent is not available, dispatch generic subagent with the appropriate skill loaded in the prompt.
 
 ## Overview
 
@@ -124,10 +139,10 @@ Before dispatching ANY subagent, the coordinator:
 
 ### 3. Execute Task with Subagent
 
-For each task, dispatch with TASK_DOCUMENTS:
+For each task, dispatch the named agent for the task's area (see Named Agent Mapping):
 
 ```
-Dispatch implementation subagent with this prompt:
+Dispatch @${AREA}-agent with this prompt:
 
     ## ROLE
     You are implementing Task N from [plan-file].
@@ -183,10 +198,10 @@ Dispatch implementation subagent with this prompt:
 
 ### 5. Review Subagent's Work
 
-Dispatch code-reviewer subagent with accumulated context:
+Dispatch @reviewer-agent with accumulated context:
 
 ```
-Dispatch review subagent with this prompt:
+Dispatch @reviewer-agent with this prompt:
 
     ## ROLE
     You are reviewing Task N implementation.
