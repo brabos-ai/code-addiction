@@ -1,11 +1,11 @@
 ---
 name: add-ecosystem
-description: Visao consolidada do add-pro - commands, skills, relacoes e dependencias. Carregada pelo /add como source of truth.
+description: Visao consolidada do ecossistema - commands, skills, relacoes e dependencias. Carregada pelo /add como source of truth.
 ---
 
-# Ecosystem Map - add-pro
+# Ecosystem Map
 
-> **Source of Truth:** Mapa completo do ecossistema add-pro.
+> **Source of Truth:** Mapa completo do ecossistema.
 
 ## Commands
 
@@ -31,7 +31,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add.ux | UX rapido - carrega add-ux-design e aplica ao contexto livre do usuario | add-ux-design |
 | add.xray | Mapear arquitetura do projeto, classificar apps, consolidar contexto | add-architecture-discovery, add-ecosystem |
 
-## Skills add-pro
+## Skills
 
 | Skill | Proposito | Usada por |
 |-------|-----------|-----------|
@@ -44,7 +44,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 | add-delivery-validation | Validar RF/RN implementados, criterios de aceite | add.review |
 | add-dev-environment-setup | Detectar SO, diagnosticar tools ausentes, instalar WSL/git/jq/gh, configurar VS Code | add |
 | add-documentation-style | Padroes de documentacao ADD-pro | add.new, add.design, add.brainstorm, add.audit |
-| add-ecosystem | Visao consolidada do ecossistema add-pro (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.copy, add.landing, add.xray |
+| add-ecosystem | Visao consolidada do ecossistema (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.copy, add.landing, add.xray |
 | add-feature-discovery | Processo de discovery de features, analise de codebase | add.new, add.plan |
 | add-feature-specification | Estrutura do about.md com RFs, RNs, criterios de aceite | add.new |
 | add-frontend-architecture | Consultant de arquitetura frontend: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
@@ -90,7 +90,7 @@ description: Visao consolidada do add-pro - commands, skills, relacoes e depende
 
 | Se modificar... | Impacta... |
 |-----------------|------------|
-| building-commands | Estrutura de TODOS os commands add-pro |
+| building-commands | Estrutura de TODOS os commands |
 | add-backend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-frontend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-database-development | add.build, add.autopilot, add.plan, add.review |
