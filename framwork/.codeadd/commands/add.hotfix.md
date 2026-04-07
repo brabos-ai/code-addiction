@@ -4,7 +4,7 @@
 > **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **ID FORMAT:** Global sequential with type suffix (e.g., `0001H`, `0002H`)
-> **STRUCTURE:** Flat docs in `docs/[NNNN]H-[slug]/` with `related.md` for relationships
+> **STRUCTURE:** Docs in `docs/features/[NNNN]H-[slug]/` with `related.md` for relationships
 
 ---
 
@@ -51,7 +51,7 @@ IF TEMPLATE NOT READ:
 
 IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
-  ✅ DO: Create hotfix/[NNNN]H-[slug] branch and docs/[NNNN]H-[slug]/
+  ✅ DO: Create hotfix/[NNNN]H-[slug] branch and docs/features/[NNNN]H-[slug]/
 
 IF CHANGELOGS NOT READ:
   ⛔ DO NOT USE: Grep on code
@@ -133,7 +133,7 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 Create directory and hotfix.md using the template from STEP 3:
 
 ```
-docs/[NNNN]H-[hotfix-slug]/
+docs/features/[NNNN]H-[hotfix-slug]/
 ├── hotfix.md (main document)
 ├── iterations.jsonl (auto-created if needed)
 └── related.md (created in STEP 11)
@@ -240,7 +240,7 @@ Verify build passes for affected apps (backend, frontend, or both).
 
 ## STEP 10: Update Documentation
 
-**Update hotfix doc created in STEP 4** (`docs/[NNNN]H-[slug]/hotfix.md`).
+**Update hotfix doc created in STEP 4** (`docs/features/[NNNN]H-[slug]/hotfix.md`).
 
 Fill sections that had placeholders:
 - **Root Cause Analysis** — why the bug was happening (from STEP 8)
@@ -258,14 +258,14 @@ From STEP 5 analysis, list all features/items related to this hotfix.
 
 ### 11.2 Create related.md
 
-Create `docs/[NNNN]H-[slug]/related.md` containing:
+Create `docs/features/[NNNN]H-[slug]/related.md` containing:
 - Which features were affected by this hotfix
 - Which PRs or issues are related
 - Dependencies or blocking relationships
 
 ### 11.3 Update Feature Documents (if applicable)
 
-For each related feature `docs/[NNNN][L]-[slug]/`:
+For each related feature `docs/features/[NNNN][L]-[slug]/`:
 - If `related.md` exists → ADD hotfix reference to "Hotfixes" section
 - If `related.md` does NOT exist → CREATE it and ADD hotfix reference
 
@@ -276,7 +276,7 @@ For each related feature `docs/[NNNN][L]-[slug]/`:
 **BEFORE informing user, append entry to iterations.jsonl:**
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/[NNNN]H-[slug]/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-[slug]/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 **Parameters:**
@@ -300,7 +300,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 
 **ALWAYS:**
 - Use next-id.sh to calculate hotfix ID (global sequential with H suffix)
-- Create hotfix branch and docs in flat structure (`docs/[NNNN]H-[slug]/`)
+- Create hotfix branch and docs in `docs/features/[NNNN]H-[slug]/`
 - Read hotfix template before creating hotfix.md
 - Read changelogs and about.md before investigating code
 - Identify related features and document in related.md
@@ -332,9 +332,9 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 # STEP 3: Read hotfix template
 # STEP 4: next-id.sh H → 0001H
 #   git checkout -b hotfix/0001H-screenshot-delete-error
-#   Write docs/0001H-screenshot-delete-error/hotfix.md
+#   Write docs/features/0001H-screenshot-delete-error/hotfix.md
 # STEP 5: Related to 0036F-ai-screenshot-validation (from RECENT_CHANGELOGS)
-# STEP 6: Read docs/0036F-ai-screenshot-validation/{changelog,about}.md
+# STEP 6: Read docs/features/0036F-ai-screenshot-validation/{changelog,about}.md
 # STEP 7: Investigate code
 # STEP 8: Confirm root cause with user
 # STEP 9: Implement fix + verify build

@@ -5,7 +5,58 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 
 # Framework Development — Internal Reference
 
-Operational knowledge for creating and modifying ADD framework artefacts. This skill is NOT distributed to users — it exists to ensure add.strategy can assess technical viability and add.make can implement correctly.
+Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so add.strategy assesses viability and add.make implements correctly.
+
+## When to Use
+- `add.strategy` analyzing if a proposal is technically viable (STEP 0 and STEP 2)
+- `add.make` implementing a new command, skill, agent, or script
+- Modifying existing framework artefacts (commands, skills, agents)
+- Deciding WHAT TYPE of artefact to create for a given need
+- Understanding how the build pipeline distributes artefacts to providers
+
+## When NOT to Use
+- **Implementing user-facing features** (backend/frontend code) → use development skills directly
+- **Understanding what artefacts exist** → use `add-ecosystem` skill (ecosystem map)
+- **Writing prompts for commands** → use `building-commands` skill (prompt engineering patterns)
+- **Running the project** → use `CLAUDE.md` (project standards and conventions)
+
+---
+
+## 0. Decision Framework — What to Create?
+
+This is the FIRST question `add.strategy` must answer. Wrong artefact type = wasted effort.
+
+| Need | Create | Why |
+|------|--------|-----|
+| Orchestrate a multi-step workflow with gates and user interaction | **Command** | Commands control execution flow, enforce gates, dispatch agents |
+| Teach patterns/rules that multiple commands need | **Skill** | Skills are reusable knowledge packs loaded by commands and agents |
+| Specialize an agent with restricted tools, model, and memory | **Agent** | Agents are isolated specialists with persistent project memory |
+| Automate a deterministic task (no LLM reasoning needed) | **Script** | Scripts are bash, fast, predictable, no token cost |
+
+### Decision Tree
+
+```
+Does it need LLM reasoning?
+├── NO → Script (.codeadd/scripts/)
+└── YES
+    ├── Does it orchestrate a workflow with multiple steps/gates?
+    │   └── YES → Command
+    ├── Does it need to run in isolated context with restricted tools?
+    │   └── YES → Agent
+    └── Is it reusable knowledge that commands/agents consume?
+        └── YES → Skill
+```
+
+### Common Mistakes in Classification
+
+| Mistake | Why it's wrong | Correct approach |
+|---------|---------------|-----------------|
+| Creating a command for something that's just knowledge | Commands orchestrate; if there's no workflow, it's a skill | Create a skill, let commands load it |
+| Creating an agent for a one-off task | Agents have overhead (spawn, memory); overkill for simple tasks | Use inline execution in the command |
+| Creating a skill that tries to execute steps | Skills teach, they don't execute; execution is commands' job | Split: skill for knowledge, command for workflow |
+| Creating a script for something that needs context | Scripts can't reason about code or make judgment calls | Create a command or agent instead |
+
+---
 
 ## Artefact Types
 
@@ -466,35 +517,151 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 
 ---
 
-## 6. Patterns to Enforce
+## 6. Runtime Behavior — How Artefacts Interact
 
-### Token Efficiency
+### How Commands Load Skills
 
-- JSON minified for structured data
+Commands instruct the LLM to read skill files. This is NOT automatic — it's a prompt instruction:
+
+```markdown
+<!-- In a command source file: -->
+## STEP 1: Load Context
+Read {{skill:add-backend-development/SKILL.md}} before implementation.
+```
+
+At runtime, the LLM sees the resolved path (e.g., `.claude/skills/add-backend-development/SKILL.md`) and uses the `Read` tool to load the file into its context. The skill content then informs subsequent decisions.
+
+**Key distinction:**
+- **Command `Read` instruction** = LLM reads file at runtime (on-demand, costs tokens)
+- **Agent `skills:` frontmatter** = skill is preloaded into agent context at spawn (automatic, always present)
+
+### How Commands Dispatch Agents
+
+Commands use the `Agent` tool (formerly `Task` tool) to spawn subagents:
+
+```markdown
+**DISPATCH AGENT: @backend-agent**
+Prompt: You are implementing ${TASK_DESCRIPTION} for feature ${FEATURE_ID}...
+```
+
+The LLM interprets this and calls the Agent tool with `subagent_type: "backend-agent"`. If the agent exists in `.claude/agents/`, it spawns with its frontmatter config. If not, the fallback (generic subagent) is used.
+
+**Parallel dispatch pattern** — commands that dispatch multiple agents MUST instruct:
+```markdown
+**CRITICAL:** Send ALL Agent tool calls in a SINGLE message for parallel execution.
+```
+
+### How Scripts Are Invoked
+
+Commands invoke scripts via `Bash` tool:
+
+```markdown
+## STEP 1: Run Context Mapper
+```bash
+bash .codeadd/scripts/status.sh
+```
+
+`status.sh` is the most common — returns project context (feature ID, branch, owner profile, etc.) as key-value pairs that commands parse to set variables like `${FEATURE_ID}`, `${OWNER_LEVEL}`.
+
+### Runtime Loading Order (typical command)
+
+```
+1. Command prompt loaded into LLM context
+2. LLM runs status.sh via Bash → gets project variables
+3. LLM reads skill files via Read → gets domain knowledge
+4. LLM dispatches @agents via Agent tool → specialists execute in isolation
+5. LLM waits for agent results → continues to next step
+6. LLM enforces gates → blocks or proceeds
+7. LLM writes output docs via Write/Edit tools
+```
+
+---
+
+## 7. Common Errors and How to Prevent Them
+
+### Build Pipeline Errors
+
+| Error | Symptom | Prevention |
+|-------|---------|------------|
+| Forgot to register in provider-map.json | File exists in `.codeadd/` but never appears in provider dirs | ALWAYS register BEFORE running build |
+| Used raw path `.codeadd/commands/add.plan.md` | Works on Claude, breaks on Codex/Gemini/etc. | Use `{{cmd:add.plan}}` variable |
+| Used raw path `.codeadd/skills/add-x/SKILL.md` | Works on Claude, breaks on other providers | Use `{{skill:add-x/SKILL.md}}` variable |
+| Agent file not named `{name}-agent.md` | build.js can't find the source file | Follow naming convention exactly |
+| Skill dir name doesn't match `name:` in frontmatter | Confusion between directory and metadata | Keep them identical |
+
+### Command Authoring Errors
+
+| Error | Symptom | Prevention |
+|-------|---------|------------|
+| No gates before critical actions | Agent skips validation, produces broken output | Add `**GATE CHECK:**` before every irreversible step |
+| No tool prohibitions | Agent uses Write when it should only Read, or edits wrong files | Add `⛔⛔⛔ ABSOLUTE PROHIBITIONS` block |
+| No fallback for agent dispatch | Command fails on providers without agentDispatch | Always include fallback table with generic subagent option |
+| Dispatching agents without loading docs first | Agent gets no context, produces generic output | Add `**WAIT:**` after doc loading, before dispatch |
+| Missing `MANDATORY SEQUENTIAL EXECUTION` block | Agent skips steps or reorders them | Always include the numbered step summary at top |
+| No completion/next-steps section | User doesn't know what to do after command finishes | Reference `add-ecosystem` skill for flow guidance |
+
+### Skill Authoring Errors
+
+| Error | Symptom | Prevention |
+|-------|---------|------------|
+| No "When NOT to Use" section | Skill triggers in wrong contexts, wastes tokens | Always list anti-patterns with delegation to correct skill |
+| Skill tries to execute (has steps/gates) | Conflicts with command orchestration | Skills teach patterns; commands execute workflows |
+| No anti-rationalization section (complex skills) | LLM finds excuses to skip rules | Add `Common Rationalizations (BLOCKED)` table |
+| Tier 3 skill with everything in one file | Too many tokens loaded for simple queries | Split into SKILL.md dispatcher + reference subdocs |
+| No structured data (inline JSON) for lookup tables | Verbose markdown wastes tokens | Use minified JSON for checklists, scores, configs |
+
+### Agent Authoring Errors
+
+| Error | Symptom | Prevention |
+|-------|---------|------------|
+| Giving Write/Edit to a read-only agent | Reviewer modifies code (anti-pattern) | Use `disallowedTools: Write, Edit, NotebookEdit` |
+| No `skills:` in frontmatter | Agent has no domain knowledge, gives generic responses | Always preload relevant skills |
+| Using `model: haiku` for tasks needing deep reasoning | Shallow analysis, missed edge cases | Use `inherit` or `opus` for architecture/implementation |
+| Agent prompt duplicates skill content | Wastes tokens; content drifts out of sync with skill | Keep prompt minimal; let preloaded skills provide knowledge |
+| No `memory: project` for agents that should learn | Agent rediscovers same patterns every session | Add memory for agents that benefit from project context |
+
+---
+
+## 8. Patterns to Enforce
+
+### Token Efficiency (MANDATORY for all artefacts)
+
+- JSON minified for structured data: `{"key":"value"}` not formatted
 - Max 10 words per description in technical specs
-- No decorative formatting (ASCII art, excessive dashes)
-- Reference don't repeat — use `{{skill:}}` syntax
-- Compress examples (1 excellent > 3 mediocre)
+- No decorative formatting (ASCII art, excessive dashes, emoji headers)
+- Reference don't repeat — use `{{skill:}}` and `{{cmd:}}` variables
+- Compress examples: 1 excellent > 3 mediocre
+- HTML comments `<!-- -->` for source-only notes (stripped by build)
 
-### Anti-Rationalization
+### Anti-Rationalization (MANDATORY for commands and complex skills)
 
-Every command/skill that controls agent behavior MUST include:
-- Explicit tool prohibitions (`⛔ DO NOT USE:`)
-- Gate checks that block progression
-- "Common Rationalizations (BLOCKED)" table for complex skills
-- NEVER/ALWAYS rules section
+LLMs rationalize skipping steps. Every command/skill that controls agent behavior MUST include:
+- Explicit tool prohibitions: `⛔ DO NOT USE: [tool] for [context]`
+- Gate checks that STOP execution: `**GATE CHECK:** [condition]? IF NO -> STOP.`
+- Rules section with `ALWAYS:` and `NEVER:` lists
+- For complex skills: `Common Rationalizations (BLOCKED)` table
 
-### Documentation Style Cache
+**Reference:** Load `building-commands` skill for detailed prompt engineering patterns.
 
-Skills that produce documents MUST use the cache technique:
-Read → Identify existing content → Preserve → Complement → Update metadata
-NEVER recreate a document — always extend.
+### Documentation Style Cache (MANDATORY for skills that produce documents)
 
-### Named Agent Dispatch (in commands)
+Read → Identify existing content → Preserve → Complement → Update metadata.
+NEVER recreate a document from scratch — always extend what exists.
 
-Always include fallback for when agent is not installed:
+### Named Agent Dispatch (MANDATORY for commands that dispatch agents)
+
+Always include fallback table for providers without agent support:
 ```markdown
 | Area | Named Agent | Fallback |
 |------|-------------|----------|
 | [area] | @[name]-agent | Generic subagent + skill add-[area]-development |
 ```
+
+### Cross-Artefact Impact (MANDATORY for any change)
+
+When creating or modifying any artefact, check:
+1. `provider-map.json` — is it registered? description accurate?
+2. `add-ecosystem` skill — does the ecosystem map reflect the change?
+3. Commands that reference it — do dispatch tables, skill loads, or script calls need updating?
+4. Agents that preload it — does the `skills:` array need updating?
+5. Run `node scripts/build.js` — any LINT warnings?
