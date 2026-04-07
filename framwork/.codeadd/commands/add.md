@@ -165,7 +165,8 @@ ALWAYS include at end of response (except if question was only about a specific 
 | Feature reviewed | `/add.done` | Finalize and generate changelog |
 | Epic with pending sub-features | `/add.build feature N` | Next sub-feature |
 | Architecture question | `/health-check` | Technical analysis |
-| Bug in production | `/add.hotfix` | Urgent fix |
+| Clear bug in production | `/add.hotfix` | Urgent fix |
+| Vague symptom / unsure if bug or feature | `/add.diagnose` | Structured investigative triage before deciding |
 | Does not know where to start | `/add.brainstorm` | Explore ideas |
 | bash/git/jq/gh missing or env errors | Load `dev-environment-setup` skill | Setup dev environment |
 | User asks about WSL or VS Code terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |

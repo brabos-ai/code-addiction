@@ -12,16 +12,17 @@ description: Visao consolidada do ecossistema - commands, skills, relacoes e dep
 | Command | Proposito | Skills que carrega |
 |---------|-----------|-------------------|
 | add | Gateway inteligente - responde duvidas, orienta fluxo, sugere proximo comando | add-ecosystem, add-dev-environment-setup |
-| add.audit | Analise tecnica completa do projeto (seguranca, arquitetura, dados, docs) | add-documentation-style, add-health-check, add-ecosystem |
+| add.audit | Analise tecnica completa do projeto (seguranca, arquitetura, dados, docs). Escala para add-investigation em findings ambiguos | add-documentation-style, add-health-check, add-ecosystem, add-investigation (on-demand) |
 | add.autopilot | Implementacao autonoma sem interacao. Suporta `/autopilot feature N` para Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design |
 | add.brainstorm | Explorar ideias (READ-ONLY) | add-documentation-style, add-ecosystem |
 | add.build | Implementacao guiada (coordena subagentes). Suporta `/add.build feature N` para Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem |
-| add.review | Revisao de codigo com auto-correcao completa. Cobre frontend, backend, seguranca, delivery validation | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit |
+| add.review | Revisao de codigo com auto-correcao completa. Cobre frontend, backend, seguranca, delivery validation. Escala para add-investigation em findings com root cause nao isolado | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation (on-demand) |
 | add.commit | Mid-workflow smart commit com mensagem Conventional Commits adaptativa: ≤3 arquivos → linha unica, >3 → lista por modulo | add-commit |
 | add.copy | Gerador de copy estruturado para landing pages SaaS | add-saas-copy, add-ecosystem |
 | add.design | Especificacao UX mobile-first, coordena subagentes para features complexas | add-ux-design, add-documentation-style |
+| add.diagnose | Triagem investigativa pre-decisao para sintomas ambiguos. Aplica metodologia de 5 fases (disambiguation, RCA, patterns, differential diagnosis, synthesis) e recomenda rota (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalizar feature, gera changelog. Valida epics + requisitos. Detecta branch protection e roteia para PR ou merge direto | add-ecosystem |
-| add.hotfix | Correcao urgente com ID global (H[NNNN]). Cria doc isolado em docs/[NNNN]H-*, documenta relacoes em related.md | add-ux-design, add-ecosystem |
+| add.hotfix | Correcao urgente com ID global (H[NNNN]). Cria doc isolado em docs/[NNNN]H-*, documenta relacoes em related.md. Escala para add-investigation quando root cause nao e obvio | add-ux-design, add-ecosystem, add-investigation (on-demand) |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery (optional) |
 | add.landing | Builder de landing pages SaaS de alta conversao | add-landing-page-saas, add-ecosystem |
 | add.new | Discovery de funcionalidade, cria about.md | add-feature-discovery, add-feature-specification, add-documentation-style, add-ecosystem |
@@ -50,6 +51,7 @@ description: Visao consolidada do ecossistema - commands, skills, relacoes e dep
 | add-frontend-architecture | Consultant de arquitetura frontend: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
 | add-frontend-development | Arquitetura frontend: state, data fetching, components, forms, routing — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-health-check | Health check de ambiente e dependencias do projeto | add.audit |
+| add-investigation | Metodologia de investigacao rigorosa (5 fases com Iron Law) para sintomas vagos e bugs de fluxo de informacao. Adaptada de obra/superpowers systematic-debugging. Reutilizavel por qualquer comando que precise de RCA antes de agir | add.diagnose, add.hotfix, add.review, add.audit |
 | add-landing-page-saas | Framework para landing pages de alta conversao SaaS | add.landing |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
 | add-plan-based-features | Implementar features baseadas em planos de subscription | - |
@@ -102,6 +104,7 @@ description: Visao consolidada do ecossistema - commands, skills, relacoes e dep
 | add-documentation-style | add.new, add.design, add.brainstorm, add.audit |
 | add-architecture-discovery | add.audit, add.xray |
 | add-ecosystem | add (perde visao do todo) |
+| add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
 | add.build | add.autopilot (compartilham logica de implementacao) |
 | add-project-scaffolding | stack-context.md (consultado por add-backend/database/frontend-development) |
 | add-subagent-driven-development | add.build, add.autopilot, add.review |
@@ -116,6 +119,7 @@ description: Visao consolidada do ecossistema - commands, skills, relacoes e dep
 | Autonomo | new -> autopilot -> done | Quer implementacao sem interacao |
 | Emergencia | hotfix -> done | Bug critico em producao |
 | Exploracao | brainstorm -> new -> ... | Nao sabe por onde comecar |
+| Triagem | diagnose -> (hotfix OR new OR no-action) | Sintoma vago, nao sabe se e bug/feature/doc-drift |
 | Novo Projeto | init -> scaffold -> build -> done | Criar projeto do zero |
 | Analise | xray / audit | Verificar saude do projeto |
 
@@ -128,7 +132,12 @@ description: Visao consolidada do ecossistema - commands, skills, relacoes e dep
 | add.init | always | `/add.new` | Onboarding done, start first feature |
 | add.brainstorm | idea ready to formalize | `/add.new` | Capture as feature |
 | add.brainstorm | needs more exploration | continue brainstorm | Not ready to commit |
-| add.brainstorm | bug discovered | `/add.hotfix` | Route to urgent fix |
+| add.brainstorm | bug suspected, needs investigation | `/add.diagnose` | Route to structured triage |
+| add.brainstorm | clear bug discovered | `/add.hotfix` | Route to urgent fix |
+| add.diagnose | route=hotfix | `/add.hotfix` | Confirmed bug requiring urgent fix |
+| add.diagnose | route=feature | `/add.new` | Confirmed functional gap |
+| add.diagnose | route=extend | `/add.new` or `/add.plan` | Extend existing feature — load prior context |
+| add.diagnose | route=no-action | done | No real problem — stop here |
 | add.new | feature has complex UI (3+ screens) | `/add.design` | UX spec needed before planning |
 | add.new | feature needs technical planning | `/add.plan` | Architect before building |
 | add.new | feature is simple (1-2 files) | `/add.build` | Skip planning, build directly |

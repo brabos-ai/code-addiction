@@ -247,6 +247,12 @@ Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 - Impacted file/line
 - Pillar (Documentation, Security, Architecture, Data, Infrastructure)
 
+### 7.1 Differential diagnosis for ambiguous findings
+
+**IF a finding lacks a clear root cause** (symptom observable but cause not isolated, OR severity assessment is uncertain, OR finding crosses pillars): LOAD {{skill:add-investigation/SKILL.md}} and apply Phase 3 (Differential Diagnosis) before finalizing severity classification.
+
+Mark such findings explicitly in the final report as `requires investigation` rather than guessing severity. The user can then run `/add.diagnose` to triage them individually.
+
 ---
 
 ## STEP 8: Calculate Scores (BEFORE final report)

@@ -189,6 +189,16 @@ Use Grep/Read to confirm what documentation indicated:
 2. Business logic (service, handler)
 3. Data layer (repository, database)
 
+### 7.1 Escalate to add-investigation skill (when root cause unclear)
+
+⛔ **IF the bug symptom is vague, intermittent, crosses multiple layers, or the first 2-3 grep/read attempts do NOT converge on a clear cause:**
+
+LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 1-3 (Root Cause Investigation, Pattern Analysis, Differential Diagnosis) before proposing a root cause in STEP 8.
+
+**Why:** Hotfixes that ship without rigorous RCA tend to fix symptoms instead of causes, causing the same bug to return. The Iron Law from add-investigation applies: NO FIX WITHOUT ROOT CAUSE.
+
+**Skip this sub-step ONLY when:** the bug has a clear error message + stack trace + obvious cause within the first investigation pass.
+
 ---
 
 ## STEP 8: Confirm Root Cause (BEFORE implementing)

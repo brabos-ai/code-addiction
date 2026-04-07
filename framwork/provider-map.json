@@ -188,7 +188,8 @@
     "add.review":     { "description": "Feature code review specialist with auto-correction until 100% correct" },
     "add.test":      { "description": "Automated test generation targeting 80% coverage — detects framework, runs startup test, dispatches parallel area agents" },
     "add.ux":        { "description": "Lightweight UX refinement - loads ux-design skill and applies to free-form instructions" },
-    "add.commit":    { "description": "Mid-workflow smart commit with adaptive Conventional Commits message based on changeset size" }
+    "add.commit":    { "description": "Mid-workflow smart commit with adaptive Conventional Commits message based on changeset size" },
+    "add.diagnose":  { "description": "Pre-decision investigative triage for ambiguous symptoms — applies 5-phase methodology and recommends route (hotfix/feature/extend/no-action)" }
   },
   "skills": {
     "add-architecture-discovery":      {},
@@ -220,7 +221,8 @@
     "add-token-efficiency":            {},
     "add-updating-claude-documentation": {},
     "add-ux-design":                   {},
-    "add-resource-path-convention":    {}
+    "add-resource-path-convention":    {},
+    "add-investigation":               {}
   },
   "agents": {
     "ux-agent":            { "description": "UX specialist for design decisions, interface analysis, and interaction patterns" },
