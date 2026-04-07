@@ -11,7 +11,7 @@ Coordinator for branch finalization. Supports features (full changelog flow), fe
 ## Spec
 
 ```json
-{"outputs":{"changelog":"docs/[0-9][0-9][0-9][0-9][A-Z]-*/changelog.md","about_addendum":"docs/[0-9][0-9][0-9][0-9][A-Z]-*/about.md"}}
+{"outputs":{"changelog":"docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/changelog.md","about_addendum":"docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/about.md"}}
 ```
 
 ---
@@ -111,11 +111,11 @@ bash .codeadd/scripts/done.sh
 
 | BRANCH_TYPE | Flow | Description |
 |-------------|------|-------------|
-| `feature` | Full (STEP 4A) | New: [prefix]/[NNNN][L]- where L in {F,R,C,D}. Legacy: F[XXXX] |
-| `hotfix` | Simplified (STEP 4B) | New: hotfix/[NNNN]H-*. Legacy: fix/H[XXXX]-* |
-| `refactor` | Full (STEP 4A) | New: refactor/[NNNN]R-* |
-| `chore` | Full (STEP 4A) | New: chore/[NNNN]C-* |
-| `docs` | Full (STEP 4A) | New: docs/[NNNN]D-* |
+| `feature` | Full (STEP 4A) | Branch: [prefix]/[NNNN][L]- where L in {F,R,C,D} |
+| `hotfix` | Simplified (STEP 4B) | Branch: hotfix/[NNNN]H-* |
+| `refactor` | Full (STEP 4A) | Branch: refactor/[NNNN]R-* |
+| `chore` | Full (STEP 4A) | Branch: chore/[NNNN]C-* |
+| `docs` | Full (STEP 4A) | Branch: docs/[NNNN]D-* |
 | no ID found | STOP | Branch has no [NNNN][L] or legacy F[XXXX]/H[XXXX] -- show error, NEVER rename |
 
 ---
@@ -124,11 +124,10 @@ bash .codeadd/scripts/done.sh
 
 **DO NOT USE Glob first.** Extract directory from CHANGED_FILES paths:
 
-- **feature / hotfix / refactor / chore / docs:** Find path matching `docs/[NNNN][L]-*/` in CHANGED_FILES. Extract the directory part.
-  - Example: `docs/0007F-calendar-view/iterations.md` -> DIR = `docs/0007F-calendar-view`
-  - Legacy: `docs/features/F0007-calendar-view/iterations.md` -> DIR = `docs/features/F0007-calendar-view`
+- **feature / hotfix / refactor / chore / docs:** Find path matching `docs/features/[NNNN][L]-*/` in CHANGED_FILES. Extract the directory part.
+  - Example: `docs/features/0007F-calendar-view/iterations.md` -> DIR = `docs/features/0007F-calendar-view`
 
-**Fallback ONLY if no docs path found in CHANGED_FILES:** Use Glob `docs/[0-9][0-9][0-9][0-9][A-Z]-*/`. If no match, try legacy Glob `docs/features/F[0-9][0-9][0-9][0-9]-*/`.
+**Fallback ONLY if no docs path found in CHANGED_FILES:** Use Glob `docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/`.
 
 **IF directory not resolved:** Show error. DO NOT proceed to merge.
 
@@ -140,7 +139,7 @@ bash .codeadd/scripts/done.sh
 
 **GATE CHECK: review.md must exist and PASSED before merge.**
 
-1. CHECK if `docs/${FEATURE_ID}/review.md` exists (flat structure: `docs/[NNNN][L]-*/review.md`)
+1. CHECK if `docs/features/${FEATURE_ID}/review.md` exists
 2. IF NOT EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
    - IF --force: proceed to 4A.1, register: "Quality Gate bypassed via --force (review.md not found)"
 3. IF EXISTS: READ review.md, find "| **Overall**" row
@@ -161,7 +160,7 @@ bash .codeadd/scripts/done.sh
 
 **Check for epic.md FIRST:**
 
-IF `docs/${FEATURE_ID}/epic.md` exists (flat: `docs/[NNNN]F-*/epic.md`):
+IF `docs/features/${FEATURE_ID}/epic.md` exists:
 - READ epic.md, COUNT total subfeatures (rows in table), COUNT done subfeatures (rows with "done")
 
 **IF epic.md AND not all subfeatures done:**
@@ -410,7 +409,7 @@ Find `hotfix-*.md` in `${DIR}` (from CHANGED_FILES). Read the hotfix doc. Extrac
 
 ### 4C.1: Load Hotfix Documentation
 
-Find `hotfix-*.md` in `docs/hotfixes/` (from CHANGED_FILES). Read the hotfix doc. Extract: Problem, Root Cause, Files Modified, Verification status.
+Find `hotfix-*.md` in `${DIR}` (from CHANGED_FILES). Read the hotfix doc. Extract: Problem, Root Cause, Files Modified, Verification status.
 
 ### 4C.2: Skip Changelog
 

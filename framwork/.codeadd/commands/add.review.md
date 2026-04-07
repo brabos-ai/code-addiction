@@ -518,6 +518,8 @@ prompt: |
 
 **GATE: ALL reviewers must return before proceeding.**
 
+**IF a finding has unclear root cause** (symptom reported but cause not isolated, OR severity disputed between reviewers, OR finding crosses layers): LOAD {{skill:add-investigation/SKILL.md}} and apply Phase 3 (Differential Diagnosis) before classifying severity. Do NOT auto-correct findings whose cause has not been confirmed via differential diagnosis — escalate them to the user with the diagnostic table.
+
 **After ALL reviewers return:**
 
 1. **Merge findings:**

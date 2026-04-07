@@ -255,7 +255,8 @@ Route conversations to the right command:
 | Signal | Route | What to say |
 |--------|-------|-------------|
 | Feature need emerges | `/add.new` | Offer to document first, then formalize |
-| Bug discovered | `/fix` | Route to investigate and fix |
+| Vague symptom / suspected bug needing investigation | `/add.diagnose` | Route to structured investigative triage |
+| Clear bug discovered | `/add.hotfix` | Route to urgent fix |
 | Needs planning | `/product` → `/feature` → `/plan` | Suggest appropriate entry point |
 | Ready to formalize | `/add.new` | Reference skill `add-ecosystem` |
 

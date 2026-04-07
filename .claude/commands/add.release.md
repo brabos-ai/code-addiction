@@ -145,75 +145,97 @@ After merge, checkout main again to restore working branch.
 
 ## STEP 7: Changelog + Preview [STOP]
 
-### 7.1 Generate changelog
+### 7.1 Collect commits between versions
 
-Use `production` as source after STEP 6 merge.
+```bash
+# If LATEST_TAG exists:
+git log [LATEST_TAG]..production --pretty=format:"%h %s" --no-merges
 
-If `LATEST_TAG` exists → `git diff --name-status [LATEST_TAG]..production`
-If first release → `git log production --name-status --pretty=format:""`
+# If first release:
+git log production --pretty=format:"%h %s" --no-merges
+```
 
-Group files by:
-- Commands (source): `framwork/.codeadd/commands/*.md`
-- Skills (source): `framwork/.codeadd/skills/**`
-- Scripts: `framwork/.codeadd/scripts/*`
-- CLI: `cli/**`
-- Docs: `docs/**`
-- Other: everything else
+Read each commit message. Classify commits by type using conventional commit prefixes or content analysis:
+- `feat:` → Features
+- `fix:` → Bug Fixes
+- `docs:` → Documentation
+- `chore:`, `build:`, `ci:` → Maintenance
+- `refactor:` → Refactoring
+- Other → group by best judgment
 
-Provider dirs (`framwork/.claude/`, `framwork/.agent/`, etc.) are generated — summarize as one line "Provider files regenerated", not individually.
+### 7.2 Collect file changes
 
-### 7.2 PRD scan
+```bash
+# If LATEST_TAG exists:
+git diff --stat [LATEST_TAG]..production
+git diff --name-status [LATEST_TAG]..production
+
+# If first release:
+git diff --stat --name-status $(git rev-list --max-parents=0 HEAD)..production
+```
+
+Use file changes to enrich commit descriptions where commit messages are too terse. Provider dirs (`framwork/.claude/`, `framwork/.agent/`, etc.) are generated — exclude from individual listing, summarize as one line if changed.
+
+### 7.3 PRD scan
 
 If `docs/prd/` exists → read and include non-draft PRDs created/updated since `LATEST_TAG`.
 
-### 7.3 Assemble release notes
+### 7.4 Assemble release notes
+
+Write human-readable release notes. Use commit descriptions as the primary source, enriched by file-level context. The notes must tell a user **what changed and why**, not just list files.
 
 Format (omit empty sections):
 ```markdown
-## Commands
-- Added: [list]
-- Modified: [list]
-- Removed: [list]
+## What's New
+- [Human-readable description of each feature, derived from commit messages and file changes]
 
-## Skills
-- Added: [list]
-- Modified: [list]
+## Bug Fixes
+- [Description of each fix]
 
-## Scripts
-- Added: [list]
-- Modified: [list]
+## Improvements
+- [Refactors, performance, DX improvements]
 
-## CLI
-- [changes to cli/]
-
-## PRDs Implemented
-- PRDXXXX: [title]
+## Maintenance
+- [Build, CI, dependency updates]
 
 ## Statistics
-X files changed, Y added, Z removed
+X files changed, Y insertions(+), Z deletions(-)
 ```
 
-### 7.4 Preview and confirm
+Each bullet should be a concise sentence describing the change from the user's perspective, not a file path or raw commit hash.
+
+### 7.5 Preview and confirm
 
 Show release preview (tag, from, target, summary, changelog). Ask user: "Create this release?" If no → STOP.
+
+### 7.6 Save release notes for tag
+
+After approval, save the release notes content to a temp file. This content will be used as the annotated tag message in STEP 8, so the CI pipeline can extract it.
 
 ---
 
 ## STEP 8: Create Tag (+ Release if no pipeline)
 
-### 8.1 Create and push annotated tag
+### 8.1 Create and push annotated tag with release notes
 
-From production branch, create annotated tag `NEXT_VERSION` and push it.
+From production branch, create annotated tag using the release notes from STEP 7.6 as the tag message:
+
+```bash
+git tag -a [NEXT_VERSION] -F [TEMP_NOTES_FILE]
+git push origin [NEXT_VERSION]
+```
+
+This embeds the release notes in the tag annotation, making them available to the CI pipeline.
 
 ### 8.2 Conditional release creation
 
 **IF `PIPELINE_HANDLES_RELEASE = true`:**
 
-DO NOT run `gh release create`. Inform user the tag was pushed and the pipeline will handle release creation. Show what the pipeline will do (from STEP 1).
+DO NOT run `gh release create`. Inform user the tag was pushed with embedded release notes and the pipeline will create the release using those notes. Show what the pipeline will do (from STEP 1).
 
 **IF `PIPELINE_HANDLES_RELEASE = false`:**
 
-Create GitHub release with `gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_FILE]`. Show release URL.
+Create GitHub release with `gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_NOTES_FILE]`. Show release URL.
 
 ---
 
@@ -227,15 +249,16 @@ List tags with dates (`git tag --sort=-v:refname --format='%(refname:short) %(cr
 
 ALWAYS:
 - Fetch tags from remote before reading (`git fetch --tags`) — without this, remote tags are invisible
-- Use annotated tags (not lightweight)
-- Generate changelog from source files only (`framwork/.codeadd/`, `cli/`, `docs/`)
-- Treat provider dirs as generated — one summary line, not individual files
+- Use annotated tags with release notes as the tag message (`git tag -a -F`)
+- Generate changelog from commits AND file diff combined — commits are primary, file diff enriches
+- Write release notes from the user's perspective (what changed, not which files)
+- Treat provider dirs as generated — exclude from individual listing
 - Omit empty changelog sections
 
 NEVER:
 - Run `node scripts/build.js` — that is the pipeline's job
 - Commit generated provider files (`framwork/.claude/`, `.agent/`, etc.) — pipeline generates them
-- Use lightweight tags
-- Generate release notes only from commit messages — use file diff
+- Use lightweight tags — annotated tags carry the release notes for the pipeline
+- Generate release notes only from file paths — use commit messages as primary source
 - Create `CHANGELOG.md` files in this command
 - Call `gh release create` when `PIPELINE_HANDLES_RELEASE = true`
