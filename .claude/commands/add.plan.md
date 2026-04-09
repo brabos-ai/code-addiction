@@ -4,14 +4,14 @@
 
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.
 This is an **open-source project for the community** (beyond internal use). Every decision must consider: technical soundness, clarity for external contributors, and real value for framework consumers.
-Generates PRD (Product Requirements Document) for execution via `/add.make`.
+Generates PRD (Product Requirements Document) for execution via `/add.build`.
 
 ---
 
 ## Spec
 
 ```json
-{"output":"docs/prd/PRD[NNNN]-[slug].md","modes":{"new":"/add.strategy [idea] → STEP 0-5","continue":"/add.strategy PRD[NNNN] → load + adjust","list":"/add.strategy → list drafts"}}
+{"output":"docs/prd/PRD[NNNN]-[slug].md","modes":{"new":"/add.plan [idea] → STEP 0-5","continue":"/add.plan PRD[NNNN] → load + adjust","list":"/add.plan → list drafts"}}
 ```
 
 ---
@@ -61,7 +61,7 @@ IF IDEA IS BAD OR UNNECESSARY:
 
 ## ⛔⛔⛔ THIS COMMAND DOES NOT EXECUTE ⛔⛔⛔
 
-**add.strategy ANALYZES and DOCUMENTS. Execution belongs to `/add.make`.**
+**add.plan ANALYZES and DOCUMENTS. Execution belongs to `/add.build`.**
 
 **ONLY PERMITTED OUTPUT:** `.md` file in `docs/prd/`
 
@@ -71,10 +71,10 @@ IF IDEA IS BAD OR UNNECESSARY:
 ⛔ DO NOT USE: Bash for implementations, builds, tests, or scripts
 ⛔ DO NOT: Create branches, commits, or PRs
 ⛔ DO NOT: Modify source code, commands, skills, or scripts
-⛔ DO NOT: Implement ANYTHING discussed — that is /add.make's job
+⛔ DO NOT: Implement ANYTHING discussed — that is /add.build's job
 
 IF TEMPTED TO IMPLEMENT:
-  → STOP. Write it in the PRD. User decides when/how to execute via /add.make.
+  → STOP. Write it in the PRD. User decides when/how to execute via /add.build.
 ```
 
 ---
@@ -82,9 +82,9 @@ IF TEMPTED TO IMPLEMENT:
 ## Operation Mode
 
 ```
-/add.strategy [idea]        → New strategic analysis (STEP 0-5)
-/add.strategy PRD[NNNN]     → Continue existing PRD
-/add.strategy               → List PRDs in draft
+/add.plan [idea]        → New strategic analysis (STEP 0-5)
+/add.plan PRD[NNNN]     → Continue existing PRD
+/add.plan               → List PRDs in draft
 ```
 
 ---
@@ -280,7 +280,7 @@ Find the next available PRD number in `docs/prd/`. If none exist, start at 0001.
 
 ## Next Steps
 
-/add.make PRD[NNNN]-[slug]
+/add.build PRD[NNNN]-[slug]
 
 ---
 
@@ -295,16 +295,16 @@ Find the next available PRD number in `docs/prd/`. If none exist, start at 0001.
 
 ## STEP 5: Completion [HARD STOP]
 
-Show: PRD file path, status (draft), and the two next-step commands (`/add.make PRD[NNNN]-[slug]` to implement, `/add.strategy PRD[NNNN]` to revise).
+Show: PRD file path, status (draft), and the two next-step commands (`/add.build PRD[NNNN]-[slug]` to implement, `/add.plan PRD[NNNN]` to revise).
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
-add.strategy ends here. Execution is `/add.make`'s responsibility.
+add.plan ends here. Execution is `/add.build`'s responsibility.
 
 ---
 
 ## Continue Mode (existing PRD)
 
-If `/add.strategy PRD[NNNN]`:
+If `/add.plan PRD[NNNN]`:
 
 1. Load existing PRD
 2. Show summary of what was already decided
@@ -315,7 +315,7 @@ If `/add.strategy PRD[NNNN]`:
 
 ## List Mode
 
-If `/add.strategy` without arguments:
+If `/add.plan` without arguments:
 
 1. List PRDs in `docs/prd/`
 2. Show status of each
@@ -342,4 +342,4 @@ NEVER:
 - Generate PRD without user validation of decisions
 - Be passive/executor — this is a consultant role
 - Write outside `docs/prd/`
-- Implement anything — that is `/add.make`'s job
+- Implement anything — that is `/add.build`'s job
