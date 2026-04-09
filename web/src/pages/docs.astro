@@ -252,6 +252,10 @@ import "../styles/global.css";
                 <code class="text-accent font-mono text-sm">/add.audit</code>
                 <p class="text-muted text-xs mt-0.5">Full project health analysis</p>
               </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add.diagnose</code>
+                <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only)</p>
+              </div>
             </div>
           </div>
 
@@ -293,6 +297,10 @@ import "../styles/global.css";
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.ux</code>
                 <p class="text-muted text-xs mt-0.5">Quick UX — loads ux-design for free context</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add.commit</code>
+                <p class="text-muted text-xs mt-0.5">Mid-workflow smart commit with Conventional Commits message</p>
               </div>
             </div>
           </div>
@@ -540,6 +548,15 @@ import "../styles/global.css";
             { name: "plan-based-features", desc: "Subscription plan gating — 3-layer PlanFeatures pattern and IPlanService" },
             { name: "dev-environment-setup", desc: "Detect OS, install missing tools, configure VS Code terminal" },
             { name: "optimizing-git-workflow", desc: "Complete Git config: colors, aliases, smart defaults, performance" },
+            { name: "backend-architecture", desc: "Backend architecture patterns and workspace conventions" },
+            { name: "backend-architecture-workspace", desc: "Workspace-level backend architecture scaffolding" },
+            { name: "frontend-architecture", desc: "Frontend architecture patterns and workspace conventions" },
+            { name: "frontend-architecture-workspace", desc: "Workspace-level frontend architecture scaffolding" },
+            { name: "ecosystem", desc: "ADD ecosystem map and framework overview" },
+            { name: "investigation", desc: "Deep diagnostic investigation for ambiguous findings" },
+            { name: "resource-path-convention", desc: "Consistent resource path conventions across the project" },
+            { name: "skill-creator", desc: "Create and structure new ADD skills" },
+            { name: "updating-claude-documentation", desc: "Standards for updating Claude documentation artefacts" },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
