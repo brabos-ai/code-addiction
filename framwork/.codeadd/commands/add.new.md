@@ -14,8 +14,14 @@ Full feature discovery command BEFORE implementation.
 ## Spec
 
 ```json
-{"write_allowed":"docs/features/","skills":{"mandatory":"feature-discovery, documentation-style, feature-specification"}}
+{"write_allowed":"docs/features/","schema":"feature-about"}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `feature-about`), `add-doc-ref-convention`, and `add-token-efficiency`.
 
 ---
 
@@ -70,24 +76,25 @@ Analyze the request and classify:
 
 ### On Start: Create TodoList
 
-**SIMPLE (3 steps):**
+**SIMPLE (4 steps):**
 ```json
 [
-  {"content":"Run init and create structure","status":"pending","activeForm":"Running init"},
+  {"content":"Run init, allocate F-ID, create structure","status":"pending","activeForm":"Running init"},
   {"content":"Validate scope with user [STOP]","status":"pending","activeForm":"Validating scope"},
-  {"content":"Document about.md and discovery.md","status":"pending","activeForm":"Documenting"}
+  {"content":"Write about.md via feature-about schema","status":"pending","activeForm":"Documenting"},
+  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"}
 ]
 ```
 
 **STANDARD (6 steps):**
 ```json
 [
-  {"content":"Run init and create structure","status":"pending","activeForm":"Running init"},
+  {"content":"Run init, allocate F-ID, create structure","status":"pending","activeForm":"Running init"},
   {"content":"Dispatch discovery subagents (features context + codebase) [parallel]","status":"pending","activeForm":"Dispatching discovery subagents"},
   {"content":"Deep thinking + present questionnaire [STOP]","status":"pending","activeForm":"Awaiting user validation"},
   {"content":"Complexity gate evaluation","status":"pending","activeForm":"Evaluating complexity"},
-  {"content":"Document about.md and discovery.md (+ epic structure if needed)","status":"pending","activeForm":"Documenting"},
-  {"content":"Validate generated documentation","status":"pending","activeForm":"Validating docs"}
+  {"content":"Write about.md via feature-about schema (+ epic structure if needed)","status":"pending","activeForm":"Documenting"},
+  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"}
 ]
 ```
 
@@ -99,7 +106,7 @@ Mark as `in_progress` → present to user → **STOP AND WAIT** → mark `comple
 
 ## Instructions by Step
 
-### 1. Run Init + Create Structure (TEMPLATES MANDATORY)
+### STEP 1: Run Init + Allocate ID + Create Structure
 
 ```bash
 bash .codeadd/scripts/init.sh
@@ -107,24 +114,32 @@ bash .codeadd/scripts/init.sh
 
 **Parse RECENT_CHANGELOGS from output** - latest completed features with summaries.
 
-**Load Product Context:** Read `docs/product.md` (if exists). Flag misalignment with product vision in questionnaire.
+**Load Product Context:** Read `docs/product/product.md` (if exists). Flag misalignment with product vision in questionnaire.
 
-**Smart changelog rule:** Match user request keywords against RECENT_CHANGELOGS. If match found, read full `docs/features/{FEAT_ID}/changelog.md` for implementations/patterns/files. Use for: precise questions, existing-work suggestions, duplication avoidance.
+**Smart changelog rule:** Match user request keywords against RECENT_CHANGELOGS. If match found, read full `docs/features/{FEAT_ID}/changelog.md` for implementations/patterns/files.
 
-**MANDATORY GATE:** Load templates from `.codeadd/templates/` (feature-about-template.md + feature-discovery-template.md) BEFORE creating docs.
+**MANDATORY GATE:** The `feature-about` schema must be loaded from `{{skill:add-doc-schemas/SKILL.md}}` BEFORE writing any doc.
+
+**Allocate next feature ID:**
+
+```bash
+bash .codeadd/scripts/status.sh next-id F
+```
+
+Output: `F[NNNN]` (e.g., `F0042`). Use this as the doc `id:` in STEP 4.
 
 **Infer from request:** branch type (`feature`|`fix`|`refactor`|`docs`), name (kebab-case, 2-4 words).
 
 **MANDATORY SEQUENCE:**
-1. `git checkout -b [type]/[XXXX]F-[name]`
-2. `mkdir docs/features/[XXXX]F-[name]/`
-3. Write about.md + discovery.md with templates filled
+1. `git checkout -b [type]/F[NNNN]-[name]`
+2. `mkdir docs/features/F[NNNN]-[name]/`
+3. Skeleton about.md with frontmatter (full content written in STEP 4 after questionnaire)
 
-**Output:** Feature ID (000XF), branch created, directory created, templates filled.
+**Output:** Feature ID (`F[NNNN]`), branch created, directory created.
 
 ---
 
-### 2. Deep Discovery (STANDARD only)
+### STEP 2: Deep Discovery (STANDARD only)
 
 **Goal:** Collect rich context for deep thinking and consultant questionnaire.
 
@@ -180,7 +195,7 @@ Generate rich, concrete questionnaire based on data, not generic questions.
 
 ---
 
-### 3. Present Consultant Questionnaire [STOP]
+### STEP 3: Present Consultant Questionnaire [STOP]
 
 **IMPORTANT:** This is a STOP POINT. Present and WAIT.
 
@@ -371,13 +386,13 @@ Summarize confirmed decisions (scope choices, accepted/rejected insights, valida
 
 ---
 
-### 3.5 COMPLEXITY GATE (after questionnaire response)
+### STEP 4: Complexity Gate (after questionnaire response)
 
 **Analyze the validated scope for independent user flows.**
 
 **Independent user flow** = can be tested in isolation, has distinct objective, could be its own PR. Keywords: "will also", "and then", "another flow".
 
-**IF N = 1 → skip gate, continue to step 4.**
+**IF N = 1 → skip gate, continue to STEP 5.**
 **IF N >= 2 → Propose decomposition [STOP]:**
 ```
 Identified [N] independent flows in the validated scope:
@@ -419,13 +434,13 @@ Decompose as subfeatures? (yes / no — keep as single feature)
 
 2. Create directory `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/`
 3. Create `about.md` per subfeature (compact — focus on the subfeature's scope)
-4. Continue to step 4 (documentation of main about.md as Epic overview)
+4. Continue to STEP 5 (documentation of main about.md as Epic overview)
 
-**IF user says "no, keep as single feature":** Continue normally to step 4.
+**IF user says "no, keep as single feature":** Continue normally to STEP 5.
 
 ---
 
-### 4. Document
+### STEP 5: Document
 
 **BEFORE writing:** Validate completeness + consistency + load skills.
 
@@ -437,20 +452,17 @@ Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided 
 
 If validated new route/endpoint → Backend MANDATORY. If validated new field/entity → Database MANDATORY. If user needs UI → Frontend MANDATORY. **NEVER exclude layers needed to deliver what was validated.**
 
-#### Load Skills
-```
-skill add-documentation-style (SKILL.md)
-skill add-documentation-style (business.md)
-skill add-feature-specification
-skill add-feature-discovery
-```
+#### Load Schema (MANDATORY)
 
-**Apply cache technique:** Read → Preserve → Complement → Metadata
+EXECUTE schema `feature-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-#### about.md
-- Path: `docs/features/[XXXX]F-[name]/about.md`
-- Content: Feature SPECIFICATION (WHAT + WHY)
-- Use validated questionnaire answers
+**Apply cache technique:** Read → Preserve → Complement → Metadata (per `{{skill:add-documentation-style/SKILL.md}}`)
+
+#### about.md (schema: feature-about)
+
+- **Path:** `docs/features/F[NNNN]-[name]/about.md`
+- **ID:** `F[NNNN]` (allocated in STEP 1 via `status.sh next-id F`)
+- Write per `feature-about` schema. Extractive only.
 
 #### discovery.md
 - Path: `docs/features/[XXXX]F-[name]/discovery.md`
@@ -463,16 +475,11 @@ skill add-feature-discovery
 
 ---
 
-### 5. Validate (STANDARD only)
+### STEP 6: Validation Gate
 
-Auto-verify:
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-about`.
 
-| Doc | Check |
-|---|---|
-| about.md | RFs listed? RNs listed? No code? |
-| discovery.md | Prerequisites filled? Files mapped? |
-
-If missing → fix before completing.
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 

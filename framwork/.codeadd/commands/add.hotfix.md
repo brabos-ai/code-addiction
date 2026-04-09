@@ -11,8 +11,14 @@
 ## Spec
 
 ```json
-{"template":".codeadd/templates/hotfix.md"}
+{"schemas":["hotfix-about","hotfix-related"]}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schemas: `hotfix-about`, `hotfix-related`), `add-doc-ref-convention`, and `add-token-efficiency`.
 
 ---
 
@@ -20,19 +26,20 @@
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Run status.sh              → FIRST COMMAND
-STEP 2: Check branch               → IF main: STOP (steps 3-4 required)
-STEP 3: Load template              → Read hotfix.md template
-STEP 4: Create branch + docs       → Branch hotfix/[NNNN]H-[slug], create hotfix.md
-STEP 5: Identify related features  → Analyze RECENT_CHANGELOGS
-STEP 6: Read documentation         → Changelogs, about.md of related features
-STEP 7: Investigate code           → ONLY AFTER steps 1-6
-STEP 8: Confirm root cause         → BEFORE implementing
-STEP 9: Implement fix              → ONLY AFTER step 8
-STEP 10: Update hotfix doc         → Fill root cause + solution sections
-STEP 11: Create related.md         → Document feature relationships
-STEP 12: Log iteration             → MANDATORY BEFORE informing user
-STEP 13: Completion                → Inform user, awaiting /add.done
+STEP 1:  Run status.sh             → FIRST COMMAND
+STEP 2:  Check branch              → IF main: STOP (step 3 required)
+STEP 3:  Allocate ID + branch      → status.sh next-id H, branch, skeleton about.md
+STEP 4:  Identify related features → Analyze RECENT_CHANGELOGS
+STEP 5:  Read documentation        → Changelogs, about.md of related features
+STEP 6:  Investigate code          → ONLY AFTER steps 1-5
+STEP 7:  Confirm root cause        → BEFORE implementing
+STEP 8:  Implement fix             → ONLY AFTER step 7
+STEP 9:  Write hotfix about.md     → schema hotfix-about, extractive
+STEP 10: Write related.md          → schema hotfix-related
+STEP 11: Validation gate — about   → run gate block
+STEP 12: Validation gate — related → run gate block
+STEP 13: Log iteration             → MANDATORY BEFORE informing user
+STEP 14: Completion                → Inform user, awaiting /add.done
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -45,9 +52,9 @@ IF BRANCH = main:
   ⛔ DO NOT: Implementation
   ✅ DO: STEP 3-4 (template + branch creation)
 
-IF TEMPLATE NOT READ:
-  ⛔ DO NOT USE: Write to create hotfix doc
-  ✅ DO: Read .codeadd/templates/hotfix.md FIRST
+IF SCHEMA NOT LOADED:
+  ⛔ DO NOT USE: Write to create hotfix docs
+  ✅ DO: Load `hotfix-about` and `hotfix-related` sections from {{skill:add-doc-schemas/SKILL.md}} FIRST
 
 IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
@@ -86,87 +93,74 @@ bash .codeadd/scripts/status.sh
 
 ⛔ **TOTAL STOP** - You are on main branch.
 
-**MANDATORY ACTION:** Execute STEP 3 and STEP 4 NOW.
+**MANDATORY ACTION:** Execute STEP 3 NOW.
 **DO NOT:** Grep, Read code, investigation, nothing.
 
 ### IF `BRANCH:hotfix/*`:
 
-✅ Branch OK. Skip to STEP 5.
+✅ Branch OK. Skip to STEP 4.
 
 ---
 
-## STEP 3: Load Template (MANDATORY)
-
-Read the hotfix template from the path in Spec.
-
-**Placeholders to understand:**
-- `{{HOTFIX_ID}}` - Global ID (e.g., `0001H`)
-- `{{BRANCH_NAME}}` - Branch created in STEP 4
-- `{{TITLE}}` - Hotfix title
-- `{{DATETIME}}` - Current date/time (YYYY-MM-DD HH:MM)
-- `{{PRIORITY}}` - High/Medium/Low
-
----
-
-## STEP 4: Create Branch + Docs
+## STEP 3: Allocate Hotfix ID + Create Branch
 
 ⛔ **GATE:** Branch must be created BEFORE investigation.
 
-### 4.1 Calculate Next Hotfix ID
+### 3.1 Allocate Next Hotfix ID
 
 ```bash
-bash .codeadd/scripts/next-id.sh H
+bash .codeadd/scripts/status.sh next-id H
 ```
 
-Output: Next global ID with H suffix (e.g., `0001H`)
+Output: Next global hotfix ID in the form `H[NNNN]` (e.g., `H0001`). Store for frontmatter writes in STEP 9 and STEP 10.
 
-### 4.2 Create Branch
+### 3.2 Create Branch
 
 ```bash
-git checkout -b hotfix/[NNNN]H-[hotfix-slug]
+git checkout -b hotfix/H[NNNN]-[hotfix-slug]
 ```
 
 **[hotfix-slug]:** kebab-case descriptive (ex: `screenshot-delete-error`, `login-timeout`)
 
-### 4.3 Create Hotfix Documentation Structure
-
-Create directory and hotfix.md using the template from STEP 3:
+### 3.3 Create Doc Directory
 
 ```
-docs/features/[NNNN]H-[hotfix-slug]/
-├── hotfix.md (main document)
-├── iterations.jsonl (auto-created if needed)
-└── related.md (created in STEP 11)
+docs/hotfixes/<slug>/
+├── about.md    (schema: hotfix-about — written in STEP 9)
+├── related.md  (schema: hotfix-related — written in STEP 10)
+└── iterations.jsonl
 ```
+
+DO NOT write doc contents yet — schemas are loaded and applied in STEP 9/10.
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
 
 ---
 
-## STEP 5: Identify Related Features
+## STEP 4: Identify Related Features
 
-### 5.1 Analyze RECENT_CHANGELOGS
+### 4.1 Analyze RECENT_CHANGELOGS
 
 From `status.sh` output:
 - Which features mention the affected area/component?
 - Is the bug likely related to recent changes?
 
-### 5.2 Interview User (if applicable)
+### 4.2 Interview User (if applicable)
 
 **If RECENT_CHANGELOGS suggests related features**, present them and ask:
 - Yes → inform which
 - No → standalone fix
 - Multiple related → list them
 
-**Store feature relationships for STEP 11.**
+**Store feature relationships for STEP 10.**
 
 ---
 
-## STEP 6: Read Documentation (BEFORE code)
+## STEP 5: Read Documentation (BEFORE code)
 
 **MANDATORY ORDER - DO NOT SKIP.**
 
-For each related feature identified in STEP 5, read its `changelog.md` and `about.md`.
+For each related feature identified in STEP 4, read its `changelog.md` and `about.md`.
 
 **Understand:**
 - Recent changes in affected area
@@ -175,7 +169,7 @@ For each related feature identified in STEP 5, read its `changelog.md` and `abou
 
 ---
 
-## STEP 7: Investigation (ONLY AFTER STEPS 1-6)
+## STEP 6: Investigation (ONLY AFTER STEPS 1-5)
 
 **PREREQUISITES VERIFIED:**
 - [ ] Branch `hotfix/*` active (NOT main)
@@ -189,11 +183,11 @@ Use Grep/Read to confirm what documentation indicated:
 2. Business logic (service, handler)
 3. Data layer (repository, database)
 
-### 7.1 Escalate to add-investigation skill (when root cause unclear)
+### 6.1 Escalate to add-investigation skill (when root cause unclear)
 
 ⛔ **IF the bug symptom is vague, intermittent, crosses multiple layers, or the first 2-3 grep/read attempts do NOT converge on a clear cause:**
 
-LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 1-3 (Root Cause Investigation, Pattern Analysis, Differential Diagnosis) before proposing a root cause in STEP 8.
+LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 1-3 (Root Cause Investigation, Pattern Analysis, Differential Diagnosis) before proposing a root cause in STEP 7.
 
 **Why:** Hotfixes that ship without rigorous RCA tend to fix symptoms instead of causes, causing the same bug to return. The Iron Law from add-investigation applies: NO FIX WITHOUT ROOT CAUSE.
 
@@ -201,7 +195,7 @@ LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 1-3 (Root Cause Inves
 
 ---
 
-## STEP 8: Confirm Root Cause (BEFORE implementing)
+## STEP 7: Confirm Root Cause (BEFORE implementing)
 
 ⛔ **GATE CHECK:** DO NOT implement without user confirmation.
 
@@ -214,17 +208,17 @@ LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 1-3 (Root Cause Inves
 
 ---
 
-## STEP 9: Implement Fix
+## STEP 8: Implement Fix
 
 **PREREQUISITES:**
 - [ ] Root cause confirmed by user
 - [ ] On branch `hotfix/*`
 
-### 9.1 Check Project Patterns
+### 8.1 Check Project Patterns
 
 **If PROJECT_PATTERNS > 0 (from script output):** Read project patterns and follow them in implementation.
 
-### 9.2 Implement
+### 8.2 Implement
 
 **DO:**
 - Fix root cause (not symptom)
@@ -242,51 +236,50 @@ If bug in frontend:
 - Add features
 - Over-engineer
 
-### 9.3 Verify Build
+### 8.3 Verify Build
 
 Verify build passes for affected apps (backend, frontend, or both).
 
 ---
 
-## STEP 10: Update Documentation
+## STEP 9: Write Hotfix about.md (schema: hotfix-about)
 
-**Update hotfix doc created in STEP 4** (`docs/features/[NNNN]H-[slug]/hotfix.md`).
+EXECUTE schema `hotfix-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-Fill sections that had placeholders:
-- **Root Cause Analysis** — why the bug was happening (from STEP 8)
-- **Approach** — what was done to fix it
-- **Files Modified** — path + what changed
-- **Verification** — bug no longer reproduces, build passes, related functionality OK
+**Path:** `docs/hotfixes/<slug>/about.md`
+
+**ID:** `H[NNNN]` from STEP 3. Write per `hotfix-about` schema. Extractive only.
 
 ---
 
-## STEP 11: Create Related References
+## STEP 10: Write related.md (schema: hotfix-related)
 
-### 11.1 Identify Related Items
+EXECUTE schema `hotfix-related` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-From STEP 5 analysis, list all features/items related to this hotfix.
+**Path:** `docs/hotfixes/<slug>/related.md`
 
-### 11.2 Create related.md
+**ID:** `H[NNNN]-related`. Write per `hotfix-related` schema. Lists only, no prose. Use `{{doc:<ID>}}` for impacted docs. Include features identified in STEP 4.
 
-Create `docs/features/[NNNN]H-[slug]/related.md` containing:
-- Which features were affected by this hotfix
-- Which PRs or issues are related
-- Dependencies or blocking relationships
-
-### 11.3 Update Feature Documents (if applicable)
-
-For each related feature `docs/features/[NNNN][L]-[slug]/`:
-- If `related.md` exists → ADD hotfix reference to "Hotfixes" section
-- If `related.md` does NOT exist → CREATE it and ADD hotfix reference
+**Cross-update:** For each related feature doc, if its `related.md` exists, append the hotfix `{{doc:H[NNNN]}}` reference; otherwise create a minimal related.md referencing this hotfix.
 
 ---
 
-## STEP 12: Log Iteration (MANDATORY — PRD0031)
+## STEP 11-12: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for each doc written:
+1. `hotfix-about` — `docs/hotfixes/<slug>/about.md`
+2. `hotfix-related` — `docs/hotfixes/<slug>/related.md`
+
+⛔ DO NOT skip. DO NOT mark the command complete until both gates return `PASS`.
+
+---
+
+## STEP 13: Log Iteration (MANDATORY — PRD0031)
 
 **BEFORE informing user, append entry to iterations.jsonl:**
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-[slug]/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+bash .codeadd/scripts/log-jsonl.sh "docs/hotfixes/<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 **Parameters:**
@@ -296,7 +289,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-[slug]/iterations.json
 
 ---
 
-## STEP 13: Ready for Review
+## STEP 14: Ready for Review
 
 ⛔ **DO NOT commit** - leave for `/add.done`
 
@@ -309,27 +302,27 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 ## Rules
 
 **ALWAYS:**
-- Use next-id.sh to calculate hotfix ID (global sequential with H suffix)
-- Create hotfix branch and docs in `docs/features/[NNNN]H-[slug]/`
-- Read hotfix template before creating hotfix.md
+- Use `status.sh next-id H` to allocate hotfix ID
+- Create hotfix branch and docs in `docs/hotfixes/<slug>/`
+- Load `hotfix-about` and `hotfix-related` schemas from add-doc-schemas before writing
 - Read changelogs and about.md before investigating code
-- Identify related features and document in related.md
 - Confirm root cause with user before implementing
 - Fix root cause, not symptoms
 - Keep changes minimal and focused
-- Update related.md in both hotfix and affected features
+- Run the validation gate for BOTH docs before completing
 - Log iteration entry before informing user
 - Verify build passes after implementing fix
 
 **NEVER:**
 - Investigate code while on main branch
-- Write hotfix.md without reading template first
+- Inline any doc template — ALWAYS load from add-doc-schemas
+- Use abstractive summarization to fit word caps
 - Grep or read code before reading changelogs
 - Implement fix without user confirming root cause
 - Refactor unrelated code during hotfix
 - Add new features inside a hotfix
 - Commit changes (leave for /add.done)
-- Use bifurcated Path A/Path B logic (always use unified H[NNNN] flow)
+- Skip either validation gate
 
 ---
 
@@ -339,17 +332,18 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 # User: "Screenshot validation bugada!"
 
 # STEP 1-2: status.sh → BRANCH:main → STOP
-# STEP 3: Read hotfix template
-# STEP 4: next-id.sh H → 0001H
-#   git checkout -b hotfix/0001H-screenshot-delete-error
-#   Write docs/features/0001H-screenshot-delete-error/hotfix.md
-# STEP 5: Related to 0036F-ai-screenshot-validation (from RECENT_CHANGELOGS)
-# STEP 6: Read docs/features/0036F-ai-screenshot-validation/{changelog,about}.md
-# STEP 7: Investigate code
-# STEP 8: Confirm root cause with user
-# STEP 9: Implement fix + verify build
-# STEP 10: Update hotfix.md
-# STEP 11: Create related.md (link 0001H ↔ 0036F)
-# STEP 12: Log iteration
-# STEP 13: Completion → suggest /add.done
+# STEP 3: status.sh next-id H → H0001
+#   git checkout -b hotfix/H0001-screenshot-delete-error
+#   mkdir docs/hotfixes/screenshot-delete-error/
+# STEP 4: Related to F0036 ai-screenshot-validation (from RECENT_CHANGELOGS)
+# STEP 5: Read F0036 changelog + about
+# STEP 6: Investigate code
+# STEP 7: Confirm root cause with user
+# STEP 8: Implement fix + verify build
+# STEP 9: Write about.md via hotfix-about schema
+# STEP 10: Write related.md via hotfix-related schema
+# STEP 11: Validation gate — hotfix-about
+# STEP 12: Validation gate — hotfix-related
+# STEP 13: Log iteration
+# STEP 14: Completion → suggest /add.done
 ```

@@ -11,8 +11,16 @@ Coordinator for feature code review. Dispatches specialized reviewers (Frontend 
 ## Spec
 
 ```json
-{"outputs":{"report":"console + docs/features/${FEATURE_ID}/review.md"}}
+{"outputs":{"report":"console + docs/features/${FEATURE_ID}/review.md"},"schema":null,"schema_note":"PRD0009 scope judgment — no add-doc-schemas entry applies"}
 ```
+
+---
+
+## PRD0009 Schema Applicability (judgment)
+
+`/add.review` writes `docs/features/${FEATURE_ID}/review.md` as a **pre-merge quality-gate checklist** tied to a specific feature, not a persistent standalone report consumed later by agents. The `add-doc-schemas` registry covers `audit-report` (date-scoped, project-wide findings) and `diagnose-report` (triage) — neither matches a feature-scoped, merge-transient review. No `review-report` schema exists, and PRD0009 explicitly forbids inventing schemas in this wave.
+
+Decision: `/add.review` is **out of scope for schema application**. It does not load a schema, does not carry an `AUDIT-*`/`DIAG-*` ID, and does not run the validation gate. The `review.md` output remains structured by the existing Quality Gate Report + in-command sections, consumed immediately by `/add.done`. If future work introduces a canonical `feature-review` schema, revisit this command.
 
 ---
 

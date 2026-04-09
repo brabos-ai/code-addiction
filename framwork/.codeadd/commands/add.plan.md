@@ -11,8 +11,14 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 ## Spec
 
 ```json
-{"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md","temp":["plan-database.md","plan-backend.md","plan-frontend.md"]},"patterns":{"skills":["backend-development","database-development","frontend-development","ux-design"],"action":"READ SKILL.md before subagent dispatch"}}
+{"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md","temp":["plan-database.md","plan-backend.md","plan-frontend.md"]},"schema":"feature-plan","patterns":{"skills":["backend-development","database-development","frontend-development","ux-design"],"action":"READ SKILL.md before subagent dispatch"}}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `feature-plan`), `add-doc-ref-convention`, and `add-token-efficiency`.
 
 ---
 
@@ -44,8 +50,11 @@ STEP 9:  Test-Spec subagent       -> AFTER area subagents, generates contract te
 <!-- /feature:tdd:step-list -->
 STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (epic)
 STEP 11: Validate requirements    -> Coverage check (GATE)
-STEP 12: Completion               -> Inform user
+STEP 12: Validation Gate          -> feature-plan schema gate
+STEP 13: Completion               -> Inform user
 ```
+
+**Reuse feature ID:** `add.plan` does NOT allocate a new ID. Read `id: F[NNNN]` from the feature's `about.md` frontmatter in STEP 5. The generated `plan.md` carries the SAME `F[NNNN]` with `related: [F[NNNN]]`.
 
 **ABSOLUTE PROHIBITIONS:**
 
@@ -520,6 +529,8 @@ The heavy work was done by the specialized subagents. Your role here is:
 
 ---
 
+**Schema load (MANDATORY).** EXECUTE schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
+
 ### 10.1 Append Subagent Outputs (RAW)
 
 ```bash
@@ -718,7 +729,15 @@ rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
 
 ---
 
-## STEP 12: Completion
+## STEP 12: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-plan`.
+
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
+
+---
+
+## STEP 13: Completion
 
 Inform the user with a summary of what was planned:
 - Feature ID and plan path
@@ -774,51 +793,6 @@ Before completing, verify:
 - [ ] Temporary files deleted
 - [ ] Skills loaded and patterns followed
 - [ ] Requirements coverage = 100%
-
----
-
-## Example: Minimal Plan (Backend-Only Feature)
-
-```markdown
-# Plan: F0012-api-health-check
-
-## Overview
-Add health check endpoint for monitoring. Returns API status and version.
-
----
-
-## Backend
-
-### Endpoints
-| Method | Path | Request DTO | Response DTO | Status | Purpose |
-|--------|------|-------------|--------------|--------|---------|
-| GET | /api/v1/health | - | HealthResponseDto | 200 | Return API status |
-
-### DTOs
-| DTO | Fields | Validations |
-|-----|--------|-------------|
-| HealthResponseDto | status, version, timestamp | - |
-
-Reference: `[search codebase for similar controller]`
-
----
-
-## Main Flow
-1. Client -> GET /api/v1/health
-2. Controller -> Build response with status/version
-3. Response -> HealthResponseDto
-
-## Implementation Order
-1. **Backend**: DTO, Controller endpoint, register route
-
-## Quick Reference
-| Pattern | How to Find |
-|---------|-------------|
-| Controller | Search codebase for similar controller |
-| DTO | Search codebase for similar DTOs |
-```
-
-**Total: ~35 lines** - This is the goal for simple features.
 
 ---
 

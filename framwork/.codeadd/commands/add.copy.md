@@ -9,11 +9,19 @@ Generates structured copy for SaaS landing pages based on project analysis.
 ## Spec
 
 ```json
-{"output":"docs/copy/CXXXX-[objective]/","files":["brief.md","copy.md"]}
+{"output":"docs/copy/COPY-<slug>.md","schema":"saas-copy"}
 ```
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `saas-copy`), `add-doc-ref-convention`, and `add-token-efficiency`.
+
+**Fixed ID:** `add.copy` uses the fixed ID `COPY-<slug>` where `<slug>` is derived from the `[objective]` argument (kebab-case). No counter allocation. `related: [PRODUCT]`.
 
 ---
 
@@ -22,10 +30,10 @@ Generates structured copy for SaaS landing pages based on project analysis.
 **STEPS IN ORDER:**
 ```
 STEP 1: Load skill                  → READ saas-copy FIRST
-STEP 2: Detect number               → LIST existing docs/copy/C*/
-STEP 3: Automatic analysis          → READ README, docs/, package.json
-STEP 4: User validation             → ASK pain points, differentials, objections
-STEP 5: Generate output             → WRITE brief.md + copy.md
+STEP 2: Automatic analysis          → READ README, docs/, package.json
+STEP 3: User validation             → ASK pain points, differentials, objections
+STEP 4: Generate output             → WRITE docs/copy/COPY-<slug>.md via saas-copy schema
+STEP 5: Validation Gate             → saas-copy schema gate
 STEP 6: Suggest next step           → INFORM how to use the output
 ```
 
@@ -66,25 +74,7 @@ Read skill `add-saas-copy` files: `SKILL.md`, `formulas.md`, `examples.md`.
 
 ---
 
-## STEP 2: Detect Next Number
-
-Find the highest existing `CXXXX` folder inside `docs/copy/`.
-
-**Logic:**
-- If `docs/copy/` doesn't exist: create with C0001
-- If C0003 exists as last: use C0004
-- Always increment +1
-
-**Expected output:**
-
-```markdown
-**Next number:** C[XXXX]
-**Output folder:** docs/copy/C[XXXX]-[objective]/
-```
-
----
-
-## STEP 3: Automatic Analysis
+## STEP 2: Automatic Analysis
 
 Read project sources: README.md, docs/product.md, docs/features/, package.json.
 
@@ -117,7 +107,7 @@ Is this correct? Adjust what's needed before continuing.
 
 ---
 
-## STEP 4: User Validation
+## STEP 3: User Validation
 
 **EXECUTE:** Ask targeted questions.
 
@@ -155,152 +145,19 @@ I need some information that I can't extract from code:
 
 ---
 
-## STEP 5: Generate Output
+## STEP 4: Generate Output (schema: saas-copy)
 
-**EXECUTE:** Create files in `docs/copy/C[XXXX]-[objective]/`
+**Schema load (MANDATORY).** EXECUTE schema `saas-copy` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-### 5.1 Create brief.md
-
-```markdown
-# Copy Brief - [Product Name]
-
-> **Objective:** [objective informed by user]
-> **Generated on:** [date]
-> **Code:** C[XXXX]
+**Path:** `docs/copy/COPY-<slug>.md` (slug derived from `[objective]` argument). Fixed ID: `COPY-<slug>`. `related: [PRODUCT]`. Write per schema — extractive only. Pick ONE canonical copy.
 
 ---
 
-## Value Proposition
+## STEP 5: Validation Gate
 
-[1 sentence that summarizes what's uniquely delivered - extracted + validated]
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `saas-copy`.
 
----
-
-## Target Audience
-
-- **Buyer:** [who decides the purchase]
-- **User:** [who uses day-to-day]
-- **Company:** [size, segment]
-
----
-
-## Pain Points (Before)
-
-1. **[Pain 1]** → [consequence]
-2. **[Pain 2]** → [consequence]
-3. **[Pain 3]** → [consequence]
-
----
-
-## Benefits (After)
-
-1. [Transformation 1 - not a feature]
-2. [Transformation 2 - not a feature]
-3. [Transformation 3 - not a feature]
-
----
-
-## Differentials
-
-| vs | Our differential |
-|----|------------------|
-| [Competitor 1] | [what we have that they don't] |
-| [Competitor 2] | [what we have that they don't] |
-| "Do nothing" | [cost of not solving] |
-
----
-
-## Mapped Objections
-
-| Objection | Response |
-|-----------|----------|
-| "[objection 1]" | [response that removes friction] |
-| "[objection 2]" | [response that removes friction] |
-
----
-
-## Social Proof
-
-- **Stats:** [real numbers]
-- **Clients:** [logos or names]
-- **Results:** [success case]
-```
-
-### 5.2 Create copy.md
-
-```markdown
-# Suggested Copy - [Product Name]
-
-> **Brief:** [link to brief.md]
-> **Code:** C[XXXX]
-
----
-
-## Headlines
-
-### Option 1 (PAS - Problem Agitate Solution)
-> "[Main pain] is costing [consequence]. [Product] solves in [time/way]."
-
-### Option 2 (BAB - Before After Bridge)
-> "From [before situation] to [after situation]. [Product] is the bridge."
-
-### Option 3 (Direct)
-> "[Main benefit] without [main objection]."
-
----
-
-## Subtitles
-
-1. "[Product] helps [audience] to [benefit] using [unique method]."
-
-2. "[Benefit 1], [benefit 2], and [benefit 3] — all in one place."
-
-3. "No [objection 1]. No [objection 2]. Just [result]."
-
----
-
-## CTAs
-
-| Type | Option A | Option B |
-|------|----------|----------|
-| **Primary** | "Start free" | "Try for 14 days" |
-| **Secondary** | "See how it works" | "Talk to sales" |
-
----
-
-## Formatted Stats
-
-- **[Number]+** [metric] (e.g., "500+ companies")
-- **[Percentage]%** [result] (e.g., "99.9% uptime")
-- **[Time]** [action] (e.g., "5-min setup")
-
----
-
-## Testimonial Framework
-
-> "[Specific result with number] after using [Product]. [Emotional benefit that brought]."
-> — **[Name]**, [Title] at [Company]
-
----
-
-## Feature → Benefit → Outcome
-
-| Feature | Benefit | Outcome |
-|---------|---------|---------|
-| [Technical feature 1] | [What it means] | [Result in life] |
-| [Technical feature 2] | [What it means] | [Result in life] |
-| [Technical feature 3] | [What it means] | [Result in life] |
-
----
-
-## 4Us Validation
-
-| Headline | Urgent | Unique | Ultra-specific | Useful |
-|----------|--------|--------|----------------|--------|
-| Option 1 | Y/N | Y/N | Y/N | Y/N |
-| Option 2 | Y/N | Y/N | Y/N | Y/N |
-| Option 3 | Y/N | Y/N | Y/N | Y/N |
-```
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 

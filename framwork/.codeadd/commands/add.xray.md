@@ -11,6 +11,12 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 
 ---
 
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `stack-context`), `add-doc-ref-convention`, and `add-token-efficiency`.
+
+---
+
 ## Spec
 
 ```json
@@ -330,7 +336,21 @@ Return summary:
 
 ---
 
-## STEP 6: Update CLAUDE.md
+## STEP 6: Write docs/stack-context.md (schema: stack-context)
+
+EXECUTE schema `stack-context` from `{{skill:add-doc-schemas/SKILL.md}}`.
+
+**Fixed ID:** `STACK` (per schema; no next-id lookup).
+
+**Path:** `docs/stack-context.md`
+
+Write per `stack-context` schema. Fixed ID: `STACK`. Extractive only.
+
+**Source data:** the consolidated reports from STEP 5 (`.codeadd/project/*.md`) and `.codeadd/temp/architecture-discovery.md`. Extract facts only.
+
+---
+
+## STEP 7: Update CLAUDE.md
 
 **DISPATCH AGENT:**
 - **Capability:** read-write (must update CLAUDE.md)
@@ -374,7 +394,7 @@ WAIT: Do NOT proceed until CLAUDE.md has been updated.
 
 ---
 
-## STEP 7: Copy Context Files to Other Engines
+## STEP 8: Copy Context Files to Other Engines
 
 **Coordinator action (no subagent needed).**
 
@@ -402,7 +422,7 @@ Verify all 3 files exist before proceeding:
 
 ---
 
-## STEP 8: Report to User
+## STEP 9: Report to User
 
 Report to user including: context files updated, apps analyzed with types, files generated, code quality scores, next steps.
 
@@ -410,12 +430,20 @@ Report to user including: context files updated, apps analyzed with types, files
 
 ---
 
-## STEP 9: Cleanup (FINAL)
+## STEP 10: Cleanup
 
 **Execute:**
 ```bash
 rm .codeadd/temp/architecture-discovery.md 2>/dev/null || true
 ```
+
+---
+
+## STEP 11: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `stack-context`.
+
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 

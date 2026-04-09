@@ -9,6 +9,36 @@
 set -euo pipefail
 
 # =============================================================================
+# SUBCOMMAND: next-id <PREFIX>
+# Prints the next available doc ID for F|H|PRD|CHG based on docs/ frontmatter.
+# PRD0009 Wave 3 — additive, does not affect default status output.
+# =============================================================================
+if [ "${1:-}" = "next-id" ]; then
+    PREFIX="${2:-}"
+    case "$PREFIX" in
+        F|H|PRD|CHG) ;;
+        *)
+            echo "ERROR:unknown prefix '${PREFIX}' (valid: F, H, PRD, CHG)" >&2
+            exit 2
+            ;;
+    esac
+    MAX=0
+    if [ -d docs ]; then
+        # Collect numeric parts from lines like: id: <PREFIX>NNNN
+        while IFS= read -r num; do
+            [ -n "$num" ] || continue
+            # strip leading zeros for arithmetic
+            n=$((10#$num))
+            [ "$n" -gt "$MAX" ] && MAX=$n
+        done < <(grep -rhE "^id:[[:space:]]*${PREFIX}[0-9]{4}[[:space:]]*$" docs/ 2>/dev/null \
+            | sed -E "s/^id:[[:space:]]*${PREFIX}([0-9]{4}).*/\1/")
+    fi
+    NEXT=$((MAX + 1))
+    printf "%s%04d\n" "$PREFIX" "$NEXT"
+    exit 0
+fi
+
+# =============================================================================
 # GUARDS: dependencias obrigatorias e repositorio git
 # =============================================================================
 
