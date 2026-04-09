@@ -58,8 +58,10 @@ export async function config(cwd, verbose = false) {
   log.info('');
   log.info('Installation Configuration:');
   log.info('');
+  const channel = manifest.channel || 'stable';
   log.info(`Version:        ${manifest.version || 'unknown'}`);
   log.info(`Release Tag:    ${manifest.releaseTag || 'unknown'}`);
+  log.info(`Channel:        ${channel}${channel === 'beta' ? ' ⚠ pre-release' : ''}`);
   log.info(`Installed At:   ${formatDate(manifest.installedAt)}`);
   log.info(`Providers:      ${manifest.providers?.join(', ') || 'none'}`);
   log.info(`Total Files:    ${manifest.files?.length || 0}`);

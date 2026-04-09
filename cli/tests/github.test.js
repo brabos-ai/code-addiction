@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getLatestTag,
+  getLatestPrerelease,
   downloadReleaseAsset,
 } from '../src/github.js';
 
@@ -46,6 +47,63 @@ describe('getLatestTag', () => {
     });
 
     await expect(getLatestTag()).rejects.toThrow('GitHub API error: 500');
+  });
+});
+
+describe('getLatestPrerelease', () => {
+  it('returns tag_name of the first prerelease', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        { tag_name: 'v0.3.0', prerelease: false },
+        { tag_name: 'v0.4.0-beta.2', prerelease: true },
+        { tag_name: 'v0.4.0-beta.1', prerelease: true },
+      ],
+    });
+
+    const tag = await getLatestPrerelease();
+    expect(tag).toBe('v0.4.0-beta.2');
+  });
+
+  it('throws when no prereleases exist', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        { tag_name: 'v0.3.0', prerelease: false },
+      ],
+    });
+
+    await expect(getLatestPrerelease()).rejects.toThrow('No beta releases found');
+  });
+
+  it('throws on network failure', async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
+
+    await expect(getLatestPrerelease()).rejects.toThrow(
+      'Could not reach GitHub. Check your connection.'
+    );
+  });
+
+  it('throws on 404', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+    });
+
+    await expect(getLatestPrerelease()).rejects.toThrow('not found or has no releases');
+  });
+
+  it('throws on non-ok non-404 status', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+    });
+
+    await expect(getLatestPrerelease()).rejects.toThrow('GitHub API error: 500');
   });
 });
 
