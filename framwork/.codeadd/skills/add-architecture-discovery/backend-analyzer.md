@@ -4,12 +4,7 @@ Analisa e documenta padrões backend IMPLEMENTADOS no projeto.
 
 ## Objetivo
 
-Gerar conteúdo para `.codeadd/project/[PREFIX]-[DIR_NAME].md` com padrões reais do projeto.
-
-**Naming Convention:** File name = `{PREFIX}-{DIRECTORY-NAME}.md`
-- PREFIX = APP (if in apps/) | LIB (if in libs/ or packages/)
-- DIRECTORY-NAME = exact directory name in UPPERCASE
-- Example: `apps/backend` → `APP-BACKEND.md`, `apps/server` → `APP-SERVER.md`
+Gerar `.codeadd/skills/project-patterns/backend.md` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
 ## PRIMEIRO: Descobrir SE Existe Backend
 
@@ -81,7 +76,25 @@ Pesquise APENAS se existir no projeto:
 - Versionamento
 - Rate limiting
 
-### 9. Testing (SE EXISTIR)
+### 9. Reusable Abstractions (CRITICAL — prevents duplication)
+- Base classes agents MUST extend (BaseService, BaseRepository, BaseController, etc)
+- Shared utilities/helpers (formatters, parsers, mappers, validators)
+- Custom decorators/annotations already available
+- Shared DTOs, enums, types, interfaces
+- Existing services that solve common problems (notification, email, file upload, etc)
+- **For each: document path, purpose, and usage example**
+- **Principle: if it exists, the agent MUST reuse it instead of creating a new one**
+
+### 10. Project Conventions (CRITICAL — ensures consistency)
+- File/folder naming pattern (kebab-case, camelCase, PascalCase)
+- Module/feature organization (by domain? by layer? by feature?)
+- Import ordering conventions
+- Dependency injection pattern (constructor, decorator, factory)
+- Where new files of each type should be placed
+- How new endpoints/routes are registered
+- **Principle: the agent must follow the established pattern, not invent a new one**
+
+### 11. Testing (SE EXISTIR)
 - Framework: jest, mocha, vitest, pytest, etc
 - Padrão de arquivos: .spec.ts, .test.ts, test_*.py
 - Comandos
@@ -110,86 +123,131 @@ grep -rE "JwtService|passport|@UseGuards" --include="*.ts" | head -5
 
 ## Output Format
 
+Write to `.codeadd/skills/project-patterns/backend.md` using this structure:
+
 ```markdown
-# Backend Patterns
+---
+area: backend
+generated: YYYY-MM-DD
+app-path: [actual app path, e.g., apps/server]
+framework: [detected framework]
+---
+
+## TL;DR
+
+[≤60 words: framework, key libraries, patterns count. Extractive only.]
+
+## TOC
+
+- [Framework & Language](#framework--language)
+- [Logging](#logging)
+- [Validation](#validation)
+- [Error Handling](#error-handling)
+- [Middleware](#middleware)
+- [Authentication](#authentication)
+- [API Conventions](#api-conventions)
+- [Database Interaction](#database-interaction)
+- [Reusable Abstractions](#reusable-abstractions)
+- [Project Conventions](#project-conventions)
+- [Testing](#testing)
 
 ## Framework & Language
-Framework: [nome] | Language: [lang] | Runtime: [version]
+
+[Topic sentence describing framework choice.] Framework: [name] | Language: [lang] | Runtime: [version]
 
 ## Logging
-Library: [nome]
-| Config | Value |
-|--------|-------|
-| Format | [JSON/text] |
-| Levels | [lista] |
-| Transport | [onde vai] |
 
-Usage:
+[Topic sentence: what logger, what context pattern.]
+Config: `{"library":"[name]","format":"[JSON/text]","levels":"[list]","context":"[fields]"}`
+
 ```[lang]
-[exemplo REAL do código]
+// [path:line]
+[REAL code example, ≤10 lines]
 ```
 
 ## Validation
-Library: [nome]
-Pattern: [como funciona]
 
-Example:
+[Topic sentence: what library, what pattern (decorators/schemas/DTOs).]
+Config: `{"library":"[name]","pattern":"[decorators/schemas]"}`
+
 ```[lang]
-[exemplo REAL de DTO/schema]
-```
-
-Error response:
-```json
-[formato REAL de erro]
-```
-
-## Database Interaction
-ORM: [nome]
-Entities: [path glob]
-Repositories: [path glob]
-
-Query pattern:
-```[lang]
-[exemplo REAL de query]
+// [path:line]
+[REAL DTO/schema example, ≤10 lines]
 ```
 
 ## Error Handling
-Base class: [path se existir]
-HTTP mapping:
-| Status | Exception |
-|--------|-----------|
-| 400 | [nome] |
-| 401 | [nome] |
-| 404 | [nome] |
 
-Pattern:
+[Topic sentence: base class, HTTP mapping strategy.]
+Config: `{"base_class":"[path]","mapping":{"400":"[name]","401":"[name]","404":"[name]"}}`
+
 ```[lang]
-[exemplo REAL de throw]
+// [path:line]
+[REAL throw example, ≤10 lines]
 ```
 
 ## Middleware
-Registration: [onde]
-Order:
-1. [middleware 1]
-2. [middleware 2]
+
+[Topic sentence: where registered, execution order.]
+Order: [middleware1] → [middleware2] → [middleware3]
 
 ## Authentication
-Type: [JWT/session/OAuth]
-Guard: [path/nome]
-Token location: [header/cookie]
+
+[Topic sentence: auth type, where validated.]
+Config: `{"type":"[JWT/session/OAuth]","guard":"[path]","token":"[header/cookie]"}`
 
 ## API Conventions
-Response format:
+
+[Topic sentence: response format, versioning.]
+
 ```json
-[formato REAL]
+[REAL response format example]
 ```
-Versioning: [padrão]
+
+## Database Interaction
+
+[Topic sentence: ORM, repository pattern.]
+Config: `{"orm":"[name]","entities":"[path glob]","repositories":"[path glob]"}`
+
+```[lang]
+// [path:line]
+[REAL query example, ≤10 lines]
+```
+
+## Reusable Abstractions
+
+[Topic sentence: what exists that agents MUST reuse instead of creating from scratch.]
+
+**Base classes:**
+- `[ClassName]` at `[path]` — [purpose]. Extend this for new [services/controllers/etc].
+
+**Shared utilities:**
+- `[utilName]` at `[path]` — [what it does]
+
+**Shared DTOs/Types:**
+- `[path glob]` — [what's available]
+
+**Existing services (reuse, don't duplicate):**
+- `[ServiceName]` at `[path]` — [what problem it solves]
+
+## Project Conventions
+
+[Topic sentence: how the project is organized and where new code should go.]
+
+File naming: [pattern]
+Module organization: [by domain/layer/feature]
+New endpoint registration: [how]
+New service placement: [where]
+Import ordering: [convention if any]
 
 ## Testing
-Framework: [nome]
-Files: [padrão]
-Run: [comando]
+
+[Topic sentence: framework, file pattern.]
+Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
 ```
+
+**CRITICAL:** Skip sections that don't exist. Each ## chunk ~100-150 words max. Code examples always with `// path:line` comment. TOC only includes sections that exist.
+
+**MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing code and violating established patterns. Prioritize discovering these over documenting library configs.
 
 ## Regras Críticas
 

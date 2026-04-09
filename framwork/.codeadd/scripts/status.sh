@@ -458,13 +458,43 @@ if [ "$BRANCH_TYPE" != "main" ]; then
 fi
 
 # =============================================================================
-# OUTPUT: PROJECT PATTERNS (from .codeadd/project/*.md)
+# OUTPUT: PROJECT PATTERNS (from .codeadd/skills/project-patterns/)
 # =============================================================================
 
-PROJECT_DIR=".codeadd/project"
-if [ -d "$PROJECT_DIR" ]; then
-    # List all pattern files (SERVER.md, ADMIN.md, CLI.md, DATABASE.md, etc)
-    PROJECT_FILES=$(find "$PROJECT_DIR" -maxdepth 1 -name "*.md" -type f 2>/dev/null | \
+PATTERNS_DIR=".codeadd/skills/project-patterns"
+if [ -d "$PATTERNS_DIR" ] && [ -f "$PATTERNS_DIR/SKILL.md" ]; then
+    # List area files (backend.md, frontend.md, database.md, etc — excluding SKILL.md)
+    AREAS=""
+    TOTAL_TOPICS=0
+
+    for md_file in "$PATTERNS_DIR"/*.md; do
+        [ -f "$md_file" ] || continue
+        fname=$(basename "$md_file" .md)
+        [ "$fname" = "SKILL" ] && continue
+
+        AREAS="${AREAS:+$AREAS,}$fname"
+
+        # Count ## headers excluding TL;DR and TOC
+        count=$(grep -cE '^## ' "$md_file" 2>/dev/null || true)
+        has_tldr=$(grep -c '^## TL;DR' "$md_file" 2>/dev/null || true)
+        has_toc=$(grep -c '^## TOC' "$md_file" 2>/dev/null || true)
+        count=$((count - has_tldr - has_toc))
+        [ "$count" -lt 0 ] && count=0
+        TOTAL_TOPICS=$((TOTAL_TOPICS + count))
+    done
+
+    if [ -n "$AREAS" ]; then
+        echo "PROJECT_SKILL:$PATTERNS_DIR"
+        echo "PROJECT_AREAS:$AREAS"
+        echo "PROJECT_TOPICS:$TOTAL_TOPICS"
+    else
+        echo "PROJECT_SKILL:$PATTERNS_DIR"
+        echo "PROJECT_AREAS:none"
+        echo "PROJECT_TOPICS:0"
+    fi
+elif [ -d ".codeadd/project" ]; then
+    # Legacy: fall back to old .codeadd/project/*.md format
+    PROJECT_FILES=$(find ".codeadd/project" -maxdepth 1 -name "*.md" -type f 2>/dev/null | \
         xargs -r -I {} basename {} .md 2>/dev/null | \
         sort | \
         tr '\n' ',' | \
@@ -474,10 +504,11 @@ if [ -d "$PROJECT_DIR" ]; then
         PROJECT_COUNT=$(echo "$PROJECT_FILES" | tr ',' '\n' | wc -l | tr -d ' \r\n')
         echo "PROJECT_PATTERNS:$PROJECT_COUNT"
         echo "PROJECT_DOCS:.codeadd/project/{$PROJECT_FILES}.md"
+        echo "PROJECT_HINT:Run /add.xray to upgrade to project-patterns skill"
     fi
 else
     echo "PROJECT_PATTERNS:0"
-    echo "PROJECT_HINT:Run /architecture-analyzer to generate project patterns"
+    echo "PROJECT_HINT:Run /add.xray to generate project patterns"
 fi
 
 # =============================================================================

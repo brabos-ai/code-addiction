@@ -4,11 +4,7 @@ Analisa e documenta estratégia de database IMPLEMENTADA no projeto.
 
 ## Objetivo
 
-Gerar conteúdo para `.codeadd/project/LIB-[DIR_NAME].md` com padrões reais do projeto.
-
-**Naming Convention:** File name = `LIB-{DIRECTORY-NAME}.md`
-- Based on actual lib path: `libs/database` → `LIB-DATABASE.md`, `libs/app-database` → `LIB-APP-DATABASE.md`
-- If cross-app without dedicated lib: use `LIB-DATABASE.md` as fallback
+Gerar `.codeadd/skills/project-patterns/database.md` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
 **IMPORTANTE:** NÃO documentar schema, tabelas ou índices. São dinâmicos e ficam desatualizados.
 
@@ -67,7 +63,23 @@ Pesquise APENAS se existir no projeto:
 - Policies: onde definidas
 - Pattern: by tenant_id, user_id, etc
 
-### 6. Seeding (SE EXISTIR)
+### 6. Reusable Abstractions (CRITICAL — prevents duplication)
+- Base repository class (if exists) — agents MUST extend instead of creating raw queries
+- Shared query helpers/builders (pagination, filtering, sorting utilities)
+- Transaction wrappers/patterns
+- Existing entity types/interfaces that new entities should follow
+- Seed data factories/builders
+- **For each: document path, purpose, and usage example**
+
+### 7. Database Conventions (CRITICAL — ensures consistency)
+- Entity/model naming pattern (singular? plural? PascalCase?)
+- Migration naming convention (timestamp prefix? sequential?)
+- Repository file placement (co-located with entity? separate folder?)
+- How new entities are registered with the ORM
+- How new migrations are created (CLI command)
+- **Principle: the agent must follow the established pattern**
+
+### 8. Seeding (SE EXISTIR)
 - Arquivo: path do seed
 - Comando: como rodar
 
@@ -94,59 +106,102 @@ cat .env .env.example .env.local 2>/dev/null | grep -i "database\|db_\|postgres\
 
 ## Output Format
 
+Write to `.codeadd/skills/project-patterns/database.md` using this structure:
+
 ```markdown
-# Database Architecture
+---
+area: database
+generated: YYYY-MM-DD
+app-path: [actual lib path, e.g., libs/database, or "cross-app"]
+engine: [detected database engine]
+---
+
+## TL;DR
+
+[≤60 words: engine, ORM, migration tool, patterns count. Extractive only.]
+
+## TOC
+
+- [Database Type](#database-type)
+- [Migrations](#migrations)
+- [Connection Strategy](#connection-strategy)
+- [Query Patterns](#query-patterns)
+- [Row-Level Security](#row-level-security)
+- [Reusable Abstractions](#reusable-abstractions)
+- [Database Conventions](#database-conventions)
+- [Seeding](#seeding)
 
 ## Database Type
-Type: [PostgreSQL/MySQL/MongoDB/etc]
-Connection: [env var name or config path]
+
+[Topic sentence: engine, connection source.]
+Config: `{"type":"[PostgreSQL/MySQL/etc]","connection":"[env var or config path]"}`
 
 ## Migrations
-Tool: [typeorm/prisma/knex/etc]
-Folder: [path]
-Glob: [padrão de arquivos, ex: *.ts, *.sql]
 
-Commands:
-| Action | Command |
-|--------|---------|
-| Create | [comando real] |
-| Run | [comando real] |
-| Revert | [comando real] |
+[Topic sentence: tool, folder, file pattern.]
+Config: `{"tool":"[name]","folder":"[path]","glob":"[pattern]","commands":{"create":"[cmd]","run":"[cmd]","revert":"[cmd]"}}`
 
-Example migration:
 ```[lang]
-[exemplo REAL de migration do projeto]
+// [path:line]
+[REAL migration example, ≤10 lines]
 ```
 
 ## Connection Strategy
-Config: [path do arquivo de config]
-Pool: [tamanho se encontrado]
-Timeout: [valor se encontrado]
+
+[Topic sentence: pool config, where configured.]
+Config: `{"config":"[path]","pool":"[size]","timeout":"[value]"}`
 
 ## Query Patterns
-ORM: [nome]
-Entities: [path glob]
-Repositories: [path glob]
 
-Pattern:
+[Topic sentence: ORM, repository pattern.]
+Config: `{"orm":"[name]","entities":"[path glob]","repositories":"[path glob]"}`
+
 ```[lang]
-[exemplo REAL de query do projeto]
+// [path:line]
+[REAL query example, ≤10 lines]
 ```
 
 ## Row-Level Security
-Status: [Enabled/Disabled]
-Policies: [path]
-Pattern: [by tenant_id, user_id, etc]
 
-Example:
+[Topic sentence: status, policy pattern.]
+Config: `{"status":"[enabled/disabled]","policies":"[path]","pattern":"[by tenant_id/user_id/etc]"}`
+
 ```sql
-[exemplo REAL de policy]
+-- [path:line]
+[REAL policy example, ≤10 lines]
 ```
+
+## Reusable Abstractions
+
+[Topic sentence: what exists that agents MUST reuse for database work.]
+
+**Base repository:**
+- `[ClassName]` at `[path]` — [purpose]. Extend for new entities.
+
+**Query helpers:**
+- `[helperName]` at `[path]` — [pagination/filtering/sorting]
+
+**Transaction patterns:**
+- [how transactions are wrapped, path to example]
+
+## Database Conventions
+
+[Topic sentence: how database code is organized.]
+
+Entity naming: [singular/plural, PascalCase]
+Migration naming: [timestamp prefix, CLI command to create]
+Repository placement: [co-located or separate]
+New entity registration: [how to register with ORM]
 
 ## Seeding
-File: [path]
-Run: [comando]
+
+[Topic sentence: seed file, command.]
+Config: `{"file":"[path]","run":"[command]"}`
 ```
+
+**CRITICAL:** Skip sections that don't exist. Each ## chunk ~100-150 words max. Code examples always with `// path:line` comment. TOC only includes sections that exist.
+
+**MOST IMPORTANT SECTIONS:** Reusable Abstractions and Database Conventions are the highest-value sections — they prevent agents from writing raw queries when helpers exist, and ensure new entities/migrations follow the established pattern.
 
 ## Regras Críticas
 

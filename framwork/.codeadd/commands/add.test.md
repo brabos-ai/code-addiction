@@ -209,7 +209,8 @@ All area generators share this structure. DISPATCH one per area that has target 
 ```
 ## MANDATORY: Load Context
 1. READ skill add-[AREA]-development (if exists) for project patterns
-2. READ .codeadd/project/*.md (if exists) for project conventions
+2. IF PROJECT_SKILL in status.sh output: run `bash .codeadd/scripts/pattern-search.sh [AREA]` and read relevant topic ranges (especially "Testing" topic)
+   IF PROJECT_DOCS in status.sh output: READ matching .codeadd/project/*.md for project conventions
 
 ## CONTEXT
 - Test framework: [TEST_FRAMEWORK]

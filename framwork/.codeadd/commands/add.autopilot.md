@@ -281,7 +281,8 @@ MUST generate Spec Checklist (PRD0034) at end of plan.md.
    Your scope is LIMITED to ${AREA} area only.
 2. Run: `bash .codeadd/scripts/status.sh`
 3. Read ALL files listed in TASK_DOCUMENTS
-4. Parse PROJECT_PATHS from script output and read relevant files
+4. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` and read relevant topic ranges
+   IF PROJECT_DOCS in script output: read the matching project pattern files
 5. Read your area's skill file (see SKILLS section)
 ```
 
