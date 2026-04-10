@@ -38,7 +38,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 | Skill | Purpose | Used by |
 |-------|---------|---------|
-| add-architecture-discovery | Map architecture, detect patterns, generate stack-context.md | add.audit, add.xray |
+| add-architecture-discovery | Map architecture, detect patterns, generate project-patterns skill | add.audit, add.xray |
 | add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | - |
 | add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-code-review | Code validation, auto-correction | add.review, add.build |
@@ -59,7 +59,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-plan-based-features | Implement subscription plan-based features | - |
 | add-planning | Technical planning orchestration | - |
 | add-product-discovery | Product discovery (macro level) | add.init |
-| add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, stack-context.md | - |
+| add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration | - |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers | - |
 | add-saas-copy | Copy frameworks and templates for SaaS landing pages | add.copy |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy | add.audit, add.review |

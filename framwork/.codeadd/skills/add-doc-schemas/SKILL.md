@@ -14,7 +14,7 @@ Agents consuming docs read frontmatter + TL;DR first, then grep specific section
 ## When to Use
 
 - Writing or refactoring a command that creates/updates a doc asset consumed by agents
-- Generating: about.md, plan.md, design.md, changelog, owner.md, product.md, stack-context.md, audit/diagnose reports, saas-copy, landing-page specs, hotfix docs
+- Generating: about.md, plan.md, design.md, changelog, owner.md, product.md, audit/diagnose reports, saas-copy, landing-page specs, hotfix docs
 - Validating an existing doc against its schema (via the gate block below)
 - Creating new generator commands that produce agent-consumed artefacts
 
@@ -156,16 +156,6 @@ For `/add.init` (creates `docs/product/product.md`).
 - **Word caps:** TL;DR ≤60 · Vision ≤80 · ICP ≤150 (table) · Core Value ≤100 · Differentiators ≤120 · Business Model ≤100
 - **Compression:** ICP = table `segment | pain | JTBD`. Differentiators = bullets. Business Model = `{"pricing":..., "channels":...}` JSON.
 - **Forbidden:** marketing fluff, superlatives, unverified claims.
-
-### stack-context
-
-For `/add.xray` (creates `docs/stack-context.md`).
-
-- **Frontmatter:** `id: STACK`, `type: stack-context`, `related: []`
-- **Sections:** TL;DR · Apps · Stack · Architecture · Conventions
-- **Word caps:** TL;DR ≤60 · Apps ≤150 (table) · Stack ≤100 (JSON) · Architecture ≤150 · Conventions ≤120
-- **Compression:** Apps = table `app | kind | path | entry`. Stack = minified JSON per layer. Architecture = bullets of layer boundaries. Conventions = bullets.
-- **Forbidden:** tutorial explanations, history of decisions (link PRD instead).
 
 ### audit-report
 

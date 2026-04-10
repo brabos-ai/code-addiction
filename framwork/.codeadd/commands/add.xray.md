@@ -9,7 +9,7 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `stack-context`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-ref-convention` and `add-token-efficiency`.
 
 ---
 
@@ -31,12 +31,11 @@ STEP 3: Detect & Classify Apps   → BUILD dispatch plan
 STEP 4: Dispatch Analyzers       → ALL IN PARALLEL
 STEP 5: Consolidate Reports      → WAIT-ALL before proceeding
 STEP 6: Generate SKILL.md Index  → CREATE project-patterns skill index
-STEP 7: Write stack-context.md   → EXECUTE schema
+STEP 7: Write stack-context.md   → WRITE .codeadd/project/ (simple format)
 STEP 8: Update CLAUDE.md         → DISPATCH agent
 STEP 9: Copy Context Files       → CLAUDE.md → AGENTS.md, GEMINI.md
 STEP 10: Report to User          → SUMMARY + next steps
 STEP 11: Cleanup                 → REMOVE temp files
-STEP 12: Validation Gate         → MUST PASS before complete
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -428,17 +427,17 @@ Each area file follows context engineering principles:
 
 ---
 
-## STEP 7: Write docs/stack-context.md (schema: stack-context)
+## STEP 7: Write .codeadd/project/stack-context.md
 
-EXECUTE schema `stack-context` from `{{skill:add-doc-schemas/SKILL.md}}`.
+WRITE `.codeadd/project/stack-context.md` using the simple key-value format. Follow `StackContextGeneration` detection rules from `{{skill:add-architecture-discovery/SKILL.md}}`.
 
-**Fixed ID:** `STACK` (per schema; no next-id lookup).
+**Path:** `.codeadd/project/stack-context.md`
 
-**Path:** `docs/stack-context.md`
+**Source data:** `.codeadd/temp/architecture-discovery.md` + `package.json` analysis from discovered apps.
 
-Write per `stack-context` schema. Fixed ID: `STACK`. Extractive only.
+**Required fields:** `framework`, `language`, `runtime`, `tier`. Detect all optional fields (`orm`, `database`, `migrations`, `frontend framework`, `build-tool`, `ui-library`, `state`, `forms`, `pattern`, `monorepo`, `workspace-tool`) from actual dependencies — never assume.
 
-**Source data:** the consolidated reports from STEP 5 (`.codeadd/skills/project-patterns/*.md`) and `.codeadd/temp/architecture-discovery.md`. Extract facts only.
+IF `.codeadd/project/stack-context.md` already exists AND content matches discovered stack → SKIP this step.
 
 ---
 
@@ -464,7 +463,7 @@ Follow OUTPUT FORMAT and TEMPLATE sections.
 ## TASK
 Update CLAUDE.md with:
 
-1. **## Architecture Contract** section
+1. **## Architecture Contract** section — include an **Apps** table (`app | kind | path | entry`) listing all detected apps/packages with their type, directory path, and entry point file
 2. **## Technical Spec** section
 3. **## Implementation Patterns** section with:
    - Location: .codeadd/skills/project-patterns/
@@ -542,15 +541,6 @@ bash .codeadd/scripts/pattern-search.sh backend
 rm .codeadd/temp/architecture-discovery.md 2>/dev/null || true
 ```
 
----
-
-## STEP 12: Validation Gate
-
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `stack-context`.
-
-⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
-
----
 
 ## OUTPUT NAMING CONVENTION (CRITICAL)
 
