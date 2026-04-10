@@ -202,6 +202,7 @@ function lintResourcePaths(content, srcPath) {
  *   providerPattern(provider)  → pattern string from provider config (or null to skip)
  *   resolveProviders(entry,map)→ array of provider keys
  *   meta(name, entry, pattern) → metadata object for the transformer
+ *   getTransformer(format)     → optional, returns format-specific transformer fn
  *   postWrite(name, entry, provider, outDir) → optional, returns extra file count
  */
 function buildResources(map, strategy) {
@@ -275,7 +276,13 @@ const skillStrategy = {
   sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'skills', name, 'SKILL.md'),
   providerPattern: (provider) => provider.skills || null,
   resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
-  meta: (name) => ({ name, description: '', skillFormat: false }),
+  meta: (name) => ({ name }),
+
+  /**
+   * Skills always use passthrough — SKILL.md already has its own YAML frontmatter.
+   * nativeFormat (toml) applies to commands only; all providers output skills as .md.
+   */
+  transform: (content) => content,
 
   /** Copy extra files/subdirs from skill source (everything except SKILL.md) */
   postWrite(name, _entry, _provider, outDir) {
