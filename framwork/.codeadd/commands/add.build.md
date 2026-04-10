@@ -452,7 +452,7 @@ Fix ALL build errors. Do not stop until build passes 100%.
 1. **Extract** from user message: bug description, error messages, area (frontend/API/worker), repro steps
    - If critical info missing: Ask ONE consolidated question
 2. **Load context**: about.md, discovery.md, plan.md (if HAS_PLAN), ARCHITECTURE_REF
-3. **Identify files** from plan.md and git changes likely involved in the bug
+3. **Identify files** from plan.md and `CHANGED` output (STEP 1) likely involved in the bug
 4. **Investigate root cause**: READ files → TRACE flow → COMPARE with contracts → CHECK business rules → IDENTIFY specific root cause
 
 #### C2: Fix Implementation

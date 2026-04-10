@@ -7,7 +7,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 > **Source of Truth:** Complete ecosystem map for add-pro.
 >
-> **Last Updated:** 2026-04-07 (STEP 6: Auto-regenerated from comprehensive ecosystem scan)
+> **Last Updated:** 2026-04-10 (STEP 2: Regenerated for v0.3.0-beta.1..HEAD analysis)
 
 ## Commands
 
@@ -41,12 +41,14 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-architecture-discovery | Map architecture, detect patterns, generate project-patterns skill | add.audit, add.xray |
 | add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | - |
 | add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
+| add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write | - |
 | add-code-review | Code validation, auto-correction | add.review, add.build |
 | add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add.commit |
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-delivery-validation | Validate requirements implemented, acceptance criteria pass | add.review |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code | add |
 | add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose, add.copy, add.landing |
+| add-documentation-style | [REMOVED in v0.3.0] Consolidate into add-claude-md-style for CLAUDE.md generation | - |
 | add-ecosystem | Consolidated ecosystem view (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.copy, add.landing, add.xray, add.diagnose |
 | add-feature-discovery | Feature discovery process, codebase analysis | add.new, add.plan |
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria | add.new |
@@ -67,7 +69,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-stripe | Stripe integration, price versioning, grandfathering | - |
 | add-subagent-driven-development | Subagent coordination with quality gates | - |
 | add-token-efficiency | Compression, compact JSON, minimal tokens | All (best practice) |
-| add-updating-claude-documentation | Update CLAUDE.md when architecture changes | - |
 | add-ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan |
 
 ## Dependency Index

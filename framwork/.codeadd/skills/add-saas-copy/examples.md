@@ -1,222 +1,222 @@
-# Exemplos de Copy
+# Copy Examples
 
-Copy morna vs afiada + casos reais.
-
----
-
-## Copy Morna vs Afiada
-
-| Morna | Afiada | Tecnica |
-|-------|--------|---------|
-| "Gerencie seus projetos" | "Pare de perder deadlines" | Dor > funcionalidade |
-| "Software completo" | "Tudo que precisa, nada que nao" | Especificidade |
-| "Facil de usar" | "Setup em 5 min, sem treinamento" | Prova concreta |
-| "Qualidade garantida" | "99.9% uptime ou $100 de credito" | Garantia com risco |
-| "Atendimento 24/7" | "Resposta em 2h ou escala automatica" | Compromisso mensuravel |
-| "Solucao inovadora" | "IA que escreve emails de follow-up" | Funcao especifica |
-| "Melhore sua produtividade" | "Recupere 4h por semana" | Numero concreto |
-| "Plataforma integrada" | "Conecta com 50+ ferramentas em 1 clique" | Quantidade + facilidade |
-| "Suporte dedicado" | "Seu gerente de conta responde em 30min" | Pessoa + tempo |
-| "Precos acessiveis" | "Comeca em R$49/mes. Cancela quando quiser." | Valor + liberdade |
+Lukewarm vs sharp copy + real cases.
 
 ---
 
-## Por Que Copy Morna Falha
+## Lukewarm vs Sharp Copy
 
-### 1. Foca em Feature, Nao em Dor
+| Lukewarm | Sharp | Technique |
+|----------|-------|-----------|
+| "Manage your projects" | "Stop missing deadlines" | Pain > functionality |
+| "Complete software" | "Everything you need, nothing you don't" | Specificity |
+| "Easy to use" | "Setup in 5 min, no training" | Concrete proof |
+| "Guaranteed quality" | "99.9% uptime or $100 credit" | Risk-backed guarantee |
+| "24/7 support" | "Response in 2h or auto-escalation" | Measurable commitment |
+| "Innovative solution" | "AI that writes follow-up emails" | Specific function |
+| "Improve your productivity" | "Reclaim 4 hours per week" | Concrete number |
+| "Integrated platform" | "Connects with 50+ tools in 1 click" | Quantity + ease |
+| "Dedicated support" | "Your account manager responds in 30min" | Person + time |
+| "Affordable pricing" | "Starts at $49/mo. Cancel anytime." | Value + freedom |
+
+---
+
+## Why Lukewarm Copy Fails
+
+### 1. Focuses on Feature, Not Pain
 
 ```markdown
-MORNA: "Nosso CRM tem pipeline visual"
-AFIADA: "Veja exatamente onde cada deal esta travado"
+LUKEWARM: "Our CRM has visual pipeline"
+SHARP: "See exactly where each deal is stuck"
 
-Por que funciona: Usuario nao quer "pipeline visual".
-Quer saber onde esta perdendo vendas.
+Why it works: User doesn't want "visual pipeline".
+They want to know where they're losing sales.
 ```
 
-### 2. Usa Adjetivos Vazios
+### 2. Uses Empty Adjectives
 
 ```markdown
-MORNA: "Software robusto e escalavel"
-AFIADA: "Aguenta 10k usuarios simultaneos sem engasgar"
+LUKEWARM: "Robust and scalable software"
+SHARP: "Handles 10k concurrent users without choking"
 
-Por que funciona: "Robusto" nao significa nada.
-10k usuarios e concreto.
+Why it works: "Robust" means nothing.
+10k users is concrete.
 ```
 
-### 3. Nao Tem Prova
+### 3. Has No Proof
 
 ```markdown
-MORNA: "Clientes satisfeitos"
-AFIADA: "4.9 estrelas no G2 (500+ reviews)"
+LUKEWARM: "Satisfied customers"
+SHARP: "4.9 stars on G2 (500+ reviews)"
 
-Por que funciona: Qualquer um pode dizer "clientes satisfeitos".
-Rating verificavel e prova.
+Why it works: Anyone can say "satisfied customers".
+Verifiable rating is proof.
 ```
 
-### 4. Nao Cria Urgencia
+### 4. Creates No Urgency
 
 ```markdown
-MORNA: "Experimente nosso produto"
-AFIADA: "Cada dia sem [produto] custa [X] em oportunidades perdidas"
+LUKEWARM: "Try our product"
+SHARP: "Every day without [product] costs [X] in lost opportunities"
 
-Por que funciona: Sem consequencia, nao ha razao para agir agora.
+Why it works: Without consequence, there's no reason to act now.
 ```
 
 ---
 
-## Exemplos Completos: Antes e Depois
+## Full Examples: Before and After
 
-### Exemplo 1: SaaS de Gestao de Projetos
+### Example 1: Project Management SaaS
 
-**ANTES (Morna):**
+**BEFORE (Lukewarm):**
 ```markdown
-# Gerencie projetos com facilidade
+# Manage projects with ease
 
-TaskMaster e uma plataforma completa para gestao de projetos.
-Com nossa solucao, sua equipe trabalha de forma mais produtiva.
+TaskMaster is a complete platform for project management.
+With our solution, your team works more productively.
 
-[Saiba mais]
+[Learn more]
 ```
 
-**DEPOIS (Afiada):**
+**AFTER (Sharp):**
 ```markdown
-# Pare de perder deadlines
+# Stop missing deadlines
 
-TaskMaster mostra onde seus projetos estao travados
-— antes que virem incendios.
+TaskMaster shows where your projects are stuck
+— before they become fires.
 
-Setup em 5 min. Sem treinamento. Cancela quando quiser.
+Setup in 5 min. No training. Cancel anytime.
 
-[Comecar gratis] [Ver demo]
+[Start free] [See demo]
 ```
 
-**O que mudou:**
-- Headline: funcionalidade → dor
-- Subtitle: adjetivo vazio → beneficio especifico
-- Prova: tempo de setup + sem friccao
-- CTA: "Saiba mais" → acao clara
+**What changed:**
+- Headline: feature → pain
+- Subtitle: empty adjective → specific benefit
+- Proof: setup time + no friction
+- CTA: "Learn more" → clear action
 
 ---
 
-### Exemplo 2: Ferramenta de Automacao
+### Example 2: Automation Tool
 
-**ANTES (Morna):**
+**BEFORE (Lukewarm):**
 ```markdown
-# Automatize seus processos
+# Automate your processes
 
-AutoFlow permite criar automacoes sem codigo.
-Integre suas ferramentas e ganhe produtividade.
+AutoFlow lets you create no-code automations.
+Integrate your tools and gain productivity.
 
-[Conheca o AutoFlow]
+[Learn about AutoFlow]
 ```
 
-**DEPOIS (Afiada):**
+**AFTER (Sharp):**
 ```markdown
-# Recupere 4 horas por semana
+# Reclaim 4 hours per week
 
-AutoFlow conecta suas 50+ ferramentas em 2 cliques.
-Copiar dados entre sistemas? Nunca mais.
+AutoFlow connects your 50+ tools in 2 clicks.
+Copy data between systems? Never again.
 
-500+ empresas ja automatizaram. Voce e a proxima?
+500+ companies already automated. Are you next?
 
-[Testar gratis por 14 dias]
+[Try free for 14 days]
 ```
 
-**O que mudou:**
-- Headline: processo → resultado mensuravel (4h)
-- Especificidade: "50+ ferramentas", "2 cliques"
-- Prova social: "500+ empresas"
-- CTA: trial com prazo
+**What changed:**
+- Headline: process → measurable result (4h)
+- Specificity: "50+ tools", "2 clicks"
+- Social proof: "500+ companies"
+- CTA: trial with deadline
 
 ---
 
-### Exemplo 3: Dashboard de Metricas
+### Example 3: Metrics Dashboard
 
-**ANTES (Morna):**
+**BEFORE (Lukewarm):**
 ```markdown
-# Visualize seus dados
+# Visualize your data
 
-DataViz transforma dados em insights acionaveis.
-Tome decisoes melhores com nossa plataforma de BI.
+DataViz transforms data into actionable insights.
+Make better decisions with our BI platform.
 
-[Agendar demo]
+[Schedule demo]
 ```
 
-**DEPOIS (Afiada):**
+**AFTER (Sharp):**
 ```markdown
-# Suas metricas. Ao vivo. No celular.
+# Your metrics. Live. On mobile.
 
-DataViz conecta 30+ fontes e monta seu dashboard em 15 min.
-Chega de esperar relatorio de segunda-feira.
+DataViz connects 30+ sources and builds your dashboard in 15 min.
+No more waiting for the Monday report.
 
-"Descobri um gargalo de R$50k no primeiro dia." — CFO, TechCorp
+"I found a $50k bottleneck on day one." — CFO, TechCorp
 
-[Comecar gratis]
+[Start free]
 ```
 
-**O que mudou:**
-- Headline: beneficio abstrato → concreto (ao vivo, celular)
-- Tempo: "15 min" para montar
-- Dor especifica: "relatorio de segunda-feira"
-- Testimonial com resultado em dinheiro
+**What changed:**
+- Headline: abstract benefit → concrete (live, mobile)
+- Time: "15 min" to set up
+- Specific pain: "Monday report"
+- Testimonial with monetary result
 
 ---
 
-## Anti-Patterns Comuns
+## Common Anti-Patterns
 
 ### 1. Buzzword Bingo
 
 ```markdown
-EVITAR:
-"Solucao disruptiva de IA com blockchain
-para transformacao digital end-to-end"
+AVOID:
+"Disruptive AI solution with blockchain
+for end-to-end digital transformation"
 
-PREFERIR:
-"IA que responde emails de suporte em 30 segundos"
+PREFER:
+"AI that responds support emails in 30 seconds"
 ```
 
 ### 2. Feature Dump
 
 ```markdown
-EVITAR:
-"API RESTful, webhooks, SSO, RBAC, multi-tenant,
-dashboard customizavel, relatorios exportaveis..."
+AVOID:
+"RESTful API, webhooks, SSO, RBAC, multi-tenant,
+customizable dashboard, exportable reports..."
 
-PREFERIR:
-"Integra com seu stack. Seguro como banco.
-Relatorios que seu chefe vai entender."
+PREFER:
+"Integrates with your stack. Secure as a bank.
+Reports your boss will understand."
 ```
 
-### 3. Jargao Tecnico para Publico Nao-Tecnico
+### 3. Technical Jargon for Non-Technical Audience
 
 ```markdown
-EVITAR (para PME):
-"Arquitetura serverless com auto-scaling horizontal"
+AVOID (for SMBs):
+"Serverless architecture with horizontal auto-scaling"
 
-PREFERIR:
-"Funciona rapido mesmo com 1000 usuarios ao mesmo tempo"
+PREFER:
+"Works fast even with 1000 users at the same time"
 ```
 
-### 4. Promessas Sem Backup
+### 4. Promises Without Backup
 
 ```markdown
-EVITAR:
-"O melhor CRM do mercado"
+AVOID:
+"The best CRM on the market"
 
-PREFERIR:
-"CRM #1 no G2 para pequenas equipes de vendas (2024)"
+PREFER:
+"#1 CRM on G2 for small sales teams (2024)"
 ```
 
 ---
 
-## Checklist de Copy Afiada
+## Sharp Copy Checklist
 
 ```markdown
-- [ ] Headline menciona DOR (nao feature)?
-- [ ] Tem NUMERO concreto (tempo, %, usuarios)?
-- [ ] Prova social e VERIFICAVEL (rating, nome, cargo)?
-- [ ] CTA tem ACAO clara (nao "Saiba mais")?
-- [ ] Subtitle explica o COMO (nao repete headline)?
-- [ ] Zero adjetivos vazios (robusto, inovador, completo)?
-- [ ] Passa no teste dos 4Us?
+- [ ] Headline mentions PAIN (not feature)?
+- [ ] Has concrete NUMBER (time, %, users)?
+- [ ] Social proof is VERIFIABLE (rating, name, role)?
+- [ ] CTA has clear ACTION (not "Learn more")?
+- [ ] Subtitle explains the HOW (doesn't repeat headline)?
+- [ ] Zero empty adjectives (robust, innovative, complete)?
+- [ ] Passes the 4Us test?
 ```

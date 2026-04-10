@@ -1,189 +1,189 @@
 ---
 name: add-saas-copy
-description: Frameworks e templates de copy para landing pages SaaS - PAS, BAB, 4Us, F→B→O + templates de brief e copy sugerida
+description: Copywriting frameworks and templates for SaaS landing pages - PAS, BAB, 4Us, F→B→O + brief and suggested copy templates
 ---
 
 # SaaS Copy
 
-Skill de **conhecimento de copywriting** para landing pages SaaS. Contém frameworks, templates e exemplos para transformar documentação técnica em argumentos de venda.
+**Copywriting knowledge** skill for SaaS landing pages. Contains frameworks, templates and examples to transform technical documentation into sales arguments.
 
-**Use para:** Referência de frameworks e templates de copy
-**Não use para:** Executar workflow (use comando `/add-copy`)
+**Use for:** Reference of copy frameworks and templates
+**Do NOT use for:** Executing workflow (use command `/add-copy`)
 
-**Relação:**
-- `saas-copy` (skill) = Conhecimento, frameworks, templates
-- `/add-copy` (comando) = Execução do workflow + geração de arquivos
-- `landing-page-saas` (skill) = Aplicação visual da copy
+**Relationship:**
+- `saas-copy` (skill) = Knowledge, frameworks, templates
+- `/add-copy` (command) = Workflow execution + file generation
+- `landing-page-saas` (skill) = Visual application of copy
 
 ---
 
 ## When to Use
 
-- Consultar frameworks de copy (PAS, BAB, 4Us, F→B→O)
-- Ver templates de Copy Brief e Copy Sugerida
-- Entender como transformar features em benefícios
-- Referência para validação de copy (morna vs afiada)
+- Consulting copy frameworks (PAS, BAB, 4Us, F→B→O)
+- Viewing Copy Brief and Suggested Copy templates
+- Understanding how to transform features into benefits
+- Reference for copy validation (lukewarm vs sharp)
 
 ## When NOT to Use
 
-- Para executar workflow completo → use `/add-copy`
-- Para gerar seções visuais → use `landing-page-saas`
-- Para email marketing ou ads (escopo diferente)
+- To execute complete workflow → use `/add-copy`
+- To generate visual sections → use `landing-page-saas`
+- For email marketing or ads (different scope)
 
 ---
 
-## Frameworks de Copy
+## Copy Frameworks
 
-| Framework | Uso | Estrutura |
+| Framework | Use | Structure |
 |-----------|-----|-----------|
 | **PAS** | Headlines | Problem → Agitate → Solution |
 | **BAB** | Storytelling | Before → After → Bridge |
-| **4Us** | Validação | Urgent, Unique, Ultra-specific, Useful |
+| **4Us** | Validation | Urgent, Unique, Ultra-specific, Useful |
 | **F→B→O** | Features | Feature → Benefit → Outcome |
 
-**Detalhes completos:** [formulas.md](formulas.md)
+**Full details:** [formulas.md](formulas.md)
 
 ---
 
-## Copy Morna vs Afiada
+## Lukewarm vs Sharp Copy
 
-| Morna | Afiada | Técnica |
-|-------|--------|---------|
-| "Gerencie seus projetos" | "Pare de perder deadlines" | Dor > funcionalidade |
-| "Software completo" | "Tudo que precisa, nada que não" | Especificidade |
-| "Fácil de usar" | "Setup em 5 min, sem treinamento" | Prova concreta |
-| "Qualidade garantida" | "99.9% uptime ou $100 de crédito" | Garantia com risco |
-| "Atendimento 24/7" | "Resposta em 2h ou escala automática" | Compromisso mensurável |
+| Lukewarm | Sharp | Technique |
+|----------|-------|-----------|
+| "Manage your projects" | "Stop missing deadlines" | Pain > functionality |
+| "Complete software" | "Everything you need, nothing you don't" | Specificity |
+| "Easy to use" | "Setup in 5 min, no training" | Concrete proof |
+| "Guaranteed quality" | "99.9% uptime or $100 credit" | Risk-backed guarantee |
+| "24/7 support" | "Response in 2h or auto-escalation" | Measurable commitment |
 
-**Mais exemplos:** [examples.md](examples.md)
+**More examples:** [examples.md](examples.md)
 
 ---
 
 ## Template: Copy Brief
 
 ```markdown
-## Copy Brief - [Nome do Produto]
+## Copy Brief - [Product Name]
 
-### Proposta de Valor
-[1 frase que resume o que entrega de único]
+### Value Proposition
+[1 sentence summarizing what is uniquely delivered]
 
-### Público-Alvo
-- **Comprador:** [quem decide a compra]
-- **Usuário:** [quem usa no dia a dia]
-- **Empresa:** [porte, segmento]
+### Target Audience
+- **Buyer:** [who decides the purchase]
+- **User:** [who uses it daily]
+- **Company:** [size, segment]
 
-### Dores (Antes)
-1. [Dor específica com consequência]
-2. [Dor específica com consequência]
-3. [Dor específica com consequência]
+### Pains (Before)
+1. [Specific pain with consequence]
+2. [Specific pain with consequence]
+3. [Specific pain with consequence]
 
-### Benefícios (Depois)
-1. [Transformação, não feature]
-2. [Transformação, não feature]
-3. [Transformação, não feature]
+### Benefits (After)
+1. [Transformation, not feature]
+2. [Transformation, not feature]
+3. [Transformation, not feature]
 
-### Diferenciais
-- vs [Alternativa 1]: [o que você tem que eles não]
-- vs [Alternativa 2]: [o que você tem que eles não]
-- vs "Fazer nada": [custo de não resolver]
+### Differentials
+- vs [Alternative 1]: [what you have that they don't]
+- vs [Alternative 2]: [what you have that they don't]
+- vs "Do nothing": [cost of not solving]
 
-### Objeções Mapeadas
-| Objeção | Resposta |
-|---------|----------|
-| "[objeção comum]" | [resposta que remove fricção] |
+### Mapped Objections
+| Objection | Response |
+|-----------|----------|
+| "[common objection]" | [response that removes friction] |
 
-### Prova Social
-- Stats: [números reais]
-- Clientes: [logos ou nomes]
-- Resultados: [caso de sucesso]
+### Social Proof
+- Stats: [real numbers]
+- Clients: [logos or names]
+- Results: [success case]
 ```
 
 ---
 
-## Template: Copy Sugerida
+## Template: Suggested Copy
 
 ```markdown
-## Copy Sugerida
+## Suggested Copy
 
-### Headlines (escolha 1)
-1. **[PAS]** "[Dor] está custando [consequência]. [Produto] resolve em [tempo]."
-2. **[BAB]** "De [antes] para [depois]. [Produto] é a ponte."
-3. **[Direto]** "[Benefício principal] sem [objeção principal]."
+### Headlines (choose 1)
+1. **[PAS]** "[Pain] is costing you [consequence]. [Product] solves it in [time]."
+2. **[BAB]** "From [before] to [after]. [Product] is the bridge."
+3. **[Direct]** "[Main benefit] without [main objection]."
 
 ### Subtitles
-1. "[Produto] ajuda [público] a [benefício] usando [método]."
-2. "[Benefício 1], [benefício 2] e [benefício 3] — tudo em um lugar."
-3. "Sem [objeção 1]. Sem [objeção 2]. Apenas [resultado]."
+1. "[Product] helps [audience] to [benefit] using [method]."
+2. "[Benefit 1], [benefit 2] and [benefit 3] — all in one place."
+3. "No [objection 1]. No [objection 2]. Just [result]."
 
 ### CTAs
-- **Primário:** "[Ação] grátis" / "Testar por [dias] dias"
-- **Secundário:** "Ver como funciona" / "Falar com vendas"
+- **Primary:** "[Action] for free" / "Try for [days] days"
+- **Secondary:** "See how it works" / "Talk to sales"
 
-### Stats (se disponíveis)
-- [Número]+ [métrica] (ex: "10k+ usuários ativos")
-- [Percentual]% [resultado] (ex: "99.9% uptime")
-- [Tempo] [ação] (ex: "Setup em 5 min")
+### Stats (if available)
+- [Number]+ [metric] (e.g., "10k+ active users")
+- [Percentage]% [result] (e.g., "99.9% uptime")
+- [Time] [action] (e.g., "Setup in 5 min")
 
 ### Testimonial Framework
-> "[Resultado específico com número] depois de usar [Produto]. [Benefício emocional]."
-> — [Nome], [Cargo] na [Empresa]
+> "[Specific result with number] after using [Product]. [Emotional benefit]."
+> — [Name], [Role] at [Company]
 ```
 
 ---
 
-## Fontes de Extração
+## Extraction Sources
 
-O comando `/add-copy` usa estas fontes para análise automática:
+The `/add-copy` command uses these sources for automatic analysis:
 
-| Fonte | O que extrair |
-|-------|---------------|
-| `README.md` | Nome, descrição, proposta de valor |
-| `docs/product.md` | Visão do produto, público-alvo (priorizar) |
-| `docs/features/` | Funcionalidades, benefícios |
-| `package.json` | Nome, descrição, keywords |
+| Source | What to extract |
+|--------|----------------|
+| `README.md` | Name, description, value proposition |
+| `docs/product.md` | Product vision, target audience (prioritize) |
+| `docs/features/` | Features, benefits |
+| `package.json` | Name, description, keywords |
 
-**Detalhes:** [extraction.md](extraction.md)
-
----
-
-## Perguntas de Validação
-
-Perguntas que o comando `/add-copy` faz ao usuário:
-
-1. **Dores do público:**
-   > "O que dói no seu cliente ANTES de usar seu produto?"
-
-2. **Diferenciais reais:**
-   > "Por que escolheriam VOCÊ e não o concorrente?"
-
-3. **Objeções comuns:**
-   > "O que impede a pessoa de comprar?"
-
-4. **Prova social:**
-   > "Que números/resultados você tem?"
+**Details:** [extraction.md](extraction.md)
 
 ---
 
-## Integração com Ecossistema
+## Validation Questions
+
+Questions the `/add-copy` command asks the user:
+
+1. **Audience pains:**
+   > "What hurts your customer BEFORE using your product?"
+
+2. **Real differentials:**
+   > "Why would they choose YOU and not the competitor?"
+
+3. **Common objections:**
+   > "What prevents people from buying?"
+
+4. **Social proof:**
+   > "What numbers/results do you have?"
+
+---
+
+## Ecosystem Integration
 
 ```
-/add-copy [objetivo]
+/add-copy [objective]
     ↓
-docs/copy/CXXXX-[objetivo]/
+docs/copy/CXXXX-[objective]/
     brief.md
     copy.md
     ↓
-/add-landing (consome o brief)
+/add-landing (consumes the brief)
     ↓
-Landing page com copy afiada
+Landing page with sharp copy
 ```
 
 ---
 
-## Arquivos de Referência
+## Reference Files
 
-| Arquivo | Conteúdo |
-|---------|----------|
-| [extraction.md](extraction.md) | Como extrair contexto do projeto |
+| File | Content |
+|------|---------|
+| [extraction.md](extraction.md) | How to extract project context |
 | [formulas.md](formulas.md) | PAS, BAB, 4Us, Feature→Benefit |
-| [examples.md](examples.md) | Copy morna vs afiada, antes/depois |
+| [examples.md](examples.md) | Lukewarm vs sharp copy, before/after |
