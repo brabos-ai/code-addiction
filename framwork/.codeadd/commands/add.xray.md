@@ -31,10 +31,9 @@ STEP 3: Detect & Classify Apps   → BUILD dispatch plan
 STEP 4: Dispatch Analyzers       → ALL IN PARALLEL
 STEP 5: Consolidate Reports      → WAIT-ALL before proceeding
 STEP 6: Generate SKILL.md Index  → CREATE project-patterns skill index
-STEP 7: Write stack-context.md   → WRITE .codeadd/project/ (simple format)
-STEP 8: Update CLAUDE.md         → DISPATCH agent
-STEP 9: Copy Context Files       → CLAUDE.md → AGENTS.md, GEMINI.md
-STEP 10: Report to User          → SUMMARY + next steps
+STEP 7: Update CLAUDE.md         → DISPATCH agent
+STEP 8: Copy Context Files       → CLAUDE.md → AGENTS.md, GEMINI.md
+STEP 9: Report to User           → SUMMARY + next steps
 STEP 11: Cleanup                 → REMOVE temp files
 ```
 
@@ -427,21 +426,7 @@ Each area file follows context engineering principles:
 
 ---
 
-## STEP 7: Write .codeadd/project/stack-context.md
-
-WRITE `.codeadd/project/stack-context.md` using the simple key-value format. Follow `StackContextGeneration` detection rules from `{{skill:add-architecture-discovery/SKILL.md}}`.
-
-**Path:** `.codeadd/project/stack-context.md`
-
-**Source data:** `.codeadd/temp/architecture-discovery.md` + `package.json` analysis from discovered apps.
-
-**Required fields:** `framework`, `language`, `runtime`, `tier`. Detect all optional fields (`orm`, `database`, `migrations`, `frontend framework`, `build-tool`, `ui-library`, `state`, `forms`, `pattern`, `monorepo`, `workspace-tool`) from actual dependencies — never assume.
-
-IF `.codeadd/project/stack-context.md` already exists AND content matches discovered stack → SKIP this step.
-
----
-
-## STEP 8: Update CLAUDE.md
+## STEP 7: Update CLAUDE.md
 
 **DISPATCH AGENT:**
 - **Capability:** read-write (must update CLAUDE.md)
@@ -489,7 +474,7 @@ WAIT: Do NOT proceed until CLAUDE.md has been updated.
 
 ---
 
-## STEP 9: Copy Context Files to Other Engines
+## STEP 8: Copy Context Files to Other Engines
 
 **Coordinator action (no subagent needed).**
 
@@ -517,7 +502,7 @@ Verify all 3 files exist before proceeding:
 
 ---
 
-## STEP 10: Report to User
+## STEP 9: Report to User
 
 Report to user including: context files updated, apps analyzed with types, files generated, code quality scores, areas mapped in project-patterns skill, topic count, next steps.
 
@@ -534,7 +519,7 @@ bash .codeadd/scripts/pattern-search.sh backend
 
 ---
 
-## STEP 11: Cleanup
+## STEP 10: Cleanup
 
 **Execute:**
 ```bash
