@@ -19,6 +19,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Determine release type
+        id: release_type
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          if [[ "$TAG" == *"-beta"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "npm_tag=beta" >> "$GITHUB_OUTPUT"
+            echo "Beta release detected: $TAG"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "npm_tag=latest" >> "$GITHUB_OUTPUT"
+            echo "Stable release detected: $TAG"
+          fi
+        working-directory: .
+
       - name: Check for CLI changes
         id: cli_changes
         run: |
@@ -70,22 +85,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${GITHUB_REF#refs/tags/}
+          PRERELEASE_FLAG=""
+          if [ "${{ steps.release_type.outputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
           NOTES=$(git tag -l --format='%(contents)' "$TAG")
           if [ -n "$NOTES" ]; then
             echo "$NOTES" > /tmp/release-notes.md
             gh release create "$TAG" \
               --title "$TAG" \
               --notes-file /tmp/release-notes.md \
+              $PRERELEASE_FLAG \
               "${{ env.ASSET_NAME }}"
           else
             gh release create "$TAG" \
               --title "$TAG" \
               --generate-notes \
+              $PRERELEASE_FLAG \
               "${{ env.ASSET_NAME }}"
           fi
 
       - name: Publish to npm
         if: steps.cli_changes.outputs.changed == 'true'
-        run: npm publish
+        run: npm publish --tag ${{ steps.release_type.outputs.npm_tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

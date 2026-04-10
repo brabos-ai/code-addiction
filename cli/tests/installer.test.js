@@ -266,6 +266,7 @@ describe('resolveInstallSource', () => {
       source: 'release',
       manifestVersion: 'v9.9.9',
       releaseTag: 'v9.9.9',
+      channel: 'stable',
       ref: null,
       downloadValue: 'v9.9.9',
     });
@@ -298,6 +299,7 @@ describe('resolveInstallSource', () => {
       source: 'tag',
       manifestVersion: 'v2.3.4',
       releaseTag: 'v2.3.4',
+      channel: 'stable',
       ref: null,
       downloadValue: 'v2.3.4',
     });
@@ -310,8 +312,60 @@ describe('resolveInstallSource', () => {
       source: 'tag',
       manifestVersion: 'v2.3.4',
       releaseTag: 'v2.3.4',
+      channel: 'stable',
       ref: null,
       downloadValue: 'v2.3.4',
+    });
+  });
+
+  it('uses prerelease resolver when channel is beta', async () => {
+    const latestPrereleaseResolver = async () => 'v0.4.0-beta.1';
+
+    const source = await resolveInstallSource(undefined, { latestPrereleaseResolver }, 'beta');
+
+    expect(source).toEqual({
+      source: 'release',
+      manifestVersion: 'v0.4.0-beta.1',
+      releaseTag: 'v0.4.0-beta.1',
+      channel: 'beta',
+      ref: null,
+      downloadValue: 'v0.4.0-beta.1',
+    });
+  });
+
+  it('detects beta channel from explicit beta version tag', async () => {
+    const source = await resolveInstallSource('v0.4.0-beta.3');
+
+    expect(source).toEqual({
+      source: 'tag',
+      manifestVersion: 'v0.4.0-beta.3',
+      releaseTag: 'v0.4.0-beta.3',
+      channel: 'beta',
+      ref: null,
+      downloadValue: 'v0.4.0-beta.3',
+    });
+  });
+
+  it('defaults to stable channel when no channel specified', async () => {
+    const latestTagResolver = async () => 'v2.0.0';
+
+    const source = await resolveInstallSource(undefined, { latestTagResolver });
+
+    expect(source.channel).toBe('stable');
+  });
+
+  it('supports legacy call signature with function as second arg', async () => {
+    const latestTagResolver = async () => 'v9.9.9';
+
+    const source = await resolveInstallSource(undefined, latestTagResolver);
+
+    expect(source).toEqual({
+      source: 'release',
+      manifestVersion: 'v9.9.9',
+      releaseTag: 'v9.9.9',
+      channel: 'stable',
+      ref: null,
+      downloadValue: 'v9.9.9',
     });
   });
 });

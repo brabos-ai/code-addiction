@@ -7,8 +7,16 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 ## Spec
 
 ```json
-{"modes":{"development":"pending tasks in plan.md/about.md","correction":"feature implemented + user describes bug","feature":"epic feature N"}}
+{"modes":{"development":"pending tasks in plan.md/about.md","correction":"feature implemented + user describes bug","feature":"epic feature N"},"mutates":["plan.md","about.md"],"schemas":["feature-plan","feature-about"]}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schemas: `feature-plan`, `feature-about`), `add-doc-ref-convention`, and `add-token-efficiency`.
+
+`/add.build` is a **mutator**: it updates existing `plan.md`/`about.md` during/after implementation. It MUST NOT allocate new IDs — always reuse the `F[NNNN]` from existing frontmatter. Every write MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable.
 
 ---
 
@@ -37,7 +45,7 @@ STEP 2: Detect feature flag        → IF "feature N" passed
 STEP 3: Parse key variables        → Extract FEATURE_ID, flags, phase
 STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE
 STEP 5: Load feature docs          → BEFORE any implementation
-STEP 6: Load project patterns      → IF PROJECT_PATHS exist
+STEP 6: Load project patterns      → IF PROJECT_SKILL or PROJECT_DOCS exist
 STEP 7: Determine scope            → Database, Backend, Workers, Frontend
 STEP 8: Execution decision         → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP 9: Implementation             → Per mode (development/correction/feature)
@@ -46,6 +54,7 @@ STEP 11: Compliance Gate           → Cross-reference RF/RN vs implementation
 STEP 12: Integration verification  → Build MUST pass
 <!-- feature:startup-test:step-list -->
 <!-- /feature:startup-test:step-list -->
+STEP 13: Mutate docs + Validation Gate → Cache rule + schema gate on plan.md/about.md
 STEP 14: Log iteration             → BEFORE informing user
 STEP 15: Completion                → Inform user based on mode
 ```
@@ -78,6 +87,20 @@ IF VALIDATOR NOT EXECUTED (after each area):
   ⛔ DO NOT: Report area completion to user
   ⛔ DO NOT: Advance to next area
   ✅ DO: Execute validator subagent immediately
+
+IF EXISTING DOC NOT READ (before mutating plan.md/about.md):
+  ⛔ DO NOT USE: Write on plan.md or about.md
+  ⛔ DO NOT: Overwrite existing content blindly
+  ⛔ DO NOT: Allocate a new F[NNNN] — reuse id from frontmatter
+  ✅ DO: Read full doc → preserve valid content → complement → bump updated:
+
+IF SCHEMA NOT LOADED (before mutating plan.md/about.md):
+  ⛔ DO NOT USE: Write on plan.md or about.md
+  ✅ DO: Load feature-plan / feature-about from {{skill:add-doc-schemas/SKILL.md}}
+
+IF VALIDATION GATE NOT RUN (after mutating plan.md/about.md):
+  ⛔ DO NOT: Report completion
+  ✅ DO: Run STEP 13 validation gate against each mutated doc
 
 ALWAYS:
   ⛔ DO NOT USE: Bash for git add/commit/stage
@@ -212,10 +235,16 @@ Read all relevant feature docs based on status.sh flags:
 
 ## STEP 6: Load Project Patterns (IF exist)
 
-Read ALL project pattern files listed in PROJECT_PATHS from status.sh output. Files are named by app (SERVER.md, ADMIN.md, CLI.md) not by type. Exception: DATABASE.md is cross-app.
+**IF status.sh outputs PROJECT_SKILL (new format):**
+1. Identify the relevant area(s) for this task (backend, frontend, database, etc.)
+2. Run: `bash .codeadd/scripts/pattern-search.sh [area]` → get TOPIC names + LINES ranges
+3. Read ONLY the topics relevant to the current task using `Read offset:START limit:LENGTH`
+4. Follow patterns documented. These are project-specific conventions.
 
-**If files exist:** Follow patterns documented. These are project-specific conventions.
-**If files don't exist:** Run `/add.xray` to generate, or continue with generic best practices.
+**IF status.sh outputs PROJECT_DOCS (legacy format):**
+Read ALL project pattern files listed in PROJECT_DOCS from status.sh output.
+
+**If neither exists:** Run `/add.xray` to generate, or continue with generic best practices.
 
 **If ITERATIONS output exists from script:** Previous /add.build sessions context - avoid repeating fixes.
 
@@ -341,8 +370,9 @@ Execute BEFORE any other action:
 
 1. Run: bash .codeadd/scripts/status.sh
 2. Read ALL files listed in TASK_DOCUMENTS below
-3. Parse PROJECT_PATHS from script output and read the file matching the app you're modifying
-   - DATABASE.md is cross-app (read if doing database work)
+3. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` and read relevant topic ranges
+   IF PROJECT_DOCS in script output: read the file matching the app you're modifying
+   - database patterns are cross-app (read if doing database work)
 
 ## TASK_DOCUMENTS (read ALL — source of truth)
 ${TASK_DOCUMENTS}
@@ -509,6 +539,22 @@ DO NOT report completion without executing this step.
 
 <!-- feature:startup-test:step -->
 <!-- /feature:startup-test:step -->
+
+---
+
+## STEP 13: Mutate Docs + Validation Gate (add-doc-schemas)
+
+Whenever implementation status, tasks, or decisions require updating `plan.md` or `about.md`, apply the **cache documental** rule from `{{skill:add-documentation-style/SKILL.md}}`:
+
+1. **Read the full existing doc.** Capture `id: F[NNNN]`, `created:`, `type:` — immutable.
+2. **Preserve valid content.** Only complement new findings. Never allocate a new ID.
+3. **Bump `updated:`** to today on every write.
+
+### 13.1 Run the Validation Gate
+
+For EACH doc mutated (`plan.md` and/or `about.md`), execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for the corresponding schema (`feature-plan` or `feature-about`). Additionally verify immutable fields (`id:`, `type:`, `created:`) were preserved from pre-mutation.
+
+⛔ DO NOT skip. DO NOT advance to STEP 14 until all gates return `PASS`.
 
 ---
 

@@ -3,7 +3,7 @@ import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
-import { getLatestTag, downloadReleaseAsset } from './github.js';
+import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
 import { applyEnabledFeatures } from './features.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
@@ -59,7 +59,7 @@ function copyFromZip(zip, srcPrefix, destDir, cwd) {
 /**
  * Main update flow.
  * @param {string} cwd
- * @param {{version?: string}} [options]
+ * @param {{version?: string, channel?: string}} [options]
  */
 export async function update(cwd, options = {}) {
   intro('ADD CLI - Update');
@@ -79,11 +79,22 @@ export async function update(cwd, options = {}) {
   const currentVersion = manifest.version ?? 'unknown';
   const providerKeys = manifest.providers ?? [];
 
+  // Channel priority: explicit --channel flag > manifest channel > stable
+  const channel = options.channel || manifest.channel || 'stable';
+
   const s = spinner();
 
   s.start('Resolving update target...');
-  const installSource = await resolveInstallSource(options.version, getLatestTag);
+  const installSource = await resolveInstallSource(
+    options.version,
+    { latestTagResolver: getLatestTag, latestPrereleaseResolver: getLatestPrerelease },
+    channel
+  );
   s.stop(`Source: ${installSource.source} (${installSource.downloadValue})`);
+
+  if (installSource.channel === 'beta') {
+    log.warn('⚠ Updating to a beta (pre-release) version. It may contain bugs or incomplete features.');
+  }
 
   const newVersion = installSource.manifestVersion.replace(/^v/, '');
   if (currentVersion === newVersion) {
@@ -143,7 +154,7 @@ export async function update(cwd, options = {}) {
     providerKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, features: previousFeatures }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: previousFeatures }
   );
 
   // Re-apply enabled features on updated commands

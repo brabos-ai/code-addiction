@@ -1,6 +1,6 @@
 ---
 name: building-commands
-description: Use when designing command workflows or refactoring existing commands — applies prompting best practices to ensure agents execute intended logic instead of skipping steps or rationalizing. Use this skill whenever creating new commands, reviewing why a command skipped steps or executed out of order, fixing agent compliance issues, converting Phase-based commands to STEP-based, or when /add.make needs to generate a command. Also use when the user mentions "o agente pulou", "agent skipped", "command não funciona", or asks to improve prompt quality of any .md command file.
+description: Use when designing command workflows or refactoring existing commands — applies prompting best practices to ensure agents execute intended logic instead of skipping steps or rationalizing. Use this skill whenever creating new commands, reviewing why a command skipped steps or executed out of order, fixing agent compliance issues, converting Phase-based commands to STEP-based, or when /add.build needs to generate a command. Also use when the user mentions "o agente pulou", "agent skipped", "command não funciona", or asks to improve prompt quality of any .md command file.
 ---
 
 # Building Commands

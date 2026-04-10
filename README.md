@@ -77,22 +77,31 @@ Pick the shortest path that fits. Less ceremony, same quality.
 
 ```
 COMPLETE  (complex features with UI)
-  brainstorm --> feature --> design --> plan --> dev --> review --> done
+  brainstorm --> new --> design --> plan --> build --> review --> done
 
 STANDARD  (features without complex UI)
-  feature --> plan --> dev --> done
+  new --> plan --> build --> review --> done
 
 LEAN      (small changes, quick tasks)
-  feature --> dev --> done
+  new --> build --> done
 
 AUTONOMOUS  (full AI implementation, no interaction)
-  feature --> autopilot --> done
+  new --> autopilot --> done
 
 EXPLORATION  (don't know where to start?)
-  brainstorm --> feature --> ...pick your flow above
+  brainstorm --> new --> ...pick your flow above
 
 EMERGENCY  (critical bug in production)
   hotfix --> done
+
+TRIAGE  (ambiguous symptoms, unclear path)
+  diagnose --> (hotfix OR new OR no-action)
+
+NEW PROJECT  (starting from scratch)
+  init --> build --> done
+
+ANALYSIS  (understand existing codebase)
+  xray / audit
 ```
 
 > **That's it.** No config files to tweak, no boilerplate to write, no decision fatigue.
@@ -118,7 +127,7 @@ EMERGENCY  (critical bug in production)
 ## Repository structure
 
 - `cli/`: installer CLI published as `codeadd`
-- `framwork/`: framework payload copied into target projects by the installer
+- `framework/`: framework payload copied into target projects by the installer
 
 ## Compatibility
 
@@ -132,12 +141,6 @@ Contributions are welcome. Start here:
 - [Contributing guide](./CONTRIBUTING.md)
 - [Code of Conduct](./CODE_OF_CONDUCT.md)
 - [Security policy](./SECURITY.md)
-
-## Roadmap
-
-- Better zero-config onboarding by project type
-- More provider adapters
-- Stronger validation and automated repair flows
 
 ## Official Pages
 

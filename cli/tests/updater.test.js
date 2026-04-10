@@ -6,11 +6,13 @@ import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
+  getLatestPrerelease: vi.fn(),
   downloadReleaseAsset: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
   getLatestTag: mocks.getLatestTag,
+  getLatestPrerelease: mocks.getLatestPrerelease,
   downloadReleaseAsset: mocks.downloadReleaseAsset,
 }));
 
@@ -23,7 +25,7 @@ vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-  log: { success: vi.fn() },
+  log: { success: vi.fn(), warn: vi.fn() },
 }));
 
 import { update } from '../src/updater.js';
@@ -45,6 +47,7 @@ let tmpDir;
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-update-'));
   mocks.getLatestTag.mockReset();
+  mocks.getLatestPrerelease.mockReset();
   mocks.downloadReleaseAsset.mockReset();
 });
 
@@ -193,5 +196,62 @@ describe('update command', () => {
     await update(tmpDir);
 
     expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+  });
+
+  it('updates within beta channel when manifest has channel=beta', async () => {
+    writeManifestFile(tmpDir, {
+      version: '0.4.0-beta.1',
+      source: 'release',
+      ref: null,
+      providers: [],
+      channel: 'beta',
+    });
+    mocks.getLatestPrerelease.mockResolvedValue('v0.4.0-beta.2');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    expect(mocks.getLatestPrerelease).toHaveBeenCalled();
+    expect(mocks.getLatestTag).not.toHaveBeenCalled();
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.version).toBe('0.4.0-beta.2');
+    expect(manifest.channel).toBe('beta');
+  });
+
+  it('switches from beta to stable via --channel flag', async () => {
+    writeManifestFile(tmpDir, {
+      version: '0.4.0-beta.1',
+      source: 'release',
+      ref: null,
+      providers: [],
+      channel: 'beta',
+    });
+    mocks.getLatestTag.mockResolvedValue('v0.3.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir, { channel: 'stable' });
+
+    expect(mocks.getLatestTag).toHaveBeenCalled();
+    expect(mocks.getLatestPrerelease).not.toHaveBeenCalled();
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.version).toBe('0.3.0');
+    expect(manifest.channel).toBe('stable');
+  });
+
+  it('defaults to stable channel when manifest has no channel field', async () => {
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      // no channel key — pre-beta install
+    });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    expect(mocks.getLatestTag).toHaveBeenCalled();
+    expect(mocks.getLatestPrerelease).not.toHaveBeenCalled();
   });
 });

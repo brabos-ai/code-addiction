@@ -9,13 +9,21 @@ Specialized builder for high-conversion SaaS landing pages. Creates responsive, 
 ## Spec
 
 ```json
-{"outputs":{"landing_page":"apps/frontend/src/pages/landing.tsx"},"shortcuts":{"minimal":"tech_minimal","tech":"tech_dark","enterprise":"tech_enterprise","bold":"tech_bold","url":"analyze_existing"}}
+{"outputs":{"landing_page":"apps/frontend/src/pages/landing.tsx","landing_spec":"docs/landing/LAND-<slug>.md"},"schema":"landing-page","shortcuts":{"minimal":"tech_minimal","tech":"tech_dark","enterprise":"tech_enterprise","bold":"tech_bold","url":"analyze_existing"}}
 ```
 
 ---
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `landing-page`), `add-doc-ref-convention`, and `add-token-efficiency`.
+
+**Fixed ID:** `add.landing` uses the fixed ID `LAND-<slug>` where `<slug>` is derived from the product/objective (kebab-case). No counter allocation. `related: [COPY-<slug>, PRODUCT]`.
 
 ---
 
@@ -27,7 +35,9 @@ STEP 2: Collect context           → IF insufficient: ASK user
 STEP 3: Load templates            → BASED ON selected sections
 STEP 4: Generate code             → APPLY aesthetic + copy patterns
 STEP 5: Validate mobile-first     → VERIFY responsive checklist
-STEP 6: Output                    → DELIVER complete code
+STEP 6: Write landing spec doc    → docs/landing/LAND-<slug>.md via landing-page schema
+STEP 7: Validation Gate           → landing-page schema gate
+STEP 8: Output                    → DELIVER complete code
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
@@ -158,7 +168,23 @@ Build `LandingPage` as a single-file page with internal section components (Hero
 
 ---
 
-## STEP 6: Output
+## STEP 6: Write Landing Spec Doc (schema: landing-page)
+
+**Schema load (MANDATORY).** EXECUTE schema `landing-page` from `{{skill:add-doc-schemas/SKILL.md}}`.
+
+**Path:** `docs/landing/LAND-<slug>.md`. Fixed ID: `LAND-<slug>`. `related: [COPY-<slug>, PRODUCT]`. Write per schema — extractive only. Reference copy via `{{doc:COPY-<slug>}}` anchors (NOT actual copy strings).
+
+---
+
+## STEP 7: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `landing-page`.
+
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
+
+---
+
+## STEP 8: Output
 
 Deliver the complete code. Summarize sections included, aesthetic applied, and list next steps (add route, replace placeholders, configure SEO/analytics).
 

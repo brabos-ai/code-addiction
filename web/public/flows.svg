@@ -30,31 +30,31 @@
   <g transform="translate(40, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Brainstorm</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-brainstorm</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.brainstorm</text>
   </g>
   <line x1="144" y1="82" x2="168" y2="82" class="arrow"/>
   <g transform="translate(172, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.new</text>
   </g>
   <line x1="276" y1="82" x2="300" y2="82" class="arrow"/>
   <g transform="translate(304, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Design</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-design</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.design</text>
   </g>
   <line x1="408" y1="82" x2="432" y2="82" class="arrow"/>
   <g transform="translate(436, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Plan</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-plan</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.plan</text>
   </g>
   <line x1="540" y1="82" x2="564" y2="82" class="arrow"/>
   <g transform="translate(568, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Code</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-dev</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.build</text>
   </g>
   <line x1="672" y1="82" x2="696" y2="82" class="arrow"/>
   <g transform="translate(700, 60)">
@@ -66,7 +66,7 @@
   <g transform="translate(832, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
 
   <!-- ============ STANDARD FLOW ============ -->
@@ -76,25 +76,25 @@
   <g transform="translate(40, 178)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.new</text>
   </g>
   <line x1="144" y1="200" x2="168" y2="200" class="arrow"/>
   <g transform="translate(172, 178)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Plan</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-plan</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.plan</text>
   </g>
   <line x1="276" y1="200" x2="300" y2="200" class="arrow"/>
   <g transform="translate(304, 178)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Code</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-dev</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.build</text>
   </g>
   <line x1="408" y1="200" x2="432" y2="200" class="arrow"/>
   <g transform="translate(436, 178)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
 
   <!-- ============ LEAN FLOW ============ -->
@@ -104,19 +104,19 @@
   <g transform="translate(40, 296)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.new</text>
   </g>
   <line x1="144" y1="318" x2="168" y2="318" class="arrow"/>
   <g transform="translate(172, 296)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Code</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-dev</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.build</text>
   </g>
   <line x1="276" y1="318" x2="300" y2="318" class="arrow"/>
   <g transform="translate(304, 296)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
 
   <!-- ============ AUTONOMOUS FLOW ============ -->
@@ -126,19 +126,19 @@
   <g transform="translate(40, 414)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Feature</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-feature</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.new</text>
   </g>
   <line x1="144" y1="436" x2="168" y2="436" class="arrow-w"/>
   <g transform="translate(172, 414)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-warn"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Autopilot</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add-autopilot</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add.autopilot</text>
   </g>
   <line x1="276" y1="436" x2="300" y2="436" class="arrow-w"/>
   <g transform="translate(304, 414)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
 
   <!-- ============ EMERGENCY FLOW ============ -->
@@ -148,13 +148,13 @@
   <g transform="translate(40, 532)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-err"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Hotfix</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ff4444">/add-hotfix</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ff4444">/add.hotfix</text>
   </g>
   <line x1="144" y1="554" x2="168" y2="554" class="arrow-e"/>
   <g transform="translate(172, 532)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-done</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
 
   <!-- ============ EXPLORATION FLOW ============ -->
@@ -163,12 +163,12 @@
 
   <g transform="translate(40, 648)">
     <rect x="0" y="0" width="100" height="26" rx="6" class="node-on"/>
-    <text x="50" y="17" text-anchor="middle" class="cmd">/add-brainstorm</text>
+    <text x="50" y="17" text-anchor="middle" class="cmd">/add.brainstorm</text>
   </g>
   <line x1="144" y1="661" x2="168" y2="661" class="arrow"/>
   <g transform="translate(172, 648)">
     <rect x="0" y="0" width="100" height="26" rx="6" class="node-on"/>
-    <text x="50" y="17" text-anchor="middle" class="cmd">/add-feature</text>
+    <text x="50" y="17" text-anchor="middle" class="cmd">/add.new</text>
   </g>
   <line x1="276" y1="661" x2="300" y2="661" class="arrow-dim"/>
   <text x="320" y="665" class="sublabel" style="fill:#999">...pick your flow</text>

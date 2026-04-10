@@ -10,8 +10,14 @@ Investigative triage for ambiguous user reports. Receives a vague symptom or unc
 ## Spec
 
 ```json
-{"report_output":"docs/diagnose/[NNNN]-[slug].md","report_condition":"route != no-action AND user confirms persistence"}
+{"report_output":"docs/diagnose/<slug>.md","report_condition":"route != no-action AND user confirms persistence","schema":"diagnose-report"}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `diagnose-report`), `add-doc-ref-convention`, and `add-token-efficiency`.
 
 ---
 
@@ -26,7 +32,8 @@ STEP 4: Triage investigation  → light vs agents (adaptive)
 STEP 5: Execute Phases 1-3    → RCA, patterns, differential diagnosis
 STEP 6: Phase 4 synthesis     → diagnosis + route from ecosystem map
 STEP 7: Present report        → STOP for user decision
-STEP 8: Persist + complete    → conditional write + next step suggestion
+STEP 8: Persist (conditional) → schema-driven write
+STEP 9: Validation Gate       → diagnose-report schema gate
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -252,96 +259,34 @@ Ask the user:
 
 ---
 
-## STEP 8: Persist (Conditional) & Complete
+## STEP 8: Persist (Conditional) — schema-driven write
 
 ### 8.1 Persist ONLY IF both conditions hold
 
 ```
 IF route = no-action:
   ⛔ DO NOT USE: Write
-  → Skip to 8.2
+  → Skip STEP 9, go to 8.4 conversational completion
 
 IF user did NOT confirm persistence:
   ⛔ DO NOT USE: Write
-  → Skip to 8.2
+  → Skip STEP 9, go to 8.4 conversational completion
 
 IF route != no-action AND user confirmed persistence:
-  ✅ Write docs/diagnose/[NNNN]-[slug].md
+  ✅ Load schema and write docs/diagnose/<slug>.md
 ```
 
-### 8.2 Determine NNNN and slug
+### 8.2 Determine slug
 
-- NNNN: find next available 4-digit number in `docs/diagnose/`. If directory empty or missing, start at `0001`.
 - slug: kebab-case from reformulated problem, max 6 words.
+- Doc ID is fixed format: `DIAG-<slug>`.
 
-### 8.3 Report template
+### 8.3 Schema load (MANDATORY)
 
-```markdown
-# Diagnose [NNNN]: [reformulated problem]
+EXECUTE schema `diagnose-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
 
-> **Date:** YYYY-MM-DD
-> **Owner:** [from status.sh]
-> **Branch:** [branch at time of diagnosis]
-> **Symptom class:** [from Phase 0]
-> **Route:** [hotfix | feature | extend | no-action]
-
----
-
-## Original Report
-
-[user input verbatim]
-
-## Reformulation (confirmed)
-
-[one sentence]
-
-## Observable Predicate
-
-WHEN ...
-THEN ...
-BUT CURRENTLY ...
-
-## Evidence
-
-| Source | Finding |
-|---|---|
-| [file:line] | [observation] |
-
-## Differential Diagnosis
-
-| # | Hypothesis | Likelihood | Cost | Result |
-|---|---|---|---|---|
-| 1 | ... | ... | ... | ... |
-
-## Diagnosis
-
-**Leading hypothesis:** [name]
-
-**Confidence:** [high/medium/low]
-
-**Because:** [evidence summary]
-
-**Rejected alternatives:**
-- [alt]: [reason]
-
-## Recommended Route
-
-**Route:** [hotfix / feature / extend X / no-action]
-
-**Next command:** [from ecosystem map]
-
-**Rationale:** [why this route is correct for this diagnosis]
-
-## Risks
-
-| Risk | If we act | If we don't act |
-|---|---|---|
-| ... | ... | ... |
-
-## Next Steps
-
-- [ ] [action from recommended route]
-```
+- **Path:** `docs/diagnose/<slug>.md`
+- **ID:** `DIAG-<slug>` (fixed per schema). Write per schema — extractive only.
 
 ### 8.4 Completion output
 
@@ -349,6 +294,16 @@ Show the user:
 - Report path (if persisted)
 - Recommended next command (from ecosystem map routing)
 - Reminder that `add.diagnose` does NOT execute — user runs the next command when ready
+
+---
+
+## STEP 9: Validation Gate
+
+Only run this gate when STEP 8 actually wrote a doc. If the doc was not persisted (route = no-action OR user declined), skip directly to the conversational completion.
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `diagnose-report`.
+
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 

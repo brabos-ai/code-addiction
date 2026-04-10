@@ -7,7 +7,7 @@ import { promptProviders, promptConfirm, promptFeatures, promptGitignore } from 
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { resolveSelected } from './providers.js';
-import { getLatestTag, downloadReleaseAsset } from './github.js';
+import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 
 /**
  * Force LF line endings on all .sh files under a directory.
@@ -75,27 +75,51 @@ export function writeManifest(cwd, version, providers, files, releaseTag, metada
 }
 
 /**
- * Resolve installation source from requested version.
- * - no version: latest GitHub release tag
- * - any other value: explicit tag
+ * Resolve installation source from requested version and channel.
+ * - no version + stable channel (default): latest GitHub release tag
+ * - no version + beta channel: latest GitHub prerelease tag
+ * - explicit version: use that tag regardless of channel
  *
  * @param {string | undefined} requestedVersion
- * @param {() => Promise<string>} [latestTagResolver]
+ * @param {object} [resolvers]
+ * @param {() => Promise<string>} [resolvers.latestTagResolver]
+ * @param {() => Promise<string>} [resolvers.latestPrereleaseResolver]
+ * @param {string} [channel]  "stable" (default) or "beta"
  * @returns {Promise<{
  *   source: 'release' | 'tag',
  *   manifestVersion: string,
  *   releaseTag: string,
+ *   channel: 'stable' | 'beta',
  *   ref: null,
  *   downloadValue: string
  * }>}
  */
-export async function resolveInstallSource(requestedVersion, latestTagResolver = getLatestTag) {
+export async function resolveInstallSource(
+  requestedVersion,
+  resolvers = {},
+  channel = 'stable'
+) {
+  // Support legacy call signature: resolveInstallSource(version, fn)
+  if (typeof resolvers === 'function') {
+    const fn = resolvers;
+    resolvers = { latestTagResolver: fn };
+    // channel stays default 'stable'
+  }
+
+  const {
+    latestTagResolver = getLatestTag,
+    latestPrereleaseResolver = getLatestPrerelease,
+  } = resolvers;
+
   if (!requestedVersion) {
-    const tag = await latestTagResolver();
+    const isBeta = channel === 'beta';
+    const resolver = isBeta ? latestPrereleaseResolver : latestTagResolver;
+    const tag = await resolver();
     return {
       source: 'release',
       manifestVersion: tag,
       releaseTag: tag,
+      channel: isBeta ? 'beta' : 'stable',
       ref: null,
       downloadValue: tag,
     };
@@ -104,10 +128,12 @@ export async function resolveInstallSource(requestedVersion, latestTagResolver =
   const tag = requestedVersion.startsWith('v')
     ? requestedVersion
     : `v${requestedVersion}`;
+  const isBeta = channel === 'beta' || tag.includes('-beta');
   return {
     source: 'tag',
     manifestVersion: tag,
     releaseTag: tag,
+    channel: isBeta ? 'beta' : 'stable',
     ref: null,
     downloadValue: tag,
   };
@@ -164,18 +190,24 @@ function copyFromZip(zip, srcPrefix, destDir, cwd) {
 /**
  * Main install flow.
  * @param {string} cwd
- * @param {{version?: string}} [options]
+ * @param {{version?: string, channel?: string}} [options]
  */
 export async function install(cwd, options = {}) {
   intro('ADD CLI - Install');
 
+  const channel = options.channel || 'stable';
+
   const s = spinner();
   s.start('Resolving install source from GitHub...');
-  const installSource = await resolveInstallSource(options.version);
+  const installSource = await resolveInstallSource(options.version, {}, channel);
   if (installSource.source === 'release') {
     s.stop(`Latest release: ${installSource.downloadValue}`);
   } else {
     s.stop(`Selected tag: ${installSource.downloadValue}`);
+  }
+
+  if (installSource.channel === 'beta') {
+    log.warn('⚠ You are installing a beta (pre-release) version. It may contain bugs or incomplete features.');
   }
 
   const addDir = path.join(cwd, '.codeadd');
@@ -235,7 +267,7 @@ export async function install(cwd, options = {}) {
     selectedKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, features: defaultFeatures, gitignore: addToGitignore }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: defaultFeatures, gitignore: addToGitignore }
   );
 
   // Apply enabled features (inject fragment content into commands)

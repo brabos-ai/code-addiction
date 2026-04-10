@@ -35,25 +35,29 @@ const USAGE = `
 Usage: codeadd <command>
 
 Commands:
-  install                    Install Code Addiction files into your project
-  install --version <tag>    Install a specific release tag (e.g. v2.0.1)
-  update                     Update to latest release
-  update --version <tag>     Update to a specific release tag
-  uninstall                  Remove Code Addiction files from your project
-  doctor                     Check environment health (Node, Git, installation)
-  validate                   Validate file integrity via SHA-256 hashes
-  validate --repair           Restore missing/modified files from release
-  features list              List optional features and their state
-  features enable <name>     Enable a feature (inject into commands)
-  features disable <name>    Disable a feature (remove from commands)
-  config show                Display installation configuration
-  config show --verbose       Display config + check for updates
+  install                      Install Code Addiction files into your project
+  install --version <tag>      Install a specific release tag (e.g. v2.0.1)
+  install --channel <channel>  Install from a release channel (stable or beta)
+  update                       Update to latest release (respects current channel)
+  update --version <tag>       Update to a specific release tag
+  update --channel <channel>   Update and switch release channel (stable or beta)
+  uninstall                    Remove Code Addiction files from your project
+  doctor                       Check environment health (Node, Git, installation)
+  validate                     Validate file integrity via SHA-256 hashes
+  validate --repair             Restore missing/modified files from release
+  features list                List optional features and their state
+  features enable <name>       Enable a feature (inject into commands)
+  features disable <name>      Disable a feature (remove from commands)
+  config show                  Display installation configuration
+  config show --verbose         Display config + check for updates
 
 Examples:
   npx codeadd install
   npx codeadd install --version v2.0.1
+  npx codeadd install --channel beta
   npx codeadd update
   npx codeadd update --version v2.0.0
+  npx codeadd update --channel stable
   npx codeadd uninstall
   npx codeadd uninstall --force
   npx codeadd doctor
@@ -69,10 +73,12 @@ async function main() {
   try {
     if (subcommand === 'install') {
       const version = getArgValue(args, '--version');
-      await install(cwd, { version });
+      const channel = getArgValue(args, '--channel');
+      await install(cwd, { version, channel });
     } else if (subcommand === 'update') {
       const version = getArgValue(args, '--version');
-      await update(cwd, { version });
+      const channel = getArgValue(args, '--channel');
+      await update(cwd, { version, channel });
     } else if (subcommand === 'uninstall') {
       const force = args.includes('--force');
       await uninstall(cwd, force);

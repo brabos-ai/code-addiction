@@ -2,28 +2,23 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Coordinates release flow: mandatory `main -> production` merge, optional tag/release creation, changelog from file diff against previous release.
+Coordinates release flow: version bump, `main -> production` merge (stable) or direct tag from main (beta), changelog generation, and tag/release creation.
 
 ---
 
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
-DETECT MODE:
-- If argument contains `--list`: execute STEP 0 + STEP 9 only.
-- Otherwise: execute STEP 0-8 in order.
-
-**STEPS IN ORDER (create mode):**
+**STEPS IN ORDER:**
 ```
 STEP 0: Check prerequisites        → gh CLI + auth
 STEP 1: Read release pipeline      → detect PIPELINE_HANDLES_RELEASE
 STEP 2: Validate source branch     → must be main
-STEP 3: Ask tag creation            → yes/no (no → merge-only via STEP 6)
-STEP 4: Detect + choose version    → fetch tags, pick bump type
+STEP 3: Ask release type            → stable | beta [STOP]
+STEP 4: Detect + choose version    → fetch tags, pick bump type or next beta number
 STEP 5: Update CLI version         → cli/package.json + commit + push main
-STEP 6: Merge main into production → push production
-STEP 7: Changelog + preview        → generate, show, get approval
+STEP 6: Merge main into production → push production (SKIP if beta)
+STEP 7: Changelog + preview        → generate, show, get approval [STOP]
 STEP 8: Create tag/release         → conditional on PIPELINE_HANDLES_RELEASE
-STEP 9: List releases (--list)     → list all tags + releases
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -37,13 +32,13 @@ IF branch is not main:
   ⛔ DO NOT USE: Bash for merge, tag, push, or gh release
   ✅ DO: Instruct user to switch to main and STOP
 
-IF merge to production failed or not completed:
+IF release type = beta:
+  ⛔ DO NOT USE: Bash for git checkout production, git merge (into production), git push origin production
+  ✅ DO: Skip STEP 6 entirely — beta tags are created from main, not production
+
+IF merge to production failed or not completed (stable only):
   ⛔ DO NOT USE: Bash for git tag, git push (tag), gh release
   ✅ DO: Show merge error and STOP
-
-IF user chose not to create tag:
-  ⛔ DO NOT USE: Bash for git tag, git push (tag), gh release
-  ✅ DO: Finish after merge with status message
 
 IF preview not approved:
   ⛔ DO NOT USE: Bash for git tag, git push (tag), gh release create
@@ -90,12 +85,14 @@ Verify current branch is `main`. If not → instruct user to switch and STOP.
 
 ---
 
-## STEP 3: Ask Tag Creation [STOP]
+## STEP 3: Ask Release Type [STOP]
 
-Ask user: "Create a release tag after merging to production?"
+Ask user: "Release type: **stable** or **beta**?"
 
-- **Yes** → continue to STEP 4.
-- **No** → execute STEP 6 (merge only), then STOP.
+- **stable** → full flow: version bump, merge to production, tag from production
+- **beta** → lightweight flow: version bump with prerelease suffix, tag from main (no production merge)
+
+Store as `RELEASE_TYPE`.
 
 ---
 
@@ -114,9 +111,11 @@ Without `git fetch --tags`, remote tags are invisible locally — this caused a 
 
 Parse: `LATEST_TAG = first line` or `none` if no tags.
 
-### 4.2 Choose bump type
+### 4.2 Choose version (stable)
 
-If `LATEST_TAG` exists (`vX.Y.Z`):
+**IF `RELEASE_TYPE = stable`:**
+
+If `LATEST_TAG` exists (`vX.Y.Z` or `vX.Y.Z-beta.N`):
 - `patch` → `vX.Y.(Z+1)` — fixes, small changes
 - `minor` → `vX.(Y+1).0` — new commands/skills/features
 - `major` → `v(X+1).0.0` — breaking changes
@@ -124,6 +123,19 @@ If `LATEST_TAG` exists (`vX.Y.Z`):
 If first release → recommend `v1.0.0`.
 
 Ask user to choose. Store as `NEXT_VERSION`.
+
+### 4.3 Choose version (beta)
+
+**IF `RELEASE_TYPE = beta`:**
+
+Find the latest stable tag (`LATEST_STABLE` = latest tag without `-beta` suffix).
+Find all beta tags for the next version.
+
+Ask user which base version to beta (suggest next minor from `LATEST_STABLE`):
+- If `LATEST_STABLE = v0.2.29` → suggest `v0.3.0-beta.1`
+- If beta tags already exist for that version (e.g., `v0.3.0-beta.2`) → suggest `v0.3.0-beta.3`
+
+Store as `NEXT_VERSION`.
 
 ---
 
@@ -134,6 +146,10 @@ Update `cli/package.json` version field to `NEXT_VERSION` (without `v` prefix). 
 ---
 
 ## STEP 6: Merge Main Into Production
+
+**IF `RELEASE_TYPE = beta`: SKIP this step entirely.** Beta releases tag directly from main.
+
+**IF `RELEASE_TYPE = stable`:**
 
 Merge main into production with `--no-ff`. Push production.
 
@@ -148,11 +164,14 @@ After merge, checkout main again to restore working branch.
 ### 7.1 Collect commits between versions
 
 ```bash
-# If LATEST_TAG exists:
+# Stable — compare against production:
 git log [LATEST_TAG]..production --pretty=format:"%h %s" --no-merges
 
+# Beta — compare against main (no production involved):
+git log [LATEST_TAG]..main --pretty=format:"%h %s" --no-merges
+
 # If first release:
-git log production --pretty=format:"%h %s" --no-merges
+git log [TARGET_BRANCH] --pretty=format:"%h %s" --no-merges
 ```
 
 Read each commit message. Classify commits by type using conventional commit prefixes or content analysis:
@@ -166,12 +185,16 @@ Read each commit message. Classify commits by type using conventional commit pre
 ### 7.2 Collect file changes
 
 ```bash
-# If LATEST_TAG exists:
+# Stable:
 git diff --stat [LATEST_TAG]..production
 git diff --name-status [LATEST_TAG]..production
 
+# Beta:
+git diff --stat [LATEST_TAG]..main
+git diff --name-status [LATEST_TAG]..main
+
 # If first release:
-git diff --stat --name-status $(git rev-list --max-parents=0 HEAD)..production
+git diff --stat --name-status $(git rev-list --max-parents=0 HEAD)..[TARGET_BRANCH]
 ```
 
 Use file changes to enrich commit descriptions where commit messages are too terse. Provider dirs (`framwork/.claude/`, `framwork/.agent/`, etc.) are generated — exclude from individual listing, summarize as one line if changed.
@@ -202,11 +225,13 @@ Format (omit empty sections):
 X files changed, Y insertions(+), Z deletions(-)
 ```
 
+For beta releases, prefix the notes with: `> ⚠ This is a pre-release version. It may contain bugs or incomplete features.`
+
 Each bullet should be a concise sentence describing the change from the user's perspective, not a file path or raw commit hash.
 
 ### 7.5 Preview and confirm
 
-Show release preview (tag, from, target, summary, changelog). Ask user: "Create this release?" If no → STOP.
+Show release preview (tag, type [stable/beta], from branch, summary, changelog). Ask user: "Create this release?" If no → STOP.
 
 ### 7.6 Save release notes for tag
 
@@ -218,9 +243,16 @@ After approval, save the release notes content to a temp file. This content will
 
 ### 8.1 Create and push annotated tag with release notes
 
-From production branch, create annotated tag using the release notes from STEP 7.6 as the tag message:
+**Stable:** from production branch. **Beta:** from main branch.
 
 ```bash
+# Stable:
+git checkout production
+git tag -a [NEXT_VERSION] -F [TEMP_NOTES_FILE]
+git push origin [NEXT_VERSION]
+git checkout main
+
+# Beta:
 git tag -a [NEXT_VERSION] -F [TEMP_NOTES_FILE]
 git push origin [NEXT_VERSION]
 ```
@@ -231,17 +263,19 @@ This embeds the release notes in the tag annotation, making them available to th
 
 **IF `PIPELINE_HANDLES_RELEASE = true`:**
 
-DO NOT run `gh release create`. Inform user the tag was pushed with embedded release notes and the pipeline will create the release using those notes. Show what the pipeline will do (from STEP 1).
+DO NOT run `gh release create`. Inform user the tag was pushed with embedded release notes and the pipeline will create the release using those notes. For beta tags, the pipeline automatically marks the GitHub Release as prerelease and publishes to npm with `--tag beta`. Show what the pipeline will do (from STEP 1).
 
 **IF `PIPELINE_HANDLES_RELEASE = false`:**
 
-Create GitHub release with `gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_NOTES_FILE]`. Show release URL.
+```bash
+# Stable:
+gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_NOTES_FILE]
 
----
+# Beta:
+gh release create [NEXT_VERSION] --target main --title "[NEXT_VERSION]" --prerelease --notes-file [TEMP_NOTES_FILE]
+```
 
-## STEP 9: List Releases (`--list` mode)
-
-List tags with dates (`git tag --sort=-v:refname --format='%(refname:short) %(creatordate:short)'`) and GitHub releases (`gh release list`). Show combined table.
+Show release URL.
 
 ---
 
@@ -254,6 +288,7 @@ ALWAYS:
 - Write release notes from the user's perspective (what changed, not which files)
 - Treat provider dirs as generated — exclude from individual listing
 - Omit empty changelog sections
+- Use `--prerelease` flag when creating beta GitHub releases manually
 
 NEVER:
 - Run `node scripts/build.js` — that is the pipeline's job
@@ -262,3 +297,4 @@ NEVER:
 - Generate release notes only from file paths — use commit messages as primary source
 - Create `CHANGELOG.md` files in this command
 - Call `gh release create` when `PIPELINE_HANDLES_RELEASE = true`
+- Merge to production for beta releases — beta tags come from main

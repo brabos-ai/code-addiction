@@ -4,7 +4,7 @@
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
 
-**Output:** `docs/audits/YYYY-MM-DD/`
+**Output:** `docs/audit/<YYYY-MM-DD>.md` (per `audit-report` schema) + supporting reports in `docs/audits/<YYYY-MM-DD>/`
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
@@ -14,8 +14,14 @@ Execute complete technical analysis of the project, identifying security, archit
 ## Spec
 
 ```json
-{"scoring":{"weights":{"critical":3,"high":2,"medium":1,"low":0.5},"formula":"max(0, 10 - (weighted_sum / 5))"}}
+{"write_allowed":"docs/audit/,docs/audits/","schema":"audit-report","scoring":{"weights":{"critical":3,"high":2,"medium":1,"low":0.5},"formula":"max(0, 10 - (weighted_sum / 5))"}}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `audit-report`), `add-doc-ref-convention`, and `add-token-efficiency`.
 
 ---
 
@@ -23,16 +29,17 @@ Execute complete technical analysis of the project, identifying security, archit
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Create folder structure    → RUN FIRST
-STEP 2: Validate prerequisites     → BEFORE discovery
-STEP 3: Discovery (parallel)       → 3 agents in parallel
-STEP 4: Wait discovery             → WAIT-ALL for 3 agents
-STEP 5: Analysis (parallel)        → 3 agents in parallel
-STEP 6: Wait analysis              → WAIT-ALL for 3 agents
-STEP 7: Consolidation              → READ all reports
-STEP 8: Calculate scores           → BEFORE final report
-STEP 9: Generate AUDIT-REPORT.md   → WRITE final report
-STEP 10: Inform user               → COMPLETE
+STEP 1:  Create folder structure    → RUN FIRST
+STEP 2:  Validate prerequisites     → BEFORE discovery
+STEP 3:  Discovery (parallel)       → 3 agents in parallel
+STEP 4:  Wait discovery             → WAIT-ALL for 3 agents
+STEP 5:  Analysis (parallel)        → 3 agents in parallel
+STEP 6:  Wait analysis              → WAIT-ALL for 3 agents
+STEP 7:  Consolidation              → READ all reports
+STEP 8:  Calculate scores           → BEFORE final report
+STEP 9:  Write audit-report doc     → schema-driven
+STEP 10: Validation Gate            → audit-report schema gate
+STEP 11: Inform user                → COMPLETE
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -45,17 +52,14 @@ IF FOLDER STRUCTURE NOT CREATED:
 
 IF DISCOVERY PHASE INCOMPLETE:
   ⛔ DO NOT: Dispatch analysis agents
-  ⛔ DO NOT USE: Read for context-discovery.md
   ⛔ DO: Wait for ALL 3 discovery agents to complete
 
 IF CONTEXT-DISCOVERY.MD NOT EXISTS:
   ⛔ DO NOT: Dispatch analysis agents
-  ⛔ DO NOT: Start security/architecture/data analysis
   ⛔ DO: Verify discovery output files exist
 
 IF ANALYSIS PHASE INCOMPLETE:
-  ⛔ DO NOT USE: Write to create AUDIT-REPORT.md
-  ⛔ DO NOT USE: Read for report consolidation
+  ⛔ DO NOT USE: Write to create the audit-report doc
   ⛔ DO: Wait for ALL 3 analysis agents to complete
 
 ALWAYS:
@@ -63,6 +67,7 @@ ALWAYS:
   ⛔ DO NOT USE: Bash for git add/commit/push
   ⛔ DO NOT: Execute analysis without project context
   ⛔ DO NOT: Skip discovery phase
+  ⛔ DO NOT: Inline any doc template — schema is the only source of truth
 ```
 
 ---
@@ -82,8 +87,8 @@ ALWAYS:
     │   ├── architecture-analyzer  → Clean arch, imports, coupling
     │   └── data-analyzer          → Migrations, indexes, queries
     │
-    └── STEP 7 - CONSOLIDATION
-        └── Coordinator            → AUDIT-REPORT.md final
+    └── STEP 9 - CONSOLIDATION (schema-driven)
+        └── Coordinator            → docs/audit/<date>.md via audit-report schema
 ```
 
 ---
@@ -104,14 +109,16 @@ You are the coordinator. You know your engine's capabilities. Map the intent to 
 ## STEP 1: Create Folder Structure (RUN FIRST)
 
 ```bash
-# Create folder with current date
+# Create folders for supporting reports + final audit-report doc
 AUDIT_DATE=$(date +%Y-%m-%d)
 mkdir -p "docs/audits/${AUDIT_DATE}"
+mkdir -p "docs/audit"
 ```
 
-**Output folder:** `docs/audits/${AUDIT_DATE}/`
+**Supporting reports folder:** `docs/audits/${AUDIT_DATE}/`
+**Final audit-report doc (schema path):** `docs/audit/${AUDIT_DATE}.md`
 
-**⛔ GATE CHECK: Folder created?**
+**⛔ GATE CHECK: Folders created?**
 - If NO → Stop. Show error and abort.
 - If YES → Proceed to STEP 2.
 
@@ -244,7 +251,7 @@ Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 **Parse each report for:**
 - Issue severity (Critical, High, Medium, Low)
 - Issue description
-- Impacted file/line
+- Impacted file/line (evidence)
 - Pillar (Documentation, Security, Architecture, Data, Infrastructure)
 
 ### 7.1 Differential diagnosis for ambiguous findings
@@ -261,167 +268,34 @@ Mark such findings explicitly in the final report as `requires investigation` ra
 - Count issues by severity (Critical=3, High=2, Medium=1, Low=0.5)
 - Score = max(0, 10 - (weighted_sum / 5))
 
-**Status by score:**
-- 8-10 → 🟢 Healthy
-- 6-7 → 🟡 Attention
-- 4-5 → 🟠 Risk
-- 0-3 → 🔴 Critical
+**Status by score:** 8-10 Healthy · 6-7 Attention · 4-5 Risk · 0-3 Critical.
 
-**Calculate:**
-- Individual pillar scores (Documentation, Security, Architecture, Data, Infrastructure)
-- Overall score (average of all pillars)
-- Total issues by severity
+**Calculate:** Individual pillar scores, overall score (average), total issues by severity.
 
 ---
 
-## STEP 9: Generate AUDIT-REPORT.md (WRITE final report)
+## STEP 9: Write audit-report doc (schema-driven)
 
-**Create:** `docs/audits/${AUDIT_DATE}/AUDIT-REPORT.md`
+**Schema load (MANDATORY).** EXECUTE schema `audit-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
 
-**Template:**
-
-```markdown
-# Technical Audit Report
-
-**Project:** [Project name]
-**Date:** [YYYY-MM-DD]
-**Version:** 1.0
+- **Path:** `docs/audit/${AUDIT_DATE}.md`
+- **ID:** `AUDIT-${AUDIT_DATE}` (fixed — audit-date based). `related: [STACK]`.
+- Write per schema — extractive only.
+- **Link supporting reports** in an optional References-style list using plain relative paths to files under `docs/audits/${AUDIT_DATE}/`.
 
 ---
 
-## Executive Summary
+## STEP 10: Validation Gate
 
-[2-3 paragraphs in simple language about project overall state, main identified risks and priority recommendations. Accessible language for non-technical users.]
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `audit-report`.
 
----
-
-## Scorecard
-
-| Pillar | Score | Status | Issues |
-|-------|-------|--------|--------|
-| Documentation | X/10 | 🔴/🟠/🟡/🟢 | X critical, Y high |
-| Security | X/10 | 🔴/🟠/🟡/🟢 | X critical, Y high |
-| Architecture | X/10 | 🔴/🟠/🟡/🟢 | X critical, Y high |
-| Data | X/10 | 🔴/🟠/🟡/🟢 | X critical, Y high |
-| Infrastructure | X/10 | 🔴/🟠/🟡/🟢 | X critical, Y high |
-| **OVERALL** | **X/10** | **🔴/🟠/🟡/🟢** | **X total** |
-
-**Legend:** 🟢 8-10 (Healthy) | 🟡 6-7 (Attention) | 🟠 4-5 (Risk) | 🔴 0-3 (Critical)
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 
-## Consolidated Issues by Priority
+## STEP 11: Completion - Inform User
 
-### 🔴 CRITICAL (Resolve IMMEDIATELY)
-
-These issues can cause data leaks, security failures or prevent system functioning.
-
-| ID | Pillar | Issue | Impact | File |
-|----|-------|-------|---------|---------|
-| C01 | [Pillar] | [Brief description] | [Impact in simple language] | [path:line] |
-
----
-
-### 🟠 HIGH (Resolve within 1 week)
-
-These issues can cause performance problems, hard-to-debug bugs or significant technical debt.
-
-| ID | Pillar | Issue | Impact | File |
-|----|-------|-------|---------|---------|
-| A01 | [Pillar] | [Brief description] | [Impact in simple language] | [path:line] |
-
----
-
-### 🟡 MEDIUM (Resolve within 1 month)
-
-These issues are important improvements but not urgent.
-
-| ID | Pillar | Issue | Impact | File |
-|----|-------|-------|---------|---------|
-| M01 | [Pillar] | [Brief description] | [Impact in simple language] | [path:line] |
-
----
-
-### 🟢 LOW (Technical backlog)
-
-Desirable improvements for code quality.
-
-| ID | Pillar | Issue | Impact | File |
-|----|-------|-------|---------|---------|
-| B01 | [Pillar] | [Brief description] | [Impact in simple language] | [path:line] |
-
----
-
-## Suggested Roadmap
-
-### Sprint 1 (Immediate)
-- [ ] [C01] - [Brief description]
-- [ ] [C02] - [Brief description]
-
-### Sprint 2 (1 week)
-- [ ] [A01] - [Brief description]
-- [ ] [A02] - [Brief description]
-
-### Sprint 3 (2 weeks)
-- [ ] [M01] - [Brief description]
-
-### Backlog
-- [ ] [B01] - [Brief description]
-
----
-
-## How to Use This Report
-
-1. **Create features for fixes:**
-   ```bash
-   # For each critical issue, create a feature
-   git checkout -b feature/[XXXX]F-fix-[issue-id]
-   ```
-
-2. **Use /feature command with context:**
-   ```
-   /feature Fix [C01]: [issue description]
-   ```
-
-3. **Execute audit again after fixes:**
-   ```
-   /audit
-   ```
-
----
-
-## Detailed Reports
-
-For complete technical details, see:
-- [Context Discovery](./context-discovery.md)
-- [Documentation Report](./documentation-report.md)
-- [Infrastructure Report](./infrastructure-report.md)
-- [Security Report](./security-report.md)
-- [Architecture Report](./architecture-report.md)
-- [Data Report](./data-report.md)
-
----
-
-## Glossary
-
-| Term | Meaning |
-|-------|-------------|
-| RLS | Row Level Security - user-level data protection in database |
-| Multi-tenancy | Data isolation between different clients/accounts |
-| Clean Architecture | Code organization pattern in layers |
-| Migration | Script that changes database structure |
-| N+1 Query | Performance issue with multiple unnecessary queries |
-
----
-
-*Report automatically generated by `/audit` command*
-```
-
----
-
-## STEP 10: Completion - Inform User
-
-Present the overall scorecard, issue counts by severity, top 3 priorities, report location, and suggested next steps (review report, create features for critical issues, re-run audit after fixes).
+Present the overall scorecard, issue counts by severity, top 3 priorities, audit-report path, and suggested next steps (review report, create features for critical issues via `/add.new`, re-run audit after fixes).
 
 **Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
@@ -432,19 +306,18 @@ Present the overall scorecard, issue counts by severity, top 3 priorities, repor
 ALWAYS:
 - Use accessible language for non-technical users
 - Prioritize issues by real business impact
-- Include specific paths and lines of problems
+- Include specific paths and lines of problems in the Findings evidence column
 - Calculate scores using defined formula
-- Generate comprehensive executive summary
+- Load the `audit-report` schema from the registry before writing
 
 NEVER:
 - Correct code automatically
 - Make commits or changes to files
 - Skip discovery phase
 - Execute analysis without project context
-- Use technical jargon without explanation in report
-- Generate false positives without verifying context
-- Skip score calculation
-- Omit file paths or line numbers in issues
+- Inline a doc template — the schema is the single source of truth
+- Omit file paths or line numbers in Findings evidence
+- Skip the validation gate
 
 ---
 

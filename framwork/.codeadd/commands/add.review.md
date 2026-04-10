@@ -11,8 +11,16 @@ Coordinator for feature code review. Dispatches specialized reviewers (Frontend 
 ## Spec
 
 ```json
-{"outputs":{"report":"console + docs/features/${FEATURE_ID}/review.md"}}
+{"outputs":{"report":"console + docs/features/${FEATURE_ID}/review.md"},"schema":null,"schema_note":"PRD0009 scope judgment — no add-doc-schemas entry applies"}
 ```
+
+---
+
+## PRD0009 Schema Applicability (judgment)
+
+`/add.review` writes `docs/features/${FEATURE_ID}/review.md` as a **pre-merge quality-gate checklist** tied to a specific feature, not a persistent standalone report consumed later by agents. The `add-doc-schemas` registry covers `audit-report` (date-scoped, project-wide findings) and `diagnose-report` (triage) — neither matches a feature-scoped, merge-transient review. No `review-report` schema exists, and PRD0009 explicitly forbids inventing schemas in this wave.
+
+Decision: `/add.review` is **out of scope for schema application**. It does not load a schema, does not carry an `AUDIT-*`/`DIAG-*` ID, and does not run the validation gate. The `review.md` output remains structured by the existing Quality Gate Report + in-command sections, consumed immediately by `/add.done`. If future work introduces a canonical `feature-review` schema, revisit this command.
 
 ---
 
@@ -148,9 +156,9 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
    - Cross-reference with changed files to validate completeness
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
-7. Parse `PROJECT_PATHS` from script output and read ALL listed files:
-   - Files are named by app (SERVER.md, ADMIN.md, CLI.md, etc)
-   - DATABASE.md is cross-app
+7. Load project patterns for validation:
+   - IF `PROJECT_SKILL` in script output: run `bash .codeadd/scripts/pattern-search.sh --list` to see areas, then `pattern-search.sh [area]` for each relevant area to get topic ranges. Read only topics related to the changed code.
+   - IF `PROJECT_DOCS` in script output: read ALL listed project pattern files
    - These contain implementation patterns to validate against
 
 ### 2.3 Load Project Architecture Reference
@@ -273,7 +281,8 @@ prompt: |
   ## BOOTSTRAP
   1. Run: bash .codeadd/scripts/status.sh
   2. Read ALL files listed in TASK_DOCUMENTS
-  3. Read PROJECT_PATHS files matching frontend apps (e.g., ADMIN.md, PORTAL.md)
+  3. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh frontend` and read relevant topic ranges
+     IF PROJECT_DOCS in script output: read matching frontend pattern files
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
   5. Read skills:
      - skill add-frontend-development (PRIMARY)
@@ -316,12 +325,11 @@ prompt: |
   - [ ] API calls use correct endpoints
   - [ ] Request/response types align
 
-  ### 6. Project Patterns Validation (if .codeadd/project/*.md exists for frontend apps)
-  - [ ] State management follows documented pattern
-  - [ ] Component structure follows documented pattern
-  - [ ] Styling follows documented pattern
-  - [ ] HTTP client follows documented pattern
-  Note: Pattern files are named by app (ADMIN.md, PORTAL.md), not FRONTEND.md
+  ### 6. Project Patterns Validation (if project-patterns skill exists)
+  - [ ] State management follows documented pattern (pattern-search.sh frontend "State Management")
+  - [ ] Component structure follows documented pattern (pattern-search.sh frontend "Component Structure")
+  - [ ] Styling follows documented pattern (pattern-search.sh frontend "Styling")
+  - [ ] HTTP client follows documented pattern (pattern-search.sh frontend "HTTP Client")
 
   ## RULES
   - NO questions — fix issues automatically
@@ -350,7 +358,8 @@ prompt: |
   ## BOOTSTRAP
   1. Run: bash .codeadd/scripts/status.sh
   2. Read ALL files listed in TASK_DOCUMENTS
-  3. Read PROJECT_PATHS files matching backend apps (e.g., SERVER.md, DATABASE.md)
+  3. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh backend,database` and read relevant topic ranges
+     IF PROJECT_DOCS in script output: read matching backend/database pattern files
   4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
   5. Read skills:
      - skill add-backend-development (PRIMARY)
@@ -464,16 +473,15 @@ prompt: |
   - [ ] Enums mirrored with same values
   - [ ] Date fields: Date in backend, string in frontend (JSON serialization)
 
-  ### 8.5. Project Patterns Validation (if .codeadd/project/*.md exists)
-  - [ ] Logging follows documented pattern (library, format, context)
-  - [ ] Validation follows documented pattern (library, DTOs)
-  - [ ] Error handling follows documented pattern (base class, HTTP mapping)
-  - [ ] Database interaction follows documented pattern (ORM, repository)
-  Note: Pattern files are named by app (SERVER.md), not BACKEND.md
+  ### 8.5. Project Patterns Validation (if project-patterns skill exists)
+  - [ ] Logging follows documented pattern (pattern-search.sh backend "Logging")
+  - [ ] Validation follows documented pattern (pattern-search.sh backend "Validation")
+  - [ ] Error handling follows documented pattern (pattern-search.sh backend "Error Handling")
+  - [ ] Database interaction follows documented pattern (pattern-search.sh backend "Database Interaction")
 
-  **Database Patterns (from .codeadd/project/DATABASE.md):**
-  - [ ] Migrations follow documented pattern (tool, folder, commands)
-  - [ ] Connection follows documented pattern
+  **Database Patterns (from pattern-search.sh database):**
+  - [ ] Migrations follow documented pattern (pattern-search.sh database "Migrations")
+  - [ ] Connection follows documented pattern (pattern-search.sh database "Connection Strategy")
 
   ### 9. Product Validation (CRITICAL)
 

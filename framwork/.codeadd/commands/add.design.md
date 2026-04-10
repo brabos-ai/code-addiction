@@ -14,8 +14,16 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 ## Spec
 
 ```json
-{"outputs":{"design":"docs/features/${FEATURE_ID}/design.md","temp":["design-context.md","design-flow.md","design-layout.md"]},"mode":{"inline":"<3 screens","subagent":">=3 screens OR complexity keywords"}}
+{"outputs":{"design":"docs/features/${FEATURE_ID}/design.md","temp":["design-context.md","design-flow.md","design-layout.md"]},"schema":"feature-design","mode":{"inline":"<3 screens","subagent":">=3 screens OR complexity keywords"}}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `feature-design`), `add-doc-ref-convention`, and `add-token-efficiency`.
+
+**Reuse feature ID:** `add.design` does NOT allocate a new ID. Read `id: F[NNNN]` from the feature's `about.md` in STEP 1.2. The generated `design.md` carries the SAME `F[NNNN]` with `related: [F[NNNN]]`.
 
 ---
 
@@ -30,7 +38,8 @@ STEP 5:  Flow & Interaction Analysis -> Subagent dispatch OR inline
 STEP 6:  Layout & Component Spec    -> Subagent dispatch OR inline (AFTER Step 5)
 STEP 7:  Confirm Design [STOP]      -> WAIT for user confirmation
 STEP 8:  Write Documentation        -> Consolidation + write design.md + cleanup
-STEP 9:  Completion                  -> INFORM user
+STEP 9:  Validation Gate             -> feature-design schema gate
+STEP 10: Completion                  -> INFORM user
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -300,86 +309,33 @@ Present consolidated design summary to user. Include: SaaS context, patterns, mo
 
 ## STEP 8: Write Documentation
 
-**Pre-check:** Read skill `add-documentation-style` file `design.md` if it exists.
+**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
 
 ### 8A: Subagent Mode -- Consolidation
 
 1. Read design-flow.md and design-layout.md
 2. Validate: every action has a UI element, every screen has a layout, entry points match navigation
 3. Fill gaps if validation finds missing items
-4. Write to `docs/features/${FEATURE_ID}/design.md` using output template
+4. Write to `docs/features/${FEATURE_ID}/design.md` following the `feature-design` schema
 5. Cleanup temp files: delete design-context.md, design-flow.md, design-layout.md
 
 ### 8B: Inline Mode -- Direct Write
 
-Write to `docs/features/${FEATURE_ID}/design.md` using output template. Delete design-context.md if exists.
+Write to `docs/features/${FEATURE_ID}/design.md` following the `feature-design` schema. Delete design-context.md if exists.
 
-### Output Template (design.md)
-
-```markdown
-# Design: [Feature Name]
-
-**SaaS:** [context] | **Patterns:** [list] | **Mobile:** touch 44px, inputs 16px+
-**Skill:** add-ux-design
-**Mode:** [inline | subagent]
+Extractive only — tables, bullets, `step → step` sequences, minified JSON for tokens.
 
 ---
 
-## Screen Flow
+## STEP 9: Validation Gate
 
-### Flow Diagram
-[ASCII flow diagram -- subagent mode only; skip for inline <3 screens]
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-design`.
 
-### Action Classification
-| Action | Frequency | Type | Access | Screen |
-|--------|-----------|------|--------|--------|
-
-### Entry Points
-| Screen | Via Nav | Via Cmd+K | Via URL | Via Notif |
-|--------|---------|-----------|---------|-----------|
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 
-## Layouts
-
-### [ScreenName] (mobile)
-**Pattern:** [from SaaS UX Pattern Library]
-**Flow context:** comes from [Screen X] via [action]
-
-+---------------------+
-| [ASCII layout]      |
-+---------------------+
-->md: [changes] | ->lg: [changes]
-
----
-
-## Components
-
-### Existing
-- [Name]: [path] | [purpose]
-
-### New
-#### [NewComponent]
-**Loc:** [path] | **Pattern:** [from ux-design] | **Mobile:** [specs]
-**Actions served:** [from Action Classification Matrix]
-**Behavior:** [description]
-
----
-
-## States
-loading->Skeleton | empty->EmptyState | error->Toast
-
----
-
-## Dev Instructions
-**Order:** [1]->[2]->[3]
-**Patterns:** [SaaS patterns from ux-design]
-**Skill:** add-ux-design (MUST load for implementation)
-```
-
----
-
-## STEP 9: Completion
+## STEP 10: Completion
 
 Inform the user that design is complete. Include: feature ID, SaaS context, patterns applied, mode used, path to design.md, artifact summary (screen flow, actions classified, entry points mapped), and next steps (`/plan`, `/dev`, `/autopilot`).
 

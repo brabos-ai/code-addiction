@@ -1,7 +1,7 @@
 ---
 name: add-frontend-development
 description: |
-  Frontend architecture: state management, data fetching, components, forms, routing — stack-agnostic. Consult stack-context.md for framework. Use when implementing frontend features.
+  Frontend architecture: state management, data fetching, components, forms, routing — stack-agnostic. Consult CLAUDE.md for framework. Use when implementing frontend features.
 ---
 
 # Frontend Development
@@ -11,7 +11,7 @@ Stack-agnostic skill for frontend architecture and implementation patterns.
 **Use for:** Pages, State, Data Fetching, Types, API integration, Forms, Routing, Components
 **Do not use for:** UI/Design (ux-design), Backend (backend-development)
 
-**Stack orientation:** Consult `.codeadd/project/stack-context.md` for the frontend framework, UI library, state management, and data-fetching tool. Apply the principles below using that framework's APIs.
+**Stack orientation:** Consult `CLAUDE.md ## Architecture Contract` for the frontend framework, UI library, state management, and data-fetching tool. Apply the principles below using that framework's APIs.
 
 **Reference:** Always consult `CLAUDE.md` for general project standards.
 
@@ -38,7 +38,7 @@ Stack-agnostic skill for frontend architecture and implementation patterns.
 
 ## Structure
 
-Organize source files by concern. Exact paths and extensions depend on the framework (see `stack-context.md`).
+Organize source files by concern. Exact paths and extensions depend on the framework (see `CLAUDE.md`).
 
 ```
 [frontend-src]/
@@ -72,7 +72,7 @@ Principles:
 
 {"separation":"UI state (local, ephemeral) vs Server state (cache of backend data) — NEVER mix them"}
 
-Use the project's data-fetching library (see `stack-context.md`) to handle server state. Every data-fetch must address:
+Use the project's data-fetching library (see `CLAUDE.md`) to handle server state. Every data-fetch must address:
 
 1. **Cache keys** — consistent, hierarchical (e.g. `['resource']`, `['resource', id]`)
 2. **Loading state** — always show a loading indicator while fetching
@@ -90,7 +90,7 @@ Separate state into two categories — never mix them:
 
 | Category | What belongs here | Where it lives |
 |----------|-------------------|----------------|
-| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see `stack-context.md`) |
+| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see `CLAUDE.md`) |
 | **Server state** | Data from the backend, CRUD results, cached responses | Data-fetching library cache |
 
 Principles:

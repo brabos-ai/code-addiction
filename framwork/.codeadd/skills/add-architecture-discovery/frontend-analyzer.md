@@ -4,12 +4,7 @@ Analisa e documenta padrões frontend IMPLEMENTADOS no projeto.
 
 ## Objetivo
 
-Gerar conteúdo para `.codeadd/project/[PREFIX]-[DIR_NAME].md` com padrões reais do projeto.
-
-**Naming Convention:** File name = `{PREFIX}-{DIRECTORY-NAME}.md`
-- PREFIX = APP (if in apps/) | LIB (if in libs/ or packages/)
-- DIRECTORY-NAME = exact directory name in UPPERCASE
-- Example: `apps/frontend` → `APP-FRONTEND.md`, `apps/admin` → `APP-ADMIN.md`
+Gerar `.codeadd/skills/project-patterns/frontend.md` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
 ## PRIMEIRO: Descobrir SE Existe Frontend
 
@@ -80,7 +75,26 @@ Pesquise APENAS se existir no projeto:
 - Location: .env.local, .env
 - Acesso: import.meta.env, process.env
 
-### 9. Testing (SE EXISTIR)
+### 9. Reusable Abstractions (CRITICAL — prevents duplication)
+- Custom hooks/composables already available (useAuth, useFetch, useForm, etc)
+- Shared UI components (Layout, Modal, DataTable, FormField, etc)
+- Shared utilities (formatters, parsers, validators, date helpers)
+- Shared types/interfaces (API response types, entity types)
+- Context providers/stores already available
+- Existing pages/features that solve similar problems (agents should study before building new ones)
+- **For each: document path, purpose, and usage example**
+- **Principle: if a hook/component/utility exists, the agent MUST reuse it**
+
+### 10. Project Conventions (CRITICAL — ensures consistency)
+- File/folder naming pattern (kebab-case, PascalCase for components, etc)
+- Feature/page organization (by route? by domain? flat?)
+- Where new components should be placed (shared vs feature-specific)
+- How new routes/pages are registered
+- Import ordering/aliasing conventions (@/, ~/, etc)
+- Co-location rules (styles next to component? tests next to component?)
+- **Principle: the agent must follow the established pattern, not invent a new one**
+
+### 11. Testing (SE EXISTIR)
 - Framework: vitest, jest, testing-library, cypress, playwright
 - Padrão de arquivos
 - Comandos
@@ -108,87 +122,140 @@ find . -type f \( -name "vite.config*" -o -name "next.config*" -o -name "webpack
 
 ## Output Format
 
-```markdown
-# Frontend Patterns
+Write to `.codeadd/skills/project-patterns/frontend.md` using this structure:
 
-## Framework & Library
-Framework: [nome] [version] | Build: [tool] | Package Manager: [npm/yarn/pnpm]
+```markdown
+---
+area: frontend
+generated: YYYY-MM-DD
+app-path: [actual app path, e.g., apps/web]
+framework: [detected framework]
+---
+
+## TL;DR
+
+[≤60 words: framework, key libraries, patterns count. Extractive only.]
+
+## TOC
+
+- [Framework & Build](#framework--build)
+- [State Management](#state-management)
+- [Component Structure](#component-structure)
+- [Styling](#styling)
+- [HTTP Client](#http-client)
+- [Routing](#routing)
+- [Forms](#forms)
+- [Environment Variables](#environment-variables)
+- [Reusable Abstractions](#reusable-abstractions)
+- [Project Conventions](#project-conventions)
+- [Testing](#testing)
+
+## Framework & Build
+
+[Topic sentence: framework, build tool, package manager.]
+Config: `{"framework":"[name]","version":"[X.Y]","build":"[vite/next/etc]","pkg":"[npm/yarn/pnpm]"}`
 
 ## State Management
-Library: [nome]
-Stores location: [path glob]
 
-Store pattern:
+[Topic sentence: library, store pattern.]
+Config: `{"library":"[name]","stores":"[path glob]","hooks":"[list]"}`
+
 ```tsx
-[exemplo REAL de store do projeto]
+// [path:line]
+[REAL store example, ≤10 lines]
 ```
-
-Hooks: [lista de custom hooks]
 
 ## Component Structure
-Folder hierarchy:
-```
-[estrutura REAL do projeto]
-```
 
-Naming:
-- Components: [PascalCase/etc]
-- Hooks: [camelCase com use/etc]
-- Files: [kebab-case/etc]
+[Topic sentence: folder hierarchy, naming conventions.]
+Config: `{"components":"[PascalCase/etc]","hooks":"[camelCase]","files":"[kebab-case/etc]"}`
 
-Props pattern:
 ```tsx
-[exemplo REAL de interface de props]
+// [path:line]
+[REAL props interface example, ≤10 lines]
 ```
 
 ## Styling
-Library: [nome]
-Global: [path]
-Pattern: [utility-first/css-modules/etc]
 
-Example:
+[Topic sentence: library, pattern.]
+Config: `{"library":"[name]","global":"[path]","pattern":"[utility-first/css-modules/etc]"}`
+
 ```tsx
-[exemplo REAL de componente estilizado]
+// [path:line]
+[REAL styled component example, ≤10 lines]
 ```
 
 ## HTTP Client
-Library: [nome]
-Config: [path]
-Base URL: [de onde vem]
 
-Pattern:
+[Topic sentence: library, base URL source.]
+Config: `{"library":"[name]","config":"[path]","base_url":"[env var or path]"}`
+
 ```tsx
-[exemplo REAL de chamada API]
+// [path:line]
+[REAL API call example, ≤10 lines]
 ```
 
 ## Routing
-Library: [nome]
-Routes: [path do arquivo de rotas]
 
-Structure:
+[Topic sentence: library, route structure.]
+Config: `{"library":"[name]","routes":"[path]"}`
+
 ```tsx
-[exemplo REAL de definição de rotas]
+// [path:line]
+[REAL route definition, ≤10 lines]
 ```
 
 ## Forms
-Library: [nome]
-Validation: [zod/yup/etc]
 
-Pattern:
+[Topic sentence: library, validation.]
+Config: `{"library":"[name]","validation":"[zod/yup/etc]"}`
+
 ```tsx
-[exemplo REAL de form]
+// [path:line]
+[REAL form example, ≤10 lines]
 ```
 
 ## Environment Variables
-Prefix: [VITE_/etc]
-Location: [.env.local/etc]
-Access: [import.meta.env/etc]
+
+[Topic sentence: prefix, access pattern.]
+Config: `{"prefix":"[VITE_/NEXT_PUBLIC_/etc]","location":"[.env.local/etc]","access":"[import.meta.env/etc]"}`
+
+## Reusable Abstractions
+
+[Topic sentence: what exists that agents MUST reuse instead of creating from scratch.]
+
+**Custom hooks/composables:**
+- `[hookName]` at `[path]` — [what it does]
+
+**Shared UI components:**
+- `[ComponentName]` at `[path]` — [purpose, props summary]
+
+**Shared utilities:**
+- `[utilName]` at `[path]` — [what it does]
+
+**Shared types:**
+- `[path glob]` — [what's available]
+
+## Project Conventions
+
+[Topic sentence: how the project is organized and where new code should go.]
+
+File naming: [pattern]
+Feature organization: [by route/domain/flat]
+New component placement: [shared/ vs feature-specific/]
+New route registration: [how]
+Import aliasing: [@ or ~ conventions]
+Co-location: [styles/tests next to component?]
 
 ## Testing
-Framework: [nome]
-Files: [*.test.tsx/etc]
-Run: [comando]
+
+[Topic sentence: framework, file pattern.]
+Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
 ```
+
+**CRITICAL:** Skip sections that don't exist. Each ## chunk ~100-150 words max. Code examples always with `// path:line` comment. TOC only includes sections that exist.
+
+**MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing hooks/components and violating established patterns. Prioritize discovering these over documenting library configs.
 
 ## Regras Críticas
 

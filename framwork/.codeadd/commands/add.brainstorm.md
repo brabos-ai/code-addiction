@@ -23,8 +23,14 @@ DO: Ask questions, analyze what exists, challenge ideas, route to /add.new when 
 ## Spec
 
 ```json
-{"document_output":"docs/brainstorm/YYYY-MM-DD-[topic-slug].md"}
+{"document_output":"docs/brainstorm/YYYY-MM-DD-<slug>.md"}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `brainstorm`), `add-doc-ref-convention`, and `add-token-efficiency`.
 
 ---
 
@@ -82,7 +88,7 @@ Read CLAUDE.md, product.md (if exists), and list implemented features from docs/
 
 ---
 
-## STEP 5: Interactive Conversation (Challenge & Insights)
+## STEP 4: Interactive Conversation (Challenge & Insights)
 
 > **MINDSET:** Do not be passive. Go BEYOND what the user is thinking. Question premises, bring unconsidered perspectives, raise edge cases, force decisions.
 
@@ -122,13 +128,13 @@ Document uncertainties           | Mature until there's clarity
 
 ---
 
-## STEP 6: Deep Dive (When Needed)
+## STEP 5: Deep Dive (When Needed)
 
 When user wants to explore a feature in detail, load its docs from `docs/features/[XXXX]F-[name]/`. When asked about code architecture, search and explain at appropriate level. When asked about feasibility, assess: technical feasibility, effort estimate (high-level), dependencies, and risks.
 
 ---
 
-## STEP 7: Resolve All Questions (BEFORE Documentation)
+## STEP 6: Resolve All Questions (BEFORE Documentation)
 
 Before generating any document, validate:
 - No questions left open
@@ -140,111 +146,36 @@ Before generating any document, validate:
 
 ---
 
-## STEP 8: Generate Summary Document (ONLY IF User Requests)
+## STEP 7: Generate Brainstorm Document (ONLY IF User Requests)
 
 When conversation reaches valuable insights, offer to generate a summary document.
 
-### Execution
-
-1. Read skill `add-documentation-style` file `business.md`
-2. Apply Business Style format (section "brainstorm/")
-3. Create document with proper naming
-
 **CRITICAL:** Documents go in `docs/brainstorm/` — NEVER in `docs/features/`.
 
-### Naming Pattern
+### 7.1 Allocate ID
 
-**Format:** `docs/brainstorm/YYYY-MM-DD-[topic-slug].md`
+Brainstorm docs use **fixed ID per schema**: `BRN-<slug>`. DO NOT call `status.sh next-id` — derive the slug in kebab-case from the topic.
 
-- YYYY-MM-DD date prefix, topic in kebab-case
-- CORRECT: `docs/brainstorm/2025-02-10-push-notifications.md`
-- WRONG: `docs/features/...` or missing date prefix
+### 7.2 Load Schema
 
-### Document Template
+EXECUTE schema `brainstorm` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-```markdown
-# Brainstorm: [Topic]
+### 7.3 Write the Doc
 
-**Date:** [YYYY-MM-DD]
-**Participants:** [who participated]
+**Path:** `docs/brainstorm/YYYY-MM-DD-<slug>.md` (date prefix for chronological tree ordering)
 
----
+- CORRECT: `docs/brainstorm/2026-04-09-push-notifications.md`
+- WRONG: `docs/brainstorm/push-notifications.md` (missing date)
 
-## Context
-
-[Problem or opportunity that motivated discussion - 3-5 lines]
+Write per `brainstorm` schema. Bullets only, extractive. DO NOT commit to implementation (decisions belong in plan.md).
 
 ---
 
-## What the User Wants
+## STEP 8: Validation Gate
 
-### Main Need
-[Description from user's point of view, without technical jargon]
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `brainstorm`.
 
-### Use Cases
-- **[Scenario 1]:** [practical situation]
-- **[Scenario 2]:** [practical situation]
-
----
-
-## Discoveries
-
-### What already exists
-- [Existing functionality] - [how it helps]
-
-### What's missing
-- [Identified gap] - [impact]
-
----
-
-## Ideas Discussed
-
-### [Idea A]
-- **Proposal:** [description]
-- **Pros:** [advantages]
-- **Cons:** [disadvantages]
-
-### [Idea B]
-- **Proposal:** [description]
-- **Pros:** [advantages]
-- **Cons:** [disadvantages]
-
----
-
-## Decisions Made
-
-> **RULE:** No question can remain open. All questions raised during brainstorm must be resolved before documenting.
-
-| Question | Decision | Justification |
-|----------|----------|---------------|
-| [Question that came up] | [Choice made] | [Why this choice] |
-
-### Validated Premises
-- [Premise that was questioned and confirmed]
-
-### Accepted Trade-offs
-- [Trade-off 1]: Accept [disadvantage] in exchange for [advantage]
-
----
-
-## Next Steps
-
-- [ ] [Action] - [responsible if defined]
-
----
-
-## For `/feature`
-
-> [Sentence describing the feature to start formal discovery]
-
----
-
-## Related Files
-
-| File | What it does |
-|------|--------------|
-| `[path]` | [max 10 words] |
-```
+⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
 ---
 
@@ -270,8 +201,10 @@ ALWAYS:
 - Run status.sh and investigate codebase before answering
 - Question premises actively — bring unsolicited insights
 - Force decisions — resolve all doubts in session before documenting
-- Create brainstorm documents ONLY in docs/brainstorm/ with Business Style
-- Limit file references to path + max 10 words
+- Create brainstorm documents ONLY in docs/brainstorm/
+- Load the `brainstorm` schema from `{{skill:add-doc-schemas/SKILL.md}}` before writing
+- Use fixed ID `BRN-<slug>` per schema (no next-id lookup)
+- Run the validation gate after writing the doc
 - Guide to appropriate commands when action is needed
 
 NEVER:
@@ -279,5 +212,8 @@ NEVER:
 - Create folders or files in docs/features/
 - Document with unresolved questions or uncertainties
 - Include technical implementation details in brainstorm documents
+- Inline any doc template — ALWAYS load from add-doc-schemas
+- Use abstractive summarization to fit word caps
 - Accept ideas passively without challenging
 - Create brainstorm document without user consent
+- Skip the validation gate

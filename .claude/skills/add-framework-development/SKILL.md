@@ -1,15 +1,15 @@
 ---
 name: add-framework-development
-description: "Internal skill for developing ADD framework artefacts (commands, skills, agents, scripts). Use when add.strategy analyzes viability of new framework features, when add.make implements framework artefacts, or when creating/modifying commands, skills, or agents. Always use this skill before proposing or implementing changes to the framework itself."
+description: "Internal skill for developing ADD framework artefacts (commands, skills, agents, scripts). Use when add.plan analyzes viability of new framework features, when add.build implements framework artefacts, or when creating/modifying commands, skills, or agents. Always use this skill before proposing or implementing changes to the framework itself."
 ---
 
 # Framework Development — Internal Reference
 
-Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so add.strategy assesses viability and add.make implements correctly.
+Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so add.plan assesses viability and add.build implements correctly.
 
 ## When to Use
-- `add.strategy` analyzing if a proposal is technically viable (STEP 0 and STEP 2)
-- `add.make` implementing a new command, skill, agent, or script
+- `add.plan` analyzing if a proposal is technically viable (STEP 0 and STEP 2)
+- `add.build` implementing a new command, skill, agent, or script
 - Modifying existing framework artefacts (commands, skills, agents)
 - Deciding WHAT TYPE of artefact to create for a given need
 - Understanding how the build pipeline distributes artefacts to providers
@@ -24,7 +24,7 @@ Operational knowledge for creating and modifying ADD framework artefacts. NOT di
 
 ## 0. Decision Framework — What to Create?
 
-This is the FIRST question `add.strategy` must answer. Wrong artefact type = wasted effort.
+This is the FIRST question `add.plan` must answer. Wrong artefact type = wasted effort.
 
 | Need | Create | Why |
 |------|--------|-----|

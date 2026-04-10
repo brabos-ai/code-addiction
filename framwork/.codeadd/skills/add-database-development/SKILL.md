@@ -1,7 +1,7 @@
 ---
 name: add-database-development
 description: |
-  Database architecture: entities, repositories, migrations, naming, multi-tenancy — stack-agnostic. Consult stack-context.md for ORM. Use when implementing database layer.
+  Database architecture: entities, repositories, migrations, naming, multi-tenancy — stack-agnostic. Consult CLAUDE.md for ORM. Use when implementing database layer.
 ---
 
 # Database Development
@@ -11,7 +11,7 @@ Skill for implementing the database layer following universal data architecture 
 **Use for:** Entities, Migrations, Repositories, Enums, Database types
 **Do not use for:** Controllers/DTOs (backend-development), Frontend (ux-design)
 
-**Stack orientation:** Consult `.codeadd/project/stack-context.md` for the ORM and database in use. Apply these principles using the project's ORM API.
+**Stack orientation:** Consult `CLAUDE.md ## Architecture Contract` for the ORM and database in use. Apply these principles using the project's ORM API.
 
 ---
 

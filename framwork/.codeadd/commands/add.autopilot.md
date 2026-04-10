@@ -14,8 +14,16 @@ You are the **Autopilot Coordinator** — a master orchestrator that coordinates
 ## Spec
 
 ```json
-{"modes":{"simple":"single feature","epic":"feature N of M"}}
+{"modes":{"simple":"single feature","epic":"feature N of M"},"mutates":["plan.md","about.md"],"schemas":["feature-plan","feature-about"]}
 ```
+
+---
+
+## Required Skills
+
+Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schemas: `feature-plan`, `feature-about`), `add-doc-ref-convention`, and `add-token-efficiency`.
+
+`/add.autopilot` is a **mutator orchestrator**: dispatched agents (planning, review) update existing `plan.md`/`about.md`. It MUST NOT allocate new IDs — reuse `F[NNNN]` from frontmatter. Every mutation MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable. After each mutation, the schema validation gate (STEP 9.5) MUST run.
 
 ---
 
@@ -31,6 +39,7 @@ STEP 6: Development Agents      → ONLY AFTER plan exists
 STEP 7: Persist Decisions + Startup Test → Log iteration + bootstrap check
 STEP 8: Review Agent            → ONLY AFTER build + startup pass
 STEP 9: Compliance Gate         → Cross-reference RF/RN vs implementation
+STEP 9.5: Doc Mutation Gate     → Cache rule + feature-plan/feature-about schema gate
 STEP 10: Final Verification    → Build + docs + review.md check
 STEP 11: Completion Report     → AUTOMATIC after verification
 ```
@@ -61,6 +70,20 @@ IF BUILD FAILING:
 IF STARTUP TEST FAILS (DI/IoC error, not connection):
   ⛔ DO NOT dispatch review agent
   ✅ DO fix DI error, re-run startup test
+
+IF EXISTING DOC NOT READ (before mutating plan.md/about.md):
+  ⛔ DO NOT USE: Write on plan.md or about.md
+  ⛔ DO NOT: Overwrite existing content blindly
+  ⛔ DO NOT: Allocate a new F[NNNN] — reuse id from frontmatter
+  ✅ DO: Read full doc → preserve valid content → complement → bump updated:
+
+IF SCHEMA NOT LOADED (before mutating plan.md/about.md):
+  ⛔ DO NOT USE: Write on plan.md or about.md
+  ✅ DO: Load feature-plan / feature-about from {{skill:add-doc-schemas/SKILL.md}}
+
+IF DOC MUTATION GATE NOT RUN (after plan.md/about.md mutations):
+  ⛔ DO NOT: Proceed to STEP 10
+  ✅ DO: Run STEP 9.5 gate against each mutated doc
 
 ALWAYS:
   ⛔ DO NOT ask user questions (100% autonomous)
@@ -258,7 +281,8 @@ MUST generate Spec Checklist (PRD0034) at end of plan.md.
    Your scope is LIMITED to ${AREA} area only.
 2. Run: `bash .codeadd/scripts/status.sh`
 3. Read ALL files listed in TASK_DOCUMENTS
-4. Parse PROJECT_PATHS from script output and read relevant files
+4. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` and read relevant topic ranges
+   IF PROJECT_DOCS in script output: read the matching project pattern files
 5. Read your area's skill file (see SKILLS section)
 ```
 
@@ -543,6 +567,22 @@ DO NOT report completion without executing this step.
    - Dispatch fix agent with missing requirements + TASK_DOCUMENTS
    - Re-run this gate after fix
 5. IF ALL RF/RN covered: proceed to STEP 10
+
+---
+
+## STEP 9.5: Doc Mutation Gate (add-doc-schemas)
+
+Any mutation to `plan.md` or `about.md` executed by dispatched agents MUST obey the **cache documental** rule from `{{skill:add-documentation-style/SKILL.md}}`:
+
+1. **Read the full existing doc first.** Capture `id: F[NNNN]`, `created:`, `type:` — immutable.
+2. **Preserve valid content.** Only complement with new findings. Never allocate a new ID.
+3. **Bump `updated:`** to today on every write.
+
+### 9.5.1 Run the Validation Gate
+
+For EACH mutated doc (`plan.md` and/or `about.md`), execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for the corresponding schema (`feature-plan` or `feature-about`). Additionally verify immutable fields (`id:`, `type:`, `created:`) were preserved from pre-mutation.
+
+⛔ DO NOT skip. DO NOT advance to STEP 10 until all gates return `PASS`. If any gate FAILs, dispatch a fix agent with the gate output and re-run.
 
 ---
 

@@ -6,6 +6,7 @@ import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
+  getLatestPrerelease: vi.fn(),
   downloadReleaseAsset: vi.fn(),
   promptProviders: vi.fn(),
   promptConfirm: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../src/github.js', () => ({
   getLatestTag: mocks.getLatestTag,
+  getLatestPrerelease: mocks.getLatestPrerelease,
   downloadReleaseAsset: mocks.downloadReleaseAsset,
 }));
 
@@ -29,7 +31,7 @@ vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-  log: { success: vi.fn(), info: vi.fn() },
+  log: { success: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
 import { install } from '../src/installer.js';
