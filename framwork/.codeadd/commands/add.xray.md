@@ -428,6 +428,8 @@ Each area file follows context engineering principles:
 
 ## STEP 7: Update CLAUDE.md
 
+Read skill `{{skill:add-claude-md-style/SKILL.md}}` BEFORE dispatching the agent.
+
 **DISPATCH AGENT:**
 - **Capability:** read-write (must update CLAUDE.md)
 - **Complexity:** standard
@@ -440,30 +442,42 @@ You are the CONTEXT FILES UPDATER.
 ## SELF-BOOTSTRAP
 Read: skill add-architecture-discovery
 Follow OUTPUT FORMAT and TEMPLATE sections.
+Read: skill add-claude-md-style
+Apply ALL content rules from that skill.
 
 ## INPUTS TO READ
 1. .codeadd/temp/architecture-discovery.md
 2. ALL files in .codeadd/skills/project-patterns/*.md (list dynamically)
 
 ## TASK
-Update CLAUDE.md with:
+Update CLAUDE.md with ONLY these sections:
 
-1. **## Architecture Contract** section — include an **Apps** table (`app | kind | path | entry`) listing all detected apps/packages with their type, directory path, and entry point file
-2. **## Technical Spec** section
-3. **## Implementation Patterns** section with:
-   - Location: .codeadd/skills/project-patterns/
-   - Areas table (area | file | topics | framework)
-   - Search command: bash .codeadd/scripts/pattern-search.sh <area> [topic]
-   - JIT loading instruction: pattern-search.sh → Read offset:START limit:LENGTH
+1. **## Architecture Contract** — Apps table (`app | kind | path | entry`) + layer hierarchy rule + import rules (compact JSON)
+2. **## Technical Spec** — compact JSON only, one object per line, max 10 words per value
+3. **## Implementation Patterns** — pointer to project-patterns skill only (no inline patterns)
+
+## CONSTRAINTS (from add-claude-md-style skill)
+Target: 80-150 lines total.
+
+DO NOT include:
+- Frontend/backend/database patterns (already in project-patterns skill)
+- API route lists
+- Component/directory trees
+- Inline code examples
+- Feature documentation or business flows
+- Security implementation details
+- Worker/job queue details
+- Any section explaining a single concept in >5 lines
 
 ## OUTPUT FORMAT
-- JSON minified one-line
-- Max 10 words per description
-- List ALL .codeadd/skills/project-patterns/*.md dynamically
+- JSON minified one-line per object
+- Max 10 words per description value
+- Implementation Patterns section = pointer block only (no inline content)
 
 ## REPORT FORMAT
 Return summary:
 - CLAUDE_MD_UPDATED: YES
+- TOTAL_LINES: [count]
 - SECTIONS_UPDATED: [list]
 - AREAS_REFERENCED: [list area files]
 ```
@@ -478,17 +492,54 @@ WAIT: Do NOT proceed until CLAUDE.md has been updated.
 
 **Coordinator action (no subagent needed).**
 
-**AFTER CLAUDE.md is confirmed updated, copy to engine-specific context files (replace if exists):**
+**AFTER CLAUDE.md is confirmed updated:**
 
-1. **GEMINI.md** ← Identical copy of CLAUDE.md
-2. **AGENTS.md** ← Copy of CLAUDE.md + APPEND the following section at the end:
+### 8.1 Copy to GEMINI.md
+
+GEMINI.md ← identical copy of CLAUDE.md.
+
+### 8.2 Copy to AGENTS.md
+
+AGENTS.md ← copy of CLAUDE.md + conditionally append shell policy.
+
+**Detect OS and Git Bash path before writing:**
+
+```bash
+uname -s
+```
+
+- If output is `Linux` or `Darwin` → skip shell policy, do NOT append anything
+- If output contains `MINGW`, `CYGWIN`, or `MSYS` (Git Bash on Windows) OR env `OS=Windows_NT` is set → detect Git Bash path:
+
+```bash
+where bash 2>/dev/null || which bash 2>/dev/null
+```
+
+Common fallback paths to check if detection fails (in order):
+1. `C:/Program Files/Git/bin/bash.exe`
+2. `C:/Program Files (x86)/Git/bin/bash.exe`
+3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
+
+**If Windows + path detected:** append to AGENTS.md:
 
 ```
 ---
 
 ## Shell policy (Windows)
 Always execute commands via Git Bash:
-`& "C:\Program Files\Git\bin\bash.exe" -lc "<command>"`
+`& "[DETECTED_PATH]" -lc "<command>"`
+Do not use WSL bash (`bash ...`) directly.
+```
+
+**If Windows + path NOT detected:** append a generic policy:
+
+```
+---
+
+## Shell policy (Windows)
+Always execute commands via Git Bash. Locate bash.exe first:
+`where bash`
+Then execute: `& "[PATH_TO_BASH]" -lc "<command>"`
 Do not use WSL bash (`bash ...`) directly.
 ```
 
