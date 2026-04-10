@@ -35,7 +35,6 @@ Internal skills loaded by product-layer commands (modifying these affects both l
 |----------------|--------------------------|
 | `building-commands` | `add.build` (STEP 3), `add.self-build` (STEP 3) |
 | `add-framework-development` | `add.plan` (STEP 0), `add.build` (STEP 3) |
-| `add-commit` | `add.build`, `add.self-build` |
 
 Command scope by layer:
 
