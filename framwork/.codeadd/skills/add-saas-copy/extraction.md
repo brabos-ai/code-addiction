@@ -1,75 +1,75 @@
-# Extracao de Contexto
+# Context Extraction
 
-Como extrair informacoes do projeto para gerar copy.
+How to extract project information to generate copy.
 
 ---
 
-## Fontes de Dados
+## Data Sources
 
-### 1. README.md (Principal)
+### 1. README.md (Primary)
 
-**Ler primeiro.** Geralmente contem:
+**Read first.** Usually contains:
 
-| Secao | O que extrair |
-|-------|---------------|
-| Titulo/Badge | Nome do produto |
-| Descricao inicial | Proposta de valor |
-| Features/Highlights | Funcionalidades principais |
-| Getting Started | Complexidade de setup |
-| Screenshots | Tipo de interface |
+| Section | What to extract |
+|---------|----------------|
+| Title/Badge | Product name |
+| Initial description | Value proposition |
+| Features/Highlights | Main features |
+| Getting Started | Setup complexity |
+| Screenshots | Interface type |
 
-**Exemplo de extracao:**
+**Extraction example:**
 
 ```markdown
 # EasyFlow
 
-> Gestao de processos para PMEs sem complexidade
+> Process management for SMBs without complexity
 
 ## Features
-- Kanban visual
-- Automacoes sem codigo
-- Relatorios em tempo real
+- Visual Kanban
+- No-code automations
+- Real-time reports
 
 ## Getting Started
 npm install && npm start
 ```
 
-**Extraido:**
-- Nome: EasyFlow
-- Proposta: Gestao de processos para PMEs sem complexidade
-- Features: Kanban, automacoes, relatorios
-- Setup: Simples (1 comando)
+**Extracted:**
+- Name: EasyFlow
+- Proposition: Process management for SMBs without complexity
+- Features: Kanban, automations, reports
+- Setup: Simple (1 command)
 
 ---
 
-### 2. docs/product.md (Se existir)
+### 2. docs/product.md (If exists)
 
-**Priorizar sobre README** - geralmente mais completo.
+**Prioritize over README** — usually more complete.
 
-| Campo | Onde encontrar |
-|-------|----------------|
-| Visao do produto | Secao "Vision" ou "About" |
-| Publico-alvo | Secao "Target" ou "Users" |
-| Problema que resolve | Secao "Problem" |
-| Diferenciais | Secao "Differentiators" |
+| Field | Where to find |
+|-------|--------------|
+| Product vision | "Vision" or "About" section |
+| Target audience | "Target" or "Users" section |
+| Problem it solves | "Problem" section |
+| Differentials | "Differentiators" section |
 
 ---
 
-### 3. docs/features/ ou features/
+### 3. docs/features/ or features/
 
-**Ler arquivos about.md de cada feature.**
+**Read about.md files for each feature.**
 
-| Extrair | Para que serve |
-|---------|----------------|
-| Nome da feature | Lista de funcionalidades |
-| Problema que resolve | Dores do publico |
-| Beneficio principal | Argumentos de venda |
+| Extract | Purpose |
+|---------|---------|
+| Feature name | Features list |
+| Problem it solves | Audience pains |
+| Main benefit | Sales arguments |
 
 ---
 
 ### 4. package.json
 
-**Dados estruturados:**
+**Structured data:**
 
 ```json
 {
@@ -79,74 +79,74 @@ npm install && npm start
 }
 ```
 
-| Campo | O que extrair |
-|-------|---------------|
-| name | Nome tecnico |
-| description | Descricao curta |
-| keywords | Categorias/tags |
+| Field | What to extract |
+|-------|----------------|
+| name | Technical name |
+| description | Short description |
+| keywords | Categories/tags |
 | dependencies | Stack (React, NestJS, etc) |
 
 ---
 
-## Questionario de Fallback
+## Fallback Questionnaire
 
-**SE projeto mal documentado (< 3 campos extraidos):**
+**IF project poorly documented (< 3 fields extracted):**
 
 ```markdown
-## Informacoes Necessarias
+## Required Information
 
-Nao consegui extrair contexto suficiente do projeto. Preciso de:
+I couldn't extract enough context from the project. I need:
 
-1. **Nome do produto:**
-   > Como o produto se chama?
+1. **Product name:**
+   > What is the product called?
 
-2. **O que faz (1 frase):**
-   > Qual o problema principal que resolve?
+2. **What it does (1 sentence):**
+   > What is the main problem it solves?
 
-3. **Para quem:**
-   > Quem e o cliente ideal? (cargo, empresa, situacao)
+3. **For whom:**
+   > Who is the ideal customer? (role, company, situation)
 
-4. **3 funcionalidades principais:**
-   > O que o usuario consegue fazer com o produto?
+4. **3 main features:**
+   > What can the user do with the product?
 
-5. **Por que diferente:**
-   > O que tem de unico vs alternativas?
+5. **Why different:**
+   > What makes it unique vs alternatives?
 ```
 
 ---
 
-## Mapeamento Feature -> Beneficio
+## Feature → Benefit Mapping
 
-**Features tecnicas precisam virar beneficios de venda.**
+**Technical features need to become sales benefits.**
 
-| Feature Tecnica | Beneficio (para copy) |
-|-----------------|----------------------|
-| "API RESTful" | "Integra com suas ferramentas" |
-| "Dashboard em tempo real" | "Veja tudo acontecendo ao vivo" |
-| "Automacoes configuráveis" | "Automatize sem saber programar" |
-| "Multi-tenant" | "Cada cliente isolado com seguranca" |
-| "SSO/SAML" | "Login unico para toda a empresa" |
-| "Webhooks" | "Receba alertas onde preferir" |
-| "Role-based access" | "Controle quem ve o que" |
+| Technical Feature | Benefit (for copy) |
+|------------------|--------------------|
+| "RESTful API" | "Integrates with your tools" |
+| "Real-time dashboard" | "See everything happening live" |
+| "Configurable automations" | "Automate without programming" |
+| "Multi-tenant" | "Each client isolated with security" |
+| "SSO/SAML" | "Single login for the whole company" |
+| "Webhooks" | "Receive alerts wherever you prefer" |
+| "Role-based access" | "Control who sees what" |
 
 ---
 
-## Checklist de Extracao
+## Extraction Checklist
 
 ```markdown
-## Obrigatorio
-- [ ] Nome do produto
-- [ ] Descricao (1-2 frases)
-- [ ] 3+ funcionalidades
-- [ ] Publico inferido
+## Required
+- [ ] Product name
+- [ ] Description (1-2 sentences)
+- [ ] 3+ features
+- [ ] Inferred audience
 
-## Desejavel
-- [ ] Stack tecnologica
-- [ ] Complexidade de setup
-- [ ] Tipo de interface (web, mobile, CLI)
-- [ ] Modelo de negocio (SaaS, self-hosted)
+## Desirable
+- [ ] Tech stack
+- [ ] Setup complexity
+- [ ] Interface type (web, mobile, CLI)
+- [ ] Business model (SaaS, self-hosted)
 
-## Se nao encontrado
-- [ ] Usar questionario de fallback
-- [ ] Marcar campos como "a validar"
+## If not found
+- [ ] Use fallback questionnaire
+- [ ] Mark fields as "to validate"
 ```
