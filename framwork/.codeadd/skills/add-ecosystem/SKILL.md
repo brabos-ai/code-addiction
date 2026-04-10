@@ -14,19 +14,19 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | Command | Purpose | Skills Loaded |
 |---------|---------|---------------|
 | add | Intelligent gateway - answers questions, guides flows, suggests next command | add-ecosystem, add-dev-environment-setup |
-| add.audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add-investigation on ambiguous findings | add-documentation-style, add-health-check, add-ecosystem, add-investigation |
+| add.audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add-investigation on ambiguous findings | add-doc-schemas, add-health-check, add-ecosystem, add-investigation |
 | add.autopilot | Autonomous implementation without interaction. Supports `/autopilot feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design |
-| add.brainstorm | Explore ideas (READ-ONLY) | add-documentation-style, add-ecosystem |
+| add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
 | add.build | Guided implementation (coordinates subagents). Supports `/add.build feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem |
 | add.commit | Mid-workflow smart commit with adaptive Conventional Commits message: ≤3 files → single line, >3 → module list | add-commit |
 | add.copy | Structured copy generator for SaaS landing pages | add-saas-copy, add-ecosystem |
-| add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-documentation-style |
+| add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology (disambiguation, RCA, patterns, differential diagnosis, synthesis) and recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem |
 | add.hotfix | Urgent fix with global ID (H[NNNN]). Creates isolated doc in docs/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.landing | High-conversion SaaS landing page builder | add-landing-page-saas, add-ecosystem |
-| add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-documentation-style, add-ecosystem |
+| add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
 | add.plan | Technical planning, creates plan.md. Detects Epic vs Feature by user flows. Coverage checklist mandatory | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem |
 | add.pr | Create PR for code review (without finalizing feature). Used standalone or referenced by add.done when branch protection active | - |
 | add.review | Code review with complete auto-correction. Covers frontend, backend, security, delivery validation. Escalates to add-investigation on findings with isolated root cause | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
@@ -46,7 +46,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-delivery-validation | Validate requirements implemented, acceptance criteria pass | add.review |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code | add |
-| add-documentation-style | ADD-pro documentation standards | add.new, add.design, add.brainstorm, add.audit |
+| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose, add.copy, add.landing |
 | add-ecosystem | Consolidated ecosystem view (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.copy, add.landing, add.xray, add.diagnose |
 | add-feature-discovery | Feature discovery process, codebase analysis | add.new, add.plan |
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria | add.new |
@@ -82,7 +82,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-security-audit | add.audit, add.review |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
-| add-documentation-style | add.new, add.design, add.brainstorm, add.audit |
+| add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose, add.copy, add.landing |
 | add-architecture-discovery | add.audit, add.xray |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |

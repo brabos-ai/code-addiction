@@ -21,7 +21,7 @@ Specialized builder for high-conversion SaaS landing pages. Creates responsive, 
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `landing-page`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 **Fixed ID:** `add.landing` uses the fixed ID `LAND-<slug>` where `<slug>` is derived from the product/objective (kebab-case). No counter allocation. `related: [COPY-<slug>, PRODUCT]`.
 

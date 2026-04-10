@@ -18,7 +18,7 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `feature-plan`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 ---
 
@@ -529,7 +529,7 @@ The heavy work was done by the specialized subagents. Your role here is:
 
 ---
 
-**Schema load (MANDATORY).** EXECUTE schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
+**Schema load (MANDATORY).** EXECUTE schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ### 10.1 Append Subagent Outputs (RAW)
 

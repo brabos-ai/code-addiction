@@ -21,7 +21,7 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `feature-design`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 **Reuse feature ID:** `add.design` does NOT allocate a new ID. Read `id: F[NNNN]` from the feature's `about.md` in STEP 1.2. The generated `design.md` carries the SAME `F[NNNN]` with `related: [F[NNNN]]`.
 
@@ -309,7 +309,7 @@ Present consolidated design summary to user. Include: SaaS context, patterns, mo
 
 ## STEP 8: Write Documentation
 
-**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
+**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ### 8A: Subagent Mode -- Consolidation
 

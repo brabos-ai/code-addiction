@@ -54,15 +54,15 @@ Use this as a checklist when an investigation feels stuck. Each rule maps to a p
 ## Quick Checklist
 
 ```
-□ (1) Do I understand how this SHOULD work?
-□ (2) Can I reliably reproduce the failure?
-□ (3) Am I looking at actual state, not assumed state?
-□ (4) Can I bisect the problem space?
-□ (5) Am I changing one variable at a time?
-□ (6) Am I keeping an audit trail?
-□ (7) Did I check the obvious basics?
-□ (8) Have I explained this out loud / written it down?
-□ (9) Do I actually understand the cause, or did it just "go away"?
+[ ] (1) Do I understand how this SHOULD work?
+[ ] (2) Can I reliably reproduce the failure?
+[ ] (3) Am I looking at actual state, not assumed state?
+[ ] (4) Can I bisect the problem space?
+[ ] (5) Am I changing one variable at a time?
+[ ] (6) Am I keeping an audit trail?
+[ ] (7) Did I check the obvious basics?
+[ ] (8) Have I explained this out loud / written it down?
+[ ] (9) Do I actually understand the cause, or did it just "go away"?
 ```
 
 Run this checklist when an investigation feels stuck. Usually 1-3 rules are being violated.

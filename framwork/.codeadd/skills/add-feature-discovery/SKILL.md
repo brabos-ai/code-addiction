@@ -306,7 +306,7 @@ Quando ADD dispara subagente para discovery:
 **Skills:**
 ```bash
 cat {{skill:add-feature-discovery/SKILL.md}}
-cat {{skill:add-documentation-style/business.md}}
+cat {{skill:add-doc-schemas/business.md}}
 ```
 
 **Contexto:**

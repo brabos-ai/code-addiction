@@ -21,7 +21,7 @@ Full feature discovery command BEFORE implementation.
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `feature-about`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 ---
 
@@ -168,7 +168,7 @@ When dispatching: match **Capability** (read-only/read-write/full-access) and **
    - **Input:** past-features.md + about.md + feature request
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
    - **Steps:**
-     - Read skill `add-feature-discovery` and skill `add-documentation-style`
+     - Read skill `add-feature-discovery` and skill `add-doc-schemas`
      - Read `docs/features/${FEATURE_ID}/past-features.md` BEFORE analyzing codebase
      - Use past-features.md as context: prioritize files touched by related features, follow established patterns, respect past decisions
      - Perform deep codebase analysis: reusable functionality, existing patterns, integration points, potential conflicts, missing prerequisites
@@ -456,7 +456,7 @@ If validated new route/endpoint → Backend MANDATORY. If validated new field/en
 
 EXECUTE schema `feature-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-**Apply cache technique:** Read → Preserve → Complement → Metadata (per `{{skill:add-documentation-style/SKILL.md}}`)
+**Apply cache technique:** Read → Preserve → Complement → Metadata (per `{{skill:add-doc-schemas/SKILL.md}}`)
 
 #### about.md (schema: feature-about)
 

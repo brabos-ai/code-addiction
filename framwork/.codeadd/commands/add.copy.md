@@ -19,7 +19,7 @@ Generates structured copy for SaaS landing pages based on project analysis.
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `saas-copy`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 **Fixed ID:** `add.copy` uses the fixed ID `COPY-<slug>` where `<slug>` is derived from the `[objective]` argument (kebab-case). No counter allocation. `related: [PRODUCT]`.
 

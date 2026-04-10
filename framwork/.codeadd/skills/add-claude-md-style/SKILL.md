@@ -1,6 +1,6 @@
 ---
 name: add-claude-md-style
-description: Use when generating or updating CLAUDE.md files — defines what belongs vs. what stays in skills/docs to keep CLAUDE.md under 200 lines and maximize instruction adherence.
+description: Use when generating or updating CLAUDE.md files — defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget. Load before any CLAUDE.md write.
 ---
 
 # CLAUDE.md Style Guide
@@ -20,13 +20,12 @@ CLAUDE.md is injected into every session as a **user message** (not system promp
 
 Facts the AI needs in **every session**, not available elsewhere:
 
-- Architecture hierarchy rule (1-2 lines)
-- Layer import rules (compact JSON)
+- Architecture hierarchy and dependency rules
 - Build/run/test commands
-- Critical naming conventions (<10 items, compact)
+- Critical naming conventions (<10 items)
 - Multi-tenancy critical rule (if applicable)
+- App entry points
 - Reference pointer to where detailed patterns live (JIT loading)
-- App entry points table (app | kind | path | entry)
 
 ## What Does NOT Belong
 
@@ -46,55 +45,170 @@ Content already captured in skills or docs:
 
 **Target:** 80-150 lines total.
 
+### JSON = DATA. Markdown = INSTRUCTIONS.
+
+This is the fundamental rule. JSON minified is for **structured data that the agent looks up** (configs, mappings, paths, tech stack). Rules, instructions, orientation, and behavioral guidance use **markdown** (lists, tables, prose).
+
+**Minified JSON — when:**
+- Tech stack specs (framework, version, engine)
+- Path mappings (package → path)
+- Config values (env vars, ports, flags)
+- Data lists (entity names, module names, enum names)
+
+**Markdown (lists, tables, prose) — when:**
+- Dependency rules ("domain never imports outer")
+- Behavioral instructions ("always use X before Y")
+- Architecture hierarchy and layer rules
+- Naming conventions
+- Build/run/test commands
+- Any orientation or guidance
+
+### Correct vs Incorrect
+
+```markdown
+# ❌ WRONG — rule as JSON
+{"hierarchy":"domain → backend → workers → apps","rule":"inner never imports outer"}
+
+# ✅ RIGHT — rule as markdown, data as JSON
+### Layers
+domain → backend/database → workers → apps. Inner never imports outer.
+
+### Packages
+{"domain":"@rd/domain","backend":"@rd/backend","database":"@rd/database","workers":"@rd/workers"}
+```
+
+```markdown
+# ❌ WRONG — instruction as JSON
+{"note":"Detailed patterns in portable skill — use pattern-search.sh for JIT loading"}
+{"search":"bash .codeadd/scripts/pattern-search.sh --list → areas"}
+
+# ✅ RIGHT — instruction as markdown
+Detailed patterns in portable skill. Use pattern-search.sh for JIT loading.
+- `bash .codeadd/scripts/pattern-search.sh --list` → list areas
+- `bash .codeadd/scripts/pattern-search.sh <area>` → topics + line ranges
+```
+
+```markdown
+# ❌ WRONG — import rules as JSON
+{"domain":[],"backend":["domain"],"database":["domain"],"workers":["domain","database"]}
+
+# ✅ RIGHT — import rules as table (behavioral guidance)
+| Package | Can import |
+|---|---|
+| domain | nothing |
+| backend | domain |
+| database | domain |
+| workers | domain, database |
+| api | domain, backend, database, workers |
+| frontend | domain |
+```
+
+```markdown
+# ❌ WRONG — placement rules as JSON
+{"Entities":"libs/domain/src/entities","Enums":"libs/domain/src/enums","Repositories":"libs/app-database/src/repositories"}
+
+# ✅ RIGHT — placement as table (orientation for where to put things)
+| What | Where |
+|---|---|
+| Entities | libs/domain/src/entities |
+| Enums | libs/domain/src/enums |
+| Repositories | libs/app-database/src/repositories |
+| NestModules | apps/backend/src/api/modules |
+| UI Components | apps/frontend/src/components |
+```
+
+### Other Format Rules
+
 **Do:**
-- Use minified JSON one-liners for structured data (stack, layers, paths)
-- Use markdown lists for rules and instructions
 - Include only these sections: Architecture Contract, Technical Spec (compact), Implementation Patterns (pointer only)
+- Use tables for mappings that guide behavior (imports, placement)
+- Use bullet lists for rules and conventions
 
 **Don't:**
 - Use code blocks with implementation examples
 - Include directory trees
 - List version-specific dependency details
 - Include inline API routes
+- Put rules or instructions inside JSON
 
-## Required: Patterns Pointer Block
+## Section Templates
 
-Every generated CLAUDE.md MUST end with a pointer to where detailed patterns live. Adapt paths to the project's actual skill/search mechanism:
+### Architecture Contract
+
+Rules and constraints the agent must follow. Uses **markdown** (tables, lists, prose).
 
 ```markdown
-## Implementation Patterns
-{"note":"Detailed patterns in portable skill — use pattern-search.sh for JIT loading"}
-{"location":".codeadd/skills/project-patterns/","files":["backend.md","frontend.md","database.md","worker.md"]}
-{"search":"bash .codeadd/scripts/pattern-search.sh --list → areas; pattern-search.sh <area> → topics + line ranges"}
-{"generate":"Run /add.xray to regenerate project-patterns skill"}
+## Architecture Contract
+
+> Dependency hierarchy. Check BEFORE implementing or reviewing.
+
+### Layers
+domain → backend/database → workers → apps. Inner never imports outer.
+
+### Import Rules
+| Package | Can import |
+|---|---|
+| domain | nothing |
+| backend, database | domain |
+| workers | domain, database |
+| api | all libs |
+| frontend | domain |
+
+### Placement
+| What | Where |
+|---|---|
+| Entities | libs/domain/src/entities |
+| Services | libs/backend/src/services |
+| Repositories | libs/app-database/src/repositories |
+| NestModules | apps/backend/src/api/modules |
 ```
 
-If the project uses a different patterns mechanism, replace the block content — but the section must always exist.
+### Technical Spec
 
-## Technical Spec: Compact Format
-
-The `## Technical Spec` section must use compact JSON (one object per line, max 10 words per value):
+Data the agent looks up. Uses **minified JSON** (one object per line).
 
 ```markdown
 ## Technical Spec
 {"pkg":"npm","build":"turbo","lang":"typescript"}
-{"backend":{"framework":"NestJS","version":"10"}}
+{"backend":{"framework":"NestJS","version":"10","entry":"apps/backend/src/api/main.ts"}}
 {"database":{"engine":"PostgreSQL","orm":"Kysely"}}
 ```
 
 **Do NOT include:** full entity lists, all enum names, all type names, all API routes, all guard names, worker handler names.
+
+### Implementation Patterns (pointer only)
+
+Instructions for where to find patterns. Uses **markdown**.
+
+```markdown
+## Implementation Patterns
+
+Detailed patterns in portable skill. Run `/add.xray` to regenerate.
+
+- Location: `.codeadd/skills/project-patterns/` (backend.md, frontend.md, database.md, worker.md)
+- Search: `bash .codeadd/scripts/pattern-search.sh --list` → areas
+- Load: `bash .codeadd/scripts/pattern-search.sh <area>` → topics + line ranges
+```
 
 ## Validation Checklist
 
 Before finalizing any generated CLAUDE.md:
 
 - [ ] Total lines ≤ 150?
+- [ ] JSON used ONLY for data (stack, configs, paths)?
+- [ ] Rules, instructions, orientation use markdown (lists, tables, prose)?
+- [ ] No rules or behavioral guidance inside JSON objects?
 - [ ] No frontend/backend/database patterns inline?
 - [ ] No API route lists?
 - [ ] No inline code examples?
 - [ ] No feature documentation?
-- [ ] Architecture hierarchy in ≤3 lines?
-- [ ] Technical Spec uses compact JSON only?
-- [ ] Patterns pointer block present at end?
-- [ ] JSON data is minified (no spaces)?
+- [ ] Architecture hierarchy in markdown (not JSON)?
+- [ ] Import/placement rules as tables (not JSON)?
+- [ ] Technical Spec uses compact JSON?
+- [ ] Patterns pointer block present at end (as markdown)?
 - [ ] No section explaining single concept in >5 lines?
+
+## Cross-references
+
+- `{{skill:add-token-efficiency/SKILL.md}}` — generic compression rules (JSON=data, markdown=instructions)
+- `{{skill:add-doc-schemas/SKILL.md}}` — doc generation standards (separate pipeline, not for CLAUDE.md)

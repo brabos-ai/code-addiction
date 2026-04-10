@@ -14,7 +14,7 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schemas: `feature-plan`, `feature-about`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 `/add.build` is a **mutator**: it updates existing `plan.md`/`about.md` during/after implementation. It MUST NOT allocate new IDs — always reuse the `F[NNNN]` from existing frontmatter. Every write MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable.
 
@@ -544,7 +544,7 @@ DO NOT report completion without executing this step.
 
 ## STEP 13: Mutate Docs + Validation Gate (add-doc-schemas)
 
-Whenever implementation status, tasks, or decisions require updating `plan.md` or `about.md`, apply the **cache documental** rule from `{{skill:add-documentation-style/SKILL.md}}`:
+Whenever implementation status, tasks, or decisions require updating `plan.md` or `about.md`, apply the **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`:
 
 1. **Read the full existing doc.** Capture `id: F[NNNN]`, `created:`, `type:` — immutable.
 2. **Preserve valid content.** Only complement new findings. Never allocate a new ID.

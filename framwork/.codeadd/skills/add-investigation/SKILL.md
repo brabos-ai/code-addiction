@@ -130,17 +130,17 @@ Mandatory output structure:
 Before concluding any investigation:
 
 ```
-□ Phase 0: Problem reformulated and user-confirmed
-□ Phase 0: At least 2 observable predicates identified
-□ Phase 1: Recent changes checked (git log / changelogs)
-□ Phase 1: Backward trace performed (symptom → origin)
-□ Phase 2: Working analogue found and diffed
-□ Phase 3: 3+ hypotheses enumerated and ranked
-□ Phase 3: Cheapest high-likelihood hypothesis tested first
-□ Phase 3: "I don't understand X" admitted where true (no guessing)
-□ Phase 4: Diagnosis names evidence + rejected alternatives
-□ Phase 4: Route recommendation sources from differential diagnosis
-□ Iron Law honored: no route without differential diagnosis
+[ ] Phase 0: Problem reformulated and user-confirmed
+[ ] Phase 0: At least 2 observable predicates identified
+[ ] Phase 1: Recent changes checked (git log / changelogs)
+[ ] Phase 1: Backward trace performed (symptom → origin)
+[ ] Phase 2: Working analogue found and diffed
+[ ] Phase 3: 3+ hypotheses enumerated and ranked
+[ ] Phase 3: Cheapest high-likelihood hypothesis tested first
+[ ] Phase 3: "I don't understand X" admitted where true (no guessing)
+[ ] Phase 4: Diagnosis names evidence + rejected alternatives
+[ ] Phase 4: Route recommendation sources from differential diagnosis
+[ ] Iron Law honored: no route without differential diagnosis
 ```
 
 ## Credits

@@ -270,7 +270,7 @@ Quando ADD dispara subagente para especificação:
 **Skills:**
 ```bash
 cat {{skill:add-feature-specification/SKILL.md}}
-cat {{skill:add-documentation-style/business.md}}
+cat {{skill:add-doc-schemas/business.md}}
 ```
 
 **Contexto:**

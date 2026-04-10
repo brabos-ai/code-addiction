@@ -230,7 +230,7 @@ Quando ADD dispara subagente para planning:
 **Skills:**
 ```bash
 cat {{skill:add-planning/SKILL.md}}
-cat {{skill:add-documentation-style/technical.md}}
+cat {{skill:add-doc-schemas/technical.md}}
 ```
 
 **Contexto:**

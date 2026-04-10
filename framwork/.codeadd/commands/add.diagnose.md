@@ -17,7 +17,7 @@ Investigative triage for ambiguous user reports. Receives a vague symptom or unc
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `diagnose-report`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 ---
 
@@ -283,7 +283,7 @@ IF route != no-action AND user confirmed persistence:
 
 ### 8.3 Schema load (MANDATORY)
 
-EXECUTE schema `diagnose-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
+EXECUTE schema `diagnose-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 - **Path:** `docs/diagnose/<slug>.md`
 - **ID:** `DIAG-<slug>` (fixed per schema). Write per schema — extractive only.
