@@ -532,7 +532,6 @@ import "../styles/global.css";
             { name: "code-review", desc: "Validation, auto-correction, quality gates" },
             { name: "feature-discovery", desc: "Discovery process, codebase analysis" },
             { name: "feature-specification", desc: "Structured about.md with RFs, RNs, criteria" },
-            { name: "documentation-style", desc: "Documentation standards across all outputs" },
             { name: "architecture-discovery", desc: "Map architecture, detect patterns, stack-context.md" },
             { name: "delivery-validation", desc: "Validate RF/RN implemented, acceptance criteria" },
             { name: "subagent-driven-development", desc: "Coordinate subagents with quality gates" },
@@ -556,7 +555,7 @@ import "../styles/global.css";
             { name: "investigation", desc: "Deep diagnostic investigation for ambiguous findings" },
             { name: "resource-path-convention", desc: "Consistent resource path conventions across the project" },
             { name: "skill-creator", desc: "Create and structure new ADD skills" },
-            { name: "updating-claude-documentation", desc: "Standards for updating Claude documentation artefacts" },
+            { name: "claude-md-style", desc: "Use when generating or updating CLAUDE.md files — defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget" },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
