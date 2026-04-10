@@ -21,7 +21,7 @@ You are the **Autopilot Coordinator** — a master orchestrator that coordinates
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schemas: `feature-plan`, `feature-about`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 `/add.autopilot` is a **mutator orchestrator**: dispatched agents (planning, review) update existing `plan.md`/`about.md`. It MUST NOT allocate new IDs — reuse `F[NNNN]` from frontmatter. Every mutation MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable. After each mutation, the schema validation gate (STEP 9.5) MUST run.
 
@@ -572,7 +572,7 @@ DO NOT report completion without executing this step.
 
 ## STEP 9.5: Doc Mutation Gate (add-doc-schemas)
 
-Any mutation to `plan.md` or `about.md` executed by dispatched agents MUST obey the **cache documental** rule from `{{skill:add-documentation-style/SKILL.md}}`:
+Any mutation to `plan.md` or `about.md` executed by dispatched agents MUST obey the **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`:
 
 1. **Read the full existing doc first.** Capture `id: F[NNNN]`, `created:`, `type:` — immutable.
 2. **Preserve valid content.** Only complement with new findings. Never allocate a new ID.

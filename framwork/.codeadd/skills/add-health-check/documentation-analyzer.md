@@ -1,6 +1,6 @@
 # Documentation Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
 
 **Objetivo:** Verificar se documentação do projeto existe, está atualizada e segue os padrões esperados.
 
@@ -32,7 +32,7 @@ ls CLAUDE.md 2>/dev/null
 ls docs/features/ 2>/dev/null
 
 # Skills de documentação
-ls {{skill:add-documentation-style/SKILL.md}} 2>/dev/null
+ls {{skill:add-doc-schemas/SKILL.md}} 2>/dev/null
 ls {{skill:add-updating-claude-documentation/SKILL.md}} 2>/dev/null
 ```
 

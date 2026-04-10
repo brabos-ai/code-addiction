@@ -152,18 +152,18 @@ framwork/.codeadd/skills/                                      # Reference of ex
 ### building-commands Checklist (APPLY)
 
 ```
-□ Top-of-file blocking section (prohibitions BEFORE instructions)
-□ Uses STEP (imperative) instead of Phase (documentary)
-□ Sequential INTEGER numbering (1, 2, 3... NEVER 2.5, 6.5)
-□ Imperative language (EXECUTE, DO NOT, CONFIRM)
-□ Gates use TOOL-SPECIFIC prohibitions
-□ Condition blocks: IF [condition]: ⛔ DO NOT USE [tool]
-□ Mandatory explicit order
-□ Checklists with checkboxes (not timelines)
-□ Spec JSON only for consultable data (paths, outputs, modes) — not gates/order
-□ Bash blocks only where non-obvious or learned from errors
-□ No fixed display/error message templates
-□ Rules: ALWAYS/NEVER markdown, no duplication of STEP order
+[ ] Top-of-file blocking section (prohibitions BEFORE instructions)
+[ ] Uses STEP (imperative) instead of Phase (documentary)
+[ ] Sequential INTEGER numbering (1, 2, 3... NEVER 2.5, 6.5)
+[ ] Imperative language (EXECUTE, DO NOT, CONFIRM)
+[ ] Gates use TOOL-SPECIFIC prohibitions
+[ ] Condition blocks: IF [condition]: ⛔ DO NOT USE [tool]
+[ ] Mandatory explicit order
+[ ] Checklists with checkboxes (not timelines)
+[ ] Spec JSON only for consultable data (paths, outputs, modes) — not gates/order
+[ ] Bash blocks only where non-obvious or learned from errors
+[ ] No fixed display/error message templates
+[ ] Rules: ALWAYS/NEVER markdown, no duplication of STEP order
 ```
 
 **⛔ FRACTIONAL NUMBERING PROHIBITED:**
@@ -293,10 +293,10 @@ description: [when to use - max 20 words]
 At each section written, verify:
 
 ```
-□ Imperative language? (not informative)
-□ Gates have tool-specific prohibitions?
-□ Order is mandatory? (not suggested)
-□ Checkboxes? (not timelines)
+[ ] Imperative language? (not informative)
+[ ] Gates have tool-specific prohibitions?
+[ ] Order is mandatory? (not suggested)
+[ ] Checkboxes? (not timelines)
 ```
 
 ---
@@ -310,9 +310,9 @@ Simulate artefact execution with 3 scenarios: happy path, gate violation, edge c
 ### 5.2 Validate vs building-commands
 
 ```
-□ Can the agent skip gates? (must be impossible)
-□ Are prohibitions specific? (tools, not generic)
-□ Is the order bypassable? (must not be)
+[ ] Can the agent skip gates? (must be impossible)
+[ ] Are prohibitions specific? (tools, not generic)
+[ ] Is the order bypassable? (must not be)
 ```
 
 **If fails:** Go back to STEP 4 and fix.

@@ -91,10 +91,10 @@ bash .codeadd/scripts/status.sh             ← CORRECT: scripts are at .codeadd
 ## Validation Checklist
 
 ```
-□ No references to .codeadd/commands/ (use {{cmd:NAME}})
-□ No references to .codeadd/skills/ (use {{skill:NAME/FILE}})
-□ Script references use .codeadd/scripts/ (literal, no variable)
-□ Command names match provider-map.json commands keys
-□ Skill names match provider-map.json skills keys (with add- prefix)
-□ Skill sub-files exist in the source skill directory
+[ ] No references to .codeadd/commands/ (use {{cmd:NAME}})
+[ ] No references to .codeadd/skills/ (use {{skill:NAME/FILE}})
+[ ] Script references use .codeadd/scripts/ (literal, no variable)
+[ ] Command names match provider-map.json commands keys
+[ ] Skill names match provider-map.json skills keys (with add- prefix)
+[ ] Skill sub-files exist in the source skill directory
 ```

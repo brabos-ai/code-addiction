@@ -141,13 +141,13 @@ Internal classification only — DO NOT produce artefacts.
 ### 2.1 Internal Questions (answer before proceeding)
 
 ```
-□ Do I understand the REAL problem? (not just the symptom)
-□ Does this already exist in the ecosystem? (check duplication)
-□ Does it align with ecosystem strategy?
-□ Are there better alternatives? (at least 2)
-□ What are the trade-offs of each approach?
-□ What could break if we implement this?
-□ Does this benefit the community and framework consumers?
+[ ] Do I understand the REAL problem? (not just the symptom)
+[ ] Does this already exist in the ecosystem? (check duplication)
+[ ] Does it align with ecosystem strategy?
+[ ] Are there better alternatives? (at least 2)
+[ ] What are the trade-offs of each approach?
+[ ] What could break if we implement this?
+[ ] Does this benefit the community and framework consumers?
 ```
 
 ### 2.2 Investigate Framework Ecosystem

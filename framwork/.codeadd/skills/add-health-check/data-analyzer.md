@@ -1,6 +1,6 @@
 # Data Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-documentation-style/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
 
 **Objetivo:** Analisar banco de dados, migrations e queries do projeto.
 

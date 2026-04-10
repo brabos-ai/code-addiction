@@ -18,7 +18,7 @@ Coordinator for branch finalization. Supports features (full changelog flow), fe
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `changelog`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 **Allocate changelog ID:** Before writing the changelog doc (STEP 4A.6), run `bash .codeadd/scripts/status.sh next-id CHG` to allocate a fresh `CHG[NNNN]`. The changelog `related:` MUST reference the closed `F[NNNN]` (feature) or `H[NNNN]` (hotfix).
 

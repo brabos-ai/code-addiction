@@ -1,6 +1,6 @@
 # Tech Audit - Complete Technical Project Audit
 
-> **DOCUMENTATION STYLE:** Follow standards defined in skill `add-documentation-style`
+> **DOCUMENTATION STYLE:** Follow standards defined in skill `add-doc-schemas`
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
 
@@ -21,7 +21,7 @@ Execute complete technical analysis of the project, identifying security, archit
 
 ## Required Skills
 
-Load `{{skill:add-documentation-style/SKILL.md}}` (hub) before STEP 1. It delegates to `add-doc-schemas` (schema: `audit-report`), `add-doc-ref-convention`, and `add-token-efficiency`.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
 ---
 
@@ -276,7 +276,7 @@ Mark such findings explicitly in the final report as `requires investigation` ra
 
 ## STEP 9: Write audit-report doc (schema-driven)
 
-**Schema load (MANDATORY).** EXECUTE schema `audit-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-documentation-style/SKILL.md}}`.
+**Schema load (MANDATORY).** EXECUTE schema `audit-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 - **Path:** `docs/audit/${AUDIT_DATE}.md`
 - **ID:** `AUDIT-${AUDIT_DATE}` (fixed — audit-date based). `related: [STACK]`.
