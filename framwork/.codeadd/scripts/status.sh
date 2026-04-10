@@ -385,7 +385,7 @@ if [ "$BRANCH_TYPE" != "main" ]; then
             git diff --cached --name-only 2>/dev/null
             git diff --name-only 2>/dev/null
             git ls-files --others --exclude-standard 2>/dev/null
-        } | sort -u | grep -v "^$" || true)
+        } | sort -u | grep -v "^$" | grep -v "^\." | grep -v "^[^/]*\.md$" | grep -v "^docs/" || true)
 
         if [ -n "$ALL_FILES" ]; then
             TOTAL=$(echo "$ALL_FILES" | wc -l | tr -d ' \r\n')
@@ -423,8 +423,8 @@ if [ "$BRANCH_TYPE" != "main" ]; then
                     order[++order_count] = key
                 } else {
                     counts[key]++
-                    # Keep max 4 names
-                    if (counts[key] <= 4) {
+                    # Keep max 10 names
+                    if (counts[key] <= 10) {
                         groups[key] = groups[key] "," base
                     }
                 }
@@ -442,7 +442,7 @@ if [ "$BRANCH_TYPE" != "main" ]; then
                     if (count == 1) {
                         entry = dir "/" files ext
                     } else {
-                        extra = (count > 4) ? ",+" (count - 4) : ""
+                        extra = (count > 10) ? ",+" (count - 10) : ""
                         entry = dir "/{" files extra "}" ext
                     }
 
