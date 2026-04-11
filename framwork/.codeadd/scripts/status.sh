@@ -10,8 +10,8 @@ set -euo pipefail
 
 # =============================================================================
 # SUBCOMMAND: next-id <PREFIX>
-# Prints the next available doc ID for F|H|PRD|CHG based on docs/ frontmatter.
-# PRD0009 Wave 3 — additive, does not affect default status output.
+# Prints the next available doc ID for F|H|PRD|CHG based on directory structure.
+# Uses [NNNN][L] format (e.g., 0001F, 0002H) — consistent with next-id.sh.
 # =============================================================================
 if [ "${1:-}" = "next-id" ]; then
     PREFIX="${2:-}"
@@ -23,18 +23,20 @@ if [ "${1:-}" = "next-id" ]; then
             ;;
     esac
     MAX=0
-    if [ -d docs ]; then
-        # Collect numeric parts from lines like: id: <PREFIX>NNNN
+    DOCS_DIR="docs/features"
+    if [ -d "$DOCS_DIR" ]; then
+        # Collect numeric parts from directory names like: [NNNN][L]-*
+        # Same source of truth as next-id.sh for consistency
         while IFS= read -r num; do
             [ -n "$num" ] || continue
             # strip leading zeros for arithmetic
             n=$((10#$num))
             [ "$n" -gt "$MAX" ] && MAX=$n
-        done < <(grep -rhE "^id:[[:space:]]*${PREFIX}[0-9]{4}[[:space:]]*$" docs/ 2>/dev/null \
-            | sed -E "s/^id:[[:space:]]*${PREFIX}([0-9]{4}).*/\1/")
+        done < <(find "$DOCS_DIR" -maxdepth 1 -type d -regex ".*/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
+            grep -oE '[0-9]{4}' | sort -u || true)
     fi
     NEXT=$((MAX + 1))
-    printf "%s%04d\n" "$PREFIX" "$NEXT"
+    printf "%04d%s\n" "$NEXT" "$PREFIX"
     exit 0
 fi
 

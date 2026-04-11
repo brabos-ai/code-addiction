@@ -31,15 +31,11 @@ fi
 # Docs directory
 DOCS_DIR="docs/features"
 
-if [ ! -d "$DOCS_DIR" ]; then
-    echo "ERROR: docs/features/ directory not found" >&2
-    exit 1
-fi
-
 # --- Execution ---
 
 # Find all existing IDs in format [NNNN][L] (e.g., 0001F, 0002H, etc.)
 # Directory pattern: docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/
+# If directory doesn't exist yet, EXISTING_IDS will be empty and we'll start at 0001
 EXISTING_IDS=$(find "$DOCS_DIR" -maxdepth 1 -type d -regex ".*/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
     grep -oE '[0-9]{4}[A-Z]' | sort -u || true)
 
