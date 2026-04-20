@@ -20,7 +20,9 @@ Coordinator for branch finalization. Supports features (full changelog flow), fe
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
 
-**Allocate changelog ID:** Before writing the changelog doc (STEP 4A.6), run `bash .codeadd/scripts/status.sh next-id CHG` to allocate a fresh `CHG[NNNN]`. The changelog `related:` MUST reference the closed `F[NNNN]` (feature) or `H[NNNN]` (hotfix).
+**Allocate changelog ID:** Before writing the changelog doc (STEP 4A.6), run `bash .codeadd/scripts/status.sh next-id CHG` to allocate a fresh `CHG[NNNN]`. The changelog `related:` MUST reference the closed `[NNNN]F` (feature) or `[NNNN]H` (hotfix).
+
+> **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format. Changelog IDs use `CHG[NNNN]` (no letter suffix — different namespace).
 
 ---
 
@@ -276,7 +278,7 @@ Options:
 bash .codeadd/scripts/status.sh next-id CHG
 ```
 
-Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `F[NNNN]` or `H[NNNN]`. Extractive only.
+Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[NNNN]F` or `[NNNN]H`. Extractive only.
 
 **AFTER writing the changelog, generate Quick Ref (metadata, appended as extractive JSON block, not inline doc structure):**
 

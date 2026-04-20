@@ -87,12 +87,14 @@ Contrast with build-time variables: `{{cmd:}}` / `{{skill:}}` are resolved by `b
 
 Every ADD doc type that participates in the reference graph has a prefix. IDs are **global within their prefix** and zero-padded to 4 digits.
 
-| Prefix | Type | Format | Example | Allocator |
+| Letter | Type | Format | Example | Allocator |
 |---|---|---|---|---|
-| `F` | Feature | `F[NNNN]` | `F0042` | `/add.new` |
-| `H` | Hotfix | `H[NNNN]` | `H0013` | `/add.hotfix` |
+| `F` | Feature | `[NNNN]F` | `0042F` | `/add.new` |
+| `H` | Hotfix | `[NNNN]H` | `0013H` | `/add.hotfix` |
 | `PRD` | PRD (framework strategy) | `PRD[NNNN]` | `PRD0009` | `/add.strategy` |
 | `CHG` | Changelog entry | `CHG[NNNN]` | `CHG0001` | `/add.done` |
+
+> **Convention:** Feature/hotfix/refactor/chore/docs IDs use `[NNNN][L]` (number first, letter suffix) per `{{skill:add-id-convention/SKILL.md}}`. `PRD` and `CHG` are separate namespaces with no letter suffix.
 
 Other doc types (`STACK`, `OWNER`, `PRODUCT`, `AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`) use fixed or slug-based IDs — see individual schemas below.
 
@@ -180,7 +182,7 @@ Fourteen canonical schemas. Each H3 below is the authoritative spec for that typ
 
 For `/add.new` (creates `docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: F[NNNN]`, `type: feature-about`, `slug:`, `status:`, `related: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `related: []`
 - **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · References
 - **Word caps:** TL;DR ≤60 · Problem ≤150 · Users ≤100 · Scope ≤200 · Metrics ≤100 · References unlimited (list only)
 - **Compression:** Problem = topic sentence + extractive bullets. Users = table `role | goal | pain`. Scope = two bullet lists. Metrics = table `metric | target | source`. References = `{{doc:}}` / URL list.
@@ -190,8 +192,8 @@ For `/add.new` (creates `docs/features/<slug>/about.md`).
 
 For `/add.plan` (creates `plan.md`).
 
-- **Frontmatter:** `id: F[NNNN]` (same as about), `type: feature-plan`, `related: [F[NNNN]]`
-- **Sections:** TL;DR · Context (link `{{doc:F[NNNN]}}`) · Architecture Decisions · Tasks · Risks · Validation
+- **Frontmatter:** `id: [NNNN]F` (same as about), `type: feature-plan`, `related: [[NNNN]F]`
+- **Sections:** TL;DR · Context (link `{{doc:[NNNN]F}}`) · Architecture Decisions · Tasks · Risks · Validation
 - **Word caps:** TL;DR ≤60 · Context ≤80 · Decisions ≤200 (table) · Tasks unlimited (checklist) · Risks ≤150 (table) · Validation ≤100
 - **Compression:** Decisions = table `decision | rationale | alternatives`. Tasks = `- [ ] area: action` bullets. Risks = table `risk | prob | mitigation`.
 - **Forbidden:** duplicating about.md problem statement; narrative rationale outside the table.
@@ -200,7 +202,7 @@ For `/add.plan` (creates `plan.md`).
 
 For `/add.design` (creates `design.md`).
 
-- **Frontmatter:** `id: F[NNNN]`, `type: feature-design`, `related: [F[NNNN]]`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature-design`, `related: [[NNNN]F]`
 - **Sections:** TL;DR · Screens · Components · Flows · Tokens · References
 - **Word caps:** TL;DR ≤60 · Screens ≤200 (table) · Components ≤150 (list) · Flows ≤150 · Tokens ≤80 · References list only
 - **Compression:** Screens = table `screen | purpose | primary action`. Components = bullets `name — shadcn source`. Flows = `step → step → step` sequences. Tokens = minified JSON.
@@ -210,7 +212,7 @@ For `/add.design` (creates `design.md`).
 
 For `/add.hotfix` (creates `docs/hotfixes/<slug>/about.md`).
 
-- **Frontmatter:** `id: H[NNNN]`, `type: hotfix-about`, `severity:`, `related: []`
+- **Frontmatter:** `id: [NNNN]H`, `type: hotfix-about`, `severity:`, `related: []`
 - **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification
 - **Word caps:** TL;DR ≤60 · Symptom ≤100 · Root Cause ≤150 · Fix ≤150 · Verification ≤80
 - **Compression:** Symptom = factual bullets `when / where / impact`. Root Cause = topic sentence + extractive bullets. Fix = bullets of file-level changes. Verification = checklist.
@@ -220,7 +222,7 @@ For `/add.hotfix` (creates `docs/hotfixes/<slug>/about.md`).
 
 For `/add.hotfix` (creates `related.md` listing impacted assets).
 
-- **Frontmatter:** `id: H[NNNN]-related`, `type: hotfix-related`, `related: [H[NNNN]]`
+- **Frontmatter:** `id: [NNNN]H-related`, `type: hotfix-related`, `related: [[NNNN]H]`
 - **Sections:** TL;DR · Impacted Files · Impacted Docs · Follow-ups
 - **Word caps:** TL;DR ≤40 · all others = list only, no prose
 - **Compression:** Files = bullets `path:line — reason`. Docs = `{{doc:}}` bullets. Follow-ups = `- [ ] action` checklist.
@@ -230,7 +232,7 @@ For `/add.hotfix` (creates `related.md` listing impacted assets).
 
 For `/add.done` (creates `docs/changelog/CHG[NNNN].md` or appends).
 
-- **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `related: [F[NNNN] | H[NNNN]]`
+- **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `related: [[NNNN]F | [NNNN]H]`
 - **Sections:** TL;DR · Changes · Breaking · Migration
 - **Word caps:** TL;DR ≤50 · Changes ≤150 · Breaking ≤100 · Migration ≤100
 - **Compression:** Changes = Conventional-Commit-style bullets `type(scope): summary`. Breaking = list or "none". Migration = steps.

@@ -112,12 +112,14 @@ bash .codeadd/scripts/status.sh
 bash .codeadd/scripts/status.sh next-id H
 ```
 
-Output: Next global hotfix ID in the form `H[NNNN]` (e.g., `H0001`). Store for frontmatter writes in STEP 9 and STEP 10.
+Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for frontmatter writes in STEP 9 and STEP 10.
+
+> **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
 ### 3.2 Create Branch
 
 ```bash
-git checkout -b hotfix/H[NNNN]-[hotfix-slug]
+git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 ```
 
 **[hotfix-slug]:** kebab-case descriptive (ex: `screenshot-delete-error`, `login-timeout`)
@@ -248,7 +250,7 @@ EXECUTE schema `hotfix-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 **Path:** `docs/hotfixes/<slug>/about.md`
 
-**ID:** `H[NNNN]` from STEP 3. Write per `hotfix-about` schema. Extractive only.
+**ID:** `[NNNN]H` from STEP 3. Write per `hotfix-about` schema. Extractive only.
 
 ---
 
@@ -258,9 +260,9 @@ EXECUTE schema `hotfix-related` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 **Path:** `docs/hotfixes/<slug>/related.md`
 
-**ID:** `H[NNNN]-related`. Write per `hotfix-related` schema. Lists only, no prose. Use `{{doc:<ID>}}` for impacted docs. Include features identified in STEP 4.
+**ID:** `[NNNN]H-related`. Write per `hotfix-related` schema. Lists only, no prose. Use `{{doc:<ID>}}` for impacted docs. Include features identified in STEP 4.
 
-**Cross-update:** For each related feature doc, if its `related.md` exists, append the hotfix `{{doc:H[NNNN]}}` reference; otherwise create a minimal related.md referencing this hotfix.
+**Cross-update:** For each related feature doc, if its `related.md` exists, append the hotfix `{{doc:[NNNN]H}}` reference; otherwise create a minimal related.md referencing this hotfix.
 
 ---
 
@@ -333,7 +335,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 
 # STEP 1-2: status.sh → BRANCH:main → STOP
 # STEP 3: status.sh next-id H → H0001
-#   git checkout -b hotfix/H0001-screenshot-delete-error
+#   git checkout -b hotfix/0001H-screenshot-delete-error
 #   mkdir docs/hotfixes/screenshot-delete-error/
 # STEP 4: Related to F0036 ai-screenshot-validation (from RECENT_CHANGELOGS)
 # STEP 5: Read F0036 changelog + about
