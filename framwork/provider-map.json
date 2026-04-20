@@ -223,7 +223,8 @@
     "add-updating-claude-documentation": {},
     "add-ux-design":                   {},
     "add-resource-path-convention":    {},
-    "add-investigation":               {}
+    "add-investigation":               {},
+    "add-id-convention":               {}
   },
   "agents": {
     "ux-agent":            { "description": "UX specialist for design decisions, interface analysis, and interaction patterns" },

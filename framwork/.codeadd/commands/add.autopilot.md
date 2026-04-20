@@ -21,9 +21,9 @@ You are the **Autopilot Coordinator** — a master orchestrator that coordinates
 
 ## Required Skills
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
-`/add.autopilot` is a **mutator orchestrator**: dispatched agents (planning, review) update existing `plan.md`/`about.md`. It MUST NOT allocate new IDs — reuse `F[NNNN]` from frontmatter. Every mutation MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable. After each mutation, the schema validation gate (STEP 9.5) MUST run.
+`/add.autopilot` is a **mutator orchestrator**: dispatched agents (planning, review) update existing `plan.md`/`about.md`. It MUST NOT allocate new IDs — reuse `[NNNN]F` from frontmatter. Every mutation MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable. After each mutation, the schema validation gate (STEP 9.5) MUST run.
 
 ---
 
@@ -74,7 +74,7 @@ IF STARTUP TEST FAILS (DI/IoC error, not connection):
 IF EXISTING DOC NOT READ (before mutating plan.md/about.md):
   ⛔ DO NOT USE: Write on plan.md or about.md
   ⛔ DO NOT: Overwrite existing content blindly
-  ⛔ DO NOT: Allocate a new F[NNNN] — reuse id from frontmatter
+  ⛔ DO NOT: Allocate a new [NNNN]F — reuse id from frontmatter
   ✅ DO: Read full doc → preserve valid content → complement → bump updated:
 
 IF SCHEMA NOT LOADED (before mutating plan.md/about.md):
@@ -574,7 +574,7 @@ DO NOT report completion without executing this step.
 
 Any mutation to `plan.md` or `about.md` executed by dispatched agents MUST obey the **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`:
 
-1. **Read the full existing doc first.** Capture `id: F[NNNN]`, `created:`, `type:` — immutable.
+1. **Read the full existing doc first.** Capture `id: [NNNN]F`, `created:`, `type:` — immutable.
 2. **Preserve valid content.** Only complement with new findings. Never allocate a new ID.
 3. **Bump `updated:`** to today on every write.
 

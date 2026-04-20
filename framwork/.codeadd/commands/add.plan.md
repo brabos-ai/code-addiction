@@ -18,7 +18,7 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ## Required Skills
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
 ---
 
@@ -54,7 +54,7 @@ STEP 12: Validation Gate          -> feature-plan schema gate
 STEP 13: Completion               -> Inform user
 ```
 
-**Reuse feature ID:** `add.plan` does NOT allocate a new ID. Read `id: F[NNNN]` from the feature's `about.md` frontmatter in STEP 5. The generated `plan.md` carries the SAME `F[NNNN]` with `related: [F[NNNN]]`.
+**Reuse feature ID:** `add.plan` does NOT allocate a new ID. Read `id: [NNNN]F` from the feature's `about.md` frontmatter in STEP 5. The generated `plan.md` carries the SAME `[NNNN]F` with `related: [[NNNN]F]`.
 
 **ABSOLUTE PROHIBITIONS:**
 
@@ -529,7 +529,7 @@ The heavy work was done by the specialized subagents. Your role here is:
 
 ---
 
-**Schema load (MANDATORY).** EXECUTE schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
+**Schema load (MANDATORY).** EXECUTE schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ### 10.1 Append Subagent Outputs (RAW)
 

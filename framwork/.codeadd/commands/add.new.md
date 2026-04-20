@@ -126,16 +126,18 @@ bash .codeadd/scripts/init.sh
 bash .codeadd/scripts/status.sh next-id F
 ```
 
-Output: `F[NNNN]` (e.g., `F0042`). Use this as the doc `id:` in STEP 4.
+Output: `[NNNN]F` (e.g., `0042F`). Use this as the doc `id:` in STEP 4.
+
+> **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
 **Infer from request:** branch type (`feature`|`fix`|`refactor`|`docs`), name (kebab-case, 2-4 words).
 
 **MANDATORY SEQUENCE:**
-1. `git checkout -b [type]/F[NNNN]-[name]`
-2. `mkdir docs/features/F[NNNN]-[name]/`
+1. `git checkout -b [type]/[NNNN]F-[name]`
+2. `mkdir docs/features/[NNNN]F-[name]/`
 3. Skeleton about.md with frontmatter (full content written in STEP 4 after questionnaire)
 
-**Output:** Feature ID (`F[NNNN]`), branch created, directory created.
+**Output:** Feature ID (`[NNNN]F`), branch created, directory created.
 
 ---
 
@@ -460,8 +462,8 @@ EXECUTE schema `feature-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 #### about.md (schema: feature-about)
 
-- **Path:** `docs/features/F[NNNN]-[name]/about.md`
-- **ID:** `F[NNNN]` (allocated in STEP 1 via `status.sh next-id F`)
+- **Path:** `docs/features/[NNNN]F-[name]/about.md`
+- **ID:** `[NNNN]F` (allocated in STEP 1 via `status.sh next-id F`)
 - Write per `feature-about` schema. Extractive only.
 
 #### discovery.md

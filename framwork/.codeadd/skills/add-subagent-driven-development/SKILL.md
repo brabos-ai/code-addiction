@@ -61,17 +61,17 @@ Subagents must read original documentation — never work from summaries. The co
 **Example — simple feature:**
 ```
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
-- docs/features/F0005-media-library/about.md
-- docs/features/F0005-media-library/plan.md
+- docs/features/0005F-media-library/about.md
+- docs/features/0005F-media-library/plan.md
 ```
 
 **Example — epic with subfeatures:**
 ```
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
-- docs/features/F0005-media-library/about.md
-- docs/features/F0005-media-library/discovery.md
-- docs/features/F0005-media-library/subfeatures/SF01-chunked-analysis/about.md
-- docs/features/F0005-media-library/subfeatures/SF01-chunked-analysis/plan.md
+- docs/features/0005F-media-library/about.md
+- docs/features/0005F-media-library/discovery.md
+- docs/features/0005F-media-library/subfeatures/SF01-chunked-analysis/about.md
+- docs/features/0005F-media-library/subfeatures/SF01-chunked-analysis/plan.md
 ```
 
 The coordinator already knows if it's a simple feature or epic, which subfeature is current, and which docs exist. It assembles the correct list. The subagent has zero conditional logic — just reads what it receives.

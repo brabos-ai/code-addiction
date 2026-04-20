@@ -74,7 +74,7 @@ Implementar sistema de notificações push para usuários. Integração com Fire
 ## Spec
 
 ### Context
-{"feature":"F0012-user-notifications","branch":"feature/F0012-user-notifications","deps":["firebase-admin@12.0"]}
+{"feature":"0012F-user-notifications","branch":"feature/0012F-user-notifications","deps":["firebase-admin@12.0"]}
 
 ### Files
 {"create":["apps/backend/src/api/modules/notifications/notifications.module.ts","apps/backend/src/api/modules/notifications/notifications.service.ts","apps/backend/src/api/modules/notifications/notifications.controller.ts","libs/domain/src/entities/Notification.ts"],"modify":["apps/backend/src/api/api.module.ts","libs/app-database/src/types/Database.ts"]}

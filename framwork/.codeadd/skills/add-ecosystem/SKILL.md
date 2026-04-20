@@ -7,7 +7,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 > **Source of Truth:** Complete ecosystem map for add-pro.
 >
-> **Last Updated:** 2026-04-10 (STEP 2: Regenerated for v0.3.0-beta.1..HEAD analysis)
+> **Last Updated:** 2026-04-20 (STEP 2: Regenerated for v0.3.4..HEAD analysis)
 
 ## Commands
 
@@ -17,17 +17,17 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add-investigation on ambiguous findings | add-doc-schemas, add-health-check, add-ecosystem, add-investigation |
 | add.autopilot | Autonomous implementation without interaction. Supports `/autopilot feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
-| add.build | Guided implementation (coordinates subagents). Supports `/add.build feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem |
+| add.build | Guided implementation (coordinates subagents). Supports `/add.build feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention |
 | add.commit | Mid-workflow smart commit with adaptive Conventional Commits message: ≤3 files → single line, >3 → module list | add-commit |
 | add.copy | Structured copy generator for SaaS landing pages | add-saas-copy, add-ecosystem |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology (disambiguation, RCA, patterns, differential diagnosis, synthesis) and recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
-| add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem |
-| add.hotfix | Urgent fix with global ID (H[NNNN]). Creates isolated doc in docs/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation |
+| add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
+| add.hotfix | Urgent fix with global ID ([NNNN]H). Creates isolated doc in docs/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.landing | High-conversion SaaS landing page builder | add-landing-page-saas, add-ecosystem |
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
-| add.plan | Technical planning, creates plan.md. Detects Epic vs Feature by user flows. Coverage checklist mandatory | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem |
+| add.plan | Technical planning, creates plan.md. Detects Epic vs Feature by user flows. Coverage checklist mandatory | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention |
 | add.pr | Create PR for code review (without finalizing feature). Used standalone or referenced by add.done when branch protection active | - |
 | add.review | Code review with complete auto-correction. Covers frontend, backend, security, delivery validation. Escalates to add-investigation on findings with isolated root cause | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation (80% coverage). Parallel subagents per area + Startup Test | add-backend-development, add-frontend-development, add-ecosystem |
@@ -55,6 +55,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
 | add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-health-check | Health check of environment and project dependencies | add.audit |
+| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) | add.plan, add.build, add.hotfix, add.done |
 | add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add.diagnose, add.hotfix, add.review, add.audit |
 | add-landing-page-saas | High-conversion SaaS landing page framework | add.landing |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
@@ -87,6 +88,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-architecture-discovery | add.audit, add.xray |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
+| add-id-convention | add.plan, add.build, add.hotfix, add.done (all ID allocation and branch naming) |
 
 ## Main Flows
 

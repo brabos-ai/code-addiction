@@ -21,9 +21,9 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 
 ## Required Skills
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
-**Reuse feature ID:** `add.design` does NOT allocate a new ID. Read `id: F[NNNN]` from the feature's `about.md` in STEP 1.2. The generated `design.md` carries the SAME `F[NNNN]` with `related: [F[NNNN]]`.
+**Reuse feature ID:** `add.design` does NOT allocate a new ID. Read `id: [NNNN]F` from the feature's `about.md` in STEP 1.2. The generated `design.md` carries the SAME `[NNNN]F` with `related: [[NNNN]F]`.
 
 ---
 
@@ -309,7 +309,7 @@ Present consolidated design summary to user. Include: SaaS context, patterns, mo
 
 ## STEP 8: Write Documentation
 
-**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `F[NNNN]` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
+**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ### 8A: Subagent Mode -- Consolidation
 
