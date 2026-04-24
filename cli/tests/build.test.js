@@ -281,6 +281,7 @@ describe('provider-map.json agents section', () => {
     'architecture-agent',
     'system-design-agent',
     'database-agent',
+    'doc-reviewer-agent',
   ];
 
   it('has agents section', () => {
@@ -288,12 +289,12 @@ describe('provider-map.json agents section', () => {
     expect(typeof map.agents).toBe('object');
   });
 
-  it('contains all 8 expected agents', () => {
+  it('contains all 9 expected agents', () => {
     const agentNames = Object.keys(map.agents);
     for (const name of expectedAgents) {
       expect(agentNames, `missing agent: ${name}`).toContain(name);
     }
-    expect(agentNames).toHaveLength(8);
+    expect(agentNames).toHaveLength(9);
   });
 
   it('every agent has a description', () => {
@@ -320,6 +321,7 @@ describe('agent source files', () => {
     'architecture-agent',
     'system-design-agent',
     'database-agent',
+    'doc-reviewer-agent',
   ];
 
   it('all agent source files exist', () => {
@@ -412,7 +414,7 @@ describe('buildAgents', () => {
 
   it('builds agent files to .claude/agents/', () => {
     const count = buildAgents(map);
-    expect(count).toBe(8);
+    expect(count).toBe(9);
   });
 
   it('built files preserve original frontmatter (passthrough)', () => {
