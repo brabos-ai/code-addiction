@@ -76,17 +76,18 @@ Analyze the request and classify:
 
 ### On Start: Create TodoList
 
-**SIMPLE (4 steps):**
+**SIMPLE (5 steps):**
 ```json
 [
   {"content":"Run init, allocate F-ID, create structure","status":"pending","activeForm":"Running init"},
   {"content":"Validate scope with user [STOP]","status":"pending","activeForm":"Validating scope"},
   {"content":"Write about.md via feature-about schema","status":"pending","activeForm":"Documenting"},
-  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"}
+  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"},
+  {"content":"Fresh-reader review (doc-reviewer-agent, max 2 rounds)","status":"pending","activeForm":"Reviewing doc"}
 ]
 ```
 
-**STANDARD (6 steps):**
+**STANDARD (7 steps):**
 ```json
 [
   {"content":"Run init, allocate F-ID, create structure","status":"pending","activeForm":"Running init"},
@@ -94,7 +95,8 @@ Analyze the request and classify:
   {"content":"Deep thinking + present questionnaire [STOP]","status":"pending","activeForm":"Awaiting user validation"},
   {"content":"Complexity gate evaluation","status":"pending","activeForm":"Evaluating complexity"},
   {"content":"Write about.md via feature-about schema (+ epic structure if needed)","status":"pending","activeForm":"Documenting"},
-  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"}
+  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"},
+  {"content":"Fresh-reader review (doc-reviewer-agent, max 2 rounds)","status":"pending","activeForm":"Reviewing doc"}
 ]
 ```
 
@@ -485,6 +487,34 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 ---
 
+### STEP 7: Fresh-Reader Review (Non-Blocking)
+
+After the gate returns `PASS`, run a fresh-reader review to surface gaps, clarity issues, or scope questions the about.md left unresolved. Non-blocking: findings are presented, user decides whether to iterate.
+
+#### 7.1 Dispatch the reviewer
+
+Dispatch `doc-reviewer-agent` as a subagent in fresh context. Pass:
+- Path to the `about.md` written in STEP 5
+- Schema name: `feature-about`
+
+The agent MUST NOT see this conversation — its job is to read only the doc and the schema. If the provider does not support subagent dispatch, apply `{{skill:add-doc-reviewer/SKILL.md}}` inline, explicitly forgetting the conversation.
+
+#### 7.2 Present findings
+
+The reviewer returns a textual review with three buckets: Gap, Clarity, Scope. Relay the review verbatim to the user, then offer resolution:
+
+- **Gap items** — the schema's depth floor expected something the doc did not capture. Offer to update the doc.
+- **Clarity items** — the doc says it, but ambiguously. Offer to rewrite the passage.
+- **Scope items** — reasonable questions outside the original discussion. Ask the user per item: *extend scope and address now* / *mark out-of-scope with a one-line reason in References or Scope:Does NOT Include* / *ignore*.
+
+#### 7.3 Iterate (max 2 rounds)
+
+If the user chooses to update the doc, re-write only the relevant sections (cache documental applies: read → preserve → complement → bump `updated:`). Then re-run the validation gate (STEP 6) and re-dispatch the reviewer (STEP 7.1).
+
+Hard cap: **2 review rounds per command invocation**. After round 2, present remaining items as informational and advise the user to re-invoke `/add.new F[NNNN]` in continue mode later if deeper iteration is needed. DO NOT loop indefinitely.
+
+---
+
 ## Continue Mode
 
 If `/feature F0018` or `/feature continue`:
@@ -522,3 +552,6 @@ NEVER:
 - Proceed without response to [STOP]
 - Exclude layer that makes feature unusable
 - Document without confirming all decisions
+- Skip the fresh-reader review after the gate passes
+- Exceed 2 review rounds per invocation
+- Let the reviewer see this conversation (dispatch in fresh context)

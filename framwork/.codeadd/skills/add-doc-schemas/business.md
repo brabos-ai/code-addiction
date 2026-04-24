@@ -1,364 +1,137 @@
-# Business Style
+# Business Voice & Notation
 
-Estilo para documentação de negócio: features, requisitos, brainstorms, discovery.
+Voice, notation, and anti-patterns for business-facing docs: feature specs, discovery, brainstorms.
 
-**Usar em:** about.md, discovery.md, docs/brainstorm/
+> **Structure is defined by the schemas in `{{skill:add-doc-schemas/SKILL.md}}`** (`feature-about`, `brainstorm`, and feature-discovery content). This file covers only *how to write* the content those schemas require — voice, requirement notation, decision tables, and anti-patterns. It does NOT prescribe section lists; those live in the schema registry.
 
----
-
-## Princípio
-
-Clareza sobre o "O QUE" e "POR QUE". Contexto suficiente para entender decisões. Bullets estruturados, não parágrafos longos.
+**Use when:** writing or reviewing about.md, discovery.md, or brainstorm docs.
 
 ---
 
-## Estrutura Obrigatória
+## Principle
+
+Clarity on **what** and **why**. Enough context to understand decisions without reading the source. Structured bullets over long paragraphs. Every statement carries a fact, a constraint, a decision, or a link — never filler.
+
+Depth over brevity. A requirement that omits the condition is worse than a requirement that takes two lines.
+
+---
+
+## Requirement Notation
+
+Use stable IDs so specs can be referenced from plans, tests, and reviews.
+
+### Format
+
+```
+- **[ID]:** [actor] [action] [object] [condition/context]
+```
+
+IDs are per-doc, monotonically increasing. Prefixes:
+
+| Prefix | Kind |
+|---|---|
+| `RF` | Functional requirement |
+| `RNF` | Non-functional requirement (performance, security, reliability) |
+| `RN` | Business rule |
+
+### Examples
+
+```
+- **RF01:** User can mark a notification as read with a single click.
+- **RF02:** System groups notifications of the same type within a 24h window.
+- **RNF01:** The list loads in under 200ms for up to 100 items.
+- **RN01:** An unread notification older than 30 days is archived automatically.
+- **RN02:** Free-plan users are capped at 50 stored notifications.
+- **RN03:** Security notifications are always sent by email in addition to in-app.
+```
+
+Keep each line self-contained. If a requirement needs more than one line, split it or promote it to a sub-heading — do not bury conditions in prose.
+
+---
+
+## Decision Notation
+
+Every non-trivial decision carries the alternative that was rejected and why. A decision without an alternative is a preference, not a decision.
+
+### Table form (default)
 
 ```markdown
-# [Tipo]: [Nome]
-
-[Contexto em 3-5 linhas - problema, solução, impacto]
-
----
-
-## [Seções específicas do documento]
-
-### Formato de Seções
-- **[Item]:** descrição concisa (~15-20 palavras)
-- **[Item]:** descrição concisa
-
-### Decisões
-| Decisão | Razão | Alternativa descartada |
-|---------|-------|------------------------|
-
-### Critérios/Checklist
-- [ ] [Critério verificável]
+| Decision | Rationale | Alternative rejected |
+|---|---|---|
+| WebSocket | Real-time without polling overhead | SSE — weaker mobile support |
+| PostgreSQL | Already in the stack | MongoDB — adds operational surface |
 ```
 
----
-
-## Formatos por Tipo de Documento
-
-### about.md (Feature Spec)
+### Expanded form (when the decision is load-bearing)
 
 ```markdown
-# Feature: [Nome]
+### Decision: [title]
 
-[O QUE: descrição da funcionalidade]
-[POR QUE: problema resolvido]
-[PARA QUEM: usuários impactados]
+**Context:** [what made this decision necessary]
 
----
+**Options considered:**
+1. **[Option A]** — [description] — pros / cons
+2. **[Option B]** — [description] — pros / cons
 
-## Objetivo
+**Choice:** [Option X], because [primary reason].
 
-**Problema:** [descrição do problema atual]
-**Solução:** [como a feature resolve]
-**Valor:** [benefício mensurável]
-
----
-
-## Requisitos
-
-### Funcionais
-- **[RF01]:** [descrição ~15 palavras]
-- **[RF02]:** [descrição ~15 palavras]
-
-### Não-Funcionais
-- **[RNF01]:** [performance/segurança/etc]
-
----
-
-## Regras de Negócio
-
-- **[RN01]:** [condição] → [resultado]
-- **[RN02]:** [condição] → [resultado]
-
----
-
-## Escopo
-
-### Incluído
-- [Item que FAZ parte]
-- [Item que FAZ parte]
-
-### Excluído
-- [Item que NÃO faz parte] - [motivo breve]
-
----
-
-## Decisões
-
-| Decisão | Razão | Alternativa descartada |
-|---------|-------|------------------------|
-| [Escolha A] | [Por que A] | [B - por que não] |
-
----
-
-## Edge Cases
-
-- **[Caso]:** [tratamento definido]
-- **[Caso]:** [tratamento definido]
-
----
-
-## Critérios de Aceite
-
-- [ ] [Critério verificável e testável]
-- [ ] [Critério verificável e testável]
-
----
-
-## Spec (Resumo Token-Efficient)
-
-{"feature":"[id]","type":"[new/enhancement/fix]","priority":"[high/medium/low]","users":["tipo1","tipo2"],"deps":["feature/sistema"]}
+**Consequences:** [downstream impacts, constraints it introduces].
 ```
 
-### discovery.md (Codebase Analysis)
+Use the expanded form only when the table form would lose information — typically for architectural choices with long-lived consequences.
+
+---
+
+## Scope Notation
+
+Split into **Includes** and **Does NOT Include**. The exclusion list is the more valuable half: it prevents scope creep and documents why a seemingly-related feature was left out.
 
 ```markdown
-# Discovery: [Feature]
+### Includes
+- [item that IS in scope]
+- [item that IS in scope]
 
-Análise técnica do codebase para implementação de [feature].
-
----
-
-## Contexto Técnico
-
-### Stack Relevante
-- **Backend:** [tecnologias específicas para esta feature]
-- **Frontend:** [tecnologias específicas]
-- **Infra:** [Redis/queues/etc se aplicável]
-
-### Padrões Identificados
-- **[Padrão]:** usado em [local] - [como aplicar aqui]
-
----
-
-## Análise do Codebase
-
-### Arquivos Relacionados
-- `path/file.ts` - [propósito, ~10 palavras]
-- `path/file.ts` - [propósito]
-
-### Features Similares
-- **[Feature X]:** [o que reutilizar] - `path/`
-- **[Feature Y]:** [o que reutilizar] - `path/`
-
----
-
-## Mapeamento de Arquivos
-
-### Criar
-- `path/new-file.ts` - [propósito]
-
-### Modificar
-- `path/existing.ts` - [o que muda]
-
----
-
-## Dependências
-
-### Internas
-- `@add/domain` - [entities/enums necessários]
-- `@add/database` - [repositories necessários]
-
-### Externas
-- `package@version` - [propósito]
-
----
-
-## Premissas Técnicas
-
-- **[Premissa]:** [impacto se incorreta]
-- **[Premissa]:** [impacto se incorreta]
-
----
-
-## Riscos Identificados
-
-- **[Risco]:** [mitigação]
-
----
-
-## Resumo para Planejamento
-
-[3-5 linhas sumarizando: complexidade, pontos de atenção, dependências críticas]
+### Does NOT Include
+- [item left out] — [one-line reason]
+- [item left out] — [one-line reason]
 ```
 
-### brainstorm/ (Idea Exploration)
-
-```markdown
-# Brainstorm: [Tópico]
-
-**Data:** [YYYY-MM-DD]
-**Participantes:** [quem participou]
+The reason on each exclusion is mandatory. "Out of scope" without a reason is a future argument waiting to happen.
 
 ---
 
-## Contexto
+## Brainstorm Voice
 
-[Problema ou oportunidade que motivou a discussão - 3-5 linhas]
+Brainstorm docs capture exploration, not decisions. Voice rules:
 
----
-
-## O que o Usuário Quer
-
-### Necessidade Principal
-[Descrição do ponto de vista do usuário, sem jargão técnico]
-
-### Cenários de Uso
-- **[Cenário 1]:** [situação prática]
-- **[Cenário 2]:** [situação prática]
-
----
-
-## Descobertas
-
-### O que já existe
-- [Funcionalidade existente] - [como ajuda]
-
-### O que falta
-- [Gap identificado] - [impacto]
-
----
-
-## Ideias Discutidas
-
-### [Ideia A]
-- **Proposta:** [descrição]
-- **Prós:** [vantagens]
-- **Contras:** [desvantagens]
-
-### [Ideia B]
-- **Proposta:** [descrição]
-- **Prós:** [vantagens]
-- **Contras:** [desvantagens]
-
----
-
-## Decisões Preliminares
-
-| Decisão | Razão |
-|---------|-------|
-| [Escolha] | [Justificativa] |
-
----
-
-## Dúvidas em Aberto
-
-- [ ] [Pergunta que precisa resposta]
-- [ ] [Pergunta que precisa resposta]
-
----
-
-## Próximos Passos
-
-- [ ] [Ação] - [responsável se definido]
-
----
-
-## Para `/feature`
-
-> [Frase descrevendo a feature para iniciar discovery formal]
-```
-
----
-
-## Notação de Requisitos
-
-### Formato Padrão
-```
-- **[ID]:** [Ação] [objeto] [condição/contexto] (~15-20 palavras)
-```
-
-### Exemplos
-```
-- **RF01:** Usuário pode marcar notificação como lida com um clique
-- **RF02:** Sistema agrupa notificações do mesmo tipo em até 24h
-- **RNF01:** Lista carrega em menos de 200ms para até 100 itens
-```
-
----
-
-## Notação de Regras de Negócio
-
-### Formato Padrão
-```
-- **[ID]:** [condição] → [resultado]
-```
-
-### Exemplos
-```
-- **RN01:** Notificação não lida após 30 dias → arquivar automaticamente
-- **RN02:** Usuário com plano Free → máximo 50 notificações armazenadas
-- **RN03:** Notificação de segurança → sempre enviar email além de in-app
-```
-
----
-
-## Notação de Decisões
-
-### Tabela Padrão
-```markdown
-| Decisão | Razão | Alternativa descartada |
-|---------|-------|------------------------|
-| WebSocket | Real-time sem polling | SSE - menos suporte mobile |
-| PostgreSQL | Já usado no projeto | MongoDB - complexidade extra |
-```
-
-### Quando Expandir
-Se a decisão é complexa, usar seção dedicada:
-```markdown
-### Decisão: [Título]
-
-**Contexto:** [situação que gerou a necessidade]
-
-**Opções Consideradas:**
-1. **[Opção A]:** [descrição] - [prós/contras]
-2. **[Opção B]:** [descrição] - [prós/contras]
-
-**Escolha:** [Opção X] porque [razão principal]
-
-**Consequências:** [impactos da decisão]
-```
+- **User-perspective language.** Describe the pain the user feels, not the system behaviour. Save the technical vocabulary for discovery/plan.
+- **Pros and cons for every candidate direction.** Directions without a cons list are proposals in disguise.
+- **Open threads explicit.** Any unresolved question blocks commitment. Naming it is the point.
+- **No verdict.** The doc closes with open threads and a pointer to the next command (`/add.new`, `/add.plan`), not with "we will build X".
 
 ---
 
 ## Anti-Patterns
 
-| Errado | Correto |
-|--------|---------|
-| Parágrafos longos explicando requisitos | Bullets com **[ID]:** formato |
-| "O sistema deve ser rápido" | **RNF01:** resposta em <200ms |
-| Decisões sem alternativas | Tabela com alternativa descartada |
-| Edge cases sem tratamento | **[Caso]:** [tratamento definido] |
-| Critérios vagos | Critérios verificáveis e testáveis |
-| Jargão técnico em brainstorm | Linguagem do usuário |
+| Wrong | Right |
+|---|---|
+| Long paragraphs explaining requirements | Bulleted `**[ID]:**` lines |
+| "The system should be fast" | `**RNF01:** response under 200ms` |
+| Decisions without alternatives | Table row with rejected alternative |
+| Edge cases described but not handled | `**[case]:** [defined handling]` |
+| Vague acceptance criteria | Verifiable, testable criteria |
+| Technical jargon in brainstorm | User-perspective language |
+| Scope list with no exclusions | Explicit "Does NOT Include" with reasons |
+| Dropping requirement conditions to shorten the line | Keep the condition; split the line if needed |
 
 ---
 
-## Checklist por Documento
+## Checklist
 
-### about.md
-- [ ] Problema claramente definido
-- [ ] Requisitos com IDs (RF/RNF)
-- [ ] Regras de negócio com IDs (RN)
-- [ ] Escopo: incluído E excluído
-- [ ] Decisões com alternativas descartadas
-- [ ] Critérios de aceite verificáveis
-- [ ] Spec token-efficient no final
-
-### discovery.md
-- [ ] Arquivos relacionados com paths
-- [ ] Features similares identificadas
-- [ ] Mapeamento criar/modificar
-- [ ] Premissas com impacto
-- [ ] Resumo para planejamento
-
-### brainstorm/
-- [ ] Data e participantes
-- [ ] Contexto do ponto de vista do usuário
-- [ ] Linguagem sem jargão técnico
-- [ ] Dúvidas em aberto listadas
-- [ ] Frase para `/feature` se aplicável
+- [ ] Requirements use `**[ID]:**` prefix (RF / RNF / RN)
+- [ ] Every RN states condition → result
+- [ ] Decisions carry a rejected alternative
+- [ ] Scope has both Includes and Does NOT Include, with reasons on exclusions
+- [ ] Acceptance criteria are verifiable and testable
+- [ ] Brainstorm uses user-perspective language, no technical jargon
+- [ ] No filler sentences (every line is fact, constraint, decision, or link)
