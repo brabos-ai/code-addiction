@@ -179,7 +179,38 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 ---
 
-## STEP 9: Guide to Action (When Appropriate)
+## STEP 9: Fresh-Reader Review (Non-Blocking)
+
+After the gate returns `PASS`, run a fresh-reader review to surface gaps, clarity issues, or scope questions the brainstorm left unresolved. Non-blocking: findings are presented, user decides whether to iterate.
+
+### 9.1 Dispatch the reviewer
+
+Dispatch `doc-reviewer-agent` as a subagent in fresh context. Pass:
+- Path to the brainstorm doc written in STEP 7.3
+- Schema name: `brainstorm`
+
+The agent MUST NOT see this conversation — its job is to read only the doc and the schema. If the provider does not support subagent dispatch, apply `{{skill:add-doc-reviewer/SKILL.md}}` inline, explicitly forgetting the conversation.
+
+### 9.2 Present findings
+
+The reviewer returns a textual review with three buckets: Gap, Clarity, Scope. Relay the review verbatim to the user, then offer resolution:
+
+- **Gap or Clarity items** — the doc failed to capture something already discussed, or captured it unclearly. Offer to update the doc.
+- **Scope items** — the reviewer asked about something not in the original discussion. Ask the user per item: *extend scope and address* / *mark out-of-scope with a one-line reason* / *ignore*.
+
+### 9.3 Iterate (max 2 rounds)
+
+If the user chooses to update the doc, re-write the relevant sections (NOT the whole doc — cache documental applies: read → preserve → complement). Then re-run the validation gate (STEP 8) and re-dispatch the reviewer (STEP 9.1).
+
+Hard cap: **2 review rounds per command invocation**. After round 2, if items remain, present them as informational and advise the user to re-invoke `/add.brainstorm` later if deeper iteration is needed. DO NOT loop indefinitely.
+
+### 9.4 A brainstorm leaves no open questions
+
+Per STEP 6 ("Resolve All Questions"), the brainstorm must not close with unresolved threads. The reviewer treats unacknowledged open questions as Gaps. If the reviewer surfaces an open question the doc did not even list, that is always a Gap — resolve it or the brainstorm is not done.
+
+---
+
+## STEP 10: Guide to Action (When Appropriate)
 
 Route conversations to the right command:
 
@@ -205,6 +236,7 @@ ALWAYS:
 - Load the `brainstorm` schema from `{{skill:add-doc-schemas/SKILL.md}}` before writing
 - Use fixed ID `BRN-<slug>` per schema (no next-id lookup)
 - Run the validation gate after writing the doc
+- Dispatch `doc-reviewer-agent` after the gate passes (non-blocking, max 2 rounds)
 - Guide to appropriate commands when action is needed
 
 NEVER:
@@ -217,3 +249,6 @@ NEVER:
 - Accept ideas passively without challenging
 - Create brainstorm document without user consent
 - Skip the validation gate
+- Skip the fresh-reader review after the gate passes
+- Exceed 2 review rounds per invocation
+- Let the reviewer see this conversation (dispatch in fresh context)
