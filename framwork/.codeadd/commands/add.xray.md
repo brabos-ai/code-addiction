@@ -218,7 +218,7 @@ Return summary:
 - TOPICS: [count of ## sections]
 ```
 
-- **Output:** Write `.codeadd/skills/project-patterns/[TYPE].md`
+- **Output:** Write `{{addpath:skills/project-patterns/[TYPE].md}}`
 
 ### 4.2 For Apps WITHOUT Specialist (cli, worker, generic)
 
@@ -265,7 +265,7 @@ Return summary:
 - TOPICS: [count of ## sections]
 ```
 
-- **Output:** Write `.codeadd/skills/project-patterns/[TYPE].md`
+- **Output:** Write `{{addpath:skills/project-patterns/[TYPE].md}}`
 
 ### 4.3 Database Analyzer (Cross-App, Always Run if Detected)
 
@@ -306,7 +306,7 @@ Return summary:
 - TOPICS: [count of ## sections]
 ```
 
-- **Output:** Write `.codeadd/skills/project-patterns/database.md`
+- **Output:** Write `{{addpath:skills/project-patterns/database.md}}`
 
 ### 4.4 Code Quality Analyzer (Always Run)
 
@@ -356,11 +356,11 @@ Return summary:
 ## STEP 5: Consolidate Reports (WAIT-ALL Before Consolidation)
 
 **WAIT-ALL:** Verify ALL agent outputs exist before proceeding.
-- [ ] All `.codeadd/skills/project-patterns/*.md` files written by specialist agents
+- [ ] All `{{addpath:skills/project-patterns/*.md}}` files written by specialist agents
 - [ ] `docs/code-quality-review.md` written by code quality agent
 
 **COLLECT reports:**
-- Files written (`.codeadd/skills/project-patterns/*.md`)
+- Files written (`{{addpath:skills/project-patterns/*.md}}`)
 - App classifications confirmed
 - Frameworks/patterns per app
 - Code quality metrics
@@ -376,7 +376,7 @@ Return summary:
 
 Create the skill index file that ties all area files together with search instructions.
 
-**WRITE** `.codeadd/skills/project-patterns/SKILL.md`:
+**WRITE** `{{addpath:skills/project-patterns/SKILL.md}}`:
 
 ```markdown
 ---
@@ -595,11 +595,11 @@ Where:
 
 | Classification | Output File |
 |----------------|-------------|
-| backend | `.codeadd/skills/project-patterns/backend.md` |
-| frontend | `.codeadd/skills/project-patterns/frontend.md` |
-| database | `.codeadd/skills/project-patterns/database.md` |
-| cli | `.codeadd/skills/project-patterns/cli.md` |
-| worker | `.codeadd/skills/project-patterns/worker.md` |
+| backend | `{{addpath:skills/project-patterns/backend.md}}` |
+| frontend | `{{addpath:skills/project-patterns/frontend.md}}` |
+| database | `{{addpath:skills/project-patterns/database.md}}` |
+| cli | `{{addpath:skills/project-patterns/cli.md}}` |
+| worker | `{{addpath:skills/project-patterns/worker.md}}` |
 
 **Special:** Code Quality → `docs/code-quality-review.md` (not in project-patterns skill).
 
@@ -627,4 +627,4 @@ quality-analyzer  → project-wide    → docs/code-quality-review.md
 
 **Note:** When multiple apps share the same type (e.g., apps/admin + apps/portal both frontend), the analyzer covers both in a single frontend.md file. The frontmatter `app-path` lists all paths.
 
-**Result:** SKILL.md index + 4 area files in `.codeadd/skills/project-patterns/`, each with frontmatter + TL;DR + TOC + topic-first ## chunks.
+**Result:** SKILL.md index + 4 area files in `{{addpath:skills/project-patterns/}}`, each with frontmatter + TL;DR + TOC + topic-first ## chunks.

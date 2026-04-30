@@ -33,7 +33,7 @@ ls docs/features/ 2>/dev/null
 
 # Skills de documentação
 ls {{skill:add-doc-schemas/SKILL.md}} 2>/dev/null
-ls {{skill:add-updating-claude-documentation/SKILL.md}} 2>/dev/null
+ls {{skill:add-claude-md-style/SKILL.md}} 2>/dev/null
 ```
 
 ### Classificar
@@ -65,7 +65,7 @@ cat CLAUDE.md
 
 **Verificar conformidade com skill:**
 ```bash
-cat {{skill:add-updating-claude-documentation/SKILL.md}}
+cat {{skill:add-claude-md-style/SKILL.md}}
 ```
 
 **Checklist de conformidade:**
@@ -179,7 +179,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 
 #### [DOC-001] CLAUDE.md não existe
 **Impacto:** Desenvolvimento com IA será inconsistente e de baixa qualidade
-**Correção:** Criar CLAUDE.md seguindo `{{skill:add-updating-claude-documentation/SKILL.md}}`
+**Correção:** Criar CLAUDE.md seguindo `{{skill:add-claude-md-style/SKILL.md}}`
 
 ---
 

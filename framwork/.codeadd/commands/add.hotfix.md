@@ -127,7 +127,7 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 ### 3.3 Create Doc Directory
 
 ```
-docs/hotfixes/<slug>/
+docs/features/[NNNN]H-<slug>/
 ├── about.md    (schema: hotfix-about — written in STEP 9)
 ├── related.md  (schema: hotfix-related — written in STEP 10)
 └── iterations.jsonl
@@ -248,7 +248,7 @@ Verify build passes for affected apps (backend, frontend, or both).
 
 EXECUTE schema `hotfix-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-**Path:** `docs/hotfixes/<slug>/about.md`
+**Path:** `docs/features/[NNNN]H-<slug>/about.md`
 
 **ID:** `[NNNN]H` from STEP 3. Write per `hotfix-about` schema. Extractive only.
 
@@ -258,7 +258,7 @@ EXECUTE schema `hotfix-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 EXECUTE schema `hotfix-related` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
-**Path:** `docs/hotfixes/<slug>/related.md`
+**Path:** `docs/features/[NNNN]H-<slug>/related.md`
 
 **ID:** `[NNNN]H-related`. Write per `hotfix-related` schema. Lists only, no prose. Use `{{doc:<ID>}}` for impacted docs. Include features identified in STEP 4.
 
@@ -269,8 +269,8 @@ EXECUTE schema `hotfix-related` from `{{skill:add-doc-schemas/SKILL.md}}`.
 ## STEP 11-12: Validation Gate
 
 Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for each doc written:
-1. `hotfix-about` — `docs/hotfixes/<slug>/about.md`
-2. `hotfix-related` — `docs/hotfixes/<slug>/related.md`
+1. `hotfix-about` — `docs/features/[NNNN]H-<slug>/about.md`
+2. `hotfix-related` — `docs/features/[NNNN]H-<slug>/related.md`
 
 ⛔ DO NOT skip. DO NOT mark the command complete until both gates return `PASS`.
 
@@ -281,7 +281,7 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for each d
 **BEFORE informing user, append entry to iterations.jsonl:**
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/hotfixes/<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 **Parameters:**
@@ -305,7 +305,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 
 **ALWAYS:**
 - Use `status.sh next-id H` to allocate hotfix ID
-- Create hotfix branch and docs in `docs/hotfixes/<slug>/`
+- Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
 - Load `hotfix-about` and `hotfix-related` schemas from add-doc-schemas before writing
 - Read changelogs and about.md before investigating code
 - Confirm root cause with user before implementing
@@ -336,7 +336,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 # STEP 1-2: status.sh → BRANCH:main → STOP
 # STEP 3: status.sh next-id H → H0001
 #   git checkout -b hotfix/0001H-screenshot-delete-error
-#   mkdir docs/hotfixes/screenshot-delete-error/
+#   mkdir docs/features/0001H-screenshot-delete-error/
 # STEP 4: Related to F0036 ai-screenshot-validation (from RECENT_CHANGELOGS)
 # STEP 5: Read F0036 changelog + about
 # STEP 6: Investigate code

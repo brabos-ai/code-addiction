@@ -250,7 +250,7 @@ For `/add.design` (creates `design.md`).
 
 ### hotfix-about
 
-For `/add.hotfix` (creates `docs/hotfixes/<slug>/about.md`).
+For `/add.hotfix` (creates `docs/features/[NNNN]H-<slug>/about.md`).
 
 - **Frontmatter:** `id: [NNNN]H`, `type: hotfix-about`, `severity:`, `related: []`
 - **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification

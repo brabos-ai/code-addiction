@@ -1,10 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
-const { stripHtmlComments, escapeTomlString, TRANSFORMERS, METADATA, buildAgents, buildResources, readMap } = require('../../scripts/build.js');
+const {
+  stripHtmlComments,
+  escapeTomlString,
+  resolveResourcePaths,
+  lintResourcePaths,
+  copyDirRecursive,
+  _resetLintCache,
+  TRANSFORMERS,
+  METADATA,
+  buildAgents,
+  readMap,
+} = require('../../scripts/build.js');
 
 // ---------------------------------------------------------------------------
 // stripHtmlComments
@@ -443,5 +455,247 @@ describe('buildAgents', () => {
     delete mapWithoutAgents.agents;
     const count = buildAgents(mapWithoutAgents);
     expect(count).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveResourcePaths: variable resolution per provider
+// ---------------------------------------------------------------------------
+
+describe('resolveResourcePaths', () => {
+  const claudeProvider = {
+    dir: 'framwork/.claude',
+    commands: 'commands/{name}.md',
+    skills: 'skills/{name}/SKILL.md',
+  };
+  const geminiProvider = {
+    dir: 'framwork/.gemini',
+    commands: 'commands/{name}.toml',
+    skills: 'skills/{name}/SKILL.md',
+  };
+
+  it('resolves {{cmd:NAME}} to provider-specific command path', () => {
+    expect(resolveResourcePaths('See {{cmd:add.plan}}', claudeProvider))
+      .toBe('See .claude/commands/add.plan.md');
+    expect(resolveResourcePaths('See {{cmd:add.plan}}', geminiProvider))
+      .toBe('See .gemini/commands/add.plan.toml');
+  });
+
+  it('resolves {{skill:NAME/FILE}} to provider-specific skill path', () => {
+    expect(resolveResourcePaths('Read {{skill:add-foo/SKILL.md}}', claudeProvider))
+      .toBe('Read .claude/skills/add-foo/SKILL.md');
+  });
+
+  it('resolves {{skill:NAME/SUBFILE}} for non-SKILL.md files', () => {
+    expect(resolveResourcePaths('Grep {{skill:add-ux-design/shadcn-docs.md}}', claudeProvider))
+      .toBe('Grep .claude/skills/add-ux-design/shadcn-docs.md');
+  });
+
+  it('resolves {{addpath:X}} to literal .codeadd/X regardless of provider', () => {
+    expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', claudeProvider))
+      .toBe('.codeadd/skills/project-patterns/backend.md');
+    expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', geminiProvider))
+      .toBe('.codeadd/skills/project-patterns/backend.md');
+    expect(resolveResourcePaths('{{addpath:manifest.json}}', claudeProvider))
+      .toBe('.codeadd/manifest.json');
+  });
+
+  it('resolves multiple variables in one string', () => {
+    const input = '{{cmd:add.plan}} loads {{skill:add-foo/SKILL.md}} writes {{addpath:scripts/x.sh}}';
+    expect(resolveResourcePaths(input, claudeProvider))
+      .toBe('.claude/commands/add.plan.md loads .claude/skills/add-foo/SKILL.md writes .codeadd/scripts/x.sh');
+  });
+
+  it('leaves unknown variables intact', () => {
+    expect(resolveResourcePaths('value {{unknown:foo}} stays', claudeProvider))
+      .toBe('value {{unknown:foo}} stays');
+  });
+
+  it('strips framwork/ prefix from provider.dir', () => {
+    // provider.dir starts with framwork/ but resolved paths must not include it
+    expect(resolveResourcePaths('{{cmd:x}}', claudeProvider)).not.toContain('framwork/');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// lintResourcePaths: warning emission and dedup
+// ---------------------------------------------------------------------------
+
+describe('lintResourcePaths', () => {
+  let warnSpy;
+
+  beforeEach(() => {
+    _resetLintCache();
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
+
+  it('warns on raw .codeadd/commands/ reference', () => {
+    lintResourcePaths('see .codeadd/commands/add.plan.md', '/fake/file.md');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/raw \.codeadd\/commands\//);
+  });
+
+  it('warns on raw .codeadd/skills/ reference', () => {
+    lintResourcePaths('see .codeadd/skills/foo/SKILL.md', '/fake/file.md');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toMatch(/raw \.codeadd\/skills\//);
+  });
+
+  it('ignores raw paths inside fenced code blocks', () => {
+    const content = [
+      '```',
+      '.codeadd/skills/foo/SKILL.md',
+      '.codeadd/commands/bar.md',
+      '```',
+      'plain text after',
+    ].join('\n');
+    lintResourcePaths(content, '/fake/file.md');
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not lint the resource-path-convention skill itself', () => {
+    lintResourcePaths(
+      '.codeadd/commands/x.md and .codeadd/skills/y/z.md',
+      '/path/add-resource-path-convention/SKILL.md',
+    );
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('dedups: same source path linted multiple times emits warnings only once', () => {
+    const content = '.codeadd/skills/foo/SKILL.md';
+    lintResourcePaths(content, '/fake/dupe.md');
+    lintResourcePaths(content, '/fake/dupe.md');
+    lintResourcePaths(content, '/fake/dupe.md');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('different source paths produce independent warnings', () => {
+    lintResourcePaths('.codeadd/skills/a.md', '/fake/a.md');
+    lintResourcePaths('.codeadd/skills/b.md', '/fake/b.md');
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('emits both warnings if a line has both raw patterns', () => {
+    lintResourcePaths('.codeadd/commands/x.md and .codeadd/skills/y/z.md', '/fake/multi.md');
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// copyDirRecursive: provider-aware sibling transformation
+// ---------------------------------------------------------------------------
+
+describe('copyDirRecursive', () => {
+  let tmpRoot;
+  let src;
+  let dest;
+
+  const provider = {
+    dir: 'framwork/.claude',
+    commands: 'commands/{name}.md',
+    skills: 'skills/{name}/SKILL.md',
+  };
+
+  beforeEach(() => {
+    _resetLintCache();
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'build-test-'));
+    src = path.join(tmpRoot, 'src');
+    dest = path.join(tmpRoot, 'dest');
+    fs.mkdirSync(src, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it('without provider: copies markdown verbatim (variables preserved)', () => {
+    fs.writeFileSync(path.join(src, 'note.md'), 'Read {{skill:add-foo/SKILL.md}} now');
+    copyDirRecursive(src, dest);
+    const out = fs.readFileSync(path.join(dest, 'note.md'), 'utf8');
+    expect(out).toBe('Read {{skill:add-foo/SKILL.md}} now');
+  });
+
+  it('with provider: resolves {{skill:}} in .md files', () => {
+    fs.writeFileSync(path.join(src, 'note.md'), 'Read {{skill:add-foo/SKILL.md}}');
+    copyDirRecursive(src, dest, provider);
+    const out = fs.readFileSync(path.join(dest, 'note.md'), 'utf8');
+    expect(out).toBe('Read .claude/skills/add-foo/SKILL.md');
+  });
+
+  it('with provider: resolves {{addpath:}} to literal .codeadd/X', () => {
+    fs.writeFileSync(path.join(src, 'note.md'), 'Write {{addpath:skills/project-patterns/backend.md}}');
+    copyDirRecursive(src, dest, provider);
+    const out = fs.readFileSync(path.join(dest, 'note.md'), 'utf8');
+    expect(out).toBe('Write .codeadd/skills/project-patterns/backend.md');
+  });
+
+  it('with provider: copies non-md files verbatim (no transformation)', () => {
+    const jsonContent = '{"placeholder": "{{skill:do-not-touch/x.md}}"}';
+    fs.writeFileSync(path.join(src, 'data.json'), jsonContent);
+    copyDirRecursive(src, dest, provider);
+    expect(fs.readFileSync(path.join(dest, 'data.json'), 'utf8')).toBe(jsonContent);
+  });
+
+  it('recurses into subdirectories propagating provider', () => {
+    const sub = path.join(src, 'sub');
+    fs.mkdirSync(sub);
+    fs.writeFileSync(path.join(sub, 'nested.md'), '{{cmd:add.plan}}');
+    copyDirRecursive(src, dest, provider);
+    const out = fs.readFileSync(path.join(dest, 'sub', 'nested.md'), 'utf8');
+    expect(out).toBe('.claude/commands/add.plan.md');
+  });
+
+  it('returns the count of files copied', () => {
+    fs.writeFileSync(path.join(src, 'a.md'), 'a');
+    fs.writeFileSync(path.join(src, 'b.txt'), 'b');
+    fs.mkdirSync(path.join(src, 'sub'));
+    fs.writeFileSync(path.join(src, 'sub', 'c.md'), 'c');
+    expect(copyDirRecursive(src, dest, provider)).toBe(3);
+  });
+
+  it('strips HTML comments from .md siblings when provider supplied', () => {
+    fs.writeFileSync(path.join(src, 'note.md'), 'before <!-- internal --> after');
+    copyDirRecursive(src, dest, provider);
+    expect(fs.readFileSync(path.join(dest, 'note.md'), 'utf8')).toBe('before  after');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Integration: real skill with siblings goes through full sibling pipeline
+// ---------------------------------------------------------------------------
+
+describe('skill sibling files integration', () => {
+  it('add-architecture-discovery analyzer siblings have {{addpath:}} resolved literally', () => {
+    const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
+    const geminiPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.gemini', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
+
+    const claudeOut = fs.readFileSync(claudePath, 'utf8');
+    const geminiOut = fs.readFileSync(geminiPath, 'utf8');
+
+    // {{addpath:}} resolves identically across providers
+    expect(claudeOut).toContain('.codeadd/skills/project-patterns/backend.md');
+    expect(geminiOut).toContain('.codeadd/skills/project-patterns/backend.md');
+
+    // No leaked variable placeholders
+    expect(claudeOut).not.toContain('{{addpath:');
+    expect(geminiOut).not.toContain('{{addpath:');
+  });
+
+  it('add-health-check documentation-analyzer has {{skill:}} resolved per provider', () => {
+    const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add-health-check', 'documentation-analyzer.md');
+    const geminiPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.gemini', 'skills', 'add-health-check', 'documentation-analyzer.md');
+
+    const claudeOut = fs.readFileSync(claudePath, 'utf8');
+    const geminiOut = fs.readFileSync(geminiPath, 'utf8');
+
+    expect(claudeOut).toContain('.claude/skills/add-claude-md-style/SKILL.md');
+    expect(geminiOut).toContain('.gemini/skills/add-claude-md-style/SKILL.md');
+
+    expect(claudeOut).not.toContain('{{skill:');
+    expect(geminiOut).not.toContain('{{skill:');
   });
 });

@@ -4,7 +4,7 @@ Analisa e documenta estratégia de database IMPLEMENTADA no projeto.
 
 ## Objetivo
 
-Gerar `.codeadd/skills/project-patterns/database.md` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Gerar `{{addpath:skills/project-patterns/database.md}}` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
 **IMPORTANTE:** NÃO documentar schema, tabelas ou índices. São dinâmicos e ficam desatualizados.
 
@@ -106,7 +106,7 @@ cat .env .env.example .env.local 2>/dev/null | grep -i "database\|db_\|postgres\
 
 ## Output Format
 
-Write to `.codeadd/skills/project-patterns/database.md` using this structure:
+Write to `{{addpath:skills/project-patterns/database.md}}` using this structure:
 
 ```markdown
 ---

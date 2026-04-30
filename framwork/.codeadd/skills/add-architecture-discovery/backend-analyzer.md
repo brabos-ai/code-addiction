@@ -4,7 +4,7 @@ Analisa e documenta padrões backend IMPLEMENTADOS no projeto.
 
 ## Objetivo
 
-Gerar `.codeadd/skills/project-patterns/backend.md` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Gerar `{{addpath:skills/project-patterns/backend.md}}` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
 ## PRIMEIRO: Descobrir SE Existe Backend
 
@@ -123,7 +123,7 @@ grep -rE "JwtService|passport|@UseGuards" --include="*.ts" | head -5
 
 ## Output Format
 
-Write to `.codeadd/skills/project-patterns/backend.md` using this structure:
+Write to `{{addpath:skills/project-patterns/backend.md}}` using this structure:
 
 ```markdown
 ---

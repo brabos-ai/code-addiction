@@ -318,5 +318,5 @@ The AI already knows each framework's API. This section provides ONLY the archit
 
 After the project structure is created, run `/add.xray` to generate:
 - `.codeadd/project/stack-context.md` — stack key-value file consumed by dev skills
-- `.codeadd/skills/project-patterns/` — implementation patterns skill with backend, frontend, database area files
+- `{{addpath:skills/project-patterns/}}` — implementation patterns skill with backend, frontend, database area files
 - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` — context files with architecture contract and technical spec

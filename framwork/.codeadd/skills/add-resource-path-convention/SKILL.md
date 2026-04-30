@@ -24,7 +24,7 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 
 ## Variables
 
-Three build-time variables are available. `build.js` replaces them with the correct provider path during build.
+Build-time variables are available. `build.js` replaces them with the correct provider path during build.
 
 ### `{{cmd:NAME}}`
 
@@ -67,6 +67,28 @@ bash .codeadd/scripts/status.sh
 bash .codeadd/scripts/done.sh
 ```
 
+### `{{addpath:X}}`
+
+Resolves to the literal `.codeadd/X` path — same across all providers. Use for **runtime paths** that exist in the user's installed project (the installer preserves `.codeadd/`), but are NOT distributed by the build pipeline.
+
+Typical cases: skills generated at runtime by commands like `/add.xray` (which writes `project-patterns/`), the manifest file, or any artefact materialized in the user's project after install.
+
+```
+{{addpath:skills/project-patterns/backend.md}}
+# All providers → .codeadd/skills/project-patterns/backend.md
+
+{{addpath:manifest.json}}
+# All providers → .codeadd/manifest.json
+```
+
+**When to use `{{addpath:}}` vs `{{skill:}}`:**
+
+| | `{{skill:NAME/FILE}}` | `{{addpath:skills/NAME/FILE}}` |
+|---|---|---|
+| Skill exists in `framwork/.codeadd/skills/` (source) | ✅ | ❌ |
+| Skill is generated at runtime in user project | ❌ | ✅ |
+| Resolves per-provider | ✅ | ❌ (always `.codeadd/`) |
+
 ## Examples
 
 ### Correct
@@ -91,9 +113,10 @@ bash .codeadd/scripts/status.sh             ← CORRECT: scripts are at .codeadd
 ## Validation Checklist
 
 ```
-[ ] No references to .codeadd/commands/ (use {{cmd:NAME}})
-[ ] No references to .codeadd/skills/ (use {{skill:NAME/FILE}})
+[ ] No raw references to .codeadd/commands/ (use {{cmd:NAME}})
+[ ] No raw references to .codeadd/skills/ (use {{skill:NAME/FILE}} for source skills, {{addpath:skills/NAME/FILE}} for runtime-generated skills)
 [ ] Script references use .codeadd/scripts/ (literal, no variable)
+[ ] Runtime artefacts in installed project use {{addpath:X}}
 [ ] Command names match provider-map.json commands keys
 [ ] Skill names match provider-map.json skills keys (with add- prefix)
 [ ] Skill sub-files exist in the source skill directory

@@ -4,7 +4,7 @@ Analisa e documenta padrões frontend IMPLEMENTADOS no projeto.
 
 ## Objetivo
 
-Gerar `.codeadd/skills/project-patterns/frontend.md` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Gerar `{{addpath:skills/project-patterns/frontend.md}}` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
 ## PRIMEIRO: Descobrir SE Existe Frontend
 
@@ -122,7 +122,7 @@ find . -type f \( -name "vite.config*" -o -name "next.config*" -o -name "webpack
 
 ## Output Format
 
-Write to `.codeadd/skills/project-patterns/frontend.md` using this structure:
+Write to `{{addpath:skills/project-patterns/frontend.md}}` using this structure:
 
 ```markdown
 ---

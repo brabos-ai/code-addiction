@@ -42,7 +42,7 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 
 ### DeepUnderstanding
 {"when":"discovery doc has insufficient info","read":"1-2 files per area to understand STRUCTURE","areas":["services → interface pattern?","repositories → return Entity or DTO?","workers → dispatch/retry config?","cron → interval pattern?","events → naming pattern?","webhooks → signature verify?"],"principle":"read only necessary to document STRUCTURE, not implementation patterns"}
-{"note":"Implementation details (logging, validation, state, styling) belong in .codeadd/skills/project-patterns/ via /architecture-analyzer"}
+{"note":"Implementation details (logging, validation, state, styling) belong in {{addpath:skills/project-patterns/}} via /architecture-analyzer"}
 
 ### AppClassification
 {"purpose":"Classify each app/package to dispatch appropriate specialist analyzer"}
@@ -63,7 +63,7 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 {"fallback":"If no signals match → analyze structure and config only, no deep patterns"}
 
 ### SpecialistRegistry
-{"purpose":"Map app type to specialist analyzer — output goes to .codeadd/skills/project-patterns/"}
+{"purpose":"Map app type to specialist analyzer — output goes to {{addpath:skills/project-patterns/}}"}
 {"registry":{
   "backend":{"skill":"backend-analyzer.md","output":"backend.md","analyzes":"logging, validation, error handling, auth, middleware, API patterns"},
   "frontend":{"skill":"frontend-analyzer.md","output":"frontend.md","analyzes":"state, styling, components, forms, hooks, routing"},
@@ -72,13 +72,13 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
   "worker":{"skill":null,"output":"worker.md","analyzes":"jobs, queues, scheduling - use generic template"},
   "generic":{"skill":null,"output":"[area-type].md","analyzes":"structure, config, entry points only"}
 }}
-{"output_dir":".codeadd/skills/project-patterns/","naming":"lowercase area type (backend.md, frontend.md, database.md, cli.md, worker.md)"}
+{"output_dir":"{{addpath:skills/project-patterns/}}","naming":"lowercase area type (backend.md, frontend.md, database.md, cli.md, worker.md)"}
 {"dispatch_rules":[
   "One specialist per app (based on primary type)",
   "Database analyzer runs ONCE (cross-app)",
   "Apps without specialist → generic analysis",
   "All analyzers run in PARALLEL",
-  "Output to .codeadd/skills/project-patterns/[area].md"
+  "Output to {{addpath:skills/project-patterns/[area].md}}"
 ]}
 
 ### GenericAppTemplate
@@ -92,11 +92,11 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 {"location":"CLAUDE.md → ## Technical Spec","format":"JSON minified one-line per object","max":"10 words per description","sections":["Stack","Structure","Patterns","Domain","API Routes","Critical Files","Background Processing (optional)","Scheduling (optional)","Events (optional)","Webhooks (optional)","Integrations (optional)","Implementation Patterns Reference"],"skip":"sections that don't apply"}
 
 ### ImplementationPatternsReference
-{"purpose":"Link to .codeadd/skills/project-patterns/ for implementation details","note":"CLAUDE.md = WHERE things are, project-patterns skill = HOW to implement"}
-{"location":".codeadd/skills/project-patterns/","naming":"lowercase area type: backend.md, frontend.md, database.md, cli.md, worker.md"}
+{"purpose":"Link to {{addpath:skills/project-patterns/}} for implementation details","note":"CLAUDE.md = WHERE things are, project-patterns skill = HOW to implement"}
+{"location":"{{addpath:skills/project-patterns/}}","naming":"lowercase area type: backend.md, frontend.md, database.md, cli.md, worker.md"}
 {"search":"bash .codeadd/scripts/pattern-search.sh <area> [topic] — returns ## headers + line ranges for JIT loading"}
 {"doNOT":["include logging patterns in CLAUDE.md","include validation patterns in CLAUDE.md","include state management details in CLAUDE.md","include styling patterns in CLAUDE.md","duplicate info already in project-patterns skill"]}
-{"reference":"List areas from pattern-search.sh --list or ls .codeadd/skills/project-patterns/*.md"}
+{"reference":"List areas from pattern-search.sh --list or ls {{addpath:skills/project-patterns/*.md}}"}
 
 ### Cleanup
 {"action":"rm .claude/temp/architecture-discovery.md","verify":"ls -la .claude/temp/ || echo cleanup complete"}
@@ -173,7 +173,7 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 - Document what EXISTS
 - Cleanup temp document at end
 - Skip sections that don't apply
-- **Reference .codeadd/skills/project-patterns/ for implementation patterns (if exist)**
+- **Reference {{addpath:skills/project-patterns/}} for implementation patterns (if exist)**
 
 **DO NOT:**
 - Create technical-spec.md or separate files
@@ -184,11 +184,11 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 - Ignore discovery document
 - Make redundant searches
 - Read many files (only necessary for patterns)
-- **Include implementation details in CLAUDE.md (logging, validation, state, styling) - these go in .codeadd/skills/project-patterns/**
+- **Include implementation details in CLAUDE.md (logging, validation, state, styling) - these go in {{addpath:skills/project-patterns/**}}
 
 **SEPARATION OF CONCERNS:**
 - **CLAUDE.md** = WHERE things are (structure, paths, layers, packages)
-- **.codeadd/skills/project-patterns/** = HOW to implement (patterns, conventions, examples)
+- **{{addpath:skills/project-patterns/**}} = HOW to implement (patterns, conventions, examples)
 
 ---
 
@@ -201,6 +201,6 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 5. **Update CLAUDE.md → ## Architecture Contract** (hierarquia, packages, imports, placement)
 6. Update CLAUDE.md → ## Technical Spec (token-efficient, STRUCTURE only)
 7. Do NOT generate `.codeadd/project/stack-context.md` — this file has been removed entirely
-8. **Check if .codeadd/skills/project-patterns/ exists** → add Implementation Patterns Reference section
+8. **Check if {{addpath:skills/project-patterns/}} exists** → add Implementation Patterns Reference section
 9. Cleanup: `rm .claude/temp/architecture-discovery.md`
 10. Report discoveries + suggest `/add.xray` if project-patterns skill doesn't exist
