@@ -77,13 +77,13 @@ jobs:
         if: steps.cli_changes.outputs.changed == 'true'
         run: npm ci
 
-      - name: Run tests
-        if: steps.cli_changes.outputs.changed == 'true'
-        run: npm test
-
       - name: Build framework
         working-directory: .
         run: node scripts/build.js
+
+      - name: Run tests
+        if: steps.cli_changes.outputs.changed == 'true'
+        run: npm test
 
       - name: Package framework zip
         working-directory: .
