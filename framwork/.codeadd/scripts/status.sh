@@ -333,7 +333,7 @@ if [ -d "$FEATURES_DIR" ]; then
                     SUMMARY=$(awk '
                         /^## Resumo/ || /^## Summary/ { found=1; next }
                         found && /^[^#>\[]/ && NF > 0 { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit }
-                    ' "$cl" 2>/dev/null | head -c 120)
+                    ' "$cl" 2>/dev/null | head -c 120 || true)
 
                     # Fallback: get title from first # line (without date/branch metadata)
                     if [ -z "$SUMMARY" ]; then
