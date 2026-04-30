@@ -19,6 +19,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate and cleanup tag if exists
+        working-directory: .
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "Processing tag: $TAG"
+          # Check if tag already exists locally
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists locally, this is expected for workflow trigger"
+          fi
+          # Verify tag matches semantic versioning
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+            echo "❌ Invalid tag format: $TAG"
+            echo "Expected format: vX.Y.Z or vX.Y.Z-beta.N"
+            exit 1
+          fi
+          echo "✓ Tag format valid: $TAG"
+
       - name: Determine release type
         id: release_type
         run: |

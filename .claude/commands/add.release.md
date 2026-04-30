@@ -241,32 +241,42 @@ After approval, save the release notes content to a temp file. This content will
 
 ## STEP 8: Create Tag (+ Release if no pipeline)
 
-### 8.1 Create and push annotated tag with release notes
+### 8.1 Use automated script to create and push annotated tag
 
-**Stable:** from production branch. **Beta:** from main branch.
+Use `./scripts/create-release-tag.sh` to automate tag creation. This script:
+- Reads version from `cli/package.json`
+- Validates tag format (vX.Y.Z or vX.Y.Z-beta.N)
+- Checks if tag already exists (locally and remotely)
+- **Deletes existing tag if found** (both local and remote)
+- Creates fresh annotated tag with release notes from `/tmp/release-notes-[VERSION].md`
+- Pushes tag to origin
 
+**Before running the script:**
+1. Ensure version is updated in `cli/package.json` (STEP 5 handles this)
+2. Save release notes to `/tmp/release-notes-v[VERSION].md` with the approved changelog
+
+**Run the script:**
 ```bash
-# Stable:
-git checkout production
-git tag -a [NEXT_VERSION] -F [TEMP_NOTES_FILE]
-git push origin [NEXT_VERSION]
-git checkout main
-
-# Beta:
-git tag -a [NEXT_VERSION] -F [TEMP_NOTES_FILE]
-git push origin [NEXT_VERSION]
+./scripts/create-release-tag.sh
 ```
 
-This embeds the release notes in the tag annotation, making them available to the CI pipeline.
+This handles all tag creation logic automatically, including cleanup of stale tags.
 
-### 8.2 Conditional release creation
+### 8.2 Pipeline-driven release creation
 
 **IF `PIPELINE_HANDLES_RELEASE = true`:**
 
-DO NOT run `gh release create`. Inform user the tag was pushed with embedded release notes and the pipeline will create the release using those notes. For beta tags, the pipeline automatically marks the GitHub Release as prerelease and publishes to npm with `--tag beta`. Show what the pipeline will do (from STEP 1).
+The tag push triggers the CI workflow automatically. The pipeline will:
+- Create GitHub Release with embedded release notes from the annotated tag
+- Build framework and package ZIP archive  
+- Publish to npm (stable as `latest`, beta as `beta`)
+- Auto-mark beta releases as prerelease on GitHub
+
+Monitor progress at: `https://github.com/brabos-ai/code-addiction/actions`
 
 **IF `PIPELINE_HANDLES_RELEASE = false`:**
 
+Manually create release:
 ```bash
 # Stable:
 gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_NOTES_FILE]
@@ -274,8 +284,6 @@ gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --
 # Beta:
 gh release create [NEXT_VERSION] --target main --title "[NEXT_VERSION]" --prerelease --notes-file [TEMP_NOTES_FILE]
 ```
-
-Show release URL.
 
 ---
 
