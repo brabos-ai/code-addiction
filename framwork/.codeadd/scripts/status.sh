@@ -331,13 +331,13 @@ if [ -d "$FEATURES_DIR" ]; then
                     # Extract summary: content after "## Resumo" or "## Summary"
                     # Skip blockquotes (>) and empty lines
                     SUMMARY=$(awk '
-                        /^## Resumo/ || /^## Summary/ { found=1; next }
+                        /^## Resumo/ || /^## Summary/ || /^## TL;DR/ { found=1; next }
                         found && /^[^#>\[]/ && NF > 0 { gsub(/^[[:space:]]+|[[:space:]]+$/, ""); print; exit }
                     ' "$cl" 2>/dev/null | head -c 120 || true)
 
                     # Fallback: get title from first # line (without date/branch metadata)
                     if [ -z "$SUMMARY" ]; then
-                        SUMMARY=$(grep -m1 "^# " "$cl" 2>/dev/null | sed 's/^# //' | head -c 80)
+                        SUMMARY=$(grep -m1 "^# " "$cl" 2>/dev/null | sed 's/^# //' | head -c 80 || true)
                     fi
 
                     if [ -n "$SUMMARY" ]; then echo "  $FEAT|$SUMMARY"; fi
