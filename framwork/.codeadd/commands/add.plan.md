@@ -576,61 +576,21 @@ echo "" >> plan.md
 
 ---
 
-### 10.4 Dispatch Architect Subagent -- Generate tasks.md (PRD0032)
+### 10.4 Dispatch Architect Subagent -- Generate tasks.md
 
-**AFTER plan.md is consolidated and gaps filled, dispatch the Architect Subagent to generate `tasks.md`.**
+**AFTER plan.md is consolidated and gaps filled, dispatch the Architect Subagent to generate `tasks.md` as a 5-section progress checklist.**
+
+**MANDATORY:** Load `{{skill:add-tasks-checklist/SKILL.md}}` BEFORE dispatching. The skill defines the canonical schema, tick rules, failure-marker semantics, and the architect prompt template.
 
 **DISPATCH AGENT: @architecture-agent**
-- **Output:** Write `${PLAN_DIR}/tasks.md` (where `PLAN_DIR` = feature dir or subfeature dir if epic)
-- **Prompt:**
-  ```
-  You are the ARCHITECT for feature ${FEATURE_ID} (subfeature ${EPIC_CURRENT_SF} if epic).
+- **Output:** Write `${PLAN_DIR}/tasks.md` (where `PLAN_DIR` = feature dir or subfeature dir if epic).
+- **Prompt:** Use the architect prompt template from `add-tasks-checklist` ("Architect Subagent Prompt Template" section), substituting `${FEATURE_ID}`, `${EPIC_CURRENT_SF}`, and `${PLAN_DIR}`.
 
-  ## CONTEXT
-  Read these files in order:
-  1. ${PLAN_DIR}/plan.md  <- PRIMARY: technical contracts
-  2. ${PLAN_DIR}/about.md <- Scope, acceptance criteria
-  3. docs/features/${FEATURE_ID}/discovery.md <- Constraints
-
-  4. ${PLAN_DIR}/plan-test-spec.md <- Test specifications (if exists)
-
-  ## TASK
-  Generate `${PLAN_DIR}/tasks.md` with atomic subtasks in this EXACT format.
-  **TDD ORDER:** Test tasks (service=test) MUST come BEFORE implementation tasks for each area.
-
-  ```markdown
-  # Tasks: [feature or SF name]
-
-  ## Metadata
-
-  | Campo | Valor |
-  |-------|-------|
-  | Complexity | SIMPLE / STANDARD / COMPLEX |
-  | Total tasks | [N] |
-  | Services | database, backend, frontend, test |
-
-  ## Tasks
-
-  | ID | Description | Service | Files | Deps | Verify |
-  |----|-------------|---------|-------|------|--------|
-  | 1.1 | Contract test: [RF01 scenario] | test | `path/file.spec.ts` | - | test file compiles |
-  | 1.2 | Contract test: [RN01 scenario] | test | `path/file.spec.ts` | - | test file compiles |
-  | 2.1 | [max 10 words] | database | `path/file.ts` | - | `npm run migrate` |
-  | 3.1 | [max 10 words] | backend | `path/a.ts`, `path/b.ts` | 2.1 | tests pass |
-  | 4.1 | [max 10 words] | frontend | `path/c.tsx` | 3.1 | tests pass |
-  ```
-
-  ## RULES
-  - 1 service per task (database | backend | frontend | test | infra)
-  - Maximum 3 files per task -- if more, split
-  - Deps: comma-separated task IDs, or `-` if none
-  - Verify: MANDATORY -- command, curl, or browser check
-  - Order: test (contract tests) -> database -> backend -> frontend
-  - Complexity scoring:
-    - SIMPLE: <=5 tasks
-    - STANDARD: 6-12 tasks
-    - COMPLEX: 13+ tasks (warn: should have been split as epic)
-  ```
+**RULES:**
+- `tasks.md` MUST follow the 5-section schema: `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (after `## Metadata`). Section headings are exact-match — validators parse by text.
+- `plan.md` is FROZEN after this step. DO NOT generate a `## Spec Checklist` section in `plan.md`. All progress proof lives in `tasks.md`.
+- Every RF/RN in `## Requirements Coverage` MUST be referenced by ≥1 item in `## Acceptance Checklist`.
+- All checkboxes start as `[ ]`. Do NOT pre-tick anything.
 
 **NEVER finalize plan without tasks.md.**
 

@@ -217,18 +217,19 @@ If feature is very simple (single component, < 5 files, no new database entities
 ### Dispatch Planning Agent
 
 **DISPATCH AGENT: @architecture-agent**
-- **Output:** plan.md with technical plan and Spec Checklist
+- **Output:** plan.md (frozen technical contracts in prose) + tasks.md (5-section progress checklist per `add-tasks-checklist`)
 - **Prompt:**
 
 ```
 ## ROLE
 You are the PLANNING agent for feature ${FEATURE_ID}.
 
-## MANDATORY: Load Command Reference (FIRST STEP)
+## MANDATORY: Load Command + Skill References (FIRST STEP)
 1. Read `{{cmd:add.plan}}` — PRIMARY reference.
    Execute as if `--yolo` (skip [STOP] points, no confirmations).
-2. Run: `bash .codeadd/scripts/status.sh`
-3. Read feature docs as specified in add.plan.md
+2. Read `{{skill:add-tasks-checklist/SKILL.md}}` — canonical tasks.md schema and architect prompt template.
+3. Run: `bash .codeadd/scripts/status.sh`
+4. Read feature docs as specified in add.plan.md
 
 ## DECISION LOG (from coordinator)
 ${DECISION_LOG}
@@ -238,14 +239,16 @@ ${COORDINATOR_NOTES}
 
 ## TASK
 Create complete technical plan following add.plan.md patterns.
-MUST generate Spec Checklist (PRD0034) at end of plan.md.
+plan.md is FROZEN after this step — DO NOT generate `## Spec Checklist` inside plan.md.
+All progress proof lives in tasks.md (5 sections per add-tasks-checklist skill).
 
 ## RULES
 - NO questions — use KISS/YAGNI for decisions
-- NO commits — just create plan.md
+- NO commits — just create plan.md and tasks.md
 - 100% autonomous — never stop for confirmation
+- tasks.md MUST follow add-tasks-checklist schema exactly (5 sections, exact headings, RF/RN coverage)
 
-## REPORT: Plan file location, key decisions, component counts per area, scope confirmed, gaps filled.
+## REPORT: Plan file location, tasks.md location, key decisions, component counts per area, scope confirmed, gaps filled.
 ```
 
 ### Process Planning Output
@@ -400,11 +403,14 @@ Update routes if needed. Search codebase for similar files as reference.
 ```
 ## ROLE
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
-Validate implemented code against skill checklist and auto-correct violations.
+Validate implemented code, audit spec compliance against plan.md prose, and emit a STRUCTURED TICK REPORT
+for the coordinator to merge into tasks.md. DO NOT WRITE tasks.md yourself — the coordinator owns writes.
 
 ## BOOTSTRAP
 1. Run: bash .codeadd/scripts/status.sh
 2. Read skill: add-${AREA}-development (contains Validation Checklist)
+3. Read skill: add-tasks-checklist (tick rules, [!] semantics, "non-trivial change", report shape)
+4. Read plan.md (prose contracts) and tasks.md (canonical checklist)
 
 ## IMPLEMENTED FILES (from ${AREA} Agent)
 ${FILES_CREATED}
@@ -413,30 +419,36 @@ ${FILES_MODIFIED}
 ## DECISION LOG
 ${DECISION_LOG}
 
-## TASK
+## TASK A — Skill Checklist Validation
 1. Extract "## Validation Checklist" from skill file
 2. Read ALL implemented files
 3. Validate each checklist item — if violated: fix immediately
 4. Verify build after fixes
 
-## SPEC COMPLIANCE CHECK (light — PRD0034)
-After skill checklist, for CURRENT AREA ONLY:
-1. Read `## Spec Checklist` from plan.md (skip if absent)
-2. Filter items for current area
-3. For each: locate in code, compare expected vs implemented
-4. Status: MATCH | PARTIAL (auto-fix) | MISSING (document as INCOMPLETE)
+## TASK B — Spec Compliance + Tick Report (CURRENT AREA ONLY)
+
+Follow the **Tick Application Procedure** in `add-tasks-checklist`. In `add.autopilot`, the validator MUST emit a JSON report (per "Validator Report Shape" in the skill) — DO NOT write `tasks.md`. The coordinator merges all reports and writes once.
 
 ## RULES
 - NO questions — fix violations automatically
 - Checklist violations = MUST FIX
 - Build MUST pass after fixes
+- DO NOT EDIT tasks.md — emit JSON report; coordinator merges and writes
 
-## REPORT: CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS, SPEC_COMPLIANCE, SPEC_STATUS
+## REPORT
+Emit the JSON shape defined in `add-tasks-checklist` → "Validator Report Shape". Include
+`area`, `ticks` (tdd/execution/acceptance with `id`/`key`, `status`, optional `reason`),
+`files_inspected`, `checklist_results`, `violations_found`, `violations_fixed`,
+`build_status`, `spec_status`.
 ```
 
-### Process Validator Output
+### Process Validator Output (Coordinator-Only Writes)
 
-After each validator returns, update Decision Log with violations found/fixed, files modified, build status.
+The coordinator (NOT validators) is the sole writer of `tasks.md`. After each batch of per-area validators returns, run the **Coordinator Merge Procedure** from `add-tasks-checklist`. Then update the Decision Log with violations found/fixed, files modified, build status, and ticks applied/failed.
+
+### Quality Gates Tick (END OF BUILD)
+
+After ALL area validators return AND build verification passes, coordinator runs the **Quality Gates Procedure** from `add-tasks-checklist` (final §5 ticks + final §1 recompute, single write).
 
 ### Build Verification After Development + Validation
 
@@ -531,12 +543,12 @@ ${COORDINATOR_NOTES}
 
 ## AUTOPILOT-SPECIFIC ADDITIONS (extend add.review.md)
 
-### Spec Compliance Audit (PRD0034 — BEFORE technical review)
-1. Read `## Spec Checklist` from plan.md (all areas)
-   If absent: extract contracts from plan.md prose (routes, services, DTOs)
-2. For EACH item: locate implementation with file:line, validate existence AND behavior
-3. Cross-reference: items cover ALL RF/RN from about.md?
-4. Status per item: COMPLIANT | DIVERGENT | MISSING
+### Spec Compliance Audit (BEFORE technical review)
+1. Read contracts from plan.md prose (routes, services, DTOs, queues, guards) — all areas
+2. Read tick state from tasks.md → ## Acceptance Checklist (each item ends with (RFNN/RNNN); §1 ## Requirements Coverage shows derived RF/RN coverage)
+3. For EACH ## Acceptance Checklist item: locate implementation with file:line, validate existence AND behavior; cross-check tick `[x]` vs reality
+4. Cross-reference: every RF/RN in tasks.md §1 has ≥1 §4 item? Every RF/RN from about.md appears in §1?
+5. Status per item: COMPLIANT (tick [x] confirmed) | DIVERGENT (tick [x] but differs) | FAILED (tick [!]) | PENDING (tick [ ]) | STALE TICK (tick [x] but code missing)
 
 ### Generate Quality Gate Report (PRD0034)
 Create docs/features/${FEATURE_ID}/review.md with:

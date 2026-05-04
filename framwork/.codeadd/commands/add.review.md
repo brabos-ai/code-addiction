@@ -185,53 +185,60 @@ From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
 
 ---
 
-## STEP 3: Spec Compliance Audit (PRD0034 — BEFORE technical review)
+## STEP 3: Spec Compliance Audit (BEFORE technical review)
 
 **Deep audit of plan.md spec vs implemented code. Catches gaps the code review does not.**
 
-### 3.1 Load Spec Checklist
+### 3.1 Load Contracts (plan.md prose) and Tick State (tasks.md → ## Acceptance Checklist)
 
 ```
-READ docs/features/${FEATURE_ID}/plan.md → section `## Spec Checklist`
-
-IF `## Spec Checklist` EXISTS:
-  → Use checklist items as audit source (deterministic)
-
-IF `## Spec Checklist` NOT FOUND:
-  → FALLBACK: Extract contracts from plan.md prose:
+READ docs/features/${FEATURE_ID}/plan.md
+  → Extract contracts from prose:
     - Routes: POST/GET/PUT/DELETE + path patterns
     - Services: Service/Handler/Adapter class definitions
     - DTOs: Dto/Request/Response class definitions
     - Guards: Guard class definitions
     - Queues: queue/processor/worker references
-  → Note: "Spec Checklist absent — audit based on prose extraction (less precise)"
+
+READ docs/features/${FEATURE_ID}/tasks.md → section `## Acceptance Checklist`
+  → Each item ends with `(RFNN/RNNN)` reference and carries [ ]/[x]/[!] tick state
+  → Use as deterministic audit source — pairs each contract with its RF/RN coverage and tick state
+READ docs/features/${FEATURE_ID}/tasks.md → section `## Requirements Coverage`
+  → Derived RF/RN tick state — used in §3.3 cross-reference
+
+IF tasks.md OR `## Acceptance Checklist` ABSENT:
+  ⛔ DO NOT proceed with audit
+  ✅ DO: Stop and report "Feature missing tasks.md/##Acceptance Checklist — must replan via /add.plan"
 ```
 
 ### 3.2 Execute Audit (ALL areas)
 
-For EACH item in the checklist (or extracted contracts):
+For EACH item in `## Acceptance Checklist`:
 
 ```
-a. LOCATE implementation with file:line
+a. LOCATE implementation with file:line (cross-reference contract from plan.md prose)
 b. VALIDATE not just existence but BEHAVIOR:
    - Route: exists AND accepts correct params (path variables, query, body)?
    - Service: generic/adapter-based as spec OR hardcoded to specific provider?
    - DTO: has ALL specified fields with correct types?
    - Guard: applied at correct scope?
    - Queue: processes events as described?
-c. COMPARE with about.md: does the item satisfy the RF/RN that motivated it?
-d. STATUS per item:
-   COMPLIANT   — matches spec in name, type, and behavior
-   DIVERGENT   — exists but differs from spec (describe exact gap)
-   MISSING     — not found in codebase
+c. COMPARE with about.md: does the item satisfy the RF/RN referenced in `(RFNN/RNNN)`?
+d. STATUS per item (cross-check tick state vs reality):
+   COMPLIANT     — tick `[x]` AND matches plan.md prose in name, type, behavior
+   DIVERGENT     — tick `[x]` but differs from spec (describe exact gap; possibly stale tick)
+   FAILED        — tick `[!]` (validator already flagged); inspect REASON, confirm or escalate
+   PENDING       — tick `[ ]` (not yet implemented)
+   STALE TICK    — tick `[x]` but code missing — re-open tick, block delivery
 ```
 
 ### 3.3 Cross-Reference
 
 ```
-Do ALL RF/RN from about.md have at least one Spec Checklist item covering them?
+Do ALL RF/RN from about.md appear in tasks.md → ## Requirements Coverage?
+Do ALL RF/RN have at least one ## Acceptance Checklist item referencing them via `(RFNN/RNNN)`?
   → COVERED:   RF/RN has corresponding checklist item(s)
-  → UNCOVERED: RF/RN has no checklist item — potential gap
+  → UNCOVERED: RF/RN has no checklist item — architect failed at /add.plan; requires replan
 ```
 
 ### 3.4 Spec Audit Output

@@ -43,7 +43,8 @@ FEATURE_ID=$(bash .codeadd/scripts/status.sh)
 
 # Carregar especificação
 cat docs/features/${FEATURE_ID}/about.md
-cat docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Para Spec Checklist (PRD0034)
+cat docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Contratos (prose)
+cat docs/features/${FEATURE_ID}/tasks.md 2>/dev/null # Tick state (## Acceptance Checklist)
 ```
 
 **Extrair do about.md:**
@@ -52,16 +53,16 @@ cat docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Para Spec Checklist (PRD0
 - **Critérios de Aceite:** Verificações testáveis
 - **Escopo Incluído:** O que FAZ parte da entrega
 
-**Extrair do plan.md (Spec Checklist — PRD0034):**
+**Extrair contratos do plan.md (prose) + tick state do tasks.md → ## Acceptance Checklist:**
 
-SE `## Spec Checklist` existe no plan.md:
-- Ler todos os items verificáveis (routes, services, DTOs, guards, migrations)
-- Mapear cada item para o RF/RN correspondente do about.md
-- Usar como fonte adicional de verificação — mais granular que about.md
+Do `plan.md` (prose): routes, services, DTOs, guards, migrations, queues — as defined in the plan.
+Do `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build`/`add.autopilot` validators.
 
-SE `## Spec Checklist` NÃO existe:
-- Continuar somente com about.md
-- Avisar: "plan.md sem Spec Checklist — validação baseada apenas em about.md (menos preciso)"
+Mapear cada item de `## Acceptance Checklist` para o RF/RN correspondente do `about.md`. Use o `## Requirements Coverage` do `tasks.md` como derived index — todos os RF/RN devem ter cobertura por ≥1 item do `## Acceptance Checklist`.
+
+SE `tasks.md` ou `## Acceptance Checklist` NÃO existem (legacy feature, pré-PRD0014):
+- BLOQUEAR validação. A feature não foi planejada com o schema atual; não há fallback automático.
+- Avisar: "tasks.md ausente ou sem ## Acceptance Checklist — feature precisa ser replanejada via /add.plan."
 
 ### Phase 2: Construir Checklist de Validação
 
@@ -108,34 +109,35 @@ SE `## Spec Checklist` NÃO existe:
 - "Que fluxos dependentes são necessários?"
 - "Que integrações são necessárias?"
 
-### Phase 3.5: Validar Spec Checklist (se plan.md tem `## Spec Checklist`)
+### Phase 3.5: Validar Acceptance Checklist (tasks.md → ## Acceptance Checklist)
 
-**Para CADA item do Spec Checklist:**
+**Para CADA item do ## Acceptance Checklist:**
 
 ```markdown
-### Spec Checklist Validation
+### Acceptance Checklist Validation
 
-| Item | Tipo | Esperado | Encontrado | Status |
-|------|------|----------|------------|--------|
-| Route: POST /billing/webhook/:provider | Route | WebhookController.handleWebhook() | POST /webhook (fixed) | ⚠️ DIVERGENT |
-| Service: WebhookNormalizerService | Service | generic, provider-agnostic | StripeWebhookService | ❌ MISSING |
-| DTO: WebhookEventDto | DTO | {provider, payload, signature} | WebhookDto {payload} | ⚠️ DIVERGENT |
+| Item (com ref RF/RN) | Tick state | Esperado (do plan.md) | Encontrado | Status |
+|----------------------|------------|------------------------|------------|--------|
+| Route POST /billing/webhook/:provider returns 200 (RF02) | [x] | WebhookController.handleWebhook() | POST /webhook (fixed) | ⚠️ DIVERGENT |
+| Service WebhookNormalizerService is provider-agnostic (RF02) | [!] | generic, provider-agnostic | StripeWebhookService | ❌ MISSING |
+| DTO WebhookEventDto exposes {provider, payload, signature} (RF02) | [ ] | {provider, payload, signature} | WebhookDto {payload} | ⚠️ DIVERGENT |
 ```
 
-**Status por item:**
-- ✅ **COMPLIANT:** Implementado conforme spec (nome, tipo, comportamento)
-- ⚠️ **DIVERGENT:** Existe mas difere do spec (funciona mas não conforme planejado)
-- ❌ **MISSING:** Não encontrado — BLOQUEIA se RF-linked
+**Status por item (cross-check tick state vs reality):**
+- ✅ **COMPLIANT:** tick `[x]` AND implementação confere com plan.md prose
+- ⚠️ **DIVERGENT:** tick `[x]` mas implementação difere do plan.md (validador errou OR drift pós-tick)
+- ❌ **MISSING/FAILED:** tick `[!]` (validador já marcou falha) OU tick `[ ]` ainda pendente
+- 🚨 **STALE TICK:** tick `[x]` mas código não existe — bloqueia entrega; reabre tick
 
-**Cross-reference obrigatório:** Todos os RF/RN do about.md têm item correspondente no Spec Checklist?
+**Cross-reference obrigatório:** Todos os RF/RN do `## Requirements Coverage` (tasks.md §1) têm item correspondente no `## Acceptance Checklist` (tasks.md §4)?
 - SE sim → validação é determinística (checklist-driven)
-- SE gap → documentar quais RF/RN ficaram sem cobertura no checklist
+- SE gap → documentar quais RF/RN ficaram sem cobertura — falha do architect na geração de tasks.md, requer regenerar via /add.plan
 
 ---
 
 ### Phase 4: Validar Implementação
 
-**Para CADA item do checklist (about.md + Spec Checklist):**
+**Para CADA item do checklist (about.md + tasks.md → ## Acceptance Checklist):**
 
 1. **Localizar código que implementa**
    ```bash

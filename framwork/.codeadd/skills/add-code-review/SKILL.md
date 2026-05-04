@@ -38,16 +38,16 @@ O agente de code-review DEVE criar todos para cada categoria de validação e pa
 
 ## Categorias de Validação
 
-### 0. Spec Compliance (CRÍTICO — PRD0034)
+### 0. Spec Compliance (CRÍTICO)
 
 **Spec vs implementation gap = the root cause of features that "pass review" but diverge from what was planned.**
 
-{"source":"docs/features/${FEATURE_ID}/plan.md → ## Spec Checklist"}
+{"sources":{"contracts":"docs/features/${FEATURE_ID}/plan.md (prose: routes, services, DTOs, queues)","tick_state":"docs/features/${FEATURE_ID}/tasks.md → ## Acceptance Checklist"}}
 
 {"validation":[
-  "READ `## Spec Checklist` from plan.md (all areas)",
-  "IF no Spec Checklist: extract contracts from plan.md prose (routes, services, DTOs, queues)",
-  "For EACH item:",
+  "READ contracts from plan.md prose (routes, services, DTOs, queues)",
+  "READ tick state from tasks.md → ## Acceptance Checklist (each item ends with (RFNN/RNNN) reference)",
+  "For EACH contract item:",
   "  1. Locate implementation with file:line",
   "  2. Validate EXISTENCE and BEHAVIOR:",
   "     - Route exists AND accepts correct params?",
@@ -235,7 +235,7 @@ O agente de code-review DEVE criar todos para cada categoria de validação e pa
 ```
 Exemplo de todos a criar:
 - [ ] Carregar contexto e identificar arquivos alterados
-- [ ] Validar Spec Compliance: ler Spec Checklist do plan.md
+- [ ] Validar Spec Compliance: ler contratos do plan.md (prose) e tick state do tasks.md → ## Acceptance Checklist
 - [ ] Validar Spec Compliance: comparar routes/services/DTOs vs spec
 - [ ] Validar Architecture Contract: imports entre packages
 - [ ] Validar Architecture Contract: placement de artefatos
@@ -261,9 +261,9 @@ Para CADA arquivo alterado, validar na ordem:
 
 1. **Spec Compliance** (PRIMEIRO — gap spec-vs-code)
    - Marcar todo como `in_progress`
-   - READ `## Spec Checklist` from plan.md (all areas)
-   - IF no Spec Checklist: grep plan.md for routes, services, DTOs, queues (prose extraction)
-   - For each item: locate with `file:line`, validate behavior (not just existence)
+   - READ contracts from plan.md prose (routes, services, DTOs, queues)
+   - READ tick state from tasks.md → ## Acceptance Checklist (each item ends with (RFNN/RNNN); cross-reference §1 Requirements Coverage)
+   - For each contract: locate with `file:line`, validate behavior (not just existence)
    - DIVERGENT items: describe exact gap → auto-fix if safe, else report
    - MISSING items: report as BLOCKED (cannot auto-fix product scope)
    - Marcar todo como `completed`

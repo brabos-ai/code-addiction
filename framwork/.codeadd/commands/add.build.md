@@ -287,18 +287,22 @@ Read ALL project pattern files listed in PROJECT_DOCS from status.sh output.
 
 ## STEP 9: Implementation (Per Mode)
 
-### TASKS MODE (PRD0032 — when tasks.md exists)
+### TASKS MODE (when tasks.md exists)
 
 **Activated when:** `HAS_TASKS=true` and `TASKS_FILE` is set.
+
+**MANDATORY:** Load `{{skill:add-tasks-checklist/SKILL.md}}` BEFORE entering this mode. The skill defines the 5-section schema, tick rules, `[!]` semantics, "non-trivial change" rule, the Resume/Rerun procedure, the tick-application procedure, and the validator report shape.
+
+**FIRST in TASKS MODE:** Run the **Resume vs Rerun Procedure** from `add-tasks-checklist`. This sets `RESUME_MODE = resume | rerun_all`.
 
 **Flow:**
 
 ```
-1. READ tasks.md from TASKS_FILE path
-2. GROUP tasks by service (database, backend, frontend)
-3. VALIDATE deps: build execution graph (tasks with no deps first)
-4. EXECUTION ORDER: database → backend → frontend
-5. AFTER all task groups complete: proceed to STEP 10 (validation)
+1. FILTER §3 Execution tasks per RESUME_MODE (rules defined in skill).
+2. GROUP filtered tasks by service (database, backend, frontend, test).
+3. VALIDATE deps: build execution graph (tasks with no deps first).
+4. EXECUTION ORDER: test → database → backend → frontend.
+5. AFTER all task groups complete: proceed to STEP 10 (validation).
 ```
 
 <!-- feature:tdd:tasks-flow -->
@@ -470,24 +474,29 @@ Fix ALL build errors. Do not stop until build passes 100%.
 **IF VALIDATOR NOT EXECUTED:** DO NOT report area completion or advance to next area. Execute Validator IMMEDIATELY.
 **IF SPEC_STATUS = INCOMPLETE:** DO NOT report area completion. Implement missing spec items OR escalate to user.
 
+**MANDATORY:** Validator MUST load `{{skill:add-tasks-checklist/SKILL.md}}` to apply tick rules, "non-trivial change" definition, and `[!]` failure-marker semantics.
+
 ### 10.1 Validator Subagent Prompt Template
 
 **DISPATCH AGENT: @reviewer-agent**
 
 ```
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
-Validate implemented code against skill checklist and auto-correct violations.
+Validate implemented code against skill checklist, audit spec compliance against plan.md prose,
+and tick tasks.md (§2 TDD, §3 Execution, §4 Acceptance Checklist) for items covered by your area.
 
 ## Self-Bootstrap (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
 2. Read skill: add-${AREA}-development
-3. Read ALL files in FILES_CREATED and FILES_MODIFIED below
+3. Read skill: add-tasks-checklist (tick rules, [!] semantics, "non-trivial change")
+4. Read ALL files in FILES_CREATED and FILES_MODIFIED below
+5. Read plan.md (prose contracts) and tasks.md (canonical checklist)
 
 ## IMPLEMENTED FILES
 ${FILES_CREATED}
 ${FILES_MODIFIED}
 
-## TASK
+## TASK A — Skill Checklist Validation
 1. Extract "## Validation Checklist" from skill file
 2. Read EVERY implemented file
 3. Validate each checklist item → if violated, prepare fix
@@ -496,21 +505,26 @@ ${FILES_MODIFIED}
 
 RULES: No questions. Checklist violations = MUST FIX. Build MUST pass.
 
-## SPEC COMPLIANCE CHECK (PRD0034)
-After skill checklist validation, for CURRENT AREA ONLY:
-1. READ `## Spec Checklist` from plan.md (if no section: SKIP)
-2. FILTER items for current area
-3. For each: locate in code, compare expected vs implemented → MATCH | PARTIAL | MISSING
-4. PARTIAL: AUTO-FIX or document divergence | MISSING: mark INCOMPLETE
-5. UPDATE plan.md Spec Checklist: mark [x] on confirmed items
-IF SPEC_STATUS = INCOMPLETE: DO NOT mark area as complete.
+## TASK B — Spec Compliance + tasks.md Tick (CURRENT AREA ONLY)
 
-## REPORT: CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS, SPEC_COMPLIANCE (X/Y), SPEC_STATUS, SPEC_MISSING
+Follow the **Tick Application Procedure** defined in the `add-tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules"). In `add.build`, the validator WRITES `tasks.md` directly — do NOT emit a JSON report (that path is for autopilot).
+
+After applying ticks, RECOMPUTE §1 Requirements Coverage per the skill's derived-state rule.
+
+IF any §3 or §4 item for this area is `[!]` or `[ ]`: SET SPEC_STATUS = INCOMPLETE.
+
+## REPORT
+CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS,
+TICKS_APPLIED (count of [x] set), TICKS_FAILED (count of [!] set with reasons), SPEC_STATUS.
 ```
 
 ### 10.2 Validation Dispatch Flow
 
 Dispatch validator for each area immediately after its implementation subagent returns. After ALL validators complete, run build verification. If build fails, dispatch fix subagent with validator outputs + build errors.
+
+### 10.3 Quality Gates Tick (END OF BUILD)
+
+After ALL area validators return AND build verification passes, run the **Quality Gates Procedure** from `add-tasks-checklist`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
 
 **CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.
 
