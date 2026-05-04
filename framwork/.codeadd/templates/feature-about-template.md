@@ -8,26 +8,26 @@
 
 ## Objective
 
-[O que faz e por que existe]
+[What it does and why it exists]
 
 ## Business Context
 
-- **Why:** [Por que é necessário]
-- **Problem:** [Problema atual]
-- **Stakeholders:** [Quem é impactado]
+- **Why:** [Why it is necessary]
+- **Problem:** [Current problem]
+- **Stakeholders:** [Who is impacted]
 
 ## Scope
 
 ### Included
-- [item concreto]
+- [concrete item]
 
 ### Not Included
-- [item explicitamente fora]
+- [explicitly excluded item]
 
 ## Business Rules
 
 ### Validations
-- [regra de validação]
+- [validation rule]
 
 ### Flows
 
@@ -42,28 +42,28 @@
 
 ## Strategic Questionnaire
 
-[Preenchido durante discovery - escopo, regras, dados, edge cases, UI/UX]
+[Filled during discovery - scope, rules, data, edge cases, UI/UX]
 
 ## Decisions
 
 | Context | Decision | Rationale |
 |---------|----------|-----------|
-| [contexto] | [decisão] | [justificativa] |
+| [context] | [decision] | [rationale] |
 
 ## Edge Cases
 
 | Name | Description | Strategy |
 |------|-------------|----------|
-| [nome] | [descrição] | [como tratar] |
+| [name] | [description] | [how to handle] |
 
 ## Acceptance Criteria
 
-- [ ] [critério mensurável]
+- [ ] [measurable criterion]
 
 ## Spec (Token-Efficient)
 
-[Architecture, Data Model, API - formato compacto]
+[Architecture, Data Model, API - compact format]
 
 ## Next Steps
 
-[Orientação para Planning Agent]
+[Guidance for Planning Agent]

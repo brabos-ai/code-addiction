@@ -83,120 +83,120 @@ After configuring, restart Claude Code to load the MCP.
 ### Checks
 
 ```bash
-# Verificar .env.example existe
+# Check if .env.example exists
 ls .env.example 2>/dev/null
 
-# Verificar variáveis obrigatórias documentadas
+# Check documented required variables
 cat .env.example 2>/dev/null
 ```
 
-**Variáveis críticas para o projeto:**
+**Critical project variables:**
 - DATABASE_URL
 - SUPABASE_URL
 - SUPABASE_PUBLISHABLE_KEY
 - SUPABASE_SECRET_KEY
 - REDIS_URL
-- STRIPE_SECRET_KEY (se billing existir)
+- STRIPE_SECRET_KEY (if billing exists)
 
-### Documentar
+### Document
 
-- Variáveis documentadas em .env.example
-- Variáveis faltando na documentação
-- Variáveis sensíveis (não devem estar em código)
+- Variables documented in .env.example
+- Variables missing from documentation
+- Sensitive variables (must not be in code)
 
 ---
 
-## Análise 3: Dependências
+## Analysis 3: Dependencies
 
-### Verificações
+### Checks
 
 ```bash
-# Verificar package-lock.json existe (deps instaladas)
+# Check if package-lock.json exists (deps installed)
 ls package-lock.json 2>/dev/null
 
-# Verificar vulnerabilidades conhecidas
+# Check for known vulnerabilities
 npm audit --json 2>/dev/null | head -50
 ```
 
-### Documentar
+### Document
 
-- Dependências com vulnerabilidades críticas
-- Dependências desatualizadas (se npm outdated disponível)
+- Dependencies with critical vulnerabilities
+- Outdated dependencies (if npm outdated is available)
 
 ---
 
-## Análise 4: Docker/Ambiente Local
+## Analysis 4: Docker/Local Environment
 
-### Verificações
+### Checks
 
 ```bash
-# Verificar docker-compose
+# Check docker-compose
 ls docker-compose.yml infra/docker-compose.yml 2>/dev/null
 
-# Verificar serviços configurados
+# Check configured services
 cat docker-compose.yml infra/docker-compose.yml 2>/dev/null | grep "image:"
 ```
 
-### Documentar
+### Document
 
-- Serviços Docker configurados
-- Se ambiente local está documentado
+- Configured Docker services
+- Whether the local environment is documented
 
 ---
 
-## Template do Output
+## Output Template
 
-**Criar:** `docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
+**Create:** `docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 
 ```markdown
 # Infrastructure Report
 
-**Gerado em:** [data]
+**Generated on:** [date]
 **Score:** [X/10]
 **Status:** 🔴/🟠/🟡/🟢
 
 ---
 
-## Resumo
+## Summary
 
-[2-3 frases sobre estado da infraestrutura]
+[2-3 sentences about the state of the infrastructure]
 
 ---
 
-## Status das Ferramentas
+## Tools Status
 
-| Ferramenta | Status | Impacto |
-|------------|--------|---------|
-| MCP Supabase | ✅/❌ | Análise de RLS [disponível/indisponível] |
-| .env.example | ✅/❌ | Documentação de variáveis |
-| Docker Compose | ✅/❌ | Ambiente local |
-| npm audit | ✅/❌ | Análise de vulnerabilidades |
+| Tool | Status | Impact |
+|------|--------|--------|
+| MCP Supabase | ✅/❌ | RLS analysis [available/unavailable] |
+| .env.example | ✅/❌ | Variable documentation |
+| Docker Compose | ✅/❌ | Local environment |
+| npm audit | ✅/❌ | Vulnerability analysis |
 
 ---
 
 ## MCP Supabase
 
-### Status: [Configurado/Não Configurado]
+### Status: [Configured/Not Configured]
 
-[Se não configurado, incluir orientação completa de configuração aqui]
+[If not configured, include complete configuration guidance here]
 
-### Capacidades Disponíveis
+### Available Capabilities
 
-| Análise | Disponível |
-|---------|------------|
-| Listar tabelas | ✅/❌ |
-| Verificar RLS | ✅/❌ |
-| Executar queries | ✅/❌ |
-| Ver migrations | ✅/❌ |
+| Analysis | Available |
+|----------|-----------|
+| List tables | ✅/❌ |
+| Check RLS | ✅/❌ |
+| Execute queries | ✅/❌ |
+| View migrations | ✅/❌ |
 
 ---
 
-## Variáveis de Ambiente
+## Environment Variables
 
-### Documentadas em .env.example
+### Documented in .env.example
 
-| Variável | Categoria | Sensível |
-|----------|-----------|----------|
+| Variable | Category | Sensitive |
+|----------|----------|-----------|
 | DATABASE_URL | Database | ✅ |
 | SUPABASE_URL | Auth | ❌ |
 | SUPABASE_SECRET_KEY | Auth | ✅ |
@@ -204,22 +204,22 @@ cat docker-compose.yml infra/docker-compose.yml 2>/dev/null | grep "image:"
 
 ### Issues
 
-#### [INF-001] .env.example não existe
-**Impacto:** Desenvolvedores não sabem quais variáveis configurar
-**Correção:** Criar .env.example com todas as variáveis necessárias
+#### [INF-001] .env.example does not exist
+**Impact:** Developers do not know which variables to configure
+**Fix:** Create .env.example with all required variables
 
 ---
 
-## Dependências
+## Dependencies
 
-### Vulnerabilidades Encontradas
+### Vulnerabilities Found
 
-| Pacote | Severidade | Descrição |
-|--------|------------|-----------|
-| [pacote] | 🔴 Critical | [descrição] |
-| [pacote] | 🟠 High | [descrição] |
+| Package | Severity | Description |
+|---------|----------|-------------|
+| [package] | 🔴 Critical | [description] |
+| [package] | 🟠 High | [description] |
 
-### Recomendação
+### Recommendation
 
 ```bash
 npm audit fix
@@ -227,62 +227,62 @@ npm audit fix
 
 ---
 
-## Ambiente Local (Docker)
+## Local Environment (Docker)
 
-### Serviços Configurados
+### Configured Services
 
-| Serviço | Porta | Descrição |
-|---------|-------|-----------|
+| Service | Port | Description |
+|---------|------|-------------|
 | postgres | 5432 | PostgreSQL database |
-| redis | 6379 | Cache e filas |
+| redis | 6379 | Cache and queues |
 | [etc.] | [etc.] | [etc.] |
 
 ---
 
-## Issues Encontrados
+## Issues Found
 
-### 🔴 Crítico
+### 🔴 Critical
 
-#### [INF-002] MCP Supabase não configurado
-**Impacto:** Análise de RLS impossível, security-analyzer limitado
-**Correção:** Seguir orientações de configuração acima
-
----
-
-### 🟠 Alto
-
-#### [INF-003] Vulnerabilidade crítica em dependência
-**Pacote:** [nome]
-**Correção:** `npm audit fix` ou atualizar manualmente
+#### [INF-002] MCP Supabase not configured
+**Impact:** RLS analysis impossible, security-analyzer limited
+**Fix:** Follow the configuration guidance above
 
 ---
 
-### 🟡 Médio
+### 🟠 High
 
-[Issues de severidade média]
-
----
-
-## Recomendações
-
-1. **[Prioridade 1]:** Configurar MCP Supabase para análise completa
-2. **[Prioridade 2]:** Corrigir vulnerabilidades de dependências
-3. **[Prioridade 3]:** [Outras recomendações]
+#### [INF-003] Critical vulnerability in dependency
+**Package:** [name]
+**Fix:** `npm audit fix` or update manually
 
 ---
 
-## Limitações da Análise
+### 🟡 Medium
 
-Devido à infraestrutura atual, as seguintes análises NÃO puderam ser realizadas:
+[Medium severity issues]
 
-| Análise | Motivo | Como Habilitar |
-|---------|--------|----------------|
-| RLS | MCP não configurado | Configurar MCP Supabase |
+---
+
+## Recommendations
+
+1. **[Priority 1]:** Configure MCP Supabase for complete analysis
+2. **[Priority 2]:** Fix dependency vulnerabilities
+3. **[Priority 3]:** [Other recommendations]
+
+---
+
+## Analysis Limitations
+
+Due to the current infrastructure, the following analyses could NOT be performed:
+
+| Analysis | Reason | How to Enable |
+|----------|--------|---------------|
+| RLS | MCP not configured | Configure MCP Supabase |
 | [etc.] | [etc.] | [etc.] |
 
 ---
 
-*Documento gerado pelo subagente infrastructure-check*
+*Document generated by the infrastructure-check subagent*
 ```
 
 ---
@@ -290,12 +290,12 @@ Devido à infraestrutura atual, as seguintes análises NÃO puderam ser realizad
 ## Critical Rules
 
 **DO:**
-- ✅ Verificar MCP Supabase PRIMEIRO
-- ✅ Gerar orientações de configuração quando necessário
-- ✅ Documentar limitações da análise
-- ✅ Ser específico sobre o que não pode ser analisado
+- ✅ Check MCP Supabase FIRST
+- ✅ Generate configuration guidance when necessary
+- ✅ Document analysis limitations
+- ✅ Be specific about what cannot be analyzed
 
 **DO NOT:**
-- ❌ Falhar silenciosamente se MCP não disponível
-- ❌ Ignorar vulnerabilidades de dependências
-- ❌ Assumir que infraestrutura está configurada
+- ❌ Fail silently if MCP is not available
+- ❌ Ignore dependency vulnerabilities
+- ❌ Assume that infrastructure is configured

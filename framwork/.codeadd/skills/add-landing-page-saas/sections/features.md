@@ -302,13 +302,13 @@ export function FeaturesShowcase() {
 }
 ```
 
-**Quando usar:** Poucas features principais, quer explicar cada uma em detalhes.
+**When to use:** Few main features, want to explain each one in detail.
 
 ---
 
-## 4. Feature Cards com Hover
+## 4. Feature Cards with Hover
 
-Cards interativos com preview on hover. Moderno e engajante.
+Interactive cards with preview on hover. Modern and engaging.
 
 ```tsx
 import { Card, CardContent } from "@/components/ui/card";
@@ -318,29 +318,29 @@ import { Zap, Shield, BarChart3, Users } from "lucide-react";
 const features = [
   {
     icon: Zap,
-    title: "Automações",
-    description: "Fluxos de trabalho que economizam horas",
+    title: "Automations",
+    description: "Workflows that save hours",
     preview: "/preview-automations.png",
     color: "from-yellow-500/20",
   },
   {
     icon: Shield,
-    title: "Segurança",
-    description: "Enterprise-grade, LGPD compliant",
+    title: "Security",
+    description: "Enterprise-grade, GDPR compliant",
     preview: "/preview-security.png",
     color: "from-green-500/20",
   },
   {
     icon: BarChart3,
     title: "Analytics",
-    description: "Métricas em tempo real",
+    description: "Real-time metrics",
     preview: "/preview-analytics.png",
     color: "from-blue-500/20",
   },
   {
     icon: Users,
-    title: "Colaboração",
-    description: "Trabalhe em equipe sem fricção",
+    title: "Collaboration",
+    description: "Work as a team without friction",
     preview: "/preview-collab.png",
     color: "from-purple-500/20",
   },
@@ -350,9 +350,9 @@ export function FeaturesHover() {
   return (
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold">Recursos poderosos</h2>
+        <h2 className="text-3xl md:text-4xl font-bold">Powerful features</h2>
         <p className="mt-4 text-muted-foreground">
-          Passe o mouse para ver em ação
+          Hover to see them in action
         </p>
       </div>
 
@@ -397,13 +397,13 @@ export function FeaturesHover() {
 }
 ```
 
-**Quando usar:** Produto visual, quer mostrar previews, audience tech-savvy.
+**When to use:** Visual product, want to show previews, tech-savvy audience.
 
 ---
 
-## 5. Features Timeline (Processo)
+## 5. Features Timeline (Process)
 
-Mostra features como etapas de um processo. Bom para onboarding/workflow.
+Shows features as steps in a process. Good for onboarding/workflow.
 
 ```tsx
 import { CheckCircle } from "lucide-react";
@@ -411,26 +411,26 @@ import { CheckCircle } from "lucide-react";
 const steps = [
   {
     step: "01",
-    title: "Conecte suas fontes",
+    title: "Connect your sources",
     description:
-      "Importe dados de planilhas, CRMs ou conecte via API em segundos.",
+      "Import data from spreadsheets, CRMs or connect via API in seconds.",
   },
   {
     step: "02",
-    title: "Configure automações",
+    title: "Set up automations",
     description:
-      "Use nossos templates prontos ou crie fluxos customizados sem código.",
+      "Use our ready-made templates or create custom flows without code.",
   },
   {
     step: "03",
-    title: "Monitore resultados",
+    title: "Monitor results",
     description:
-      "Acompanhe métricas em dashboards atualizados em tempo real.",
+      "Track metrics in dashboards updated in real time.",
   },
   {
     step: "04",
-    title: "Escale sem limites",
-    description: "Convide sua equipe e cresça sem se preocupar com infraestrutura.",
+    title: "Scale without limits",
+    description: "Invite your team and grow without worrying about infrastructure.",
   },
 ];
 
@@ -438,9 +438,9 @@ export function FeaturesTimeline() {
   return (
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-16">
-        <h2 className="text-3xl md:text-4xl font-bold">Como funciona</h2>
+        <h2 className="text-3xl md:text-4xl font-bold">How it works</h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Do zero ao resultado em 4 passos simples
+          From zero to results in 4 simple steps
         </p>
       </div>
 
@@ -470,13 +470,13 @@ export function FeaturesTimeline() {
 }
 ```
 
-**Quando usar:** Explicar processo, onboarding, "how it works".
+**When to use:** Explaining a process, onboarding, "how it works".
 
 ---
 
-## Integrações Section
+## Integrations Section
 
-Mostre com quem você integra. Essencial para SaaS B2B.
+Show what you integrate with. Essential for B2B SaaS.
 
 ```tsx
 const integrations = [
@@ -493,10 +493,10 @@ export function Integrations() {
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Integra com suas ferramentas favoritas
+          Integrates with your favorite tools
         </h2>
         <p className="mt-4 text-muted-foreground">
-          +50 integrações nativas. Ou crie a sua via API.
+          50+ native integrations. Or build your own via API.
         </p>
       </div>
 

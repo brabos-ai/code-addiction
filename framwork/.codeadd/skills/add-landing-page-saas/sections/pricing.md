@@ -1,12 +1,12 @@
 # Pricing Sections
 
-Tabelas de preço que convertem. Mobile-first, copy-paste ready.
+Pricing tables that convert. Mobile-first, copy-paste ready.
 
 ---
 
-## 1. 3-Tier Cards (Padrão SaaS)
+## 1. 3-Tier Cards (SaaS Default)
 
-O layout mais comum e eficaz. Plano do meio destacado.
+The most common and effective layout. Middle plan highlighted.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -18,48 +18,48 @@ import { cn } from "@/lib/utils";
 const plans = [
   {
     name: "Starter",
-    description: "Para começar",
+    description: "To get started",
     price: { monthly: 0, yearly: 0 },
     features: [
-      "Até 3 usuários",
+      "Up to 3 users",
       "1 workspace",
-      "1.000 registros/mês",
-      "Integrações básicas",
-      "Suporte por email",
+      "1,000 records/month",
+      "Basic integrations",
+      "Email support",
     ],
-    cta: "Começar grátis",
+    cta: "Start for free",
     highlighted: false,
   },
   {
     name: "Pro",
-    description: "Para equipes em crescimento",
+    description: "For growing teams",
     price: { monthly: 97, yearly: 79 },
     features: [
-      "Até 10 usuários",
-      "Workspaces ilimitados",
-      "50.000 registros/mês",
-      "Todas integrações",
-      "Automações avançadas",
-      "Relatórios customizados",
-      "Suporte prioritário",
+      "Up to 10 users",
+      "Unlimited workspaces",
+      "50,000 records/month",
+      "All integrations",
+      "Advanced automations",
+      "Custom reports",
+      "Priority support",
     ],
-    cta: "Testar 14 dias grátis",
+    cta: "Try free for 14 days",
     highlighted: true,
   },
   {
     name: "Enterprise",
-    description: "Para grandes operações",
+    description: "For large operations",
     price: { monthly: null, yearly: null },
     features: [
-      "Usuários ilimitados",
-      "Volume ilimitado",
+      "Unlimited users",
+      "Unlimited volume",
       "SSO/SAML",
-      "API dedicada",
-      "SLA 99.9%",
-      "Gerente de sucesso",
-      "Onboarding dedicado",
+      "Dedicated API",
+      "99.9% SLA",
+      "Success manager",
+      "Dedicated onboarding",
     ],
-    cta: "Falar com vendas",
+    cta: "Talk to sales",
     highlighted: false,
   },
 ];
@@ -71,13 +71,13 @@ export function Pricing() {
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Preços simples e transparentes
+          Simple and transparent pricing
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Comece grátis, escale quando precisar
+          Start free, scale when you need
         </p>
 
-        {/* Toggle mensal/anual */}
+        {/* Monthly/annual toggle */}
         <div className="mt-8 inline-flex items-center gap-4 rounded-full border p-1">
           <button
             onClick={() => setAnnual(false)}
@@ -86,7 +86,7 @@ export function Pricing() {
               !annual ? "bg-primary text-primary-foreground" : "text-muted-foreground"
             )}
           >
-            Mensal
+            Monthly
           </button>
           <button
             onClick={() => setAnnual(true)}
@@ -95,7 +95,7 @@ export function Pricing() {
               annual ? "bg-primary text-primary-foreground" : "text-muted-foreground"
             )}
           >
-            Anual
+            Annual
             <Badge variant="secondary" className="ml-2">
               -20%
             </Badge>
@@ -114,7 +114,7 @@ export function Pricing() {
           >
             {plan.highlighted && (
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                Mais popular
+                Most popular
               </Badge>
             )}
 
@@ -127,18 +127,18 @@ export function Pricing() {
               {/* Price */}
               <div className="mb-6">
                 {plan.price.monthly === null ? (
-                  <div className="text-3xl font-bold">Personalizado</div>
+                  <div className="text-3xl font-bold">Custom</div>
                 ) : plan.price.monthly === 0 ? (
-                  <div className="text-4xl font-bold">Grátis</div>
+                  <div className="text-4xl font-bold">Free</div>
                 ) : (
                   <>
                     <span className="text-4xl font-bold">
-                      R${annual ? plan.price.yearly : plan.price.monthly}
+                      ${annual ? plan.price.yearly : plan.price.monthly}
                     </span>
-                    <span className="text-muted-foreground">/mês</span>
+                    <span className="text-muted-foreground">/mo</span>
                     {annual && plan.price.yearly > 0 && (
                       <p className="text-sm text-muted-foreground">
-                        cobrado anualmente
+                        billed annually
                       </p>
                     )}
                   </>
@@ -172,13 +172,13 @@ export function Pricing() {
 }
 ```
 
-**Quando usar:** Padrão para qualquer SaaS. Funciona sempre.
+**When to use:** Default for any SaaS. Always works.
 
 ---
 
 ## 2. Comparison Table (Feature Matrix)
 
-Tabela comparativa detalhada. Bom quando tem muitas features por plano.
+Detailed comparison table. Good when there are many features per plan.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -186,37 +186,37 @@ import { Check, Minus } from "lucide-react";
 
 const features = [
   {
-    category: "Recursos básicos",
+    category: "Core features",
     items: [
-      { name: "Usuários", starter: "3", pro: "10", enterprise: "Ilimitado" },
-      { name: "Workspaces", starter: "1", pro: "Ilimitado", enterprise: "Ilimitado" },
-      { name: "Armazenamento", starter: "1 GB", pro: "10 GB", enterprise: "Ilimitado" },
+      { name: "Users", starter: "3", pro: "10", enterprise: "Unlimited" },
+      { name: "Workspaces", starter: "1", pro: "Unlimited", enterprise: "Unlimited" },
+      { name: "Storage", starter: "1 GB", pro: "10 GB", enterprise: "Unlimited" },
     ],
   },
   {
-    category: "Automações",
+    category: "Automations",
     items: [
-      { name: "Fluxos de trabalho", starter: false, pro: true, enterprise: true },
-      { name: "Triggers customizados", starter: false, pro: true, enterprise: true },
-      { name: "Webhooks", starter: false, pro: "10/mês", enterprise: "Ilimitado" },
+      { name: "Workflows", starter: false, pro: true, enterprise: true },
+      { name: "Custom triggers", starter: false, pro: true, enterprise: true },
+      { name: "Webhooks", starter: false, pro: "10/mo", enterprise: "Unlimited" },
     ],
   },
   {
-    category: "Integrações",
+    category: "Integrations",
     items: [
       { name: "Slack/Teams", starter: true, pro: true, enterprise: true },
       { name: "Zapier", starter: false, pro: true, enterprise: true },
-      { name: "API REST", starter: false, pro: true, enterprise: true },
+      { name: "REST API", starter: false, pro: true, enterprise: true },
       { name: "SSO/SAML", starter: false, pro: false, enterprise: true },
     ],
   },
   {
-    category: "Suporte",
+    category: "Support",
     items: [
-      { name: "Documentação", starter: true, pro: true, enterprise: true },
+      { name: "Documentation", starter: true, pro: true, enterprise: true },
       { name: "Email", starter: true, pro: true, enterprise: true },
-      { name: "Chat ao vivo", starter: false, pro: true, enterprise: true },
-      { name: "Gerente dedicado", starter: false, pro: false, enterprise: true },
+      { name: "Live chat", starter: false, pro: true, enterprise: true },
+      { name: "Dedicated manager", starter: false, pro: false, enterprise: true },
       { name: "SLA", starter: false, pro: "99%", enterprise: "99.9%" },
     ],
   },
@@ -237,9 +237,9 @@ export function PricingComparison() {
   return (
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold">Compare os planos</h2>
+        <h2 className="text-3xl md:text-4xl font-bold">Compare plans</h2>
         <p className="mt-4 text-muted-foreground">
-          Encontre o plano ideal para sua necessidade
+          Find the right plan for your needs
         </p>
       </div>
 
@@ -251,21 +251,21 @@ export function PricingComparison() {
               <th className="text-left py-4 pr-4"></th>
               <th className="px-4 py-4 text-center">
                 <div className="font-bold">Starter</div>
-                <div className="text-2xl font-bold mt-2">Grátis</div>
+                <div className="text-2xl font-bold mt-2">Free</div>
                 <Button variant="outline" className="mt-4 w-full">
-                  Começar
+                  Get started
                 </Button>
               </th>
               <th className="px-4 py-4 text-center bg-primary/5 rounded-t-lg">
                 <div className="font-bold text-primary">Pro</div>
-                <div className="text-2xl font-bold mt-2">R$97/mês</div>
-                <Button className="mt-4 w-full">Testar grátis</Button>
+                <div className="text-2xl font-bold mt-2">$97/mo</div>
+                <Button className="mt-4 w-full">Try for free</Button>
               </th>
               <th className="px-4 py-4 text-center">
                 <div className="font-bold">Enterprise</div>
-                <div className="text-2xl font-bold mt-2">Sob consulta</div>
+                <div className="text-2xl font-bold mt-2">Custom</div>
                 <Button variant="outline" className="mt-4 w-full">
-                  Falar com vendas
+                  Talk to sales
                 </Button>
               </th>
             </tr>
@@ -307,13 +307,13 @@ export function PricingComparison() {
 }
 ```
 
-**Quando usar:** Muitas features, decisão complexa, B2B enterprise.
+**When to use:** Many features, complex decision, B2B enterprise.
 
 ---
 
 ## 3. Simple Pricing (Single Tier)
 
-Para produtos simples ou quando quer destacar um único plano.
+For simple products or when you want to highlight a single plan.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -329,24 +329,24 @@ export function PricingSimple() {
           <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary to-primary/50" />
 
           <CardHeader className="text-center pt-8">
-            <h2 className="text-2xl font-bold">Tudo que você precisa</h2>
-            <p className="text-muted-foreground">Um preço, sem surpresas</p>
+            <h2 className="text-2xl font-bold">Everything you need</h2>
+            <p className="text-muted-foreground">One price, no surprises</p>
           </CardHeader>
 
           <CardContent className="text-center">
             <div className="mb-8">
-              <span className="text-5xl font-bold">R$47</span>
-              <span className="text-muted-foreground">/mês por usuário</span>
+              <span className="text-5xl font-bold">$47</span>
+              <span className="text-muted-foreground">/mo per user</span>
             </div>
 
             <ul className="space-y-4 text-left max-w-sm mx-auto">
               {[
-                "Usuários ilimitados",
-                "Todas as features",
-                "Integrações incluídas",
-                "Suporte prioritário",
-                "Atualizações gratuitas",
-                "Sem limite de uso",
+                "Unlimited users",
+                "All features",
+                "Integrations included",
+                "Priority support",
+                "Free updates",
+                "No usage limits",
               ].map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
                   <Check className="h-5 w-5 text-primary" />
@@ -358,10 +358,10 @@ export function PricingSimple() {
 
           <CardFooter className="flex flex-col gap-4">
             <Button size="lg" className="w-full">
-              Começar agora
+              Get started now
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              14 dias grátis. Cancele quando quiser.
+              14 days free. Cancel anytime.
             </p>
           </CardFooter>
         </Card>
@@ -371,13 +371,13 @@ export function PricingSimple() {
 }
 ```
 
-**Quando usar:** Produto simples, um único tier, early stage.
+**When to use:** Simple product, single tier, early stage.
 
 ---
 
 ## 4. Horizontal Pricing (Compact)
 
-Layout compacto horizontal. Bom para seções menores ou como "sticky".
+Compact horizontal layout. Good for smaller sections or as a "sticky".
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -387,22 +387,22 @@ export function PricingHorizontal() {
     <section className="container px-4 py-16">
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 rounded-2xl bg-muted/50 border">
         <div>
-          <h2 className="text-2xl font-bold">Pronto para começar?</h2>
+          <h2 className="text-2xl font-bold">Ready to get started?</h2>
           <p className="text-muted-foreground mt-1">
-            Teste grátis por 14 dias, sem cartão de crédito
+            Free trial for 14 days, no credit card required
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="text-center sm:text-right">
-            <div className="text-sm text-muted-foreground">A partir de</div>
+            <div className="text-sm text-muted-foreground">Starting from</div>
             <div className="text-3xl font-bold">
-              R$97<span className="text-lg font-normal">/mês</span>
+              $97<span className="text-lg font-normal">/mo</span>
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">Ver planos</Button>
-            <Button>Começar grátis</Button>
+            <Button variant="outline">View plans</Button>
+            <Button>Start for free</Button>
           </div>
         </div>
       </div>
@@ -411,13 +411,13 @@ export function PricingHorizontal() {
 }
 ```
 
-**Quando usar:** CTA section, sticky footer, reminder.
+**When to use:** CTA section, sticky footer, reminder.
 
 ---
 
 ## Pricing FAQ
 
-Sempre inclua FAQ abaixo do pricing. Reduz objeções.
+Always include a FAQ below pricing. Reduces objections.
 
 ```tsx
 import {
@@ -429,29 +429,29 @@ import {
 
 const faqs = [
   {
-    question: "Posso cancelar a qualquer momento?",
+    question: "Can I cancel at any time?",
     answer:
-      "Sim, você pode cancelar sua assinatura a qualquer momento. Não há contratos de longo prazo ou taxas de cancelamento.",
+      "Yes, you can cancel your subscription at any time. There are no long-term contracts or cancellation fees.",
   },
   {
-    question: "Como funciona o período de teste?",
+    question: "How does the trial period work?",
     answer:
-      "Você tem 14 dias para testar todas as funcionalidades do plano Pro gratuitamente. Não pedimos cartão de crédito para começar.",
+      "You have 14 days to try all Pro plan features for free. We don't ask for a credit card to get started.",
   },
   {
-    question: "Posso mudar de plano depois?",
+    question: "Can I change plans later?",
     answer:
-      "Sim! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento. A diferença é calculada proporcionalmente.",
+      "Yes! You can upgrade or downgrade your plan at any time. The difference is calculated proportionally.",
   },
   {
-    question: "Qual a forma de pagamento?",
+    question: "What payment methods do you accept?",
     answer:
-      "Aceitamos cartão de crédito (Visa, Mastercard, Amex), PIX e boleto bancário para planos anuais.",
+      "We accept credit cards (Visa, Mastercard, Amex) and bank transfers for annual plans.",
   },
   {
-    question: "Vocês oferecem desconto para startups?",
+    question: "Do you offer discounts for startups?",
     answer:
-      "Sim! Startups early-stage podem se candidatar ao nosso programa com 50% de desconto no primeiro ano. Entre em contato.",
+      "Yes! Early-stage startups can apply to our program with 50% off the first year. Get in touch.",
   },
 ];
 
@@ -460,7 +460,7 @@ export function PricingFAQ() {
     <section className="container px-4 py-16 md:py-24">
       <div className="max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold text-center mb-8">
-          Perguntas frequentes
+          Frequently asked questions
         </h2>
 
         <Accordion type="single" collapsible className="w-full">
@@ -483,27 +483,27 @@ export function PricingFAQ() {
 
 ---
 
-## Elementos de Conversão
+## Conversion Elements
 
-### Garantia
+### Guarantee
 ```tsx
 <div className="text-center mt-8 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
   <p className="text-sm">
-    <span className="font-semibold text-green-600">Garantia de 30 dias</span>
-    {" "}— Não gostou? Devolvemos seu dinheiro, sem perguntas.
+    <span className="font-semibold text-green-600">30-day guarantee</span>
+    {" "}— Not satisfied? We'll refund you, no questions asked.
   </p>
 </div>
 ```
 
-### Urgência (use com moderação)
+### Urgency (use sparingly)
 ```tsx
 <div className="text-center">
   <Badge variant="destructive" className="mb-4">
-    Oferta termina em 3 dias
+    Offer ends in 3 days
   </Badge>
   <div className="text-sm text-muted-foreground">
-    <span className="line-through">R$197</span>
-    <span className="text-2xl font-bold text-primary ml-2">R$97</span>
+    <span className="line-through">$197</span>
+    <span className="text-2xl font-bold text-primary ml-2">$97</span>
   </div>
 </div>
 ```
@@ -512,13 +512,13 @@ export function PricingFAQ() {
 ```tsx
 <div className="flex justify-center gap-8 mt-8 text-sm text-muted-foreground">
   <span className="flex items-center gap-2">
-    <CreditCard className="h-4 w-4" /> Pagamento seguro
+    <CreditCard className="h-4 w-4" /> Secure payment
   </span>
   <span className="flex items-center gap-2">
-    <Shield className="h-4 w-4" /> LGPD compliant
+    <Shield className="h-4 w-4" /> GDPR compliant
   </span>
   <span className="flex items-center gap-2">
-    <RefreshCw className="h-4 w-4" /> Cancele quando quiser
+    <RefreshCw className="h-4 w-4" /> Cancel anytime
   </span>
 </div>
 ```

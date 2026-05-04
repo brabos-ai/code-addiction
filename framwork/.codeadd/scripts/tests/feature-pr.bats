@@ -11,20 +11,20 @@ teardown() {
 
 # ─── Guards ──────────────────────────────────────────────────────────
 
-@test "falha quando não está em feature branch" {
+@test "fails when not on a feature branch" {
   run "$SCRIPTS_DIR/feature-pr.sh"
   [ "$status" -eq 1 ]
   [[ "$output" == *"Not on a feature branch"* ]]
 }
 
-@test "falha em detached HEAD" {
+@test "fails in detached HEAD" {
   git checkout --detach -q
   run "$SCRIPTS_DIR/feature-pr.sh"
   [ "$status" -eq 1 ]
   [[ "$output" == *"Could not detect current branch"* ]]
 }
 
-@test "falha quando feature dir não existe (create-pr mode)" {
+@test "fails when feature dir does not exist (create-pr mode)" {
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/feature-pr.sh" --create-pr
   [ "$status" -eq 1 ]
@@ -33,7 +33,7 @@ teardown() {
 
 # ─── Preview mode ───────────────────────────────────────────────────
 
-@test "preview mode: mostra ações que serão executadas" {
+@test "preview mode: shows actions to be executed" {
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test
   run "$SCRIPTS_DIR/feature-pr.sh"
@@ -43,7 +43,7 @@ teardown() {
   [[ "$output" == *"CONFIRM=Run with --create-pr to execute"* ]]
 }
 
-@test "preview mode: detecta feature ID corretamente" {
+@test "preview mode: detects feature ID correctly" {
   git checkout -b feature/0042F-login -q
   mkdir -p docs/features/0042F-login
   run "$SCRIPTS_DIR/feature-pr.sh"
@@ -51,7 +51,7 @@ teardown() {
   [[ "$output" == *"FEATURE_ID=0042F-login"* ]]
 }
 
-@test "preview mode: conta pending changes" {
+@test "preview mode: counts pending changes" {
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test
   echo "new" > newfile.txt
@@ -63,7 +63,7 @@ teardown() {
 
 # ─── Create PR mode guards ──────────────────────────────────────────
 
-@test "create-pr mode: falha sem changelog.md" {
+@test "create-pr mode: fails without changelog.md" {
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test
   echo "change" > src.txt
@@ -73,7 +73,7 @@ teardown() {
   [[ "$output" == *"changelog.md not found"* ]]
 }
 
-@test "create-pr mode: falha sem changes e sem uncommitted" {
+@test "create-pr mode: fails without changes and without uncommitted" {
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test
   echo "# Changelog" > docs/features/0001F-test/changelog.md
@@ -84,7 +84,7 @@ teardown() {
 
 # ─── Create PR mode: push/gh failures ──────────────────────────────
 
-@test "create-pr mode: falha ao fazer push quando não há remote configurado" {
+@test "create-pr mode: fails when pushing with no remote configured" {
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test
   echo "# Changelog" > docs/features/0001F-test/changelog.md
@@ -95,7 +95,7 @@ teardown() {
   [[ "$output" == *"git push failed"* ]]
 }
 
-@test "create-pr mode: falha quando gh não está autenticado" {
+@test "create-pr mode: fails when gh is not authenticated" {
   setup_remote
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test
@@ -116,7 +116,7 @@ GHEOF
   [[ "$output" == *"gh CLI is not authenticated"* ]]
 }
 
-@test "create-pr mode: falha quando PR já existe para o branch" {
+@test "create-pr mode: fails when PR already exists for branch" {
   setup_remote
   git checkout -b feature/0001F-test -q
   mkdir -p docs/features/0001F-test

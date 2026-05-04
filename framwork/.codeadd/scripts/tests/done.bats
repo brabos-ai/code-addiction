@@ -11,7 +11,7 @@ teardown() {
 
 # ─── Context mode (default) ─────────────────────────────────────────
 
-@test "context mode: mostra info do branch feature" {
+@test "context mode: shows feature branch info" {
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -21,7 +21,7 @@ teardown() {
   [[ "$output" == *"FEATURE_NUMBER=0001F"* ]]
 }
 
-@test "context mode: detecta hotfix" {
+@test "context mode: detects hotfix" {
   git checkout -b hotfix/0001H-urgent -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -29,14 +29,14 @@ teardown() {
   [[ "$output" == *"FEATURE_NUMBER=0001H"* ]]
 }
 
-@test "context mode: detecta fix" {
+@test "context mode: detects fix" {
   git checkout -b fix/0001H-bugfix -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"BRANCH_TYPE=fix"* ]]
 }
 
-@test "context mode: reporta pending changes" {
+@test "context mode: reports pending changes" {
   git checkout -b feature/0001F-test -q
   echo "change" > newfile.txt
   run "$SCRIPTS_DIR/done.sh"
@@ -45,16 +45,16 @@ teardown() {
   [[ "$output" == *"UNTRACKED_COUNT=1"* ]]
 }
 
-@test "context mode: reporta sem pending changes" {
+@test "context mode: reports no pending changes" {
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"HAS_UNCOMMITTED=false"* ]]
 }
 
-# ─── Erros ───────────────────────────────────────────────────────────
+# ─── Errors ───────────────────────────────────────────────────────────
 
-@test "falha em detached HEAD" {
+@test "fails in detached HEAD" {
   git checkout --detach -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 1 ]
@@ -62,7 +62,7 @@ teardown() {
   [[ "$output" == *"detached"* ]]
 }
 
-@test "context mode: falha em branch sem ID" {
+@test "context mode: fails on branch without ID" {
   git checkout -b random-branch -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 1 ]
@@ -72,7 +72,7 @@ teardown() {
 
 # ─── Generic branch prefixes (PRD0007) ───────────────────────────────
 
-@test "context mode: refactor/0002R-cleanup detectado como refactor" {
+@test "context mode: refactor/0002R-cleanup detected as refactor" {
   git checkout -b refactor/0002R-cleanup -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -80,7 +80,7 @@ teardown() {
   [[ "$output" == *"FEATURE_NUMBER=0002R"* ]]
 }
 
-@test "context mode: chore/0003C-deps detectado como chore" {
+@test "context mode: chore/0003C-deps detected as chore" {
   git checkout -b chore/0003C-deps -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -88,7 +88,7 @@ teardown() {
   [[ "$output" == *"FEATURE_NUMBER=0003C"* ]]
 }
 
-@test "context mode: docs/0004D-readme detectado como docs" {
+@test "context mode: docs/0004D-readme detected as docs" {
   git checkout -b docs/0004D-readme -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -98,13 +98,13 @@ teardown() {
 
 # ─── Merge mode guards ──────────────────────────────────────────────
 
-@test "merge mode: falha quando já está em main (no ID)" {
+@test "merge mode: fails when already on main (no ID)" {
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
   [[ "$output" == *"STATUS=ERROR"* ]]
 }
 
-@test "merge mode: falha em branch sem ID" {
+@test "merge mode: fails on branch without ID" {
   git checkout -b random-branch -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
@@ -113,7 +113,7 @@ teardown() {
 
 # ─── Context mode: edge cases ────────────────────────────────────────
 
-@test "context mode: reporta múltiplas mudanças simultâneas (modified + staged + untracked)" {
+@test "context mode: reports multiple simultaneous changes (modified + staged + untracked)" {
   git checkout -b feature/0001F-test -q
   echo "original" > existing.txt
   git add existing.txt && git commit -m "add file" -q
@@ -129,8 +129,8 @@ teardown() {
   [[ "$output" == *"HAS_UNCOMMITTED=true"* ]]
 }
 
-@test "context mode: emite WARNING quando origin/main não existe no remote" {
-  # Sem setup_remote — origin/main não existe
+@test "context mode: emits WARNING when origin/main does not exist on remote" {
+  # Without setup_remote — origin/main does not exist
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
@@ -139,36 +139,36 @@ teardown() {
 
 # ─── Merge mode: execution scenarios ────────────────────────────────
 
-@test "merge mode: falha sem remote configurado (push failure)" {
+@test "merge mode: fails without remote configured (push failure)" {
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -ne 0 ]
 }
 
-@test "merge mode: detecta merge conflict no squash" {
+@test "merge mode: detects merge conflict on squash" {
   setup_remote
-  # Adiciona arquivo base no main e envia
+  # Add base file on main and push
   echo "original content" > shared.txt
   git add shared.txt && git commit -m "add shared file" -q
   git push origin main -q
-  # Cria feature branch e modifica o arquivo
+  # Create feature branch and modify the file
   git checkout -b feature/0001F-conflict -q
   echo "feature version" > shared.txt
   git add shared.txt && git commit -m "feature change" -q
   git push -u origin feature/0001F-conflict -q
-  # Conflito: atualiza main com mudança diferente
+  # Conflict: update main with a different change
   git checkout main -q
   echo "main conflicting version" > shared.txt
   git add shared.txt && git commit -m "main change" -q
   git push origin main -q
-  # Volta para feature e tenta merge
+  # Return to feature and attempt merge
   git checkout feature/0001F-conflict -q
   run "$SCRIPTS_DIR/done.sh" --merge
   [ "$status" -eq 1 ]
   [[ "$output" == *"Merge conflict detected"* ]]
 }
 
-@test "merge mode: pula commit quando branch não tem commits além do main" {
+@test "merge mode: skips commit when branch has no commits beyond main" {
   setup_remote
   git checkout -b feature/0001F-test -q
   git push -u origin feature/0001F-test -q

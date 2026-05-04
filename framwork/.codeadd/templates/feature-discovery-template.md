@@ -9,41 +9,41 @@
 ## Codebase Analysis
 
 ### Commit History
-[Commits recentes relevantes]
+[Recent relevant commits]
 
 ### Related Files
-- `path/to/file.ts` - [relevância]
+- `path/to/file.ts` - [relevance]
 
 ### Similar Features
-- [feature similar e o que aproveitar]
+- [similar feature and what to reuse]
 
 ### Patterns
-[Padrões existentes no codebase que devem ser seguidos]
+[Existing codebase patterns that must be followed]
 
 ## Technical Context
 
 ### Infrastructure
-[Stack, deploy, infra relevante]
+[Stack, deploy, relevant infra]
 
 ### Dependencies
-[Libs, serviços externos]
+[Libs, external services]
 
 ### Integration Points
-[Onde a feature se conecta com código existente]
+[Where the feature connects with existing code]
 
 ## Files Mapping
 
 ### To Create
-- `path/to/new-file.ts` - [propósito]
+- `path/to/new-file.ts` - [purpose]
 
 ### To Modify
-- `path/to/existing-file.ts` - [o que muda]
+- `path/to/existing-file.ts` - [what changes]
 
 ## Technical Assumptions
 
 | Assumption | Impact if Wrong |
 |------------|-----------------|
-| [premissa] | [consequência] |
+| [assumption] | [consequence] |
 
 ## References
 
@@ -51,33 +51,33 @@
 - `path/to/file.ts`
 
 ### Documentation
-- [links relevantes]
+- [relevant links]
 
-### Related Features (histórico)
-- F[XXXX]-[name] - [relação]
+### Related Features (history)
+- F[XXXX]-[name] - [relationship]
 
 ## Related Features
 
 | Feature | Relation | Key Files | Impact |
 |---------|----------|-----------|--------|
-| F[XXXX]-[name] | extends\|depends\|conflicts\|shares-pattern\|shares-domain | `src/path/` | [ação esperada] |
+| F[XXXX]-[name] | extends\|depends\|conflicts\|shares-pattern\|shares-domain | `src/path/` | [expected action] |
 
 <!-- refs: F[XXXX] -->
 
-**Tipos de relação:**
-- `extends` — reusar código, seguir padrão
-- `depends` — verificar que dependência existe e está estável
-- `conflicts` — mapear áreas de conflito
-- `shares-pattern` — seguir padrão para consistência
-- `shares-domain` — revisar para não duplicar
+**Relationship types:**
+- `extends` — reuse code, follow pattern
+- `depends` — verify dependency exists and is stable
+- `conflicts` — map areas of conflict
+- `shares-pattern` — follow pattern for consistency
+- `shares-domain` — review to avoid duplication
 
 ## Summary for Planning
 
 ### Executive Summary
-[2-3 frases]
+[2-3 sentences]
 
 ### Key Decisions
-- [decisão importante]
+- [important decision]
 
 ### Critical Files
-- `path/to/critical.ts` - [por que é crítico]
+- `path/to/critical.ts` - [why it is critical]

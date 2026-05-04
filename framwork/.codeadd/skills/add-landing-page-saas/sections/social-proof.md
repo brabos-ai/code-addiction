@@ -1,12 +1,12 @@
 # Social Proof Sections
 
-Prova social que gera confiança e converte. Essencial para SaaS.
+Social proof that builds trust and converts. Essential for SaaS.
 
 ---
 
-## 1. Logo Cloud (Clientes)
+## 1. Logo Cloud (Clients)
 
-Mostre quem já usa. Credibilidade instantânea.
+Show who already uses it. Instant credibility.
 
 ```tsx
 export function LogoCloud() {
@@ -23,7 +23,7 @@ export function LogoCloud() {
     <section className="py-12 border-y bg-muted/30">
       <div className="container px-4">
         <p className="text-center text-sm text-muted-foreground mb-8">
-          Usado por empresas que você conhece
+          Used by companies you know
         </p>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
           {logos.map((logo) => (
@@ -41,7 +41,7 @@ export function LogoCloud() {
 }
 ```
 
-### Variação: Logo Marquee (Animado)
+### Variation: Logo Marquee (Animated)
 ```tsx
 import { motion } from "framer-motion";
 
@@ -51,7 +51,7 @@ export function LogoMarquee() {
   return (
     <section className="py-12 overflow-hidden">
       <p className="text-center text-sm text-muted-foreground mb-8">
-        +500 empresas confiam em nós
+        +500 companies trust us
       </p>
       <div className="relative">
         {/* Fade edges */}
@@ -82,13 +82,13 @@ export function LogoMarquee() {
 }
 ```
 
-**Quando usar:** Tem clientes conhecidos, B2B, quer credibilidade rápida.
+**When to use:** Have well-known clients, B2B, want quick credibility.
 
 ---
 
 ## 2. Testimonials Grid
 
-Depoimentos em cards. O mais versátil.
+Testimonials in cards. The most versatile.
 
 ```tsx
 import { Card, CardContent } from "@/components/ui/card";
@@ -100,15 +100,15 @@ const testimonials = [
     role: "CEO, TechStart",
     image: "/avatars/ana.jpg",
     content:
-      "Implementamos em uma semana e o time já estava usando. Nunca vi uma adoção tão rápida.",
+      "We rolled it out in a week and the team was already using it. I've never seen such fast adoption.",
     rating: 5,
   },
   {
     name: "Carlos Santos",
-    role: "Head de Operações, ScaleUp",
+    role: "Head of Operations, ScaleUp",
     image: "/avatars/carlos.jpg",
     content:
-      "Reduzimos 40% do tempo em processos manuais. O ROI foi imediato.",
+      "We cut 40% of manual process time. The ROI was immediate.",
     rating: 5,
   },
   {
@@ -116,7 +116,7 @@ const testimonials = [
     role: "Founder, GrowthLab",
     image: "/avatars/marina.jpg",
     content:
-      "O suporte é incrível. Respondem rápido e realmente resolvem os problemas.",
+      "The support is incredible. They respond fast and actually solve the problems.",
     rating: 5,
   },
 ];
@@ -126,10 +126,10 @@ export function TestimonialsGrid() {
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold">
-          O que nossos clientes dizem
+          What our customers say
         </h2>
         <p className="mt-4 text-muted-foreground">
-          +2.000 empresas já transformaram suas operações
+          +2,000 companies have already transformed their operations
         </p>
       </div>
 
@@ -173,20 +173,20 @@ export function TestimonialsGrid() {
 }
 ```
 
-**Quando usar:** Tem depoimentos reais, quer mostrar diversidade de clientes.
+**When to use:** Have real testimonials, want to show diversity of customers.
 
 ---
 
-## 3. Featured Testimonial (Destaque)
+## 3. Featured Testimonial (Highlight)
 
-Um depoimento grande e impactante. Bom para quote forte.
+One large, impactful testimonial. Good for a strong quote.
 
 ```tsx
 export function TestimonialFeatured() {
   return (
     <section className="container px-4 py-16 md:py-24">
       <div className="max-w-4xl mx-auto text-center">
-        {/* Logo do cliente */}
+        {/* Client logo */}
         <img
           src="/logos/nubank.svg"
           alt="Nubank"
@@ -195,10 +195,10 @@ export function TestimonialFeatured() {
 
         {/* Quote */}
         <blockquote className="text-2xl md:text-3xl lg:text-4xl font-medium leading-relaxed">
-          "Testamos várias soluções antes. Essa foi a única que o time realmente
-          adotou. Em 3 meses,{" "}
+          "We tried several solutions before. This was the only one the team
+          actually adopted. In 3 months,{" "}
           <span className="text-primary">
-            dobramos nossa produtividade
+            we doubled our productivity
           </span>
           ."
         </blockquote>
@@ -212,7 +212,7 @@ export function TestimonialFeatured() {
           />
           <div className="text-left">
             <div className="font-semibold">João Mendes</div>
-            <div className="text-muted-foreground">VP de Produto, Nubank</div>
+            <div className="text-muted-foreground">VP of Product, Nubank</div>
           </div>
         </div>
       </div>
@@ -221,13 +221,13 @@ export function TestimonialFeatured() {
 }
 ```
 
-**Quando usar:** Tem um cliente de peso, quote muito forte.
+**When to use:** Have a high-profile client, a very strong quote.
 
 ---
 
 ## 4. Stats Section
 
-Números que impressionam. Prova social quantitativa.
+Impressive numbers. Quantitative social proof.
 
 ```tsx
 import { motion } from "framer-motion";
@@ -235,10 +235,10 @@ import { useInView } from "framer-motion";
 import { useRef } from "react";
 
 const stats = [
-  { value: "10k+", label: "Usuários ativos" },
-  { value: "500+", label: "Empresas" },
+  { value: "10k+", label: "Active users" },
+  { value: "500+", label: "Companies" },
   { value: "99.9%", label: "Uptime" },
-  { value: "4.9", label: "Rating no G2" },
+  { value: "4.9", label: "G2 Rating" },
 ];
 
 export function Stats() {
@@ -270,13 +270,13 @@ export function Stats() {
 }
 ```
 
-### Variação: Stats com ícones
+### Variation: Stats with icons
 ```tsx
 import { Users, Building2, Clock, Star } from "lucide-react";
 
 const stats = [
-  { icon: Users, value: "10k+", label: "Usuários" },
-  { icon: Building2, value: "500+", label: "Empresas" },
+  { icon: Users, value: "10k+", label: "Users" },
+  { icon: Building2, value: "500+", label: "Companies" },
   { icon: Clock, value: "99.9%", label: "Uptime" },
   { icon: Star, value: "4.9", label: "Rating" },
 ];
@@ -300,13 +300,13 @@ export function StatsWithIcons() {
 }
 ```
 
-**Quando usar:** Tem números impressionantes, quer prova social rápida.
+**When to use:** Have impressive numbers, want quick social proof.
 
 ---
 
 ## 5. Review Badges
 
-Badges de plataformas de review. Confiança instantânea.
+Badges from review platforms. Instant trust.
 
 ```tsx
 export function ReviewBadges() {
@@ -347,13 +347,13 @@ export function ReviewBadges() {
 }
 ```
 
-**Quando usar:** Tem reviews em plataformas, B2B SaaS.
+**When to use:** Have reviews on platforms, B2B SaaS.
 
 ---
 
 ## 6. Case Study Teaser
 
-Preview de case study. Leva para página completa.
+Preview of a case study. Links to the full page.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -365,14 +365,14 @@ const cases = [
     company: "TechStart",
     logo: "/logos/techstart.svg",
     metric: "+47%",
-    description: "aumento em produtividade",
+    description: "increase in productivity",
     image: "/cases/techstart.jpg",
   },
   {
     company: "ScaleUp",
     logo: "/logos/scaleup.svg",
     metric: "3x",
-    description: "mais leads qualificados",
+    description: "more qualified leads",
     image: "/cases/scaleup.jpg",
   },
 ];
@@ -382,13 +382,13 @@ export function CaseStudyTeaser() {
     <section className="container px-4 py-16 md:py-24">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold">Casos de sucesso</h2>
+          <h2 className="text-3xl md:text-4xl font-bold">Success stories</h2>
           <p className="mt-2 text-muted-foreground">
-            Veja como empresas reais estão crescendo
+            See how real companies are growing
           </p>
         </div>
         <Button variant="outline">
-          Ver todos os casos
+          View all cases
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -419,7 +419,7 @@ export function CaseStudyTeaser() {
                 </div>
                 <div className="text-muted-foreground">{item.description}</div>
                 <Button variant="link" className="mt-4 p-0">
-                  Ler case completo
+                  Read full case study
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -432,23 +432,23 @@ export function CaseStudyTeaser() {
 }
 ```
 
-**Quando usar:** Tem cases documentados, quer gerar leads qualificados.
+**When to use:** Have documented case studies, want to generate qualified leads.
 
 ---
 
-## Combinações Recomendadas
+## Recommended Combinations
 
-### Para Early Stage (poucos clientes)
+### For Early Stage (few clients)
 ```
-Stats (números de uso) → Testimonials (2-3 quotes)
+Stats (usage numbers) → Testimonials (2-3 quotes)
 ```
 
-### Para Growth Stage
+### For Growth Stage
 ```
 Logo Cloud → Stats → Testimonials Grid → Review Badges
 ```
 
-### Para Enterprise
+### For Enterprise
 ```
 Featured Testimonial → Case Study Teasers → Logo Cloud (enterprises)
 ```

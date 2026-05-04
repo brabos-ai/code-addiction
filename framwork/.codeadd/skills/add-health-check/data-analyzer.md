@@ -111,7 +111,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 ### Checks (If MCP Available)
 
 ```sql
--- Listar índices existentes
+-- List existing indexes
 SELECT
   tablename,
   indexname,
@@ -119,7 +119,7 @@ SELECT
 FROM pg_indexes
 WHERE schemaname = 'public';
 
--- Verificar se tenant column tem índice
+-- Check if tenant column has an index
 SELECT * FROM pg_indexes
 WHERE indexdef LIKE '%account_id%';
 ```

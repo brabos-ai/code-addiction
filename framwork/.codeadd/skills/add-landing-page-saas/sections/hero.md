@@ -1,12 +1,12 @@
 # Hero Sections
 
-Seções de hero para landing pages SaaS. Mobile-first, copy-paste ready.
+Hero sections for SaaS landing pages. Mobile-first, copy-paste ready.
 
 ---
 
-## 1. Centered Hero (Padrão)
+## 1. Centered Hero (Default)
 
-O mais versátil. Título centralizado + CTA + screenshot abaixo.
+The most versatile. Centered headline + CTA + screenshot below.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -27,38 +27,38 @@ export function HeroCentered() {
           {/* Badge */}
           <Badge variant="outline" className="px-4 py-1.5 text-sm">
             <span className="mr-2">🚀</span>
-            Novo: Integração com WhatsApp
+            New: WhatsApp Integration
           </Badge>
 
           {/* Headline */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight max-w-4xl">
-            Gerencie seu negócio{" "}
-            <span className="text-primary">sem complicação</span>
+            Manage your business{" "}
+            <span className="text-primary">without the complexity</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-            Automatize processos, acompanhe métricas e escale sua operação.
-            Tudo em uma plataforma simples que sua equipe vai adorar usar.
+            Automate processes, track metrics and scale your operation.
+            All in a simple platform your team will love using.
           </p>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" className="text-lg px-8 h-12">
-              Começar grátis
+              Start for free
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-8 h-12">
               <Play className="mr-2 h-5 w-5" />
-              Ver demo
+              See demo
             </Button>
           </div>
 
           {/* Trust badges */}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <span>✓ Grátis por 14 dias</span>
-            <span>✓ Sem cartão de crédito</span>
-            <span>✓ Setup em 5 minutos</span>
+            <span>✓ Free for 14 days</span>
+            <span>✓ No credit card</span>
+            <span>✓ Setup in 5 minutes</span>
           </div>
         </div>
 
@@ -68,7 +68,7 @@ export function HeroCentered() {
           <div className="relative rounded-xl border bg-background/50 backdrop-blur shadow-2xl overflow-hidden">
             <img
               src="/dashboard-screenshot.png"
-              alt="Dashboard do produto"
+              alt="Product dashboard"
               className="w-full"
             />
           </div>
@@ -79,13 +79,13 @@ export function HeroCentered() {
 }
 ```
 
-**Quando usar:** Produto visual (dashboard, app), quer mostrar screenshot.
+**When to use:** Visual product (dashboard, app), want to show screenshot.
 
 ---
 
-## 2. Split Hero (Texto + Imagem)
+## 2. Split Hero (Text + Image)
 
-Texto à esquerda, imagem/demo à direita. Bom para mostrar interface.
+Text on the left, image/demo on the right. Good for showing the interface.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -100,25 +100,25 @@ export function HeroSplit() {
           <div className="space-y-8">
             <div className="inline-flex items-center rounded-full border px-4 py-1.5 text-sm">
               <span className="flex h-2 w-2 rounded-full bg-primary mr-2" />
-              Mais de 500 empresas já usam
+              More than 500 companies already use it
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              O CRM que sua equipe{" "}
-              <span className="text-primary">vai realmente usar</span>
+              The CRM your team{" "}
+              <span className="text-primary">will actually use</span>
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-lg">
-              Simplifique vendas, automatize follow-ups e feche mais negócios.
-              Sem complexidade, sem treinamento extensivo.
+              Simplify sales, automate follow-ups and close more deals.
+              Without complexity, without extensive training.
             </p>
 
             {/* Feature list */}
             <ul className="space-y-3">
               {[
-                "Pipeline visual drag-and-drop",
-                "Automações sem código",
-                "Relatórios em tempo real",
+                "Visual drag-and-drop pipeline",
+                "No-code automations",
+                "Real-time reports",
               ].map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
@@ -130,11 +130,11 @@ export function HeroSplit() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="text-lg px-8">
-                Testar grátis
+                Try for free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button size="lg" variant="ghost" className="text-lg">
-                Falar com vendas
+                Talk to sales
               </Button>
             </div>
           </div>
@@ -145,7 +145,7 @@ export function HeroSplit() {
             <div className="relative rounded-2xl border shadow-2xl overflow-hidden">
               <img
                 src="/app-screenshot.png"
-                alt="Interface do CRM"
+                alt="CRM interface"
                 className="w-full"
               />
             </div>
@@ -153,7 +153,7 @@ export function HeroSplit() {
             {/* Floating stats card */}
             <div className="absolute -bottom-6 -left-6 bg-background border rounded-xl p-4 shadow-lg">
               <div className="text-2xl font-bold text-primary">+47%</div>
-              <div className="text-sm text-muted-foreground">conversão em vendas</div>
+              <div className="text-sm text-muted-foreground">sales conversion</div>
             </div>
           </div>
         </div>
@@ -163,13 +163,13 @@ export function HeroSplit() {
 }
 ```
 
-**Quando usar:** Quer destacar features com bullets, produto B2B.
+**When to use:** Want to highlight features with bullets, B2B product.
 
 ---
 
-## 3. Hero com Video Background
+## 3. Hero with Video Background
 
-Impactante, bom para produtos visuais ou criativos.
+Impactful, good for visual or creative products.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -195,21 +195,21 @@ export function HeroVideo() {
       {/* Content */}
       <div className="relative container px-4 text-center text-white">
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl mx-auto">
-          Transforme dados em decisões
+          Turn data into decisions
         </h1>
 
         <p className="mt-6 text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
-          Analytics em tempo real para empresas que precisam agir rápido.
-          Visualize, analise e decida com confiança.
+          Real-time analytics for companies that need to act fast.
+          Visualize, analyze and decide with confidence.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" className="text-lg px-8 bg-white text-black hover:bg-white/90">
-            Começar agora
+            Get started now
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button size="lg" variant="outline" className="text-lg px-8 border-white text-white hover:bg-white/10">
-            Ver demonstração
+            See a demo
           </Button>
         </div>
       </div>
@@ -218,13 +218,13 @@ export function HeroVideo() {
 }
 ```
 
-**Quando usar:** Produto visual, quer causar impacto emocional.
+**When to use:** Visual product, want to create emotional impact.
 
 ---
 
-## 4. Hero Minimalista
+## 4. Minimalist Hero
 
-Clean, direto ao ponto. Bom para ferramentas developer ou B2B enterprise.
+Clean, straight to the point. Good for developer tools or B2B enterprise.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -236,30 +236,30 @@ export function HeroMinimal() {
       <div className="container px-4 py-20">
         <div className="max-w-3xl">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-            APIs de pagamento para desenvolvedores
+            Payment APIs for developers
           </h1>
 
           <p className="mt-6 text-lg md:text-xl text-muted-foreground">
-            Integre pagamentos em minutos, não semanas.
-            SDKs em 7 linguagens, documentação completa, suporte 24/7.
+            Integrate payments in minutes, not weeks.
+            SDKs in 7 languages, complete documentation, 24/7 support.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Button size="lg" className="text-lg">
-              Ver documentação
+              View documentation
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="text-lg">
-              Criar conta
+              Create account
             </Button>
           </div>
 
           {/* Code snippet preview */}
           <div className="mt-12 rounded-lg bg-zinc-950 p-4 font-mono text-sm text-zinc-300 overflow-x-auto">
-            <pre>{`curl -X POST https://api.exemplo.com/v1/payments \\
+            <pre>{`curl -X POST https://api.example.com/v1/payments \\
   -H "Authorization: Bearer sk_live_xxx" \\
   -d amount=1000 \\
-  -d currency=brl`}</pre>
+  -d currency=usd`}</pre>
           </div>
         </div>
       </div>
@@ -268,13 +268,13 @@ export function HeroMinimal() {
 }
 ```
 
-**Quando usar:** Produto técnico, audience developer, API/infra.
+**When to use:** Technical product, developer audience, API/infra.
 
 ---
 
-## 5. Hero com Animated Gradient
+## 5. Hero with Animated Gradient
 
-Moderno, eye-catching. Estilo Stripe/Linear.
+Modern, eye-catching. Stripe/Linear style.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -293,37 +293,37 @@ export function HeroGradient() {
       {/* Content */}
       <div className="relative container px-4 text-center">
         <div className="inline-flex items-center rounded-full bg-muted px-4 py-1.5 text-sm mb-8">
-          <span className="font-medium">Novo</span>
+          <span className="font-medium">New</span>
           <span className="mx-2 h-1 w-1 rounded-full bg-foreground" />
-          <span className="text-muted-foreground">Lançamos integração com Slack</span>
+          <span className="text-muted-foreground">We just launched Slack integration</span>
         </div>
 
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-5xl mx-auto bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
-          A próxima geração de{" "}
+          The next generation of{" "}
           <span className="bg-gradient-to-r from-violet-500 to-cyan-500 bg-clip-text text-transparent">
-            colaboração em equipe
+            team collaboration
           </span>
         </h1>
 
         <p className="mt-8 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Projetos, documentos e comunicação em um só lugar.
-          Feito para equipes que movem rápido e pensam grande.
+          Projects, documents and communication in one place.
+          Built for teams that move fast and think big.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" className="text-lg px-8 bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600">
-            Começar grátis
+            Start for free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button size="lg" variant="outline" className="text-lg px-8">
-            Agendar demo
+            Schedule a demo
           </Button>
         </div>
 
         {/* Logos */}
         <div className="mt-16">
           <p className="text-sm text-muted-foreground mb-6">
-            Confiado por empresas inovadoras
+            Trusted by innovative companies
           </p>
           <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
             {/* Placeholder logos */}
@@ -338,49 +338,49 @@ export function HeroGradient() {
 }
 ```
 
-**Quando usar:** Produto moderno, quer parecer inovador, audience jovem/tech.
+**When to use:** Modern product, want to appear innovative, young/tech audience.
 
 ---
 
-## Variações Rápidas
+## Quick Variations
 
 ### Badge Styles
 ```tsx
 // Announcement
 <Badge variant="outline" className="gap-2">
   <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-  Novidade
+  New
 </Badge>
 
 // Product Hunt
 <Badge className="bg-[#ff6154] hover:bg-[#ff6154]/90">
-  #1 no Product Hunt
+  #1 on Product Hunt
 </Badge>
 
 // Version
-<Badge variant="secondary">v2.0 disponível</Badge>
+<Badge variant="secondary">v2.0 available</Badge>
 ```
 
 ### CTA Variations
 ```tsx
 // Primary + Ghost
 <div className="flex gap-4">
-  <Button size="lg">Começar grátis</Button>
-  <Button size="lg" variant="ghost">Saiba mais →</Button>
+  <Button size="lg">Start for free</Button>
+  <Button size="lg" variant="ghost">Learn more →</Button>
 </div>
 
 // With subtext
 <div className="text-center">
-  <Button size="lg" className="mb-2">Criar conta</Button>
+  <Button size="lg" className="mb-2">Create account</Button>
   <p className="text-sm text-muted-foreground">
-    Grátis para sempre. Sem cartão.
+    Free forever. No card needed.
   </p>
 </div>
 
 // Email capture
 <div className="flex gap-2 max-w-md mx-auto">
-  <Input placeholder="seu@email.com" className="flex-1" />
-  <Button>Começar</Button>
+  <Input placeholder="you@email.com" className="flex-1" />
+  <Button>Get started</Button>
 </div>
 ```
 
@@ -392,10 +392,10 @@ export function HeroGradient() {
     <Shield className="h-4 w-4" /> SOC 2
   </span>
   <span className="flex items-center gap-1">
-    <Users className="h-4 w-4" /> 10k+ usuários
+    <Users className="h-4 w-4" /> 10k+ users
   </span>
   <span className="flex items-center gap-1">
-    <Star className="h-4 w-4" /> 4.9 no G2
+    <Star className="h-4 w-4" /> 4.9 on G2
   </span>
 </div>
 
@@ -407,7 +407,7 @@ export function HeroGradient() {
     ))}
   </div>
   <span className="text-sm text-muted-foreground">
-    +2.000 empresas já usam
+    +2,000 companies already use it
   </span>
 </div>
 ```

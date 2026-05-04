@@ -6,7 +6,7 @@
 
 **Output:** `docs/health-checks/YYYY-MM-DD/architecture-report.md`
 
-**Criticidade:** 🟠 ALTO
+**Criticality:** 🟠 HIGH
 
 ---
 

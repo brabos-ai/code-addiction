@@ -26,7 +26,7 @@ The code-review agent MUST create todos for each validation category and for eac
 
 ---
 
-## Skills de Referência
+## Reference Skills
 
 **Load BEFORE reviewing:**
 
@@ -38,7 +38,7 @@ The code-review agent MUST create todos for each validation category and for eac
 
 ---
 
-## Categorias de Validação
+## Validation Categories
 
 ### 0. Spec Compliance (CRITICAL)
 
@@ -177,7 +177,7 @@ Examples:
 
 ---
 
-### 2. RESTful Compliance (CRÍTICO)
+### 2. RESTful Compliance (CRITICAL)
 
 | Rule | Correct | Wrong |
 |---|---|---|
@@ -187,7 +187,7 @@ Examples:
 
 ---
 
-### 3. Contract Validation (CRÍTICO)
+### 3. Contract Validation (CRITICAL)
 
 Frontend ↔ Backend:
 
@@ -319,7 +319,7 @@ For EACH changed file, validate in order:
    - MISSING items: report as BLOCKED (cannot auto-fix product scope)
    - Mark todo as `completed`
 
-2. **Architecture Contract** (segundo — violação estrutural)
+2. **Architecture Contract** (second — structural violation)
    - Mark todo as `in_progress`
    - Read `## Architecture Contract` from `CLAUDE.md`
    - For each new/modified file:
@@ -329,7 +329,7 @@ For EACH changed file, validate in order:
    - If violation found: **CRITICAL BLOCKER** — fix before continuing
    - Mark todo as `completed`
 
-3. **IoC Configuration** (segundo mais crítico)
+3. **IoC Configuration** (second most critical)
    - Mark todo as `in_progress`
    - For each new component created:
      - [ ] Verify decorator (`@Injectable`, `@Controller`)
@@ -432,35 +432,35 @@ Create `docs/features/${featureId}/review.md`.
 
 **New Service created? Verify:**
 
-1. `@Injectable()` no service
-2. `providers: [NovoService]` no módulo
-3. `imports: [FeatureModule]` no `AppModule`
+1. `@Injectable()` on the service
+2. `providers: [NewService]` in the module
+3. `imports: [FeatureModule]` in `AppModule`
 
 **New Repository created? Verify:**
 
-1. `@Injectable()` no repository
-2. `providers: [NovoRepository]` no `AppDatabaseModule`
-3. `exports: [NovoRepository]` no `AppDatabaseModule`
-4. `export { NovoRepository }` no `index.ts` de `libs/app-database/src/`
+1. `@Injectable()` on the repository
+2. `providers: [NewRepository]` in `AppDatabaseModule`
+3. `exports: [NewRepository]` in `AppDatabaseModule`
+4. `export { NewRepository }` in `libs/app-database/src/index.ts`
 
 **New Handler created? Verify:**
 
-1. `@Injectable()` no handler
-2. `providers: [NovoHandler]` no módulo da feature
+1. `@Injectable()` on the handler
+2. `providers: [NewHandler]` in the feature module
 3. **DO NOT** export handler in `index.ts` (implementation detail)
 
 **New Controller created? Verify:**
 
-1. `@Controller('prefix')` no controller
-2. `controllers: [NovoController]` no módulo
-3. `@UseGuards(JwtAuthGuard)` aplicado
-4. `imports: [FeatureModule]` no `AppModule`
+1. `@Controller('prefix')` on the controller
+2. `controllers: [NewController]` in the module
+3. `@UseGuards(JwtAuthGuard)` applied
+4. `imports: [FeatureModule]` in `AppModule`
 
 **New Entity/Enum created? Verify:**
 
-1. `export { NovaEntity }` no `index.ts` de `libs/domain/src/`
+1. `export { NewEntity }` in `libs/domain/src/index.ts`
 
 **New Table created? Verify:**
 
-1. Migration criada em `libs/app-database/migrations/`
-2. Tipo adicionado em `libs/app-database/src/types/Database.ts`
+1. Migration created in `libs/app-database/migrations/`
+2. Type added in `libs/app-database/src/types/Database.ts`

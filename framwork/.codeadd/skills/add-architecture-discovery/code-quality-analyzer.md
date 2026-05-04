@@ -127,7 +127,7 @@ find . -name "*.interface.ts" -o -name "I*.ts" | head -10
 
 ## Executive Summary
 
-| Área | Status | Score |
+| Area | Status | Score |
 |------|--------|-------|
 | SOLID | [Good/Needs Work/Critical] | X/10 |
 | Clean Code | [Good/Needs Work/Critical] | X/10 |

@@ -11,14 +11,14 @@ teardown() {
 
 # ─── Config detection ───────────────────────────────────────────────
 
-@test "detecta package.json" {
+@test "detects package.json" {
   echo '{"name":"test"}' > package.json
   run "$SCRIPTS_DIR/architecture-discover.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"package.json"* ]]
 }
 
-@test "detecta múltiplos config files" {
+@test "detects multiple config files" {
   echo '{}' > package.json
   echo "" > requirements.txt
   run "$SCRIPTS_DIR/architecture-discover.sh"
@@ -27,7 +27,7 @@ teardown() {
   [[ "$output" == *"requirements.txt"* ]]
 }
 
-@test "detecta lock files" {
+@test "detects lock files" {
   echo '{}' > package.json
   echo "" > package-lock.json
   run "$SCRIPTS_DIR/architecture-discover.sh"
@@ -37,7 +37,7 @@ teardown() {
 
 # ─── Structure ───────────────────────────────────────────────────────
 
-@test "mostra seção STRUCTURE" {
+@test "shows STRUCTURE section" {
   mkdir -p src/components
   run "$SCRIPTS_DIR/architecture-discover.sh"
   [ "$status" -eq 0 ]
@@ -45,7 +45,7 @@ teardown() {
   [[ "$output" == *"src/"* ]]
 }
 
-@test "ignora node_modules na estrutura" {
+@test "ignores node_modules in structure" {
   mkdir -p node_modules/some-pkg
   mkdir -p src
   run "$SCRIPTS_DIR/architecture-discover.sh"
@@ -55,7 +55,7 @@ teardown() {
 
 # ─── Extensions ──────────────────────────────────────────────────────
 
-@test "lista extensões de arquivos" {
+@test "lists file extensions" {
   echo "x" > file1.ts
   echo "x" > file2.ts
   echo "x" > file3.js
@@ -67,7 +67,7 @@ teardown() {
 
 # ─── Scripts detection ───────────────────────────────────────────────
 
-@test "detecta scripts do package.json" {
+@test "detects package.json scripts" {
   cat > package.json << 'EOF'
 {
   "scripts": {
@@ -83,7 +83,7 @@ EOF
   [[ "$output" == *"build"* ]]
 }
 
-@test "detecta targets do Makefile" {
+@test "detects Makefile targets" {
   cat > Makefile << 'EOF'
 build:
 	echo "building"
@@ -98,7 +98,7 @@ EOF
 
 # ─── Deps ────────────────────────────────────────────────────────────
 
-@test "lista dependências do package.json" {
+@test "lists package.json dependencies" {
   cat > package.json << 'EOF'
 {
   "dependencies": {
@@ -115,7 +115,7 @@ EOF
 
 # ─── ENV files ───────────────────────────────────────────────────────
 
-@test "detecta .env files" {
+@test "detects .env files" {
   echo "KEY=val" > .env
   echo "KEY=val" > .env.example
   run "$SCRIPTS_DIR/architecture-discover.sh"
@@ -127,7 +127,7 @@ EOF
 
 # ─── LSP ─────────────────────────────────────────────────────────────
 
-@test "reporta LSP status" {
+@test "reports LSP status" {
   run "$SCRIPTS_DIR/architecture-discover.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"LSP:"* ]]
@@ -135,20 +135,20 @@ EOF
 
 # ─── Exit clean ──────────────────────────────────────────────────────
 
-@test "exit 0 sempre" {
+@test "always exits 0" {
   run "$SCRIPTS_DIR/architecture-discover.sh"
   [ "$status" -eq 0 ]
 }
 
 # ─── Edge cases ───────────────────────────────────────────────────────
 
-@test "não crasha com package.json malformado" {
+@test "does not crash with malformed package.json" {
   echo "{ invalid json: [" > package.json
   run "$SCRIPTS_DIR/architecture-discover.sh"
   [ "$status" -eq 0 ]
 }
 
-@test "lida com diretório com espaços no nome" {
+@test "handles directory with spaces in name" {
   mkdir -p "src/my component"
   mkdir -p "src/utils"
   run "$SCRIPTS_DIR/architecture-discover.sh"
