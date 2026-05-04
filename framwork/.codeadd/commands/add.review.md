@@ -45,6 +45,7 @@ STEP 3: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical revie
 STEP 4: Dispatch Reviewers      → PARALLEL (Frontend + Backend via Task)
 STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
 STEP 6: Build Verification      → npm run build, fix until passing
+STEP 7: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from CLAUDE.md (do NOT trust ticks)
 <!-- feature:startup-test:step-list -->
 <!-- /feature:startup-test:step-list -->
 <!-- feature:tdd:step-list -->
@@ -75,6 +76,16 @@ IF BUILD FAILING (after fixes):
 IF STARTUP TEST FAILS (exit code 1, non-connection error):
   ⛔ DO NOT USE: Write to create review.md
   ✅ DO: Fix DI/IoC error, re-run startup test
+
+IF tasks.md HAS `## Validation Gates` SECTION:
+  ⛔ DO NOT: Trust existing `[x]` ticks on `## Validation Gates` — review's job is to verify, not to trust
+  ⛔ DO NOT USE: Write to create review.md until every gate command from CLAUDE.md `validation_gates` has been INDEPENDENTLY re-invoked via Bash in this session and its exit code captured
+  ⛔ DO NOT: Mark review READY while any gate is red on a file in `git diff --name-only`
+  ✅ DO: Re-run every gate from scratch in STEP 7; record the (gate, exit code) pairs in review.md; downgrade `[x]` to `[!]` on regression
+
+IF CLAUDE.md HAS NO `validation_gates` BLOCK:
+  ⛔ DO NOT: Skip review silently
+  ✅ DO: Emit ONE single line: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Continue with the rest of the review.
 
 ALWAYS:
   ⛔ DO NOT USE: Bash for git commit
@@ -580,6 +591,38 @@ npm run build
 
 ---
 
+## STEP 7: Validation Gates Re-Run (INDEPENDENT)
+
+The reviewer's job is to verify, not to trust. Existing `[x]` ticks on `## Validation Gates` are evidence of past success — they are NOT evidence of current correctness. This step re-establishes the truth.
+
+### 7.1 Pre-condition
+
+Read CLAUDE.md `validation_gates` block.
+
+- **Block missing** → emit one-line nudge `Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates.` and skip the rest of STEP 7.
+- **Block present** → proceed.
+
+### 7.2 Re-Run Procedure
+
+Apply the **Validation Gates Procedure (review variant)** from `{{skill:add-tasks-checklist/SKILL.md}}`:
+
+1. Compute `TOUCHED_FILES = git diff --name-only` against the feature base.
+2. For EACH `(intent, command)` in `validation_gates`:
+   1. Invoke the command via Bash. Capture stdout/stderr and exit code in this session.
+   2. Exit 0 → confirm `[x]` (or upgrade `[!]`/`[ ]` to `[x]`).
+   3. Exit ≠ 0 → partition failures into `TOUCHED_FAILURES` vs `UNTOUCHED_FAILURES`.
+      - `TOUCHED_FAILURES` non-empty → downgrade the tick to `[!] — REASON: <≤120 chars>`. **Mark review BLOCKED.** Do NOT auto-fix in review (auto-fixes belong to build); surface to user instead.
+      - `UNTOUCHED_FAILURES` only → keep `[x]` and refresh `### Known Issues` (cap 10 + `+N more`).
+3. Write the updated `tasks.md`.
+
+### 7.3 Hard requirements
+
+- Every gate command MUST be invoked via Bash in this session before STEP 8 produces `review.md`.
+- Capture each `(gate, exit_code)` pair for inclusion in the Quality Gate Report.
+- Review status MUST be BLOCKED if any gate is red on a touched file after re-run.
+
+---
+
 ## STEP 7.5: Log Iteration (IF corrections applied)
 
 **IF files were modified during review (auto-corrections):**
@@ -609,6 +652,7 @@ Collect results from all previous steps:
 | Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED | X/Y items compliant |
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
+| Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if CLAUDE.md has no validation_gates) |
 <!-- feature:startup-test:quality-gate -->
 <!-- /feature:startup-test:quality-gate -->
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |

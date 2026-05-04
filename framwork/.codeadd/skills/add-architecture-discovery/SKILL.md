@@ -88,8 +88,32 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 {"project_conventions":"HIGHEST PRIORITY — discover file naming, folder organization, module registration, import conventions, where new code of each type goes. This ensures consistency."}
 {"rules":["Discover via code, not name","Include real examples","Skip empty sections","Prioritize Reusable Abstractions and Project Conventions over library configs"]}
 
+### ValidationGates_Detection
+{"purpose":"Detect runnable commands for 5 universal gate intents — lint, typecheck, test, build, format — across ANY language/ecosystem the project uses","output":"CLAUDE.md → ## Validation Gates (minified JSON block)"}
+
+{"language_agnostic":"Inspect whatever manifest(s) the project actually has — package.json, pyproject.toml, *.csproj/*.sln, Makefile, Cargo.toml, go.mod, mix.exs, composer.json, Gemfile, build.gradle, pom.xml, etc. Map each gate intent to the real command this project uses. Do NOT assume a language; do NOT fabricate gates that don't exist."}
+
+{"intents":{
+  "lint":"static analysis / style enforcement (eslint, ruff, golangci-lint, rubocop, dotnet format --verify, etc.)",
+  "typecheck":"type validation when separate from build (tsc --noEmit, mypy, pyright, mix dialyzer, etc.)",
+  "build":"compile / bundle / produce artifacts (npm run build, cargo build, dotnet build, go build, mvn package, etc.)",
+  "test":"automated test suite (npm test, pytest, go test, cargo test, dotnet test, mix test, etc.)",
+  "format":"formatter in CHECK mode only (prettier --check, ruff format --check, gofmt -l, dotnet format --verify-no-changes, etc.)"
+}}
+
+{"detection_rules":[
+  "Only emit gates that actually exist in the project — absence is meaningful",
+  "Prefer canonical/shortest script name on ambiguity (e.g. `test` over `test:e2e`)",
+  "format gate: ONLY accept non-mutating variants (--check, --verify, -l). If only a mutating `format`/`fmt` exists → SKIP format entirely (would rewrite files mid-build)",
+  "If typecheck is part of build (no separate command), omit typecheck — don't duplicate",
+  "If a single script wraps multiple gates (e.g. `verify` runs lint+test+build), still emit each individual gate separately when individually runnable",
+  "Document detection choice inline if ambiguous (which script picked and why)"
+]}
+
+{"output_block":"## Validation Gates\\n{\\\"validation_gates\\\":{\\\"lint\\\":\\\"<cmd>\\\",\\\"typecheck\\\":\\\"<cmd>\\\",\\\"test\\\":\\\"<cmd>\\\",\\\"build\\\":\\\"<cmd>\\\",\\\"format\\\":\\\"<cmd>\\\"}}","placement":"After ## Technical Spec, before ## Implementation Patterns","empty_case":"If NO gates detected → omit the entire section (do not emit empty object)"}
+
 ### OutputFormat_TokenEfficient
-{"location":"CLAUDE.md → ## Technical Spec","format":"JSON minified one-line per object","max":"10 words per description","sections":["Stack","Structure","Patterns","Domain","API Routes","Critical Files","Background Processing (optional)","Scheduling (optional)","Events (optional)","Webhooks (optional)","Integrations (optional)","Implementation Patterns Reference"],"skip":"sections that don't apply"}
+{"location":"CLAUDE.md → ## Technical Spec","format":"JSON minified one-line per object","max":"10 words per description","sections":["Stack","Structure","Patterns","Domain","API Routes","Critical Files","Background Processing (optional)","Scheduling (optional)","Events (optional)","Webhooks (optional)","Validation Gates","Implementation Patterns Reference"],"skip":"sections that don't apply"}
 
 ### ImplementationPatternsReference
 {"purpose":"Link to {{addpath:skills/project-patterns/}} for implementation details","note":"CLAUDE.md = WHERE things are, project-patterns skill = HOW to implement"}
@@ -150,6 +174,9 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 {"globalPrefix":"/api/v1","prefixLocation":"path"}
 {"routes":[{"module":"auth","prefix":"/auth","endpoints":["POST /login"]}]}
 
+### Validation Gates (if any detected — see ValidationGates_Detection above)
+{"validation_gates":{"lint":"<command>","typecheck":"<command>","test":"<command>","build":"<command>","format":"<command-in-check-mode>"}}
+
 ### Implementation Patterns (if .codeadd/skills/project-patterns/ exists)
 {"note":"Detailed patterns documented as portable skill for token-efficient JIT loading"}
 {"location":".codeadd/skills/project-patterns/","files":"backend.md, frontend.md, database.md, cli.md, worker.md (by area type)"}
@@ -200,7 +227,8 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 4. Deep Understanding: read 1-2 files per area ONLY if STRUCTURE unclear
 5. **Update CLAUDE.md → ## Architecture Contract** (hierarquia, packages, imports, placement)
 6. Update CLAUDE.md → ## Technical Spec (token-efficient, STRUCTURE only)
-7. Do NOT generate `.codeadd/project/stack-context.md` — this file has been removed entirely
-8. **Check if {{addpath:skills/project-patterns/}} exists** → add Implementation Patterns Reference section
-9. Cleanup: `rm .claude/temp/architecture-discovery.md`
-10. Report discoveries + suggest `/add.xray` if project-patterns skill doesn't exist
+7. **Detect validation gates** per `ValidationGates_Detection` rules → emit `## Validation Gates` block in CLAUDE.md (omit if none detected)
+8. Do NOT generate `.codeadd/project/stack-context.md` — this file has been removed entirely
+9. **Check if {{addpath:skills/project-patterns/}} exists** → add Implementation Patterns Reference section
+10. Cleanup: `rm .claude/temp/architecture-discovery.md`
+11. Report discoveries + suggest `/add.xray` if project-patterns skill doesn't exist

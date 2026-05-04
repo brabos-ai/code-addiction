@@ -120,7 +120,7 @@ Detailed patterns in portable skill. Use pattern-search.sh for JIT loading.
 ### Other Format Rules
 
 **Do:**
-- Include only these sections: Architecture Contract, Technical Spec (compact), Implementation Patterns (pointer only)
+- Include only these sections: Architecture Contract, Technical Spec (compact), Validation Gates (if any detected), Implementation Patterns (pointer only)
 - Use tables for mappings that guide behavior (imports, placement)
 - Use bullet lists for rules and conventions
 
@@ -176,6 +176,19 @@ Data the agent looks up. Uses **minified JSON** (one object per line).
 
 **Do NOT include:** full entity lists, all enum names, all type names, all API routes, all guard names, worker handler names.
 
+### Validation Gates
+
+Auto-derived data block emitted by `add-architecture-discovery`. Maps the 5 universal gate intents (lint, typecheck, test, build, format) to the actual command this project uses. Consumed by `add.plan`, `add.build`, `add.autopilot`, `add.review` to inject and enforce checklist items in `tasks.md`.
+
+Uses **minified JSON** (it's data, not behavior). Only includes gates that actually exist — absence is meaningful. The `format` gate, when present, MUST be a non-mutating check command.
+
+```markdown
+## Validation Gates
+{"validation_gates":{"lint":"npm run lint","typecheck":"npm run typecheck","test":"npm test","build":"npm run build","format":"npm run format:check"}}
+```
+
+Language-agnostic — the keys are intents, the values are the real commands for whatever ecosystem this project uses (Node, Python, .NET, Go, Rust, Ruby, Elixir, Java, etc.). If no gates are detected, omit the section entirely. Do not emit `{"validation_gates":{}}`.
+
 ### Implementation Patterns (pointer only)
 
 Instructions for where to find patterns. Uses **markdown**.
@@ -205,6 +218,9 @@ Before finalizing any generated CLAUDE.md:
 - [ ] Architecture hierarchy in markdown (not JSON)?
 - [ ] Import/placement rules as tables (not JSON)?
 - [ ] Technical Spec uses compact JSON?
+- [ ] Validation Gates block present (if gates detected) using minified JSON?
+- [ ] Validation Gates omits `format` unless a non-mutating check command exists?
+- [ ] Validation Gates section omitted entirely when no gates detected (no empty `{}`)?
 - [ ] Patterns pointer block present at end (as markdown)?
 - [ ] No section explaining single concept in >5 lines?
 

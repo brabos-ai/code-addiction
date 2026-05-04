@@ -25,7 +25,7 @@ description: Use when generating, reading, or ticking tasks.md — defines the c
 
 ## Canonical Structure
 
-`tasks.md` has **5 sections in this exact order with these exact headings** (validators parse by exact text):
+`tasks.md` has **6 sections in this exact order with these exact headings** (validators parse by exact text). The 6th section (`## Validation Gates`) is **conditional** — present only when CLAUDE.md exposes a `validation_gates` block.
 
 ```markdown
 # Tasks: [feature or SF name]
@@ -69,13 +69,16 @@ description: Use when generating, reading, or ticking tasks.md — defines the c
 - [ ] Service `UsersService.create` enforces unique email (RN01)
 - [ ] Queue `user.signup` published on success (RF01)
 
-## Quality Gates
+## Validation Gates
 
-- [ ] Build passes (`npm run build`)
-- [ ] All tests pass (`npm test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] No TODO/FIXME introduced
+- [ ] Run `npm run lint` and fix failures in files touched by this work
+- [ ] Run `npm run typecheck` and fix failures in files touched by this work
+- [ ] Run `npm test` and fix failures in files touched by this work
+- [ ] Run `npm run build` and fix failures
+- [ ] Run `npm run format:check` and fix failures in files touched by this work
 ```
+
+> The exact items above are auto-derived from CLAUDE.md `validation_gates`. The example shows a Node project; for Python the items would read `Run \`pytest\` …`, for .NET `Run \`dotnet test\` …`, etc. — language-agnostic.
 
 ## Section Rules
 
@@ -104,10 +107,17 @@ description: Use when generating, reading, or ticking tasks.md — defines the c
 - Architect rule: every RF and RN listed in `## Requirements Coverage` MUST be referenced by at least one Acceptance item. `add.review` cross-checks this.
 - **Tick rule:** validator ticks `[x]` when the contract is verifiable in the diff (route handler exists with expected method/path; DTO field present; service method implements expected behavior). If partial (e.g., route exists but does not enforce a rule), set `[!]` with reason.
 
-### `## Quality Gates`
+### `## Validation Gates`
 
-- Fixed lines for build, tests, lint, and project-specific gates.
-- **Tick rule:** ticked at the **end** of `add.build` after all area validators complete and global checks pass. Single point — validators do not tick this section.
+- **Auto-derived** from the `validation_gates` JSON block in CLAUDE.md (written by `add-architecture-discovery` / `add.xray`). One checklist line per detected gate. If the block is absent or empty, **omit this section entirely** — never fabricate gate items.
+- Item line format: `- [ ] Run \`<gate command>\` and fix failures in files touched by this work` (drop "in files touched by this work" for the `build` gate, which is global).
+- The `format` gate appears only when CLAUDE.md provides a non-mutating check command (e.g. `prettier --check`, `ruff format --check`, `dotnet format --verify-no-changes`).
+- **Tick rule (build/autopilot):** the validator MUST actually invoke the gate command via Bash, capture exit code and output, then:
+  - Exit 0 → tick `[x]`.
+  - Exit ≠ 0 → identify failures restricted to files in `git diff --name-only` against the feature base; fix only those; re-run; tick `[x]` only when the re-run is green. Never tick on red. Never tick based on self-attestation.
+  - Pre-existing failures in untouched files → record under `### Known Issues` (see below). Do not block the tick on touched-file fixes.
+- **Tick rule (review):** the reviewer MUST **independently re-run** every gate command (do NOT trust existing `[x]` ticks from build). If the re-run goes red on touched files, set `[!]`; if it goes red only on untouched files, leave `[x]` and update `### Known Issues`.
+- **`### Known Issues` subsection** (under `## Validation Gates`): one bullet per pre-existing failure outside the touched set. Format: `- <file>:<line> — <short failure summary>`. Capped at **10 entries**; if more, append `- +N more (run \`<gate>\` for full list)`.
 
 ## Failure Marker `[!]`
 
@@ -148,7 +158,7 @@ A change is **trivial** (does NOT count) when it is exclusively:
 | §2 TDD | per-area validator | coordinator merges per-area reports |
 | §3 Execution | per-area validator | coordinator merges per-area reports |
 | §4 Acceptance Checklist | per-area validator | coordinator merges per-area reports |
-| §5 Quality Gates | post-validator final step | coordinator final step |
+| §5 Validation Gates | post-validator final step (must run real commands) | coordinator final step (must run real commands) |
 | `[!]` setting | per-area validator | coordinator (from validator reports) |
 
 In `add.autopilot`, **only the coordinator writes** to `tasks.md`. Area validators emit a structured report and the coordinator performs a single merge-write per batch — this avoids parallel-write contention without locks.
@@ -186,14 +196,14 @@ Read these files in order:
 4. ${PLAN_DIR}/plan-test-spec.md — Test specifications (if exists)
 
 ## TASK
-Generate `${PLAN_DIR}/tasks.md` following the canonical 5-section schema defined in
+Generate `${PLAN_DIR}/tasks.md` following the canonical schema defined in
 the `add-tasks-checklist` skill. Use the EXACT section headings:
   ## Metadata
   ## Requirements Coverage
   ## TDD
   ## Execution
   ## Acceptance Checklist
-  ## Quality Gates
+  ## Validation Gates    (omit entirely if CLAUDE.md has no validation_gates block)
 
 ## RULES
 - ## Requirements Coverage MUST list every RF and RN from about.md.
@@ -203,6 +213,7 @@ the `add-tasks-checklist` skill. Use the EXACT section headings:
 - ## Execution tasks: 1 service per task, max 3 files, ≤10 words description,
   4 metadata sub-bullets (Service, Files, Deps, Verify), Verify is mandatory.
 - All checkboxes start as `[ ]`. Do NOT pre-tick anything.
+- ## Validation Gates: read CLAUDE.md `validation_gates` JSON block. Emit one item per detected gate using the format `- [ ] Run \`<command>\` and fix failures in files touched by this work` (drop the "in files touched" suffix for the `build` gate). If the block is absent or empty, omit this section entirely — never fabricate gates.
 - Complexity scoring: SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
 - Service order (TDD ordering): test → database → backend → frontend.
 
@@ -255,16 +266,37 @@ Used by the coordinator after collecting all per-area validator reports. Coordin
 3. **Recompute** §1 Requirements Coverage: a RF/RN line ticks `[x]` only if ALL §3 Execution AND §4 Acceptance items referencing it (via `(RFNN/RNNN)`) are `[x]`.
 4. **Write** `tasks.md` ONCE per batch with all merged ticks.
 
-## Quality Gates Procedure (end of build)
+## Validation Gates Procedure (end of build / autopilot / review)
 
-Used by `add.build` (or autopilot coordinator) AFTER all area validators complete and global build verification runs.
+Used by `add.build` (or autopilot coordinator, or `add.review`) AFTER all area validators complete. This is where `## Validation Gates` items get ticked. **Self-attestation is forbidden.** Every tick must correspond to an actual command invocation captured in this session.
 
-1. Run global checks (build, tests, lint, project-specific gates from CLAUDE.md).
-2. Tick `## Quality Gates` items based on actual results:
-   - Pass → `[x]`
-   - Fail → `[!] — REASON: <≤120 chars naming the failing artefact>`
-3. Recompute `## Requirements Coverage` derived state one final time.
-4. Single write to `tasks.md`.
+### Pre-condition: migration nudge
+
+Read CLAUDE.md. If no `validation_gates` JSON block exists, emit ONE single line to the user:
+
+> Note: `validation_gates` not detected in CLAUDE.md. Run `/add.xray` to enable validation gates.
+
+Do NOT auto-run xray. Do NOT block. Skip the rest of this procedure when the block is absent (no gates to enforce). When the block is present but `## Validation Gates` is missing from `tasks.md`, that is a planning bug — surface it but still run the gates from CLAUDE.md.
+
+### Steps
+
+1. Parse `validation_gates` from CLAUDE.md → ordered list of `(intent, command)` pairs.
+2. Compute `TOUCHED_FILES = git diff --name-only <feature-base>...HEAD` (plus uncommitted changes for `add.build`).
+3. For EACH `(intent, command)`:
+   1. Invoke the command via Bash. Capture stdout/stderr and exit code.
+   2. Exit 0 → set the corresponding `## Validation Gates` item to `[x]`. Continue.
+   3. Exit ≠ 0 → parse output for file-scoped failures (each tool reports `path:line:…`).
+      - Partition into `TOUCHED_FAILURES` (path ∈ TOUCHED_FILES) and `UNTOUCHED_FAILURES` (rest).
+      - Fix `TOUCHED_FAILURES` (or dispatch a fix subagent). Re-invoke the gate. If green → `[x]`. If still red on touched files → `[!] — REASON: <≤120 chars naming the failing artefact>`. NEVER tick `[x]` while red on a touched file.
+      - Append `UNTOUCHED_FAILURES` to `### Known Issues` under `## Validation Gates`. Cap at 10 entries; append `- +N more (run \`<command>\` for full list)` when truncating.
+4. Recompute `## Requirements Coverage` derived state one final time.
+5. Single write to `tasks.md`.
+
+### Review variant (independent re-run)
+
+When invoked by `add.review`, ignore any pre-existing `[x]` ticks on `## Validation Gates` — re-run every gate command from scratch. The review's job is to verify, not to trust.
+
+> Backwards-compatibility note: this procedure replaces the prior "Quality Gates Procedure". The §5 section was renamed `## Quality Gates → ## Validation Gates`. Existing `tasks.md` files generated before this change use the old heading; consumers should treat both headings as the same section during the transition window, but new writes always use `## Validation Gates`.
 
 ## Validation Checklist
 

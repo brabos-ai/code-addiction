@@ -85,6 +85,16 @@ IF DOC MUTATION GATE NOT RUN (after plan.md/about.md mutations):
   ⛔ DO NOT: Proceed to STEP 10
   ✅ DO: Run STEP 9.5 gate against each mutated doc
 
+IF tasks.md HAS `## Validation Gates` SECTION:
+  ⛔ DO NOT USE: Edit on tasks.md to tick `## Validation Gates` items WITHOUT first invoking the actual gate command via Bash and capturing its exit code in this session
+  ⛔ DO NOT: Self-attest "lint passed" / "tests pass" — every tick MUST correspond to a real Bash invocation visible in the transcript
+  ⛔ DO NOT: Tick `[x]` while the latest invocation of that gate exited non-zero on a file in `git diff --name-only`
+  ✅ DO: Coordinator runs each gate command from CLAUDE.md → captures exit code → fixes touched-file failures → re-runs → ticks only on green; records untouched-file failures under `### Known Issues` (cap 10)
+
+IF CLAUDE.md HAS NO `validation_gates` BLOCK:
+  ⛔ DO NOT: Fabricate gate items in tasks.md
+  ✅ DO: Emit ONE single line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Continue without blocking.
+
 ALWAYS:
   ⛔ DO NOT ask user questions (100% autonomous)
   ⛔ DO NOT wait for user confirmation
@@ -598,13 +608,27 @@ For EACH mutated doc (`plan.md` and/or `about.md`), execute the validation gate 
 
 ---
 
-## STEP 10: Final Verification
+## STEP 10: Final Verification + Validation Gates Tick
 
+### 10.1 Project Build & Doc Existence
 Run project build. Verify expected docs exist in feature directory:
 - `about.md`, `discovery.md`, `plan.md`, `review.md`
 - `design.md` (optional)
 
 Checklist: Build passes, all expected docs exist, review.md has Quality Gate Report, review status is READY (not BLOCKED).
+
+### 10.2 Validation Gates Tick (coordinator)
+
+The coordinator (NOT area validators) is the sole writer of `## Validation Gates` ticks in autopilot. Run the **Validation Gates Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}`:
+
+1. Read CLAUDE.md `validation_gates` block.
+   - Block missing → emit one-line nudge `Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates.` and skip the rest of 10.2.
+2. For each `(intent, command)`: invoke via Bash, capture exit code.
+3. Exit ≠ 0 → partition failures via `git diff --name-only` against feature base; dispatch fix agent for touched-file failures; re-run; tick `[x]` only on green; otherwise `[!] — REASON: …`.
+4. Append untouched-file failures to `### Known Issues` (cap 10 + `+N more`).
+5. Single coordinator write to `tasks.md` with the merged ticks.
+
+**Hard requirement:** every gate command MUST be invoked via Bash in this session before any `[x]` tick on `## Validation Gates`. Self-attestation is forbidden.
 
 ---
 

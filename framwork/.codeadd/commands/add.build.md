@@ -102,6 +102,16 @@ IF VALIDATION GATE NOT RUN (after mutating plan.md/about.md):
   ⛔ DO NOT: Report completion
   ✅ DO: Run STEP 13 validation gate against each mutated doc
 
+IF tasks.md HAS `## Validation Gates` SECTION:
+  ⛔ DO NOT USE: Edit on tasks.md to tick `## Validation Gates` items WITHOUT first invoking the actual gate command via Bash and capturing its exit code in this session
+  ⛔ DO NOT: Self-attest "lint passed" / "tests pass" / "build clean" — every tick MUST correspond to a real Bash invocation whose output is visible in the transcript
+  ⛔ DO NOT: Tick `[x]` while the latest invocation of that gate exited non-zero on a file in `git diff --name-only`
+  ✅ DO: Run gate → capture exit code → if exit≠0 partition failures by `git diff --name-only` → fix touched-file failures → re-run → tick `[x]` only on green; record untouched-file failures under `### Known Issues` (cap 10)
+
+IF CLAUDE.md HAS NO `validation_gates` BLOCK:
+  ⛔ DO NOT: Fabricate gate items
+  ✅ DO: Emit ONE single line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Continue without blocking.
+
 ALWAYS:
   ⛔ DO NOT USE: Bash for git add/commit/stage
   ⛔ DO NOT: Ask if user wants to commit
@@ -522,9 +532,13 @@ TICKS_APPLIED (count of [x] set), TICKS_FAILED (count of [!] set with reasons), 
 
 Dispatch validator for each area immediately after its implementation subagent returns. After ALL validators complete, run build verification. If build fails, dispatch fix subagent with validator outputs + build errors.
 
-### 10.3 Quality Gates Tick (END OF BUILD)
+### 10.3 Validation Gates Tick (END OF BUILD)
 
-After ALL area validators return AND build verification passes, run the **Quality Gates Procedure** from `add-tasks-checklist`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
+After ALL area validators return AND build verification passes, run the **Validation Gates Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
+
+**Hard requirement:** every gate command listed in CLAUDE.md `validation_gates` MUST be invoked via Bash in this session. Tick `[x]` only when the most recent invocation exited 0 (after fixing touched-file failures). Tick `[!]` when touched-file failures persist after a fix attempt. Append untouched-file failures to `### Known Issues` (cap 10 + `+N more`).
+
+**Migration nudge:** if CLAUDE.md has no `validation_gates` block, emit the one-line nudge and skip this sub-step (no gates to enforce).
 
 **CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.
 
