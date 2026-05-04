@@ -60,7 +60,7 @@
   <g transform="translate(700, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Review</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add-review</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd">/add.review</text>
   </g>
   <line x1="804" y1="82" x2="828" y2="82" class="arrow"/>
   <g transform="translate(832, 60)">
@@ -121,7 +121,7 @@
 
   <!-- ============ AUTONOMOUS FLOW ============ -->
   <text x="40" y="386" class="label" style="fill:#ffaa00">AUTONOMOUS FLOW</text>
-  <text x="40" y="400" class="sublabel">Full AI implementation, no human interaction needed</text>
+  <text x="40" y="400" class="sublabel">Autonomous Feature Coordinator</text>
 
   <g transform="translate(40, 414)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>

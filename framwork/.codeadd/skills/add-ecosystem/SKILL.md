@@ -7,7 +7,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 > **Source of Truth:** Complete ecosystem map for add-pro.
 >
-> **Last Updated:** 2026-04-20 (STEP 2: Regenerated for v0.3.4..HEAD analysis)
+> **Last Updated:** 2026-05-03 (STEP 2: Regenerated for v0.3.9..HEAD analysis)
 
 ## Commands
 
@@ -15,9 +15,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 |---------|---------|---------------|
 | add | Intelligent gateway - answers questions, guides flows, suggests next command | add-ecosystem, add-dev-environment-setup |
 | add.audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add-investigation on ambiguous findings | add-doc-schemas, add-health-check, add-ecosystem, add-investigation |
-| add.autopilot | Autonomous implementation without interaction. Supports `/autopilot feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design |
+| add.autopilot | Autonomous Feature Coordinator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-tasks-checklist |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
-| add.build | Guided implementation (coordinates subagents). Supports `/add.build feature N` for Epics | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention |
+| add.build | Development Execution Specialist | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.commit | Mid-workflow smart commit with adaptive Conventional Commits message: ≤3 files → single line, >3 → module list | add-commit |
 | add.copy | Structured copy generator for SaaS landing pages | add-saas-copy, add-ecosystem |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
@@ -27,9 +27,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.landing | High-conversion SaaS landing page builder | add-landing-page-saas, add-ecosystem |
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
-| add.plan | Technical planning, creates plan.md. Detects Epic vs Feature by user flows. Coverage checklist mandatory | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention |
+| add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.pr | Create PR for code review (without finalizing feature). Used standalone or referenced by add.done when branch protection active | - |
-| add.review | Code review with complete auto-correction. Covers frontend, backend, security, delivery validation. Escalates to add-investigation on findings with isolated root cause | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
+| add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation (80% coverage). Parallel subagents per area + Startup Test | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
 | add.xray | Map project architecture, classify apps, consolidate context | add-architecture-discovery, add-ecosystem |
@@ -42,10 +42,10 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | - |
 | add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write | - |
-| add-code-review | Code validation, auto-correction | add.review, add.build |
+| add-code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID | add.review, add.build |
 | add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add.commit |
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-delivery-validation | Validate requirements implemented, acceptance criteria pass | add.review |
+| add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass | add.review |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code | add |
 | add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose, add.copy, add.landing |
 | add-documentation-style | [REMOVED in v0.3.0] Consolidate into add-claude-md-style for CLAUDE.md generation | - |
@@ -69,6 +69,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-skill-creator | Create and test skills under real pressure | - |
 | add-stripe | Stripe integration, price versioning, grandfathering | - |
 | add-subagent-driven-development | Subagent coordination with quality gates | - |
+| add-tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth | add.plan, add.build, add.autopilot |
 | add-token-efficiency | Compression, compact JSON, minimal tokens | All (best practice) |
 | add-ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan |
 
@@ -89,6 +90,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done (all ID allocation and branch naming) |
+| add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 
 ## Main Flows
 

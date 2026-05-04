@@ -54,7 +54,7 @@
 
   <rect x="370" y="100" width="270" height="36" class="cmd-box"/>
   <text x="386" y="118" class="cmd-name">/add.plan</text>
-  <text x="386" y="130" class="cmd-desc">Technical planning → plan.md</text>
+  <text x="386" y="130" class="cmd-desc">Technical Planning Orchestrator</text>
 
   <!-- IMPLEMENTATION GROUP -->
   <rect x="350" y="174" width="310" height="150" class="group-bg"/>
@@ -63,11 +63,11 @@
 
   <rect x="370" y="220" width="270" height="36" class="cmd-box"/>
   <text x="386" y="238" class="cmd-name">/add.build</text>
-  <text x="386" y="250" class="cmd-desc">Subagent-driven implementation</text>
+  <text x="386" y="250" class="cmd-desc">Development Execution Specialist</text>
 
   <rect x="370" y="264" width="270" height="36" class="cmd-box"/>
   <text x="386" y="282" class="cmd-name">/add.autopilot</text>
-  <text x="386" y="294" class="cmd-desc">Full autonomous implementation</text>
+  <text x="386" y="294" class="cmd-desc">Autonomous Feature Coordinator</text>
 
   <!-- HOTFIX GROUP -->
   <rect x="350" y="338" width="310" height="150" class="group-bg"/>
@@ -89,7 +89,7 @@
 
   <rect x="700" y="56" width="260" height="36" class="cmd-box"/>
   <text x="716" y="74" class="cmd-name">/add.review</text>
-  <text x="716" y="86" class="cmd-desc">Code review + auto-correction</text>
+  <text x="716" y="86" class="cmd-desc">Feature Code Review Specialist</text>
 
   <rect x="700" y="100" width="260" height="36" class="cmd-box"/>
   <text x="716" y="118" class="cmd-name">/add.test</text>
