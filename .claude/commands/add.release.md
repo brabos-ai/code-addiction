@@ -2,7 +2,7 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Coordinates release flow: version bump, `main -> production` merge (stable) or direct tag from main (beta), changelog generation, and tag/release creation.
+Coordinates release flow: version bump, `main → production` merge (stable only), changelog generation, and tag push — CI pipeline handles GitHub release creation.
 
 ---
 
@@ -10,82 +10,53 @@ Coordinates release flow: version bump, `main -> production` merge (stable) or d
 
 **STEPS IN ORDER:**
 ```
-STEP 0: Check prerequisites        → gh CLI + auth
-STEP 1: Read release pipeline      → detect PIPELINE_HANDLES_RELEASE
-STEP 2: Validate source branch     → must be main
-STEP 3: Ask release type            → stable | beta [STOP]
-STEP 4: Detect + choose version    → fetch tags, pick bump type or next beta number
-STEP 5: Update CLI version         → cli/package.json + commit + push main
-STEP 6: Merge main into production → push production (SKIP if beta)
-STEP 7: Changelog + preview        → generate, show, get approval [STOP]
-STEP 8: Create tag/release         → conditional on PIPELINE_HANDLES_RELEASE
+STEP 0: Prerequisites          → gh CLI + auth
+STEP 1: Validate branch        → must be main
+STEP 2: Release type           → stable | beta [STOP]
+STEP 3: Detect version         → fetch tags, choose bump [STOP]
+STEP 4: Update CLI version     → cli/package.json + commit + push
+STEP 5: Merge to production    → --no-ff + push (SKIP if beta)
+STEP 6: Changelog + preview    → generate, confirm [STOP]
+STEP 7: Push tag               → save notes + run script → pipeline handles the rest
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
-```
 IF gh CLI missing or unauthenticated:
-  ⛔ DO NOT USE: Bash for git merge, git tag, git push, gh release
+  ⛔ DO NOT USE: Bash for git merge, git tag, git push
   ✅ DO: Show install/auth instructions and STOP
 
 IF branch is not main:
-  ⛔ DO NOT USE: Bash for merge, tag, push, or gh release
+  ⛔ DO NOT USE: Bash for merge, tag, push
   ✅ DO: Instruct user to switch to main and STOP
 
 IF release type = beta:
-  ⛔ DO NOT USE: Bash for git checkout production, git merge (into production), git push origin production
-  ✅ DO: Skip STEP 6 entirely — beta tags are created from main, not production
+  ⛔ DO NOT USE: Bash for git checkout production, git merge, git push origin production
+  ✅ DO: Skip STEP 5 entirely
 
-IF merge to production failed or not completed (stable only):
-  ⛔ DO NOT USE: Bash for git tag, git push (tag), gh release
+IF merge to production failed (stable only):
+  ⛔ DO NOT USE: Bash for git tag, git push (tag)
   ✅ DO: Show merge error and STOP
 
 IF preview not approved:
-  ⛔ DO NOT USE: Bash for git tag, git push (tag), gh release create
+  ⛔ DO NOT USE: Bash for git tag, git push (tag)
   ✅ DO: Wait for confirmation or cancel
-
-IF PIPELINE_HANDLES_RELEASE = true:
-  ⛔ DO NOT USE: Bash for gh release create
-  ✅ DO: Only create and push the tag — pipeline handles release creation
-```
 
 ---
 
-## STEP 0: Check Prerequisites
+## STEP 0: Prerequisites
 
 Verify gh CLI is installed and authenticated. If either fails → show instructions for user's platform and STOP.
 
 ---
 
-## STEP 1: Read Release Pipeline
-
-**PURPOSE:** Detect if a CI/CD pipeline creates GitHub releases on tag push — to avoid duplicate releases.
-
-### 1.1 Find and read workflow files
-
-Read all `.github/workflows/*.yml` files. If no workflows directory exists → set `PIPELINE_HANDLES_RELEASE = false`, skip to STEP 2.
-
-### 1.2 Detect pipeline behavior
-
-Set `PIPELINE_HANDLES_RELEASE = true` if ANY workflow meets ALL of these:
-- Triggers on `push: tags: v*` (or similar tag pattern)
-- Contains `gh release create` OR `softprops/action-gh-release` OR `goreleaser`
-
-Also extract what the pipeline does beyond release creation (build ZIP, npm publish, deploy, etc.).
-
-### 1.3 Inform user
-
-Show: `PIPELINE_HANDLES_RELEASE = [true|false]` with reason. If true, warn that STEP 8 will only push the tag.
-
----
-
-## STEP 2: Validate Source Branch
+## STEP 1: Validate Branch
 
 Verify current branch is `main`. If not → instruct user to switch and STOP.
 
 ---
 
-## STEP 3: Ask Release Type [STOP]
+## STEP 2: Release Type [STOP]
 
 Ask user: "Release type: **stable** or **beta**?"
 
@@ -96,9 +67,7 @@ Store as `RELEASE_TYPE`.
 
 ---
 
-## STEP 4: Detect + Choose Version
-
-### 4.1 Fetch and list tags
+## STEP 3: Detect Version [STOP]
 
 **CRITICAL:** Always fetch tags from remote before reading local tags.
 
@@ -111,11 +80,9 @@ Without `git fetch --tags`, remote tags are invisible locally — this caused a 
 
 Parse: `LATEST_TAG = first line` or `none` if no tags.
 
-### 4.2 Choose version (stable)
+### Stable
 
-**IF `RELEASE_TYPE = stable`:**
-
-If `LATEST_TAG` exists (`vX.Y.Z` or `vX.Y.Z-beta.N`):
+If `LATEST_TAG` exists:
 - `patch` → `vX.Y.(Z+1)` — fixes, small changes
 - `minor` → `vX.(Y+1).0` — new commands/skills/features
 - `major` → `v(X+1).0.0` — breaking changes
@@ -124,12 +91,9 @@ If first release → recommend `v1.0.0`.
 
 Ask user to choose. Store as `NEXT_VERSION`.
 
-### 4.3 Choose version (beta)
+### Beta
 
-**IF `RELEASE_TYPE = beta`:**
-
-Find the latest stable tag (`LATEST_STABLE` = latest tag without `-beta` suffix).
-Find all beta tags for the next version.
+Find the latest stable tag (`LATEST_STABLE` = latest tag without `-beta` suffix). Find all beta tags for the next version.
 
 Ask user which base version to beta (suggest next minor from `LATEST_STABLE`):
 - If `LATEST_STABLE = v0.2.29` → suggest `v0.3.0-beta.1`
@@ -139,50 +103,42 @@ Store as `NEXT_VERSION`.
 
 ---
 
-## STEP 5: Update CLI Package Version
+## STEP 4: Update CLI Version
 
 Update `cli/package.json` version field to `NEXT_VERSION` (without `v` prefix). Commit with message `chore: bump version to $NEXT_VERSION` and push to main.
 
 ---
 
-## STEP 6: Merge Main Into Production
+## STEP 5: Merge Main Into Production
 
-**IF `RELEASE_TYPE = beta`: SKIP this step entirely.** Beta releases tag directly from main.
-
-**IF `RELEASE_TYPE = stable`:**
+**IF `RELEASE_TYPE = beta`: SKIP this step entirely.**
 
 Merge main into production with `--no-ff`. Push production.
 
-If merge fails → show error and STOP. Do not proceed to tag creation.
+If merge fails → show error and STOP.
 
-After merge, checkout main again to restore working branch.
+After merge, checkout main to restore working branch.
 
 ---
 
-## STEP 7: Changelog + Preview [STOP]
+## STEP 6: Changelog + Preview [STOP]
 
-### 7.1 Collect commits between versions
+### Collect commits
 
 ```bash
-# Stable — compare against production:
+# Stable:
 git log [LATEST_TAG]..production --pretty=format:"%h %s" --no-merges
 
-# Beta — compare against main (no production involved):
+# Beta:
 git log [LATEST_TAG]..main --pretty=format:"%h %s" --no-merges
 
 # If first release:
 git log [TARGET_BRANCH] --pretty=format:"%h %s" --no-merges
 ```
 
-Read each commit message. Classify commits by type using conventional commit prefixes or content analysis:
-- `feat:` → Features
-- `fix:` → Bug Fixes
-- `docs:` → Documentation
-- `chore:`, `build:`, `ci:` → Maintenance
-- `refactor:` → Refactoring
-- Other → group by best judgment
+Classify commits by conventional prefix (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`) or content analysis.
 
-### 7.2 Collect file changes
+### Collect file changes
 
 ```bash
 # Stable:
@@ -192,31 +148,28 @@ git diff --name-status [LATEST_TAG]..production
 # Beta:
 git diff --stat [LATEST_TAG]..main
 git diff --name-status [LATEST_TAG]..main
-
-# If first release:
-git diff --stat --name-status $(git rev-list --max-parents=0 HEAD)..[TARGET_BRANCH]
 ```
 
-Use file changes to enrich commit descriptions where commit messages are too terse. Provider dirs (`framwork/.claude/`, `framwork/.agent/`, etc.) are generated — exclude from individual listing, summarize as one line if changed.
+Use file changes to enrich terse commit messages. Provider dirs (`framwork/.claude/`, `framwork/.agent/`, etc.) are generated — exclude from individual listing, summarize as one line if changed.
 
-### 7.3 PRD scan
+### PRD scan
 
-If `docs/prd/` exists → read and include non-draft PRDs created/updated since `LATEST_TAG`.
+If `docs/prd/` exists → include non-draft PRDs created/updated since `LATEST_TAG`.
 
-### 7.4 Assemble release notes
+### Assemble release notes
 
-Write human-readable release notes. Use commit descriptions as the primary source, enriched by file-level context. The notes must tell a user **what changed and why**, not just list files.
+Write human-readable release notes from the user's perspective — what changed and why, not file paths.
 
 Format (omit empty sections):
 ```markdown
 ## What's New
-- [Human-readable description of each feature, derived from commit messages and file changes]
+- [Feature description]
 
 ## Bug Fixes
-- [Description of each fix]
+- [Fix description]
 
 ## Improvements
-- [Refactors, performance, DX improvements]
+- [Refactor/DX/perf improvement]
 
 ## Maintenance
 - [Build, CI, dependency updates]
@@ -225,65 +178,26 @@ Format (omit empty sections):
 X files changed, Y insertions(+), Z deletions(-)
 ```
 
-For beta releases, prefix the notes with: `> ⚠ This is a pre-release version. It may contain bugs or incomplete features.`
+For beta releases, prefix with: `> ⚠ This is a pre-release version. It may contain bugs or incomplete features.`
 
-Each bullet should be a concise sentence describing the change from the user's perspective, not a file path or raw commit hash.
+### Preview and confirm
 
-### 7.5 Preview and confirm
-
-Show release preview (tag, type [stable/beta], from branch, summary, changelog). Ask user: "Create this release?" If no → STOP.
-
-### 7.6 Save release notes for tag
-
-After approval, save the release notes content to a temp file. This content will be used as the annotated tag message in STEP 8, so the CI pipeline can extract it.
+Show release preview (tag, type, from branch, changelog). Ask: "Create this release?" If no → STOP.
 
 ---
 
-## STEP 8: Create Tag (+ Release if no pipeline)
+## STEP 7: Push Tag
 
-### 8.1 Use automated script to create and push annotated tag
+Save the approved release notes to `/tmp/release-notes-v[VERSION].md`.
 
-Use `./scripts/create-release-tag.sh` to automate tag creation. This script:
-- Reads version from `cli/package.json`
-- Validates tag format (vX.Y.Z or vX.Y.Z-beta.N)
-- Checks if tag already exists (locally and remotely)
-- **Deletes existing tag if found** (both local and remote)
-- Creates fresh annotated tag with release notes from `/tmp/release-notes-[VERSION].md`
-- Pushes tag to origin
-
-**Before running the script:**
-1. Ensure version is updated in `cli/package.json` (STEP 5 handles this)
-2. Save release notes to `/tmp/release-notes-v[VERSION].md` with the approved changelog
-
-**Run the script:**
+Run:
 ```bash
 ./scripts/create-release-tag.sh
 ```
 
-This handles all tag creation logic automatically, including cleanup of stale tags.
+The script reads the version from `cli/package.json`, creates an annotated tag with the release notes, and pushes it to origin. The CI pipeline then builds the framework, packages the ZIP, creates the GitHub Release, and publishes to npm.
 
-### 8.2 Pipeline-driven release creation
-
-**IF `PIPELINE_HANDLES_RELEASE = true`:**
-
-The tag push triggers the CI workflow automatically. The pipeline will:
-- Create GitHub Release with embedded release notes from the annotated tag
-- Build framework and package ZIP archive  
-- Publish to npm (stable as `latest`, beta as `beta`)
-- Auto-mark beta releases as prerelease on GitHub
-
-Monitor progress at: `https://github.com/brabos-ai/code-addiction/actions`
-
-**IF `PIPELINE_HANDLES_RELEASE = false`:**
-
-Manually create release:
-```bash
-# Stable:
-gh release create [NEXT_VERSION] --target production --title "[NEXT_VERSION]" --notes-file [TEMP_NOTES_FILE]
-
-# Beta:
-gh release create [NEXT_VERSION] --target main --title "[NEXT_VERSION]" --prerelease --notes-file [TEMP_NOTES_FILE]
-```
+Monitor at: `https://github.com/brabos-ai/code-addiction/actions`
 
 ---
 
@@ -291,18 +205,14 @@ gh release create [NEXT_VERSION] --target main --title "[NEXT_VERSION]" --prerel
 
 ALWAYS:
 - Fetch tags from remote before reading (`git fetch --tags`) — without this, remote tags are invisible
-- Use annotated tags with release notes as the tag message (`git tag -a -F`)
-- Generate changelog from commits AND file diff combined — commits are primary, file diff enriches
+- Use annotated tags with release notes as tag message — pipeline extracts them for the GitHub Release
+- Generate changelog from commits AND file diff — commits primary, file diff enriches
 - Write release notes from the user's perspective (what changed, not which files)
 - Treat provider dirs as generated — exclude from individual listing
-- Omit empty changelog sections
-- Use `--prerelease` flag when creating beta GitHub releases manually
 
 NEVER:
-- Run `node scripts/build.js` — that is the pipeline's job
-- Commit generated provider files (`framwork/.claude/`, `.agent/`, etc.) — pipeline generates them
-- Use lightweight tags — annotated tags carry the release notes for the pipeline
-- Generate release notes only from file paths — use commit messages as primary source
-- Create `CHANGELOG.md` files in this command
-- Call `gh release create` when `PIPELINE_HANDLES_RELEASE = true`
+- Run `node scripts/build.js` — pipeline's job
+- Commit generated provider files (`framwork/.claude/`, `.agent/`, etc.)
 - Merge to production for beta releases — beta tags come from main
+- Create `CHANGELOG.md` files
+- Call `gh release create` — pipeline handles release creation
