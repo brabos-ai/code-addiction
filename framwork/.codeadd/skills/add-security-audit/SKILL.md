@@ -17,97 +17,167 @@ Skill para auditoria de segurança baseada em OWASP Top 10.
 
 ## OWASP Checklist
 
-### A01 - Broken Access Control (CRITICAL)
+### A01 — Broken Access Control (CRITICAL)
 
-{"multiTenant":["ALL queries filter by account_id","account_id from JWT (NEVER body)","ownership validated before UPDATE/DELETE","guards on protected endpoints"]}
+Multi-tenant rules:
 
-{"search":["grep 'findAll|selectFrom' → check account_id filter","grep '@Body()' → check no accountId from body"]}
+- ALL queries filter by `account_id`
+- `account_id` from JWT (NEVER body)
+- Ownership validated before UPDATE/DELETE
+- Guards on protected endpoints
 
----
+Searches to run:
 
-### A02 - Cryptographic Failures
-
-{"check":["credentials encrypted","passwords NEVER in logs","tokens not in responses","API keys via env vars","secrets not committed"]}
-
-{"search":["grep 'sk_live|api_key|secret' → no hardcoded","grep 'logger|console' → no sensitive data"]}
-
----
-
-### A03 - Injection (CRITICAL)
-
-{"sqlNoSql":["parametrized queries","validated inputs","no .raw() with user input"]}
-
-{"command":["no exec/spawn with user input"]}
-
-{"search":["grep 'raw(' → check user input","grep '${' in queries → SQL injection"]}
+- `grep 'findAll|selectFrom'` → check `account_id` filter
+- `grep '@Body()'` → check no `accountId` from body
 
 ---
 
-### A04 - Insecure Design
+### A02 — Cryptographic Failures
 
-{"auth":["guards on ALL protected routes","JWT expiration","refresh token handling","logout invalidates session"]}
+Checks:
 
-{"search":["grep '@Get|@Post' → check @UseGuards"]}
+- Credentials encrypted
+- Passwords NEVER in logs
+- Tokens not in responses
+- API keys via env vars
+- Secrets not committed
 
----
+Searches:
 
-### A05 - Misconfiguration
-
-{"check":["CORS not origin:'*' in prod","secrets via env vars","debug disabled in prod","no stack traces exposed","deps updated"]}
-
-{"search":["grep 'origin.*\\*' → open CORS","grep 'process.env' → use IConfigurationService"]}
-
----
-
-### A06 - Vulnerable Components
-
-{"check":["npm audit no critical/high","deps regularly updated"]}
-
-{"cmd":"npm audit --json | grep -E 'critical|high'"}
+- `grep 'sk_live|api_key|secret'` → no hardcoded
+- `grep 'logger|console'` → no sensitive data
 
 ---
 
-### A07 - Auth Failures
+### A03 — Injection (CRITICAL)
 
-{"check":["bcrypt/argon2 for passwords","rate limiting on auth","MFA available","secure password recovery"]}
+SQL/NoSQL:
 
----
+- Parametrized queries
+- Validated inputs
+- No `.raw()` with user input
 
-### A08 - Integrity Failures
+Command injection:
 
-{"check":["deps from trusted sources","lock files committed","CI/CD security validations"]}
+- No `exec`/`spawn` with user input
 
----
+Searches:
 
-### A09 - Logging Failures
-
-{"check":["no sensitive data in logs","sufficient context for debug","log unauthorized access attempts"]}
-
----
-
-### A10 - SSRF
-
-{"check":["external URLs validated/whitelisted","no arbitrary user URLs","validate hostnames before fetch"]}
+- `grep 'raw('` → check user input
+- `grep '${'` in queries → SQL injection
 
 ---
 
-### Extra - XSS
+### A04 — Insecure Design
 
-{"check":["outputs sanitized","no dangerouslySetInnerHTML (or sanitized)","URLs validated in href/src"]}
+Checks:
 
-{"search":["grep 'dangerouslySetInnerHTML' → check sanitization"]}
+- Guards on ALL protected routes
+- JWT expiration
+- Refresh token handling
+- Logout invalidates session
+
+Search: `grep '@Get|@Post'` → check `@UseGuards`.
 
 ---
 
-### Extra - Mass Assignment
+### A05 — Misconfiguration
 
-{"check":["explicit DTOs (no body spread)","use @Expose/@Exclude","validate PartialType"]}
+Checks:
 
-{"search":["grep '...body|...dto' → spread vulnerability"]}
+- CORS not `origin:'*'` in prod
+- Secrets via env vars
+- Debug disabled in prod
+- No stack traces exposed
+- Deps updated
+
+Searches:
+
+- `grep 'origin.*\*'` → open CORS
+- `grep 'process.env'` → use `IConfigurationService`
+
+---
+
+### A06 — Vulnerable Components
+
+Checks:
+
+- `npm audit` no critical/high
+- Deps regularly updated
+
+Command: `npm audit --json | grep -E 'critical|high'`.
+
+---
+
+### A07 — Auth Failures
+
+Checks:
+
+- bcrypt/argon2 for passwords
+- Rate limiting on auth
+- MFA available
+- Secure password recovery
+
+---
+
+### A08 — Integrity Failures
+
+Checks:
+
+- Deps from trusted sources
+- Lock files committed
+- CI/CD security validations
+
+---
+
+### A09 — Logging Failures
+
+Checks:
+
+- No sensitive data in logs
+- Sufficient context for debug
+- Log unauthorized access attempts
+
+---
+
+### A10 — SSRF
+
+Checks:
+
+- External URLs validated/whitelisted
+- No arbitrary user URLs
+- Validate hostnames before fetch
+
+---
+
+### Extra — XSS
+
+Checks:
+
+- Outputs sanitized
+- No `dangerouslySetInnerHTML` (or sanitized)
+- URLs validated in `href`/`src`
+
+Search: `grep 'dangerouslySetInnerHTML'` → check sanitization.
+
+---
+
+### Extra — Mass Assignment
+
+Checks:
+
+- Explicit DTOs (no body spread)
+- Use `@Expose`/`@Exclude`
+- Validate `PartialType`
+
+Search: `grep '...body|...dto'` → spread vulnerability.
 
 ---
 
 ## Scoring
+
+Severity weights and status thresholds (lookup):
 
 {"severity":{"critical":3,"high":2,"medium":1,"low":0.5}}
 {"score":"10 - (weighted_sum / 5)"}
@@ -117,10 +187,10 @@ Skill para auditoria de segurança baseada em OWASP Top 10.
 
 ## Process
 
-1. **Setup:** Read security.md, CLAUDE.md, identify scope files
+1. **Setup:** Read `security.md`, `CLAUDE.md`, identify scope files
 2. **Analyze:** For EACH OWASP category → run searches → verify (no false positives) → classify severity
-3. **Multi-Tenant:** Check ALL queries filter account_id, ID from JWT
-4. **Report:** Calculate score, group by severity, create security-report.md
+3. **Multi-Tenant:** Check ALL queries filter `account_id`, ID from JWT
+4. **Report:** Calculate score, group by severity, create `security-report.md`
 
 ---
 
@@ -167,6 +237,7 @@ Skill para auditoria de segurança baseada em OWASP Top 10.
 ## Rules
 
 **Do:**
+
 - Analyze ALL files in scope
 - Check ALL OWASP categories
 - Verify context (avoid false positives)
@@ -174,7 +245,8 @@ Skill para auditoria de segurança baseada em OWASP Top 10.
 - Explain impact simply
 - Give specific recommendations
 
-**Dont:**
+**Don't:**
+
 - Auto-fix (only report)
 - False positives without context
 - Ignore minor findings
@@ -184,8 +256,20 @@ Skill para auditoria de segurança baseada em OWASP Top 10.
 
 ## False Positive Prevention
 
-{"contextMatters":["process.env.NODE_ENV is OK","internal queries can use .raw()","validated DTOs can use PartialType"]}
+Context that matters:
 
-{"frameworkProtections":["NestJS sanitizes some inputs","Kysely parametrizes queries","React escapes outputs by default"]}
+- `process.env.NODE_ENV` is OK
+- Internal queries can use `.raw()`
+- Validated DTOs can use `PartialType`
 
-{"projectPatterns":["check documented patterns","IConfigurationService is correct","don't report as violation if follows docs"]}
+Framework protections:
+
+- NestJS sanitizes some inputs
+- Kysely parametrizes queries
+- React escapes outputs by default
+
+Project patterns:
+
+- Check documented patterns
+- `IConfigurationService` is correct
+- Don't report as violation if it follows the docs

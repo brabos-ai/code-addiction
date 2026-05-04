@@ -11,119 +11,214 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 
 ---
 
-## Spec
+## When to Use
 
-### WhenToUse
-{"triggers":["need architecture docs","update CLAUDE.md","document technical spec","/plan needs context","/add-dev needs patterns"],"auto-loaded-by":["/plan","/dev"],"output":"CLAUDE.md → ## Technical Spec + ## Architecture Contract"}
+Triggers:
+- Need architecture docs
+- Update CLAUDE.md
+- Document technical spec
+- `/plan` needs context
+- `/add-dev` needs patterns
 
-### Phase0_AutomatedDiscovery
-{"script":"bash .codeadd/scripts/architecture-discover.sh","output":".claude/temp/architecture-discovery.md","includes":["package.json","turbo.json","tsconfig","dir structure depth 3","stack detection","patterns (CQRS,Repository,DI)","controllers,services,repositories","frontend (UI,state,forms,stores,hooks)","workers,cron,events,webhooks","integrations","statistics"]}
+Auto-loaded by: `/plan`, `/dev`.
 
-### Phase1_ArchitectureContract
-{"purpose":"Gerar contrato de dependências para direcionar dev e review","output":"CLAUDE.md → ## Architecture Contract"}
+Output: `CLAUDE.md → ## Technical Spec + ## Architecture Contract`.
 
-{"discovery":[
-  "Identificar packages/apps do monorepo (ou módulos se single-app)",
-  "Ler package.json de cada um para mapear dependencies internas",
-  "Inferir hierarquia de camadas (quem depende de quem)",
-  "Detectar padrão Clean Architecture se existir (domain→interfaces→database→api)",
-  "Mapear onde cada tipo de artefato deve ficar (entities, DTOs, repos, services)"
-]}
+---
 
-{"detectHierarchy":[
-  "Package sem deps internas = innermost (ex: domain)",
-  "Package que só depende de domain = interfaces",
-  "Package que depende de domain+interfaces = database/infra",
-  "Apps que dependem de tudo = outermost (api)"
-]}
+## Phase 0 — Automated Discovery
 
-### DiscoveryDocument
-{"location":".claude/temp/architecture-discovery.md","sections":["2.5: Stack Detection","3: Architectural Patterns","4: Domain Models & Entities","5: Infrastructure & Config","5.5: Routes & Endpoints","6.x: Frontend/Workers/Events/Webhooks/Integrations"],"action":"read BEFORE manual searches"}
+Run: `bash .codeadd/scripts/architecture-discover.sh`
+Output: `.claude/temp/architecture-discovery.md`
 
-### DeepUnderstanding
-{"when":"discovery doc has insufficient info","read":"1-2 files per area to understand STRUCTURE","areas":["services → interface pattern?","repositories → return Entity or DTO?","workers → dispatch/retry config?","cron → interval pattern?","events → naming pattern?","webhooks → signature verify?"],"principle":"read only necessary to document STRUCTURE, not implementation patterns"}
-{"note":"Implementation details (logging, validation, state, styling) belong in {{addpath:skills/project-patterns/}} via /architecture-analyzer"}
+The script collects:
 
-### AppClassification
-{"purpose":"Classify each app/package to dispatch appropriate specialist analyzer"}
-{"method":"Read app's package.json dependencies → match against signals → return type"}
-{"signals":{
-  "backend":["express","fastify","nestjs","@nestjs/*","hono","koa","@grpc/*","socket.io","@trpc/*"],
-  "frontend":["react","vue","svelte","solid-js","@angular/*","next","nuxt","@tanstack/react-*","@remix-run/*"],
-  "database":["prisma","drizzle-orm","kysely","typeorm","sequelize","knex","@mikro-orm/*"],
-  "cli":["commander","yargs","clack","@clack/*","inquirer","meow","oclif"],
-  "worker":["bullmq","bull","agenda","node-cron","bee-queue","@temporalio/*"]
-}}
-{"classification_rules":[
-  "Match dependencies against signals",
-  "App can have MULTIPLE types (backend + database)",
-  "Primary type = first strong match",
-  "If no match → generic (structure only)"
-]}
-{"fallback":"If no signals match → analyze structure and config only, no deep patterns"}
+{"includes":["package.json","turbo.json","tsconfig","dir structure depth 3","stack detection","patterns (CQRS,Repository,DI)","controllers,services,repositories","frontend (UI,state,forms,stores,hooks)","workers,cron,events,webhooks","integrations","statistics"]}
 
-### SpecialistRegistry
-{"purpose":"Map app type to specialist analyzer — output goes to {{addpath:skills/project-patterns/}}"}
-{"registry":{
-  "backend":{"skill":"backend-analyzer.md","output":"backend.md","analyzes":"logging, validation, error handling, auth, middleware, API patterns"},
-  "frontend":{"skill":"frontend-analyzer.md","output":"frontend.md","analyzes":"state, styling, components, forms, hooks, routing"},
-  "database":{"skill":"database-analyzer.md","output":"database.md","scope":"cross-app","analyzes":"ORM, migrations, queries, transactions"},
-  "cli":{"skill":null,"output":"cli.md","analyzes":"commands, args, prompts - use generic template"},
-  "worker":{"skill":null,"output":"worker.md","analyzes":"jobs, queues, scheduling - use generic template"},
-  "generic":{"skill":null,"output":"[area-type].md","analyzes":"structure, config, entry points only"}
-}}
-{"output_dir":"{{addpath:skills/project-patterns/}}","naming":"lowercase area type (backend.md, frontend.md, database.md, cli.md, worker.md)"}
-{"dispatch_rules":[
-  "One specialist per app (based on primary type)",
-  "Database analyzer runs ONCE (cross-app)",
-  "Apps without specialist → generic analysis",
-  "All analyzers run in PARALLEL",
-  "Output to {{addpath:skills/project-patterns/[area].md}}"
-]}
+---
 
-### GenericAppTemplate
-{"purpose":"Template for ANY app type without specialist — focus on what agents need to develop correctly"}
-{"sections":["App Nature (discovered)","Structure","Entry Points","Dependencies","Configuration","Reusable Abstractions","Project Conventions","Commands/Jobs (if applicable)"]}
-{"reusable_abstractions":"HIGHEST PRIORITY — discover base classes, shared utilities, custom helpers, existing services/modules that agents MUST reuse. List each with path + purpose + usage example. This prevents duplication."}
-{"project_conventions":"HIGHEST PRIORITY — discover file naming, folder organization, module registration, import conventions, where new code of each type goes. This ensures consistency."}
-{"rules":["Discover via code, not name","Include real examples","Skip empty sections","Prioritize Reusable Abstractions and Project Conventions over library configs"]}
+## Phase 1 — Architecture Contract
 
-### ValidationGates_Detection
-{"purpose":"Detect runnable commands for 5 universal gate intents — lint, typecheck, test, build, format — across ANY language/ecosystem the project uses","output":"CLAUDE.md → ## Validation Gates (minified JSON block)"}
+Generate the dependency contract that drives development and review. Output goes to `CLAUDE.md → ## Architecture Contract`.
 
-{"language_agnostic":"Inspect whatever manifest(s) the project actually has — package.json, pyproject.toml, *.csproj/*.sln, Makefile, Cargo.toml, go.mod, mix.exs, composer.json, Gemfile, build.gradle, pom.xml, etc. Map each gate intent to the real command this project uses. Do NOT assume a language; do NOT fabricate gates that don't exist."}
+### Discovery steps
 
-{"intents":{
-  "lint":"static analysis / style enforcement (eslint, ruff, golangci-lint, rubocop, dotnet format --verify, etc.)",
-  "typecheck":"type validation when separate from build (tsc --noEmit, mypy, pyright, mix dialyzer, etc.)",
-  "build":"compile / bundle / produce artifacts (npm run build, cargo build, dotnet build, go build, mvn package, etc.)",
-  "test":"automated test suite (npm test, pytest, go test, cargo test, dotnet test, mix test, etc.)",
-  "format":"formatter in CHECK mode only (prettier --check, ruff format --check, gofmt -l, dotnet format --verify-no-changes, etc.)"
-}}
+- Identificar packages/apps do monorepo (ou módulos se single-app)
+- Ler `package.json` de cada um para mapear dependencies internas
+- Inferir hierarquia de camadas (quem depende de quem)
+- Detectar padrão Clean Architecture se existir (domain → interfaces → database → api)
+- Mapear onde cada tipo de artefato deve ficar (entities, DTOs, repos, services)
 
-{"detection_rules":[
-  "Only emit gates that actually exist in the project — absence is meaningful",
-  "Prefer canonical/shortest script name on ambiguity (e.g. `test` over `test:e2e`)",
-  "format gate: ONLY accept non-mutating variants (--check, --verify, -l). If only a mutating `format`/`fmt` exists → SKIP format entirely (would rewrite files mid-build)",
-  "If typecheck is part of build (no separate command), omit typecheck — don't duplicate",
-  "If a single script wraps multiple gates (e.g. `verify` runs lint+test+build), still emit each individual gate separately when individually runnable",
-  "Document detection choice inline if ambiguous (which script picked and why)"
-]}
+### How to detect the hierarchy
 
-{"output_block":"## Validation Gates\\n{\\\"validation_gates\\\":{\\\"lint\\\":\\\"<cmd>\\\",\\\"typecheck\\\":\\\"<cmd>\\\",\\\"test\\\":\\\"<cmd>\\\",\\\"build\\\":\\\"<cmd>\\\",\\\"format\\\":\\\"<cmd>\\\"}}","placement":"After ## Technical Spec, before ## Implementation Patterns","empty_case":"If NO gates detected → omit the entire section (do not emit empty object)"}
+- Package sem deps internas = innermost (ex: domain)
+- Package que só depende de domain = interfaces
+- Package que depende de domain + interfaces = database/infra
+- Apps que dependem de tudo = outermost (api)
 
-### OutputFormat_TokenEfficient
-{"location":"CLAUDE.md → ## Technical Spec","format":"JSON minified one-line per object","max":"10 words per description","sections":["Stack","Structure","Patterns","Domain","API Routes","Critical Files","Background Processing (optional)","Scheduling (optional)","Events (optional)","Webhooks (optional)","Validation Gates","Implementation Patterns Reference"],"skip":"sections that don't apply"}
+---
 
-### ImplementationPatternsReference
-{"purpose":"Link to {{addpath:skills/project-patterns/}} for implementation details","note":"CLAUDE.md = WHERE things are, project-patterns skill = HOW to implement"}
-{"location":"{{addpath:skills/project-patterns/}}","naming":"lowercase area type: backend.md, frontend.md, database.md, cli.md, worker.md"}
-{"search":"bash .codeadd/scripts/pattern-search.sh <area> [topic] — returns ## headers + line ranges for JIT loading"}
-{"doNOT":["include logging patterns in CLAUDE.md","include validation patterns in CLAUDE.md","include state management details in CLAUDE.md","include styling patterns in CLAUDE.md","duplicate info already in project-patterns skill"]}
-{"reference":"List areas from pattern-search.sh --list or ls {{addpath:skills/project-patterns/*.md}}"}
+## Discovery Document
 
-### Cleanup
-{"action":"rm .claude/temp/architecture-discovery.md","verify":"ls -la .claude/temp/ || echo cleanup complete"}
+{"location":".claude/temp/architecture-discovery.md","sections":["2.5: Stack Detection","3: Architectural Patterns","4: Domain Models & Entities","5: Infrastructure & Config","5.5: Routes & Endpoints","6.x: Frontend/Workers/Events/Webhooks/Integrations"]}
+
+Read the discovery document COMPLETE before any manual searches.
+
+---
+
+## Deep Understanding (only when needed)
+
+When the discovery document has insufficient info, read 1–2 files per area to understand STRUCTURE only — not implementation patterns. Implementation details (logging, validation, state, styling) belong in `{{addpath:skills/project-patterns/}}` via `/architecture-analyzer`.
+
+Areas and what to look for:
+
+| Area | Question |
+|---|---|
+| Services | Interface pattern? |
+| Repositories | Return Entity or DTO? |
+| Workers | Dispatch/retry config? |
+| Cron | Interval pattern? |
+| Events | Naming pattern? |
+| Webhooks | Signature verify? |
+
+**Principle:** Read only what's necessary to document STRUCTURE.
+
+---
+
+## App Classification
+
+Classify each app/package to dispatch the appropriate specialist analyzer.
+
+**Method:** Read app's `package.json` dependencies → match against signals → return type.
+
+### Signals (lookup table)
+
+{"signals":{"backend":["express","fastify","nestjs","@nestjs/*","hono","koa","@grpc/*","socket.io","@trpc/*"],"frontend":["react","vue","svelte","solid-js","@angular/*","next","nuxt","@tanstack/react-*","@remix-run/*"],"database":["prisma","drizzle-orm","kysely","typeorm","sequelize","knex","@mikro-orm/*"],"cli":["commander","yargs","clack","@clack/*","inquirer","meow","oclif"],"worker":["bullmq","bull","agenda","node-cron","bee-queue","@temporalio/*"]}}
+
+### Classification rules
+
+- Match dependencies against signals
+- An app can have MULTIPLE types (e.g., backend + database)
+- Primary type = first strong match
+- If no signals match → `generic` (analyze structure and config only, no deep patterns)
+
+---
+
+## Specialist Registry
+
+Maps app type to specialist analyzer. Output goes to `{{addpath:skills/project-patterns/}}`.
+
+{"registry":{"backend":{"skill":"backend-analyzer.md","output":"backend.md","analyzes":"logging, validation, error handling, auth, middleware, API patterns"},"frontend":{"skill":"frontend-analyzer.md","output":"frontend.md","analyzes":"state, styling, components, forms, hooks, routing"},"database":{"skill":"database-analyzer.md","output":"database.md","scope":"cross-app","analyzes":"ORM, migrations, queries, transactions"},"cli":{"skill":null,"output":"cli.md","analyzes":"commands, args, prompts - use generic template"},"worker":{"skill":null,"output":"worker.md","analyzes":"jobs, queues, scheduling - use generic template"},"generic":{"skill":null,"output":"[area-type].md","analyzes":"structure, config, entry points only"}}}
+
+Output dir: `{{addpath:skills/project-patterns/}}`. Naming: lowercase area type (`backend.md`, `frontend.md`, `database.md`, `cli.md`, `worker.md`).
+
+### Dispatch rules
+
+- One specialist per app (based on primary type)
+- Database analyzer runs ONCE (cross-app)
+- Apps without specialist → generic analysis
+- All analyzers run in PARALLEL
+- Output to `{{addpath:skills/project-patterns/[area].md}}`
+
+---
+
+## Generic App Template
+
+Template for ANY app type without a specialist — focus on what agents need to develop correctly.
+
+Sections:
+
+- App Nature (discovered)
+- Structure
+- Entry Points
+- Dependencies
+- Configuration
+- Reusable Abstractions
+- Project Conventions
+- Commands/Jobs (if applicable)
+
+**Reusable Abstractions — HIGHEST PRIORITY.** Discover base classes, shared utilities, custom helpers, existing services/modules that agents MUST reuse. List each with path + purpose + usage example. This prevents duplication.
+
+**Project Conventions — HIGHEST PRIORITY.** Discover file naming, folder organization, module registration, import conventions, where new code of each type goes. This ensures consistency.
+
+Rules:
+
+- Discover via code, not name
+- Include real examples
+- Skip empty sections
+- Prioritize Reusable Abstractions and Project Conventions over library configs
+
+---
+
+## Validation Gates Detection
+
+Detect runnable commands for the 5 universal gate intents — `lint`, `typecheck`, `test`, `build`, `format` — across ANY language/ecosystem the project uses.
+
+Output: `CLAUDE.md → ## Validation Gates` (minified JSON block).
+
+**Language-agnostic.** Inspect whatever manifest(s) the project actually has — `package.json`, `pyproject.toml`, `*.csproj`/`*.sln`, `Makefile`, `Cargo.toml`, `go.mod`, `mix.exs`, `composer.json`, `Gemfile`, `build.gradle`, `pom.xml`, etc. Map each gate intent to the real command this project uses. Do NOT assume a language; do NOT fabricate gates that don't exist.
+
+### Intents (lookup)
+
+{"intents":{"lint":"static analysis / style enforcement (eslint, ruff, golangci-lint, rubocop, dotnet format --verify, etc.)","typecheck":"type validation when separate from build (tsc --noEmit, mypy, pyright, mix dialyzer, etc.)","build":"compile / bundle / produce artifacts (npm run build, cargo build, dotnet build, go build, mvn package, etc.)","test":"automated test suite (npm test, pytest, go test, cargo test, dotnet test, mix test, etc.)","format":"formatter in CHECK mode only (prettier --check, ruff format --check, gofmt -l, dotnet format --verify-no-changes, etc.)"}}
+
+### Detection rules
+
+- Only emit gates that actually exist in the project — absence is meaningful
+- Prefer canonical/shortest script name on ambiguity (e.g. `test` over `test:e2e`)
+- `format` gate: ONLY accept non-mutating variants (`--check`, `--verify`, `-l`). If only a mutating `format`/`fmt` exists → SKIP format entirely (would rewrite files mid-build)
+- If typecheck is part of build (no separate command), omit typecheck — don't duplicate
+- If a single script wraps multiple gates (e.g. `verify` runs lint+test+build), still emit each individual gate separately when individually runnable
+- Document detection choice inline if ambiguous (which script picked and why)
+
+### Output block
+
+Placement: after `## Technical Spec`, before `## Implementation Patterns`.
+
+```markdown
+## Validation Gates
+{"validation_gates":{"lint":"<cmd>","typecheck":"<cmd>","test":"<cmd>","build":"<cmd>","format":"<cmd>"}}
+```
+
+If NO gates detected → omit the entire section (do not emit empty object).
+
+---
+
+## Output Format — Token Efficient
+
+{"location":"CLAUDE.md → ## Technical Spec","format":"JSON minified one-line per object","max":"10 words per description","sections":["Stack","Structure","Patterns","Domain","API Routes","Critical Files","Background Processing (optional)","Scheduling (optional)","Events (optional)","Webhooks (optional)","Validation Gates","Implementation Patterns Reference"]}
+
+Skip sections that don't apply.
+
+---
+
+## Implementation Patterns Reference
+
+Link to `{{addpath:skills/project-patterns/}}` for implementation details.
+
+- **CLAUDE.md** = WHERE things are
+- **project-patterns skill** = HOW to implement
+
+Location: `{{addpath:skills/project-patterns/}}`. Naming: lowercase area type (`backend.md`, `frontend.md`, `database.md`, `cli.md`, `worker.md`).
+
+Search: `bash .codeadd/scripts/pattern-search.sh <area> [topic]` — returns `##` headers + line ranges for JIT loading.
+
+DO NOT include in CLAUDE.md:
+
+- Logging patterns
+- Validation patterns
+- State management details
+- Styling patterns
+- Anything already in the project-patterns skill
+
+Reference list: from `pattern-search.sh --list` or `ls {{addpath:skills/project-patterns/*.md}}`.
+
+---
+
+## Cleanup
+
+After execution: `rm .claude/temp/architecture-discovery.md`
+Verify: `ls -la .claude/temp/ || echo cleanup complete`
 
 ---
 
@@ -174,7 +269,7 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 {"globalPrefix":"/api/v1","prefixLocation":"path"}
 {"routes":[{"module":"auth","prefix":"/auth","endpoints":["POST /login"]}]}
 
-### Validation Gates (if any detected — see ValidationGates_Detection above)
+### Validation Gates (if any detected — see Validation Gates Detection above)
 {"validation_gates":{"lint":"<command>","typecheck":"<command>","test":"<command>","build":"<command>","format":"<command-in-check-mode>"}}
 
 ### Implementation Patterns (if .codeadd/skills/project-patterns/ exists)
@@ -189,33 +284,36 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 ## Critical Rules
 
 **DO:**
+
 - Run Phase 0 script FIRST (automated discovery)
 - Read discovery document COMPLETE before manual searches
 - Use document as primary source (90% of work done)
 - Be framework-agnostic (detect, don't assume)
 - Update section WITHIN CLAUDE.md (not separate file)
-- **Generate Architecture Contract BEFORE Technical Spec**
+- Generate Architecture Contract BEFORE Technical Spec
 - JSON minified one-line
 - Max 10 words per description
 - Document what EXISTS
 - Cleanup temp document at end
 - Skip sections that don't apply
-- **Reference {{addpath:skills/project-patterns/}} for implementation patterns (if exist)**
+- Reference `{{addpath:skills/project-patterns/}}` for implementation patterns (if exist)
 
 **DO NOT:**
-- Create technical-spec.md or separate files
+
+- Create `technical-spec.md` or separate files
 - Use formatted/indented JSON
 - Invent patterns not found in code
 - Leave temp document after execution
 - Assume specific framework/structure
 - Ignore discovery document
 - Make redundant searches
-- Read many files (only necessary for patterns)
-- **Include implementation details in CLAUDE.md (logging, validation, state, styling) - these go in {{addpath:skills/project-patterns/**}}
+- Read many files (only what's necessary for patterns)
+- Include implementation details in CLAUDE.md (logging, validation, state, styling) — these go in `{{addpath:skills/project-patterns/}}`
 
-**SEPARATION OF CONCERNS:**
+**Separation of concerns:**
+
 - **CLAUDE.md** = WHERE things are (structure, paths, layers, packages)
-- **{{addpath:skills/project-patterns/**}} = HOW to implement (patterns, conventions, examples)
+- **`{{addpath:skills/project-patterns/}}`** = HOW to implement (patterns, conventions, examples)
 
 ---
 
@@ -224,11 +322,11 @@ Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estrut
 1. Execute `bash .codeadd/scripts/architecture-discover.sh`
 2. Read `.claude/temp/architecture-discovery.md` COMPLETE
 3. Use document sections as foundation
-4. Deep Understanding: read 1-2 files per area ONLY if STRUCTURE unclear
-5. **Update CLAUDE.md → ## Architecture Contract** (hierarquia, packages, imports, placement)
-6. Update CLAUDE.md → ## Technical Spec (token-efficient, STRUCTURE only)
-7. **Detect validation gates** per `ValidationGates_Detection` rules → emit `## Validation Gates` block in CLAUDE.md (omit if none detected)
+4. Deep Understanding: read 1–2 files per area ONLY if STRUCTURE is unclear
+5. Update CLAUDE.md → `## Architecture Contract` (hierarquia, packages, imports, placement)
+6. Update CLAUDE.md → `## Technical Spec` (token-efficient, STRUCTURE only)
+7. Detect validation gates per the Validation Gates Detection rules → emit `## Validation Gates` block in CLAUDE.md (omit if none detected)
 8. Do NOT generate `.codeadd/project/stack-context.md` — this file has been removed entirely
-9. **Check if {{addpath:skills/project-patterns/}} exists** → add Implementation Patterns Reference section
+9. Check if `{{addpath:skills/project-patterns/}}` exists → add Implementation Patterns Reference section
 10. Cleanup: `rm .claude/temp/architecture-discovery.md`
 11. Report discoveries + suggest `/add.xray` if project-patterns skill doesn't exist
