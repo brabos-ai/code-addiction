@@ -5,19 +5,19 @@ description: Product validation: Requirements 100% implemented, prerequisites ex
 
 # Delivery Validation
 
-Skill para validação de PRODUTO - verifica se requisitos foram 100% implementados.
+Skill for PRODUCT validation — checks whether requirements were 100% implemented.
 
-**Use para:** Validar entrega de feature, verificar requisitos cumpridos, identificar gaps funcionais
-**Não use para:** Validar código técnico (usar code-review), planejamento, discovery
+**Use for:** Validating feature delivery, checking fulfilled requirements, identifying functional gaps.
+**Don't use for:** Validating technical code (use code-review), planning, discovery.
 
-**Diferença do code-review:**
+**Difference from code-review:**
 
-| code-review (Técnico) | delivery-validation (Produto) |
-|----------------------|------------------------------|
-| IoC, SOLID, segurança | RF/RN implementados? |
-| Contratos tipos | Critérios de aceite passando? |
-| Build compila? | Funcionalidade funciona end-to-end? |
-| Padrões técnicos | Dependências implícitas criadas? |
+| code-review (Technical) | delivery-validation (Product) |
+|-------------------------|-------------------------------|
+| IoC, SOLID, security | RF/RN implemented? |
+| Type contracts | Acceptance criteria passing? |
+| Build compiles? | Functionality works end-to-end? |
+| Technical patterns | Implicit dependencies created? |
 
 ---
 
@@ -27,151 +27,159 @@ Skill para validação de PRODUTO - verifica se requisitos foram 100% implementa
 
 ---
 
-## Quando Usar
+## When to Use
 
-{"use":["Antes de /add-done (gate final)","Após /review (complementar)","Quando feature parece pronta"],"dontUse":["Durante desenvolvimento","Para validar código (usar code-review)","Sem about.md definido"]}
+- Before `/add-done` (final gate)
+- After `/review` (complementary)
+- When the feature appears ready
+
+### When NOT to Use
+
+- During development
+- To validate code (use `code-review` instead)
+- Without a defined `about.md`
 
 ---
 
 ## Workflow
 
-### Phase 1: Carregar Requisitos
+### Phase 1: Load Requirements
 
 ```bash
-# Identificar feature atual
+# Identify current feature
 FEATURE_ID=$(bash .codeadd/scripts/status.sh)
 
-# Carregar especificação
+# Load specification
 cat docs/features/${FEATURE_ID}/about.md
-cat docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Contratos (prose)
+cat docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Contracts (prose)
 cat docs/features/${FEATURE_ID}/tasks.md 2>/dev/null # Tick state (## Acceptance Checklist)
 ```
 
-**Extrair do about.md:**
-- **RF (Requisitos Funcionais):** O que o sistema DEVE fazer
-- **RN (Regras de Negócio):** Condições e comportamentos
-- **Critérios de Aceite:** Verificações testáveis
-- **Escopo Incluído:** O que FAZ parte da entrega
+**Extract from about.md:**
+- **RF (Functional Requirements):** What the system MUST do
+- **RN (Business Rules):** Conditions and behaviors
+- **Acceptance Criteria:** Testable checks
+- **Included Scope:** What IS part of the delivery
 
-**Extrair contratos do plan.md (prose) + tick state do tasks.md → ## Acceptance Checklist:**
+**Extract contracts from plan.md (prose) + tick state from tasks.md → ## Acceptance Checklist:**
 
-Do `plan.md` (prose): routes, services, DTOs, guards, migrations, queues — as defined in the plan.
-Do `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build`/`add.autopilot` validators.
+From `plan.md` (prose): routes, services, DTOs, guards, migrations, queues — as defined in the plan.
+From `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build`/`add.autopilot` validators.
 
-Mapear cada item de `## Acceptance Checklist` para o RF/RN correspondente do `about.md`. Use o `## Requirements Coverage` do `tasks.md` como derived index — todos os RF/RN devem ter cobertura por ≥1 item do `## Acceptance Checklist`.
+Map each `## Acceptance Checklist` item to the corresponding RF/RN from `about.md`. Use `## Requirements Coverage` from `tasks.md` as a derived index — every RF/RN must have coverage by ≥1 item from `## Acceptance Checklist`.
 
-SE `tasks.md` ou `## Acceptance Checklist` NÃO existem (legacy feature, pré-PRD0014):
-- BLOQUEAR validação. A feature não foi planejada com o schema atual; não há fallback automático.
-- Avisar: "tasks.md ausente ou sem ## Acceptance Checklist — feature precisa ser replanejada via /add.plan."
+IF `tasks.md` or `## Acceptance Checklist` does NOT exist (legacy feature, pre-PRD0014):
+- BLOCK validation. The feature was not planned with the current schema; there is no automatic fallback.
+- Warn: "tasks.md missing or has no ## Acceptance Checklist — feature must be replanned via /add.plan."
 
-### Phase 2: Construir Checklist de Validação
+### Phase 2: Build Validation Checklist
 
-**Para CADA requisito, criar item verificável:**
+**For EACH requirement, create a verifiable item:**
 
 ```markdown
-## Checklist de Requisitos
+## Requirements Checklist
 
-### Requisitos Funcionais
-- [ ] **RF01:** [descrição] → [como verificar]
-- [ ] **RF02:** [descrição] → [como verificar]
+### Functional Requirements
+- [ ] **RF01:** [description] → [how to verify]
+- [ ] **RF02:** [description] → [how to verify]
 
-### Regras de Negócio
-- [ ] **RN01:** [condição] → [resultado esperado]
-- [ ] **RN02:** [condição] → [resultado esperado]
+### Business Rules
+- [ ] **RN01:** [condition] → [expected result]
+- [ ] **RN02:** [condition] → [expected result]
 
-### Critérios de Aceite
-- [ ] [critério 1] → [como testar]
-- [ ] [critério 2] → [como testar]
+### Acceptance Criteria
+- [ ] [criterion 1] → [how to test]
+- [ ] [criterion 2] → [how to test]
 ```
 
-### Phase 3: Verificar Prerequisites (CRÍTICO)
+### Phase 3: Verify Prerequisites (CRITICAL)
 
-**Para CADA requisito, analisar dependências implícitas:**
+**For EACH requirement, analyze implicit dependencies:**
 
 ```markdown
 ## Prerequisites Analysis
 
-### RF01: "Verificar tier do produto antes de baixar"
-**Análise de dependências:**
-1. Produto precisa ter campo `tier`? → [VERIFICAR no model]
-2. Existe fluxo para atribuir tier? → [VERIFICAR endpoints]
-3. Tier já está sendo populado? → [VERIFICAR dados]
+### RF01: "Check product tier before allowing download"
+**Dependency analysis:**
+1. Does Product need a `tier` field? → [VERIFY in model]
+2. Is there a flow to assign tier? → [VERIFY endpoints]
+3. Is tier already populated? → [VERIFY data]
 
 **Status:**
-- [ ] Campo tier existe em Product → ✅/❌
-- [ ] Fluxo de atribuição existe → ✅/❌
-- [ ] Dados estão consistentes → ✅/❌
+- [ ] tier field exists on Product → ✅/❌
+- [ ] Assignment flow exists → ✅/❌
+- [ ] Data is consistent → ✅/❌
 ```
 
-**Perguntas-chave para cada requisito:**
-- "O que PRECISA existir para isso funcionar?"
-- "Que dados/campos são necessários?"
-- "Que fluxos dependentes são necessários?"
-- "Que integrações são necessárias?"
+**Key questions for each requirement:**
+- "What MUST exist for this to work?"
+- "What data/fields are needed?"
+- "What dependent flows are needed?"
+- "What integrations are needed?"
 
-### Phase 3.5: Validar Acceptance Checklist (tasks.md → ## Acceptance Checklist)
+### Phase 3.5: Validate Acceptance Checklist (tasks.md → ## Acceptance Checklist)
 
-**Para CADA item do ## Acceptance Checklist:**
+**For EACH item in ## Acceptance Checklist:**
 
 ```markdown
 ### Acceptance Checklist Validation
 
-| Item (com ref RF/RN) | Tick state | Esperado (do plan.md) | Encontrado | Status |
-|----------------------|------------|------------------------|------------|--------|
+| Item (with RF/RN ref) | Tick state | Expected (from plan.md) | Found | Status |
+|-----------------------|------------|-------------------------|-------|--------|
 | Route POST /billing/webhook/:provider returns 200 (RF02) | [x] | WebhookController.handleWebhook() | POST /webhook (fixed) | ⚠️ DIVERGENT |
 | Service WebhookNormalizerService is provider-agnostic (RF02) | [!] | generic, provider-agnostic | StripeWebhookService | ❌ MISSING |
 | DTO WebhookEventDto exposes {provider, payload, signature} (RF02) | [ ] | {provider, payload, signature} | WebhookDto {payload} | ⚠️ DIVERGENT |
 ```
 
-**Status por item (cross-check tick state vs reality):**
-- ✅ **COMPLIANT:** tick `[x]` AND implementação confere com plan.md prose
-- ⚠️ **DIVERGENT:** tick `[x]` mas implementação difere do plan.md (validador errou OR drift pós-tick)
-- ❌ **MISSING/FAILED:** tick `[!]` (validador já marcou falha) OU tick `[ ]` ainda pendente
-- 🚨 **STALE TICK:** tick `[x]` mas código não existe — bloqueia entrega; reabre tick
+**Status per item (cross-check tick state vs reality):**
+- ✅ **COMPLIANT:** tick `[x]` AND implementation matches plan.md prose
+- ⚠️ **DIVERGENT:** tick `[x]` but implementation differs from plan.md (validator was wrong OR drift after tick)
+- ❌ **MISSING/FAILED:** tick `[!]` (validator already marked failure) OR tick `[ ]` still pending
+- 🚨 **STALE TICK:** tick `[x]` but code does not exist — blocks delivery; reopen tick
 
-**Cross-reference obrigatório:** Todos os RF/RN do `## Requirements Coverage` (tasks.md §1) têm item correspondente no `## Acceptance Checklist` (tasks.md §4)?
-- SE sim → validação é determinística (checklist-driven)
-- SE gap → documentar quais RF/RN ficaram sem cobertura — falha do architect na geração de tasks.md, requer regenerar via /add.plan
+**Mandatory cross-reference:** Do all RF/RN from `## Requirements Coverage` (tasks.md §1) have a corresponding item in `## Acceptance Checklist` (tasks.md §4)?
+- IF yes → validation is deterministic (checklist-driven)
+- IF gap → document which RF/RN are uncovered — architect failure when generating tasks.md, requires regenerating via /add.plan
 
 ---
 
-### Phase 4: Validar Implementação
+### Phase 4: Validate Implementation
 
-**Para CADA item do checklist (about.md + tasks.md → ## Acceptance Checklist):**
+**For EACH checklist item (about.md + tasks.md → ## Acceptance Checklist):**
 
-1. **Localizar código que implementa**
+1. **Locate code that implements it**
    ```bash
-   # Buscar implementação do requisito
-   grep -r "[termo-chave]" apps/ libs/ --include="*.ts"
+   # Search the requirement's implementation
+   grep -r "[key-term]" apps/ libs/ --include="*.ts"
    ```
 
-2. **Verificar se lógica está correta**
-   - Condições do RN implementadas?
-   - Edge cases tratados?
-   - Fluxo completo end-to-end?
+2. **Verify the logic is correct**
+   - RN conditions implemented?
+   - Edge cases handled?
+   - Full end-to-end flow?
 
-3. **Marcar status:**
-   - ✅ **Implementado:** Código existe e está correto
-   - ⚠️ **Parcial:** Implementado mas incompleto
-   - ❌ **Não implementado:** Falta completamente
-   - 🔗 **Prerequisite faltando:** Dependência não existe
+3. **Mark status:**
+   - ✅ **Implemented:** Code exists and is correct
+   - ⚠️ **Partial:** Implemented but incomplete
+   - ❌ **Not implemented:** Completely missing
+   - 🔗 **Missing prerequisite:** Dependency does not exist
 
-### Phase 5: Testar Cenários (se possível)
+### Phase 5: Test Scenarios (if possible)
 
-**Para cada critério de aceite:**
+**For each acceptance criterion:**
 
 ```markdown
-### Teste: [Critério]
+### Test: [Criterion]
 
-**Cenário:** [descrição]
-**Dado:** [pré-condição]
-**Quando:** [ação]
-**Então:** [resultado esperado]
+**Scenario:** [description]
+**Given:** [precondition]
+**When:** [action]
+**Then:** [expected result]
 
-**Resultado:** ✅ Passou / ❌ Falhou / ⚠️ Não testável
+**Result:** ✅ Passed / ❌ Failed / ⚠️ Not testable
 ```
 
-### Phase 6: Gerar Relatório
+### Phase 6: Generate Report
 
 **Output: validation-report.md**
 
@@ -186,156 +194,174 @@ SE `tasks.md` ou `## Acceptance Checklist` NÃO existem (legacy feature, pré-PR
 
 ---
 
-## Requisitos Funcionais
+## Functional Requirements
 
-| ID | Requisito | Status | Observação |
-|----|-----------|--------|------------|
-| RF01 | [desc] | ✅ | Implementado em `path:line` |
-| RF02 | [desc] | ❌ | Não encontrado |
+| ID | Requirement | Status | Note |
+|----|-------------|--------|------|
+| RF01 | [desc] | ✅ | Implemented at `path:line` |
+| RF02 | [desc] | ❌ | Not found |
 
 ---
 
-## Regras de Negócio
+## Business Rules
 
-| ID | Regra | Status | Observação |
-|----|-------|--------|------------|
-| RN01 | [cond] → [result] | ✅ | Lógica correta |
-| RN02 | [cond] → [result] | ⚠️ | Falta edge case X |
+| ID | Rule | Status | Note |
+|----|------|--------|------|
+| RN01 | [cond] → [result] | ✅ | Logic correct |
+| RN02 | [cond] → [result] | ⚠️ | Missing edge case X |
 
 ---
 
 ## Prerequisites Analysis
 
-| Requisito | Prerequisite | Status | Ação Necessária |
-|-----------|--------------|--------|-----------------|
-| RF01 | Campo tier em Product | ❌ | Criar campo |
-| RF01 | Fluxo de atribuição | ❌ | Criar endpoint |
+| Requirement | Prerequisite | Status | Required Action |
+|-------------|--------------|--------|-----------------|
+| RF01 | tier field on Product | ❌ | Create field |
+| RF01 | Assignment flow | ❌ | Create endpoint |
 
 ---
 
-## Critérios de Aceite
+## Acceptance Criteria
 
-- [x] [Critério 1] - Passou
-- [ ] [Critério 2] - Falhou: [motivo]
-
----
-
-## Gaps Identificados
-
-### Gap 1: [Título]
-**Requisito:** RF01
-**Problema:** [descrição do gap]
-**Impacto:** [o que não funciona]
-**Ação:** [o que precisa ser feito]
+- [x] [Criterion 1] - Passed
+- [ ] [Criterion 2] - Failed: [reason]
 
 ---
 
-## Decisão
+## Identified Gaps
+
+### Gap 1: [Title]
+**Requirement:** RF01
+**Problem:** [gap description]
+**Impact:** [what does not work]
+**Action:** [what needs to be done]
+
+---
+
+## Decision
 
 **Status:** ✅ APPROVED / ⚠️ NEEDS WORK / ❌ BLOCKED
 
-**Se BLOCKED:**
-- [ ] Implementar [gap 1]
-- [ ] Implementar [gap 2]
+**If BLOCKED:**
+- [ ] Implement [gap 1]
+- [ ] Implement [gap 2]
 
-**Se APPROVED:**
-Feature pronta para merge.
+**If APPROVED:**
+Feature ready to merge.
 ```
 
 ---
 
-## Severidades
+## Severities
 
-{"severity":{"✅ Implemented":"Requisito 100% atendido","⚠️ Partial":"Implementado mas incompleto - pode mergear com ressalva","❌ Missing":"Não implementado - BLOQUEIA merge","🔗 Prerequisite Missing":"Dependência não existe - BLOQUEIA merge"}}
+| Severity | Meaning |
+|----------|---------|
+| ✅ Implemented | Requirement 100% met |
+| ⚠️ Partial | Implemented but incomplete — may merge with caveat |
+| ❌ Missing | Not implemented — BLOCKS merge |
+| 🔗 Prerequisite Missing | Dependency does not exist — BLOCKS merge |
 
 ---
 
-## Regras de Bloqueio
+## Blocking Rules
 
-{"blocking":{"❌ Missing RF":"Feature incompleta - não entregar","🔗 Prerequisite Missing":"Impossível funcionar - não entregar","❌ Missing RN crítica":"Comportamento incorreto - não entregar"},"non_blocking":{"⚠️ Partial RF":"Pode mergear se documentado","⚠️ Missing RN não-crítica":"Pode mergear com TODO"}}
+**Blocking (do NOT deliver):**
+
+| Condition | Reason |
+|-----------|--------|
+| ❌ Missing RF | Feature incomplete |
+| 🔗 Prerequisite Missing | Cannot work without it |
+| ❌ Missing critical RN | Incorrect behavior |
+
+**Non-blocking (may merge):**
+
+| Condition | Action |
+|-----------|--------|
+| ⚠️ Partial RF | May merge if documented |
+| ⚠️ Missing non-critical RN | May merge with TODO |
 
 ---
 
-## Integração com Outros Commands
+## Integration with Other Commands
 
-### Uso em /review
+### Use in /review
 ```markdown
-## Phase Final: Product Validation
+## Final Phase: Product Validation
 
-Após code review técnico, executar delivery-validation:
-1. Carregar skill: `cat {{skill:add-delivery-validation/SKILL.md}}`
-2. Executar validação de produto
-3. Só aprovar se code-review E delivery-validation passarem
+After technical code review, run delivery-validation:
+1. Load skill: `cat {{skill:add-delivery-validation/SKILL.md}}`
+2. Run product validation
+3. Approve only if both code-review AND delivery-validation pass
 ```
 
-### Uso em /add-done
+### Use in /add-done
 ```markdown
-## Gate Final
+## Final Gate
 
-ANTES de mergear:
-1. code-review passou? → ✅
-2. delivery-validation passou? → ✅
-3. Ambos ✅ → pode mergear
+BEFORE merging:
+1. code-review passed? → ✅
+2. delivery-validation passed? → ✅
+3. Both ✅ → may merge
 ```
 
 ---
 
 ## Checklist
 
-- [ ] about.md existe e está completo?
-- [ ] Todos RF listados?
-- [ ] Todos RN listados?
-- [ ] Critérios de aceite definidos?
-- [ ] Prerequisites analisados para cada RF?
-- [ ] Cada requisito tem implementação verificada?
-- [ ] Gaps documentados com ação necessária?
-- [ ] Status final definido (APPROVED/BLOCKED)?
+- [ ] Does about.md exist and is it complete?
+- [ ] All RF listed?
+- [ ] All RN listed?
+- [ ] Acceptance criteria defined?
+- [ ] Prerequisites analyzed for each RF?
+- [ ] Each requirement has implementation verified?
+- [ ] Gaps documented with required action?
+- [ ] Final status defined (APPROVED/BLOCKED)?
 
 ---
 
 ## Rules
 
 **Do:**
-- Ler about.md PRIMEIRO
-- Analisar prerequisites para CADA requisito
-- Verificar implementação com código (não assumir)
-- Documentar gaps com ações concretas
-- Bloquear se prerequisite faltando
+- Read about.md FIRST
+- Analyze prerequisites for EACH requirement
+- Verify implementation against code (do not assume)
+- Document gaps with concrete actions
+- Block if a prerequisite is missing
 
-**Dont:**
-- Aprovar sem verificar prerequisites
-- Assumir que 'parece implementado' é suficiente
-- Ignorar regras de negócio
-- Aprovar feature incompleta
-- Confundir com code-review (técnico)
+**Don't:**
+- Approve without checking prerequisites
+- Assume "looks implemented" is enough
+- Ignore business rules
+- Approve an incomplete feature
+- Confuse with code-review (technical)
 
 ---
 
-## Exemplo Prático
+## Practical Example
 
-**Cenário:** Feature "Download de template com verificação de tier"
+**Scenario:** Feature "Template download with tier verification"
 
-**about.md diz:**
+**about.md says:**
 ```
-RF01: Verificar tier do produto antes de permitir download
-RN01: Produto sem tier → bloquear download
-```
-
-**Análise de Prerequisites:**
-```
-RF01: Verificar tier do produto
-  └─ Prerequisite: Produto TEM campo tier?
-     └─ Verificar: SELECT * FROM products LIMIT 1;
-     └─ Resultado: ❌ Campo tier NÃO EXISTE
-
-  └─ Prerequisite: Existe fluxo para atribuir tier?
-     └─ Verificar: grep -r "tier" apps/backend/src/
-     └─ Resultado: ❌ Nenhum endpoint de atribuição
+RF01: Check product tier before allowing download
+RN01: Product without tier → block download
 ```
 
-**Decisão:** ❌ BLOCKED
-- Prerequisite "campo tier" não existe
-- Prerequisite "fluxo de atribuição" não existe
-- Feature não pode funcionar sem esses prerequisites
+**Prerequisites Analysis:**
+```
+RF01: Check product tier
+  └─ Prerequisite: Does Product HAVE a tier field?
+     └─ Verify: SELECT * FROM products LIMIT 1;
+     └─ Result: ❌ tier field DOES NOT EXIST
 
-**Ação:** Implementar prerequisites antes de considerar feature pronta.
+  └─ Prerequisite: Is there an assignment flow?
+     └─ Verify: grep -r "tier" apps/backend/src/
+     └─ Result: ❌ No assignment endpoint
+```
+
+**Decision:** ❌ BLOCKED
+- Prerequisite "tier field" does not exist
+- Prerequisite "assignment flow" does not exist
+- Feature cannot work without these prerequisites
+
+**Action:** Implement prerequisites before considering the feature ready.

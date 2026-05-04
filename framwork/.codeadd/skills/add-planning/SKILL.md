@@ -5,47 +5,58 @@ description: Use when creating technical implementation plans - creates/updates 
 
 # Technical Planning
 
-Skill para criação de planos técnicos de implementação. Cria/atualiza `plan.md` com tasks, mapeamento de arquivos e estimativas.
+Skill for creating technical implementation plans. Creates/updates `plan.md` with tasks, file mapping and estimates.
 
-**Princípio:** Plano concreto e executável, não wishlist.
+**Principle:** Concrete, executable plan — not a wishlist.
 
 ---
 
 ## Spec
 
-{"trigger":"create implementation plan","input":["about.md","discovery.md","design.md?"],"output":"docs/features/[ID]/plan.md","style":"documentation-style/technical.md","format":"JSON minified + tasks sequenciadas"}
+{"trigger":"create implementation plan","input":["about.md","discovery.md","design.md?"],"output":"docs/features/[ID]/plan.md","style":"documentation-style/technical.md","format":"minified JSON + sequenced tasks"}
 
 ---
 
-## Quando Usar
+## When to Use
 
-{"whenToUse":{"Feature documentada, pronta para dev":"Criar plan.md","plan.md existe incompleto":"Completar tasks faltantes","Escopo mudou":"Atualizar tasks afetadas","Durante dev, descobriu mais trabalho":"Adicionar tasks"},"dontUse":"Sem about.md (primeiro documentar feature)"}
+- Feature documented and ready for dev → create `plan.md`
+- `plan.md` exists but incomplete → fill missing tasks
+- Scope changed → update affected tasks
+- During dev, discovered more work → add tasks
+
+### When NOT to Use
+
+- Without `about.md` (document the feature first)
 
 ---
 
 ## Workflow
 
-### Phase 1: Carregar Contexto
+### Phase 1: Load Context
 
 ```bash
-# Ler documentação da feature
+# Read feature documentation
 cat docs/features/[FEATURE_ID]/about.md
 cat docs/features/[FEATURE_ID]/discovery.md
-cat docs/features/[FEATURE_ID]/design.md  # se existir
+cat docs/features/[FEATURE_ID]/design.md  # if it exists
 ```
 
-**Extrair:**
-- Requisitos (RF/RNF/RN) do about.md
-- Arquivos a criar/modificar do discovery.md
-- Componentes UI do design.md (se houver)
+**Extract:**
+- Requirements (RF/RNF/RN) from about.md
+- Files to create/modify from discovery.md
+- UI components from design.md (if any)
 
-### Phase 2: Estruturar Tasks
+### Phase 2: Structure Tasks
 
-**Regras de quebra:**
+**Breakdown rules:**
 
-{"breakRules":{"Simples":{"criteria":"1-3 arquivos, sem deps","action":"Task única"},"Média":{"criteria":"4-10 arquivos, deps sequenciais","action":"Tasks por camada"},"Grande":{"criteria":">10 arquivos, múltiplos domínios","action":"Batches separados"}}}
+| Size | Criteria | Action |
+|------|----------|--------|
+| Simple | 1–3 files, no deps | Single task |
+| Medium | 4–10 files, sequential deps | Tasks per layer |
+| Large | >10 files, multiple domains | Separate batches |
 
-**Ordem padrão (bottom-up):**
+**Default order (bottom-up):**
 ```
 1. Domain (entities, enums, types)
 2. Database (migrations, repositories)
@@ -55,29 +66,29 @@ cat docs/features/[FEATURE_ID]/design.md  # se existir
 6. Integration (tests, e2e)
 ```
 
-### Phase 3: Estimar Complexidade
+### Phase 3: Estimate Complexity
 
-**Escala:**
+**Scale:**
 ```
-S = Small  → 1-2 arquivos, mudança localizada
-M = Medium → 3-5 arquivos, lógica moderada
-L = Large  → 6+ arquivos, lógica complexa
+S = Small  → 1-2 files, localized change
+M = Medium → 3-5 files, moderate logic
+L = Large  → 6+ files, complex logic
 ```
 
-**Sinais de complexidade:**
-- Novas entidades → +1 size
+**Complexity signals:**
+- New entities → +1 size
 - Migrations → +1 size
-- Integrações externas → +1 size
-- UI complexa (forms, tables) → +1 size
+- External integrations → +1 size
+- Complex UI (forms, tables) → +1 size
 
-### Phase 4: Estruturar Documento
+### Phase 4: Structure Document
 
 **Template plan.md (Technical Style):**
 
 ```markdown
 # Plan: [Feature Name]
 
-Plano técnico para implementação de [feature]. Baseado em about.md e discovery.md.
+Technical plan for implementing [feature]. Based on about.md and discovery.md.
 
 ---
 
@@ -90,41 +101,41 @@ Plano técnico para implementação de [feature]. Baseado em about.md e discover
 {"create":["path/file1.ts","path/file2.ts"],"modify":["path/existing.ts"]}
 
 ### Tasks
-[{"id":1,"task":"Criar entity [Name]","estimate":"S","deps":[]},{"id":2,"task":"Criar migration","estimate":"S","deps":[1]},{"id":3,"task":"Criar repository","estimate":"S","deps":[2]},{"id":4,"task":"Criar service","estimate":"M","deps":[3]},{"id":5,"task":"Criar controller + DTOs","estimate":"M","deps":[4]},{"id":6,"task":"Criar componentes UI","estimate":"M","deps":[5]},{"id":7,"task":"Testes e2e","estimate":"S","deps":[6]}]
+[{"id":1,"task":"Create entity [Name]","estimate":"S","deps":[]},{"id":2,"task":"Create migration","estimate":"S","deps":[1]},{"id":3,"task":"Create repository","estimate":"S","deps":[2]},{"id":4,"task":"Create service","estimate":"M","deps":[3]},{"id":5,"task":"Create controller + DTOs","estimate":"M","deps":[4]},{"id":6,"task":"Create UI components","estimate":"M","deps":[5]},{"id":7,"task":"e2e tests","estimate":"S","deps":[6]}]
 
 ---
 
-## Tasks Detalhadas
+## Detailed Tasks
 
-### Task 1: Criar entity [Name]
+### Task 1: Create entity [Name]
 **Estimate:** S
 **Files:** `libs/domain/src/entities/[Name].ts`
-**Deps:** Nenhuma
+**Deps:** None
 
 **Checklist:**
-- [ ] Campos conforme about.md
-- [ ] Enums se necessário
-- [ ] Export no index.ts
+- [ ] Fields per about.md
+- [ ] Enums if needed
+- [ ] Export in index.ts
 
 ---
 
-### Task 2: Criar migration
+### Task 2: Create migration
 **Estimate:** S
 **Files:** `libs/app-database/src/migrations/[timestamp]-[name].ts`
 **Deps:** Task 1
 
 **Checklist:**
-- [ ] Tabela com campos
-- [ ] Indexes necessários
+- [ ] Table with fields
+- [ ] Required indexes
 - [ ] Foreign keys
 
 ---
 
-[... continuar para cada task ...]
+[... continue for each task ...]
 
 ---
 
-## Batching (se aplicável)
+## Batching (if applicable)
 
 **Batch 1: Foundation**
 - Tasks 1-3 (domain + database)
@@ -144,9 +155,9 @@ Plano técnico para implementação de [feature]. Baseado em about.md e discover
 
 ---
 
-## Riscos e Mitigações
+## Risks and Mitigations
 
-- **[Risco do discovery.md]:** [mitigação no plano]
+- **[Risk from discovery.md]:** [mitigation in plan]
 
 ---
 
@@ -154,47 +165,51 @@ Plano técnico para implementação de [feature]. Baseado em about.md e discover
 {"updated":"YYYY-MM-DD","sessions":N,"by":"[subagent]"}
 ```
 
-### Phase 5: Validar e Persistir
+### Phase 5: Validate and Persist
 
-**Checklist antes de salvar:**
-- [ ] Todas as tasks têm estimate (S/M/L)
-- [ ] Dependências entre tasks estão corretas
-- [ ] Paths são concretos e verificáveis
-- [ ] Batches fazem sentido para commits
-- [ ] Metadata atualizado
+**Checklist before saving:**
+- [ ] All tasks have estimate (S/M/L)
+- [ ] Dependencies between tasks are correct
+- [ ] Paths are concrete and verifiable
+- [ ] Batches make sense for commits
+- [ ] Metadata updated
 
 ---
 
-## Formato de Tasks
+## Task Format
 
-### JSON Spec (compacto)
+### JSON Spec (compact)
 ```json
-[{"id":1,"task":"descrição","estimate":"S","deps":[]},{"id":2,"task":"descrição","estimate":"M","deps":[1]}]
+[{"id":1,"task":"description","estimate":"S","deps":[]},{"id":2,"task":"description","estimate":"M","deps":[1]}]
 ```
 
-### Task Detalhada (expandida)
+### Detailed Task (expanded)
 ```markdown
-### Task N: [Título]
+### Task N: [Title]
 **Estimate:** [S/M/L]
 **Files:** `path/file.ts`
-**Deps:** Task [N-1] ou Nenhuma
+**Deps:** Task [N-1] or None
 
 **Checklist:**
-- [ ] [Item verificável]
+- [ ] [Verifiable item]
 ```
 
 ---
 
 ## Batching Strategy
 
-### Quando usar batches
+### When to use batches
 
-{"batching":{"<5 tasks":"Batch único","5-10 tasks":"2-3 batches por camada",">10 tasks":"Batches por domínio/módulo"}}
+| Task count | Strategy |
+|------------|----------|
+| <5 tasks | Single batch |
+| 5–10 tasks | 2–3 batches per layer |
+| >10 tasks | Batches per domain/module |
 
-### Regras de commit
+### Commit rules
 
 ```
-Batch = 1 commit semântico
+Batch = 1 semantic commit
 
 feat([feature]): add [what was added]
 fix([feature]): fix [what was fixed]
@@ -204,27 +219,27 @@ test([feature]): add tests for [what]
 
 ---
 
-## Regras
+## Rules
 
 **Do:**
-- Basear tasks em about.md e discovery.md
-- Incluir dependências entre tasks
-- Estimar todas as tasks (S/M/L)
-- Paths concretos e verificáveis
-- Batches com commits semânticos
+- Base tasks on about.md and discovery.md
+- Include dependencies between tasks
+- Estimate all tasks (S/M/L)
+- Concrete and verifiable paths
+- Batches with semantic commits
 
-**Dont:**
-- Tasks vagas (implementar feature)
-- Estimativas sem critério
-- Ignorar dependências entre tasks
-- Planejar sem ler documentação prévia
-- Batches muito grandes (>5 tasks)
+**Don't:**
+- Vague tasks ("implement feature")
+- Estimates without criteria
+- Ignore dependencies between tasks
+- Plan without reading prior documentation
+- Overly large batches (>5 tasks)
 
 ---
 
-## Integração com ADD
+## ADD Integration
 
-Quando ADD dispara subagente para planning:
+When ADD dispatches a subagent for planning:
 
 ```markdown
 **Skills:**
@@ -233,29 +248,29 @@ cat {{skill:add-planning/SKILL.md}}
 cat {{skill:add-doc-schemas/technical.md}}
 ```
 
-**Contexto:**
+**Context:**
 - Feature: [ID]
-- about.md: [path ou conteúdo]
-- discovery.md: [path ou conteúdo]
+- about.md: [path or content]
+- discovery.md: [path or content]
 
-**Instruções:**
-1. Ler about.md (requisitos)
-2. Ler discovery.md (arquivos, padrões)
-3. Ler design.md se existir
-4. Criar plan.md com tasks sequenciadas
-5. Atualizar metadata
+**Instructions:**
+1. Read about.md (requirements)
+2. Read discovery.md (files, patterns)
+3. Read design.md if it exists
+4. Create plan.md with sequenced tasks
+5. Update metadata
 ```
 
 ---
 
 ## Checklist
 
-- [ ] Leu about.md (requisitos)?
-- [ ] Leu discovery.md (arquivos)?
-- [ ] Tasks têm IDs sequenciais?
-- [ ] Todas tasks têm estimate (S/M/L)?
-- [ ] Dependências entre tasks corretas?
-- [ ] Paths são concretos?
-- [ ] Batches definidos (se >5 tasks)?
-- [ ] Riscos mapeados?
-- [ ] Metadata atualizado?
+- [ ] Read about.md (requirements)?
+- [ ] Read discovery.md (files)?
+- [ ] Tasks have sequential IDs?
+- [ ] All tasks have estimate (S/M/L)?
+- [ ] Dependencies between tasks correct?
+- [ ] Paths are concrete?
+- [ ] Batches defined (if >5 tasks)?
+- [ ] Risks mapped?
+- [ ] Metadata updated?

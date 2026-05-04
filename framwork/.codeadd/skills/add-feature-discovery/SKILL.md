@@ -5,9 +5,9 @@ description: Use when analyzing codebase for a specific feature - creates/update
 
 # Feature Discovery
 
-Skill para análise técnica do codebase focada em uma feature específica. Persiste análise no `discovery.md` para reutilização entre sessões.
+Skill for technical codebase analysis focused on a specific feature. Persists analysis in `discovery.md` for reuse across sessions.
 
-**Princípio:** Analisar uma vez, usar sempre. Cache por feature.
+**Principle:** Analyze once, use always. Cache per feature.
 
 ---
 
@@ -17,65 +17,72 @@ Skill para análise técnica do codebase focada em uma feature específica. Pers
 
 ---
 
-## Quando Usar
+## When to Use
 
-{"whenToUse":{"Nova feature sem discovery.md":"Análise completa","discovery.md existe mas vazio":"Análise completa","discovery.md existe preenchido":"Ler cache, complementar se necessário","Mudanças significativas no codebase":"Atualizar seções afetadas"},"dontUse":"Para análise global do projeto (usar architecture-discovery)"}
+- New feature without `discovery.md` → full analysis
+- `discovery.md` exists but empty → full analysis
+- `discovery.md` exists and filled → read cache, complement if needed
+- Significant codebase changes → update affected sections
+
+### When NOT to Use
+
+- For global project analysis (use `add-architecture-discovery` instead)
 
 ---
 
 ## Workflow
 
-**REQUIRED:** Aplicar antes de escrever:
-- `token-efficiency` - JSON minificado, tabelas, sem decoração
-- `documentation-style/cache` - Ler→Preservar→Complementar→Metadata
+**REQUIRED:** Apply before writing:
+- `token-efficiency` — minified JSON, tables, no decoration
+- `documentation-style/cache` — Read → Preserve → Complement → Metadata
 
-### Phase 1: Verificar Cache (Cache Documental)
+### Phase 1: Check Cache (Documental Cache)
 
 ```bash
 cat docs/features/[FEATURE_ID]/discovery.md
 ```
 
-|Estado|Ação|
+|State|Action|
 |---|---|
-|Preenchido e recente|Usar como contexto, pular para Phase 4|
-|Vazio/template|Phase 2 (análise completa)|
-|Desatualizado|Phase 2 com foco nas mudanças|
+|Filled and recent|Use as context, skip to Phase 4|
+|Empty/template|Phase 2 (full analysis)|
+|Outdated|Phase 2 focused on changes|
 
-### Phase 1.5: Past Features Discovery (NOVO)
+### Phase 1.5: Past Features Discovery
 
-**Objetivo:** Identificar features com relação direta ou indireta com a feature atual.
+**Goal:** Identify features with direct or indirect relation to the current feature.
 
-**EXECUTE como subagente separado [read-only, light] ANTES da Phase 2.**
+**EXECUTE as a separate subagent [read-only, light] BEFORE Phase 2.**
 
-**Input obrigatório:**
-- `RECENT_CHANGELOGS` (output do `init.sh` ou `status.sh`)
-- `about.md` da feature atual
+**Required input:**
+- `RECENT_CHANGELOGS` (output of `init.sh` or `status.sh`)
+- `about.md` of the current feature
 
-**Processo:**
+**Process:**
 ```
-1. Extrair keywords do about.md (domínio, entidades, ações)
-2. Para cada feature em RECENT_CHANGELOGS:
-   a. Ler seção "## Quick Ref" do changelog.md (se existir) → match por domain, keywords, touched
-   b. SE Quick Ref não existe: ler primeiros 30 lines do changelog.md como fallback
-3. Para cada match encontrado:
-   a. Ler iterations.jsonl completo da feature
-   b. Ler about.md da feature (escopo, requisitos)
-   c. Classificar relação: extends | depends | conflicts | shares-pattern | shares-domain
-4. Gerar past-features.md
+1. Extract keywords from about.md (domain, entities, actions)
+2. For each feature in RECENT_CHANGELOGS:
+   a. Read the "## Quick Ref" section of changelog.md (if it exists) → match by domain, keywords, touched
+   b. IF Quick Ref does not exist: read first 30 lines of changelog.md as fallback
+3. For each match found:
+   a. Read the full iterations.jsonl of the feature
+   b. Read the about.md of the feature (scope, requirements)
+   c. Classify the relation: extends | depends | conflicts | shares-pattern | shares-domain
+4. Generate past-features.md
 ```
 
-**Critérios de match (em ordem de relevância):**
-| Critério | Peso |
-|----------|------|
-| Mesmo domínio (Quick Ref `domain`) | Alto |
-| Arquivos em comum (Quick Ref `touched`) | Alto |
-| Keywords em comum (Quick Ref `keywords`) | Médio |
-| Padrões em comum (Quick Ref `patterns`) | Médio |
-| Mesmo módulo/package | Baixo |
+**Match criteria (in order of relevance):**
+| Criterion | Weight |
+|-----------|--------|
+| Same domain (Quick Ref `domain`) | High |
+| Files in common (Quick Ref `touched`) | High |
+| Keywords in common (Quick Ref `keywords`) | Medium |
+| Patterns in common (Quick Ref `patterns`) | Medium |
+| Same module/package | Low |
 
 **Output:** `docs/features/${FEATURE_ID}/past-features.md`
 
-**Formato do past-features.md:**
+**past-features.md format:**
 ```markdown
 # Past Features Analysis: [Feature Name]
 
@@ -85,51 +92,51 @@ cat docs/features/[FEATURE_ID]/discovery.md
 - **Domain:** [domain1, domain2]
 - **Shared files:** `src/path/file.ts`
 - **Patterns used:** [pattern1, pattern2]
-- **Key decisions:** [decisão mais relevante]
+- **Key decisions:** [most relevant decision]
 - **Iterations summary:** N iterations, N pivots
-- **Relevance:** [por que importa para a feature atual]
+- **Relevance:** [why it matters for the current feature]
 
 ## No Match
-- F[XXXX]-[name] — [motivo em 1 linha]
+- F[XXXX]-[name] — [reason in 1 line]
 
 ## Metadata
 {"updated":"YYYY-MM-DD","feature":"F[XXXX]-[name]","matches":N,"total_analyzed":N,"by":"past-features-agent"}
 ```
 
-**Cache check:** SE `past-features.md` existe E `metadata.updated` = hoje → usar como cache, skip Phase 1.5.
+**Cache check:** IF `past-features.md` exists AND `metadata.updated` = today → use as cache, skip Phase 1.5.
 
 ---
 
-### Phase 2: Análise Focada
+### Phase 2: Focused Analysis
 
-**Objetivo:** Analisar APENAS o que é relevante para a feature.
+**Goal:** Analyze ONLY what is relevant to the feature.
 
-**EXECUTE como subagente separado [read-write, standard] APÓS Phase 1.5.**
+**EXECUTE as a separate subagent [read-write, standard] AFTER Phase 1.5.**
 
-**ANTES de analisar o codebase:**
+**BEFORE analyzing the codebase:**
 ```
-1. Ler docs/features/${FEATURE_ID}/past-features.md (gerado pela Phase 1.5)
-2. Usar como contexto:
-   - Arquivos já tocados por features relacionadas → priorizar na busca
-   - Padrões usados → seguir os mesmos
-   - Decisões passadas → não contradizer
-   - Conflitos potenciais → mapear
-3. Incluir seção "Related Features" no discovery.md
-```
-
-```
-1. Ler about.md → entender requisitos
-2. Identificar domínio/área afetada
-3. Buscar arquivos relacionados (Glob/Grep)
-4. Identificar padrões existentes similares
-5. Mapear dependências
+1. Read docs/features/${FEATURE_ID}/past-features.md (generated by Phase 1.5)
+2. Use as context:
+   - Files already touched by related features → prioritize in search
+   - Patterns used → follow the same ones
+   - Past decisions → do not contradict
+   - Potential conflicts → map them
+3. Include "Related Features" section in discovery.md
 ```
 
-**O que analisar:**
+```
+1. Read about.md → understand requirements
+2. Identify domain/area affected
+3. Search related files (Glob/Grep)
+4. Identify existing similar patterns
+5. Map dependencies
+```
 
-{"analysisAreas":{"Entidades":"Models/entities relacionadas ao domínio","Padrões":"Features similares como referência","Infraestrutura":"Services, repositories, controllers existentes","Frontend":"Components, hooks, stores relacionados","Integrações":"APIs externas, webhooks, eventos"}}
+**What to analyze:**
 
-### Phase 3: Estruturar Descobertas
+{"analysisAreas":{"Entities":"Models/entities related to the domain","Patterns":"Similar features as reference","Infrastructure":"Existing services, repositories, controllers","Frontend":"Related components, hooks, stores","Integrations":"External APIs, webhooks, events"}}
+
+### Phase 3: Structure Findings
 
 **Template discovery.md (Business Style):**
 
@@ -137,121 +144,121 @@ cat docs/features/[FEATURE_ID]/discovery.md
 # Discovery: [Feature]
 
 ## Summary
-{"patterns":["padrão principal"],"files_create":N,"files_modify":N,"deps":["dep crítica"],"complexity":"low|medium|high","risks":["risco principal"]}
+{"patterns":["main pattern"],"files_create":N,"files_modify":N,"deps":["critical dep"],"complexity":"low|medium|high","risks":["main risk"]}
 
 ---
 
-## Contexto Técnico
+## Technical Context
 
-### Stack Relevante
-- **Backend:** [tecnologias específicas]
-- **Frontend:** [tecnologias específicas]
-- **Infra:** [se aplicável]
+### Relevant Stack
+- **Backend:** [specific technologies]
+- **Frontend:** [specific technologies]
+- **Infra:** [if applicable]
 
-### Padrões Identificados
-- **[Padrão]:** usado em [local] - [como aplicar aqui]
-
----
-
-## Análise do Codebase
-
-### Arquivos Relacionados
-- `path/file.ts` - [propósito, ~10 palavras]
-
-### Features Similares
-- **[Feature X]:** [o que reutilizar] - `path/`
+### Identified Patterns
+- **[Pattern]:** used in [location] — [how to apply here]
 
 ---
 
-## Mapeamento de Arquivos
+## Codebase Analysis
 
-### Criar
-- `path/new-file.ts` - [propósito]
+### Related Files
+- `path/file.ts` — [purpose, ~10 words]
 
-### Modificar
-- `path/existing.ts` - [o que muda]
-
----
-
-## Prerequisites Analysis (CRÍTICO)
-
-**Objetivo:** Identificar O QUE PRECISA EXISTIR para a feature funcionar.
-
-**Para CADA requisito do about.md, analisar:**
-
-### Dados/Modelos Necessários
-| Requisito | Prerequisite | Existe? | Ação |
-|-----------|--------------|---------|------|
-| RF01 | Campo X na entidade Y | ✅/❌ | Criar se ❌ |
-
-### Fluxos Dependentes
-| Requisito | Fluxo Necessário | Existe? | Ação |
-|-----------|------------------|---------|------|
-| RF01 | Endpoint para atribuir X | ✅/❌ | Criar se ❌ |
-
-### Integrações
-| Requisito | Integração | Existe? | Ação |
-|-----------|------------|---------|------|
-| RF01 | API externa Y | ✅/❌ | Configurar se ❌ |
-
-### Dados Existentes
-| Requisito | Dados Necessários | Populados? | Ação |
-|-----------|-------------------|------------|------|
-| RF01 | Registros com campo X | ✅/❌ | Migrar se ❌ |
-
-**Regra:** Se algum prerequisite está ❌, a feature NÃO PODE ser considerada completa sem implementá-lo primeiro.
+### Similar Features
+- **[Feature X]:** [what to reuse] — `path/`
 
 ---
 
-## Delivery Completeness (CRÍTICO)
+## File Mapping
 
-**Pergunta central:** Com esse escopo, o usuário final consegue USAR a funcionalidade?
+### Create
+- `path/new-file.ts` — [purpose]
 
-### Validação de Entrega Funcional
-
-| Validado no Questionário | Camada Necessária | No Escopo? | Usuário consegue usar? |
-|--------------------------|-------------------|------------|------------------------|
-| [item validado] | Frontend/Backend/DB | ✅/❌ | ✅/❌ |
-
-**Exemplos de falha:**
-- Validou "checkbox" mas excluiu frontend → ❌ Usuário não consegue usar
-- Validou "escolha de tipo" mas excluiu frontend → ❌ Usuário não consegue usar
-- Apenas backend sem UI → ❌ Feature inutilizável (exceto APIs puras)
-
-**⚠️ Se "Usuário consegue usar?" = ❌ → Escopo INCOMPLETO. Adicionar camada faltante.**
+### Modify
+- `path/existing.ts` — [what changes]
 
 ---
 
-## Dependências
+## Prerequisites Analysis (CRITICAL)
 
-### Internas
-- `@package/module` - [o que usar]
+**Goal:** Identify WHAT MUST EXIST for the feature to work.
 
-### Externas
-- `package@version` - [propósito]
+**For EACH requirement in about.md, analyze:**
+
+### Required Data/Models
+| Requirement | Prerequisite | Exists? | Action |
+|-------------|--------------|---------|--------|
+| RF01 | Field X on entity Y | ✅/❌ | Create if ❌ |
+
+### Dependent Flows
+| Requirement | Required Flow | Exists? | Action |
+|-------------|---------------|---------|--------|
+| RF01 | Endpoint to assign X | ✅/❌ | Create if ❌ |
+
+### Integrations
+| Requirement | Integration | Exists? | Action |
+|-------------|-------------|---------|--------|
+| RF01 | External API Y | ✅/❌ | Configure if ❌ |
+
+### Existing Data
+| Requirement | Required Data | Populated? | Action |
+|-------------|---------------|------------|--------|
+| RF01 | Records with field X | ✅/❌ | Migrate if ❌ |
+
+**Rule:** If any prerequisite is ❌, the feature CANNOT be considered complete without implementing it first.
 
 ---
 
-## Premissas Técnicas
+## Delivery Completeness (CRITICAL)
 
-- **[Premissa]:** [impacto se incorreta]
+**Central question:** With this scope, can the end user USE the functionality?
+
+### Functional Delivery Validation
+
+| Validated in Questionnaire | Required Layer | In Scope? | User can use? |
+|----------------------------|----------------|-----------|---------------|
+| [validated item] | Frontend/Backend/DB | ✅/❌ | ✅/❌ |
+
+**Failure examples:**
+- Validated "checkbox" but excluded frontend → ❌ User can't use
+- Validated "type choice" but excluded frontend → ❌ User can't use
+- Backend only without UI → ❌ Feature unusable (except for pure APIs)
+
+**⚠️ If "User can use?" = ❌ → Scope INCOMPLETE. Add the missing layer.**
 
 ---
 
-## Riscos Identificados
+## Dependencies
 
-- **[Risco]:** [mitigação]
+### Internal
+- `@package/module` — [what to use]
+
+### External
+- `package@version` — [purpose]
 
 ---
 
-## Resumo para Planejamento
+## Technical Assumptions
 
-[3-5 linhas: complexidade, pontos de atenção, dependências críticas]
+- **[Assumption]:** [impact if incorrect]
+
+---
+
+## Identified Risks
+
+- **[Risk]:** [mitigation]
+
+---
+
+## Planning Summary
+
+[3-5 lines: complexity, attention points, critical dependencies]
 
 ---
 
 ## Updates
-[{"date":"YYYY-MM-DD","change":"descrição curta"}]
+[{"date":"YYYY-MM-DD","change":"short description"}]
 
 ---
 
@@ -259,48 +266,48 @@ cat docs/features/[FEATURE_ID]/discovery.md
 {"updated":"YYYY-MM-DD","sessions":N,"by":"[subagent]"}
 ```
 
-**IMPORTANTE:** Sempre atualizar `## Summary` e `## Updates` quando houver mudanças.
+**IMPORTANT:** Always update `## Summary` and `## Updates` when there are changes.
 
-### Phase 4: Persistir/Atualizar
+### Phase 4: Persist/Update
 
-**Se criando:** Escrever discovery.md completo com metadata
+**If creating:** Write full discovery.md with metadata
 
-**Se atualizando:**
-1. Preservar informações válidas existentes
-2. Complementar com novos achados
-3. Incrementar `sessions` no metadata
-4. Atualizar `updated` date
+**If updating:**
+1. Preserve valid existing information
+2. Complement with new findings
+3. Increment `sessions` in metadata
+4. Update `updated` date
 
 ---
 
-## Regras
+## Rules
 
 **Do:**
-- Ler about.md primeiro (entender o que precisa)
-- Analisar prerequisites para CADA requisito (CRÍTICO)
-- Validar Delivery Completeness (CRÍTICO)
-- Perguntar: usuário consegue USAR com esse escopo?
-- Buscar features similares como referência
-- Focar apenas no domínio relevante
-- Atualizar metadata ao final
-- Usar paths concretos e verificáveis
+- Read about.md first (understand what is needed)
+- Analyze prerequisites for EACH requirement (CRITICAL)
+- Validate Delivery Completeness (CRITICAL)
+- Ask: can the user USE the feature with this scope?
+- Search for similar features as reference
+- Focus only on the relevant domain
+- Update metadata at the end
+- Use concrete and verifiable paths
 
-**Dont:**
-- Analisar codebase inteiro (focar na feature)
-- Ignorar discovery.md existente
-- Sobrescrever informações válidas
-- Criar arquivos redundantes
-- Listar arquivos sem relevância clara
-- Assumir que prerequisite existe sem verificar
-- Pular seção de Prerequisites Analysis
-- Pular seção de Delivery Completeness
-- Aceitar escopo que torna feature inutilizável
+**Don't:**
+- Analyze the entire codebase (focus on the feature)
+- Ignore existing discovery.md
+- Overwrite valid information
+- Create redundant files
+- List files without clear relevance
+- Assume a prerequisite exists without verifying
+- Skip the Prerequisites Analysis section
+- Skip the Delivery Completeness section
+- Accept a scope that makes the feature unusable
 
 ---
 
-## Integração com ADD
+## ADD Integration
 
-Quando ADD dispara subagente para discovery:
+When ADD dispatches a subagent for discovery:
 
 ```markdown
 **Skills:**
@@ -309,34 +316,34 @@ cat {{skill:add-feature-discovery/SKILL.md}}
 cat {{skill:add-doc-schemas/business.md}}
 ```
 
-**Contexto:**
+**Context:**
 - Feature: [ID]
-- about.md: [conteúdo ou path]
+- about.md: [content or path]
 
-**Instruções:**
-1. Verificar discovery.md existente
-2. Se vazio/desatualizado → análise completa
-3. Se preenchido → usar como cache
-4. Atualizar metadata
+**Instructions:**
+1. Check existing discovery.md
+2. If empty/outdated → full analysis
+3. If filled → use as cache
+4. Update metadata
 ```
 
 ---
 
 ## Checklist
 
-- [ ] Verificou discovery.md existente?
-- [ ] Verificou past-features.md existente (cache check)?
-- [ ] **Phase 1.5 executada?** Past features analisadas com RECENT_CHANGELOGS?
-- [ ] past-features.md gerado com matches + no-matches + metadata?
-- [ ] Leu about.md para entender requisitos?
-- [ ] Leu past-features.md ANTES de analisar codebase?
-- [ ] Identificou features similares?
-- [ ] **Seção "Related Features" incluída no discovery.md?** (com tabela + `<!-- refs: ... -->`)
-- [ ] Mapeou arquivos a criar/modificar?
-- [ ] **Analisou prerequisites para CADA requisito?** (CRÍTICO)
-- [ ] Prerequisites faltantes estão no escopo da feature?
-- [ ] **Validou Delivery Completeness?** (CRÍTICO)
-- [ ] **Usuário consegue USAR a feature com esse escopo?** (CRÍTICO)
-- [ ] Listou dependências?
-- [ ] Documentou premissas e riscos?
-- [ ] Atualizou metadata?
+- [ ] Checked existing discovery.md?
+- [ ] Checked existing past-features.md (cache check)?
+- [ ] **Phase 1.5 executed?** Past features analyzed with RECENT_CHANGELOGS?
+- [ ] past-features.md generated with matches + no-matches + metadata?
+- [ ] Read about.md to understand requirements?
+- [ ] Read past-features.md BEFORE analyzing codebase?
+- [ ] Identified similar features?
+- [ ] **"Related Features" section included in discovery.md?** (with table + `<!-- refs: ... -->`)
+- [ ] Mapped files to create/modify?
+- [ ] **Analyzed prerequisites for EACH requirement?** (CRITICAL)
+- [ ] Are missing prerequisites in scope of the feature?
+- [ ] **Validated Delivery Completeness?** (CRITICAL)
+- [ ] **Can the user USE the feature with this scope?** (CRITICAL)
+- [ ] Listed dependencies?
+- [ ] Documented assumptions and risks?
+- [ ] Updated metadata?
