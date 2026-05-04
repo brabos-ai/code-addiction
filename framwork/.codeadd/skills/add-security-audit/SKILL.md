@@ -6,12 +6,12 @@ description: |
 
 # Security Audit
 
-Skill para auditoria de segurança baseada em OWASP Top 10.
+Skill for security auditing based on OWASP Top 10.
 
-**Use para:** Validar segurança, auditar codebase, identificar vulnerabilidades
-**Não use para:** Corrigir código (apenas reporta), code review geral
+**Use for:** Validate security, audit codebase, identify vulnerabilities
+**Do not use for:** Fixing code (reporting only), general code review
 
-**Referência:** Sempre consultar `CLAUDE.md` para padrões gerais do projeto.
+**Reference:** Always consult `CLAUDE.md` for general project standards.
 
 ---
 

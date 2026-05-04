@@ -22,18 +22,18 @@
 #   bash .codeadd/scripts/log-iteration.sh add signup-flow "feature 1" "api/{ctrl,svc}.ts" "/dev" "--feature 1" "--epic auth-system"
 # =============================================================================
 
-# FIX P1: set -euo pipefail garante que: erros em qualquer comando abortem o
-# script (-e), pipes propaguem falhas (-o pipefail) e variaveis nao definidas
-# causem erro imediato (-u).
+# FIX P1: set -euo pipefail ensures that: errors in any command abort the
+# script (-e), pipes propagate failures (-o pipefail) and undefined variables
+# cause immediate error (-u).
 set -euo pipefail
 
 # =============================================================================
 # ARGS
 # =============================================================================
 
-# FIX P2: Argumentos obrigatorios (TYPE, SLUG, WHAT, FILES) agora sao
-# validados explicitamente em vez de receberem valores padrao silenciosos que
-# mascarariam chamadas incorretas.
+# FIX P2: Required arguments (TYPE, SLUG, WHAT, FILES) are now
+# validated explicitly instead of receiving silent default values that
+# would mask incorrect calls.
 if [ $# -lt 4 ]; then
     echo "ERROR:missing_required_args"
     echo "USAGE: bash log-iteration.sh <type> <slug> <what> <files> [cmd] [--feature N] [--epic name]"
@@ -46,23 +46,23 @@ WHAT="${3}"
 FILES="${4}"
 CMD="${5:-/dev}"
 
-# FIX P2 (continuacao): Validar que os obrigatorios nao sao strings vazias.
+# FIX P2 (continued): Validate that required args are not empty strings.
 [ -z "$TYPE"  ] && echo "ERROR:empty_arg_type"  && exit 1
 [ -z "$SLUG"  ] && echo "ERROR:empty_arg_slug"  && exit 1
 [ -z "$WHAT"  ] && echo "ERROR:empty_arg_what"  && exit 1
 [ -z "$FILES" ] && echo "ERROR:empty_arg_files" && exit 1
 
-# FIX P10: Parser de flags reescrito para suportar argumentos posicionais
-# variadicos (--feature N --epic name podem vir em qualquer posicao a partir
-# do arg 6) e com lookahead correto para pares flag/valor separados por espaco.
+# FIX P10: Flag parser rewritten to support variadic positional arguments
+# (--feature N --epic name can come in any position starting from
+# arg 6) and with correct lookahead for flag/value pairs separated by space.
 FEATURE_NUM=""
 EPIC_NAME=""
 
-shift $(( $# >= 5 ? 5 : $# ))  # Descarta os 5 primeiros args; o restante sao flags opcionais.
+shift $(( $# >= 5 ? 5 : $# ))  # Discard the first 5 args; the rest are optional flags.
 while [ $# -gt 0 ]; do
     case "$1" in
         --feature)
-            # FIX P10: lookahead real — consome o proximo argumento como valor.
+            # FIX P10: real lookahead — consumes the next argument as value.
             if [ $# -lt 2 ] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
                 echo "ERROR:--feature requires a numeric argument"
                 exit 1
@@ -116,15 +116,15 @@ esac
 # DETECT FEATURE
 # =============================================================================
 
-# FIX P8: Verificar se git esta disponivel antes de usa-lo.
+# FIX P8: Verify that git is available before using it.
 if ! command -v git > /dev/null 2>&1; then
     echo "ERROR:git_not_found"
     exit 1
 fi
 
-# FIX P8: Usar fallback compativel com Git < 2.22 que nao possui
-# --show-current; `git rev-parse --abbrev-ref HEAD` funciona em versoes
-# antigas e retorna "HEAD" quando em estado detached (sem branch).
+# FIX P8: Use fallback compatible with Git < 2.22 which does not have
+# --show-current; `git rev-parse --abbrev-ref HEAD` works in older versions
+# and returns "HEAD" when in detached state (no branch).
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
 
 # Extract feature slug from branch (feature/0001F-name or fix/0001H-name)
@@ -142,7 +142,7 @@ fi
 FEATURE_DIR="docs/features/${FEATURE_ID}"
 ITERATIONS_FILE="${FEATURE_DIR}/iterations.md"
 
-# FIX P9: Validar que date produz saida no formato esperado.
+# FIX P9: Validate that date produces output in the expected format.
 DATE_TODAY=$(date +"%Y-%m-%d" 2>/dev/null || true)
 if [ -z "$DATE_TODAY" ]; then
     echo "ERROR:date_command_failed_or_produced_empty_output"
@@ -159,8 +159,8 @@ if [ ! -d "$FEATURE_DIR" ]; then
     exit 1
 fi
 
-# FIX P6: Verificar permissao de escrita no diretorio antes de tentar criar
-# ou modificar arquivos dentro dele.
+# FIX P6: Verify write permission on the directory before attempting to create
+# or modify files within it.
 if [ ! -w "$FEATURE_DIR" ]; then
     echo "ERROR:no_write_permission"
     echo "PATH:$FEATURE_DIR"
@@ -172,19 +172,19 @@ fi
 # =============================================================================
 
 if [ -f "$ITERATIONS_FILE" ]; then
-    # FIX P6: Verificar permissao de escrita no arquivo existente.
+    # FIX P6: Verify write permission on the existing file.
     if [ ! -w "$ITERATIONS_FILE" ]; then
         echo "ERROR:no_write_permission"
         echo "PATH:$ITERATIONS_FILE"
         exit 1
     fi
 
-    # FIX P3 + P5: O pipeline original falhava silenciosamente com set -e
-    # quando grep nao encontrava matches (exit 1). A solucao desabilita
-    # temporariamente a saida por erro para o grep, e garante fallback "0"
-    # mesmo que a expressao retorne string vazia.
+    # FIX P3 + P5: The original pipeline silently failed with set -e
+    # when grep found no matches (exit 1). The solution temporarily disables
+    # error exit for grep, and guarantees fallback "0"
+    # even if the expression returns an empty string.
     LAST_NUM=$(grep -oE '^## I([0-9]+)' "$ITERATIONS_FILE" 2>/dev/null | tail -1 | grep -oE '[0-9]+' || true)
-    # FIX P5: Garantir que LAST_NUM seja sempre numerico antes da aritmetica.
+    # FIX P5: Ensure LAST_NUM is always numeric before arithmetic.
     if [ -z "$LAST_NUM" ] || ! [[ "$LAST_NUM" =~ ^[0-9]+$ ]]; then
         LAST_NUM=0
     fi
@@ -205,8 +205,8 @@ fi
 # APPEND ITERATION
 # =============================================================================
 
-# FIX P4: head -c 60 opera em bytes, nao em caracteres, e pode cortar no meio
-# de um multibyte UTF-8. Usar cut -c1-60 que opera em caracteres.
+# FIX P4: head -c 60 operates on bytes, not characters, and may cut in the middle
+# of a multibyte UTF-8. Use cut -c1-60 which operates on characters.
 WHAT_TRUNCATED=$(printf '%s' "$WHAT" | cut -c1-60)
 
 # Build feature/epic suffix for header if specified
@@ -220,11 +220,11 @@ if [ -n "$EPIC_NAME" ]; then
     FEATURE_HEADER="${FEATURE_HEADER}|epic:${EPIC_NAME}"
 fi
 
-# FIX P7: Heredoc com delimitador entre aspas ('EOF') desabilita expansao de
-# variaveis dentro do corpo — correto para o cabecalho estatico acima. Porem,
-# para o bloco de dados precisamos de expansao controlada. A abordagem segura
-# e usar printf com placeholders, evitando que metacaracteres presentes nos
-# valores das variaveis (backticks, $, \) sejam interpretados pelo shell.
+# FIX P7: Heredoc with quoted delimiter ('EOF') disables variable expansion
+# inside the body — correct for the static header above. However,
+# for the data block we need controlled expansion. The safe approach
+# is to use printf with placeholders, preventing metacharacters present in
+# variable values (backticks, $, \) from being interpreted by the shell.
 {
     printf '## I%s|%s|%s|%s%s\n' \
         "$NEXT_NUM" "$DATE_TODAY" "$CMD" "$TYPE" "$FEATURE_HEADER"

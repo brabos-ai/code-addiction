@@ -25,11 +25,17 @@ if [ -f "docs/owner.md" ]; then
     OWNER_NIVEL=$(grep -i "^Nivel:" docs/owner.md 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || true)
     OWNER_IDIOMA=$(grep -i "^Idioma:" docs/owner.md 2>/dev/null | sed 's/^Idioma:[[:space:]]*//' | head -1 || true)
     [ -z "$OWNER_NAME" ] && OWNER_NAME="unknown"
-    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediario"
+    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediate"
     [ -z "$OWNER_IDIOMA" ] && OWNER_IDIOMA="en-us"
+    # Normalize PT-BR skill level identifiers to English (backwards compatibility)
+    case "$OWNER_NIVEL" in
+      iniciante) OWNER_NIVEL="beginner" ;;
+      intermediario) OWNER_NIVEL="intermediate" ;;
+      avancado) OWNER_NIVEL="advanced" ;;
+    esac
     echo "OWNER:$OWNER_NAME|$OWNER_NIVEL|$OWNER_IDIOMA"
 else
-    echo "OWNER:unknown|intermediario|en-us (default)"
+    echo "OWNER:unknown|intermediate|en-us (default)"
 fi
 
 # =============================================================================
@@ -157,7 +163,7 @@ if [ -d "apps/backend/src/api/modules" ]; then
 fi
 
 # =============================================================================
-# OUTPUT: RECENT_CHANGELOGS (últimas 5 items finalizados - contexto cross-feature)
+# OUTPUT: RECENT_CHANGELOGS (last 5 completed items - cross-feature context)
 # =============================================================================
 
 # Nested structure: docs/features/[NNNN][L]-*/changelog.md

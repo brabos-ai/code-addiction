@@ -1,21 +1,21 @@
 # Database Analyzer
 
-Analisa e documenta estratégia de database IMPLEMENTADA no projeto.
+Analyzes and documents the database strategy IMPLEMENTED in the project.
 
-## Objetivo
+## Objective
 
-Gerar `{{addpath:skills/project-patterns/database.md}}` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Generate `{{addpath:skills/project-patterns/database.md}}` with real project patterns. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
-**IMPORTANTE:** NÃO documentar schema, tabelas ou índices. São dinâmicos e ficam desatualizados.
+**IMPORTANT:** Do NOT document schema, tables, or indexes. They are dynamic and go stale.
 
-## PRIMEIRO: Descobrir SE Existe Database
+## FIRST: Discover IF Database Exists
 
-**NÃO assuma nada. Descubra via config files e código.**
+**Do NOT assume anything. Discover via config files and code.**
 
-1. Leia CLAUDE.md para entender estrutura do projeto
-2. Leia config files para identificar dependências de database:
+1. Read CLAUDE.md to understand the project structure
+2. Read config files to identify database dependencies:
    ```bash
-   # Dependências listam ORMs, drivers, query builders
+   # Dependencies list ORMs, drivers, query builders
    cat package.json 2>/dev/null          # Node.js (typeorm, prisma, knex, etc)
    cat requirements.txt 2>/dev/null      # Python (sqlalchemy, django ORM, etc)
    cat Gemfile 2>/dev/null               # Ruby (activerecord, sequel, etc)
@@ -25,42 +25,42 @@ Gerar `{{addpath:skills/project-patterns/database.md}}` com padrões reais do pr
    cat Cargo.toml 2>/dev/null            # Rust (diesel, sqlx, etc)
    cat composer.json 2>/dev/null         # PHP (eloquent, doctrine, etc)
    ```
-3. Procure por pastas/arquivos de database:
+3. Look for database folders/files:
    ```bash
    # Migrations, entities, schemas
    find . -type d \( -name "migrations" -o -name "entities" -o -name "models" \) 2>/dev/null | head -10
    ```
-4. Se não encontrar database/ORM no projeto → retorne "NO_DATABASE_FOUND"
-5. Se encontrar → continue a análise
+4. If no database/ORM found in the project → return "NO_DATABASE_FOUND"
+5. If found → continue analysis
 
-## O Que Descobrir
+## What to Discover
 
-Pesquise APENAS se existir no projeto:
+Search ONLY for what exists in the project:
 
 ### 1. Database Type
-- Qual engine está sendo usado? (descubra via connection string ou config)
-- Connection: de onde vem (env var, config file)
+- Which engine is being used? (discover via connection string or config)
+- Connection: where it comes from (env var, config file)
 
 ### 2. Migrations
 - Tool: typeorm, knex, prisma, liquibase, flyway, alembic, etc
-- Pasta: path das migrations
-- Glob: padrão de arquivos
-- Comandos: como criar, rodar, reverter
-- **Encontrar exemplo de migration**
+- Folder: migrations path
+- Glob: file pattern
+- Commands: how to create, run, revert
+- **Find a migration example**
 
 ### 3. Connection Strategy
 - Pool size
 - Timeout
-- Onde configurado
+- Where configured
 
 ### 4. ORM/Query Builder
-- Biblioteca: typeorm, prisma, knex, kysely, sequelize, sqlalchemy, etc
+- Library: typeorm, prisma, knex, kysely, sequelize, sqlalchemy, etc
 - Entities/Models: path glob
-- Repositories: path glob (se existir)
+- Repositories: path glob (if exists)
 
-### 5. Row-Level Security (SE EXISTIR)
+### 5. Row-Level Security (IF EXISTS)
 - Status: enabled/disabled
-- Policies: onde definidas
+- Policies: where defined
 - Pattern: by tenant_id, user_id, etc
 
 ### 6. Reusable Abstractions (CRITICAL — prevents duplication)
@@ -79,29 +79,29 @@ Pesquise APENAS se existir no projeto:
 - How new migrations are created (CLI command)
 - **Principle: the agent must follow the established pattern**
 
-### 8. Seeding (SE EXISTIR)
-- Arquivo: path do seed
-- Comando: como rodar
+### 8. Seeding (IF EXISTS)
+- File: seed path
+- Command: how to run
 
-## Como Pesquisar
+## How to Search
 
-**IMPORTANTE:** Primeiro leia package.json (ou equivalente) para ver dependências de database instaladas. Depois confirme com código.
+**IMPORTANT:** First read package.json (or equivalent) to see installed database dependencies. Then confirm with code.
 
 ```bash
-# 1. Ler dependências do projeto (fonte da verdade)
+# 1. Read project dependencies (source of truth)
 cat package.json | grep -A 100 '"dependencies"' | head -50
 
-# 2. Encontrar pastas de database
+# 2. Find database folders
 find . -type d \( -name "migrations" -o -name "entities" -o -name "models" -o -name "schemas" \) 2>/dev/null | head -10
 
-# 3. Encontrar arquivos de config de ORM
+# 3. Find ORM config files
 find . -type f \( -name "ormconfig*" -o -name "*.schema.prisma" -o -name "knexfile*" -o -name "drizzle.config*" -o -name "schema.prisma" \) 2>/dev/null | head -5
 
-# 4. Encontrar env vars de database
+# 4. Find database env vars
 cat .env .env.example .env.local 2>/dev/null | grep -i "database\|db_\|postgres\|mysql\|mongo"
 
-# 5. Ler arquivo de migration/entity para entender padrão
-# (escolher um arquivo após descobrir onde estão)
+# 5. Read a migration/entity file to understand the pattern
+# (choose a file after discovering where they are)
 ```
 
 ## Output Format
@@ -203,16 +203,16 @@ Config: `{"file":"[path]","run":"[command]"}`
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Database Conventions are the highest-value sections — they prevent agents from writing raw queries when helpers exist, and ensure new entities/migrations follow the established pattern.
 
-## Regras Críticas
+## Critical Rules
 
-**OBRIGATÓRIO:**
-- Documentar paths e globs (acionáveis)
-- Exemplos reais do código
-- Comandos reais do projeto
+**MANDATORY:**
+- Document paths and globs (actionable)
+- Real code examples
+- Real project commands
 
-**PROIBIDO:**
-- Schema de tabelas (dinâmico, fica old)
-- Relacionamentos entre tabelas
-- Índices específicos
+**FORBIDDEN:**
+- Table schemas (dynamic, goes stale)
+- Relationships between tables
+- Specific indexes
 - Backup/recovery strategy
-- Seções com "Not found"
+- Sections with "Not found"

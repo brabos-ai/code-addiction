@@ -5,7 +5,7 @@ Analyzes developed code and generates automated tests targeting 80% coverage. Us
 ---
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante -> explain why; avancado -> essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
 
 ---
 

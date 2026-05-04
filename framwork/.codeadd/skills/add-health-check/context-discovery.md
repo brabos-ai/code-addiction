@@ -1,94 +1,94 @@
 # Context Discovery - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Follow patterns defined in `{{skill:add-doc-schemas/SKILL.md}}`
 
-**Objetivo:** Entender arquitetura, multi-tenancy e funcionalidades do projeto para fornecer contexto aos demais subagentes.
+**Objective:** Understand the architecture, multi-tenancy, and features of the project to provide context to the other subagents.
 
 **Output:** `docs/health-checks/YYYY-MM-DD/context-discovery.md`
 
 ---
 
-## Missão
+## Mission
 
-Você é um subagente especializado em descoberta de contexto. Seu trabalho é analisar o projeto e documentar:
-1. Tipo de arquitetura (monorepo, monolito, microservices)
-2. Modelo de multi-tenancy (se existir)
-3. Funcionalidades/módulos existentes
-4. Padrões adotados
-5. Boundary esperado entre frontend e backend
+You are a subagent specialized in context discovery. Your job is to analyze the project and document:
+1. Architecture type (monorepo, monolith, microservices)
+2. Multi-tenancy model (if it exists)
+3. Existing features/modules
+4. Adopted patterns
+5. Expected boundary between frontend and backend
 
-Este documento será usado pelos demais subagentes de análise.
+This document will be used by the other analysis subagents.
 
 ---
 
-## Análise 1: Tipo de Arquitetura
+## Analysis 1: Architecture Type
 
-### Verificações
+### Checks
 
 ```bash
-# Verificar estrutura
+# Check structure
 ls -la
 ls apps/ libs/ src/ packages/ 2>/dev/null
 
-# Verificar package.json
+# Check package.json
 cat package.json | grep -E '"workspaces"|"turbo"|"nx"|"lerna"'
 
-# Verificar turbo.json ou nx.json
+# Check turbo.json or nx.json
 ls turbo.json nx.json 2>/dev/null
 ```
 
-### Classificação
+### Classification
 
-| Estrutura | Classificação |
+| Structure | Classification |
 |-----------|---------------|
 | `apps/` + `libs/` | Monorepo |
-| Apenas `src/` | Monolito |
-| Múltiplos `package.json` independentes | Microservices |
+| Only `src/` | Monolith |
+| Multiple independent `package.json` | Microservices |
 
-**Documentar:**
-- Tipo identificado
-- Apps existentes (backend, frontend, workers)
-- Libs existentes (domain, database, shared)
+**Document:**
+- Identified type
+- Existing apps (backend, frontend, workers)
+- Existing libs (domain, database, shared)
 
 ---
 
-## Análise 2: Multi-Tenancy
+## Analysis 2: Multi-Tenancy
 
-### Verificações
+### Checks
 
 ```bash
-# Buscar padrões de tenant
+# Search for tenant patterns
 grep -rn "accountId\|account_id\|tenantId\|tenant_id\|organizationId\|organization_id" --include="*.ts" . | grep -v node_modules | head -20
 
-# Verificar JWT claims
+# Check JWT claims
 grep -rn "JwtPayload\|TokenPayload\|claims" --include="*.ts" . | grep -v node_modules | head -10
 
-# Verificar entities com tenant
+# Check entities with tenant
 grep -rn "accountId\|tenantId" libs/domain/src/entities/ --include="*.ts" 2>/dev/null | head -10
 
-# Verificar tabelas do banco
+# Check database tables
 grep -rn "account_id\|tenant_id" libs/*/migrations/ --include="*.js" --include="*.ts" 2>/dev/null | head -10
 ```
 
-### Documentar
+### Document
 
-**Se multi-tenancy identificado:**
+**If multi-tenancy identified:**
 - Tenant identifier (accountId, organizationId, etc.)
-- Hierarquia (Account → Workspaces → Users)
-- Claim no JWT
-- Coluna nas tabelas
+- Hierarchy (Account → Workspaces → Users)
+- JWT claim
+- Column in tables
 
-**Se NÃO identificado:**
-- Documentar como "Single-tenant" ou "Não identificado"
+**If NOT identified:**
+- Document as "Single-tenant" or "Not identified"
 
 ---
 
-## Análise 3: Funcionalidades/Módulos
+## Analysis 3: Features/Modules
 
-### Verificações
+### Checks
 
 ```bash
-# Backend - Módulos NestJS
+# Backend - NestJS Modules
 ls apps/backend/src/api/modules/ 2>/dev/null
 ls apps/backend/src/modules/ 2>/dev/null
 ls src/modules/ 2>/dev/null
@@ -104,19 +104,19 @@ find . -name "*.controller.ts" -not -path "*/node_modules/*" 2>/dev/null
 find . -name "*.service.ts" -not -path "*/node_modules/*" 2>/dev/null | head -20
 ```
 
-### Para Cada Módulo Identificado
+### For Each Identified Module
 
-**Documentar:**
-- Nome do módulo
+**Document:**
+- Module name
 - Path
-- Descrição breve (~10 palavras)
-- Funcionalidades principais
+- Brief description (~10 words)
+- Main features
 
 ---
 
-## Análise 4: Padrões Adotados
+## Analysis 4: Adopted Patterns
 
-### Verificações
+### Checks
 
 ```bash
 # CQRS
@@ -135,129 +135,129 @@ grep -rn "@Inject\|@Injectable" --include="*.ts" . | grep -v node_modules | head
 grep -rn "EventHandler\|EventPublisher\|IEventBroker" --include="*.ts" . | grep -v node_modules | head -5
 ```
 
-### Documentar
+### Document
 
-| Padrão | Identificado | Onde |
-|--------|--------------|------|
-| CQRS | Sim/Não | [paths] |
-| Repository | Sim/Não | [paths] |
-| Clean Architecture | Sim/Não | [paths] |
-| DI | Sim/Não | [tipo: NestJS/Manual] |
-| Event-driven | Sim/Não | [paths] |
+| Pattern | Identified | Where |
+|---------|------------|-------|
+| CQRS | Yes/No | [paths] |
+| Repository | Yes/No | [paths] |
+| Clean Architecture | Yes/No | [paths] |
+| DI | Yes/No | [type: NestJS/Manual] |
+| Event-driven | Yes/No | [paths] |
 
 ---
 
-## Análise 5: Boundary Frontend/Backend
+## Analysis 5: Frontend/Backend Boundary
 
-### Verificações
+### Checks
 
 ```bash
-# Frontend usando Supabase diretamente?
+# Frontend using Supabase directly?
 grep -rn "supabase\." apps/frontend/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -10
 
-# Frontend fazendo chamadas API?
+# Frontend making API calls?
 grep -rn "axios\|fetch\|api\." apps/frontend/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -10
 
-# API client centralizado?
+# Centralized API client?
 ls apps/frontend/src/lib/api* apps/frontend/src/services/api* 2>/dev/null
 ```
 
-### Documentar
+### Document
 
-**Boundary esperado:**
-- Frontend DEVE/NÃO DEVE acessar Supabase diretamente
-- Chamadas via API centralizada em [path]
+**Expected boundary:**
+- Frontend SHOULD/SHOULD NOT access Supabase directly
+- Calls via centralized API at [path]
 - Auth via [Supabase Auth/Custom JWT/etc.]
 
 ---
 
-## Template do Output
+## Output Template
 
-**Criar:** `docs/health-checks/YYYY-MM-DD/context-discovery.md`
+**Create:** `docs/health-checks/YYYY-MM-DD/context-discovery.md`
 
 ```markdown
 # Context Discovery
 
-**Gerado em:** [data]
+**Generated on:** [date]
 
 ---
 
-## Arquitetura Identificada
+## Identified Architecture
 
-- **Tipo:** [Monorepo/Monolito/Microservices]
+- **Type:** [Monorepo/Monolith/Microservices]
 - **Build System:** [Turbo/Nx/None]
-- **Apps:** [lista de apps]
-- **Libs:** [lista de libs]
+- **Apps:** [list of apps]
+- **Libs:** [list of libs]
 
 ---
 
 ## Multi-Tenancy
 
-- **Modelo:** [Account-based/Organization-based/Single-tenant/Não identificado]
+- **Model:** [Account-based/Organization-based/Single-tenant/Not identified]
 - **Tenant Identifier:** [accountId/organizationId/N/A]
-- **Hierarquia:** [Account → Workspaces → Users / N/A]
-- **Claim no JWT:** [accountId/N/A]
-- **Coluna nas tabelas:** [account_id/N/A]
+- **Hierarchy:** [Account → Workspaces → Users / N/A]
+- **JWT Claim:** [accountId/N/A]
+- **Column in tables:** [account_id/N/A]
 
 ---
 
-## Funcionalidades/Módulos
+## Features/Modules
 
-| Módulo | Path | Descrição |
-|--------|------|-----------|
-| [nome] | [path] | [descrição ~10 palavras] |
-| auth | apps/backend/src/api/modules/auth/ | Signup, signin, JWT, recuperação de senha |
-| workspace | apps/backend/src/api/modules/workspace/ | CRUD de workspaces, associação de usuários |
-| billing | apps/backend/src/api/modules/billing/ | Assinaturas Stripe, checkout, webhooks |
+| Module | Path | Description |
+|--------|------|-------------|
+| [name] | [path] | [description ~10 words] |
+| auth | apps/backend/src/api/modules/auth/ | Signup, signin, JWT, password recovery |
+| workspace | apps/backend/src/api/modules/workspace/ | Workspace CRUD, user association |
+| billing | apps/backend/src/api/modules/billing/ | Stripe subscriptions, checkout, webhooks |
 
 ---
 
-## Padrões Adotados
+## Adopted Patterns
 
-| Padrão | Status | Onde |
-|--------|--------|------|
-| CQRS | ✅/❌ | [paths ou N/A] |
-| Repository | ✅/❌ | [paths ou N/A] |
-| Clean Architecture | ✅/❌ | [paths ou N/A] |
+| Pattern | Status | Where |
+|---------|--------|-------|
+| CQRS | ✅/❌ | [paths or N/A] |
+| Repository | ✅/❌ | [paths or N/A] |
+| Clean Architecture | ✅/❌ | [paths or N/A] |
 | Dependency Injection | ✅/❌ | [NestJS/Manual/N/A] |
-| Event-driven | ✅/❌ | [paths ou N/A] |
+| Event-driven | ✅/❌ | [paths or N/A] |
 
 ---
 
-## Boundary Frontend/Backend
+## Frontend/Backend Boundary
 
-- **Regra esperada:** Frontend [DEVE/NÃO DEVE] acessar Supabase diretamente
-- **API Client:** [path do api client ou "Não centralizado"]
-- **Auth Strategy:** [Supabase Auth/JWT Custom/etc.]
+- **Expected rule:** Frontend [SHOULD/SHOULD NOT] access Supabase directly
+- **API Client:** [api client path or "Not centralized"]
+- **Auth Strategy:** [Supabase Auth/Custom JWT/etc.]
 
-### Validações Esperadas por Request
+### Expected Validations per Request
 
-Baseado no modelo de multi-tenancy, os seguintes campos DEVEM ser validados:
+Based on the multi-tenancy model, the following fields MUST be validated:
 
-- [ ] `[tenant_identifier]` do JWT validado
-- [ ] Ownership verificado antes de operações CRUD
-- [ ] Queries filtradas por `[coluna_tenant]`
+- [ ] `[tenant_identifier]` from JWT validated
+- [ ] Ownership verified before CRUD operations
+- [ ] Queries filtered by `[tenant_column]`
 
 ---
 
-## Para os Subagentes de Análise
+## For the Analysis Subagents
 
 ### Security Analyzer
-- Validar se cada módulo verifica `[tenant_identifier]`
-- Verificar se frontend não acessa Supabase diretamente
-- Verificar RLS nas tabelas se MCP disponível
+- Validate whether each module checks `[tenant_identifier]`
+- Verify that frontend does not access Supabase directly
+- Check RLS on tables if MCP is available
 
 ### Architecture Analyzer
-- Verificar se padrões identificados são seguidos consistentemente
-- Verificar imports entre camadas conforme Clean Architecture
+- Verify that identified patterns are followed consistently
+- Check imports between layers as per Clean Architecture
 
 ### Data Analyzer
-- Verificar se tabelas têm coluna `[coluna_tenant]`
-- Verificar índices em colunas de tenant
+- Verify that tables have the `[tenant_column]` column
+- Check indexes on tenant columns
 
 ---
 
-*Documento gerado pelo subagente context-discovery*
+*Document generated by the context-discovery subagent*
 ```
 
 ---
@@ -265,13 +265,13 @@ Baseado no modelo de multi-tenancy, os seguintes campos DEVEM ser validados:
 ## Critical Rules
 
 **DO:**
-- ✅ Analisar TODA estrutura antes de documentar
-- ✅ Ser específico com paths e padrões
-- ✅ Documentar mesmo quando padrão NÃO é identificado
-- ✅ Fornecer contexto útil para demais subagentes
+- ✅ Analyze the ENTIRE structure before documenting
+- ✅ Be specific with paths and patterns
+- ✅ Document even when a pattern is NOT identified
+- ✅ Provide useful context for the other subagents
 
 **DO NOT:**
-- ❌ Assumir padrões sem verificar
-- ❌ Inventar funcionalidades não existentes
-- ❌ Pular análises mesmo se estrutura parecer óbvia
-- ❌ Documentar aspirações (apenas realidade atual)
+- ❌ Assume patterns without verifying
+- ❌ Invent features that do not exist
+- ❌ Skip analyses even if the structure seems obvious
+- ❌ Document aspirations (only current reality)

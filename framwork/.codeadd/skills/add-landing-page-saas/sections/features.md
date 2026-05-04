@@ -1,12 +1,12 @@
 # Feature Sections
 
-Seções de features para landing pages SaaS. Mostre o valor do seu produto.
+Feature sections for SaaS landing pages. Show the value of your product.
 
 ---
 
-## 1. Bento Grid (Estilo Apple/Linear)
+## 1. Bento Grid (Apple/Linear Style)
 
-Layout assimétrico com cards de tamanhos variados. Moderno e visual.
+Asymmetric layout with varied card sizes. Modern and visual.
 
 ```tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,44 +24,44 @@ export function FeaturesBento() {
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Tudo que você precisa para escalar
+          Everything you need to scale
         </h2>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Recursos pensados para empresas que querem crescer sem complicação.
+          Features designed for companies that want to grow without complexity.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card grande - destaque */}
+        {/* Large card - featured */}
         <Card className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-primary/10 via-background to-background border-primary/20">
           <CardHeader>
             <Zap className="h-10 w-10 text-primary mb-4" />
-            <CardTitle className="text-2xl">Automações inteligentes</CardTitle>
+            <CardTitle className="text-2xl">Smart automations</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              Crie fluxos de trabalho que economizam horas por semana.
-              Sem código, sem complexidade.
+              Build workflows that save hours every week.
+              No code, no complexity.
             </p>
             <div className="rounded-lg bg-muted/50 p-4">
               <img
                 src="/automation-preview.png"
-                alt="Preview de automação"
+                alt="Automation preview"
                 className="rounded"
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Cards pequenos */}
+        {/* Small cards */}
         <Card className="group hover:border-primary/50 transition-colors">
           <CardHeader>
             <Shield className="h-8 w-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <CardTitle>Segurança enterprise</CardTitle>
+            <CardTitle>Enterprise security</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              SOC 2, LGPD, criptografia end-to-end.
+              SOC 2, GDPR, end-to-end encryption.
             </p>
           </CardContent>
         </Card>
@@ -69,11 +69,11 @@ export function FeaturesBento() {
         <Card className="group hover:border-primary/50 transition-colors">
           <CardHeader>
             <BarChart3 className="h-8 w-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <CardTitle>Analytics em tempo real</CardTitle>
+            <CardTitle>Real-time analytics</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Dashboards customizáveis e relatórios automáticos.
+              Customizable dashboards and automated reports.
             </p>
           </CardContent>
         </Card>
@@ -81,11 +81,11 @@ export function FeaturesBento() {
         <Card className="group hover:border-primary/50 transition-colors">
           <CardHeader>
             <Users className="h-8 w-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <CardTitle>Colaboração</CardTitle>
+            <CardTitle>Collaboration</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Trabalhe em equipe com permissões granulares.
+              Work as a team with granular permissions.
             </p>
           </CardContent>
         </Card>
@@ -93,23 +93,23 @@ export function FeaturesBento() {
         <Card className="group hover:border-primary/50 transition-colors">
           <CardHeader>
             <Globe className="h-8 w-8 text-primary mb-2 group-hover:scale-110 transition-transform" />
-            <CardTitle>API completa</CardTitle>
+            <CardTitle>Full API</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Integre com qualquer sistema via REST ou webhooks.
+              Integrate with any system via REST or webhooks.
             </p>
           </CardContent>
         </Card>
 
-        {/* Card wide */}
+        {/* Wide card */}
         <Card className="md:col-span-2 bg-muted/50">
           <CardHeader className="flex-row items-center gap-4">
             <Smartphone className="h-8 w-8 text-primary" />
             <div>
-              <CardTitle>Apps mobile nativos</CardTitle>
+              <CardTitle>Native mobile apps</CardTitle>
               <p className="text-sm text-muted-foreground">
-                iOS e Android com sync em tempo real
+                iOS and Android with real-time sync
               </p>
             </div>
           </CardHeader>
@@ -120,13 +120,13 @@ export function FeaturesBento() {
 }
 ```
 
-**Quando usar:** Muitas features, quer visual moderno, uma feature principal.
+**When to use:** Many features, want a modern visual, one main feature.
 
 ---
 
-## 2. Feature Grid (Clássico)
+## 2. Feature Grid (Classic)
 
-Grid simples e organizado. Funciona para qualquer tipo de SaaS.
+Simple, organized grid. Works for any type of SaaS.
 
 ```tsx
 import { Zap, Shield, BarChart3, Users, Globe, Clock } from "lucide-react";
@@ -134,33 +134,33 @@ import { Zap, Shield, BarChart3, Users, Globe, Clock } from "lucide-react";
 const features = [
   {
     icon: Zap,
-    title: "Rápido de configurar",
-    description: "Setup em menos de 5 minutos. Importe dados de qualquer lugar.",
+    title: "Fast to set up",
+    description: "Setup in less than 5 minutes. Import data from anywhere.",
   },
   {
     icon: Shield,
-    title: "Seguro por padrão",
-    description: "Criptografia, backups automáticos e compliance LGPD.",
+    title: "Secure by default",
+    description: "Encryption, automatic backups and GDPR compliance.",
   },
   {
     icon: BarChart3,
-    title: "Relatórios detalhados",
-    description: "Métricas que importam, atualizadas em tempo real.",
+    title: "Detailed reports",
+    description: "Metrics that matter, updated in real time.",
   },
   {
     icon: Users,
-    title: "Colaboração em equipe",
-    description: "Convide sua equipe com permissões personalizadas.",
+    title: "Team collaboration",
+    description: "Invite your team with custom permissions.",
   },
   {
     icon: Globe,
-    title: "Integrações",
-    description: "Conecte com Slack, Zapier, Google e +50 apps.",
+    title: "Integrations",
+    description: "Connect with Slack, Zapier, Google and 50+ apps.",
   },
   {
     icon: Clock,
-    title: "Suporte 24/7",
-    description: "Time brasileiro pronto para ajudar quando precisar.",
+    title: "24/7 support",
+    description: "Team ready to help whenever you need.",
   },
 ];
 
@@ -169,10 +169,10 @@ export function FeaturesGrid() {
     <section className="container px-4 py-16 md:py-24">
       <div className="text-center mb-12">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Por que escolher a gente?
+          Why choose us?
         </h2>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Simples de usar, poderoso de verdade.
+          Simple to use, genuinely powerful.
         </p>
       </div>
 
@@ -198,13 +198,13 @@ export function FeaturesGrid() {
 }
 ```
 
-**Quando usar:** Features equilibradas, sem destaque específico, B2B clássico.
+**When to use:** Balanced features, no specific highlight, classic B2B.
 
 ---
 
-## 3. Feature Showcase (Alternado)
+## 3. Feature Showcase (Alternating)
 
-Uma feature por bloco, alternando texto/imagem. Bom para explicar em detalhes.
+One feature per block, alternating text/image. Good for explaining in detail.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -212,40 +212,40 @@ import { CheckCircle } from "lucide-react";
 
 const showcases = [
   {
-    title: "Pipeline visual de vendas",
+    title: "Visual sales pipeline",
     description:
-      "Arraste e solte deals entre etapas. Veja seu funil de vendas em tempo real e nunca perca um follow-up.",
+      "Drag and drop deals between stages. See your sales funnel in real time and never miss a follow-up.",
     features: [
-      "Kanban customizável",
-      "Automação de follow-up",
-      "Previsão de receita",
+      "Customizable Kanban",
+      "Follow-up automation",
+      "Revenue forecasting",
     ],
     image: "/feature-pipeline.png",
-    cta: "Ver como funciona",
+    cta: "See how it works",
   },
   {
-    title: "Relatórios que fazem sentido",
+    title: "Reports that make sense",
     description:
-      "Dashboards prontos para usar. Métricas de vendas, performance de time e previsões — tudo em um lugar.",
+      "Ready-to-use dashboards. Sales metrics, team performance and forecasts — all in one place.",
     features: [
-      "Templates prontos",
-      "Filtros avançados",
-      "Export para PDF/Excel",
+      "Ready-made templates",
+      "Advanced filters",
+      "Export to PDF/Excel",
     ],
     image: "/feature-reports.png",
-    cta: "Explorar relatórios",
+    cta: "Explore reports",
   },
   {
-    title: "Integrações nativas",
+    title: "Native integrations",
     description:
-      "Conecte suas ferramentas favoritas em cliques. WhatsApp, email, calendário e +50 integrações.",
+      "Connect your favorite tools in clicks. WhatsApp, email, calendar and 50+ integrations.",
     features: [
-      "Sync bidirecional",
-      "Webhooks customizados",
-      "API REST completa",
+      "Two-way sync",
+      "Custom webhooks",
+      "Full REST API",
     ],
     image: "/feature-integrations.png",
-    cta: "Ver integrações",
+    cta: "View integrations",
   },
 ];
 

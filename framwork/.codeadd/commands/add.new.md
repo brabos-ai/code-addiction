@@ -3,7 +3,7 @@
 > **REF:** `CLAUDE.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Full feature discovery command BEFORE implementation.
 

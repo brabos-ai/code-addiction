@@ -5,7 +5,7 @@
 
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-# Setup: cria repositório git temporário com branch main
+# Setup: creates temporary git repository with main branch
 common_setup() {
   TEST_TEMP_DIR=$(mktemp -d)
   TEST_REPO="$TEST_TEMP_DIR/repo"
@@ -18,14 +18,14 @@ common_setup() {
   git commit --allow-empty -m "init" -q
 }
 
-# Teardown: limpa diretório temporário
+# Teardown: cleans temporary directory
 common_teardown() {
   if [ -n "${TEST_TEMP_DIR:-}" ] && [ -d "$TEST_TEMP_DIR" ]; then
     rm -rf "$TEST_TEMP_DIR"
   fi
 }
 
-# Helper: cria estrutura de feature docs
+# Helper: creates feature docs structure
 create_feature_docs() {
   local feature_id="${1:-F0001-test}"
   local docs_dir="$TEST_REPO/docs/features/$feature_id"
@@ -34,7 +34,7 @@ create_feature_docs() {
   echo "$docs_dir"
 }
 
-# Helper: adiciona remote origin ao repo de teste
+# Helper: adds remote origin to test repo
 setup_remote() {
   local remote_dir="$TEST_TEMP_DIR/remote"
   mkdir -p "$remote_dir"

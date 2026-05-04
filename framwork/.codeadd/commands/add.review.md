@@ -2,7 +2,7 @@
 
 > **AUTO-CORRECTION RULE:** The reviewer MUST automatically apply ALL identified corrections. Only finalize when code is 100% correct.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Coordinator for feature code review. Dispatches specialized reviewers (Frontend + Backend) in parallel, consolidates findings, auto-corrects all violations, verifies build, and outputs structured report to console.
 

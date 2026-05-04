@@ -10,8 +10,8 @@
 # Dependencies: get-main-branch.sh
 # ============================================
 
-# [FIX-1] Adicionado -u (variáveis não definidas causam erro) e -o pipefail
-# (erros em pipes não eram propagados). O script original só tinha `set -e`.
+# [FIX-1] Added -u (undefined variables cause error) and -o pipefail
+# (errors in pipes were not propagated). The original script only had `set -e`.
 set -euo pipefail
 
 # --- Args ---
@@ -25,8 +25,8 @@ done
 
 # --- Detection ---
 
-# [FIX-2] CURRENT_BRANCH poderia ser vazia em repositório com HEAD desanexado
-# (detached HEAD). Verificação explícita adicionada.
+# [FIX-2] CURRENT_BRANCH could be empty in repository with detached HEAD.
+# Explicit verification added.
 CURRENT_BRANCH=$(git branch --show-current)
 if [ -z "$CURRENT_BRANCH" ]; then
     echo "STATUS=ERROR"
@@ -36,8 +36,8 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# [FIX-3] Verificar se o script de dependência existe e é executável antes de
-# chamá-lo. A falha aqui produzia mensagem de erro do shell, sem contexto claro.
+# [FIX-3] Verify that the dependency script exists and is executable before
+# calling it. Failure here produced a shell error message without clear context.
 if [ ! -f "$SCRIPT_DIR/get-main-branch.sh" ]; then
     echo "STATUS=ERROR"
     echo "ERROR=Dependency not found: $SCRIPT_DIR/get-main-branch.sh"
@@ -49,7 +49,7 @@ fi
 
 MAIN_BRANCH=$("$SCRIPT_DIR/get-main-branch.sh")
 
-# [FIX-4] MAIN_BRANCH vazia causaria git checkout/merge silenciosamente errado.
+# [FIX-4] Empty MAIN_BRANCH would cause git checkout/merge to silently fail.
 if [ -z "$MAIN_BRANCH" ]; then
     echo "STATUS=ERROR"
     echo "ERROR=Could not determine main branch."
@@ -113,15 +113,15 @@ if [ "$MODE" = "context" ]; then
     echo "PENDING_CHANGES"
     echo "========================================"
 
-    # [FIX-6] Os redirecionamentos 2>/dev/null ocultavam erros reais de git
-    # (ex: não estar dentro de um repositório). Removidos; set -euo pipefail
-    # agora captura falhas reais enquanto saída de erro legítima continua visível.
+    # [FIX-6] The 2>/dev/null redirections were hiding real git errors
+    # (e.g.: not being inside a repository). Removed; set -euo pipefail
+    # now captures real failures while legitimate error output remains visible.
     MODIFIED=$(git diff --name-only)
     STAGED=$(git diff --cached --name-only)
     UNTRACKED=$(git ls-files --others --exclude-standard)
 
-    # [FIX-7] wc -l numa string vazia ainda retorna 1 em alguns sistemas.
-    # Uso de `|| true` para contagens e filtro com grep -c evitam falso positivo.
+    # [FIX-7] wc -l on an empty string still returns 1 on some systems.
+    # Use of `|| true` for counts and filter with grep -c avoid false positives.
     MODIFIED_COUNT=$(printf '%s\n' "$MODIFIED" | grep -c '[^[:space:]]' || true)
     STAGED_COUNT=$(printf '%s\n' "$STAGED" | grep -c '[^[:space:]]' || true)
     UNTRACKED_COUNT=$(printf '%s\n' "$UNTRACKED" | grep -c '[^[:space:]]' || true)
@@ -151,9 +151,9 @@ if [ "$MODE" = "context" ]; then
     echo "BRANCH_CHANGES"
     echo "========================================"
 
-    # [FIX-8] O fallback `|| echo ""` mascarava erros reais (ex: branch remota
-    # inexistente). A verificação explícita abaixo emite mensagem útil em vez
-    # de silenciar o problema.
+    # [FIX-8] The `|| echo ""` fallback was masking real errors (e.g.: non-existent
+    # remote branch). The explicit check below emits a useful message instead
+    # of silencing the problem.
     if ! git rev-parse --verify "origin/$MAIN_BRANCH" >/dev/null 2>&1; then
         echo "STATUS=WARNING"
         echo "WARNING=Remote branch origin/$MAIN_BRANCH not found. BRANCH_CHANGES may be incomplete."
@@ -186,17 +186,17 @@ if [ "$MODE" = "merge" ]; then
     echo "TYPE=$BRANCH_TYPE"
     echo ""
 
-    # [FIX-9] Impedir merge quando a branch atual JÁ É a branch principal.
-    # Sem essa guarda o script faria squash-merge de main em main.
+    # [FIX-9] Prevent merge when current branch IS ALREADY the main branch.
+    # Without this guard the script would squash-merge main into main.
     if [ "$CURRENT_BRANCH" = "$MAIN_BRANCH" ]; then
         echo "STATUS=ERROR"
         echo "ERROR=Already on $MAIN_BRANCH. Checkout a feature/fix branch first."
         exit 1
     fi
 
-    # [FIX-10] Impedir merge quando o tipo de branch é desconhecido.
-    # O script original permitia continuar e criava commits com tipo "chore"
-    # e número "UNKNOWN", o que é provavelmente indesejado.
+    # [FIX-10] Prevent merge when branch type is unknown.
+    # The original script allowed proceeding and created commits with type "chore"
+    # and number "UNKNOWN", which is probably undesired.
     if [ "$BRANCH_TYPE" = "unknown" ]; then
         echo "STATUS=ERROR"
         echo "ERROR=Unsupported branch type: $CURRENT_BRANCH"
@@ -229,28 +229,28 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
 
     # Step 2: Push to branch
     echo "STEP=Pushing to branch..."
-    # [FIX-11] O primeiro push usava 2>/dev/null, ocultando erros de autenticação
-    # ou de remote inexistente. Mantido apenas o push definitivo, com saída de
-    # erro visível para o operador.
+    # [FIX-11] The first push used 2>/dev/null, hiding authentication errors
+    # or non-existent remote. Only the definitive push is kept, with error output
+    # visible to the operator.
     git push -u origin "$CURRENT_BRANCH"
     echo "PUSH_BRANCH=OK"
 
     # Step 3: Switch to main and pull
     echo "STEP=Switching to $MAIN_BRANCH..."
-    # [FIX-12] Armazenar o nome da branch ANTES do checkout para poder usá-la
-    # depois do Step 7, uma vez que após o checkout CURRENT_BRANCH deixaria de
-    # ser válido como "branch de origem" se consultado novamente via git.
-    # A variável já foi capturada antes; apenas documentamos o motivo aqui.
+    # [FIX-12] Store the branch name BEFORE checkout so it can be used
+    # after Step 7, since after checkout CURRENT_BRANCH would no longer
+    # be valid as the "source branch" if queried again via git.
+    # The variable was already captured before; we only document the reason here.
     git checkout "$MAIN_BRANCH"
     git pull origin "$MAIN_BRANCH"
     echo "CHECKOUT_MAIN=OK"
 
     # Step 4: Squash merge
     echo "STEP=Squash merging..."
-    # [FIX-13] `git merge --squash` não gera um commit de merge; não admite
-    # `--abort`. O original chamava `git merge --abort` em caso de falha, o que
-    # sempre retornaria erro (não há merge em andamento), mascarando o problema
-    # real. Corrigido para apenas limpar o índice com `git reset HEAD`.
+    # [FIX-13] `git merge --squash` does not create a merge commit; does not accept
+    # `--abort`. The original called `git merge --abort` on failure, which
+    # would always return error (no merge in progress), masking the real
+    # problem. Fixed to only clean the index with `git reset HEAD`.
     if ! git merge --squash "$CURRENT_BRANCH"; then
         echo "STATUS=ERROR"
         echo "ERROR=Merge conflict detected"
@@ -261,9 +261,9 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     echo "SQUASH=OK"
 
     # Step 5: Create merge commit
-    # [FIX-14] Após `git merge --squash` pode não haver nada staged quando a
-    # branch de origem não tem commits à frente da main (ex: branch já integrada).
-    # Nesse caso `git commit` falharia com "nothing to commit". Verificação adicionada.
+    # [FIX-14] After `git merge --squash` there may be nothing staged when
+    # the source branch has no commits ahead of main (e.g.: branch already integrated).
+    # In that case `git commit` would fail with "nothing to commit". Verification added.
     echo "STEP=Creating merge commit..."
     if git diff --cached --quiet; then
         echo "MERGE_COMMIT=SKIPPED (nothing to commit after squash)"

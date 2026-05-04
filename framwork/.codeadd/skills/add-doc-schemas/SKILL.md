@@ -51,11 +51,11 @@ Schema-agnostic rules that apply to every generated doc, even when the schema is
 
 | Context | Language |
 |---|---|
-| Prose, explanations, rationale | PT-BR |
+| Prose, explanations, rationale | Follow the `language` field in `owner.md` (e.g. `pt-br`, `en-us`); default to English when the field is unset or `owner.md` does not exist |
 | Code, git, CLI flags, technical terms | English |
 | Frontmatter keys and schema type names | English (machine-parsed) |
 
-Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English inside PT-BR prose. Do not translate them.
+Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English regardless of the owner's language setting. Do not translate them.
 
 ### Markdown Formatting
 

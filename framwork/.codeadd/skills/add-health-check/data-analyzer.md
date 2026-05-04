@@ -1,114 +1,114 @@
 # Data Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Follow patterns defined in `{{skill:add-doc-schemas/SKILL.md}}`
 
-**Objetivo:** Analisar banco de dados, migrations e queries do projeto.
+**Objective:** Analyze the project's database, migrations, and queries.
 
 **Output:** `docs/health-checks/YYYY-MM-DD/data-report.md`
 
-**Criticidade:** 🟡 MÉDIO
+**Criticality:** 🟡 MEDIUM
 
 ---
 
-## Missão
+## Mission
 
-Você é um subagente especializado em análise de dados. Seu trabalho é:
-1. Ler `context-discovery.md` para entender schema esperado
-2. Ler `infrastructure-report.md` para saber se MCP está disponível
-3. Verificar migrations e consistência
-4. Identificar queries N+1 potenciais
-5. Verificar índices em colunas importantes
+You are a subagent specialized in data analysis. Your job is:
+1. Read `context-discovery.md` to understand the expected schema
+2. Read `infrastructure-report.md` to determine if MCP is available
+3. Verify migrations and consistency
+4. Identify potential N+1 queries
+5. Check indexes on important columns
 
 ---
 
-## Pré-requisito: Ler Contexto
+## Prerequisite: Read Context
 
 ```bash
 cat docs/health-checks/YYYY-MM-DD/context-discovery.md
 cat docs/health-checks/YYYY-MM-DD/infrastructure-report.md
 ```
 
-**Extrair:**
-- Tenant column (ex: account_id)
-- ORM/Query builder usado (Kysely, Prisma, etc.)
-- Se MCP Supabase está disponível
+**Extract:**
+- Tenant column (e.g.: account_id)
+- ORM/Query builder used (Kysely, Prisma, etc.)
+- Whether MCP Supabase is available
 
 ---
 
-## Análise 1: Migrations
+## Analysis 1: Migrations
 
-### Verificações
+### Checks
 
 ```bash
-# Listar migrations
+# List migrations
 ls libs/app-database/migrations/ 2>/dev/null
 ls prisma/migrations/ 2>/dev/null
 ls migrations/ 2>/dev/null
 
-# Verificar ordem de migrations
+# Check migration order
 ls -la libs/app-database/migrations/ 2>/dev/null | sort
 
-# Verificar se há migrations pendentes (se MCP disponível)
-# Usar mcp__supabase__list_migrations
+# Check for pending migrations (if MCP available)
+# Use mcp__supabase__list_migrations
 ```
 
-### Problemas Comuns
+### Common Problems
 
-| Problema | Severidade | Como Identificar |
-|----------|------------|------------------|
-| Migration com down() vazio | 🟠 Alto | grep "down.*{}" |
-| Migrations fora de ordem | 🟡 Médio | Timestamps inconsistentes |
-| Dados seed em migration | 🟡 Médio | INSERT em migration |
+| Problem | Severity | How to Identify |
+|---------|----------|-----------------|
+| Migration with empty down() | 🟠 High | grep "down.*{}" |
+| Migrations out of order | 🟡 Medium | Inconsistent timestamps |
+| Seed data in migration | 🟡 Medium | INSERT in migration |
 
 ```bash
-# Down vazio (não permite rollback)
+# Empty down() (prevents rollback)
 grep -rn "down.*async.*{" libs/app-database/migrations/ --include="*.js" -A 2 2>/dev/null | grep -B 1 "}"
 
-# Dados em migrations (deveria ser seed separado)
+# Data in migrations (should be separate seed)
 grep -rn "INSERT INTO\|insert(" libs/app-database/migrations/ --include="*.js" 2>/dev/null
 ```
 
 ---
 
-## Análise 2: Schema Sync (Se MCP Disponível)
+## Analysis 2: Schema Sync (If MCP Available)
 
-### Verificar Tabelas Existentes
+### Check Existing Tables
 
 ```sql
 -- Via MCP Supabase
 SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 ```
 
-### Comparar com Types/Entities
+### Compare with Types/Entities
 
 ```bash
-# Tabelas definidas no código
+# Tables defined in code
 grep -rn "tableName\|table:" libs/app-database/src/ --include="*.ts" 2>/dev/null
 
-# Entities definidas
+# Defined entities
 ls libs/domain/src/entities/ 2>/dev/null
 ```
 
-### Problemas Comuns
+### Common Problems
 
-| Problema | Severidade |
-|----------|------------|
-| Tabela no banco sem entity | 🟡 Médio |
-| Entity sem tabela no banco | 🔴 Crítico |
-| Colunas diferentes | 🟠 Alto |
+| Problem | Severity |
+|---------|----------|
+| Table in database without entity | 🟡 Medium |
+| Entity without table in database | 🔴 Critical |
+| Different columns | 🟠 High |
 
 ---
 
-## Análise 3: Índices
+## Analysis 3: Indexes
 
-### Colunas que DEVEM ter Índice
+### Columns that MUST have an Index
 
 1. **Tenant column** (account_id, organization_id)
 2. **Foreign keys**
-3. **Colunas usadas em WHERE frequente**
-4. **Colunas de status** (se queries por status)
+3. **Columns used in frequent WHERE clauses**
+4. **Status columns** (if queried by status)
 
-### Verificações (Se MCP Disponível)
+### Checks (If MCP Available)
 
 ```sql
 -- Listar índices existentes
@@ -124,34 +124,34 @@ SELECT * FROM pg_indexes
 WHERE indexdef LIKE '%account_id%';
 ```
 
-### Verificações (Via Código)
+### Checks (Via Code)
 
 ```bash
-# Índices definidos em migrations
+# Indexes defined in migrations
 grep -rn "createIndex\|addIndex\|index(" libs/app-database/migrations/ --include="*.js" 2>/dev/null
 
-# Colunas usadas em WHERE
+# Columns used in WHERE clauses
 grep -rn "where(\|\.where\|WHERE" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null | head -20
 ```
 
 ---
 
-## Análise 4: Queries N+1
+## Analysis 4: N+1 Queries
 
-### O Que Buscar
+### What to Look For
 
 ```bash
-# Loops com queries dentro
+# Loops with queries inside
 grep -rn "for.*await\|forEach.*await\|map.*await" libs/app-database/src/ apps/backend/src/ --include="*.ts" 2>/dev/null | head -20
 
-# findById dentro de loops (code smell)
+# findById inside loops (code smell)
 grep -rn "findById\|findOne" apps/backend/src/ --include="*.ts" -B 3 2>/dev/null | grep -B 3 "for\|forEach\|map" | head -20
 
-# Queries sem joins onde deveria ter
+# Queries without joins where they should have
 grep -rn "selectFrom\|from(" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null | grep -v "join\|leftJoin\|innerJoin" | head -10
 ```
 
-### Pattern N+1
+### N+1 Pattern
 
 ```typescript
 // ❌ N+1 Problem
@@ -160,117 +160,117 @@ for (const user of users) {
   const account = await accountRepository.findById(user.accountId); // N queries!
 }
 
-// ✅ Correto
-const users = await userRepository.findAllWithAccount(); // 1 query com join
+// ✅ Correct
+const users = await userRepository.findAllWithAccount(); // 1 query with join
 ```
 
 ---
 
-## Análise 5: Queries Sem Filtro de Tenant
+## Analysis 5: Queries Without Tenant Filter
 
-### Verificações
+### Checks
 
 ```bash
-# Tenant column do context-discovery
+# Tenant column from context-discovery
 TENANT_COL="account_id"
 
-# findAll sem filtro de tenant
+# findAll without tenant filter
 grep -rn "findAll\|selectFrom.*select\(\'\*\'\)" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null | grep -v "$TENANT_COL" | head -10
 
-# Queries que deveriam filtrar mas não filtram
+# Queries that should filter but don't
 grep -rn "selectFrom\|from(" libs/app-database/src/repositories/ --include="*.ts" -A 5 2>/dev/null | grep -v "where.*$TENANT_COL\|.$TENANT_COL" | head -20
 ```
 
 ---
 
-## Análise 6: Soft Delete Consistência
+## Analysis 6: Soft Delete Consistency
 
-### Verificações
+### Checks
 
 ```bash
-# Tabelas com deleted_at
+# Tables with deleted_at
 grep -rn "deleted_at\|deletedAt" libs/app-database/migrations/ --include="*.js" 2>/dev/null
 
-# Queries que ignoram deleted_at
+# Queries that ignore deleted_at
 grep -rn "selectFrom\|findAll\|findById" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null | grep -v "deleted\|isNull" | head -10
 ```
 
 ---
 
-## Template do Output
+## Output Template
 
-**Criar:** `docs/health-checks/YYYY-MM-DD/data-report.md`
+**Create:** `docs/health-checks/YYYY-MM-DD/data-report.md`
 
 ```markdown
 # Data Report
 
-**Gerado em:** [data]
+**Generated on:** [date]
 **Score:** [X/10]
 **Status:** 🔴/🟠/🟡/🟢
 
 ---
 
-## Resumo
+## Summary
 
-[2-3 frases sobre estado geral do banco de dados e queries]
+[2-3 sentences about the overall state of the database and queries]
 
 ---
 
-## Contexto da Análise
+## Analysis Context
 
 - **ORM/Query Builder:** [Kysely/Prisma/etc.]
 - **Tenant Column:** [account_id]
-- **MCP Disponível:** [Sim/Não]
+- **MCP Available:** [Yes/No]
 
 ---
 
 ## Migrations
 
-### Status: [X] migrations encontradas
+### Status: [X] migrations found
 
-| Migration | Data | Status |
+| Migration | Date | Status |
 |-----------|------|--------|
 | 20250101001_create_initial_schema | 2025-01-01 | ✅ |
-| 20250101002_seed_default_plans | 2025-01-01 | ⚠️ Seed em migration |
+| 20250101002_seed_default_plans | 2025-01-01 | ⚠️ Seed in migration |
 
 ### Issues
 
-#### [DATA-001] Migration com down() vazio
-**Arquivo:** libs/app-database/migrations/20250103001_add_auth_user_id.js
-**Problema:** Função down() não implementada, rollback impossível
-**Correção:** Implementar down() com operação reversa
+#### [DATA-001] Migration with empty down()
+**File:** libs/app-database/migrations/20250103001_add_auth_user_id.js
+**Problem:** down() function not implemented, rollback impossible
+**Fix:** Implement down() with the reverse operation
 
 ---
 
 ## Schema Sync
 
-### Tabelas no Banco vs Entities
+### Tables in Database vs Entities
 
-| Tabela | Entity | Status |
-|--------|--------|--------|
+| Table | Entity | Status |
+|-------|--------|--------|
 | users | User | ✅ Sync |
 | accounts | Account | ✅ Sync |
-| orphan_table | - | ⚠️ Sem entity |
+| orphan_table | - | ⚠️ No entity |
 
 ---
 
-## Índices
+## Indexes
 
-### Análise de Índices Críticos
+### Critical Index Analysis
 
-| Coluna | Tabela | Tem Índice | Recomendação |
-|--------|--------|------------|--------------|
-| account_id | users | ✅/❌ | [Criar/OK] |
-| account_id | workspaces | ✅/❌ | [Criar/OK] |
-| email | users | ✅/❌ | [Criar para login] |
+| Column | Table | Has Index | Recommendation |
+|--------|-------|-----------|----------------|
+| account_id | users | ✅/❌ | [Create/OK] |
+| account_id | workspaces | ✅/❌ | [Create/OK] |
+| email | users | ✅/❌ | [Create for login] |
 
 ### Issues
 
-#### [DATA-002] Coluna de tenant sem índice
-**Tabela:** workspaces
-**Coluna:** account_id
-**Impacto:** Queries de tenant lentas em escala
-**Correção:** Criar migration com índice
+#### [DATA-002] Tenant column without index
+**Table:** workspaces
+**Column:** account_id
+**Impact:** Slow tenant queries at scale
+**Fix:** Create migration with index
 
 ```sql
 CREATE INDEX idx_workspaces_account_id ON workspaces(account_id);
@@ -278,134 +278,134 @@ CREATE INDEX idx_workspaces_account_id ON workspaces(account_id);
 
 ---
 
-## Queries N+1
+## N+1 Queries
 
-### Potenciais Problemas Encontrados
+### Potential Problems Found
 
-#### [DATA-003] Loop com query interna
-**Arquivo:** apps/backend/src/api/modules/workspace/workspace.service.ts:45
-**Código:**
+#### [DATA-003] Loop with inner query
+**File:** apps/backend/src/api/modules/workspace/workspace.service.ts:45
+**Code:**
 ```typescript
 for (const user of users) {
   const workspace = await this.workspaceRepo.findByUserId(user.id);
 }
 ```
-**Impacto:** N+1 queries, performance degradada
-**Correção:** Criar método com join ou batch query
+**Impact:** N+1 queries, degraded performance
+**Fix:** Create method with join or batch query
 
 ---
 
-## Queries Sem Filtro de Tenant
+## Queries Without Tenant Filter
 
-### Repositórios Analisados
+### Repositories Analyzed
 
-| Repository | findAll com tenant | findById com tenant |
-|------------|-------------------|---------------------|
+| Repository | findAll with tenant | findById with tenant |
+|------------|--------------------|--------------------|
 | UserRepository | ✅/❌ | ✅/❌ |
 | WorkspaceRepository | ✅/❌ | ✅/❌ |
 
 ### Issues
 
-#### [DATA-004] findAll sem filtro de tenant
-**Arquivo:** libs/app-database/src/repositories/WorkspaceRepository.ts:34
-**Método:** `findAll()`
-**Problema:** Retorna todos os registros sem filtrar por account_id
-**Correção:** Adicionar parâmetro accountId obrigatório
+#### [DATA-004] findAll without tenant filter
+**File:** libs/app-database/src/repositories/WorkspaceRepository.ts:34
+**Method:** `findAll()`
+**Problem:** Returns all records without filtering by account_id
+**Fix:** Add mandatory accountId parameter
 
 ---
 
-## Issues Consolidados
+## Consolidated Issues
 
-### 🔴 Crítico
+### 🔴 Critical
 
-[Issues críticos relacionados a dados]
-
----
-
-### 🟠 Alto
-
-#### [DATA-002] Coluna de tenant sem índice
-#### [DATA-003] Query N+1 em loop
-#### [DATA-004] findAll sem filtro de tenant
+[Critical issues related to data]
 
 ---
 
-### 🟡 Médio
+### 🟠 High
 
-#### [DATA-001] Migration com down() vazio
-
----
-
-### 🟢 Baixo
-
-[Issues menores]
+#### [DATA-002] Tenant column without index
+#### [DATA-003] N+1 query in loop
+#### [DATA-004] findAll without tenant filter
 
 ---
 
-## Checklist de Correção
+### 🟡 Medium
+
+#### [DATA-001] Migration with empty down()
+
+---
+
+### 🟢 Low
+
+[Minor issues]
+
+---
+
+## Fix Checklist
 
 ### Migrations
-- [ ] [DATA-001] Implementar down() em migrations
+- [ ] [DATA-001] Implement down() in migrations
 
-### Índices
-- [ ] [DATA-002] Criar índice em account_id
+### Indexes
+- [ ] [DATA-002] Create index on account_id
 
 ### Queries
-- [ ] [DATA-003] Refatorar query N+1
-- [ ] [DATA-004] Adicionar filtro de tenant
+- [ ] [DATA-003] Refactor N+1 query
+- [ ] [DATA-004] Add tenant filter
 
 ---
 
-## Recomendações
+## Recommendations
 
-1. **Prioridade 1:** Criar índices em colunas de tenant
-2. **Prioridade 2:** Refatorar queries N+1
-3. **Prioridade 3:** Garantir filtro de tenant em todas queries
+1. **Priority 1:** Create indexes on tenant columns
+2. **Priority 2:** Refactor N+1 queries
+3. **Priority 3:** Ensure tenant filter on all queries
 
 ---
 
-## Limitações da Análise
+## Analysis Limitations
 
-[Se MCP não disponível]
+[If MCP not available]
 
-As seguintes análises NÃO foram possíveis:
-- Verificar tabelas existentes no banco
-- Verificar índices existentes
-- Comparar schema real vs esperado
+The following analyses were NOT possible:
+- Check existing tables in the database
+- Check existing indexes
+- Compare real schema vs expected
 
-Para análise completa, configure o MCP Supabase seguindo:
+For complete analysis, configure the MCP Supabase by following:
 `docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 
 ---
 
-*Documento gerado pelo subagente data-analyzer*
+*Document generated by the data-analyzer subagent*
 ```
 
 ---
 
 ## Scoring
 
-**Cálculo do score:**
-- Entity sem tabela: -3 pontos
-- Query N+1 identificada: -1.5 pontos
-- Tenant column sem índice: -1 ponto
-- findAll sem filtro tenant: -1 ponto
-- Migration sem down(): -0.5 pontos
+**Score calculation:**
+- Entity without table: -3 points
+- N+1 query identified: -1.5 points
+- Tenant column without index: -1 point
+- findAll without tenant filter: -1 point
+- Migration without down(): -0.5 points
 
-**Score = max(0, 10 - soma_deduções)**
+**Score = max(0, 10 - sum_of_deductions)**
 
 ---
 
 ## Critical Rules
 
 **DO:**
-- ✅ Ler context-discovery.md e infrastructure-report.md PRIMEIRO
-- ✅ Usar MCP Supabase se disponível
-- ✅ Verificar CADA repository
-- ✅ Documentar limitações quando MCP não disponível
+- ✅ Read context-discovery.md and infrastructure-report.md FIRST
+- ✅ Use MCP Supabase if available
+- ✅ Check EACH repository
+- ✅ Document limitations when MCP is not available
 
 **DO NOT:**
-- ❌ Executar queries destrutivas
-- ❌ Modificar dados ou schema
-- ❌ Ignorar queries N+1
-- ❌ Assumir que índices existem sem verificar
+- ❌ Execute destructive queries
+- ❌ Modify data or schema
+- ❌ Ignore N+1 queries
+- ❌ Assume indexes exist without verifying

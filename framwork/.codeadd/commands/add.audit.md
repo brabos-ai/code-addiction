@@ -7,7 +7,7 @@ Execute complete technical analysis of the project, identifying security, archit
 **Output:** `docs/audit/<YYYY-MM-DD>.md` (per `audit-report` schema) + supporting reports in `docs/audits/<YYYY-MM-DD>/`
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 ---
 

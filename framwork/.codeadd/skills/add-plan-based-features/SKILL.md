@@ -127,7 +127,7 @@ async validateProjectCreation(workspaceId: string, currentCount: number): Promis
   if (currentCount >= limit) {
     return {
       allowed: false,
-      reason: `Limite de ${limit} projetos atingido. Faça upgrade.`
+      reason: `Project limit of ${limit} reached. Please upgrade.`
     };
   }
   return { allowed: true };

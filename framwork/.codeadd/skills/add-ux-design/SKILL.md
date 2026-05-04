@@ -74,16 +74,16 @@ DQS = (Impact + Fit + Feasibility + Performance) − Consistency Risk
 
 | Law | Rule | Application |
 |-----|------|-------------|
-| **Fitts** | Larger + closer = easier | CTAs grandes, ações primárias acessíveis |
-| **Hick** | More options = slower decision | Max 5-7 items visíveis, progressive disclosure |
-| **Miller** | 7±2 chunks | Agrupar info em seções, não listas longas |
-| **Jakob** | Users expect patterns | Não reinventar, seguir convenções |
-| **Doherty** | <400ms = flow state | Feedback imediato, optimistic UI |
-| **Peak-End** | Memory = peak + end | Celebrar sucesso, polish no final |
-| **Aesthetic-Usability** | Beautiful = easier | Investir em visual polish |
+| **Fitts** | Larger + closer = easier | Large CTAs, primary actions accessible |
+| **Hick** | More options = slower decision | Max 5-7 visible items, progressive disclosure |
+| **Miller** | 7±2 chunks | Group info into sections, not long lists |
+| **Jakob** | Users expect patterns | Don't reinvent, follow conventions |
+| **Doherty** | <400ms = flow state | Immediate feedback, optimistic UI |
+| **Peak-End** | Memory = peak + end | Celebrate success, polish at the end |
+| **Aesthetic-Usability** | Beautiful = easier | Invest in visual polish |
 
 ### Cognitive Load Principles
-{"intrinsic":"simplificar fluxo","extraneous":"eliminar ruído visual","germane":"patterns consistentes"}
+{"intrinsic":"simplify flow","extraneous":"eliminate visual noise","germane":"consistent patterns"}
 
 ---
 

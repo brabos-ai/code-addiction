@@ -9,26 +9,26 @@ teardown() {
   common_teardown
 }
 
-# ─── Detecção via remote ────────────────────────────────────────────
+# ─── Detection via remote ────────────────────────────────────────────
 
-@test "detecta main via origin/HEAD (repo clonado)" {
+@test "detects main via origin/HEAD (cloned repo)" {
   setup_remote
   run "$SCRIPTS_DIR/get-main-branch.sh"
   [ "$status" -eq 0 ]
   [ "$output" = "main" ]
 }
 
-@test "detecta main via refs/remotes/origin/main" {
+@test "detects main via refs/remotes/origin/main" {
   setup_remote
-  # Remove symbolic-ref para forçar fallback para show-ref
+  # Remove symbolic-ref to force fallback to show-ref
   git remote set-head origin --delete 2>/dev/null || true
   run "$SCRIPTS_DIR/get-main-branch.sh"
   [ "$status" -eq 0 ]
   [ "$output" = "main" ]
 }
 
-@test "detecta master via remote quando main não existe" {
-  # Criar repo com master
+@test "detects master via remote when main does not exist" {
+  # Create repo with master
   cd "$TEST_TEMP_DIR"
   rm -rf "$TEST_REPO"
   mkdir -p "$TEST_REPO"
@@ -52,25 +52,25 @@ teardown() {
   [ "$output" = "master" ]
 }
 
-# ─── Detecção via branch local (sem remote) ─────────────────────────
+# ─── Detection via local branch (no remote) ─────────────────────────
 
-@test "detecta main local quando não há remote" {
-  # Repo sem remote, branch main já existe do setup
+@test "detects local main when there is no remote" {
+  # Repo without remote, main branch already exists from setup
   run "$SCRIPTS_DIR/get-main-branch.sh"
   [ "$status" -eq 0 ]
   [ "$output" = "main" ]
 }
 
-@test "detecta master local quando não há remote e branch é master" {
+@test "detects local master when there is no remote and branch is master" {
   git branch -m master
   run "$SCRIPTS_DIR/get-main-branch.sh"
   [ "$status" -eq 0 ]
   [ "$output" = "master" ]
 }
 
-# ─── Casos de erro ──────────────────────────────────────────────────
+# ─── Error cases ──────────────────────────────────────────────────
 
-@test "falha com exit 1 fora de repositório git" {
+@test "fails with exit 1 outside of git repository" {
   cd "$TEST_TEMP_DIR"
   mkdir -p not-a-repo
   cd not-a-repo
@@ -78,13 +78,13 @@ teardown() {
   [ "$status" -eq 1 ]
 }
 
-@test "falha com exit 2 quando não há main nem master" {
+@test "fails with exit 2 when neither main nor master exists" {
   git branch -m develop
   run "$SCRIPTS_DIR/get-main-branch.sh"
   [ "$status" -eq 2 ]
 }
 
-@test "mensagem de erro vai para stderr quando falha" {
+@test "error message goes to stderr on failure" {
   git branch -m develop
   run "$SCRIPTS_DIR/get-main-branch.sh"
   [ "$status" -eq 2 ]

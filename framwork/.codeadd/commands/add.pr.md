@@ -1,7 +1,7 @@
 # Feature PR & Changelog Generator
 
 > **MODEL:** Use `haiku` model
-> **LANG:** Follow `OWNER:name|level|language` from status.sh or owner.md. Default: intermediario, en-us.
+> **LANG:** Follow `OWNER:name|level|language` from status.sh or owner.md. Default: intermediate, en-us.
 
 Coordinator for PR creation with intelligent changelog generation. Analyzes files, filters POCOs/DTOs, detects out-of-scope implementations, feeds root CHANGELOG.md.
 

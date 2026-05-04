@@ -2,10 +2,10 @@
 
 # =============================================================================
 # Status (v4 - Centralized Metadata)
-# Output compacto para agentes de desenvolvimento
+# Compact output for development agents
 # =============================================================================
 
-# P1 - FIX: adicionar -u (variaveis nao definidas) e pipefail (falhas em pipes)
+# P1 - FIX: add -u (undefined variables) and pipefail (failures in pipes)
 set -euo pipefail
 
 # =============================================================================
@@ -41,16 +41,16 @@ if [ "${1:-}" = "next-id" ]; then
 fi
 
 # =============================================================================
-# GUARDS: dependencias obrigatorias e repositorio git
+# GUARDS: mandatory dependencies and git repository
 # =============================================================================
 
-# P11 - FIX: verificar dependencia git
+# P11 - FIX: verify git dependency
 if ! command -v git &>/dev/null; then
     echo "ERROR:git not found in PATH" >&2
     exit 1
 fi
 
-# P2 - FIX: verificar que estamos dentro de um repositorio git
+# P2 - FIX: verify that we are inside a git repository
 if ! git rev-parse --git-dir &>/dev/null; then
     echo "ERROR:not a git repository" >&2
     exit 1
@@ -62,7 +62,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# P3 - FIX: verificar existencia e permissao de execucao do script auxiliar
+# P3 - FIX: verify existence and execute permission of the helper script
 if [ ! -f "$SCRIPT_DIR/get-main-branch.sh" ]; then
     echo "ERROR:get-main-branch.sh not found at $SCRIPT_DIR/get-main-branch.sh" >&2
     exit 1
@@ -88,13 +88,13 @@ CURRENT_BRANCH="$BRANCH_NAME"
 FEATURE_ID="$FEATURE_SLUG"
 FEATURE_DIR="${DOCS_DIR:-docs/features/${FEATURE_SLUG}}"
 
-# P10 - FIX: inicializar BEHIND e AHEAD no escopo global para evitar "unbound variable"
-#             quando o bloco GIT STATUS nao e executado
+# P10 - FIX: initialize BEHIND and AHEAD in global scope to avoid "unbound variable"
+#             when the GIT STATUS block is not executed
 AHEAD="0"
 BEHIND="0"
 
-# P12 - FIX: inicializar PHASE no escopo global para evitar uso nao definido
-#             nas RECOMMENDATIONS quando FEATURE_DIR nao existe
+# P12 - FIX: initialize PHASE in global scope to avoid undefined use
+#             in RECOMMENDATIONS when FEATURE_DIR does not exist
 PHASE="none"
 
 # =============================================================================
@@ -110,10 +110,16 @@ echo "BRANCH:$CURRENT_BRANCH TYPE:$BRANCH_TYPE MAIN:$MAIN_BRANCH"
 OWNER_FILE="docs/owner.md"
 if [ -f "$OWNER_FILE" ]; then
     OWNER_NAME=$(grep -i "^Nome:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nome:[[:space:]]*//' | head -1 || echo "unknown")
-    OWNER_NIVEL=$(grep -i "^Nivel:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || echo "intermediario")
+    OWNER_NIVEL=$(grep -i "^Nivel:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || echo "intermediate")
     OWNER_IDIOMA=$(grep -i "^Idioma:" "$OWNER_FILE" 2>/dev/null | sed 's/^Idioma:[[:space:]]*//' | head -1 || echo "en-us")
     [ -z "$OWNER_NAME" ] && OWNER_NAME="unknown"
-    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediario"
+    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediate"
+    # Normalize PT-BR skill level identifiers to English (backwards compatibility)
+    case "$OWNER_NIVEL" in
+      iniciante) OWNER_NIVEL="beginner" ;;
+      intermediario) OWNER_NIVEL="intermediate" ;;
+      avancado) OWNER_NIVEL="advanced" ;;
+    esac
     [ -z "$OWNER_IDIOMA" ] && OWNER_IDIOMA="en-us"
     echo "OWNER:${OWNER_NAME}|${OWNER_NIVEL}|${OWNER_IDIOMA}"
 fi
@@ -191,7 +197,7 @@ if [ -n "$FEATURE_ID" ]; then
             [ -n "$LAST_UPDATE" ] && [ "$LAST_UPDATE" != "{" ] && echo "LAST_UPDATE:$LAST_UPDATE" || true
         fi
         # =============================================================================
-        # OUTPUT: FEATURES (se plan.md tem seção ## Features - indica Epic)
+        # OUTPUT: FEATURES (if plan.md has ## Features section - indicates Epic)
         # =============================================================================
 
         PLAN_FILE="$FEATURE_DIR/plan.md"
@@ -273,7 +279,7 @@ if [ -n "$FEATURE_ID" ]; then
 
             # tasks.md for current subfeature
             if [ -n "$CURRENT_SF" ]; then
-                # P5 - FIX: usar aspas para proteger o glob e evitar word splitting
+                # P5 - FIX: use quotes to protect the glob and avoid word splitting
                 SF_DIR_GLOB="$FEATURE_DIR/subfeatures/${CURRENT_SF}-*"
                 SF_DIR=$(ls -d "$SF_DIR_GLOB" 2>/dev/null | head -1 || echo "")
                 if [ -n "$SF_DIR" ] && [ -f "$SF_DIR/tasks.md" ]; then
@@ -307,20 +313,20 @@ if [ -n "$FEATURE_ID" ]; then
 fi
 
 # =============================================================================
-# OUTPUT: RECENT_CHANGELOGS (últimas 5 features finalizadas - contexto cross-feature)
+# OUTPUT: RECENT_CHANGELOGS (last 5 completed features - cross-feature context)
 # =============================================================================
 
 FEATURES_DIR="docs/features"
 if [ -d "$FEATURES_DIR" ]; then
-    # P6 - FIX: substituir xargs ls -t por find com -printf para ordenacao global
-    #            correta por mtime, evitando problemas com multiplos diretorios
+    # P6 - FIX: replace xargs ls -t with find using -printf for correct global
+    #            ordering by mtime, avoiding issues with multiple directories
     CHANGELOGS=$(find "$FEATURES_DIR" -name "changelog.md" -type f 2>/dev/null \
         -printf "%T@ %p\n" 2>/dev/null | sort -rn | head -5 | awk '{print $2}' || echo "")
 
     if [ -n "$CHANGELOGS" ]; then
         echo "RECENT_CHANGELOGS:"
-        # P7 - NOTA: o loop while em subshell e intencional aqui (apenas echo),
-        #            mas usamos process substitution para manter no mesmo shell
+        # P7 - NOTE: the while loop in subshell is intentional here (echo only),
+        #            but we use process substitution to stay in the same shell
         while IFS= read -r cl; do
             if [ -f "$cl" ]; then
                 # Extract feature ID from path
@@ -359,8 +365,8 @@ UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d
 if [ "${MODIFIED:-0}" -gt 0 ] || [ "${STAGED:-0}" -gt 0 ] || [ "${UNTRACKED:-0}" -gt 0 ]; then
     GIT_LINE="GIT:M$MODIFIED S$STAGED U$UNTRACKED"
 
-    # P9 - FIX: verificar se o branch remoto existe antes de calcular ahead/behind
-    #            para evitar falha silenciosa ou abort com set -e
+    # P9 - FIX: verify that the remote branch exists before calculating ahead/behind
+    #            to avoid silent failure or abort with set -e
     if [ "$CURRENT_BRANCH" != "(detached)" ]; then
         if git rev-parse --verify "origin/$CURRENT_BRANCH" &>/dev/null; then
             AHEAD=$(git rev-list --count "origin/$CURRENT_BRANCH..$CURRENT_BRANCH" 2>/dev/null || echo "0")
@@ -537,7 +543,7 @@ elif [ -n "$FEATURE_ID" ]; then
 fi
 
 # Git warnings
-# P10 - BEHIND ja inicializado com "0" no topo; seguro usar aqui com set -u
+# P10 - BEHIND already initialized to "0" at the top; safe to use here with set -u
 [ "${BEHIND}" != "0" ] && RECS="${RECS:+$RECS | }git pull (behind)"
 
 [ -n "$RECS" ] && echo "REC:$RECS" || true

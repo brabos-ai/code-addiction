@@ -1,14 +1,14 @@
-# Aesthetics - Paletas para SaaS
+# Aesthetics - Palettes for SaaS
 
-Direções estéticas completas para landing pages SaaS. Escolha uma e seja consistente.
+Complete aesthetic directions for SaaS landing pages. Choose one and stay consistent.
 
 ---
 
 ## Minimal (Notion, Linear, Raycast)
 
-**Vibe:** Limpo, profissional, sofisticado. "Less is more."
+**Vibe:** Clean, professional, sophisticated. "Less is more."
 
-### Cores
+### Colors
 ```css
 :root {
   /* Light mode */
@@ -16,7 +16,7 @@ Direções estéticas completas para landing pages SaaS. Escolha uma e seja cons
   --foreground: 0 0% 9%;
   --muted: 0 0% 96%;
   --muted-foreground: 0 0% 45%;
-  --primary: 0 0% 9%;           /* Preto como primary */
+  --primary: 0 0% 9%;           /* Black as primary */
   --primary-foreground: 0 0% 100%;
   --accent: 0 0% 96%;
   --border: 0 0% 90%;
@@ -38,19 +38,19 @@ theme: {
 }
 ```
 
-### Características
+### Characteristics
 ```markdown
-- Background: Branco puro (#FFFFFF)
-- Texto: Preto/cinza escuro, sem cores vibrantes
-- Accent: Apenas 1 cor (geralmente preto ou cinza)
-- Bordas: Sutis, 1px, cinza claro
-- Shadows: Mínimas ou nenhuma
-- Spacing: Generoso (py-24, gap-8)
-- Typography: Uma fonte apenas (Inter, SF Pro)
-- Animations: Nenhuma ou fade sutil
+- Background: Pure white (#FFFFFF)
+- Text: Black/dark gray, no vibrant colors
+- Accent: Only 1 color (usually black or gray)
+- Borders: Subtle, 1px, light gray
+- Shadows: Minimal or none
+- Spacing: Generous (py-24, gap-8)
+- Typography: Single font only (Inter, SF Pro)
+- Animations: None or subtle fade
 ```
 
-### Padrões de Código
+### Code Patterns
 ```tsx
 // Buttons
 <Button className="bg-black text-white hover:bg-black/90">
@@ -69,42 +69,42 @@ theme: {
 <p className="text-gray-600 text-lg leading-relaxed">
 ```
 
-### Exemplo de Hero
+### Hero Example
 ```tsx
 <section className="min-h-screen flex items-center">
   <div className="container px-4 py-24">
     <h1 className="text-5xl md:text-6xl font-medium tracking-tight max-w-3xl">
-      Gerencie projetos com clareza
+      Manage projects with clarity
     </h1>
     <p className="mt-6 text-xl text-gray-600 max-w-xl">
-      Uma ferramenta simples para equipes que valorizam foco.
+      A simple tool for teams that value focus.
     </p>
     <Button className="mt-10 bg-black text-white px-8 h-12">
-      Começar grátis
+      Start for free
     </Button>
   </div>
 </section>
 ```
 
-**Use para:** Ferramentas de produtividade, dev tools, B2B enterprise.
+**Use for:** Productivity tools, dev tools, B2B enterprise.
 
 ---
 
 ## Tech (Vercel, Supabase, Railway)
 
-**Vibe:** Moderno, dark mode, gradientes sutis. "Built for developers."
+**Vibe:** Modern, dark mode, subtle gradients. "Built for developers."
 
-### Cores
+### Colors
 ```css
 :root {
   /* Dark mode */
-  --background: 0 0% 4%;          /* Preto profundo */
+  --background: 0 0% 4%;          /* Deep black */
   --foreground: 0 0% 98%;
   --muted: 0 0% 10%;
   --muted-foreground: 0 0% 60%;
-  --primary: 142 76% 36%;         /* Verde Vercel-like */
+  --primary: 142 76% 36%;         /* Vercel-like green */
   --primary-foreground: 0 0% 100%;
-  --accent: 217 91% 60%;          /* Azul accent */
+  --accent: 217 91% 60%;          /* Blue accent */
   --border: 0 0% 15%;
 }
 ```
@@ -126,19 +126,19 @@ theme: {
 }
 ```
 
-### Características
+### Characteristics
 ```markdown
-- Background: Preto profundo (#0A0A0A, #000)
-- Texto: Branco/cinza claro
-- Primary: Verde vibrante (#22C55E) ou Azul (#3B82F6)
-- Gradients: Sutis, mesh gradients
-- Glow effects: Blur em elementos destacados
-- Grid patterns: Background com linhas sutis
-- Code snippets: Destaque visual
-- Animations: Suaves, microinteractions
+- Background: Deep black (#0A0A0A, #000)
+- Text: White/light gray
+- Primary: Vibrant green (#22C55E) or Blue (#3B82F6)
+- Gradients: Subtle, mesh gradients
+- Glow effects: Blur on highlighted elements
+- Grid patterns: Background with subtle lines
+- Code snippets: Visual highlight
+- Animations: Smooth, microinteractions
 ```
 
-### Padrões de Código
+### Code Patterns
 ```tsx
 // Background pattern
 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -160,7 +160,7 @@ theme: {
 <pre className="bg-zinc-950 rounded-lg p-4 text-sm text-zinc-300 font-mono">
 ```
 
-### Exemplo de Hero
+### Hero Example
 ```tsx
 <section className="relative min-h-screen flex items-center bg-black overflow-hidden">
   {/* Grid pattern */}
@@ -194,22 +194,22 @@ theme: {
 </section>
 ```
 
-**Use para:** Dev tools, infrastructure, APIs, technical products.
+**Use for:** Dev tools, infrastructure, APIs, technical products.
 
 ---
 
 ## Enterprise (Salesforce, HubSpot, Zendesk)
 
-**Vibe:** Confiável, profissional, estruturado. "Trusted by Fortune 500."
+**Vibe:** Reliable, professional, structured. "Trusted by Fortune 500."
 
-### Cores
+### Colors
 ```css
 :root {
-  --background: 210 40% 98%;      /* Off-white azulado */
+  --background: 210 40% 98%;      /* Bluish off-white */
   --foreground: 222 47% 11%;
   --muted: 210 40% 96%;
   --muted-foreground: 215 16% 47%;
-  --primary: 221 83% 53%;         /* Azul confiável */
+  --primary: 221 83% 53%;         /* Trustworthy blue */
   --primary-foreground: 0 0% 100%;
   --accent: 210 40% 94%;
   --border: 214 32% 91%;
@@ -232,19 +232,19 @@ theme: {
 }
 ```
 
-### Características
+### Characteristics
 ```markdown
-- Background: Off-white ou cinza muito claro
-- Primary: Azul (#2563EB, #1D4ED8)
-- Accent: Verde para success, vermelho para alerts
-- Shadows: Suaves, layers definidos
-- Borders: Visíveis, estrutura clara
-- Icons: Outlined, consistentes
-- Forms: Bem definidos, labels claros
-- Trust signals: Badges, certificações, logos
+- Background: Off-white or very light gray
+- Primary: Blue (#2563EB, #1D4ED8)
+- Accent: Green for success, red for alerts
+- Shadows: Soft, defined layers
+- Borders: Visible, clear structure
+- Icons: Outlined, consistent
+- Forms: Well-defined, clear labels
+- Trust signals: Badges, certifications, logos
 ```
 
-### Padrões de Código
+### Code Patterns
 ```tsx
 // Background
 <div className="bg-slate-50">
@@ -267,27 +267,27 @@ theme: {
 <div className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
 ```
 
-### Exemplo de Hero
+### Hero Example
 ```tsx
 <section className="bg-gradient-to-b from-blue-50 to-white">
   <div className="container px-4 py-20 md:py-28">
     <div className="max-w-3xl">
       <Badge className="bg-blue-100 text-blue-700 mb-6">
-        #1 em CRM no Brasil
+        #1 CRM in the market
       </Badge>
       <h1 className="text-4xl md:text-5xl font-semibold text-slate-900">
-        O CRM que cresce com sua empresa
+        The CRM that grows with your company
       </h1>
       <p className="mt-6 text-xl text-slate-600">
-        Gerencie vendas, marketing e suporte em uma única plataforma.
-        Usado por mais de 10.000 empresas.
+        Manage sales, marketing and support in a single platform.
+        Trusted by more than 10,000 companies.
       </p>
       <div className="mt-8 flex flex-col sm:flex-row gap-4">
         <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-          Começar grátis
+          Start for free
         </Button>
         <Button size="lg" variant="outline">
-          Falar com vendas
+          Talk to sales
         </Button>
       </div>
       {/* Trust logos */}
@@ -301,22 +301,22 @@ theme: {
 </section>
 ```
 
-**Use para:** CRM, ERP, B2B enterprise, ferramentas corporativas.
+**Use for:** CRM, ERP, B2B enterprise, corporate tools.
 
 ---
 
 ## Bold (Stripe, Figma, Loom)
 
-**Vibe:** Marcante, gradientes fortes, memorável. "Stand out."
+**Vibe:** Bold, strong gradients, memorable. "Stand out."
 
-### Cores
+### Colors
 ```css
 :root {
   --background: 0 0% 100%;
   --foreground: 224 71% 4%;
   --muted: 220 14% 96%;
   --muted-foreground: 220 9% 46%;
-  --primary: 262 83% 58%;         /* Roxo vibrante */
+  --primary: 262 83% 58%;         /* Vibrant purple */
   --primary-foreground: 0 0% 100%;
   --accent: 174 72% 56%;          /* Teal accent */
   --border: 220 13% 91%;
@@ -344,18 +344,18 @@ theme: {
 }
 ```
 
-### Características
+### Characteristics
 ```markdown
-- Gradients: Fortes, multi-color (purple → pink → orange)
-- Typography: Display fonts bold para headlines
-- Colors: Vibrantes, contrastantes
-- Illustrations: 3D, isometric, caracterescos
+- Gradients: Strong, multi-color (purple → pink → orange)
+- Typography: Bold display fonts for headlines
+- Colors: Vibrant, high-contrast
+- Illustrations: 3D, isometric, expressive characters
 - Animations: Bouncy, spring physics
-- Glassmorphism: Blur + transparência
-- Shadows: Coloridas (shadow-primary/20)
+- Glassmorphism: Blur + transparency
+- Shadows: Colored (shadow-primary/20)
 ```
 
-### Padrões de Código
+### Code Patterns
 ```tsx
 // Gradient backgrounds
 <div className="bg-gradient-to-br from-violet-500 via-purple-500 to-pink-500">
@@ -380,7 +380,7 @@ theme: {
 >
 ```
 
-### Exemplo de Hero
+### Hero Example
 ```tsx
 <section className="relative min-h-screen flex items-center overflow-hidden">
   {/* Animated gradient background */}
@@ -392,74 +392,74 @@ theme: {
 
   <div className="relative container px-4 text-center">
     <Badge className="bg-gradient-to-r from-violet-500 to-pink-500 text-white mb-8">
-      Novo design colaborativo
+      New collaborative design
     </Badge>
     <h1 className="text-5xl md:text-7xl font-display font-bold">
-      Design que{" "}
+      Design that{" "}
       <span className="bg-gradient-to-r from-violet-500 via-pink-500 to-orange-500 bg-clip-text text-transparent">
-        inspira
+        inspires
       </span>
     </h1>
     <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">
-      Crie interfaces incríveis com sua equipe. Em tempo real,
-      de qualquer lugar.
+      Create amazing interfaces with your team. In real time,
+      from anywhere.
     </p>
     <div className="mt-10 flex gap-4 justify-center">
       <Button
         size="lg"
         className="bg-gradient-to-r from-violet-500 to-pink-500 text-white px-8 shadow-lg shadow-violet-500/25"
       >
-        Começar grátis
+        Start for free
       </Button>
       <Button size="lg" variant="outline" className="px-8">
-        Ver templates
+        View templates
       </Button>
     </div>
   </div>
 </section>
 ```
 
-**Use para:** Design tools, creative tools, produtos consumer, startups D2C.
+**Use for:** Design tools, creative tools, consumer products, D2C startups.
 
 ---
 
-## Escolhendo a Estética
+## Choosing an Aesthetic
 
-| Seu Produto | Público | Estética |
+| Your Product | Audience | Aesthetic |
 |-------------|---------|----------|
 | Dev tool, API, infra | Developers | **Tech** |
-| Produtividade, notes, tasks | Profissionais | **Minimal** |
+| Productivity, notes, tasks | Professionals | **Minimal** |
 | CRM, ERP, B2B complex | Enterprise | **Enterprise** |
-| Design, creative, consumer | Criadores, startups | **Bold** |
+| Design, creative, consumer | Creators, startups | **Bold** |
 
 ---
 
-## Fonts Recomendadas
+## Recommended Fonts
 
 ### Display (Headlines)
 ```markdown
-- Clash Display - Geométrica, moderna
-- Cabinet Grotesk - Bold, característica
-- Satoshi - Limpa, versátil
-- Plus Jakarta Sans - Friendly, profissional
+- Clash Display - Geometric, modern
+- Cabinet Grotesk - Bold, distinctive
+- Satoshi - Clean, versatile
+- Plus Jakarta Sans - Friendly, professional
 ```
 
-### Body (Texto)
+### Body (Text)
 ```markdown
-- Inter - Neutra, legível
-- DM Sans - Moderna, limpa
-- Geist - Técnica, Vercel-style
-- Source Sans Pro - Clássica, profissional
+- Inter - Neutral, readable
+- DM Sans - Modern, clean
+- Geist - Technical, Vercel-style
+- Source Sans Pro - Classic, professional
 ```
 
 ### Mono (Code)
 ```markdown
 - JetBrains Mono - Ligatures, dev-friendly
-- Geist Mono - Moderna, Vercel-style
+- Geist Mono - Modern, Vercel-style
 - Fira Code - Popular, ligatures
 ```
 
-### Como Carregar (Next.js/Vite)
+### How to Load (Next.js/Vite)
 ```tsx
 // Google Fonts via link
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

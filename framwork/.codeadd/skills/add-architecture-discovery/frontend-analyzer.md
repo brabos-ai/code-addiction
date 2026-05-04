@@ -1,74 +1,74 @@
 # Frontend Analyzer
 
-Analisa e documenta padrões frontend IMPLEMENTADOS no projeto.
+Analyzes and documents frontend patterns IMPLEMENTED in the project.
 
-## Objetivo
+## Objective
 
-Gerar `{{addpath:skills/project-patterns/frontend.md}}` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Generate `{{addpath:skills/project-patterns/frontend.md}}` with real project patterns. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
-## PRIMEIRO: Descobrir SE Existe Frontend
+## FIRST: Discover IF Frontend Exists
 
-**NÃO assuma nada. Descubra via config files e código.**
+**Do NOT assume anything. Discover via config files and code.**
 
-1. Leia CLAUDE.md para entender estrutura do projeto
-2. Leia config files para identificar dependências:
+1. Read CLAUDE.md to understand the project structure
+2. Read config files to identify dependencies:
    ```bash
-   # Dependências listam tudo que o projeto usa
+   # Dependencies list everything the project uses
    cat package.json 2>/dev/null          # Node.js (React, Vue, Svelte, etc)
    cat requirements.txt 2>/dev/null      # Python (Django templates, etc)
    cat Gemfile 2>/dev/null               # Ruby (Rails views, etc)
    cat pubspec.yaml 2>/dev/null          # Flutter/Dart
    cat composer.json 2>/dev/null         # PHP (Laravel Blade, etc)
    ```
-3. Analise extensões de arquivos para confirmar stack:
+3. Analyze file extensions to confirm the stack:
    ```bash
-   # Verificar extensões presentes
+   # Check present extensions
    find . -type f \( -name "*.tsx" -o -name "*.jsx" -o -name "*.vue" -o -name "*.svelte" \) 2>/dev/null | head -5
    ```
-4. Se não encontrar código frontend → retorne "NO_FRONTEND_FOUND"
-5. Se encontrar → continue a análise
+4. If no frontend code found → return "NO_FRONTEND_FOUND"
+5. If found → continue analysis
 
-## O Que Descobrir
+## What to Discover
 
-Pesquise APENAS se existir no projeto:
+Search ONLY for what exists in the project:
 
 ### 1. Framework & Build
-- Qual framework está sendo usado? (descubra via imports/código)
-- Qual build tool? (veja configs: vite.config, webpack.config, next.config, etc)
-- Package manager (veja lockfile: package-lock, yarn.lock, pnpm-lock)
+- Which framework is being used? (discover via imports/code)
+- Which build tool? (check configs: vite.config, webpack.config, next.config, etc)
+- Package manager (check lockfile: package-lock, yarn.lock, pnpm-lock)
 
 ### 2. State Management
-- Biblioteca: zustand, redux, pinia, context, jotai, recoil, etc
-- Padrão de stores
-- Hooks customizados
-- **Encontrar exemplo real de store**
+- Library: zustand, redux, pinia, context, jotai, recoil, etc
+- Store pattern
+- Custom hooks
+- **Find a real store example**
 
 ### 3. Component Structure
-- Hierarquia de pastas
+- Folder hierarchy
 - Naming conventions
-- Padrão de props (interfaces/types)
-- **Encontrar exemplo de componente típico**
+- Props pattern (interfaces/types)
+- **Find a typical component example**
 
 ### 4. Styling
-- Biblioteca: tailwind, styled-components, css-modules, sass, emotion, etc
+- Library: tailwind, styled-components, css-modules, sass, emotion, etc
 - Global styles location
-- Convenções
+- Conventions
 
 ### 5. HTTP Client
-- Biblioteca: axios, fetch, swr, react-query, tanstack-query, etc
-- Configuração base
+- Library: axios, fetch, swr, react-query, tanstack-query, etc
+- Base configuration
 - Interceptors
-- **Encontrar exemplo de chamada API**
+- **Find an API call example**
 
 ### 6. Routing
-- Biblioteca: react-router, next/router, tanstack-router, vue-router, etc
-- Estrutura de rotas
+- Library: react-router, next/router, tanstack-router, vue-router, etc
+- Route structure
 - Lazy loading
 
 ### 7. Forms
-- Biblioteca: react-hook-form, formik, vee-validate, etc
-- Validação: zod, yup, joi
-- **Encontrar exemplo de form**
+- Library: react-hook-form, formik, vee-validate, etc
+- Validation: zod, yup, joi
+- **Find a form example**
 
 ### 8. Environment Variables
 - Prefixo: VITE_, NEXT_PUBLIC_, REACT_APP_
@@ -94,30 +94,30 @@ Pesquise APENAS se existir no projeto:
 - Co-location rules (styles next to component? tests next to component?)
 - **Principle: the agent must follow the established pattern, not invent a new one**
 
-### 11. Testing (SE EXISTIR)
+### 11. Testing (IF EXISTS)
 - Framework: vitest, jest, testing-library, cypress, playwright
-- Padrão de arquivos
-- Comandos
+- File pattern
+- Commands
 
-## Como Pesquisar
+## How to Search
 
-**IMPORTANTE:** Primeiro leia package.json (ou equivalente) para ver dependências instaladas. Depois confirme com código.
+**IMPORTANT:** First read package.json (or equivalent) to see installed dependencies. Then confirm with code.
 
 ```bash
-# 1. Ler dependências do projeto (fonte da verdade)
+# 1. Read project dependencies (source of truth)
 cat package.json | grep -A 100 '"dependencies"' | head -50
 
-# 2. Encontrar onde está o código frontend
+# 2. Find where frontend code is located
 find . -type f \( -name "*.tsx" -o -name "*.jsx" -o -name "*.vue" -o -name "*.svelte" \) 2>/dev/null | head -10
 
-# 3. Encontrar stores/state
+# 3. Find stores/state
 find . -type d \( -name "stores" -o -name "store" -o -name "state" \) 2>/dev/null | head -5
 
-# 4. Encontrar configs de build
+# 4. Find build configs
 find . -type f \( -name "vite.config*" -o -name "next.config*" -o -name "webpack.config*" -o -name "nuxt.config*" \) 2>/dev/null | head -5
 
-# 5. Ler arquivo de componente para entender padrão
-# (escolher um componente após descobrir onde estão)
+# 5. Read a component file to understand the pattern
+# (choose a component after discovering where they are)
 ```
 
 ## Output Format
@@ -257,15 +257,15 @@ Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing hooks/components and violating established patterns. Prioritize discovering these over documenting library configs.
 
-## Regras Críticas
+## Critical Rules
 
-**OBRIGATÓRIO:**
-- Ler arquivos reais para extrair exemplos
-- Só incluir seções que REALMENTE existem
-- Exemplos devem ser do código do projeto
+**MANDATORY:**
+- Read real files to extract examples
+- Only include sections that ACTUALLY exist
+- Examples must come from the project code
 
-**PROIBIDO:**
-- Inventar padrões não encontrados
-- Seções com "Not found" ou "None"
-- Exemplos genéricos
-- Assumir configurações
+**FORBIDDEN:**
+- Fabricate patterns not found in the code
+- Sections with "Not found" or "None"
+- Generic examples
+- Assume configurations

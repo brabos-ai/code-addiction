@@ -2,7 +2,7 @@
 
 > **MODEL:** Use `haiku` model
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante -> explain why; avancado -> essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
 
 Coordinator for branch finalization. Supports features (full changelog flow), feature hotfixes, and standalone hotfixes. Analyzes context, generates documentation, and auto-merges to main.
 

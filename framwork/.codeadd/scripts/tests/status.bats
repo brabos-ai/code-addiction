@@ -11,27 +11,27 @@ teardown() {
 
 # ─── Branch detection ───────────────────────────────────────────────
 
-@test "output BRANCH com tipo main" {
+@test "outputs BRANCH with type main" {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"BRANCH:main TYPE:main MAIN:main"* ]]
 }
 
-@test "detecta branch feature" {
+@test "detects feature branch" {
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:feature"* ]]
 }
 
-@test "detecta branch fix" {
+@test "detects fix branch" {
   git checkout -b fix/0001H-bugfix -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:fix"* ]]
 }
 
-@test "detecta branch docs" {
+@test "detects docs branch" {
   git checkout -b docs/0001D-readme -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
@@ -40,7 +40,7 @@ teardown() {
 
 # ─── Phase detection ────────────────────────────────────────────────
 
-@test "phase=created quando feature dir existe mas está vazio" {
+@test "phase=created when feature dir exists but is empty" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/status.sh"
@@ -48,7 +48,7 @@ teardown() {
   [[ "$output" == *"PHASE:created"* ]]
 }
 
-@test "phase=documented quando about.md tem conteúdo real" {
+@test "phase=documented when about.md has real content" {
   mkdir -p docs/features/0001F-test
   echo "# Feature 0001F" > docs/features/0001F-test/about.md
   git checkout -b feature/0001F-test -q
@@ -77,7 +77,7 @@ teardown() {
 
 # ─── Feature docs listing ───────────────────────────────────────────
 
-@test "lista docs existentes da feature" {
+@test "lists existing feature docs" {
   mkdir -p docs/features/0001F-test
   echo "a" > docs/features/0001F-test/about.md
   echo "p" > docs/features/0001F-test/plan.md
@@ -89,31 +89,31 @@ teardown() {
 
 # ─── Owner detection ────────────────────────────────────────────────
 
-@test "detecta owner completo (nome|nivel|idioma)" {
+@test "detects complete owner (name|level|language)" {
   mkdir -p docs
   printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Maicon|avancado|pt-br"* ]]
+  [[ "$output" == *"OWNER:Maicon|advanced|pt-br"* ]]
 }
 
-@test "owner usa defaults para campos faltando" {
+@test "owner uses defaults for missing fields" {
   mkdir -p docs
   printf 'Nome: Ana\n' > docs/owner.md
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Ana|intermediario|en-us"* ]]
+  [[ "$output" == *"OWNER:Ana|intermediate|en-us"* ]]
 }
 
 # ─── Recommendations ────────────────────────────────────────────────
 
-@test "recomenda /feature quando em main" {
+@test "recommends /feature when on main" {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"REC:/feature to start"* ]]
 }
 
-@test "recomenda /add-dev quando phase=planned" {
+@test "recommends /add-dev when phase=planned" {
   mkdir -p docs/features/0001F-test
   echo "# Plan" > docs/features/0001F-test/plan.md
   git checkout -b feature/0001F-test -q
@@ -124,7 +124,7 @@ teardown() {
 
 # ─── Git status ──────────────────────────────────────────────────────
 
-@test "mostra GIT status quando há arquivos modificados" {
+@test "shows GIT status when there are modified files" {
   echo "new file" > test.txt
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
@@ -133,7 +133,7 @@ teardown() {
 
 # ─── Feature not found ──────────────────────────────────────────────
 
-@test "reporta feature dir not found quando docs não existem" {
+@test "reports feature dir not found when docs do not exist" {
   git checkout -b feature/9999F-missing -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
@@ -143,7 +143,7 @@ teardown() {
 
 # ─── Exit clean ─────────────────────────────────────────────────────
 
-@test "exit 0 sempre" {
+@test "always exits with 0" {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
 }
@@ -159,7 +159,7 @@ teardown() {
   [[ "$output" == *"PHASE:designed"* ]]
 }
 
-@test "phase=discovering quando discovery.md existe sem seção Summary for Planning" {
+@test "phase=discovering when discovery.md exists without Summary for Planning section" {
   mkdir -p docs/features/0001F-test
   echo "# Discovery - work in progress" > docs/features/0001F-test/discovery.md
   git checkout -b feature/0001F-test -q
@@ -168,7 +168,7 @@ teardown() {
   [[ "$output" == *"PHASE:discovering"* ]]
 }
 
-@test "phase=discovered quando discovery.md contém '## Summary for Planning'" {
+@test "phase=discovered when discovery.md contains '## Summary for Planning'" {
   mkdir -p docs/features/0001F-test
   printf '# Discovery\n\n## Summary for Planning\n{"key":"value"}\n' > docs/features/0001F-test/discovery.md
   git checkout -b feature/0001F-test -q
@@ -179,7 +179,7 @@ teardown() {
 
 # ─── iterations.jsonl ────────────────────────────────────────────────
 
-@test "exibe ITERATIONS quando iterations.jsonl existe com entradas" {
+@test "shows ITERATIONS when iterations.jsonl exists with entries" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   printf '{"ts":"2026-01-01","type":"fix","slug":"btn","what":"fix button"}\n' >> docs/features/0001F-test/iterations.jsonl
@@ -194,7 +194,7 @@ teardown() {
 
 # ─── Epic from plan.md ───────────────────────────────────────────────
 
-@test "detecta epic quando plan.md tem '### Feature N:' sections" {
+@test "detects epic when plan.md has '### Feature N:' sections" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   printf '# Plan\n\n## Epic: auth-system\n\n### Feature 1: Login\n### Feature 2: Signup\n### Feature 3: Logout\n' \
@@ -206,12 +206,12 @@ teardown() {
   [[ "$output" == *"NEXT:1"* ]]
 }
 
-@test "epic: exibe all_complete quando todas as features estão completas" {
+@test "epic: shows all_complete when all features are complete" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   printf '# Plan\n\n### Feature 1: Login\n### Feature 2: Signup\n' \
     > docs/features/0001F-test/plan.md
-  # Marca as features como completas via iterations.jsonl
+  # Marks features as complete via iterations.jsonl
   printf '{"ts":"2026-01-01","type":"add","slug":"feature-1-complete","what":"done"}\n' >> docs/features/0001F-test/iterations.jsonl
   printf '{"ts":"2026-01-02","type":"add","slug":"feature-2-complete","what":"done"}\n' >> docs/features/0001F-test/iterations.jsonl
   run "$SCRIPTS_DIR/status.sh"
@@ -221,7 +221,7 @@ teardown() {
 
 # ─── epic.md (PRD0032) ───────────────────────────────────────────────
 
-@test "detecta epic.md e reporta progresso de subfeatures" {
+@test "detects epic.md and reports subfeature progress" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   printf '| SF01 | Login | done |\n| SF02 | Signup | in_progress |\n| SF03 | Logout | pending |\n' \
@@ -235,7 +235,7 @@ teardown() {
 
 # ─── tasks.md ────────────────────────────────────────────────────────
 
-@test "exibe progresso de tasks.md quando presente (sem epic)" {
+@test "shows tasks.md progress when present (no epic)" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   printf '| 1.1 | Task one | ✅ |\n| 1.2 | Task two | ✅ |\n| 1.3 | Task three | pending |\n' \
@@ -248,7 +248,7 @@ teardown() {
 
 # ─── Summaries ───────────────────────────────────────────────────────
 
-@test "exibe ABOUT_SUMMARY quando about.md tem seção ## Summary com JSON" {
+@test "shows ABOUT_SUMMARY when about.md has ## Summary section with JSON" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   printf '# About 0001F\n\n## Summary\n{"purpose":"test feature","scope":"minimal"}\n' \
@@ -260,8 +260,8 @@ teardown() {
 
 # ─── RECENT_CHANGELOGS ───────────────────────────────────────────────
 
-@test "exibe RECENT_CHANGELOGS quando há features finalizadas" {
-  # Em main branch (sem FEATURE_ID atual)
+@test "shows RECENT_CHANGELOGS when there are completed features" {
+  # On main branch (no current FEATURE_ID)
   mkdir -p docs/features/0001F-login
   printf '# 0001F Login\n\n## Summary\nUser authentication implemented\n' \
     > docs/features/0001F-login/changelog.md
@@ -276,7 +276,7 @@ teardown() {
 
 # ─── Git checkpoint tag ──────────────────────────────────────────────
 
-@test "exibe LAST_CHECKPOINT quando tag de checkpoint existe" {
+@test "shows LAST_CHECKPOINT when checkpoint tag exists" {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   git tag "checkpoint/0001F-test-v1-done"

@@ -5,9 +5,9 @@ description: Use when need to analyze and document project architecture - auto-g
 
 # Architecture Discovery
 
-Analisa codebase e atualiza seção Technical Spec do CLAUDE.md com dados estruturados em formato token-efficient.
+Analyzes the codebase and updates the Technical Spec section of CLAUDE.md with structured data in a token-efficient format.
 
-**Princípio:** Descobrir, não impor. Documentar o que EXISTE no código, não o que "deveria" existir. CLAUDE.md é self-contained.
+**Principle:** Discover, don't impose. Document what EXISTS in the code, not what "should" exist. CLAUDE.md is self-contained.
 
 ---
 
@@ -43,18 +43,18 @@ Generate the dependency contract that drives development and review. Output goes
 
 ### Discovery steps
 
-- Identificar packages/apps do monorepo (ou módulos se single-app)
-- Ler `package.json` de cada um para mapear dependencies internas
-- Inferir hierarquia de camadas (quem depende de quem)
-- Detectar padrão Clean Architecture se existir (domain → interfaces → database → api)
-- Mapear onde cada tipo de artefato deve ficar (entities, DTOs, repos, services)
+- Identify packages/apps in the monorepo (or modules if single-app)
+- Read each `package.json` to map internal dependencies
+- Infer layer hierarchy (who depends on whom)
+- Detect Clean Architecture pattern if present (domain → interfaces → database → api)
+- Map where each artifact type should reside (entities, DTOs, repos, services)
 
 ### How to detect the hierarchy
 
-- Package sem deps internas = innermost (ex: domain)
-- Package que só depende de domain = interfaces
-- Package que depende de domain + interfaces = database/infra
-- Apps que dependem de tudo = outermost (api)
+- Package with no internal deps = innermost (e.g., domain)
+- Package that only depends on domain = interfaces
+- Package that depends on domain + interfaces = database/infra
+- Apps that depend on everything = outermost (api)
 
 ---
 
@@ -227,10 +227,10 @@ Verify: `ls -la .claude/temp/ || echo cleanup complete`
 ```markdown
 ## Architecture Contract
 
-> Dependências e placement. Consultar ANTES de implementar/revisar.
+> Dependencies and placement. Consult BEFORE implementing/reviewing.
 
 ### Layers
-{"hierarchy":"domain → interfaces → database → api","rule":"inner nunca importa outer"}
+{"hierarchy":"domain → interfaces → database → api","rule":"inner never imports outer"}
 
 ### Packages
 {"domain":"@org/domain","interfaces":"@org/backend","database":"@org/database","api":"apps/*"}
@@ -323,7 +323,7 @@ Verify: `ls -la .claude/temp/ || echo cleanup complete`
 2. Read `.claude/temp/architecture-discovery.md` COMPLETE
 3. Use document sections as foundation
 4. Deep Understanding: read 1–2 files per area ONLY if STRUCTURE is unclear
-5. Update CLAUDE.md → `## Architecture Contract` (hierarquia, packages, imports, placement)
+5. Update CLAUDE.md → `## Architecture Contract` (hierarchy, packages, imports, placement)
 6. Update CLAUDE.md → `## Technical Spec` (token-efficient, STRUCTURE only)
 7. Detect validation gates per the Validation Gates Detection rules → emit `## Validation Gates` block in CLAUDE.md (omit if none detected)
 8. Do NOT generate `.codeadd/project/stack-context.md` — this file has been removed entirely

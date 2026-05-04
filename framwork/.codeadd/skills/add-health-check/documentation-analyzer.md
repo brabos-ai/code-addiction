@@ -1,282 +1,282 @@
 # Documentation Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Follow patterns defined in `{{skill:add-doc-schemas/SKILL.md}}`
 
-**Objetivo:** Verificar se documentação do projeto existe, está atualizada e segue os padrões esperados.
+**Objective:** Verify whether the project documentation exists, is up to date, and follows the expected standards.
 
 **Output:** `docs/health-checks/YYYY-MM-DD/documentation-report.md`
 
-**Criticidade:** 🔴 CRÍTICO - Documentação impacta diretamente a qualidade do desenvolvimento futuro com IA.
+**Criticality:** 🔴 CRITICAL - Documentation directly impacts the quality of future AI-assisted development.
 
 ---
 
-## Missão
+## Mission
 
-Você é um subagente especializado em análise de documentação. Seu trabalho é verificar:
-1. Existência de CLAUDE.md
-2. Conformidade com padrões de documentação
-3. Paths mencionados existem no projeto
-4. Documentação reflete estado atual (não aspiracional)
+You are a subagent specialized in documentation analysis. Your job is to verify:
+1. Existence of CLAUDE.md
+2. Compliance with documentation standards
+3. Paths mentioned in documentation exist in the project
+4. Documentation reflects the current state (not aspirational)
 
 ---
 
-## Análise 1: Existência de Documentação
+## Analysis 1: Documentation Existence
 
-### Verificações
+### Checks
 
 ```bash
-# Documentação obrigatória
+# Required documentation
 ls CLAUDE.md 2>/dev/null
 
-# Documentação de features
+# Feature documentation
 ls docs/features/ 2>/dev/null
 
-# Skills de documentação
+# Documentation skills
 ls {{skill:add-doc-schemas/SKILL.md}} 2>/dev/null
 ls {{skill:add-claude-md-style/SKILL.md}} 2>/dev/null
 ```
 
-### Classificar
+### Classify
 
-| Documento | Status | Criticidade |
-|-----------|--------|-------------|
-| CLAUDE.md | Existe/Não existe | 🔴 Crítico |
-| docs/features/* | Existe/Não existe | 🟡 Médio |
+| Document | Status | Criticality |
+|----------|--------|-------------|
+| CLAUDE.md | Exists/Does not exist | 🔴 Critical |
+| docs/features/* | Exists/Does not exist | 🟡 Medium |
 
 ---
 
-## Análise 2: CLAUDE.md - Conformidade
+## Analysis 2: CLAUDE.md - Compliance
 
-### Se CLAUDE.md Existe
+### If CLAUDE.md Exists
 
-**Ler o arquivo:**
+**Read the file:**
 ```bash
 cat CLAUDE.md
 ```
 
-**Verificar seções obrigatórias:**
-- [ ] Stack Tecnológica (com versões)
-- [ ] Estrutura do Projeto/Monorepo
-- [ ] Convenções de Nomenclatura
-- [ ] Padrões Arquiteturais
-- [ ] Multi-Tenancy (se aplicável)
+**Check required sections:**
+- [ ] Technology Stack (with versions)
+- [ ] Project/Monorepo Structure
+- [ ] Naming Conventions
+- [ ] Architectural Patterns
+- [ ] Multi-Tenancy (if applicable)
 - [ ] Database/Schema
-- [ ] Boas Práticas
+- [ ] Best Practices
 
-**Verificar conformidade com skill:**
+**Check compliance with skill:**
 ```bash
 cat {{skill:add-claude-md-style/SKILL.md}}
 ```
 
-**Checklist de conformidade:**
-- [ ] Brevidade: ~500 palavras max
-- [ ] Sem blocos de código extensos (>10 linhas)
-- [ ] Paths específicos e verificáveis
-- [ ] Versões de dependências incluídas
-- [ ] Idioma PT-BR (termos técnicos em EN)
-- [ ] Sem documentação aspiracional
+**Compliance checklist:**
+- [ ] Brevity: ~500 words max
+- [ ] No extensive code blocks (>10 lines)
+- [ ] Specific and verifiable paths
+- [ ] Dependency versions included
+- [ ] Language: English (technical terms as-is)
+- [ ] No aspirational documentation
 
 ---
 
-## Análise 3: Paths Mencionados Existem
+## Analysis 3: Mentioned Paths Exist
 
-### Verificação Automatizada
+### Automated Check
 
 ```bash
-# Extrair paths mencionados no CLAUDE.md
+# Extract paths mentioned in CLAUDE.md
 grep -oP '`[^`]+\.(ts|js|json|yml|yaml|md)`' CLAUDE.md 2>/dev/null | sort -u
 
-# Extrair paths de diretórios
+# Extract directory paths
 grep -oP '`[^`]+/`' CLAUDE.md 2>/dev/null | sort -u
 
-# Verificar cada path
-# Para cada path extraído, verificar se existe
+# Check each path
+# For each extracted path, verify whether it exists
 ```
 
-**Documentar:**
-- Paths válidos (existem)
-- Paths inválidos (não existem) → Issue 🔴 Crítico
+**Document:**
+- Valid paths (exist)
+- Invalid paths (do not exist) → Issue 🔴 Critical
 
 ---
 
-## Análise 4: Documentação de Features
+## Analysis 4: Feature Documentation
 
-### Verificações
+### Checks
 
 ```bash
-# Listar features documentadas
+# List documented features
 ls docs/features/ 2>/dev/null
 
-# Para cada feature, verificar estrutura
+# For each feature, check structure
 for dir in docs/features/*/; do
   echo "=== $dir ==="
   ls "$dir" 2>/dev/null
 done
 ```
 
-**Estrutura esperada por feature:**
-- `about.md` - Requisitos e escopo
-- `discovery.md` - Processo de descoberta
-- `plan.md` - Planejamento técnico
-- `changelog.md` - Registro final (gerado pelo /add-done)
+**Expected structure per feature:**
+- `about.md` - Requirements and scope
+- `discovery.md` - Discovery process
+- `plan.md` - Technical planning
+- `changelog.md` - Final record (generated by /add-done)
 
 ---
 
-## Análise 5: Consistência com Código
+## Analysis 5: Consistency with Code
 
-### Verificar se Documentação Reflete Realidade
+### Verify That Documentation Reflects Reality
 
 ```bash
-# Stack documentada vs package.json
+# Documented stack vs package.json
 cat package.json | grep -E '"react"|"@nestjs"|"kysely"|"knex"'
 
-# Módulos documentados vs existentes
+# Documented modules vs existing modules
 ls apps/backend/src/api/modules/ 2>/dev/null
 ls apps/backend/src/modules/ 2>/dev/null
 
-# Entities documentadas vs existentes
+# Documented entities vs existing entities
 ls libs/domain/src/entities/ 2>/dev/null
 ```
 
-**Comparar:**
-- Módulos no CLAUDE.md vs módulos reais
-- Stack no CLAUDE.md vs package.json
-- Entities listadas vs entities existentes
+**Compare:**
+- Modules in CLAUDE.md vs real modules
+- Stack in CLAUDE.md vs package.json
+- Listed entities vs existing entities
 
 ---
 
-## Template do Output
+## Output Template
 
-**Criar:** `docs/health-checks/YYYY-MM-DD/documentation-report.md`
+**Create:** `docs/health-checks/YYYY-MM-DD/documentation-report.md`
 
 ```markdown
 # Documentation Report
 
-**Gerado em:** [data]
+**Generated on:** [date]
 **Score:** [X/10]
 **Status:** 🔴/🟠/🟡/🟢
 
 ---
 
-## Resumo
+## Summary
 
-[2-3 frases sobre estado geral da documentação]
+[2-3 sentences about the overall state of the documentation]
 
 ---
 
-## Documentos Analisados
+## Analyzed Documents
 
-| Documento | Status | Conformidade |
-|-----------|--------|--------------|
+| Document | Status | Compliance |
+|----------|--------|------------|
 | CLAUDE.md | ✅/❌ | [X%] |
-| docs/features/* | ✅/❌ | [X features documentadas] |
+| docs/features/* | ✅/❌ | [X features documented] |
 
 ---
 
-## Issues Encontrados
+## Issues Found
 
-### 🔴 Crítico
+### 🔴 Critical
 
-#### [DOC-001] CLAUDE.md não existe
-**Impacto:** Desenvolvimento com IA será inconsistente e de baixa qualidade
-**Correção:** Criar CLAUDE.md seguindo `{{skill:add-claude-md-style/SKILL.md}}`
-
----
-
-#### [DOC-002] Path inválido no CLAUDE.md
-**Arquivo:** CLAUDE.md:45
-**Path mencionado:** `libs/shared/src/services/`
-**Problema:** Diretório não existe
-**Correção:** Atualizar CLAUDE.md com path correto ou remover referência
+#### [DOC-001] CLAUDE.md does not exist
+**Impact:** AI-assisted development will be inconsistent and low quality
+**Fix:** Create CLAUDE.md following `{{skill:add-claude-md-style/SKILL.md}}`
 
 ---
 
-### 🟠 Alto
-
-#### [DOC-004] CLAUDE.md com mais de 500 palavras
-**Contagem atual:** [X] palavras
-**Impacto:** Documento muito extenso, difícil manutenção
-**Correção:** Simplificar CLAUDE.md mantendo apenas informações essenciais
-
----
-
-#### [DOC-005] Módulo não documentado
-**Módulo:** apps/backend/src/api/modules/[módulo]/
-**Impacto:** IA não conhece este módulo, desenvolvimento inconsistente
-**Correção:** Adicionar módulo na seção de estrutura do CLAUDE.md
+#### [DOC-002] Invalid path in CLAUDE.md
+**File:** CLAUDE.md:45
+**Path mentioned:** `libs/shared/src/services/`
+**Problem:** Directory does not exist
+**Fix:** Update CLAUDE.md with the correct path or remove the reference
 
 ---
 
-### 🟡 Médio
+### 🟠 High
 
-#### [DOC-006] Feature sem documentação completa
+#### [DOC-004] CLAUDE.md with more than 500 words
+**Current count:** [X] words
+**Impact:** Document is too long, difficult to maintain
+**Fix:** Simplify CLAUDE.md keeping only essential information
+
+---
+
+#### [DOC-005] Undocumented module
+**Module:** apps/backend/src/api/modules/[module]/
+**Impact:** AI is unaware of this module, development will be inconsistent
+**Fix:** Add module to the structure section of CLAUDE.md
+
+---
+
+### 🟡 Medium
+
+#### [DOC-006] Feature without complete documentation
 **Feature:** docs/features/[feature]/
-**Faltando:** [about.md/discovery.md/plan.md]
-**Correção:** Completar documentação da feature
+**Missing:** [about.md/discovery.md/plan.md]
+**Fix:** Complete the feature documentation
 
 ---
 
-### 🟢 Baixo
+### 🟢 Low
 
-#### [DOC-007] Versão desatualizada no CLAUDE.md
-**Documentado:** React 18.2
-**Real:** React 18.3 (verificar package.json)
-**Correção:** Atualizar versão no CLAUDE.md
+#### [DOC-007] Outdated version in CLAUDE.md
+**Documented:** React 18.2
+**Actual:** React 18.3 (check package.json)
+**Fix:** Update version in CLAUDE.md
 
 ---
 
-## Checklist de Conformidade
+## Compliance Checklist
 
 ### CLAUDE.md
-- [ ] Existe
-- [ ] ~500 palavras ou menos
-- [ ] Sem blocos de código extensos
-- [ ] Paths verificáveis
-- [ ] Versões incluídas
-- [ ] Idioma PT-BR
+- [ ] Exists
+- [ ] ~500 words or fewer
+- [ ] No extensive code blocks
+- [ ] Verifiable paths
+- [ ] Versions included
+- [ ] Language: English
 
 ### Features
-- [ ] Pasta docs/features/ existe
-- [ ] Features com estrutura completa
+- [ ] docs/features/ folder exists
+- [ ] Features with complete structure
 
 ---
 
-## Recomendações
+## Recommendations
 
-1. **[Prioridade 1]:** [Ação mais urgente]
-2. **[Prioridade 2]:** [Segunda ação]
-3. **[Prioridade 3]:** [Terceira ação]
+1. **[Priority 1]:** [Most urgent action]
+2. **[Priority 2]:** [Second action]
+3. **[Priority 3]:** [Third action]
 
 ---
 
-*Documento gerado pelo subagente documentation-analyzer*
+*Document generated by the documentation-analyzer subagent*
 ```
 
 ---
 
 ## Scoring
 
-**Cálculo do score:**
-- CLAUDE.md não existe: -5 pontos
-- Cada path inválido: -1 ponto
-- CLAUDE.md > 500 palavras: -0.5 pontos
-- Módulo não documentado: -0.5 pontos
-- Feature incompleta: -0.25 pontos
+**Score calculation:**
+- CLAUDE.md does not exist: -5 points
+- Each invalid path: -1 point
+- CLAUDE.md > 500 words: -0.5 points
+- Undocumented module: -0.5 points
+- Incomplete feature: -0.25 points
 
-**Score = max(0, 10 - soma_deduções)**
+**Score = max(0, 10 - sum_of_deductions)**
 
 ---
 
 ## Critical Rules
 
 **DO:**
-- ✅ Verificar TODOS os paths mencionados
-- ✅ Comparar documentação com código real
-- ✅ Ser específico sobre o que está faltando
-- ✅ Priorizar issues por impacto no desenvolvimento com IA
+- ✅ Check ALL mentioned paths
+- ✅ Compare documentation with real code
+- ✅ Be specific about what is missing
+- ✅ Prioritize issues by impact on AI-assisted development
 
 **DO NOT:**
-- ❌ Ignorar paths inválidos
-- ❌ Aceitar documentação aspiracional como válida
-- ❌ Pular verificação de conformidade
-- ❌ Gerar falsos positivos sem verificar
+- ❌ Ignore invalid paths
+- ❌ Accept aspirational documentation as valid
+- ❌ Skip compliance checks
+- ❌ Generate false positives without verifying

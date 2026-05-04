@@ -1,19 +1,19 @@
 # Backend Analyzer
 
-Analisa e documenta padrões backend IMPLEMENTADOS no projeto.
+Analyzes and documents backend patterns IMPLEMENTED in the project.
 
-## Objetivo
+## Objective
 
-Gerar `{{addpath:skills/project-patterns/backend.md}}` com padrões reais do projeto. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Generate `{{addpath:skills/project-patterns/backend.md}}` with real project patterns. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
 
-## PRIMEIRO: Descobrir SE Existe Backend
+## FIRST: Discover IF Backend Exists
 
-**NÃO assuma nada. Descubra via config files e código.**
+**Do NOT assume anything. Discover via config files and code.**
 
-1. Leia CLAUDE.md para entender estrutura do projeto
-2. Leia config files para identificar dependências:
+1. Read CLAUDE.md to understand the project structure
+2. Read config files to identify dependencies:
    ```bash
-   # Dependências listam tudo que o projeto usa
+   # Dependencies list everything the project uses
    cat package.json 2>/dev/null          # Node.js
    cat requirements.txt 2>/dev/null      # Python
    cat Gemfile 2>/dev/null               # Ruby
@@ -24,56 +24,56 @@ Gerar `{{addpath:skills/project-patterns/backend.md}}` com padrões reais do pro
    cat composer.json 2>/dev/null         # PHP
    cat *.csproj 2>/dev/null              # .NET
    ```
-3. Analise extensões de arquivos para confirmar stack
-4. Se não encontrar código backend → retorne "NO_BACKEND_FOUND"
-5. Se encontrar → continue a análise
+3. Analyze file extensions to confirm the stack
+4. If no backend code is found → return "NO_BACKEND_FOUND"
+5. If found → continue analysis
 
-## O Que Descobrir
+## What to Discover
 
-Pesquise APENAS se existir no projeto:
+Search ONLY for what exists in the project:
 
 ### 1. Framework & Language
-- Qual framework está sendo usado? (descubra via imports/código)
-- Qual linguagem? (veja extensões dos arquivos)
-- Runtime version (se documentado)
+- Which framework is being used? (discover via imports/code)
+- Which language? (check file extensions)
+- Runtime version (if documented)
 
 ### 2. Logging
-- Biblioteca: winston, pino, bunyan, morgan, loguru, etc
-- Configuração: formato (JSON?), níveis, transports
-- Contexto: correlationId, userId, etc
-- **Encontrar exemplo real de uso no código**
+- Library: winston, pino, bunyan, morgan, loguru, etc
+- Configuration: format (JSON?), levels, transports
+- Context: correlationId, userId, etc
+- **Find a real usage example in the code**
 
 ### 3. Validation
-- Biblioteca: class-validator, joi, zod, yup, pydantic, etc
-- Padrão: decorators, schemas, DTOs
-- Formato de erro de validação
-- **Encontrar exemplo real de DTO/schema**
+- Library: class-validator, joi, zod, yup, pydantic, etc
+- Pattern: decorators, schemas, DTOs
+- Validation error format
+- **Find a real DTO/schema example**
 
 ### 4. Database Interaction
 - ORM/Query builder: typeorm, prisma, sequelize, knex, kysely, sqlalchemy, etc
-- Padrão de repositório
-- Localização de entities/models
-- **Encontrar exemplo de query**
+- Repository pattern
+- Entities/models location
+- **Find a query example**
 
 ### 5. Error Handling
-- Classe base de erro (se existir)
-- Mapeamento HTTP status
-- Padrão de try/catch
-- **Encontrar exemplo de throw**
+- Base error class (if exists)
+- HTTP status mapping
+- try/catch pattern
+- **Find a throw example**
 
 ### 6. Middleware
-- Ordem de execução
-- Onde registrado
-- Principais middlewares (auth, logging, rate-limit)
+- Execution order
+- Where registered
+- Main middlewares (auth, logging, rate-limit)
 
 ### 7. Authentication
-- Tipo: JWT, sessions, OAuth
-- Onde token validado
+- Type: JWT, sessions, OAuth
+- Where token is validated
 - Guards/decorators
 
 ### 8. API Conventions
-- Response format padrão
-- Versionamento
+- Standard response format
+- Versioning
 - Rate limiting
 
 ### 9. Reusable Abstractions (CRITICAL — prevents duplication)
@@ -94,30 +94,30 @@ Pesquise APENAS se existir no projeto:
 - How new endpoints/routes are registered
 - **Principle: the agent must follow the established pattern, not invent a new one**
 
-### 11. Testing (SE EXISTIR)
+### 11. Testing (IF EXISTS)
 - Framework: jest, mocha, vitest, pytest, etc
-- Padrão de arquivos: .spec.ts, .test.ts, test_*.py
-- Comandos
+- File pattern: .spec.ts, .test.ts, test_*.py
+- Commands
 
-## Como Pesquisar
+## How to Search
 
 ```bash
-# 1. Encontrar framework
+# 1. Find framework
 grep -rE "from '@nestjs|from 'express|from 'fastify" --include="*.ts" --include="*.js" | head -3
 
-# 2. Encontrar logging
+# 2. Find logging
 grep -rE "winston|pino|bunyan|logger\." --include="*.ts" | head -5
 
-# 3. Encontrar validation
+# 3. Find validation
 grep -rE "class-validator|@IsEmail|@IsString|zod|joi" --include="*.ts" | head -5
 
-# 4. Encontrar ORM
+# 4. Find ORM
 grep -rE "typeorm|prisma|sequelize|knex|kysely" --include="*.ts" | head -5
 
-# 5. Encontrar error handling
+# 5. Find error handling
 grep -rE "extends (Http)?Exception|throw new" --include="*.ts" | head -5
 
-# 6. Encontrar auth
+# 6. Find auth
 grep -rE "JwtService|passport|@UseGuards" --include="*.ts" | head -5
 ```
 
@@ -249,15 +249,15 @@ Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing code and violating established patterns. Prioritize discovering these over documenting library configs.
 
-## Regras Críticas
+## Critical Rules
 
-**OBRIGATÓRIO:**
-- Ler arquivos reais para extrair exemplos
-- Só incluir seções que REALMENTE existem
-- Exemplos devem ser do código do projeto, não genéricos
+**MANDATORY:**
+- Read real files to extract examples
+- Only include sections that ACTUALLY exist
+- Examples must come from the project code, not generic docs
 
-**PROIBIDO:**
-- Inventar padrões não encontrados
-- Seções com "Not found" ou "None"
-- Exemplos genéricos de documentação
-- Assumir configurações
+**FORBIDDEN:**
+- Fabricate patterns not found in the code
+- Sections with "Not found" or "None"
+- Generic documentation examples
+- Assume configurations

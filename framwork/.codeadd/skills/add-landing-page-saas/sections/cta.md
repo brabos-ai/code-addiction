@@ -1,12 +1,12 @@
 # CTA Sections
 
-Call-to-action final. A última chance de converter.
+Final call-to-action. The last chance to convert.
 
 ---
 
-## 1. CTA Simples (Padrão)
+## 1. Simple CTA (Default)
 
-Direto ao ponto. Funciona sempre.
+Straight to the point. Always works.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -17,22 +17,22 @@ export function CTASimple() {
     <section className="container px-4 py-16 md:py-24">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Pronto para transformar sua operação?
+          Ready to transform your operation?
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Comece grátis hoje. Sem cartão de crédito, sem compromisso.
+          Start free today. No credit card, no commitment.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" className="text-lg px-8">
-            Começar grátis
+            Start for free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button size="lg" variant="outline" className="text-lg px-8">
-            Agendar demo
+            Schedule a demo
           </Button>
         </div>
         <p className="mt-6 text-sm text-muted-foreground">
-          ✓ 14 dias grátis ✓ Setup em 5 minutos ✓ Cancele quando quiser
+          ✓ 14 days free ✓ Setup in 5 minutes ✓ Cancel anytime
         </p>
       </div>
     </section>
@@ -40,13 +40,13 @@ export function CTASimple() {
 }
 ```
 
-**Quando usar:** Sempre funciona. Default seguro.
+**When to use:** Always works. Safe default.
 
 ---
 
-## 2. CTA com Background Gradiente
+## 2. CTA with Gradient Background
 
-Mais impactante. Destaca do resto da página.
+More impactful. Stands out from the rest of the page.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -62,10 +62,10 @@ export function CTAGradient() {
       {/* Content */}
       <div className="relative container px-4 py-16 md:py-24 text-center text-primary-foreground">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Junte-se a +2.000 empresas
+          Join +2,000 companies
         </h2>
         <p className="mt-4 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
-          Comece a automatizar seus processos hoje e economize horas por semana.
+          Start automating your processes today and save hours every week.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
           <Button
@@ -73,7 +73,7 @@ export function CTAGradient() {
             variant="secondary"
             className="text-lg px-8 bg-white text-primary hover:bg-white/90"
           >
-            Começar grátis
+            Start for free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
           <Button
@@ -81,7 +81,7 @@ export function CTAGradient() {
             variant="outline"
             className="text-lg px-8 border-white text-white hover:bg-white/10"
           >
-            Ver demo
+            See demo
           </Button>
         </div>
       </div>
@@ -90,13 +90,13 @@ export function CTAGradient() {
 }
 ```
 
-**Quando usar:** Quer destaque forte, seção final impactante.
+**When to use:** Want a strong highlight, impactful final section.
 
 ---
 
-## 3. CTA com Email Capture
+## 3. CTA with Email Capture
 
-Captura email direto. Bom para lead generation.
+Captures email directly. Good for lead generation.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -108,26 +108,26 @@ export function CTAEmailCapture() {
     <section className="container px-4 py-16 md:py-24">
       <div className="max-w-xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold">
-          Comece grátis agora
+          Start for free now
         </h2>
         <p className="mt-4 text-muted-foreground">
-          Digite seu email e crie sua conta em segundos
+          Enter your email and create your account in seconds
         </p>
 
         <form className="mt-8 flex flex-col sm:flex-row gap-3">
           <Input
             type="email"
-            placeholder="seu@email.com"
+            placeholder="you@email.com"
             className="flex-1 h-12 text-base"
           />
           <Button size="lg" className="h-12 px-8">
-            Criar conta
+            Create account
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </form>
 
         <p className="mt-4 text-sm text-muted-foreground">
-          Grátis para sempre no plano Starter. Sem cartão de crédito.
+          Free forever on the Starter plan. No credit card required.
         </p>
       </div>
     </section>
@@ -135,13 +135,13 @@ export function CTAEmailCapture() {
 }
 ```
 
-**Quando usar:** Quer capturar lead rapidamente, signup simplificado.
+**When to use:** Want to capture leads quickly, simplified signup.
 
 ---
 
-## 4. CTA com Imagem/Mockup
+## 4. CTA with Image/Mockup
 
-Mostra o produto junto com o CTA. Reforça o valor.
+Shows the product alongside the CTA. Reinforces the value.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -154,18 +154,18 @@ export function CTAWithImage() {
         {/* Content */}
         <div>
           <h2 className="text-3xl md:text-4xl font-bold">
-            Veja como é fácil começar
+            See how easy it is to get started
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Configure seu workspace em minutos e comece a ver resultados
-            imediatamente.
+            Set up your workspace in minutes and start seeing results
+            immediately.
           </p>
 
           <ul className="mt-6 space-y-3">
             {[
-              "Importe dados de qualquer lugar",
-              "Configure automações sem código",
-              "Convide sua equipe em cliques",
+              "Import data from anywhere",
+              "Set up automations without code",
+              "Invite your team in clicks",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
@@ -178,12 +178,12 @@ export function CTAWithImage() {
 
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <Button size="lg" className="text-lg">
-              Começar grátis
+              Start for free
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="text-lg">
               <Play className="mr-2 h-5 w-5" />
-              Ver demo (2 min)
+              Watch demo (2 min)
             </Button>
           </div>
         </div>
@@ -193,7 +193,7 @@ export function CTAWithImage() {
           <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-primary/5 rounded-2xl blur-2xl" />
           <img
             src="/dashboard-preview.png"
-            alt="Preview do dashboard"
+            alt="Dashboard preview"
             className="relative rounded-xl border shadow-2xl"
           />
         </div>
@@ -203,13 +203,13 @@ export function CTAWithImage() {
 }
 ```
 
-**Quando usar:** Produto visual, quer reforçar o que o cliente vai receber.
+**When to use:** Visual product, want to reinforce what the customer will get.
 
 ---
 
 ## 5. CTA Card (Compact)
 
-Formato card. Bom para sidebar ou seções menores.
+Card format. Good for sidebar or smaller sections.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -223,21 +223,21 @@ export function CTACard() {
         <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
           <Sparkles className="h-6 w-6 text-primary" />
         </div>
-        <h3 className="text-xl font-bold">Pronto para começar?</h3>
+        <h3 className="text-xl font-bold">Ready to get started?</h3>
         <p className="text-sm text-muted-foreground">
-          Teste grátis por 14 dias
+          Free trial for 14 days
         </p>
       </CardHeader>
       <CardContent className="text-center">
-        <div className="text-3xl font-bold">R$0</div>
+        <div className="text-3xl font-bold">$0</div>
         <div className="text-sm text-muted-foreground">
-          para começar, depois R$97/mês
+          to get started, then $97/mo
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-3">
-        <Button className="w-full">Criar conta grátis</Button>
+        <Button className="w-full">Create free account</Button>
         <Button variant="ghost" className="w-full">
-          Falar com vendas
+          Talk to sales
         </Button>
       </CardFooter>
     </Card>
@@ -245,13 +245,13 @@ export function CTACard() {
 }
 ```
 
-**Quando usar:** Sidebar, pop-up, seção compacta.
+**When to use:** Sidebar, pop-up, compact section.
 
 ---
 
 ## 6. CTA Sticky (Mobile)
 
-Barra fixa no mobile. Sempre visível.
+Fixed bar on mobile. Always visible.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -262,9 +262,9 @@ export function CTASticky() {
       <div className="bg-background/95 backdrop-blur border-t p-4">
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1">
-            Ver demo
+            See demo
           </Button>
-          <Button className="flex-1">Começar grátis</Button>
+          <Button className="flex-1">Start for free</Button>
         </div>
       </div>
     </div>
@@ -272,13 +272,13 @@ export function CTASticky() {
 }
 ```
 
-**Quando usar:** Sempre no mobile. Aumenta conversão significativamente.
+**When to use:** Always on mobile. Significantly increases conversion.
 
 ---
 
 ## 7. Newsletter CTA
 
-Para captura de leads não prontos para comprar.
+For capturing leads not yet ready to buy.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -294,23 +294,23 @@ export function CTANewsletter() {
             <Mail className="h-6 w-6 text-primary" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold">
-            Receba dicas de produtividade
+            Get productivity tips
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Conteúdo semanal sobre como escalar operações. Sem spam.
+            Weekly content on how to scale operations. No spam.
           </p>
 
           <form className="mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <Input
               type="email"
-              placeholder="seu@email.com"
+              placeholder="you@email.com"
               className="flex-1"
             />
-            <Button>Inscrever</Button>
+            <Button>Subscribe</Button>
           </form>
 
           <p className="mt-4 text-xs text-muted-foreground">
-            +5.000 líderes já recebem. Cancele quando quiser.
+            +5,000 leaders already receive it. Cancel anytime.
           </p>
         </div>
       </div>
@@ -319,13 +319,13 @@ export function CTANewsletter() {
 }
 ```
 
-**Quando usar:** Topo de funil, conteúdo marketing, blog.
+**When to use:** Top of funnel, marketing content, blog.
 
 ---
 
 ## Footer CTA (Final)
 
-CTA dentro do footer. Última chance antes de sair.
+CTA inside the footer. Last chance before leaving.
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -338,14 +338,14 @@ export function Footer() {
       <div className="container px-4 py-12 border-b">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
-            <h3 className="text-xl font-bold">Pronto para começar?</h3>
+            <h3 className="text-xl font-bold">Ready to get started?</h3>
             <p className="text-muted-foreground">
-              Crie sua conta grátis em segundos
+              Create your free account in seconds
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">Falar com vendas</Button>
-            <Button>Começar grátis</Button>
+            <Button variant="outline">Talk to sales</Button>
+            <Button>Start for free</Button>
           </div>
         </div>
       </div>
@@ -361,14 +361,14 @@ export function Footer() {
       <div className="container px-4 py-6 border-t">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2025 SeuSaaS. Todos os direitos reservados.
+            © 2025 YourSaaS. All rights reserved.
           </p>
           <div className="flex gap-4 text-sm text-muted-foreground">
             <a href="/privacy" className="hover:text-foreground">
-              Privacidade
+              Privacy
             </a>
             <a href="/terms" className="hover:text-foreground">
-              Termos
+              Terms
             </a>
           </div>
         </div>
@@ -380,46 +380,46 @@ export function Footer() {
 
 ---
 
-## Copy para CTAs
+## CTA Copy
 
 ### Headlines
 ```markdown
-- "Pronto para [resultado]?"
-- "Comece a [benefício] hoje"
-- "Junte-se a [número] [empresas/profissionais]"
-- "Transforme sua [área] em [tempo]"
-- "Não perca mais tempo com [dor]"
+- "Ready for [result]?"
+- "Start [benefit] today"
+- "Join [number] [companies/professionals]"
+- "Transform your [area] in [time]"
+- "Stop wasting time with [pain]"
 ```
 
 ### Sub-headlines
 ```markdown
-- "Comece grátis, escale quando precisar"
-- "Sem cartão de crédito. Sem compromisso."
-- "Configure em 5 minutos. Veja resultados em 1 semana."
-- "Teste todas as funcionalidades por 14 dias"
+- "Start free, scale when you need"
+- "No credit card. No commitment."
+- "Set up in 5 minutes. See results in 1 week."
+- "Try all features for 14 days"
 ```
 
-### Botões
+### Buttons
 ```markdown
-# Alta intenção
-- "Começar grátis"
-- "Criar conta"
-- "Testar agora"
-- "Experimentar grátis"
+# High intent
+- "Start for free"
+- "Create account"
+- "Try now"
+- "Try for free"
 
-# Baixa fricção
-- "Ver demo"
-- "Agendar conversa"
-- "Saber mais"
-- "Explorar recursos"
+# Low friction
+- "See demo"
+- "Schedule a call"
+- "Learn more"
+- "Explore features"
 ```
 
 ### Trust elements
 ```markdown
-- "✓ 14 dias grátis"
-- "✓ Sem cartão de crédito"
-- "✓ Cancele quando quiser"
-- "✓ Setup em 5 minutos"
-- "✓ Suporte incluso"
-- "✓ Dados protegidos (LGPD)"
+- "✓ 14 days free"
+- "✓ No credit card"
+- "✓ Cancel anytime"
+- "✓ Setup in 5 minutes"
+- "✓ Support included"
+- "✓ Data protected (GDPR)"
 ```

@@ -1,120 +1,120 @@
 # Code Quality Analyzer
 
-Analisa qualidade do código como um SonarQube - SOLID, Clean Code, technical debt, code smells.
+Analyzes code quality like SonarQube — SOLID, Clean Code, technical debt, code smells.
 
-## Objetivo
+## Objective
 
-Gerar `docs/code-quality-review.md` com análise de:
-- Aderência a SOLID
+Generate `docs/code-quality-review.md` with analysis of:
+- SOLID adherence
 - Clean Code practices
-- Technical debt identificado
-- Oportunidades de melhoria
+- Identified technical debt
+- Improvement opportunities
 
-## PRIMEIRO: Contexto
+## FIRST: Context
 
-**NÃO assuma nada. Analise o código real.**
+**Do NOT assume anything. Analyze the real code.**
 
-1. Leia CLAUDE.md para entender estrutura do projeto
-2. Leia .codeadd/project/*.md se existirem (padrões já documentados)
-3. Analise código real para identificar gaps
+1. Read CLAUDE.md to understand the project structure
+2. Read .codeadd/project/*.md if they exist (already documented patterns)
+3. Analyze real code to identify gaps
 
-## O Que Analisar
+## What to Analyze
 
 ### 1. SOLID Principles
 
 **S - Single Responsibility**
 ```bash
-# Procurar classes/funções muito grandes (possível violação)
+# Find classes/functions that are too large (possible violation)
 find . -name "*.ts" -o -name "*.js" -o -name "*.py" | xargs wc -l | sort -rn | head -20
-# Arquivos com muitas responsabilidades
+# Files with too many responsibilities
 ```
-- [ ] Classes com mais de 300 linhas → possível violação
-- [ ] Funções com mais de 50 linhas → possível violação
-- [ ] Arquivos com múltiplos exports não relacionados
+- [ ] Classes over 300 lines → possible violation
+- [ ] Functions over 50 lines → possible violation
+- [ ] Files with multiple unrelated exports
 
 **O - Open/Closed**
-- [ ] Código usa herança/composição para extensão?
-- [ ] Existem switch/if chains que deveriam ser polimorfismo?
+- [ ] Does code use inheritance/composition for extension?
+- [ ] Are there switch/if chains that should be polymorphism?
 
 **L - Liskov Substitution**
-- [ ] Subclasses respeitam contratos das superclasses?
-- [ ] Interfaces são coerentes?
+- [ ] Do subclasses respect superclass contracts?
+- [ ] Are interfaces coherent?
 
 **I - Interface Segregation**
-- [ ] Interfaces pequenas e focadas?
-- [ ] Dependências injetam apenas o necessário?
+- [ ] Small and focused interfaces?
+- [ ] Do dependencies inject only what is needed?
 
 **D - Dependency Inversion**
-- [ ] Módulos de alto nível dependem de abstrações?
-- [ ] Existe IoC/DI container?
-- [ ] Services dependem de interfaces, não implementações?
+- [ ] Do high-level modules depend on abstractions?
+- [ ] Is there an IoC/DI container?
+- [ ] Do services depend on interfaces, not implementations?
 
 ### 2. Clean Code Practices
 
 **Naming**
-- [ ] Nomes descritivos (não abreviações crípticas)
-- [ ] Convenção consistente (camelCase, PascalCase, etc)
+- [ ] Descriptive names (no cryptic abbreviations)
+- [ ] Consistent convention (camelCase, PascalCase, etc)
 
 **Functions**
-- [ ] Funções pequenas (< 20 linhas ideal)
-- [ ] Poucos parâmetros (< 4 ideal)
-- [ ] Sem side effects ocultos
+- [ ] Small functions (< 20 lines ideal)
+- [ ] Few parameters (< 4 ideal)
+- [ ] No hidden side effects
 
 **Comments**
-- [ ] Código auto-documentado (não precisa de comentários óbvios)
-- [ ] Comentários explicam "por quê", não "o quê"
+- [ ] Self-documenting code (no obvious comments needed)
+- [ ] Comments explain "why", not "what"
 
 **Error Handling**
-- [ ] Erros tratados adequadamente
-- [ ] Não usa exceptions para flow control
-- [ ] Mensagens de erro úteis
+- [ ] Errors handled appropriately
+- [ ] No exceptions used for flow control
+- [ ] Useful error messages
 
 ### 3. Architecture Patterns
 
 **Layering**
-- [ ] Separação clara de camadas
-- [ ] Dependências fluem na direção correta
-- [ ] Sem imports circulares
+- [ ] Clear layer separation
+- [ ] Dependencies flow in the correct direction
+- [ ] No circular imports
 
 **Cohesion & Coupling**
-- [ ] Módulos coesos (fazem uma coisa bem)
-- [ ] Baixo acoplamento entre módulos
+- [ ] Cohesive modules (do one thing well)
+- [ ] Low coupling between modules
 
 ### 4. Technical Debt
 
 **Code Smells**
 ```bash
-# TODOs e FIXMEs no código
+# TODOs and FIXMEs in the code
 grep -rn "TODO\|FIXME\|HACK\|XXX" --include="*.ts" --include="*.js" --include="*.py" | head -20
 
-# Arquivos muito antigos sem modificação (possível código morto)
-# Duplicação de código
+# Very old files with no modifications (possible dead code)
+# Code duplication
 ```
 
 **Deprecated/Legacy**
-- [ ] Dependências desatualizadas
-- [ ] Código comentado que deveria ser removido
-- [ ] Features abandonadas
+- [ ] Outdated dependencies
+- [ ] Commented-out code that should be removed
+- [ ] Abandoned features
 
-## Como Pesquisar
+## How to Search
 
 ```bash
-# 1. Verificar tamanho de arquivos (possível violação SRP)
+# 1. Check file sizes (possible SRP violation)
 find . -name "*.ts" -type f | xargs wc -l | sort -rn | head -15
 
-# 2. Procurar TODOs/FIXMEs
+# 2. Find TODOs/FIXMEs
 grep -rn "TODO\|FIXME" --include="*.ts" --include="*.tsx" | head -20
 
-# 3. Procurar código comentado
+# 3. Find commented-out code
 grep -rn "^[[:space:]]*//" --include="*.ts" | head -10
 
-# 4. Verificar se tem DI container
+# 4. Check for DI container
 grep -rn "inject\|@Injectable\|IoC\|Container" --include="*.ts" | head -5
 
-# 5. Verificar interfaces vs implementações
+# 5. Check interfaces vs implementations
 find . -name "*.interface.ts" -o -name "I*.ts" | head -10
 
-# 6. Analisar 2-3 arquivos grandes para entender padrão
+# 6. Analyze 2-3 large files to understand the pattern
 ```
 
 ## Output Format
@@ -123,7 +123,7 @@ find . -name "*.interface.ts" -o -name "I*.ts" | head -10
 # Architecture Review
 
 > Generated by /architecture-analyzer on YYYY-MM-DD
-> Project: [nome do projeto]
+> Project: [project name]
 
 ## Executive Summary
 
@@ -140,13 +140,13 @@ find . -name "*.interface.ts" -o -name "I*.ts" | head -10
 **Status:** [Followed/Partially/Violated]
 
 **Findings:**
-- [arquivo]: [descrição do problema] → [sugestão]
+- [file]: [problem description] → [suggestion]
 
 ### Open/Closed
 **Status:** [Followed/Partially/Violated]
 
 **Findings:**
-- [arquivo]: [descrição] → [sugestão]
+- [file]: [description] → [suggestion]
 
 ### Liskov Substitution
 **Status:** [Followed/Partially/N/A]
@@ -155,19 +155,19 @@ find . -name "*.interface.ts" -o -name "I*.ts" | head -10
 **Status:** [Followed/Partially/Violated]
 
 **Findings:**
-- [interface]: [problema] → [sugestão]
+- [interface]: [problem] → [suggestion]
 
 ### Dependency Inversion
 **Status:** [Followed/Partially/Violated]
 
 **Findings:**
-- [descrição] → [sugestão]
+- [description] → [suggestion]
 
 ## Clean Code Analysis
 
 ### Naming Conventions
 **Status:** [Consistent/Inconsistent]
-[detalhes se inconsistente]
+[details if inconsistent]
 
 ### Function Size
 **Status:** [Good/Needs Refactoring]
@@ -188,52 +188,52 @@ find . -name "*.interface.ts" -o -name "I*.ts" | head -10
 | [path] | [n] | [text] | [H/M/L] |
 
 ### Deprecated Code
-[lista se encontrado]
+[list if found]
 
 ### Code Duplication
-[áreas identificadas se houver]
+[areas identified if any]
 
 ## Improvement Opportunities
 
 ### High Priority
-- [ ] **[título]**: [descrição] | Impact: [H/M/L] | Effort: [H/M/L]
+- [ ] **[title]**: [description] | Impact: [H/M/L] | Effort: [H/M/L]
 
 ### Medium Priority
-- [ ] **[título]**: [descrição] | Impact: [H/M/L] | Effort: [H/M/L]
+- [ ] **[title]**: [description] | Impact: [H/M/L] | Effort: [H/M/L]
 
 ### Low Priority / Nice to Have
-- [ ] **[título]**: [descrição]
+- [ ] **[title]**: [description]
 
 ## Recommendations
 
 ### Quick Wins (< 1 day effort)
-1. [ação específica]
+1. [specific action]
 
 ### Medium-term (1-5 days)
-1. [ação específica]
+1. [specific action]
 
 ### Long-term (refactoring)
-1. [ação específica]
+1. [specific action]
 
 ---
 *Review generated automatically. Manual validation recommended.*
 ```
 
-## Regras Críticas
+## Critical Rules
 
-**OBRIGATÓRIO:**
-- Analisar código REAL, não assumir
-- Dar exemplos concretos com paths de arquivos
-- Sugestões acionáveis (não genéricas)
-- Priorizar por impacto
+**MANDATORY:**
+- Analyze REAL code, do not assume
+- Provide concrete examples with file paths
+- Actionable suggestions (not generic)
+- Prioritize by impact
 
-**PROIBIDO:**
-- Inventar problemas não encontrados
-- Críticas sem sugestão de melhoria
-- Seções vazias (se não encontrou problema, não inclua)
-- Linguagem negativa excessiva (foco em melhoria, não crítica)
+**FORBIDDEN:**
+- Fabricate problems not found in the code
+- Criticism without an improvement suggestion
+- Empty sections (if no problem found, don't include it)
+- Excessive negative language (focus on improvement, not criticism)
 
 **SCORING:**
-- 8-10: Good - seguindo bem
-- 5-7: Needs Work - alguns problemas
-- 1-4: Critical - precisa atenção urgente
+- 8-10: Good - following well
+- 5-7: Needs Work - some issues
+- 1-4: Critical - needs urgent attention

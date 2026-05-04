@@ -1,7 +1,7 @@
 # ADD - Intelligent Ecosystem Gateway
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante -> explain why; avancado -> essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
 
 Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests next command.
 

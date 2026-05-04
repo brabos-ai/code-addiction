@@ -1,30 +1,30 @@
 #!/bin/bash
 # =============================================================================
 # Get Main Branch
-# Detecta branch principal do projeto com fallback em cascata
+# Detects the project's main branch with cascading fallback
 # =============================================================================
 # Usage: MAIN_BRANCH=$("$SCRIPT_DIR/get-main-branch.sh")
-# Returns: nome da branch principal (main, master, etc)
+# Returns: name of the main branch (main, master, etc)
 # Exit codes:
-#   0 — branch encontrada com certeza (verificada no repositório)
-#   1 — não é um repositório git
-#   2 — nenhuma branch padrão encontrada (fallback hardcoded não utilizado)
+#   0 — branch found with certainty (verified in repository)
+#   1 — not a git repository
+#   2 — no default branch found (hardcoded fallback not used)
 # =============================================================================
 
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Guarda: verificar se estamos dentro de um repositório git
+# Guard: verify we are inside a git repository
 # ---------------------------------------------------------------------------
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
-  echo "ERRO: o diretório atual não é um repositório git." >&2
+  echo "ERROR: current directory is not a git repository." >&2
   exit 1
 fi
 
 # ---------------------------------------------------------------------------
-# 1. Tentar origin/HEAD (funciona em repos clonados corretamente)
-#    Usa subshell para isolar pipefail — se git symbolic-ref falhar,
-#    o pipe com sed não mascara o erro.
+# 1. Try origin/HEAD (works in correctly cloned repos)
+#    Uses subshell to isolate pipefail — if git symbolic-ref fails,
+#    the pipe with sed does not mask the error.
 # ---------------------------------------------------------------------------
 MAIN=""
 if MAIN=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'); then
@@ -35,7 +35,7 @@ if MAIN=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/r
 fi
 
 # ---------------------------------------------------------------------------
-# 2. Verificar se origin/main existe no remote
+# 2. Check if origin/main exists on remote
 # ---------------------------------------------------------------------------
 if git show-ref --verify --quiet refs/remotes/origin/main 2>/dev/null; then
   echo "main"
@@ -43,7 +43,7 @@ if git show-ref --verify --quiet refs/remotes/origin/main 2>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# 3. Verificar se origin/master existe no remote
+# 3. Check if origin/master exists on remote
 # ---------------------------------------------------------------------------
 if git show-ref --verify --quiet refs/remotes/origin/master 2>/dev/null; then
   echo "master"
@@ -51,7 +51,7 @@ if git show-ref --verify --quiet refs/remotes/origin/master 2>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Fallback: verificar branches locais (repo sem remote ou sem fetch)
+# 4. Fallback: check local branches (repo without remote or without fetch)
 # ---------------------------------------------------------------------------
 if git show-ref --verify --quiet refs/heads/main 2>/dev/null; then
   echo "main"
@@ -64,9 +64,9 @@ if git show-ref --verify --quiet refs/heads/master 2>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# 5. Último recurso: nenhuma branch padrão encontrada
-#    Emite aviso no stderr e sai com erro — não retorna "main" às cegas,
-#    pois o chamador precisa saber que não há branch verificada.
+# 5. Last resort: no default branch found
+#    Emits warning on stderr and exits with error — does not blindly return "main"
+#    because the caller needs to know there is no verified branch.
 # ---------------------------------------------------------------------------
-echo "ERRO: nenhuma branch principal encontrada (main/master ausentes local e remotamente)." >&2
+echo "ERROR: no main branch found (main/master absent locally and remotely)." >&2
 exit 2

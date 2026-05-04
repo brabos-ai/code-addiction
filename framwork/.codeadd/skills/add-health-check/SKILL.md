@@ -6,9 +6,9 @@ description: |
 
 # Health Check
 
-Suite de skills para análise técnica completa do projeto.
+Suite of skills for complete technical analysis of the project.
 
-**Referência:** Sempre consultar `CLAUDE.md` para padrões gerais do projeto.
+**Reference:** Always consult `CLAUDE.md` for general project standards.
 
 ---
 
@@ -82,7 +82,7 @@ Entrepreneurs who:
 
 ## Language
 
-{"reports":"PT-BR"}
+{"reports":"language from owner.md, default English"}
 {"techTerms":"EN"}
 {"style":"accessible for non-technical"}
 {"glossary":"included in HEALTH-REPORT.md"}

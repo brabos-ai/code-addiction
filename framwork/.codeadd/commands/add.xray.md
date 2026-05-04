@@ -3,7 +3,7 @@
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates reports into a portable project-patterns skill.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 ---
 

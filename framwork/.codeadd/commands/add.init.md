@@ -3,7 +3,7 @@
 Collects owner profile in 1 minute (3 direct questions) and optionally creates product blueprint.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 ---
 
@@ -63,7 +63,7 @@ Ask the user these three questions (name, technical level, preferred language). 
 
 | Question | a | b | c |
 |----------|---|---|---|
-| Level | iniciante | intermediario | avancado |
+| Level | beginner | intermediate | advanced |
 | Language | pt-br | en-us | [specified] |
 
 ---

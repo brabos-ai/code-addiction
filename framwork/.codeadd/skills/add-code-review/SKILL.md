@@ -5,30 +5,30 @@ description: Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Archi
 
 # Code Review
 
-Skill para validação de código implementado contra padrões do projeto.
+Skill for validating implemented code against project standards.
 
-**Use para:** Validar código, identificar violações, auto-corrigir (autopilot)
-**Não use para:** Implementar código, planejamento, discovery
+**Use for:** Validate code, identify violations, auto-fix (autopilot)
+**Do not use for:** Implementing code, planning, discovery
 
-**Referência:** Sempre consultar `CLAUDE.md` para padrões gerais do projeto.
+**Reference:** Always consult `CLAUDE.md` for general project standards.
 
 ---
 
-## ⚠️ REGRA OBRIGATÓRIA: TodoWrite
+## ⚠️ MANDATORY RULE: TodoWrite
 
-**ANTES de iniciar qualquer revisão, você DEVE criar uma lista de todos usando TodoWrite.**
+**BEFORE starting any review, you MUST create a todo list using TodoWrite.**
 
-O agente de code-review DEVE criar todos para cada categoria de validação e para cada arquivo alterado. Isso garante:
+The code-review agent MUST create todos for each validation category and for each changed file. This ensures:
 
-1. Visibilidade do progresso para o usuário
-2. Nenhuma validação esquecida
-3. Rastreabilidade das correções
+1. Progress visibility for the user
+2. No validation is forgotten
+3. Traceability of fixes
 
 ---
 
 ## Skills de Referência
 
-**Carregar ANTES de revisar:**
+**Load BEFORE reviewing:**
 
 - Backend: `{{skill:add-backend-development/SKILL.md}}`
 - Database: `{{skill:add-database-development/SKILL.md}}`
@@ -40,7 +40,7 @@ O agente de code-review DEVE criar todos para cada categoria de validação e pa
 
 ## Categorias de Validação
 
-### 0. Spec Compliance (CRÍTICO)
+### 0. Spec Compliance (CRITICAL)
 
 **Spec vs implementation gap = the root cause of features that "pass review" but diverge from what was planned.**
 
@@ -77,20 +77,20 @@ Spec Compliance scoring:
 
 ---
 
-### 0.5. Architecture Contract (MAIS CRÍTICO)
+### 0.5. Architecture Contract (MOST CRITICAL)
 
-**Violação de arquitetura = CRITICAL BLOCKER. Corrigir ANTES de qualquer outra validação.**
+**Architecture violation = CRITICAL BLOCKER. Fix BEFORE any other validation.**
 
 Source: `CLAUDE.md → ## Architecture Contract`.
 
 Validation steps:
 
-Para CADA arquivo novo/modificado:
+For EACH new/modified file:
 
-1. Identificar layer/package do arquivo
-2. Grep imports de `@org/*` (ou alias do projeto)
-3. Verificar contra regras de Imports do contrato
-4. Verificar se artefato está no package correto (Placement)
+1. Identify the file's layer/package
+2. Grep imports of `@org/*` (or project alias)
+3. Verify against Import rules from the contract
+4. Verify the artefact is in the correct package (Placement)
 
 Examples:
 
@@ -102,78 +102,78 @@ Examples:
 
 ---
 
-### 1. IoC Configuration (CRÍTICO)
+### 1. IoC Configuration (CRITICAL)
 
-**Código sem IoC correto NÃO funciona em runtime.**
+**Code without correct IoC does NOT work at runtime.**
 
 #### Checklist por tipo de componente (lookup)
 
-{"iocChecklist":{"Service":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":false},"Repository":{"decorator":"@Injectable()","providers":"db module","exports":"db module","controllers":false,"indexTs":"libs/"},"Handler":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":"NUNCA"},"Guard":{"decorator":"@Injectable()","providers":"feature/global","exports":false,"controllers":false,"indexTs":false},"Controller":{"decorator":"@Controller()","providers":false,"exports":false,"controllers":"feature module","indexTs":false}}}
+{"iocChecklist":{"Service":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":false},"Repository":{"decorator":"@Injectable()","providers":"db module","exports":"db module","controllers":false,"indexTs":"libs/"},"Handler":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":"NEVER"},"Guard":{"decorator":"@Injectable()","providers":"feature/global","exports":false,"controllers":false,"indexTs":false},"Controller":{"decorator":"@Controller()","providers":false,"exports":false,"controllers":"feature module","indexTs":false}}}
 
-#### Validações obrigatórias IoC
+#### Mandatory IoC Validations
 
 **Service:**
 
-- Tem `@Injectable()`
-- Registrado em `providers[]` do módulo
-- Módulo importado em `AppModule.imports[]`
+- Has `@Injectable()`
+- Registered in module `providers[]`
+- Module imported in `AppModule.imports[]`
 
 **Repository:**
 
-- Tem `@Injectable()`
-- Registrado em `providers[]` do módulo database
-- Registrado em `exports[]` do módulo database
-- Exportado no `index.ts` de `libs/app-database/src/`
-- Tipo adicionado em `Database.ts` se nova tabela
+- Has `@Injectable()`
+- Registered in database module `providers[]`
+- Registered in database module `exports[]`
+- Exported in `libs/app-database/src/index.ts`
+- Type added in `Database.ts` if new table
 
 **CommandHandler:**
 
-- Tem `@Injectable()`
-- Registrado em `providers[]` do módulo feature
-- NÃO exportado em `index.ts` (implementation detail)
-- `Command` exportado (contrato público)
+- Has `@Injectable()`
+- Registered in feature module `providers[]`
+- NOT exported in `index.ts` (implementation detail)
+- `Command` exported (public contract)
 
 **EventHandler:**
 
-- Tem `@Injectable()`
-- Registrado em `providers[]` do módulo feature
-- NÃO exportado em `index.ts` (implementation detail)
-- `Event` exportado se cross-module
+- Has `@Injectable()`
+- Registered in feature module `providers[]`
+- NOT exported in `index.ts` (implementation detail)
+- `Event` exported if cross-module
 
 **Controller:**
 
-- Tem `@Controller('prefix')`
-- Registrado em `controllers[]` do módulo
-- Guards aplicados (`@UseGuards`)
-- Módulo importado em `AppModule.imports[]`
+- Has `@Controller('prefix')`
+- Registered in module `controllers[]`
+- Guards applied (`@UseGuards`)
+- Module imported in `AppModule.imports[]`
 
 **Module:**
 
-- Importa módulos necessários (`SharedModule`, `DatabaseModule`)
-- Registra todos providers
-- Registra todos controllers
-- Importado em `AppModule.imports[]`
+- Imports required modules (`SharedModule`, `DatabaseModule`)
+- Registers all providers
+- Registers all controllers
+- Imported in `AppModule.imports[]`
 
 #### Arquivos a verificar para IoC
 
 | File | Check |
 |---|---|
-| `apps/backend/src/app.module.ts` | `imports[]` contém módulo |
+| `apps/backend/src/app.module.ts` | `imports[]` contains module |
 | `[feature].module.ts` | `providers[]`, `controllers[]`, `imports[]` |
-| `libs/app-database/src/app-database.module.ts` | `providers[]`, `exports[]` para repos |
-| `libs/app-database/src/index.ts` | exports de repos públicos |
-| `libs/app-database/src/types/Database.ts` | tipos de tabelas novas |
-| `libs/domain/src/index.ts` | exports de entities/enums novos |
+| `libs/app-database/src/app-database.module.ts` | `providers[]`, `exports[]` for repos |
+| `libs/app-database/src/index.ts` | public repo exports |
+| `libs/app-database/src/types/Database.ts` | new table types |
+| `libs/domain/src/index.ts` | new entity/enum exports |
 
-#### Erros comuns IoC
+#### Common IoC Errors
 
 | Erro | Causa | Fix |
 |---|---|---|
-| `Nest can't resolve dependencies of X` | `X` não está em `providers[]` ou dependência de `X` não registrada | Adicionar `X` e suas dependências em `providers[]` |
-| `X is not a provider` | Falta `@Injectable()` ou não registrado | Adicionar decorator e registrar em `providers[]` |
-| `Module X not found` | Módulo não importado em `AppModule` | Adicionar em `AppModule.imports[]` |
-| `Repository not found` | Repo não exportado em `exports[]` do db module | Adicionar em `exports[]` de `AppDatabaseModule` |
-| 404 on endpoint | Controller não registrado ou módulo não importado | Verificar `controllers[]` e `AppModule.imports[]` |
+| `Nest can't resolve dependencies of X` | `X` not in `providers[]` or `X`'s dependency not registered | Add `X` and its dependencies to `providers[]` |
+| `X is not a provider` | Missing `@Injectable()` or not registered | Add decorator and register in `providers[]` |
+| `Module X not found` | Module not imported in `AppModule` | Add to `AppModule.imports[]` |
+| `Repository not found` | Repo not exported in db module `exports[]` | Add to `AppDatabaseModule` `exports[]` |
+| 404 on endpoint | Controller not registered or module not imported | Check `controllers[]` and `AppModule.imports[]` |
 
 ---
 
@@ -280,64 +280,64 @@ Weights and status (lookup):
 3. Read `CLAUDE.md`
 4. Identify ALL changed files
 
-**OBRIGATÓRIO: Criar TodoWrite com lista de validações:**
+**MANDATORY: Create TodoWrite with validation list:**
 
 ```
-Exemplo de todos a criar:
-- [ ] Carregar contexto e identificar arquivos alterados
-- [ ] Validar Spec Compliance: ler contratos do plan.md (prose) e tick state do tasks.md → ## Acceptance Checklist
-- [ ] Validar Spec Compliance: comparar routes/services/DTOs vs spec
-- [ ] Validar Architecture Contract: imports entre packages
-- [ ] Validar Architecture Contract: placement de artefatos
-- [ ] Validar IoC: verificar @Injectable em novos services
-- [ ] Validar IoC: verificar providers[] nos módulos
-- [ ] Validar IoC: verificar exports[] para repositórios
-- [ ] Validar IoC: verificar imports[] em AppModule
-- [ ] Validar IoC: verificar barrel exports (index.ts)
-- [ ] Validar RESTful: métodos HTTP corretos
-- [ ] Validar RESTful: status codes corretos
-- [ ] Validar Contracts: tipos sincronizados frontend/backend
-- [ ] Validar Security: multi-tenancy (account_id)
-- [ ] Validar Security: guards aplicados
-- [ ] Validar Quality: sem any, sem console.log
-- [ ] Validar Database: migrations, tipos Kysely
-- [ ] Corrigir issues encontrados
-- [ ] Verificar build compila
-- [ ] Gerar relatório de review
+Example todos to create:
+- [ ] Load context and identify changed files
+- [ ] Validate Spec Compliance: read contracts from plan.md (prose) and tick state from tasks.md → ## Acceptance Checklist
+- [ ] Validate Spec Compliance: compare routes/services/DTOs vs spec
+- [ ] Validate Architecture Contract: imports between packages
+- [ ] Validate Architecture Contract: artefact placement
+- [ ] Validate IoC: check @Injectable on new services
+- [ ] Validate IoC: check providers[] in modules
+- [ ] Validate IoC: check exports[] for repositories
+- [ ] Validate IoC: check imports[] in AppModule
+- [ ] Validate IoC: check barrel exports (index.ts)
+- [ ] Validate RESTful: correct HTTP methods
+- [ ] Validate RESTful: correct status codes
+- [ ] Validate Contracts: types synchronized frontend/backend
+- [ ] Validate Security: multi-tenancy (account_id)
+- [ ] Validate Security: guards applied
+- [ ] Validate Quality: no any, no console.log
+- [ ] Validate Database: migrations, Kysely types
+- [ ] Fix issues found
+- [ ] Verify build compiles
+- [ ] Generate review report
 ```
 
 ### Phase 2: Validate (com TodoWrite updates)
 
-Para CADA arquivo alterado, validar na ordem:
+For EACH changed file, validate in order:
 
 1. **Spec Compliance** (PRIMEIRO — gap spec-vs-code)
-   - Marcar todo como `in_progress`
+   - Mark todo as `in_progress`
    - READ contracts from `plan.md` prose (routes, services, DTOs, queues)
    - READ tick state from `tasks.md → ## Acceptance Checklist` (each item ends with `(RFNN/RNNN)`; cross-reference §1 Requirements Coverage)
    - For each contract: locate with `file:line`, validate behavior (not just existence)
    - DIVERGENT items: describe exact gap → auto-fix if safe, else report
    - MISSING items: report as BLOCKED (cannot auto-fix product scope)
-   - Marcar todo como `completed`
+   - Mark todo as `completed`
 
 2. **Architecture Contract** (segundo — violação estrutural)
-   - Marcar todo como `in_progress`
-   - Ler `## Architecture Contract` do `CLAUDE.md`
-   - Para cada arquivo novo/modificado:
-     - [ ] Identificar layer/package do arquivo
-     - [ ] Verificar imports de `@org/*` contra regras de Imports
-     - [ ] Verificar se artefato está no package correto (Placement)
-   - Se violação encontrada: **CRITICAL BLOCKER** — corrigir antes de continuar
-   - Marcar todo como `completed`
+   - Mark todo as `in_progress`
+   - Read `## Architecture Contract` from `CLAUDE.md`
+   - For each new/modified file:
+     - [ ] Identify the file's layer/package
+     - [ ] Verify imports of `@org/*` against Import rules
+     - [ ] Verify the artefact is in the correct package (Placement)
+   - If violation found: **CRITICAL BLOCKER** — fix before continuing
+   - Mark todo as `completed`
 
 3. **IoC Configuration** (segundo mais crítico)
-   - Marcar todo como `in_progress`
-   - Para cada novo componente criado:
-     - [ ] Verificar decorator (`@Injectable`, `@Controller`)
-     - [ ] Verificar registro em `providers[]`/`controllers[]`
-     - [ ] Verificar `exports[]` se compartilhado
-     - [ ] Verificar `index.ts` se em `libs/`
-     - [ ] Verificar `AppModule.imports[]`
-   - Marcar todo como `completed`
+   - Mark todo as `in_progress`
+   - For each new component created:
+     - [ ] Verify decorator (`@Injectable`, `@Controller`)
+     - [ ] Verify registration in `providers[]`/`controllers[]`
+     - [ ] Verify `exports[]` if shared
+     - [ ] Verify `index.ts` if in `libs/`
+     - [ ] Verify `AppModule.imports[]`
+   - Mark todo as `completed`
 
 4. **RESTful Compliance**
 5. **Contract Validation**
@@ -348,13 +348,13 @@ Para CADA arquivo alterado, validar na ordem:
 
 ### Phase 3: Fix (autopilot)
 
-1. Para cada issue encontrado:
-   - Criar todo específico: "Corrigir [issue] em [arquivo]"
-   - Marcar como `in_progress`
-   - Aplicar fix
-   - Marcar como `completed`
-2. Verificar build compila
-3. Documentar before/after
+1. For each issue found:
+   - Create specific todo: "Fix [issue] in [file]"
+   - Mark as `in_progress`
+   - Apply fix
+   - Mark as `completed`
+2. Verify build compiles
+3. Document before/after
 
 ### Phase 4: Report
 
@@ -404,10 +404,10 @@ Create `docs/features/${featureId}/review.md`.
 
 **Do:**
 
-- CRIAR TodoWrite ANTES de iniciar review
-- Atualizar todos durante cada fase
-- Marcar todo como `in_progress` antes de começar validação
-- Marcar todo como `completed` após finalizar validação
+- CREATE TodoWrite BEFORE starting review
+- Update todos during each phase
+- Mark todo as `in_progress` before starting validation
+- Mark todo as `completed` after finishing validation
 - Load skills BEFORE review
 - Run `status.sh` FIRST
 - Auto-fix in autopilot
@@ -416,51 +416,51 @@ Create `docs/features/${featureId}/review.md`.
 
 **Don't:**
 
-- Iniciar review SEM criar TodoWrite
-- Pular validação de Architecture Contract (MAIS crítica)
-- Pular validação de IoC
+- Start review WITHOUT creating TodoWrite
+- Skip Architecture Contract validation (MOST critical)
+- Skip IoC validation
 - Report without fixing (autopilot)
 - Ignore skill patterns
 - Accept "works" as justification
 - Leave non-compiling code
-- Esquecer de verificar `AppModule.imports[]`
-- Esquecer de verificar barrel exports em `libs/`
+- Forget to verify `AppModule.imports[]`
+- Forget to verify barrel exports in `libs/`
 
 ---
 
 ## IoC Quick Reference
 
-**Novo Service criado? Verificar:**
+**New Service created? Verify:**
 
 1. `@Injectable()` no service
 2. `providers: [NovoService]` no módulo
 3. `imports: [FeatureModule]` no `AppModule`
 
-**Novo Repository criado? Verificar:**
+**New Repository created? Verify:**
 
 1. `@Injectable()` no repository
 2. `providers: [NovoRepository]` no `AppDatabaseModule`
 3. `exports: [NovoRepository]` no `AppDatabaseModule`
 4. `export { NovoRepository }` no `index.ts` de `libs/app-database/src/`
 
-**Novo Handler criado? Verificar:**
+**New Handler created? Verify:**
 
 1. `@Injectable()` no handler
 2. `providers: [NovoHandler]` no módulo da feature
-3. **NÃO** exportar handler em `index.ts` (implementation detail)
+3. **DO NOT** export handler in `index.ts` (implementation detail)
 
-**Novo Controller criado? Verificar:**
+**New Controller created? Verify:**
 
 1. `@Controller('prefix')` no controller
 2. `controllers: [NovoController]` no módulo
 3. `@UseGuards(JwtAuthGuard)` aplicado
 4. `imports: [FeatureModule]` no `AppModule`
 
-**Nova Entity/Enum criado? Verificar:**
+**New Entity/Enum created? Verify:**
 
 1. `export { NovaEntity }` no `index.ts` de `libs/domain/src/`
 
-**Nova Tabela criada? Verificar:**
+**New Table created? Verify:**
 
 1. Migration criada em `libs/app-database/migrations/`
 2. Tipo adicionado em `libs/app-database/src/types/Database.ts`

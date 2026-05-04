@@ -1,7 +1,7 @@
 # Diagnose - Pre-Decision Investigative Triage
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (iniciante → explain why; avancado → essentials only).
+> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Investigative triage for ambiguous user reports. Receives a vague symptom or uncertain request, applies the `add-investigation` 5-phase methodology, and delivers a diagnosis + route recommendation (hotfix / feature / extend / no-action). READ-ONLY — does NOT implement fixes or open features.
 
@@ -95,7 +95,7 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 ### 1.3 Conditional reads
 
-- If OWNER not found → inform user to run `/add.init`, continue with `intermediario` defaults
+- If OWNER not found → inform user to run `/add.init`, continue with `intermediate` defaults
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
 
 ---

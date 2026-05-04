@@ -1,45 +1,45 @@
 # Infrastructure Check - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Follow patterns defined in `{{skill:add-doc-schemas/SKILL.md}}`
 
-**Objetivo:** Verificar se infraestrutura e ferramentas de análise estão configuradas.
+**Objective:** Verify whether infrastructure and analysis tools are configured.
 
 **Output:** `docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 
 ---
 
-## Missão
+## Mission
 
-Você é um subagente especializado em verificação de infraestrutura. Seu trabalho é:
-1. Verificar se MCP Supabase está habilitado (necessário para análise de RLS)
-2. Verificar variáveis de ambiente configuradas
-3. Verificar dependências instaladas
-4. Gerar orientações de configuração quando necessário
+You are a subagent specialized in infrastructure verification. Your job is:
+1. Verify whether MCP Supabase is enabled (required for RLS analysis)
+2. Verify configured environment variables
+3. Verify installed dependencies
+4. Generate configuration guidance when necessary
 
 ---
 
-## Análise 1: MCP Supabase
+## Analysis 1: MCP Supabase
 
-### Verificação
+### Check
 
-**Tentar usar ferramenta MCP:**
-- Se conseguir executar `mcp__supabase__list_tables` → MCP habilitado
-- Se falhar ou não existir → MCP não configurado
+**Try using MCP tool:**
+- If able to run `mcp__supabase__list_tables` → MCP enabled
+- If it fails or does not exist → MCP not configured
 
-### Se MCP NÃO Configurado
+### If MCP NOT Configured
 
-**Gerar orientação de configuração:**
+**Generate configuration guidance:**
 
 ```markdown
-## Configuração do MCP Supabase
+## MCP Supabase Configuration
 
-Para análise completa de RLS e banco de dados, configure o MCP Supabase:
+For complete RLS and database analysis, configure the MCP Supabase:
 
-### Passo 1: Instalar MCP Server
-O MCP Supabase já está incluído no Claude Code. Basta configurar as credenciais.
+### Step 1: Install MCP Server
+MCP Supabase is already included in Claude Code. Just configure the credentials.
 
-### Passo 2: Configurar Credenciais
-Adicione no arquivo de configuração do Claude Code:
+### Step 2: Configure Credentials
+Add to the Claude Code configuration file:
 
 **Linux/Mac:** `~/.claude/settings.json`
 **Windows:** `%APPDATA%\Claude\settings.json`
@@ -51,26 +51,26 @@ Adicione no arquivo de configuração do Claude Code:
       "command": "npx",
       "args": ["-y", "@anthropic-ai/mcp-server-supabase"],
       "env": {
-        "SUPABASE_URL": "https://[seu-projeto].supabase.co",
-        "SUPABASE_SERVICE_ROLE_KEY": "[sua-service-role-key]"
+        "SUPABASE_URL": "https://[your-project].supabase.co",
+        "SUPABASE_SERVICE_ROLE_KEY": "[your-service-role-key]"
       }
     }
   }
 }
 ```
 
-### Passo 3: Obter Credenciais
-1. Acesse https://supabase.com/dashboard
-2. Selecione seu projeto
-3. Vá em Settings → API
-4. Copie:
+### Step 3: Get Credentials
+1. Go to https://supabase.com/dashboard
+2. Select your project
+3. Go to Settings → API
+4. Copy:
    - Project URL → SUPABASE_URL
    - service_role key → SUPABASE_SERVICE_ROLE_KEY
 
-### Passo 4: Reiniciar Claude Code
-Após configurar, reinicie o Claude Code para carregar o MCP.
+### Step 4: Restart Claude Code
+After configuring, restart Claude Code to load the MCP.
 
-### Passo 5: Executar Health Check Novamente
+### Step 5: Run Health Check Again
 ```bash
 /tech-health-check
 ```
@@ -78,9 +78,9 @@ Após configurar, reinicie o Claude Code para carregar o MCP.
 
 ---
 
-## Análise 2: Variáveis de Ambiente
+## Analysis 2: Environment Variables
 
-### Verificações
+### Checks
 
 ```bash
 # Verificar .env.example existe

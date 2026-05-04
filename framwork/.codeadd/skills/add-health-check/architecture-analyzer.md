@@ -1,8 +1,8 @@
 # Architecture Analyzer - Health Check Subagent
 
-> **DOCUMENTATION STYLE:** Seguir padrões definidos em `{{skill:add-doc-schemas/SKILL.md}}`
+> **DOCUMENTATION STYLE:** Follow patterns defined in `{{skill:add-doc-schemas/SKILL.md}}`
 
-**Objetivo:** Verificar conformidade com padrões arquiteturais e identificar violações.
+**Objective:** Verify compliance with architectural patterns and identify violations.
 
 **Output:** `docs/health-checks/YYYY-MM-DD/architecture-report.md`
 
@@ -10,400 +10,400 @@
 
 ---
 
-## Missão
+## Mission
 
-Você é um subagente especializado em análise de arquitetura. Seu trabalho é:
-1. Ler `context-discovery.md` para entender padrões esperados
-2. Verificar conformidade com Clean Architecture
-3. Identificar imports incorretos entre camadas
-4. Verificar consistência de padrões (CQRS, Repository, etc.)
-5. Identificar acoplamento excessivo
+You are a subagent specialized in architecture analysis. Your job is:
+1. Read `context-discovery.md` to understand expected patterns
+2. Verify compliance with Clean Architecture
+3. Identify incorrect imports between layers
+4. Verify pattern consistency (CQRS, Repository, etc.)
+5. Identify excessive coupling
 
 ---
 
-## Pré-requisito: Ler Contexto
+## Prerequisite: Read Context
 
 ```bash
 cat docs/health-checks/YYYY-MM-DD/context-discovery.md
 ```
 
-**Extrair:**
-- Padrões esperados (CQRS, Repository, Clean Architecture)
-- Estrutura de camadas (domain, backend, app-database)
-- Convenções de nomenclatura
+**Extract:**
+- Expected patterns (CQRS, Repository, Clean Architecture)
+- Layer structure (domain, backend, app-database)
+- Naming conventions
 
 ---
 
-## Análise 1: Clean Architecture - Dependências
+## Analysis 1: Clean Architecture - Dependencies
 
-### Regra de Ouro
+### Golden Rule
 
 ```
-Camadas INTERNAS nunca dependem de camadas EXTERNAS
+INNER layers never depend on OUTER layers
 
 Domain (core) → Backend (interfaces) → App-Database (data) → API (presentation)
 
-NUNCA:
-- Domain importando de Backend
-- Domain importando de App-Database
-- Backend importando de API modules
+NEVER:
+- Domain importing from Backend
+- Domain importing from App-Database
+- Backend importing from API modules
 ```
 
-### Verificações
+### Checks
 
 ```bash
-# Domain importando de outras camadas (VIOLAÇÃO)
+# Domain importing from other layers (VIOLATION)
 grep -rn "from '@add/backend'\|from '@add/database'\|from '@add/api'" libs/domain/src/ --include="*.ts" 2>/dev/null
 
-# Backend (interfaces) importando de API (VIOLAÇÃO)
+# Backend (interfaces) importing from API (VIOLATION)
 grep -rn "from 'apps/backend'\|from '../api'" libs/backend/src/ --include="*.ts" 2>/dev/null
 
-# Repositories usando DTOs (VIOLAÇÃO)
+# Repositories using DTOs (VIOLATION)
 grep -rn "Dto\|DTO" libs/app-database/src/ --include="*.ts" 2>/dev/null
 ```
 
-### Classificar
+### Classify
 
-| Violação | Severidade |
-|----------|------------|
-| Domain importando backend | 🔴 Crítico |
-| Domain importando database | 🔴 Crítico |
-| Repository usando DTO | 🟠 Alto |
-| Interface importando implementação | 🟡 Médio |
+| Violation | Severity |
+|-----------|----------|
+| Domain importing backend | 🔴 Critical |
+| Domain importing database | 🔴 Critical |
+| Repository using DTO | 🟠 High |
+| Interface importing implementation | 🟡 Medium |
 
 ---
 
-## Análise 2: CQRS Conformidade
+## Analysis 2: CQRS Compliance
 
-### Se CQRS Identificado em context-discovery.md
+### If CQRS Identified in context-discovery.md
 
 ```bash
-# Commands sem Handler
+# Commands without Handler
 for cmd in $(find apps/backend -name "*Command.ts" -not -name "*Handler*" 2>/dev/null); do
   handler="${cmd%Command.ts}CommandHandler.ts"
   if [ ! -f "$handler" ] && [ ! -f "$(dirname $cmd)/handlers/$(basename $handler)" ]; then
-    echo "Command sem handler: $cmd"
+    echo "Command without handler: $cmd"
   fi
 done
 
-# Queries diretas em Controllers (deveria usar Query/Repository)
+# Direct queries in Controllers (should use Query/Repository)
 grep -rn "findAll\|findById\|selectFrom" apps/backend/src/api/modules/*/[!*service*].ts --include="*.controller.ts" 2>/dev/null
 
-# Commands retornando dados (deveria ser void ou ID)
+# Commands returning data (should be void or ID)
 grep -rn "execute.*return.*{" apps/backend/src/api/modules/*/commands/handlers/ --include="*.ts" 2>/dev/null | head -10
 ```
 
-### Padrões Esperados
+### Expected Patterns
 
-| Componente | Responsabilidade | Retorno |
-|------------|------------------|---------|
-| Command | Operação de escrita | void ou ID |
-| Query | Operação de leitura | DTO/Entity |
-| CommandHandler | Executa command | void ou ID |
-| Service | Orquestra | Delega para Commands |
+| Component | Responsibility | Return |
+|-----------|---------------|--------|
+| Command | Write operation | void or ID |
+| Query | Read operation | DTO/Entity |
+| CommandHandler | Executes command | void or ID |
+| Service | Orchestrates | Delegates to Commands |
 
 ---
 
-## Análise 3: Repository Pattern
+## Analysis 3: Repository Pattern
 
-### Verificações
+### Checks
 
 ```bash
-# Repositories retornando DTOs (VIOLAÇÃO)
+# Repositories returning DTOs (VIOLATION)
 grep -rn "Dto" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null
 
-# Repositories com lógica de negócio (VIOLAÇÃO)
+# Repositories with business logic (VIOLATION)
 grep -rn "if.*throw\|validate\|check" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null | head -10
 
-# Queries raw sem parametrização (SQL Injection risk)
+# Raw queries without parameterization (SQL Injection risk)
 grep -rn "raw\|sql\`" libs/app-database/src/repositories/ --include="*.ts" 2>/dev/null | head -10
 ```
 
-### Padrões Esperados
+### Expected Patterns
 
-| Método | Retorno | Violação |
-|--------|---------|----------|
+| Method | Return | Violation |
+|--------|--------|-----------|
 | `create()` | Entity | DTO |
 | `findById()` | Entity \| null | DTO |
 | `findAll()` | Entity[] | DTO[] |
-| `update()` | Entity | void sem retorno |
+| `update()` | Entity | void without return |
 | `delete()` | void | Entity |
 
 ---
 
-## Análise 4: Convenções de Nomenclatura
+## Analysis 4: Naming Conventions
 
-### Verificações
+### Checks
 
 ```bash
-# Interfaces sem prefixo I (se convenção usar)
+# Interfaces without I prefix (if convention uses it)
 grep -rn "^export interface [^I]" libs/backend/src/ --include="*.ts" 2>/dev/null | grep -v "export interface {" | head -10
 
-# Services sem sufixo Service
+# Services without Service suffix
 find apps/backend -name "*.ts" -path "*/services/*" ! -name "*Service.ts" ! -name "*service.ts" ! -name "index.ts" 2>/dev/null
 
-# Handlers com nome incorreto
+# Handlers with incorrect name
 find apps/backend -name "*Handler.ts" 2>/dev/null | while read f; do
   if ! grep -q "Handler$\|Handler.ts" <<< "$f"; then
-    echo "Nome incorreto: $f"
+    echo "Incorrect name: $f"
   fi
 done
 
-# DTOs sem sufixo Dto
+# DTOs without Dto suffix
 find apps/backend -path "*/dtos/*" -name "*.ts" ! -name "*Dto.ts" ! -name "*dto.ts" ! -name "index.ts" 2>/dev/null
 ```
 
 ---
 
-## Análise 5: Acoplamento
+## Analysis 5: Coupling
 
-### Verificações
+### Checks
 
 ```bash
-# Módulos importando de outros módulos diretamente (deveria usar shared)
+# Modules importing from other modules directly (should use shared)
 grep -rn "from '\.\./\.\./.*modules/" apps/backend/src/api/modules/ --include="*.ts" 2>/dev/null | head -20
 
-# Circular dependencies potenciais
-# Módulo A importa de B, B importa de A
+# Potential circular dependencies
+# Module A imports from B, B imports from A
 for module in apps/backend/src/api/modules/*/; do
   mod_name=$(basename "$module")
   grep -rn "from '.*modules/" "$module" --include="*.ts" 2>/dev/null | grep -v "$mod_name" | head -5
 done
 
-# Services muito grandes (>300 linhas = code smell)
+# Very large services (>300 lines = code smell)
 find apps/backend -name "*.service.ts" -exec wc -l {} \; 2>/dev/null | awk '$1 > 300 {print}'
 ```
 
 ---
 
-## Análise 6: Exports e Encapsulamento
+## Analysis 6: Exports and Encapsulation
 
-### Verificações
+### Checks
 
 ```bash
-# Handlers exportados em index.ts (NÃO devem ser exportados)
+# Handlers exported in index.ts (should NOT be exported)
 grep -rn "Handler" apps/backend/src/api/modules/*/index.ts libs/*/src/index.ts 2>/dev/null
 
-# Implementações exportadas em libs (devem exportar apenas interfaces)
+# Implementations exported in libs (should only export interfaces)
 grep -rn "export.*class" libs/backend/src/index.ts libs/domain/src/index.ts 2>/dev/null | grep -v "export.*interface\|export.*type\|export.*enum"
 ```
 
 ---
 
-## Template do Output
+## Output Template
 
-**Criar:** `docs/health-checks/YYYY-MM-DD/architecture-report.md`
+**Create:** `docs/health-checks/YYYY-MM-DD/architecture-report.md`
 
 ```markdown
 # Architecture Report
 
-**Gerado em:** [data]
+**Generated on:** [date]
 **Score:** [X/10]
 **Status:** 🔴/🟠/🟡/🟢
 
 ---
 
-## Resumo
+## Summary
 
-[2-3 frases sobre estado geral da arquitetura]
+[2-3 sentences about the overall state of the architecture]
 
 ---
 
-## Contexto da Análise
+## Analysis Context
 
-Baseado em `context-discovery.md`:
-- **Tipo:** [Monorepo/Monolito]
-- **Padrões Esperados:** [CQRS, Repository, Clean Architecture]
-- **Camadas:** [domain, backend, app-database, api]
+Based on `context-discovery.md`:
+- **Type:** [Monorepo/Monolith]
+- **Expected Patterns:** [CQRS, Repository, Clean Architecture]
+- **Layers:** [domain, backend, app-database, api]
 
 ---
 
 ## Clean Architecture
 
-### Hierarquia de Dependências
+### Dependency Hierarchy
 
 ```
-✅ Domain (libs/domain) - Entidades, Enums, Types
-    ↓ depende de: NADA
+✅ Domain (libs/domain) - Entities, Enums, Types
+    ↓ depends on: NOTHING
 
 ✅ Backend (libs/backend) - Interfaces
-    ↓ depende de: Domain apenas
+    ↓ depends on: Domain only
 
 ✅ App-Database (libs/app-database) - Repositories
-    ↓ depende de: Domain, Backend (interfaces)
+    ↓ depends on: Domain, Backend (interfaces)
 
 ✅ API (apps/backend) - Controllers, Services, Handlers
-    ↓ depende de: Todas as camadas acima
+    ↓ depends on: All layers above
 ```
 
-### Violações Encontradas
+### Violations Found
 
-| Origem | Destino | Arquivo | Severidade |
-|--------|---------|---------|------------|
-| domain | backend | [arquivo:linha] | 🔴 Crítico |
-| repository | DTO | [arquivo:linha] | 🟠 Alto |
+| Source | Destination | File | Severity |
+|--------|-------------|------|----------|
+| domain | backend | [file:line] | 🔴 Critical |
+| repository | DTO | [file:line] | 🟠 High |
 
 ---
 
-## CQRS Conformidade
+## CQRS Compliance
 
-### Status: [Implementado/Parcial/Não implementado]
+### Status: [Implemented/Partial/Not implemented]
 
-| Verificação | Status | Detalhes |
-|-------------|--------|----------|
-| Commands têm handlers | ✅/❌ | [X] commands sem handler |
-| Commands retornam void/ID | ✅/❌ | [X] commands retornando objetos |
-| Queries em Controllers | ✅/❌ | [X] queries diretas |
+| Check | Status | Details |
+|-------|--------|---------|
+| Commands have handlers | ✅/❌ | [X] commands without handler |
+| Commands return void/ID | ✅/❌ | [X] commands returning objects |
+| Queries in Controllers | ✅/❌ | [X] direct queries |
 
 ---
 
 ## Repository Pattern
 
-### Status: [Conforme/Violações encontradas]
+### Status: [Compliant/Violations found]
 
-| Verificação | Status | Detalhes |
-|-------------|--------|----------|
-| Retorna Entities | ✅/❌ | [detalhes] |
-| Sem lógica de negócio | ✅/❌ | [detalhes] |
-| Queries parametrizadas | ✅/❌ | [detalhes] |
-
----
-
-## Convenções de Nomenclatura
-
-| Convenção | Status | Violações |
-|-----------|--------|-----------|
-| Interfaces com I | ✅/❌ | [X] violações |
-| Services com sufixo | ✅/❌ | [X] violações |
-| Handlers com sufixo | ✅/❌ | [X] violações |
-| DTOs com sufixo | ✅/❌ | [X] violações |
+| Check | Status | Details |
+|-------|--------|---------|
+| Returns Entities | ✅/❌ | [details] |
+| No business logic | ✅/❌ | [details] |
+| Parameterized queries | ✅/❌ | [details] |
 
 ---
 
-## Acoplamento
+## Naming Conventions
 
-### Dependências entre Módulos
+| Convention | Status | Violations |
+|------------|--------|------------|
+| Interfaces with I | ✅/❌ | [X] violations |
+| Services with suffix | ✅/❌ | [X] violations |
+| Handlers with suffix | ✅/❌ | [X] violations |
+| DTOs with suffix | ✅/❌ | [X] violations |
 
-| Módulo | Importa de | Status |
-|--------|------------|--------|
-| auth | shared | ✅ Correto |
-| workspace | auth (direto) | ⚠️ Deveria usar shared |
+---
+
+## Coupling
+
+### Dependencies between Modules
+
+| Module | Imports from | Status |
+|--------|-------------|--------|
+| auth | shared | ✅ Correct |
+| workspace | auth (direct) | ⚠️ Should use shared |
 
 ### Code Smells
 
-| Arquivo | Linhas | Issue |
-|---------|--------|-------|
-| [service.ts] | 450 | Arquivo muito grande |
+| File | Lines | Issue |
+|------|-------|-------|
+| [service.ts] | 450 | File too large |
 
 ---
 
-## Issues Consolidados
+## Consolidated Issues
 
-### 🔴 Crítico
+### 🔴 Critical
 
-#### [ARCH-001] Domain importando de camada externa
-**Arquivo:** libs/domain/src/entities/User.ts:5
-**Código:**
+#### [ARCH-001] Domain importing from external layer
+**File:** libs/domain/src/entities/User.ts:5
+**Code:**
 ```typescript
 import { SomeDto } from '@add/backend';
 ```
-**Impacto:** Viola Clean Architecture, domain não pode ser reutilizado
-**Correção:** Remover import, domain deve ser puro
+**Impact:** Violates Clean Architecture, domain cannot be reused
+**Fix:** Remove import, domain must be pure
 
 ---
 
-### 🟠 Alto
+### 🟠 High
 
-#### [ARCH-002] Repository usando DTO
-**Arquivo:** libs/app-database/src/repositories/UserRepository.ts:23
-**Problema:** Método `create()` recebe `CreateUserDto` em vez de entity parcial
-**Impacto:** Acoplamento database com API layer
-**Correção:** Usar `Omit<User, 'id' | 'createdAt'>`
-
----
-
-#### [ARCH-003] Command retornando objeto completo
-**Arquivo:** apps/backend/src/api/modules/auth/commands/handlers/SignUpCommandHandler.ts:45
-**Problema:** Command retorna `{ user, account }` em vez de IDs
-**Impacto:** Viola CQRS, queries devem buscar dados
-**Correção:** Retornar apenas `{ userId, accountId }`
+#### [ARCH-002] Repository using DTO
+**File:** libs/app-database/src/repositories/UserRepository.ts:23
+**Problem:** Method `create()` receives `CreateUserDto` instead of partial entity
+**Impact:** Coupling between database and API layer
+**Fix:** Use `Omit<User, 'id' | 'createdAt'>`
 
 ---
 
-### 🟡 Médio
+#### [ARCH-003] Command returning full object
+**File:** apps/backend/src/api/modules/auth/commands/handlers/SignUpCommandHandler.ts:45
+**Problem:** Command returns `{ user, account }` instead of IDs
+**Impact:** Violates CQRS, queries should fetch data
+**Fix:** Return only `{ userId, accountId }`
 
-#### [ARCH-004] Módulo importando de outro módulo
-**Arquivo:** apps/backend/src/api/modules/workspace/workspace.service.ts:3
-**Código:**
+---
+
+### 🟡 Medium
+
+#### [ARCH-004] Module importing from another module
+**File:** apps/backend/src/api/modules/workspace/workspace.service.ts:3
+**Code:**
 ```typescript
 import { AuthService } from '../auth/auth.service';
 ```
-**Impacto:** Acoplamento entre módulos
-**Correção:** Usar shared service ou interface
+**Impact:** Coupling between modules
+**Fix:** Use shared service or interface
 
 ---
 
-### 🟢 Baixo
+### 🟢 Low
 
-#### [ARCH-005] Interface sem prefixo I
-**Arquivo:** libs/backend/src/services/LoggerService.ts
-**Esperado:** ILoggerService
-**Correção:** Renomear para seguir convenção
+#### [ARCH-005] Interface without I prefix
+**File:** libs/backend/src/services/LoggerService.ts
+**Expected:** ILoggerService
+**Fix:** Rename to follow convention
 
 ---
 
-## Checklist de Correção
+## Fix Checklist
 
 ### Clean Architecture
-- [ ] [ARCH-001] Remover imports inválidos do domain
+- [ ] [ARCH-001] Remove invalid imports from domain
 
 ### CQRS
-- [ ] [ARCH-003] Ajustar retorno de commands
+- [ ] [ARCH-003] Adjust command return values
 
 ### Repository
-- [ ] [ARCH-002] Remover DTOs dos repositories
+- [ ] [ARCH-002] Remove DTOs from repositories
 
-### Acoplamento
-- [ ] [ARCH-004] Desacoplar módulos
-
----
-
-## Recomendações
-
-1. **Prioridade 1:** Corrigir violações de Clean Architecture
-2. **Prioridade 2:** Ajustar padrão CQRS
-3. **Prioridade 3:** Refatorar módulos acoplados
+### Coupling
+- [ ] [ARCH-004] Decouple modules
 
 ---
 
-*Documento gerado pelo subagente architecture-analyzer*
+## Recommendations
+
+1. **Priority 1:** Fix Clean Architecture violations
+2. **Priority 2:** Adjust CQRS pattern
+3. **Priority 3:** Refactor coupled modules
+
+---
+
+*Document generated by the architecture-analyzer subagent*
 ```
 
 ---
 
 ## Scoring
 
-**Cálculo do score:**
-- Domain importando externa: -3 pontos
-- Repository usando DTO: -2 pontos
-- Command retornando objeto: -1 ponto
-- Módulo importando outro: -0.5 pontos
-- Convenção não seguida: -0.25 pontos
+**Score calculation:**
+- Domain importing external layer: -3 points
+- Repository using DTO: -2 points
+- Command returning object: -1 point
+- Module importing another module: -0.5 points
+- Convention not followed: -0.25 points
 
-**Score = max(0, 10 - soma_deduções)**
+**Score = max(0, 10 - sum_of_deductions)**
 
 ---
 
 ## Critical Rules
 
 **DO:**
-- ✅ Ler context-discovery.md PRIMEIRO
-- ✅ Verificar CADA violação no código
-- ✅ Incluir código problemático no report
-- ✅ Ser específico com arquivo e linha
+- ✅ Read context-discovery.md FIRST
+- ✅ Verify EACH violation in the code
+- ✅ Include problematic code in the report
+- ✅ Be specific with file and line number
 
 **DO NOT:**
-- ❌ Assumir padrões sem verificar
-- ❌ Reportar violações em node_modules
-- ❌ Ignorar violações "pequenas"
-- ❌ Sugerir refatorações desnecessárias
+- ❌ Assume patterns without verifying
+- ❌ Report violations in node_modules
+- ❌ Ignore "small" violations
+- ❌ Suggest unnecessary refactors

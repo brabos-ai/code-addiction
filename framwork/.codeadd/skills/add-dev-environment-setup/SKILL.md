@@ -89,13 +89,13 @@ Show what is missing vs already installed:
 
 ## STEP 4: CONFIRM
 
-SAY: "Vou te mostrar os comandos para instalar. Você executa no terminal e me avisa quando terminar."
+SAY: "I'll show you the commands to install. You run them in the terminal and let me know when you're done."
 
 ⛔ IF user says N → STOP.
 
 **Windows only — admin check:**
 ⛔ IF `wsl --install` is needed → SAY first:
-"Para instalar o WSL você precisa de um terminal com privilégios de Administrador. Abra o PowerShell como Administrador e execute o comando que vou te mostrar."
+"To install WSL you need a terminal with Administrator privileges. Open PowerShell as Administrator and run the command I'll show you."
 ⛔ DO NOT USE Bash tool to run `wsl --install`.
 
 ---
@@ -111,19 +111,19 @@ SAY: "Vou te mostrar os comandos para instalar. Você executa no terminal e me a
 **5.1 — WSL2 + Debian** (only if no real distro found in STEP 2)
 ⛔ IF user already has Ubuntu, Debian, or any real distro → SKIP this step, use existing distro.
 
-SAY: "Execute no PowerShell como Administrador:"
+SAY: "Run in PowerShell as Administrator:"
 
 ```powershell
 wsl --install -d Debian
 ```
 
-SAY: "Reinicie o Windows. Abra o terminal Debian para completar o setup e me avise."
+SAY: "Restart Windows. Open the Debian terminal to complete the setup and let me know."
 
 ⛔ WAIT for user confirmation before proceeding.
 
 **5.2 — Tools inside WSL**
 
-SAY: "Execute no terminal WSL:"
+SAY: "Run in the WSL terminal:"
 
 ```bash
 sudo apt update && sudo apt install -y git curl
@@ -133,7 +133,7 @@ sudo apt update && sudo apt install -y git curl
 
 **5.3 — gh CLI (official repo — NOT `apt-get install gh`)**
 
-SAY: "Execute estes comandos no terminal WSL, um bloco de cada vez:"
+SAY: "Run these commands in the WSL terminal, one block at a time:"
 
 ```bash
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -149,13 +149,13 @@ sudo apt update && sudo apt install -y gh
 
 **5.4 — gh auth login**
 
-SAY: "Execute no terminal WSL:"
+SAY: "Run in the WSL terminal:"
 
 ```bash
 gh auth login
 ```
 
-SAY: "Selecione: GitHub.com → HTTPS → Login with a web browser. Cole o código no navegador."
+SAY: "Select: GitHub.com → HTTPS → Login with a web browser. Paste the code in the browser."
 
 ⛔ WAIT for user confirmation before proceeding.
 
@@ -183,14 +183,14 @@ Result: user opens VS Code normally (shortcut/taskbar/recent files) → new term
 
 **5.6 — AI Coding Tools in WSL (optional)**
 
-ASK: "Quais ferramentas de AI você utiliza? Posso te mostrar como instalar no WSL:"
+ASK: "Which AI tools do you use? I can show you how to install them in WSL:"
 - [ ] Claude Code
 - [ ] OpenCode
-- [ ] Nenhuma — pular
+- [ ] None — skip
 
 ⛔ ONLY show install commands for tools the user confirms.
 
-SAY: "Execute no terminal WSL:"
+SAY: "Run in the WSL terminal:"
 
 ```bash
 # Claude Code (if confirmed)
@@ -211,7 +211,7 @@ curl -fsSL https://opencode.ai/install | bash
 
 ⛔ DO NOT USE Bash tool. SHOW all commands to user.
 
-SAY: "Execute no terminal:"
+SAY: "Run in the terminal:"
 
 ```bash
 # Homebrew (if missing)
@@ -225,7 +225,7 @@ bash --version
 brew install bash   # if needed
 ```
 
-SAY for AI tools (if confirmed): "Execute no terminal:"
+SAY for AI tools (if confirmed): "Run in the terminal:"
 
 ```bash
 # Claude Code
@@ -243,7 +243,7 @@ curl -fsSL https://opencode.ai/install | bash
 
 ⛔ DO NOT USE Bash tool. SHOW all commands to user.
 
-SAY: "Execute no terminal:"
+SAY: "Run in the terminal:"
 
 ```bash
 # Debian/Ubuntu
@@ -258,7 +258,7 @@ sudo dnf install -y git gh && gh auth login
 sudo pacman -S git github-cli && gh auth login
 ```
 
-SAY for AI tools (if confirmed): "Execute no terminal:"
+SAY for AI tools (if confirmed): "Run in the terminal:"
 
 ```bash
 # Claude Code
@@ -301,7 +301,7 @@ opencode --version 2>/dev/null && echo "✅ OpenCode ready" || true
 | Proceeding after user says N | Stop immediately, show manual commands only |
 | Declaring success before verifying | Run STEP 6 first |
 | `npm install -g @anthropic-ai/claude-code` | Use native installer: `curl -fsSL https://claude.ai/install.sh \| bash` |
-| Installing AI tools without asking | Always confirm which tools user wants: Claude Code / OpenCode / Nenhuma |
+| Installing AI tools without asking | Always confirm which tools user wants: Claude Code / OpenCode / None |
 | Running sudo/apt/brew via Bash tool | Agent hangs — sudo requires password. SHOW commands, user runs manually |
 | Running `gh auth login` via Bash tool | Agent hangs — interactive prompt. SHOW command, guide user step by step |
 | Running `curl \| bash` via Bash tool | Agent hangs — interactive installer. SHOW command, user runs manually |

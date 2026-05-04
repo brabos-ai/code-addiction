@@ -13,7 +13,7 @@ For doc-specific concerns (schemas, word caps per section, zone budgets, validat
 
 ## Spec
 
-{"abbrev":{"cmd":"command","sk":"skill","sc":"script","cfg":"config","dep":"dependency","req":"required","opt":"optional","desc":"description","impl":"implementation","ref":"reference","doc":"documentation","fn":"function","param":"parameter","ret":"return","err":"error","msg":"message","ctx":"context","val":"value","obj":"object","arr":"array","str":"string","num":"number","bool":"boolean"},"targets":{"skill_core":"<200 words","skill_ref":"<500 words","cmd":"<300 words core","changelog":"<150 words"},"compression":{"structured_data":"JSON minificado","human_instructions":"markdown lists (do/dont/rules)","tables":"APENAS output final","json":"minified, no spaces","code":"no decorative comments","paths":"glob patterns","examples":"1 excellent > 3 mediocre"}}
+{"abbrev":{"cmd":"command","sk":"skill","sc":"script","cfg":"config","dep":"dependency","req":"required","opt":"optional","desc":"description","impl":"implementation","ref":"reference","doc":"documentation","fn":"function","param":"parameter","ret":"return","err":"error","msg":"message","ctx":"context","val":"value","obj":"object","arr":"array","str":"string","num":"number","bool":"boolean"},"targets":{"skill_core":"<200 words","skill_ref":"<500 words","cmd":"<300 words core","changelog":"<150 words"},"compression":{"structured_data":"minified JSON","human_instructions":"markdown lists (do/dont/rules)","tables":"final output only","json":"minified, no spaces","code":"no decorative comments","paths":"glob patterns","examples":"1 excellent > 3 mediocre"}}
 
 ---
 
@@ -154,7 +154,7 @@ Agent: analyze→understand→design→implement
 
 ## Anti-Patterns
 
-{"verbose_explanations":"compress to 1-2 sentences","repeated_concepts":"reference first occurrence","decorative_formatting":"remove ASCII art, excessive dashes","full_words":"use abbrev table","inline_examples":">5 lines = separate file","redundant_headers":"merge related sections","tables_in_resources":"JSON para dados, tabelas só em output final","json_for_instructions":"use markdown lists para do/dont/rules"}
+{"verbose_explanations":"compress to 1-2 sentences","repeated_concepts":"reference first occurrence","decorative_formatting":"remove ASCII art, excessive dashes","full_words":"use abbrev table","inline_examples":">5 lines = separate file","redundant_headers":"merge related sections","tables_in_resources":"JSON for data, tables only in final output","json_for_instructions":"use markdown lists for do/dont/rules"}
 
 ---
 
@@ -164,8 +164,8 @@ Before finalizing ANY resource:
 
 ```
 [ ] JSON specs minified?
-[ ] JSON para dados, markdown lists para instruções?
-[ ] Tabelas só em output final ao usuário?
+[ ] JSON for data, markdown lists for instructions?
+[ ] Tables only in final output to user?
 [ ] Paths use glob patterns?
 [ ] No decorative formatting?
 [ ] Abbreviations applied?
@@ -184,7 +184,7 @@ Before finalizing ANY resource:
 
 ## Quick Compression Reference
 
-{"text":"max 20 words/item, 100 words/paragraph","code":"inline if <10 lines, file if >10","json":"minified, para dados estruturados","instructions":"markdown lists para do/dont/rules","tables":"APENAS output final","examples":"1 per concept","headers":"no emojis","paths":"glob > explicit list"}
+{"text":"max 20 words/item, 100 words/paragraph","code":"inline if <10 lines, file if >10","json":"minified, for structured data","instructions":"markdown lists for do/dont/rules","tables":"final output only","examples":"1 per concept","headers":"no emojis","paths":"glob > explicit list"}
 
 ---
 
