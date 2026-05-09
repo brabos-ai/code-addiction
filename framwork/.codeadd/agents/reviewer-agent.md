@@ -2,7 +2,6 @@
 name: reviewer-agent
 description: Code review specialist for quality, security (OWASP), architecture compliance, and best practices. Use proactively after code changes. Read-only — analyzes and reports, never modifies code.
 model: sonnet
-disallowedTools: Write, Edit, NotebookEdit
 skills:
   - add-code-review
   - add-security-audit

@@ -2,7 +2,6 @@
 name: ux-agent
 description: UX specialist for design decisions, interface analysis, and interaction patterns. Use when evaluating frontend behavior, proposing UX improvements, creating design specs, or during brainstorms involving user experience. Use proactively when design.md exists.
 model: sonnet
-tools: Read, Glob, Grep, Bash, Write, Edit
 skills:
   - add-ux-design
 memory: project

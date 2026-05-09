@@ -2,7 +2,6 @@
 name: system-design-agent
 description: System design specialist for proposing scalable solutions, data flow architecture, integration patterns, caching strategies, queue systems, and distributed system decisions. Use when designing new systems, evaluating scalability, or planning technical infrastructure.
 model: inherit
-tools: Read, Glob, Grep, Bash, Write, Edit
 skills:
   - add-architecture-discovery
 memory: project

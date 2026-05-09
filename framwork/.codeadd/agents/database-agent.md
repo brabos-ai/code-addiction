@@ -2,7 +2,6 @@
 name: database-agent
 description: Database specialist for schema design, migrations, entity modeling, query optimization, and data integrity. Use when designing database schemas, creating migrations, or optimizing queries.
 model: sonnet
-tools: Read, Glob, Grep, Bash, Write, Edit
 skills:
   - add-database-development
 memory: project
