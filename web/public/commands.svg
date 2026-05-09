@@ -108,19 +108,6 @@
   <text x="716" y="282" class="cmd-name">/add.pr</text>
   <text x="716" y="294" class="cmd-desc">Create PR for code review</text>
 
-  <!-- CONTENT GROUP -->
-  <rect x="680" y="338" width="300" height="150" class="group-bg"/>
-  <text x="700" y="364" class="group-title">CONTENT</text>
-  <line x1="700" y1="372" x2="960" y2="372" class="cat-line"/>
-
-  <rect x="700" y="384" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="402" class="cmd-name">/add.copy</text>
-  <text x="716" y="414" class="cmd-desc">SaaS copy generator</text>
-
-  <rect x="700" y="428" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="446" class="cmd-name">/add.landing</text>
-  <text x="716" y="458" class="cmd-desc">High-conversion landing pages</text>
-
   <!-- UTILITIES GROUP -->
   <rect x="20" y="440" width="310" height="200" class="group-bg"/>
   <text x="40" y="466" class="group-title">UTILITIES</text>

@@ -19,13 +19,11 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
 | add.build | Development Execution Specialist | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.commit | Mid-workflow smart commit with adaptive Conventional Commits message: ≤3 files → single line, >3 → module list | add-commit |
-| add.copy | Structured copy generator for SaaS landing pages | add-saas-copy, add-ecosystem |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology (disambiguation, RCA, patterns, differential diagnosis, synthesis) and recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
-| add.landing | High-conversion SaaS landing page builder | add-landing-page-saas, add-ecosystem |
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
 | add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.pr | Create PR for code review (without finalizing feature). Used standalone or referenced by add.done when branch protection active | - |
@@ -47,9 +45,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass | add.review |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code | add |
-| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose, add.copy, add.landing |
+| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose |
 | add-documentation-style | [REMOVED in v0.3.0] Consolidate into add-claude-md-style for CLAUDE.md generation | - |
-| add-ecosystem | Consolidated ecosystem view (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.copy, add.landing, add.xray, add.diagnose |
+| add-ecosystem | Consolidated ecosystem view (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.xray, add.diagnose |
 | add-feature-discovery | Feature discovery process, codebase analysis | add.new, add.plan |
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria | add.new |
 | add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
@@ -57,14 +55,12 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-health-check | Health check of environment and project dependencies | add.audit |
 | add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) | add.plan, add.build, add.hotfix, add.done |
 | add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add.diagnose, add.hotfix, add.review, add.audit |
-| add-landing-page-saas | High-conversion SaaS landing page framework | add.landing |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
 | add-plan-based-features | Implement subscription plan-based features | - |
 | add-planning | Technical planning orchestration | - |
 | add-product-discovery | Product discovery (macro level) | add.init |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration | - |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers | - |
-| add-saas-copy | Copy frameworks and templates for SaaS landing pages | add.copy |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy | add.audit, add.review |
 | add-skill-creator | Create and test skills under real pressure | - |
 | add-stripe | Stripe integration, price versioning, grandfathering | - |
@@ -85,7 +81,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-security-audit | add.audit, add.review |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
-| add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose, add.copy, add.landing |
+| add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose |
 | add-architecture-discovery | add.audit, add.xray |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
@@ -145,9 +141,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.done | was feature, back on main | `/add.new` | Start next feature |
 | add.done | was epic, more subfeatures | `/add.build feature N` | Next subfeature |
 | add.done | was hotfix | `/add.new` | Return to feature work |
-| add.copy | has landing page to build | `/add.landing` | Copy feeds the landing builder |
-| add.copy | standalone copy task | done | Copy delivered |
-| add.landing | always | `/add.commit` or `/add.done` | Landing built, commit or finalize |
 | add.ux | within active feature | return to current flow | UX applied, resume workflow |
 | add.ux | standalone | done | One-off UX task |
 | add.xray | issues found | `/add.audit` | Deep health check |
