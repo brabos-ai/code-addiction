@@ -134,7 +134,7 @@ framework: [detected framework]
 
 ## TL;DR
 
-[≤60 words: framework, key libraries, patterns count. Extractive only.]
+[Brief by genre — framework, key libraries, patterns count. Extractive only. Stop when the three are covered. No length number applies.]
 
 ## TOC
 
@@ -253,7 +253,7 @@ Co-location: [styles/tests next to component?]
 Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
 ```
 
-**CRITICAL:** Skip sections that don't exist. Each ## chunk ~100-150 words max. Code examples always with `// path:line` comment. TOC only includes sections that exist.
+**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist.
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing hooks/components and violating established patterns. Prioritize discovering these over documenting library configs.
 

@@ -118,7 +118,7 @@ engine: [detected database engine]
 
 ## TL;DR
 
-[≤60 words: engine, ORM, migration tool, patterns count. Extractive only.]
+[Brief by genre — engine, ORM, migration tool, patterns count. Extractive only. Stop when those are covered. No length number applies.]
 
 ## TOC
 
@@ -199,7 +199,7 @@ New entity registration: [how to register with ORM]
 Config: `{"file":"[path]","run":"[command]"}`
 ```
 
-**CRITICAL:** Skip sections that don't exist. Each ## chunk ~100-150 words max. Code examples always with `// path:line` comment. TOC only includes sections that exist.
+**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist.
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Database Conventions are the highest-value sections — they prevent agents from writing raw queries when helpers exist, and ensure new entities/migrations follow the established pattern.
 

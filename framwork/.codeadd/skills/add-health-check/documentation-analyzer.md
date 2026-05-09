@@ -69,8 +69,8 @@ cat {{skill:add-claude-md-style/SKILL.md}}
 ```
 
 **Compliance checklist:**
-- [ ] Brevity: ~500 words max
-- [ ] No extensive code blocks (>10 lines)
+- [ ] Density: every sentence is fact, decision, constraint, link, or signal — no filler.
+- [ ] No extensive code blocks (link by `path:line` instead).
 - [ ] Specific and verifiable paths
 - [ ] Dependency versions included
 - [ ] Language: English (technical terms as-is)

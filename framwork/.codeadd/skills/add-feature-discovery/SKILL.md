@@ -13,7 +13,7 @@ Skill for technical codebase analysis focused on a specific feature. Persists an
 
 ## Spec
 
-{"trigger":"analyze codebase for feature","output":"docs/features/[ID]/discovery.md","style":"documentation-style/business.md","cache":{"location":"discovery.md","check":"metadata.updated","ttl":"until codebase changes"},"required":["token-efficiency","documentation-style/cache"]}
+{"trigger":"analyze codebase for feature","output":"docs/features/[ID]/discovery.md","schema":"add-doc-schemas/references/new-feature.md","cache":{"location":"discovery.md","check":"metadata.updated","ttl":"until codebase changes"},"required":["token-efficiency","add-doc-schemas"]}
 
 ---
 

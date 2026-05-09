@@ -198,9 +198,9 @@ Read: .codeadd/temp/architecture-discovery.md
 3. WRITE file to .codeadd/skills/project-patterns/[TYPE].md
    - Use lowercase area type as filename (backend.md, frontend.md)
    - Include YAML frontmatter: area, generated, app-path, framework
-   - Include ## TL;DR (≤60 words, extractive)
+   - Include ## TL;DR (extractive — what the doc is, why it exists, headline outcome; stop when those three are covered; no length number applies)
    - Include ## TOC if >3 sections
-   - Each ## chunk: topic sentence first, ~100-150 words, 1 real code example with // path:line
+   - Each ## chunk: topic sentence first, then extractive content; split by sub-heading rather than truncate when a chunk grows past a natural boundary; 1 real code example with // path:line; no length number applies
 
 ## RULES
 - No questions - use best judgment
@@ -245,10 +245,10 @@ Read: .codeadd/temp/architecture-discovery.md
 3. WRITE file to .codeadd/skills/project-patterns/[TYPE].md
    - Use lowercase area type as filename (cli.md, worker.md)
    - Include YAML frontmatter: area, generated, app-path, framework
-   - Include ## TL;DR (≤60 words, extractive)
+   - Include ## TL;DR (extractive — what the doc is, why it exists, headline outcome; stop when those three are covered; no length number applies)
    - Include ## TOC if >3 sections
    - Sections: App Nature, Structure, Entry Points, Dependencies, Configuration, Commands/Jobs
-   - Each ## chunk: topic sentence first, ~100-150 words
+   - Each ## chunk: topic sentence first, then extractive content; split by sub-heading rather than truncate when a chunk grows past a natural boundary; no length number applies
 
 ## RULES
 - No questions - use best judgment
@@ -413,9 +413,9 @@ bash .codeadd/scripts/pattern-search.sh backend logging
 
 Each area file follows context engineering principles:
 - YAML frontmatter (area, generated, app-path, framework)
-- ## TL;DR (≤60 words, extractive)
+- ## TL;DR (extractive — what the doc is, why it exists, headline outcome; stop when those three are covered)
 - ## TOC (flat anchor list)
-- ## [Topic] chunks (~100-150 words, topic sentence first, 1 code example with path:line)
+- ## [Topic] chunks (topic sentence first, then extractive content; 1 code example with path:line; split by sub-heading when a chunk grows past a natural boundary)
 
 ## Generated
 

@@ -9,11 +9,11 @@ description: Use when creating commands, skills, or docs — defines generic com
 
 Every token counts. Resources must be compressed without losing clarity. This skill defines mandatory compression patterns for all ADD outputs (commands, skills, scripts, docs).
 
-For doc-specific concerns (schemas, word caps per section, zone budgets, validation gate), see `{{skill:add-doc-schemas/SKILL.md}}`.
+For doc-specific concerns (schemas, depth floors, output-length doctrine, validation gate), see `{{skill:add-doc-schemas/SKILL.md}}`. Output length is governed there — this skill covers compression *patterns* only.
 
 ## Spec
 
-{"abbrev":{"cmd":"command","sk":"skill","sc":"script","cfg":"config","dep":"dependency","req":"required","opt":"optional","desc":"description","impl":"implementation","ref":"reference","doc":"documentation","fn":"function","param":"parameter","ret":"return","err":"error","msg":"message","ctx":"context","val":"value","obj":"object","arr":"array","str":"string","num":"number","bool":"boolean"},"targets":{"skill_core":"<200 words","skill_ref":"<500 words","cmd":"<300 words core","changelog":"<150 words"},"compression":{"structured_data":"minified JSON","human_instructions":"markdown lists (do/dont/rules)","tables":"final output only","json":"minified, no spaces","code":"no decorative comments","paths":"glob patterns","examples":"1 excellent > 3 mediocre"}}
+{"abbrev":{"cmd":"command","sk":"skill","sc":"script","cfg":"config","dep":"dependency","req":"required","opt":"optional","desc":"description","impl":"implementation","ref":"reference","doc":"documentation","fn":"function","param":"parameter","ret":"return","err":"error","msg":"message","ctx":"context","val":"value","obj":"object","arr":"array","str":"string","num":"number","bool":"boolean"},"compression":{"structured_data":"minified JSON","human_instructions":"markdown lists (do/dont/rules)","tables":"final output only","json":"minified, no spaces","code":"no decorative comments","paths":"glob patterns","examples":"1 excellent > 3 mediocre"}}
 
 ---
 
@@ -154,7 +154,7 @@ Agent: analyze→understand→design→implement
 
 ## Anti-Patterns
 
-{"verbose_explanations":"compress to 1-2 sentences","repeated_concepts":"reference first occurrence","decorative_formatting":"remove ASCII art, excessive dashes","full_words":"use abbrev table","inline_examples":">5 lines = separate file","redundant_headers":"merge related sections","tables_in_resources":"JSON for data, tables only in final output","json_for_instructions":"use markdown lists for do/dont/rules"}
+{"verbose_explanations":"compress to dense bullets","repeated_concepts":"reference first occurrence","decorative_formatting":"remove ASCII art, excessive dashes","full_words":"use abbrev table","inline_examples":"large blocks = separate file","redundant_headers":"merge related sections","tables_in_resources":"JSON for data, tables only in final output","json_for_instructions":"use markdown lists for do/dont/rules","length_caps":"never publish <N words / <N chars on agent-generated content; output length is governed by depth floors in add-doc-schemas"}
 
 ---
 
@@ -176,20 +176,17 @@ Before finalizing ANY resource:
 
 ---
 
-## Word Count Targets
-
-{"targets":{"skill_core":"<200","skill_max":"<500","cmd_core":"<300","cmd_max":"<500","changelog_core":"<100","changelog_max":"<150","script_header":"<50-100"}}
-
----
-
 ## Quick Compression Reference
 
-{"text":"max 20 words/item, 100 words/paragraph","code":"inline if <10 lines, file if >10","json":"minified, for structured data","instructions":"markdown lists for do/dont/rules","tables":"final output only","examples":"1 per concept","headers":"no emojis","paths":"glob > explicit list"}
+{"code":"inline if short, file if long","json":"minified, for structured data","instructions":"markdown lists for do/dont/rules","tables":"final output only","examples":"1 per concept","headers":"no emojis","paths":"glob > explicit list"}
+
+> **Output length is NOT governed here.** Numeric caps on agent-generated content (`<N words`, `<N chars`, `~N-N words`) are prohibited per `{{skill:add-doc-schemas/SKILL.md}}`. Use depth floors and density.
 
 ---
 
 ## Cross-references
 
-- `{{skill:add-doc-schemas/SKILL.md}}` — schemas, word caps, zone budgets, validation gate (authority for all doc structure)
+- `{{skill:add-doc-schemas/SKILL.md}}` — **authority on output length and doc structure** (depth floors, density, validation gate, schemas by category). This skill covers compression *patterns* only; length is governed there.
 - `{{skill:add-claude-md-style/SKILL.md}}` — CLAUDE.md generation rules
 - `{{doc:PRD0009}}` — Documentation Context Engineering PRD
+- `{{doc:PRD0019}}` — Documentation Standards Refactor (length-cap removal, schemas by category)

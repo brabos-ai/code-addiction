@@ -13,7 +13,7 @@ Skill for documenting feature specifications. Creates/updates `about.md` with re
 
 ## Spec
 
-{"trigger":"document feature requirements","output":"docs/features/[ID]/about.md","style":"documentation-style/business.md","focus":"business rules, scope, decisions","required":["token-efficiency","documentation-style/cache"]}
+{"trigger":"document feature requirements","output":"docs/features/[ID]/about.md","schema":"add-doc-schemas/references/new-feature.md","focus":"business rules, scope, decisions","required":["token-efficiency","add-doc-schemas"]}
 
 ---
 

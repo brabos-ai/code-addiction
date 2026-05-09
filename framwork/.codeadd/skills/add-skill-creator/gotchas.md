@@ -92,9 +92,9 @@ description: Use when implementing any feature, before writing code
 
 ### Skill Loaded Every Conversation = Token Drain
 
-- Frequently-loaded skills: <200 words
-- All others: <500 words
-- Move details to `references/` files
+- Each section meets its content requirement and stops there — no padding, no narrative restating the heading.
+- Frequently-loaded skills carry only what every consumer needs; everything else lives in `references/` for JIT loading.
+- No numeric word or character cap applies — density (every sentence is a fact, decision, constraint, link, or signal) is the rule. See `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine.
 
 ### Don't Duplicate CLI Help
 

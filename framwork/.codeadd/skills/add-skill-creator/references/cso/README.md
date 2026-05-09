@@ -48,10 +48,11 @@ description: Use when generating commit messages or reviewing staged changes
 
 **Problem**: Frequently-loaded skills consume tokens in EVERY conversation.
 
-**Target word counts**:
+**Discipline**:
 
-- Frequently-loaded skills: <200 words total
-- Other skills: <500 words
+- Frequently-loaded skills carry only what every consumer needs. Everything else (examples, edge cases, expanded notation) goes into `references/` and loads JIT.
+- Each section meets its content requirement and stops there — no padding, no restating the heading. Density (fact / decision / constraint / link / signal per sentence) is the rule.
+- No numeric word or character cap applies. Output length is governed by depth floors per `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ### Techniques
 
@@ -220,14 +221,14 @@ See test-driven-development skill for context.
 Before deploying:
 
 - [ ] Description starts with "Use when..."?
-- [ ] Description is <500 characters?
+- [ ] Description fits within Anthropic SDK platform constraint (1024 chars; see `anthropic-best-practices.md`)?
 - [ ] Description lists ONLY triggers, not workflow?
 - [ ] Includes 3+ keywords (errors/symptoms/tools)?
 - [ ] Third person throughout?
 - [ ] Name uses gerund or verb-first format?
 - [ ] Name has only letters, numbers, hyphens?
 - [ ] No @ syntax for cross-references?
-- [ ] Word count <200 (frequent) or <500 (other)?
+- [ ] Every section meets its content requirement and stops there — no filler, no padding (no numeric word/char cap; see `{{skill:add-doc-schemas/SKILL.md}}`)?
 
 ## Real-World Examples
 
