@@ -105,8 +105,8 @@
   <text x="716" y="250" class="cmd-desc">Changelog, docs, finalize</text>
 
   <rect x="700" y="264" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="282" class="cmd-name">/add.pr</text>
-  <text x="716" y="294" class="cmd-desc">Create PR for code review</text>
+  <text x="716" y="282" class="cmd-name">/add.pull-request</text>
+  <text x="716" y="294" class="cmd-desc">Idempotent PR — create or append update</text>
 
   <!-- UTILITIES GROUP -->
   <rect x="20" y="440" width="310" height="200" class="group-bg"/>

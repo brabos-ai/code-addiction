@@ -269,8 +269,8 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Changelog, docs, finalize. Routes to PR or merge</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.pr</code>
-                <p class="text-muted text-xs mt-0.5">Create PR for code review</p>
+                <code class="text-accent font-mono text-sm">/add.pull-request</code>
+                <p class="text-muted text-xs mt-0.5">Idempotent PR — creates new PR or appends update section if one is already open. Generates feature changelog on feature branches</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm" style="color:#ff4444">/add.hotfix</code>
@@ -290,10 +290,6 @@ import "../styles/global.css";
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.ux</code>
                 <p class="text-muted text-xs mt-0.5">Quick UX — loads ux-design for free context</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.commit</code>
-                <p class="text-muted text-xs mt-0.5">Mid-workflow smart commit with Conventional Commits message</p>
               </div>
             </div>
           </div>
@@ -528,8 +524,6 @@ import "../styles/global.css";
             { name: "architecture-discovery", desc: "Map architecture, detect patterns, stack-context.md" },
             { name: "delivery-validation", desc: "Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass" },
             { name: "subagent-driven-development", desc: "Coordinate subagents with quality gates" },
-            { name: "landing-page-saas", desc: "High-conversion landing page framework" },
-            { name: "saas-copy", desc: "Copy frameworks and templates for SaaS" },
             { name: "add-tasks-checklist", desc: "Use when generating, reading, or ticking tasks.md — defines the canonical 5-section schema, tick rules per section, failure marker semantics, 'non-trivial change' rule, and the architect subagent prompt template" },
             { name: "stripe", desc: "Stripe integration, price versioning, grandfathering" },
             { name: "token-efficiency", desc: "Compression, compact JSON, minimal tokens" },
@@ -789,7 +783,6 @@ import "../styles/global.css";
         {data:{id:'add.autopilot',label:'add.autopilot',type:'command'}},
         {data:{id:'add.brainstorm',label:'add.brainstorm',type:'command'}},
         {data:{id:'add.build',label:'add.build',type:'command'}},
-        {data:{id:'add.commit',label:'add.commit',type:'command'}},
         {data:{id:'add.design',label:'add.design',type:'command'}},
         {data:{id:'add.diagnose',label:'add.diagnose',type:'command'}},
         {data:{id:'add.done',label:'add.done',type:'command'}},
@@ -797,7 +790,7 @@ import "../styles/global.css";
         {data:{id:'add.init',label:'add.init',type:'command'}},
         {data:{id:'add.new',label:'add.new',type:'command'}},
         {data:{id:'add.plan',label:'add.plan',type:'command'}},
-        {data:{id:'add.pr',label:'add.pr',type:'command'}},
+        {data:{id:'add.pull-request',label:'add.pull-request',type:'command'}},
         {data:{id:'add.review',label:'add.review',type:'command'}},
         {data:{id:'add.test',label:'add.test',type:'command'}},
         {data:{id:'add.ux',label:'add.ux',type:'command'}},
@@ -863,7 +856,6 @@ import "../styles/global.css";
         ['add.build','add-database-development','loads'],
         ['add.build','add-backend-development','loads'],
         ['add.build','add-frontend-development','loads'],
-        ['add.commit','add-commit','loads'],
         ['add.design','add-doc-schemas','loads'],
         ['add.design','add-id-convention','loads'],
         ['add.design','add-ux-design','loads'],
