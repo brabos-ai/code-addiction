@@ -1,14 +1,18 @@
 ---
 name: add-health-check
 description: |
-  Tech health check: documentation, security, architecture, data analysis.
+  Tech health check: documentation, security, architecture, data analysis. Use when user requests project audit, tech debt review, or health check.
 ---
 
 # Health Check
 
-Suite of skills for complete technical analysis of the project.
+Suite of skills for complete technical analysis of the project. Always consult `CLAUDE.md` for general project standards.
 
-**Reference:** Always consult `CLAUDE.md` for general project standards.
+## When NOT to Use
+
+- Single-file or single-function review (use code-review)
+- Security-only audit (use add-security-audit)
+- Code-review tasks on PRs or diffs
 
 ---
 
@@ -34,55 +38,40 @@ Suite of skills for complete technical analysis of the project.
 
 ## Criticality
 
-{"pillars":[{"name":"Documentation","level":"🔴 Critical","reason":"impacts AI dev quality"},{"name":"Security","level":"🔴 Critical","reason":"data leaks, privacy"},{"name":"Architecture","level":"🟠 High","reason":"accumulating tech debt"},{"name":"Data","level":"🟡 Medium","reason":"performance, consistency"},{"name":"Infrastructure","level":"🔵 Info","reason":"prerequisite for analysis"}]}
+| Pillar | Level | Reason |
+|--------|-------|--------|
+| Documentation | 🔴 Critical | impacts AI dev quality |
+| Security | 🔴 Critical | data leaks, privacy |
+| Architecture | 🟠 High | accumulating tech debt |
+| Data | 🟡 Medium | performance, consistency |
+| Infrastructure | 🔵 Info | prerequisite for analysis |
 
 ---
 
 ## Skills
 
-{"phase1":[{"skill":"context-discovery","output":"context-discovery.md"},{"skill":"documentation-analyzer","output":"documentation-report.md"},{"skill":"infrastructure-check","output":"infrastructure-report.md"}]}
+Phase 1: `context-discovery` → context-discovery.md; `documentation-analyzer` → documentation-report.md; `infrastructure-check` → infrastructure-report.md.
 
-{"phase2":[{"skill":"security-analyzer","deps":"context,infrastructure","output":"security-report.md"},{"skill":"architecture-analyzer","deps":"context","output":"architecture-report.md"},{"skill":"data-analyzer","deps":"context,infrastructure","output":"data-report.md"}]}
-
----
-
-## Output
-
-{"folder":"docs/health-checks/YYYY-MM-DD/"}
-
-{"files":["context-discovery.md","documentation-report.md","infrastructure-report.md","security-report.md","architecture-report.md","data-report.md","HEALTH-REPORT.md"]}
+Phase 2: `security-analyzer` (deps: context, infrastructure) → security-report.md; `architecture-analyzer` (deps: context) → architecture-report.md; `data-analyzer` (deps: context, infrastructure) → data-report.md.
 
 ---
 
-## Usage
+## Usage & Output
 
 ```bash
 /tech-health-check
 ```
 
-### Process
-1. Create folder with current date
-2. Run Phase 1 agents in parallel
-3. Wait completion
-4. Run Phase 2 agents in parallel (with Phase 1 context)
-5. Wait completion
-6. Consolidate in HEALTH-REPORT.md
+Process:
+1. Create folder `docs/health-checks/YYYY-MM-DD/` with current date
+2. Run Phase 1 agents in parallel; wait completion
+3. Run Phase 2 agents in parallel (with Phase 1 context); wait completion
+4. Consolidate in HEALTH-REPORT.md
 
----
-
-## Audience
-
-Entrepreneurs who:
-- Use vibe coding
-- Don't understand technical details
-- Need clear adjustment roadmap
-- Want prioritization: critical → desirable
+Output files: `context-discovery.md`, `documentation-report.md`, `infrastructure-report.md`, `security-report.md`, `architecture-report.md`, `data-report.md`, `HEALTH-REPORT.md`.
 
 ---
 
 ## Language
 
-{"reports":"language from owner.md, default English"}
-{"techTerms":"EN"}
-{"style":"accessible for non-technical"}
-{"glossary":"included in HEALTH-REPORT.md"}
+Reports written for entrepreneurs who may not be technical — accessible style, prioritized critical → desirable. Language follows `owner.md` (default English); technical terms stay in EN; glossary included in HEALTH-REPORT.md.

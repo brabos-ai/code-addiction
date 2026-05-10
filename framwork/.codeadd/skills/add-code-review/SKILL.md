@@ -1,6 +1,6 @@
 ---
 name: add-code-review
-description: Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID.
+description: 'Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID.'
 ---
 
 # Code Review
@@ -8,13 +8,17 @@ description: Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Archi
 Skill for validating implemented code against project standards.
 
 **Use for:** Validate code, identify violations, auto-fix (autopilot)
-**Do not use for:** Implementing code, planning, discovery
+**Do not use for:**
+
+- Implementing new features (use `add-backend-development` / `add-frontend-development`)
+- Planning or specifying work (use `add-planning` / `add-feature-specification`)
+- Codebase discovery or architecture analysis (use `add-feature-discovery` / `add-architecture-discovery`)
 
 **Reference:** Always consult `CLAUDE.md` for general project standards.
 
 ---
 
-## ⚠️ MANDATORY RULE: TodoWrite
+## MANDATORY RULE: TodoWrite
 
 **BEFORE starting any review, you MUST create a todo list using TodoWrite.**
 
@@ -40,7 +44,7 @@ The code-review agent MUST create todos for each validation category and for eac
 
 ## Validation Categories
 
-### 0. Spec Compliance (CRITICAL)
+### 1. Spec Compliance (CRITICAL)
 
 **Spec vs implementation gap = the root cause of features that "pass review" but diverge from what was planned.**
 
@@ -77,7 +81,7 @@ Spec Compliance scoring:
 
 ---
 
-### 0.5. Architecture Contract (MOST CRITICAL)
+### 2. Architecture Contract (MOST CRITICAL)
 
 **Architecture violation = CRITICAL BLOCKER. Fix BEFORE any other validation.**
 
@@ -96,65 +100,21 @@ Examples:
 
 | Violation | Fix |
 |---|---|
-| `interfaces` importa `database` | Mover artefato ou ajustar import |
-| DTO de service contract em `database` | Mover DTO para `interfaces` |
-| `domain` importa qualquer coisa | Remover import — `domain` tem zero deps |
+| `interfaces` imports `database` | Move artefact or adjust import |
+| Service-contract DTO in `database` | Move DTO to `interfaces` |
+| `domain` imports anything | Remove import — `domain` has zero deps |
 
 ---
 
-### 1. IoC Configuration (CRITICAL)
+### 3. IoC Configuration (CRITICAL)
 
 **Code without correct IoC does NOT work at runtime.**
 
-#### Checklist por tipo de componente (lookup)
+#### Checklist by component type (lookup)
 
 {"iocChecklist":{"Service":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":false},"Repository":{"decorator":"@Injectable()","providers":"db module","exports":"db module","controllers":false,"indexTs":"libs/"},"Handler":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":"NEVER"},"Guard":{"decorator":"@Injectable()","providers":"feature/global","exports":false,"controllers":false,"indexTs":false},"Controller":{"decorator":"@Controller()","providers":false,"exports":false,"controllers":"feature module","indexTs":false}}}
 
-#### Mandatory IoC Validations
-
-**Service:**
-
-- Has `@Injectable()`
-- Registered in module `providers[]`
-- Module imported in `AppModule.imports[]`
-
-**Repository:**
-
-- Has `@Injectable()`
-- Registered in database module `providers[]`
-- Registered in database module `exports[]`
-- Exported in `libs/app-database/src/index.ts`
-- Type added in `Database.ts` if new table
-
-**CommandHandler:**
-
-- Has `@Injectable()`
-- Registered in feature module `providers[]`
-- NOT exported in `index.ts` (implementation detail)
-- `Command` exported (public contract)
-
-**EventHandler:**
-
-- Has `@Injectable()`
-- Registered in feature module `providers[]`
-- NOT exported in `index.ts` (implementation detail)
-- `Event` exported if cross-module
-
-**Controller:**
-
-- Has `@Controller('prefix')`
-- Registered in module `controllers[]`
-- Guards applied (`@UseGuards`)
-- Module imported in `AppModule.imports[]`
-
-**Module:**
-
-- Imports required modules (`SharedModule`, `DatabaseModule`)
-- Registers all providers
-- Registers all controllers
-- Imported in `AppModule.imports[]`
-
-#### Arquivos a verificar para IoC
+#### Files to verify for IoC
 
 | File | Check |
 |---|---|
@@ -167,7 +127,7 @@ Examples:
 
 #### Common IoC Errors
 
-| Erro | Causa | Fix |
+| Error | Cause | Fix |
 |---|---|---|
 | `Nest can't resolve dependencies of X` | `X` not in `providers[]` or `X`'s dependency not registered | Add `X` and its dependencies to `providers[]` |
 | `X is not a provider` | Missing `@Injectable()` or not registered | Add decorator and register in `providers[]` |
@@ -177,7 +137,7 @@ Examples:
 
 ---
 
-### 2. RESTful Compliance (CRITICAL)
+### 4. RESTful Compliance (CRITICAL)
 
 | Rule | Correct | Wrong |
 |---|---|---|
@@ -187,7 +147,7 @@ Examples:
 
 ---
 
-### 3. Contract Validation (CRITICAL)
+### 5. Contract Validation (CRITICAL)
 
 Frontend ↔ Backend:
 
@@ -206,7 +166,7 @@ JSONB rules:
 
 ---
 
-### 4. Security (OWASP)
+### 6. Security (OWASP)
 
 | Category | Check |
 |---|---|
@@ -223,7 +183,7 @@ Multi-tenant:
 
 ---
 
-### 5. SOLID Principles
+### 7. SOLID Principles
 
 - **SRP:** one class, one responsibility
 - **OCP:** open for extension, closed for modification
@@ -233,7 +193,7 @@ Multi-tenant:
 
 ---
 
-### 6. Code Quality
+### 8. Code Quality
 
 - No `any` type
 - DTOs follow naming
@@ -244,7 +204,7 @@ Multi-tenant:
 
 ---
 
-### 7. Database
+### 9. Database
 
 - Migration created
 - Has `up` and `down`
@@ -254,7 +214,7 @@ Multi-tenant:
 
 ---
 
-### 8. Environment
+### 10. Environment
 
 - New vars in `.env.example`
 - Example values not real
@@ -279,72 +239,21 @@ Weights and status (lookup):
 2. Read reference skills (backend, database, frontend, security)
 3. Read `CLAUDE.md`
 4. Identify ALL changed files
+5. Create TodoWrite (see MANDATORY RULE) covering each validation category and changed file
 
-**MANDATORY: Create TodoWrite with validation list:**
+### Phase 2: Validate
 
-```
-Example todos to create:
-- [ ] Load context and identify changed files
-- [ ] Validate Spec Compliance: read contracts from plan.md (prose) and tick state from tasks.md → ## Acceptance Checklist
-- [ ] Validate Spec Compliance: compare routes/services/DTOs vs spec
-- [ ] Validate Architecture Contract: imports between packages
-- [ ] Validate Architecture Contract: artefact placement
-- [ ] Validate IoC: check @Injectable on new services
-- [ ] Validate IoC: check providers[] in modules
-- [ ] Validate IoC: check exports[] for repositories
-- [ ] Validate IoC: check imports[] in AppModule
-- [ ] Validate IoC: check barrel exports (index.ts)
-- [ ] Validate RESTful: correct HTTP methods
-- [ ] Validate RESTful: correct status codes
-- [ ] Validate Contracts: types synchronized frontend/backend
-- [ ] Validate Security: multi-tenancy (account_id)
-- [ ] Validate Security: guards applied
-- [ ] Validate Quality: no any, no console.log
-- [ ] Validate Database: migrations, Kysely types
-- [ ] Fix issues found
-- [ ] Verify build compiles
-- [ ] Generate review report
-```
+For EACH changed file, validate in order, marking each todo `in_progress` → `completed`:
 
-### Phase 2: Validate (com TodoWrite updates)
-
-For EACH changed file, validate in order:
-
-1. **Spec Compliance** (PRIMEIRO — gap spec-vs-code)
-   - Mark todo as `in_progress`
-   - READ contracts from `plan.md` prose (routes, services, DTOs, queues)
-   - READ tick state from `tasks.md → ## Acceptance Checklist` (each item ends with `(RFNN/RNNN)`; cross-reference §1 Requirements Coverage)
-   - For each contract: locate with `file:line`, validate behavior (not just existence)
-   - DIVERGENT items: describe exact gap → auto-fix if safe, else report
-   - MISSING items: report as BLOCKED (cannot auto-fix product scope)
-   - Mark todo as `completed`
-
-2. **Architecture Contract** (second — structural violation)
-   - Mark todo as `in_progress`
-   - Read `## Architecture Contract` from `CLAUDE.md`
-   - For each new/modified file:
-     - [ ] Identify the file's layer/package
-     - [ ] Verify imports of `@org/*` against Import rules
-     - [ ] Verify the artefact is in the correct package (Placement)
-   - If violation found: **CRITICAL BLOCKER** — fix before continuing
-   - Mark todo as `completed`
-
-3. **IoC Configuration** (second most critical)
-   - Mark todo as `in_progress`
-   - For each new component created:
-     - [ ] Verify decorator (`@Injectable`, `@Controller`)
-     - [ ] Verify registration in `providers[]`/`controllers[]`
-     - [ ] Verify `exports[]` if shared
-     - [ ] Verify `index.ts` if in `libs/`
-     - [ ] Verify `AppModule.imports[]`
-   - Mark todo as `completed`
-
-4. **RESTful Compliance**
-5. **Contract Validation**
-6. **Security (OWASP)**
-7. **SOLID Principles**
-8. **Code Quality**
-9. **Database**
+1. **Spec Compliance** — see §1
+2. **Architecture Contract** — see §2 (CRITICAL BLOCKER if violated; fix before continuing)
+3. **IoC Configuration** — see §3
+4. **RESTful Compliance** — see §4
+5. **Contract Validation** — see §5
+6. **Security (OWASP)** — see §6
+7. **SOLID Principles** — see §7
+8. **Code Quality** — see §8
+9. **Database** — see §9
 
 ### Phase 3: Fix (autopilot)
 
@@ -358,45 +267,7 @@ For EACH changed file, validate in order:
 
 ### Phase 4: Report
 
-Create `docs/features/${featureId}/review.md`.
-
----
-
-## Output Template
-
-```markdown
-# Code Review: [Feature]
-
-**Date:** [date] | **Status:** ✅ APPROVED
-
-## Score
-
-| Category | Score | Status |
-|----------|-------|--------|
-| Spec Compliance | X/10 | ✅ |
-| Arch Contract | X/10 | ✅ |
-| IoC | X/10 | ✅ |
-| RESTful | X/10 | ✅ |
-| Contracts | X/10 | ✅ |
-| Security | X/10 | ✅ |
-| SOLID | X/10 | ✅ |
-| Quality | X/10 | ✅ |
-| Database | X/10 | ✅ |
-| **OVERALL** | **X/10** | **✅** |
-
-## Issues Found & Fixed
-
-### Issue #1: [Title]
-**Category:** [cat] | **File:** `path:line` | **Severity:** 🔴 Critical
-
-**Problem:** [code before]
-**Fix:** [code after]
-**Status:** ✅ FIXED
-
-## Build Status
-- [x] Backend compiles
-- [x] Frontend compiles
-```
+Generate the review report at `docs/features/${featureId}/review.md`. The exact output template (score table, issue format, build status) is owned by the consuming command (`add.review`) — this skill validates; the command formats.
 
 ---
 
@@ -404,11 +275,8 @@ Create `docs/features/${featureId}/review.md`.
 
 **Do:**
 
-- CREATE TodoWrite BEFORE starting review
-- Update todos during each phase
-- Mark todo as `in_progress` before starting validation
-- Mark todo as `completed` after finishing validation
-- Load skills BEFORE review
+- Create TodoWrite BEFORE starting review and update it during each phase
+- Load reference skills BEFORE review
 - Run `status.sh` FIRST
 - Auto-fix in autopilot
 - Verify build
@@ -416,51 +284,11 @@ Create `docs/features/${featureId}/review.md`.
 
 **Don't:**
 
-- Start review WITHOUT creating TodoWrite
+- Start review without creating TodoWrite
 - Skip Architecture Contract validation (MOST critical)
 - Skip IoC validation
 - Report without fixing (autopilot)
 - Ignore skill patterns
 - Accept "works" as justification
 - Leave non-compiling code
-- Forget to verify `AppModule.imports[]`
-- Forget to verify barrel exports in `libs/`
-
----
-
-## IoC Quick Reference
-
-**New Service created? Verify:**
-
-1. `@Injectable()` on the service
-2. `providers: [NewService]` in the module
-3. `imports: [FeatureModule]` in `AppModule`
-
-**New Repository created? Verify:**
-
-1. `@Injectable()` on the repository
-2. `providers: [NewRepository]` in `AppDatabaseModule`
-3. `exports: [NewRepository]` in `AppDatabaseModule`
-4. `export { NewRepository }` in `libs/app-database/src/index.ts`
-
-**New Handler created? Verify:**
-
-1. `@Injectable()` on the handler
-2. `providers: [NewHandler]` in the feature module
-3. **DO NOT** export handler in `index.ts` (implementation detail)
-
-**New Controller created? Verify:**
-
-1. `@Controller('prefix')` on the controller
-2. `controllers: [NewController]` in the module
-3. `@UseGuards(JwtAuthGuard)` applied
-4. `imports: [FeatureModule]` in `AppModule`
-
-**New Entity/Enum created? Verify:**
-
-1. `export { NewEntity }` in `libs/domain/src/index.ts`
-
-**New Table created? Verify:**
-
-1. Migration created in `libs/app-database/migrations/`
-2. Type added in `libs/app-database/src/types/Database.ts`
+- Forget to verify `AppModule.imports[]` or barrel exports in `libs/`

@@ -1,30 +1,17 @@
 ---
 name: add-subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session - dispatches fresh subagent for each task with code review between tasks, enabling fast iteration with quality gates. Use this skill whenever coordinating multiple subagents for feature implementation, whether from /add-dev, /add-autopilot, or standalone plan execution.
+description: Use when executing implementation plans via dispatched subagents with code review between tasks.
 ---
 
 # Subagent-Driven Development
 
-Execute plan by dispatching named specialist agents per task, with code review after each.
+Execute a plan by dispatching named specialist agents per task, with code review after each.
 
-**Core principle:** Named agent per task + review between tasks = high quality, fast iteration
+**Core principle:** Named agent per task + review between tasks = high quality, fast iteration.
 
 > **Provider-Agnostic:** This skill describes WHAT to dispatch (intent + prompt), not HOW. Use your platform's subagent mechanism (Task tool, sub-process, agent call, etc.).
 
-## Named Agent Mapping
-
-When dispatching, prefer named agents over generic subagents. Named agents have skills preloaded, model optimized, and tool restrictions enforced.
-
-| Area | Named Agent | Type |
-|------|-------------|------|
-| Database | `@database-agent` | Implementation (read-write) |
-| Backend | `@backend-agent` | Implementation (read-write) |
-| Frontend | `@frontend-agent` | Implementation (read-write) |
-| Review | `@reviewer-agent` | Validation (read-only) |
-| Discovery | `@discovery-agent` | Exploration (read-only) |
-| Architecture | `@architecture-agent` | Advisory (read-only) |
-
-**Fallback:** If named agent is not available, dispatch generic subagent with the appropriate skill loaded in the prompt.
+---
 
 ## Overview
 
@@ -39,10 +26,30 @@ When dispatching, prefer named agents over generic subagents. Named agents have 
 - Tasks are mostly independent
 - Want continuous progress with quality gates
 
-**When NOT to use:**
-- Need to review plan first (use executing-plans)
-- Tasks are tightly coupled (manual execution better)
-- Plan needs revision (brainstorm first)
+## When NOT to Use
+
+- **Plan needs review first** — use `executing-plans` (separate session) so the human can vet the plan before any code is written.
+- **Tasks are tightly coupled** — manual execution avoids the conflict risk of resetting context between dependent steps.
+- **Plan needs revision** — brainstorm/refine first; dispatching subagents over a shaky plan compounds rework.
+- **Single trivial task** — dispatch overhead (TASK_DOCUMENTS, decision log, review) outweighs benefit; just do it inline.
+- **Exploratory / spike work** — no spec to anchor TASK_DOCUMENTS; use a discovery agent instead.
+
+---
+
+## Named Agent Mapping
+
+When dispatching, prefer named agents over generic subagents. Named agents have skills preloaded, model optimized, and tool restrictions enforced.
+
+| Area | Named Agent | Type |
+|------|-------------|------|
+| Database | `@database-agent` | Implementation (read-write) |
+| Backend | `@backend-agent` | Implementation (read-write) |
+| Frontend | `@frontend-agent` | Implementation (read-write) |
+| Review | `@reviewer-agent` | Validation (read-only) |
+| Discovery | `@discovery-agent` | Exploration (read-only) |
+| Architecture | `@architecture-agent` | Advisory (read-only) |
+
+**Fallback:** If a named agent is not available, dispatch a generic subagent with the appropriate skill loaded in the prompt.
 
 ---
 
@@ -80,35 +87,46 @@ The coordinator already knows if it's a simple feature or epic, which subfeature
 
 ## Subagent Prompt Template
 
-All subagent prompts follow this structure:
+All subagent prompts include these fields, in order:
 
+- **ROLE** — `You are the [AREA] [agent type] for task [N].`
+- **TASK_DOCUMENTS** — file paths the subagent must read first (source of truth).
+- **DECISION LOG** — accumulated decisions from previous tasks.
+- **SKILLS** — `MANDATORY:` (always for this area) + `ADDITIONAL:` (detected from context).
+- **COORDINATOR NOTES** — decisions, warnings, patterns to follow/avoid.
+- **TASK** — specific deliverables for this subagent.
+- **REPORT FORMAT** — what to return to the coordinator.
+
+---
+
+## Decision Log (Canonical Format)
+
+The coordinator maintains a single decision log throughout the session, appending after each task.
+
+```markdown
+### DECISION LOG
+<!-- Coordinator maintains, updates after each task -->
+
+#### Session Info
+- Plan: [plan-file location]
+- Started: [timestamp]
+- Working Directory: [path]
+- Tasks: [count]
+
+#### Task N: [task name]
+- Status: completed | in_progress | failed
+- Depends On: [Task IDs, or -]
+- Files Created: [list]
+- Files Modified: [list]
+- Decisions: [from subagent report]
+- Review Score: [X/10]
+
+#### Accumulated Decisions
+- [Decision 1 from Task 1]
+- [Decision 2 from Task 2]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SUBAGENT PROMPT TEMPLATE                     │
-├─────────────────────────────────────────────────────────────────┤
-│  ## ROLE                                                        │
-│  You are the [AREA] [agent type] for task [N].                  │
-│                                                                 │
-│  ## TASK_DOCUMENTS (read ALL before starting — source of truth) │
-│  [List of file paths — subagent reads these directly]           │
-│                                                                 │
-│  ## DECISION LOG (from previous tasks)                          │
-│  [Accumulated decisions from earlier subagents]                 │
-│                                                                 │
-│  ## SKILLS                                                      │
-│  MANDATORY: [always for this area]                              │
-│  ADDITIONAL: [detected from context]                            │
-│                                                                 │
-│  ## COORDINATOR NOTES                                           │
-│  [Decisions, warnings, patterns to follow/avoid]                │
-│                                                                 │
-│  ## TASK                                                        │
-│  [Specific deliverables for this subagent]                      │
-│                                                                 │
-│  ## REPORT FORMAT                                               │
-│  [What to return to coordinator]                                │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+This block is the only canonical decision-log shape — every dispatch (implementer, reviewer, fix) receives an excerpt of it under a `## DECISION LOG` heading.
 
 ---
 
@@ -116,21 +134,11 @@ All subagent prompts follow this structure:
 
 ### 1. Load Plan + Initialize Decision Log
 
-Read plan file, create TodoWrite with all tasks, initialize decision log:
-
-```markdown
-### DECISION LOG
-<!-- Coordinator maintains, updates after each task -->
-
-#### Session Start
-- Plan: [plan-file location]
-- Tasks: [count]
-- Working directory: [path]
-```
+Read the plan file, create TodoWrite with all tasks, write the `Session Info` block of the Decision Log (see canonical format above).
 
 ### 2. Pre-Dispatch Preparation (Coordinator's Job)
 
-Before dispatching ANY subagent, the coordinator:
+Before dispatching ANY subagent:
 
 1. **Assemble TASK_DOCUMENTS** — list all doc paths the subagent needs (epic-aware)
 2. **Identify Reference Files** — find similar files in codebase via Glob/Grep
@@ -139,297 +147,146 @@ Before dispatching ANY subagent, the coordinator:
 
 ### 3. Execute Task with Subagent
 
-For each task, dispatch the named agent for the task's area (see Named Agent Mapping):
+Dispatch `@${AREA}-agent` (see Named Agent Mapping) with a prompt that fills every field of the Subagent Prompt Template, plus this mandatory first step:
 
 ```
-Dispatch @${AREA}-agent with this prompt:
+## MANDATORY: Load Context (FIRST STEP)
+1. Run: bash .codeadd/scripts/status.sh
+2. Read ALL files listed in TASK_DOCUMENTS above
+3. Read your area's skill file (see SKILLS section)
 
-    ## ROLE
-    You are implementing Task N from [plan-file].
-
-    ## TASK_DOCUMENTS (read ALL before starting — source of truth)
-    - [path/to/about.md]
-    - [path/to/plan.md]
-    - [path/to/tasks.md]
-
-    ## MANDATORY: Load Context (FIRST STEP)
-    1. Run: bash .codeadd/scripts/status.sh
-    2. Read ALL files listed in TASK_DOCUMENTS above
-    3. Read your area's skill file (see SKILLS section)
-
-    ## DECISION LOG (from previous tasks)
-    [Accumulated decisions - what was already done]
-
-    ## SKILLS
-    MANDATORY:
-    - [skill for this area]
-
-    ADDITIONAL (detected):
-    - [extra skills if needed]
-
-    ## COORDINATOR NOTES
-    - [Specific guidance]
-    - [Warnings/patterns to avoid]
-    - [Dependencies from previous tasks]
-
-    ## TASK
-    [Specific deliverables from plan]
-
-    ## REPORT FORMAT
-    Return:
-    1. FILES_CREATED: [list]
-    2. FILES_MODIFIED: [list]
-    3. BUILD_STATUS: [pass/fail]
-    4. DECISIONS_MADE: [list]
-    5. ISSUES_ENCOUNTERED: [if any]
+## REPORT FORMAT
+Return:
+1. FILES_CREATED: [list]
+2. FILES_MODIFIED: [list]
+3. BUILD_STATUS: [pass/fail]
+4. DECISIONS_MADE: [list]
+5. ISSUES_ENCOUNTERED: [if any]
 ```
 
 ### 4. Update Decision Log
 
-**After subagent returns**, update the decision log:
-
-```markdown
-#### Task N: [task name]
-- FILES_CREATED: [list]
-- FILES_MODIFIED: [list]
-- DECISIONS_MADE: [from subagent report]
-- STATUS: completed
-```
+After the subagent returns, append a `#### Task N` block to the Decision Log using the canonical format.
 
 ### 5. Review Subagent's Work
 
-Dispatch @reviewer-agent with accumulated context:
+Dispatch `@reviewer-agent` with the same prompt template. Review-specific deltas:
 
-```
-Dispatch @reviewer-agent with this prompt:
-
-    ## ROLE
-    You are reviewing Task N implementation.
-
-    ## TASK_DOCUMENTS (read ALL before reviewing — source of truth)
-    [Same docs as the implementation subagent received]
-
-    ## DECISION LOG (full)
-    [All decisions up to this point]
-
-    ## FILES TO REVIEW
-    [From task N report - FILES_CREATED + FILES_MODIFIED]
-
-    ## SKILLS
-    - {{skill:add-code-review/SKILL.md}}
-
-    ## COORDINATOR NOTES
-    - Verify implementation matches spec from TASK_DOCUMENTS
-    - Check for IoC registration (providers, exports)
-    - Validate multi-tenancy patterns
-
-    ## TASK
-    1. Read all files from TASK_DOCUMENTS (spec)
-    2. Read all changed files (implementation)
-    3. Validate implementation against spec
-    4. Check skill patterns
-    5. AUTO-FIX issues found
-    6. Report findings
-
-    ## REPORT FORMAT
-    Return:
-    1. ISSUES_FOUND: [list with severity]
-    2. ISSUES_FIXED: [list]
-    3. BUILD_STATUS: [pass/fail]
-    4. SCORE: [X/10]
+```diff
+  ## TASK_DOCUMENTS  (same docs as the implementation subagent received)
++ ## FILES TO REVIEW  (FILES_CREATED + FILES_MODIFIED from Task N report)
+  ## SKILLS
+- - [implementation skill]
++ - {{skill:add-code-review/SKILL.md}}
+  ## TASK
+- [Specific deliverables from plan]
++ 1. Read all files from TASK_DOCUMENTS (spec)
++ 2. Read all changed files (implementation)
++ 3. Validate implementation against spec
++ 4. Check skill patterns
++ 5. AUTO-FIX issues found
++ 6. Report findings
+  ## REPORT FORMAT
+- 1. FILES_CREATED / FILES_MODIFIED / BUILD_STATUS / DECISIONS_MADE / ISSUES_ENCOUNTERED
++ 1. ISSUES_FOUND: [list with severity]
++ 2. ISSUES_FIXED: [list]
++ 3. BUILD_STATUS: [pass/fail]
++ 4. SCORE: [X/10]
 ```
 
 ### 6. Apply Review Feedback
 
-**If issues found:**
-- Fix Critical issues immediately (dispatch fix subagent)
-- Fix Important issues before next task
-- Note Minor issues in decision log
+- **Critical** issues → dispatch fix subagent immediately.
+- **Important** issues → fix before next task.
+- **Minor** issues → note in Decision Log, defer.
 
-**Fix subagent prompt includes:**
-```
-## DECISION LOG
-[Full log including review findings]
-
-## ISSUES TO FIX
-[From review report]
-
-## COORDINATOR NOTES
-- Review found [N] issues
-- Priority: [Critical first]
-```
+Fix-subagent prompts add an `## ISSUES TO FIX` section (from the review report) and a `COORDINATOR NOTES` line stating priority. Everything else mirrors the implementation prompt.
 
 ### 7. Mark Complete, Next Task
 
 - Mark task as completed in TodoWrite
 - Update Decision Log with final status
-- Move to next task
-- Repeat steps 3-6
+- Move to next task; repeat steps 3–6
 
 ### 8. Coordinator Compliance Gate
 
 After ALL tasks complete and BEFORE reporting completion, the coordinator verifies the implementation matches the specification. This is not a review — it's a cross-reference check.
 
-**Why this exists:** Subagents may complete their tasks and pass code review, but still miss requirements from the spec. The coordinator is the only actor who has both the full spec and the full Decision Log. This gate catches gaps before they reach the user.
+**Why this exists:** Subagents may complete their tasks and pass code review yet still miss requirements from the spec. The coordinator is the only actor with both the full spec and the full Decision Log.
 
 **Steps:**
 
 1. **Re-read TASK_DOCUMENTS** (about.md, plan.md) to extract RF/RN list
 2. **Cross-reference** each RF/RN against FILES_CREATED/FILES_MODIFIED from the Decision Log
 3. **Quick-read** relevant implementation files to confirm the requirement exists in code
-4. **If any RF/RN has no corresponding implementation:**
-   - List missing items
-   - Dispatch fix subagent with the missing requirements + TASK_DOCUMENTS
-   - Re-run this gate after fix
+4. **If any RF/RN has no corresponding implementation:** list missing items, dispatch fix subagent with the missing requirements + TASK_DOCUMENTS, re-run this gate after the fix
 5. **If ALL RF/RN are covered:** proceed to Final Review
 
 ```
-⛔ DO NOT report completion without executing this gate.
-⛔ DO NOT skip quick-read — file existence alone does not confirm implementation.
+DO NOT report completion without executing this gate.
+DO NOT skip quick-read — file existence alone does not confirm implementation.
 ```
 
 ### 9. Final Review
 
-After Compliance Gate passes, dispatch final code-reviewer with COMPLETE decision log:
-
-```
-## FULL DECISION LOG
-[All tasks, all decisions, all files]
-
-## TASK_DOCUMENTS
-[All feature/subfeature docs]
-
-## VERIFICATION CHECKLIST
-[From plan - what should exist]
-
-## TASK
-- Review entire implementation against TASK_DOCUMENTS
-- Verify all plan requirements met
-- Check overall architecture
-- Final build verification
-```
+After the Compliance Gate passes, dispatch the final reviewer with the COMPLETE Decision Log + all TASK_DOCUMENTS + the plan's verification checklist. Task: review entire implementation against TASK_DOCUMENTS, verify all plan requirements met, check overall architecture, run final build verification.
 
 ---
 
 ## Example Workflow
 
 ```
-Coordinator: Loading plan, creating TodoWrite, initializing Decision Log.
+Coordinator: load plan, init TodoWrite + Decision Log.
 
-=== Task 1: Hook installation script ===
+Task 1 — Hook installation script
+  Dispatch implementer → FILES_CREATED: scripts/install-hook.sh, BUILD: pass
+  Dispatch reviewer    → Score 9/10, no issues
+  Update Decision Log, mark complete.
 
-[Assemble TASK_DOCUMENTS, find references, compose skills]
+Task 2 — Recovery modes
+  Dispatch implementer → FILES_CREATED: src/recovery.ts, BUILD: pass
+  Dispatch reviewer    → Important: missing progress reporting
+  Dispatch fix         → progress every 100 items
+  Update Decision Log, mark complete.
 
-[Dispatch subagent with TASK_DOCUMENTS — subagent reads docs directly]
-Subagent:
-  FILES_CREATED: [scripts/install-hook.sh]
-  DECISIONS_MADE: [Used POSIX sh for compatibility]
-  BUILD_STATUS: pass
+Compliance Gate
+  Re-read about.md + plan.md → 8 RF extracted
+  Cross-reference Decision Log → all 8 covered
+  Quick-read key files → confirmed. PASS.
 
-[Update Decision Log with Task 1 results]
-
-[Dispatch review subagent with same TASK_DOCUMENTS + decision log]
-Reviewer: Strengths: Good coverage. Issues: None. Score: 9/10
-
-[Mark Task 1 complete]
-
-=== Task 2: Recovery modes ===
-
-[Assemble TASK_DOCUMENTS with updated decision log]
-
-[Dispatch subagent — reads docs + receives Task 1 decisions]
-Subagent:
-  FILES_CREATED: [src/recovery.ts]
-  DECISIONS_MADE: [Added verify/repair modes]
-  BUILD_STATUS: pass
-
-[Dispatch review subagent]
-Reviewer: Issues (Important): Missing progress reporting
-
-[Dispatch fix subagent with review findings]
-Fix subagent: Added progress every 100 items
-
-[Update Decision Log, mark Task 2 complete]
-
-...
-
-=== Coordinator Compliance Gate ===
-
-[Re-read about.md + plan.md → extract RF/RN]
-[Cross-reference against Decision Log → all 8 RF covered]
-[Quick-read key files → implementations confirmed]
-Gate: PASS
-
-=== Final Review ===
-
-[Dispatch final reviewer with complete decision log + TASK_DOCUMENTS]
-Final reviewer: All requirements met, ready to merge
-
-Done!
+Final Review
+  Dispatch reviewer with full log + TASK_DOCUMENTS → ready to merge.
 ```
 
 ---
 
-## Decision Log Structure
+## Validation Checklist
 
-Maintain throughout session:
+Coordinator must confirm before reporting completion:
 
-```markdown
-### DECISION LOG
-
-#### Session Info
-- Plan: [location]
-- Started: [timestamp]
-- Working Directory: [path]
-
-#### Task 1: [name]
-- Status: completed
-- Files Created: [list]
-- Files Modified: [list]
-- Decisions: [list]
-- Review Score: [X/10]
-
-#### Task 2: [name]
-- Status: in_progress
-- Depends On: Task 1 (entities created)
-- ...
-
-#### Accumulated Decisions
-- [Decision 1 from Task 1]
-- [Decision 2 from Task 2]
-- ...
-```
-
----
-
-## Red Flags
-
-**Never:**
-- Pass summaries/digests instead of file paths — subagents must read original docs
-- Skip assembling TASK_DOCUMENTS (coordinator must always provide doc paths)
-- Forget to update decision log
-- Skip code review between tasks
-- Proceed with unfixed Critical issues
-- Dispatch multiple implementation subagents in parallel (conflicts)
-- Skip Coordinator Compliance Gate before reporting completion
-
-**If subagent fails task:**
-- Add failure to decision log
-- Dispatch fix subagent with full context
-- Don't try to fix manually (context pollution)
+- [ ] TASK_DOCUMENTS assembled (epic-aware) for every dispatch
+- [ ] No subagent received summaries — only file paths
+- [ ] Decision Log updated after every task (implementer + reviewer + fix)
+- [ ] Code review dispatched after every implementation task
+- [ ] Critical review issues fixed before advancing
+- [ ] Only one implementation subagent in flight at a time
+- [ ] Compliance Gate executed: each RF/RN cross-referenced + quick-read
+- [ ] Final Review dispatched with COMPLETE Decision Log
+- [ ] Build status `pass` on final task
+- [ ] TodoWrite reflects real state (no stale `in_progress`)
 
 ---
 
 ## Integration
 
 **Required patterns:**
-- **TASK_DOCUMENTS** - Coordinator assembles doc paths, subagent reads originals
-- **Decision Log** - Maintained throughout session
-- **Coordinator Compliance Gate** - Cross-reference spec vs implementation before completion
+- **TASK_DOCUMENTS** — coordinator assembles doc paths, subagent reads originals
+- **Decision Log** — maintained throughout session
+- **Coordinator Compliance Gate** — cross-reference spec vs implementation before completion
 
 **Reference scripts:**
-- `bash .codeadd/scripts/status.sh` - Get feature context
-- `bash .codeadd/scripts/architecture-discover.sh` - Codebase structure overview
+- `bash .codeadd/scripts/status.sh` — get feature context
+- `bash .codeadd/scripts/architecture-discover.sh` — codebase structure overview
 
 **Skills to compose:**
 - Backend: `{{skill:add-backend-development/SKILL.md}}`
@@ -437,90 +294,13 @@ Maintain throughout session:
 - Frontend: `{{skill:add-frontend-development/SKILL.md}}` + `{{skill:add-ux-design/SKILL.md}}`
 - Review: `{{skill:add-code-review/SKILL.md}}`
 
----
-
-## PRD0031 — Persistent Decision Logging
-
-**decisions.jsonl** is the persistent record of implementation decisions per feature.
-Located at: `docs/features/${FEATURE_ID}/decisions.jsonl`
-
-### When to Log
-
-Log **only pivots** — when a subagent changes approach during implementation. `choice` and `result` were removed (no consumer reads them, only pivots are filtered by context mapping).
-
-| Moment | type | Required Fields | Optional |
-|--------|------|-----------------|----------|
-| When pivoting to different approach | `pivot` | ts, agent, type, decision, reason, from | attempt, error |
-
-### Log Format (JSONL — one JSON per line)
-
-```jsonl
-{"ts":"2026-02-18T14:45:00Z","agent":"backend","type":"pivot","from":"Prisma","decision":"Switch to Drizzle","reason":"Prisma migration failed with Supabase edge functions","attempt":1,"error":"Migration timeout on edge runtime"}
-```
-
-### Append Command
-
-```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "<type>" "<agent>" '"decision":"[what]","reason":"[why]"'
-```
-
-### Central File (consolidated by /add-done)
-
-`.codeadd/project/decisions.jsonl` — all project decisions, consolidated at feature completion.
-Used by context mapping at start of new features (read last 20 pivots as warnings).
+**Extended references:**
+- Persistent decision logging (`decisions.jsonl`) and the Architect subagent pattern (`tasks.md`) live in `references/persistent-logging-and-tasks.md`. Load on demand when a feature uses persistent logs or tasks-mode execution.
 
 ---
 
-## PRD0032 — Architect Subagent Pattern (tasks.md)
+## If a Subagent Fails
 
-**tasks.md** is the structured execution plan generated after plan.md is created.
-Located at: `docs/features/${FEATURE_ID}/tasks.md` (or subfeature dir)
-
-### When to Dispatch Architect Subagent
-
-After plan.md is created and validated (STEP 9.4 of /add-plan).
-
-### Architect Subagent Dispatch
-
-**Capability:** read-write | **Complexity:** standard
-
-**Prompt:**
-```
-Read plan.md + about.md + discovery.md.
-Generate tasks.md with atomic subtasks:
-- 1 service per task (database | backend | frontend | test | infra)
-- Maximum 3 files per task
-- Explicit deps (task IDs, or "-")
-- Verify: command/curl/browser check per task
-- Order: database → backend → frontend → test
-- Complexity: SIMPLE (≤5), STANDARD (6-12), COMPLEX (13+, warn)
-```
-
-### tasks.md Format
-
-```markdown
-# Tasks: [feature or subfeature name]
-
-## Metadata
-| Campo | Valor |
-|-------|-------|
-| Complexity | STANDARD |
-| Total tasks | 8 |
-| Services | database, backend, frontend |
-
-## Tasks
-| ID | Description | Service | Files | Deps | Verify |
-|----|-------------|---------|-------|------|--------|
-| 1.1 | Create users table migration | database | `migrations/001.ts` | - | `npm run migrate` |
-| 2.1 | Create signup endpoint | backend | `api/controller.ts`, `api/dto.ts` | 1.1 | `curl POST /api/signup` |
-| 3.1 | Create SignupForm component | frontend | `components/SignupForm.tsx` | 2.1 | browser: form renders |
-```
-
-### TASKS MODE in /add-dev
-
-When `HAS_TASKS=true`, /add-dev executes by tasks:
-1. READ tasks.md → group by service
-2. Execute database group first
-3. AFTER each group: run verify commands
-4. IF verify fails: fix before advancing
-5. Pass relevant tasks to each subagent (not "all of plan.md")
+- Append failure to Decision Log (status: `failed`, error excerpt)
+- Dispatch a fix subagent with full context — never patch manually (context pollution)
+- Re-run review after the fix

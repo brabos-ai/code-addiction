@@ -7,7 +7,7 @@ description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creat
 
 ## Overview
 
-Single source of truth for how feature/hotfix/refactor/chore/docs IDs and branches are formatted across the ADD ecosystem. The scripts enforce this format; commands that diverge (e.g., letter-first `H0001` instead of `0001H`) produce branches that `done.sh` cannot parse.
+Scripts enforce this format; commands that diverge (e.g., letter-first `H0001` instead of `0001H`) produce branches that `done.sh` cannot parse.
 
 ## When to Use
 
@@ -20,6 +20,7 @@ Single source of truth for how feature/hotfix/refactor/chore/docs IDs and branch
 
 - Scripts that already implement the convention (`next-id.sh`, `get-branch-metadata.sh`) — they are the authority, not this doc
 - Unrelated IDs (e.g., `CHG[NNNN]` for changelogs — different namespace, no letter suffix)
+- Provider-specific issue trackers (Jira/Linear) — they own their own ID schemes
 
 ## Canonical Format
 
@@ -57,13 +58,13 @@ Examples:
 - `chore/0003C-bump-deps`
 - `docs/0002D-readme-sync`
 
-### Doc ID / frontmatter
+### Usage in docs
+
+Frontmatter `id:` and `{{doc:...}}` references both use the canonical format:
 
 ```yaml
 id: 0001H
 ```
-
-### Cross-references
 
 ```
 {{doc:0001H}}

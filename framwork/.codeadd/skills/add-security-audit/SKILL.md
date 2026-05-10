@@ -6,10 +6,8 @@ description: |
 
 # Security Audit
 
-Skill for security auditing based on OWASP Top 10.
-
 **Use for:** Validate security, audit codebase, identify vulnerabilities
-**Do not use for:** Fixing code (reporting only), general code review
+**Do not use for:** Writing security fixes, dependency upgrades, incident response, general code review
 
 **Reference:** Always consult `CLAUDE.md` for general project standards.
 
@@ -21,10 +19,10 @@ Skill for security auditing based on OWASP Top 10.
 
 Multi-tenant rules:
 
-- ALL queries filter by `account_id`
-- `account_id` from JWT (NEVER body)
-- Ownership validated before UPDATE/DELETE
-- Guards on protected endpoints
+- [ ] ALL queries filter by `account_id`
+- [ ] `account_id` from JWT (NEVER body)
+- [ ] Ownership validated before UPDATE/DELETE
+- [ ] Guards on protected endpoints
 
 Searches to run:
 
@@ -35,13 +33,11 @@ Searches to run:
 
 ### A02 — Cryptographic Failures
 
-Checks:
-
-- Credentials encrypted
-- Passwords NEVER in logs
-- Tokens not in responses
-- API keys via env vars
-- Secrets not committed
+- [ ] Credentials encrypted
+- [ ] Passwords NEVER in logs
+- [ ] Tokens not in responses
+- [ ] API keys via env vars
+- [ ] Secrets not committed
 
 Searches:
 
@@ -54,13 +50,13 @@ Searches:
 
 SQL/NoSQL:
 
-- Parametrized queries
-- Validated inputs
-- No `.raw()` with user input
+- [ ] Parametrized queries
+- [ ] Validated inputs
+- [ ] No `.raw()` with user input
 
 Command injection:
 
-- No `exec`/`spawn` with user input
+- [ ] No `exec`/`spawn` with user input
 
 Searches:
 
@@ -71,12 +67,10 @@ Searches:
 
 ### A04 — Insecure Design
 
-Checks:
-
-- Guards on ALL protected routes
-- JWT expiration
-- Refresh token handling
-- Logout invalidates session
+- [ ] Guards on ALL protected routes
+- [ ] JWT expiration
+- [ ] Refresh token handling
+- [ ] Logout invalidates session
 
 Search: `grep '@Get|@Post'` → check `@UseGuards`.
 
@@ -84,13 +78,12 @@ Search: `grep '@Get|@Post'` → check `@UseGuards`.
 
 ### A05 — Misconfiguration
 
-Checks:
+- [ ] CORS not `origin:'*'` in prod
+- [ ] Debug disabled in prod
+- [ ] No stack traces exposed
+- [ ] Deps updated
 
-- CORS not `origin:'*'` in prod
-- Secrets via env vars
-- Debug disabled in prod
-- No stack traces exposed
-- Deps updated
+Secrets/env vars: see A02.
 
 Searches:
 
@@ -101,10 +94,8 @@ Searches:
 
 ### A06 — Vulnerable Components
 
-Checks:
-
-- `npm audit` no critical/high
-- Deps regularly updated
+- [ ] `npm audit` no critical/high
+- [ ] Deps regularly updated
 
 Command: `npm audit --json | grep -E 'critical|high'`.
 
@@ -112,52 +103,43 @@ Command: `npm audit --json | grep -E 'critical|high'`.
 
 ### A07 — Auth Failures
 
-Checks:
-
-- bcrypt/argon2 for passwords
-- Rate limiting on auth
-- MFA available
-- Secure password recovery
+- [ ] bcrypt/argon2 for passwords
+- [ ] Rate limiting on auth
+- [ ] MFA available
+- [ ] Secure password recovery
 
 ---
 
 ### A08 — Integrity Failures
 
-Checks:
-
-- Deps from trusted sources
-- Lock files committed
-- CI/CD security validations
+- [ ] Deps from trusted sources
+- [ ] Lock files committed
+- [ ] CI/CD security validations
 
 ---
 
 ### A09 — Logging Failures
 
-Checks:
+- [ ] Sufficient context for debug
+- [ ] Log unauthorized access attempts
 
-- No sensitive data in logs
-- Sufficient context for debug
-- Log unauthorized access attempts
+Sensitive data in logs: see A02.
 
 ---
 
 ### A10 — SSRF
 
-Checks:
-
-- External URLs validated/whitelisted
-- No arbitrary user URLs
-- Validate hostnames before fetch
+- [ ] External URLs validated/whitelisted
+- [ ] No arbitrary user URLs
+- [ ] Validate hostnames before fetch
 
 ---
 
 ### Extra — XSS
 
-Checks:
-
-- Outputs sanitized
-- No `dangerouslySetInnerHTML` (or sanitized)
-- URLs validated in `href`/`src`
+- [ ] Outputs sanitized
+- [ ] No `dangerouslySetInnerHTML` (or sanitized)
+- [ ] URLs validated in `href`/`src`
 
 Search: `grep 'dangerouslySetInnerHTML'` → check sanitization.
 
@@ -165,11 +147,9 @@ Search: `grep 'dangerouslySetInnerHTML'` → check sanitization.
 
 ### Extra — Mass Assignment
 
-Checks:
-
-- Explicit DTOs (no body spread)
-- Use `@Expose`/`@Exclude`
-- Validate `PartialType`
+- [ ] Explicit DTOs (no body spread)
+- [ ] Use `@Expose`/`@Exclude`
+- [ ] Validate `PartialType`
 
 Search: `grep '...body|...dto'` → spread vulnerability.
 
@@ -177,11 +157,14 @@ Search: `grep '...body|...dto'` → spread vulnerability.
 
 ## Scoring
 
-Severity weights and status thresholds (lookup):
+Formula: `score = 10 - (weighted_sum / 5)`
 
-{"severity":{"critical":3,"high":2,"medium":1,"low":0.5}}
-{"score":"10 - (weighted_sum / 5)"}
-{"status":{"8-10":"✅ Secure","6-7":"⚠️ Attention","4-5":"🟠 Risk","0-3":"🔴 Vulnerable"}}
+| Severity | Weight | Score Range | Status |
+|----------|--------|-------------|--------|
+| critical | 3 | 8-10 | ✅ Secure |
+| high | 2 | 6-7 | ⚠️ Attention |
+| medium | 1 | 4-5 | 🟠 Risk |
+| low | 0.5 | 0-3 | 🔴 Vulnerable |
 
 ---
 
@@ -236,37 +219,16 @@ Severity weights and status thresholds (lookup):
 
 ## Rules
 
-**Do:**
-
-- Analyze ALL files in scope
-- Check ALL OWASP categories
-- Verify context (avoid false positives)
-- Include exact line
-- Explain impact simply
-- Give specific recommendations
-
-**Don't:**
-
-- Auto-fix (only report)
-- False positives without context
-- Ignore minor findings
-- Use jargon without explanation
+- Analyze ALL files in scope, check ALL OWASP categories, include exact line, explain impact simply
+- Verify context to avoid false positives; do not flag minor findings without justification
+- Report only — never auto-fix
+- Avoid jargon without explanation
 
 ---
 
 ## False Positive Prevention
 
-Context that matters:
-
-- `process.env.NODE_ENV` is OK
-- Internal queries can use `.raw()`
-- Validated DTOs can use `PartialType`
-
-Framework protections:
-
-- NestJS sanitizes some inputs
-- Kysely parametrizes queries
-- React escapes outputs by default
+Stack-specific protections (NestJS sanitization, Kysely parametrization, React escaping, etc.) and accepted patterns (e.g. `process.env.NODE_ENV`, internal `.raw()`, validated `PartialType`): consult `CLAUDE.md` for the project's stack and documented exceptions.
 
 Project patterns:
 

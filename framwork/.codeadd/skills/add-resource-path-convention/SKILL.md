@@ -5,8 +5,6 @@ description: Use when writing commands or skills that reference other commands, 
 
 # Resource Path Convention
 
-## Overview
-
 Commands and skills in `framwork/.codeadd/` are the source of truth. After build, they are placed in provider-specific directories (`.claude/commands/`, `.agents/skills/`, `.gemini/commands/`, etc.). Hardcoded `.codeadd/commands/` or `.codeadd/skills/` paths break because these directories do not exist in the installed project. Use build-time variables to reference resources.
 
 ## When to Use
@@ -33,11 +31,8 @@ Resolves to the full path of a command file for the target provider.
 ```
 {{cmd:add.plan}}
 
-# Claude  → .claude/commands/add.plan.md
-# Codex   → .agents/skills/add.plan/SKILL.md
-# Gemini  → .gemini/commands/add.plan.toml
-# Copilot → .github/agents/add.plan.md
-# Kiro    → .kiro/prompts/add.plan.md
+# Claude → .claude/commands/add.plan.md
+# Gemini → .gemini/commands/add.plan.toml
 ```
 
 ### `{{skill:NAME/FILE}}`
@@ -48,14 +43,7 @@ Resolves to the full path of a skill file. Use `SKILL.md` for the main file, or 
 {{skill:add-backend-development/SKILL.md}}
 
 # Claude → .claude/skills/add-backend-development/SKILL.md
-# Codex  → .agents/skills/add-backend-development/SKILL.md
-```
-
-```
-{{skill:add-ux-design/shadcn-docs.md}}
-
-# Claude → .claude/skills/add-ux-design/shadcn-docs.md
-# Codex  → .agents/skills/add-ux-design/shadcn-docs.md
+# Gemini → .gemini/skills/add-backend-development/SKILL.md
 ```
 
 ### Scripts (no variable needed)
@@ -74,11 +62,8 @@ Resolves to the literal `.codeadd/X` path — same across all providers. Use for
 Typical cases: skills generated at runtime by commands like `/add.xray` (which writes `project-patterns/`), the manifest file, or any artefact materialized in the user's project after install.
 
 ```
-{{addpath:skills/project-patterns/backend.md}}
-# All providers → .codeadd/skills/project-patterns/backend.md
-
-{{addpath:manifest.json}}
-# All providers → .codeadd/manifest.json
+{{addpath:skills/project-patterns/backend.md}}  # → .codeadd/skills/project-patterns/backend.md
+{{addpath:manifest.json}}                       # → .codeadd/manifest.json
 ```
 
 **When to use `{{addpath:}}` vs `{{skill:}}`:**

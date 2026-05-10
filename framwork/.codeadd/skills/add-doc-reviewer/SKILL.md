@@ -1,15 +1,13 @@
 ---
 name: add-doc-reviewer
-description: Use when reviewing a just-written documentation asset (about.md, brainstorm, plan.md, hotfix docs, and other schema-bound ADD docs) as a fresh stakeholder — surfaces gaps, unclear passages, and out-of-scope questions without ever reading the originating conversation. Invoke this whenever a command finishes writing a schema-bound doc and you want a cold-read sanity check before declaring the doc done, or when a user asks for a second-pass review of an existing doc. Dispatched by /add.brainstorm and /add.new automatically; can also be invoked manually.
+description: Use when reviewing a just-written ADD doc as a fresh stakeholder — surfaces gaps, clarity, and scope questions.
 ---
 
 # Doc Reviewer
 
 ## Overview
 
-Reviews a generated documentation asset as if you were a fresh stakeholder reading it for the first time. Surfaces the questions a reasonable reader would still have, and classifies each into Gap / Clarity / Scope so the parent command knows how to resolve it.
-
-The reviewer has no context beyond the doc and its schema. That blindness is the leverage: any question the reviewer raises about something the user already discussed is proof that the doc failed to capture the discussion. If you cheat and read the originating conversation, you lose the very signal the skill exists to produce.
+Reviews a generated documentation asset as a fresh stakeholder, surfacing the questions a reasonable reader would still have, classified into Gap / Clarity / Scope. The reviewer reads only the doc and its schema — any question about something the user already discussed is proof the doc failed to capture it; reading the originating conversation destroys that signal.
 
 ## When to Use
 
@@ -46,11 +44,9 @@ Check the schema against the lens table below. The lens is the first thing that 
 | **Technical** | `feature-plan`, `feature-design`, `audit-report`, `diagnose-report`, `changelog`, `hotfix-related`, `landing-page` | Architecture decisions, tasks, risks, dependencies, validation steps, component/field/route specifics, migration steps, file paths | Product vision, user-facing value prose, marketing claims |
 | **Mixed** | `hotfix-about` | Symptom section → Business lens (observable impact). Root Cause section → Technical lens (mechanism, failed safeguards). Stay inside the right lens per section. | Speculating about fix design beyond what the Fix section names |
 
-**Business-lens discipline.** A real technical gap (e.g. "the about.md does not specify which fields are on the form") is NOT a Gap for `feature-about` — it belongs to the next command (`/add.plan`). Do not raise it. If the concern can be reframed as a business-level question — "does scope cover editing existing items or only creating new ones?" instead of "what's the entity shape?" — raise the business version. Otherwise drop. User-visible behaviour is Business even when it sounds technical: *"What happens if two users edit the same item?"* is Business (conflict resolution is user-facing). *"Optimistic or pessimistic locking?"* is Technical. Same phenomenon, different layer.
-
-**Technical-lens discipline.** Do not ask product/vision questions. If `feature-plan` seems to solve the wrong problem, that's an upstream gap in `feature-about` — note it in the Verdict, do not enumerate as a Gap.
-
-**Mixed-lens discipline.** In `hotfix-about`, each section has its own lens. Symptom questions must be observable and user-facing; Root Cause questions must be mechanical and specific (the exact code path, the exact failed safeguard). Do not blur the two — a mechanism question in Symptom is wrong-lens; an impact question in Root Cause is wrong-lens.
+- **Business discipline.** Real technical gaps belong to the next command — do not raise them. Reframe as a business question or drop. User-visible behaviour is Business even when it sounds technical: *"What happens if two users edit the same item?"* is Business (conflict resolution is user-facing). *"Optimistic or pessimistic locking?"* is Technical. Same phenomenon, different layer.
+- **Technical discipline.** Do not ask product/vision questions. If `feature-plan` solves the wrong problem, that's an upstream `feature-about` gap — note in Verdict, do not enumerate.
+- **Mixed discipline.** In `hotfix-about`, Symptom questions must be observable and user-facing; Root Cause questions must be mechanical and specific. Do not blur.
 
 When in doubt: check the schema's section list. Problem/Users/Scope/Metrics → Business. Decisions/Tasks/Risks/Validation → Technical.
 
@@ -82,7 +78,7 @@ This is the one schema rule worth calling out; the rest are already covered by t
 
 ## Output Format
 
-Return a textual review. The parent agent reads the prose and decides how to act.
+Return a textual review. The parent agent reads the prose and decides how to act. Omit empty bucket headings entirely. Use `**<section name>** — ` prefix on Gaps/Clarity questions; omit for Scope questions that don't map to a section. No JSON — the consumer is a reasoning agent, not a parser.
 
 ```markdown
 ## Doc Review: <doc path>
@@ -111,29 +107,15 @@ Return a textual review. The parent agent reads the prose and decides how to act
 <One paragraph. Name the 1–2 most important items to address first. If the doc has no Gaps or Clarity items, say so plainly and flag any Scope questions as the user's call. If the frontmatter is malformed or a required section is missing entirely, mention it here — schema compliance is the validation gate's job, not yours, but you can flag it in passing.>
 ```
 
-Notes on the format:
-
-- **Empty buckets**: if a bucket has no items, omit the heading entirely. The parent agent handles variable structure fine.
-- **Section prefix** on questions: use `**<section name>** — ` for Gaps and Clarity (which always map to a section). Omit the prefix for Scope questions that genuinely don't map to any existing section.
-- **No JSON.** The consumer is a reasoning agent, not a parser.
-
 ## Example
 
-**Input**
-
-- Doc: `docs/features/0042F-notifications/about.md`
-- Schema: `feature-about`
+**Input:** Doc `docs/features/0042F-notifications/about.md`, Schema `feature-about`.
 
 **Doc body (excerpted)**
 
 ```markdown
 ## Problem
 Users miss important updates because we have no in-app notification system.
-
-## Users
-| role | goal | pain |
-|---|---|---|
-| End user | See recent activity | Misses updates posted while offline |
 
 ## Scope
 ### Includes
@@ -155,7 +137,7 @@ Users miss important updates because we have no in-app notification system.
 
 ### Gaps
 
-1. **Scope** — The "Does NOT Include" list has only one item. The schema requires the three most likely scope-creep requests with reasoning. Email notifications, digest/summary frequency, and per-type mute controls are obvious candidates — are any of them out of scope, and why?
+1. **Scope** — The "Does NOT Include" list has only one item. Email notifications, digest/summary frequency, and per-type mute controls are obvious candidates — are any of them out of scope, and why?
    Why: `feature-about` depth floor requires "Does NOT Include" to cover the three most likely scope-creep requests with reasoning.
 
 ### Clarity
@@ -168,22 +150,12 @@ Users miss important updates because we have no in-app notification system.
 The Scope gap is the most important — without explicit exclusions, /add.plan will re-open the conversation. Address that first, then tighten the Problem statement.
 ```
 
-**What the review does NOT include** (wrong-lens traps avoided):
-
-- No question about the notification entity shape, API routes, or database schema (those belong to `feature-plan`)
-- No question about which library to use for WebSocket transport (Technical — out of scope here)
-- No question about marketing copy or landing page positioning (Business, but not this doc's Business)
-
 ## Constraints
 
 - **Read-only.** Never edit the doc. The parent decides whether to re-invoke the generator.
-- **Quality beats count.** One sharp question beats five generic ones.
+- **Quality beats count.** One sharp question beats five generic ones. Submit the real number, even if it's 1 or 0.
 - **Be specific.** Name a section or a phrase. *"Scope is unclear"* is not a question; *"Scope says 'notifications are in scope' but does not specify whether push notifications are included alongside in-app"* is.
 - **No implementation advice.** You ask; you do not propose how to answer. The parent and the user decide.
-
-## Loop Context
-
-The skill performs one review per invocation. The parent command owns the loop, the 2-round cap, and the user interaction. If you are dispatched as a subagent, your response is a single review; the parent reads it and decides whether to re-dispatch.
 
 ## Anti-Patterns
 
@@ -191,12 +163,8 @@ The skill performs one review per invocation. The parent command owns the loop, 
 |---|---|
 | Reading the source conversation before reviewing | Read only the doc and the schema H3 |
 | "This section is too short" | Name the missing fact by its schema depth-floor requirement |
-| 20 questions, most nitpicks | As many as the doc warrants, each one a blocker |
-| Proposing answers to your own questions | Ask; let the parent and user decide |
-| Flagging an explicit Open Thread in a brainstorm as a Gap | Only flag unacknowledged open questions |
 | Field names / API routes / class names in a Business-lens review | Wrong lens — reframe as user-visible scope, or drop |
 | Product-vision questions in a Technical-lens review | Wrong lens — note upstream gap in Verdict, don't enumerate |
-| Padding to hit a count | Submit the real number, even if it's 1 or 0 |
 
 ## Checklist
 

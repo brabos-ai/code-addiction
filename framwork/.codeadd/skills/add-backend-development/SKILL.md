@@ -1,7 +1,7 @@
 ---
 name: add-backend-development
 description: |
-  Backend architecture: SOLID, Clean Architecture, DTOs, Services, Repository Pattern, RESTful standards — stack-agnostic. Consult CLAUDE.md for framework. Use when implementing backend features.
+  Backend API architecture: Clean Architecture, SOLID, DTOs, Services, Repositories, RESTful — stack-agnostic.
 ---
 
 # Backend Development
@@ -14,6 +14,17 @@ Skill for backend API implementation following universal architectural principle
 **Stack resolution:** Consult `CLAUDE.md ## Architecture Contract` for the framework in use (Express, Fastify, NestJS, Hono, Elysia, etc.). Apply these principles using the framework's idiomatic patterns. The AI already knows each framework's syntax — this skill teaches architecture, not framework tutorials.
 
 **Reference:** Always consult `CLAUDE.md` for general project standards.
+
+---
+
+## When NOT to Use
+
+- **Frontend / UI work** — use `ux-design` or `add-frontend-development` instead
+- **Database migrations or schema design** — use `add-database-development`
+- **Security audits / threat modeling** — use `add-security-audit`
+- **Pure scripts, CLIs, or non-API code** — these patterns target HTTP API services
+- **Greenfield architecture decisions** — use `add-backend-architecture` to choose structure first
+- **Project scaffolding** — use `add-project-scaffolding` for initial setup
 
 ---
 
@@ -106,13 +117,6 @@ Principles:
 - Register all components in the framework's container/module system
 - Cross-module dependencies must be explicitly exported/shared
 
-Checklist:
-
-- [ ] Component created with proper DI registration for the framework
-- [ ] Registered in the DI container/module
-- [ ] Imported/available where consumed
-- [ ] Exported if shared across modules
-
 **Common DI errors:** Unresolved dependency = not registered. Cross-module failure = not exported. Route 404 = module not loaded. Consult framework docs for idiomatic registration.
 
 ---
@@ -186,28 +190,7 @@ DTO naming:
 - Returns domain entities, not raw rows or ORM-specific objects
 - All data access goes through repositories — no direct DB calls in services
 
----
-
-## CQRS (When Applicable)
-
-**IMPORTANT:** Only apply CQRS if the project already uses it. If the project uses simple service calls, follow that pattern. Do NOT impose CQRS on projects that don't use it.
-
-**Commands:**
-
-- Return: `void` or ID (NEVER full objects)
-- Naming: `[Action][Subject]Command`
-- Handler: `[Command]Handler`
-
-**Events:**
-
-- Naming: `[Subject][PastTense]Event` (e.g. `UserCreated`)
-- Handlers MUST be idempotent
-
-**Rules:**
-
-- Write operations → Commands
-- Read operations → direct service/repository calls
-- Event handlers can be re-executed safely (idempotent)
+<!-- CQRS section removed — flagged for future split into add-backend-cqrs skill -->
 
 ---
 
@@ -296,60 +279,41 @@ Rules:
 ### RESTful Standards
 
 - [ ] URLs use nouns, not verbs (no `/getUsers`, `/createOrder`)
-  - Check: routes don't contain verbs (get, create, update, delete, fetch)
 - [ ] Correct HTTP methods (GET=read, POST=create, PUT=full update, PATCH=partial, DELETE=remove)
-  - Check: route definitions match operation type
 - [ ] Correct status codes (POST→201, DELETE→204, GET/PUT/PATCH→200)
-  - Check: response status codes match the method table above
 - [ ] URL pattern follows `/api/v1/resource`
-  - Check: route paths use versioned plural nouns
 
 ### Clean Architecture
 
 - [ ] Layer dependencies respected (domain → application → infrastructure → presentation)
-  - Check: domain files have zero imports from upper layers
 - [ ] Domain has zero I/O or framework dependencies
-  - Check: no database/http/framework imports in domain layer
 - [ ] Repositories return domain entities, not DTOs or raw rows
-  - Check: repository methods return entity types
 
 ### Dependency Injection
 
 - [ ] All services/repositories/handlers registered in DI container
-  - Check: every component is registered per framework convention
 - [ ] Dependencies injected via constructor, not instantiated directly
-  - Check: no `new ConcreteService()` in business logic
 - [ ] Services depend on interfaces, not concrete implementations
-  - Check: constructor parameters reference abstractions
+- [ ] Cross-module dependencies explicitly exported/shared
 
 ### DTOs
 
 - [ ] Naming follows convention (Create/Update/Patch/Response + EntityDto)
-  - Check: DTO class names match pattern
 - [ ] Validation rules on all input DTO fields
-  - Check: every input field has validation defined
 - [ ] Response DTOs exist for read operations
-  - Check: GET endpoints return typed response DTOs, not raw entities
 
 ### Error Handling
 
 - [ ] Services throw domain errors, not HTTP exceptions
-  - Check: no HTTP status codes or framework exception classes in service layer
 - [ ] Presentation layer maps domain errors to HTTP responses
-  - Check: error mapping exists in controller/middleware/error handler
 - [ ] Domain errors are descriptive and typed
-  - Check: custom error classes with meaningful names
 
 ### Multi-Tenancy
 
 - [ ] Every query filters by tenant identifier
-  - Check: repository methods receive and filter by tenant ID
 - [ ] Tenant ID extracted from auth context, never from request body
-  - Check: controller gets tenant ID from auth middleware/context
 - [ ] Client-provided tenant ID never trusted
-  - Check: no `req.body.tenantId` usage for authorization
 
 ### Configuration
 
 - [ ] Uses centralized config service, never direct env var access
-  - Check: no `process.env` / `Bun.env` in feature code

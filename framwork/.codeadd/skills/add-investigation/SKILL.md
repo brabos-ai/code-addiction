@@ -1,15 +1,13 @@
 ---
 name: add-investigation
-description: Use when investigating vague symptoms, suspicious behavior, or information-flow bugs that are not obvious. Enforces differential diagnosis before route recommendation. Consumed by add.diagnose and available to any command that needs rigorous root-cause analysis before acting (hotfix triage, audit deep-dive, review follow-up).
+description: Use when investigating vague symptoms or information-flow bugs requiring differential diagnosis before fixes. Applies to hotfix triage, audit deep-dive, review follow-up. Consumed by add.diagnose.
 ---
 
 # Investigation Skill
 
 ## Overview
 
-Vague symptoms, hard-to-find bugs, and information-flow inconsistencies are NOT solved by jumping into code. They are solved by rigorous disambiguation, backward tracing, and differential diagnosis — BEFORE any fix or route decision.
-
-This skill encodes a 5-phase methodology with a hard Iron Law. Adapted from [obra/superpowers `systematic-debugging`](https://github.com/obra/superpowers/tree/main/skills/systematic-debugging) (MIT, credit to Jesse Vincent) and extended with Phase 0 (Symptom Disambiguation) and Differential Diagnosis — gaps the original did not cover for "ambiguous symptom, no error message" cases.
+Vague symptoms, hard-to-find bugs, and information-flow inconsistencies are NOT solved by jumping into code — they require rigorous disambiguation, backward tracing, and differential diagnosis BEFORE any fix or route decision. This skill encodes a 5-phase methodology with a hard Iron Law (see Credits for attribution).
 
 ## ⛔ Iron Law
 

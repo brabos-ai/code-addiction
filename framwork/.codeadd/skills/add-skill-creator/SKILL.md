@@ -9,9 +9,13 @@ date_added: "2026-02-27"
 
 # Skill Creator (Excellence)
 
-Dispatcher for skill creation excellence. Use the decision tree below to find the right template and standards.
+## Quick Decision Tree
 
-## ⚡ Quick Decision Tree
+Use this dispatcher when:
+- Creating a NEW skill from scratch
+- Improving an EXISTING skill that agents ignore
+- Debugging why a skill isn't being triggered
+- Standardizing skills across a team
 
 ### What do you need to do?
 
@@ -29,7 +33,7 @@ Dispatcher for skill creation excellence. Use the decision tree below to find th
    - Check metadata/naming -> [Standards](references/standards/README.md)
    - Add tests -> [Testing Guide](references/testing/README.md)
 
-## 📚 Component Index
+## Component Index
 
 | Component | Purpose |
 |-----------|---------|
@@ -38,19 +42,18 @@ Dispatcher for skill creation excellence. Use the decision tree below to find th
 | **[Anti-Rationalization](references/anti-rationalization/README.md)**| How to write rules that agents won't ignore. |
 | **[Testing](references/testing/README.md)** | How to ensure your skill actually works. |
 
-## 🛠️ Templates
+## Templates
 
 - [Technique Skill](references/templates/technique.md) (How-to)
 - [Reference Skill](references/templates/reference.md) (Docs)
 - [Discipline Skill](references/templates/discipline.md) (Rules)
 - [Pattern Skill](references/templates/pattern.md) (Design Patterns)
 
-## When to Use
+## When NOT to Use
 
-- Creating a NEW skill from scratch
-- Improving an EXISTING skill that agents ignore
-- Debugging why a skill isn't being triggered
-- Standardizing skills across a team
+- Authoring prompts, agents, or slash commands → use `/add.build` with `type=command` instead
+- Writing one-off scripts or utilities that won't be reused as agent capabilities
+- Documenting provider-specific configuration (settings.json, MCP servers, hooks) — those belong in provider docs, not skills
 
 ## How It Works
 
@@ -89,7 +92,7 @@ metadata:
 
 See [gotchas.md](gotchas.md) for more.
 
-## ✅ Pre-Deploy Checklist
+## Pre-Deploy Checklist
 
 Before deploying any skill:
 
@@ -100,22 +103,3 @@ Before deploying any skill:
 - [ ] Total lines < 500 (use `references/` for more)
 - [ ] No `@` force-loading in cross-references
 - [ ] Tested with real scenarios
-
-## 🔗 Related Skills
-
-- Use `/add-build skill [nome]` para criar skill via fluxo guiado
-
-## Examples
-
-**Create a Tier 1 skill:**
-```bash
-mkdir -p ~/.config/opencode/skills/my-technique
-touch ~/.config/opencode/skills/my-technique/SKILL.md
-```
-
-**Create a Tier 2 skill:**
-```bash
-mkdir -p ~/.config/opencode/skills/my-skill/references/core
-touch ~/.config/opencode/skills/my-skill/{SKILL.md,gotchas.md}
-touch ~/.config/opencode/skills/my-skill/references/core/README.md
-```

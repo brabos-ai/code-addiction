@@ -1,44 +1,25 @@
 ---
 name: add-frontend-architecture
-description: |
-  Frontend architecture consultant — guides project structure decisions for new or existing frontend projects. Helps choose between Simple Component-Based, Feature-Based, or Feature-Sliced Design based on project scale, team size, and framework. Framework-aware: provides specific guidance for React, Vue, and Angular, accounting for how opinionated each framework is. Use this skill when the user asks about frontend folder structure, project organization, how to scale their frontend, how to organize components/features/pages, or when starting a new frontend project. Also use when the user mentions "components folder is a mess", "where should this go", "how to structure React/Vue/Angular", "feature folders", or is refactoring a growing frontend. This skill guides decisions — it does not implement features (use add-frontend-development for that) and does not handle UI/UX design (use ux-design for that).
+description: Frontend architecture consultant for project structure, folder organization, feature boundaries, and scaling decisions. Framework-aware (React, Vue, Angular). Use when user asks about frontend folder structure, "components folder is a mess", "where should this go", over-engineering, slices, feature folders, or starting/refactoring a frontend project. Guides decisions only — does not implement (use add-frontend-development) or design UI (use ux-design).
 ---
 
 # Frontend Architecture Consultant
 
-Guide structural decisions for frontend projects. Framework-aware, scale-appropriate.
-
-**Use for:** Project structure, folder organization, feature boundaries, component hierarchy, scaling decisions
-**Not for:** Feature implementation (add-frontend-development), UI/UX design (ux-design), backend (add-backend-architecture)
-
-**Key difference from add-frontend-development:** This skill answers "how should I organize this project?" — add-frontend-development answers "how should I implement this feature?"
-
----
-
-## Core Philosophy
-
-Frontend architecture is inseparable from how you think about components. The folder structure follows from your component strategy, not the other way around.
-
-The right architecture is the **simplest one that keeps your team productive** as the project grows. A 5-page dashboard doesn't need Feature-Sliced Design. A 50-page SaaS app doesn't survive with a flat `components/` folder.
+Guide structural decisions for frontend projects. Choose the **simplest** pattern that keeps the team productive as the project grows.
 
 ---
 
 ## Framework Detection
 
-Before recommending architecture, identify the framework. Each framework has a different level of opinion about structure:
+Detect first — each framework has a different opinion level about structure.
 
-| Framework | Opinion Level | What the skill provides |
-|-----------|--------------|------------------------|
-| **Angular** | High — modules, services, DI, routing built-in | Validate and optimize within Angular's structure |
-| **Vue** | Medium — Composition API, Pinia exist but structure is free | Guide organization where Vue leaves it open |
-| **React** | Low — almost nothing decided for you | Define the architecture that React doesn't provide |
+| Framework | Opinion | Skill role | Reference |
+|-----------|---------|-----------|-----------|
+| **Angular** | High (modules, DI, routing built-in) | Validate/optimize within Angular | `references/angular.md` |
+| **Vue** | Medium (Composition API + Pinia, structure free) | Fill gaps Vue leaves open | `references/vue.md` |
+| **React** | Low (almost nothing decided) | Define what React doesn't | `references/react.md` |
 
-**Detection:** Check `package.json`, `stack-context.md`, or ask the user. Then load the relevant reference:
-- React → `references/react.md`
-- Vue → `references/vue.md`
-- Angular → `references/angular.md`
-
-For other frameworks (Svelte, Solid, etc.), apply the universal principles below and adapt to the framework's idioms.
+Detect via `package.json`, `stack-context.md`, or ask. For Svelte/Solid/etc., apply universal principles below.
 
 ---
 
@@ -46,27 +27,11 @@ For other frameworks (Svelte, Solid, etc.), apply the universal principles below
 
 ### Context Questions
 
-1. **Scale** — How many pages/views does this project have?
-   - Small (1-10 pages, single feature area)
-   - Medium (10-30 pages, 3-6 feature areas)
-   - Large (30+ pages, many feature areas)
-
-2. **Team size** — How many frontend developers?
-   - Solo or small (1-2)
-   - Medium (3-5)
-   - Large (6+)
-
-3. **Component reuse** — How much shared UI exists?
-   - Minimal (mostly page-specific components)
-   - Moderate (shared component library emerging)
-   - Heavy (design system, shared across multiple apps)
-
-4. **Domain complexity** — How complex is the business logic on the frontend?
-   - Light (display data, simple forms, basic CRUD)
-   - Moderate (multi-step flows, complex state, role-based views)
-   - Heavy (real-time data, complex calculations, rich interactions)
-
-5. **Framework** — Which framework? (affects how much the skill needs to define)
+1. **Scale** — Small (1-10 pages) / Medium (10-30) / Large (30+)
+2. **Team size** — Solo (1-2) / Medium (3-5) / Large (6+)
+3. **Component reuse** — Minimal / Moderate / Heavy (design system)
+4. **Domain complexity** — Light (CRUD) / Moderate (multi-step flows) / Heavy (real-time, rich interactions)
+5. **Framework** — Determines how much the skill must define
 
 ### Decision Matrix
 
@@ -74,23 +39,11 @@ For other frameworks (Svelte, Solid, etc.), apply the universal principles below
 |---------|---------|-----|
 | Small scale, solo dev, light domain | **Simple Component-Based** | Flat structure, fast to navigate, no ceremony |
 | Medium scale, small-medium team, moderate domain | **Feature-Based** | Features co-located, scales well, easy to understand |
-| Large scale, large team, heavy domain | **Feature-Sliced Design** | Formalized layers, clear boundaries, prevents chaos at scale |
+| Large scale (30+ pages, 6+ devs), heavy domain, complex feature interactions | **Feature-Sliced Design** | Formalized layers, strict boundaries; overkill for solo/small/CRUD |
 
-### Over-Engineering Signals
+**Over-engineering signals:** more folders than files; barrel files everywhere causing circular deps; `/shared` with 50+ unnavigable components; layers added "because architecture says so".
 
-- More folders than files inside them
-- Components with `index.ts` re-exports that just re-export one thing
-- A `/shared` or `/common` folder with 50+ components nobody can navigate
-- Barrel files (`index.ts`) everywhere creating circular dependency problems
-- Layers/abstractions that exist "because the architecture says so" but add no value
-
-### Under-Engineering Signals
-
-- A flat `components/` folder with 80+ files
-- Business logic mixed into UI components (API calls inside buttons)
-- State management scattered — some in stores, some in components, some in URL params
-- Can't find where something lives without full-text search
-- New team members take a week to understand the structure
+**Under-engineering signals:** flat `components/` with 80+ files; API calls inside buttons; state scattered across stores/components/URL; full-text search needed to find anything; week-long onboarding.
 
 ---
 
@@ -98,246 +51,105 @@ For other frameworks (Svelte, Solid, etc.), apply the universal principles below
 
 ### Simple Component-Based
 
-For small projects where anything more would be overhead.
+For small projects where anything more is overhead.
 
 ```
 src/
-  pages/
-    home.tsx
-    about.tsx
-    settings.tsx
-  components/
-    header.tsx
-    footer.tsx
-    user-card.tsx
-    settings-form.tsx
-  hooks/                    (or composables/)
-    use-auth.ts
-    use-users.ts
-  lib/
-    api.ts
-  types/
-    user.ts
+  pages/         home.tsx, about.tsx, settings.tsx
+  components/    header.tsx, footer.tsx, user-card.tsx     (flat)
+  hooks/         use-auth.ts, use-users.ts                  (or composables/)
+  lib/           api.ts
+  types/         user.ts
   app.tsx
   routes.tsx
 ```
 
-Rules:
-- Pages are route-level components
-- Components folder is flat (no deep nesting for 10-20 components)
-- Hooks/composables co-located or in a single folder
-- No feature folders needed at this scale
-- Direct imports between components are fine
+Rules: pages = route-level; components folder flat; no feature folders; direct imports fine.
 
-When to graduate: when the `components/` folder exceeds 25-30 files and you start struggling to find things.
+**Graduate when:** `components/` exceeds 25-30 files.
 
 ### Feature-Based
 
-For medium projects. The frontend equivalent of Vertical Slice — organize by business feature.
-
-**Read the framework-specific reference** for detailed guidance:
-- React: `references/react.md`
-- Vue: `references/vue.md`
-- Angular: `references/angular.md`
-
-Core structure (framework-agnostic):
+For medium projects. Frontend equivalent of Vertical Slice — organize by business feature. See framework-specific reference for details.
 
 ```
 src/
   features/
-    auth/
-      components/
-      hooks|composables/
-      types.ts
-      index.ts
-    products/
-      components/
-      hooks|composables/
-      types.ts
-      index.ts
-    orders/
-      components/
-      hooks|composables/
-      types.ts
-      index.ts
+    auth/        components/  hooks|composables/  types.ts  index.ts
+    products/    components/  hooks|composables/  types.ts  index.ts
+    orders/      components/  hooks|composables/  types.ts  index.ts
   shared/
-    components/
-      ui/               (design system primitives)
-      layout/            (header, sidebar, footer)
+    components/  ui/          (design system primitives)
+                 layout/      (header, sidebar, footer)
     hooks|composables/
-    lib/
-      api.ts
+    lib/         api.ts
     types/
-  pages/                 (or routes/ — thin, compose features)
+  pages/         (thin, compose features)
   app.tsx
 ```
 
-Key rules:
-- Features own their components, hooks, and types
-- Features expose a public API via `index.ts` — other features import from the barrel, not from internal files
-- Shared contains only truly reusable, domain-agnostic code
-- Pages are thin — they compose features, they don't contain business logic
+Rules:
+- Features own their components, hooks, types
+- Cross-feature imports go through `index.ts` public API only — never internal files
+- `shared/` = truly reusable, domain-agnostic code only
+- Pages are thin — compose features, no business logic
 
 ### Feature-Sliced Design (FSD)
 
-For large projects with many developers and complex feature interactions.
-
-FSD formalizes frontend structure into layers with strict dependency rules:
+For large projects with many devs and complex feature interactions.
 
 ```
 src/
-  app/              (global setup: providers, routing, styles)
-  pages/            (route-level compositions — combine widgets and features)
-  widgets/          (complex UI blocks — combine features and entities)
-  features/         (user interactions — forms, toggles, actions)
-  entities/         (business objects — user, product, order)
-  shared/           (infrastructure — UI kit, API client, lib utilities)
+  app/         (global setup: providers, routing, styles)
+  pages/       (route-level — combine widgets and features)
+  widgets/     (complex UI blocks — combine features and entities)
+  features/    (user interactions — forms, toggles, actions)
+  entities/    (business objects — user, product, order)
+  shared/      (infrastructure — UI kit, API client, utilities)
 ```
 
-Dependency rule (strict):
-```
-app → pages → widgets → features → entities → shared
-```
-
-Each layer can only import from layers **below** it. Never upward.
+**Strict dependency rule:** `app → pages → widgets → features → entities → shared`. Each layer imports only from layers below. Never upward.
 
 Within each layer, organize by **slice** (domain concept):
+
 ```
 features/
-  add-to-cart/
-    ui/
-    model/
-    api/
-    index.ts
-  apply-discount/
-    ui/
-    model/
-    api/
-    index.ts
+  add-to-cart/      ui/  model/  api/  index.ts
+  apply-discount/   ui/  model/  api/  index.ts
 ```
 
-FSD is well-documented externally. The skill's role is to help decide **when** FSD is appropriate and how to apply it pragmatically — not to replicate the full FSD spec.
-
-When FSD is right:
-- 6+ frontend developers
-- 30+ pages
-- Features interact with each other in complex ways
-- You need strict boundaries to prevent spaghetti
-
-When FSD is overkill:
-- Small-medium projects
-- Solo developer or small team
-- Simple CRUD apps
+**Apply FSD when:** 6+ frontend devs, 30+ pages, complex feature interactions, strict boundaries needed. Skill's role is to decide *when* FSD fits and apply it pragmatically — not replicate the full spec.
 
 ---
 
-## Universal Principles (All Patterns)
+## Universal Principles
 
-### 1. Components Have Clear Roles
-
-Every component falls into one of these categories:
-
-| Role | Responsibility | Knows about business logic? |
-|------|---------------|----------------------------|
-| **Page** | Route entry point, composes features | No — just layout and composition |
-| **Feature component** | Domain-specific UI + logic | Yes — owns its feature's behavior |
-| **UI component** | Reusable, presentational | No — receives data via props/slots |
-| **Layout component** | Page structure (header, sidebar) | No — structural only |
-
-Don't mix roles. A button component should not fetch data. A page should not contain business logic.
-
-### 2. Feature Isolation
-
-Features should be as independent as possible:
-- Feature components import from `shared/` and their own feature folder
-- Cross-feature imports go through the feature's public API (`index.ts`), never internal files
-- If Feature A needs data from Feature B, it should go through a shared hook/composable or the data layer, not by importing B's internal components
-
-### 3. State Belongs Where It's Used
-
-| State type | Where it lives | Examples |
-|------------|---------------|----------|
-| Component state | Inside the component | Form input values, toggle open/close |
-| Feature state | Feature's store/hook | Selected filters, feature-specific UI state |
-| Server state | Data fetching library cache | API responses, CRUD data |
-| Global UI state | App-level store | Theme, sidebar collapsed, current user |
-| URL state | Router/URL params | Current page, search query, selected tab |
-
-Don't hoist state higher than necessary. Don't put everything in a global store.
-
-### 4. Pages Are Thin
-
-Pages (route-level components) should:
-- Set up layout
-- Compose feature components
-- Handle route params
-- Set page metadata (title, breadcrumbs)
-
-Pages should NOT:
-- Contain business logic
-- Make API calls directly (delegate to feature hooks/composables)
-- Have complex state management
-
-### 5. Shared Folder Discipline
-
-Same as backend: shared is for truly reusable, domain-agnostic code.
-
-Good shared:
-- UI primitives (Button, Input, Modal, Table)
-- Layout components (Header, Sidebar, PageWrapper)
-- API client setup
-- Auth hooks/composables
-- Utility functions (formatDate, formatCurrency)
-- Type definitions for API responses
-
-Bad shared:
-- Feature components disguised as "reusable"
-- Business logic utilities
-- Components used by only one feature
-
-### 6. Component Composition Over Configuration
-
-Prefer composing small components over building large configurable ones.
-
-```tsx
-// Prefer this — composable
-<Card>
-  <CardHeader>
-    <CardTitle>{title}</CardTitle>
-  </CardHeader>
-  <CardContent>{children}</CardContent>
-</Card>
-
-// Over this — configurable
-<Card
-  title={title}
-  headerVariant="primary"
-  showFooter={true}
-  footerActions={actions}
-  contentPadding="lg"
-/>
-```
-
-Compound components are easier to understand, modify, and extend than prop-heavy monoliths.
-
-### 7. Barrel Files Strategy
-
-Barrel files (`index.ts`) are useful for feature public APIs but dangerous when overused:
-
-- DO use barrels at the feature boundary: `features/auth/index.ts` exports what other features can use
-- DO NOT create barrels inside feature internals (each subfolder doesn't need an index.ts)
-- DO NOT create a single barrel that re-exports all shared components (leads to circular deps and bundle bloat)
-- Watch for circular dependency issues — they often come from barrel files
+| Principle | Rule |
+|-----------|------|
+| **Component roles** | Page (compose, no logic) / Feature (domain logic) / UI (presentational, props only) / Layout (structural). Never mix — buttons don't fetch, pages don't compute. |
+| **Feature isolation** | Features import from `shared/` and self only. Cross-feature → through public `index.ts`. Need data from another feature → shared hook or data layer, never internal imports. |
+| **State location** | Component state → in component. Feature state → feature store/hook. Server state → fetching lib cache. Global UI → app store. URL state → router params. Don't hoist higher than needed; don't globalize everything. |
+| **Thin pages** | Pages set up layout, compose features, handle route params, set metadata. Never contain business logic, direct API calls, or complex state. |
+| **Shared discipline** | Good: UI primitives, layout, API client, auth hooks, utilities, API types. Bad: feature components disguised as reusable, business logic, single-feature consumers. |
+| **Barrel strategy** | DO at feature boundary (`features/auth/index.ts`). DON'T inside internals or as one mega-barrel of all shared (causes circular deps + bundle bloat). |
 
 ---
 
-## Guidance Workflow
+## When NOT to Use
 
-When a user asks for frontend architecture guidance:
+- [ ] User asks how to **implement** a feature (routing, forms, data fetching) — use `add-frontend-development`
+- [ ] User asks about **UI/UX design**, styling, components visuals — use `add-ux-design` / `frontend-design`
+- [ ] User asks about **backend** structure or APIs — use `add-backend-architecture`
+- [ ] User wants to **scaffold** a new project from scratch — use `add-project-scaffolding`
+- [ ] Question is about a specific library's API — use Context7 docs
 
-1. **Detect framework** — Check package.json, stack-context.md, or ask
-2. **Assess context** — Scale, team, complexity, component reuse
-3. **Recommend pattern** — Match to Decision Matrix, explain why alternatives don't fit
-4. **Load reference** — Read the framework-specific reference for detailed guidance
-5. **Apply to their domain** — Map the pattern to their specific features and pages
-6. **Address the framework gap** — For React: define everything. For Vue: fill the gaps. For Angular: validate and optimize.
+---
+
+## Workflow
+
+- [ ] Detect framework (package.json, stack-context.md, or ask)
+- [ ] Assess context: scale, team size, component reuse, domain complexity
+- [ ] Match to Decision Matrix; explain why alternatives don't fit
+- [ ] Load framework-specific reference (`references/{react|vue|angular}.md`)
+- [ ] Map the pattern to user's actual features and pages
+- [ ] Address framework gap: React → define everything; Vue → fill gaps; Angular → validate/optimize

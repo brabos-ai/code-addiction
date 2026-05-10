@@ -20,7 +20,9 @@ Skill for technical codebase analysis focused on a specific feature. Persists an
 
 ### When NOT to Use
 
-- For global project analysis (use `add-architecture-discovery` instead)
+- Global project analysis (use `add-architecture-discovery` instead)
+- Post-implementation review of finished work (use `add-code-review`)
+- Hotfix triage where root-cause investigation is needed (use `add-investigation`)
 
 ---
 
@@ -30,7 +32,7 @@ Skill for technical codebase analysis focused on a specific feature. Persists an
 - `token-efficiency` — minified JSON, tables, no decoration
 - `documentation-style/cache` — Read → Preserve → Complement → Metadata
 
-### Phase 1: Check Cache (Documental Cache)
+### Phase 1: Check Cache
 
 ```bash
 cat docs/features/[FEATURE_ID]/discovery.md
@@ -47,6 +49,8 @@ cat docs/features/[FEATURE_ID]/discovery.md
 **Goal:** Identify features with direct or indirect relation to the current feature.
 
 **EXECUTE as a separate subagent [read-only, light] BEFORE Phase 2.**
+
+**Cache:** IF `past-features.md` exists AND `metadata.updated` = today → reuse, skip Phase 1.5.
 
 **Required input:**
 - `RECENT_CHANGELOGS` (output of `init.sh` or `status.sh`)
@@ -96,8 +100,6 @@ cat docs/features/[FEATURE_ID]/discovery.md
 ## Metadata
 {"updated":"YYYY-MM-DD","feature":"F[XXXX]-[name]","matches":N,"total_analyzed":N,"by":"past-features-agent"}
 ```
-
-**Cache check:** IF `past-features.md` exists AND `metadata.updated` = today → use as cache, skip Phase 1.5.
 
 ---
 
@@ -178,33 +180,20 @@ cat docs/features/[FEATURE_ID]/discovery.md
 
 **Goal:** Identify WHAT MUST EXIST for the feature to work.
 
-**For EACH requirement in about.md, analyze:**
+**For EACH requirement in about.md, analyze across all prerequisite types:**
 
-### Required Data/Models
-| Requirement | Prerequisite | Exists? | Action |
-|-------------|--------------|---------|--------|
-| RF01 | Field X on entity Y | ✅/❌ | Create if ❌ |
-
-### Dependent Flows
-| Requirement | Required Flow | Exists? | Action |
-|-------------|---------------|---------|--------|
-| RF01 | Endpoint to assign X | ✅/❌ | Create if ❌ |
-
-### Integrations
-| Requirement | Integration | Exists? | Action |
-|-------------|-------------|---------|--------|
-| RF01 | External API Y | ✅/❌ | Configure if ❌ |
-
-### Existing Data
-| Requirement | Required Data | Populated? | Action |
-|-------------|---------------|------------|--------|
-| RF01 | Records with field X | ✅/❌ | Migrate if ❌ |
+| Type | Requirement | Prerequisite | Exists? | Action |
+|------|-------------|--------------|---------|--------|
+| Data/Model | RF01 | Field X on entity Y | ✅/❌ | Create if ❌ |
+| Flow | RF01 | Endpoint to assign X | ✅/❌ | Create if ❌ |
+| Integration | RF01 | External API Y | ✅/❌ | Configure if ❌ |
+| Existing Data | RF01 | Records with field X | ✅/❌ | Migrate if ❌ |
 
 **Rule:** If any prerequisite is ❌, the feature CANNOT be considered complete without implementing it first.
 
 ---
 
-## Delivery Completeness (CRITICAL)
+## Delivery Completeness
 
 **Central question:** With this scope, can the end user USE the functionality?
 
@@ -219,7 +208,7 @@ cat docs/features/[FEATURE_ID]/discovery.md
 - Validated "type choice" but excluded frontend → ❌ User can't use
 - Backend only without UI → ❌ Feature unusable (except for pure APIs)
 
-**⚠️ If "User can use?" = ❌ → Scope INCOMPLETE. Add the missing layer.**
+**If "User can use?" = ❌ → Scope INCOMPLETE. Add the missing layer.**
 
 ---
 
@@ -260,7 +249,7 @@ cat docs/features/[FEATURE_ID]/discovery.md
 {"updated":"YYYY-MM-DD","sessions":N,"by":"[subagent]"}
 ```
 
-**IMPORTANT:** Always update `## Summary` and `## Updates` when there are changes.
+**Always update `## Summary` and `## Updates` when there are changes.**
 
 ### Phase 4: Persist/Update
 
@@ -274,70 +263,21 @@ cat docs/features/[FEATURE_ID]/discovery.md
 
 ---
 
-## Rules
-
-**Do:**
-- Read about.md first (understand what is needed)
-- Analyze prerequisites for EACH requirement (CRITICAL)
-- Validate Delivery Completeness (CRITICAL)
-- Ask: can the user USE the feature with this scope?
-- Search for similar features as reference
-- Focus only on the relevant domain
-- Update metadata at the end
-- Use concrete and verifiable paths
-
-**Don't:**
-- Analyze the entire codebase (focus on the feature)
-- Ignore existing discovery.md
-- Overwrite valid information
-- Create redundant files
-- List files without clear relevance
-- Assume a prerequisite exists without verifying
-- Skip the Prerequisites Analysis section
-- Skip the Delivery Completeness section
-- Accept a scope that makes the feature unusable
-
----
-
-## ADD Integration
-
-When ADD dispatches a subagent for discovery:
-
-```markdown
-**Skills:**
-```bash
-cat {{skill:add-feature-discovery/SKILL.md}}
-cat {{skill:add-doc-schemas/business.md}}
-```
-
-**Context:**
-- Feature: [ID]
-- about.md: [content or path]
-
-**Instructions:**
-1. Check existing discovery.md
-2. If empty/outdated → full analysis
-3. If filled → use as cache
-4. Update metadata
-```
-
----
-
 ## Checklist
 
+- [ ] Read about.md to understand requirements?
 - [ ] Checked existing discovery.md?
 - [ ] Checked existing past-features.md (cache check)?
-- [ ] **Phase 1.5 executed?** Past features analyzed with RECENT_CHANGELOGS?
+- [ ] Phase 1.5 executed with RECENT_CHANGELOGS?
 - [ ] past-features.md generated with matches + no-matches + metadata?
-- [ ] Read about.md to understand requirements?
 - [ ] Read past-features.md BEFORE analyzing codebase?
-- [ ] Identified similar features?
-- [ ] **"Related Features" section included in discovery.md?** (with table + `<!-- refs: ... -->`)
-- [ ] Mapped files to create/modify?
-- [ ] **Analyzed prerequisites for EACH requirement?** (CRITICAL)
-- [ ] Are missing prerequisites in scope of the feature?
-- [ ] **Validated Delivery Completeness?** (CRITICAL)
-- [ ] **Can the user USE the feature with this scope?** (CRITICAL)
-- [ ] Listed dependencies?
-- [ ] Documented assumptions and risks?
-- [ ] Updated metadata?
+- [ ] Identified similar features and reused patterns?
+- [ ] "Related Features" section included in discovery.md (with table + `<!-- refs: ... -->`)?
+- [ ] Mapped files to create/modify with concrete, verifiable paths?
+- [ ] Analyzed prerequisites for EACH requirement (no assumptions, verified)?
+- [ ] Missing prerequisites are in scope of the feature?
+- [ ] Validated Delivery Completeness — can the user USE the feature with this scope? (CRITICAL)
+- [ ] Focused only on the relevant domain (not entire codebase)?
+- [ ] Preserved valid existing info (no overwrite, no redundant files)?
+- [ ] Listed dependencies, documented assumptions and risks?
+- [ ] Updated metadata at the end?

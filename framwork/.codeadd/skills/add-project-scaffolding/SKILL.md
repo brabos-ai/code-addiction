@@ -1,7 +1,6 @@
 ---
 name: add-project-scaffolding
-description: |
-  Guide project creation from scratch: Node.js stacks (Express, Fastify, NestJS, Bun), two tiers (Starter monolith / Scale monorepo), NestJS-like module organization, and Starter-to-Scale migration. Use when user wants to create a new project, scaffold a codebase, or migrate from monolith to monorepo.
+description: Guide Node.js project scaffolding — Starter monolith, Scale monorepo, Starter→Scale migration.
 ---
 
 # Project Scaffolding
@@ -9,11 +8,12 @@ description: |
 Guide AI-assisted creation of Node.js projects from scratch with consistent architecture across stacks.
 
 **Use for:** Creating new projects, choosing stack, scaffolding folder structure, migrating Starter to Scale
-**Not for:** Implementing features (use backend/database/frontend-development), analyzing existing projects (use architecture-discovery)
+**Not for:**
+- Implementing features (use backend/database/frontend-development)
+- Analyzing existing projects (use architecture-discovery)
+- Non-Node.js stacks (Python, Go, Java, .NET, etc.)
 
 **Principle:** This skill is KNOWLEDGE that guides the AI — not a CLI generator or static templates. The AI generates the actual files using its knowledge of each framework, guided by these architectural decisions.
-
----
 
 ---
 
@@ -38,15 +38,17 @@ Single `src/` directory organized by domain modules. Every module contains ALL i
 
 ### Structure
 
+> **Legend:** NestJS uses `*.controller.ts` / `*.module.ts` (decorator-based). Other stacks (Express/Fastify/Bun-Hono/Bun-Elysia) use `*.routes.ts` for handlers and `index.ts` as barrel/plugin export.
+
 ```
 project/
 ├── src/
 │   ├── modules/                    # One directory per domain
 │   │   ├── users/
-│   │   │   ├── users.controller.ts # NestJS: @Controller, Others: .routes.ts
+│   │   │   ├── users.controller.ts
 │   │   │   ├── users.service.ts
 │   │   │   ├── users.repository.ts
-│   │   │   ├── users.module.ts     # NestJS: @Module, Others: index.ts (barrel)
+│   │   │   ├── users.module.ts
 │   │   │   ├── dtos/
 │   │   │   │   ├── create-user.dto.ts
 │   │   │   │   └── user-response.dto.ts
@@ -58,15 +60,15 @@ project/
 │   │       └── ...
 │   ├── shared/                     # Cross-module code
 │   │   ├── database/
-│   │   │   ├── database.module.ts  # NestJS: @Module, Others: database.ts
+│   │   │   ├── database.module.ts
 │   │   │   ├── migrations/
 │   │   │   └── types/
 │   │   ├── config/
 │   │   │   └── env.ts
 │   │   ├── middlewares/
-│   │   ├── guards/                 # NestJS: guards, Others: auth middleware
+│   │   ├── guards/
 │   │   └── utils/
-│   ├── app.module.ts               # NestJS: @Module, Others: app.ts
+│   ├── app.module.ts
 │   └── main.ts                     # Entry point
 ├── tests/
 │   ├── unit/
@@ -83,7 +85,13 @@ project/
 
 ### Naming by Framework
 
-{"nestjs":{"controller":"*.controller.ts","service":"*.service.ts","module":"*.module.ts","barrel":"index.ts in libs/"},"express":{"controller":"*.routes.ts","service":"*.service.ts","module":"index.ts (exports)","barrel":"index.ts"},"fastify":{"controller":"*.routes.ts","service":"*.service.ts","module":"index.ts (plugin export)","barrel":"index.ts"},"bun-hono":{"controller":"*.routes.ts","service":"*.service.ts","module":"index.ts","barrel":"index.ts"},"bun-elysia":{"controller":"*.routes.ts","service":"*.service.ts","module":"index.ts (plugin export)","barrel":"index.ts"}}
+| Stack | Controller | Service | Module | Barrel |
+|-------|-----------|---------|--------|--------|
+| nestjs | `*.controller.ts` | `*.service.ts` | `*.module.ts` | `index.ts` (in libs/) |
+| express | `*.routes.ts` | `*.service.ts` | `index.ts` (exports) | `index.ts` |
+| fastify | `*.routes.ts` | `*.service.ts` | `index.ts` (plugin) | `index.ts` |
+| bun-hono | `*.routes.ts` | `*.service.ts` | `index.ts` | `index.ts` |
+| bun-elysia | `*.routes.ts` | `*.service.ts` | `index.ts` (plugin) | `index.ts` |
 
 ---
 
@@ -145,19 +153,12 @@ Ask the user (or infer from context):
 
 ```
 1. Stack: express | fastify | nestjs | bun-hono | bun-elysia
-2. Database: postgresql | mysql | sqlite | mongodb | none (for now)
-3. ORM: prisma | drizzle | kysely | typeorm | none
-4. Frontend: react | vue | svelte | none
-5. Tier: starter (default) | scale
-6. Package manager: npm | pnpm | yarn | bun
+2. Database: postgresql | mysql | sqlite | mongodb | none (default: postgresql)
+3. ORM: prisma | drizzle | kysely | typeorm | none (default: prisma)
+4. Frontend: react | vue | svelte | none (default: none)
+5. Tier: starter | scale (default: starter)
+6. Package manager: npm | pnpm | yarn | bun (default: pnpm)
 ```
-
-If the user doesn't specify, use sensible defaults:
-- **Tier:** starter
-- **Database:** postgresql
-- **ORM:** prisma (most common, good DX)
-- **Frontend:** none (backend-first is common)
-- **Package manager:** pnpm
 
 ### 2. Generate Folder Structure
 
@@ -169,7 +170,11 @@ For each stack, generate appropriate configs:
 
 #### TypeScript Config
 
-{"base":{"compilerOptions":{"target":"ES2022","module":"NodeNext","moduleResolution":"NodeNext","strict":true,"esModuleInterop":true,"skipLibCheck":true,"forceConsistentCasingInFileNames":true,"resolveJsonModule":true,"declaration":true,"declarationMap":true,"sourceMap":true,"outDir":"./dist"}},"nestjs_additions":{"emitDecoratorMetadata":true,"experimentalDecorators":true},"bun_override":{"types":["bun-types"]}}
+| Scope | Options |
+|-------|---------|
+| Base `compilerOptions` | `target: ES2022`, `module/moduleResolution: NodeNext`, `strict: true`, `esModuleInterop`, `skipLibCheck`, `forceConsistentCasingInFileNames`, `resolveJsonModule`, `declaration`, `declarationMap`, `sourceMap`, `outDir: ./dist` |
+| NestJS additions | `emitDecoratorMetadata: true`, `experimentalDecorators: true` |
+| Bun override | `types: ["bun-types"]` |
 
 #### Docker Compose (dev)
 
@@ -256,12 +261,10 @@ Each `module/` and `shared/` from Starter maps 1:1 to a `package/` or `apps/` in
 
 ## Stack-Specific Guidance
 
-The AI already knows each framework's API. This section provides ONLY the architectural decisions that are project-specific, not syntax tutorials.
-
-### All Stacks (Universal)
+### Universal (all stacks)
 
 - Organize by domain modules, not by technical layer
-- Each module is self-contained: routes/controller + service + repository + DTOs + entities
+- Each module self-contained: routes/controller + service + repository + DTOs + entities
 - Entry point (`main.ts`) registers modules, not individual routes
 - Configuration centralized in `shared/config/` — never `process.env` in modules
 - Database connection in `shared/database/` — shared across modules
@@ -271,11 +274,11 @@ The AI already knows each framework's API. This section provides ONLY the archit
 - Use Router (Express) or plugin (Fastify) to encapsulate each module
 - Register all module routers/plugins in `app.ts`
 - Module's `index.ts` exports the router/plugin for registration
-- DI is manual — create instances in `index.ts` or use a lightweight container (tsyringe, awilix)
+- DI manual — create instances in `index.ts` or use lightweight container (tsyringe, awilix)
 
 ### NestJS
 
-- Standard NestJS patterns apply — `@Module`, `@Controller`, `@Injectable`
+- Standard NestJS patterns — `@Module`, `@Controller`, `@Injectable`
 - Each domain gets its own module with providers, controllers, exports
 - Register all feature modules in `AppModule`
 
@@ -283,7 +286,7 @@ The AI already knows each framework's API. This section provides ONLY the archit
 
 - Use Hono's `app.route()` or Elysia's `.use()` plugin to mount modules
 - Module's `index.ts` exports the sub-app/plugin
-- Leverage Bun's native performance — no need for clustering
+- Leverage Bun's native performance — no clustering needed
 
 ---
 
@@ -318,5 +321,5 @@ The AI already knows each framework's API. This section provides ONLY the archit
 
 After the project structure is created, run `/add.xray` to generate:
 - `.codeadd/project/stack-context.md` — stack key-value file consumed by dev skills
-- `{{addpath:skills/project-patterns/}}` — implementation patterns skill with backend, frontend, database area files
+- `{{skill:project-patterns/}}` — implementation patterns skill with backend, frontend, database area files
 - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` — context files with architecture contract and technical spec

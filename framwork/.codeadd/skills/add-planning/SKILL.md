@@ -1,6 +1,6 @@
 ---
 name: add-planning
-description: Use when creating technical implementation plans - creates/updates plan.md with tasks, file mappings, dependencies and complexity estimates using Technical Style
+description: Create/update plan.md with sequenced tasks, file mapping, dependencies and S/M/L estimates
 ---
 
 # Technical Planning
@@ -21,6 +21,8 @@ Skill for creating technical implementation plans. Creates/updates `plan.md` wit
 ### When NOT to Use
 
 - Without `about.md` (document the feature first)
+- Without `discovery.md` (run feature discovery first)
+- Non-technical roadmaps or product timelines (use product docs instead)
 
 ---
 
@@ -170,29 +172,7 @@ Technical plan for implementing [feature]. Based on about.md and discovery.md.
 
 ---
 
-## Task Format
-
-### JSON Spec (compact)
-```json
-[{"id":1,"task":"description","estimate":"S","deps":[]},{"id":2,"task":"description","estimate":"M","deps":[1]}]
-```
-
-### Detailed Task (expanded)
-```markdown
-### Task N: [Title]
-**Estimate:** [S/M/L]
-**Files:** `path/file.ts`
-**Deps:** Task [N-1] or None
-
-**Checklist:**
-- [ ] [Verifiable item]
-```
-
----
-
 ## Batching Strategy
-
-### When to use batches
 
 | Task count | Strategy |
 |------------|----------|
@@ -200,71 +180,12 @@ Technical plan for implementing [feature]. Based on about.md and discovery.md.
 | 5–10 tasks | 2–3 batches per layer |
 | >10 tasks | Batches per domain/module |
 
-### Commit rules
-
-```
-Batch = 1 semantic commit
-
-feat([feature]): add [what was added]
-fix([feature]): fix [what was fixed]
-refactor([feature]): refactor [what changed]
-test([feature]): add tests for [what]
-```
+**Commit rules:** one semantic commit per batch — see `add-commit` skill for Conventional Commits type detection and message logic.
 
 ---
 
 ## Rules
 
-**Do:**
-- Base tasks on about.md and discovery.md
-- Include dependencies between tasks
-- Estimate all tasks (S/M/L)
-- Concrete and verifiable paths
-- Batches with semantic commits
+**Do:** base tasks on about.md and discovery.md; include dependencies; estimate every task (S/M/L); use concrete paths; one semantic commit per batch.
 
-**Don't:**
-- Vague tasks ("implement feature")
-- Estimates without criteria
-- Ignore dependencies between tasks
-- Plan without reading prior documentation
-- Overly large batches (>5 tasks)
-
----
-
-## ADD Integration
-
-When ADD dispatches a subagent for planning:
-
-```markdown
-**Skills:**
-```bash
-cat {{skill:add-planning/SKILL.md}}
-cat {{skill:add-doc-schemas/technical.md}}
-```
-
-**Context:**
-- Feature: [ID]
-- about.md: [path or content]
-- discovery.md: [path or content]
-
-**Instructions:**
-1. Read about.md (requirements)
-2. Read discovery.md (files, patterns)
-3. Read design.md if it exists
-4. Create plan.md with sequenced tasks
-5. Update metadata
-```
-
----
-
-## Checklist
-
-- [ ] Read about.md (requirements)?
-- [ ] Read discovery.md (files)?
-- [ ] Tasks have sequential IDs?
-- [ ] All tasks have estimate (S/M/L)?
-- [ ] Dependencies between tasks correct?
-- [ ] Paths are concrete?
-- [ ] Batches defined (if >5 tasks)?
-- [ ] Risks mapped?
-- [ ] Metadata updated?
+**Don't:** vague tasks ("implement feature"); estimates without criteria; ignore dependencies; plan without prior docs; batches >5 tasks.

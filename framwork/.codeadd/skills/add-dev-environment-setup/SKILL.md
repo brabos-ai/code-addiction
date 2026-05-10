@@ -1,6 +1,6 @@
 ---
 name: add-dev-environment-setup
-description: Use when user needs to set up bash/git/jq/gh CLI to run add-pro scripts, environment tools are missing, or VS Code terminal is not WSL — detects OS, diagnoses gaps silently, confirms with user, installs missing tools in correct order, and merges WSL profile into .vscode/settings.json on Windows
+description: Use when bash/git/jq/gh CLI are missing or VS Code terminal is not WSL — detects OS, diagnoses gaps, installs missing tools.
 ---
 
 # Dev Environment Setup
@@ -23,25 +23,16 @@ Detect OS → diagnose silently → confirm → install → configure VS Code.
 
 - All tools already installed and verified
 - User is on Linux with working environment
+- Container or CI environment (ephemeral; tools provisioned by image/workflow)
 
 ---
 
 ## ⛔ ABSOLUTE PROHIBITIONS
 
 ```
-⛔ DO NOT USE Bash tool to run sudo, apt, dnf, pacman, brew install, curl|bash, wsl --install, or gh auth login
-⛔ DO NOT USE Bash tool to run ANY command that requires password input or interactive prompts
-⛔ DO NOT install WSL without confirming admin privileges first
-⛔ DO NOT use `apt-get install gh` — outdated, use official gh repo
-⛔ DO NOT reinstall WSL if Ubuntu or any real distro already exists — use existing
-⛔ DO NOT suggest Git Bash as a bash alternative — WSL only
-⛔ DO NOT overwrite .vscode/settings.json — always READ → MERGE → WRITE
-⛔ DO NOT install anything if user says N to confirmation
-
-INSTALLATION RULE:
-  ⛔ DO NOT USE: Bash tool for install/auth commands (sudo hangs waiting for password)
-  ✅ DO: SHOW commands in a code block → user copies and runs manually
-  ✅ DO: AFTER user confirms execution → VERIFY with non-sudo checks (--version)
+⛔ NEVER use Bash tool for sudo/apt/dnf/pacman/brew/curl|bash/wsl --install/gh auth login (hangs on password or interactive prompt)
+⛔ NEVER overwrite .vscode/settings.json, reinstall WSL when a real distro exists, suggest Git Bash, use `apt-get install gh`, or proceed after user says N
+✅ ALWAYS show install commands in code blocks → user runs manually → verify with non-sudo `--version` checks
 ```
 
 ---
@@ -65,8 +56,6 @@ $env:OS           # Windows PowerShell → Windows_NT
 | bash | `bash --version` | Must be inside WSL, not Git Bash |
 | git | `git --version` | Inside WSL |
 | gh | `gh --version` | Inside WSL |
-| claude | `claude --version` | Optional — check if Claude Code is installed |
-| opencode | `opencode --version` | Optional — check if OpenCode is installed |
 
 WSL check logic:
 - `wsl -l -v` shows a real distro (Ubuntu, Debian, etc.) → WSL is ready, use existing distro
@@ -104,6 +93,7 @@ SAY: "I'll show you the commands to install. You run them in the terminal and le
 
 ⛔ DO NOT USE Bash tool for ANY command in this step.
 ⛔ ALL commands below are SHOWN to the user in code blocks — user copies and runs manually.
+⛔ AFTER each sub-step, WAIT for user confirmation before proceeding to the next.
 ✅ AFTER user confirms execution → proceed to STEP 6 (VERIFY) using non-sudo checks.
 
 ### Windows
@@ -119,8 +109,6 @@ wsl --install -d Debian
 
 SAY: "Restart Windows. Open the Debian terminal to complete the setup and let me know."
 
-⛔ WAIT for user confirmation before proceeding.
-
 **5.2 — Tools inside WSL**
 
 SAY: "Run in the WSL terminal:"
@@ -128,8 +116,6 @@ SAY: "Run in the WSL terminal:"
 ```bash
 sudo apt update && sudo apt install -y git curl
 ```
-
-⛔ WAIT for user confirmation before proceeding.
 
 **5.3 — gh CLI (official repo — NOT `apt-get install gh`)**
 
@@ -145,8 +131,6 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githu
 sudo apt update && sudo apt install -y gh
 ```
 
-⛔ WAIT for user confirmation before proceeding.
-
 **5.4 — gh auth login**
 
 SAY: "Run in the WSL terminal:"
@@ -156,8 +140,6 @@ gh auth login
 ```
 
 SAY: "Select: GitHub.com → HTTPS → Login with a web browser. Paste the code in the browser."
-
-⛔ WAIT for user confirmation before proceeding.
 
 **5.5 — VS Code settings.json (mandatory)**
 
@@ -181,94 +163,37 @@ Use the distro name detected in STEP 2 (e.g., `Debian`, `Ubuntu`, `Ubuntu-24.04`
 
 Result: user opens VS Code normally (shortcut/taskbar/recent files) → new terminal opens WSL automatically. No workflow change needed.
 
-**5.6 — AI Coding Tools in WSL (optional)**
-
-ASK: "Which AI tools do you use? I can show you how to install them in WSL:"
-- [ ] Claude Code
-- [ ] OpenCode
-- [ ] None — skip
-
-⛔ ONLY show install commands for tools the user confirms.
-
-SAY: "Run in the WSL terminal:"
-
-```bash
-# Claude Code (if confirmed)
-# ⛔ DO NOT use `npm install -g @anthropic-ai/claude-code` — deprecated
-curl -fsSL https://claude.ai/install.sh | bash
-
-# OpenCode (if confirmed)
-curl -fsSL https://opencode.ai/install | bash
-```
-
-⛔ WAIT for user confirmation before proceeding to STEP 6.
-
-> ℹ️ **Performance tip (applies to both tools):** Projects at `/mnt/c/...` run slower than projects in the native WSL filesystem. For best performance, clone repos directly into WSL: `~/projects/`.
-
 ---
 
-### macOS
+### Unix (macOS + Linux)
 
 ⛔ DO NOT USE Bash tool. SHOW all commands to user.
+
+Pick the package manager that matches the user's OS:
+
+| OS | Install command |
+|----|-----------------|
+| macOS (Homebrew) | `brew install git gh` (install Homebrew first if missing — see below) |
+| Debian/Ubuntu | `sudo apt update && sudo apt install -y git curl` then official gh repo (same flow as Windows 5.3) |
+| Fedora/RHEL | `sudo dnf install -y git gh` |
+| Arch | `sudo pacman -S git github-cli` |
 
 SAY: "Run in the terminal:"
 
 ```bash
-# Homebrew (if missing)
+# macOS — install Homebrew if missing
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-brew install git gh
-gh auth login
-
-# Check bash version — upgrade if < 4.0
+# macOS — bash upgrade if < 4.0
 bash --version
 brew install bash   # if needed
 ```
 
-SAY for AI tools (if confirmed): "Run in the terminal:"
+After install, in all cases:
 
 ```bash
-# Claude Code
-curl -fsSL https://claude.ai/install.sh | bash
-
-# OpenCode
-curl -fsSL https://opencode.ai/install | bash
-```
-
-⛔ WAIT for user confirmation before proceeding to STEP 6.
-
----
-
-### Linux
-
-⛔ DO NOT USE Bash tool. SHOW all commands to user.
-
-SAY: "Run in the terminal:"
-
-```bash
-# Debian/Ubuntu
-sudo apt update && sudo apt install -y git curl
-# Install gh via official repo (same as Windows/WSL flow above)
 gh auth login
-
-# Fedora/RHEL
-sudo dnf install -y git gh && gh auth login
-
-# Arch
-sudo pacman -S git github-cli && gh auth login
 ```
-
-SAY for AI tools (if confirmed): "Run in the terminal:"
-
-```bash
-# Claude Code
-curl -fsSL https://claude.ai/install.sh | bash
-
-# OpenCode
-curl -fsSL https://opencode.ai/install | bash
-```
-
-⛔ WAIT for user confirmation before proceeding to STEP 6.
 
 ---
 
@@ -278,9 +203,6 @@ curl -fsSL https://opencode.ai/install | bash
 
 ```bash
 git --version && gh --version && echo "✅ All tools ready"
-# If AI tools were installed:
-claude --version 2>/dev/null && echo "✅ Claude Code ready" || true
-opencode --version 2>/dev/null && echo "✅ OpenCode ready" || true
 ```
 
 ⛔ IF any tool still missing → diagnose installation error. DO NOT declare success.
@@ -300,8 +222,6 @@ opencode --version 2>/dev/null && echo "✅ OpenCode ready" || true
 | Skipping settings.json | It's mandatory — user won't change VS Code workflow |
 | Proceeding after user says N | Stop immediately, show manual commands only |
 | Declaring success before verifying | Run STEP 6 first |
-| `npm install -g @anthropic-ai/claude-code` | Use native installer: `curl -fsSL https://claude.ai/install.sh \| bash` |
-| Installing AI tools without asking | Always confirm which tools user wants: Claude Code / OpenCode / None |
 | Running sudo/apt/brew via Bash tool | Agent hangs — sudo requires password. SHOW commands, user runs manually |
 | Running `gh auth login` via Bash tool | Agent hangs — interactive prompt. SHOW command, guide user step by step |
 | Running `curl \| bash` via Bash tool | Agent hangs — interactive installer. SHOW command, user runs manually |

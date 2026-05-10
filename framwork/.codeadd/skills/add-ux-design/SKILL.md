@@ -1,6 +1,6 @@
 ---
 name: add-ux-design
-description: "Use when building UI components, pages, layouts, dashboards, charts, tables, forms, or any frontend interface. Use when styling, theming, or applying design direction to SaaS products. Triggers: design, UI, UX, component, page, layout, dashboard, mobile, responsive, dark mode, animation, skeleton, empty-state, loading-state, onboarding, settings, billing, auth."
+description: "Use when building, styling, or theming UI components, pages, layouts, dashboards, charts, tables, or forms for SaaS products."
 ---
 
 # UX Design (Distinctive, Production-Grade)
@@ -13,14 +13,62 @@ Your goal is to create **memorable, high-craft SaaS interfaces** that:
 - Are fully functional, mobile-first, and production-ready
 - Avoid generic "template" patterns
 
-**Use for:** Components, pages, layouts, dashboards, charts, tables, forms
-**NEVER use for:** Backend (backend-development), Database (database-development)
+---
 
-**Support Files:**
-- `{{skill:add-ux-design/design-direction.md}}` - Design Thinking, Quality Score, Output Structure
-- `{{skill:add-ux-design/ux-laws-principles.md}}` - UX Laws, Cognitive Load, Mental Models
-- `{{skill:add-ux-design/modern-patterns.md}}` - Interaction patterns, Visual trends, Performance UX
-- `{{skill:add-ux-design/ux-writing.md}}` - Microcopy, Error messages, Empty states
+## When to Use
+
+Use this skill when the request involves any of:
+
+- Building UI: components, pages, layouts, dashboards, charts, tables, forms
+- Styling, theming, or applying design direction to a SaaS product
+- Mobile / responsive layout, dark mode, animations, skeletons
+- Empty states, loading states, onboarding, settings, billing, auth surfaces
+
+**Trigger keywords:** design, UI, UX, component, page, layout, dashboard, mobile, responsive, dark mode, animation, skeleton, empty-state, loading-state, onboarding, settings, billing, auth.
+
+---
+
+## When NOT to Use
+
+Do NOT load this skill for:
+
+- **Backend logic** (controllers, services, business rules) — use `add-backend-development`
+- **Database schema, migrations, ORM modeling** — use `add-database-development`
+- **Server / infra config** (Docker, CI, env, deploy) — use the relevant DevOps skill
+- **CLI / tooling / build scripts** with no UI surface
+- **Pure data wrangling, prompt engineering, or non-visual code review**
+
+---
+
+## Support Files
+
+| File | Purpose |
+|------|---------|
+| `{{skill:add-ux-design/design-direction.md}}` | Design Thinking, Quality Score, Output Structure |
+| `{{skill:add-ux-design/ux-laws-principles.md}}` | UX Laws, Cognitive Load, Mental Models |
+| `{{skill:add-ux-design/modern-patterns.md}}` | Interaction patterns, visual trends, performance UX |
+| `{{skill:add-ux-design/saas-patterns.md}}` | SaaS surface patterns (Dashboard, Settings, Billing, etc.) |
+| `{{skill:add-ux-design/ux-writing.md}}` | Microcopy, error messages, empty states |
+
+### Docs Lookup
+
+| Library | Doc file |
+|---------|----------|
+| shadcn | `{{skill:add-ux-design/shadcn-docs.md}}` |
+| tailwind | `{{skill:add-ux-design/tailwind-v3-docs.md}}` |
+| motion | `{{skill:add-ux-design/motion-dev-docs.md}}` |
+| recharts | `{{skill:add-ux-design/recharts-docs.md}}` |
+| @tanstack/react-table | `{{skill:add-ux-design/tanstack-table-docs.md}}` |
+| @tanstack/react-query | `{{skill:add-ux-design/tanstack-query-docs.md}}` |
+| @tanstack/react-router | `{{skill:add-ux-design/tanstack-router-docs.md}}` |
+
+### Recommended Libraries
+
+| Group | Library — purpose (install) |
+|-------|------------------------------|
+| Core | shadcn/ui — components; tailwindcss — styling; motion — animations |
+| Data | recharts — charts; @tanstack/react-table — tables; @tanstack/react-query — data fetching |
+| UX | sonner — toasts (`npx shadcn add sonner`); vaul — mobile drawers (`npx shadcn add drawer`); cmdk — command palette (`npx shadcn add command`); nuqs — URL state; @tanstack/react-virtual — 1000+ items |
 
 ---
 
@@ -83,7 +131,9 @@ DQS = (Impact + Fit + Feasibility + Performance) − Consistency Risk
 | **Aesthetic-Usability** | Beautiful = easier | Invest in visual polish |
 
 ### Cognitive Load Principles
-{"intrinsic":"simplify flow","extraneous":"eliminate visual noise","germane":"consistent patterns"}
+- **Intrinsic:** simplify the flow itself
+- **Extraneous:** eliminate visual noise
+- **Germane:** reuse consistent patterns
 
 ---
 
@@ -92,23 +142,27 @@ DQS = (Impact + Fit + Feasibility + Performance) − Consistency Risk
 > **Full details:** `modern-patterns.md`
 
 ### Optimistic UI (MUST USE)
+- User clicks → UI updates instantly → request fires → rollback + toast on error.
 ```tsx
-// User clicks → UI updates instantly → Request fires → Rollback if error
 const handleLike = async () => {
-  setLiked(true) // Optimistic
-  try { await api.like(id) }
-  catch { setLiked(false); toast.error("Failed") } // Rollback
+  setLiked(true)
+  try { await api.like(id) } catch { setLiked(false); toast.error("Failed") }
 }
 ```
 
 ### Command Palette (⌘K)
-{"when":"10+ actions available","must":"fuzzy search, recent items, keyboard nav","lib":"cmdk via shadcn"}
+- **When:** 10+ actions available
+- **Must:** fuzzy search, recent items, keyboard nav
+- **Lib:** cmdk via shadcn
 
 ### Inline Editing
-{"pattern":"click → input appears → blur/enter saves","feedback":"subtle border, auto-save indicator","when":"frequent single-field edits"}
+- **Pattern:** click → input appears → blur/enter saves
+- **Feedback:** subtle border, auto-save indicator
+- **When:** frequent single-field edits
 
 ### Multi-select + Bulk Actions
-{"pattern":"checkbox col → selection count → sticky action bar bottom","keyboard":"shift+click range, ctrl+click toggle"}
+- **Pattern:** checkbox column → selection count → sticky action bar at bottom
+- **Keyboard:** shift+click for range, ctrl+click to toggle
 
 ### Infinite vs Pagination
 | Content Type | Recommendation |
@@ -122,59 +176,26 @@ const handleLike = async () => {
 
 ## SaaS UX Pattern Library
 
-### Dashboard
-{"layout":"KPIs→Charts→Activity","kpis":{"grid":"grid-cols-2 md:grid-cols-4","card":"icon+value+label+trend","max":4},"charts":{"line":"trends","bar":"comparisons","h":"h-[200px] md:h-[300px]"},"activity":"avatar+action+timestamp","mobile":{"kpis":"2col,swipe>4","charts":"full-w,h-scroll"}}
+> **Full details:** `saas-patterns.md` — Dashboard, Settings, Billing, Onboarding, DataTables, Auth, Workspace, Navigation, Forms, Modal, Feedback.
 
-### Settings
-{"layout":{"desktop":"sidebar→forms","mobile":"accordion|tabs"},"sections":["General","Profile","Notifications","Security","Billing","Team","API"],"forms":{"label":"above","save":"sticky-bottom-mobile"},"feedback":{"save":"toast 3s","unsaved":"warning dialog"},"danger":"red zone bottom+confirm"}
+### Context Detection
 
-### Billing
-{"pricing":{"tiers":3,"highlight":"Popular badge+border-primary","toggle":"monthly/annual"},"cards":"name→price→features→CTA","usage":{"display":"Progress current/limit","warn":"yellow@80%,red@95%"},"invoices":{"cols":"date|desc|amount|status|actions","mobile":"cards"},"checkout":"plan→payment→confirm→success"}
+Auto-detect SaaS context from keywords:
 
-### Onboarding
-{"flow":["Welcome","Profile","FirstAction","Success"],"maxSteps":5,"progress":"stepper|checklist","empty":"illustration+headline+desc+CTA","tooltips":{"max":3,"dismiss":"click|X"},"celebration":"confetti/animation on completion"}
+| Keywords | Pattern |
+|----------|---------|
+| dashboard, metrics, KPIs, analytics | Dashboard |
+| settings, preferences, config, profile | Settings |
+| billing, pricing, plans, subscription | Billing |
+| onboarding, welcome, setup, wizard | Onboarding |
+| list, table, CRUD, manage | DataTables |
+| login, signup, auth, password | Auth |
+| team, members, workspace, invite | Workspace |
+| notifications, alerts | Feedback |
+| form, input, create, edit | Forms |
+| modal, dialog, popup, drawer | Modal |
 
-### DataTables
-{"layout":"filters→table→pagination","header":{"search":"debounce 300ms","filters":"dropdown+chips","bulk":"on selection"},"table":"checkbox|main|secondary|status|actions","mobile":"cards|h-scroll+sticky-col1","states":{"loading":"skeleton 3-5 rows","empty":"illust+CTA","error":"msg+retry"}}
-
-### Auth
-{"login":"email+pwd,social,forgot,signup link","signup":"name+email+pwd,terms,social","layout":{"desktop":"split form|illustration","mobile":"centered,logo top"},"flows":{"magic":"email→link→inbox→logged","forgot":"email→reset→newpwd→success","2fa":"6digits+resend"}}
-
-### Workspace
-{"members":"avatar+name+email+role+actions","roles":["Owner","Admin","Member","Viewer"],"invite":"email+role+send,pending list","switcher":"header dropdown,current highlighted","settings":["General","Members","Billing","DangerZone"]}
-
-### Navigation
-{"desktop":{"sidebar":"logo→nav→spacer→user,collapsible 240px→60px","header":"breadcrumb|search|notif|user,h-14 md:h-16,sticky"},"mobile":{"bottomNav":"5 max,icon+label,h-16","drawer":"hamburger→full nav"},"states":{"active":"bg-muted+text-primary+font-medium"}}
-
-### Forms
-{"layout":"max-w-2xl,space-y-6 sections,space-y-4 fields","fields":"label above+required*,placeholder=example,helper=muted,error=destructive","validation":"blur first,change after error,inline errors","actions":"bottom right,primary+secondary outline","mobile":"sticky bottom+safe-area","autosave":"draft indicator for long forms"}
-
-### Modal
-{"sizes":{"sm":"max-w-sm","md":"max-w-md","lg":"max-w-lg","full":"max-w-4xl"},"structure":"header(title+X)→content(scroll)→footer(actions right)","mobile":"drawer bottom (Vaul)","behavior":"X|Esc|outside close,focus trap"}
-
-### Feedback
-{"toast":{"position":"bottom-right,mobile:bottom-center","success":"green,auto 3s","error":"red,manual+retry","warning":"yellow,manual"},"loading":{"content":"Skeleton","actions":"Spinner+disable","progress":"uploads"},"confirm":{"destructive":"AlertDialog red","standard":"Dialog"}}
-
----
-
-## Context Detection
-
-**Auto-detect SaaS context from keywords:**
-
-| Keywords | Context | Pattern |
-|----------|---------|---------|
-| dashboard,metrics,KPIs,analytics | Dashboard | Dashboard |
-| settings,preferences,config,profile | Settings | Settings |
-| billing,pricing,plans,subscription | Billing | Billing |
-| onboarding,welcome,setup,wizard | Onboarding | Onboarding |
-| list,table,CRUD,manage | DataTables | DataTables |
-| login,signup,auth,password | Auth | Auth |
-| team,members,workspace,invite | Workspace | Workspace |
-| notifications,alerts | Feedback | Feedback |
-| form,input,create,edit | Forms | Forms |
-| modal,dialog,popup,drawer | Modal | Modal |
-
-**Multiple contexts:** "Team Settings" → Settings + Workspace
+**Multiple contexts:** "Team Settings" → Settings + Workspace.
 
 ---
 
@@ -203,7 +224,9 @@ idle → hover(scale-[1.02]) → active(scale-[0.98]) → loading(spinner+disabl
 | Percentage text | File uploads, long processes |
 
 ### Success Celebrations
-{"subtle":"checkmark animation + green pulse","milestone":"confetti for achievements, first actions","rule":"match importance of action"}
+- **Subtle:** checkmark animation + green pulse
+- **Milestone:** confetti for achievements / first actions
+- **Rule:** match the importance of the action
 
 ---
 
@@ -212,74 +235,58 @@ idle → hover(scale-[1.02]) → active(scale-[0.98]) → loading(spinner+disabl
 > **Full details:** `modern-patterns.md`
 
 ### Bento Grids
-{"when":"feature showcases, varied dashboards","pattern":"asymmetric grid-cols, varied item sizes","rule":"max 4 different sizes"}
+- **When:** feature showcases, varied dashboards
+- **Pattern:** asymmetric `grid-cols`, varied item sizes
+- **Rule:** max 4 different sizes
 
 ### Glassmorphism (Correct Usage)
-```tsx
-<div className="bg-white/10 backdrop-blur-md border border-white/20 shadow-lg shadow-black/5">
-// Use for: overlays, highlighted cards, hero elements
-// Avoid: small text over glass, overuse
-```
+- Class: `bg-white/10 backdrop-blur-md border border-white/20 shadow-lg shadow-black/5`
+- Use for overlays, highlighted cards, hero elements. Avoid small text over glass and overuse.
 
 ### Dark Mode First
-{"principle":"design dark first, derive light","benefits":"vibrant colors, less eye strain","must":"AA contrast ratio in dark mode"}
+- **Principle:** design dark first, derive light
+- **Benefits:** vibrant colors, less eye strain
+- **Must:** AA contrast ratio in dark mode
 
 ### Shadows (SaaS-Grade)
-```tsx
-// WRONG: Pure black shadows
-shadow-lg // can look dirty
-
-// CORRECT: Tinted subtle shadows
-className="shadow-lg shadow-primary/5"
-// or custom with color tint
-```
+- WRONG: `shadow-lg` alone (pure black, looks dirty)
+- CORRECT: tinted, e.g. `className="shadow-lg shadow-primary/5"`
 
 ### The 60-30-10 Rule
-{"60%":"neutral (background)","30%":"secondary (cards/surfaces)","10%":"accent (CTAs/highlights)"}
+- **60%** neutral (background)
+- **30%** secondary (cards / surfaces)
+- **10%** accent (CTAs / highlights)
 
 ---
 
 ## Typography
 
 ### Font Pairing
-{"display":["Clash Display","Cabinet Grotesk","Satoshi","Plus Jakarta Sans"],"body":["DM Sans","Inter (if must)","Source Sans Pro"],"mono":["JetBrains Mono","Fira Code"]}
+- **Display:** Clash Display, Cabinet Grotesk, Satoshi, Plus Jakarta Sans
+- **Body:** DM Sans, Inter (only if must), Source Sans Pro
+- **Mono:** JetBrains Mono, Fira Code
 
 ### Scale (Mobile-First)
-```tsx
-// Headings
-<h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-bold">
-<h2 className="text-xl md:text-2xl font-display font-semibold">
-
-// Body
-<p className="text-sm md:text-base text-muted-foreground">
-
-// Small
-<span className="text-xs text-muted-foreground">
-```
+- **H1:** `text-2xl md:text-3xl lg:text-4xl font-display font-bold`
+- **H2:** `text-xl md:text-2xl font-display font-semibold`
+- **Body:** `text-sm md:text-base text-muted-foreground`
+- **Small:** `text-xs text-muted-foreground`
 
 ---
 
 ## Mobile-First (MANDATORY)
 
 ### Base Architecture
-```tsx
-// CORRECT: Mobile-first (320px base)
-<div className="p-4 md:p-6 lg:p-8">
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-
-// WRONG: Desktop-first
-<div className="p-8 sm:p-4">  // NEVER
-```
+- CORRECT (mobile-first, 320px base): `p-4 md:p-6 lg:p-8`, `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+- WRONG (desktop-first): `p-8 sm:p-4` — NEVER
 
 ### Touch Requirements
-{"minTarget":"44x44px","spacing":"8px between touch elements","feedback":"active:scale-[0.98] or bg change"}
+- **Min target:** 44×44px
+- **Spacing:** 8px between touch elements
+- **Feedback:** `active:scale-[0.98]` or background change
 
 ### Input Scaling (iOS Zoom Prevention)
-```tsx
-// ALWAYS 16px+ for inputs (prevents iOS zoom)
-<Input className="text-base" /> // 16px minimum
-// NEVER text-sm on mobile inputs
-```
+- Use `<Input className="text-base" />` (16px). Never `text-sm` on mobile inputs.
 
 ### Mobile Patterns
 | Element | Desktop | Mobile |
@@ -291,10 +298,7 @@ className="shadow-lg shadow-primary/5"
 | Forms | Inline submit | Sticky bottom + safe-area |
 
 ### Safe Area
-```tsx
-<div className="fixed bottom-0 inset-x-0 p-4 pb-safe">
-// CSS: padding-bottom: max(1rem, env(safe-area-inset-bottom));
-```
+- Fixed bottom bars: `className="fixed bottom-0 inset-x-0 p-4 pb-safe"` → CSS `padding-bottom: max(1rem, env(safe-area-inset-bottom))`
 
 ---
 
@@ -308,10 +312,13 @@ className="shadow-lg shadow-primary/5"
 - **Human:** "Something went wrong" not "Error 500"
 
 ### Error Messages
-{"structure":"What happened + Why + How to fix","good":"Email already registered. Try logging in instead.","bad":"Error: duplicate key violation"}
+- **Structure:** What happened + Why + How to fix
+- **Good:** "Email already registered. Try logging in instead."
+- **Bad:** "Error: duplicate key violation"
 
 ### Empty States
-{"structure":"Title + Value description + CTA","example":"No projects yet → Create your first project to start organizing work → Create Project"}
+- **Structure:** Title + Value description + CTA
+- **Example:** "No projects yet → Create your first project to start organizing work → Create Project"
 
 ### Loading States
 - Avoid generic "Loading..."
@@ -322,31 +329,12 @@ className="shadow-lg shadow-primary/5"
 
 ## States (MANDATORY)
 
-Every component/page must handle ALL states:
+Every component/page must handle ALL states — Loading, Error, Empty, Success.
 
 ```tsx
-// Loading
 if (isLoading) return <Skeleton className="h-[200px]" />
-
-// Error
-if (error) return (
-  <ErrorState
-    message="Failed to load data"
-    action={<Button onClick={refetch}>Try again</Button>}
-  />
-)
-
-// Empty
-if (!data?.length) return (
-  <EmptyState
-    icon={<FileIcon />}
-    title="No items yet"
-    description="Create your first item to get started"
-    action={<Button>Create Item</Button>}
-  />
-)
-
-// Success
+if (error)     return <ErrorState message="Failed to load data" action={<Button onClick={refetch}>Try again</Button>} />
+if (!data?.length) return <EmptyState icon={<FileIcon />} title="No items yet" description="Create your first item to get started" action={<Button>Create Item</Button>} />
 return <DataDisplay data={data} />
 ```
 
@@ -367,19 +355,16 @@ return <DataDisplay data={data} />
 - 3-5 skeleton rows for lists
 
 ### Preloading
-```tsx
-// Prefetch on hover
-<Link prefetch onMouseEnter={() => prefetch(url)}>
-
-// Preload images
-<Image placeholder="blur" blurDataURL={tiny} />
-```
+- **Prefetch on hover:** `<Link prefetch onMouseEnter={() => prefetch(url)}>`
+- **Preload images:** `<Image placeholder="blur" blurDataURL={tiny} />`
 
 ---
 
 ## Anti-Patterns (IMMEDIATE FAILURE)
 
 **Iron Law:** If the design could be mistaken for a template → restart.
+
+If you catch yourself doing ANY of the patterns below, **STOP. Delete. Start over.**
 
 | Pattern | Why Bad | Fix |
 |---------|---------|-----|
@@ -388,25 +373,16 @@ return <DataDisplay data={data} />
 | Purple gradients on white | Most overused SaaS pattern | Subtle, token-based color story |
 | Symmetrical, predictable sections | Looks auto-generated | Break grid intentionally |
 | Gradients on long text | Hurts readability | Short titles only |
-| Pure black shadows | Look dirty | Tinted shadows (primary/5) |
-| >3 vibrant colors | Distracts from content | 60-30-10 rule |
 | Desktop-first breakpoints | Mobile afterthought | 320px base always |
 | Centered modals on mobile | Bad touch UX | Vaul bottom drawers |
-| Touch targets <44px | Frustrating | Min 44x44px |
-| Inputs <16px font | iOS auto-zoom | text-base minimum |
 | Generic loading text | Feels slow | Contextual messages |
 | No empty states | Confusing | Always design empty |
 | Decoration without intent | Visual noise | Every flourish serves the aesthetic thesis |
-
-### Red Flags — STOP and Rethink
-
-If you catch yourself doing ANY of these, **STOP. Delete. Start over.**
-
-- Using default component styling without customization
-- Skipping the Design Thinking Phase "because it's a small component"
-- Saying "I'll add personality later"
-- Copying a layout from another project without adapting tone
-- Blending 3+ aesthetic tones
+| Default component styling without customization | Template feel | Customize tokens, spacing, type |
+| Skipping Design Thinking "because it's small" | DQS missing | Run the phase always |
+| Saying "I'll add personality later" | Later never comes | Intent goes in first |
+| Copying a layout without adapting tone | Tone clash | Re-anchor to product tone |
+| Blending 3+ aesthetic tones | Visual noise | Max 2 tones |
 
 ### Common Rationalizations (BLOCKED)
 
@@ -429,25 +405,10 @@ If you catch yourself doing ANY of these, **STOP. Delete. Start over.**
 - **Motion:** `prefers-reduced-motion` support
 - **Keyboard:** All actions keyboard accessible
 
-### Focus Management
-```tsx
-// Visible focus
-className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-
-// Trap focus in modals (shadcn does this)
-// Restore focus on close
-```
-
-### Reduced Motion
-```tsx
-// Respect user preference
-className="motion-safe:animate-fadeIn"
-
-// Or in CSS
-@media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.01ms !important; }
-}
-```
+### Focus & Motion
+- **Visible focus:** `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`
+- **Modals:** trap focus (shadcn does this); restore focus on close
+- **Reduced motion:** use `motion-safe:` variants, or guard with `@media (prefers-reduced-motion: reduce)`
 
 ---
 
@@ -466,63 +427,65 @@ className="motion-safe:animate-fadeIn"
 
 ---
 
-## Docs Lookup
-
-{"shadcn":"{{skill:add-ux-design/shadcn-docs.md}}"}
-{"tailwind":"{{skill:add-ux-design/tailwind-v3-docs.md}}"}
-{"motion":"{{skill:add-ux-design/motion-dev-docs.md}}"}
-{"recharts":"{{skill:add-ux-design/recharts-docs.md}}"}
-{"tanstackTable":"{{skill:add-ux-design/tanstack-table-docs.md}}"}
-{"tanstackQuery":"{{skill:add-ux-design/tanstack-query-docs.md}}"}
-{"tanstackRouter":"{{skill:add-ux-design/tanstack-router-docs.md}}"}
-{"designDirection":"{{skill:add-ux-design/design-direction.md}}"}
-{"uxLaws":"{{skill:add-ux-design/ux-laws-principles.md}}"}
-{"modernPatterns":"{{skill:add-ux-design/modern-patterns.md}}"}
-{"uxWriting":"{{skill:add-ux-design/ux-writing.md}}"}
-
----
-
-## Recommended Libs
-
-{"core":[{"name":"shadcn/ui","for":"components"},{"name":"tailwindcss","for":"styling"},{"name":"motion","for":"animations"}]}
-{"data":[{"name":"recharts","for":"charts"},{"name":"@tanstack/react-table","for":"tables"},{"name":"@tanstack/react-query","for":"data fetching"}]}
-{"ux":[{"name":"sonner","for":"toasts","cmd":"npx shadcn add sonner"},{"name":"vaul","for":"mobile drawers","cmd":"npx shadcn add drawer"},{"name":"cmdk","for":"command palette","cmd":"npx shadcn add command"},{"name":"nuqs","for":"URL state"},{"name":"@tanstack/react-virtual","for":"1000+ items"}]}
-
----
-
 ## Required Output Structure
 
 When generating ANY frontend work, ALWAYS include:
 
-### 1. Design Direction (comment block at top)
+1. **Design Direction header** (top-of-file comment): aesthetic name, DQS score, differentiation statement. Example: `/** Design Direction: Minimal Clean + Data-Dense | DQS: 12/15 | Differentiation: ... */`
+2. **Component implementation** — full working code, intentional styling, comments only where intent isn't obvious.
+3. **States coverage** — Loading, Empty, Error, Success all handled.
+
+---
+
+## Quick Patterns
+
+### Layout Shell
 ```tsx
-/**
- * Design Direction: [Aesthetic name, e.g. "Minimal Clean + Data-Dense"]
- * DQS: [score]/15
- * Differentiation: "This avoids generic UI by [doing X instead of Y]"
- */
+<div className="min-h-screen bg-background">
+  <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+    <div className="container flex h-14 md:h-16 items-center px-4" />
+  </header>
+  <div className="container flex flex-col md:flex-row gap-6 p-4 md:p-6">
+    <aside className="hidden md:block w-64 shrink-0"><nav className="sticky top-20 space-y-2" /></aside>
+    <main className="flex-1 min-w-0 space-y-6" />
+  </div>
+</div>
 ```
 
-### 2. Component Implementation
-- Full working code with intentional styling
-- Comments only where intent isn't obvious
+### Card with Hover
+```tsx
+<Card className="group cursor-pointer transition-all hover:shadow-lg hover:shadow-primary/5 hover:border-primary/50">
+  <CardHeader><CardTitle className="group-hover:text-primary transition-colors">{title}</CardTitle></CardHeader>
+</Card>
+```
 
-### 3. States Coverage
-- Loading, Empty, Error, Success — ALL handled
+### Animated List (motion)
+```tsx
+<motion.ul initial="hidden" animate="show"
+  variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } }}>
+  {items.map(item => (
+    <motion.li key={item.id} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>{item.name}</motion.li>
+  ))}
+</motion.ul>
+```
+
+### Responsive Chart (recharts)
+```tsx
+<div className="h-[200px] md:h-[300px] w-full">
+  <ResponsiveContainer width="100%" height="100%">
+    <LineChart data={data}>
+      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+      <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))' }} />
+      <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
+```
 
 ---
 
-## Questions to Ask (Before Complex Interfaces)
-
-1. Who is this for, emotionally?
-2. Should this feel trustworthy, exciting, calm, or data-rich?
-3. Is memorability or clarity more important?
-4. Will this scale to other pages/components?
-5. What should users *feel* in the first 3 seconds?
-
----
-
-## Checklist (Before Shipping)
+## Validation Checklist (Before Shipping)
 
 ### UX
 - [ ] All states handled (loading, empty, error, success)
@@ -557,64 +520,3 @@ When generating ANY frontend work, ALWAYS include:
 - [ ] Focus visible and logical
 - [ ] Reduced motion supported
 - [ ] Keyboard navigation works
-
----
-
-## Quick Patterns
-
-### Layout Shell
-```tsx
-<div className="min-h-screen bg-background">
-  <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-    <div className="container flex h-14 md:h-16 items-center px-4" />
-  </header>
-  <div className="container flex flex-col md:flex-row gap-6 p-4 md:p-6">
-    <aside className="hidden md:block w-64 shrink-0">
-      <nav className="sticky top-20 space-y-2" />
-    </aside>
-    <main className="flex-1 min-w-0 space-y-6" />
-  </div>
-</div>
-```
-
-### Card with Hover
-```tsx
-<Card className="group cursor-pointer transition-all hover:shadow-lg hover:shadow-primary/5 hover:border-primary/50">
-  <CardHeader>
-    <CardTitle className="group-hover:text-primary transition-colors">
-      {title}
-    </CardTitle>
-  </CardHeader>
-</Card>
-```
-
-### Animated List
-```tsx
-<motion.ul initial="hidden" animate="show" variants={{
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05 } }
-}}>
-  {items.map((item) => (
-    <motion.li key={item.id} variants={{
-      hidden: { opacity: 0, y: 10 },
-      show: { opacity: 1, y: 0 }
-    }}>
-      {item.name}
-    </motion.li>
-  ))}
-</motion.ul>
-```
-
-### Responsive Chart
-```tsx
-<div className="h-[200px] md:h-[300px] w-full">
-  <ResponsiveContainer width="100%" height="100%">
-    <LineChart data={data}>
-      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-      <XAxis dataKey="name" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))' }} />
-      <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-    </LineChart>
-  </ResponsiveContainer>
-</div>
-```

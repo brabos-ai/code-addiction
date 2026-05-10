@@ -11,6 +11,12 @@ Every token counts. Resources must be compressed without losing clarity. This sk
 
 For doc-specific concerns (schemas, depth floors, output-length doctrine, validation gate), see `{{skill:add-doc-schemas/SKILL.md}}`. Output length is governed there — this skill covers compression *patterns* only.
 
+## When NOT to use
+
+- Output-length decisions (word/char caps, depth floors) → use `{{skill:add-doc-schemas/SKILL.md}}`
+- CLAUDE.md style and content rules → use `{{skill:add-claude-md-style/SKILL.md}}`
+- ID format / branch naming → use `{{skill:add-id-convention/SKILL.md}}`
+
 ---
 
 ## Mandatory Patterns
@@ -90,15 +96,7 @@ Use pattern-search.sh for JIT loading.
 
 ### 4. No Decorative Formatting
 
-```markdown
-# BAD
-────────────────────────
-## Section Title
-────────────────────────
-
-# GOOD
-## Section Title
-```
+BAD: `────────` dividers wrapping `## Section Title`. GOOD: bare `## Section Title`.
 
 ### 5. Reference, Never Repeat
 
@@ -150,7 +148,17 @@ Agent: analyze→understand→design→implement
 
 ## Anti-Patterns
 
-{"verbose_explanations":"compress to dense bullets","repeated_concepts":"reference first occurrence","decorative_formatting":"remove ASCII art, excessive dashes","full_words":"use abbrev table","inline_examples":"large blocks = separate file","redundant_headers":"merge related sections","tables_in_resources":"JSON for data, tables only in final output","json_for_instructions":"use markdown lists for do/dont/rules","length_caps":"never publish <N words / <N chars on agent-generated content; output length is governed by depth floors in add-doc-schemas"}
+| Anti-pattern | Fix |
+|---|---|
+| Verbose explanations | Compress to dense bullets |
+| Repeated concepts | Reference first occurrence |
+| Decorative formatting | Remove ASCII art, excessive dashes |
+| Full words | Use abbrev table |
+| Inline examples (large blocks) | Move to separate file |
+| Redundant headers | Merge related sections |
+| Tables in resources | JSON for data, tables only in final output |
+| JSON for instructions | Use markdown lists for do/dont/rules |
+| Length caps | Never publish `<N words` / `<N chars` on agent-generated content; output length is governed by depth floors in add-doc-schemas |
 
 ---
 
@@ -171,10 +179,6 @@ Before finalizing ANY resource:
 ```
 
 ---
-
-## Quick Compression Reference
-
-{"code":"inline if short, file if long","json":"minified, for structured data","instructions":"markdown lists for do/dont/rules","tables":"final output only","examples":"1 per concept","headers":"no emojis","paths":"glob > explicit list"}
 
 > **Output length is NOT governed here.** Numeric caps on agent-generated content (`<N words`, `<N chars`, `~N-N words`) are prohibited per `{{skill:add-doc-schemas/SKILL.md}}`. Use depth floors and density.
 

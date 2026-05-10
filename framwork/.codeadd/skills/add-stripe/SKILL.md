@@ -1,15 +1,19 @@
 ---
 name: add-stripe
-description: Use when user mentions Stripe, billing, subscriptions, plans, or payments - provides patterns for Stripe integration with price versioning and grandfathering (project)
+description: Use when user mentions Stripe, billing, subscriptions, plans, or payments - patterns for Stripe with price versioning and grandfathering
 ---
 
 # Stripe Integration
 
-## Overview
-
-Stripe integration for SaaS. Query `stripe-doc.md` via Grep for code examples.
+Stripe integration for SaaS.
 
 **Principle:** Never edit an existing price. Create a new one and keep existing customers on the previous price (grandfathering).
+
+## When NOT to use
+
+- Non-Stripe payment processors (PayPal, Paddle, Lemon Squeezy)
+- One-time payments without subscriptions
+- Pure frontend Stripe.js setup (Elements, Checkout redirects)
 
 ## Database Schema
 
@@ -23,12 +27,7 @@ plans → plan_prices → subscriptions → payment_history
 
 {"api":{"createPlan":"stripe.products.create()","createPrice":"stripe.prices.create()","deactivatePrice":"stripe.prices.update({active:false})","createSub":"stripe.subscriptions.create()","cancelSub":"stripe.subscriptions.cancel()"}}
 
-## Querying Documentation
-
-```bash
-Grep pattern="subscription" path="{{skill:add-stripe/stripe-doc.md}}"
-Grep pattern="price" path="{{skill:add-stripe/stripe-doc.md}}"
-```
+Query docs: `Grep pattern="<term>" path="{{skill:add-stripe/stripe-doc.md}}"`
 
 ## Essential Flows
 

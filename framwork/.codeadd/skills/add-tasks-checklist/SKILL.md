@@ -1,6 +1,6 @@
 ---
 name: add-tasks-checklist
-description: Use when generating, reading, or ticking tasks.md — defines the canonical 5-section schema, tick rules per section, failure marker semantics, "non-trivial change" rule, and the architect subagent prompt template. Single source of truth for tasks.md across add.plan, add.build, add.autopilot, add.review, add-code-review, add-delivery-validation.
+description: Schema and tick rules for tasks.md across plan/build/review.
 ---
 
 # tasks.md Checklist Schema
@@ -206,16 +206,10 @@ the `add-tasks-checklist` skill. Use the EXACT section headings:
   ## Validation Gates    (omit entirely if CLAUDE.md has no validation_gates block)
 
 ## RULES
-- ## Requirements Coverage MUST list every RF and RN from about.md.
-- ## TDD tasks MUST precede their corresponding ## Execution tasks.
-- Every ## Acceptance Checklist item MUST end with `(RFNN)` or `(RNNN)` reference;
-  every RF/RN in §1 MUST be referenced by at least one §4 item.
-- ## Execution tasks: 1 service per task, max 3 files, ≤10 words description,
-  4 metadata sub-bullets (Service, Files, Deps, Verify), Verify is mandatory.
-- All checkboxes start as `[ ]`. Do NOT pre-tick anything.
-- ## Validation Gates: read CLAUDE.md `validation_gates` JSON block. Emit one item per detected gate using the format `- [ ] Run \`<command>\` and fix failures in files touched by this work` (drop the "in files touched" suffix for the `build` gate). If the block is absent or empty, omit this section entirely — never fabricate gates.
-- Complexity scoring: SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
-- Service order (TDD ordering): test → database → backend → frontend.
+Follow the Section Rules defined in the `add-tasks-checklist` skill. All
+checkboxes start as `[ ]` — do NOT pre-tick anything. Complexity scoring:
+SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
+Service order (TDD ordering): test → database → backend → frontend.
 
 ## OUTPUT
 Write `${PLAN_DIR}/tasks.md` only. Do not modify any other file.
@@ -247,10 +241,7 @@ Used by the per-area validator subagent in `add.build` (writes directly) and `ad
    - §2 TDD → tests where the test file lives in the area's path
    - §3 Execution → tasks with `Service: ${AREA}`
    - §4 Acceptance Checklist → items whose contracts (from `plan.md` prose) belong to the area
-3. **Apply tick rules** (defined in "Section Rules" above):
-   - §2 TDD: `[x]` if test file added/modified AND test command exits 0; else `[!]` with reason
-   - §3 Execution: `[x]` if ALL `Files` in metadata appear in diff with NON-TRIVIAL changes; else `[!]`
-   - §4 Acceptance: `[x]` if contract verifiable in diff; divergent/missing → `[!]`
+3. **Apply tick rules** per §Section Rules above (TDD, Execution, Acceptance).
 4. **Auto-fix** divergent items where safe (wrong status code, missing field, etc.); re-tick on success.
 5. **Output:**
    - In `add.build`: write the updated `tasks.md` directly (full file).
@@ -282,13 +273,7 @@ Do NOT auto-run xray. Do NOT block. Skip the rest of this procedure when the blo
 
 1. Parse `validation_gates` from CLAUDE.md → ordered list of `(intent, command)` pairs.
 2. Compute `TOUCHED_FILES = git diff --name-only <feature-base>...HEAD` (plus uncommitted changes for `add.build`).
-3. For EACH `(intent, command)`:
-   1. Invoke the command via Bash. Capture stdout/stderr and exit code.
-   2. Exit 0 → set the corresponding `## Validation Gates` item to `[x]`. Continue.
-   3. Exit ≠ 0 → parse output for file-scoped failures (each tool reports `path:line:…`).
-      - Partition into `TOUCHED_FAILURES` (path ∈ TOUCHED_FILES) and `UNTOUCHED_FAILURES` (rest).
-      - Fix `TOUCHED_FAILURES` (or dispatch a fix subagent). Re-invoke the gate. If green → `[x]`. If still red on touched files → `[!] — REASON: <≤120 chars naming the failing artefact>`. NEVER tick `[x]` while red on a touched file.
-      - Append `UNTOUCHED_FAILURES` to `### Known Issues` under `## Validation Gates`. Cap at 10 entries; append `- +N more (run \`<command>\` for full list)` when truncating.
+3. For EACH `(intent, command)`: invoke per §Section Rules → `## Validation Gates` (build/autopilot tick rule). On red touched-file failures after fix-and-rerun, set `[!]` with reason. Append untouched failures to `### Known Issues` (cap 10; truncate with `- +N more (run \`<command>\` for full list)`).
 4. Recompute `## Requirements Coverage` derived state one final time.
 5. Single write to `tasks.md`.
 
@@ -296,18 +281,14 @@ Do NOT auto-run xray. Do NOT block. Skip the rest of this procedure when the blo
 
 When invoked by `add.review`, ignore any pre-existing `[x]` ticks on `## Validation Gates` — re-run every gate command from scratch. The review's job is to verify, not to trust.
 
-> Backwards-compatibility note: this procedure replaces the prior "Quality Gates Procedure". The §5 section was renamed `## Quality Gates → ## Validation Gates`. Existing `tasks.md` files generated before this change use the old heading; consumers should treat both headings as the same section during the transition window, but new writes always use `## Validation Gates`.
+> Backwards-compatibility note: §5 was renamed `## Quality Gates → ## Validation Gates`. Consumers should treat both headings as the same section during the transition window; new writes always use `## Validation Gates`.
 
 ## Validation Checklist
 
 ```
-[ ] All 5 section headings present and exact text
-[ ] ## Requirements Coverage covers every RF/RN from about.md
-[ ] ## TDD tasks precede their corresponding ## Execution tasks
-[ ] Every ## Acceptance Checklist item ends with (RFNN/RNNN) reference
+[ ] All 6 section headings present and exact text (§6 omitted if no validation_gates block)
 [ ] Every RF/RN in §1 is referenced by ≥1 §4 item
-[ ] ## Execution tasks have all 4 metadata sub-bullets
-[ ] No more than 3 files per ## Execution task
+[ ] ## Execution tasks have all 4 metadata sub-bullets, ≤3 files each
 [ ] All checkboxes initialized as [ ]
 [ ] No tick lives in plan.md (plan.md is frozen)
 ```

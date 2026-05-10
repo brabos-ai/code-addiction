@@ -1,7 +1,7 @@
 ---
 name: add-database-development
 description: |
-  Database architecture: entities, repositories, migrations, naming, multi-tenancy — stack-agnostic. Consult CLAUDE.md for ORM. Use when implementing database layer.
+  Database layer: entities, repos, migrations, multi-tenancy. Stack-agnostic. Consult CLAUDE.md for ORM.
 ---
 
 # Database Development
@@ -9,7 +9,7 @@ description: |
 Skill for implementing the database layer following universal data architecture principles.
 
 **Use for:** Entities, Migrations, Repositories, Enums, Database types
-**Do not use for:** Controllers/DTOs (`backend-development`), Frontend (`ux-design`)
+**Do not use for:** Controllers/DTOs (`backend-development`), Frontend (`ux-design`), API contracts, query optimization tuning
 
 **Stack orientation:** Consult `CLAUDE.md ## Architecture Contract` for the ORM and database in use. Apply these principles using the project's ORM API.
 
@@ -90,7 +90,7 @@ Principles — apply using your project's migration tool syntax:
 2. **Never edit an existing migration** — create a new one
 3. **Always implement both `up` and `down`** — every migration must be reversible
 4. **Descriptive names** — the filename should explain the change
-5. **Foreign keys** with explicit references and intentional cascade behavior
+5. **Relationships** — explicit FK constraints with intentional cascade behavior; prefer `CASCADE` for child records that cannot exist without parent (e.g., invites → account), `RESTRICT` or `SET NULL` when child has independent value; document WHERE and WHY cascade is used
 6. **Indexes** on frequently queried columns (`account_id`, lookup fields, composite indexes for multi-column queries)
 7. **Default values** for `id` (UUID generation), `created_at`, `updated_at`
 
@@ -149,21 +149,10 @@ Rules:
 Maintain organized exports for every new entity, enum, repository, and interface:
 
 ```typescript
-// repositories/index.ts
-export * from './UserRepository';
-export * from './InviteRepository';
-
-// interfaces/index.ts
-export * from './IUserRepository';
-export * from './IInviteRepository';
-
-// entities/index.ts
+// One barrel per directory: entities/, enums/, repositories/, interfaces/
 export * from './User';
 export * from './Invite';
-
-// enums/index.ts
-export * from './UserRole';
-export * from './InviteStatus';
+// ...add every new file
 ```
 
 ---
@@ -173,11 +162,8 @@ export * from './InviteStatus';
 **EVERY query MUST filter by `account_id`/`tenant_id`. No exceptions.**
 
 ```typescript
-// WRONG — leaks data across tenants
-async findAll(): Promise<User[]> { /* query without tenant filter */ }
-
-// CORRECT — scoped to tenant
-async findByAccountId(accountId: string): Promise<User[]> { /* query filtered by account_id */ }
+async findAll(): Promise<User[]> { /* WRONG — leaks data across tenants */ }
+async findByAccountId(accountId: string): Promise<User[]> { /* CORRECT — scoped */ }
 ```
 
 Rules:
@@ -185,32 +171,6 @@ Rules:
 - `account_id` FK with CASCADE delete
 - Validate tenant filtering in repository, not in service layer
 - Every table with user data must have an `account_id` column
-
----
-
-## Relationships
-
-- Explicit foreign keys — always declare FK constraints in migrations
-- Cascade with care — document WHERE and WHY cascade deletes are used
-- Prefer `CASCADE` for child records that cannot exist without a parent (e.g., invites → account)
-- Prefer `RESTRICT` or `SET NULL` when child records have independent value
-
----
-
-## Data Validation
-
-- Validate at entry layer (DTO/input validation), not in database
-- Database guarantees referential integrity (FKs, NOT NULL, UNIQUE)
-- Application guarantees business rules (format, ranges, permissions)
-
----
-
-## KISS Principle
-
-- Simple query > complex query
-- If you need nested subqueries, rethink the data model
-- Prefer multiple simple queries over one complex join when clarity matters
-- Optimize only when there is a measured performance problem
 
 ---
 
@@ -226,7 +186,6 @@ Rules:
 
 ### Enums
 
-- [ ] Located in enums directory
 - [ ] Exported in enums barrel file (`index.ts`)
 - [ ] Values are lowercase strings (e.g., `OWNER = 'owner'`)
 
@@ -234,7 +193,7 @@ Rules:
 
 - [ ] Naming follows `YYYYMMDDNNN_description_snake_case` pattern
 - [ ] Has both `up` and `down` (reversible)
-- [ ] Foreign keys defined with proper references
+- [ ] Foreign keys defined with proper references and intentional cascade
 - [ ] Indexes on frequently queried columns (`account_id`, lookup fields)
 - [ ] `account_id` FK has CASCADE delete
 - [ ] Never modifies an existing migration file
@@ -242,12 +201,7 @@ Rules:
 ### Repository
 
 - [ ] Interface defines contract with domain types
-- [ ] Implementation uses project's ORM (see `stack-context.md`)
-- [ ] Both exported in respective barrel files (`index.ts`)
+- [ ] Both interface and implementation exported in barrel files
 - [ ] Returns domain entities (not raw database rows)
 - [ ] Every query filters by `account_id` / `tenant_id`
 - [ ] Uses mapper (`toEntity`) for snake_case → camelCase conversion
-
-### Build
-
-- [ ] Project builds without errors after changes

@@ -5,9 +5,11 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 # Ecosystem Map - add-pro
 
-> **Source of Truth:** Complete ecosystem map for add-pro.
->
-> **Last Updated:** 2026-05-03 (STEP 2: Regenerated for v0.3.9..HEAD analysis)
+## When NOT to Use
+
+- Not a how-to guide — load the specific skill for execution detail.
+- Not for authoring new skills/commands → use `add-skill-creator`.
+- Not for resource path conventions → use `add-resource-path-convention`.
 
 ## Commands
 
@@ -33,40 +35,39 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 ## Skills
 
-| Skill | Purpose | Used by |
-|-------|---------|---------|
-| add-architecture-discovery | Map architecture, detect patterns, generate project-patterns skill | add.audit, add.xray |
-| add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | - |
-| add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write | - |
-| add-code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID | add.review, add.build |
-| add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add.pull-request, any workflow that commits |
-| add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass | add.review |
-| add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code | add |
-| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.xray, add.diagnose |
-| add-documentation-style | [REMOVED in v0.3.0] Consolidate into add-claude-md-style for CLAUDE.md generation | - |
-| add-ecosystem | Consolidated ecosystem view (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.xray, add.diagnose |
-| add-feature-discovery | Feature discovery process, codebase analysis | add.new, add.plan |
-| add-feature-specification | about.md structure with requirements, rules, acceptance criteria | add.new |
-| add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
-| add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-health-check | Health check of environment and project dependencies | add.audit |
-| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) | add.plan, add.build, add.hotfix, add.done, add.pull-request |
-| add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add.diagnose, add.hotfix, add.review, add.audit |
-| add-optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
-| add-plan-based-features | Implement subscription plan-based features | - |
-| add-planning | Technical planning orchestration | - |
-| add-product-discovery | Product discovery (macro level) | add.init |
-| add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration | - |
-| add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers | - |
-| add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy | add.audit, add.review |
-| add-skill-creator | Create and test skills under real pressure | - |
-| add-stripe | Stripe integration, price versioning, grandfathering | - |
-| add-subagent-driven-development | Subagent coordination with quality gates | - |
-| add-tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth | add.plan, add.build, add.autopilot |
-| add-token-efficiency | Compression, compact JSON, minimal tokens | All (best practice) |
-| add-ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan |
+| Skill | Purpose |
+|-------|---------|
+| add-architecture-discovery | Map architecture, detect patterns, generate project-patterns skill |
+| add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy |
+| add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic |
+| add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write |
+| add-code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID |
+| add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules |
+| add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |
+| add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass |
+| add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code |
+| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs |
+| add-ecosystem | Consolidated ecosystem view (source of truth) |
+| add-feature-discovery | Feature discovery process, codebase analysis |
+| add-feature-specification | about.md structure with requirements, rules, acceptance criteria |
+| add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware |
+| add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic |
+| add-health-check | Health check of environment and project dependencies |
+| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) |
+| add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting |
+| add-optimizing-git-workflow | Git patterns, commits, branches, aliases |
+| add-plan-based-features | Implement subscription plan-based features |
+| add-planning | Technical planning orchestration |
+| add-product-discovery | Product discovery (macro level) |
+| add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
+| add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
+| add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
+| add-skill-creator | Create and test skills under real pressure |
+| add-stripe | Stripe integration, price versioning, grandfathering |
+| add-subagent-driven-development | Subagent coordination with quality gates |
+| add-tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth |
+| add-token-efficiency | Compression, compact JSON, minimal tokens |
+| add-ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind |
 
 ## Dependency Index
 
@@ -103,7 +104,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 ## Command Next-Steps Routing
 
-> **Routing table.** After completing a command, look up its row to suggest the next step. Conditions evaluated top-to-bottom — use FIRST match.
+Conditions evaluated top-to-bottom — use FIRST match.
 
 | After | Condition | Suggest | Why |
 |-------|-----------|---------|-----|
