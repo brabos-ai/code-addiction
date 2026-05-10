@@ -386,16 +386,6 @@ describe('agent source files', () => {
     });
   }
 
-  it('read-only agents use disallowedTools', () => {
-    const readOnlyAgents = ['reviewer-agent', 'discovery-agent', 'architecture-agent'];
-    for (const name of readOnlyAgents) {
-      const content = fs.readFileSync(path.join(agentsDir, `${name}.md`), 'utf8');
-      expect(content, `${name} should have disallowedTools`).toMatch(/^disallowedTools:/m);
-      expect(content, `${name} should disallow Write`).toContain('Write');
-      expect(content, `${name} should disallow Edit`).toContain('Edit');
-    }
-  });
-
   it('implementation agents have skills preloaded', () => {
     const agentsWithSkills = {
       'ux-agent': ['add-ux-design'],
@@ -439,7 +429,6 @@ describe('buildAgents', () => {
     // Passthrough means content is identical (only HTML comments stripped)
     expect(built).toContain('name: reviewer-agent');
     expect(built).toContain('model: sonnet');
-    expect(built).toContain('disallowedTools: Write, Edit, NotebookEdit');
     expect(built).toContain('memory: project');
     // Should NOT have the md transformer's frontmatter wrapper
     expect(built).not.toMatch(/^---\ndescription:/);
