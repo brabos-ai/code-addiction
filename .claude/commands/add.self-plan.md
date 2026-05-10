@@ -6,12 +6,6 @@ Plans structural changes to the internal development layer (`.claude/`, `scripts
 
 ---
 
-## Spec
-
-{"output":"docs/self-plan/PLAN-[slug].md","modes":{"new":"/add.self-plan [idea] → STEP 0-5","continue":"/add.self-plan PLAN-[slug] → load + adjust","list":"/add.self-plan → list plans"}}
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**

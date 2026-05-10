@@ -7,14 +7,6 @@ Executor that transforms PRDs into functional artefacts (commands, skills, scrip
 
 ---
 
-## Spec
-
-```json
-{"outputs":{"command":"framwork/.codeadd/commands/*.md","skill":"framwork/.codeadd/skills/*/SKILL.md","script":"framwork/.codeadd/scripts/*"}}
-```
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
@@ -160,7 +152,7 @@ framwork/.codeadd/skills/                                      # Reference of ex
 [ ] Condition blocks: IF [condition]: ⛔ DO NOT USE [tool]
 [ ] Mandatory explicit order
 [ ] Checklists with checkboxes (not timelines)
-[ ] Spec JSON only for consultable data (paths, outputs, modes) — not gates/order
+[ ] No `## Spec` section (prohibited — see building-commands "No `## Spec` Section")
 [ ] Bash blocks only where non-obvious or learned from errors
 [ ] No fixed display/error message templates
 [ ] Rules: ALWAYS/NEVER markdown, no duplication of STEP order
@@ -362,4 +354,4 @@ NEVER:
 - Use fractional numbering (2.5, 6.5)
 - Insert steps without renumbering
 - Create provider files manually (use framwork/.codeadd/ + provider-map.json)
-- Put gates/order in Spec JSON that duplicate STEPs
+- Add a `## Spec` section to commands or skills (prohibited)

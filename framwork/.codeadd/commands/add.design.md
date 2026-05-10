@@ -11,14 +11,6 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 
 ---
 
-## Spec
-
-```json
-{"outputs":{"design":"docs/features/${FEATURE_ID}/design.md","temp":["design-context.md","design-flow.md","design-layout.md"]},"schema":"feature-design","mode":{"inline":"<3 screens","subagent":">=3 screens OR complexity keywords"}}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.

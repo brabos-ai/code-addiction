@@ -11,10 +11,6 @@ Every token counts. Resources must be compressed without losing clarity. This sk
 
 For doc-specific concerns (schemas, depth floors, output-length doctrine, validation gate), see `{{skill:add-doc-schemas/SKILL.md}}`. Output length is governed there — this skill covers compression *patterns* only.
 
-## Spec
-
-{"abbrev":{"cmd":"command","sk":"skill","sc":"script","cfg":"config","dep":"dependency","req":"required","opt":"optional","desc":"description","impl":"implementation","ref":"reference","doc":"documentation","fn":"function","param":"parameter","ret":"return","err":"error","msg":"message","ctx":"context","val":"value","obj":"object","arr":"array","str":"string","num":"number","bool":"boolean"},"compression":{"structured_data":"minified JSON","human_instructions":"markdown lists (do/dont/rules)","tables":"final output only","json":"minified, no spaces","code":"no decorative comments","paths":"glob patterns","examples":"1 excellent > 3 mediocre"}}
-
 ---
 
 ## Mandatory Patterns

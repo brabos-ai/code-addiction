@@ -13,14 +13,6 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 
 ---
 
-## Spec
-
-```json
-{"specialists":{"backend":"backend-analyzer.md","frontend":"frontend-analyzer.md","database":"database-analyzer.md","code_quality":"code-quality-analyzer.md","generic":"GenericAppTemplate"},"outputs":{"skill":".codeadd/skills/project-patterns/","docs":"code-quality-review.md","root":"CLAUDE.md|AGENTS.md|GEMINI.md"}}
-```
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**

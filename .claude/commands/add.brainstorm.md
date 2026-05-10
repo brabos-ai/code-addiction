@@ -6,14 +6,6 @@ Transforms rough ideas into fully-formed, final designs ready for `/add.plan`. P
 
 ---
 
-## Spec
-
-```json
-{"output":"docs/brainstorming/YYYY-MM-DD-[topic].md or YYYY-MM-DD-[topic]-umbrella.md","modes":{"new":"new idea exploration","refine":"topic refinement from existing umbrella spec"}}
-```
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**

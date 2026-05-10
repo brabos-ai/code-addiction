@@ -20,14 +20,6 @@ DO: Ask questions, analyze what exists, challenge ideas, route to /add.new when 
 
 ---
 
-## Spec
-
-```json
-{"document_output":"docs/brainstorm/YYYY-MM-DD-<slug>.md"}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).

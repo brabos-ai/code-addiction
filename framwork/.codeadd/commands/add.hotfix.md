@@ -8,14 +8,6 @@
 
 ---
 
-## Spec
-
-```json
-{"schemas":["hotfix-about","hotfix-related"]}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).

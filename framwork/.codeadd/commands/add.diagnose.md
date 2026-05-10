@@ -7,14 +7,6 @@ Investigative triage for ambiguous user reports. Receives a vague symptom or unc
 
 ---
 
-## Spec
-
-```json
-{"report_output":"docs/diagnose/<slug>.md","report_condition":"route != no-action AND user confirms persistence","schema":"diagnose-report"}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).

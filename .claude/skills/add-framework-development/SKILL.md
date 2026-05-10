@@ -110,6 +110,8 @@ NEVER:
 **Frontmatter** — `> **KEY:** value` format (not YAML):
 - `LANG`, `OWNER`, `ARCHITECTURE REFERENCE`, `DOCS`, `MODE`
 
+**No `## Spec` section** — DO NOT add a top-of-file `## Spec` JSON metadata block to commands or skills. Output paths, modes, schemas belong in the frontmatter `description` and STEP body. Nothing programmatically consumes `## Spec`. See `building-commands` skill for the prohibition.
+
 **Tool Prohibitions** — `⛔⛔⛔ ABSOLUTE PROHIBITIONS` block:
 ```
 ⛔ DO NOT USE: [tool] for [context]

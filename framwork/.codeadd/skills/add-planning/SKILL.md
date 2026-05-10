@@ -11,12 +11,6 @@ Skill for creating technical implementation plans. Creates/updates `plan.md` wit
 
 ---
 
-## Spec
-
-{"trigger":"create implementation plan","input":["about.md","discovery.md","design.md?"],"output":"docs/features/[ID]/plan.md","schema":"add-doc-schemas/references/new-feature.md","format":"minified JSON + sequenced tasks"}
-
----
-
 ## When to Use
 
 - Feature documented and ready for dev → create `plan.md`

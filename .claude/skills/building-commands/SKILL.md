@@ -38,14 +38,13 @@ The high-level flow every command follows: load context → gate check → inves
 
 ```
 1. LANG header (MANDATORY)
-2. Spec JSON (OPTIONAL — data only, see Spec JSON section)
-3. ⛔ Blocking section — prohibitions BEFORE instructions
-4. STEP 1: Load context
-5. STEP 2: Validate/discover (gate check)
-6. STEP 3: Investigate (docs → code)
-7. STEP N: Execute
-8. STEP N+1: Complete (inform user)
-9. Rules — ALWAYS/NEVER markdown
+2. ⛔ Blocking section — prohibitions BEFORE instructions
+3. STEP 1: Load context
+4. STEP 2: Validate/discover (gate check)
+5. STEP 3: Investigate (docs → code)
+6. STEP N: Execute
+7. STEP N+1: Complete (inform user)
+8. Rules — ALWAYS/NEVER markdown
 ```
 
 ### Template
@@ -199,21 +198,25 @@ Most bugs relate to recent changes. Script output points directly to the relevan
 
 ---
 
-## Spec JSON (OPTIONAL — Data Only)
+## No `## Spec` Section (PROHIBITED)
 
-Spec JSON is OPTIONAL. Use it ONLY for data the LLM needs to look up — paths, outputs, modes, routing tables. **DO NOT use it to duplicate behavioral instructions** that already exist in STEPs or prohibitions.
+DO NOT add a `## Spec` section to commands or skills. Output paths, modes, schemas, write boundaries, and similar metadata belong in the frontmatter `description` and the STEP body — not in a separate JSON metadata block at the top of the file.
 
-Structured data does not orient behavior. The LLM does not "consult" a JSON to decide its next step — it follows natural language instructions. Putting gates/order in JSON just wastes tokens repeating what the STEPs already say.
+Why: nothing programmatically consumes `## Spec` (build.js, CLI, runtime all ignore it). It duplicates information already in the description and STEPs, which creates drift risk. Open-source contributors must mentally pretty-print minified JSON to read it.
 
 ```
-✅ GOOD — data the LLM consults:
-{"outputs":{"command":"framwork/.codeadd/commands/*.md"},"modes":{"create":"STEP 0-8","list":"STEP 0 + STEP 9"}}
-
-❌ BAD — behavioral duplication:
-{"gates":["gh_authenticated","branch_is_main"],"order":["prerequisites","branch_check","merge"]}
+❌ DO NOT — top-of-file metadata block:
+## Spec
+```json
+{"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md"},"schema":"feature-plan"}
 ```
 
-**Rule of thumb:** If removing the Spec JSON would cause the LLM to miss information not available elsewhere in the command → keep it. If everything is restated in STEPs/prohibitions → remove it.
+✅ DO — state output and schema in prose where they're used:
+## STEP 9: Write plan.md
+Write to `docs/features/${FEATURE_ID}/plan.md` per the `feature-plan` schema.
+```
+
+If a JSON example genuinely helps (e.g., showing the shape of an output document), put it under a heading that names what it is — `## Output Format`, `## Output Template` — inside the section that explains the output. Not as a metadata block at the top.
 
 ---
 
@@ -348,7 +351,7 @@ Before deploying command:
 ### Structure
 - [ ] **LANG header present** (first line after title) — no "detect language" blocks
 - [ ] **Written 100% in English** (command logic, headers, rules, gates)
-- [ ] Spec JSON contains only consultable data (paths, outputs, modes) — or is absent
+- [ ] No `## Spec` section (prohibited — see "No `## Spec` Section")
 - [ ] Top-of-file blocking section (prohibitions BEFORE instructions)
 - [ ] Uses STEP (imperative) instead of Phase (documentary)
 - [ ] Imperative language throughout (EXECUTE, DO NOT, CONFIRM)
@@ -397,7 +400,7 @@ Before deploying command:
 | Prohibitions in middle of file | Move to TOP-OF-FILE before instructions |
 | Using "Phase" (documentary) | Use "STEP" (imperative) |
 | Command written in PT-BR or mixed | Command 100% in English + LANG header |
-| Spec JSON with gates/order duplicating STEPs | Remove or keep only data (paths, outputs, modes) |
+| `## Spec` section at top of file | Remove — prohibited (see "No `## Spec` Section") |
 | Bash blocks for obvious operations | Use intent: "Verify branch is main. If not → STOP" |
 | Fixed display/error message templates | Let the LLM generate contextual messages |
 | Rules that restate STEP order | Remove — STEP sequence already enforces this |

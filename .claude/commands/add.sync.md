@@ -8,14 +8,6 @@ Computes diff since last release, regenerates the ecosystem map, dispatches 4 an
 
 ---
 
-## Spec
-
-```json
-{"outputs":{"ecosystem_map":"framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md","ecosystem_map_md":"ecosystem.md","reports":".tmp/sync/*.json","targets":["README.md","web/src/pages/docs.astro","web/src/pages/index.astro","web/public/*.svg"]},"payload":".tmp/sync/change-payload.json"}
-```
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**

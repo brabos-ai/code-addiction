@@ -21,12 +21,6 @@ Skill for PRODUCT validation — checks whether requirements were 100% implement
 
 ---
 
-## Spec
-
-{"trigger":"validate feature delivery","input":"about.md + implementation","output":"validation report","focus":"requirements completeness","required":["about.md exists","implementation exists"]}
-
----
-
 ## When to Use
 
 - Before `/add-done` (final gate)

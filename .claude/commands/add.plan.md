@@ -8,14 +8,6 @@ Generates PRD (Product Requirements Document) for execution via `/add.build`.
 
 ---
 
-## Spec
-
-```json
-{"output":"docs/prd/PRD[NNNN]-[slug].md","modes":{"new":"/add.plan [idea] → STEP 0-5","continue":"/add.plan PRD[NNNN] → load + adjust","list":"/add.plan → list drafts"}}
-```
-
----
-
 ## ⛔⛔⛔ MANDATORY CRITICAL POSTURE ⛔⛔⛔
 
 **THIS COMMAND IS A CONSULTANT, NOT AN ORDER-TAKER.**

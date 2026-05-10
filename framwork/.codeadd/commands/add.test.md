@@ -9,16 +9,6 @@ Analyzes developed code and generates automated tests targeting 80% coverage. Us
 
 ---
 
-## Spec
-
-```json
-{
-  "modes": {"diff": "test changed files (git diff)", "feature": "test entire feature (about.md/plan.md)", "path": "test specific path"}
-}
-```
-
----
-
 ## Agent Dispatch Rules
 
 When this command instructs you to DISPATCH AGENT:

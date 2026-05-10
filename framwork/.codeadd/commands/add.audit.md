@@ -11,14 +11,6 @@ Execute complete technical analysis of the project, identifying security, archit
 
 ---
 
-## Spec
-
-```json
-{"write_allowed":"docs/audit/,docs/audits/","schema":"audit-report","scoring":{"weights":{"critical":3,"high":2,"medium":1,"low":0.5},"formula":"max(0, 10 - (weighted_sum / 5))"}}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).

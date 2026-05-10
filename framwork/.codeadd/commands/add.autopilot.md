@@ -11,14 +11,6 @@ You are the **Autopilot Coordinator** — a master orchestrator that coordinates
 
 ---
 
-## Spec
-
-```json
-{"modes":{"simple":"single feature","epic":"feature N of M"},"mutates":["plan.md","about.md"],"schemas":["feature-plan","feature-about"]}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.

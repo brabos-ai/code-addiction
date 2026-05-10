@@ -18,7 +18,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.autopilot | Autonomous Feature Coordinator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-tasks-checklist |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
 | add.build | Development Execution Specialist | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
-| add.commit | Mid-workflow smart commit with adaptive Conventional Commits message: ≤3 files → single line, >3 → module list | add-commit |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology (disambiguation, RCA, patterns, differential diagnosis, synthesis) and recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
@@ -26,7 +25,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
 | add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
-| add.pr | Create PR for code review (without finalizing feature). Used standalone or referenced by add.done when branch protection active | - |
+| add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation (80% coverage). Parallel subagents per area + Startup Test | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
@@ -41,11 +40,11 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write | - |
 | add-code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID | add.review, add.build |
-| add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add.commit |
+| add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add.pull-request, any workflow that commits |
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass | add.review |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code | add |
-| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose |
+| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.xray, add.diagnose |
 | add-documentation-style | [REMOVED in v0.3.0] Consolidate into add-claude-md-style for CLAUDE.md generation | - |
 | add-ecosystem | Consolidated ecosystem view (source of truth) | add, add.new, add.design, add.plan, add.build, add.done, add.hotfix, add.brainstorm, add.test, add.audit, add.xray, add.diagnose |
 | add-feature-discovery | Feature discovery process, codebase analysis | add.new, add.plan |
@@ -53,7 +52,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | - |
 | add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-health-check | Health check of environment and project dependencies | add.audit |
-| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) | add.plan, add.build, add.hotfix, add.done |
+| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) | add.plan, add.build, add.hotfix, add.done, add.pull-request |
 | add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add.diagnose, add.hotfix, add.review, add.audit |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases | - |
 | add-plan-based-features | Implement subscription plan-based features | - |
@@ -81,11 +80,11 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-security-audit | add.audit, add.review |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
-| add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.init, add.xray, add.diagnose |
+| add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.xray, add.diagnose |
 | add-architecture-discovery | add.audit, add.xray |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
-| add-id-convention | add.plan, add.build, add.hotfix, add.done (all ID allocation and branch naming) |
+| add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 
 ## Main Flows
@@ -134,10 +133,10 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.review | status=PASSED | `/add.done` | All gates green, finalize |
 | add.review | status=BLOCKED | fix + `/add.review` | Iterate until PASSED |
 | add.hotfix | always | `/add.done` | Hotfix ready, finalize branch |
-| add.commit | more work to do | `/add.commit` | Keep developing |
-| add.commit | branch ready to finalize | `/add.done` | Merge to main |
-| add.commit | needs team review | `/add.pr` | PR before merge |
-| add.pr | always | wait for PR review | Human review pending |
+| add.review | needs team review before merge | `/add.pull-request` | PR for human review |
+| add.pull-request | PR open, awaiting review | wait for review | Human review pending |
+| add.pull-request | PR merged on GitHub | `/add.done` | Cleanup local branch + tags |
+| add.pull-request | scope grew, need to update PR | `/add.pull-request` | Idempotent — appends update section |
 | add.done | was feature, back on main | `/add.new` | Start next feature |
 | add.done | was epic, more subfeatures | `/add.build feature N` | Next subfeature |
 | add.done | was hotfix | `/add.new` | Return to feature work |

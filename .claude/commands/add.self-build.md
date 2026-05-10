@@ -7,12 +7,6 @@ Evolves artefacts in the internal development layer (`.claude/`, `scripts/`, `CL
 
 ---
 
-## Spec
-
-{"outputs":{"command":".claude/commands/*.md","skill":".claude/skills/*/SKILL.md","agent":".claude/agents/*.md","script":"scripts/*","map":"CLAUDE.md"},"modes":{"planned":"/add.self-build PLAN-[slug] → execute plan","pontual":"/add.self-build [target] [description] → quick change"}}
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**

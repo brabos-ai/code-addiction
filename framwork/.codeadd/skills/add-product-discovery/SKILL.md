@@ -11,12 +11,6 @@ Runs a quick founder + product discovery in 5–10 minutes, creating a communica
 
 ---
 
-## Spec
-
-{"auto-loaded-by":["/add when new project"],"creates":["docs/owner.md","docs/product.md"]}
-
----
-
 ## When to Use
 
 - Starting a new project

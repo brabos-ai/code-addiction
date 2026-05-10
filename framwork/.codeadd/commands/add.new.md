@@ -11,14 +11,6 @@ Full feature discovery command BEFORE implementation.
 
 ---
 
-## Spec
-
-```json
-{"write_allowed":"docs/features/","schema":"feature-about"}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).

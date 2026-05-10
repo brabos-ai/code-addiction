@@ -2,38 +2,15 @@
 
 > **MODEL:** Use `haiku` model
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
 
-Coordinator for branch finalization. Supports features (full changelog flow), feature hotfixes, and standalone hotfixes. Analyzes context, generates documentation, and auto-merges to main.
-
----
-
-## Spec
-
-```json
-{"outputs":{"changelog":"docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/changelog.md","about_addendum":"docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/about.md"},"schema":"changelog"}
-```
+Coordinator for branch finalization. Generates the changelog from changeset analysis and auto-merges to main. Same flow for all branch types (feature, hotfix, refactor, chore, docs) — review gate applies to features only.
 
 ---
 
 ## Required Skills
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
-
-**Allocate changelog ID:** Before writing the changelog doc (STEP 4A.6), run `bash .codeadd/scripts/status.sh next-id CHG` to allocate a fresh `CHG[NNNN]`. The changelog `related:` MUST reference the closed `[NNNN]F` (feature) or `[NNNN]H` (hotfix).
-
-> **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format. Changelog IDs use `CHG[NNNN]` (no letter suffix — different namespace).
-
----
-
-## Yolo Mode
-
-If argument contains `--yolo`:
-- Skip ALL [STOP] points
-- Accept --force automatically for incomplete epics/requirements
-- Do NOT ask for confirmation at any gate
-- Execute to completion without human interaction
-- Log all auto-decisions in console output
+- `{{skill:add-doc-schemas/SKILL.md}}` — schemas, IDs, validation gate
+- `{{skill:add-id-convention/SKILL.md}}` — branch/ID format
 
 ---
 
@@ -42,14 +19,14 @@ If argument contains `--yolo`:
 **STEPS IN ORDER:**
 ```
 STEP 1: done.sh                 -> RUN FIRST (collect context)
-STEP 2: Detect BRANCH_TYPE      -> Route to correct flow
+STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Branch-specific flow    -> Feature: full | Hotfix: simplified
+STEP 4: Validate + changelog    -> Quality gates (feature only) + changelog generation
 STEP 5: Preview                 -> INFORMATIVE ONLY (NO confirmation)
 STEP 6: Execute merge           -> AUTOMATIC after preview
 ```
 
-**ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE PROHIBITIONS (invariants — per-step gates live in their steps):**
 
 ```
 IF STATUS=ERROR from script:
@@ -62,34 +39,10 @@ IF BRANCH_TYPE = unknown:
   ⛔ DO NOT USE: Bash for git operations
   ✅ DO: Show error and stop
 
-IF BRANCH_TYPE = feature AND REVIEW_MD NOT FOUND AND NOT --force:
-  ⛔ DO NOT USE: Write to create changelog.md
-  ⛔ DO NOT USE: Bash for done.sh --merge
-  ✅ DO: Inform user to run /add.review first
-
-IF BRANCH_TYPE = feature AND REVIEW_MD OVERALL = BLOCKED AND NOT --force:
-  ⛔ DO NOT USE: Write to create changelog.md
-  ⛔ DO NOT USE: Bash for done.sh --merge
-  ✅ DO: Show blocked gates and request /add.review re-run
-
-IF BRANCH_TYPE = feature AND EPIC INCOMPLETE:
-  ⛔ DO NOT USE: Write to create changelog.md
-  ⛔ DO NOT USE: Bash for done.sh --merge
-  ✅ DO: Show warning and wait for user decision
-
-IF BRANCH_TYPE = feature AND REQUIREMENTS UNCOVERED:
-  ⛔ DO NOT USE: Write to create changelog.md
-  ⛔ DO NOT USE: Bash for done.sh --merge
-  ✅ DO: Show warning and wait for user decision
-
-IF BRANCH_TYPE = feature AND CHANGELOG NOT WRITTEN:
-  ⛔ DO NOT USE: Bash for done.sh --merge
-  ✅ DO: Write changelog FIRST
-
 ALWAYS:
   ⛔ DO NOT USE: Bash for git add/commit/push (done.sh --merge handles everything)
-  ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT USE: Bash for git branch -m (NEVER rename branches)
+  ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT: Suggest renaming branches to fix unknown type errors -- the branch prefix is intentional
 ```
 
@@ -119,14 +72,16 @@ bash .codeadd/scripts/done.sh
 
 **Parse `BRANCH_TYPE` from script output:**
 
-| BRANCH_TYPE | Flow | Description |
-|-------------|------|-------------|
-| `feature` | Full (STEP 4A) | Branch: [prefix]/[NNNN][L]- where L in {F,R,C,D} |
-| `hotfix` | Simplified (STEP 4B) | Branch: hotfix/[NNNN]H-* |
-| `refactor` | Full (STEP 4A) | Branch: refactor/[NNNN]R-* |
-| `chore` | Full (STEP 4A) | Branch: chore/[NNNN]C-* |
-| `docs` | Full (STEP 4A) | Branch: docs/[NNNN]D-* |
-| no ID found | STOP | Branch has no [NNNN][L] or legacy F[XXXX]/H[XXXX] -- show error, NEVER rename |
+| BRANCH_TYPE | Description |
+|-------------|-------------|
+| `feature` | Branch: feature/[NNNN]F-* |
+| `hotfix` | Branch: hotfix/[NNNN]H-* |
+| `refactor` | Branch: refactor/[NNNN]R-* |
+| `chore` | Branch: chore/[NNNN]C-* |
+| `docs` | Branch: docs/[NNNN]D-* |
+| no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
+
+All recognized types proceed to STEP 4. Quality gates (4.0-4.2) apply to `feature` only — other types skip directly to changelog generation.
 
 ---
 
@@ -143,32 +98,32 @@ bash .codeadd/scripts/done.sh
 
 ---
 
-## STEP 4A: Feature Flow (BRANCH_TYPE = feature)
+## STEP 4: Validate & Generate Changelog
 
-### 4A.0: Quality Gate Verification (PRD0034 -- BEFORE all other checks)
+### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
 
-**GATE CHECK: review.md must exist and PASSED before merge.**
+**SKIP this substep entirely if `BRANCH_TYPE` ≠ `feature`.** Hotfix/refactor/chore/docs branches do not require `/add.review`.
+
+**GATE CHECK (feature only): review.md must exist and PASSED before merge.**
 
 1. CHECK if `docs/features/${FEATURE_ID}/review.md` exists
 2. IF NOT EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
-   - IF --force: proceed to 4A.1, register: "Quality Gate bypassed via --force (review.md not found)"
 3. IF EXISTS: READ review.md, find "| **Overall**" row
-4. IF Overall = PASSED: Proceed to 4A.1
+4. IF Overall = PASSED: Proceed to 4.1
 5. IF Overall = BLOCKED: Show table of BLOCKED gates -> BLOCKED
-   - IF --force: proceed to 4A.1, register: "Quality Gate bypassed via --force. Gates BLOCKED: [list]"
 
-**IF BLOCKED AND NOT --force:**
-- DO NOT USE: Write to create changelog.md
-- DO NOT USE: Bash for done.sh --merge
-- DO: Show blocked gates and instructions
+**IF BLOCKED:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ✅ DO: Show blocked gates and instructions to re-run /add.review
 
 **NOTE:** Done does NOT re-run validations. It only reads the existing review.md report.
 
 ---
 
-### 4A.1: Validate Epic.md (PRD0032 -- new epic structure)
+### 4.1: Validate Epic.md (FEATURE BRANCHES ONLY)
 
-**Check for epic.md FIRST:**
+**SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
 IF `docs/features/${FEATURE_ID}/epic.md` exists:
 - READ epic.md, COUNT total subfeatures (rows in table), COUNT done subfeatures (rows with "done")
@@ -176,44 +131,27 @@ IF `docs/features/${FEATURE_ID}/epic.md` exists:
 **IF epic.md AND not all subfeatures done:**
 
 ```
-Warning: Incomplete Epic! (epic.md structure)
+Incomplete Epic!
 Subfeatures: ${DONE_SF}/${TOTAL_SF} complete
 
 Pending:
 - ${SF_ID}: [name] (status: pending)
 
-Options:
-1. Continue: /add.build (implements next subfeature)
-2. Force merge anyway: /add.done --force
+Run /add.build to implement the next subfeature.
 ```
 
-**IF INCOMPLETE:** DO NOT write changelog or merge. Show warning and wait for user decision.
-
-**IF --force with incomplete subfeatures:**
-- Register warning in changelog: "Epic merged with incomplete subfeatures (${DONE_SF}/${TOTAL_SF})"
+**IF INCOMPLETE:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ✅ DO: Show pending subfeatures and STOP
 
 **IF epic.md AND all subfeatures done:** Proceed normally.
 
-### 4A.2: Validate Epic (Legacy -- IF plan.md is Epic)
+---
 
-**Check if Feature is Legacy Epic:** Look for `## Features` section in `${DIR}/plan.md`.
+### 4.2: Validate Requirements Coverage (FEATURE BRANCHES ONLY)
 
-**IF NO Features section (simple feature):** Skip to 4A.3.
-
-**Count Features:**
-- TOTAL_FEATURES = count of `### Feature [0-9]+:` headings in plan.md
-- COMPLETED_FEATURES = count of entries with `"slug":"feature-N-complete"` in iterations.jsonl (fallback: count distinct `"slug":"feature-N"` entries with `"type":"add"`)
-
-**IF all complete (COMPLETED >= TOTAL):** Proceed to 4A.3.
-
-**IF incomplete:** Show warning with missing features list and options (continue dev or --force).
-
-**IF INCOMPLETE:** DO NOT write changelog or merge. Show warning and wait for user decision.
-
-**IF --force with incomplete features:**
-- Register warning in changelog: "Epic merged with incomplete features (${COMPLETED}/${TOTAL})"
-
-### 4A.3: Validate Requirements Coverage
+**SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
 **IF plan.md has `## Cobertura de Requisitos` section:**
 
@@ -222,23 +160,24 @@ Count rows matching `| .* | X |` (uncovered) in plan.md.
 **IF coverage < 100% (UNCOVERED > 0):**
 
 ```
-Warning: Uncovered Requirements!
+Uncovered Requirements!
 
 Requirements without coverage:
 - [List of RF/RN with X]
 
 Options:
-1. Implement missing: /dev
+1. Implement missing: /add.build
 2. Exclude from scope: edit plan.md
-3. Force merge anyway: /add.done --force
 ```
 
-**IF UNCOVERED:** DO NOT write changelog or merge. Show warning and wait for user decision.
+**IF UNCOVERED:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ✅ DO: Show uncovered requirements and STOP
 
-**IF --force with incomplete coverage:**
-- Register warning in changelog: "Merged with ${UNCOVERED} uncovered requirements"
+---
 
-### 4A.4: Load Feature Context (BEFORE analyzing files)
+### 4.3: Load Feature Context (BEFORE analyzing files)
 
 **Read `${DIR}/about.md`.** Extract: Objective, Scope (Included/Excluded), Business Rules, Technical Decisions, Acceptance Criteria.
 
@@ -248,7 +187,9 @@ Options:
 - `HISTORY_FILES` = union of all `files` arrays across JSONL entries
 - `ITERATION_MAP` = {entry1: {slug, type, what, files}, entry2: ...} (ordered by `ts`)
 
-### 4A.5: Intelligent File Analysis
+---
+
+### 4.4: Intelligent File Analysis
 
 **Classify each file in CHANGED_FILES:**
 
@@ -258,19 +199,29 @@ Options:
 | NOT in `HISTORY_FILES`? | Potential out-of-scope |
 
 **Priority classification:**
-```json
-{"high":["services","usecases","handlers","controllers","repositories","hooks","stores","validators","pages","components"],"medium":["types","interfaces","utils","helpers","config","tests"],"low":["models","entities","dtos","migrations","constants","enums","styles"]}
-```
+- **HIGH** — services, usecases, handlers, controllers, repositories, hooks, stores, validators, pages, components
+- **MEDIUM** — types, interfaces, utils, helpers, config, tests
+- **LOW** — models, entities, dtos, migrations, constants, enums, styles
 
 **For each HIGH priority file:** describe (~10 words), map to iteration (I{n} or "out-of-scope"), list main methods/functions.
 
 **Detect out-of-scope:** HIGH/MEDIUM files NOT in HISTORY_FILES and NOT in original scope -> register reason (dependency | improvement | discovery) -> include in "Out of Scope" changelog section.
 
-### 4A.6: Generate Changelog (schema: changelog)
+---
+
+### 4.5: Generate Changelog (schema: changelog)
 
 **Path:** `${DIR}/changelog.md`
 
-**Schema load (MANDATORY).** EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`.
+**Idempotency guard (RUN FIRST).** If `${DIR}/changelog.md` already exists, **SKIP** schema execution, ID allocation, and Quick Ref generation. Proceed directly to STEP 4.6 (validation still runs against the existing file).
+
+```bash
+[ -f "${DIR}/changelog.md" ] && echo "CHANGELOG_EXISTS — skipping generation"
+```
+
+**If changelog does NOT exist:**
+
+EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 **Allocate changelog ID:**
 
@@ -280,23 +231,33 @@ bash .codeadd/scripts/status.sh next-id CHG
 
 Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[NNNN]F` or `[NNNN]H`. Extractive only.
 
-**AFTER writing the changelog, generate Quick Ref (metadata, appended as extractive JSON block, not inline doc structure):**
+**AFTER writing the changelog, generate Quick Ref** (metadata, appended as extractive JSON block, not inline doc structure):
 
-1. Read about.md -> extract domain (1-3 words) + keywords (3-7 words)
-2. Read iterations.jsonl -> extract touched directories (unique parent dirs from all files)
-3. Read discovery.md section "Identified Patterns" -> extract patterns
+1. Read about.md → extract domain (1-3 words) + keywords (3-7 words)
+2. Read iterations.jsonl → extract touched directories (unique parent dirs)
+3. Read discovery.md section "Identified Patterns" → extract patterns
 4. Replace placeholders in the "## Quick Ref" block with real data
 
 **Quick Ref rules:**
 - `id`: Feature ID (e.g., `F0012`)
-- `domain`: 1-3 words for the business domain (inferred from about.md)
-- `touched`: Unique touched directories -- group files by parent dir (e.g., `["src/metrics/","src/events/"]`)
+- `domain`: 1-3 words inferred from about.md
+- `touched`: Unique parent dirs (e.g., `["src/metrics/","src/events/"]`)
 - `patterns`: Architectural patterns (e.g., `["event-driven","decorator"]`)
-- `keywords`: 3-7 domain keywords (e.g., `["tracking","analytics"]`)
+- `keywords`: 3-7 domain keywords
 
 **IF discovery.md has no "Identified Patterns" section:** infer patterns from the narrative changelog.
 
-### 4A.7: Update about.md (IF out-of-scope detected)
+---
+
+### 4.6: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `changelog`.
+
+⛔ DO NOT skip. DO NOT proceed until gate returns `PASS`.
+
+---
+
+### 4.7: Update about.md (IF out-of-scope detected)
 
 IF out-of-scope detected, append to about.md:
 
@@ -311,35 +272,22 @@ IF out-of-scope detected, append to about.md:
 **Impact:** [1 line]
 ```
 
-### 4A.8: Consolidate decisions.jsonl (PRD0031 -- MANDATORY)
+---
 
-**Consolidate feature decisions into project-level central file:**
+### 4.8: Consolidate decisions.jsonl
 
-```
-FEATURE_DECISIONS = docs/features/${FEATURE_NUMBER}-*/decisions.jsonl
-CENTRAL_DECISIONS = .codeadd/project/decisions.jsonl
+Append feature-level `decisions.jsonl` entries into the project-central `.codeadd/project/decisions.jsonl`, deduplicating by `ts`.
 
-IF FEATURE_DECISIONS exists:
-  1. READ FEATURE_DECISIONS (all JSONL lines)
-  2. READ CENTRAL_DECISIONS (if exists)
-  3. MERGE: append feature entries to central
-  4. DEDUPLICATE: remove entries where ts+agent+decision already in central
-  5. WRITE .codeadd/project/decisions.jsonl (updated)
-```
-
-**Bash implementation:**
 ```bash
-FEAT_DECISIONS="docs/features/${FEATURE_NUMBER}-$(ls docs/features | grep "^${FEATURE_NUMBER}")/decisions.jsonl"
+FEAT_DECISIONS="${DIR}/decisions.jsonl"
 CENTRAL=".codeadd/project/decisions.jsonl"
 
 if [ -f "$FEAT_DECISIONS" ]; then
+  mkdir -p "$(dirname "$CENTRAL")"
   if [ -f "$CENTRAL" ]; then
-    # Append feature entries not already in central (deduplicate by ts)
     while IFS= read -r line; do
       ts=$(echo "$line" | grep -o '"ts":"[^"]*"' | head -1)
-      if ! grep -q "$ts" "$CENTRAL" 2>/dev/null; then
-        echo "$line" >> "$CENTRAL"
-      fi
+      grep -q "$ts" "$CENTRAL" 2>/dev/null || echo "$line" >> "$CENTRAL"
     done < "$FEAT_DECISIONS"
   else
     cp "$FEAT_DECISIONS" "$CENTRAL"
@@ -348,44 +296,11 @@ if [ -f "$FEAT_DECISIONS" ]; then
 fi
 ```
 
-### 4A.9: Validation Gate
-
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `changelog`.
-
-⛔ DO NOT skip. DO NOT proceed to merge until gate returns `PASS`.
-
----
-
-## STEP 4B: Feature Hotfix Flow (BRANCH_TYPE = hotfix_feature)
-
-### 4B.1: Load Hotfix Documentation
-
-Find `hotfix-*.md` in `${DIR}` (from CHANGED_FILES). Read the hotfix doc. Extract: Problem, Root Cause, Files Modified, Verification status.
-
-### 4B.2: Skip Changelog
-
-**DO NOT generate changelog.** The hotfix document IS the record of what was done.
-
----
-
-## STEP 4C: Standalone Hotfix Flow (BRANCH_TYPE = hotfix_standalone)
-
-### 4C.1: Load Hotfix Documentation
-
-Find `hotfix-*.md` in `${DIR}` (from CHANGED_FILES). Read the hotfix doc. Extract: Problem, Root Cause, Files Modified, Verification status.
-
-### 4C.2: Skip Changelog
-
-**DO NOT generate changelog.** The hotfix document IS the record of what was done.
-
 ---
 
 ## STEP 5: Preview (INFORMATIVE ONLY)
 
-Show a preview with: type, feature ID, summary, file count, status. Adapt content per branch type:
-- **feature:** Include iteration count, top HIGH priority files, out-of-scope indicator
-- **hotfix_feature:** Include problem, fix, file count, related feature
-- **hotfix_standalone:** Include problem, fix, file count
+Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any).
 
 **DO NOT ask for confirmation. Proceed directly to STEP 6.**
 
@@ -395,60 +310,24 @@ Show a preview with: type, feature ID, summary, file count, status. Adapt conten
 
 **Execute immediately after STEP 5.**
 
-### 6.1: Detect Merge Strategy
-
-Check if repo requires Pull Request via `gh api` branch protection check. Route accordingly:
-
-| Result | Action |
-|--------|--------|
-| `PR_REQUIRED` (branch protection active) | Route to PR flow (6.2A) |
-| `DIRECT_MERGE` (no protection or gh not installed) | Route to direct merge (6.2B) |
-
-### 6.2A: PR Flow (branch protection detected)
-
-Inform user that branch protection was detected -- creating Pull Request instead of direct merge.
-
-1. Read `{{cmd:add.pr}}` as reference for PR creation flow
-2. Follow add.pr STEPs 7-9 (Preview, Write files, Execute --create-pr)
-3. Use `bash .codeadd/scripts/feature-pr.sh --create-pr` for PR creation
-
-After PR created, inform: "PR Created! Merge via GitHub when approved. After merge, run: /add.done (will detect merged PR and cleanup)"
-
-### 6.2B: Direct Merge (default)
-
 ```bash
 bash .codeadd/scripts/done.sh --merge
 ```
 
-**DO NOT USE Bash for git add/commit/push manually. done.sh --merge handles everything (commit, push, merge, checkpoint cleanup, branch cleanup).**
+`done.sh --merge` handles everything: commit, push, merge to main, checkpoint cleanup, branch cleanup. It also deletes all `checkpoint/*` tags for the feature (local + remote) created by `/add.build` during implementation.
 
-**NOTE:** done.sh --merge automatically deletes all `checkpoint/*` tags for the feature (local + remote). These temporary tags were created by `/add.build` during implementation and are no longer needed after merge.
+⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
 
 **After merge, MUST suggest next command from ecosystem map:**
-READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, feature vs hotfix, epic status), identify and suggest the appropriate next step.
+READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.
 
 ---
 
 ## Rules
 
-ALWAYS:
-- Run done.sh context mode FIRST
-- Resolve directory from CHANGED_FILES (not Glob)
-- Read about.md + iterations.jsonl BEFORE analyzing (feature only)
-- Validate files against HISTORY_FILES (feature only)
-- Write changelog BEFORE --merge (feature only)
-- Execute --merge automatically after validations pass
-- Load hotfix doc for hotfix types
-
 NEVER:
-- Analyze without loaded context
-- Generate changelog for hotfix types
-- Use Glob before checking CHANGED_FILES
-- Execute --merge without changelog written (feature only)
-- Use Bash for git add/commit/push manually
-- Ask user for merge confirmation
-- Rename branches (git branch -m) to fix type errors
-- Suggest renaming a branch -- the prefix is intentional
+- Rename branches (git branch -m) to fix type errors — the prefix is intentional
+- Use Glob before checking CHANGED_FILES paths
 
 ---
 
@@ -456,10 +335,9 @@ NEVER:
 
 | Error | Action |
 |-------|--------|
-| No F/H ID in branch | Show error: branch must contain F[XXXX] or H[XXXX]. NEVER suggest renaming |
+| No `[NNNN][L]` ID in branch | Show error: branch must contain a valid feature/hotfix ID. NEVER suggest renaming |
 | about.md not found | Degrade: changelog without scope context |
-| iterations.md not found | Degrade: use only about.md |
-| Hotfix doc not found | Warn: no hotfix documentation found, proceed with merge |
+| iterations.jsonl not found | Degrade: use only about.md |
 | Dir not in CHANGED_FILES | Fallback: Glob `docs/features/${FEATURE_NUMBER}-*/` |
 | >50 files | Analyze top 20 HIGH + count rest |
-| Merge conflict | Abort, suggest /hotfix |
+| Merge conflict | Abort, suggest /add.hotfix |

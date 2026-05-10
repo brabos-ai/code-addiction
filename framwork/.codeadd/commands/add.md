@@ -9,14 +9,6 @@ Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests 
 
 ---
 
-## Spec
-
-```json
-{"write_allowed":"docs/analysis/","skills":{"on_demand":"dev-environment-setup (load when type=Setup or env tools missing)"}}
-```
-
----
-
 ## PROHIBITIONS AND PERMISSIONS
 
 ```

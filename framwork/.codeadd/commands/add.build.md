@@ -4,14 +4,6 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 
 ---
 
-## Spec
-
-```json
-{"modes":{"development":"pending tasks in plan.md/about.md","correction":"feature implemented + user describes bug","feature":"epic feature N"},"mutates":["plan.md","about.md"],"schemas":["feature-plan","feature-about"]}
-```
-
----
-
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
