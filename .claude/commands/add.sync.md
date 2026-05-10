@@ -11,7 +11,7 @@ Computes diff since last release, regenerates the ecosystem map, dispatches 4 an
 ## Spec
 
 ```json
-{"outputs":{"ecosystem_map":"framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md","reports":".tmp/sync/*.json","targets":["README.md","web/src/pages/docs.astro","web/src/pages/index.astro","web/public/*.svg"]},"payload":".tmp/sync/change-payload.json"}
+{"outputs":{"ecosystem_map":"framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md","ecosystem_map_md":"ecosystem.md","reports":".tmp/sync/*.json","targets":["README.md","web/src/pages/docs.astro","web/src/pages/index.astro","web/public/*.svg"]},"payload":".tmp/sync/change-payload.json"}
 ```
 
 ---
@@ -22,9 +22,10 @@ Computes diff since last release, regenerates the ecosystem map, dispatches 4 an
 ```
 STEP 1: Compute Change Payload    → git diff LAST_TAG..HEAD + ecosystem scan + inconsistency check
 STEP 2: Regenerate Ecosystem Map  → deterministic from scan data (no agent)
-STEP 3: Dispatch 4 Analyzer Agents → READ-ONLY, PARALLEL, each writes report to .tmp/sync/
-STEP 4: Apply Edits               → coordinator reads all reports, applies via Edit tool (single writer)
-STEP 5: Final Report              → files modified, [MANUAL] items, log iteration
+STEP 3: Regenerate ecosystem.md   → 3 Mermaid graphs from STEP 1.3 scan data (no agent)
+STEP 4: Dispatch 4 Analyzer Agents → READ-ONLY, PARALLEL, each writes report to .tmp/sync/
+STEP 5: Apply Edits               → coordinator reads all reports, applies via Edit tool (single writer)
+STEP 6: Final Report              → files modified, [MANUAL] items, log iteration
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -36,7 +37,7 @@ IF CHANGE PAYLOAD NOT BUILT (STEP 1 not complete):
   ⛔ DO NOT: Dispatch any agent
   ✅ DO: Complete STEP 1 first
 
-IF AGENT REPORTS NOT ALL RECEIVED (STEP 3 not complete):
+IF AGENT REPORTS NOT ALL RECEIVED (STEP 4 not complete):
   ⛔ DO NOT USE: Edit on README.md, docs.astro, index.astro, or *.svg
   ⛔ DO NOT USE: Write on README.md, docs.astro, index.astro, or *.svg
   ⛔ DO NOT: Apply any edits
@@ -154,7 +155,42 @@ Before writing: show diff of what changed (added/removed/changed entries). Then 
 
 ---
 
-## STEP 3: Dispatch 4 Analyzer Agents (PARALLEL)
+## STEP 3: Regenerate ecosystem.md
+
+Regenerate `ecosystem.md` at the repository root from STEP 1.3 scan data. Reuses the same scan — no additional filesystem read.
+
+This file is the human-facing integration map. Contains 3 Mermaid graphs only — orphaned-skill / gap analysis is intentionally NOT regenerated here (lives in `docs/prd/PRD0022-ecosystem-master-map.md`).
+
+**Three graphs to emit:**
+
+```
+Graph 1 — Core Pipeline:
+  Commands in main feature flow (add.new, add.plan, add.build, add.review, add.done, add.test, add.autopilot)
+  → skills they load (loads relationship)
+
+Graph 2 — Support Commands:
+  Auxiliary commands (add, add.init, add.design, add.diagnose, add.hotfix, add.audit, add.xray, add.brainstorm, add.ux)
+  → skills they load (loads relationship)
+
+Graph 3 — Agent Dispatch:
+  Commands → agents they dispatch
+  Agents → skills they load
+```
+
+Build edges from STEP 1.3 scan:
+- `command → skill` for every skill referenced in a command file
+- `command → agent` for every agent dispatched by a command (parse via @agent-name or "DISPATCH AGENT" blocks)
+- `agent → skill` from each agent's frontmatter
+
+Mermaid syntax: use `graph LR` per block, node shapes `(command)` rounded, `{{skill}}` hexagon, `>agent]` flag. Use short alias IDs (e.g. `NEW(add.new)`, `DS{{add-doc-schemas}}`, `BA>backend-agent]`) to keep edges readable.
+
+**File header:** include the auto-generation marker at top + footer link to `framwork/.codeadd/skills/add-ecosystem/SKILL.md` as the AI-side source of truth.
+
+⛔ DO NOT USE: Edit on `ecosystem.md` — file is fully regenerated each run, always Write.
+
+---
+
+## STEP 4: Dispatch 4 Analyzer Agents (PARALLEL)
 
 **DISPATCH 4 AGENTS IN PARALLEL:**
 Each agent is independent. Dispatch ALL simultaneously.
@@ -175,7 +211,7 @@ Each agent is independent. Dispatch ALL simultaneously.
    - **Prompt:** Read `.tmp/sync/change-payload.json` and `web/public/commands.svg`, `web/public/flows.svg`, `web/public/flowchart.svg`. Return text-only edits (within `<text>` nodes only). Layout changes go to manual_items. Write Update Report array to `.tmp/sync/svg-report.json`.
    - **Output:** `.tmp/sync/svg-report.json`
 
-**WAIT-ALL before proceeding to STEP 4.**
+**WAIT-ALL before proceeding to STEP 5.**
 
 ⛔ GATE CHECK: All 4 reports exist?
 - [ ] `.tmp/sync/readme-report.json` exists
@@ -189,9 +225,9 @@ IF ANY MISSING:
 
 ---
 
-## STEP 4: Apply Edits (Single Writer)
+## STEP 5: Apply Edits (Single Writer)
 
-### 4.1 Read All Reports
+### 5.1 Read All Reports
 
 Read all 4 report files. Each report follows this schema:
 
@@ -212,13 +248,13 @@ Read all 4 report files. Each report follows this schema:
 For insertions: `old` = anchor text already in file, `new` = anchor text + newline + new content.
 For deletions: `old` = text to remove, `new` = "".
 
-### 4.2 Collect and Order Edits
+### 5.2 Collect and Order Edits
 
 For each target file:
 1. Collect ALL edits from all reports targeting that file
 2. Order by position in file — **apply bottom-up** (last occurrence first) to preserve line positions for subsequent edits
 
-### 4.3 Apply Each Edit
+### 5.3 Apply Each Edit
 
 For each edit (in bottom-up order):
 1. Verify `old` text exists verbatim in the file
@@ -229,7 +265,7 @@ For each edit (in bottom-up order):
 
 ---
 
-## STEP 5: Final Report + Completion
+## STEP 6: Final Report + Completion
 
 Show report (omit empty sections):
 
@@ -240,6 +276,7 @@ Show report (omit empty sections):
 [UPDATED / NO CHANGES] — list added/removed/changed entries
 
 ### Files Modified
+- ecosystem.md: regenerated
 - README.md: N edits applied
 - web/src/pages/docs.astro: N edits applied
 - web/src/pages/index.astro: N edits applied
@@ -269,7 +306,7 @@ No commit was made. Run `git diff` to review changes before committing.
 
 Log iteration:
 ```bash
-bash .codeadd/scripts/log-iteration.sh "enhance" "add.sync" "auto-update docs from LAST_TAG..HEAD diff" "README.md,web/src/pages/docs.astro,web/src/pages/index.astro,web/public/*.svg"
+bash .codeadd/scripts/log-iteration.sh "enhance" "add.sync" "auto-update docs from LAST_TAG..HEAD diff" "ecosystem.md,README.md,web/src/pages/docs.astro,web/src/pages/index.astro,web/public/*.svg"
 ```
 
 ---

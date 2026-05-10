@@ -63,6 +63,7 @@ import "../styles/global.css";
         <div>
           <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Deep Dive</p>
           <ul class="space-y-2">
+            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
             <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
             <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
             <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
@@ -632,6 +633,61 @@ import "../styles/global.css";
         </div>
       </section>
 
+      <!-- ECOSYSTEM MAP -->
+      <section id="ecosystem" class="mb-20">
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Deep Dive</p>
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Ecosystem Map</h2>
+        <p class="text-muted-light mb-6">
+          Interactive map of commands, skills, and agents. Hover a node to highlight its connections. Click to inspect.
+        </p>
+
+        <!-- Legend + filters -->
+        <div class="flex flex-wrap items-center gap-4 mb-4">
+          <div class="flex items-center gap-4 text-xs text-muted-light">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#a78bfa"></span>Commands</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22d3ee"></span>Skills</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#34d399"></span>Agents</span>
+          </div>
+          <div class="flex items-center gap-2 ml-auto flex-wrap">
+            <input id="eco-search" type="text" placeholder="Search..." class="bg-white/[0.04] border border-white/10 rounded-md px-2.5 py-1 text-xs text-foreground placeholder-muted focus:outline-none focus:border-accent/40 font-mono w-32"/>
+            <button data-filter="all" class="eco-btn text-xs px-3 py-1 rounded-md border border-accent bg-accent text-surface font-mono">All</button>
+            <button data-filter="command" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Commands</button>
+            <button data-filter="skill" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Skills</button>
+            <button data-filter="agent" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Agents</button>
+          </div>
+        </div>
+
+        <!-- Graph + browse sidebar -->
+        <div class="flex gap-4 items-start">
+          <div id="eco-graph-wrap" class="flex-1 relative min-w-0">
+            <div id="eco-cy" class="rounded-xl border border-white/10 bg-[#0a0a0f]" style="height:720px"></div>
+            <div class="absolute top-3 right-3 flex flex-col gap-1 bg-[#0a0a0f]/80 border border-white/10 rounded-lg p-1 backdrop-blur-sm">
+              <button id="eco-zoom-in" title="Zoom in" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m6-6H6"/></svg></button>
+              <button id="eco-zoom-out" title="Zoom out" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg></button>
+              <button id="eco-fit" title="Fit to canvas" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></svg></button>
+              <div class="h-px bg-white/10 my-0.5"></div>
+              <button id="eco-fullscreen" title="Fullscreen" class="eco-ctrl"><svg id="eco-fs-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M4 16v4h4M16 20h4v-4"/></svg></button>
+            </div>
+            <div class="absolute bottom-3 left-3 text-[10px] text-muted-light/70 font-mono pointer-events-none select-none bg-[#0a0a0f]/70 px-2 py-1 rounded">
+              scroll to zoom · drag to pan · click to inspect
+            </div>
+          </div>
+          <aside id="eco-sidebar" class="hidden lg:flex w-60 shrink-0 rounded-xl border border-white/10 bg-white/[0.02] flex-col" style="height:720px">
+            <div id="eco-inspect" class="hidden border-b border-white/10 p-4 shrink-0">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p id="eco-panel-name" class="font-mono text-foreground font-bold text-sm break-all leading-tight"></p>
+                  <p id="eco-panel-type" class="font-mono text-[10px] uppercase tracking-widest mt-0.5"></p>
+                </div>
+                <button id="eco-panel-close" class="text-muted hover:text-foreground text-xs leading-none shrink-0">✕</button>
+              </div>
+              <div id="eco-panel-body" class="text-xs text-muted-light space-y-2 mt-3 max-h-48 overflow-y-auto"></div>
+            </div>
+            <div id="eco-browse" class="flex-1 overflow-y-auto p-3 space-y-3 min-h-0"></div>
+          </aside>
+        </div>
+      </section>
+
       <!-- Footer -->
       <footer class="border-t border-white/5 pt-8 mt-16 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted">
         <div class="flex items-center gap-2">
@@ -678,5 +734,588 @@ import "../styles/global.css";
         });
       });
     }
+  </script>
+
+  <style is:global>
+    .eco-list-item--active { background: rgba(255,255,255,0.06); }
+    .eco-list-item--active span:last-child { color: #f1f5f9; }
+    .eco-ctrl {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      color: #94a3b8;
+      transition: background-color 120ms, color 120ms;
+    }
+    .eco-ctrl:hover { background: rgba(255,255,255,0.06); color: #f1f5f9; }
+    .eco-ctrl:active { background: rgba(255,255,255,0.1); }
+    #eco-graph-wrap.is-fullscreen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      padding: 16px;
+      background: #0a0a0f;
+    }
+    #eco-graph-wrap.is-fullscreen #eco-cy {
+      height: 100% !important;
+      border-radius: 8px;
+    }
+  </style>
+
+  <script is:inline>
+  (function () {
+    var CYTOSCAPE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js';
+    var LAYOUT_BASE_CDN = 'https://cdn.jsdelivr.net/npm/layout-base@2.0.1/layout-base.min.js';
+    var COSE_BASE_CDN = 'https://cdn.jsdelivr.net/npm/cose-base@2.2.0/cose-base.min.js';
+    var COSE_BILKENT_CDN = 'https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.min.js';
+
+    function loadScript(src) {
+      return new Promise(function(res, rej) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = res;
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+
+    function initEcosystem() {
+      var nodes = [
+        // Commands
+        {data:{id:'add',label:'add',type:'command'}},
+        {data:{id:'add.audit',label:'add.audit',type:'command'}},
+        {data:{id:'add.autopilot',label:'add.autopilot',type:'command'}},
+        {data:{id:'add.brainstorm',label:'add.brainstorm',type:'command'}},
+        {data:{id:'add.build',label:'add.build',type:'command'}},
+        {data:{id:'add.commit',label:'add.commit',type:'command'}},
+        {data:{id:'add.design',label:'add.design',type:'command'}},
+        {data:{id:'add.diagnose',label:'add.diagnose',type:'command'}},
+        {data:{id:'add.done',label:'add.done',type:'command'}},
+        {data:{id:'add.hotfix',label:'add.hotfix',type:'command'}},
+        {data:{id:'add.init',label:'add.init',type:'command'}},
+        {data:{id:'add.new',label:'add.new',type:'command'}},
+        {data:{id:'add.plan',label:'add.plan',type:'command'}},
+        {data:{id:'add.pr',label:'add.pr',type:'command'}},
+        {data:{id:'add.review',label:'add.review',type:'command'}},
+        {data:{id:'add.test',label:'add.test',type:'command'}},
+        {data:{id:'add.ux',label:'add.ux',type:'command'}},
+        {data:{id:'add.xray',label:'add.xray',type:'command'}},
+        // Agents
+        {data:{id:'architecture-agent',label:'architecture',type:'agent'}},
+        {data:{id:'backend-agent',label:'backend',type:'agent'}},
+        {data:{id:'database-agent',label:'database',type:'agent'}},
+        {data:{id:'discovery-agent',label:'discovery',type:'agent'}},
+        {data:{id:'doc-reviewer-agent',label:'doc-reviewer',type:'agent'}},
+        {data:{id:'frontend-agent',label:'frontend',type:'agent'}},
+        {data:{id:'reviewer-agent',label:'reviewer',type:'agent'}},
+        {data:{id:'system-design-agent',label:'system-design',type:'agent'}},
+        {data:{id:'ux-agent',label:'ux',type:'agent'}},
+        // Skills
+        {data:{id:'add-doc-schemas',label:'doc-schemas',type:'skill'}},
+        {data:{id:'add-ecosystem',label:'ecosystem',type:'skill'}},
+        {data:{id:'add-ux-design',label:'ux-design',type:'skill'}},
+        {data:{id:'add-id-convention',label:'id-convention',type:'skill'}},
+        {data:{id:'add-backend-development',label:'backend-dev',type:'skill'}},
+        {data:{id:'add-frontend-development',label:'frontend-dev',type:'skill'}},
+        {data:{id:'add-tasks-checklist',label:'tasks-checklist',type:'skill'}},
+        {data:{id:'add-database-development',label:'database-dev',type:'skill'}},
+        {data:{id:'add-investigation',label:'investigation',type:'skill'}},
+        {data:{id:'add-code-review',label:'code-review',type:'skill'}},
+        {data:{id:'add-security-audit',label:'security-audit',type:'skill'}},
+        {data:{id:'add-architecture-discovery',label:'arch-discovery',type:'skill'}},
+        {data:{id:'add-feature-discovery',label:'feature-discovery',type:'skill'}},
+        {data:{id:'add-delivery-validation',label:'delivery-validation',type:'skill'}},
+        {data:{id:'add-health-check',label:'health-check',type:'skill'}},
+        {data:{id:'add-product-discovery',label:'product-discovery',type:'skill'}},
+        {data:{id:'add-doc-reviewer',label:'doc-reviewer',type:'skill'}},
+        {data:{id:'add-claude-md-style',label:'claude-md-style',type:'skill'}},
+        {data:{id:'add-dev-environment-setup',label:'dev-env-setup',type:'skill'}},
+        {data:{id:'add-commit',label:'commit',type:'skill'}},
+        {data:{id:'add-feature-specification',label:'feature-spec',type:'skill'}},
+        {data:{id:'add-backend-architecture',label:'backend-arch',type:'skill'}},
+        {data:{id:'add-frontend-architecture',label:'frontend-arch',type:'skill'}},
+      ];
+
+      var RAW = [
+        // command → skill (loads)
+        ['add','add-ecosystem','loads'],
+        ['add','add-dev-environment-setup','loads'],
+        ['add.audit','add-doc-schemas','loads'],
+        ['add.audit','add-health-check','loads'],
+        ['add.audit','add-investigation','loads'],
+        ['add.autopilot','add-doc-schemas','loads'],
+        ['add.autopilot','add-id-convention','loads'],
+        ['add.autopilot','add-tasks-checklist','loads'],
+        ['add.autopilot','add-ecosystem','loads'],
+        ['add.autopilot','add-ux-design','loads'],
+        ['add.autopilot','add-database-development','loads'],
+        ['add.autopilot','add-backend-development','loads'],
+        ['add.autopilot','add-frontend-development','loads'],
+        ['add.autopilot','add-code-review','loads'],
+        ['add.brainstorm','add-doc-schemas','loads'],
+        ['add.brainstorm','add-ecosystem','loads'],
+        ['add.build','add-doc-schemas','loads'],
+        ['add.build','add-id-convention','loads'],
+        ['add.build','add-tasks-checklist','loads'],
+        ['add.build','add-ux-design','loads'],
+        ['add.build','add-database-development','loads'],
+        ['add.build','add-backend-development','loads'],
+        ['add.build','add-frontend-development','loads'],
+        ['add.commit','add-commit','loads'],
+        ['add.design','add-doc-schemas','loads'],
+        ['add.design','add-id-convention','loads'],
+        ['add.design','add-ux-design','loads'],
+        ['add.diagnose','add-doc-schemas','loads'],
+        ['add.diagnose','add-ecosystem','loads'],
+        ['add.diagnose','add-investigation','loads'],
+        ['add.done','add-doc-schemas','loads'],
+        ['add.done','add-id-convention','loads'],
+        ['add.done','add-ecosystem','loads'],
+        ['add.hotfix','add-doc-schemas','loads'],
+        ['add.hotfix','add-id-convention','loads'],
+        ['add.hotfix','add-investigation','loads'],
+        ['add.hotfix','add-ux-design','loads'],
+        ['add.hotfix','add-ecosystem','loads'],
+        ['add.init','add-doc-schemas','loads'],
+        ['add.init','add-product-discovery','loads'],
+        ['add.new','add-doc-schemas','loads'],
+        ['add.new','add-id-convention','loads'],
+        ['add.new','add-feature-discovery','loads'],
+        ['add.new','add-feature-specification','loads'],
+        ['add.new','add-doc-reviewer','loads'],
+        ['add.plan','add-doc-schemas','loads'],
+        ['add.plan','add-id-convention','loads'],
+        ['add.plan','add-backend-development','loads'],
+        ['add.plan','add-database-development','loads'],
+        ['add.plan','add-frontend-development','loads'],
+        ['add.plan','add-ux-design','loads'],
+        ['add.plan','add-tasks-checklist','loads'],
+        ['add.review','add-code-review','loads'],
+        ['add.review','add-frontend-development','loads'],
+        ['add.review','add-ux-design','loads'],
+        ['add.review','add-backend-development','loads'],
+        ['add.review','add-database-development','loads'],
+        ['add.review','add-security-audit','loads'],
+        ['add.review','add-delivery-validation','loads'],
+        ['add.review','add-tasks-checklist','loads'],
+        ['add.review','add-investigation','loads'],
+        ['add.test','add-backend-development','loads'],
+        ['add.test','add-frontend-development','loads'],
+        ['add.test','add-ecosystem','loads'],
+        ['add.ux','add-ux-design','loads'],
+        ['add.xray','add-doc-schemas','loads'],
+        ['add.xray','add-architecture-discovery','loads'],
+        ['add.xray','add-claude-md-style','loads'],
+        // command → agent (dispatches)
+        ['add.autopilot','backend-agent','dispatches'],
+        ['add.autopilot','frontend-agent','dispatches'],
+        ['add.autopilot','database-agent','dispatches'],
+        ['add.autopilot','reviewer-agent','dispatches'],
+        ['add.build','backend-agent','dispatches'],
+        ['add.build','frontend-agent','dispatches'],
+        ['add.build','database-agent','dispatches'],
+        ['add.build','reviewer-agent','dispatches'],
+        ['add.design','ux-agent','dispatches'],
+        ['add.new','discovery-agent','dispatches'],
+        ['add.new','doc-reviewer-agent','dispatches'],
+        ['add.xray','architecture-agent','dispatches'],
+        ['add.diagnose','discovery-agent','dispatches'],
+        ['add.diagnose','architecture-agent','dispatches'],
+        // agent → skill (uses)
+        ['backend-agent','add-backend-development','uses'],
+        ['backend-agent','add-database-development','uses'],
+        ['frontend-agent','add-frontend-development','uses'],
+        ['database-agent','add-database-development','uses'],
+        ['reviewer-agent','add-code-review','uses'],
+        ['reviewer-agent','add-security-audit','uses'],
+        ['ux-agent','add-ux-design','uses'],
+        ['discovery-agent','add-feature-discovery','uses'],
+        ['discovery-agent','add-feature-specification','uses'],
+        ['doc-reviewer-agent','add-doc-reviewer','uses'],
+        ['doc-reviewer-agent','add-doc-schemas','uses'],
+        ['architecture-agent','add-architecture-discovery','uses'],
+        ['architecture-agent','add-backend-architecture','uses'],
+        ['architecture-agent','add-frontend-architecture','uses'],
+        ['system-design-agent','add-architecture-discovery','uses'],
+      ];
+
+      var edges = RAW.map(function(r, i) {
+        return {data:{id:'e'+i, source:r[0], target:r[1], type:r[2]}};
+      });
+
+      // Compute degree (connection count) per node for size scaling
+      var degreeMap = {};
+      edges.forEach(function(e) {
+        degreeMap[e.data.source] = (degreeMap[e.data.source] || 0) + 1;
+        degreeMap[e.data.target] = (degreeMap[e.data.target] || 0) + 1;
+      });
+      nodes.forEach(function(n) {
+        n.data.degree = degreeMap[n.data.id] || 1;
+      });
+
+      var cy = window.__ecoCy = window.cytoscape({
+        container: document.getElementById('eco-cy'),
+        elements: { nodes: nodes, edges: edges },
+        wheelSensitivity: 0.2,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': '',
+              'font-size': 10,
+              'font-family': 'ui-sans-serif, system-ui, sans-serif',
+              'text-valign': 'bottom',
+              'text-halign': 'center',
+              'text-margin-y': 6,
+              'color': '#cbd5e1',
+              'text-wrap': 'wrap',
+              'text-max-width': 140,
+              'text-outline-color': '#0a0a0f',
+              'text-outline-width': 2,
+              'shape': 'ellipse',
+              'width': 'mapData(degree, 1, 12, 10, 38)',
+              'height': 'mapData(degree, 1, 12, 10, 38)',
+              'border-width': 0,
+              'transition-property': 'background-color, border-width, width, height',
+              'transition-duration': '120ms',
+            }
+          },
+          {
+            selector: 'node.show-label',
+            style: { 'label': 'data(label)' }
+          },
+          {
+            selector: 'node[type="command"]',
+            style: {
+              'background-color': '#a78bfa',
+            }
+          },
+          {
+            selector: 'node[type="skill"]',
+            style: {
+              'background-color': '#22d3ee',
+            }
+          },
+          {
+            selector: 'node[type="agent"]',
+            style: {
+              'background-color': '#34d399',
+            }
+          },
+          {
+            selector: 'node.highlighted',
+            style: {
+              'border-width': 2,
+              'border-color': '#ffffff',
+              'border-opacity': 0.85,
+              'color': '#f1f5f9',
+              'font-size': 11,
+              'z-index': 999,
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 0.8,
+              'line-color': '#334155',
+              'curve-style': 'bezier',
+              'opacity': 0.55,
+              'target-arrow-shape': 'none',
+            }
+          },
+          {
+            selector: 'edge.highlighted',
+            style: {
+              'width': 1.4,
+              'line-color': '#cbd5e1',
+              'opacity': 1,
+              'z-index': 998,
+            }
+          },
+          {
+            selector: '.faded',
+            style: {'opacity': 0.08}
+          },
+          {
+            selector: '.hidden-node',
+            style: {'display': 'none'}
+          },
+        ],
+        layout: {
+          name: 'cose-bilkent',
+          quality: 'proof',
+          nodeDimensionsIncludeLabels: false,
+          fit: true,
+          padding: 60,
+          randomize: true,
+          nodeRepulsion: 6500,
+          idealEdgeLength: 85,
+          edgeElasticity: 0.45,
+          nestingFactor: 0.1,
+          gravity: 0.9,
+          numIter: 3500,
+          tile: true,
+          tilingPaddingVertical: 6,
+          tilingPaddingHorizontal: 6,
+          gravityRangeCompound: 1.5,
+          gravityCompound: 1.0,
+          gravityRange: 1.2,
+          initialEnergyOnIncremental: 0.5,
+          animate: false,
+        }
+      });
+
+      // Pull disconnected components close to the main cluster centroid.
+      // cose-bilkent tiles orphans on the side; we re-center them so they
+      // don't visually drift away from the graph.
+      cy.ready(function() {
+        var components = cy.elements().components();
+        if (components.length <= 1) return;
+        // Largest component is treated as the "main" cluster
+        var main = components.reduce(function(a, b) { return a.length >= b.length ? a : b; });
+        var bb = main.boundingBox();
+        var cx = bb.x1 + bb.w / 2;
+        var cy1 = bb.y1 + bb.h / 2;
+        components.forEach(function(comp) {
+          if (comp === main) return;
+          var cb = comp.boundingBox();
+          var ccx = cb.x1 + cb.w / 2;
+          var ccy = cb.y1 + cb.h / 2;
+          // Pick the closest edge of the main bbox + a small gap
+          var gap = 80;
+          var targetX, targetY;
+          if (Math.abs(ccx - cx) > Math.abs(ccy - cy1)) {
+            targetX = ccx < cx ? bb.x1 - gap : bb.x2 + gap;
+            targetY = cy1;
+          } else {
+            targetX = cx;
+            targetY = ccy < cy1 ? bb.y1 - gap : bb.y2 + gap;
+          }
+          var dx = targetX - ccx;
+          var dy = targetY - ccy;
+          comp.nodes().forEach(function(n) {
+            var p = n.position();
+            n.position({ x: p.x + dx, y: p.y + dy });
+          });
+        });
+        cy.fit(cy.elements(), 50);
+      });
+
+      // ----- Helpers shared between graph + list -----
+      function highlightNode(id) {
+        var n = cy.getElementById(id);
+        if (!n || n.empty()) return;
+        // Always reset state first so successive highlights don't accumulate
+        cy.elements().removeClass('faded').removeClass('highlighted').removeClass('show-label');
+        var hood = n.closedNeighborhood();
+        cy.elements().not(hood).addClass('faded');
+        hood.addClass('highlighted');
+        hood.nodes().addClass('show-label');
+        document.querySelectorAll('.eco-list-item').forEach(function(el) {
+          el.classList.toggle('eco-list-item--active', el.dataset.id === id);
+        });
+      }
+      function clearHighlight() {
+        cy.elements().removeClass('faded').removeClass('highlighted');
+        if (cy.zoom() < 1.1) cy.nodes().removeClass('show-label');
+        document.querySelectorAll('.eco-list-item--active').forEach(function(el) {
+          el.classList.remove('eco-list-item--active');
+        });
+      }
+      function focusNode(id) {
+        var n = cy.getElementById(id);
+        if (!n || n.empty()) return;
+        cy.stop(true, true);
+        cy.animate({ center: { eles: n }, zoom: Math.max(cy.zoom(), 1.4) }, { duration: 350 });
+        showInspect(n);
+        highlightNode(id);
+      }
+      function showInspect(n) {
+        var inspect = document.getElementById('eco-inspect');
+        document.getElementById('eco-panel-name').textContent = n.data('id');
+        var typeEl = document.getElementById('eco-panel-type');
+        typeEl.textContent = n.data('type');
+        typeEl.style.color = TYPE_COLOR[n.data('type')] || '#cbd5e1';
+        var out = n.outgoers('node');
+        var inc = n.incomers('node');
+        var html = '';
+        if (out.length) {
+          html += '<div><span class="text-foreground font-mono text-[10px] uppercase tracking-wide">Loads / Dispatches</span><ul class="mt-1 space-y-0.5">';
+          out.each(function(x) { html += '<li class="font-mono text-[10px] truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
+          html += '</ul></div>';
+        }
+        if (inc.length) {
+          html += '<div><span class="text-foreground font-mono text-[10px] uppercase tracking-wide">Used by</span><ul class="mt-1 space-y-0.5">';
+          inc.each(function(x) { html += '<li class="font-mono text-[10px] truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
+          html += '</ul></div>';
+        }
+        document.getElementById('eco-panel-body').innerHTML = html;
+        inspect.classList.remove('hidden');
+        // Wire link clicks inside inspect to focus
+        inspect.querySelectorAll('.eco-link').forEach(function(li) {
+          li.addEventListener('click', function() { focusNode(li.dataset.id); });
+        });
+      }
+      var TYPE_COLOR = { command: '#a78bfa', skill: '#22d3ee', agent: '#34d399' };
+
+      // Hover: highlight neighborhood + reveal labels (Obsidian-style)
+      cy.on('mouseover', 'node', function(e) { highlightNode(e.target.id()); });
+      cy.on('mouseout', 'node', function() { clearHighlight(); });
+
+      // ----- Browse sidebar: render lists -----
+      var browseEl = document.getElementById('eco-browse');
+      var GROUPS = [
+        { type: 'command', label: 'Commands', color: TYPE_COLOR.command, collapsed: false },
+        { type: 'skill', label: 'Skills', color: TYPE_COLOR.skill, collapsed: true },
+        { type: 'agent', label: 'Agents', color: TYPE_COLOR.agent, collapsed: true },
+      ];
+      browseEl.innerHTML = GROUPS.map(function(g) {
+        var items = nodes.filter(function(n) { return n.data.type === g.type; })
+          .sort(function(a, b) { return a.data.id.localeCompare(b.data.id); });
+        var lis = items.map(function(n) {
+          return '<li class="eco-list-item flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-white/[0.04] transition-colors" data-id="' + n.data.id + '">' +
+            '<span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:' + g.color + '"></span>' +
+            '<span class="font-mono text-[11px] text-muted-light truncate">' + n.data.id + '</span></li>';
+        }).join('');
+        var collapsedAttr = g.collapsed ? 'true' : 'false';
+        var listStyle = g.collapsed ? ' style="display:none"' : '';
+        var chevStyle = g.collapsed ? ' style="transform:rotate(-90deg)"' : '';
+        return '<div data-type="' + g.type + '" data-collapsed="' + collapsedAttr + '">' +
+          '<button type="button" class="eco-group-toggle font-mono text-[10px] uppercase tracking-widest mb-1.5 px-2 w-full flex items-center justify-between hover:bg-white/[0.03] rounded py-0.5 transition-colors" style="color:' + g.color + '">' +
+            '<span class="flex items-center gap-1.5">' +
+              '<svg class="eco-chevron w-2.5 h-2.5 transition-transform"' + chevStyle + ' fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>' +
+              g.label +
+            '</span><span class="text-muted" data-count>' + items.length + '</span>' +
+          '</button>' +
+          '<ul class="eco-group-list space-y-px"' + listStyle + '>' + lis + '</ul></div>';
+      }).join('');
+
+      // List item interactions — click only (hover does nothing, per UX feedback)
+      browseEl.addEventListener('click', function(e) {
+        var toggle = e.target.closest('.eco-group-toggle');
+        if (toggle) {
+          var group = toggle.parentElement;
+          var collapsed = group.dataset.collapsed === 'true';
+          group.dataset.collapsed = collapsed ? 'false' : 'true';
+          var list = group.querySelector('.eco-group-list');
+          var chev = group.querySelector('.eco-chevron');
+          if (list) list.style.display = collapsed ? '' : 'none';
+          if (chev) chev.style.transform = collapsed ? '' : 'rotate(-90deg)';
+          return;
+        }
+        var li = e.target.closest('.eco-list-item');
+        if (li) focusNode(li.dataset.id);
+      });
+
+      // Zoom: progressively reveal labels
+      cy.on('zoom', function() {
+        var z = cy.zoom();
+        if (z >= 1.1) {
+          cy.nodes().addClass('show-label');
+        } else {
+          cy.nodes().removeClass('show-label');
+        }
+      });
+
+      // Click node: open inspect
+      cy.on('tap', 'node', function(e) { showInspect(e.target); });
+
+      document.getElementById('eco-panel-close').addEventListener('click', function() {
+        document.getElementById('eco-inspect').classList.add('hidden');
+      });
+
+      // ----- Sidebar list filter (type + search) -----
+      var listState = { filter: 'all', query: '' };
+      function applyListFilter() {
+        var q = listState.query;
+        var f = listState.filter;
+        document.querySelectorAll('#eco-browse > div').forEach(function(group) {
+          var groupType = group.dataset.type;
+          var groupVisible = (f === 'all' || f === groupType);
+          var visibleCount = 0;
+          group.querySelectorAll('.eco-list-item').forEach(function(li) {
+            var match = groupVisible && (!q || li.dataset.id.toLowerCase().indexOf(q) !== -1);
+            li.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+          });
+          group.style.display = (groupVisible && visibleCount > 0) ? '' : 'none';
+          var countEl = group.querySelector('[data-count]');
+          if (countEl) countEl.textContent = visibleCount;
+        });
+      }
+
+      document.querySelectorAll('.eco-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.eco-btn').forEach(function(b) {
+            b.className = 'eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono';
+          });
+          this.className = 'eco-btn text-xs px-3 py-1 rounded-md border border-accent bg-accent text-surface font-mono';
+          listState.filter = this.dataset.filter;
+          applyListFilter();
+        });
+      });
+
+      document.getElementById('eco-search').addEventListener('input', function() {
+        listState.query = this.value.trim().toLowerCase();
+        applyListFilter();
+      });
+
+      // ----- Graph controls -----
+      function zoomBy(factor) {
+        var z = cy.zoom() * factor;
+        cy.animate({ zoom: { level: z, position: { x: cy.width()/2, y: cy.height()/2 } } }, { duration: 180 });
+      }
+      document.getElementById('eco-zoom-in').addEventListener('click', function() { zoomBy(1.3); });
+      document.getElementById('eco-zoom-out').addEventListener('click', function() { zoomBy(1/1.3); });
+      document.getElementById('eco-fit').addEventListener('click', function() {
+        cy.stop(true, true);
+        cy.elements().removeClass('faded').removeClass('highlighted').removeClass('show-label');
+        document.querySelectorAll('.eco-list-item--active').forEach(function(el) { el.classList.remove('eco-list-item--active'); });
+        document.getElementById('eco-inspect').classList.add('hidden');
+        cy.animate({ fit: { eles: cy.elements(), padding: 50 } }, { duration: 350 });
+      });
+
+      var wrap = document.getElementById('eco-graph-wrap');
+      var fsIcon = document.getElementById('eco-fs-icon');
+      var ICON_FS = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M4 16v4h4M16 20h4v-4"/>';
+      var ICON_EXIT = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4M9 9H4M15 9V4M15 9h5M9 15v5M9 15H4M15 15v5M15 15h5"/>';
+      function toggleFullscreen() {
+        var entering = !wrap.classList.contains('is-fullscreen');
+        wrap.classList.toggle('is-fullscreen', entering);
+        fsIcon.innerHTML = entering ? ICON_EXIT : ICON_FS;
+        document.body.style.overflow = entering ? 'hidden' : '';
+        // Resize cy to new container, then refit
+        setTimeout(function() {
+          cy.resize();
+          cy.fit(cy.elements(), 50);
+        }, 60);
+      }
+      document.getElementById('eco-fullscreen').addEventListener('click', toggleFullscreen);
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && wrap.classList.contains('is-fullscreen')) toggleFullscreen();
+      });
+    }
+
+    // Lazy-load Cytoscape when section scrolls into view
+    var section = document.getElementById('ecosystem');
+    if (!section) return;
+    var observer = new IntersectionObserver(function(entries) {
+      if (entries[0].isIntersecting) {
+        observer.disconnect();
+        var chain = window.cytoscape
+          ? Promise.resolve()
+          : loadScript(CYTOSCAPE_CDN);
+        chain
+          .then(function() { return loadScript(LAYOUT_BASE_CDN); })
+          .then(function() { return loadScript(COSE_BASE_CDN); })
+          .then(function() { return loadScript(COSE_BILKENT_CDN); })
+          .then(initEcosystem)
+          .catch(function(err) { console.error('Ecosystem load failed:', err); });
+      }
+    }, { rootMargin: '300px' });
+    observer.observe(section);
+  })();
   </script>
 </Layout>

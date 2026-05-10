@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --version)",
+      "Bash(npx playwright *)",
+      "Read(//home/fnd/.cache/ms-playwright/**)",
+      "Bash(npm run *)",
+      "Bash(echo \"started pid: $!\")",
+      "Read(//tmp/**)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}
