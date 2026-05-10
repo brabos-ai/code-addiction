@@ -17,9 +17,10 @@ STEP 4 → Load complementary skill docs
 STEP 5 → Apply UX to user instruction
 ```
 
-**PROHIBITIONS — until skill is loaded:**
-- NEVER Edit/Write any file before reading skill `add-ux-design`
-- NEVER propose UX patterns, layouts, or components before STEP 3 completes
+**CONSTRAINTS — BLOCKING GATES:**
+- Do not edit/write files until skill `add-ux-design` is loaded (STEP 2)
+- Do not propose patterns/layouts/components until design patterns are discovered (STEP 3)
+- Do not skip project pattern discovery — reuse existing components always
 
 ---
 
@@ -82,17 +83,3 @@ EXECUTE the user's free-form instruction applying:
 - Mobile-first approach
 
 Output a brief summary of what was done and which UX considerations were applied.
-
----
-
-## Rules
-
-ALWAYS:
-- Load ux-design skill before proposing any changes
-- Discover project patterns before editing code
-- Reuse existing components instead of recreating them
-
-NEVER:
-- Edit/Write files without loading ux-design skill first
-- Propose layouts without discovering project patterns
-- Ignore existing design tokens, colors, or spacing

@@ -28,46 +28,20 @@ STEP 8: Persist (conditional) → schema-driven write
 STEP 9: Validation Gate       → diagnose-report schema gate
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+---
 
-```
-IF CONTEXT NOT LOADED (STEP 1):
-  ⛔ DO NOT USE: Grep, Read on code files
-  ⛔ DO NOT: Dispatch agents
-  ✅ DO: Run status.sh and load add-ecosystem FIRST
+## ⛔ ABSOLUTE PROHIBITIONS (by checkpoint)
 
-IF PROBLEM FRAMING NOT CONFIRMED (STEP 2):
-  ⛔ DO NOT USE: Glob, Grep, Read on code files
-  ⛔ DO NOT: Dispatch agents
-  ⛔ DO NOT: Classify symptom or propose hypotheses
-  ✅ DO: Present reformulation and WAIT for user confirmation
-
-IF add-investigation SKILL NOT LOADED (STEP 3):
-  ⛔ DO NOT: Begin investigation
-  ⛔ DO NOT: Suggest a route
-  ✅ DO: Read the skill first
-
-IF DIFFERENTIAL DIAGNOSIS NOT COMPLETE (STEP 5):
-  ⛔ DO NOT: Recommend a route
-  ⛔ DO NOT USE: Write
-  ✅ DO: Complete Phase 3 with 3+ ranked hypotheses
-
-ALWAYS (READ-ONLY BOUNDARY):
-  ⛔ DO NOT USE: Edit on ANY file
-  ⛔ DO NOT USE: Bash for implementation, builds, scripts (except status.sh)
-  ⛔ DO NOT USE: Write outside docs/diagnose/
-  ⛔ DO NOT: Create branches, commits, PRs
-  ⛔ DO NOT: Modify source code, commands, skills
-  ⛔ DO NOT: Execute /add.new, /add.hotfix, /add.build — only SUGGEST
-
-IF ROUTE = no-action (STEP 6):
-  ⛔ DO NOT USE: Write
-  ✅ DO: Conversational response only, no persistence
-
-IF USER DOES NOT CONFIRM PERSISTENCE (STEP 8):
-  ⛔ DO NOT USE: Write
-  ✅ DO: Respond in chat only
-```
+| Checkpoint | Condition | Forbidden | Allowed |
+|---|---|---|---|
+| **STEP 1** | Context not loaded | Grep, Read code files, dispatch agents | Run status.sh + load add-ecosystem |
+| **STEP 2** | Framing not confirmed | Glob, Grep, Read code, dispatch agents, classify symptom | Present reformulation, WAIT |
+| **STEP 3** | Skill not loaded | Begin investigation, suggest route | Read add-investigation skill |
+| **STEP 5** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
+| **READ-ONLY** | Always | Edit files, Bash (except status.sh), Write outside docs/diagnose/, branches, commits, /add.new/hotfix/build | Suggest next steps |
+| **STEP 6-8** | route = no-action | Write | Conversational response only |
+| **STEP 8** | User declined persistence | Write | Respond in chat only |
+| **STEP 9** | Doc not written | Skip validation gate | Run gate before complete |
 
 ---
 
@@ -253,39 +227,30 @@ Ask the user:
 
 ## STEP 8: Persist (Conditional) — schema-driven write
 
-### 8.1 Persist ONLY IF both conditions hold
+### 8.1 Persistence decision tree
 
-```
-IF route = no-action:
-  ⛔ DO NOT USE: Write
-  → Skip STEP 9, go to 8.4 conversational completion
+| route | user_confirmed_persistence | Action |
+|---|---|---|
+| no-action | any | Skip to 8.4 (conversational only) |
+| hotfix/feature/extend | no | Skip to 8.4 (conversational only) |
+| hotfix/feature/extend | yes | Execute 8.2 → 8.3 → 8.4 |
 
-IF user did NOT confirm persistence:
-  ⛔ DO NOT USE: Write
-  → Skip STEP 9, go to 8.4 conversational completion
+### 8.2 Determine slug & schema
 
-IF route != no-action AND user confirmed persistence:
-  ✅ Load schema and write docs/diagnose/<slug>.md
-```
+- slug: kebab-case from reformulated problem, max 6 words
+- Doc ID: `DIAG-<slug>` (fixed per schema)
+- EXECUTE schema `diagnose-report` from `{{skill:add-doc-schemas/SKILL.md}}`
 
-### 8.2 Determine slug
+### 8.3 Write (if conditions met)
 
-- slug: kebab-case from reformulated problem, max 6 words.
-- Doc ID is fixed format: `DIAG-<slug>`.
-
-### 8.3 Schema load (MANDATORY)
-
-EXECUTE schema `diagnose-report` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
-
-- **Path:** `docs/diagnose/<slug>.md`
-- **ID:** `DIAG-<slug>` (fixed per schema). Write per schema — extractive only.
+Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/<slug>.md` per schema (extractive only).
 
 ### 8.4 Completion output
 
 Show the user:
 - Report path (if persisted)
 - Recommended next command (from ecosystem map routing)
-- Reminder that `add.diagnose` does NOT execute — user runs the next command when ready
+- Reminder: `add.diagnose` is READ-ONLY; user executes the next command when ready
 
 ---
 
@@ -301,18 +266,17 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 ## Rules
 
-ALWAYS:
-- Confirm problem reformulation with user before investigating
-- Apply add-investigation skill Phase 0 before any code read
-- Enumerate 3+ hypotheses in Phase 3 before committing to one
-- Consult ecosystem map for route recommendation (never hardcode)
-- Persist report only when route ≠ no-action AND user confirms
-- Credit add-investigation skill as the methodology source in reports
-
-NEVER:
-- Recommend a route without differential diagnosis
-- Execute the recommended command automatically
-- Modify code, configs, or create branches
-- Accept "something is weird" as sufficient framing — push for observable
-- Persist a report when diagnosis = no-action
-- Bypass the 3-failure stop rule (return to framing instead of guessing more)
+| Requirement | Checkpoint | Rationale |
+|---|---|---|
+| **✅ Confirm reformulation before investigating** | STEP 2 | Wrong framing wastes downstream investigation |
+| **✅ Apply Phase 0 before code read** | STEP 3 | Symptom classification guides triage depth |
+| **✅ Enumerate 3+ hypotheses** | STEP 5 | Prevents single-cause bias |
+| **✅ Consult ecosystem map** | STEP 6 | Route must be framework-consistent |
+| **✅ Persist only when route ≠ no-action + user confirmed** | STEP 8 | Avoids noise in diagnose/ |
+| **✅ Credit add-investigation skill** | STEP 7 | Methodology transparency |
+| **⛔ No route without differential diagnosis** | STEP 5→6 | Route validity depends on evidence |
+| **⛔ Never execute recommended command** | STEP 7 | add.diagnose is advisory only |
+| **⛔ No code modification** | All | READ-ONLY boundary |
+| **⛔ Reject "something is weird"** | STEP 2 | Push for observable predicate (WHEN/THEN/BUT) |
+| **⛔ No persistence on no-action** | STEP 8 | Keeps diagnose/ focused |
+| **⛔ Enforce 3-failure stop rule** | STEP 5 | Return to framing instead of guessing more |

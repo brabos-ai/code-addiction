@@ -34,38 +34,14 @@ STEP 9:  Validation Gate             -> feature-design schema gate
 STEP 10: Completion                  -> INFORM user
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
+**⛔ ABSOLUTE PROHIBITIONS (DO NOT SKIP):**
 
-IF UX-DESIGN SKILL NOT LOADED:
-  ⛔ DO NOT USE: Write for design.md
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT: Propose any layouts
-  ✅ DO: Read skill add-ux-design FIRST
-
-IF DESIGN SYSTEM INSPECTION NOT COMPLETE (STEP 3):
-  ⛔ DO NOT USE: Write for design.md
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT: Propose layouts without inspection data
-  ✅ DO: Complete STEP 3 inspection FIRST
-
-IF COMPLEXITY GATE NOT EVALUATED (STEP 4):
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT: Start flow analysis or layout spec
-  ✅ DO: Evaluate complexity gate FIRST
-
-IF SUBAGENT MODE AND FLOW NOT COMPLETE (STEP 5):
-  ⛔ DO NOT USE: Task for Layout subagent
-  ⛔ DO NOT: Write layout specs
-  ✅ DO: Complete Flow subagent FIRST (Layout depends on Flow output)
-
-IF DESIGN NOT CONFIRMED BY USER:
-  ⛔ DO NOT USE: Write for design.md
-  ⛔ DO NOT: Create final documentation
-  ✅ DO: Present design and WAIT for confirmation
-
-IF NO FRONTEND EXISTS:
-  ⛔ DO NOT USE: Write for design.md
-  ✅ DO: Inform user, skip design
+- **UX-DESIGN SKILL NOT LOADED:** Stop immediately. Read skill add-ux-design FIRST before any work.
+- **DESIGN SYSTEM INSPECTION NOT COMPLETE (STEP 3):** Do NOT propose layouts. Complete inspection FIRST.
+- **COMPLEXITY GATE NOT EVALUATED (STEP 4):** Do NOT dispatch subagents. Evaluate gate FIRST.
+- **SUBAGENT MODE / FLOW INCOMPLETE (STEP 5):** Do NOT dispatch Layout subagent. Flow must complete FIRST (Layout depends on Flow output).
+- **DESIGN NOT CONFIRMED BY USER:** Do NOT write design.md. Present design and WAIT for confirmation.
+- **NO FRONTEND EXISTS:** Inform user, skip design.
 
 ---
 
@@ -109,82 +85,67 @@ PATTERNS_TO_APPLY=[matching patterns from SaaS UX Pattern Library]
 
 > **CRITICAL:** NEVER propose layouts without completing this step. All proposals MUST align with existing visual patterns.
 
-Inspect the project's design system by searching and reading relevant files in each area below.
+Inspect the project's design system by searching and reading relevant files in each area. Each subsection is independent — extract only what is specified.
 
-### 3.1: Theme & Tokens
+### 3.1: Theme & Tokens (Required)
 
 Analyze tailwind config files and CSS files with custom properties (globals.css, index.css, etc.).
 
 **Extract:** colors (primary, secondary, accent, muted, background, foreground, border, destructive), spacing (base unit, common gaps, padding), border-radius values, font families (headings, body, mono), dark mode (yes/no, strategy).
 
-### 3.2: Layout Components
+### 3.2: Layout Shell (Required)
 
-Find and read all layout-related components (layout, shell, sidebar, header, topbar, navbar, footer, app-shell, dashboard-layout, page-layout) and app layout files.
+Find and read layout-related components (layout, shell, sidebar, header, topbar, navbar, footer, app-shell, dashboard-layout, page-layout).
 
-**Extract:** shell (name, path, structure), sidebar (width, collapsible, position, nav items), topbar (height, position, contents), content area (max-width, padding, responsive behavior).
+**Extract:** shell (name, path, structure), sidebar (width, collapsible, position), topbar (height, position, contents), content area (max-width, padding, responsive).
 
-### 3.3: Visual Patterns
-
-Find and read 3-5 representative pages (dashboard, settings, list, detail, form).
-
-**Extract:** page headers (title style, breadcrumbs, actions), cards (padding, shadow, border, radius), lists (table vs cards, pagination, empty states), forms (layout, label position, errors), buttons (usage, sizes, icon placement).
-
-### 3.4: Component Library
+### 3.3: Component Library Audit (Required)
 
 Audit available UI components and check for component index/exports.
 
 **Extract:** full list of existing UI components with paths, shadcn status (yes/no, which installed).
 
-### 3.5: Frontend Analysis
+### 3.4: Visual Patterns Reference (Required for Subagent Mode)
+
+Find and read 3-5 representative pages (dashboard, settings, list, detail, form).
+
+**Extract:** page headers, cards, lists, forms, buttons usage patterns.
+
+### 3.5: Frontend Readiness Check
 
 ```json
-{"frontend_false":"Backend-only, skip design","frontend_true_lt5":"New project, use ux-design defaults BUT document as new patterns","frontend_true_gte5":"MUST follow patterns from inspection"}
+{"frontend_false":"Backend-only, skip design","frontend_true_lt5":"New project, use ux-design defaults","frontend_true_gte5":"MUST follow patterns from inspection"}
 ```
 
 **IF HAS_FOUNDATIONS=true:** Read `docs/design-system.md` and use tokens.
 
-### 3.6: Write Design Context (REQUIRED OUTPUT)
+### 3.6: Write Design Context (Required Output for Subagent Mode)
 
-**MUST output summary to user AND write temp file for subagents:**
+Write temp file: `docs/features/${FEATURE_ID}/design-context.md`
 
-```markdown
-## Design Context Detected
+**Structure (Extractive format, no prose):**
 
-### Theme Tokens
-| Token | Value | Usage |
-|-------|-------|-------|
-| --primary | [hsl/hex] | [buttons, links] |
-| --background | [hsl/hex] | [page bg] |
-| --card | [hsl/hex] | [cards bg] |
-| --border | [hsl/hex] | [dividers] |
-| --radius | [value] | [corners] |
-
-### Layout Structure
-| Element | Status | Details |
-|---------|--------|---------|
-| Sidebar | [yes/no] | [width, collapsible, position] |
-| Topbar | [yes/no] | [height, fixed, contents] |
-| Footer | [yes/no] | [structure] |
-| Content | - | [max-width, padding] |
-
-### Visual Patterns in Use
-- **Page Headers:** [pattern observed]
-- **Cards:** [padding, shadow, radius used]
-- **Spacing:** [common gap values]
-- **Lists:** [table/cards/list preference]
-
-### Available Components ([count] total)
-[key components that MUST be reused]
-
-### Design Constraints
-- **Must use:** [existing tokens, components, patterns]
-- **Avoid:** [patterns not present in codebase]
-- **Match:** [specific spacing, radius, shadow values]
+```json
+{
+  "theme": {
+    "colors": {"primary":"[hsl]","secondary":"[hsl]","...":"..."},
+    "spacing": {"1":"0.25rem","2":"0.5rem","...":"..."},
+    "fonts": {"display":"[family]","body":"[family]","mono":"[family]"},
+    "radius": "[value]",
+    "darkMode": true|false
+  },
+  "layout": {
+    "shell": "[name]",
+    "sidebar": {"width":"[px]","collapsible":true|false},
+    "topbar": {"height":"[px]","fixed":true|false},
+    "contentMaxWidth": "[px/css]"
+  },
+  "components": ["[path/name]",...],
+  "constraints": ["MUST use [token]", "AVOID [pattern]", "MATCH [value]"]
+}
 ```
 
-**Write to temp file:** `docs/features/${FEATURE_ID}/design-context.md`
-
-**GATE CHECK:** No frontend -> inform user, skip design, STOP. Major inconsistencies -> flag to user. Complete -> STEP 4.
+**GATE CHECK:** No frontend -> inform user, skip design, STOP. Missing 3.1-3.3 -> Complete FIRST. Complete -> STEP 4.
 
 ---
 
@@ -206,84 +167,71 @@ Inform user which mode was selected and why.
 
 ---
 
-## STEP 5: Flow & Interaction Analysis
+## STEP 5 & 6: Subagent Dispatch (Parameterized Template)
 
-### 5A: Subagent Mode
+### Subagent Template (Reducer Pattern)
 
-DISPATCH AGENT: @ux-agent
+DISPATCH AGENT: @ux-agent with parameters below.
 
 ```
-You are the FLOW & INTERACTION ARCHITECT for feature ${FEATURE_ID}.
+You are the {{FLOW_TYPE}} SPECIALIST for feature ${FEATURE_ID}.
 
 ## Bootstrap
-Read: design-context.md, about.md, discovery.md for ${FEATURE_ID}.
-Load: skill add-ux-design files ux-laws-principles.md, modern-patterns.md.
+Read: design-context.md{{READ_PRIOR_FLOW}}, about.md, discovery.md for ${FEATURE_ID}.
+Load: skill add-ux-design files {{SKILL_FILES}}.
 
 ## Task
-- Map ALL screens and create ASCII flow diagram
-- Classify ALL user actions (Action Classification Matrix)
-- Map entry points per screen (nav, Cmd+K, URL, notification, breadcrumb)
-- Define state transitions between screens
+{{TASK_BULLETS}}
 
 ## Output
-Write to: docs/features/${FEATURE_ID}/design-flow.md
-
-Tables: Flow Diagram, Screen Inventory (screen/purpose/parent/depth), Action Classification Matrix (action/frequency/type/access/screen), Entry Points, State Transitions.
-
-## Rules
-- Apply UX laws and modern patterns from skill docs
-- Keep output under 80 lines
-- NO layout specs (Layout subagent handles that)
-```
-
-**WAIT for subagent. Verify design-flow.md was written.**
-
-### 5B: Inline Mode
-
-Coordinator creates compact Action Classification table directly (no flow diagram needed for <3 screens). Store in memory for Step 7.
-
-**GATE CHECK (subagent only):** design-flow.md missing -> re-dispatch ONCE, then handle inline.
-
----
-
-## STEP 6: Layout & Component Spec
-
-### 6A: Subagent Mode
-
-DISPATCH AGENT: @ux-agent
-
-```
-You are the LAYOUT & COMPONENT SPECIALIST for feature ${FEATURE_ID}.
-
-## Bootstrap
-Read: design-context.md, design-flow.md (MANDATORY), about.md, discovery.md for ${FEATURE_ID}.
-Load: skill add-ux-design files shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md.
-
-## Task
-- ASCII layout per screen (mobile-first 320px, md/lg breakpoint notes)
-- Spec new components only (existing = path reference)
-- Map states (loading/empty/error) per screen
-- Ensure ALL actions from matrix have UI elements
-- Flow context per layout (where user comes from / goes to)
-
-## Output
-Write to: docs/features/${FEATURE_ID}/design-layout.md
-
-Per screen: pattern, flow context, mobile ASCII layout, breakpoints, components table, states.
-New components: location, pattern, props, uses, mobile specs, actions served, behavior.
+Write to: {{OUTPUT_PATH}}
+{{OUTPUT_SPEC}}
 
 ## Rules
-- Follow design-context.md constraints
-- Reuse existing components by path reference
-- Keep output under 100 lines
-- NO flow analysis (already in design-flow.md)
+- {{CORE_CONSTRAINT}}
+- Keep output under {{LINE_LIMIT}} lines
+{{NO_OVERLAP_RULE}}
 ```
 
-**WAIT for subagent. Verify design-layout.md was written.**
+### Parameter Sets (Dispatch Configuration)
 
-### 6B: Inline Mode
+**FLOW DISPATCH (STEP 5):**
+```json
+{
+  "FLOW_TYPE": "FLOW & INTERACTION ARCHITECT",
+  "READ_PRIOR_FLOW": "",
+  "SKILL_FILES": "ux-laws-principles.md, modern-patterns.md",
+  "TASK_BULLETS": "- Map ALL screens and create ASCII flow diagram\n- Classify ALL user actions (Action Classification Matrix)\n- Map entry points per screen (nav, Cmd+K, URL, notification, breadcrumb)\n- Define state transitions between screens",
+  "OUTPUT_PATH": "docs/features/${FEATURE_ID}/design-flow.md",
+  "OUTPUT_SPEC": "Tables: Flow Diagram, Screen Inventory (screen/purpose/parent/depth), Action Classification Matrix (action/frequency/type/access/screen), Entry Points, State Transitions.",
+  "CORE_CONSTRAINT": "Apply UX laws and modern patterns from skill docs",
+  "LINE_LIMIT": "80",
+  "NO_OVERLAP_RULE": "- NO layout specs (Layout subagent handles that)"
+}
+```
 
-Coordinator creates layout specs directly using patterns from ux-design skill. Per page: pattern, mobile ASCII layout (320px), md/lg breakpoints, components table (existing w/ path, new w/ location), states. For new components: location, pattern, props, uses, mobile specs, actions served, behavior. Store in memory for Step 7.
+**LAYOUT DISPATCH (STEP 6, only after FLOW complete):**
+```json
+{
+  "FLOW_TYPE": "LAYOUT & COMPONENT SPECIALIST",
+  "READ_PRIOR_FLOW": ", design-flow.md (MANDATORY)",
+  "SKILL_FILES": "shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md",
+  "TASK_BULLETS": "- ASCII layout per screen (mobile-first 320px, md/lg breakpoint notes)\n- Spec new components only (existing = path reference)\n- Map states (loading/empty/error) per screen\n- Ensure ALL actions from matrix have UI elements\n- Flow context per layout (where user comes from / goes to)",
+  "OUTPUT_PATH": "docs/features/${FEATURE_ID}/design-layout.md",
+  "OUTPUT_SPEC": "Per screen: pattern, flow context, mobile ASCII layout, breakpoints, components table, states.\nNew components: location, pattern, props, uses, mobile specs, actions served, behavior.",
+  "CORE_CONSTRAINT": "Follow design-context.md constraints; reuse existing components by path reference",
+  "LINE_LIMIT": "100",
+  "NO_OVERLAP_RULE": "- NO flow analysis (already in design-flow.md)"
+}
+```
+
+**Dispatch idempotency guard:** Check if output file exists before dispatching. If yes, skip and proceed to next step. If FLOW exists but LAYOUT missing, dispatch LAYOUT only (Layout depends on Flow).
+
+### Inline Mode (Complexity < 3 screens)
+
+**STEP 5 (Flow):** Coordinator creates compact Action Classification table directly. Store in memory for Step 7.
+
+**STEP 6 (Layout):** Coordinator creates layout specs directly using patterns from ux-design skill. Per page: pattern, mobile ASCII layout (320px), md/lg breakpoints, components table (existing w/ path, new w/ location), states. For new components: location, pattern, props, uses, mobile specs, actions served, behavior. Store in memory for Step 7.
 
 ---
 
@@ -358,32 +306,37 @@ Inform the user that design is complete. Include: feature ID, SaaS context, patt
 
 ---
 
-## Rules
+## Core Rules
 
-ALWAYS:
-- Load ux-design skill first (STEP 1) -- single source of truth
-- Complete STEP 3 inspection before any layout proposal
-- Read theme files completely (not head -30)
-- Output Design Context Summary before STEP 4
-- Evaluate complexity gate before dispatching subagents
-- Execute subagents sequentially (Flow then Layout)
-- Validate coherence during consolidation (Step 8)
-- Cleanup all temp files after writing design.md
-- Align with existing theme/layout/patterns -- map existing before proposing
+**MANDATORY FLOW:**
+1. Load ux-design skill (STEP 1) — single source of truth
+2. Complete STEP 3 inspection before any layout proposal
+3. Output Design Context Summary before STEP 4
+4. Evaluate complexity gate before dispatching subagents
+5. Execute subagents sequentially: Flow → Layout (Layout depends on Flow)
+6. User confirmation (STEP 7) before consolidation
+7. Validate coherence during consolidation (Step 8)
+8. Cleanup all temp files after writing design.md
+
+**DESIGN INVARIANTS:**
+- Align with existing theme/layout/patterns — map existing before proposing
 - Use mobile-first (320px base)
-- Verify checkpoint before writing design.md: skill loaded, SaaS context detected, gate evaluated, patterns aligned, existing components with paths, new components follow conventions, states mapped, mobile requirements met, layout respects shell structure, actions classified, entry points mapped
+- Reuse existing components by path reference
+- New components must follow project conventions
+- States (loading/empty/error) mapped per screen
+- Entry points and actions classified and matched to UI elements
 
-NEVER:
-- Propose layouts that conflict with detected patterns
-- Skip inspection even for simple features
-- Duplicate patterns (use ux-design skill)
-- Auto-create design-system.md
-- Dispatch Layout subagent before Flow completes
-- Leave temp files after consolidation
-- Ask aesthetic questions or present multiple options in feature mode
-- Omit critical info (props, paths, states)
-- Use generic layouts when project has patterns
-- Run foundations mode without discovery questions and user decisions
+**PROHIBITIONS (enforce in all steps):**
+- Do NOT propose layouts that conflict with detected patterns
+- Do NOT skip STEP 3 inspection, even for simple features
+- Do NOT duplicate patterns (use ux-design skill)
+- Do NOT auto-create design-system.md (Foundations mode only on user request)
+- Do NOT dispatch Layout before Flow completes
+- Do NOT leave temp files after consolidation
+- Do NOT ask aesthetic questions or present multiple options in feature mode
+- Do NOT omit critical info (props, paths, states, actions)
+- Do NOT use generic layouts when project has established patterns
+- Do NOT run Foundations mode without discovery questions and user decisions
 
 ---
 

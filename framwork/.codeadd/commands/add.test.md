@@ -22,6 +22,20 @@ You are the coordinator. You know your engine's capabilities. Map the intent to 
 
 ---
 
+## Status Enums (Standardized)
+
+All test status values use the following enumeration:
+
+| Status | Meaning | Context |
+|--------|---------|---------|
+| PASSED | Test(s) executed successfully | Startup test, test generator, full suite |
+| FAILED | Test(s) did not execute successfully | Startup test, test generator, full suite |
+| SKIPPED | Test(s) were intentionally skipped (no failure) | Startup test (unavailable infrastructure) |
+
+Use these terms consistently throughout execution.
+
+---
+
 ## Execution Order
 
 ```
@@ -182,9 +196,11 @@ Report: STARTUP_STATUS (PASSED/FAILED/SKIPPED), files created/existing, errors i
 
 ### 3.3 Process Startup Result
 
-- IF FAILED: Inform user, display errors. STOP — do NOT proceed to test generation.
-- IF SKIPPED: Inform user with reason. PROCEED.
-- IF PASSED: PROCEED.
+| Status | Action |
+|--------|--------|
+| PASSED | PROCEED to STEP 4 |
+| FAILED | Inform user + display errors. STOP — do NOT proceed |
+| SKIPPED | Inform user + reason. PROCEED to STEP 4 |
 
 ---
 
@@ -248,17 +264,20 @@ Report: AREA, FILES_CREATED, FILES_MODIFIED, TESTS_PASSING (true/false), TEST_CO
 
 ### 4.3 Verify Generator Outputs
 
-WAIT-ALL: ALL dispatched generators must return before proceeding.
-
-COLLECT: `ALL_TEST_FILES`, `ALL_TESTS_PASSING`, `TOTAL_TEST_COUNT` from all agents.
-
-IF any agent reports TESTS_PASSING = false:
-  INFORM user which area has failing tests and the errors.
-  ATTEMPT one fix iteration before proceeding.
+| Check | Action |
+|-------|--------|
+| **WAIT-ALL** | ALL dispatched generators must return before proceeding |
+| **COLLECT** | Gather `ALL_TEST_FILES`, `ALL_TESTS_PASSING`, `TOTAL_TEST_COUNT` from all agents |
+| **TESTS_PASSING = false** | Inform user which area failed + errors. ATTEMPT one fix iteration |
+| **Ready** | Proceed to STEP 5 only if all generators completed |
 
 ---
 
 ## STEP 5: Run Tests + Coverage Check
+
+### 5.1 Execute Coverage Command
+
+**Idempotency:** Check if test results file exists from previous run. If yes, validate timestamps match current test files. If stale, delete before re-running.
 
 EXECUTE: `[COVERAGE_COMMAND]`
 
@@ -266,97 +285,113 @@ CAPTURE: Total tests, passing/failing, coverage percentage (overall + per file).
 
 IF tests failing: LIST, FIX test issues, RE-RUN.
 
+### 5.2 Record Initial Coverage
+
 REPORT: Tests passing/total, coverage %, target (80%), status (meets/below target).
 
 SET `ITERATION_COUNT` = 1.
+SET `COVERAGE_BASELINE` = current coverage.
 
 ---
 
 ## STEP 6: Iterate (Max 5 Iterations)
 
-IF `CURRENT_COVERAGE` >= 80: SKIP to STEP 7.
-IF `ITERATION_COUNT` >= 5: Inform user max reached. SKIP to STEP 7.
+### 6.1 Coverage Gate
 
-### For each iteration:
-1. PARSE coverage report to find files below 80% or with 0% coverage
-2. For each gap file: READ source, READ existing tests, identify uncovered paths, generate additional tests
-3. EXECUTE: `[COVERAGE_COMMAND]`
-4. UPDATE `CURRENT_COVERAGE`, INCREMENT `ITERATION_COUNT`
-5. REPORT: `Iteration [N]: Coverage [PREVIOUS]% -> [CURRENT_COVERAGE]%`
-6. IF still < 80% AND iterations < 5: REPEAT
+| Condition | Action |
+|-----------|--------|
+| `CURRENT_COVERAGE >= 80%` | SKIP to STEP 7 (target met) |
+| `ITERATION_COUNT >= 5` | Inform user max iterations reached. SKIP to STEP 7 |
+| Otherwise | PROCEED to 6.2 |
+
+### 6.2 Iteration Loop
+
+**For EACH iteration [1..5]:**
+
+1. **Idempotency Check:** Verify test result snapshots exist. Delete stale entries before continuing.
+
+2. **Parse Gaps:** From coverage report, identify files with < 80% or 0% coverage.
+
+3. **Generate Missing Tests:**
+   - For each gap file: READ source, READ existing tests
+   - Identify uncovered branches/paths
+   - Generate additional tests targeting those gaps
+   - EXECUTE: `[TEST_COMMAND]` to verify new tests compile
+
+4. **Measure Coverage:**
+   - EXECUTE: `[COVERAGE_COMMAND]`
+   - CAPTURE new coverage %, per-file breakdown
+
+5. **Record Progress:**
+   - INCREMENT `ITERATION_COUNT`
+   - REPORT: `Iteration [N]: Coverage [PREVIOUS]% -> [CURRENT]%`
+
+6. **Check Loop Condition:**
+   - IF `CURRENT_COVERAGE >= 80%`: BREAK to STEP 7
+   - IF `ITERATION_COUNT >= 5`: Inform user max reached. BREAK to STEP 7
+   - ELSE: REPEAT loop
 
 ---
 
 ## STEP 7: Report
 
-### 7.1 Final Report
+### 7.1 Final Report Template
 
-```
-====================================
-  add-test — Final Report
-====================================
-
-Scope: [SCOPE_MODE] — [description]
-Target files: [count]
-
-STARTUP TEST:
-  Status: [PASSED / FAILED / SKIPPED]
-  Scripts created: [list or "none"]
-
-TEST GENERATION:
-  Areas covered: [Backend, Frontend, Workers]
-  Test files created: [count]
-  Total test cases: [TOTAL_TEST_COUNT]
-
-COVERAGE:
-  Final: [CURRENT_COVERAGE]%
-  Target: 80%
-  Status: [TARGET MET / BELOW TARGET ([X]%)]
-  Iterations: [ITERATION_COUNT]
-
-FILES CREATED/MODIFIED:
-  [list of all test files]
-
-[IF BELOW TARGET:]
-SUGGESTIONS FOR MANUAL IMPROVEMENT:
-  - [file1]: [uncovered area — what to test]
-  - [file2]: [uncovered area — what to test]
-
-====================================
-```
+| Section | Content |
+|---------|---------|
+| **Scope** | [SCOPE_MODE] — [description] + [count] target files |
+| **Startup Test** | Status: [PASSED/FAILED/SKIPPED], Scripts: [created list \| none] |
+| **Test Generation** | Areas: [Backend, Frontend, Workers], Files created: [count], Total cases: [TOTAL_TEST_COUNT] |
+| **Coverage** | Final: [CURRENT_COVERAGE]%, Target: 80%, Status: [MET \| BELOW ([X]%)], Iterations: [ITERATION_COUNT] |
+| **Files** | [list of all test files created/modified] |
+| **Gaps** | [If below target] — list uncovered areas with recommendations |
 
 **Next Steps (from ecosystem map):**
-Read skill `add-ecosystem` Main Flows section.
-- Tests passing -> `/add.review`
-- Tests failing -> fix and re-run `/add.test`
+- Tests passing (CURRENT_COVERAGE >= 80% OR manual resolution complete) → `/add.review`
+- Tests below target → See gap recommendations above or re-run `/add.test`
 
-### 7.2 Log Iteration
+### 7.2 Log Results (Idempotent)
+
+**Only if log file does NOT exist from this execution:**
 
 IF `.codeadd/scripts/log-iteration.sh` exists:
 ```bash
 bash .codeadd/scripts/log-iteration.sh "test" "add-test" "Generated tests — [CURRENT_COVERAGE]% coverage" "[ALL_TEST_FILES comma-separated]"
 ```
 
+**Idempotency:** Verify log entry timestamp differs from current time. Only write if new.
+
 ---
 
-## Rules
+## Rules (Consolidated)
 
-ALWAYS:
-- Detect existing test framework BEFORE installing new one
+### Sequence Gates (Strict Order)
+- Detect test framework BEFORE installing
 - Run startup test BEFORE generating unit/integration tests
-- Dispatch area agents in parallel when multiple areas exist
-- Verify tests compile and pass BEFORE reporting coverage
-- Mock external dependencies (DB, HTTP, queues) in generated tests
-- Iterate on coverage gaps up to 5 times maximum
-- Log iteration after completion
+- Complete startup (pass/fail/skip) BEFORE dispatching generators
+- Complete all generators BEFORE running coverage
+- Complete coverage BEFORE iterating
 
-NEVER:
-- Install a test framework if one already exists
-- Generate E2E tests (only unit + integration)
-- Modify source code to improve coverage (only modify test files)
-- Skip startup test step (run or explicitly skip with reason)
-- Dispatch test generators before startup test completes
-- Report coverage without actually running the test suite
-- Exceed 5 iteration attempts for coverage target
-- Leave failing tests in the final output
-- Regenerate contract tests that already exist from /add.plan (detect and skip)
+### Idempotency (Prevent Duplication)
+- Check for existing test result files; validate timestamps match current state
+- Delete stale snapshots before re-running coverage
+- Verify log entries (by timestamp) before appending new iteration records
+- Detect existing contract tests from `/add.plan` — DO NOT regenerate
+
+### Test Generation Standards
+- Dispatch area agents in parallel (all at once, not sequentially)
+- Mock external dependencies (DB, HTTP, queues) — do NOT call real services
+- Modify test files only; NEVER modify source code for coverage
+- Only generate unit + integration; NEVER E2E tests
+- Run tests immediately after generation; verify compile + pass before reporting
+
+### Coverage Iteration Limits
+- Iterate maximum 5 times
+- Stop early if >= 80% or max iterations reached
+- Do NOT exceed 5 attempts under any condition
+
+### Final Output Standards
+- All tests must pass before reporting
+- Report actual coverage measurement (not estimated)
+- Log iteration only once per execution
+- Provide gap recommendations if below 80%

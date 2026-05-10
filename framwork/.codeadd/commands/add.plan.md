@@ -25,53 +25,52 @@ If argument contains `--yolo`:
 
 ---
 
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
+## GATES (Invariant Execution Blockers)
 
-**STEPS IN ORDER:**
+| Gate | Triggered at | Condition | Action |
+|------|--------------|-----------|--------|
+| `feature_identified` | STEP 4 | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection |
+| `docs_loaded` | STEP 5 | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents |
+| `scope_determined` | STEP 7 | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first |
+| `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
+
+---
+
+## INVARIANT PROHIBITIONS
+
+- NEVER write implementation code in plan.md (only contracts, schemas, structure)
+- NEVER create subagents for components not in scope
+- NEVER rewrite or summarize subagent outputs during consolidation (APPEND only)
+- NEVER finalize plan without tasks.md AND 100% coverage validation
+- NEVER execute subagents in parallel (SEQUENTIAL only, one at a time)
+
+---
+
+## STEPS IN ORDER
+
 ```
 STEP 1:  Load founder profile     -> SILENT
 STEP 2:  Run context mapper       -> FIRST COMMAND
 STEP 3:  Load recent context      -> INTELLIGENT changelog reading
-STEP 4:  Parse key variables      -> Feature detection
-STEP 5:  Load feature docs        -> about.md, discovery.md, design.md
+STEP 4:  Parse key variables      -> Feature detection (GATE: feature_identified)
+STEP 5:  Load feature docs        -> about.md, discovery.md, design.md (GATE: docs_loaded)
 STEP 6:  Clarification questions  -> IF NEEDED ONLY
-STEP 7:  Analyze scope            -> Epic subfeature vs full feature
-STEP 8:  Execute subagents        -> SEQUENTIAL, by area (8.0: cross-SF context for epics)
+STEP 7:  Analyze scope            -> Epic/Feature type + subagent selection (GATE: scope_determined)
+STEP 8:  Execute subagents        -> SEQUENTIAL by area
+  - 8.0: Cross-SF context (EPIC ONLY)
+  - 8.1: Database Specialist
+  - 8.2: Backend Specialist
+  - 8.3: Frontend Specialist
 <!-- feature:tdd:step-list -->
-STEP 9:  Test-Spec subagent       -> AFTER area subagents, generates contract test cases
+STEP 9:  Test-Spec subagent       -> AFTER area subagents (TDD feature)
 <!-- /feature:tdd:step-list -->
-STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (epic)
-STEP 11: Validate requirements    -> Coverage check (GATE)
+STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
+STEP 11: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP 12: Validation Gate          -> feature-plan schema gate
 STEP 13: Completion               -> Inform user
 ```
 
 **Reuse feature ID:** `add.plan` does NOT allocate a new ID. Read `id: [NNNN]F` from the feature's `about.md` frontmatter in STEP 5. The generated `plan.md` carries the SAME `[NNNN]F` with `related: [[NNNN]F]`.
-
-**ABSOLUTE PROHIBITIONS:**
-
-```
-IF FEATURE NOT IDENTIFIED (Step 4):
-  NEVER dispatch subagents or write plan.md
-  ALWAYS list features and ask user to choose
-
-IF DOCS NOT LOADED (Step 5 incomplete):
-  NEVER dispatch subagents or start planning
-  ALWAYS read about.md and discovery.md FIRST
-
-IF SCOPE NOT DETERMINED (Step 7 incomplete):
-  NEVER dispatch subagents without knowing which ones are needed
-  ALWAYS complete scope analysis FIRST
-
-IF COVERAGE < 100% (Step 11):
-  NEVER finalize plan.md or proceed to STEP 12
-  ALWAYS resolve gaps by adding missing tasks or documenting exclusions
-
-ALWAYS:
-  NEVER write implementation code in plan.md
-  NEVER create subagents for components not in scope
-  NEVER rewrite subagent outputs during consolidation (APPEND only)
-```
 
 ---
 
@@ -88,97 +87,60 @@ Read `docs/owner.md` to determine communication style.
 
 ## STEP 2: Run Context Mapper (FIRST COMMAND)
 
-```bash
-bash .codeadd/scripts/status.sh
-```
+Execute: `bash .codeadd/scripts/status.sh`
 
 Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN), DESIGN_SYSTEM, FRONTEND (component structure), ALL_FEATURES, RECENT_CHANGELOGS (last 5), HAS_EPIC, EPIC_CURRENT_SF, EPIC_PROGRESS.
 
 **NEVER skip this script. ALL subsequent steps depend on its output.**
 
-### 2.1 Epic.md Detection (PRD0032)
-
-**IF `HAS_EPIC=true`:** Read epic.md, identify next pending SF (EPIC_CURRENT_SF), set scope to that SF only, load its about.md + shared discovery.md, inform user: "Planning subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}".
-
-**IF HAS_EPIC=true AND no pending subfeature:** NEVER plan. Inform user all SFs complete, run `/add.done`.
+**Epic Detection:** IF `HAS_EPIC=true`, read epic.md, identify next pending SF (EPIC_CURRENT_SF), set scope to that SF only, load its about.md + shared discovery.md, and inform user: "Planning subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}". IF HAS_EPIC=true AND no pending subfeature, NEVER plan—inform user all SFs complete and suggest `/add.done`.
 
 ---
 
-## STEP 3: Load Recent Context + Past Features Discovery (INTELLIGENT)
+## STEP 3: Load Recent Context (INTELLIGENT)
 
-**The script returns RECENT_CHANGELOGS with summaries of the last completed features.**
+**Cache Detection:** IF `docs/features/${FEATURE_ID}/past-features.md` exists, read it (cache). IF cache + discovery.md has section "Related Features", use as context and skip agent dispatch. Otherwise, dispatch Past Features Discovery Agent.
 
-### 3.1 Past Features Cache Check
-
-```
-IF docs/features/${FEATURE_ID}/past-features.md exists:
-  -> Read past-features.md (cache)
-  -> Check if discovery.md has section "Related Features"
-  -> IF yes: use as context, skip 3.2
-  -> IF no: skip 3.2 (past-features.md is sufficient)
-
-IF past-features.md does NOT exist:
-  -> Execute STEP 3.2 (dispatch Past Features Agent)
-```
-
-### 3.2 Dispatch Past Features Discovery Agent (IF needed)
-
-**DISPATCH AGENT: @discovery-agent**
+**Agent Dispatch (if needed):**
+- **Agent:** @discovery-agent
 - **Skill:** `add-feature-discovery` Phase 1.5
-- **Input:** about.md of current feature + RECENT_CHANGELOGS
+- **Input:** about.md + RECENT_CHANGELOGS (from status.sh)
 - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
-- **Prompt:**
-  ```
-  Read skill add-feature-discovery Phase 1.5.
-  Feature: ${FEATURE_ID}.
-  Input: docs/features/${FEATURE_ID}/about.md + RECENT_CHANGELOGS below.
-  [RECENT_CHANGELOGS]
-  Execute past features analysis and write past-features.md.
-  ```
 
-**WAIT:** past-features.md must exist before continuing.
+**Extract and Apply:** From past-features.md (cached or generated), identify:
+- Files available for reuse
+- Recently established patterns and technical decisions
+- Correct codebase terminology for searches
+- Implementation order respecting dependencies (`depends`)
+- Related patterns (`shares-pattern` relation)
+- Known conflicts (`conflicts` relation)
 
-### 3.3 Use Context for Planning
+**Fallback:** IF past-features.md has no relevant matches, analyze RECENT_CHANGELOGS manually by keyword. IF match found and discovery.md doesn't reference it, read full changelog of that feature.
 
-With past-features.md available (cached or generated):
-
-1. **Extract from past-features.md:**
-   - Files that can be reused
-   - Recently established patterns
-   - Relevant technical decisions
-   - Correct terminology for codebase search
-
-2. **Use in planning:**
-   - Implementation order respecting dependencies (`depends`)
-   - Patterns to follow (features with `shares-pattern` relation)
-   - Potential conflicts (features with `conflicts` relation)
-
-**Intelligent fallback (if past-features.md has no relevant matches):**
-- Analyze RECENT_CHANGELOGS manually for matches by keyword
-- If match found and discovery.md does not reference it -> read full changelog of that feature
-
-**Goal:** Use knowledge from recent deliveries to plan better, avoiding reinventing the wheel.
+**Goal:** Use knowledge from recent deliveries to inform planning, avoiding reinventing the wheel.
 
 ---
 
 ## STEP 4: Parse Key Variables (GATE: feature_identified)
 
-Extract from script: `FEATURE_ID` (if empty -> list ALL_FEATURES and ask), `CURRENT_PHASE` (must be `discovered` or `designed`), `HAS_DESIGN`, `HAS_FOUNDATIONS`.
+Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `designed`), `HAS_DESIGN`, `HAS_FOUNDATIONS`.
 
-**IF feature identified:** Display and proceed to STEP 5.
-**IF not:** Show feature list and WAIT. NEVER dispatch subagents or write plan.md without a feature.
+**IF feature identified:** Display metadata and proceed to STEP 5.
+**IF feature_identified gate fails:** Show feature list and WAIT for user choice. Ref: GATES table.
 
 ---
 
 ## STEP 5: Load Feature Documentation (GATE: docs_loaded)
 
-**IF HAS_EPIC=true:** Read `${SF_DIR}/about.md` (PRIMARY), `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists).
+**File loading matrix:**
 
-**IF normal feature:** Read `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS).
+| Type | Files to read | Priority |
+|------|---------------|----------|
+| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists) | PRIMARY |
+| Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
+| Design data | Use design.md to inform backend contracts (endpoints serve UI needs) | IF HAS_DESIGN=true |
 
-**IF HAS_DESIGN=true:** Use design.md to inform backend contracts (endpoints serve the UI needs).
-
-**GATE:** about.md AND discovery.md MUST be read. IF either missing -> STOP and inform user.
+**Gate enforcement:** about.md AND discovery.md are MANDATORY. IF either missing, STOP and inform user. Ref: GATES table.
 
 ---
 
@@ -194,60 +156,54 @@ Present questions with options and a RECOMMENDED default. Format: `### 1. [Quest
 
 ## STEP 7: Analyze Scope & Determine Structure (GATE: scope_determined)
 
-### 7.1 Determine Scope Context
+**Scope determination:**
 
-**IF HAS_EPIC=true:** Scope = current subfeature only. Do NOT plan the entire epic.
-**IF normal feature:** Scope = entire feature as documented in about.md + discovery.md.
+| Condition | Scope | Action |
+|-----------|-------|--------|
+| HAS_EPIC=true | Current subfeature only | Read ${SF_DIR}/about.md, do NOT plan entire epic |
+| Normal feature | Entire feature | Read ${FEATURE_DIR}/about.md + discovery.md |
 
-### 7.2 Determine Subagents
+**Subagent selection matrix:**
 
-```json
-{"scopeDetection":{"database":{"keywords":"entities,tables,migrations,new data","subagent":"Database Specialist"},"backend":{"keywords":"endpoints,API,controllers,commands,events,workers,queues","subagent":"Backend Specialist"},"frontend":{"keywords":"pages,components,UI,forms,hooks","subagent":"Frontend Specialist"}}}
-```
+| Keywords | Subagent | Create if |
+|----------|----------|-----------|
+| entities, tables, migrations, new data | Database Specialist | Feature needs data changes |
+| endpoints, API, controllers, commands, events, workers, queues | Backend Specialist | Feature needs business logic |
+| pages, components, UI, forms, hooks | Frontend Specialist | Feature needs UI changes |
 
-### Decision Rules
+**Decision rule:** Only create subagents the feature actually needs. Examples:
+- Backend-only feature → Database + Backend Specialist only
+- Full-stack feature → All three
+- Simple UI change → Frontend Specialist only
 
-- **Only create subagents that the feature actually needs**
-- If feature is backend-only -> Only Backend Specialist
-- If feature is full-stack -> Database + Backend + Frontend
-- If simple UI change -> Only Frontend Specialist
-
-**Inform user:** Type (FEATURE/EPIC), scope (components), subagents list. Then proceed.
-
-**GATE:** Epic vs Feature decided, subagents identified, user informed.
+**Inform user:** Type (FEATURE/EPIC), scope summary, subagent list. Ref: GATES table for scope_determined requirements.
 
 ---
 
 ## STEP 8: Execute Subagents (SEQUENTIAL)
 
-**NEVER execute subagents in parallel. ALWAYS wait for each to complete before dispatching the next.**
+**Execution rule:** SEQUENTIAL only. Wait for each subagent to complete before dispatching next.
 
-### Subagent Output Location
-
-Each subagent writes to a temporary file:
-```
-docs/features/${FEATURE_ID}/plan-[area].md
-```
+**Output location:** Each subagent writes to: `docs/features/${FEATURE_ID}/plan-[area].md` (temporary; deleted after consolidation).
 
 ---
 
-### 8.0 Build Cross-SF Context (EPIC ONLY)
+### 8.0 Cross-SF Context (EPIC ONLY)
 
-**IF HAS_EPIC=true:** Before dispatching any subagent, read epic.md dependency graph, identify consumers + providers of this SF, read their about.md (and plan.md if exists), then build `${CROSS_SF_CONTEXT}`:
-
-**Build this block and INJECT it into every subagent prompt:**
+**IF HAS_EPIC=true:** Read epic.md dependency graph, identify consumers + providers of this SF, read their about.md + plan.md (if exists), build `${CROSS_SF_CONTEXT}` block below, and INJECT it into every subagent prompt:
 
 ```
 ## Cross-SF Context (EPIC -- read for integration awareness)
+
 ### Consumers (SFs that need data from this SF):
-- **${SF_ID}**: ${1-line — what data it needs}
+- **${SF_ID}**: ${1-line description of data needed}
 
 ### Providers (SFs that supply data to this SF):
-- **${SF_ID}**: ${1-line — what data it provides} | Contracts: ${schemas/DTOs if plan.md exists}
+- **${SF_ID}**: ${1-line description of data supplied} | Contracts: ${schemas/DTOs if plan.md exists}
 
 ### Integration rules:
 - Schema fields MUST match consumer expectations
-- Shared resources (enums, config vars, types) defined in earliest SF
+- Shared resources (enums, config vars, types) defined ONCE in earliest SF
 - Document jsonb field structures when consumers depend on specific keys
 ```
 
@@ -512,163 +468,74 @@ ${CROSS_SF_CONTEXT}
 
 ## STEP 10: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)
 
-**PHILOSOPHY: APPEND + VALIDATE + FILL GAPS**
+**Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
-The heavy work was done by the specialized subagents. Your role here is:
-1. **PRESERVE** - Append outputs without reinterpreting
-2. **VALIDATE** - Ensure everything from discovery/design is mapped
-3. **COMPLETE** - Fill identified gaps (schemas, contracts, etc.)
+**Schema load (MANDATORY):** Execute schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per skill.
 
----
+### 10.1 Assemble plan.md
 
-**Schema load (MANDATORY).** EXECUTE schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
+Create plan.md header: `# Plan: ${FEATURE_ID}`. Append subagent outputs in order (preserving original content):
+1. plan-test-spec.md (if exists)
+2. plan-database.md (if exists)
+3. plan-backend.md (if exists)
+4. plan-frontend.md (if exists)
 
-### 10.1 Append Subagent Outputs (RAW)
+Separate each section with `---`. **NEVER rewrite or summarize subagent content. Append directly.**
 
-```bash
-cd "docs/features/${FEATURE_ID}"
+### 10.2 Validate Completeness
 
-# Create plan.md header
-echo "# Plan: ${FEATURE_ID}" > plan.md
-echo "" >> plan.md
-
-# Append each section PRESERVING ORIGINAL CONTENT
-[ -f plan-test-spec.md ] && cat plan-test-spec.md >> plan.md && echo "" >> plan.md && echo "---" >> plan.md
-[ -f plan-database.md ] && cat plan-database.md >> plan.md && echo "" >> plan.md && echo "---" >> plan.md
-[ -f plan-backend.md ] && cat plan-backend.md >> plan.md && echo "" >> plan.md && echo "---" >> plan.md
-[ -f plan-frontend.md ] && cat plan-frontend.md >> plan.md && echo "" >> plan.md && echo "---" >> plan.md
-```
-
-**NEVER rewrite or summarize subagent content. Append directly.**
-
----
-
-### 10.2 Validate Completeness (MANDATORY)
-
-**Read discovery.md and design.md (if exists). Verify ALL of:**
-- discovery entities/tables -> complete SQL schema in plan-database
-- discovery JSONB fields -> detailed TypeScript structure
-- discovery endpoints -> complete request/response DTOs
-- discovery events/workers -> payload and consumers documented
-- design components -> mapped in plan-frontend
-- design states/interactions -> hooks and stores defined
+Read discovery.md and design.md (if exists). Verify:
+- All entities/tables from discovery → complete schema in plan-database
+- JSONB fields → detailed TypeScript structures
+- Endpoints → complete request/response DTOs
+- Events/workers → documented payloads and consumers
+- Design components → mapped in plan-frontend
+- States/interactions → defined hooks and stores
 - Frontend types mirror backend DTOs
-- Main flow is clear (who calls whom)
+- Main flow is clear (call chain documented)
 
----
+### 10.3 Fill Gaps
 
-### 10.3 Fill Gaps (IF NEEDED)
+IF validation identifies gaps, ADD directly to plan.md. Common gaps:
+- **Missing table schema** → Complete CREATE TABLE with all discovery fields
+- **Missing JSONB structure** → TypeScript interface with detailed field types
+- **Incomplete API contract** → Request/Response tables (Field | Type | Required | Description)
 
-**IF validation identifies gaps, ADD directly to plan.md.** Common gaps:
-- **Missing table schema** -> add complete CREATE TABLE with all fields from discovery
-- **Missing JSONB structure** -> add TypeScript interface with detailed field types
-- **Incomplete API contract** -> add Request/Response tables with Field | Type | Required | Description
+**Rule:** If discovery.md contains information, it MUST appear in plan.md in actionable form for developer.
 
-**RULE:** If discovery.md has the information, it MUST appear in plan.md in an actionable form for the developer.
+### 10.4 Generate tasks.md (Architect Subagent)
 
----
+**MANDATORY:** Load `{{skill:add-tasks-checklist/SKILL.md}}` BEFORE dispatching.
 
-### 10.4 Dispatch Architect Subagent -- Generate tasks.md
+**Dispatch:** @architecture-agent
+- **Output:** `${PLAN_DIR}/tasks.md` (feature dir or subfeature dir if epic)
+- **Prompt template:** From `add-tasks-checklist` ("Architect Subagent Prompt Template" section), substituting `${FEATURE_ID}`, `${EPIC_CURRENT_SF}`, `${PLAN_DIR}`
 
-**AFTER plan.md is consolidated and gaps filled, dispatch the Architect Subagent to generate `tasks.md` as a 5-section progress checklist.**
-
-**MANDATORY:** Load `{{skill:add-tasks-checklist/SKILL.md}}` BEFORE dispatching. The skill defines the canonical schema, tick rules, failure-marker semantics, and the architect prompt template.
-
-**DISPATCH AGENT: @architecture-agent**
-- **Output:** Write `${PLAN_DIR}/tasks.md` (where `PLAN_DIR` = feature dir or subfeature dir if epic).
-- **Prompt:** Use the architect prompt template from `add-tasks-checklist` ("Architect Subagent Prompt Template" section), substituting `${FEATURE_ID}`, `${EPIC_CURRENT_SF}`, and `${PLAN_DIR}`.
-
-**RULES:**
-- `tasks.md` MUST follow the 5-section schema: `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (after `## Metadata`). Section headings are exact-match — validators parse by text.
-- `plan.md` is FROZEN after this step. DO NOT generate a `## Spec Checklist` section in `plan.md`. All progress proof lives in `tasks.md`.
-- Every RF/RN in `## Requirements Coverage` MUST be referenced by ≥1 item in `## Acceptance Checklist`.
-- All checkboxes start as `[ ]`. Do NOT pre-tick anything.
-
-**NEVER finalize plan without tasks.md.**
-
----
+**Rules:**
+- tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (validators parse by text)
+- plan.md FROZEN after this step (no spec checklist section)
+- Every RF/RN in Requirements Coverage MUST link to ≥1 Acceptance Checklist item
+- All checkboxes start as `[ ]` (no pre-ticking)
 
 ### 10.5 Cross-SF Integration Review (EPIC ONLY)
 
-**IF HAS_EPIC=true:** After tasks.md is generated, dispatch the Integration Review Agent.
+**IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent for integration review.
 **IF normal feature:** Skip to 10.6.
 
-**Purpose:** Cross-validate all existing SF plans to catch mismatches that individual subagents cannot see (schema != consumer output, fragmented enums, missing config vars, undocumented handoffs).
+**Purpose:** Cross-validate all existing SF plans (schema mismatches, fragmented enums, missing config, undocumented handoffs).
 
-**DISPATCH AGENT: @architecture-agent**
-- **Prompt:**
-  ```
-  You are the INTEGRATION REVIEWER for epic ${FEATURE_ID}.
+**Checks to fix in-place:**
+1. Schema ↔ Consumer Alignment (column names, jsonb, types match)
+2. Shared Resource Centralization (enums/config added ONCE in earliest SF)
+3. Cross-SF Handoff Contracts (each dependency edge documented)
+4. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
+5. Worker/DI Registration (new services have DI tasks)
 
-  ## CONTEXT
-  Read these files in order:
-  1. docs/features/${FEATURE_ID}/epic.md <- dependency graph
-  2. docs/features/${FEATURE_ID}/discovery.md <- shared requirements
-  3. ALL existing plan.md files: ls docs/features/${FEATURE_ID}/subfeatures/*/plan.md
-  4. ALL existing tasks.md files: ls docs/features/${FEATURE_ID}/subfeatures/*/tasks.md
-
-  ## TASK
-  Cross-validate all SF plans and FIX issues directly in the affected plan.md/tasks.md files.
-
-  ### Checks (fix each in-place):
-  1. **Schema <-> Consumer Alignment** - column names, jsonb structures, types match consumer expectations. FIX in provider plan.md.
-  2. **Shared Resource Centralization** - enums/config vars/types added ONCE in earliest SF. FIX by moving to foundation SF.
-  3. **Cross-SF Handoff Contracts** - each dependency edge has documented provider output + consumer expectation. FIX by adding "Cross-SF Dependencies" section.
-  4. **Fallback & Degradation** - SFs depending on unimplemented SFs have fallback behavior documented. FIX in dependent SF plan/tasks.
-  5. **Worker/DI Registration** - DI registration tasks exist for new services (API + worker cradle, barrel exports). FIX by adding missing tasks.
-
-  ## OUTPUT
-  Apply all fixes directly to affected files. Output summary of changes (file + what changed) to stdout. NEVER create a separate report file.
-
-  ## RULES
-  - ONLY fix integration issues -- NEVER rewrite content or change architecture
-  - Preserve existing content -- APPEND or EDIT, never delete sections
-  - Keep each plan.md under 150 lines after fixes
-  ```
-
-**WAIT:** Integration review must complete before proceeding to 10.6.
-
----
+**Output:** Summary of changes (file + what changed) to stdout. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
 
 ### 10.6 Add Navigation Sections
 
-Append to plan.md: **Overview** (1-2 paragraphs from about.md), **Main Flow** (numbered Actor -> Action steps), **Implementation Order** (Database -> Backend -> Frontend), **Quick Reference** (table mapping patterns to codebase search terms for Entity, Repository, Controller, Command, Hook, Page).
-
----
-
-## STEP 11: Validate Requirements Coverage (GATE: coverage_validated)
-
-**GATE: coverage_validated - MANDATORY before finalizing**
-
-```
-IF COVERAGE < 100%:
-  NEVER finalize plan.md or proceed to STEP 12
-  ALWAYS resolve gaps by adding missing tasks
-```
-
-### 11.1 Process
-
-1. **Extract** all RFs, RNs, and Scope items from discovery.md
-2. **Map** each requirement to Feature/Area and specific Tasks
-3. **IF no task exists** -> CREATE task or JUSTIFY exclusion
-
-### 11.2 Generate Coverage Table
-
-Add `## Requirements Coverage` to plan.md with this format:
-
-| ID | Requirement | Covered? | Feature/Area | Tasks |
-|----|-------------|----------|--------------|-------|
-| RF01 | User creates account | YES | Feature 1 | 1.1, 1.2, 1.3 |
-| RF05 | Admin toggle RLS | EXCLUDED | - | Out of current scope - validated with user |
-
-**Status:** YES 100% covered | NO X requirements pending
-
-### 11.3 Validate
-
-- 100% covered -> Proceed to STEP 12
-- < 100% -> STOP, resolve gaps (add tasks or document exclusion), then re-validate
-
----
+Append to plan.md: **Overview** (1-2 paragraphs from about.md), **Main Flow** (numbered Actor→Action steps), **Implementation Order** (Database→Backend→Frontend), **Quick Reference** (pattern→codebase search terms: Entity, Repository, Controller, Command, Hook, Page).
 
 ### 10.7 Cleanup Temporary Files
 
@@ -677,74 +544,67 @@ cd "docs/features/${FEATURE_ID}"
 rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
 ```
 
-**NEVER delete temporary files until plan.md is complete AND coverage is validated.**
+Delete only after plan.md complete AND coverage validated.
+
+---
+
+## STEP 11: Validate Requirements Coverage (GATE: coverage_validated)
+
+**Extract** all RFs, RNs, and Scope items from discovery.md. **Map** each requirement to Feature/Area and specific tasks. **IF no task exists → CREATE task or JUSTIFY exclusion.**
+
+**Generate coverage table** in plan.md:
+
+| ID | Requirement | Covered? | Feature/Area | Tasks |
+|----|-------------|----------|--------------|-------|
+| RF01 | User creates account | YES | Backend + Frontend | 1.1, 1.2, 1.3 |
+| RF05 | Admin toggle RLS | EXCLUDED | - | Out of scope — validated with user |
+
+**Validation:** IF Coverage = 100% → Proceed to STEP 12. IF Coverage < 100% → STOP, resolve gaps (add tasks or document exclusions), re-validate. Ref: GATES table.
 
 ---
 
 ## STEP 12: Validation Gate
 
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-plan`.
-
-⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
+Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-plan`. ⛔ DO NOT skip. Require `PASS` before proceeding.
 
 ---
 
 ## STEP 13: Completion
 
-Inform the user with a summary of what was planned:
+Inform user with summary:
 - Feature ID and plan path
-- Which areas were planned (Database/Backend/Frontend)
-- Key metrics (endpoint count, task count)
-- Suggest next command based on context: read skill `add-ecosystem` Main Flows section to determine whether `/add.build`, `/add.autopilot`, or `/add.design` is appropriate.
+- Areas planned (Database/Backend/Frontend)
+- Key metrics (endpoint count, task count, RF/RN count)
+- Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build`, `/add.autopilot`, or `/add.design`
 
 ---
 
-## Rules
+## Execution Rules
 
-ALWAYS:
-- Keep plan under 150 lines total
-- Use tables for structured data
-- Reference similar files instead of writing code
-- Create only subagents the feature actually needs
-- Execute subagents sequentially (one at a time)
-- Delete temporary plan-*.md files after consolidation
-- Load skill files before planning each area
-- Validate 100% requirements coverage before finalizing
-- Append subagent outputs without rewriting
-
-NEVER:
-- Write implementation code in plan.md
-- Create verbose descriptions
-- Include testing strategy (follow project patterns)
-- Add unnecessary sections
-- Create subagents for components not in scope
-- Rewrite or summarize subagent content during consolidation
-- Finalize plan with coverage below 100%
+| Rule | Category |
+|------|----------|
+| Keep final plan.md under 150 lines | Size constraint |
+| Use tables for all structured data (not prose) | Readability |
+| Reference similar files instead of writing code | Patterns |
+| Create only subagents the feature actually needs | Scope |
+| Execute subagents SEQUENTIALLY (not parallel) | Ordering |
+| Delete temporary plan-*.md files after consolidation | Cleanup |
+| Load skill files before planning each area | Prerequisites |
+| Append subagent outputs without rewriting | Preservation |
+| Validate 100% requirements coverage before finalizing | Gate enforcement |
 
 ---
 
-## Skills to Reference
+## Quick Skill Reference
 
-- Backend: skill `add-backend-development`
-- Database: skill `add-database-development`
-- Frontend (Code): skill `add-frontend-development`
-- Frontend (UI): skill `add-ux-design`
-
----
-
-## Plan Quality Checklist
-
-Before completing, verify:
-
-- [ ] Plan is under 150 lines
-- [ ] All contracts use tables (not prose)
-- [ ] Every section has a Reference to similar file
-- [ ] No code blocks with implementation
-- [ ] Flow is numbered list (not ASCII/Mermaid)
-- [ ] Implementation order is clear
-- [ ] Temporary files deleted
-- [ ] Skills loaded and patterns followed
-- [ ] Requirements coverage = 100%
+- Backend: `add-backend-development`
+- Database: `add-database-development`
+- Frontend (Code): `add-frontend-development`
+- Frontend (UI): `add-ux-design`
+- Schemas: `add-doc-schemas`
+- ID Convention: `add-id-convention`
+- Tasks Checklist: `add-tasks-checklist`
+- Feature Discovery: `add-feature-discovery`
 
 ---
 
@@ -752,8 +612,8 @@ Before completing, verify:
 
 | Error | Action |
 |-------|--------|
-| about.md not found | STOP - inform user, cannot plan without scope |
-| discovery.md not found | STOP - inform user, cannot plan without requirements |
-| status.sh fails | STOP - show error, check .add setup |
-| Subagent fails to write output | Re-dispatch subagent once, then plan manually |
-| >5 features in Epic | Split into multiple Epics, inform user |
+| about.md or discovery.md missing | STOP — cannot plan without RFs/RNs. Inform user. |
+| status.sh fails | STOP — show error. Check .codeadd setup. |
+| Subagent output not written | Re-dispatch once. If still fails, plan manually. |
+| >5 features in Epic | STOP — split into multiple Epics. Inform user. |
+| Coverage < 100% | STOP — resolve gaps in tasks.md. Re-validate. |

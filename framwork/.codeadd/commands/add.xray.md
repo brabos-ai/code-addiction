@@ -25,28 +25,9 @@ STEP 5: Consolidate Reports      → WAIT-ALL before proceeding
 STEP 6: Generate SKILL.md Index  → CREATE project-patterns skill index
 STEP 7: Update CLAUDE.md         → DISPATCH agent
 STEP 8: Copy Context Files       → CLAUDE.md → AGENTS.md, GEMINI.md
-STEP 9: Report to User           → SUMMARY + next steps
-STEP 11: Cleanup                 → REMOVE temp files
+STEP 9: Report & Cleanup         → SUMMARY + remove temp files
 ```
 
-**⛔ ABSOLUTE PROHIBITIONS:**
-
-```
-IF SKILL NOT LOADED (STEP 1 incomplete):
-  ⛔ DO NOT USE: Write on any file
-  ⛔ DO NOT: Dispatch any agent
-  ✅ DO: Read skill add-architecture-discovery FIRST
-
-IF DISCOVERY NOT RUN (STEP 2 incomplete):
-  ⛔ DO NOT: Classify or dispatch analyzers
-  ✅ DO: Run discovery script or create manually
-
-IF AGENTS NOT ALL COMPLETE (STEP 5 gate):
-  ⛔ DO NOT: Write SKILL.md index or CLAUDE.md
-  ✅ DO: Wait for all agent outputs
-```
-
----
 
 ## Rules
 
@@ -165,208 +146,155 @@ mkdir -p .codeadd/skills/project-patterns
 **DISPATCH ALL AGENTS IN PARALLEL:**
 Each agent is independent. Dispatch ALL simultaneously.
 
-### 4.1 For Apps WITH Specialist (backend, frontend)
+### 4.1 Common Dispatch Pattern
+
+**For ALL analyzers** (app specialists + database + code quality):
 
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Prompt:**
+- **Context:** Read `.codeadd/temp/architecture-discovery.md`
+- **Output format:** Each file includes YAML frontmatter + ## TL;DR + ## TOC (if >3 sections) + topic-first ## chunks with code examples (path:line refs)
 
-```
-## ROLE
-You are analyzing: [APP_NAME] at [APP_PATH]
-Classification: [TYPE]
-
-## SELF-BOOTSTRAP
-Read: skill add-architecture-discovery file [TYPE]-analyzer.md
-Follow ALL instructions in that file.
-
-## CONTEXT
-Read: .codeadd/temp/architecture-discovery.md
-
-## TASK
-1. Analyze ONLY the app at: [APP_PATH]
-2. Follow skill instructions for [TYPE] patterns
-3. WRITE file to .codeadd/skills/project-patterns/[TYPE].md
-   - Use lowercase area type as filename (backend.md, frontend.md)
-   - Include YAML frontmatter: area, generated, app-path, framework
-   - Include ## TL;DR (extractive — what the doc is, why it exists, headline outcome; stop when those three are covered; no length number applies)
-   - Include ## TOC if >3 sections
-   - Each ## chunk: topic sentence first, then extractive content; split by sub-heading rather than truncate when a chunk grows past a natural boundary; 1 real code example with // path:line; no length number applies
-
-## RULES
-- No questions - use best judgment
+**Common Rules (ALL analyzers):**
+- No questions — use best judgment
 - Document ONLY what EXISTS in code
 - Include real code examples with path:line references
 - Token-efficient format (context engineering compliant)
-- Skip sections with no findings (no "Not found" sections)
+- Skip empty sections
 
-## REPORT FORMAT
-Return summary:
-- FILE_WRITTEN: .codeadd/skills/project-patterns/[TYPE].md (or NONE)
-- TYPE: [TYPE]
-- FRAMEWORKS: [discovered]
-- PATTERNS_FOUND: [list]
-- TOPICS: [count of ## sections]
-```
+### 4.2 App Specialists (with specialist: backend, frontend)
 
-- **Output:** Write `{{addpath:skills/project-patterns/[TYPE].md}}`
+**DISPATCH FOR EACH APP WITH SPECIALIST:**
 
-### 4.2 For Apps WITHOUT Specialist (cli, worker, generic)
-
-**DISPATCH AGENT:**
-- **Capability:** read-write (must write output file)
-- **Complexity:** standard
-- **Prompt:**
-
+**Prompt:**
 ```
 ## ROLE
-You are analyzing: [APP_NAME] at [APP_PATH]
-Classification: [TYPE] (no specialist - use generic template)
+Analyze [APP_NAME] at [APP_PATH] (classified as [TYPE])
+
+## SELF-BOOTSTRAP
+Read: skill add-architecture-discovery file [TYPE]-analyzer.md
+Follow ALL instructions.
+
+## TASK
+1. Analyze ONLY [APP_PATH] using [TYPE]-specific patterns
+2. WRITE to .codeadd/skills/project-patterns/[TYPE].md
+   - Frontmatter: area, generated, app-path, framework
+   - Sections: ## TL;DR, ## TOC, then topic-first ## chunks
+3. Return: FILE_WRITTEN, TYPE, FRAMEWORKS, PATTERNS_FOUND, TOPICS count
+
+## OUTPUT
+Write {{addpath:skills/project-patterns/[TYPE].md}}
+```
+
+### 4.3 App Generic Template (without specialist: cli, worker)
+
+**DISPATCH FOR EACH APP WITHOUT SPECIALIST:**
+
+**Prompt:**
+```
+## ROLE
+Analyze [APP_NAME] at [APP_PATH] (classified as [TYPE], no specialist)
 
 ## SELF-BOOTSTRAP
 Read: skill add-architecture-discovery
-Focus on: GenericAppTemplate section
-
-## CONTEXT
-Read: .codeadd/temp/architecture-discovery.md
+Focus: GenericAppTemplate section
 
 ## TASK
-1. Analyze ONLY the app at: [APP_PATH]
-2. DISCOVER what this app does (don't assume from name)
-3. WRITE file to .codeadd/skills/project-patterns/[TYPE].md
-   - Use lowercase area type as filename (cli.md, worker.md)
-   - Include YAML frontmatter: area, generated, app-path, framework
-   - Include ## TL;DR (extractive — what the doc is, why it exists, headline outcome; stop when those three are covered; no length number applies)
-   - Include ## TOC if >3 sections
+1. Discover what this app does (via CODE, not folder name)
+2. WRITE to .codeadd/skills/project-patterns/[TYPE].md
+   - Frontmatter: area, generated, app-path, framework
    - Sections: App Nature, Structure, Entry Points, Dependencies, Configuration, Commands/Jobs
-   - Each ## chunk: topic sentence first, then extractive content; split by sub-heading rather than truncate when a chunk grows past a natural boundary; no length number applies
+3. Return: FILE_WRITTEN, APP_PURPOSE, ENTRY_POINT, KEY_DEPENDENCIES, TOPICS count
 
-## RULES
-- No questions - use best judgment
-- Discover via CODE, not folder name
-- Include real code examples with path:line references
-- Skip empty sections
-
-## REPORT FORMAT
-Return summary:
-- FILE_WRITTEN: .codeadd/skills/project-patterns/[TYPE].md (or NONE)
-- APP_PURPOSE: [discovered]
-- ENTRY_POINT: [path]
-- KEY_DEPENDENCIES: [list]
-- TOPICS: [count of ## sections]
+## OUTPUT
+Write {{addpath:skills/project-patterns/[TYPE].md}}
 ```
 
-- **Output:** Write `{{addpath:skills/project-patterns/[TYPE].md}}`
+### 4.4 Database Analyzer (if detected)
 
-### 4.3 Database Analyzer (Cross-App, Always Run if Detected)
+**DISPATCH IF DATABASE FOUND:**
 
-**DISPATCH AGENT:**
-- **Capability:** read-write (must write output file)
-- **Complexity:** standard
-- **Prompt:**
-
+**Prompt:**
 ```
 ## ROLE
-You are the DATABASE ANALYZER for project discovery.
+Analyze database patterns across the project
 
 ## SELF-BOOTSTRAP
 Read: skill add-architecture-discovery file database-analyzer.md
-Follow ALL instructions in that file.
-
-## CONTEXT
-Read: .codeadd/temp/architecture-discovery.md
+Follow ALL instructions.
 
 ## TASK
-1. Analyze database patterns across the project
-2. If database found: WRITE file to .codeadd/skills/project-patterns/database.md
-3. If NO database found: Do NOT write any file
-4. Include YAML frontmatter: area, generated, app-path, engine
-5. Include ## TL;DR, ## TOC, topic-first ## chunks
+1. Analyze database patterns
+2. If database found: WRITE to .codeadd/skills/project-patterns/database.md
+3. If NO database: skip (do NOT write)
+   - Frontmatter: area, generated, app-path, engine
+4. Return: FILE_WRITTEN, STACK, PATTERNS_FOUND, TOPICS count
 
-## RULES
-- No questions - use best judgment
-- Document ONLY what EXISTS
-- Do NOT document schema (dynamic)
-- Token-efficient format with path:line code references
-
-## REPORT FORMAT
-Return summary:
-- FILE_WRITTEN: .codeadd/skills/project-patterns/database.md (or NONE)
-- STACK: [engine + ORM + migrations]
-- PATTERNS_FOUND: [list]
-- TOPICS: [count of ## sections]
+## OUTPUT
+Write {{addpath:skills/project-patterns/database.md}} (or NONE)
 ```
 
-- **Output:** Write `{{addpath:skills/project-patterns/database.md}}`
+### 4.5 Code Quality Analyzer (always)
 
-### 4.4 Code Quality Analyzer (Always Run)
+**DISPATCH ALWAYS:**
 
-**DISPATCH AGENT:**
-- **Capability:** read-write (must write output file)
-- **Complexity:** standard
-- **Prompt:**
-
+**Prompt:**
 ```
 ## ROLE
-You are the CODE QUALITY ANALYZER for project discovery.
+Analyze code quality across the project
 
 ## SELF-BOOTSTRAP
 Read: skill add-architecture-discovery file code-quality-analyzer.md
-Follow ALL instructions in that file.
-
-## CONTEXT
-Read: .codeadd/temp/architecture-discovery.md
+Follow ALL instructions.
 
 ## TASK
-1. Analyze code quality across the project
-2. WRITE file to docs/code-quality-review.md
+1. Analyze code quality (actual code, not just config)
+2. WRITE to docs/code-quality-review.md
+3. Return: FILE_WRITTEN, SOLID_SCORE, CLEAN_CODE_SCORE, TECH_DEBT, TOP_ISSUES (top 3)
 
-## RULES
-- No questions - use best judgment
-- Analyze actual code, not just config
-- Focus on real issues found
-
-## REPORT FORMAT
-Return summary:
-- FILE_WRITTEN: docs/code-quality-review.md
-- SOLID_SCORE: [assessment]
-- CLEAN_CODE_SCORE: [assessment]
-- TECH_DEBT: [high/medium/low]
-- TOP_ISSUES: [list top 3]
+## OUTPUT
+Write docs/code-quality-review.md
 ```
 
-- **Output:** Write `docs/code-quality-review.md`
-
 **DISPATCH RULES:**
-- RUN ALL app analyzers IN PARALLEL
-- Database analyzer runs in same batch (parallel)
-- Code quality analyzer runs in same batch (parallel)
+- RUN ALL analyzers IN PARALLEL
+- Do NOT wait between dispatches
+- Expect outputs: all app area files + database.md (if detected) + code-quality-review.md
 
 ---
 
 ## STEP 5: Consolidate Reports (WAIT-ALL Before Consolidation)
 
 **WAIT-ALL:** Verify ALL agent outputs exist before proceeding.
-- [ ] All `{{addpath:skills/project-patterns/*.md}}` files written by specialist agents
-- [ ] `docs/code-quality-review.md` written by code quality agent
+
+**Gate Check Checklist:**
+- [ ] All `{{addpath:skills/project-patterns/*.md}}` files exist (each app/database type)
+- [ ] `docs/code-quality-review.md` exists
+- [ ] All files contain expected sections (frontmatter, TL;DR, TOC, topic chunks)
+- [ ] Topic counts confirmed per area file
 
 **COLLECT reports:**
-- Files written (`{{addpath:skills/project-patterns/*.md}}`)
-- App classifications confirmed
-- Frameworks/patterns per app
+- Files written (list each area file)
+- App classifications confirmed (type → framework)
+- Frameworks/patterns discovered
 - Code quality metrics
-- Topic counts per area
+- Topic count per area
 
-**GATE CHECK: All agent outputs exist?**
-- If NO → Wait. Do NOT proceed to STEP 6.
-- If YES → Proceed to STEP 6.
+**Decision Point:**
+- If ANY file missing or incomplete → Wait/retry. Do NOT proceed.
+- If ALL outputs verified → Proceed to STEP 6.
 
 ---
 
 ## STEP 6: Generate SKILL.md Index
 
 Create the skill index file that ties all area files together with search instructions.
+
+**Backup existing file (if present):**
+```bash
+[ -f .codeadd/skills/project-patterns/SKILL.md ] && cp .codeadd/skills/project-patterns/SKILL.md .codeadd/skills/project-patterns/SKILL.md.backup
+```
 
 **WRITE** `{{addpath:skills/project-patterns/SKILL.md}}`:
 
@@ -415,6 +343,8 @@ Each area file follows context engineering principles:
 ```
 
 **Populate the Areas table dynamically** from the files written in STEP 4.
+
+**Verify:** Check that SKILL.md exists and contains Areas table before proceeding.
 
 ---
 
@@ -545,9 +475,10 @@ Verify all 3 files exist before proceeding:
 
 ---
 
-## STEP 9: Report to User
+## STEP 9: Report & Cleanup
 
-Report to user including: context files updated, apps analyzed with types, files generated, code quality scores, areas mapped in project-patterns skill, topic count, next steps.
+**Report to user:**
+Include: context files updated, apps analyzed with types, files generated, code quality scores, areas mapped in project-patterns skill, topic count.
 
 **Include pattern-search usage example:**
 ```bash
@@ -560,11 +491,7 @@ bash .codeadd/scripts/pattern-search.sh backend
 
 **Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
 
----
-
-## STEP 10: Cleanup
-
-**Execute:**
+**Cleanup temp files:**
 ```bash
 rm .codeadd/temp/architecture-discovery.md 2>/dev/null || true
 ```

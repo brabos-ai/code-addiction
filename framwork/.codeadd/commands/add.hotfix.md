@@ -86,7 +86,6 @@ bash .codeadd/scripts/status.sh
 ⛔ **TOTAL STOP** - You are on main branch.
 
 **MANDATORY ACTION:** Execute STEP 3 NOW.
-**DO NOT:** Grep, Read code, investigation, nothing.
 
 ### IF `BRANCH:hotfix/*`:
 
@@ -283,13 +282,13 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.json
 
 ---
 
-## STEP 14: Ready for Review
+## STEP 14: Hotfix Complete
 
-⛔ **DO NOT commit** - leave for `/add.done`
+⛔ **DO NOT commit** - branch ready for next phase.
 
-Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status. Suggest next step: `/add.done`.
+Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status.
 
-**Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
+**Next Phase:** Hotfix ownership ends; merging is handled by ecosystem flow. Reference skill `add-ecosystem` Main Flows section for context-aware routing.
 
 ---
 
@@ -315,7 +314,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 - Implement fix without user confirming root cause
 - Refactor unrelated code during hotfix
 - Add new features inside a hotfix
-- Commit changes (leave for /add.done)
+- Commit changes before user review
 - Skip either validation gate
 
 ---
@@ -339,5 +338,5 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 # STEP 11: Validation gate — hotfix-about
 # STEP 12: Validation gate — hotfix-related
 # STEP 13: Log iteration
-# STEP 14: Completion → suggest /add.done
+# STEP 14: Hotfix complete → ownership transfers to ecosystem
 ```

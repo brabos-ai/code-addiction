@@ -11,539 +11,311 @@ Full feature discovery command BEFORE implementation.
 
 ---
 
-## Required Skills
+## STEP 1: Load Skills + Validate Context
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+**Load schemas and conventions (ONE-TIME):**
+- `{{skill:add-doc-schemas/SKILL.md}}` (feature-about schema, validation gate)
+- `{{skill:add-id-convention/SKILL.md}}` (ID/branch format)
+- `{{skill:add-doc-reviewer/SKILL.md}}` (fresh-reader review)
 
----
+All subsequent steps reference these loaded skills; DO NOT reload.
 
-## Yolo Mode
+**Validate Execution Context:**
 
-If argument contains `--yolo`: skip ALL [STOP] points, use Recommendation options automatically, execute to completion without human interaction, log all auto-decisions.
-
----
-
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
-
-**FIRST ACTION:** Validate this produces DOCUMENTATION ONLY (about.md, discovery.md). Arguments = feature description, never implementation orders.
-
-**PROHIBITIONS AND PERMISSIONS:**
-```
-READ-ONLY FOR CODE:
-  ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
-  ⛔ DO NOT: Run build/test/deploy, write code, implement features
-
-ALLOWED:
-  MAY CREATE: docs/features/[XXXX]F-[name]/**/*.md
-  MAY RUN: bash .codeadd/scripts/init.sh, git checkout -b (Step 1 only)
-
-IF USER PROVIDES CODE/SPECS IN ARGUMENTS:
-  Treat as REFERENCE MATERIAL for discovery — do not execute or apply
-```
+- [CONTINUE MODE] Read detected feature branch. If `about.md` exists AND validated (contains filled sections 1-3 from questionnaire) → skip STEP 2 and STEP 3, proceed to STEP 4.
+- [NEW FEATURE] If no existing feature branch, proceed to STEP 2.
 
 ---
 
-## Operation Modes
+## Execution Constraints & Modes
 
-### Detection Mode
+**READ-ONLY GUARANTEE:**
+- ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
+- ⛔ DO NOT: Run build/test/deploy, write code, implement features
+- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh, git checkout -b
 
-```
-/feature [description]     → Create new feature
-/feature F0018             → Continue existing feature
-/feature continue          → Continue feature from current branch
-```
+**Operation Modes:**
+- `/add.new [description]` — Create new feature
+- `/add.new F0018` — Continue existing feature (F-ID)
+- `/add.new continue` — Continue feature from current branch
 
-### Complexity Detection
-
-Analyze the request and classify:
-
-| Type | Keywords | TodoList |
-|------|----------|----------|
-| **SIMPLE** | "add field", "fix", "adjust", "bug", "remove" | 3 steps |
-| **STANDARD** | "create", "implement", "new", "feature", integrations | 6 steps |
+**Complexity Classification** (inferred in STEP 2):
+- **SIMPLE:** "add field", "fix", "adjust", "bug", "remove" (4 steps)
+- **STANDARD:** "create", "implement", "new", "feature", integrations (7 steps)
 
 ---
 
-## Execution via TodoWrite
+## STEP 2: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
 
-### On Start: Create TodoList
-
-**SIMPLE (5 steps):**
-```json
-[
-  {"content":"Run init, allocate F-ID, create structure","status":"pending","activeForm":"Running init"},
-  {"content":"Validate scope with user [STOP]","status":"pending","activeForm":"Validating scope"},
-  {"content":"Write about.md via feature-about schema","status":"pending","activeForm":"Documenting"},
-  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"},
-  {"content":"Fresh-reader review (doc-reviewer-agent, max 2 rounds)","status":"pending","activeForm":"Reviewing doc"}
-]
-```
-
-**STANDARD (7 steps):**
-```json
-[
-  {"content":"Run init, allocate F-ID, create structure","status":"pending","activeForm":"Running init"},
-  {"content":"Dispatch discovery subagents (features context + codebase) [parallel]","status":"pending","activeForm":"Dispatching discovery subagents"},
-  {"content":"Deep thinking + present questionnaire [STOP]","status":"pending","activeForm":"Awaiting user validation"},
-  {"content":"Complexity gate evaluation","status":"pending","activeForm":"Evaluating complexity"},
-  {"content":"Write about.md via feature-about schema (+ epic structure if needed)","status":"pending","activeForm":"Documenting"},
-  {"content":"Run validation gate (add-doc-schemas)","status":"pending","activeForm":"Validating docs"},
-  {"content":"Fresh-reader review (doc-reviewer-agent, max 2 rounds)","status":"pending","activeForm":"Reviewing doc"}
-]
-```
-
-### [STOP] Rule
-
-Mark as `in_progress` → present to user → **STOP AND WAIT** → mark `completed` only AFTER user responds.
-
----
-
-## Instructions by Step
-
-### STEP 1: Run Init + Allocate ID + Create Structure
+**Execute init + allocate ID:**
 
 ```bash
 bash .codeadd/scripts/init.sh
-```
-
-**Parse RECENT_CHANGELOGS from output** - latest completed features with summaries.
-
-**Load Product Context:** Read `docs/product/product.md` (if exists). Flag misalignment with product vision in questionnaire.
-
-**Smart changelog rule:** Match user request keywords against RECENT_CHANGELOGS. If match found, read full `docs/features/{FEAT_ID}/changelog.md` for implementations/patterns/files.
-
-**MANDATORY GATE:** The `feature-about` schema must be loaded from `{{skill:add-doc-schemas/SKILL.md}}` BEFORE writing any doc.
-
-**Allocate next feature ID:**
-
-```bash
 bash .codeadd/scripts/status.sh next-id F
 ```
 
-Output: `[NNNN]F` (e.g., `0042F`). Use this as the doc `id:` in STEP 4.
+Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it exists. Match user request keywords against changelog; if match found, read full `changelog.md` for patterns/files/implementations.
 
-> **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
+**Allocate ID** (e.g., `0042F`). Using ID/branch conventions from STEP 1 skills, infer branch type (`feature`|`fix`|`refactor`|`docs`) and name (kebab-case, 2-4 words).
 
-**Infer from request:** branch type (`feature`|`fix`|`refactor`|`docs`), name (kebab-case, 2-4 words).
-
-**MANDATORY SEQUENCE:**
+**Create structure:**
 1. `git checkout -b [type]/[NNNN]F-[name]`
 2. `mkdir docs/features/[NNNN]F-[name]/`
-3. Skeleton about.md with frontmatter (full content written in STEP 4 after questionnaire)
+3. Create skeleton `about.md` with frontmatter only (full content in STEP 4)
 
-**Output:** Feature ID (`[NNNN]F`), branch created, directory created.
+**Output:** Feature ID, branch, directory.
 
 ---
 
-### STEP 2: Deep Discovery (STANDARD only)
+## STEP 3: Deep Discovery (STANDARD COMPLEXITY ONLY)
 
-**Goal:** Collect rich context for deep thinking and consultant questionnaire.
+**IF SIMPLE:** Skip to STEP 4.
+**IF STANDARD:** Continue below.
 
-## Agent Dispatch Rules
+**Goal:** Collect rich context for questionnaire.
 
-When dispatching: match **Capability** (read-only/read-write/full-access) and **Complexity** (light/standard/heavy) to best available agent mechanism. Verify output exists before proceeding past WAIT/GATE.
+**Dispatch sequential agents (agent 2 depends on agent 1 output):**
 
-**DISPATCH SEQUENTIAL (agent 2 depends on output of agent 1):**
-
-1. **DISPATCH AGENT: @discovery-agent — Past Features Discovery**
-   - **Intent:** Analyze past features for relevance to current request
-   - **Skill:** `feature-discovery/SKILL.md` Phase 1.5
-   - **Input:** RECENT_CHANGELOGS (from Step 1) + current feature's about.md
+1. **Agent: Past Features Discovery**
+   - **Input:** RECENT_CHANGELOGS + skeleton about.md
    - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
-   - **Steps:**
-     - Read skill `add-feature-discovery` Phase 1.5
-     - Extract keywords from about.md
-     - For each feature in RECENT_CHANGELOGS: check Quick Ref in changelog.md (fallback: first 30 lines)
-     - For matches: read iterations.jsonl + about.md, classify relationship
-     - Write `docs/features/${FEATURE_ID}/past-features.md`
-   - **WAIT:** past-features.md must exist before continuing.
+   - Extract keywords from about.md. For each feature in RECENT_CHANGELOGS, check Quick Ref in changelog.md (fallback: first 30 lines). For matches, read iterations.jsonl + about.md, classify relationship. Write past-features.md.
+   - **WAIT:** Verify past-features.md exists before continuing.
 
-2. **DISPATCH AGENT: @discovery-agent — Codebase Discovery**
-   - **Intent:** Deep codebase analysis informed by past features context
-   - **Skill:** `feature-discovery/SKILL.md` Phase 2-4
-   - **Input:** past-features.md + about.md + feature request
+2. **Agent: Codebase Discovery**
+   - **Input:** past-features.md + skeleton about.md + feature request
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
-   - **Steps:**
-     - Read skill `add-feature-discovery` and skill `add-doc-schemas`
-     - Read `docs/features/${FEATURE_ID}/past-features.md` BEFORE analyzing codebase
-     - Use past-features.md as context: prioritize files touched by related features, follow established patterns, respect past decisions
-     - Perform deep codebase analysis: reusable functionality, existing patterns, integration points, potential conflicts, missing prerequisites
-     - Include "Related Features" section in discovery.md (table + `<!-- refs: ... -->`)
-     - Write `docs/features/${FEATURE_ID}/discovery.md` using the discovery template
+   - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
-### 2.3 Deep Thinking (coordinator, BEFORE questionnaire)
+**Coordinator: Deep Thinking (before questionnaire)**
 
-After both agents complete, coordinator performs deep thinking using their outputs:
+Evaluate using agent outputs:
+- Impact on existing features (from past-features.md)?
+- Edge cases + error flows (timeout, conflict, partial failure)?
+- Consistency between requirements?
+- Missing UX gaps?
+- Implicit assumptions (auth, permissions, ordering)?
+- Non-obvious scenarios?
+- Related features with correct relation types?
+- Technology decisions pre-decided by codebase?
 
-**DEEP THINKING CHECKLIST (evaluate ALL):**
-- [ ] Impact on existing features? (from past-features.md)
-- [ ] Edge cases per functional requirement?
-- [ ] Complete error flows? (timeout, conflict, partial failure)
-- [ ] Consistency between requirements in the request?
-- [ ] Missing UX gaps not mentioned by user?
-- [ ] "What if...?" questions — non-obvious scenarios
-- [ ] Implicit assumptions that need validation (auth, permissions, ordering)
-- [ ] Past decisions that guide or constrain current choices?
-- [ ] Technology/library decisions pre-decided by codebase?
-- [ ] Related features mapped with correct relation types?
-
-Generate rich, concrete questionnaire based on data, not generic questions.
+Generate concrete questionnaire from data (not generic).
 
 ---
 
-### STEP 3: Present Consultant Questionnaire [STOP]
+## STEP 4: Present Consultant Questionnaire [STOP]
 
-**IMPORTANT:** This is a STOP POINT. Present and WAIT.
+**STOP AND WAIT. This is a mandatory pause.**
 
-**MINDSET:** You are a **product consultant**, not an order taker. Your role is:
-- Help user REFINE the demand
-- Bring CONTEXT from codebase that influences decisions
-- SUGGEST improvements they didn't think of
-- Show TRADE-OFFS of each choice
-- Identify GAPS and risks
+**YOU ARE:** Product consultant, not order taker. Refine demand, bring codebase context, suggest improvements, show trade-offs, identify gaps.
 
-#### Smart Inference Rules
+**Inference Sources (priority):** 1) Codebase (similar features, patterns), 2) Request (verbs, problem), 3) Best practices (domain patterns), 4) Past decisions (UX consistency).
 
-**Inference sources (priority):**
-
-| Source | What to Extract | Example |
-|---|---|---|
-| **1. Codebase** | Similar features, existing patterns, entities | "Already exists `cancelSubscription()`, we can extend" |
-| **2. Request** | Verbs, context, described problem | "add" → small scope, "create" → larger scope |
-| **3. Best Practices** | Domain patterns | Cancellation → confirm with user? |
-| **4. Previous Features** | Past decisions | Maintain UX consistency |
-
-**Inferences by action type:**
-
-| Action Mentioned | Infer Automatically |
+**Inferences by action:**
+| Action | Infer |
 |---|---|
 | Cancel/delete | Confirm with user? Soft delete? |
 | Form/input | Validation? Masks? |
-| External integration | Fallback? Retry? Timeout? |
-| List | Pagination? Filters? Sorting? |
+| Integration | Fallback? Retry? Timeout? |
+| List | Pagination? Filters? Sort? |
 | Notification | Email? Push? In-app? |
 
-#### Questionnaire Structure (5 Sections)
+**Questionnaire Template (5 sections):**
 
 ```markdown
-## Consultant Validation - [Feature Name] (000XF)
-
----
+## Consultant Validation - [Name] (000XF)
 
 ### 1. I understand you want...
-
-**Goal:** [1 clear sentence of what user wants to achieve]
-
-**Current problem:** [Why this is necessary - inferred from request]
-
-**Expected delivery:** [What user will have at the end - ALL layers]
-
-> If I misunderstood, correct me before continuing.
-
----
-
-### 2. I discovered in codebase
-
-| Finding | Relevance to Feature |
-|---|---|
-| [Exists X in `path/file.ts`] | [Can reuse/extend] |
-| [Pattern Y used in similar features] | [Follow same pattern] |
-| [Z doesn't exist yet] | [Need to create] |
-
-**Similar feature as reference:** `[path/]` - [what to leverage]
-
----
-
-### 3. Refining the Demand
-
-#### 3.1 [Strategic scope question]
-
-| Option | What it includes | Trade-off |
-|---|---|---|
-| a) | [description] | [benefit] / [cost] |
-| b) | [description] | [benefit] / [cost] |
-| c) | [description] | [benefit] / [cost] |
-
-> **Recommendation:** Option **a)** — [concrete justification based on codebase, best practice, or clear trade-off]
-
-#### 3.2 [Behavior/UX question]
-
-| Option | Behavior | When it makes sense |
-|---|---|---|
-| a) | [description] | [ideal scenario] |
-| b) | [description] | [alternative scenario] |
-
-> **Recommendation:** Option **a)** — [concrete justification based on codebase, best practice, or clear trade-off]
-
-[Add more questions as needed]
-
-**Recommendation Rules:**
-- MANDATORY below EVERY option table — no exceptions
-- Justification MUST be CONCRETE (not "it's the best option" — say WHY)
-- Base on: codebase discovery, best practices, trade-off analysis, previous features
-- If no option is clearly better: "Depends on [criteria]. If X → option a. If Y → option b."
-
----
-
-### 4. Consultant Insights
-
-You are a **senior product consultant** bringing value the user DIDN'T ask for. Think: what would they WISH they had asked for after shipping? What adjacent value comes with minimal effort? What patterns fail at scale?
-
-**Product/UX features:** Perform market benchmark via WebSearch + model knowledge.
-**Internal/refactor/infra:** Skip WebSearch. Use engineering best practices and architecture patterns.
-
-**FORMAT — free-form, not rigid categories.** Present each insight as:
-
-#### [emoji] [Insight title]
-- [What + Why + Impact — in your own words, like a senior consultant would explain]
-- **Effort:** Low/Medium/High
-- → Include? `Yes` / `No` / `Later`
-
-**Hard Rules:**
-- Section 4 MUST NOT repeat topics from Section 3
-- If the insight is about something the user ASKED → it belongs in Section 3, not here
-- If the insight is about something the consultant BROUGHT → it belongs in Section 4
-- Minimum 1 insight, maximum 10
-
-**After all insights, include a response template:**
-
-```markdown
----
-Quick Response Template (copy, paste, fill):
-
-3.1: R:
-3.2: R:
-[...one line per refinement question from section 3...]
-Insight 1 ([title]): R:
-Insight 2 ([title]): R:
-[...one line per insight from section 4...]
-```
-
----
-
-### 5. How It Will Work
-
-Present: main flow diagram (`[User] → [Action] → [System] → [Result]`), stage-by-stage table (who/what/feedback), error cases table, and before vs after comparison.
-
----
-
-## How to Respond
-
-**Accepted responses:**
-- `Ok` → Accept ALL agent recommendations as default
-- `Ok, but 3.2b` → Accept recommendations except where specified
-- `3.1b, 3.2a` → Specific choices (overrides recommendations)
-- `Insight X: Yes` / `Insight Y: No` / `Insight Z: Later`
-- `+ also want X` → Add to scope
-
-**Defaults:**
-- **If you don't specify an option:** Agent's recommendation is used.
-- **If you don't respond to an insight:** It is NOT included (explicit opt-in required).
-```
-
-#### Example: Feature with UI (Profile Reset)
-```markdown
-### 1. I understand you want...
-**Goal:** Allow user to reset profile AND optionally cancel subscription
-**Current problem:** Route `/account/reset` has confusing name and no integrated cancellation
-**Expected delivery:** Backend `/profile/reset` route + Frontend modal with checkbox + Stripe integration
+**Goal:** [1 sentence]
+**Current problem:** [Why necessary]
+**Expected delivery:** [All layers]
+> If wrong, correct me.
 
 ### 2. I discovered in codebase
 | Finding | Relevance |
 |---|---|
-| `ResetAccountOnboardingCommandHandler` exists | Extend with cancellation logic |
-| `SubscriptionService.cancelSubscription()` implemented | Reuse, add "immediate" mode |
-| Frontend uses modal pattern in `ConfirmDialog.tsx` | Follow same pattern |
+| [Exists X in path] | [Reuse/extend] |
+| [Pattern Y] | [Follow same] |
+| [Z missing] | [Create new] |
+**Similar reference:** `[path]` — [leverage]
+
+### 3. Refining the Demand
+#### 3.1 [Strategic scope question]
+| Option | Includes | Trade-off |
+|---|---|---|
+| a) | [what] | [benefit/cost] |
+| b) | [what] | [benefit/cost] |
+> **Recommendation:** Option **a)** — [concrete rationale from codebase/practice]
+
+#### 3.2 [Behavior/UX question]
+| Option | Behavior | When |
+|---|---|---|
+| a) | [what] | [scenario] |
+| b) | [what] | [scenario] |
+> **Recommendation:** Option **a)** — [concrete rationale]
+
+[More questions as needed. MANDATORY Recommendation below EVERY option table — concrete, not generic.]
 
 ### 4. Consultant Insights
-#### Two-step confirmation for destructive actions
-- Separating confirmations (reset → then cancel) follows "progressive disclosure of consequences" pattern (Stripe, GitHub, AWS). Prevents accidental subscription loss.
-- **Effort:** Low
+[Section 4 brings value user DIDN'T ask for — what they'd wish they had asked. Minimum 1, max 10.]
+
+#### [Insight title]
+- [What + Why + Impact]
+- **Effort:** Low/Medium/High
 - → Include? `Yes` / `No` / `Later`
+
+[RULE: Section 4 must NOT repeat Section 3 topics. If user asked → Section 3. If consultant brought → Section 4.]
+
+**Response Template:**
+```
+3.1: R:
+3.2: R:
+[...per refinement question...]
+Insight 1: R:
+[...per insight...]
 ```
 
-#### Adapt to Feature Type
+### 5. How It Will Work
+[Main flow: User → Action → System → Result. Stage table. Error cases. Before/after.]
+```
 
-| Type | Sections to Include | Sections to Skip |
+**Feature Type Adaptation:**
+| Type | Include | Skip |
 |---|---|---|
 | API only | Goal, Scope, Data, Errors | UI/UX |
 | UI only | Goal, Scope, Flow, States | Persistence |
-| Refactor | What changes, What stays, Risks | New data |
-| Integration | Goal, External APIs, Fallbacks | - |
-| **Fullstack** | **ALL necessary layers** | - |
+| Fullstack | ALL necessary layers | — |
 
-**CRITICAL RULE:** If questionnaire validated user UI/flow → type is **Fullstack**, not "API only".
+**How to Respond:**
+- `Ok` → Accept all recommendations
+- `Ok, but 3.2b` → Override specific choice
+- `3.1b, 3.2a` → Explicit choices
+- `Insight X: Yes/No/Later` → Decision per insight
+- `+ also want X` → Add scope
 
-#### After Presenting → STOP AND WAIT
-
-#### After Receiving Response
-
-Summarize confirmed decisions (scope choices, accepted/rejected insights, validated assumptions) and ask user to confirm. If confirmed → COMPLEXITY GATE. If corrected → adjust and confirm again.
-
----
-
-### STEP 4: Complexity Gate (after questionnaire response)
-
-**Analyze the validated scope for independent user flows.**
-
-**Independent user flow** = can be tested in isolation, has distinct objective, could be its own PR. Keywords: "will also", "and then", "another flow".
-
-**IF N = 1 → skip gate, continue to STEP 5.**
-**IF N >= 2 → Propose decomposition [STOP]:**
-```
-Identified [N] independent flows in the validated scope:
-
-SF01: [name] — [1-sentence objective]
-SF02: [name] — [1-sentence objective]
-
-Suggested implementation order:
-1. SF01 (no dependencies)
-2. SF02 (depends on: SF01)
-
-Decompose as subfeatures? (yes / no — keep as single feature)
-```
-
-**DO NOT proceed before user responds.**
-
-**IF user confirms epic decomposition:**
-
-1. Create `docs/features/${FEATURE_ID}/epic.md`:
-```markdown
-# Epic: [Name]
-
-## Subfeatures
-
-| ID | Name | Objective | Status | Checkpoint |
-|----|------|----------|--------|------------|
-| SF01 | [name] | [objective] | pending | - |
-| SF02 | [name] | [objective] | pending | - |
-
-## Implementation Order
-
-1. SF01 (no dependencies)
-2. SF02 (depends on: SF01)
-
-## Notes
-
-[Any relevant notes about dependencies or constraints]
-```
-
-2. Create directory `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/`
-3. Create `about.md` per subfeature (compact — focus on the subfeature's scope)
-4. Continue to STEP 5 (documentation of main about.md as Epic overview)
-
-**IF user says "no, keep as single feature":** Continue normally to STEP 5.
+**Defaults:** Unspecified options use recommendation. Unspecified insights are NOT included.
 
 ---
 
-### STEP 5: Document
+## STEP 5: Complexity Gate (After Questionnaire Response)
 
-**BEFORE writing:** Validate completeness + consistency + load skills.
+**Summarize confirmed decisions from questionnaire.** Ask user to confirm. If confirmed → continue. If corrected → adjust and re-confirm.
 
-#### Completeness Checklist
+**Analyze validated scope for independent user flows.**
 
-Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided (Yes/No/Later), no unanswered questions. **IF ANSWER MISSING → DO NOT DOCUMENT** — ask user first.
+**Independent flow** = testable in isolation, distinct objective, could be own PR. Keywords: "will also", "and then", "another flow".
 
-#### Consistency Validation
+**IF N = 1:** Skip decomposition, continue to STEP 6.
+**IF N >= 2 [STOP]:** Propose decomposition:
+```
+Identified [N] independent flows:
 
-If validated new route/endpoint → Backend MANDATORY. If validated new field/entity → Database MANDATORY. If user needs UI → Frontend MANDATORY. **NEVER exclude layers needed to deliver what was validated.**
+SF01: [name] — [objective]
+SF02: [name] — [objective]
 
-#### Load Schema (MANDATORY)
+Suggested order:
+1. SF01 (no deps)
+2. SF02 (depends on SF01)
 
-EXECUTE schema `feature-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
+Decompose as subfeatures? (yes/no)
+```
 
-**Apply cache technique:** Read → Preserve → Complement → Metadata (per `{{skill:add-doc-schemas/SKILL.md}}`)
+**IF epic confirmed:**
+1. Create `docs/features/${FEATURE_ID}/epic.md` with subfeature table + order + notes
+2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
+3. Create compact `about.md` per subfeature
+4. Continue to STEP 6
 
-#### about.md (schema: feature-about)
+**IF single feature:** Continue to STEP 6.
 
+---
+
+## STEP 6: Document (Feature + Codebase Analysis)
+
+**Completeness Check:**
+Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided (Yes/No/Later). IF MISSING → ask first. DO NOT document incomplete questionnaire.
+
+**Consistency Check:**
+- New route/endpoint → Backend MANDATORY
+- New field/entity → Database MANDATORY
+- User needs UI → Frontend MANDATORY
+- NEVER exclude layers needed to deliver validated scope
+
+**Write about.md:**
 - **Path:** `docs/features/[NNNN]F-[name]/about.md`
-- **ID:** `[NNNN]F` (allocated in STEP 1 via `status.sh next-id F`)
-- Write per `feature-about` schema. Extractive only.
+- **Schema:** Use `feature-about` (loaded in STEP 1)
+- **Technique:** Read skeleton → Preserve frontmatter → Complement with validated decisions → Bump `updated:` timestamp
+- Write extractive only (requirements, not implementation)
 
-#### discovery.md
-- Path: `docs/features/[XXXX]F-[name]/discovery.md`
-- Content: CODEBASE ANALYSIS (WHAT ALREADY EXISTS)
-
-**DISPATCH AGENT: @discovery-agent — Deep Codebase Analysis**
-- **Intent:** Analyze codebase against feature requirements, map related files, identify prerequisites
-- **Input:** Feature name, about.md path, skills (feature-discovery + documentation-style/business)
-- **Output:** Write `docs/features/${FEATURE_ID}/discovery.md` with Prerequisites Analysis filled
+**Dispatch Agent: Codebase Analysis**
+- **Input:** Feature name, about.md path
+- **Output:** Write `docs/features/${FEATURE_ID}/discovery.md` (prerequisites, related files, existing patterns)
 
 ---
 
-### STEP 6: Validation Gate
+## STEP 7: Validation Gate
 
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-about`.
+Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
-⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
-
----
-
-### STEP 7: Fresh-Reader Review (Non-Blocking)
-
-After the gate returns `PASS`, run a fresh-reader review to surface gaps, clarity issues, or scope questions the about.md left unresolved. Non-blocking: findings are presented, user decides whether to iterate.
-
-#### 7.1 Dispatch the reviewer
-
-Dispatch `doc-reviewer-agent` as a subagent in fresh context. Pass:
-- Path to the `about.md` written in STEP 5
-- Schema name: `feature-about`
-
-The agent MUST NOT see this conversation — its job is to read only the doc and the schema. If the provider does not support subagent dispatch, apply `{{skill:add-doc-reviewer/SKILL.md}}` inline, explicitly forgetting the conversation.
-
-#### 7.2 Present findings
-
-The reviewer returns a textual review with three buckets: Gap, Clarity, Scope. Relay the review verbatim to the user, then offer resolution:
-
-- **Gap items** — the schema's depth floor expected something the doc did not capture. Offer to update the doc.
-- **Clarity items** — the doc says it, but ambiguously. Offer to rewrite the passage.
-- **Scope items** — reasonable questions outside the original discussion. Ask the user per item: *extend scope and address now* / *mark out-of-scope with a one-line reason in References or Scope:Does NOT Include* / *ignore*.
-
-#### 7.3 Iterate (max 2 rounds)
-
-If the user chooses to update the doc, re-write only the relevant sections (cache documental applies: read → preserve → complement → bump `updated:`). Then re-run the validation gate (STEP 6) and re-dispatch the reviewer (STEP 7.1).
-
-Hard cap: **2 review rounds per command invocation**. After round 2, present remaining items as informational and advise the user to re-invoke `/add.new F[NNNN]` in continue mode later if deeper iteration is needed. DO NOT loop indefinitely.
+**MANDATORY.** DO NOT skip. DO NOT mark complete until gate returns `PASS`.
 
 ---
 
-## Continue Mode
+## STEP 8: Fresh-Reader Review (Max 2 Rounds)
 
-If `/feature F0018` or `/feature continue`:
+**Dispatch:** `doc-reviewer-agent` in fresh context (does NOT see this conversation). Pass about.md path + schema name.
 
-1. Detect feature (ID passed or current branch)
-2. Check what exists — skip completed steps (filled about.md → skip questionnaire; filled discovery.md → go to validation)
-3. **Past Features cache:** If `past-features.md` exists AND `discovery.md` has "Related Features" → skip Phase 1.5. Otherwise run Past Features Discovery Agent first.
-4. **Load iterations.jsonl** (if exists) — parse to understand what was implemented, areas touched, any pivots. Use to avoid re-work.
-5. Create TodoList with ONLY missing steps and continue execution
+**Present findings:** Three buckets: Gap (schema expected something missing), Clarity (doc is ambiguous), Scope (reasonable questions outside discussion).
+
+**Resolve per item:**
+- **Gap:** Update doc → re-run STEP 7 gate + STEP 8 reviewer
+- **Clarity:** Rewrite passage → re-run STEP 7 gate + STEP 8 reviewer
+- **Scope:** User decides: extend scope + address now / mark out-of-scope with reason / ignore
+
+**Hard cap:** 2 review rounds per invocation. After round 2, present findings as informational. Advise re-invoking `/add.new F[NNNN]` in continue mode later for deeper iteration.
+
+---
+
+## Continue Mode (Re-Invocation)
+
+**Detect:** Feature ID from argument or current branch.
+
+**Skip Logic:**
+- If `about.md` exists AND contains completed questionnaire sections (1, 3, validated decisions) → Skip STEP 4 questionnaire, proceed to STEP 5
+- If `discovery.md` exists AND contains "Related Features" → Skip STEP 3 discovery agents, proceed to STEP 5
+- If validation gate passed (logged state) → Skip STEP 7, proceed to STEP 8
+
+**Load iterations.jsonl** (if exists) to understand prior implementations/pivots. Avoid re-work.
+
+**Create TodoList with ONLY missing steps.** Continue execution.
 
 ---
 
 ## Completion
 
-After all steps complete, summarize what was created and suggest the logical next command based on what was discovered (read skill `add-ecosystem` Main Flows for context): `/add.design` for UI features, `/add.plan` for technical planning, `/add.build` for simple features, or `/add.autopilot` for autonomous execution.
+Summarize created artifacts. Suggest next command based on discovery: `/add.plan` for technical planning, `/add.build` for implementation, `/add.design` for UI features.
 
 ---
 
-## Rules
+## Execution Rules
 
-ALWAYS:
-- Act as CONSULTANT — bring codebase context, show trade-offs, identify gaps/risks
-- Add Recommendation block below EVERY option table with concrete rationale
-- Accept 'Ok' as confirmation of all agent recommendations
-- Combine WebSearch + model knowledge for benchmarks (product features)
-- Ensure Section 4 insights are genuinely new (not repeats of Section 3)
-- Infer based on codebase + best practices
+**ALWAYS:**
+- Act as consultant — bring codebase context, trade-offs, gaps, risks
+- Recommendation block MANDATORY below every option table (concrete rationale, not generic)
+- Accept `Ok` as confirmation of all recommendations
+- Combine WebSearch + model knowledge for product feature benchmarks
+- Section 4 insights must be genuinely new (not Section 3 repeats)
 - Include Quick Response Template after insights
+- Skip questionnaire [STOP] if re-invoked and about.md already validated
 
-NEVER:
-- Be passive or just validate what user asked
-- Make generic inferences without codebase basis
+**NEVER:**
+- Be passive; validate what user asked without consulting
+- Infer without codebase basis; make generic suggestions
 - Present options without clear trade-offs
 - Skip Consultant Insights section
-- Proceed without response to [STOP]
-- Exclude layer that makes feature unusable
-- Document without confirming all decisions
-- Skip the fresh-reader review after the gate passes
+- Proceed without response to [STOP] points
+- Exclude layers that make feature unusable
+- Document incomplete questionnaire
+- Skip fresh-reader review after gate passes
 - Exceed 2 review rounds per invocation
-- Let the reviewer see this conversation (dispatch in fresh context)
+- Let reviewer see conversation (fresh context only)

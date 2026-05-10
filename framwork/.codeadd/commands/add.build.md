@@ -17,23 +17,12 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 
 ---
 
-## Yolo Mode
-
-If argument contains `--yolo`:
-- Skip ALL [STOP] points
-- Accept DEVELOPMENT mode automatically (no mode confirmation)
-- Do NOT ask for confirmation at any gate
-- Execute to completion without human interaction
-- Log all auto-decisions in console output
-
----
-
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
 ```
 STEP 1: Run context mapper         → FIRST COMMAND (status.sh)
-STEP 2: Detect feature flag        → IF "feature N" passed
+STEP 2: Detect context             → Epic subfeature | Legacy feature flag | Simple mode
 STEP 3: Parse key variables        → Extract FEATURE_ID, flags, phase
 STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE
 STEP 5: Load feature docs          → BEFORE any implementation
@@ -51,64 +40,17 @@ STEP 14: Log iteration             → BEFORE informing user
 STEP 15: Completion                → Inform user based on mode
 ```
 
-**ABSOLUTE PROHIBITIONS:**
+**ABSOLUTE INVARIANTS (enforce at all gates):**
 
-```
-IF FEATURE N REQUESTED BUT DEPENDENCY NOT MET:
-  ⛔ DO NOT USE: Edit on code files
-  ⛔ DO NOT USE: Write on code files
-  ⛔ DO NOT: Implement anything
-  ✅ DO: Inform that feature N-1 must be completed first
-
-IF FEATURE NOT IDENTIFIED:
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT USE: Edit on code files
-  ✅ DO: Run status.sh and identify feature
-
-IF DOCS NOT LOADED:
-  ⛔ DO NOT USE: Task for implementation subagents
-  ⛔ DO NOT USE: Edit on code files
-  ✅ DO: Load about.md, discovery.md, plan.md first
-
-IF EXECUTION DECISION NOT MADE:
-  ⛔ DO NOT USE: Task for subagent dispatch
-  ⛔ DO NOT: Start implementation
-  ✅ DO: Output execution decision first
-
-IF VALIDATOR NOT EXECUTED (after each area):
-  ⛔ DO NOT: Report area completion to user
-  ⛔ DO NOT: Advance to next area
-  ✅ DO: Execute validator subagent immediately
-
-IF EXISTING DOC NOT READ (before mutating plan.md/about.md):
-  ⛔ DO NOT USE: Write on plan.md or about.md
-  ⛔ DO NOT: Overwrite existing content blindly
-  ⛔ DO NOT: Allocate a new [NNNN]F — reuse id from frontmatter
-  ✅ DO: Read full doc → preserve valid content → complement → bump updated:
-
-IF SCHEMA NOT LOADED (before mutating plan.md/about.md):
-  ⛔ DO NOT USE: Write on plan.md or about.md
-  ✅ DO: Load feature-plan / feature-about from {{skill:add-doc-schemas/SKILL.md}}
-
-IF VALIDATION GATE NOT RUN (after mutating plan.md/about.md):
-  ⛔ DO NOT: Report completion
-  ✅ DO: Run STEP 13 validation gate against each mutated doc
-
-IF tasks.md HAS `## Validation Gates` SECTION:
-  ⛔ DO NOT USE: Edit on tasks.md to tick `## Validation Gates` items WITHOUT first invoking the actual gate command via Bash and capturing its exit code in this session
-  ⛔ DO NOT: Self-attest "lint passed" / "tests pass" / "build clean" — every tick MUST correspond to a real Bash invocation whose output is visible in the transcript
-  ⛔ DO NOT: Tick `[x]` while the latest invocation of that gate exited non-zero on a file in `git diff --name-only`
-  ✅ DO: Run gate → capture exit code → if exit≠0 partition failures by `git diff --name-only` → fix touched-file failures → re-run → tick `[x]` only on green; record untouched-file failures under `### Known Issues` (cap 10)
-
-IF CLAUDE.md HAS NO `validation_gates` BLOCK:
-  ⛔ DO NOT: Fabricate gate items
-  ✅ DO: Emit ONE single line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Continue without blocking.
-
-ALWAYS:
-  ⛔ DO NOT USE: Bash for git add/commit/stage
-  ⛔ DO NOT: Ask if user wants to commit
-  ✅ DO: Leave ALL files as unstaged changes
-```
+- **FEATURE DETECTION:** Must identify FEATURE_ID before proceeding. If missing → run status.sh
+- **DEPENDENCY CHECK:** If feature flag passed → validate N-1 complete in iterations.jsonl before implementation
+- **DOCS FIRST:** Always load feature docs (about.md, discovery.md, plan.md) before dispatching subagents
+- **EXECUTION DECISION VISIBLE:** Output decision (DIRECT vs SUBAGENTS) before ANY implementation
+- **VALIDATOR MANDATORY:** After each area implementation → dispatch validator immediately. Do NOT report completion without validator
+- **IMMUTABILITY:** Never allocate new [NNNN]F ID. Always reuse from existing frontmatter. Preserve created:, id:, type:
+- **IDEMPOTENCY:** Check file existence before writing. Never overwrite artefacts without reading first
+- **BUILD GATE:** Code MUST compile 100%. Fix errors before advancing
+- **GIT CLEAN:** Leave files unstaged. Never git add/commit/stage
 
 ---
 
@@ -131,39 +73,38 @@ This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS
 
 ---
 
-## STEP 2: Detect Context (Epic Subfeature OR Legacy Feature Flag)
+## STEP 2: Detect Context
 
-### 2A: HAS_EPIC=true (PRD0032 epic.md structure)
+**IF HAS_EPIC=true:**
+1. READ `docs/features/${FEATURE_ID}/epic.md`
+2. IDENTIFY current subfeature: `EPIC_CURRENT_SF` from script output
+3. IF `EPIC_CURRENT_SF` is empty → STOP. Inform all subfeatures complete → suggest `/add.done`
+4. SET `SF_DIR = docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/`
+5. SET `TASKS_FILE = ${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
+6. Inform: "Executing subfeature `${EPIC_CURRENT_SF}` of epic `${FEATURE_ID}`"
+7. ASSEMBLE `TASK_DOCUMENTS`:
+   - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
+   - `docs/features/${FEATURE_ID}/discovery.md`
+   - `${SF_DIR}/plan.md` (if exists)
+   - `${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
 
-```
-IF HAS_EPIC=true:
-  1. READ docs/features/${FEATURE_ID}/epic.md
-  2. IDENTIFY current subfeature: EPIC_CURRENT_SF from script output
-  3. SET SF_DIR = docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/
-  4. SET TASKS_FILE = ${SF_DIR}/tasks.md (if HAS_TASKS=true)
-  5. Inform: "Executing subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}"
-  6. ASSEMBLE TASK_DOCUMENTS for subagent prompts:
-     - docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md
-     - docs/features/${FEATURE_ID}/discovery.md
-     - ${SF_DIR}/plan.md (if exists)
-     - ${SF_DIR}/tasks.md (if HAS_TASKS=true)
-```
+**ELSE IF user passed `feature N` (legacy feature flag):**
+1. EXTRACT feature number from input
+2. READ `plan.md` → CHECK for `## Features` section (indicates Legacy Epic)
+3. IF no Features section → WARN and execute normally (go to Simple Mode below)
+4. IF Features section exists:
+   - Extract tasks for feature N from plan.md
+   - VALIDATE dependency: query `iterations.jsonl` for feature N-1 completion
+   - IF N-1 not complete → BLOCK implementation, inform which feature must complete first
+   - IF N-1 complete → proceed (treat as feature N subfeature context)
 
-**IF HAS_EPIC=true AND EPIC_CURRENT_SF is empty:** DO NOT implement. Inform all subfeatures complete → run `/add.done`.
-
-### 2B: Legacy Feature Flag (`/add.build feature N`)
-
-```
-IF user passed "feature N" AND HAS_EPIC=false:
-  1. EXTRACT feature number
-  2. READ plan.md → CHECK for "## Features" section (Legacy Epic)
-  3. IF no Features section: warning + execute normally
-  4. IF Features section: extract tasks for feature N, validate dependency (N-1 complete in iterations.jsonl?), BLOCK if not met
-```
-
-### 2C: Simple Mode (no epic, no legacy feature flag)
-
-ASSEMBLE TASK_DOCUMENTS: about.md, discovery.md, design.md (if exists), plan.md (if exists), tasks.md (if HAS_TASKS=true) — all under `docs/features/${FEATURE_ID}/`.
+**ELSE (Simple Mode):**
+ASSEMBLE `TASK_DOCUMENTS` from `docs/features/${FEATURE_ID}/`:
+- `about.md`
+- `discovery.md`
+- `design.md` (if exists)
+- `plan.md` (if exists)
+- `tasks.md` (if `HAS_TASKS=true`)
 
 ---
 
@@ -372,35 +313,33 @@ Use this template for ALL area subagents (database, backend, frontend, workers):
 You are implementing the ${AREA} for feature ${FEATURE_ID}.
 
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-Execute BEFORE any other action:
-
 1. Run: bash .codeadd/scripts/status.sh
-2. Read ALL files listed in TASK_DOCUMENTS below
-3. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` and read relevant topic ranges
-   IF PROJECT_DOCS in script output: read the file matching the app you're modifying
-   - database patterns are cross-app (read if doing database work)
+2. Read ALL files in TASK_DOCUMENTS below
+3. IF PROJECT_SKILL in output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` → read relevant topics
+   ELSE IF PROJECT_DOCS: read matching app patterns (database patterns cross-app)
 
 ## TASK_DOCUMENTS (read ALL — source of truth)
 ${TASK_DOCUMENTS}
 
 ## MANDATORY: Load Development Skill
-BEFORE writing code, read: skill add-${AREA}-development
-- For Frontend: The skill will check for design.md and load ux-design/SKILL.md if needed
-- If design.md EXISTS: Follow its specs + use ux-design for implementation details
-- For specific components, Grep on skill docs: shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md, recharts-docs.md, tanstack-table-docs.md, tanstack-query-docs.md
+Read: skill add-${AREA}-development (patterns, validation, code style)
+- For Frontend: skill will auto-load ux-design if design.md exists
+- Reference component docs as needed: shadcn, tailwind-v3, motion, recharts, tanstack
 
-Follow ALL patterns from the loaded skills.
+## IDEMPOTENCY: Before writing files
+- Check if file exists → READ FIRST before overwriting
+- Never delete + recreate; preserve and patch instead
+- If test/config files exist, validate before write
 
 ## Your Tasks
 ${TASK_LIST}
 
-## DECISION LOGGING (MANDATORY — PRD0031)
-Log **only pivots** to `docs/features/${FEATURE_ID}/decisions.jsonl`:
-- PIVOT: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
+## DECISION LOGGING (PRD0031 — pivots only)
+On approach change: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
 
 ## Deliverables
-- Report: List of files created/modified + decisions logged
-- Status: Build passes (run: ${BUILD_COMMAND})
+- Files created/modified + decisions logged
+- Build passes: ${BUILD_COMMAND}
 ```
 
 #### 9.3 Area-Specific Notes
@@ -562,60 +501,54 @@ DO NOT report completion without executing this step.
 
 ---
 
-## STEP 13: Mutate Docs + Validation Gate (add-doc-schemas)
+## STEP 13: Mutate Docs + Validation Gate
 
-Whenever implementation status, tasks, or decisions require updating `plan.md` or `about.md`, apply the **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`:
+**IF implementation requires updating `plan.md` or `about.md`:**
 
-1. **Read the full existing doc.** Capture `id: [NNNN]F`, `created:`, `type:` — immutable.
-2. **Preserve valid content.** Only complement new findings. Never allocate a new ID.
-3. **Bump `updated:`** to today on every write.
+1. READ the full existing doc (idempotency check)
+2. Capture immutable fields: `id: [NNNN]F`, `created:`, `type:`
+3. Preserve valid content → only complement new findings
+4. Bump `updated:` to today
+5. Apply schema validation gate from `{{skill:add-doc-schemas/SKILL.md}}`
 
-### 13.1 Run the Validation Gate
+For EACH mutated doc, execute the validation gate (schema: `feature-plan` or `feature-about`). Verify immutables preserved. DO NOT advance to STEP 14 until gates return PASS.
 
-For EACH doc mutated (`plan.md` and/or `about.md`), execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for the corresponding schema (`feature-plan` or `feature-about`). Additionally verify immutable fields (`id:`, `type:`, `created:`) were preserved from pre-mutation.
-
-⛔ DO NOT skip. DO NOT advance to STEP 14 until all gates return `PASS`.
+Reference: **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`
 
 ---
 
-## STEP 14: Log Iteration + Checkpoint (BEFORE informing user)
+## STEP 14: Log Iteration + Checkpoint
 
-### 14.1 Log Iteration to iterations.jsonl (PRD0031)
+**14.1 Log Iteration (MANDATORY before user notification):**
 
-**MANDATORY: Append entry to `docs/features/${FEATURE_ID}/iterations.jsonl`:**
+Check if `docs/features/${FEATURE_ID}/iterations.jsonl` exists. If not, create empty file. Append entry:
 
 ```bash
 bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "<TYPE>" "/dev" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
-**IF epic subfeature (HAS_EPIC=true), add `"sf"` field:**
-```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "<TYPE>" "/dev" '"slug":"<SLUG>","what":"<WHAT>","files":["<f1>"],"sf":"${EPIC_CURRENT_SF}"'
-```
+IF `HAS_EPIC=true`, add `"sf"` field: `"sf":"${EPIC_CURRENT_SF}"`
 
 **Types:** `add | fix | refactor | test | docs`
 
-### 14.2 Git Tag Checkpoint (PRD0032 — Universal)
+**14.2 Create Checkpoint Tag (MANDATORY):**
 
-**ALWAYS create a checkpoint tag after successful implementation:**
+Check if tag exists before creating (idempotency guard):
 
 ```bash
-# Feature simples
-git tag "checkpoint/${FEATURE_ID}-done"
+# Simple feature
+git tag "checkpoint/${FEATURE_ID}-done" 2>/dev/null || true
 
-# Subfeature in epic (HAS_EPIC=true)
-git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
+# Epic subfeature (HAS_EPIC=true)
+git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done" 2>/dev/null || true
 ```
 
-**DO NOT skip tag creation. This enables rollback and progress tracking.**
+NOTE: Checkpoint tags use `checkpoint/` prefix (separate from release `v*`). Temporarily — cleaned up by `/add.done`.
 
-**NOTE:** Checkpoint tags use `checkpoint/` prefix to separate from release tags (`v*`). These tags are temporary — cleaned up automatically by `/add.done` during merge.
+**14.3 Update epic.md (IF HAS_EPIC=true only):**
 
-### 14.3 Update epic.md (IF HAS_EPIC=true)
-
-**IF HAS_EPIC=true, update the subfeature status in `docs/features/${FEATURE_ID}/epic.md`:**
-
-Change `| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT_SF} | [name] | [obj] | done | ${FEATURE_ID}-${EPIC_CURRENT_SF}-done |`
+IF file exists, update subfeature status line:
+`| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT_SF} | [name] | [obj] | done | ${FEATURE_ID}-${EPIC_CURRENT_SF}-done |`
 
 ---
 
@@ -656,33 +589,6 @@ Context: Implementing tasks from plan.md
 
 Dispatching subagents..."
 ```
-
----
-
-## Rules
-
-ALWAYS:
-- Detect mode automatically (development vs correction vs feature)
-- Load relevant skill BEFORE implementing
-- Follow skill patterns rigorously
-- Implement contracts exactly as specified
-- Ensure 100% compilation before proceeding
-- Keep code simple (KISS, YAGNI)
-- Output execution decision BEFORE implementation
-- Execute validator subagent after EACH area
-- Log iteration BEFORE informing user
-- Leave ALL files as unstaged changes
-
-NEVER:
-- Commit or stage any code (git add/commit/stage)
-- Ask if user wants to commit
-- Skip implementation sections
-- Leave code in non-compiling state
-- Add features not in specification
-- Ignore skill patterns
-- Skip execution decision output
-- Report area completion without validator
-- Inform user without logging iteration
 
 ---
 

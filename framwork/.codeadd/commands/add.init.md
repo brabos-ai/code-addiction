@@ -7,47 +7,24 @@ Collects owner profile in 1 minute (3 direct questions) and optionally creates p
 
 ---
 
-## Required Skills
+## STEP 1: Load Skills & Check Context
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+### 1.1 Load Skills (once per invocation)
 
----
+Load before proceeding:
+- `{{skill:add-doc-schemas/SKILL.md}}` (schemas, IDs, universal rules, validation gate)
+- `{{skill:add-product-discovery/SKILL.md}}` (conditional; load if product flow needed)
 
-## STEPS IN ORDER
-
-```
-STEP 1: Check context              → owner.md exists? product.md exists?
-STEP 2: 3 Direct questions         → name, level, language
-STEP 3: Create docs/product/owner.md → schema owner, id OWNER
-STEP 4: Commit owner.md            → automatic
-STEP 5: Validation gate (owner)    → run gate block
-STEP 6: Ask about product.md       → optional
-STEP 7: If yes → product flow      → load skill product-discovery
-STEP 8: Validation gate (product)  → run gate block (skip if no product.md)
-STEP 9: Onboarding Complete        → suggest /add.new
-```
-
-**PROHIBITIONS:**
-
-- NEVER write docs/product/owner.md before checking context (STEP 1)
-- NEVER write docs/product/owner.md before all 3 questions are answered (STEP 2)
-- NEVER start product flow before owner.md is created and validated (STEP 5)
-- NEVER skip the validation gate for any generated doc
-
----
-
-## STEP 1: Check Context
-
-### 1.1 Check owner.md
+### 1.2 Check owner.md
 
 Check if `docs/product/owner.md` exists and read it.
 
 **IF EXISTS:**
 Show the current profile (name, level, language) and ask: update or keep?
-- If keep: skip to STEP 6
-- If update: continue to STEP 2
+- If keep: store decision `owner_update=no` and skip to STEP 6
+- If update: store decision `owner_update=yes` and continue to STEP 2
 
-### 1.2 Check product.md
+### 1.3 Check product.md
 
 Check if `docs/product/product.md` exists and read it.
 
@@ -55,26 +32,28 @@ Store whether it exists (used in STEP 6).
 
 ---
 
-## STEP 2: 3 Direct Questions
+## STEP 2: 3 Direct Questions (only if owner_update=yes or owner.md not found)
 
-Ask the user these three questions (name, technical level, preferred language). Collect all three before proceeding.
+**IF owner_update=no:** skip to STEP 6.
 
-**Response mapping:**
+Ask these three questions. Collect all three before proceeding.
 
-| Question | a | b | c |
-|----------|---|---|---|
-| Level | beginner | intermediate | advanced |
-| Language | pt-br | en-us | [specified] |
+**Questions:**
+1. Name?
+2. Technical level? (beginner / intermediate / advanced)
+3. Preferred language? (pt-br / en-us / [specified])
 
 ---
 
 ## STEP 3: Create docs/product/owner.md
 
-EXECUTE schema `owner` from `{{skill:add-doc-schemas/SKILL.md}}`.
+**Execution rule for all doc writes (STEP 3, STEP 7.3):**
 
-**Fixed ID:** `OWNER` (per schema; no next-id lookup).
-
-Write per `owner` schema. Fixed ID: `OWNER`. Extractive only.
+1. Execute schema `owner` from `{{skill:add-doc-schemas/SKILL.md}}` (Section "Schema Index by Category" → product category)
+2. Fixed ID: `OWNER` (per schema; no next-id lookup)
+3. Extractive only — no narrative bio or personal opinions
+4. Populate: name, level, language from answers above
+5. Write with frontmatter: `id: OWNER`, `type: owner`, `created: <today>`, `updated: <today>`, `related: [PRODUCT]`
 
 ---
 
@@ -90,7 +69,16 @@ Created by /add.init"
 
 ## STEP 5: Validation Gate — owner
 
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `owner`.
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `owner`:
+
+1. Frontmatter presence (id, type, created, updated, related)
+2. TL;DR complete (what, why, headline)
+3. TOC rule (if >3 H2 sections)
+4. Depth floors met (per schema: Founder, Skills, Constraints, Goals)
+5. Non-redundancy and density
+6. Doc refs resolve
+7. Hard bans absent
+8. Metadata footer (updated: matches today)
 
 ⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
@@ -102,34 +90,35 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 **IF NOT:** Ask if the user wants to create a product blueprint (recommended for new projects).
 
-- If yes: go to STEP 7
+- If yes and user answers: go to STEP 7
 - If no: go to STEP 9
+- If already answered before: skip this step (idempotency)
 
 ---
 
 ## STEP 7: Product Flow (OPTIONAL)
 
-### 7.1 Load Skill
+**Prerequisite:** Only execute if user approved product creation in STEP 6.
 
-```bash
-Read skill add-product-discovery
-```
+### 7.1 Discover Product via add-product-discovery
 
-### 7.2 Follow Phase2_ProductBlueprint from Skill
+Follow the skill's Phase 1 (founder, already done via owner.md) and Phase 2 (product blueprint):
 
 - Open question: "What do you want to build?"
-- Infer based on market patterns
-- Validate with user
+- Evaluate response depth (shallow → follow-ups; medium/rich → proceed)
+- Infer based on market patterns (per skill: scheduling, ecommerce, saas-b2b, marketplace, etc.)
+- Validate inferences with user until approved
 
-### 7.3 Write docs/product/product.md
+### 7.2 Write docs/product/product.md
 
-EXECUTE schema `product` from `{{skill:add-doc-schemas/SKILL.md}}`.
+Execute schema `product` from `{{skill:add-doc-schemas/SKILL.md}}`:
 
-**Fixed ID:** `PRODUCT` (per schema; no next-id lookup).
+1. Fixed ID: `PRODUCT` (per schema; no next-id lookup)
+2. Extractive only — no marketing fluff or unverified claims
+3. Populate: Vision, ICP, Core Value, Differentiators, Business Model from user answers + inferences
+4. Write with frontmatter: `id: PRODUCT`, `type: product`, `created: <today>`, `updated: <today>`, `related: [OWNER]`
 
-Write per `product` schema. Fixed ID: `PRODUCT`. Extractive only.
-
-### 7.4 Commit product.md
+### 7.3 Commit product.md
 
 ```bash
 git add docs/product/product.md && git commit -m "docs: create product blueprint
@@ -143,7 +132,16 @@ Created by /add.init"
 
 Run ONLY if product.md was created in STEP 7. Otherwise skip to STEP 9.
 
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `product`.
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `product`:
+
+1. Frontmatter presence (id, type, created, updated, related)
+2. TL;DR complete (what, why, headline)
+3. TOC rule (if >3 H2 sections)
+4. Depth floors met (per schema: Vision, ICP, Core Value, Differentiators, Business Model)
+5. Non-redundancy and density
+6. Doc refs resolve
+7. Hard bans absent
+8. Metadata footer (updated: matches today)
 
 ⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
 
@@ -151,29 +149,43 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 ## STEP 9: Onboarding Complete
 
-Summarize what was created (owner.md, and product.md if applicable). Inform the user that communication is now adapted to their level and language. Suggest `/add.new` to create their first feature.
+Summarize what was created:
+- owner.md ✓ (always)
+- product.md ✓ (if approved in STEP 6)
+
+Inform the user that communication is now adapted to their level and language (per owner.md settings). Suggest `/add.new` to create their first feature.
 
 ---
 
-## Rules
+## Execution Rules
 
-**ALWAYS:**
-- Check existing docs FIRST
-- Ask exactly 3 questions (name, level, language)
-- Load schemas from add-doc-schemas instead of inlining templates
-- Use fixed IDs OWNER and PRODUCT per schema
-- Run the validation gate after every generated doc
-- Automatic commit after each doc
-- Ask about product.md (do not force)
-- Suggest /add.new at the end
-- Adapt language to owner's choice
+**Idempotency (re-invocation safety):**
+- STEP 1.2: If owner.md exists, ask "update or keep?" and store decision (`owner_update=yes|no`)
+- STEP 2: Skip if `owner_update=no`
+- STEP 6: If already answered before, skip re-asking (check for prior decision)
+- STEP 7: Only execute if user approved product creation; skip if product.md already exists
 
-**NEVER:**
-- Inline doc templates — ALWAYS load from add-doc-schemas
-- Use abstractive summarization to fit word caps
-- Load skill product-discovery before needed
-- Force product.md on legacy projects
-- Ask more than 3 questions for profile
-- Infer level without asking directly
-- Skip automatic commit
-- Skip the validation gate
+**Skill loading (STEP 1.1):**
+- Load `add-doc-schemas` immediately (always needed)
+- Load `add-product-discovery` conditionally (only if STEP 7 will execute)
+
+**Doc writing (STEP 3, STEP 7.2):**
+- Never inline templates — always reference `add-doc-schemas` schema
+- Extractive only (no narrative, no abstraction, no marketing copy)
+- Fixed IDs per schema: OWNER and PRODUCT (no next-id lookup)
+- Frontmatter always includes: id, type, created, updated, related
+
+**Validation (STEP 5, STEP 8):**
+- Non-negotiable: every doc must pass the gate before command completes
+- Gate checks: frontmatter, TL;DR, TOC rule, depth floors, density, refs, hard bans, metadata
+- Warnings (orphan refs) are logged but do not block PASS
+
+**Prohibitions:**
+- NEVER write owner.md before STEP 1.2 checks what exists
+- NEVER write owner.md before all 3 questions answered (STEP 2)
+- NEVER start product flow before owner.md is validated (STEP 5)
+- NEVER force product.md creation — ask and honor the user's answer
+- NEVER ask more than 3 profile questions
+- NEVER inline schema templates instead of loading from add-doc-schemas
+- NEVER skip validation gates
+- NEVER skip automatic commits
