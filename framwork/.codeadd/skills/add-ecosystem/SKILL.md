@@ -21,9 +21,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
 | add.build | Development Execution Specialist | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
-| add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology (disambiguation, RCA, patterns, differential diagnosis, synthesis) and recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
+| add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
-| add.hotfix | Urgent fix with global ID ([NNNN]H). Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
+| add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
 | add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
@@ -69,6 +69,22 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-token-efficiency | Compression, compact JSON, minimal tokens |
 | add-ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind |
 
+## Agents
+
+| Agent | Purpose | Dispatched by |
+|-------|---------|---------------|
+| ux-agent | UX specialist for design decisions, interface analysis | add.design, add.ux |
+| backend-agent | Backend implementation specialist | add.build, add.autopilot |
+| frontend-agent | Frontend implementation specialist | add.build, add.autopilot |
+| reviewer-agent | Code review (read-only) | add.review |
+| discovery-agent | Feature discovery and specification (read-only) | add.new |
+| architecture-agent | Architecture consultant, layer/module advice (read-only) | add.plan, add.diagnose (Fase B), add.hotfix |
+| system-design-agent | System design, data flows, infrastructure | add.plan, add.audit |
+| database-agent | Schema design, migrations, queries | add.build, add.plan |
+| doc-reviewer-agent | Fresh-context doc review (read-only) | add.new, add.brainstorm |
+| feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
+| git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
+
 ## Dependency Index
 
 | If you modify... | It impacts... |
@@ -84,7 +100,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.xray, add.diagnose |
 | add-architecture-discovery | add.audit, add.xray |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
-| add-investigation | add.diagnose (primary), add.hotfix (STEP 7.1 escalation), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
+| add-investigation | add.diagnose (primary, agent-dispatched mode), add.hotfix (STEP 6.1 escalation, agent-dispatched mode), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
+| feature-history-agent | add.diagnose (STEP 4 Fase A.1), add.hotfix (STEP 4) |
+| git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 
