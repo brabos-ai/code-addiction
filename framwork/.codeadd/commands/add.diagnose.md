@@ -18,7 +18,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 **STEPS IN ORDER:**
 ```
 STEP 1: Load context          → status.sh + add-ecosystem
-STEP 2: Capture & reformulate → STOP for user confirmation
+STEP 2: Capture & reformulate → internal only, no stop
 STEP 3: Load investigation    → add-investigation skill, apply Phase 0
 STEP 4: Two-phase agent dispatch → A.1 ∥ A.2 (parallel) → B (sequential)
 STEP 5: Phases 2-3            → pattern analysis, differential diagnosis
@@ -35,7 +35,6 @@ STEP 9: Validation Gate       → diagnose-report schema gate
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
 | **STEP 1** | Context not loaded | Grep, Read code files, dispatch agents | Run status.sh + load add-ecosystem |
-| **STEP 2** | Framing not confirmed | Glob, Grep, Read code, dispatch agents, classify symptom | Present reformulation, WAIT |
 | **STEP 3** | Skill not loaded | Begin investigation, suggest route | Read add-investigation skill |
 | **STEP 4** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
 | **STEP 4** | A outputs incomplete | Proceed to STEP 5, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
@@ -68,22 +67,13 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 ---
 
-## STEP 2: Capture & Reformulate Input [STOP]
+## STEP 2: Capture & Reformulate Input (internal)
 
 ### 2.1 Reformulate using the user's own words
 
 Restate the user input in ONE sentence using only the nouns/verbs they used. Do NOT inject technical interpretation yet.
 
-### 2.2 Present the reformulation
-
-Show the user:
-- Original report (verbatim)
-- One-sentence reformulation
-- 3-4 clarifying questions if the report is vague (WHO / WHEN / WHERE / WHAT expected vs actual)
-
-### 2.3 WAIT for user confirmation
-
-⛔ HARD STOP. Do not proceed to STEP 3 until the user confirms or corrects the reformulation. The entire investigation is downstream of this framing — wrong framing = wasted investigation.
+Store this reformulation internally — it feeds Phase 0 (STEP 3) and the final report (STEP 7). Do NOT present it to the user now. Do NOT ask questions. Proceed immediately to STEP 3.
 
 ---
 
@@ -174,7 +164,7 @@ Read {{skill:add-investigation/references/differential-diagnosis.md}}.
 2. Rank by likelihood × cost-to-test
 3. Test cheapest-high first using the agent reports as primary evidence; only re-grep if a hypothesis lacks coverage
 4. Log each test with result
-5. If 3 hypotheses fail → STOP, return to STEP 2 (question framing)
+5. If 3 hypotheses fail → surface framing gaps in STEP 7 report and ask user to clarify there
 
 ⛔ DO NOT commit to a single cause without comparing alternatives.
 ⛔ DO NOT redo Phase 1 work (recent-changes scan, doc reads, backward tracing) — that's what the three agents just produced. Cite their outputs.
@@ -186,7 +176,7 @@ Read {{skill:add-investigation/references/differential-diagnosis.md}}.
 ### 6.1 Synthesize diagnosis
 
 Build the structured output from skill Phase 4:
-1. Reformulated problem (from STEP 2, confirmed)
+1. Reformulated problem (from STEP 2)
 2. Evidence found (from Phases 1-2)
 3. Diagnosis with selected hypothesis + rejected alternatives + why
 4. Recommended route
