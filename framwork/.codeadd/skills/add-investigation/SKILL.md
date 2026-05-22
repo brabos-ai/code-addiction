@@ -37,6 +37,37 @@ Corollaries:
 - Project-wide health check → use audit flow.
 - Simple typos, lint errors, or compile failures → fix directly.
 
+## Execution Modes
+
+The 5 phases below apply in either of two execution modes. The methodology (Iron Law, phase ordering, output requirements) is identical in both — only WHO executes Phase 1 changes.
+
+### Local mode (default)
+
+The operator executes every Phase 1 step manually: reads errors, reproduces the predicate, scans recent changes (git log + changelogs + feature docs), instruments boundaries, and runs the backward trace. Use this mode when:
+- The host runtime cannot dispatch subagents
+- The codebase is small enough that direct exploration is faster than coordination
+- The symptom is already narrowly localized
+
+### Agent-dispatched mode
+
+Phase 1 is partitioned and delegated to specialized read-only agents. The operator consumes their outputs and continues with Phases 2-4. Use this mode when invoking the skill from `/add.diagnose` or `/add.hotfix`, or whenever broad discovery is needed.
+
+| Phase 1 step | Mode mapping |
+|---|---|
+| Read errors literally | Operator (local) |
+| Reproduce the observable predicate | Operator (local) |
+| Check recent changes (changelogs, feature docs, git log) | **Parallel dispatch:** `@feature-history-agent` (docs) ∥ `@git-history-agent` (git) |
+| Instrument boundaries / backward-trace code | **Sequential dispatch:** `@architecture-agent` (consumes combined Fase A outputs) |
+| Document evidence | Operator synthesizes the three reports |
+
+**Rules in agent-dispatched mode:**
+- Both Fase A agents MUST be dispatched in a single message (parallel).
+- Fase B (`@architecture-agent`) MUST be dispatched AFTER both Fase A reports return, with the combined output as input.
+- Operator never redoes work the agents already did — cite their reports as Phase 1 evidence.
+- Iron Law, Phase 0, Phases 2-4 are identical to local mode.
+
+If Fase A returns "no strong matches" from both agents, Fase B receives a broad-scan brief instead of narrow targets — investigation continues, not aborts.
+
 ## The 5 Phases (Blocking Sequence)
 
 Each phase BLOCKS the next. Do not skip forward.
@@ -64,9 +95,9 @@ See `references/backward-tracing.md` for the backward-tracing technique and `ref
 Mandatory steps:
 1. Read errors literally (if any exist). DO NOT interpret.
 2. Reproduce the observable predicate from Phase 0 (mentally or concretely).
-3. Check recent changes: `git log`, changelogs, recent feature docs.
+3. Check recent changes: `git log`, changelogs, recent feature docs. *(Delegable in agent-dispatched mode — see Execution Modes: parallel `@feature-history-agent` ∥ `@git-history-agent`.)*
 4. Instrument every component boundary in multi-layer systems (trace log points, not fixes).
-5. Trace data flow BACKWARD from symptom → immediate cause → caller → origin.
+5. Trace data flow BACKWARD from symptom → immediate cause → caller → origin. *(Delegable in agent-dispatched mode — see Execution Modes: sequential `@architecture-agent` over combined Fase A outputs.)*
 
 ⛔ DO NOT propose fixes in Phase 1. The output is a LOCATION, not a solution.
 

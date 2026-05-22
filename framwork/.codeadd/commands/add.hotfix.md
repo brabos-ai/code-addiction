@@ -21,8 +21,8 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 STEP 1:  Run status.sh             → FIRST COMMAND
 STEP 2:  Check branch              → IF main: STOP (step 3 required)
 STEP 3:  Allocate ID + branch      → status.sh next-id H, branch, skeleton about.md
-STEP 4:  Identify related features → Analyze RECENT_CHANGELOGS
-STEP 5:  Read documentation        → Changelogs, about.md of related features
+STEP 4:  Discover history (parallel agents) → @feature-history-agent ∥ @git-history-agent
+STEP 5:  Synthesize history outputs → Confirm related features with user
 STEP 6:  Investigate code          → ONLY AFTER steps 1-5
 STEP 7:  Confirm root cause        → BEFORE implementing
 STEP 8:  Implement fix             → ONLY AFTER step 7
@@ -52,10 +52,10 @@ IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
   ✅ DO: Create hotfix/[NNNN]H-[slug] branch and docs/features/[NNNN]H-[slug]/
 
-IF CHANGELOGS NOT READ:
+IF HISTORY AGENTS NOT DISPATCHED:
   ⛔ DO NOT USE: Grep on code
   ⛔ DO NOT USE: Read on code
-  ✅ DO: Read changelogs of related features first
+  ✅ DO: Dispatch @feature-history-agent ∥ @git-history-agent (parallel) and wait for both reports
 
 IF ROOT CAUSE NOT CONFIRMED:
   ⛔ DO NOT USE: Edit on code files
@@ -130,35 +130,48 @@ DO NOT write doc contents yet — schemas are loaded and applied in STEP 9/10.
 
 ---
 
-## STEP 4: Identify Related Features
+## STEP 4: Discover History via Parallel Agents
 
-### 4.1 Analyze RECENT_CHANGELOGS
+⛔ **CRITICAL:** Dispatch BOTH agents in a SINGLE message with TWO Agent tool calls (parallel execution).
 
-From `status.sh` output:
-- Which features mention the affected area/component?
-- Is the bug likely related to recent changes?
+### 4.1 Build the symptom brief
 
-### 4.2 Interview User (if applicable)
+From the user's bug report plus `RECENT_CHANGELOGS` from STEP 1, write a short brief:
+- One-sentence problem statement
+- Affected area / keywords (component, route, entity)
+- Optional window (default: 30 days)
 
-**If RECENT_CHANGELOGS suggests related features**, present them and ask:
-- Yes → inform which
-- No → standalone fix
-- Multiple related → list them
+### 4.2 Dispatch parallel
 
-**Store feature relationships for STEP 10.**
+**DISPATCH AGENT: @feature-history-agent**
+Prompt: "Find existing features whose docs (about.md, changelog.md, plan.md) plausibly relate to this bug. Brief: <brief>. Scan `docs/features/`, score relevance, deep-read top-10. Return structured Feature History Report."
+
+**DISPATCH AGENT: @git-history-agent**
+Prompt: "Correlate recent git history with this bug. Brief: <brief>. Window: 30 days. Use git log/show/diff/branch (read-only) to surface suspicious commits and active branches. Return structured Git History Report."
+
+**WAIT** for both reports before proceeding to STEP 5.
 
 ---
 
-## STEP 5: Read Documentation (BEFORE code)
+## STEP 5: Synthesize History & Confirm Related Features
 
-**MANDATORY ORDER - DO NOT SKIP.**
+### 5.1 Combine the two reports
 
-For each related feature identified in STEP 4, read its `changelog.md` and `about.md`.
+- **Convergent signals** — features/files mentioned by BOTH agents (highest confidence)
+- **Divergent signals** — surfaced by only one (still relevant)
+- **Suspicious commits** — flagged by @git-history-agent in or adjacent to those features
 
-**Understand:**
-- Recent changes in affected area
-- Architecture decisions that might relate to bug
-- Dependencies and flow
+### 5.2 Present to user
+
+Present the top related features (with FEAT_IDs) + the top suspicious commits and ask:
+- Confirm related features (yes / no / different one)
+- Acknowledge suspicious commits (any context the user can add?)
+
+**Store the confirmed feature relationships for STEP 10 (related.md).**
+
+### 5.3 Escalate to add-investigation (if needed)
+
+If the agents' reports do NOT converge on a clear area OR the bug is vague/multi-layer, LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 2-3 over the agent outputs before STEP 6. The agents already covered Phase 1 in agent-dispatched mode.
 
 ---
 
@@ -166,8 +179,8 @@ For each related feature identified in STEP 4, read its `changelog.md` and `abou
 
 **PREREQUISITES VERIFIED:**
 - [ ] Branch `hotfix/*` active (NOT main)
-- [ ] Changelogs of related features READ
-- [ ] Documentation of related features READ
+- [ ] @feature-history-agent + @git-history-agent reports received
+- [ ] Related features confirmed with user
 
 **NOW you can investigate code:**
 
@@ -178,13 +191,13 @@ Use Grep/Read to confirm what documentation indicated:
 
 ### 6.1 Escalate to add-investigation skill (when root cause unclear)
 
-⛔ **IF the bug symptom is vague, intermittent, crosses multiple layers, or the first 2-3 grep/read attempts do NOT converge on a clear cause:**
+⛔ **IF the bug symptom is vague, intermittent, crosses multiple layers, or the agent reports (STEP 4) + grep/read (STEP 6) do NOT converge on a clear cause:**
 
-LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 1-3 (Root Cause Investigation, Pattern Analysis, Differential Diagnosis) before proposing a root cause in STEP 7.
+LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 2-3 (Pattern Analysis, Differential Diagnosis) over the agent outputs plus a code-tracing dispatch to `@architecture-agent`. Phase 1 was already executed in agent-dispatched mode by STEP 4 — DO NOT redo it.
 
 **Why:** Hotfixes that ship without rigorous RCA tend to fix symptoms instead of causes, causing the same bug to return. The Iron Law from add-investigation applies: NO FIX WITHOUT ROOT CAUSE.
 
-**Skip this sub-step ONLY when:** the bug has a clear error message + stack trace + obvious cause within the first investigation pass.
+**Skip this sub-step ONLY when:** the bug has a clear error message + stack trace + obvious cause, AND the agent reports + initial code read converge on it within the first pass.
 
 ---
 
@@ -298,7 +311,8 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 - Use `status.sh next-id H` to allocate hotfix ID
 - Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
 - Load `hotfix-about` and `hotfix-related` schemas from add-doc-schemas before writing
-- Read changelogs and about.md before investigating code
+- Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code
+- Wait for both history reports before any Grep/Read on code
 - Confirm root cause with user before implementing
 - Fix root cause, not symptoms
 - Keep changes minimal and focused
@@ -310,7 +324,7 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 - Investigate code while on main branch
 - Inline any doc template — ALWAYS load from add-doc-schemas
 - Use abstractive summarization to fit word caps
-- Grep or read code before reading changelogs
+- Grep or read code before the parallel history agents return
 - Implement fix without user confirming root cause
 - Refactor unrelated code during hotfix
 - Add new features inside a hotfix
@@ -328,8 +342,9 @@ Inform user of completion including: hotfix ID, branch, problem, root cause, sol
 # STEP 3: status.sh next-id H → H0001
 #   git checkout -b hotfix/0001H-screenshot-delete-error
 #   mkdir docs/features/0001H-screenshot-delete-error/
-# STEP 4: Related to F0036 ai-screenshot-validation (from RECENT_CHANGELOGS)
-# STEP 5: Read F0036 changelog + about
+# STEP 4: Dispatch @feature-history-agent ∥ @git-history-agent (parallel)
+#   → A.1 surfaces F0036 ai-screenshot-validation; A.2 flags commit abc123 as suspicious
+# STEP 5: Confirm F0036 with user; note suspicious commit abc123
 # STEP 6: Investigate code
 # STEP 7: Confirm root cause with user
 # STEP 8: Implement fix + verify build

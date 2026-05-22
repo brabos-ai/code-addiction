@@ -231,6 +231,8 @@
     "architecture-agent":  { "description": "Architecture consultant for structural decisions, layers, and module boundaries (read-only)" },
     "system-design-agent": { "description": "System design specialist for scalable solutions, data flows, and infrastructure decisions" },
     "database-agent":      { "description": "Database specialist for schema design, migrations, entity modeling, and query optimization" },
-    "doc-reviewer-agent":  { "description": "Documentation review specialist - reads generated docs in fresh context and surfaces gaps, clarity issues, and scope questions (read-only)" }
+    "doc-reviewer-agent":  { "description": "Documentation review specialist - reads generated docs in fresh context and surfaces gaps, clarity issues, and scope questions (read-only)" },
+    "feature-history-agent": { "description": "Feature history archaeologist — scans docs/features/ to find feature docs (about/changelog/plan) relevant to a symptom predicate (read-only, docs/ only)" },
+    "git-history-agent":     { "description": "Git history correlator — surfaces recent commits (log/show/diff/branch) plausibly related to a symptom predicate (read-only git)" }
   }
 }
