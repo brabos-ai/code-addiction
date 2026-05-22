@@ -35,15 +35,14 @@ graph LR
   IV{{add-investigation}}
   FD{{add-feature-discovery}}
   FS{{add-feature-specification}}
-  DR{{add-doc-reviewer}}
 
-  NEW --> DS & ID & FD & FS & DR
-  PLAN --> DS & ID & TC & BE & FE & DB & UX
-  BUILD --> DS & ID & TC & BE & FE & DB & UX
-  REVIEW --> CR & BE & FE & DB & UX & SA & DV & TC & IV
+  NEW --> DS & ID & FD & FS
+  PLAN --> DS & ID & TC & BE & FE & DB & UX & FD
+  BUILD --> DS & ID & TC & BE & FE & DB & UX & CR
+  REVIEW --> CR & BE & FE & DB & UX & SA & DV & IV
   DONE --> DS & ID
   TEST --> BE & FE
-  AUTO --> DS & ID & TC & BE & FE & DB & UX & CR
+  AUTO --> TC & BE & FE & DB & UX
 ```
 
 ---
@@ -80,8 +79,8 @@ graph LR
   DESIGN --> DS & ID & UX
   DIAGNOSE --> DS & ECO & IV
   HOTFIX --> DS & ID & IV & UX & ECO
-  AUDIT --> DS & HC & IV
-  XRAY --> DS & AD & CMS
+  AUDIT --> DS & HC & IV & ECO
+  XRAY --> DS & AD & CMS & ECO
   BRAINSTORM --> DS & ECO
   UX_CMD --> UX
 ```
@@ -98,8 +97,11 @@ graph LR
   BUILD(add.build)
   DESIGN(add.design)
   NEW(add.new)
-  XRAY(add.xray)
   DIAGNOSE(add.diagnose)
+  HOTFIX(add.hotfix)
+  REVIEW(add.review)
+  PLAN(add.plan)
+  BRAINSTORM(add.brainstorm)
 
   BA>backend-agent]
   FA>frontend-agent]
@@ -109,7 +111,8 @@ graph LR
   DISCO>discovery-agent]
   DOCR>doc-reviewer-agent]
   ARCH>architecture-agent]
-  SDA>system-design-agent]
+  FHA>feature-history-agent]
+  GHA>git-history-agent]
 
   BE{{add-backend-development}}
   FE{{add-frontend-development}}
@@ -124,13 +127,17 @@ graph LR
   AD{{add-architecture-discovery}}
   BARCH{{add-backend-architecture}}
   FARCH{{add-frontend-architecture}}
+  IV{{add-investigation}}
 
-  AUTO --> BA & FA & DA & RA
+  AUTO --> BA & FA & DA & RA & ARCH
   BUILD --> BA & FA & DA & RA
   DESIGN --> UXA
-  NEW --> DISCO & DOCR
-  XRAY --> ARCH
-  DIAGNOSE --> DISCO & ARCH
+  NEW --> DOCR
+  PLAN --> DISCO & BA & FA & DA & ARCH
+  REVIEW --> RA
+  BRAINSTORM --> DOCR
+  DIAGNOSE --> FHA & GHA & ARCH
+  HOTFIX --> FHA & GHA
 
   BA --> BE & DB
   FA --> FE
@@ -140,7 +147,8 @@ graph LR
   DISCO --> FD & FS
   DOCR --> DR & DS
   ARCH --> AD & BARCH & FARCH
-  SDA --> AD
+  FHA --> IV
+  GHA --> IV
 ```
 
 ---
