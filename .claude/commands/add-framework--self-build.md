@@ -3,7 +3,7 @@
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **SKILL:** Apply `building-commands` to ALL command/skill outputs
 
-Evolves artefacts in the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Operates in two modes: pontual (quick changes) or planned (from `/add.self-plan` document).
+Evolves artefacts in the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Operates in two modes: pontual (quick changes) or planned (from `/add-framework--self-plan` document).
 
 ---
 
@@ -44,23 +44,23 @@ ALWAYS:
   ⛔ DO NOT USE: Write on framwork/.codeadd/
   ⛔ DO NOT USE: Edit on framwork/.codeadd/
   ⛔ DO NOT USE: Write on framwork/ provider directories
-  ⛔ DO NOT: Modify product layer artefacts — that is /add.build's job
+  ⛔ DO NOT: Modify product layer artefacts — that is /add-framework--build's job
   ⛔ DO NOT: Run node scripts/build.js — only modifies internal layer
 
 ---
 
 ## Operation Mode
 
-/add.self-build PLAN-[slug]                → Execute plan from add.self-plan
-/add.self-build [target] [description]     → Pontual change (no plan required)
+/add-framework--self-build [NNNN]-SELF-PLAN--[slug]                → Execute plan from add-framework--self-plan
+/add-framework--self-build [target] [description]     → Pontual change (no plan required)
 
 **Examples:**
-/add.self-build PLAN-refactor-gates
-/add.self-build add.sync "add retry logic for failed agent dispatches"
-/add.self-build building-commands "add section about agent memory patterns"
-/add.self-build CLAUDE.md "update pipeline section with new provider"
+/add-framework--self-build 0001-SELF-PLAN--refactor-gates
+/add-framework--self-build add-framework--sync "add retry logic for failed agent dispatches"
+/add-framework--self-build building-commands "add section about agent memory patterns"
+/add-framework--self-build CLAUDE.md "update pipeline section with new provider"
 
-**Valid targets:** command name (`add.plan`, `add.sync`), skill name (`building-commands`), agent name (`readme-analyzer`), script name (`build.js`), or `CLAUDE.md`.
+**Valid targets:** command name (`add-framework--plan`, `add-framework--sync`), skill name (`building-commands`), agent name (`readme-analyzer`), script name (`build.js`), or `CLAUDE.md`.
 
 ---
 
@@ -72,7 +72,7 @@ Read `CLAUDE.md` at project root.
 
 ### 1.2 If Plan specified
 
-Read `docs/self-plan/PLAN-[slug].md`.
+Read `docs/plans/[NNNN]-SELF-PLAN--[slug].md`.
 
 **Extract from plan:**
 - Artefacts to modify/create/remove
@@ -87,7 +87,7 @@ Read the target artefact. Collect:
 **Change:** [user's description]
 **Impact:** [quick assessment — which other artefacts depend on this?]
 
-**If change is complex (3+ artefacts, cross-cutting, or high risk):** Recommend `/add.self-plan` first.
+**If change is complex (3+ artefacts, cross-cutting, or high risk):** Recommend `/add-framework--self-plan` first.
 
 ---
 
@@ -203,7 +203,7 @@ ALWAYS:
 - Check dependencies when removing or renaming artefacts
 
 NEVER:
-- Write to framwork/.codeadd/ — that is /add.build's job
+- Write to framwork/.codeadd/ — that is /add-framework--build's job
 - Write to framwork/ provider directories
 - Run node scripts/build.js
 - Implement without loading context first

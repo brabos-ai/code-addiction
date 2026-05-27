@@ -2,7 +2,7 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Transforms rough ideas into fully-formed, final designs ready for `/add.plan`. Pairs discovery-first ecosystem context with conversational exploration. Outputs documented designs with zero open questions.
+Transforms rough ideas into fully-formed, final designs ready for `/add-framework--plan`. Pairs discovery-first ecosystem context with conversational exploration. Outputs documented designs with zero open questions.
 
 ---
 
@@ -16,7 +16,7 @@ STEP 2: Understand the idea            → ask clarifying questions (one at a ti
 STEP 3: Validate complexity            → detect if scope is simple or umbrella-worthy
 STEP 4: Explore & validate decisions   → conversational ideation until all questions answered
 STEP 5: Generate design document       → write final design (no open questions)
-STEP 6: Completion & next steps        → suggest /add.plan, display design path
+STEP 6: Completion & next steps        → suggest /add-framework--plan, display design path
 STEP 7: Continue Mode (alt entry)      → topic refinement from umbrella spec
 ```
 
@@ -30,7 +30,7 @@ IF USER ASKS OPEN-ENDED QUESTION DURING STEP 4:
 
 IF DESIGN DOCUMENT IS INCOMPLETE:
   ⛔ DO NOT WRITE TO docs/brainstorming/
-  ⛔ DO NOT SUGGEST /add.plan
+  ⛔ DO NOT SUGGEST /add-framework--plan
   ⛔ DO NOT MARK AS ready-for-implementation
   ✅ DO: Return to STEP 4, identify missing sections, continue exploration
 
@@ -193,7 +193,7 @@ Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
 ```markdown
 # Brainstorm: [Topic]
 
-> **Status:** final (ready for /add.plan)
+> **Status:** final (ready for /add-framework--plan)
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
 
@@ -252,7 +252,7 @@ Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
 
 ## Next Steps
 
-Run: `/add.plan [idea]`
+Run: `/add-framework--plan [idea]`
 ```
 
 **For umbrella specs:**
@@ -290,11 +290,11 @@ Bullet list of 3-5 key validated decisions from the design.
 
 ### 6.3 Next Step Guidance
 
-Display: "Ready for formal planning. Run: `/add.plan [idea]` to create a PRD and move toward implementation."
+Display: "Ready for formal planning. Run: `/add-framework--plan [idea]` to create a plan and move toward implementation."
 
 ### 6.4 Offer Refinement (If Umbrella)
 
-If umbrella spec: "You can now refine individual subtopics by running `/add.brainstorm vamos refinar [topic] -> ref: YYYY-MM-DD-[name]-umbrella.md`"
+If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DD-[name]-umbrella.md`"
 
 ---
 
@@ -328,7 +328,7 @@ ALWAYS:
 - Validate every section 100% before writing design doc
 - Write design documents in Markdown (100% English)
 - Store outputs in `docs/brainstorming/` only
-- Confirm no open questions before suggesting `/add.plan`
+- Confirm no open questions before suggesting `/add-framework--plan`
 - Use natural language invocation (no flags/modes in command itself)
 
 NEVER:
@@ -336,6 +336,6 @@ NEVER:
 - Create umbrella specs without explicit decomposition
 - Skip the bootstrap phase (ecosystem context first)
 - Write documents outside `docs/brainstorming/`
-- Proceed to `/add.build` or implementation (brainstorm's output is design only)
+- Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
 - Use informative language ("it's recommended") — use imperative ("CONFIRM", "VALIDATE")
 - Create design docs until all validation checkboxes pass

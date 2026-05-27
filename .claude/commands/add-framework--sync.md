@@ -4,7 +4,7 @@
 
 Computes diff since last release, regenerates the ecosystem map, dispatches 4 analyzer agents in parallel, and applies all documentation updates as a single writer. Leaves changes uncommitted for human review.
 
-**Run before `/add.release` to ensure all public documentation is consistent.**
+**Run before `/add-framework--release` to ensure all public documentation is consistent.**
 
 ---
 
@@ -151,7 +151,7 @@ Before writing: show diff of what changed (added/removed/changed entries). Then 
 
 Regenerate `ecosystem.md` at the repository root from STEP 1.3 scan data. Reuses the same scan — no additional filesystem read.
 
-This file is the human-facing integration map. Contains 3 Mermaid graphs only — orphaned-skill / gap analysis is intentionally NOT regenerated here (lives in `docs/prd/PRD0022-ecosystem-master-map.md`).
+This file is the human-facing integration map. Contains 3 Mermaid graphs only — orphaned-skill / gap analysis is intentionally NOT regenerated here (lives in `docs/plans/0022-PLAN--ecosystem-master-map.md`).
 
 **Three graphs to emit:**
 
@@ -298,7 +298,7 @@ No commit was made. Run `git diff` to review changes before committing.
 
 Log iteration:
 ```bash
-bash .codeadd/scripts/log-iteration.sh "enhance" "add.sync" "auto-update docs from LAST_TAG..HEAD diff" "ecosystem.md,README.md,web/src/pages/docs.astro,web/src/pages/index.astro,web/public/*.svg"
+bash .codeadd/scripts/log-iteration.sh "enhance" "add-framework--sync" "auto-update docs from LAST_TAG..HEAD diff" "ecosystem.md,README.md,web/src/pages/docs.astro,web/src/pages/index.astro,web/public/*.svg"
 ```
 
 ---
