@@ -129,8 +129,8 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.init | always | `/add.new` | Onboarding done, start first feature |
 | add.brainstorm | idea ready to formalize | `/add.new` | Capture as feature |
 | add.brainstorm | needs more exploration | continue brainstorm | Not ready to commit |
-| add.brainstorm | bug suspected, needs investigation | `/add.diagnose` | Route to structured triage |
-| add.brainstorm | clear bug discovered | `/add.hotfix` | Route to urgent fix |
+| add.brainstorm | bug suspected, needs investigation | `/add.diagnose` | Structured triage needed |
+| add.brainstorm | clear bug discovered | `/add.hotfix` | Urgent fix needed |
 | add.diagnose | route=hotfix | `/add.hotfix` | Confirmed bug requiring urgent fix |
 | add.diagnose | route=feature | `/add.new` | Confirmed functional gap |
 | add.diagnose | route=extend | `/add.new` or `/add.plan` | Extend existing feature — load prior context |

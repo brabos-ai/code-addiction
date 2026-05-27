@@ -160,7 +160,7 @@ For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DD-<slug>.md`). Date pre
   - **Candidate Directions** — per direction: one-line summary, pros, cons, open issues. Enough for a future plan to pick it up without re-discovering.
   - **Open Threads** — unresolved questions that must be decided before committing to a direction.
 - **Compression:** bullets only. Directions = `name — summary — pros/cons — open issues`. Voice follows Brainstorm Voice rules above.
-- **Hard bans:** committing to implementation, final decisions (those belong in plan), technical jargon that obscures the user-perspective framing.
+- **Hard bans:** committing to implementation, final decisions (those belong in plan), technical jargon that obscures the user-perspective framing, full class/method implementations or multi-line code blocks (a single illustrative one-shot snippet is allowed to anchor a direction).
 
 ## Anti-Patterns
 
