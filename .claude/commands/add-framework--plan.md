@@ -4,7 +4,7 @@
 
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.
 This is an **open-source project for the community** (beyond internal use). Every decision must consider: technical soundness, clarity for external contributors, and real value for framework consumers.
-Generates PRD (Product Requirements Document) for execution via `/add.build`.
+Generates plan document for execution via `/add-framework--build`.
 
 ---
 
@@ -53,20 +53,20 @@ IF IDEA IS BAD OR UNNECESSARY:
 
 ## ⛔⛔⛔ THIS COMMAND DOES NOT EXECUTE ⛔⛔⛔
 
-**add.plan ANALYZES and DOCUMENTS. Execution belongs to `/add.build`.**
+**add-framework--plan ANALYZES and DOCUMENTS. Execution belongs to `/add-framework--build`.**
 
-**ONLY PERMITTED OUTPUT:** `.md` file in `docs/prd/`
+**ONLY PERMITTED OUTPUT:** `.md` file in `docs/plans/`
 
 ```
 ⛔ DO NOT USE: Edit on ANY file
-⛔ DO NOT USE: Write outside docs/prd/
+⛔ DO NOT USE: Write outside docs/plans/
 ⛔ DO NOT USE: Bash for implementations, builds, tests, or scripts
 ⛔ DO NOT: Create branches, commits, or PRs
 ⛔ DO NOT: Modify source code, commands, skills, or scripts
-⛔ DO NOT: Implement ANYTHING discussed — that is /add.build's job
+⛔ DO NOT: Implement ANYTHING discussed — that is /add-framework--build's job
 
 IF TEMPTED TO IMPLEMENT:
-  → STOP. Write it in the PRD. User decides when/how to execute via /add.build.
+  → STOP. Write it in the plan. User decides when/how to execute via /add-framework--build.
 ```
 
 ---
@@ -74,9 +74,9 @@ IF TEMPTED TO IMPLEMENT:
 ## Operation Mode
 
 ```
-/add.plan [idea]        → New strategic analysis (STEP 0-5)
-/add.plan PRD[NNNN]     → Continue existing PRD
-/add.plan               → List PRDs in draft
+/add-framework--plan [idea]        → New strategic analysis (STEP 0-5)
+/add-framework--plan PLAN[NNNN]     → Continue existing plan
+/add-framework--plan               → List plans in draft
 ```
 
 ---
@@ -102,6 +102,16 @@ Ecosystem Map: ALWAYS load for relationship visibility between commands and skil
 Scan `framwork/` provider dirs to understand what exists: commands, skills, scripts, workflows.
 
 If context files don't exist → inform user and proceed with limited context.
+
+### 0.3 Dispatch Discovery Agent (SILENT)
+
+IF no idea in invocation args → skip this sub-step, proceed to STEP 1.
+
+IF an idea was provided in invocation args, dispatch `@framework-discovery-agent` with:
+- `topic`: [idea from invocation]
+- `scope`: `product`
+
+DO NOT show the agent's raw report verbatim. Use the report to inform the "What already exists" section of the STEP 3 questionnaire — surfaces related artefacts and prior plan decisions before the conversation opens.
 
 ---
 
@@ -144,9 +154,9 @@ Internal classification only — DO NOT produce artefacts.
 
 ### 2.2 Investigate Framework Ecosystem
 
-Search all provider dirs in `framwork/` for: similar commands/skills (to reuse or avoid duplication), established patterns, related previous decisions (PRDs in `docs/prd/`), gaps this idea could fill.
+IF STEP 0.3 was skipped (no idea provided in invocation) → fall back entirely to direct search in `framwork/` provider dirs for similar commands/skills, patterns, and related plans in `docs/plans/`.
 
-Use DISPATCH AGENT (read-only, light) if deep codebase analysis is needed.
+IF STEP 0.3 ran → use the discovery agent report as the baseline. Supplement with direct search only if the report shows gaps or the idea is novel territory.
 
 Internal analysis only — DO NOT produce artefacts.
 
@@ -192,24 +202,24 @@ Present a consultation with these sections (adapt contextually, do not copy rigi
 4. **Recommendations** — opportunities to include, risks identified with mitigations, alternatives considered.
 5. **Ecosystem Impact** — table of affected components and necessary actions.
 
-After user responds → summarize confirmed decisions, then ask to proceed to PRD generation.
+After user responds → summarize confirmed decisions, then ask to proceed to plan generation.
 
 ---
 
-## STEP 4: Generate PRD
+## STEP 4: Generate plan
 
 Confirm ALL decisions are taken before writing.
 
 ### Path and Sequential Numbering
 
-Find the next available PRD number in `docs/prd/`. If none exist, start at 0001.
+Find the next available plan number in `docs/plans/`. If none exist, start at 0001.
 
-**Path:** `docs/prd/PRD[NNNN]-[slug].md`
+**Path:** `docs/plans/[NNNN]-PLAN--[slug].md`
 
-### PRD Structure
+### Plan Structure
 
 ```markdown
-# PRD: [Name]
+# Plan: [Name]
 
 > **Status:** draft | approved | implemented
 > **Type:** command | skill | script | workflow
@@ -272,11 +282,11 @@ Find the next available PRD number in `docs/prd/`. If none exist, start at 0001.
 
 ## Next Steps
 
-/add.build PRD[NNNN]-[slug]
+/add-framework--build [NNNN]-PLAN--[slug]
 
 ---
 
-## PRD Changelog
+## Plan Changelog
 
 | Date | Change |
 |------|--------|
@@ -287,29 +297,29 @@ Find the next available PRD number in `docs/prd/`. If none exist, start at 0001.
 
 ## STEP 5: Completion [HARD STOP]
 
-Show: PRD file path, status (draft), and the two next-step commands (`/add.build PRD[NNNN]-[slug]` to implement, `/add.plan PRD[NNNN]` to revise).
+Show: plan file path, status (draft), and the two next-step commands (`/add-framework--build [NNNN]-PLAN--[slug]` to implement, `/add-framework--plan PLAN[NNNN]` to revise).
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
-add.plan ends here. Execution is `/add.build`'s responsibility.
+add-framework--plan ends here. Execution is `/add-framework--build`'s responsibility.
 
 ---
 
-## Continue Mode (existing PRD)
+## Continue Mode (existing plan)
 
-If `/add.plan PRD[NNNN]`:
+If `/add-framework--plan PLAN[NNNN]`:
 
-1. Load existing PRD
+1. Load existing plan
 2. Show summary of what was already decided
 3. Ask: "What do you want to adjust?"
-4. Update PRD with changelog entry
+4. Update plan with changelog entry
 
 ---
 
 ## List Mode
 
-If `/add.plan` without arguments:
+If `/add-framework--plan` without arguments:
 
-1. List PRDs in `docs/prd/`
+1. List plans in `docs/plans/`
 2. Show status of each
 3. Ask which to work on
 
@@ -324,14 +334,14 @@ ALWAYS:
 - Show clear trade-offs for each option
 - Identify ecosystem impact (which commands/skills are affected)
 - Consider community and framework consumers in every decision
-- Generate complete, actionable PRD with validated decisions
+- Generate complete, actionable plan with validated decisions
 - Connect proposals with existing ecosystem strategy
 
 NEVER:
 - Accept ideas without questioning
 - Ignore what already exists in the ecosystem
 - Skip impact analysis
-- Generate PRD without user validation of decisions
+- Generate plan without user validation of decisions
 - Be passive/executor — this is a consultant role
-- Write outside `docs/prd/`
-- Implement anything — that is `/add.build`'s job
+- Write outside `docs/plans/`
+- Implement anything — that is `/add-framework--build`'s job

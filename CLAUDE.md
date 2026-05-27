@@ -23,27 +23,43 @@ Development tools that build and maintain the framework itself. NOT distributed 
 
 | Type | Path |
 |------|------|
-| Commands | `.claude/commands/*.md` (`add.plan`, `add.build`, `add.self-plan`, `add.self-build`, `add.sync`, `add.release`) |
+| Commands | `.claude/commands/*.md` — namespace `add-framework--*`. Sub-prefixes: framework default (implicit), `self-` (internal infrastructure), `shared-` (usable in both contexts) |
 | Skills | `.claude/skills/` (`building-commands`, `add-framework-development`, `add-commit`) |
-| Agents | `.claude/agents/` (`readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`) |
+| Agents | `.claude/agents/` (`readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`). Agents with tool restrictions use full product-layer frontmatter (`tools`, `disallowedTools`, `memory`). Agents that inherit all tools use minimal frontmatter (`name`, `description`, `model` only). |
+| Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
+
+Internal commands (all under `add-framework--` namespace):
+
+| Command | Sub-prefix | Purpose |
+|---------|-----------|---------|
+| `add-framework--plan` | framework default | Strategic consultant; generates framework plans |
+| `add-framework--build` | framework default | Executes framework plans (operates on product layer) |
+| `add-framework--release` | framework default | Release manager (tags, GitHub releases, CLI) |
+| `add-framework--sync` | framework default | Regenerates ecosystem.md, README.md, web docs |
+| `add-framework--self-plan` | self | Plans changes to the internal layer itself |
+| `add-framework--self-build` | self | Executes self-plans (operates on `.claude/`, `scripts/`, `CLAUDE.md`) |
+| `add-framework--shared-brainstorm` | shared | Collaborative ideation; precedes either `--plan` or `--self-plan` |
+| `add-framework--shared-review` | shared | Audits a plan vs implementation via 4 parallel read-only subagents |
 
 ### Internal ↔ Product Cross-Reference
 
-Internal skills loaded by product-layer commands (modifying these affects both layers):
+Internal skills loaded by internal commands (these skills live in `.claude/skills/` and are referenced from the `add-framework--*` workflow):
 
-| Internal Skill | Used by Product Commands |
-|----------------|--------------------------|
-| `building-commands` | `add.build` (STEP 3), `add.self-build` (STEP 3) |
-| `add-framework-development` | `add.plan` (STEP 0), `add.build` (STEP 3) |
+| Internal Skill | Used by Internal Commands |
+|----------------|---------------------------|
+| `building-commands` | `add-framework--build` (STEP 3), `add-framework--self-build` (STEP 3) |
+| `add-framework-development` | `add-framework--plan` (STEP 0), `add-framework--build` (STEP 3) |
 
 Command scope by layer:
 
 | Command | Operates on |
 |---------|-------------|
-| `add.plan`, `add.build` | Product layer (`framwork/.codeadd/`) |
-| `add.self-plan`, `add.self-build` | Internal layer (`.claude/`, `scripts/`, `CLAUDE.md`) |
-| `add.sync` | Documentation (`README.md`, `web/`, SVGs) |
-| `add.release` | Git tags, GitHub releases, `cli/` |
+| `add-framework--plan`, `add-framework--build` | Product layer (`framwork/.codeadd/`) |
+| `add-framework--self-plan`, `add-framework--self-build` | Internal layer (`.claude/`, `scripts/`, `CLAUDE.md`) |
+| `add-framework--shared-brainstorm` | Either context (precedes plan or self-plan) |
+| `add-framework--shared-review` | Either context (audits a plan in `docs/plans/`) |
+| `add-framework--sync` | Documentation (`README.md`, `web/`, SVGs) |
+| `add-framework--release` | Git tags, GitHub releases, `cli/` |
 
 ## Pipeline
 
@@ -129,7 +145,7 @@ Current features:
 | `web/public/flowchart.svg` | Architecture flowchart |
 | `README.md` | Repository documentation |
 
-Documentation is auto-updated by `add.sync` before releases (dispatches 4 analyzer agents in parallel).
+Documentation is auto-updated by `add-framework--sync` before releases (dispatches 4 analyzer agents in parallel).
 
 ## CI/CD
 

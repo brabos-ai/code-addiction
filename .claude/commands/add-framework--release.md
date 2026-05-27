@@ -152,9 +152,9 @@ git diff --name-status [LATEST_TAG]..main
 
 Use file changes to enrich terse commit messages. Provider dirs (`framwork/.claude/`, `framwork/.agent/`, etc.) are generated — exclude from individual listing, summarize as one line if changed.
 
-### PRD scan
+### Plan scan
 
-If `docs/prd/` exists → include non-draft PRDs created/updated since `LATEST_TAG`.
+If `docs/plans/` exists → include non-draft plans created/updated since `LATEST_TAG`.
 
 ### Assemble release notes
 

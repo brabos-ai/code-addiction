@@ -2,7 +2,7 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Transforms rough ideas into fully-formed, final designs ready for `/add.plan`. Pairs discovery-first ecosystem context with conversational exploration. Outputs documented designs with zero open questions.
+Transforms rough ideas into fully-formed, final designs ready for `/add-framework--plan`. Pairs discovery-first ecosystem context with conversational exploration. Outputs documented designs with zero open questions.
 
 ---
 
@@ -11,14 +11,30 @@ Transforms rough ideas into fully-formed, final designs ready for `/add.plan`. P
 **STEPS IN ORDER:**
 
 ```
-STEP 1: Bootstrap ecosystem context    → detect mode, run script, show landscape
+STEP 1: Capture topic & discover context → detect mode, capture topic, dispatch agent
 STEP 2: Understand the idea            → ask clarifying questions (one at a time)
 STEP 3: Validate complexity            → detect if scope is simple or umbrella-worthy
 STEP 4: Explore & validate decisions   → conversational ideation until all questions answered
 STEP 5: Generate design document       → write final design (no open questions)
-STEP 6: Completion & next steps        → suggest /add.plan, display design path
-STEP 7: Continue Mode (alt entry)      → topic refinement from umbrella spec
+STEP 6: Completion & next steps [HARD STOP] → print suggested command as text, STOP
+STEP 7: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
 ```
+
+**⛔ HARD GATE — ROLE BOUNDARY:**
+
+`shared-brainstorm` DISCUSSES, EXPLORES, DOCUMENTS. It NEVER implements code AND NEVER invokes another command.
+
+```
+IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
+  ⛔ DO NOT USE: Skill tool (invoking any skill or command)
+  ⛔ DO NOT invoke: /add-framework--plan
+  ⛔ DO NOT invoke: /add-framework--self-plan
+  ⛔ DO NOT invoke: /add-framework--build
+  ⛔ DO NOT invoke: /add-framework--self-build
+  ✅ DO: At STEP 6 handoff, print the suggested command as plain text, then STOP
+```
+
+---
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
@@ -30,18 +46,19 @@ IF USER ASKS OPEN-ENDED QUESTION DURING STEP 4:
 
 IF DESIGN DOCUMENT IS INCOMPLETE:
   ⛔ DO NOT WRITE TO docs/brainstorming/
-  ⛔ DO NOT SUGGEST /add.plan
+  ⛔ DO NOT SUGGEST /add-framework--plan
   ⛔ DO NOT MARK AS ready-for-implementation
   ✅ DO: Return to STEP 4, identify missing sections, continue exploration
 
 IF USER WANTS TO REFINE A TOPIC FROM UMBRELLA:
   ⛔ DO NOT PROCEED WITHOUT UMBRELLA SPEC REFERENCE
   ✅ DO: Ask user to provide -> ref: YYYY-MM-DD-[name]-umbrella.md path
+
 ```
 
 ---
 
-## STEP 1: Bootstrap Ecosystem Context
+## STEP 1: Capture Topic & Discover Context
 
 ### 1.0 Detect Invocation Mode
 
@@ -54,29 +71,30 @@ Inspect the user's invocation string:
   - → JUMP to **STEP 7 (Continue Mode)**
 - ELSE (new idea) → proceed to STEP 1.1
 
-### 1.1 Execute Bootstrap Script
+### 1.1 Capture Topic
 
-```bash
-bash .claude/bootstrap-framework-context.sh
-```
+IF topic or idea is present in the invocation args → extract it directly and proceed to STEP 1.2.
 
-### 1.2 Display Landscape to User
+IF no topic in args → ask: "What do you want to explore?" Wait for the user's response before continuing.
 
-Present output in readable format:
-- Active skills (name + one-line description)
-- Active agents (listing)
-- Active commands (listing)
-- Active scripts (listing)
-- Key framework context snippets
-
-Say: "Here's the current ADD framework landscape. This context helps us avoid duplicating work and understand what's already possible."
-
-### 1.3 Capture Initial Idea
-
-Ask user to describe what they want to explore. Listen for:
+Listen for:
 - Raw idea / problem statement
 - Type hint (command / skill / script / workflow / product / architecture)
 - Scope signal (single artefact vs. multi-topic)
+
+### 1.2 Dispatch Framework Discovery Agent (SILENT)
+
+Dispatch `@framework-discovery-agent` with:
+- `topic`: captured topic from STEP 1.1
+- `scope`: `both`
+
+DO NOT show the agent's raw report verbatim to the user. Use the report internally as grounding context for the rest of the session.
+
+### 1.3 Present Targeted Context Summary
+
+Using the discovery report from STEP 1.2, present a brief (3–5 item) summary of relevant existing artefacts and prior decisions that relate to the user's topic.
+
+IF the agent returned "no strong matches" → say: "This looks like novel territory — no strong matches to existing artefacts or past plans."
 
 ---
 
@@ -159,10 +177,11 @@ For each section:
 
 ### 4.3 Discovery Integration
 
-Weave bootstrap output into conversation naturally:
-- When discussing scope: reference what already exists (from bootstrap)
+Weave the discovery agent report (from STEP 1.2) into the conversation naturally:
+- When discussing scope: reference ranked artefacts that already exist
 - When discussing impact: show which existing commands/skills relate
-- Prevent duplicative thinking by grounding ideas in discovered landscape
+- When discussing decisions: surface relevant prior decisions from ranked plans
+- Prevent duplicative thinking by grounding ideas in the discovered landscape
 
 ### 4.4 Validation Checkpoint
 
@@ -188,20 +207,22 @@ Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
 
 ### 5.2 Write Design Document
 
+**No-code rule:** Design docs must contain no full class/method implementations. One short illustrative snippet is allowed if it clarifies the design; describe all other behavior in prose.
+
 **For simple ideas:**
 
 ```markdown
 # Brainstorm: [Topic]
 
-> **Status:** final (ready for /add.plan)
+> **Status:** final (ready for /add-framework--plan or /add-framework--self-plan)
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
 
 ## Discovery
 
-[Summary of relevant skills, agents, commands, scripts from bootstrap]
-- [Skill name] — what it does, why it's relevant to this idea
-- [Agent/Command/Script] — brief relevance
+[Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
+- [Skill/Agent/Command] — what it does, why it's relevant to this idea
+- [Plan NNNN] — prior decision relevant to this design
 
 ## Context & Motivation
 
@@ -252,7 +273,8 @@ Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
 
 ## Next Steps
 
-Run: `/add.plan [idea]`
+[product layer idea] Run: `/add-framework--plan [idea]`
+[internal layer idea] Run: `/add-framework--self-plan [idea]`
 ```
 
 **For umbrella specs:**
@@ -278,7 +300,7 @@ Create file in `docs/brainstorming/` with content from 5.2. Do NOT commit — wa
 
 ---
 
-## STEP 6: Completion & Next Steps
+## STEP 6: Completion & Next Steps [HARD STOP]
 
 ### 6.1 Display Design Document Path
 
@@ -288,13 +310,24 @@ Show: "Design document created: `docs/brainstorming/YYYY-MM-DD-[topic].md`"
 
 Bullet list of 3-5 key validated decisions from the design.
 
-### 6.3 Next Step Guidance
+### 6.3 Next Step Guidance [HARD STOP]
 
-Display: "Ready for formal planning. Run: `/add.plan [idea]` to create a PRD and move toward implementation."
+Determine the target layer from STEP 2.2 "Framework impact" classification:
+- IF product layer (`framwork/.codeadd/`) → suggest `/add-framework--plan`
+- IF internal layer (`.claude/`, `scripts/`, `CLAUDE.md`) → suggest `/add-framework--self-plan`
+- IF layer is ambiguous → ask the user which layer, then print the correct command
+
+Print ONLY one of the following (matching the detected layer), then STOP:
+
+```
+[product layer]  Idea is ready to formalize. Run: /add-framework--plan [idea]
+[internal layer] Idea is ready to formalize. Run: /add-framework--self-plan [idea]
+(shared-brainstorm stops here — it does not run the next command for you.)
+```
 
 ### 6.4 Offer Refinement (If Umbrella)
 
-If umbrella spec: "You can now refine individual subtopics by running `/add.brainstorm vamos refinar [topic] -> ref: YYYY-MM-DD-[name]-umbrella.md`"
+If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DD-[name]-umbrella.md`"
 
 ---
 
@@ -306,9 +339,13 @@ Triggered when STEP 1.0 detects a refinement invocation.
 
 Read the referenced umbrella spec file at the path captured in STEP 1.0.
 
-### 7.2 Load Bootstrap Context
+### 7.2 Dispatch Framework Discovery Agent (SILENT)
 
-Re-run bootstrap to refresh ecosystem landscape.
+Dispatch `@framework-discovery-agent` with:
+- `topic`: subtopic extracted in STEP 7.1
+- `scope`: `both`
+
+Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
 ### 7.3 Start STEP 2 (Understand the Idea)
 
@@ -323,19 +360,24 @@ Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DD-[subtopic].md`.
 ## Rules
 
 ALWAYS:
-- Execute bootstrap script FIRST (user must see ecosystem landscape before ideating)
+- Capture topic BEFORE dispatching discovery agent (STEP 1.1 before 1.2)
+- Dispatch `@framework-discovery-agent` silently before any exploration
 - Ask one question at a time during exploration
 - Validate every section 100% before writing design doc
 - Write design documents in Markdown (100% English)
 - Store outputs in `docs/brainstorming/` only
-- Confirm no open questions before suggesting `/add.plan`
+- Confirm no open questions before printing the next-command suggestion
+- Route internal-layer ideas to `/add-framework--self-plan`, not `/add-framework--plan`
 - Use natural language invocation (no flags/modes in command itself)
 
 NEVER:
+- Show the raw discovery agent report verbatim to the user
+- Dump a full artefact landscape before the user has shared their topic
 - Leave open questions in design documents
 - Create umbrella specs without explicit decomposition
-- Skip the bootstrap phase (ecosystem context first)
 - Write documents outside `docs/brainstorming/`
-- Proceed to `/add.build` or implementation (brainstorm's output is design only)
+- Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
+- Invoke any command or skill via Skill tool or slash — handoff is text-only
+- Write full class/method implementations in design docs (one illustrative snippet allowed)
 - Use informative language ("it's recommended") — use imperative ("CONFIRM", "VALIDATE")
 - Create design docs until all validation checkboxes pass

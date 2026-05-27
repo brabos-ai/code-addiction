@@ -2,14 +2,14 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Plans structural changes to the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Generates documented plan for execution by `/add.self-build`.
+Plans structural changes to the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Generates documented plan for execution by `/add-framework--self-build`.
 
 ---
 
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
-STEP 0: Load context              → CLAUDE.md + affected artefacts
+STEP 0: Load context              → CLAUDE.md + affected artefacts + dispatch discovery agent
 STEP 1: Understand the demand     → classify type and scope
 STEP 2: Impact analysis           → map dependencies between internal artefacts
 STEP 3: Consultative questions    → [STOP] present analysis, wait for answers
@@ -28,8 +28,8 @@ ALWAYS:
   ⛔ DO NOT USE: Write on framwork/.codeadd/
   ⛔ DO NOT USE: Edit on framwork/.codeadd/
   ⛔ DO NOT USE: Write on framwork/ provider directories
-  ⛔ DO NOT: Implement any change — that is /add.self-build's job
-  ⛔ DO NOT: Write outside docs/self-plan/
+  ⛔ DO NOT: Implement any change — that is /add-framework--self-build's job
+  ⛔ DO NOT: Write outside docs/plans/
   ⛔ DO NOT: Create branches, commits, or PRs
 
 ---
@@ -54,6 +54,16 @@ Based on user's request, identify and read the internal artefacts that will be a
 
 Read `.claude/skills/add-framework-development/SKILL.md` for artefact type decision framework.
 
+### 0.4 Dispatch Discovery Agent (SILENT)
+
+IF no idea in invocation args → skip this sub-step, proceed to STEP 1.
+
+IF an idea was provided in invocation args, dispatch `@framework-discovery-agent` with:
+- `topic`: [idea from invocation]
+- `scope`: `internal`
+
+DO NOT show the agent's raw report verbatim. Use the report to inform the "Current State" and "Open Questions" sections of the STEP 3 consultation — surfaces related internal artefacts and prior self-plans before the conversation opens.
+
 ---
 
 ## STEP 1: Understand the Demand
@@ -62,7 +72,7 @@ Read `.claude/skills/add-framework-development/SKILL.md` for artefact type decis
 
 | Scope | Target | Example |
 |-------|--------|---------|
-| **COMMAND** | `.claude/commands/*.md` | "improve add.build gates" |
+| **COMMAND** | `.claude/commands/*.md` | "improve add-framework--build gates" |
 | **SKILL** | `.claude/skills/*/SKILL.md` | "add new skill for testing patterns" |
 | **AGENT** | `.claude/agents/*.md` | "create agent for code analysis" |
 | **SCRIPT** | `scripts/*` | "improve build.js error handling" |
@@ -118,9 +128,9 @@ After user responds → summarize confirmed decisions, then ask to proceed to pl
 
 ### 4.1 Path and Naming
 
-Find next available plan in `docs/self-plan/`. If directory doesn't exist, create it.
+Find next available plan in `docs/plans/`. If directory doesn't exist, create it.
 
-**Path:** `docs/self-plan/PLAN-[slug].md`
+**Path:** `docs/plans/[NNNN]-SELF-PLAN--[slug].md`
 
 ### 4.2 Plan Structure
 
@@ -150,7 +160,7 @@ Write the plan document:
 | [file] | modify/create/remove | [why] |
 
 ## Execution Order
-[Numbered steps for add.self-build to follow]
+[Numbered steps for add-framework--self-build to follow]
 
 ## Validated Decisions
 | Question | Decision | Rationale |
@@ -160,7 +170,7 @@ Write the plan document:
 ---
 
 ## Next Steps
-/add.self-build PLAN-[slug]
+/add-framework--self-build [NNNN]-SELF-PLAN--[slug]
 ```
 
 ---
@@ -168,17 +178,17 @@ Write the plan document:
 ## STEP 5: Completion [HARD STOP]
 
 Show: plan file path, status (draft), and two next-step commands:
-- `/add.self-build PLAN-[slug]` to implement
-- `/add.self-plan PLAN-[slug]` to revise
+- `/add-framework--self-build [NNNN]-SELF-PLAN--[slug]` to implement
+- `/add-framework--self-plan [NNNN]-SELF-PLAN--[slug]` to revise
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
-add.self-plan ends here. Execution is `/add.self-build`'s responsibility.
+add-framework--self-plan ends here. Execution is `/add-framework--self-build`'s responsibility.
 
 ---
 
 ## Continue Mode (existing plan)
 
-If `/add.self-plan PLAN-[slug]`:
+If `/add-framework--self-plan [NNNN]-SELF-PLAN--[slug]`:
 
 1. Load existing plan
 2. Show summary of what was already decided
@@ -189,9 +199,9 @@ If `/add.self-plan PLAN-[slug]`:
 
 ## List Mode
 
-If `/add.self-plan` without arguments:
+If `/add-framework--self-plan` without arguments:
 
-1. List plans in `docs/self-plan/`
+1. List plans in `docs/plans/`
 2. Show status of each
 3. Ask which to work on
 
@@ -208,8 +218,8 @@ ALWAYS:
 - Present analysis and wait for user validation before writing plan
 
 NEVER:
-- Write outside `docs/self-plan/`
-- Implement changes — that is `/add.self-build`'s job
+- Write outside `docs/plans/`
+- Implement changes — that is `/add-framework--self-build`'s job
 - Modify any file in `framwork/.codeadd/`
 - Skip impact analysis
 - Generate plan without user validation of decisions
