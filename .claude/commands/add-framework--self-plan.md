@@ -9,7 +9,7 @@ Plans structural changes to the internal development layer (`.claude/`, `scripts
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
-STEP 0: Load context              → CLAUDE.md + affected artefacts
+STEP 0: Load context              → CLAUDE.md + affected artefacts + dispatch discovery agent
 STEP 1: Understand the demand     → classify type and scope
 STEP 2: Impact analysis           → map dependencies between internal artefacts
 STEP 3: Consultative questions    → [STOP] present analysis, wait for answers
@@ -53,6 +53,16 @@ Based on user's request, identify and read the internal artefacts that will be a
 ### 0.3 Read Skills
 
 Read `.claude/skills/add-framework-development/SKILL.md` for artefact type decision framework.
+
+### 0.4 Dispatch Discovery Agent (SILENT)
+
+IF no idea in invocation args → skip this sub-step, proceed to STEP 1.
+
+IF an idea was provided in invocation args, dispatch `@framework-discovery-agent` with:
+- `topic`: [idea from invocation]
+- `scope`: `internal`
+
+DO NOT show the agent's raw report verbatim. Use the report to inform the "Current State" and "Open Questions" sections of the STEP 3 consultation — surfaces related internal artefacts and prior self-plans before the conversation opens.
 
 ---
 

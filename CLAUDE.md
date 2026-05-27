@@ -25,7 +25,7 @@ Development tools that build and maintain the framework itself. NOT distributed 
 |------|------|
 | Commands | `.claude/commands/*.md` — namespace `add-framework--*`. Sub-prefixes: framework default (implicit), `self-` (internal infrastructure), `shared-` (usable in both contexts) |
 | Skills | `.claude/skills/` (`building-commands`, `add-framework-development`, `add-commit`) |
-| Agents | `.claude/agents/` (`readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`) |
+| Agents | `.claude/agents/` (`readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`). Agents with tool restrictions use full product-layer frontmatter (`tools`, `disallowedTools`, `memory`). Agents that inherit all tools use minimal frontmatter (`name`, `description`, `model` only). |
 | Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
 
 Internal commands (all under `add-framework--` namespace):

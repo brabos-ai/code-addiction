@@ -103,6 +103,16 @@ Scan `framwork/` provider dirs to understand what exists: commands, skills, scri
 
 If context files don't exist → inform user and proceed with limited context.
 
+### 0.3 Dispatch Discovery Agent (SILENT)
+
+IF no idea in invocation args → skip this sub-step, proceed to STEP 1.
+
+IF an idea was provided in invocation args, dispatch `@framework-discovery-agent` with:
+- `topic`: [idea from invocation]
+- `scope`: `product`
+
+DO NOT show the agent's raw report verbatim. Use the report to inform the "What already exists" section of the STEP 3 questionnaire — surfaces related artefacts and prior plan decisions before the conversation opens.
+
 ---
 
 ## STEP 1: Understand the Demand
@@ -144,9 +154,9 @@ Internal classification only — DO NOT produce artefacts.
 
 ### 2.2 Investigate Framework Ecosystem
 
-Search all provider dirs in `framwork/` for: similar commands/skills (to reuse or avoid duplication), established patterns, related previous decisions (plans in `docs/plans/`), gaps this idea could fill.
+IF STEP 0.3 was skipped (no idea provided in invocation) → fall back entirely to direct search in `framwork/` provider dirs for similar commands/skills, patterns, and related plans in `docs/plans/`.
 
-Use DISPATCH AGENT (read-only, light) if deep codebase analysis is needed.
+IF STEP 0.3 ran → use the discovery agent report as the baseline. Supplement with direct search only if the report shows gaps or the idea is novel territory.
 
 Internal analysis only — DO NOT produce artefacts.
 

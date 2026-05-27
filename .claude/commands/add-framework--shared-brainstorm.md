@@ -17,7 +17,7 @@ STEP 3: Validate complexity            → detect if scope is simple or umbrella
 STEP 4: Explore & validate decisions   → conversational ideation until all questions answered
 STEP 5: Generate design document       → write final design (no open questions)
 STEP 6: Completion & next steps [HARD STOP] → print suggested command as text, STOP
-STEP 7: Continue Mode (alt entry)      → topic refinement from umbrella spec
+STEP 7: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
 ```
 
 **⛔ HARD GATE — ROLE BOUNDARY:**
@@ -177,10 +177,11 @@ For each section:
 
 ### 4.3 Discovery Integration
 
-Weave bootstrap output into conversation naturally:
-- When discussing scope: reference what already exists (from bootstrap)
+Weave the discovery agent report (from STEP 1.2) into the conversation naturally:
+- When discussing scope: reference ranked artefacts that already exist
 - When discussing impact: show which existing commands/skills relate
-- Prevent duplicative thinking by grounding ideas in discovered landscape
+- When discussing decisions: surface relevant prior decisions from ranked plans
+- Prevent duplicative thinking by grounding ideas in the discovered landscape
 
 ### 4.4 Validation Checkpoint
 
@@ -219,9 +220,9 @@ Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
 
 ## Discovery
 
-[Summary of relevant skills, agents, commands, scripts from bootstrap]
-- [Skill name] — what it does, why it's relevant to this idea
-- [Agent/Command/Script] — brief relevance
+[Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
+- [Skill/Agent/Command] — what it does, why it's relevant to this idea
+- [Plan NNNN] — prior decision relevant to this design
 
 ## Context & Motivation
 
@@ -338,9 +339,13 @@ Triggered when STEP 1.0 detects a refinement invocation.
 
 Read the referenced umbrella spec file at the path captured in STEP 1.0.
 
-### 7.2 Load Bootstrap Context
+### 7.2 Dispatch Framework Discovery Agent (SILENT)
 
-Re-run bootstrap to refresh ecosystem landscape.
+Dispatch `@framework-discovery-agent` with:
+- `topic`: subtopic extracted in STEP 7.1
+- `scope`: `both`
+
+Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
 ### 7.3 Start STEP 2 (Understand the Idea)
 
@@ -355,7 +360,8 @@ Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DD-[subtopic].md`.
 ## Rules
 
 ALWAYS:
-- Execute bootstrap script FIRST (user must see ecosystem landscape before ideating)
+- Capture topic BEFORE dispatching discovery agent (STEP 1.1 before 1.2)
+- Dispatch `@framework-discovery-agent` silently before any exploration
 - Ask one question at a time during exploration
 - Validate every section 100% before writing design doc
 - Write design documents in Markdown (100% English)
@@ -365,9 +371,10 @@ ALWAYS:
 - Use natural language invocation (no flags/modes in command itself)
 
 NEVER:
+- Show the raw discovery agent report verbatim to the user
+- Dump a full artefact landscape before the user has shared their topic
 - Leave open questions in design documents
 - Create umbrella specs without explicit decomposition
-- Skip the bootstrap phase (ecosystem context first)
 - Write documents outside `docs/brainstorming/`
 - Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
 - Invoke any command or skill via Skill tool or slash — handoff is text-only
