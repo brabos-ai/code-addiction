@@ -201,8 +201,8 @@ describe('provider-map.json capabilities', () => {
     }
   });
 
-  it('reduced to the 4 MCP-capable providers', () => {
-    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor']);
+  it('reduced to the 5 MCP-capable providers', () => {
+    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode']);
   });
 
   it('claude has all capabilities enabled', () => {

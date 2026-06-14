@@ -73,6 +73,7 @@ graph LR
   AD{{add-architecture-discovery}}
   CMS{{add-claude-md-style}}
   DE{{add-dev-environment-setup}}
+  DR{{add-doc-reviewer}}
 
   ADD --> ECO & DE
   INIT --> DS & PD
@@ -81,7 +82,7 @@ graph LR
   HOTFIX --> DS & ID & IV & UX & ECO
   AUDIT --> DS & HC & IV & ECO
   XRAY --> DS & AD & CMS & ECO
-  BRAINSTORM --> DS & ECO
+  BRAINSTORM --> DS & DR
   UX_CMD --> UX
 ```
 

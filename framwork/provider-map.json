@@ -35,6 +35,18 @@
         "https://antigravity.google/docs/skills"
       ]
     },
+    "opencode": {
+      "dir": "framwork/.opencode",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "docs": [
+        "https://opencode.ai/docs/plugins/",
+        "https://opencode.ai/docs/mcp-servers/",
+        "https://opencode.ai/docs/agents/",
+        "https://opencode.ai/docs/commands/"
+      ]
+    },
     "cursor": {
       "dir": "framwork/.cursor",
       "commands": "commands/{name}.md",
