@@ -184,6 +184,9 @@ Present questions with options and a RECOMMENDED default. Format: `### 1. [Quest
 
 **Execution rule:** SEQUENTIAL only. Wait for each subagent to complete before dispatching next.
 
+<!-- plugin:gitnexus:graph-plan -->
+<!-- /plugin:gitnexus:graph-plan -->
+
 **Output location:** Each subagent writes to: `docs/features/${FEATURE_ID}/plan-[area].md` (temporary; deleted after consolidation).
 
 ---
@@ -242,7 +245,7 @@ ${CROSS_SF_CONTEXT}
   ${SUBAGENT_BOOTSTRAP}
 
   ## Your Task
-  Create the database planning section. Search the codebase for similar entities and repositories to use as references.
+  Create the database planning section. Find similar entities and repositories in the codebase to use as references.
   When Cross-SF Context is present, ensure schema fields match the data structures expected by consumer SFs.
 
   ## Output Format
@@ -293,7 +296,7 @@ ${CROSS_SF_CONTEXT}
 
   ## Your Task
   Create the backend planning section covering: API, Commands, Events, Workers (if needed).
-  Search the codebase for similar modules to use as references.
+  Find similar modules in the codebase to use as references.
 
   ## Output Format
   Write to: docs/features/${FEATURE_ID}/plan-backend.md
@@ -360,7 +363,7 @@ ${CROSS_SF_CONTEXT}
   ## Your Task
   Create the frontend planning section.
   **If design.md exists:** Follow its layout specs, component inventory, and mobile-first requirements.
-  **If not:** Search the codebase for similar pages/components to use as references.
+  **If not:** Find similar pages/components in the codebase to use as references.
 
   ## Output Format
   Write to: docs/features/${FEATURE_ID}/plan-frontend.md
