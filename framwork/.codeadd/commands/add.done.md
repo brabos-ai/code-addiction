@@ -321,6 +321,9 @@ bash .codeadd/scripts/done.sh --merge
 **After merge, MUST suggest next command from ecosystem map:**
 READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.
 
+<!-- plugin:gitnexus:graph-reindex -->
+<!-- /plugin:gitnexus:graph-reindex -->
+
 ---
 
 ## Rules

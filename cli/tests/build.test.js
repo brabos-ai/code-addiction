@@ -7,7 +7,6 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const {
   stripHtmlComments,
-  escapeTomlString,
   resolveResourcePaths,
   lintResourcePaths,
   copyDirRecursive,
@@ -43,9 +42,9 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments(input)).toBe('Content');
   });
 
-  it('removes feature markers', () => {
+  it('preserves feature markers verbatim (functional injection points)', () => {
     const input = '<!-- feature:tdd:step -->injected content<!-- /feature:tdd:step -->';
-    expect(stripHtmlComments(input)).toBe('injected content');
+    expect(stripHtmlComments(input)).toBe(input);
   });
 
   it('collapses triple+ newlines to double', () => {
@@ -65,31 +64,23 @@ describe('stripHtmlComments', () => {
   it('returns empty string for comment-only content', () => {
     expect(stripHtmlComments('<!-- only comment -->')).toBe('');
   });
-});
 
-// ---------------------------------------------------------------------------
-// escapeTomlString
-// ---------------------------------------------------------------------------
-
-describe('escapeTomlString', () => {
-  it('escapes double quotes', () => {
-    expect(escapeTomlString('say "hello"')).toBe('say \\"hello\\"');
-  });
-
-  it('escapes backslashes', () => {
-    expect(escapeTomlString('path\\to\\file')).toBe('path\\\\to\\\\file');
-  });
-
-  it('escapes newlines and tabs', () => {
-    expect(escapeTomlString('line1\nline2\ttab')).toBe('line1\\nline2\\ttab');
-  });
-
-  it('handles combined special chars', () => {
-    expect(escapeTomlString('"a\\b\n"')).toBe('\\"a\\\\b\\n\\"');
-  });
-
-  it('passes through normal strings unchanged', () => {
-    expect(escapeTomlString('simple text')).toBe('simple text');
+  it('preserves feature: and plugin: injection markers (functional, not dev-notes)', () => {
+    const input = [
+      'a',
+      '<!-- feature:tdd:gate -->',
+      '<!-- /feature:tdd:gate -->',
+      '<!-- plugin:gitnexus:graph-map -->',
+      '<!-- /plugin:gitnexus:graph-map -->',
+      '<!-- internal dev note -->',
+      'b',
+    ].join('\n');
+    const out = stripHtmlComments(input);
+    expect(out).toContain('<!-- feature:tdd:gate -->');
+    expect(out).toContain('<!-- /feature:tdd:gate -->');
+    expect(out).toContain('<!-- plugin:gitnexus:graph-map -->');
+    expect(out).toContain('<!-- /plugin:gitnexus:graph-map -->');
+    expect(out).not.toContain('internal dev note');
   });
 });
 
@@ -107,13 +98,6 @@ describe('METADATA', () => {
     it('generates skill frontmatter (with name)', () => {
       const result = METADATA.mdFrontmatter({ name: 'add', description: 'Gateway', skillFormat: true });
       expect(result).toBe('---\nname: add\ndescription: Gateway\n---\n\n');
-    });
-  });
-
-  describe('tomlHeader', () => {
-    it('generates TOML comment with source path', () => {
-      const result = METADATA.tomlHeader({ name: 'add.plan' });
-      expect(result).toBe('# AUTO-GENERATED - source: framwork/.codeadd/commands/add.plan.md\n');
     });
   });
 });
@@ -134,48 +118,6 @@ describe('TRANSFORMERS', () => {
       expect(result).toBe('---\nname: add.test\ndescription: Test cmd\n---\n\n# Hello');
     });
   });
-
-  describe('toml', () => {
-    it('wraps content in TOML prompt heredoc', () => {
-      const result = TRANSFORMERS.toml('# My Command\n\nDo things.', {
-        name: 'add.plan',
-        description: 'Technical planning',
-      });
-
-      expect(result).toContain('description = "Technical planning"');
-      expect(result).toContain('prompt = """');
-      expect(result).toContain('# My Command\n\nDo things.');
-      expect(result).toContain('"""');
-    });
-
-    it('includes AUTO-GENERATED comment as TOML comment', () => {
-      const result = TRANSFORMERS.toml('content', { name: 'add', description: 'desc' });
-      expect(result).toMatch(/^# AUTO-GENERATED/);
-    });
-
-    it('escapes description with special chars', () => {
-      const result = TRANSFORMERS.toml('content', {
-        name: 'add',
-        description: 'Uses "quotes" and \\backslash',
-      });
-      expect(result).toContain('description = "Uses \\"quotes\\" and \\\\backslash"');
-    });
-
-    it('preserves multi-line markdown content inside heredoc', () => {
-      const content = '# Title\n\n## Section\n\n- item 1\n- item 2\n\n```js\ncode();\n```';
-      const result = TRANSFORMERS.toml(content, { name: 'add', description: 'test' });
-
-      const promptStart = result.indexOf('prompt = """\n') + 'prompt = """\n'.length;
-      const promptEnd = result.lastIndexOf('\n"""');
-      const extracted = result.slice(promptStart, promptEnd);
-      expect(extracted).toBe(content);
-    });
-
-    it('delegates header to METADATA.tomlHeader', () => {
-      const result = TRANSFORMERS.toml('content', { name: 'add.build', description: 'desc' });
-      expect(result).toContain(METADATA.tomlHeader({ name: 'add.build' }));
-    });
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -183,7 +125,7 @@ describe('TRANSFORMERS', () => {
 // ---------------------------------------------------------------------------
 
 describe('full pipeline', () => {
-  it('strips comments then transforms to TOML', () => {
+  it('strips dev-note comments but preserves feature markers, then transforms to MD', () => {
     const source = [
       '<!-- AUTO-GENERATED - DO NOT EDIT -->',
       '# Add Plan',
@@ -197,14 +139,17 @@ describe('full pipeline', () => {
     ].join('\n');
 
     const cleaned = stripHtmlComments(source);
-    expect(cleaned).not.toContain('<!--');
+    expect(cleaned).not.toContain('AUTO-GENERATED');
+    expect(cleaned).not.toContain('internal note');
+    expect(cleaned).toContain('<!-- feature:tdd:step-list -->'); // functional marker survives
     expect(cleaned).toContain('# Add Plan');
     expect(cleaned).toContain('Plan your features.');
 
-    const toml = TRANSFORMERS.toml(cleaned, { name: 'add.plan', description: 'Planning' });
-    expect(toml).toContain('description = "Planning"');
-    expect(toml).toContain('prompt = """');
-    expect(toml).not.toContain('<!--');
+    const md = TRANSFORMERS.md(cleaned, { name: 'add.plan', description: 'Planning', skillFormat: false });
+    expect(md).toContain('---\ndescription: Planning\n---');
+    expect(md).toContain('# Add Plan');
+    expect(md).toContain('<!-- feature:tdd:step-list -->');
+    expect(md).not.toContain('AUTO-GENERATED');
   });
 
   it('strips comments then transforms to MD', () => {
@@ -250,9 +195,14 @@ describe('provider-map.json capabilities', () => {
     }
   });
 
-  it('gemini uses toml nativeFormat', () => {
-    expect(map.providers.gemini.capabilities.nativeFormat).toBe('toml');
-    expect(map.providers.gemini.commands).toContain('.toml');
+  it('all providers use md nativeFormat', () => {
+    for (const [key, p] of Object.entries(map.providers)) {
+      expect(p.capabilities.nativeFormat, `provider ${key} should be md`).toBe('md');
+    }
+  });
+
+  it('reduced to the 4 MCP-capable providers', () => {
+    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor']);
   });
 
   it('claude has all capabilities enabled', () => {
@@ -424,10 +374,8 @@ describe('buildAgents', () => {
   });
 
   it('built files preserve original frontmatter (passthrough)', () => {
-    const sourcePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.codeadd', 'agents', 'reviewer-agent.md');
     const builtPath = path.join(builtDir, 'reviewer-agent.md');
 
-    const source = fs.readFileSync(sourcePath, 'utf8');
     const built = fs.readFileSync(builtPath, 'utf8');
 
     // Passthrough means content is identical (only HTML comments stripped)
@@ -439,8 +387,8 @@ describe('buildAgents', () => {
   });
 
   it('does not build agents for providers without agents pattern', () => {
-    const geminiAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.gemini', 'agents');
-    expect(fs.existsSync(geminiAgentsDir)).toBe(false);
+    const cursorAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'agents');
+    expect(fs.existsSync(cursorAgentsDir)).toBe(false);
   });
 
   it('handles missing agents section gracefully', () => {
@@ -461,17 +409,17 @@ describe('resolveResourcePaths', () => {
     commands: 'commands/{name}.md',
     skills: 'skills/{name}/SKILL.md',
   };
-  const geminiProvider = {
-    dir: 'framwork/.gemini',
-    commands: 'commands/{name}.toml',
+  const cursorProvider = {
+    dir: 'framwork/.cursor',
+    commands: 'commands/{name}.md',
     skills: 'skills/{name}/SKILL.md',
   };
 
   it('resolves {{cmd:NAME}} to provider-specific command path', () => {
     expect(resolveResourcePaths('See {{cmd:add.plan}}', claudeProvider))
       .toBe('See .claude/commands/add.plan.md');
-    expect(resolveResourcePaths('See {{cmd:add.plan}}', geminiProvider))
-      .toBe('See .gemini/commands/add.plan.toml');
+    expect(resolveResourcePaths('See {{cmd:add.plan}}', cursorProvider))
+      .toBe('See .cursor/commands/add.plan.md');
   });
 
   it('resolves {{skill:NAME/FILE}} to provider-specific skill path', () => {
@@ -487,7 +435,7 @@ describe('resolveResourcePaths', () => {
   it('resolves {{addpath:X}} to literal .codeadd/X regardless of provider', () => {
     expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', claudeProvider))
       .toBe('.codeadd/skills/project-patterns/backend.md');
-    expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', geminiProvider))
+    expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', cursorProvider))
       .toBe('.codeadd/skills/project-patterns/backend.md');
     expect(resolveResourcePaths('{{addpath:manifest.json}}', claudeProvider))
       .toBe('.codeadd/manifest.json');
@@ -664,31 +612,31 @@ describe('copyDirRecursive', () => {
 describe('skill sibling files integration', () => {
   it('add-architecture-discovery analyzer siblings have {{addpath:}} resolved literally', () => {
     const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
-    const geminiPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.gemini', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
+    const cursorPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
 
     const claudeOut = fs.readFileSync(claudePath, 'utf8');
-    const geminiOut = fs.readFileSync(geminiPath, 'utf8');
+    const cursorOut = fs.readFileSync(cursorPath, 'utf8');
 
     // {{addpath:}} resolves identically across providers
     expect(claudeOut).toContain('.codeadd/skills/project-patterns/backend.md');
-    expect(geminiOut).toContain('.codeadd/skills/project-patterns/backend.md');
+    expect(cursorOut).toContain('.codeadd/skills/project-patterns/backend.md');
 
     // No leaked variable placeholders
     expect(claudeOut).not.toContain('{{addpath:');
-    expect(geminiOut).not.toContain('{{addpath:');
+    expect(cursorOut).not.toContain('{{addpath:');
   });
 
   it('add-health-check documentation-analyzer has {{skill:}} resolved per provider', () => {
     const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add-health-check', 'documentation-analyzer.md');
-    const geminiPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.gemini', 'skills', 'add-health-check', 'documentation-analyzer.md');
+    const cursorPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'skills', 'add-health-check', 'documentation-analyzer.md');
 
     const claudeOut = fs.readFileSync(claudePath, 'utf8');
-    const geminiOut = fs.readFileSync(geminiPath, 'utf8');
+    const cursorOut = fs.readFileSync(cursorPath, 'utf8');
 
     expect(claudeOut).toContain('.claude/skills/add-claude-md-style/SKILL.md');
-    expect(geminiOut).toContain('.gemini/skills/add-claude-md-style/SKILL.md');
+    expect(cursorOut).toContain('.cursor/skills/add-claude-md-style/SKILL.md');
 
     expect(claudeOut).not.toContain('{{skill:');
-    expect(geminiOut).not.toContain('{{skill:');
+    expect(cursorOut).not.toContain('{{skill:');
   });
 });

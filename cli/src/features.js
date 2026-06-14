@@ -1,9 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import { intro, outro, log } from '@clack/prompts';
 import { promptFeatures } from './prompt.js';
 import { resolveSelected } from './providers.js';
+import {
+  parseFragmentSections,
+  injectSections,
+  removeSections,
+  readManifest,
+  saveManifest,
+  recalculateHashes,
+} from './injection-core.js';
 
 /**
  * Feature registry — each optional feature that can be toggled.
@@ -20,102 +27,6 @@ export const FEATURES = {
     commands: ['add.build', 'add.review'],
   },
 };
-
-/**
- * Read .codeadd/manifest.json
- * @param {string} cwd
- * @returns {object | null}
- */
-function readManifest(cwd) {
-  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
-  if (!fs.existsSync(manifestPath)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Write manifest back to disk.
- * @param {string} cwd
- * @param {object} manifest
- */
-function saveManifest(cwd, manifest) {
-  const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
-}
-
-/**
- * Calculate SHA-256 hash of a file.
- * @param {string} filePath
- * @returns {string | null}
- */
-function calculateHash(filePath) {
-  if (!fs.existsSync(filePath)) return null;
-  const content = fs.readFileSync(filePath);
-  return crypto.createHash('sha256').update(content).digest('hex');
-}
-
-/**
- * Parse fragment file into sections.
- * Sections are delimited by <!-- section:NAME --> and <!-- /section:NAME --> markers.
- * @param {string} fragmentContent
- * @returns {Map<string, string>} sectionName → content
- */
-function parseFragmentSections(fragmentContent) {
-  const sections = new Map();
-  const regex = /<!-- section:(\S+) -->\n([\s\S]*?)<!-- \/section:\1 -->/g;
-  let match;
-  while ((match = regex.exec(fragmentContent)) !== null) {
-    sections.set(match[1], match[2]);
-  }
-  return sections;
-}
-
-/**
- * Inject fragment sections into command markers.
- * Markers: <!-- feature:FEATURE:SECTION --> ... <!-- /feature:FEATURE:SECTION -->
- * @param {string} commandContent
- * @param {string} featureName
- * @param {Map<string, string>} sections
- * @returns {string}
- */
-function injectSections(commandContent, featureName, sections) {
-  let result = commandContent;
-  for (const [sectionName, sectionContent] of sections) {
-    const marker = `feature:${featureName}:${sectionName}`;
-    const regex = new RegExp(
-      `(<!-- ${escapeRegex(marker)} -->)\\n?[\\s\\S]*?(<!-- \\/${escapeRegex(marker)} -->)`,
-      'g'
-    );
-    result = result.replace(regex, `$1\n${sectionContent}$2`);
-  }
-  return result;
-}
-
-/**
- * Remove content between feature markers (keep markers empty).
- * @param {string} commandContent
- * @param {string} featureName
- * @returns {string}
- */
-function removeSections(commandContent, featureName) {
-  const regex = new RegExp(
-    `(<!-- feature:${escapeRegex(featureName)}:\\S+ -->)\\n?[\\s\\S]*?(<!-- \\/feature:${escapeRegex(featureName)}:\\S+ -->)`,
-    'g'
-  );
-  return commandContent.replace(regex, '$1\n$2');
-}
-
-/**
- * Escape string for use in regex.
- * @param {string} str
- * @returns {string}
- */
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 /**
  * Get all installed command file paths that have markers for a feature.
@@ -172,21 +83,6 @@ function getFragments(cwd, featureName) {
 }
 
 /**
- * Recalculate hashes for modified command files in manifest.
- * @param {string} cwd
- * @param {object} manifest
- * @param {string[]} modifiedPaths absolute paths of modified files
- */
-function recalculateHashes(cwd, manifest, modifiedPaths) {
-  if (!manifest.hashes) manifest.hashes = {};
-  for (const absPath of modifiedPaths) {
-    const relPath = path.relative(cwd, absPath).replace(/\\/g, '/');
-    const hash = calculateHash(absPath);
-    if (hash) manifest.hashes[relPath] = hash;
-  }
-}
-
-/**
  * Enable a feature — inject fragment content into command markers.
  * @param {string} cwd
  * @param {string} featureName
@@ -203,7 +99,7 @@ export function enableFeature(cwd, featureName) {
 
     for (const cmdPath of commandFiles) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = injectSections(original, featureName, sections);
+      const updated = injectSections(original, 'feature', featureName, sections);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
         modifiedPaths.push(cmdPath);
@@ -234,7 +130,7 @@ export function disableFeature(cwd, featureName) {
 
   for (const cmdPath of commandFiles) {
     const original = fs.readFileSync(cmdPath, 'utf8');
-    const updated = removeSections(original, featureName);
+    const updated = removeSections(original, 'feature', featureName);
     if (updated !== original) {
       fs.writeFileSync(cmdPath, updated, 'utf8');
       modifiedPaths.push(cmdPath);

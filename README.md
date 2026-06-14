@@ -47,6 +47,15 @@ npx codeadd uninstall
 # list optional features
 npx codeadd features list
 
+# list available plugins
+npx codeadd plugins list
+
+# enable a plugin (e.g., gitnexus)
+npx codeadd plugins enable gitnexus
+
+# disable a plugin
+npx codeadd plugins disable gitnexus
+
 # show installation configuration
 npx codeadd config show
 ```
@@ -128,6 +137,7 @@ ANALYSIS  (understand existing codebase)
 
 - `cli/`: installer CLI published as `codeadd`
 - `framework/`: framework payload copied into target projects by the installer
+  - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
 
 ## Compatibility
 

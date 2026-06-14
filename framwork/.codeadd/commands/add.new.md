@@ -101,6 +101,9 @@ Evaluate using agent outputs:
 
 Generate concrete questionnaire from data (not generic).
 
+<!-- plugin:gitnexus:graph-map -->
+<!-- /plugin:gitnexus:graph-map -->
+
 ---
 
 ## STEP 4: Present Consultant Questionnaire [STOP]

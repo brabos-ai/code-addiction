@@ -7,6 +7,7 @@ import { doctor } from '../src/doctor.js';
 import { validate } from '../src/validator.js';
 import { config } from '../src/config.js';
 import { features } from '../src/features.js';
+import { plugins } from '../src/plugins.js';
 
 const subcommand = process.argv[2];
 const args = process.argv.slice(3);
@@ -48,6 +49,9 @@ Commands:
   features list                List optional features and their state
   features enable <name>       Enable a feature (inject into commands)
   features disable <name>      Disable a feature (remove from commands)
+  plugins list                 List external-tool plugins and their state
+  plugins enable <name>        Enable a plugin (validate tool, inject + activate skills)
+  plugins disable <name>       Disable a plugin (remove injections + skills)
   config show                  Display installation configuration
   config show --verbose         Display config + check for updates
 
@@ -89,6 +93,8 @@ async function main() {
       await validate(cwd, repair);
     } else if (subcommand === 'features') {
       await features(cwd, args);
+    } else if (subcommand === 'plugins') {
+      await plugins(cwd, args);
     } else if (subcommand === 'config') {
       const subCmd = args[0];
       if (subCmd === 'show') {

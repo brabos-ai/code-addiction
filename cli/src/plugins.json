@@ -1,0 +1,25 @@
+{
+  "$schema-doc": {
+    "description": "Plugin catalog — external-tool integrations. codeadd owns utilization, never installation. Each entry keyed by plugin name. Schema per entry:",
+    "fields": {
+      "type": "string — 'mcp' | 'script' | 'http'. v1 implements only 'mcp'.",
+      "description": "string — one-line summary shown in `plugins list`.",
+      "detect": "string — shell probe; exit-0 means the tool is present (hard gate).",
+      "homepage": "string — tool's homepage, printed on validation failure.",
+      "installHint": "string — how the user installs the tool themselves.",
+      "postEnableHint": "string — printed after a successful enable (setup/index steps).",
+      "injects": "string[] — command names that receive fragment injection.",
+      "skills": "string[] — plugin-bound skill names copied into each provider on enable."
+    }
+  },
+  "gitnexus": {
+    "type": "mcp",
+    "description": "Code knowledge-graph navigation (calls, refs, blast-radius) via MCP",
+    "detect": "gitnexus --version",
+    "homepage": "https://github.com/abhigyanpatwari/GitNexus",
+    "installHint": "Install globally: npm install -g gitnexus",
+    "postEnableHint": "gitnexus enabled. Make the graph usable:\n  1) gitnexus setup     # wire MCP (once)\n  2) gitnexus analyze   # index this repo (from repo root)\nRe-run analyze after large changes. Docs: https://github.com/abhigyanpatwari/GitNexus",
+    "injects": ["add.new", "add.diagnose", "add.hotfix", "add.done"],
+    "skills": ["add-gitnexus"]
+  }
+}
