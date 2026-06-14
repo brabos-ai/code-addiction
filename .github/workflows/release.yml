@@ -85,6 +85,9 @@ jobs:
         if: steps.cli_changes.outputs.changed == 'true'
         run: npm test
 
+      # Runs AFTER "Build framework" (node scripts/build.js) above, so the
+      # gitignored, build-emitted .codeadd/injection-points.json is fresh in the
+      # tree before it is packaged here. Do not reorder these steps.
       - name: Package framework zip
         working-directory: .
         run: |
@@ -93,7 +96,10 @@ jobs:
           for subdir in .codeadd/scripts .codeadd/fragments .codeadd/templates .codeadd/plugins .agent .agents .augment .bob .claude .cursor .gemini .github .kilocode .kiro .opencode .qwen .roo .shai .windsurf; do
             [ -d "framwork/$subdir" ] && DIRS="$DIRS framwork/$subdir"
           done
-          zip -r "code-addiction-${TAG}.zip" $DIRS
+          # Single-file build outputs (not subdirs) packaged explicitly.
+          FILES=""
+          [ -f "framwork/.codeadd/injection-points.json" ] && FILES="$FILES framwork/.codeadd/injection-points.json"
+          zip -r "code-addiction-${TAG}.zip" $DIRS $FILES
           echo "ASSET_NAME=code-addiction-${TAG}.zip" >> "$GITHUB_ENV"
 
       - name: Create GitHub Release and upload asset

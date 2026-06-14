@@ -42,6 +42,7 @@ import { install } from '../src/installer.js';
 function buildInstallZip() {
   const zip = new AdmZip();
   zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
+  zip.addFile(`framwork/.codeadd/injection-points.json`, Buffer.from('{"version":1,"points":[]}\n'));
   zip.addFile(`framwork/.agents/skills/add/SKILL.md`, Buffer.from('---\nname: add\n---\n'));
   zip.addFile(`framwork/.agents/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
   return zip.toBuffer();
@@ -79,6 +80,10 @@ describe('install command e2e', () => {
 
     const sh = fs.readFileSync(path.join(tmpDir, '.codeadd', 'scripts', 'health.sh'), 'utf8');
     expect(sh).toBe('echo ok\n');
+
+    // The build-emitted injection sidecar must land in the installed project so
+    // post-install feature/plugin injection can resolve anchors.
+    expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'injection-points.json'))).toBe(true);
 
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')

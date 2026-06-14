@@ -267,10 +267,12 @@ memory: project
 
 Plugins (see CLAUDE.md → Plugin System) can inject capability into agent definitions, not just commands — carrying an external-tool capability across the command→subagent dispatch boundary (agents never see a command's injected fragment). To make an agent a plugin injection target:
 
-- Add a `<!-- plugin:PLUGIN:SECTION -->` / `<!-- /plugin:PLUGIN:SECTION -->` marker pair to the agent source body (markers survive build via `stripHtmlComments`, which preserves `plugin:`/`feature:` comments).
+- Add a `<!-- plugin:PLUGIN:SECTION -->` / `<!-- /plugin:PLUGIN:SECTION -->` marker pair to the agent source body. Markers are **stripped at build** — `extractInjectionPoints()` records each as a content anchor in `framwork/.codeadd/injection-points.json`; the built agent files ship marker-free and injection is anchored to adjacent prose post-install.
+- Place the marker **on its own line** (an inline marker shown inside prose/code as documentation is ignored — only standalone-line markers are injection points), and ensure the line directly above it is plain text, not a `{{cmd:}}`/`{{skill:}}`/`{{addpath:}}` variable (the build walks past variable lines and fails loud if no variable-free adjacent line exists).
 - Author a per-agent fragment at `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` whose `<!-- section:SECTION -->` matches the marker.
 - Declare the target in the catalog entry's `agents` array (`{ agent, sections }`).
-- **Exclusion is by omission:** an agent with a tool allowlist that blocks MCP (e.g. `tools: Glob, Read`), or whose purpose is not the code graph, simply carries no marker and is never injected. Never add an injection marker to an MCP-blocked agent.
+- **Exclusion is by omission:** an agent with a tool allowlist that blocks MCP (e.g. `tools: Glob, Read`), or whose purpose is not the code graph, simply carries no marker — so the build emits no sidecar entry for it and it is never injected. Never add an injection marker to an MCP-blocked agent.
+- After adding/moving a marker, **rebuild** (`node scripts/build.js`) to regenerate the sidecar.
 
 Only providers with an `agentsSubdir` (currently Claude) receive agent injection.
 
@@ -445,11 +447,12 @@ Not all providers support all features. When a command uses a capability, it MUS
 2. **For each resource** (command/skill/agent):
    a. **Read source** from `.codeadd/`
    b. **`lintResourcePaths()`** — warns if raw `.codeadd/commands/` or `.codeadd/skills/` paths found (should use `{{cmd:}}` / `{{skill:}}`)
-   c. **`stripHtmlComments()`** — removes `<!-- -->` comments + collapses blank lines (token savings)
-   d. **`resolveResourcePaths()`** — replaces `{{cmd:NAME}}` and `{{skill:NAME/FILE}}` for each provider
-   e. **Transform** — applies `md` or `toml` transformer based on provider's `nativeFormat`
-   f. **Write** — outputs to provider directory
-   g. **`postWrite`** — for skills: copies extra subdocs (reference files, scripts, etc.)
+   c. **`extractInjectionPoints()`** — for commands/agents: records each `feature:`/`plugin:` marker as a content anchor into `framwork/.codeadd/injection-points.json` (then the markers are stripped)
+   d. **`stripHtmlComments()`** — removes ALL `<!-- -->` comments (incl. injection markers) + collapses blank lines (token savings)
+   e. **`resolveResourcePaths()`** — replaces `{{cmd:NAME}}` and `{{skill:NAME/FILE}}` for each provider
+   f. **Transform** — applies `md` or `toml` transformer based on provider's `nativeFormat`
+   g. **Write** — outputs to provider directory
+   h. **`postWrite`** — for skills: copies extra subdocs (reference files, scripts, etc.)
 
 ### Registering New Artefacts
 

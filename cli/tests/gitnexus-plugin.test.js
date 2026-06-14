@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseFragmentSections } from '../src/injection-core.js';
+
+const require = createRequire(import.meta.url);
+const { extractInjectionPoints } = require('../../scripts/build.js');
 
 /**
  * Structural consistency of the gitnexus plugin (Phase 2 + 3 of plan 0032).
@@ -117,6 +121,32 @@ describe('gitnexus agent injection targets', () => {
       const agentSrc = fs.readFileSync(path.join(AGENTS_DIR, `${excluded}.md`), 'utf8');
       expect(agentSrc, `${excluded} must not be injected`).not.toContain('plugin:gitnexus:');
       expect(fs.existsSync(path.join(PLUGIN_DIR, 'fragments', 'agents', `${excluded}.md`))).toBe(false);
+    });
+  }
+});
+
+describe('gitnexus marker-free build (sidecar carries the anchors)', () => {
+  const entry = catalogEntry();
+
+  for (const t of entry?.agents ?? []) {
+    it(`agent ${t.agent} source resolves to plugin:gitnexus injection points with variable-free anchors`, () => {
+      const src = fs.readFileSync(path.join(AGENTS_DIR, `${t.agent}.md`), 'utf8');
+      const pts = extractInjectionPoints(src, t.agent, 'agent').filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
+      expect(pts.map((p) => p.section).sort()).toEqual([...t.sections].sort());
+      for (const p of pts) {
+        expect(p.resource).toEqual({ name: t.agent, kind: 'agent' });
+        expect(p.anchor.text).not.toContain('<!--'); // anchor is prose, never a marker
+        expect(p.anchor.text).not.toMatch(/\{\{(?:cmd|skill|addpath):/); // no per-provider variable
+      }
+    });
+  }
+
+  for (const cmd of entry?.injects ?? []) {
+    it(`command ${cmd} source resolves to plugin:gitnexus injection points`, () => {
+      const src = fs.readFileSync(path.join(COMMANDS_DIR, `${cmd}.md`), 'utf8');
+      const pts = extractInjectionPoints(src, cmd, 'command').filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
+      expect(pts.length).toBeGreaterThan(0);
+      for (const p of pts) expect(p.resource).toEqual({ name: cmd, kind: 'command' });
     });
   }
 });

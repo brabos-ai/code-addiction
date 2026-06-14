@@ -90,7 +90,7 @@ Three strategies with different behaviors:
 | Skills | YAML frontmatter (name + description) | MD or TOML | Copies extra files (subdirs, siblings) |
 | Agents | Passthrough (keeps original frontmatter) | None | — |
 
-Key mechanics: HTML comments (`<!-- -->`) are stripped at build time (use for source-only dev notes) — **except** `feature:`/`plugin:` injection markers, which are preserved so post-install injection can target the built provider files. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. All providers use markdown (the build is markdown-only).
+Key mechanics: HTML comments (`<!-- -->`) are stripped at build time uniformly (use for source-only dev notes), **including** `feature:`/`plugin:` injection markers. Those markers are not shipped — `extractInjectionPoints()` consumes each one into a build-emitted **content-anchored sidecar** (`framwork/.codeadd/injection-points.json`) keyed by adjacent prose text, and the built provider files ship **marker-free**. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. All providers use markdown (the build is markdown-only).
 
 ### Resource Path Variables (build-time)
 
@@ -114,9 +114,14 @@ Optional features inject content into commands post-install (not at build time),
 |-----------|------|
 | Fragment source | `framwork/.codeadd/fragments/{feature}/{command}.md` |
 | Feature registry | `cli/src/features.js` |
+| Injection sidecar | `framwork/.codeadd/injection-points.json` (build-emitted; installs to `.codeadd/`) |
 | Manifest state | `.codeadd/manifest.json` → `features` field |
 
-Fragments use `<!-- section:NAME -->` markers. Commands use `<!-- feature:FEATURE:SECTION -->` markers for injection points.
+Fragments use `<!-- section:NAME -->` markers. Command **source** carries `<!-- feature:FEATURE:SECTION -->` injection markers, but those are **stripped at build** — the build records each one as a **content anchor** in `injection-points.json`. Post-install, `features.js` locates the anchor by adjacent prose text and inserts the fragment section there (no markers in installed files); disable re-derives the exact block from the fragment and removes it (byte-identical round-trip). A rewritten anchor line fails loud (no silent no-op).
+
+Each sidecar `anchor` is `{ text, ordinal, position, next }`: `text` + `ordinal` (occurrence index) pin the line; `position` is `after` (default) or `before`; `next` is an optional drift hint — the trimmed line that should still exist *below* the anchor (it must remain present somewhere below, not necessarily immediately, so a sibling feature/plugin injecting at the **same** anchor is not mistaken for prose drift). When two enabled features/plugins share one anchor on a file, each enables independently and both blocks land after the anchor; each disable removes only its own re-derived block.
+
+**Pre-sidecar installs:** a project installed before this mechanism still carries old `<!-- feature/plugin -->` marker-wrapped blocks. `loadInjectionPoints` returns `[]` when the sidecar is absent, so enable/disable become safe no-ops — but `disable` cannot strip those old blocks. Re-install (or `codeadd update`) to ship the marker-free files + sidecar.
 
 Current features:
 
@@ -139,11 +144,13 @@ A first-class `plugin` concept (distinct from `features`) integrates **external 
 | Shared injection helpers | `cli/src/injection-core.js` (imported by `features.js` + `plugins.js`) |
 | Manifest state | `.codeadd/manifest.json` → `plugins` field |
 
-Fragments use `<!-- section:NAME -->` markers. Commands **and agents** use `<!-- plugin:PLUGIN:SECTION -->` injection markers (parallel to the `feature:` namespace). Catalog entry schema: `type` (`mcp`\|`script`\|`http`; only `mcp` in v1), `description`, `detect`, `homepage`, `installHint`, `postEnableHint`, `injects` (array), `skills` (array), `agents` (array of `{ agent, sections }`).
+Fragments use `<!-- section:NAME -->` markers. Command **and agent** source carry `<!-- plugin:PLUGIN:SECTION -->` injection markers (parallel to the `feature:` namespace); like features, these are stripped at build into the content-anchored sidecar and injected post-install by text-anchor — installed files are marker-free. Catalog entry schema: `type` (`mcp`\|`script`\|`http`; only `mcp` in v1), `description`, `detect`, `homepage`, `installHint`, `postEnableHint`, `injects` (array), `skills` (array), `agents` (array of `{ agent, sections }`).
 
-**Agent injection** carries plugin capability across the command→subagent dispatch boundary: a per-agent fragment travels with the agent into *every* command that dispatches it (no per-command duplication). Agent injection only targets providers with an `agentsSubdir` (currently Claude). Exclusion is enforced by *not* placing a marker in an agent's source — MCP-blocked allowlist agents (e.g. `feature-history-agent`, `git-history-agent`) and non-code-graph agents (e.g. `doc-reviewer-agent`) carry no marker and are never injected. `injectAgentFragments` / `removeAgentFragments` in `injection-core.js` mirror the command-injection path symmetrically.
+**Agent injection** carries plugin capability across the command→subagent dispatch boundary: a per-agent fragment travels with the agent into *every* command that dispatches it (no per-command duplication). Agent injection only targets providers with an `agentsSubdir` (currently Claude). Exclusion is enforced by *not* placing a marker in an agent's source — MCP-blocked allowlist agents (e.g. `feature-history-agent`, `git-history-agent`) and non-code-graph agents (e.g. `doc-reviewer-agent`) carry no marker, so the build emits no sidecar entry for them and they are never injected. `injectAgentFragments` / `removeAgentFragments` in `injection-core.js` drive agent injection from the same sidecar + anchor mechanism as commands.
 
-Lifecycle (`codeadd plugins enable|disable|list <name>`): **validate** (hard-gate `detect` shell probe — exit-0 = present) → **inject** command fragments → **inject** agent fragments → **activate skills** (copy `plugins/{plugin}/skills/{name}/SKILL.md` into every installed provider's `skills/` dir) → print `postEnableHint`. Disable removes injected command + agent sections (markers kept) and copied skill dirs.
+Lifecycle (`codeadd plugins enable|disable|list <name>`): **validate** (hard-gate `detect` shell probe — exit-0 = present) → **inject** command fragments (anchor-based) → **inject** agent fragments (anchor-based) → **activate skills** (copy `plugins/{plugin}/skills/{name}/SKILL.md` into every installed provider's `skills/` dir) → print `postEnableHint`. Disable re-derives and removes injected command + agent blocks (marker-free) and copied skill dirs.
+
+The build-emitted sidecar is **anchor uniqueness/variable validated**: a marker whose nearest adjacent line carries a `{{cmd:}}`/`{{skill:}}`/`{{addpath:}}` variable is walked past (variables resolve per-provider so cannot anchor one shared map); if no variable-free adjacent line exists the build fails loud. Markers embedded in prose (shown as documentation) are ignored — only standalone-line markers are injection points.
 
 ## Web / Documentation
 

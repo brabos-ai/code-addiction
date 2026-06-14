@@ -6,6 +6,7 @@ import { resolveSelected } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
 import { applyEnabledFeatures } from './features.js';
+import { applyEnabledPlugins } from './plugins.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 
 const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
@@ -145,8 +146,9 @@ export async function update(cwd, options = {}) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
-  // Preserve feature states from previous manifest
+  // Preserve feature + plugin states from previous manifest
   const previousFeatures = manifest.features ?? {};
+  const previousPlugins = manifest.plugins ?? {};
 
   writeManifest(
     cwd,
@@ -154,13 +156,19 @@ export async function update(cwd, options = {}) {
     providerKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: previousFeatures }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: previousFeatures, plugins: previousPlugins }
   );
 
-  // Re-apply enabled features on updated commands
+  // Re-apply enabled features on updated commands (files were overwritten by the new version)
   const featuresApplied = applyEnabledFeatures(cwd);
   if (featuresApplied > 0) {
     log.success(`Re-applied ${featuresApplied} feature injection(s).`);
+  }
+
+  // Re-apply enabled plugins (mirrors installer; marker-free files need re-injection post-update)
+  const pluginsApplied = applyEnabledPlugins(cwd);
+  if (pluginsApplied > 0) {
+    log.success(`Re-applied ${pluginsApplied} plugin injection(s).`);
   }
 
   // Sync .gitignore block if opted-in during install (backward compat: skip if key absent)

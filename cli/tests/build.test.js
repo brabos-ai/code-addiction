@@ -42,9 +42,9 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments(input)).toBe('Content');
   });
 
-  it('preserves feature markers verbatim (functional injection points)', () => {
+  it('strips feature/plugin injection markers (consumed into the sidecar at build)', () => {
     const input = '<!-- feature:tdd:step -->injected content<!-- /feature:tdd:step -->';
-    expect(stripHtmlComments(input)).toBe(input);
+    expect(stripHtmlComments(input)).toBe('injected content');
   });
 
   it('collapses triple+ newlines to double', () => {
@@ -65,7 +65,7 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments('<!-- only comment -->')).toBe('');
   });
 
-  it('preserves feature: and plugin: injection markers (functional, not dev-notes)', () => {
+  it('strips feature:, plugin:, and dev-note comments uniformly (no marker survives the build)', () => {
     const input = [
       'a',
       '<!-- feature:tdd:gate -->',
@@ -76,11 +76,11 @@ describe('stripHtmlComments', () => {
       'b',
     ].join('\n');
     const out = stripHtmlComments(input);
-    expect(out).toContain('<!-- feature:tdd:gate -->');
-    expect(out).toContain('<!-- /feature:tdd:gate -->');
-    expect(out).toContain('<!-- plugin:gitnexus:graph-map -->');
-    expect(out).toContain('<!-- /plugin:gitnexus:graph-map -->');
+    expect(out).not.toContain('<!--');
+    expect(out).not.toContain('feature:tdd:gate');
+    expect(out).not.toContain('plugin:gitnexus:graph-map');
     expect(out).not.toContain('internal dev note');
+    expect(out).toBe('a\n\nb');
   });
 });
 
@@ -125,7 +125,7 @@ describe('TRANSFORMERS', () => {
 // ---------------------------------------------------------------------------
 
 describe('full pipeline', () => {
-  it('strips dev-note comments but preserves feature markers, then transforms to MD', () => {
+  it('strips all comments (dev-notes + injection markers), then transforms to MD', () => {
     const source = [
       '<!-- AUTO-GENERATED - DO NOT EDIT -->',
       '# Add Plan',
@@ -141,14 +141,14 @@ describe('full pipeline', () => {
     const cleaned = stripHtmlComments(source);
     expect(cleaned).not.toContain('AUTO-GENERATED');
     expect(cleaned).not.toContain('internal note');
-    expect(cleaned).toContain('<!-- feature:tdd:step-list -->'); // functional marker survives
+    expect(cleaned).not.toContain('<!--'); // no marker survives the build
     expect(cleaned).toContain('# Add Plan');
     expect(cleaned).toContain('Plan your features.');
 
     const md = TRANSFORMERS.md(cleaned, { name: 'add.plan', description: 'Planning', skillFormat: false });
     expect(md).toContain('---\ndescription: Planning\n---');
     expect(md).toContain('# Add Plan');
-    expect(md).toContain('<!-- feature:tdd:step-list -->');
+    expect(md).not.toContain('<!--');
     expect(md).not.toContain('AUTO-GENERATED');
   });
 
