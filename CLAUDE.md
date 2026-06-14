@@ -1,6 +1,6 @@
 # Code-Addiction (ADD Framework)
 
-Open-source framework that distributes AI-assisted development commands, skills, and agents to 4 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity).
+Open-source framework that distributes AI-assisted development commands, skills, and agents to 5 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity, OpenCode).
 
 ## Project Anatomy
 
@@ -102,9 +102,9 @@ Key mechanics: HTML comments (`<!-- -->`) are stripped at build time (use for so
 
 ### Provider Capabilities
 
-The 4 supported providers (claude, codex, cursor, antigrav) are all MCP-capable and markdown-native. Minor differences remain: antigrav has no hooks; codex has no slashCommands. All support `agentDispatch` and `mcp`. Per-provider capability flags live in `provider-map.json` → `providers.{name}.capabilities`.
+The 5 supported providers (claude, codex, cursor, antigrav, opencode) are all MCP-capable and markdown-native. Minor differences remain: antigrav has no hooks; codex has no slashCommands. All support `agentDispatch` and `mcp`. Per-provider capability flags live in `provider-map.json` → `providers.{name}.capabilities`.
 
-Distribution rules: all commands/skills build to all 4 providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents only build for providers with an `agents` pattern (currently only claude).
+Distribution rules: all commands/skills build to all 5 providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents only build for providers with an `agents` pattern (currently only claude).
 
 ## Feature Injection System
 

@@ -40,19 +40,30 @@ export const PROVIDERS = {
     commandsSubdir: null,
     skillsSubdir: 'skills',
   },
+  opencode: {
+    label: 'OpenCode',
+    hint: '.opencode/commands/',
+    src: 'framwork/.opencode',
+    dest: '.opencode',
+    commandsSubdir: 'commands',
+    skillsSubdir: 'skills',
+  },
 };
 
 /**
  * Priority-ordered provider keys shown first in the install prompt.
  * Remaining providers are sorted alphabetically after these.
  */
-export const PROVIDER_PRIORITY = ['claude', 'codex', 'cursor', 'antigrav'];
+export const PROVIDER_PRIORITY = ['claude', 'codex', 'cursor', 'antigrav', 'opencode'];
 
 /**
  * Resolve selected provider keys to { src, dest, commandsSubdir, ... } pairs.
+ * Keys not present in PROVIDERS are skipped — an install made before a provider
+ * was removed may still list it in its manifest; emitting an entry with an
+ * undefined `dest`/`src` would crash path.join during install/update.
  * @param {string[]} keys
  * @returns {{ key: string, label: string, src: string, dest: string, commandsSubdir: string | null, skillsSubdir: string | null }[]}
  */
 export function resolveSelected(keys) {
-  return keys.map((key) => ({ key, ...PROVIDERS[key] }));
+  return keys.filter((key) => PROVIDERS[key]).map((key) => ({ key, ...PROVIDERS[key] }));
 }
