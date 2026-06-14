@@ -1,6 +1,6 @@
 # Code-Addiction (ADD Framework)
 
-Open-source framework that distributes AI-assisted development commands, skills, and agents to 15+ providers (Claude Code, Codex, Gemini, Copilot, Cursor, Kiro, etc.).
+Open-source framework that distributes AI-assisted development commands, skills, and agents to 4 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity).
 
 ## Project Anatomy
 
@@ -90,7 +90,7 @@ Three strategies with different behaviors:
 | Skills | YAML frontmatter (name + description) | MD or TOML | Copies extra files (subdirs, siblings) |
 | Agents | Passthrough (keeps original frontmatter) | None | — |
 
-Key mechanics: HTML comments (`<!-- -->`) are stripped at build time (use for source-only dev notes). `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. Gemini is the only TOML provider; all others use markdown.
+Key mechanics: HTML comments (`<!-- -->`) are stripped at build time (use for source-only dev notes) — **except** `feature:`/`plugin:` injection markers, which are preserved so post-install injection can target the built provider files. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. All providers use markdown (the build is markdown-only).
 
 ### Resource Path Variables (build-time)
 
@@ -102,18 +102,9 @@ Key mechanics: HTML comments (`<!-- -->`) are stripped at build time (use for so
 
 ### Provider Capabilities
 
-Not all 15 providers support every feature. Grouped by limitation:
+The 4 supported providers (claude, codex, cursor, antigrav) are all MCP-capable and markdown-native. Minor differences remain: antigrav has no hooks; codex has no slashCommands. All support `agentDispatch` and `mcp`. Per-provider capability flags live in `provider-map.json` → `providers.{name}.capabilities`.
 
-| Limitation | Providers |
-|------------|-----------|
-| Full capability (hooks + agents + MCP + slashCommands) | claude, codex, cursor, kiro, opencode, auggie, copilot, roo |
-| No hooks | antigrav, kilocode, qwen, bob, shai, windsurf |
-| No agentDispatch | gemini, shai, windsurf |
-| TOML format (not markdown) | gemini |
-| No MCP | gemini |
-| No slashCommands | codex, bob, copilot, shai |
-
-Distribution rules: all commands/skills build to all providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents only build for providers with `agents` pattern (currently only claude).
+Distribution rules: all commands/skills build to all 4 providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents only build for providers with an `agents` pattern (currently only claude).
 
 ## Feature Injection System
 
@@ -133,6 +124,22 @@ Current features:
 |---------|---------|-------------------|
 | `tdd` | enabled | add.plan, add.build, add.review |
 | `startup-test` | enabled | add.build, add.review |
+
+## Plugin System
+
+A first-class `plugin` concept (distinct from `features`) integrates **external MCP tools**. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands, activates plugin-bound skills, and points the user at the tool's own installer. Plugins are **disabled by default**.
+
+| Component | Path |
+|-----------|------|
+| Catalog (baked into CLI) | `cli/src/plugins.json` |
+| Asset source tree | `framwork/.codeadd/plugins/{plugin}/{fragments,skills}/` |
+| Plugin module | `cli/src/plugins.js` |
+| Shared injection helpers | `cli/src/injection-core.js` (imported by `features.js` + `plugins.js`) |
+| Manifest state | `.codeadd/manifest.json` → `plugins` field |
+
+Fragments use `<!-- section:NAME -->` markers. Commands use `<!-- plugin:PLUGIN:SECTION -->` injection markers (parallel to the `feature:` namespace). Catalog entry schema: `type` (`mcp`\|`script`\|`http`; only `mcp` in v1), `description`, `detect`, `homepage`, `installHint`, `postEnableHint`, `injects` (array), `skills` (array).
+
+Lifecycle (`codeadd plugins enable|disable|list <name>`): **validate** (hard-gate `detect` shell probe — exit-0 = present) → **inject** fragments → **activate skills** (copy `plugins/{plugin}/skills/{name}/SKILL.md` into every installed provider's `skills/` dir) → print `postEnableHint`. Disable removes injected sections and copied skill dirs.
 
 ## Web / Documentation
 

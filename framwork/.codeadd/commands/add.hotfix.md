@@ -220,6 +220,9 @@ LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 2-3 (Pattern Analysis
 - [ ] Root cause confirmed by user
 - [ ] On branch `hotfix/*`
 
+<!-- plugin:gitnexus:graph-impact -->
+<!-- /plugin:gitnexus:graph-impact -->
+
 ### 8.1 Check Project Patterns
 
 **If PROJECT_PATTERNS > 0 (from script output):** Read project patterns and follow them in implementation.

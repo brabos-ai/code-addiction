@@ -2,11 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected } from '../src/providers.js';
 
 describe('PROVIDERS', () => {
-  it('contains all expected provider keys', () => {
-    for (const k of ['claude', 'codex', 'antigrav', 'opencode', 'kilocode',
-      'gemini', 'cursor', 'windsurf', 'copilot', 'auggie', 'roo', 'kiro', 'qwen', 'shai', 'bob']) {
+  it('contains exactly the 4 MCP-capable provider keys', () => {
+    for (const k of ['claude', 'codex', 'cursor', 'antigrav']) {
       expect(PROVIDERS, `missing provider: ${k}`).toHaveProperty(k);
     }
+    expect(Object.keys(PROVIDERS).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor']);
   });
 
   it('each provider has src, dest, label, hint', () => {
@@ -22,8 +22,8 @@ describe('PROVIDERS', () => {
 });
 
 describe('PROVIDER_PRIORITY', () => {
-  it('lists claude, codex, antigrav, opencode in that order', () => {
-    expect(PROVIDER_PRIORITY).toEqual(['claude', 'codex', 'antigrav', 'opencode']);
+  it('lists claude, codex, cursor, antigrav in that order', () => {
+    expect(PROVIDER_PRIORITY).toEqual(['claude', 'codex', 'cursor', 'antigrav']);
   });
 
   it('all priority keys exist in PROVIDERS', () => {
@@ -49,8 +49,8 @@ describe('resolveSelected', () => {
   });
 
   it('maps multiple keys', () => {
-    const result = resolveSelected(['claude', 'kilocode']);
+    const result = resolveSelected(['claude', 'cursor']);
     expect(result).toHaveLength(2);
-    expect(result.map((r) => r.key)).toEqual(['claude', 'kilocode']);
+    expect(result.map((r) => r.key)).toEqual(['claude', 'cursor']);
   });
 });

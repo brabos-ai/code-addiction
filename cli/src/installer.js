@@ -6,6 +6,7 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptProviders, promptConfirm, promptFeatures, promptGitignore } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
+import { applyEnabledPlugins } from './plugins.js';
 import { resolveSelected } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 
@@ -267,13 +268,19 @@ export async function install(cwd, options = {}) {
     selectedKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: defaultFeatures, gitignore: addToGitignore }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: defaultFeatures, plugins: {}, gitignore: addToGitignore }
   );
 
   // Apply enabled features (inject fragment content into commands)
   const featuresApplied = applyEnabledFeatures(cwd);
   if (featuresApplied > 0) {
     log.success(`Applied ${featuresApplied} feature injection(s).`);
+  }
+
+  // Apply enabled plugins (disabled by default — no-op on fresh install)
+  const pluginsApplied = applyEnabledPlugins(cwd);
+  if (pluginsApplied > 0) {
+    log.success(`Applied ${pluginsApplied} plugin injection(s).`);
   }
 
   const enabledFeatures = Object.entries(defaultFeatures)

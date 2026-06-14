@@ -66,6 +66,7 @@ import "../styles/global.css";
             <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
             <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
             <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
+            <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">Plugins</a></li>
             <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
             <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">Project Structure</a></li>
           </ul>
@@ -98,7 +99,7 @@ import "../styles/global.css";
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">codeadd CLI</div>
-            <p class="text-muted-light text-sm">install, update, uninstall, doctor, validate, features, config</p>
+            <p class="text-muted-light text-sm">install, update, uninstall, doctor, validate, features, plugins, config</p>
           </div>
         </div>
       </section>
@@ -162,6 +163,10 @@ import "../styles/global.css";
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd features</code>
             <span class="text-muted-light text-sm">List, enable, or disable optional features (e.g. TDD, Startup Test)</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
+            <span class="text-muted-light text-sm">List, enable, or disable MCP plugins (e.g. GitNexus)</span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd config show</code>
@@ -578,6 +583,31 @@ import "../styles/global.css";
             </div>
             <p class="text-muted-light text-sm mb-1">Application Startup Test (IoC/DI validation)</p>
             <p class="text-muted text-xs">Injected into: <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PLUGINS -->
+      <section id="plugins" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Plugins</h2>
+        <p class="text-muted-light mb-6">
+          Plugins integrate external MCP tools into ADD commands. Code Addiction handles utilization — it validates the tool is present, injects guidance into commands, and activates plugin-bound skills. Plugins are disabled by default.
+        </p>
+        <p class="text-muted-light mb-6">
+          Enable or disable them with <code class="text-accent font-mono text-xs">npx codeadd plugins enable|disable &lt;name&gt;</code>.
+        </p>
+
+        <div class="space-y-3">
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">gitnexus</code>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Code knowledge-graph navigation (calls, refs, blast-radius) via MCP</p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code></p>
+            <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-gitnexus</code> — structural/relational code navigation (call graph, references, blast-radius, trace flows, safe refactors)</p>
+            <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/abhigyanpatwari/GitNexus</a></p>
           </div>
         </div>
       </section>

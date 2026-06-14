@@ -2,9 +2,9 @@
 
 > Integration map of all commands, skills, and agents in the ADD framework. For gap analysis and orphaned artefacts see [PRD0022](docs/prd/PRD0022-ecosystem-master-map.md).
 
-Three graphs: **Core Pipeline** (main development flow), **Support Commands** (auxiliary flow), **Agent Dispatch** (subagent orchestration).
+Four graphs: **Core Pipeline** (main development flow), **Support Commands** (auxiliary flow), **Agent Dispatch** (subagent orchestration), **Plugin Integrations** (optional MCP plugins).
 
-Node shapes: `(command)` rounded · `{{skill}}` hexagon · `>agent]` flag
+Node shapes: `(command)` rounded · `{{skill}}` hexagon · `>agent]` flag · `[plugin]` square
 
 ---
 
@@ -149,6 +149,26 @@ graph LR
   ARCH --> AD & BARCH & FARCH
   FHA --> IV
   GHA --> IV
+```
+
+---
+
+## Graph 4 — Plugin Integrations
+
+Optional MCP plugins that inject additive guidance into commands. Disabled by default — enable via `codeadd plugins enable <name>`.
+
+```mermaid
+graph LR
+  GNX[gitnexus plugin]
+  GNX_SK{{add-gitnexus}}
+
+  NEW(add.new)
+  DIAGNOSE(add.diagnose)
+  HOTFIX(add.hotfix)
+  DONE(add.done)
+
+  GNX -->|injects into| NEW & DIAGNOSE & HOTFIX & DONE
+  GNX -->|activates skill| GNX_SK
 ```
 
 ---

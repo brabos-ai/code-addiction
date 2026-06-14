@@ -52,6 +52,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria |
 | add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware |
 | add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic |
+| add-gitnexus | [plugin-bound] Code knowledge-graph navigation via GitNexus MCP — call graph, refs, blast-radius, trace flows, safe refactors. Enabled by `codeadd plugins enable gitnexus` |
 | add-health-check | Health check of environment and project dependencies |
 | add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) |
 | add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting |
@@ -84,6 +85,14 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | doc-reviewer-agent | Fresh-context doc review (read-only) | add.new, add.brainstorm |
 | feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
 | git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
+
+## Plugins
+
+| Plugin | Type | Description | Injects into | Plugin skill |
+|--------|------|-------------|--------------|--------------|
+| gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add.new, add.diagnose, add.hotfix, add.done | add-gitnexus |
+
+Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are disabled by default and require the external tool to be installed.
 
 ## Dependency Index
 

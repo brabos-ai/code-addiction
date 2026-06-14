@@ -36,13 +36,12 @@ describe('getInstalledDirs', () => {
   });
 
   it('includes all known providers when all are selected', () => {
-    const dirs = getInstalledDirs(['claude', 'codex', 'antigrav', 'kilocode', 'opencode']);
+    const dirs = getInstalledDirs(['claude', 'codex', 'antigrav', 'cursor']);
     expect(dirs).toContain('.codeadd/');
     expect(dirs).toContain('.claude/');
     expect(dirs).toContain('.agents/');
     expect(dirs).toContain('.agent/');
-    expect(dirs).toContain('.kilocode/');
-    expect(dirs).toContain('.opencode/');
+    expect(dirs).toContain('.cursor/');
   });
 
   it('silently ignores unknown provider keys', () => {

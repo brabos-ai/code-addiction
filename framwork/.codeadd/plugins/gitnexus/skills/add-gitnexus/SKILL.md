@@ -1,0 +1,39 @@
+---
+name: add-gitnexus
+description: Use when a task needs structural/relational code navigation — call graph, references, blast-radius, trace flows, safe refactors — and the GitNexus plugin is enabled. Routes intent to the native gitnexus-* skills.
+---
+
+# add-gitnexus
+
+## Overview
+
+GitNexus exposes a code knowledge-graph (calls, refs, blast-radius) over MCP, with native `gitnexus-*` skills that already document *how* to use each tool. This skill is a **thin dispatcher**: it maps the current intent to the right native skill. It does not reimplement MCP tools and has no fallback branch — when an intent matches, load the native skill and follow it.
+
+## grep vs graph
+
+- **Structural / relational** ("what calls X", "what breaks if I change X", trace a flow, map architecture) → **graph** (the native skills below).
+- **Literal text** (find a string, a TODO, a config key) → **grep**. The graph is additive; grep keeps working unchanged.
+
+## Intent → native skill
+
+| Agent intent | Load native skill |
+|--------------|-------------------|
+| Map architecture, "how does X work", "what calls X", trace flow | `gitnexus-exploring` |
+| Blast-radius, "what breaks if I change X", safe-to-edit | `gitnexus-impact-analysis` |
+| Trace an error, "why does X fail" | `gitnexus-debugging` |
+| Rename / extract / split / move safely | `gitnexus-refactoring` |
+| Review a PR, assess merge risk | `gitnexus-pr-review` |
+| Run GitNexus CLI (index / status / wiki) | `gitnexus-cli` |
+| Graph schema / available tools | `gitnexus-guide` |
+
+## Command-intent resolution
+
+When reached from a codeadd command, resolve as:
+
+- `add.new` (discovery) → `gitnexus-exploring` — map modules, key call paths, entry points before questioning.
+- `add.diagnose` (triage) → `gitnexus-impact-analysis` for blast-radius, or `gitnexus-debugging` to trace an error to its source.
+- `add.hotfix` (pre-edit) → `gitnexus-impact-analysis` — find impacted call sites of the symbol about to change.
+
+## Operating note
+
+This skill assumes an **indexed graph**. Freshness is handled at `add.done` (re-index after significant changes), not here. If the graph returns nothing, the repo may be unindexed — proceed with grep; do not block.

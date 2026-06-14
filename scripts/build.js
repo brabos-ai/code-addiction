@@ -67,26 +67,20 @@ function copyDirRecursive(src, dest, provider = null) {
 // ---------------------------------------------------------------------------
 
 /**
- * Remove ALL HTML comments and collapse excess blank lines.
- * Saves tokens when content is sent to the model.
+ * Remove HTML comments and collapse excess blank lines (saves tokens).
+ *
+ * EXCEPTION: `feature:`/`plugin:` injection markers are preserved — they are
+ * functional injection points consumed post-install by features.js/plugins.js,
+ * not source-only dev-notes. Stripping them would make injection a no-op on the
+ * built provider files.
  */
 function stripHtmlComments(content) {
   return content
-    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<!--([\s\S]*?)-->/g, (match, inner) =>
+      /^\s*\/?(?:feature|plugin):/.test(inner) ? match : ''
+    )
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-}
-
-/**
- * Escape a string for use as a TOML basic string value (double-quoted).
- */
-function escapeTomlString(str) {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t');
 }
 
 // ---------------------------------------------------------------------------
@@ -100,11 +94,6 @@ const METADATA = {
       ? `---\nname: ${meta.name}\ndescription: ${meta.description}\n---\n\n`
       : `---\ndescription: ${meta.description}\n---\n\n`;
   },
-
-  /** TOML header comment for traceability */
-  tomlHeader(meta) {
-    return `# AUTO-GENERATED - source: framwork/.codeadd/commands/${meta.name}.md\n`;
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -115,23 +104,9 @@ const METADATA = {
 // ---------------------------------------------------------------------------
 
 const TRANSFORMERS = {
-  /** Identity + frontmatter — most providers accept markdown as-is */
+  /** Identity + frontmatter — all providers accept markdown as-is */
   md(content, meta) {
     return METADATA.mdFrontmatter(meta) + content;
-  },
-
-  /**
-   * TOML wrapper for Gemini CLI.
-   * See: framwork/.codeadd/transforms/gemini/commands.md
-   */
-  toml(content, meta) {
-    return [
-      METADATA.tomlHeader(meta),
-      `description = "${escapeTomlString(meta.description)}"`,
-      'prompt = """',
-      content,
-      '"""',
-    ].join('\n');
   },
 };
 
@@ -389,7 +364,6 @@ function main() {
 // Export for testing
 module.exports = {
   stripHtmlComments,
-  escapeTomlString,
   resolveResourcePaths,
   lintResourcePaths,
   copyDirRecursive,
