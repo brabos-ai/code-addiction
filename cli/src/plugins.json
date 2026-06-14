@@ -9,7 +9,8 @@
       "installHint": "string — how the user installs the tool themselves.",
       "postEnableHint": "string — printed after a successful enable (setup/index steps).",
       "injects": "string[] — command names that receive fragment injection.",
-      "skills": "string[] — plugin-bound skill names copied into each provider on enable."
+      "skills": "string[] — plugin-bound skill names copied into each provider on enable.",
+      "agents": "{ agent: string, sections: string[] }[] — agent definitions that receive per-agent fragment injection; carries the capability across the command→subagent dispatch boundary."
     }
   },
   "gitnexus": {
@@ -20,6 +21,16 @@
     "installHint": "Install globally: npm install -g gitnexus",
     "postEnableHint": "gitnexus enabled. Make the graph usable:\n  1) gitnexus setup     # wire MCP (once)\n  2) gitnexus analyze   # index this repo (from repo root)\nRe-run analyze after large changes. Docs: https://github.com/abhigyanpatwari/GitNexus",
     "injects": ["add.new", "add.diagnose", "add.hotfix", "add.done"],
-    "skills": ["add-gitnexus"]
+    "skills": ["add-gitnexus"],
+    "agents": [
+      { "agent": "discovery-agent", "sections": ["graph"] },
+      { "agent": "architecture-agent", "sections": ["graph"] },
+      { "agent": "system-design-agent", "sections": ["graph"] },
+      { "agent": "backend-agent", "sections": ["graph"] },
+      { "agent": "database-agent", "sections": ["graph"] },
+      { "agent": "frontend-agent", "sections": ["graph"] },
+      { "agent": "ux-agent", "sections": ["graph"] },
+      { "agent": "reviewer-agent", "sections": ["graph"] }
+    ]
   }
 }

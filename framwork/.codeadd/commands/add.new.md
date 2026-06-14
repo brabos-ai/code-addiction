@@ -87,6 +87,9 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
+<!-- plugin:gitnexus:graph-map -->
+<!-- /plugin:gitnexus:graph-map -->
+
 **Coordinator: Deep Thinking (before questionnaire)**
 
 Evaluate using agent outputs:
@@ -100,9 +103,6 @@ Evaluate using agent outputs:
 - Technology decisions pre-decided by codebase?
 
 Generate concrete questionnaire from data (not generic).
-
-<!-- plugin:gitnexus:graph-map -->
-<!-- /plugin:gitnexus:graph-map -->
 
 ---
 

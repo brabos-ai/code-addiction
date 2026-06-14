@@ -263,6 +263,17 @@ memory: project
 | Architecture decisions | inherit | Read-only | project |
 | Design proposals | sonnet | Read/Write | project |
 
+### Plugin Agent-Injection Markers
+
+Plugins (see CLAUDE.md → Plugin System) can inject capability into agent definitions, not just commands — carrying an external-tool capability across the command→subagent dispatch boundary (agents never see a command's injected fragment). To make an agent a plugin injection target:
+
+- Add a `<!-- plugin:PLUGIN:SECTION -->` / `<!-- /plugin:PLUGIN:SECTION -->` marker pair to the agent source body (markers survive build via `stripHtmlComments`, which preserves `plugin:`/`feature:` comments).
+- Author a per-agent fragment at `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` whose `<!-- section:SECTION -->` matches the marker.
+- Declare the target in the catalog entry's `agents` array (`{ agent, sections }`).
+- **Exclusion is by omission:** an agent with a tool allowlist that blocks MCP (e.g. `tools: Glob, Read`), or whose purpose is not the code graph, simply carries no marker and is never injected. Never add an injection marker to an MCP-blocked agent.
+
+Only providers with an `agentsSubdir` (currently Claude) receive agent injection.
+
 ---
 
 ## 4. Build Pipeline

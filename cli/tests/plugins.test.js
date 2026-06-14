@@ -26,7 +26,7 @@ function writeCatalog(dir, catalog) {
  * Scaffold an installed-project tree: manifest + provider command files with
  * markers + the plugin asset source tree (fragments + skills).
  */
-function scaffoldProject(cwd, { providers, pluginName, sectionsByCommand, skills }) {
+function scaffoldProject(cwd, { providers, pluginName, sectionsByCommand, skills, agentsByName }) {
   fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
   fs.writeFileSync(
     path.join(cwd, '.codeadd', 'manifest.json'),
@@ -62,6 +62,26 @@ function scaffoldProject(cwd, { providers, pluginName, sectionsByCommand, skills
     const skillDir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'skills', skill);
     fs.mkdirSync(skillDir, { recursive: true });
     fs.writeFileSync(path.join(skillDir, 'SKILL.md'), `---\nname: ${skill}\ndescription: d\n---\nbody\n`);
+  }
+
+  // Installed agent files (only claude exposes agents) + per-agent fragments.
+  if (agentsByName) {
+    const fragDir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'fragments', 'agents');
+    fs.mkdirSync(fragDir, { recursive: true });
+    for (const [agent, sects] of Object.entries(agentsByName)) {
+      const markers = sects
+        .map((s) => `<!-- plugin:${pluginName}:${s} -->\n<!-- /plugin:${pluginName}:${s} -->`)
+        .join('\n');
+      if (providers.includes('claude')) {
+        const dir = path.join(cwd, '.claude', 'agents');
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, `${agent}.md`), `---\nname: ${agent}\n---\n\nbody\n\n${markers}\n`);
+      }
+      const body = sects
+        .map((s) => `<!-- section:${s} -->\n${s.toUpperCase()}-AGENT-CONTENT\n<!-- /section:${s} -->`)
+        .join('\n');
+      fs.writeFileSync(path.join(fragDir, `${agent}.md`), body + '\n');
+    }
   }
 }
 
@@ -222,6 +242,106 @@ describe('plugins', () => {
 
       const manifest = JSON.parse(fs.readFileSync(path.join(cwd, '.codeadd', 'manifest.json'), 'utf8'));
       expect(manifest.plugins.gx).toEqual({ enabled: false });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // agent injection (per-agent fragments travel into agent definitions)
+  // -------------------------------------------------------------------------
+  describe('agent injection', () => {
+    it('enablePlugin injects agents alongside commands and reports a count', () => {
+      writeCatalog(catDir, {
+        gx: {
+          type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: [],
+          agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
+        },
+      });
+      scaffoldProject(cwd, {
+        providers: ['claude'],
+        pluginName: 'gx',
+        sectionsByCommand: { 'add.new': ['explore'] },
+        skills: [],
+        agentsByName: { 'discovery-agent': ['graph'] },
+      });
+
+      const result = enablePlugin(cwd, 'gx');
+      expect(result.ok).toBe(true);
+      expect(result.agents).toBe(1);
+
+      const agent = fs.readFileSync(path.join(cwd, '.claude', 'agents', 'discovery-agent.md'), 'utf8');
+      expect(agent).toContain('GRAPH-AGENT-CONTENT');
+
+      const manifest = JSON.parse(fs.readFileSync(path.join(cwd, '.codeadd', 'manifest.json'), 'utf8'));
+      expect(manifest.hashes['.claude/agents/discovery-agent.md']).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it('disablePlugin removes agent injection — byte-identical round-trip', () => {
+      writeCatalog(catDir, {
+        gx: {
+          type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: [],
+          agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
+        },
+      });
+      scaffoldProject(cwd, {
+        providers: ['claude'],
+        pluginName: 'gx',
+        sectionsByCommand: { 'add.new': ['explore'] },
+        skills: [],
+        agentsByName: { 'discovery-agent': ['graph'] },
+      });
+      const file = path.join(cwd, '.claude', 'agents', 'discovery-agent.md');
+      const before = fs.readFileSync(file, 'utf8');
+
+      enablePlugin(cwd, 'gx');
+      const result = disablePlugin(cwd, 'gx');
+      expect(result.agents).toBe(1);
+      expect(fs.readFileSync(file, 'utf8')).toBe(before);
+      expect(fs.readFileSync(file, 'utf8')).toContain('<!-- plugin:gx:graph -->');
+    });
+
+    it('re-enable is idempotent (no marker drift)', () => {
+      writeCatalog(catDir, {
+        gx: {
+          type: 'mcp', description: 'g', detect: 'true', injects: [], skills: [],
+          agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
+        },
+      });
+      scaffoldProject(cwd, {
+        providers: ['claude'],
+        pluginName: 'gx',
+        sectionsByCommand: {},
+        skills: [],
+        agentsByName: { 'discovery-agent': ['graph'] },
+      });
+      const file = path.join(cwd, '.claude', 'agents', 'discovery-agent.md');
+      enablePlugin(cwd, 'gx');
+      const once = fs.readFileSync(file, 'utf8');
+      enablePlugin(cwd, 'gx');
+      expect(fs.readFileSync(file, 'utf8')).toBe(once);
+    });
+
+    it('applyEnabledPlugins re-applies agent injection', () => {
+      writeCatalog(catDir, {
+        gx: {
+          type: 'mcp', description: 'g', detect: 'true', injects: [], skills: [],
+          agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
+        },
+      });
+      scaffoldProject(cwd, {
+        providers: ['claude'],
+        pluginName: 'gx',
+        sectionsByCommand: {},
+        skills: [],
+        agentsByName: { 'discovery-agent': ['graph'] },
+      });
+      const mp = path.join(cwd, '.codeadd', 'manifest.json');
+      const m = JSON.parse(fs.readFileSync(mp, 'utf8'));
+      m.plugins = { gx: { enabled: true } };
+      fs.writeFileSync(mp, JSON.stringify(m, null, 2));
+
+      applyEnabledPlugins(cwd);
+      const agent = fs.readFileSync(path.join(cwd, '.claude', 'agents', 'discovery-agent.md'), 'utf8');
+      expect(agent).toContain('GRAPH-AGENT-CONTENT');
     });
   });
 

@@ -11,6 +11,8 @@ import {
   readManifest,
   saveManifest,
   recalculateHashes,
+  injectAgentFragments,
+  removeAgentFragments,
 } from './injection-core.js';
 
 const CATALOG_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'plugins.json');
@@ -161,21 +163,22 @@ function deactivateSkills(cwd, skills) {
 }
 
 /**
- * Enable a plugin — validate (hard gate) → inject fragments → activate skills → hint.
+ * Enable a plugin — validate (hard gate) → inject command + agent fragments →
+ * activate skills → hint.
  * @param {string} cwd
  * @param {string} pluginName
- * @returns {{ ok: boolean, modified: number, skills: number, reason?: string }}
+ * @returns {{ ok: boolean, modified: number, agents: number, skills: number, reason?: string }}
  */
 export function enablePlugin(cwd, pluginName) {
   const catalog = loadCatalog();
   const entry = catalog[pluginName];
-  if (!entry) return { ok: false, modified: 0, skills: 0, reason: 'unknown' };
+  if (!entry) return { ok: false, modified: 0, agents: 0, skills: 0, reason: 'unknown' };
 
   if (!validate(entry)) {
-    return { ok: false, modified: 0, skills: 0, reason: 'not-detected' };
+    return { ok: false, modified: 0, agents: 0, skills: 0, reason: 'not-detected' };
   }
 
-  // Inject fragments
+  // Inject command fragments
   const fragments = getFragments(cwd, pluginName);
   const modifiedPaths = [];
   for (const { commandName, content: fragmentContent } of fragments) {
@@ -193,6 +196,9 @@ export function enablePlugin(cwd, pluginName) {
     }
   }
 
+  // Inject agent fragments (carry the capability across the dispatch boundary)
+  const agentPaths = injectAgentFragments(cwd, pluginName);
+
   // Activate skills
   const skills = activateSkills(cwd, pluginName, entry.skills);
 
@@ -200,18 +206,18 @@ export function enablePlugin(cwd, pluginName) {
   if (manifest) {
     if (!manifest.plugins) manifest.plugins = {};
     manifest.plugins[pluginName] = { enabled: true };
-    recalculateHashes(cwd, manifest, modifiedPaths);
+    recalculateHashes(cwd, manifest, [...modifiedPaths, ...agentPaths]);
     saveManifest(cwd, manifest);
   }
 
-  return { ok: true, modified: modifiedPaths.length, skills };
+  return { ok: true, modified: modifiedPaths.length, agents: agentPaths.length, skills };
 }
 
 /**
- * Disable a plugin — remove injected sections, remove activated skills.
+ * Disable a plugin — remove injected command + agent sections, remove activated skills.
  * @param {string} cwd
  * @param {string} pluginName
- * @returns {{ modified: number, skills: number }}
+ * @returns {{ modified: number, agents: number, skills: number }}
  */
 export function disablePlugin(cwd, pluginName) {
   const catalog = loadCatalog();
@@ -228,17 +234,20 @@ export function disablePlugin(cwd, pluginName) {
     }
   }
 
+  // Remove agent injections (symmetric with enable)
+  const agentPaths = removeAgentFragments(cwd, pluginName);
+
   const skills = deactivateSkills(cwd, entry.skills);
 
   const manifest = readManifest(cwd);
   if (manifest) {
     if (!manifest.plugins) manifest.plugins = {};
     manifest.plugins[pluginName] = { enabled: false };
-    recalculateHashes(cwd, manifest, modifiedPaths);
+    recalculateHashes(cwd, manifest, [...modifiedPaths, ...agentPaths]);
     saveManifest(cwd, manifest);
   }
 
-  return { modified: modifiedPaths.length, skills };
+  return { modified: modifiedPaths.length, agents: agentPaths.length, skills };
 }
 
 /**
@@ -331,11 +340,11 @@ export async function plugins(cwd, args) {
         outro('Not enabled.');
         process.exit(1);
       }
-      log.success(`Plugin "${pluginName}" enabled. ${result.modified} command(s), ${result.skills} skill(s) activated.`);
+      log.success(`Plugin "${pluginName}" enabled. ${result.modified} command(s), ${result.agents} agent(s), ${result.skills} skill(s) activated.`);
       if (entry.postEnableHint) log.info(entry.postEnableHint);
     } else {
       const result = disablePlugin(cwd, pluginName);
-      log.success(`Plugin "${pluginName}" disabled. ${result.modified} command(s), ${result.skills} skill(s) removed.`);
+      log.success(`Plugin "${pluginName}" disabled. ${result.modified} command(s), ${result.agents} agent(s), ${result.skills} skill(s) removed.`);
     }
 
     outro('Done.');

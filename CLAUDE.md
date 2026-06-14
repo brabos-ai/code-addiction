@@ -127,19 +127,23 @@ Current features:
 
 ## Plugin System
 
-A first-class `plugin` concept (distinct from `features`) integrates **external MCP tools**. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands, activates plugin-bound skills, and points the user at the tool's own installer. Plugins are **disabled by default**.
+A first-class `plugin` concept (distinct from `features`) integrates **external MCP tools**. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points the user at the tool's own installer. Plugins are **disabled by default**.
 
 | Component | Path |
 |-----------|------|
 | Catalog (baked into CLI) | `cli/src/plugins.json` |
-| Asset source tree | `framwork/.codeadd/plugins/{plugin}/{fragments,skills}/` |
+| Command fragment source | `framwork/.codeadd/plugins/{plugin}/fragments/{command}.md` |
+| Agent fragment source | `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` |
+| Skill source | `framwork/.codeadd/plugins/{plugin}/skills/{skill}/SKILL.md` |
 | Plugin module | `cli/src/plugins.js` |
 | Shared injection helpers | `cli/src/injection-core.js` (imported by `features.js` + `plugins.js`) |
 | Manifest state | `.codeadd/manifest.json` → `plugins` field |
 
-Fragments use `<!-- section:NAME -->` markers. Commands use `<!-- plugin:PLUGIN:SECTION -->` injection markers (parallel to the `feature:` namespace). Catalog entry schema: `type` (`mcp`\|`script`\|`http`; only `mcp` in v1), `description`, `detect`, `homepage`, `installHint`, `postEnableHint`, `injects` (array), `skills` (array).
+Fragments use `<!-- section:NAME -->` markers. Commands **and agents** use `<!-- plugin:PLUGIN:SECTION -->` injection markers (parallel to the `feature:` namespace). Catalog entry schema: `type` (`mcp`\|`script`\|`http`; only `mcp` in v1), `description`, `detect`, `homepage`, `installHint`, `postEnableHint`, `injects` (array), `skills` (array), `agents` (array of `{ agent, sections }`).
 
-Lifecycle (`codeadd plugins enable|disable|list <name>`): **validate** (hard-gate `detect` shell probe — exit-0 = present) → **inject** fragments → **activate skills** (copy `plugins/{plugin}/skills/{name}/SKILL.md` into every installed provider's `skills/` dir) → print `postEnableHint`. Disable removes injected sections and copied skill dirs.
+**Agent injection** carries plugin capability across the command→subagent dispatch boundary: a per-agent fragment travels with the agent into *every* command that dispatches it (no per-command duplication). Agent injection only targets providers with an `agentsSubdir` (currently Claude). Exclusion is enforced by *not* placing a marker in an agent's source — MCP-blocked allowlist agents (e.g. `feature-history-agent`, `git-history-agent`) and non-code-graph agents (e.g. `doc-reviewer-agent`) carry no marker and are never injected. `injectAgentFragments` / `removeAgentFragments` in `injection-core.js` mirror the command-injection path symmetrically.
+
+Lifecycle (`codeadd plugins enable|disable|list <name>`): **validate** (hard-gate `detect` shell probe — exit-0 = present) → **inject** command fragments → **inject** agent fragments → **activate skills** (copy `plugins/{plugin}/skills/{name}/SKILL.md` into every installed provider's `skills/` dir) → print `postEnableHint`. Disable removes injected command + agent sections (markers kept) and copied skill dirs.
 
 ## Web / Documentation
 

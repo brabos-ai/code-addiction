@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { resolveSelected } from './providers.js';
 
 /**
  * injection-core — shared pure helpers + manifest IO for the two additive
@@ -128,4 +129,105 @@ export function recalculateHashes(cwd, manifest, modifiedPaths) {
     const hash = calculateHash(absPath);
     if (hash) manifest.hashes[relPath] = hash;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Agent injection (per-agent plugin fragments)
+//
+// Plugins reach beyond command bodies into agent definitions: a per-agent
+// fragment travels with the agent into every command that dispatches it. Same
+// section-marker model as command injection — only the source location (the
+// agents/ subtree) and the target files (provider agent dirs) differ.
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve installed agent directories from manifest providers.
+ * Only providers with an agentsSubdir (currently Claude) hold agent files.
+ * @param {string} cwd
+ * @returns {string[]} absolute agent directory paths
+ */
+function agentDirs(cwd) {
+  const manifest = readManifest(cwd);
+  const providers = resolveSelected(manifest?.providers ?? []);
+  return providers
+    .filter((p) => p.agentsSubdir)
+    .map((p) => path.join(cwd, p.dest, p.agentsSubdir));
+}
+
+/**
+ * Read per-agent fragments from .codeadd/plugins/{name}/fragments/agents/{agent}.md
+ * @param {string} cwd
+ * @param {string} pluginName
+ * @returns {Array<{agentName: string, content: string}>}
+ */
+export function getAgentFragments(cwd, pluginName) {
+  const dir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'fragments', 'agents');
+  if (!fs.existsSync(dir)) return [];
+
+  const fragments = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+    const agentName = entry.name.replace(/\.md$/, '');
+    const content = fs.readFileSync(path.join(dir, entry.name), 'utf8');
+    fragments.push({ agentName, content });
+  }
+  return fragments;
+}
+
+/**
+ * Inject plugin sections into each target agent file across installed providers.
+ * Driven by fragments-on-disk + markers-in-files (mirrors command injection):
+ * a fragment with no matching installed agent file is silently skipped.
+ * @param {string} cwd
+ * @param {string} pluginName
+ * @returns {string[]} absolute paths of modified agent files
+ */
+export function injectAgentFragments(cwd, pluginName) {
+  const fragments = getAgentFragments(cwd, pluginName);
+  const dirs = agentDirs(cwd);
+  const modified = [];
+
+  for (const { agentName, content } of fragments) {
+    const sections = parseFragmentSections(content);
+    for (const dir of dirs) {
+      const file = path.join(dir, `${agentName}.md`);
+      if (!fs.existsSync(file)) continue;
+      const original = fs.readFileSync(file, 'utf8');
+      const updated = injectSections(original, 'plugin', pluginName, sections);
+      if (updated !== original) {
+        fs.writeFileSync(file, updated, 'utf8');
+        modified.push(file);
+      }
+    }
+  }
+  return modified;
+}
+
+/**
+ * Remove plugin sections from any installed agent file carrying the plugin
+ * marker (keeps markers, mirrors removeSections for commands).
+ * @param {string} cwd
+ * @param {string} pluginName
+ * @returns {string[]} absolute paths of modified agent files
+ */
+export function removeAgentFragments(cwd, pluginName) {
+  const dirs = agentDirs(cwd);
+  const marker = `plugin:${pluginName}:`;
+  const modified = [];
+
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+      const file = path.join(dir, entry.name);
+      const original = fs.readFileSync(file, 'utf8');
+      if (!original.includes(marker)) continue;
+      const updated = removeSections(original, 'plugin', pluginName);
+      if (updated !== original) {
+        fs.writeFileSync(file, updated, 'utf8');
+        modified.push(file);
+      }
+    }
+  }
+  return modified;
 }
