@@ -146,6 +146,25 @@ describe('update command', () => {
     expect(fs.existsSync(localFile)).toBe(true);
   });
 
+  it('preserves plugin state across an update (does not drop manifest.plugins)', async () => {
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: ['claude'],
+      features: { tdd: true },
+      plugins: { gitnexus: { enabled: true } },
+    });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.features.tdd).toBe(true); // feature state preserved
+    expect(manifest.plugins).toEqual({ gitnexus: { enabled: true } }); // plugin state NOT dropped
+  });
+
   it('syncs .gitignore block when manifest.gitignore is true', async () => {
     writeManifestFile(tmpDir, {
       version: '1.0.0',

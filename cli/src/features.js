@@ -2,15 +2,33 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { intro, outro, log } from '@clack/prompts';
 import { promptFeatures } from './prompt.js';
-import { resolveSelected } from './providers.js';
 import {
   parseFragmentSections,
-  injectSections,
-  removeSections,
+  loadInjectionPoints,
+  resolveResourceFiles,
+  applyInjectionToContent,
+  removeInjectionFromContent,
   readManifest,
   saveManifest,
   recalculateHashes,
 } from './injection-core.js';
+
+/**
+ * Emit an actionable, loud warning when an anchor cannot be located (the user
+ * rewrote the adjacent prose, or the sidecar drifted). Never a silent no-op.
+ * @param {string} namespace
+ * @param {string} name
+ * @param {string} resourceName
+ * @param {Array<{sections:string[], anchor:object}>} missed
+ */
+function warnMissed(namespace, name, resourceName, missed) {
+  for (const m of missed) {
+    log.warn(
+      `Could not inject ${namespace}:${name} [${m.sections.join(', ')}] into ${resourceName}: ` +
+        `anchor not found ("${m.anchor.text}" #${m.anchor.ordinal}). The adjacent text may have been edited.`,
+    );
+  }
+}
 
 /**
  * Feature registry — each optional feature that can be toggled.
@@ -27,40 +45,6 @@ export const FEATURES = {
     commands: ['add.build', 'add.review'],
   },
 };
-
-/**
- * Get all installed command file paths that have markers for a feature.
- * Searches provider command directories based on manifest.providers.
- * @param {string} cwd
- * @param {string} featureName
- * @returns {string[]} absolute paths
- */
-function findCommandsWithMarkers(cwd, featureName) {
-  const manifest = readManifest(cwd);
-  const providerKeys = manifest?.providers ?? [];
-  const providers = resolveSelected(providerKeys);
-
-  const commandDirs = providers
-    .filter((p) => p.commandsSubdir)
-    .map((p) => path.join(cwd, p.dest, p.commandsSubdir));
-
-  const files = [];
-  const marker = `feature:${featureName}:`;
-
-  for (const dir of commandDirs) {
-    if (!fs.existsSync(dir)) continue;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
-      const fullPath = path.join(dir, entry.name);
-      const content = fs.readFileSync(fullPath, 'utf8');
-      if (content.includes(marker)) {
-        files.push(fullPath);
-      }
-    }
-  }
-
-  return files;
-}
 
 /**
  * Get fragment files for a feature.
@@ -90,16 +74,20 @@ function getFragments(cwd, featureName) {
  */
 export function enableFeature(cwd, featureName) {
   const fragments = getFragments(cwd, featureName);
+  const points = loadInjectionPoints(cwd).filter(
+    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
+  );
   const modifiedPaths = [];
 
   for (const { commandName, content: fragmentContent } of fragments) {
     const sections = parseFragmentSections(fragmentContent);
-    const commandFiles = findCommandsWithMarkers(cwd, featureName)
-      .filter((f) => path.basename(f, '.md') === commandName);
+    const cmdPoints = points.filter((p) => p.resource.name === commandName);
+    if (cmdPoints.length === 0) continue;
 
-    for (const cmdPath of commandFiles) {
+    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = injectSections(original, 'feature', featureName, sections);
+      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections);
+      if (missed.length) warnMissed('feature', featureName, commandName, missed);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
         modifiedPaths.push(cmdPath);
@@ -125,15 +113,24 @@ export function enableFeature(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function disableFeature(cwd, featureName) {
-  const commandFiles = findCommandsWithMarkers(cwd, featureName);
+  const fragments = getFragments(cwd, featureName);
+  const points = loadInjectionPoints(cwd).filter(
+    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
+  );
   const modifiedPaths = [];
 
-  for (const cmdPath of commandFiles) {
-    const original = fs.readFileSync(cmdPath, 'utf8');
-    const updated = removeSections(original, 'feature', featureName);
-    if (updated !== original) {
-      fs.writeFileSync(cmdPath, updated, 'utf8');
-      modifiedPaths.push(cmdPath);
+  for (const { commandName, content: fragmentContent } of fragments) {
+    const sections = parseFragmentSections(fragmentContent);
+    const cmdPoints = points.filter((p) => p.resource.name === commandName);
+    if (cmdPoints.length === 0) continue;
+
+    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
+      const original = fs.readFileSync(cmdPath, 'utf8');
+      const updated = removeInjectionFromContent(original, cmdPoints, sections);
+      if (updated !== original) {
+        fs.writeFileSync(cmdPath, updated, 'utf8');
+        modifiedPaths.push(cmdPath);
+      }
     }
   }
 

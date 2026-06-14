@@ -40,3 +40,6 @@ You are a feature discovery specialist. Your role is to explore codebases, extra
 - Speed over depth — use haiku-appropriate fast exploration
 - Flag unknowns explicitly rather than guessing
 - You are a leaf agent — do NOT dispatch other agents
+
+<!-- plugin:gitnexus:graph -->
+<!-- /plugin:gitnexus:graph -->

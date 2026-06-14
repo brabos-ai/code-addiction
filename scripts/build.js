@@ -69,18 +69,186 @@ function copyDirRecursive(src, dest, provider = null) {
 /**
  * Remove HTML comments and collapse excess blank lines (saves tokens).
  *
- * EXCEPTION: `feature:`/`plugin:` injection markers are preserved — they are
- * functional injection points consumed post-install by features.js/plugins.js,
- * not source-only dev-notes. Stripping them would make injection a no-op on the
- * built provider files.
+ * ALL comments strip uniformly — including `feature:`/`plugin:` injection
+ * markers. The markers are consumed at build time by extractInjectionPoints()
+ * into the content-anchored sidecar (injection-points.json); the built provider
+ * files ship marker-free and post-install injection locates anchors by text.
  */
 function stripHtmlComments(content) {
   return content
-    .replace(/<!--([\s\S]*?)-->/g, (match, inner) =>
-      /^\s*\/?(?:feature|plugin):/.test(inner) ? match : ''
-    )
+    .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+// ---------------------------------------------------------------------------
+// Injection-point extraction (marker → content-anchor sidecar)
+//
+// Source files keep `<!-- feature/plugin:NAME:SECTION -->` markers for authoring
+// ergonomics + exclusion-by-omission. At build time each OPEN marker is recorded
+// as an injection point anchored to the nearest surviving non-blank line above it
+// (identified by text + occurrence ordinal, so it survives per-provider frontmatter
+// offsets, line shifts, and most user edits). The markers are then stripped.
+// ---------------------------------------------------------------------------
+
+// Matches an OPEN injection marker (closers start with `/` and are ignored).
+const OPEN_MARKER_RE = /^\s*(feature|plugin):([^:\s]+):(\S+?)\s*$/;
+// Resource-path variables that resolve differently per provider — illegal in an anchor.
+const ANCHOR_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):/;
+
+/**
+ * A real injection marker stands alone on its line. A marker embedded in prose
+ * (e.g. a `<!-- feature:x:y -->` shown inside a table cell or code span as
+ * documentation) is NOT an injection point — only a comment to be stripped.
+ * @param {string} raw  full source
+ * @param {number} start  comment start index
+ * @param {number} end    comment end index (exclusive)
+ * @returns {boolean}
+ */
+function isStandaloneMarker(raw, start, end) {
+  const lineStart = raw.lastIndexOf('\n', start - 1) + 1;
+  const lineEnd = raw.indexOf('\n', end);
+  const before = raw.slice(lineStart, start);
+  const after = raw.slice(end, lineEnd === -1 ? raw.length : lineEnd);
+  return before.trim() === '' && after.trim() === '';
+}
+
+/**
+ * Split text into trimmed lines, dropping leading/trailing blank-only lines so
+ * "nearest non-blank" math matches the post-strip installed body.
+ * @param {string} text
+ * @returns {string[]} non-empty trimmed lines, in order
+ */
+function nonBlankLines(text) {
+  return text.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+}
+
+/**
+ * Parse a resource body, returning one injection point per OPEN marker.
+ * Anchors are computed against the comment-stripped (but not blank-collapsed)
+ * body, so ordinals match what the CLI counts in the installed file.
+ *
+ * @param {string} rawContent
+ * @param {string} resourceName  logical name (e.g. "add.build", "backend-agent")
+ * @param {'command'|'agent'} resourceKind
+ * @returns {Array<{namespace,name,section,resource:{name,kind},anchor:{text,ordinal,position,next}}>}
+ * @throws if a chosen anchor line carries a {{cmd:}}/{{skill:}}/{{addpath:}} variable
+ */
+function extractInjectionPoints(rawContent, resourceName, resourceKind) {
+  const commentRe = /<!--([\s\S]*?)-->/g;
+  let surviving = '';
+  let lastIndex = 0;
+  let m;
+  const pending = []; // { namespace, name, section, survivingPos }
+
+  while ((m = commentRe.exec(rawContent)) !== null) {
+    surviving += rawContent.slice(lastIndex, m.index);
+    lastIndex = m.index + m[0].length;
+    const open = m[1].match(OPEN_MARKER_RE);
+    if (open && isStandaloneMarker(rawContent, m.index, lastIndex)) {
+      pending.push({
+        namespace: open[1],
+        name: open[2],
+        section: open[3],
+        survivingPos: surviving.length, // marker location in the stripped body
+      });
+    }
+  }
+  surviving += rawContent.slice(lastIndex);
+
+  const points = [];
+  for (const p of pending) {
+    const above = nonBlankLines(surviving.slice(0, p.survivingPos));
+    const below = nonBlankLines(surviving.slice(p.survivingPos));
+
+    let text = null;
+    let position;
+    let ordinal;
+    let next = null;
+
+    // Prefer the nearest variable-free non-blank line ABOVE (walk past lines
+    // carrying a {{cmd:}}/{{skill:}}/{{addpath:}} variable — they resolve
+    // differently per provider and cannot serve as a single shared anchor).
+    let aboveIdx = -1;
+    for (let k = above.length - 1; k >= 0; k--) {
+      if (!ANCHOR_VARIABLE_RE.test(above[k])) { aboveIdx = k; break; }
+    }
+
+    if (aboveIdx !== -1) {
+      text = above[aboveIdx];
+      position = 'after';
+      ordinal = above.slice(0, aboveIdx + 1).filter((l) => l === text).length;
+      // Drift hint only when the anchor is the line immediately above the marker
+      // and the following line is itself variable-free (else it resolves per provider).
+      const walked = aboveIdx !== above.length - 1;
+      next = !walked && below.length > 0 && !ANCHOR_VARIABLE_RE.test(below[0]) ? below[0] : null;
+    } else {
+      // No variable-free line above → anchor before the nearest variable-free line below.
+      const belowIdx = below.findIndex((l) => !ANCHOR_VARIABLE_RE.test(l));
+      if (belowIdx !== -1) {
+        text = below[belowIdx];
+        position = 'before';
+        ordinal = above.filter((l) => l === text).length
+          + below.slice(0, belowIdx + 1).filter((l) => l === text).length;
+      }
+    }
+
+    if (text == null) {
+      throw new Error(
+        `No variable-free anchor for ${p.namespace}:${p.name}:${p.section} in ${resourceName} — ` +
+          `every adjacent line resolves a resource-path variable. Add a stable plain line next to the marker.`,
+      );
+    }
+
+    points.push({
+      namespace: p.namespace,
+      name: p.name,
+      section: p.section,
+      resource: { name: resourceName, kind: resourceKind },
+      anchor: { text, ordinal, position, next },
+    });
+  }
+  return points;
+}
+
+// Build-run accumulator (reset per build).
+let INJECTION_POINTS = [];
+
+/**
+ * Extract + accumulate injection points for one resource body.
+ * @param {string} rawContent
+ * @param {string} resourceName
+ * @param {'command'|'agent'} resourceKind
+ */
+function collectInjectionPoints(rawContent, resourceName, resourceKind) {
+  INJECTION_POINTS.push(...extractInjectionPoints(rawContent, resourceName, resourceKind));
+}
+
+/** @returns {Array} the points accumulated so far this build */
+function getInjectionPoints() {
+  return INJECTION_POINTS;
+}
+
+/**
+ * Write the sidecar map. Stable sort by (kind, name) for clean diffs while
+ * preserving source-encounter order within a resource (needed for clustered
+ * markers that share an anchor).
+ * @param {string} outPath
+ * @returns {number} number of points written
+ */
+function writeInjectionPoints(outPath) {
+  const points = INJECTION_POINTS
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => {
+      const ak = a.p.resource.kind, bk = b.p.resource.kind;
+      if (ak !== bk) return ak < bk ? -1 : 1;
+      const an = a.p.resource.name, bn = b.p.resource.name;
+      if (an !== bn) return an < bn ? -1 : 1;
+      return a.i - b.i; // stable: keep source order within a resource
+    })
+    .map(({ p }) => p);
+  writeFile(outPath, JSON.stringify({ version: 1, points }, null, 2) + '\n');
+  return points.length;
 }
 
 // ---------------------------------------------------------------------------
@@ -217,6 +385,7 @@ function buildResources(map, strategy) {
     // Read + clean once per resource (not per provider)
     const raw = readFile(srcPath);
     lintResourcePaths(raw, srcPath);
+    if (strategy.injectionKind) collectInjectionPoints(raw, name, strategy.injectionKind);
     const cleaned = stripHtmlComments(raw);
     const providers = strategy.resolveProviders(entry, map);
 
@@ -262,6 +431,7 @@ const commandStrategy = {
   sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'commands', `${name}.md`),
   providerPattern: (provider) => provider.commands || null,
   resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
+  injectionKind: 'command',
   meta: (name, entry, resolvedPattern) => ({
     name,
     description: entry.description,
@@ -320,6 +490,7 @@ const agentStrategy = {
   sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'agents', `${name}.md`),
   providerPattern: (provider) => provider.agents || null,
   resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
+  injectionKind: 'agent',
   meta: (name, entry) => ({ name, description: entry.description }),
   /** Passthrough — agents keep their own frontmatter (name, model, tools, skills, memory) */
   transform: (content) => content,
@@ -348,22 +519,32 @@ function buildAgents(map) {
 function main() {
   console.log('Building provider files...\n');
 
+  INJECTION_POINTS = [];
   const map = readMap();
   const commandCount = buildCommands(map);
   const skillCount = buildSkills(map);
   const agentCount = buildAgents(map);
+
+  const sidecarPath = path.join(ROOT, 'framwork', '.codeadd', 'injection-points.json');
+  const pointCount = writeInjectionPoints(sidecarPath);
 
   const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
   console.log(`  Skills   : ${Object.keys(map.skills).length} skills  → ${skillCount} files`);
   console.log(`  Agents   : ${Object.keys(map.agents || {}).length} agents  → ${agentCount} files`);
+  console.log(`  Injection points : ${pointCount} → ${path.relative(ROOT, sidecarPath)}`);
   console.log(`  Total    : ${total} files generated`);
 }
 
 // Export for testing
 module.exports = {
   stripHtmlComments,
+  extractInjectionPoints,
+  collectInjectionPoints,
+  getInjectionPoints,
+  writeInjectionPoints,
+  _resetInjectionPoints: () => { INJECTION_POINTS = []; },
   resolveResourcePaths,
   lintResourcePaths,
   copyDirRecursive,

@@ -4,6 +4,16 @@ import path from 'node:path';
 import os from 'node:os';
 import { readManifest } from '../src/uninstaller.js';
 
+vi.mock('../src/prompt.js', () => ({
+  promptConfirm: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@clack/prompts', () => ({
+  intro: vi.fn(),
+  outro: vi.fn(),
+  spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
+  log: { info: vi.fn(), warn: vi.fn(), success: vi.fn() },
+}));
+
 let tmpDir;
 
 beforeEach(() => {
@@ -58,11 +68,6 @@ describe('readManifest', () => {
 
 describe('uninstall', () => {
   it('throws if manifest does not exist', async () => {
-    // Mock prompt to avoid interactive input
-    vi.mock('../src/prompt.js', () => ({
-      promptConfirm: vi.fn().mockResolvedValue(undefined),
-    }));
-
     const { uninstall } = await import('../src/uninstaller.js');
     const emptyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'add-empty-'));
 
@@ -76,16 +81,6 @@ describe('uninstall', () => {
   });
 
   it('removes files listed in manifest (--force)', async () => {
-    vi.mock('../src/prompt.js', () => ({
-      promptConfirm: vi.fn().mockResolvedValue(undefined),
-    }));
-    vi.mock('@clack/prompts', () => ({
-      intro: vi.fn(),
-      outro: vi.fn(),
-      spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-      log: { info: vi.fn(), warn: vi.fn(), success: vi.fn() },
-    }));
-
     // Create fake ADD files
     const addDir = path.join(tmpDir, '.codeadd');
     const commandsDir = path.join(addDir, 'commands');
@@ -112,16 +107,6 @@ describe('uninstall', () => {
   });
 
   it('removes the ADD-managed .gitignore block and preserves user entries', async () => {
-    vi.mock('../src/prompt.js', () => ({
-      promptConfirm: vi.fn().mockResolvedValue(undefined),
-    }));
-    vi.mock('@clack/prompts', () => ({
-      intro: vi.fn(),
-      outro: vi.fn(),
-      spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-      log: { info: vi.fn(), warn: vi.fn(), success: vi.fn() },
-    }));
-
     const addDir = path.join(tmpDir, '.codeadd');
     const commandsDir = path.join(addDir, 'commands');
     fs.mkdirSync(commandsDir, { recursive: true });
@@ -155,16 +140,6 @@ describe('uninstall', () => {
   });
 
   it('deletes .gitignore when it only contains the ADD-managed block', async () => {
-    vi.mock('../src/prompt.js', () => ({
-      promptConfirm: vi.fn().mockResolvedValue(undefined),
-    }));
-    vi.mock('@clack/prompts', () => ({
-      intro: vi.fn(),
-      outro: vi.fn(),
-      spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-      log: { info: vi.fn(), warn: vi.fn(), success: vi.fn() },
-    }));
-
     const addDir = path.join(tmpDir, '.codeadd');
     const commandsDir = path.join(addDir, 'commands');
     fs.mkdirSync(commandsDir, { recursive: true });

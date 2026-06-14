@@ -6,6 +6,8 @@
  * eligible for feature injection (null means feature injection not supported).
  * skillsSubdir is the subdirectory within dest that holds skill files
  * (used by plugin-bound skill activation).
+ * agentsSubdir is the subdirectory within dest that holds agent definition files
+ * eligible for plugin agent-injection (null means the provider has no agents).
  */
 export const PROVIDERS = {
   claude: {
@@ -15,6 +17,7 @@ export const PROVIDERS = {
     dest: '.claude',
     commandsSubdir: 'commands',
     skillsSubdir: 'skills',
+    agentsSubdir: 'agents',
   },
   codex: {
     label: 'Codex (OpenAI)',
@@ -23,6 +26,7 @@ export const PROVIDERS = {
     dest: '.agents',
     commandsSubdir: null,
     skillsSubdir: 'skills',
+    agentsSubdir: null,
   },
   cursor: {
     label: 'Cursor',
@@ -31,6 +35,7 @@ export const PROVIDERS = {
     dest: '.cursor',
     commandsSubdir: 'commands',
     skillsSubdir: 'skills',
+    agentsSubdir: null,
   },
   antigrav: {
     label: 'Antigravity (Google)',
@@ -39,6 +44,7 @@ export const PROVIDERS = {
     dest: '.agent',
     commandsSubdir: null,
     skillsSubdir: 'skills',
+    agentsSubdir: null,
   },
   opencode: {
     label: 'OpenCode',
@@ -47,6 +53,7 @@ export const PROVIDERS = {
     dest: '.opencode',
     commandsSubdir: 'commands',
     skillsSubdir: 'skills',
+    agentsSubdir: null,
   },
 };
 
@@ -62,7 +69,7 @@ export const PROVIDER_PRIORITY = ['claude', 'codex', 'cursor', 'antigrav', 'open
  * was removed may still list it in its manifest; emitting an entry with an
  * undefined `dest`/`src` would crash path.join during install/update.
  * @param {string[]} keys
- * @returns {{ key: string, label: string, src: string, dest: string, commandsSubdir: string | null, skillsSubdir: string | null }[]}
+ * @returns {{ key: string, label: string, src: string, dest: string, commandsSubdir: string | null, skillsSubdir: string | null, agentsSubdir: string | null }[]}
  */
 export function resolveSelected(keys) {
   return keys.filter((key) => PROVIDERS[key]).map((key) => ({ key, ...PROVIDERS[key] }));

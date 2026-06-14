@@ -6,12 +6,28 @@ import { intro, outro, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
 import {
   parseFragmentSections,
-  injectSections,
-  removeSections,
+  loadInjectionPoints,
+  resolveResourceFiles,
+  applyInjectionToContent,
+  removeInjectionFromContent,
   readManifest,
   saveManifest,
   recalculateHashes,
+  injectAgentFragments,
+  removeAgentFragments,
 } from './injection-core.js';
+
+/**
+ * Loud, actionable warning when a plugin anchor can't be located (drift / edit).
+ */
+function warnMissed(pluginName, resourceName, missed) {
+  for (const m of missed) {
+    log.warn(
+      `Could not inject plugin:${pluginName} [${m.sections.join(', ')}] into ${resourceName}: ` +
+        `anchor not found ("${m.anchor.text}" #${m.anchor.ordinal}). The adjacent text may have been edited.`,
+    );
+  }
+}
 
 const CATALOG_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'plugins.json');
 
@@ -53,38 +69,6 @@ export function validate(entry) {
   } catch {
     return false;
   }
-}
-
-/**
- * Get all installed command file paths that have markers for a plugin.
- * Searches provider command directories based on manifest.providers.
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {string[]} absolute paths
- */
-function findCommandsWithMarkers(cwd, pluginName) {
-  const manifest = readManifest(cwd);
-  const providerKeys = manifest?.providers ?? [];
-  const providers = resolveSelected(providerKeys);
-
-  const commandDirs = providers
-    .filter((p) => p.commandsSubdir)
-    .map((p) => path.join(cwd, p.dest, p.commandsSubdir));
-
-  const files = [];
-  const marker = `plugin:${pluginName}:`;
-
-  for (const dir of commandDirs) {
-    if (!fs.existsSync(dir)) continue;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
-      const fullPath = path.join(dir, entry.name);
-      const content = fs.readFileSync(fullPath, 'utf8');
-      if (content.includes(marker)) files.push(fullPath);
-    }
-  }
-
-  return files;
 }
 
 /**
@@ -161,37 +145,45 @@ function deactivateSkills(cwd, skills) {
 }
 
 /**
- * Enable a plugin — validate (hard gate) → inject fragments → activate skills → hint.
+ * Enable a plugin — validate (hard gate) → inject command + agent fragments →
+ * activate skills → hint.
  * @param {string} cwd
  * @param {string} pluginName
- * @returns {{ ok: boolean, modified: number, skills: number, reason?: string }}
+ * @returns {{ ok: boolean, modified: number, agents: number, skills: number, reason?: string }}
  */
 export function enablePlugin(cwd, pluginName) {
   const catalog = loadCatalog();
   const entry = catalog[pluginName];
-  if (!entry) return { ok: false, modified: 0, skills: 0, reason: 'unknown' };
+  if (!entry) return { ok: false, modified: 0, agents: 0, skills: 0, reason: 'unknown' };
 
   if (!validate(entry)) {
-    return { ok: false, modified: 0, skills: 0, reason: 'not-detected' };
+    return { ok: false, modified: 0, agents: 0, skills: 0, reason: 'not-detected' };
   }
 
-  // Inject fragments
+  // Inject command fragments
   const fragments = getFragments(cwd, pluginName);
+  const points = loadInjectionPoints(cwd).filter(
+    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'command',
+  );
   const modifiedPaths = [];
   for (const { commandName, content: fragmentContent } of fragments) {
     const sections = parseFragmentSections(fragmentContent);
-    const commandFiles = findCommandsWithMarkers(cwd, pluginName)
-      .filter((f) => path.basename(f, '.md') === commandName);
+    const cmdPoints = points.filter((p) => p.resource.name === commandName);
+    if (cmdPoints.length === 0) continue;
 
-    for (const cmdPath of commandFiles) {
+    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = injectSections(original, 'plugin', pluginName, sections);
+      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections);
+      if (missed.length) warnMissed(pluginName, commandName, missed);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
         modifiedPaths.push(cmdPath);
       }
     }
   }
+
+  // Inject agent fragments (carry the capability across the dispatch boundary)
+  const agentPaths = injectAgentFragments(cwd, pluginName);
 
   // Activate skills
   const skills = activateSkills(cwd, pluginName, entry.skills);
@@ -200,33 +192,45 @@ export function enablePlugin(cwd, pluginName) {
   if (manifest) {
     if (!manifest.plugins) manifest.plugins = {};
     manifest.plugins[pluginName] = { enabled: true };
-    recalculateHashes(cwd, manifest, modifiedPaths);
+    recalculateHashes(cwd, manifest, [...modifiedPaths, ...agentPaths]);
     saveManifest(cwd, manifest);
   }
 
-  return { ok: true, modified: modifiedPaths.length, skills };
+  return { ok: true, modified: modifiedPaths.length, agents: agentPaths.length, skills };
 }
 
 /**
- * Disable a plugin — remove injected sections, remove activated skills.
+ * Disable a plugin — remove injected command + agent sections, remove activated skills.
  * @param {string} cwd
  * @param {string} pluginName
- * @returns {{ modified: number, skills: number }}
+ * @returns {{ modified: number, agents: number, skills: number }}
  */
 export function disablePlugin(cwd, pluginName) {
   const catalog = loadCatalog();
   const entry = catalog[pluginName] ?? {};
 
-  const commandFiles = findCommandsWithMarkers(cwd, pluginName);
+  const fragments = getFragments(cwd, pluginName);
+  const points = loadInjectionPoints(cwd).filter(
+    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'command',
+  );
   const modifiedPaths = [];
-  for (const cmdPath of commandFiles) {
-    const original = fs.readFileSync(cmdPath, 'utf8');
-    const updated = removeSections(original, 'plugin', pluginName);
-    if (updated !== original) {
-      fs.writeFileSync(cmdPath, updated, 'utf8');
-      modifiedPaths.push(cmdPath);
+  for (const { commandName, content: fragmentContent } of fragments) {
+    const sections = parseFragmentSections(fragmentContent);
+    const cmdPoints = points.filter((p) => p.resource.name === commandName);
+    if (cmdPoints.length === 0) continue;
+
+    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
+      const original = fs.readFileSync(cmdPath, 'utf8');
+      const updated = removeInjectionFromContent(original, cmdPoints, sections);
+      if (updated !== original) {
+        fs.writeFileSync(cmdPath, updated, 'utf8');
+        modifiedPaths.push(cmdPath);
+      }
     }
   }
+
+  // Remove agent injections (symmetric with enable)
+  const agentPaths = removeAgentFragments(cwd, pluginName);
 
   const skills = deactivateSkills(cwd, entry.skills);
 
@@ -234,11 +238,11 @@ export function disablePlugin(cwd, pluginName) {
   if (manifest) {
     if (!manifest.plugins) manifest.plugins = {};
     manifest.plugins[pluginName] = { enabled: false };
-    recalculateHashes(cwd, manifest, modifiedPaths);
+    recalculateHashes(cwd, manifest, [...modifiedPaths, ...agentPaths]);
     saveManifest(cwd, manifest);
   }
 
-  return { modified: modifiedPaths.length, skills };
+  return { modified: modifiedPaths.length, agents: agentPaths.length, skills };
 }
 
 /**
@@ -331,11 +335,11 @@ export async function plugins(cwd, args) {
         outro('Not enabled.');
         process.exit(1);
       }
-      log.success(`Plugin "${pluginName}" enabled. ${result.modified} command(s), ${result.skills} skill(s) activated.`);
+      log.success(`Plugin "${pluginName}" enabled. ${result.modified} command(s), ${result.agents} agent(s), ${result.skills} skill(s) activated.`);
       if (entry.postEnableHint) log.info(entry.postEnableHint);
     } else {
       const result = disablePlugin(cwd, pluginName);
-      log.success(`Plugin "${pluginName}" disabled. ${result.modified} command(s), ${result.skills} skill(s) removed.`);
+      log.success(`Plugin "${pluginName}" disabled. ${result.modified} command(s), ${result.agents} agent(s), ${result.skills} skill(s) removed.`);
     }
 
     outro('Done.');

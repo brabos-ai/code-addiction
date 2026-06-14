@@ -1,0 +1,5 @@
+<!-- section:graph -->
+
+**GitNexus graph available:** before proposing UX changes, query the code knowledge-graph to trace the real frontend flows — screens, navigation paths, and the components a user journey actually traverses — so recommendations map to how the interface is built. Structural/relational questions → graph; literal text → grep. Mechanics: load skill `add-gitnexus` (routes to `gitnexus-exploring`, frontend-scoped).
+
+<!-- /section:graph -->

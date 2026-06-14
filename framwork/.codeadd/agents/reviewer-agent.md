@@ -41,3 +41,6 @@ For each finding:
 - Focus on real issues — do not report style preferences or nitpicks
 - False positives erode trust — only report issues you are confident about
 - You are a leaf agent — do NOT dispatch other agents
+
+<!-- plugin:gitnexus:graph -->
+<!-- /plugin:gitnexus:graph -->

@@ -47,4 +47,11 @@ describe('release packaging', () => {
     if (Object.keys(plugins).length === 0) return; // no plugins → nothing to ship
     expect(packagedSubdirs()).toContain('.codeadd/plugins');
   });
+
+  it('ships the injection-points.json sidecar (anchors for post-install injection)', () => {
+    // The sidecar is a single file (not a subdir), so it must be added to the
+    // zip explicitly. Without it, every feature/plugin enable becomes a no-op.
+    const yml = fs.readFileSync(RELEASE_WORKFLOW, 'utf8');
+    expect(yml).toContain('framwork/.codeadd/injection-points.json');
+  });
 });
