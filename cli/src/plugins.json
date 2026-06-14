@@ -20,7 +20,7 @@
     "homepage": "https://github.com/abhigyanpatwari/GitNexus",
     "installHint": "Install globally: npm install -g gitnexus",
     "postEnableHint": "gitnexus enabled. Make the graph usable:\n  1) gitnexus setup     # wire MCP (once)\n  2) gitnexus analyze   # index this repo (from repo root)\nRe-run analyze after large changes. Docs: https://github.com/abhigyanpatwari/GitNexus",
-    "injects": ["add.new", "add.diagnose", "add.hotfix", "add.done"],
+    "injects": ["add.new", "add.plan", "add.diagnose", "add.hotfix", "add.done"],
     "skills": ["add-gitnexus"],
     "agents": [
       { "agent": "discovery-agent", "sections": ["graph"] },

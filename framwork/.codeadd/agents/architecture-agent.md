@@ -23,6 +23,10 @@ You are an architecture consultant. Your role is to analyze project structure, e
 
 1. Read project structure and key files to understand current architecture
 2. Map layers, dependencies, and module boundaries
+
+<!-- plugin:gitnexus:graph -->
+<!-- /plugin:gitnexus:graph -->
+
 3. Analyze against established architectural patterns
 4. Identify violations, risks, and improvement opportunities
 5. Provide clear recommendations with rationale and trade-offs
@@ -41,6 +45,3 @@ You are an architecture consultant. Your role is to analyze project structure, e
 - Recommend within the project's existing paradigm — don't propose full rewrites
 - Trade-off analysis is mandatory — never recommend without stating what you give up
 - You are a leaf agent — do NOT dispatch other agents
-
-<!-- plugin:gitnexus:graph -->
-<!-- /plugin:gitnexus:graph -->
