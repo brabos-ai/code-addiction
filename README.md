@@ -47,18 +47,18 @@ npx codeadd uninstall
 # list optional features
 npx codeadd features list
 
-# list available plugins
+# list available plugins (see docs for per-plugin setup)
 npx codeadd plugins list
-
-# enable a plugin (e.g., gitnexus)
-npx codeadd plugins enable gitnexus
-
-# disable a plugin
-npx codeadd plugins disable gitnexus
 
 # show installation configuration
 npx codeadd config show
 ```
+
+## Plugins
+
+Plugins integrate external MCP tools into ADD commands, extending discovery, planning, and diagnosis with structural code navigation. Plugins are **disabled by default** — enable only after installing the external tool.
+
+See [code.brabos.ai/docs#plugins](https://code.brabos.ai/docs#plugins) for the full plugin catalog with install prerequisites and step-by-step setup.
 
 ## How it works
 
