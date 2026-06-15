@@ -1,5 +1,5 @@
 <!-- section:graph-trace -->
 
-**Graph available (GitNexus):** when a symptom **spans call sites**, **trace blast-radius / call paths** before hypothesizing — follow refs to the source instead of guessing. Mechanics: load skill `add-gitnexus`.
+**Before hypothesizing a cause, trace the call paths in the graph:** load skill `add-gitnexus` and follow refs / blast-radius from the symptom to its source instead of guessing. Grep alone misses DI-by-token, barrels/reexports, dynamic refs, and inheritance, so it is not sufficient evidence of where a symptom originates. If the graph is empty or unindexed, say so explicitly and fall back to grep — do not block.
 
 <!-- /section:graph-trace -->
