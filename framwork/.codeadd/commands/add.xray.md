@@ -98,6 +98,9 @@ CREATE discovery document manually:
 
 ## STEP 3: Detect & Classify Apps
 
+<!-- plugin:gitnexus:graph-classify -->
+<!-- /plugin:gitnexus:graph-classify -->
+
 ### 3.1 Detect Apps
 
 List all directories under `apps/`, `packages/`, `libs/`.
@@ -148,6 +151,9 @@ Each agent is independent. Dispatch ALL simultaneously.
 
 ### 4.1 Common Dispatch Pattern
 
+<!-- plugin:gitnexus:graph-dispatch-common -->
+<!-- /plugin:gitnexus:graph-dispatch-common -->
+
 **For ALL analyzers** (app specialists + database + code quality):
 
 **DISPATCH AGENT:**
@@ -164,6 +170,9 @@ Each agent is independent. Dispatch ALL simultaneously.
 - Skip empty sections
 
 ### 4.2 App Specialists (with specialist: backend, frontend)
+
+<!-- plugin:gitnexus:graph-specialist -->
+<!-- /plugin:gitnexus:graph-specialist -->
 
 **DISPATCH FOR EACH APP WITH SPECIALIST:**
 
@@ -213,6 +222,9 @@ Write {{addpath:skills/project-patterns/[TYPE].md}}
 
 ### 4.4 Database Analyzer (if detected)
 
+<!-- plugin:gitnexus:graph-database -->
+<!-- /plugin:gitnexus:graph-database -->
+
 **DISPATCH IF DATABASE FOUND:**
 
 **Prompt:**
@@ -236,6 +248,9 @@ Write {{addpath:skills/project-patterns/database.md}} (or NONE)
 ```
 
 ### 4.5 Code Quality Analyzer (always)
+
+<!-- plugin:gitnexus:graph-quality -->
+<!-- /plugin:gitnexus:graph-quality -->
 
 **DISPATCH ALWAYS:**
 
@@ -349,6 +364,9 @@ Each area file follows context engineering principles:
 ---
 
 ## STEP 7: Update CLAUDE.md
+
+<!-- plugin:gitnexus:graph-contract -->
+<!-- /plugin:gitnexus:graph-contract -->
 
 Read skill `{{skill:add-claude-md-style/SKILL.md}}` BEFORE dispatching the agent.
 

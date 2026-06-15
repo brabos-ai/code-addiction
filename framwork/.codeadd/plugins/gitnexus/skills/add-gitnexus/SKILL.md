@@ -31,9 +31,11 @@ GitNexus exposes a code knowledge-graph (calls, refs, blast-radius) over MCP, wi
 When reached from a codeadd command, resolve as:
 
 - `add.new` (discovery) → `gitnexus-exploring` — map modules, key call paths, entry points before questioning.
+- `add.plan` (planning) → `gitnexus-impact-analysis` — establish blast-radius (callers, dependents, dead-code) of the change surface before dispatching subagents.
 - `add.diagnose` (triage) → `gitnexus-impact-analysis` for blast-radius, or `gitnexus-debugging` to trace an error to its source.
 - `add.hotfix` (pre-edit) → `gitnexus-impact-analysis` — find impacted call sites of the symbol about to change.
+- `add.done` (post-change) → `gitnexus-cli` — re-index (`gitnexus analyze`) after significant changes so the graph stays current.
 
 ## Operating note
 
-This skill assumes an **indexed graph**. Freshness is handled at `add.done` (re-index after significant changes), not here. If the graph returns nothing, the repo may be unindexed — proceed with grep; do not block.
+This skill assumes an **indexed graph**. Freshness is handled at `add.done` (re-index after significant changes), not here. If the graph returns nothing, the repo may be unindexed — **say so explicitly**, then proceed with grep; do not block.

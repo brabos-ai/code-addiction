@@ -1,5 +1,5 @@
 <!-- section:graph-reindex -->
 
-**Graph freshness (GitNexus):** after significant changes, re-index so the knowledge-graph stays current — `gitnexus analyze` from the repo root. A stale graph misleads later discovery/diagnosis. Mechanics: load skill `add-gitnexus`.
+**After significant changes, re-index the graph so later discovery and diagnosis are not misled by a stale picture:** run `gitnexus analyze` from the repo root (load skill `add-gitnexus` for mechanics). If indexing is unavailable, note it explicitly — do not block the done flow.
 
 <!-- /section:graph-reindex -->
