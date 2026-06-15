@@ -591,25 +591,90 @@ import "../styles/global.css";
       <section id="plugins" class="mb-20">
         <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Plugins</h2>
         <p class="text-muted-light mb-6">
-          Plugins integrate external MCP tools into ADD commands. Code Addiction handles utilization — it validates the tool is present, injects guidance into commands, and activates plugin-bound skills. Plugins are disabled by default.
-        </p>
-        <p class="text-muted-light mb-6">
-          Enable or disable them with <code class="text-accent font-mono text-xs">npx codeadd plugins enable|disable &lt;name&gt;</code>.
+          Plugins integrate external MCP tools into ADD commands. Code Addiction handles utilization —
+          it validates the tool is present, injects guidance into commands and agents, and activates
+          plugin-bound skills. Plugins are <strong>disabled by default</strong> and require the
+          external tool to be installed first.
         </p>
 
-        <div class="space-y-3">
-          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">gitnexus</code>
+        <!-- gitnexus -->
+        <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02] space-y-6">
+
+          <!-- Header -->
+          <div>
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-lg font-bold">gitnexus</code>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Code knowledge-graph navigation (calls, refs, blast-radius) via MCP</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code></p>
+            <p class="text-muted-light text-sm mb-1">Code knowledge-graph navigation (call graph, refs, blast-radius) via MCP. Enables structural code navigation across discovery, planning, diagnosis, and hotfix commands — going beyond grep to understand actual call chains and impact.</p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.plan</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code>, <code class="font-mono">add.xray</code></p>
             <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-gitnexus</code> — structural/relational code navigation (call graph, references, blast-radius, trace flows, safe refactors)</p>
             <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/abhigyanpatwari/GitNexus</a></p>
           </div>
+
+          <!-- Step 1: Install prerequisite -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">1 — Install GitNexus</p>
+            <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction validates this with <code class="font-mono">gitnexus --version</code>.</p>
+            <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+              <span class="text-accent select-none">$</span>
+              <span class="flex-1 text-foreground" id="cmd-gn-install">npm install -g gitnexus</span>
+              <button onclick="copyCmd('cmd-gn-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Enable -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-gn-enable">npx codeadd plugins enable gitnexus</span>
+                <button onclick="copyCmd('cmd-gn-enable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-muted select-none"># to disable later</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-gn-disable">npx codeadd plugins disable gitnexus</span>
+                <button onclick="copyCmd('cmd-gn-disable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Post-enable setup -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">3 — Wire and index (once per repo)</p>
+            <p class="text-muted-light text-xs mb-2">Run these after enabling. Re-run <code class="font-mono">analyze</code> after large changes.</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-gn-setup">gitnexus setup</span>
+                <button onclick="copyCmd('cmd-gn-setup', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-gn-analyze">gitnexus analyze</span>
+                <button onclick="copyCmd('cmd-gn-analyze', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+            <p class="text-muted text-xs mt-2">Verify: ask Claude to run <code class="font-mono">gitnexus list_repos</code> (or <code class="font-mono">/mcp</code>) — this repo must appear indexed. If it does not, commands silently fall back to grep.</p>
+          </div>
+
         </div>
+
+        <script is:inline>
+          function copyCmd(id, btn) {
+            var text = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(text).then(function() {
+              var orig = btn.textContent;
+              btn.textContent = '✓';
+              setTimeout(function() { btn.textContent = orig; }, 1500);
+            });
+          }
+        </script>
       </section>
 
       <!-- PROVIDERS -->

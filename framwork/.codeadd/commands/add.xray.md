@@ -18,14 +18,13 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 **STEPS IN ORDER:**
 ```
 STEP 1: Self-Bootstrap           → READ skill FIRST
-STEP 2: Run Discovery Script     → VERIFY output exists
-STEP 3: Detect & Classify Apps   → BUILD dispatch plan
-STEP 4: Dispatch Analyzers       → ALL IN PARALLEL
-STEP 5: Consolidate Reports      → WAIT-ALL before proceeding
-STEP 6: Generate SKILL.md Index  → CREATE project-patterns skill index
-STEP 7: Update CLAUDE.md         → DISPATCH agent
-STEP 8: Copy Context Files       → CLAUDE.md → AGENTS.md, GEMINI.md
-STEP 9: Report & Cleanup         → SUMMARY + remove temp files
+STEP 2: Detect & Classify Apps   → EXPLORE + BUILD dispatch plan
+STEP 3: Dispatch Analyzers       → ALL IN PARALLEL
+STEP 4: Consolidate Reports      → WAIT-ALL before proceeding
+STEP 5: Generate SKILL.md Index  → CREATE project-patterns skill index
+STEP 6: Update CLAUDE.md         → DISPATCH agent
+STEP 7: Copy Context Files       → CLAUDE.md → AGENTS.md, GEMINI.md
+STEP 8: Report & Cleanup         → SUMMARY + remove temp files
 ```
 
 
@@ -43,7 +42,7 @@ NEVER:
 - Analyze code yourself (coordinator only)
 - Write area files directly (specialists do this)
 - Execute specialists sequentially (run parallel)
-- Skip SKILL.md index generation (STEP 6)
+- Skip SKILL.md index generation (STEP 5)
 - Skip code quality analyzer (always run)
 - Modify specialist agent prompts
 - Generate area files without frontmatter + TL;DR
@@ -76,36 +75,35 @@ Read skill `add-architecture-discovery`.
 
 ---
 
-## STEP 2: Run Discovery Script
+## STEP 2: Detect & Classify Apps
 
-**Execute:**
+### 2.0 Explore Project
+
+Using native tools, gather the signals needed for classification:
+
 ```bash
-bash .codeadd/scripts/architecture-discover.sh
+# Detect monorepo tooling
+ls turbo.json pnpm-workspace.yaml nx.json lerna.json 2>/dev/null
+
+# List candidate app dirs
+ls apps/ packages/ libs/ 2>/dev/null
+
+# Read root config
+cat package.json
 ```
 
-Verify `.codeadd/temp/architecture-discovery.md` exists.
+Also check for non-node stacks: `requirements.txt`, `go.mod`, `Cargo.toml`, `composer.json`.
 
-**IF script doesn't exist:**
-
-CREATE discovery document manually:
-
-1. Detect project type (monorepo vs single-app) — check for `turbo.json`, `pnpm-workspace.yaml`, `nx.json`
-2. Identify stack from `package.json` and `tsconfig.json`
-3. Map directory structure: `apps/`, `packages/`, `libs/`
-4. WRITE findings to `.codeadd/temp/architecture-discovery.md`
-
----
-
-## STEP 3: Detect & Classify Apps
+No temp file — use findings inline for classification below.
 
 <!-- plugin:gitnexus:graph-classify -->
 <!-- /plugin:gitnexus:graph-classify -->
 
-### 3.1 Detect Apps
+### 2.1 Detect Apps
 
 List all directories under `apps/`, `packages/`, `libs/`.
 
-### 3.2 Classify Each App
+### 2.2 Classify Each App
 
 **For each detected app:**
 
@@ -123,7 +121,7 @@ List all directories under `apps/`, `packages/`, `libs/`.
 
 3. ASSIGN specialist or generic template
 
-### 3.3 Build Dispatch Plan
+### 2.3 Build Dispatch Plan
 
 **Format:**
 ```
@@ -136,7 +134,7 @@ CROSS-APP:
 - libs/database detected → database-analyzer.md → database.md
 ```
 
-### 3.4 Create Output Directory
+### 2.4 Create Output Directory
 
 ```bash
 mkdir -p .codeadd/skills/project-patterns
@@ -144,12 +142,12 @@ mkdir -p .codeadd/skills/project-patterns
 
 ---
 
-## STEP 4: Dispatch Specialist Analyzers (PARALLEL)
+## STEP 3: Dispatch Specialist Analyzers (PARALLEL)
 
 **DISPATCH ALL AGENTS IN PARALLEL:**
 Each agent is independent. Dispatch ALL simultaneously.
 
-### 4.1 Common Dispatch Pattern
+### 3.1 Common Dispatch Pattern
 
 <!-- plugin:gitnexus:graph-dispatch-common -->
 <!-- /plugin:gitnexus:graph-dispatch-common -->
@@ -159,7 +157,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Context:** Read `.codeadd/temp/architecture-discovery.md`
+- **Context:** Dispatch plan from STEP 2 (classified apps, paths, detected stack)
 - **Output format:** Each file includes YAML frontmatter + ## TL;DR + ## TOC (if >3 sections) + topic-first ## chunks with code examples (path:line refs)
 
 **Common Rules (ALL analyzers):**
@@ -169,7 +167,7 @@ Each agent is independent. Dispatch ALL simultaneously.
 - Token-efficient format (context engineering compliant)
 - Skip empty sections
 
-### 4.2 App Specialists (with specialist: backend, frontend)
+### 3.2 App Specialists (with specialist: backend, frontend)
 
 <!-- plugin:gitnexus:graph-specialist -->
 <!-- /plugin:gitnexus:graph-specialist -->
@@ -196,7 +194,7 @@ Follow ALL instructions.
 Write {{addpath:skills/project-patterns/[TYPE].md}}
 ```
 
-### 4.3 App Generic Template (without specialist: cli, worker)
+### 3.3 App Generic Template (without specialist: cli, worker)
 
 **DISPATCH FOR EACH APP WITHOUT SPECIALIST:**
 
@@ -220,7 +218,7 @@ Focus: GenericAppTemplate section
 Write {{addpath:skills/project-patterns/[TYPE].md}}
 ```
 
-### 4.4 Database Analyzer (if detected)
+### 3.4 Database Analyzer (if detected)
 
 <!-- plugin:gitnexus:graph-database -->
 <!-- /plugin:gitnexus:graph-database -->
@@ -247,7 +245,7 @@ Follow ALL instructions.
 Write {{addpath:skills/project-patterns/database.md}} (or NONE)
 ```
 
-### 4.5 Code Quality Analyzer (always)
+### 3.5 Code Quality Analyzer (always)
 
 <!-- plugin:gitnexus:graph-quality -->
 <!-- /plugin:gitnexus:graph-quality -->
@@ -279,7 +277,7 @@ Write docs/code-quality-review.md
 
 ---
 
-## STEP 5: Consolidate Reports (WAIT-ALL Before Consolidation)
+## STEP 4: Consolidate Reports (WAIT-ALL Before Consolidation)
 
 **WAIT-ALL:** Verify ALL agent outputs exist before proceeding.
 
@@ -298,11 +296,11 @@ Write docs/code-quality-review.md
 
 **Decision Point:**
 - If ANY file missing or incomplete → Wait/retry. Do NOT proceed.
-- If ALL outputs verified → Proceed to STEP 6.
+- If ALL outputs verified → Proceed to STEP 5.
 
 ---
 
-## STEP 6: Generate SKILL.md Index
+## STEP 5: Generate SKILL.md Index
 
 Create the skill index file that ties all area files together with search instructions.
 
@@ -357,13 +355,13 @@ Each area file follows context engineering principles:
 [DATE] by /add.xray
 ```
 
-**Populate the Areas table dynamically** from the files written in STEP 4.
+**Populate the Areas table dynamically** from the files written in STEP 3.
 
 **Verify:** Check that SKILL.md exists and contains Areas table before proceeding.
 
 ---
 
-## STEP 7: Update CLAUDE.md
+## STEP 6: Update CLAUDE.md
 
 <!-- plugin:gitnexus:graph-contract -->
 <!-- /plugin:gitnexus:graph-contract -->
@@ -386,8 +384,7 @@ Read: skill add-claude-md-style
 Apply ALL content rules from that skill.
 
 ## INPUTS TO READ
-1. .codeadd/temp/architecture-discovery.md
-2. ALL files in .codeadd/skills/project-patterns/*.md (list dynamically)
+1. ALL files in .codeadd/skills/project-patterns/*.md (list dynamically)
 
 ## TASK
 Update CLAUDE.md with ONLY these sections:
@@ -428,17 +425,17 @@ WAIT: Do NOT proceed until CLAUDE.md has been updated.
 
 ---
 
-## STEP 8: Copy Context Files to Other Engines
+## STEP 7: Copy Context Files to Other Engines
 
 **Coordinator action (no subagent needed).**
 
 **AFTER CLAUDE.md is confirmed updated:**
 
-### 8.1 Copy to GEMINI.md
+### 7.1 Copy to GEMINI.md
 
 GEMINI.md ← identical copy of CLAUDE.md.
 
-### 8.2 Copy to AGENTS.md
+### 7.2 Copy to AGENTS.md
 
 AGENTS.md ← copy of CLAUDE.md + conditionally append shell policy.
 
@@ -493,7 +490,7 @@ Verify all 3 files exist before proceeding:
 
 ---
 
-## STEP 9: Report & Cleanup
+## STEP 8: Report & Cleanup
 
 **Report to user:**
 Include: context files updated, apps analyzed with types, files generated, code quality scores, areas mapped in project-patterns skill, topic count.
@@ -508,11 +505,6 @@ bash .codeadd/scripts/pattern-search.sh backend
 ```
 
 **Next Steps:** Reference skill `add-ecosystem` Main Flows section for context-aware next command suggestion.
-
-**Cleanup temp files:**
-```bash
-rm .codeadd/temp/architecture-discovery.md 2>/dev/null || true
-```
 
 
 ## OUTPUT NAMING CONVENTION (CRITICAL)
