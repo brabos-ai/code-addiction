@@ -9,6 +9,24 @@ description: Use when a task needs structural/relational code navigation — cal
 
 GitNexus exposes a code knowledge-graph (calls, refs, blast-radius) over MCP, with native `gitnexus-*` skills that already document *how* to use each tool. This skill is a **thin dispatcher**: it maps the current intent to the right native skill. It does not reimplement MCP tools and has no fallback branch — when an intent matches, load the native skill and follow it.
 
+## Resolve the repo first (multiple indexed repos)
+
+GitNexus indexes repositories **by name** and serves them all from one MCP instance. When **more than one** repo is indexed, every tool (`query`, `context`, `impact`, `route_map`, …) requires a `repo` parameter — omitting it fails with:
+`Error: Multiple repositories indexed. Specify which one with the "repo" parameter. Available: ...`
+
+**Before the first gitnexus MCP call in a task, resolve the repo once:**
+
+1. Call `list_repos`.
+2. **One repo** → omit `repo` (single-repo calls need no disambiguation).
+3. **Multiple repos** → select the entry for *this* project, in order:
+   a. `path` equals the current repo root (`git rev-parse --show-toplevel`);
+   b. else the `path` basename equals the repo-root basename (handles WSL/Windows path mismatch, e.g. `/mnt/c/...` vs `C:\...`);
+   c. else the repo-root basename matches the git remote slug (`git remote get-url origin`);
+   d. else **ask the user** which of the listed names to use — do not guess.
+4. Pass the chosen `name` as `repo` on every gitnexus tool call for the rest of the task.
+
+**Zero repos** → the project is unindexed: say so explicitly and fall back to grep (see Operating note).
+
 ## grep vs graph
 
 - **Structural / relational** ("what calls X", "what breaks if I change X", trace a flow, map architecture) → **graph** (the native skills below).
