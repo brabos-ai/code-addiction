@@ -59,10 +59,11 @@ function copyFromZip(zip, srcPrefix, destDir, cwd) {
 
 /**
  * Main update flow.
- * @param {string} cwd
+ * @param {string} cwd  the target base (bin passes the scope-resolved targetDir)
  * @param {{version?: string, channel?: string}} [options]
+ * @param {'project'|'global'} [scope]  fallback scope when manifest has none
  */
-export async function update(cwd, options = {}) {
+export async function update(cwd, options = {}, scope = 'project') {
   intro('ADD CLI - Update');
 
   const manifestPath = path.join(cwd, '.codeadd', 'manifest.json');
@@ -79,6 +80,8 @@ export async function update(cwd, options = {}) {
 
   const currentVersion = manifest.version ?? 'unknown';
   const providerKeys = manifest.providers ?? [];
+  // Authoritative scope: manifest wins; fall back to the flag-derived scope.
+  const installScope = manifest.scope ?? scope;
 
   // Channel priority: explicit --channel flag > manifest channel > stable
   const channel = options.channel || manifest.channel || 'stable';
@@ -116,7 +119,7 @@ export async function update(cwd, options = {}) {
   const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, cwd);
   allFiles.push(...coreFiles);
 
-  const providers = resolveSelected(providerKeys);
+  const providers = resolveSelected(providerKeys, installScope);
   for (const p of providers) {
     const destDir = path.join(cwd, p.dest);
     const pFiles = copyFromZip(zip, p.src, destDir, cwd);
@@ -156,7 +159,7 @@ export async function update(cwd, options = {}) {
     providerKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: previousFeatures, plugins: previousPlugins }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope: installScope, features: previousFeatures, plugins: previousPlugins }
   );
 
   // Re-apply enabled features on updated commands (files were overwritten by the new version)
@@ -171,8 +174,8 @@ export async function update(cwd, options = {}) {
     log.success(`Re-applied ${pluginsApplied} plugin injection(s).`);
   }
 
-  // Sync .gitignore block if opted-in during install (backward compat: skip if key absent)
-  if (manifest.gitignore === true) {
+  // Sync .gitignore block if opted-in during install (project scope only — never gitignore the home dir)
+  if (installScope === 'project' && manifest.gitignore === true) {
     writeGitignoreBlock(cwd, getInstalledDirs(providerKeys));
     log.success('.gitignore synced.');
   }

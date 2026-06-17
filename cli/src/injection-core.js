@@ -243,7 +243,9 @@ export function loadInjectionPoints(cwd) {
  */
 export function resolveResourceFiles(cwd, resource) {
   const manifest = readManifest(cwd);
-  const providers = resolveSelected(manifest?.providers ?? []);
+  // Scope-aware: a global install resolves provider dests under the home dir
+  // (e.g. OpenCode .config/opencode, not .opencode). manifest.scope is authoritative.
+  const providers = resolveSelected(manifest?.providers ?? [], manifest?.scope ?? 'project');
   const subKey = resource.kind === 'agent' ? 'agentsSubdir' : 'commandsSubdir';
   return providers
     .filter((p) => p[subKey])

@@ -227,6 +227,17 @@ describe('resolveResourceFiles', () => {
     manifest(['claude']);
     expect(resolveResourceFiles(cwd, { name: 'ghost', kind: 'command' })).toEqual([]);
   });
+
+  it('resolves under the global dest when manifest.scope is global', () => {
+    // OpenCode: project dest .opencode, global dest .config/opencode.
+    fs.writeFileSync(
+      path.join(cwd, '.codeadd', 'manifest.json'),
+      JSON.stringify({ version: '1', providers: ['opencode'], scope: 'global' }),
+    );
+    touch('.config/opencode/commands/add.new.md');
+    const files = resolveResourceFiles(cwd, { name: 'add.new', kind: 'command' });
+    expect(files).toEqual([path.join(cwd, '.config', 'opencode', 'commands', 'add.new.md')]);
+  });
 });
 
 // ---------------------------------------------------------------------------

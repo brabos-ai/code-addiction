@@ -92,8 +92,9 @@ function checkManifest(cwd) {
 /**
  * Main doctor flow - checks environment health.
  * @param {string} cwd
+ * @param {'project'|'global'} [scope]  install scope (messaging only)
  */
-export async function doctor(cwd) {
+export async function doctor(cwd, scope = 'project') {
   intro('ADD CLI - Doctor');
 
   const s = spinner();
@@ -108,6 +109,7 @@ export async function doctor(cwd) {
 
   log.info('');
   log.info('Environment Health Check:');
+  if (scope === 'global') log.info('Scope: global (user-level install)');
   log.info('');
 
   const nodeIcon = nodeCheck.ok ? 'OK' : 'ERROR';

@@ -139,6 +139,53 @@ describe('uninstall', () => {
     expect(gitignore).not.toContain('# END ADD');
   });
 
+  it('global corrupted-manifest fallback removes .config/opencode and keeps .gitignore', async () => {
+    // Global install dir that ADD_DIRS does not list — only GLOBAL_ADD_DIRS does
+    const ocSkill = path.join(tmpDir, '.config', 'opencode', 'skills', 'add', 'SKILL.md');
+    fs.mkdirSync(path.dirname(ocSkill), { recursive: true });
+    fs.writeFileSync(ocSkill, '# add');
+
+    // A home-level .gitignore that must NOT be touched in global scope
+    fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n', 'utf8');
+
+    // Corrupted manifest → fallback path; scope comes from the --global flag (param)
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'not json{{{', 'utf8');
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true, 'global');
+
+    expect(fs.existsSync(ocSkill)).toBe(false);
+    expect(fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8')).toBe('node_modules/\n');
+  });
+
+  it('global manifest-driven uninstall does not remove a .gitignore block', async () => {
+    const ocDir = path.join(tmpDir, '.config', 'opencode', 'skills', 'add');
+    fs.mkdirSync(ocDir, { recursive: true });
+    fs.writeFileSync(path.join(ocDir, 'SKILL.md'), '# add');
+    fs.writeFileSync(
+      path.join(tmpDir, '.gitignore'),
+      '# ADD - managed by code-addiction\n.codeadd/\n# END ADD\n',
+      'utf8'
+    );
+
+    const manifest = {
+      version: '2.0.1',
+      installedAt: '2026-03-01T00:00:00Z',
+      providers: ['opencode'],
+      scope: 'global',
+      gitignore: false,
+      files: ['.config/opencode/skills/add/SKILL.md'],
+    };
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), JSON.stringify(manifest), 'utf8');
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true, 'global');
+
+    expect(fs.existsSync(path.join(ocDir, 'SKILL.md'))).toBe(false);
+    // .gitignore block left intact (global never manages gitignore)
+    expect(fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8')).toContain('# ADD - managed by code-addiction');
+  });
+
   it('deletes .gitignore when it only contains the ADD-managed block', async () => {
     const addDir = path.join(tmpDir, '.codeadd');
     const commandsDir = path.join(addDir, 'commands');
