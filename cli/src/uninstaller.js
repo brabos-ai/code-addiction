@@ -5,6 +5,7 @@ import { promptConfirm } from './prompt.js';
 import { removeGitignoreBlock } from './gitignore.js';
 
 const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
+const GLOBAL_ADD_DIRS = ['.codeadd', '.claude', '.agents', '.config/opencode'];
 
 /**
  * Read and parse .codeadd/manifest.json.
@@ -69,10 +70,11 @@ function removeEmptyDirs(dir) {
 
 /**
  * Main uninstall flow.
- * @param {string} cwd
+ * @param {string} cwd  the target base (bin passes the scope-resolved targetDir)
  * @param {boolean} force  skip confirmation
+ * @param {'project'|'global'} [scope]  fallback scope when manifest has none
  */
-export async function uninstall(cwd, force = false) {
+export async function uninstall(cwd, force = false, scope = 'project') {
   intro('ADD CLI - Uninstall');
 
   const manifest = readManifest(cwd);
@@ -81,11 +83,16 @@ export async function uninstall(cwd, force = false) {
     throw new Error('No ADD installation found. Run `npx codeadd install` first.');
   }
 
+  // Authoritative scope: manifest wins; fall back to the flag-derived scope
+  // (a corrupted manifest carries no scope, so the --global flag decides).
+  const installScope = manifest.scope ?? scope;
+  const dirs = installScope === 'global' ? GLOBAL_ADD_DIRS : ADD_DIRS;
+
   if (manifest.corrupted) {
     log.warn('Manifest is corrupted. Falling back to directory-based removal.');
 
     const allPresent = [];
-    for (const dir of ADD_DIRS) {
+    for (const dir of dirs) {
       allPresent.push(...walkDir(path.join(cwd, dir), cwd));
     }
 
@@ -118,11 +125,13 @@ export async function uninstall(cwd, force = false) {
     }
     s.stop(`Removed ${removed} files.`);
 
-    for (const dir of ADD_DIRS) {
+    for (const dir of dirs) {
       removeEmptyDirs(path.join(cwd, dir));
     }
 
-    removeGitignoreBlock(cwd);
+    if (installScope === 'project') {
+      removeGitignoreBlock(cwd);
+    }
 
     outro('ADD removed successfully.');
     return;
@@ -131,7 +140,7 @@ export async function uninstall(cwd, force = false) {
   const manifestFiles = new Set(manifest.files ?? []);
 
   const allPresent = [];
-  for (const dir of ADD_DIRS) {
+  for (const dir of dirs) {
     allPresent.push(...walkDir(path.join(cwd, dir), cwd));
   }
 
@@ -175,11 +184,13 @@ export async function uninstall(cwd, force = false) {
 
   s.stop(`Removed ${removed} files.`);
 
-  for (const dir of ADD_DIRS) {
+  for (const dir of dirs) {
     removeEmptyDirs(path.join(cwd, dir));
   }
 
-  removeGitignoreBlock(cwd);
+  if (installScope === 'project') {
+    removeGitignoreBlock(cwd);
+  }
 
   outro('ADD removed successfully.');
 }

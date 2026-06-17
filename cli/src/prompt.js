@@ -1,29 +1,51 @@
-import { multiselect, confirm, isCancel } from '@clack/prompts';
-import { PROVIDERS, PROVIDER_PRIORITY } from './providers.js';
+import { multiselect, select, confirm, isCancel } from '@clack/prompts';
+import { PROVIDERS, PROVIDER_PRIORITY, globalCapable } from './providers.js';
 import { FEATURES } from './features.js';
+
+/**
+ * Ask the user to choose install scope. Defaults to 'project' (backward-compatible).
+ * Throws 'USER_CANCEL' if cancelled.
+ * @returns {Promise<'project'|'global'>}
+ */
+export async function promptScope() {
+  const scope = await select({
+    message: 'Install scope',
+    options: [
+      { value: 'project', label: 'Project', hint: 'this repo only (.codeadd/, .claude/ …)' },
+      { value: 'global', label: 'User (global)', hint: 'all projects (~/.codeadd/, ~/.claude/ …)' },
+    ],
+    initialValue: 'project',
+  });
+  if (isCancel(scope)) {
+    throw new Error('USER_CANCEL');
+  }
+  return scope;
+}
 
 /**
  * Show interactive multi-select for AI providers.
  * Priority providers appear first; remaining sorted alphabetically.
+ * In global scope, providers without a global dest are filtered out.
  * Returns the selected provider keys.
  * Throws with message 'USER_CANCEL' if user cancels.
+ * @param {'project'|'global'} [scope]
  * @returns {Promise<string[]>}
  */
-export async function promptProviders() {
+export async function promptProviders(scope = 'project') {
   const prioritySet = new Set(PROVIDER_PRIORITY);
   const orderedKeys = [
     ...PROVIDER_PRIORITY.filter((k) => PROVIDERS[k]),
     ...Object.keys(PROVIDERS).filter((k) => !prioritySet.has(k)).sort(),
-  ];
+  ].filter((k) => (scope === 'global' ? globalCapable(k) : true));
 
   const options = orderedKeys.map((value) => ({
     value,
     label: PROVIDERS[value].label,
-    hint: PROVIDERS[value].hint,
+    hint: scope === 'global' ? `~/${PROVIDERS[value].globalDest}/` : PROVIDERS[value].hint,
   }));
 
   const selected = await multiselect({
-    message: 'Select AI providers to install',
+    message: scope === 'global' ? 'Select AI providers to install globally' : 'Select AI providers to install',
     options,
     initialValues: ['claude'],
     required: false,

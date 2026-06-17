@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected } from '../src/providers.js';
+import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected, globalCapable } from '../src/providers.js';
 
 describe('PROVIDERS', () => {
   it('contains exactly the 5 MCP-capable provider keys', () => {
@@ -64,5 +64,49 @@ describe('resolveSelected', () => {
       expect(typeof r.dest).toBe('string');
       expect(typeof r.src).toBe('string');
     }
+  });
+});
+
+describe('globalDest', () => {
+  it('maps each provider to its documented global destination root', () => {
+    expect(PROVIDERS.claude.globalDest).toBe('.claude');
+    expect(PROVIDERS.codex.globalDest).toBe('.agents');
+    expect(PROVIDERS.cursor.globalDest).toBeNull();
+    expect(PROVIDERS.antigrav.globalDest).toBeNull();
+    expect(PROVIDERS.opencode.globalDest).toBe('.config/opencode');
+  });
+});
+
+describe('resolveSelected (scope-aware)', () => {
+  it('defaults to project scope (unchanged behavior)', () => {
+    const result = resolveSelected(['claude', 'opencode']);
+    expect(result.map((r) => r.dest)).toEqual(['.claude', '.opencode']);
+  });
+
+  it('returns global dests for scope "global"', () => {
+    const result = resolveSelected(['claude', 'opencode'], 'global');
+    expect(result.map((r) => r.key)).toEqual(['claude', 'opencode']);
+    expect(result.map((r) => r.dest)).toEqual(['.claude', '.config/opencode']);
+  });
+
+  it('drops providers without a global dest in global scope', () => {
+    expect(resolveSelected(['cursor'], 'global')).toEqual([]);
+    expect(resolveSelected(['antigrav'], 'global')).toEqual([]);
+    const mixed = resolveSelected(['claude', 'cursor', 'antigrav', 'codex'], 'global');
+    expect(mixed.map((r) => r.key)).toEqual(['claude', 'codex']);
+  });
+});
+
+describe('globalCapable', () => {
+  it('is true only for providers with a global dest', () => {
+    expect(globalCapable('claude')).toBe(true);
+    expect(globalCapable('codex')).toBe(true);
+    expect(globalCapable('opencode')).toBe(true);
+    expect(globalCapable('cursor')).toBe(false);
+    expect(globalCapable('antigrav')).toBe(false);
+  });
+
+  it('is false for unknown keys', () => {
+    expect(globalCapable('nope')).toBe(false);
   });
 });

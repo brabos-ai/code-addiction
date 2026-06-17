@@ -1,9 +1,10 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { promptProviders, promptConfirm, promptFeatures, promptGitignore } from './prompt.js';
+import { promptProviders, promptScope, promptConfirm, promptFeatures, promptGitignore } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
@@ -191,10 +192,14 @@ function copyFromZip(zip, srcPrefix, destDir, cwd) {
 /**
  * Main install flow.
  * @param {string} cwd
- * @param {{version?: string, channel?: string}} [options]
+ * @param {{version?: string, channel?: string, global?: boolean}} [options]
  */
 export async function install(cwd, options = {}) {
   intro('ADD CLI - Install');
+
+  // --global forces global scope; otherwise prompt (defaults to project).
+  const scope = options.global ? 'global' : await promptScope();
+  const targetDir = scope === 'global' ? os.homedir() : cwd;
 
   const channel = options.channel || 'stable';
 
@@ -211,19 +216,20 @@ export async function install(cwd, options = {}) {
     log.warn('⚠ You are installing a beta (pre-release) version. It may contain bugs or incomplete features.');
   }
 
-  const addDir = path.join(cwd, '.codeadd');
+  const addDir = path.join(targetDir, '.codeadd');
   if (dirExists(addDir)) {
     await promptConfirm('.codeadd/ already exists. Overwrite with latest version?');
   }
 
-  const selectedKeys = await promptProviders();
-  const providers = resolveSelected(selectedKeys);
+  const selectedKeys = await promptProviders(scope);
+  const providers = resolveSelected(selectedKeys, scope);
 
   const selectedFeatures = await promptFeatures();
-  const addToGitignore = await promptGitignore();
+  // gitignore is meaningful only for project installs (you don't gitignore your home dir).
+  const addToGitignore = scope === 'project' ? await promptGitignore() : false;
 
   for (const p of providers) {
-    const destDir = path.join(cwd, p.dest);
+    const destDir = path.join(targetDir, p.dest);
     if (dirExists(destDir)) {
       await promptConfirm(`${p.dest}/ already exists. Overwrite?`);
     }
@@ -238,12 +244,12 @@ export async function install(cwd, options = {}) {
 
   const allFiles = [];
 
-  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, cwd);
+  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, targetDir);
   allFiles.push(...coreFiles);
 
   for (const p of providers) {
-    const destDir = path.join(cwd, p.dest);
-    const pFiles = copyFromZip(zip, p.src, destDir, cwd);
+    const destDir = path.join(targetDir, p.dest);
+    const pFiles = copyFromZip(zip, p.src, destDir, targetDir);
     allFiles.push(...pFiles);
   }
 
@@ -251,7 +257,8 @@ export async function install(cwd, options = {}) {
 
   fixLineEndings(path.join(addDir, 'scripts'));
 
-  if (addToGitignore) {
+  // gitignore write still uses cwd deliberately — only meaningful for project scope (targetDir === cwd).
+  if (scope === 'project' && addToGitignore) {
     writeGitignoreBlock(cwd, getInstalledDirs(selectedKeys));
     log.success('.gitignore updated.');
   }
@@ -263,22 +270,22 @@ export async function install(cwd, options = {}) {
   }
 
   writeManifest(
-    cwd,
+    targetDir,
     installSource.manifestVersion,
     selectedKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, features: defaultFeatures, plugins: {}, gitignore: addToGitignore }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope, features: defaultFeatures, plugins: {}, gitignore: addToGitignore }
   );
 
   // Apply enabled features (inject fragment content into commands)
-  const featuresApplied = applyEnabledFeatures(cwd);
+  const featuresApplied = applyEnabledFeatures(targetDir);
   if (featuresApplied > 0) {
     log.success(`Applied ${featuresApplied} feature injection(s).`);
   }
 
   // Apply enabled plugins (disabled by default — no-op on fresh install)
-  const pluginsApplied = applyEnabledPlugins(cwd);
+  const pluginsApplied = applyEnabledPlugins(targetDir);
   if (pluginsApplied > 0) {
     log.success(`Applied ${pluginsApplied} plugin injection(s).`);
   }

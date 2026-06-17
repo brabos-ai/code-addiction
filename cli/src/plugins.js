@@ -103,7 +103,7 @@ function getFragments(cwd, pluginName) {
 function activateSkills(cwd, pluginName, skills) {
   if (!skills || skills.length === 0) return 0;
   const manifest = readManifest(cwd);
-  const providers = resolveSelected(manifest?.providers ?? []).filter((p) => p.skillsSubdir);
+  const providers = resolveSelected(manifest?.providers ?? [], manifest?.scope ?? 'project').filter((p) => p.skillsSubdir);
 
   let activated = 0;
   for (const skill of skills) {
@@ -129,7 +129,7 @@ function activateSkills(cwd, pluginName, skills) {
 function deactivateSkills(cwd, skills) {
   if (!skills || skills.length === 0) return 0;
   const manifest = readManifest(cwd);
-  const providers = resolveSelected(manifest?.providers ?? []).filter((p) => p.skillsSubdir);
+  const providers = resolveSelected(manifest?.providers ?? [], manifest?.scope ?? 'project').filter((p) => p.skillsSubdir);
 
   let removed = 0;
   for (const skill of skills) {
@@ -287,10 +287,14 @@ export function getPluginStates(cwd) {
 
 /**
  * CLI entry point for `codeadd plugins` subcommand.
+ * Scope flows through manifest.scope (read by resolveResourceFiles and skill
+ * activation); the param exists so bin can pass it positionally.
  * @param {string} cwd
  * @param {string[]} args
+ * @param {'project'|'global'} [scope]
  */
-export async function plugins(cwd, args) {
+export async function plugins(cwd, args, scope = 'project') {
+  void scope;
   const action = args[0];
   const pluginName = args[1];
   const catalog = loadCatalog();

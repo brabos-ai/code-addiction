@@ -185,10 +185,14 @@ export function getFeatureStates(cwd) {
 
 /**
  * CLI entry point for `codeadd features` subcommand.
+ * Scope flows through manifest.scope (read by resolveResourceFiles); the param
+ * exists so bin can pass it positionally and is the fallback when absent.
  * @param {string} cwd
  * @param {string[]} args
+ * @param {'project'|'global'} [scope]
  */
-export async function features(cwd, args) {
+export async function features(cwd, args, scope = 'project') {
+  void scope;
   const action = args[0];
   const featureName = args[1];
 

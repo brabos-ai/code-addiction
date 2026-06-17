@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getLatestPrerelease: vi.fn(),
   downloadReleaseAsset: vi.fn(),
   promptProviders: vi.fn(),
+  promptScope: vi.fn(),
   promptConfirm: vi.fn(),
   promptFeatures: vi.fn(),
   promptGitignore: vi.fn(),
@@ -22,6 +23,7 @@ vi.mock('../src/github.js', () => ({
 
 vi.mock('../src/prompt.js', () => ({
   promptProviders: mocks.promptProviders,
+  promptScope: mocks.promptScope,
   promptConfirm: mocks.promptConfirm,
   promptFeatures: mocks.promptFeatures,
   promptGitignore: mocks.promptGitignore,
@@ -48,6 +50,19 @@ function buildInstallZip() {
   return zip.toBuffer();
 }
 
+/**
+ * Release zip carrying OpenCode content, whose global dest (.config/opencode)
+ * differs from its project dest (.opencode) — proves scope-correct path mapping.
+ */
+function buildOpencodeZip() {
+  const zip = new AdmZip();
+  zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\n'));
+  zip.addFile(`framwork/.codeadd/injection-points.json`, Buffer.from('{"version":1,"points":[]}\n'));
+  zip.addFile(`framwork/.opencode/skills/add/SKILL.md`, Buffer.from('---\nname: add\n---\n'));
+  zip.addFile(`framwork/.opencode/commands/add.md`, Buffer.from('# add\n'));
+  return zip.toBuffer();
+}
+
 let tmpDir;
 
 beforeEach(() => {
@@ -57,6 +72,8 @@ beforeEach(() => {
   mocks.promptProviders.mockReset();
   mocks.promptConfirm.mockReset();
   mocks.promptProviders.mockResolvedValue(['codex']);
+  mocks.promptScope.mockReset();
+  mocks.promptScope.mockResolvedValue('project');
   mocks.promptConfirm.mockResolvedValue(undefined);
   mocks.promptFeatures.mockResolvedValue(['tdd', 'startup-test']);
   mocks.promptGitignore.mockResolvedValue(true);
@@ -179,5 +196,59 @@ describe('install command e2e', () => {
     );
     expect(manifest.gitignore).toBe(false);
     expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+  });
+
+  it('project install still records scope:project (backward-compatible)', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.scope).toBe('project');
+  });
+});
+
+describe('install command e2e — global scope', () => {
+  let homeDir;
+
+  beforeEach(() => {
+    homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-home-'));
+    vi.spyOn(os, 'homedir').mockReturnValue(homeDir);
+  });
+
+  afterEach(() => {
+    os.homedir.mockRestore();
+    fs.rmSync(homeDir, { recursive: true, force: true });
+  });
+
+  it('global install lands under home, records scope:global, skips gitignore', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildOpencodeZip());
+    mocks.promptProviders.mockResolvedValue(['opencode']);
+
+    await install(tmpDir, { global: true });
+
+    // OpenCode global dest is .config/opencode (NOT .opencode)
+    expect(fs.existsSync(path.join(homeDir, '.config', 'opencode', 'skills', 'add', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(homeDir, '.config', 'opencode', 'commands', 'add.md'))).toBe(true);
+    expect(fs.existsSync(path.join(homeDir, '.opencode'))).toBe(false);
+
+    // Core files land at ~/.codeadd, not the project cwd
+    expect(fs.existsSync(path.join(homeDir, '.codeadd', 'manifest.json'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'manifest.json'))).toBe(false);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(homeDir, '.codeadd', 'manifest.json'), 'utf8')
+    );
+    expect(manifest.scope).toBe('global');
+    expect(manifest.gitignore).toBe(false);
+
+    // No gitignore noise in the home dir; scope prompt never shown (flag forces it)
+    expect(fs.existsSync(path.join(homeDir, '.gitignore'))).toBe(false);
+    expect(mocks.promptScope).not.toHaveBeenCalled();
+    expect(mocks.promptGitignore).not.toHaveBeenCalled();
   });
 });

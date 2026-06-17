@@ -273,4 +273,31 @@ describe('update command', () => {
     expect(mocks.getLatestTag).toHaveBeenCalled();
     expect(mocks.getLatestPrerelease).not.toHaveBeenCalled();
   });
+
+  it('global-scope manifest resolves global provider dests and skips gitignore sync', async () => {
+    // Build a zip carrying OpenCode content (global dest .config/opencode ≠ project .opencode)
+    const zip = new AdmZip();
+    zip.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
+    zip.addFile('framwork/.opencode/skills/add/SKILL.md', Buffer.from('---\nname: add\n---\n'));
+
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: ['opencode'],
+      scope: 'global',
+      gitignore: true, // even if stale-true, global must not write .gitignore
+    });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(zip.toBuffer());
+
+    await update(tmpDir);
+
+    expect(fs.existsSync(path.join(tmpDir, '.config', 'opencode', 'skills', 'add', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.opencode'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.scope).toBe('global');
+  });
 });

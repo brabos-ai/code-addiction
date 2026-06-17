@@ -44,8 +44,9 @@ function formatDate(isoDate) {
  * Main config flow - displays installation info.
  * @param {string} cwd
  * @param {boolean} verbose  if true, checks for updates
+ * @param {'project'|'global'} [scope]  fallback scope for display when manifest has none
  */
-export async function config(cwd, verbose = false) {
+export async function config(cwd, verbose = false, scope = 'project') {
   intro('ADD CLI - Config');
 
   const manifest = readManifest(cwd);
@@ -62,6 +63,7 @@ export async function config(cwd, verbose = false) {
   log.info(`Version:        ${manifest.version || 'unknown'}`);
   log.info(`Release Tag:    ${manifest.releaseTag || 'unknown'}`);
   log.info(`Channel:        ${channel}${channel === 'beta' ? ' ⚠ pre-release' : ''}`);
+  log.info(`Scope:          ${manifest.scope ?? scope}`);
   log.info(`Installed At:   ${formatDate(manifest.installedAt)}`);
   log.info(`Providers:      ${manifest.providers?.join(', ') || 'none'}`);
   log.info(`Total Files:    ${manifest.files?.length || 0}`);

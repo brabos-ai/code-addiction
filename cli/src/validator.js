@@ -103,9 +103,11 @@ async function repairFiles(cwd, filesToRepair, releaseTag) {
  * Main validate flow.
  * @param {string} cwd
  * @param {boolean} repair  if true, restore missing/modified files
+ * @param {'project'|'global'} [scope]  install scope (messaging only)
  */
-export async function validate(cwd, repair = false) {
+export async function validate(cwd, repair = false, scope = 'project') {
   intro('ADD CLI - Validate');
+  if (scope === 'global') log.info('Scope: global (user-level install)');
 
   const manifest = readManifest(cwd);
 

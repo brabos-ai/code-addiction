@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import os from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { cancel, outro, log } from '@clack/prompts';
 import { install } from '../src/installer.js';
 import { update } from '../src/updater.js';
@@ -32,6 +34,20 @@ function getArgValue(argv, flag) {
   return value;
 }
 
+/**
+ * Resolve the install target from CLI flags.
+ * --global / --user → home directory (scope 'global'); otherwise cwd (scope 'project').
+ * @param {string} cwd
+ * @param {string[]} argv
+ * @returns {{ targetDir: string, scope: 'project'|'global', global: boolean }}
+ */
+export function resolveTarget(cwd, argv) {
+  const global = argv.includes('--global') || argv.includes('--user');
+  return global
+    ? { targetDir: os.homedir(), scope: 'global', global: true }
+    : { targetDir: cwd, scope: 'project', global: false };
+}
+
 const USAGE = `
 Usage: codeadd <command>
 
@@ -39,6 +55,7 @@ Commands:
   install                      Install Code Addiction files into your project
   install --version <tag>      Install a specific release tag (e.g. v2.0.1)
   install --channel <channel>  Install from a release channel (stable or beta)
+  install --global             Install at user level (home dir, all projects)
   update                       Update to latest release (respects current channel)
   update --version <tag>       Update to a specific release tag
   update --channel <channel>   Update and switch release channel (stable or beta)
@@ -55,15 +72,20 @@ Commands:
   config show                  Display installation configuration
   config show --verbose         Display config + check for updates
 
+  (--global / --user installs into your home dir instead of the project; applies to install/update/uninstall/doctor/validate/config/features/plugins)
+
 Examples:
   npx codeadd install
   npx codeadd install --version v2.0.1
   npx codeadd install --channel beta
+  npx codeadd install --global
   npx codeadd update
   npx codeadd update --version v2.0.0
   npx codeadd update --channel stable
+  npx codeadd update --global
   npx codeadd uninstall
   npx codeadd uninstall --force
+  npx codeadd uninstall --global
   npx codeadd doctor
   npx codeadd validate
   npx codeadd validate --repair
@@ -73,33 +95,35 @@ Examples:
 
 async function main() {
   const cwd = process.cwd();
+  const { targetDir, scope, global } = resolveTarget(cwd, args);
 
   try {
     if (subcommand === 'install') {
       const version = getArgValue(args, '--version');
       const channel = getArgValue(args, '--channel');
-      await install(cwd, { version, channel });
+      // install owns the scope prompt (interactive UX); pass raw cwd + global flag.
+      await install(cwd, { version, channel, global });
     } else if (subcommand === 'update') {
       const version = getArgValue(args, '--version');
       const channel = getArgValue(args, '--channel');
-      await update(cwd, { version, channel });
+      await update(targetDir, { version, channel }, scope);
     } else if (subcommand === 'uninstall') {
       const force = args.includes('--force');
-      await uninstall(cwd, force);
+      await uninstall(targetDir, force, scope);
     } else if (subcommand === 'doctor') {
-      await doctor(cwd);
+      await doctor(targetDir, scope);
     } else if (subcommand === 'validate') {
       const repair = args.includes('--repair');
-      await validate(cwd, repair);
+      await validate(targetDir, repair, scope);
     } else if (subcommand === 'features') {
-      await features(cwd, args);
+      await features(targetDir, args, scope);
     } else if (subcommand === 'plugins') {
-      await plugins(cwd, args);
+      await plugins(targetDir, args, scope);
     } else if (subcommand === 'config') {
       const subCmd = args[0];
       if (subCmd === 'show') {
         const verbose = args.includes('--verbose');
-        await config(cwd, verbose);
+        await config(targetDir, verbose, scope);
       } else {
         log.message(USAGE);
         process.exit(1);
@@ -118,4 +142,7 @@ async function main() {
   }
 }
 
-main();
+// Run only when invoked as a script (not when imported by tests).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
