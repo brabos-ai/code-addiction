@@ -75,7 +75,6 @@ beforeEach(() => {
   mocks.promptScope.mockReset();
   mocks.promptScope.mockResolvedValue('project');
   mocks.promptConfirm.mockResolvedValue(undefined);
-  mocks.promptFeatures.mockResolvedValue(['tdd', 'startup-test']);
   mocks.promptGitignore.mockResolvedValue(true);
 });
 
@@ -120,32 +119,23 @@ describe('install command e2e', () => {
     await expect(install(tmpDir)).rejects.toThrow('not found or has no releases');
   });
 
-  it('writes selected features to manifest based on user choice', async () => {
+  it('initializes manifest.features from registry defaults without prompting', async () => {
     mocks.getLatestTag.mockResolvedValue('v1.0.0');
     mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
-    mocks.promptFeatures.mockResolvedValue(['tdd']);
 
     await install(tmpDir);
+
+    // No install-time feature prompt — opt-in lives in `codeadd features`.
+    expect(mocks.promptFeatures).not.toHaveBeenCalled();
 
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
     );
-    expect(manifest.features.tdd).toBe(true);
-    expect(manifest.features['startup-test']).toBe(false);
-  });
-
-  it('writes all features disabled when user selects none', async () => {
-    mocks.getLatestTag.mockResolvedValue('v1.0.0');
-    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
-    mocks.promptFeatures.mockResolvedValue([]);
-
-    await install(tmpDir);
-
-    const manifest = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
-    );
-    expect(manifest.features.tdd).toBe(false);
-    expect(manifest.features['startup-test']).toBe(false);
+    // tdd is the only registered feature and defaults true.
+    expect(manifest.features).toEqual({ tdd: true });
+    // Removing the feature prompt must not disturb the plugin path:
+    // plugins stay disabled (empty) by default on a fresh install.
+    expect(manifest.plugins).toEqual({});
   });
 
   it('installs from explicit tag via --version flag', async () => {

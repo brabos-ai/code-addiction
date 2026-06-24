@@ -104,12 +104,12 @@ describe('extractInjectionPoints', () => {
   it('ignores a marker embedded in prose (documentation), only standalone markers count', () => {
     const src = [
       'Real anchor.',
-      '| When applicable | enabled (see `<!-- feature:startup-test:step -->` markers) |',
+      '| When applicable | enabled (see `<!-- feature:tdd:gate -->` markers) |',
       'more prose',
-      '<!-- feature:startup-test:step -->',
-      '<!-- /feature:startup-test:step -->',
+      '<!-- feature:tdd:gate -->',
+      '<!-- /feature:tdd:gate -->',
     ].join('\n');
-    const pts = extractInjectionPoints(src, 'add.review', 'command');
+    const pts = extractInjectionPoints(src, 'add.build', 'command');
     // Only the standalone marker is an injection point (the inline one is documentation).
     expect(pts).toHaveLength(1);
     expect(pts[0].anchor.text).toBe('more prose');

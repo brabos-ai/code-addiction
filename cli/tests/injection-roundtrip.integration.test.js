@@ -10,7 +10,6 @@ vi.mock('@clack/prompts', async (importOriginal) => {
   return { ...actual, intro: vi.fn(), outro: vi.fn(), log: { ...actual.log, success: vi.fn(), info: vi.fn(), error: vi.fn(), warn: warnSpy } };
 });
 
-import { parseFragmentSections } from '../src/injection-core.js';
 import { enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin, disablePlugin } from '../src/plugins.js';
 
@@ -53,7 +52,7 @@ afterEach(() => {
 const sidecarPoints = () => JSON.parse(fs.readFileSync(SIDECAR, 'utf8')).points;
 
 describe('feature injection round-trip on real built files', () => {
-  for (const feature of ['tdd', 'startup-test']) {
+  for (const feature of ['tdd']) {
     it(`${feature}: enable injects, never misses an anchor, disable restores byte-identically`, () => {
       // All command files carrying a sidecar point for this feature.
       const targets = [
@@ -76,35 +75,6 @@ describe('feature injection round-trip on real built files', () => {
       for (const f of targets) expect(snapshot(f)).toBe(before[f]); // byte-identical restore
     });
   }
-});
-
-describe('cross-feature shared-anchor injection on real add.review', () => {
-  // tdd:step-list and startup-test:step-list share one anchor on add.review.
-  // Enabling both (separate calls) must inject BOTH — no false drift drop.
-  const distinctLine = (fragRel, section) => {
-    const sections = parseFragmentSections(fs.readFileSync(path.join(tmp, fragRel), 'utf8'));
-    return sections.get(section).split('\n').map((l) => l.trim()).find((l) => l.length > 10);
-  };
-
-  it('enabling tdd + startup-test both inject at the shared step-list anchor, then restore', () => {
-    const file = path.join(tmp, '.claude', 'commands', 'add.review.md');
-    const before = snapshot(file);
-
-    enableFeature(tmp, 'tdd');
-    enableFeature(tmp, 'startup-test'); // shares the step-list anchor with tdd
-    expect(warnSpy).not.toHaveBeenCalled(); // neither injection dropped
-
-    const tddLine = distinctLine('.codeadd/fragments/tdd/add.review.md', 'step-list');
-    const startupLine = distinctLine('.codeadd/fragments/startup-test/add.review.md', 'step-list');
-    const after = snapshot(file);
-    expect(after).toContain(tddLine);
-    expect(after).toContain(startupLine); // the previously-dropped one
-    expect(after).not.toContain('<!--');
-
-    disableFeature(tmp, 'startup-test');
-    disableFeature(tmp, 'tdd');
-    expect(snapshot(file)).toBe(before); // byte-identical restore
-  });
 });
 
 describe('gitnexus plugin injection round-trip on real built files', () => {

@@ -25,8 +25,6 @@ STEP 4: Dispatch Reviewers      → PARALLEL (Frontend + Backend via Task)
 STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
 STEP 6: Build Verification      → npm run build, fix until passing
 STEP 7: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from CLAUDE.md (do NOT trust ticks)
-<!-- feature:startup-test:step-list -->
-<!-- /feature:startup-test:step-list -->
 <!-- feature:tdd:step-list -->
 <!-- /feature:tdd:step-list -->
 STEP 8: Quality Gate Report     → Create review.md + console output
@@ -119,21 +117,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Success Criteria:** Build exits 0, no errors.
 **Failure:** Build fails. Fix errors. Re-run build. Do NOT proceed to STEP 7 until build passes.
 
-### Gate 6: Startup Test Passes (CONDITIONAL - if feature enabled)
-
-**Validation:** Application starts without DI/IoC configuration errors.
-
-| Condition | Rule |
-|-----------|------|
-| When applicable | STEP 6 feature injection enabled (see `<!-- feature:startup-test:step -->` markers) |
-| Success | Exit code 0 (or connection errors are acceptable — ignore) |
-| Failure | Exit code 1 AND non-connection error (DI/IoC error) → Fix error, re-run test. Do NOT write review.md. |
-| Not applicable | Feature not enabled → Skip this gate; note as "SKIPPED" in Quality Gate Report |
-
-**Success Criteria:** Test passes (exit 0) or only connection errors detected.
-**Failure:** Non-connection error. Fix DI/IoC configuration. Do NOT write review.md until passing.
-
-### Gate 7: Validation Gates Re-Run Independently (STEP 7)
+### Gate 6: Validation Gates Re-Run Independently (STEP 7)
 
 **Validation:** Every gate from CLAUDE.md `validation_gates` block re-executed in current session.
 
@@ -155,7 +139,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Special Cases:**
 - CLAUDE.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Skip rest of STEP 7.
 
-### Gate 8: Review Document Writable (STEP 8)
+### Gate 7: Review Document Writable (STEP 8)
 
 **Validation:** review.md must write successfully before console output.
 
@@ -181,10 +165,9 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT write spec audit output | Context NOT loaded (Gate 2) | Load all docs and CLAUDE.md first |
 | Do NOT dispatch reviewers (Task) | Spec audit NOT complete (Gate 3) | Execute Spec Compliance Audit first |
 | Do NOT proceed to STEP 7/8 | Build failing after fixes | Fix build errors until 100% passing (Gate 5) |
-| Do NOT write review.md | Startup test fails with DI error | Fix DI/IoC configuration, re-test (Gate 6) |
-| Do NOT trust ticks on Validation Gates | Existing `[x]` marks in tasks.md | Re-run every gate command independently (Gate 7) |
-| Do NOT mark review READY | Any gate red on touched file after re-run | Report gate failure; block review (Gate 7) |
-| Do NOT skip review silently | CLAUDE.md has no validation_gates | Emit one-line nudge; continue review (Gate 7) |
+| Do NOT trust ticks on Validation Gates | Existing `[x]` marks in tasks.md | Re-run every gate command independently (Gate 6) |
+| Do NOT mark review READY | Any gate red on touched file after re-run | Report gate failure; block review (Gate 6) |
+| Do NOT skip review silently | CLAUDE.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
 | Do NOT use Bash git commit | Any point in workflow | Use /add-commit skill instead |
 | Do NOT stage files silently | Pre-Review Setup (STEP 1) | Ask user permission first via AskUserQuestion |
 
@@ -519,9 +502,6 @@ npm run build
 
 **GATE 5: Do NOT proceed to STEP 7 until build passes 100%.**
 
-<!-- feature:startup-test:step -->
-<!-- /feature:startup-test:step -->
-
 ---
 
 ## STEP 7: Validation Gates Re-Run (INDEPENDENT)
@@ -584,8 +564,6 @@ Collect results from all previous steps:
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
 | Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if CLAUDE.md has no validation_gates) |
-<!-- feature:startup-test:quality-gate -->
-<!-- /feature:startup-test:quality-gate -->
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 
 > Reviewed at: ${TIMESTAMP}
@@ -595,7 +573,7 @@ Collect results from all previous steps:
 **Overall = PASSED** only if ALL gates are PASSED or SKIPPED.
 **Overall = BLOCKED** if ANY gate is BLOCKED.
 
-### 8.2 Write review.md (Gate 8)
+### 8.2 Write review.md (Gate 7)
 
 ```
 WRITE docs/features/${FEATURE_ID}/review.md

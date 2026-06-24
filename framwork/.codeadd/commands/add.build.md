@@ -33,8 +33,6 @@ STEP 9: Implementation             → Per mode (development/correction/feature)
 STEP 10: Area validation           → Validator subagents (MANDATORY per area)
 STEP 11: Compliance Gate           → Cross-reference RF/RN vs implementation
 STEP 12: Integration verification  → Build MUST pass
-<!-- feature:startup-test:step-list -->
-<!-- /feature:startup-test:step-list -->
 STEP 13: Mutate docs + Validation Gate → Cache rule + schema gate on plan.md/about.md
 STEP 14: Log iteration             → BEFORE informing user
 STEP 15: Completion                → Inform user based on mode
@@ -252,6 +250,8 @@ Read ALL project pattern files listed in PROJECT_DOCS from status.sh output.
 <!-- /feature:tdd:tasks-flow -->
 <!-- feature:tdd:gate -->
 <!-- /feature:tdd:gate -->
+<!-- feature:tdd:verify-red -->
+<!-- /feature:tdd:verify-red -->
 
 **Subagent prompt addition for TASKS MODE:**
 
@@ -495,9 +495,6 @@ DO NOT report completion without executing this step.
 <!-- /feature:tdd:verification -->
 
 **CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
-
-<!-- feature:startup-test:step -->
-<!-- /feature:startup-test:step -->
 
 ---
 

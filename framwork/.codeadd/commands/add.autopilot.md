@@ -73,8 +73,8 @@ STEP 3: Validate Prerequisites  → about.md + discovery.md MUST exist
 STEP 4: Determine Execution Mode → Epic vs Simple
 STEP 5: Planning Agent          → ONLY AFTER 1-4 (or SKIP if simple)
 STEP 6: Development Agents      → ONLY AFTER plan exists
-STEP 7: Persist Decisions + Startup Test → Log iteration + bootstrap check
-STEP 8: Review Agent            → ONLY AFTER build + startup pass
+STEP 7: Persist Decisions → Log iteration
+STEP 8: Review Agent            → ONLY AFTER build passes
 STEP 9: Compliance Gate         → Cross-reference RF/RN vs implementation
 STEP 9.5: Doc Mutation Gate     → Cache rule + feature-plan/feature-about schema gate
 STEP 10: Final Verification    → Build + docs + review.md check
@@ -103,10 +103,6 @@ IF PLAN NOT CREATED (and not simple feature):
 IF BUILD FAILING:
   ⛔ DO NOT dispatch review agent
   ✅ DO fix build errors first
-
-IF STARTUP TEST FAILS (DI/IoC error, not connection):
-  ⛔ DO NOT dispatch review agent
-  ✅ DO fix DI error, re-run startup test
 
 IF EXISTING DOC NOT READ (before mutating plan.md/about.md):
   ⛔ DO NOT USE: Write on plan.md or about.md
@@ -466,7 +462,7 @@ After ALL area validators return AND build verification passes:
 
 ---
 
-## STEP 7: Persist Decisions + Application Startup Test
+## STEP 7: Persist Decisions
 
 ### 7.1 Persist Iteration Log (idempotent)
 
@@ -483,34 +479,11 @@ git tag "${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
 ```
 Update epic.md subfeature status to `in_progress` (will move to `done` after `/add.done`).
 
-### 7.2 Application Startup Test (idempotent)
-
-Validates IoC/DI at runtime — build passing does not mean app starts.
-
-**Idempotency:** Check if STARTUP_CHECK already logged as PASSED or SKIPPED in iterations.jsonl for TODAY. If yes, skip.
-
-```
-1. CHECK: does `start:test` exist in package.json scripts?
-2. IF NOT EXISTS:
-   a. ANALYZE project: framework, entry point, bootstrap method
-   b. CREATE ./scripts/bootstrap-check.ts
-      Must: bootstrap completely, NOT listen()/serve(), exit(0) OK, exit(1) error
-   c. ADD to package.json: "start:test": "ts-node ./scripts/bootstrap-check.ts"
-3. EXECUTE: npm run start:test
-4. IF exit code 0: STARTUP_CHECK: PASSED → proceed to STEP 8
-5. IF exit code 1:
-   - DI/IoC error → AUTO-FIX (add missing provider), re-run. If still failing: BLOCKED, log attempt
-   - Connection error (DB/Redis unavailable) → STARTUP_CHECK: SKIPPED (environment-specific)
-
-Log result:
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "test" "startup" '"status":"[PASSED|SKIPPED|BLOCKED]","attempt":[N]'
-```
-
 ---
 
 ## STEP 8: Review Agent
 
-**GATE CHECK:** Build MUST be passing AND Startup Test MUST be PASSED/SKIPPED before dispatching review.
+**GATE CHECK:** Build MUST be passing before dispatching review.
 **Idempotency Guard:** If review.md exists, skip review agent.
 
 **DISPATCH AGENT: @reviewer-agent**
@@ -547,7 +520,7 @@ ${COORDINATOR_NOTES}
 
 ### B — Generate Quality Gate Report
 Create docs/features/${FEATURE_ID}/review.md with:
-- Quality Gate table (Build, Spec Compliance, Code Review Score, Product Validation, Startup Test, Overall)
+- Quality Gate table (Build, Spec Compliance, Code Review Score, Product Validation, Overall)
 - Overall = PASSED only if ALL gates are PASSED or SKIPPED
 - Auto-fix critical issues (missing components, broken contracts, failed requirements)
 
@@ -639,7 +612,7 @@ Generate contextual report summarizing execution:
 - Components (file counts: Database/Backend/Frontend)
 - Key decisions (highlights from Decision Log)
 - Quality gates (overall status: PASSED or BLOCKED with reasons)
-- Validation summary (Code Review score, Spec Compliance, RF/RN coverage, Startup Test result)
+- Validation summary (Code Review score, Spec Compliance, RF/RN coverage)
 - Next steps (review changes, test manually, /add.done)
 
 **Epic Mode:**

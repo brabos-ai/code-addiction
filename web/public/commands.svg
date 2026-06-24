@@ -93,7 +93,7 @@
 
   <rect x="700" y="100" width="260" height="36" class="cmd-box"/>
   <text x="716" y="118" class="cmd-name">/add.test</text>
-  <text x="716" y="130" class="cmd-desc">Generate tests (80% coverage)</text>
+  <text x="716" y="130" class="cmd-desc">Generate automated tests</text>
 
   <!-- DELIVERY GROUP -->
   <rect x="680" y="174" width="300" height="150" class="group-bg"/>
