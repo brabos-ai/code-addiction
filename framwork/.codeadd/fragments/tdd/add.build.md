@@ -17,6 +17,17 @@ OVERRIDE execution with TDD ordering:
 **⛔ TDD GATE:** After implementing code tasks (database/backend/frontend), run existing test files. If tests fail, iterate on the implementation — do NOT modify test files to make them pass.
 <!-- /section:gate -->
 
+<!-- section:verify-red -->
+
+**⛔ VERIFY RED — MANDATORY (load skill: {{skill:add-tdd/SKILL.md}}):**
+
+For each test task, before writing ANY production code:
+1. Run the new test → it **MUST fail**.
+2. Confirm it fails for the **RIGHT reason** (missing implementation — NOT a syntax/import error).
+3. Only then write the **minimal** code to reach GREEN. No cleverness.
+4. If the test passes before you implement: the test is wrong or the feature exists. Investigate, do not proceed.
+<!-- /section:verify-red -->
+
 <!-- section:awareness -->
 
 ## TDD AWARENESS (PRD0001)

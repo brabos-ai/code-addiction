@@ -39,11 +39,6 @@ export const FEATURES = {
     default: true,
     commands: ['add.plan', 'add.build', 'add.review'],
   },
-  'startup-test': {
-    description: 'Application Startup Test (IoC/DI validation)',
-    default: true,
-    commands: ['add.build', 'add.review'],
-  },
 };
 
 /**

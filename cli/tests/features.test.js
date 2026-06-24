@@ -103,15 +103,8 @@ describe('FEATURES registry', () => {
     expect(FEATURES.tdd.commands).toContain('add.review');
   });
 
-  it('defines startup-test feature', () => {
-    expect(FEATURES['startup-test']).toBeDefined();
-    expect(FEATURES['startup-test'].commands).toContain('add.build');
-    expect(FEATURES['startup-test'].commands).toContain('add.review');
-  });
-
-  it('both features default to true', () => {
+  it('tdd defaults to true', () => {
     expect(FEATURES.tdd.default).toBe(true);
-    expect(FEATURES['startup-test'].default).toBe(true);
   });
 });
 
@@ -263,34 +256,26 @@ describe('enable then disable roundtrip', () => {
 
 describe('applyEnabledFeatures', () => {
   it('applies all default-enabled features', () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': true }, providers: ['claude'] });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true }, providers: ['claude'] });
     setupCommand(tmpDir, '.claude/commands', 'add.build', ['gate']);
-    setupCommand(tmpDir, '.claude/commands', 'add.review', ['step']);
     setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD injected' });
-    setupFragment(tmpDir, 'startup-test', 'add.review', { step: 'Startup Test injected' });
     addSidecar(tmpDir, 'tdd', 'add.build', ['gate']);
-    addSidecar(tmpDir, 'startup-test', 'add.review', ['step']);
 
     const total = applyEnabledFeatures(tmpDir);
 
-    expect(total).toBeGreaterThanOrEqual(2);
+    expect(total).toBeGreaterThanOrEqual(1);
     expect(fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8')).toContain('TDD injected');
-    expect(fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.review.md'), 'utf8')).toContain('Startup Test injected');
   });
 
   it('skips disabled features', () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false, 'startup-test': true }, providers: ['claude'] });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false }, providers: ['claude'] });
     setupCommand(tmpDir, '.claude/commands', 'add.build', ['gate']);
-    setupCommand(tmpDir, '.claude/commands', 'add.review', ['step']);
     setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD should not appear' });
-    setupFragment(tmpDir, 'startup-test', 'add.review', { step: 'Startup injected' });
     addSidecar(tmpDir, 'tdd', 'add.build', ['gate']);
-    addSidecar(tmpDir, 'startup-test', 'add.review', ['step']);
 
     applyEnabledFeatures(tmpDir);
 
     expect(fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.build.md'), 'utf8')).not.toContain('TDD should not appear');
-    expect(fs.readFileSync(path.join(tmpDir, '.claude', 'commands', 'add.review.md'), 'utf8')).toContain('Startup injected');
   });
 
   it('uses defaults when manifest has no features field', () => {
@@ -310,11 +295,10 @@ describe('applyEnabledFeatures', () => {
 
 describe('getFeatureStates', () => {
   it('returns all features with their states', () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': false } });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true } });
     const states = getFeatureStates(tmpDir);
     expect(states).toHaveLength(Object.keys(FEATURES).length);
     expect(states.find((s) => s.name === 'tdd').enabled).toBe(true);
-    expect(states.find((s) => s.name === 'startup-test').enabled).toBe(false);
   });
 
   it('uses defaults when no features in manifest', () => {
@@ -342,7 +326,7 @@ describe('features() CLI interactive mode', () => {
   });
 
   it('enables a previously disabled feature when user selects it', async () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false, 'startup-test': false }, providers: ['claude'] });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: false }, providers: ['claude'] });
     setupCommand(tmpDir, '.claude/commands', 'add.build', ['gate']);
     setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD GATE content' });
     addSidecar(tmpDir, 'tdd', 'add.build', ['gate']);
@@ -355,13 +339,13 @@ describe('features() CLI interactive mode', () => {
   });
 
   it('disables a previously enabled feature when user deselects it', async () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': true }, providers: ['claude'] });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true }, providers: ['claude'] });
     setupCommand(tmpDir, '.claude/commands', 'add.build', ['gate']);
     setupFragment(tmpDir, 'tdd', 'add.build', { gate: 'TDD content' });
     addSidecar(tmpDir, 'tdd', 'add.build', ['gate']);
     enableFeature(tmpDir, 'tdd');
 
-    mockPromptFeatures.mockResolvedValue(['startup-test']);
+    mockPromptFeatures.mockResolvedValue([]);
     await features(tmpDir, []);
 
     expect(readManifest(tmpDir).features.tdd).toBe(false);
@@ -369,7 +353,7 @@ describe('features() CLI interactive mode', () => {
   });
 
   it('makes no changes when selection matches current state', async () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': false }, providers: ['claude'] });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true }, providers: ['claude'] });
     setupCommand(tmpDir, '.claude/commands', 'add.build', ['gate']);
     addSidecar(tmpDir, 'tdd', 'add.build', ['gate']);
 
@@ -378,11 +362,10 @@ describe('features() CLI interactive mode', () => {
 
     const manifest = readManifest(tmpDir);
     expect(manifest.features.tdd).toBe(true);
-    expect(manifest.features['startup-test']).toBe(false);
   });
 
   it('passes currently enabled features as initialValues to prompt', async () => {
-    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true, 'startup-test': false } });
+    writeManifest(tmpDir, { version: '1.0.0', features: { tdd: true } });
     mockPromptFeatures.mockResolvedValue(['tdd']);
     await features(tmpDir, []);
     expect(mockPromptFeatures).toHaveBeenCalledWith(['tdd']);

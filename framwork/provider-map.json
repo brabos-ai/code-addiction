@@ -75,7 +75,7 @@
     "add.plan":      { "description": "Technical planning orchestrator - creates plan.md with epic vs feature detection" },
     "add.pull-request": { "description": "Idempotent PR command for current branch — creates new PR or appends update section to existing one. Generates feature changelog on feature branches before opening" },
     "add.review":     { "description": "Feature code review specialist with auto-correction until 100% correct" },
-    "add.test":      { "description": "Automated test generation targeting 80% coverage — detects framework, runs startup test, dispatches parallel area agents" },
+    "add.test":      { "description": "Automated test generation — detects framework, dispatches parallel area agents, reports coverage (informational)" },
     "add.ux":        { "description": "Lightweight UX refinement - loads ux-design skill and applies to free-form instructions" },
     "add.diagnose":  { "description": "Pre-decision investigative triage for ambiguous symptoms — applies 5-phase methodology and recommends route (hotfix/feature/extend/no-action)" }
   },
@@ -106,6 +106,8 @@
     "add-stripe":                      {},
     "add-subagent-driven-development": {},
     "add-tasks-checklist":             {},
+    "add-tdd":                         {},
+    "add-test-specification":          {},
     "add-token-efficiency":            {},
     "add-claude-md-style":             {},
     "add-ux-design":                   {},

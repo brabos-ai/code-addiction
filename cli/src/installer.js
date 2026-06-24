@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { promptProviders, promptScope, promptConfirm, promptFeatures, promptGitignore } from './prompt.js';
+import { promptProviders, promptScope, promptConfirm, promptGitignore } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
@@ -224,7 +224,6 @@ export async function install(cwd, options = {}) {
   const selectedKeys = await promptProviders(scope);
   const providers = resolveSelected(selectedKeys, scope);
 
-  const selectedFeatures = await promptFeatures();
   // gitignore is meaningful only for project installs (you don't gitignore your home dir).
   const addToGitignore = scope === 'project' ? await promptGitignore() : false;
 
@@ -263,10 +262,11 @@ export async function install(cwd, options = {}) {
     log.success('.gitignore updated.');
   }
 
-  // Initialize features based on user selection
+  // Features default to their registry defaults (no install-time prompt).
+  // Users toggle post-install via `codeadd features enable|disable <name>`.
   const defaultFeatures = {};
-  for (const name of Object.keys(FEATURES)) {
-    defaultFeatures[name] = selectedFeatures.includes(name);
+  for (const [name, meta] of Object.entries(FEATURES)) {
+    defaultFeatures[name] = meta.default;
   }
 
   writeManifest(
@@ -283,6 +283,8 @@ export async function install(cwd, options = {}) {
   if (featuresApplied > 0) {
     log.success(`Applied ${featuresApplied} feature injection(s).`);
   }
+
+  log.info('TDD is enabled by default. Run `codeadd features` to adjust.');
 
   // Apply enabled plugins (disabled by default — no-op on fresh install)
   const pluginsApplied = applyEnabledPlugins(targetDir);

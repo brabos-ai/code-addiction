@@ -10,14 +10,14 @@ STEP 9:  Test-Spec subagent       → AFTER area subagents, generates contract t
 
 **When to create:** ALWAYS — runs after all area subagents complete.
 
-**MANDATORY:** Load skill BEFORE dispatch: `.codeadd/skills/test-specification/SKILL.md`
+**MANDATORY:** Load skill BEFORE dispatch: {{skill:add-test-specification/SKILL.md}}
 
 **Dispatch prompt:**
 ```
 You are the TEST SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
 
 ## MANDATORY: Load Skill
-READ: .codeadd/skills/test-specification/SKILL.md — follow ALL rules.
+READ: {{skill:add-test-specification/SKILL.md}} — follow ALL rules.
 
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
@@ -45,7 +45,7 @@ Rules:
 ## Output Format
 Write to: docs/features/${FEATURE_ID}/plan-test-spec.md
 
-Use the EXACT format from the test-specification skill:
+Use the EXACT format from the {{skill:add-test-specification/SKILL.md}} skill:
 
 ## Test Specification
 

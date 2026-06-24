@@ -29,7 +29,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
-| add.test | Automated test generation (80% coverage). Parallel subagents per area + Startup Test | add-backend-development, add-frontend-development, add-ecosystem |
+| add.test | Automated test generation. Parallel subagents per area; reports coverage (informational) | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
 | add.xray | Map project architecture, classify apps, consolidate context | add-architecture-discovery, add-ecosystem |
 
@@ -67,6 +67,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-stripe | Stripe integration, price versioning, grandfathering |
 | add-subagent-driven-development | Subagent coordination with quality gates |
 | add-tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth |
+| add-tdd | RED-GREEN-REFACTOR execution discipline: failing test confirmed for the right reason before code |
+| add-test-specification | Generate contract test cases (RF/RN → testable cases) into plan-test-spec.md |
 | add-token-efficiency | Compression, compact JSON, minimal tokens |
 | add-ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind |
 
@@ -114,6 +116,8 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
+| add-tdd | add.build, add.test |
+| add-test-specification | add.plan (STEP 9) |
 
 ## Main Flows
 
