@@ -35,13 +35,15 @@ graph LR
   IV{{add-investigation}}
   FD{{add-feature-discovery}}
   FS{{add-feature-specification}}
+  TDD{{add-tdd}}
+  TSPEC{{add-test-specification}}
 
   NEW --> DS & ID & FD & FS
-  PLAN --> DS & ID & TC & BE & FE & DB & UX & FD
-  BUILD --> DS & ID & TC & BE & FE & DB & UX & CR
+  PLAN --> DS & ID & TC & BE & FE & DB & UX & FD & TSPEC
+  BUILD --> DS & ID & TC & BE & FE & DB & UX & CR & TDD
   REVIEW --> CR & BE & FE & DB & UX & SA & DV & IV
   DONE --> DS & ID
-  TEST --> BE & FE
+  TEST --> BE & FE & TDD
   AUTO --> TC & BE & FE & DB & UX
 ```
 
