@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
 import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { cancel, outro, log } from '@clack/prompts';
@@ -10,6 +12,7 @@ import { validate } from '../src/validator.js';
 import { config } from '../src/config.js';
 import { features } from '../src/features.js';
 import { plugins } from '../src/plugins.js';
+import { promptUninstallScope } from '../src/prompt.js';
 
 const subcommand = process.argv[2];
 const args = process.argv.slice(3);
@@ -46,6 +49,35 @@ export function resolveTarget(cwd, argv) {
   return global
     ? { targetDir: os.homedir(), scope: 'global', global: true }
     : { targetDir: cwd, scope: 'project', global: false };
+}
+
+/**
+ * Probe both manifest locations to determine uninstall scope without requiring a flag.
+ * Only used by the uninstall branch when no scope flag is present.
+ * @param {string} cwd
+ * @returns {Promise<Array<{targetDir: string, scope: 'project'|'global'}>>}
+ */
+export async function resolveUninstallScope(cwd) {
+  const projectManifest = path.join(cwd, '.codeadd', 'manifest.json');
+  const globalManifest = path.join(os.homedir(), '.codeadd', 'manifest.json');
+  const hasProject = fs.existsSync(projectManifest);
+  const hasGlobal = fs.existsSync(globalManifest);
+
+  if (hasProject && hasGlobal) {
+    const choice = await promptUninstallScope();
+    if (choice === 'both') {
+      return [
+        { targetDir: cwd, scope: 'project' },
+        { targetDir: os.homedir(), scope: 'global' },
+      ];
+    }
+    return choice === 'global'
+      ? [{ targetDir: os.homedir(), scope: 'global' }]
+      : [{ targetDir: cwd, scope: 'project' }];
+  }
+  if (hasProject) return [{ targetDir: cwd, scope: 'project' }];
+  if (hasGlobal) return [{ targetDir: os.homedir(), scope: 'global' }];
+  return [];
 }
 
 const USAGE = `
@@ -109,7 +141,19 @@ async function main() {
       await update(targetDir, { version, channel }, scope);
     } else if (subcommand === 'uninstall') {
       const force = args.includes('--force');
-      await uninstall(targetDir, force, scope);
+      const hasScopeFlag = args.includes('--global') || args.includes('--user');
+      if (hasScopeFlag) {
+        await uninstall(targetDir, force, scope);
+      } else {
+        const targets = await resolveUninstallScope(cwd);
+        if (targets.length === 0) {
+          await uninstall(cwd, force, 'project');
+        } else {
+          for (const { targetDir: td, scope: sc } of targets) {
+            await uninstall(td, force, sc);
+          }
+        }
+      }
     } else if (subcommand === 'doctor') {
       await doctor(targetDir, scope);
     } else if (subcommand === 'validate') {

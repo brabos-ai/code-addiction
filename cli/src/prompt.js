@@ -89,6 +89,26 @@ export async function promptFeatures(initialValues) {
 }
 
 /**
+ * Ask the user which install to remove when both project and global are found.
+ * Throws 'USER_CANCEL' if cancelled.
+ * @returns {Promise<'project'|'global'|'both'>}
+ */
+export async function promptUninstallScope() {
+  const choice = await select({
+    message: 'Which installation to remove?',
+    options: [
+      { value: 'project', label: 'Project', hint: 'this repo (.codeadd/, .claude/ …)' },
+      { value: 'global', label: 'User (global)', hint: 'all projects (~/.codeadd/, ~/.claude/ …)' },
+      { value: 'both', label: 'Both', hint: 'remove project and user installs' },
+    ],
+  });
+  if (isCancel(choice)) {
+    throw new Error('USER_CANCEL');
+  }
+  return choice;
+}
+
+/**
  * Ask user to confirm an action.
  * Throws with message 'USER_CANCEL' if user cancels or declines.
  * @param {string} message
