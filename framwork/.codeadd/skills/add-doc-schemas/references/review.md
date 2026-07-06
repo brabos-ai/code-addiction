@@ -1,8 +1,8 @@
 # Review Category — Schemas & Voice
 
-Category file for review docs (audit reports, diagnose reports). Universal rules live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns review-specific schemas and notation.
+Category file for review docs (audit reports, diagnose reports, QA validation reports). Universal rules live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns review-specific schemas and notation.
 
-**Schemas in this category:** `audit-report`, `diagnose-report`.
+**Schemas in this category:** `audit-report`, `diagnose-report`, `qa-validation`.
 
 ## Shared Notation
 
@@ -52,3 +52,18 @@ For `/add.diagnose` (creates `docs/diagnose/<slug>.md`).
   - **Recommended Route** — a single sentence + target command (`/add.hotfix` | `/add.new` | `extend` | `no-action`), grounded in the evidence.
 - **Compression:** Hypotheses = table `hypothesis | likelihood | test`. Evidence = bullets `source → observation → supports/refutes`.
 - **Hard bans:** speculation presented as conclusion, recommended fix without an evidence chain.
+
+### qa-validation
+
+For `/add.qa` (creates `<scope>/_qa-report/validation-NNN.md` + `screenshots/run-NNN/`). Agent-judged, dual-axis QA audit driven via Playwright MCP. It is an **audit, not a gate** — it documents findings, it never fixes. Full rubric/template live in the plugin-bound `add-qa` skill; this is the doc-schema contract.
+
+- **ID:** `<feature-id>-validation-NNN` — a **per-scope sequence**, NOT a global prefix. Numbering starts `001` and increments per scope (SF folder when scoped, feature folder otherwise); the screenshot `run-NNN` shares the same `NNN`. See `{{skill:add-id-convention/SKILL.md}}` (per-scope sequence IDs).
+- **Frontmatter:** `id: <feature-id>-validation-NNN`, `type: qa-validation`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]`, `method`, `specs: { about, design }`, `viewports: [...]`. (`updated`/`related` optional — reports are append-only per run, not edited.)
+- **Sections:** TL;DR · Summary · Functional delivery (vs about.md) · Findings · Clean screens · Not covered / caveats
+- **Depth floor:**
+  - **Summary** — severity counts (blocker / major / minor / polish).
+  - **Functional delivery** — one row per acceptance criterion / RF tested: result (met / not met / partial) + evidence. Per Finding & Evidence Discipline, no result without evidence.
+  - **Findings** — per finding: severity, `type: ux | functional`, screen, viewport, the related criterion (functional) or design ref (UX), concrete evidence (screenshot path and/or log line), observed, expected, fix hint.
+  - **Not covered** — screens/criteria skipped, auth not seeded, flows unreachable, no pixel-diff baseline. Silent omission is banned.
+- **Compression:** Summary + Functional-delivery = tables; Findings = `### [SEVERITY · type] screen @viewport` blocks.
+- **Hard bans:** a finding without evidence (screenshot path or log line), a functional result without a tested criterion, dropping unreached screens/criteria silently, any "fix applied" claim (QA documents, it does not fix), pass/fail gating language (it is an audit).

@@ -1,0 +1,136 @@
+---
+name: add-qa
+description: Use when running agent-judged QA validation with the playwright plugin — the Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and the qa-agent.
+---
+
+# add-qa — QA Validation Methodology
+
+## Overview
+
+The QA capability **drives the running app via Playwright MCP** and lets the **agent be the judge** (Level C): Playwright captures evidence, the agent assesses it. It validates two axes — **UX quality** vs `design.md` (looking at screenshots) and **functional delivery** vs `about.md` (actively exercising acceptance criteria). It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes.
+
+Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT here — they live in `/add.qa-setup` (must run before the plugin is enabled).
+
+## When to Use
+
+- `/add.qa` dispatches a `qa-agent` to validate a subfeature.
+- A `qa-agent` needs the judge rubric, severity taxonomy, or the finding/report shape.
+
+## When NOT to Use
+
+- Installing prereqs or scaffolding `config.json`/`screens.json` → `/add.qa-setup`.
+- Static code review (no rendered result) → `/add.review`.
+- Unit/integration test generation → `/add.test`.
+
+## Validation Model — Level C
+
+Playwright **captures and exercises**; only the **agent judges** fidelity and responsiveness. There is no pixel-diff and no Figma baseline — fidelity is agent judgement against `design.md`, plus regression-by-eye across runs. Both axes are default-on and spec-derived: pointing at the spec is enough, no manual "validate UX and functionality" instruction needed.
+
+| Axis | Source of truth | Method |
+|---|---|---|
+| UX quality | `design.md` | Look at full-page screenshots per screen × viewport; judge layout/hierarchy/spacing, tokens/color/type, single primary CTA, responsiveness, correct state |
+| Functional delivery | `about.md` (RF/RN + acceptance criteria) | Actively drive each criterion end-to-end (fill/click/submit/navigate); mark met / not met / partial; fold in console/network/4xx–5xx diagnostics |
+
+Viewports (v1, configurable in `config.json`): desktop 1440, tablet 768, mobile 375.
+
+## Severity Taxonomy
+
+| Severity | Meaning |
+|---|---|
+| `blocker` | Unusable / broken core path |
+| `major` | Significant deviation or functional error |
+| `minor` | Small visual/functional issue |
+| `polish` | Cosmetic / low-confidence |
+
+Each finding is also tagged `type: ux | functional`. An *expected* error state (e.g. invalid-token) is correct behavior, not a finding.
+
+## Scope, Path & Numbering
+
+- **Scope:** SF folder when scoped to a subfeature (`SCOPE_DIR = .../subfeatures/SFxx-*`), feature folder otherwise.
+- **Report path:** `SCOPE_DIR/_qa-report/validation-NNN.md`; screenshots in `SCOPE_DIR/_qa-report/screenshots/run-NNN/` named `<screen>.<viewport>.png`.
+- **Numbering:** per scope, `validation-NNN` starting `001`; each SF keeps its own regression history. The screenshot `run-NNN` shares the report's `NNN`. See `{{skill:add-id-convention/SKILL.md}}` (per-scope sequence IDs) and the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
+
+## Config & Catalog Formats (reference)
+
+> **Source of truth: `/add.qa-setup`.** These blocks are a read-time reference for the run command + agent (which *consume* the files). `/add.qa-setup` is the canonical **scaffolder** — it runs before this plugin skill exists, so it carries the authoritative shape. If the two ever diverge, `/add.qa-setup` wins; update it, then mirror here.
+
+`docs/qa/config.json` (project-wide; scaffolded by `/add.qa-setup`):
+```json
+{
+  "baseUrl": "http://localhost:5173",
+  "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
+  "bootHint": "how to start the app's dev server (free text, project-specific)",
+  "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
+}
+```
+
+`FEATURE_DIR/_qa-report/screens.json` (route map for the UX axis; `sf` enables per-SF filtering). The functional axis intent is NOT stored here — it is read from each SF's `about.md` at run time, so the catalog stays small and the functional contract has one source of truth:
+```json
+{
+  "feature": "0001F",
+  "screens": [
+    { "id": "login", "sf": "SF02", "name": "Login", "path": "/login", "auth": false, "design": "docs/features/0001F-.../subfeatures/SF02-.../design.md", "expect": "what a correct render / expected state looks like" }
+  ]
+}
+```
+
+## Report Template (`validation-NNN.md`)
+
+```markdown
+---
+id: <feature-id>-validation-NNN
+type: qa-validation
+created: <YYYY-MM-DD>
+feature: <feature-id>
+scope: [<SFxx>, ...]
+method: playwright-mcp-drive + agent-judge (Level C) — dual-axis (UX + functional)
+specs: { about: <about.md ref>, design: <design.md ref> }
+viewports: [1440, 768, 375]
+---
+
+# QA Validation NNN — <feature-id>
+
+## TL;DR
+<1–2 lines: overall health + headline problems for next wave.>
+
+## Summary
+| Severity | Count |
+|---|---|
+| Blocker | N |
+| Major | N |
+| Minor | N |
+| Polish | N |
+
+## Functional delivery (vs about.md)
+| Acceptance criterion / RF | Result | Evidence |
+|---|---|---|
+| <criterion from about.md> | met / not met / partial | <screenshot or note> |
+
+## Findings
+### [SEVERITY · ux|functional] <screen> @<viewport> — <short title>
+- **Screen:** <route> · **Spec:** <about.md criterion> · **Design:** <design.md ref>
+- **Type:** ux | functional
+- **Evidence:** ![](screenshots/run-NNN/<screen>.<viewport>.png) · `<log line if functional>`
+- **Observed:** <what is wrong / what the behavior did>
+- **Expected:** <what design.md shows OR what the about.md criterion promises>
+- **Fix hint:** <where/what to change>
+
+## Clean screens
+<screens that passed UX + functional with no findings>
+
+## Not covered / caveats
+<screens/criteria skipped, auth not seeded, flows not reachable, no image baseline
+(fidelity is agent judgement, not pixel-diff vs Figma), post-interaction states not
+captured, etc.>
+```
+
+## Validation Checklist
+
+```
+[ ] Both axes judged (UX vs design.md, functional vs about.md) — neither silently skipped
+[ ] Every finding has evidence (screenshot path and/or log line) + severity + type
+[ ] Functional roll-up lists each criterion tested (met/not met/partial)
+[ ] Report numbered per scope (validation-NNN, start 001); run-NNN matches
+[ ] Unreached screens/criteria recorded under "Not covered"
+[ ] No code modified — audit only
+```
