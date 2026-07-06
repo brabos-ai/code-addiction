@@ -63,6 +63,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
+| add-qa | [plugin-bound] Agent-judged QA validation via Playwright MCP — Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, config.json/screens.json formats. Enabled by `codeadd plugins enable playwright` |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
 | add-skill-creator | Create and test skills under real pressure |

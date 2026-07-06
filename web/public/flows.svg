@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 680" fill="none">
   <style>
     .title { fill: #e8e8e8; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; }
     .cmd { fill: #00ff88; font-family: 'JetBrains Mono', monospace; font-size: 9px; }
@@ -62,12 +62,19 @@
     <text x="50" y="18" text-anchor="middle" class="ntxt">Review</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.review</text>
   </g>
-  <line x1="804" y1="82" x2="828" y2="82" class="arrow"/>
+  <line x1="804" y1="82" x2="828" y2="82" class="arrow-w"/>
   <g transform="translate(832, 60)">
+    <rect x="0" y="0" width="100" height="44" rx="6" class="node-warn"/>
+    <text x="50" y="18" text-anchor="middle" class="ntxt">QA</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add.qa</text>
+  </g>
+  <line x1="936" y1="82" x2="960" y2="82" class="arrow-w"/>
+  <g transform="translate(964, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
+  <text x="40" y="120" class="sublabel" style="fill:#999">/add.qa runs here only when the playwright plugin is enabled (optional, audit not a gate)</text>
 
   <!-- ============ STANDARD FLOW ============ -->
   <text x="40" y="150" class="label">STANDARD FLOW</text>

@@ -1,6 +1,6 @@
 # ADD Ecosystem Map
 
-> Integration map of all commands, skills, and agents in the ADD framework. For gap analysis and orphaned artefacts see [PRD0022](docs/prd/PRD0022-ecosystem-master-map.md).
+> Integration map of all commands, skills, and agents in the ADD framework. For gap analysis and orphaned artefacts see [0022-PLAN](docs/plans/0022-PLAN--ecosystem-master-map.md).
 
 Four graphs: **Core Pipeline** (main development flow), **Support Commands** (auxiliary flow), **Agent Dispatch** (subagent orchestration), **Plugin Integrations** (optional MCP plugins).
 
@@ -51,7 +51,7 @@ graph LR
 
 ## Graph 2 — Support Commands
 
-Auxiliary commands (gateway, discovery, emergency, analysis) and their skills.
+Auxiliary commands (gateway, discovery, emergency, analysis, QA) and their skills.
 
 ```mermaid
 graph LR
@@ -64,6 +64,8 @@ graph LR
   XRAY(add.xray)
   BRAINSTORM(add.brainstorm)
   UX_CMD(add.ux)
+  QASETUP(add.qa-setup)
+  QA(add.qa)
 
   ECO{{add-ecosystem}}
   DS{{add-doc-schemas}}
@@ -76,6 +78,7 @@ graph LR
   CMS{{add-claude-md-style}}
   DE{{add-dev-environment-setup}}
   DR{{add-doc-reviewer}}
+  QSK{{add-qa}}
 
   ADD --> ECO & DE
   INIT --> DS & PD
@@ -86,6 +89,8 @@ graph LR
   XRAY --> DS & AD & CMS & ECO
   BRAINSTORM --> DS & DR
   UX_CMD --> UX
+  QASETUP --> DE & DS
+  QA --> QSK & DS
 ```
 
 ---
@@ -105,6 +110,7 @@ graph LR
   REVIEW(add.review)
   PLAN(add.plan)
   BRAINSTORM(add.brainstorm)
+  QA(add.qa)
 
   BA>backend-agent]
   FA>frontend-agent]
@@ -116,6 +122,7 @@ graph LR
   ARCH>architecture-agent]
   FHA>feature-history-agent]
   GHA>git-history-agent]
+  QAA>qa-agent]
 
   BE{{add-backend-development}}
   FE{{add-frontend-development}}
@@ -131,6 +138,7 @@ graph LR
   BARCH{{add-backend-architecture}}
   FARCH{{add-frontend-architecture}}
   IV{{add-investigation}}
+  QSK{{add-qa}}
 
   AUTO --> BA & FA & DA & RA & ARCH
   BUILD --> BA & FA & DA & RA
@@ -141,6 +149,7 @@ graph LR
   BRAINSTORM --> DOCR
   DIAGNOSE --> FHA & GHA & ARCH
   HOTFIX --> FHA & GHA
+  QA --> QAA
 
   BA --> BE & DB
   FA --> FE
@@ -152,13 +161,14 @@ graph LR
   ARCH --> AD & BARCH & FARCH
   FHA --> IV
   GHA --> IV
+  QAA --> QSK
 ```
 
 ---
 
 ## Graph 4 — Plugin Integrations
 
-Optional MCP plugins that inject additive guidance into commands. Disabled by default — enable via `codeadd plugins enable <name>`.
+Optional MCP plugins that inject additive guidance into commands and agents. Disabled by default — enable via `codeadd plugins enable <name>`.
 
 ```mermaid
 graph LR
@@ -172,6 +182,15 @@ graph LR
 
   GNX -->|injects into| NEW & DIAGNOSE & HOTFIX & DONE
   GNX -->|activates skill| GNX_SK
+
+  PW[playwright plugin]
+  PW_SK{{add-qa}}
+
+  QA(add.qa)
+  QAA>qa-agent]
+
+  PW -->|injects into| QA & QAA
+  PW -->|activates skill| PW_SK
 ```
 
 ---

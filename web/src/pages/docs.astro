@@ -166,7 +166,7 @@ import "../styles/global.css";
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
-            <span class="text-muted-light text-sm">List, enable, or disable MCP plugins (e.g. GitNexus)</span>
+            <span class="text-muted-light text-sm">List, enable, or disable MCP plugins (e.g. GitNexus, Playwright)</span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd config show</code>
@@ -261,6 +261,14 @@ import "../styles/global.css";
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.diagnose</code>
                 <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only)</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add.qa</code>
+                <p class="text-muted text-xs mt-0.5">Agent-judged QA — drives the app via Playwright, validates UX + delivery (audit, not a gate). Needs the playwright plugin</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add.qa-setup</code>
+                <p class="text-muted text-xs mt-0.5">QA prerequisites + config bootstrap — installs Playwright MCP, scaffolds QA config</p>
               </div>
             </div>
           </div>
@@ -667,6 +675,75 @@ import "../styles/global.css";
 
         </div>
 
+        <!-- playwright -->
+        <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02] space-y-6 mt-6">
+
+          <!-- Header -->
+          <div>
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-lg font-bold">playwright</code>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Browser-driven QA capture (screenshots + console/network) via Playwright MCP. Powers agent-judged QA — drives the app in a real browser to validate UX quality (vs design.md) and functional delivery (vs about.md acceptance criteria), capturing screenshots and console/network diagnostics.</p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.qa</code></p>
+            <p class="text-muted text-xs mb-1">Injects into agent: <code class="font-mono">qa-agent</code></p>
+            <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-qa</code> — Playwright MCP browser-driving playbook (navigation, screenshots, console/network capture) for QA validation</p>
+            <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/microsoft/playwright-mcp</a></p>
+          </div>
+
+          <!-- Step 1: Install prerequisite -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">1 — Install Playwright MCP</p>
+            <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction validates this with <code class="font-mono">npx --yes @playwright/mcp@latest --version</code>. Run <code class="font-mono">/add.qa-setup</code> for a guided, per-OS install of chromium + the Playwright MCP server.</p>
+            <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+              <span class="text-accent select-none">$</span>
+              <span class="flex-1 text-foreground" id="cmd-pw-install">npx --yes @playwright/mcp@latest --version</span>
+              <button onclick="copyCmd('cmd-pw-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Enable -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-pw-enable">npx codeadd plugins enable playwright</span>
+                <button onclick="copyCmd('cmd-pw-enable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-muted select-none"># to disable later</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-pw-disable">npx codeadd plugins disable playwright</span>
+                <button onclick="copyCmd('cmd-pw-disable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Set up and run -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">3 — Set up and run QA (once per project)</p>
+            <p class="text-muted-light text-xs mb-2">Scaffold QA config after enabling, then run the audit per feature.</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-pw-setup">/add.qa-setup</span>
+                <button onclick="copyCmd('cmd-pw-setup', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-pw-run">/add.qa &lt;feature-id&gt;</span>
+                <button onclick="copyCmd('cmd-pw-run', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+            <p class="text-muted text-xs mt-2">Verify: the Playwright MCP server must be connected (e.g. <code class="font-mono">/mcp</code>) — if it does not appear, <code class="font-mono">/add.qa</code> cannot drive the browser.</p>
+          </div>
+
+        </div>
+
         <script is:inline>
           function copyCmd(id, btn) {
             var text = document.getElementById(id).textContent;
@@ -888,6 +965,8 @@ import "../styles/global.css";
         {data:{id:'add.new',label:'add.new',type:'command'}},
         {data:{id:'add.plan',label:'add.plan',type:'command'}},
         {data:{id:'add.pull-request',label:'add.pull-request',type:'command'}},
+        {data:{id:'add.qa',label:'add.qa',type:'command'}},
+        {data:{id:'add.qa-setup',label:'add.qa-setup',type:'command'}},
         {data:{id:'add.review',label:'add.review',type:'command'}},
         {data:{id:'add.test',label:'add.test',type:'command'}},
         {data:{id:'add.ux',label:'add.ux',type:'command'}},
@@ -901,6 +980,7 @@ import "../styles/global.css";
         {data:{id:'feature-history-agent',label:'feature-history',type:'agent'}},
         {data:{id:'frontend-agent',label:'frontend',type:'agent'}},
         {data:{id:'git-history-agent',label:'git-history',type:'agent'}},
+        {data:{id:'qa-agent',label:'qa',type:'agent'}},
         {data:{id:'reviewer-agent',label:'reviewer',type:'agent'}},
         {data:{id:'system-design-agent',label:'system-design',type:'agent'}},
         {data:{id:'ux-agent',label:'ux',type:'agent'}},
@@ -1001,6 +1081,9 @@ import "../styles/global.css";
         ['add.xray','add-doc-schemas','loads'],
         ['add.xray','add-architecture-discovery','loads'],
         ['add.xray','add-claude-md-style','loads'],
+        ['add.qa','add-doc-schemas','loads'],
+        ['add.qa-setup','add-doc-schemas','loads'],
+        ['add.qa-setup','add-dev-environment-setup','loads'],
         // command → agent (dispatches)
         ['add.autopilot','backend-agent','dispatches'],
         ['add.autopilot','frontend-agent','dispatches'],
@@ -1014,6 +1097,7 @@ import "../styles/global.css";
         ['add.new','discovery-agent','dispatches'],
         ['add.new','doc-reviewer-agent','dispatches'],
         ['add.xray','architecture-agent','dispatches'],
+        ['add.qa','qa-agent','dispatches'],
         ['add.diagnose','discovery-agent','dispatches'],
         ['add.diagnose','architecture-agent','dispatches'],
         ['add.diagnose','feature-history-agent','dispatches'],
