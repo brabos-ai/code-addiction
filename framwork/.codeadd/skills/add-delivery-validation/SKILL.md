@@ -22,6 +22,8 @@ Skill for PRODUCT validation — checks whether requirements were 100% implement
 | Build compiles? | Functionality works end-to-end? |
 | Technical patterns | Implicit dependencies created? |
 
+**Runtime arm — `/add.qa`:** this skill validates delivery **statically** (reads the code/docs, checks the RF/RN checklist). `/add.qa` (the `playwright` plugin, opt-in) is the **runtime** arm of the same goal — it drives the running app to prove functional delivery against `about.md` acceptance criteria (and UX fidelity vs `design.md`), producing a `_qa-report/validation-NNN.md` audit. Use them together when the feature has UI: this skill confirms the requirements exist in code; `/add.qa` confirms they actually work in the browser.
+
 ### When NOT to Use
 
 - During development (run only when feature appears ready)

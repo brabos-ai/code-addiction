@@ -28,6 +28,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
 | add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
+| add.qa | Agent-judged QA validation — drives the app via Playwright MCP, validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_qa-report/validation-NNN.md` (audit, not a gate). Dispatches @qa-agent per SF. **Requires the `playwright` plugin** | add-qa (plugin), add-doc-schemas |
+| add.qa-setup | QA prerequisites + project config bootstrap — installs chromium + Playwright MCP (confirm-then-execute) and scaffolds `docs/qa/config.json` + per-feature `screens.json`. Base command (runs before the plugin is enabled) | add-dev-environment-setup, add-doc-schemas |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation. Parallel subagents per area; reports coverage (informational) | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
@@ -61,6 +63,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
+| add-qa | [plugin-bound] Agent-judged QA validation via Playwright MCP — Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, config.json/screens.json formats. Enabled by `codeadd plugins enable playwright` |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
 | add-skill-creator | Create and test skills under real pressure |
@@ -87,12 +90,14 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | doc-reviewer-agent | Fresh-context doc review (read-only) | add.new, add.brainstorm |
 | feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
 | git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
+| qa-agent | Dual-axis QA judge (read-only on code) — drives the app via Playwright MCP, validates UX vs design.md + functional delivery vs about.md | add.qa (per SF, parallel) |
 
 ## Plugins
 
 | Plugin | Type | Description | Injects into | Plugin skill |
 |--------|------|-------------|--------------|--------------|
 | gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add.new, add.diagnose, add.hotfix, add.done | add-gitnexus |
+| playwright | mcp | Browser-driven QA capture (screenshots + console/network) via Playwright MCP | add.qa (command), qa-agent (agent) | add-qa |
 
 Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are disabled by default and require the external tool to be installed.
 
@@ -114,6 +119,10 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-investigation | add.diagnose (primary, agent-dispatched mode), add.hotfix (STEP 6.1 escalation, agent-dispatched mode), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
 | feature-history-agent | add.diagnose (STEP 4 Fase A.1), add.hotfix (STEP 4) |
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
+| qa-agent | add.qa (dispatched per SF) |
+| add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
+| add-ux-design (design.md) | add.qa (UX axis judges fidelity vs the design spec) |
+| playwright (plugin) | add.qa (drive), qa-agent (drive) — disabled by default; QA run mode gates on it |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 | add-tdd | add.build, add.test |
@@ -162,6 +171,7 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.autopilot | always | `/add.done` | Autopilot includes review; finalize |
 | add.test | tests passing | `/add.review` | Validate code quality |
 | add.test | tests failing | fix + `/add.test` | Iterate until green |
+| add.review | status=PASSED, has UI + playwright plugin enabled | `/add.qa` | Validate the rendered result (UX + functional) before finalizing |
 | add.review | status=PASSED | `/add.done` | All gates green, finalize |
 | add.review | status=BLOCKED | fix + `/add.review` | Iterate until PASSED |
 | add.hotfix | always | `/add.done` | Hotfix ready, finalize branch |
@@ -178,4 +188,7 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.xray | context mapped, ready to build | `/add.new` | Start building with context |
 | add.xray | standalone analysis | done | Analysis delivered |
 | add.audit | critical issues found | `/add.new` per issue | Create features to fix findings |
+| add.qa-setup | prereqs + config ready | `codeadd plugins enable playwright` → `/add.qa` | Enable the capability, then run the audit |
+| add.qa | findings present | `/add.build` or `/add.review` | Audit is non-blocking — feed findings into the next fix wave |
+| add.qa | clean (no findings) | `/add.done` | QA audit clean — finalize |
 | add.audit | project healthy | done | No action needed |

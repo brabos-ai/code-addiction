@@ -77,7 +77,9 @@
     "add.review":     { "description": "Feature code review specialist with auto-correction until 100% correct" },
     "add.test":      { "description": "Automated test generation — detects framework, dispatches parallel area agents, reports coverage (informational)" },
     "add.ux":        { "description": "Lightweight UX refinement - loads ux-design skill and applies to free-form instructions" },
-    "add.diagnose":  { "description": "Pre-decision investigative triage for ambiguous symptoms — applies 5-phase methodology and recommends route (hotfix/feature/extend/no-action)" }
+    "add.diagnose":  { "description": "Pre-decision investigative triage for ambiguous symptoms — applies 5-phase methodology and recommends route (hotfix/feature/extend/no-action)" },
+    "add.qa":        { "description": "Agent-judged QA validation — drives the app via Playwright MCP, validates UX quality (vs design.md) AND functional delivery (vs about.md), writes a versioned _qa-report/validation-NNN.md (audit, not a gate). Requires the playwright plugin" },
+    "add.qa-setup":  { "description": "QA prerequisites + project config bootstrap — installs chromium + Playwright MCP (confirm-then-execute) and scaffolds docs/qa/config.json + per-feature screens.json so /add.qa can run" }
   },
   "skills": {
     "add-architecture-discovery":      {},
@@ -126,6 +128,7 @@
     "database-agent":      { "description": "Database specialist for schema design, migrations, entity modeling, and query optimization" },
     "doc-reviewer-agent":  { "description": "Documentation review specialist - reads generated docs in fresh context and surfaces gaps, clarity issues, and scope questions (read-only)" },
     "feature-history-agent": { "description": "Feature history archaeologist — scans docs/features/ to find feature docs (about/changelog/plan) relevant to a symptom predicate (read-only, docs/ only)" },
-    "git-history-agent":     { "description": "Git history correlator — surfaces recent commits (log/show/diff/branch) plausibly related to a symptom predicate (read-only git)" }
+    "git-history-agent":     { "description": "Git history correlator — surfaces recent commits (log/show/diff/branch) plausibly related to a symptom predicate (read-only git)" },
+    "qa-agent":              { "description": "Dual-axis QA judge — drives the app via Playwright MCP to validate UX quality (vs design.md) and functional delivery (vs about.md acceptance criteria), capturing screenshots + console/network diagnostics, returning classified findings (read-only on code)" }
   }
 }

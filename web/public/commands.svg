@@ -83,7 +83,7 @@
   <text x="386" y="458" class="cmd-desc">Smart commit with adaptive message</text>
 
   <!-- QUALITY GROUP -->
-  <rect x="680" y="10" width="300" height="150" class="group-bg"/>
+  <rect x="680" y="10" width="300" height="244" class="group-bg"/>
   <text x="700" y="36" class="group-title">QUALITY</text>
   <line x1="700" y1="44" x2="960" y2="44" class="cat-line"/>
 
@@ -95,18 +95,26 @@
   <text x="716" y="118" class="cmd-name">/add.test</text>
   <text x="716" y="130" class="cmd-desc">Generate automated tests</text>
 
+  <rect x="700" y="144" width="260" height="36" class="cmd-box"/>
+  <text x="716" y="162" class="cmd-name">/add.qa</text>
+  <text x="716" y="174" class="cmd-desc">Agent-judged QA via Playwright (plugin)</text>
+
+  <rect x="700" y="188" width="260" height="36" class="cmd-box"/>
+  <text x="716" y="206" class="cmd-name">/add.qa-setup</text>
+  <text x="716" y="218" class="cmd-desc">Bootstrap Playwright MCP + QA config</text>
+
   <!-- DELIVERY GROUP -->
-  <rect x="680" y="174" width="300" height="150" class="group-bg"/>
-  <text x="700" y="200" class="group-title">DELIVERY</text>
-  <line x1="700" y1="208" x2="960" y2="208" class="cat-line"/>
+  <rect x="680" y="268" width="300" height="150" class="group-bg"/>
+  <text x="700" y="294" class="group-title">DELIVERY</text>
+  <line x1="700" y1="302" x2="960" y2="302" class="cat-line"/>
 
-  <rect x="700" y="220" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="238" class="cmd-name">/add.done</text>
-  <text x="716" y="250" class="cmd-desc">Changelog, docs, finalize</text>
+  <rect x="700" y="314" width="260" height="36" class="cmd-box"/>
+  <text x="716" y="332" class="cmd-name">/add.done</text>
+  <text x="716" y="344" class="cmd-desc">Changelog, docs, finalize</text>
 
-  <rect x="700" y="264" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="282" class="cmd-name">/add.pull-request</text>
-  <text x="716" y="294" class="cmd-desc">Idempotent PR — create or append update</text>
+  <rect x="700" y="358" width="260" height="36" class="cmd-box"/>
+  <text x="716" y="376" class="cmd-name">/add.pull-request</text>
+  <text x="716" y="388" class="cmd-desc">Idempotent PR — create or append update</text>
 
   <!-- UTILITIES GROUP -->
   <rect x="20" y="440" width="310" height="200" class="group-bg"/>
