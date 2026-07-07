@@ -229,8 +229,23 @@ teardown() {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"HAS_EPIC:true"* ]]
-  [[ "$output" == *"EPIC_PROGRESS:"* ]]
-  [[ "$output" == *"EPIC_CURRENT_SF:"* ]]
+  # Value assertions: only SF01 is done → 1/3; in_progress SF02 is the current SF.
+  # (Guards against BRE `\|` alternation matching every row.)
+  [[ "$output" == *"EPIC_PROGRESS:1/3"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
+}
+
+@test "reports subfeature progress with padded/aligned columns" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  # LLM-generated markdown tables align columns with padding — the status cell
+  # carries leading/trailing spaces. A literal `-F '| done |'` match would fail here.
+  printf '| SF01 | Login  | done        |\n| SF02 | Signup | in_progress |\n| SF03 | Logout | pending     |\n' \
+    > docs/features/0001F-test/epic.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"EPIC_PROGRESS:1/3"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
 }
 
 # ─── tasks.md ────────────────────────────────────────────────────────
