@@ -260,18 +260,18 @@ if [ -n "$FEATURE_ID" ]; then
             TOTAL_SF=$(grep -cE '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null || true)
 
             # Count done subfeatures
-            DONE_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | grep -c '\| done \|' || true)
+            DONE_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | grep -Ec '\|[[:space:]]*done[[:space:]]*\|' || true)
 
             echo "EPIC_PROGRESS:$DONE_SF/$TOTAL_SF"
 
             # Find current SF: in_progress first, then first pending
             CURRENT_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | \
-                grep '\| in_progress \|' | \
+                grep -E '\|[[:space:]]*in_progress[[:space:]]*\|' | \
                 grep -oE 'SF[0-9]+' | head -1 || echo "")
 
             if [ -z "$CURRENT_SF" ]; then
                 CURRENT_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | \
-                    grep '\| pending \|' | \
+                    grep -E '\|[[:space:]]*pending[[:space:]]*\|' | \
                     grep -oE 'SF[0-9]+' | head -1 || echo "")
             fi
 
