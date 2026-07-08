@@ -264,11 +264,11 @@ import "../styles/global.css";
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa</code>
-                <p class="text-muted text-xs mt-0.5">Agent-judged QA — drives the app via Playwright, validates UX + delivery (audit, not a gate). Needs the playwright plugin</p>
+                <p class="text-muted text-xs mt-0.5">Agent-judged QA — judges the persisted qa.spec run across UX, functional, responsiveness, and a11y (audit, not a gate). playwright plugin adds live driving</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa-setup</code>
-                <p class="text-muted text-xs mt-0.5">QA prerequisites + config bootstrap — installs Playwright MCP, scaffolds QA config</p>
+                <p class="text-muted text-xs mt-0.5">QA prerequisites + config bootstrap — installs the @playwright/test runner + chromium, generates a qa-project skill, scaffolds QA config</p>
               </div>
             </div>
           </div>
@@ -560,6 +560,8 @@ import "../styles/global.css";
             { name: "claude-md-style", desc: "Use when generating or updating CLAUDE.md files — defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget" },
             { name: "add-tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add.build and add.test." },
             { name: "add-test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add.plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
+            { name: "add-qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, target viewports, a11y expectations) from about.md + design.md + plan-*.md. Loaded by add.plan's qa-pipeline QA-Spec step." },
+            { name: "add-qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and the qa-agent." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
@@ -593,6 +595,14 @@ import "../styles/global.css";
             </div>
             <p class="text-muted-light text-sm mb-1">Application Startup Test (IoC/DI validation)</p>
             <p class="text-muted text-xs">Injected into: <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
+          </div>
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">qa-pipeline</code>
+              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">QA pipeline (E2E authoring + agent QA validation)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.test</code>, <code class="font-mono">add.build</code></p>
           </div>
         </div>
       </section>
@@ -685,10 +695,9 @@ import "../styles/global.css";
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Browser-driven QA capture (screenshots + console/network) via Playwright MCP. Powers agent-judged QA — drives the app in a real browser to validate UX quality (vs design.md) and functional delivery (vs about.md acceptance criteria), capturing screenshots and console/network diagnostics.</p>
+            <p class="text-muted-light text-sm mb-1">Adds live browser driving (screenshots + console/network) to the already-present agent-judged QA validation via Playwright MCP. QA works out of the box from persisted run evidence (screenshots + assertion/axe results) — this plugin lets qa-agent additionally drive the app live for richer evidence.</p>
             <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.qa</code></p>
-            <p class="text-muted text-xs mb-1">Injects into agent: <code class="font-mono">qa-agent</code></p>
-            <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-qa</code> — Playwright MCP browser-driving playbook (navigation, screenshots, console/network capture) for QA validation</p>
+            <p class="text-muted text-xs">Injects into agent: <code class="font-mono">qa-agent</code></p>
             <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/microsoft/playwright-mcp</a></p>
           </div>
 
@@ -981,6 +990,7 @@ import "../styles/global.css";
         {data:{id:'frontend-agent',label:'frontend',type:'agent'}},
         {data:{id:'git-history-agent',label:'git-history',type:'agent'}},
         {data:{id:'qa-agent',label:'qa',type:'agent'}},
+        {data:{id:'e2e-agent',label:'e2e',type:'agent'}},
         {data:{id:'reviewer-agent',label:'reviewer',type:'agent'}},
         {data:{id:'system-design-agent',label:'system-design',type:'agent'}},
         {data:{id:'ux-agent',label:'ux',type:'agent'}},
@@ -1010,6 +1020,8 @@ import "../styles/global.css";
         {data:{id:'add-frontend-architecture',label:'frontend-arch',type:'skill'}},
         {data:{id:'add-tdd',label:'tdd',type:'skill'}},
         {data:{id:'add-test-specification',label:'test-specification',type:'skill'}},
+        {data:{id:'add-qa',label:'qa',type:'skill'}},
+        {data:{id:'add-qa-spec',label:'qa-spec',type:'skill'}},
       ];
 
       var RAW = [
@@ -1082,8 +1094,10 @@ import "../styles/global.css";
         ['add.xray','add-architecture-discovery','loads'],
         ['add.xray','add-claude-md-style','loads'],
         ['add.qa','add-doc-schemas','loads'],
+        ['add.qa','add-qa','loads'],
         ['add.qa-setup','add-doc-schemas','loads'],
         ['add.qa-setup','add-dev-environment-setup','loads'],
+        ['add.plan','add-qa-spec','loads'],
         // command → agent (dispatches)
         ['add.autopilot','backend-agent','dispatches'],
         ['add.autopilot','frontend-agent','dispatches'],
@@ -1098,6 +1112,7 @@ import "../styles/global.css";
         ['add.new','doc-reviewer-agent','dispatches'],
         ['add.xray','architecture-agent','dispatches'],
         ['add.qa','qa-agent','dispatches'],
+        ['add.test','e2e-agent','dispatches'],
         ['add.diagnose','discovery-agent','dispatches'],
         ['add.diagnose','architecture-agent','dispatches'],
         ['add.diagnose','feature-history-agent','dispatches'],
@@ -1120,6 +1135,7 @@ import "../styles/global.css";
         ['architecture-agent','add-backend-architecture','uses'],
         ['architecture-agent','add-frontend-architecture','uses'],
         ['system-design-agent','add-architecture-discovery','uses'],
+        ['qa-agent','add-qa','uses'],
       ];
 
       var edges = RAW.map(function(r, i) {

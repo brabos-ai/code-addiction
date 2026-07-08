@@ -37,9 +37,10 @@ graph LR
   FS{{add-feature-specification}}
   TDD{{add-tdd}}
   TSPEC{{add-test-specification}}
+  QSPEC{{add-qa-spec}}
 
   NEW --> DS & ID & FD & FS
-  PLAN --> DS & ID & TC & BE & FE & DB & UX & FD & TSPEC
+  PLAN --> DS & ID & TC & BE & FE & DB & UX & FD & TSPEC & QSPEC
   BUILD --> DS & ID & TC & BE & FE & DB & UX & CR & TDD
   REVIEW --> CR & BE & FE & DB & UX & SA & DV & IV
   DONE --> DS & ID
@@ -111,6 +112,7 @@ graph LR
   PLAN(add.plan)
   BRAINSTORM(add.brainstorm)
   QA(add.qa)
+  TEST(add.test)
 
   BA>backend-agent]
   FA>frontend-agent]
@@ -123,6 +125,7 @@ graph LR
   FHA>feature-history-agent]
   GHA>git-history-agent]
   QAA>qa-agent]
+  E2EA>e2e-agent]
 
   BE{{add-backend-development}}
   FE{{add-frontend-development}}
@@ -150,6 +153,7 @@ graph LR
   DIAGNOSE --> FHA & GHA & ARCH
   HOTFIX --> FHA & GHA
   QA --> QAA
+  TEST --> E2EA
 
   BA --> BE & DB
   FA --> FE

@@ -55,15 +55,17 @@ For `/add.diagnose` (creates `docs/diagnose/<slug>.md`).
 
 ### qa-validation
 
-For `/add.qa` (creates `<scope>/_qa-report/validation-NNN.md` + `screenshots/run-NNN/`). Agent-judged, dual-axis QA audit driven via Playwright MCP. It is an **audit, not a gate** — it documents findings, it never fixes. Full rubric/template live in the plugin-bound `add-qa` skill; this is the doc-schema contract.
+For `/add.qa` (creates `<scope>/_tests/run-NNN/qa-validation-NNN.md` + `_tests/run-NNN/screenshots/`). Agent-judged, dual-axis QA audit — read-PNG by default; the `playwright` plugin adds live browser driving. It is an **audit, not a gate** — it documents findings, it never fixes. Full rubric/template live in the default-shipped `add-qa` skill; this is the doc-schema contract.
 
-- **ID:** `<feature-id>-validation-NNN` — a **per-scope sequence**, NOT a global prefix. Numbering starts `001` and increments per scope (SF folder when scoped, feature folder otherwise); the screenshot `run-NNN` shares the same `NNN`. See `{{skill:add-id-convention/SKILL.md}}` (per-scope sequence IDs).
-- **Frontmatter:** `id: <feature-id>-validation-NNN`, `type: qa-validation`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]`, `method`, `specs: { about, design }`, `viewports: [...]`. (`updated`/`related` optional — reports are append-only per run, not edited.)
+> Migration: legacy `_qa-report/` projects keep their old reports in place; new runs write under `_tests/`.
+
+- **ID:** `<feature-id>-qa-validation-NNN` — a **per-scope sequence**, NOT a global prefix. Numbering starts `001` and increments per scope (SF folder when scoped, feature folder otherwise); the screenshot `run-NNN` shares the same `NNN`. See `{{skill:add-id-convention/SKILL.md}}` (per-scope sequence IDs).
+- **Frontmatter:** `id: <feature-id>-qa-validation-NNN`, `type: qa-validation`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]`, `method`, `specs: { about, design }`, `viewports: [...]`. (`updated`/`related` optional — reports are append-only per run, not edited.)
 - **Sections:** TL;DR · Summary · Functional delivery (vs about.md) · Findings · Clean screens · Not covered / caveats
 - **Depth floor:**
   - **Summary** — severity counts (blocker / major / minor / polish).
   - **Functional delivery** — one row per acceptance criterion / RF tested: result (met / not met / partial) + evidence. Per Finding & Evidence Discipline, no result without evidence.
-  - **Findings** — per finding: severity, `type: ux | functional`, screen, viewport, the related criterion (functional) or design ref (UX), concrete evidence (screenshot path and/or log line), observed, expected, fix hint.
+  - **Findings** — per finding: severity, `type: ux | functional | a11y`, screen, viewport, the related criterion (functional) or design ref (UX), concrete evidence (screenshot path and/or log line), observed, expected, fix hint.
   - **Not covered** — screens/criteria skipped, auth not seeded, flows unreachable, no pixel-diff baseline. Silent omission is banned.
 - **Compression:** Summary + Functional-delivery = tables; Findings = `### [SEVERITY · type] screen @viewport` blocks.
 - **Hard bans:** a finding without evidence (screenshot path or log line), a functional result without a tested criterion, dropping unreached screens/criteria silently, any "fix applied" claim (QA documents, it does not fix), pass/fail gating language (it is an audit).

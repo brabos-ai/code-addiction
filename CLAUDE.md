@@ -128,7 +128,7 @@ Current features:
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
 | `tdd` | enabled | add.plan, add.build, add.review |
-| `startup-test` | enabled | add.build, add.review |
+| `qa-pipeline` | disabled | add.plan, add.test, add.build |
 
 ## Plugin System
 

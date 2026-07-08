@@ -39,6 +39,11 @@ export const FEATURES = {
     default: true,
     commands: ['add.plan', 'add.build', 'add.review'],
   },
+  'qa-pipeline': {
+    description: 'QA pipeline (E2E authoring + agent QA validation)',
+    default: false,
+    commands: ['add.plan', 'add.test', 'add.build'],
+  },
 };
 
 /**

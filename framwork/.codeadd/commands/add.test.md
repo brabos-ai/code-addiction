@@ -40,7 +40,7 @@ Use these terms consistently throughout execution.
 
 ```
 STEP 1: Environment Check       -> RUN FIRST — detect/configure test framework
-STEP 2: Context Loading          -> DETERMINE scope (diff/feature/path)
+STEP 2: Context Loading          -> DETERMINE scope (diff/feature)
 STEP 3: Dispatch Test Generators -> ONLY AFTER 1-2 — parallel agents per area
 STEP 4: Run Tests + Coverage     -> ONLY AFTER generators return — measure + report
 STEP 5: Report                   -> ONLY AFTER tests run
@@ -102,7 +102,6 @@ REPORT: Framework, test command, coverage command, areas detected.
 |-------|------|-------|
 | `add-test` (no args) | `diff` | Files changed in git diff |
 | `add-test feature N` | `feature` | Entire feature N scope |
-| `add-test <path>` | `path` | Specific directory/file |
 
 ### 2.2 Detect Existing Contract Tests (TDD Awareness)
 
@@ -130,10 +129,6 @@ IF no changed files -> STOP with guidance.
 2. READ: `docs/features/[XXXX]F/about.md` — extract RF/RN requirements
 3. READ: `docs/features/[XXXX]F/plan.md` — extract implementation scope
 4. SET `TARGET_FILES` = files referenced in plan.md + files in feature modules
-
-**IF MODE = path:**
-1. VERIFY path exists
-2. SET `TARGET_FILES` = all source files under path (exclude existing tests)
 
 ### 2.4 Map Files to Areas
 
@@ -211,6 +206,8 @@ Report: AREA, FILES_CREATED, FILES_MODIFIED, TESTS_PASSING (true/false), TEST_CO
 | **COLLECT** | Gather `ALL_TEST_FILES`, `ALL_TESTS_PASSING`, `TOTAL_TEST_COUNT` from all agents |
 | **TESTS_PASSING = false** | Inform user which area failed + errors. ATTEMPT one fix iteration |
 | **Ready** | Proceed to STEP 4 only if all generators completed |
+<!-- feature:qa-pipeline:e2e-dispatch -->
+<!-- /feature:qa-pipeline:e2e-dispatch -->
 
 ---
 
@@ -278,7 +275,7 @@ bash .codeadd/scripts/log-iteration.sh "test" "add-test" "Generated tests — [C
 - Dispatch area agents in parallel (all at once, not sequentially)
 - Mock external dependencies (DB, HTTP, queues) — do NOT call real services
 - Modify test files only; NEVER modify source code for coverage
-- Only generate unit + integration; NEVER E2E tests
+- Generate unit + integration by default; author E2E specs only under the qa-pipeline QA axis (via @e2e-agent). With the feature OFF there is no QA axis, so no E2E is authored — behavior unchanged.
 - Run tests immediately after generation; verify compile + pass before reporting
 
 ### Final Output Standards

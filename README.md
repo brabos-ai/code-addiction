@@ -56,7 +56,7 @@ npx codeadd config show
 
 ## Plugins
 
-Plugins integrate external MCP tools into ADD commands — extending discovery, planning, and diagnosis with structural code navigation, and QA validation with browser automation. Plugins are **disabled by default** — enable only after installing the external tool.
+Plugins integrate external MCP tools into ADD commands — extending discovery, planning, and diagnosis with structural code navigation, and adding live browser driving to QA validation (which works out of the box without any plugin). Plugins are **disabled by default** — enable only after installing the external tool.
 
 See [code.brabos.ai/docs#plugins](https://code.brabos.ai/docs#plugins) for the full plugin catalog with install prerequisites and step-by-step setup.
 

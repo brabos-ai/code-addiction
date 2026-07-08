@@ -74,7 +74,7 @@
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
-  <text x="40" y="120" class="sublabel" style="fill:#999">/add.qa runs here only when the playwright plugin is enabled (optional, audit not a gate)</text>
+  <text x="40" y="120" class="sublabel" style="fill:#999">/add.qa runs here from persisted QA-Spec evidence; the playwright plugin adds live driving (optional, audit not a gate)</text>
 
   <!-- ============ STANDARD FLOW ============ -->
   <text x="40" y="150" class="label">STANDARD FLOW</text>

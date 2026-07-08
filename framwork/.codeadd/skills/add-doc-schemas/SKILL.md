@@ -95,7 +95,7 @@ Every ADD doc type that participates in the reference graph has a prefix. IDs ar
 
 > **Convention:** Feature/hotfix IDs use `[NNNN][L]` (number first, letter suffix) per `{{skill:add-id-convention/SKILL.md}}`. `PRD` and `CHG` are separate namespaces with no letter suffix.
 
-Other doc types (`OWNER`, `PRODUCT`, `AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
+Other doc types (`OWNER`, `PRODUCT`, `AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
 
 ### ID Allocation
 

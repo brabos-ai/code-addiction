@@ -35,13 +35,13 @@
   },
   "playwright": {
     "type": "mcp",
-    "description": "Browser-driven QA capture (screenshots + console/network) via Playwright MCP",
+    "description": "Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP",
     "detect": "npx --yes @playwright/mcp@latest --version",
     "homepage": "https://github.com/microsoft/playwright-mcp",
     "installHint": "Install the Playwright MCP server (@playwright/mcp) + chromium, then wire it as an MCP server. Run /add.qa-setup for guided, per-OS install + project QA config. Tool: https://github.com/microsoft/playwright-mcp",
-    "postEnableHint": "playwright enabled. Make QA runnable:\n  1) /add.qa-setup        # install prereqs (chromium + Playwright MCP) + scaffold project QA config\n  2) verify the Playwright MCP server is connected (e.g. /mcp) — it MUST appear; if not, add.qa cannot drive the browser\n  3) /add.qa <feature-id> [SFxx]   # run the audit\nDocs: https://github.com/microsoft/playwright-mcp",
+    "postEnableHint": "playwright enabled — adds live browser driving to the already-present QA validation. Make it runnable:\n  1) /add.qa-setup        # install prereqs (chromium + Playwright MCP) + scaffold project QA config\n  2) verify the Playwright MCP server is connected (e.g. /mcp) — it MUST appear; if not, add.qa runs in degraded read-PNG mode\n  3) /add.qa <feature-id> [SFxx]   # run the audit\nDocs: https://github.com/microsoft/playwright-mcp",
     "injects": ["add.qa"],
-    "skills": ["add-qa"],
+    "skills": [],
     "agents": [
       { "agent": "qa-agent", "sections": ["drive"] }
     ]

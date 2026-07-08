@@ -97,11 +97,11 @@
 
   <rect x="700" y="144" width="260" height="36" class="cmd-box"/>
   <text x="716" y="162" class="cmd-name">/add.qa</text>
-  <text x="716" y="174" class="cmd-desc">Agent-judged QA via Playwright (plugin)</text>
+  <text x="716" y="174" class="cmd-desc">Agent-judged QA from persisted evidence</text>
 
   <rect x="700" y="188" width="260" height="36" class="cmd-box"/>
   <text x="716" y="206" class="cmd-name">/add.qa-setup</text>
-  <text x="716" y="218" class="cmd-desc">Bootstrap Playwright MCP + QA config</text>
+  <text x="716" y="218" class="cmd-desc">Bootstrap QA runner + config (MCP optional)</text>
 
   <!-- DELIVERY GROUP -->
   <rect x="680" y="268" width="300" height="150" class="group-bg"/>

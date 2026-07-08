@@ -14,4 +14,6 @@
 
 Settle before judging (`browser_wait_for`) so you screenshot the final rendered state, not a loading frame. For `auth:true` screens, establish the session per the `authSeed` hint first. Prefer non-destructive interactions; note any state you mutate. If a tool surface differs from the above, fall back to the closest available `browser_*` tool and note the substitution — do not abort the axis.
 
+In live mode this is **purely additive** over read-PNG judgment: beyond the scripted PNG set the run persisted, you may additionally capture unscripted states and read console/network interactively for richer evidence. The read-PNG axes (UX / functional / responsiveness / a11y) still stand on the persisted screenshots + axe/assertion artifacts.
+
 <!-- /section:drive -->
