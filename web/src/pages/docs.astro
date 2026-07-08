@@ -596,6 +596,14 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-1">Application Startup Test (IoC/DI validation)</p>
             <p class="text-muted text-xs">Injected into: <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
           </div>
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">qa-pipeline</code>
+              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">QA pipeline (E2E authoring + agent QA validation)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.test</code>, <code class="font-mono">add.build</code></p>
+          </div>
         </div>
       </section>
 
@@ -687,10 +695,9 @@ import "../styles/global.css";
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Browser-driven QA capture (screenshots + console/network) via Playwright MCP. Powers agent-judged QA — drives the app in a real browser to validate UX quality (vs design.md) and functional delivery (vs about.md acceptance criteria), capturing screenshots and console/network diagnostics.</p>
+            <p class="text-muted-light text-sm mb-1">Adds live browser driving (screenshots + console/network) to the already-present agent-judged QA validation via Playwright MCP. QA works out of the box from persisted run evidence (screenshots + assertion/axe results) — this plugin lets qa-agent additionally drive the app live for richer evidence.</p>
             <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.qa</code></p>
-            <p class="text-muted text-xs mb-1">Injects into agent: <code class="font-mono">qa-agent</code></p>
-            <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-qa</code> — Playwright MCP browser-driving playbook (navigation, screenshots, console/network capture) for QA validation</p>
+            <p class="text-muted text-xs">Injects into agent: <code class="font-mono">qa-agent</code></p>
             <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/microsoft/playwright-mcp</a></p>
           </div>
 
@@ -983,6 +990,7 @@ import "../styles/global.css";
         {data:{id:'frontend-agent',label:'frontend',type:'agent'}},
         {data:{id:'git-history-agent',label:'git-history',type:'agent'}},
         {data:{id:'qa-agent',label:'qa',type:'agent'}},
+        {data:{id:'e2e-agent',label:'e2e',type:'agent'}},
         {data:{id:'reviewer-agent',label:'reviewer',type:'agent'}},
         {data:{id:'system-design-agent',label:'system-design',type:'agent'}},
         {data:{id:'ux-agent',label:'ux',type:'agent'}},
@@ -1012,6 +1020,8 @@ import "../styles/global.css";
         {data:{id:'add-frontend-architecture',label:'frontend-arch',type:'skill'}},
         {data:{id:'add-tdd',label:'tdd',type:'skill'}},
         {data:{id:'add-test-specification',label:'test-specification',type:'skill'}},
+        {data:{id:'add-qa',label:'qa',type:'skill'}},
+        {data:{id:'add-qa-spec',label:'qa-spec',type:'skill'}},
       ];
 
       var RAW = [
@@ -1084,8 +1094,10 @@ import "../styles/global.css";
         ['add.xray','add-architecture-discovery','loads'],
         ['add.xray','add-claude-md-style','loads'],
         ['add.qa','add-doc-schemas','loads'],
+        ['add.qa','add-qa','loads'],
         ['add.qa-setup','add-doc-schemas','loads'],
         ['add.qa-setup','add-dev-environment-setup','loads'],
+        ['add.plan','add-qa-spec','loads'],
         // command → agent (dispatches)
         ['add.autopilot','backend-agent','dispatches'],
         ['add.autopilot','frontend-agent','dispatches'],
@@ -1100,6 +1112,7 @@ import "../styles/global.css";
         ['add.new','doc-reviewer-agent','dispatches'],
         ['add.xray','architecture-agent','dispatches'],
         ['add.qa','qa-agent','dispatches'],
+        ['add.test','e2e-agent','dispatches'],
         ['add.diagnose','discovery-agent','dispatches'],
         ['add.diagnose','architecture-agent','dispatches'],
         ['add.diagnose','feature-history-agent','dispatches'],
@@ -1122,6 +1135,7 @@ import "../styles/global.css";
         ['architecture-agent','add-backend-architecture','uses'],
         ['architecture-agent','add-frontend-architecture','uses'],
         ['system-design-agent','add-architecture-discovery','uses'],
+        ['qa-agent','add-qa','uses'],
       ];
 
       var edges = RAW.map(function(r, i) {

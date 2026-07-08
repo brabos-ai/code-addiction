@@ -89,7 +89,7 @@
 
   <line x1="1010" y1="85" x2="1037" y2="85" class="arrow"/>
 
-  <!-- 5.5. QA (optional, requires playwright plugin) -->
+  <!-- 5.5. QA (optional; playwright plugin adds live driving) -->
   <g transform="translate(1042, 55)">
     <rect x="0" y="0" width="110" height="60" rx="8" class="node-bg"/>
     <text x="55" y="18" text-anchor="middle" class="node-step">OPT</text>
