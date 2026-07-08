@@ -19,19 +19,19 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add-investigation on ambiguous findings | add-doc-schemas, add-health-check, add-ecosystem, add-investigation |
 | add.autopilot | Autonomous Feature Coordinator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-tasks-checklist |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
-| add.build | Development Execution Specialist | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
+| add.build | Development Execution Specialist. QA-Fix mode (`/add.build qa`) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
-| add.plan | Technical Planning Orchestrator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist |
+| add.plan | Technical Planning Orchestrator. QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
-| add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches @qa-agent per SF. **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
+| add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches @qa-agent per SF, judged across 4 axes (UX, functional, responsiveness, a11y). **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
 | add.qa-setup | QA prerequisites + project config bootstrap — installs the `@playwright/test` runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific `qa-project` skill, and scaffolds `docs/qa/config.json` + reachability-aware `FEATURE_DIR/_tests/screens.json`. Base command (runs before the plugin is enabled) | add-dev-environment-setup, add-doc-schemas |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
-| add.test | Automated test generation. Parallel subagents per area; reports coverage (informational) | add-backend-development, add-frontend-development, add-ecosystem |
+| add.test | Automated test generation. Parallel subagents per area; reports coverage (informational). Dispatches @e2e-agent when qa-pipeline feature enabled | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
 | add.xray | Map project architecture, classify apps, consolidate context | add-architecture-discovery, add-ecosystem |
 
@@ -63,7 +63,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
-| add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, config.json/screens.json formats |
+| add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, 4-axis (UX + functional + responsiveness + a11y) method, report schema/template, config.json/screens.json formats |
+| add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, viewports, a11y expectations) from about.md + design.md + plan-*.md — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
 | add-skill-creator | Create and test skills under real pressure |
@@ -90,14 +91,15 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | doc-reviewer-agent | Fresh-context doc review (read-only) | add.new, add.brainstorm |
 | feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
 | git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
-| qa-agent | Dual-axis QA judge — judges from persisted run evidence (read-PNG); with the playwright plugin, additionally drives live, validates UX vs design.md + functional delivery vs about.md | add.qa (per SF, parallel) |
+| qa-agent | 4-axis QA judge (UX, functional, responsiveness, a11y) — judges from persisted run evidence (screenshots + axe/assertion results, read-PNG); with the playwright plugin, additionally drives live | add.qa (per SF, parallel) |
+| e2e-agent | Cross-cutting E2E spec author — authors `<surface>.qa.spec` (functional assertions + multi-viewport capture + axe a11y), finalizes screens.json reachability recipe, green-confirms via `@playwright/test` (no MCP, test files only) | add.test (qa-pipeline feature) |
 
 ## Plugins
 
 | Plugin | Type | Description | Injects into | Plugin skill |
 |--------|------|-------------|--------------|--------------|
 | gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add.new, add.diagnose, add.hotfix, add.done | add-gitnexus |
-| playwright | mcp | Browser-driven QA capture (screenshots + console/network) via Playwright MCP | add.qa (command), qa-agent (agent) | — (add-qa is now default) |
+| playwright | mcp | Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP | add.qa (command), qa-agent (agent) | — (add-qa is now default) |
 
 Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are disabled by default and require the external tool to be installed.
 
@@ -120,6 +122,8 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | feature-history-agent | add.diagnose (STEP 4 Fase A.1), add.hotfix (STEP 4) |
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | qa-agent | add.qa (dispatched per SF) |
+| e2e-agent | add.test (dispatched when qa-pipeline feature enabled) |
+| add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) |
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (UX axis judges fidelity vs the design spec) |
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |

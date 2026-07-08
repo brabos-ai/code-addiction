@@ -264,11 +264,11 @@ import "../styles/global.css";
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa</code>
-                <p class="text-muted text-xs mt-0.5">Agent-judged QA — drives the app via Playwright, validates UX + delivery (audit, not a gate). Needs the playwright plugin</p>
+                <p class="text-muted text-xs mt-0.5">Agent-judged QA — judges the persisted qa.spec run across UX, functional, responsiveness, and a11y (audit, not a gate). playwright plugin adds live driving</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa-setup</code>
-                <p class="text-muted text-xs mt-0.5">QA prerequisites + config bootstrap — installs Playwright MCP, scaffolds QA config</p>
+                <p class="text-muted text-xs mt-0.5">QA prerequisites + config bootstrap — installs the @playwright/test runner + chromium, generates a qa-project skill, scaffolds QA config</p>
               </div>
             </div>
           </div>
@@ -560,6 +560,8 @@ import "../styles/global.css";
             { name: "claude-md-style", desc: "Use when generating or updating CLAUDE.md files — defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget" },
             { name: "add-tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add.build and add.test." },
             { name: "add-test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add.plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
+            { name: "add-qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, target viewports, a11y expectations) from about.md + design.md + plan-*.md. Loaded by add.plan's qa-pipeline QA-Spec step." },
+            { name: "add-qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and the qa-agent." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
