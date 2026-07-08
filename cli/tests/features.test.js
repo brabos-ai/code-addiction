@@ -106,6 +106,13 @@ describe('FEATURES registry', () => {
   it('tdd defaults to true', () => {
     expect(FEATURES.tdd.default).toBe(true);
   });
+
+  it('defines qa-pipeline feature with the tdd shape', () => {
+    expect(FEATURES['qa-pipeline']).toBeDefined();
+    expect(FEATURES['qa-pipeline'].default).toBe(false);
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.test', 'add.build']);
+    expect(FEATURES['qa-pipeline']).not.toHaveProperty('providers');
+  });
 });
 
 describe('enableFeature', () => {

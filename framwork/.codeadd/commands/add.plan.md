@@ -61,6 +61,8 @@ STEP 8:  Execute subagents        -> SEQUENTIAL by area
   - 8.1: Database Specialist
   - 8.2: Backend Specialist
   - 8.3: Frontend Specialist
+<!-- feature:qa-pipeline:step-list -->
+<!-- /feature:qa-pipeline:step-list -->
 <!-- feature:tdd:step-list -->
 STEP 9:  Test-Spec subagent       -> AFTER area subagents (TDD feature)
 <!-- /feature:tdd:step-list -->
@@ -470,6 +472,8 @@ ${CROSS_SF_CONTEXT}
 ---
 
 ## STEP 10: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)
+<!-- feature:qa-pipeline:qa-spec -->
+<!-- /feature:qa-pipeline:qa-spec -->
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
@@ -482,6 +486,7 @@ Create plan.md header: `# Plan: ${FEATURE_ID}`. Append subagent outputs in order
 2. plan-database.md (if exists)
 3. plan-backend.md (if exists)
 4. plan-frontend.md (if exists)
+5. plan-qa-spec.md (if exists)
 
 Separate each section with `---`. **NEVER rewrite or summarize subagent content. Append directly.**
 
@@ -544,7 +549,7 @@ Append to plan.md: **Overview** (1-2 paragraphs from about.md), **Main Flow** (n
 
 ```bash
 cd "docs/features/${FEATURE_ID}"
-rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md
+rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md plan-qa-spec.md
 ```
 
 Delete only after plan.md complete AND coverage validated.

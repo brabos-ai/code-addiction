@@ -131,8 +131,8 @@ describe('install command e2e', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
     );
-    // tdd is the only registered feature and defaults true.
-    expect(manifest.features).toEqual({ tdd: true });
+    // tdd defaults true; qa-pipeline defaults false (opt-in, registered in features.js).
+    expect(manifest.features).toEqual({ tdd: true, 'qa-pipeline': false });
     // Removing the feature prompt must not disturb the plugin path:
     // plugins stay disabled (empty) by default on a fresh install.
     expect(manifest.plugins).toEqual({});

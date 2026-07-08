@@ -24,7 +24,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 STEP 1: Run context mapper         → FIRST COMMAND (status.sh)
 STEP 2: Detect context             → Epic subfeature | Legacy feature flag | Simple mode
 STEP 3: Parse key variables        → Extract FEATURE_ID, flags, phase
-STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE
+STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE | QA-FIX (/add.build qa)
 STEP 5: Load feature docs          → BEFORE any implementation
 STEP 6: Load project patterns      → IF PROJECT_SKILL or PROJECT_DOCS exist
 STEP 7: Determine scope            → Database, Backend, Workers, Frontend
@@ -131,6 +131,8 @@ This command detects automatically:
 
 ### 4.2 Detection Flow (priority order)
 
+**QA-Fix pre-check (BEFORE the ladder):** IF the command was invoked with an explicit `qa` argument (`/add.build qa`, or an explicit `--qa` / report-path signal) → SKIP the mode ladder entirely and go to the **QA-Fix Flow (qa-pipeline)** section (below STEP 5). IF that section is NOT present (the `qa-pipeline` feature is disabled) → tell the user to run `codeadd features enable qa-pipeline` and STOP; do NOT fall through to a normal build mode.
+
 1. User described PROBLEM/BUG + feature implemented? → CORRECTION MODE
 2. `HAS_TASKS=true`? → TASKS MODE
 3. User passed `feature N`? → FEATURE MODE
@@ -173,6 +175,8 @@ Read all relevant feature docs based on status.sh flags:
 **Priority:** plan.md > design.md + about.md > about.md + discovery.md
 
 ---
+<!-- feature:qa-pipeline:qa-fix -->
+<!-- /feature:qa-pipeline:qa-fix -->
 
 ## STEP 6: Load Project Patterns (IF exist)
 

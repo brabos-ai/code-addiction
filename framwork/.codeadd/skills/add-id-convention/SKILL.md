@@ -82,13 +82,13 @@ Examples: `status.sh next-id F` → `0001F`, `status.sh next-id H` → `0001H`.
 
 Never hand-roll IDs. Never reuse an ID from another namespace.
 
-## Per-Scope Sequence IDs (validation-NNN)
+## Per-Scope Sequence IDs (qa-validation-NNN)
 
 Not every artefact uses the global `[NNNN][L]` convention. QA validation reports (`/add.qa`) use a **per-scope sequence** so each scope keeps its own local regression history.
 
-- **Format:** `<feature-id>-validation-NNN` (e.g. `0001F-validation-003`), `NNN` zero-padded from `001`.
-- **Scope = the report's folder:** the subfeature folder when scoped to an SF, the feature folder otherwise. Two SFs of the same feature each have their own `validation-001`.
-- **Allocation:** scan the scope's `_qa-report/validation-*.md`, take the highest `NNN`, add 1. NOT via `status.sh next-id` (that allocator serves `[NNNN][L]` types only). Screenshot `run-NNN` reuses the same `NNN`.
+- **Format:** `<feature-id>-qa-validation-NNN` (e.g. `0001F-qa-validation-003`), `NNN` zero-padded from `001`. Filename: `_tests/run-NNN/qa-validation-NNN.md` (the `id:` stem matches the filename).
+- **Scope = the report's folder:** the subfeature folder when scoped to an SF, the feature folder otherwise. Two SFs of the same feature each have their own `qa-validation-001`.
+- **Allocation:** scan the scope's `_tests/run-*/` folders, take the highest `NNN`, add 1. NOT via `status.sh next-id` (that allocator serves `[NNNN][L]` types only). The report + its screenshots live under the same `run-NNN`.
 
 Distinct from `[NNNN][L]`: `NNN` is a 3-digit per-scope run number, no letter suffix, NOT globally unique. See the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
 

@@ -1,5 +1,5 @@
 ---
-description: Agent-judged QA validation — drives the app via Playwright MCP, validates UX quality (vs design.md) AND functional delivery (vs about.md), writes a versioned _qa-report/validation-NNN.md (audit, not a gate). Requires the playwright plugin
+description: Agent-judged QA validation — runs persisted specs + reads persisted PNGs, validates UX quality (vs design.md) AND functional delivery (vs about.md), writes a versioned _tests/run-NNN/qa-validation-NNN.md (audit, not a gate). Plugin optional: runs persisted specs + reads PNGs without it, live-drives with it
 argument-hint: "<about.md path | feature-id [SFxx]>  (e.g. /add.qa @docs/features/0001F-*/subfeatures/SF06-*/about.md  ·  /add.qa 0001F SF02)"
 ---
 
@@ -7,14 +7,14 @@ argument-hint: "<about.md path | feature-id [SFxx]>  (e.g. /add.qa @docs/feature
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Drives the running app via Playwright MCP and judges it on **two axes**: UX quality vs `design.md` (looking at screenshots) and functional delivery vs `about.md` (actively exercising flows). Dispatches one `qa-agent` per subfeature, aggregates findings, writes a versioned `_qa-report/validation-NNN.md`. This is an **audit, not a gate** — it documents, it never fixes.
+Runs the persisted `<surface>.qa.spec` and judges the result on **four axes**: UX quality vs `design.md`, functional delivery vs `about.md`, responsiveness across viewports, and a11y. With the `playwright` plugin it additionally drives the app live for richer evidence. Dispatches one `qa-agent` per subfeature, aggregates findings, writes a versioned `_tests/run-NNN/qa-validation-NNN.md`. This is an **audit, not a gate** — it documents, it never fixes.
 
 ---
 
 ## Required Skills
 
-Load skill `add-qa` (methodology — rubric, severity taxonomy, report schema, numbering; installed by the `playwright` plugin) before STEP 4.
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 5 (the `qa-validation` schema + `_qa-report/` path + validation gate).
+Load skill `{{skill:add-qa/SKILL.md}}` (now default-shipped; methodology — rubric, severity, report schema, numbering, read-PNG mode) before STEP 4.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 5 (the `qa-validation` schema + `_tests/run-NNN/` path + validation gate).
 
 ---
 
@@ -22,11 +22,11 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 5 (the `qa-validation` sch
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Gate            → plugin enabled + MCP detected + baseUrl reachable
+STEP 1: Gate            → config present + baseUrl reachable/local (plugin optional)
 STEP 2: Resolve scope   → spec-driven (about.md path) or id-driven (feature-id [SFxx])
-STEP 3: Read specs      → about.md (functional) + design.md (UX) + screens.json (route map)
-STEP 4: Dispatch agents → one qa-agent per SF (parallel), both axes
-STEP 5: Aggregate+write → validation-NNN.md + screenshots/run-NNN/
+STEP 3: Read specs      → about.md + design.md + _tests/screens.json
+STEP 4: Run specs + dispatch → run <surface>.qa.spec, then qa-agent per SF (functional/UX/responsiveness/a11y)
+STEP 5: Aggregate+write → _tests/run-NNN/{qa-validation-NNN.md, screenshots/}
 STEP 6: Summary         → counts by severity + report path
 STEP 7: Validation Gate → qa-validation schema gate
 ```
@@ -35,11 +35,10 @@ STEP 7: Validation Gate → qa-validation schema gate
 
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
-| **STEP 1** | `playwright` plugin not enabled OR Playwright MCP not detected | Any `browser_*` MCP call, dispatching qa-agent | Stop, route to `/add.qa-setup` + `codeadd plugins enable playwright` |
-| **STEP 1** | `baseUrl` not reachable | Drive the browser, dispatch agents | Route to the config `bootHint` (start the app), then retry |
-| **STEP 1** | `baseUrl` is a production/remote host | Drive at all | Refuse — functional QA mutates state; require a local/throwaway env |
+| **STEP 1** | `baseUrl` not reachable | Run specs, dispatch agents | Route to the config `bootHint` (start the app), then retry |
+| **STEP 1** | `baseUrl` is a production/remote host | Run at all | Refuse — the specs submit forms and create records; require a local/throwaway env |
 | **STEP 3** | `screens.json` absent for the feature | Dispatch agents, guess routes | Route to `/add.qa-setup` to scaffold the catalog |
-| **READ-ONLY** | Always | Edit/Write on source code, app config, migrations; fixing findings | Write only under `SCOPE_DIR/_qa-report/` |
+| **READ-ONLY** | Always | Edit/Write on source code, app config, migrations; fixing findings | Write only under `SCOPE_DIR/_tests/run-NNN/` |
 | **STEP 7** | Report not written | Mark complete | Run the gate first |
 
 ---
@@ -47,7 +46,7 @@ STEP 7: Validation Gate → qa-validation schema gate
 ## STEP 1: Gate
 
 ### 1.1 Capability gate
-Verify the `playwright` plugin is enabled and the Playwright MCP server is connected (the agent will need `browser_*` tools). If not → STOP. Route the user to `/add.qa-setup` then `codeadd plugins enable playwright`. Do NOT attempt to drive.
+The `playwright` plugin is **optional**. If enabled + MCP connected → live-driving mode is available. If not → **degraded mode** (run persisted specs via the runner + read persisted PNGs). Do NOT stop for a missing plugin.
 
 ### 1.2 Reachability + safety gate
 Read `docs/qa/config.json`. Confirm `baseUrl` is reachable; if not, surface the config `bootHint` and stop until the app is up. Confirm `baseUrl` is a local/throwaway environment — refuse to run against production (the functional axis submits forms and creates records).
@@ -67,36 +66,49 @@ Two input forms — detect from the first token:
 For each subfeature in scope, read:
 - `about.md` — the **functional contract**: RF/RN, acceptance criteria, rules, flows. Source of truth for *what behavior to prove*.
 - `design.md` — the **UX contract**: source of truth for *what it should look like*.
-- `FEATURE_DIR/_qa-report/screens.json` — the route map (which screens to visit + the design ref). If absent → route to `/add.qa-setup`.
+- `FEATURE_DIR/_tests/screens.json` — the route map (which screens to visit + the design ref). If absent → route to `/add.qa-setup`.
 
 ---
 
-## STEP 4: Dispatch QA Agents (one per SF, parallel)
+## STEP 4: Run Persisted Specs + Dispatch QA Agents (one per SF, parallel)
 
-Each subfeature is validated by its own `qa-agent` to isolate the heavy image context and parallelize across SFs. Dispatch all simultaneously.
+4.1 Run the surface's <surface>.qa.spec via the qa-project Managed App Lifecycle
+    (probe → boot-bg + wait-ready if down → run → teardown-iff-booted).
+    Collect: functional assertion pass/fail, axe-core results, PNGs written to
+    _tests/run-NNN/screenshots/<screen>.<viewport>.png.
+    If persisted specs are ABSENT → branch on WHY (see 4.0).
+
+4.0 Specs absent:
+    - qa-pipeline OFF → specs were never authored. Tell the user:
+      `codeadd features enable qa-pipeline` + `/add.qa-setup` + `/add.test`.
+      Do NOT bounce to /add.test (it won't author E2E with the feature off).
+    - qa-pipeline ON, not yet generated → route to /add.test to author them;
+      or (plugin ON) fall back to today's live-drive-from-catalog as a stopgap.
+
+4.2 DISPATCH @qa-agent (one per SF, PARALLEL). Mode:
+    - plugin OFF → read-PNG mode: Read the PNGs + DOM/console artifacts the run
+      captured; judge UX. No browser_* calls.
+    - plugin ON → read-PNG PLUS live driving (open unscripted states, read
+      console/network interactively, capture extra evidence).
+    Each agent folds in the axe-core results + functional assertion roll-up.
+    If @qa-agent is not available in this engine, dispatch a generic subagent with
+    this same directive + the add-qa skill (soft-degrade — the judged arm still runs
+    where agents don't build; the deterministic assertion + axe results from 4.1 are
+    provider-independent).
+    WAIT-ALL before STEP 5.
 
 <!-- plugin:playwright:drive -->
 <!-- /plugin:playwright:drive -->
 
-**DISPATCH AGENT: @qa-agent (one per SF) [read-write, heavy] — PARALLEL:**
-Each agent is independent. Dispatch ALL in scope simultaneously. Each receives:
-- the SF's `about.md` + `design.md` paths (the two contracts),
-- its `screens.json` entries (route map for the UX axis),
-- the viewport list + `baseUrl` + `authSeed` hint from `config.json`,
-- the directive to validate **both axes**: UX quality (look at screenshots vs `design.md`) AND functional delivery (actively exercise each acceptance criterion vs `about.md`).
-- **Output:** classified findings + the functional-checklist pass/fail roll-up + the curated screenshot paths.
-
-**WAIT-ALL** before proceeding to STEP 5.
-
-⛔ qa-agent is READ-ONLY on the codebase — it drives and reports, never fixes. If an agent edited code, reject the run.
+⛔ qa-agent is READ-ONLY on the codebase — it judges and reports, never fixes. If an agent edited code, reject the run.
 
 ---
 
 ## STEP 5: Aggregate & Write Report
 
-Determine the next number **per scope**: scan `SCOPE_DIR/_qa-report/validation-*.md`, take the highest `NNN`, add 1 (start `001`). Run screenshots share the same `NNN` → `run-NNN`.
+Determine the next `run-NNN` **per scope**: scan `SCOPE_DIR/_tests/run-*/`, take the highest `NNN`, add 1 (start `001`).
 
-Write `SCOPE_DIR/_qa-report/validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill). Copy each curated screenshot into `SCOPE_DIR/_qa-report/screenshots/run-NNN/`, preserving `<screen>.<viewport>.png` names so the report's relative links resolve.
+Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill). Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<viewport>.png` names so the report's relative links resolve.
 
 ---
 
