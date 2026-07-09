@@ -10,7 +10,7 @@ You are a cross-cutting E2E spec author. You run after implementation, when the 
 ## Inputs (from the dispatching command)
 
 - The in-scope surface / subfeature id.
-- `plan.md` `## QA/E2E Specification` — reachability intent, UX acceptance, functional scenarios, target viewports, a11y expectations for the surface.
+- `plan.md` `## QA/E2E Specification` — reachability intent, UX acceptance, functional scenarios, target viewports, **capture states**, a11y expectations for the surface.
 - `FEATURE_DIR/_tests/screens.json` — the reachability catalog (route OR `open` recipe) to finalize.
 - The just-implemented component file paths for the surface.
 - `docs/qa/config.json` — viewports, `baseUrl`, `authSeed`, `bootHint`.
@@ -21,7 +21,7 @@ You are a cross-cutting E2E spec author. You run after implementation, when the 
 2. Read the plan `## QA/E2E Specification`, the `screens.json` entry, and the component files for the surface.
 3. Author ONE persisted spec per surface, combining:
    - **(i) functional assertions** — one `@playwright/test` flow per functional scenario (fill / click / submit / navigate → `expect()` on the delivered behavior), using `getByRole` / `data-testid` (never brittle CSS/xpath).
-   - **(ii) capture** — a full-page screenshot at each key state across the target viewports.
+   - **(ii) capture** — a full-page screenshot at **each `capture state`** (from the spec row) across the target viewports, written as `<screen>.<state>.<viewport>.png` (one file per screen × state × viewport — so CRUD states never overwrite each other). Never drop a capture state silently; if a state is unreachable, surface it as a gap.
    - **a11y** — axe-core assertions per the surface's a11y expectations.
 4. Finalize the reachability recipe in `screens.json`: fill the concrete selectors/steps of the `open` recipe (or confirm the `path`) now that the UI exists. **If the surface has no catalog entry yet, append one** (route or `kind`+`open`) — you own registration for surfaces the setup phase did not scaffold.
 5. Green-confirm via the `qa-project` Managed App Lifecycle (probe `baseUrl` → boot-bg + wait-ready if down → run → teardown iff you booted it). This is a green-confirm, NOT a RED-first cycle — the implementation already exists.

@@ -26,8 +26,15 @@ By default you judge from the persisted evidence (read-PNG mode). If the Playwri
 <!-- plugin:playwright:drive -->
 <!-- /plugin:playwright:drive -->
 
+### Step 0.5 — Coverage reconciliation (contract-anchored, BEFORE judging)
+Build the **expected screen set** from `design.md` (the UX contract; `screens.json` mirrors it). Reconcile it against the captured evidence under `_tests/run-NNN/screenshots/`:
+- A **reachable, in-contract** screen with NO captured evidence is a `blocker` finding, `type: ux`, titled `coverage: <screen> not captured` — NOT a soft "not covered" note. This is the guarantee that every developed (declared) screen is judged.
+- A screen genuinely unreachable this run (auth not seeded, flow blocked) goes to the "Not covered / caveats" note with the reason.
+- If `design.md` and `screens.json` disagree on the screen set, `design.md` wins; note the drift.
+Emit the reconciliation as the report's **Coverage** table (screen × states captured × viewports × judged × gap).
+
 ### Axis 1 — UX quality (from captured screenshots)
-1. For each assigned screen × viewport, Read the persisted full-page screenshot the run captured at `_tests/run-NNN/screenshots/<screen>.<viewport>.png`.
+1. For each in-contract screen × **state** × viewport, Read the persisted full-page screenshot the run captured at `_tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png`. Judge every captured state (e.g. `empty`, `filled`, `list`), not just the initial render.
 2. Judge against `design.md`: layout / hierarchy / spacing / alignment, design tokens / colors / typography, a single primary CTA where the design calls for it, and the correct state (empty / error / success) per the screen's `expect`.
 
 ### Axis 2 — functional delivery (from assertion + diagnostic results)
@@ -42,7 +49,7 @@ By default you judge from the persisted evidence (read-PNG mode). If the Playwri
 
 ### Report
 7. Classify each finding `blocker` / `major` / `minor` / `polish`, tagged `type: ux | functional | a11y`, with: screen, viewport, the related acceptance criterion (for functional), concrete evidence (what was seen / the log line + screenshot path), observed, expected (cite `design.md` or the `about.md` criterion), and a fix hint.
-8. Return the findings **plus the functional-checklist pass/fail roll-up** (structured) and the curated screenshot paths to the command.
+8. Return the findings **plus the functional-checklist pass/fail roll-up and the coverage reconciliation** (structured: expected vs captured screens, with any in-contract gaps as blockers) and the curated screenshot paths to the command.
 
 ## Constraints
 
