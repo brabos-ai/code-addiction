@@ -28,7 +28,7 @@ The persisted spec (or, with the plugin, live driving) **captures and exercises*
 
 | Axis | Source of truth | Method |
 |---|---|---|
-| UX quality | `design.md` | Look at full-page screenshots per screen × viewport; judge layout/hierarchy/spacing, tokens/color/type, single primary CTA, responsiveness, correct state |
+| UX quality | `design.md` | Look at full-page screenshots per screen × **state** × viewport; judge layout/hierarchy/spacing, tokens/color/type, single primary CTA, responsiveness, correct state. **Coverage is contract-anchored: every screen `design.md` declares must have evidence — a reachable declared screen with none is a `blocker`.** |
 | Functional delivery | `about.md` (RF/RN + acceptance criteria) | Judge each criterion from the persisted spec's functional-assertion results (and, with the plugin, additionally by live driving); mark met / not met / partial; fold in console/network/4xx–5xx diagnostics |
 | Responsiveness | config.json viewports | Per-viewport screenshots: overflow / clipping / wrapping / off-canvas, tap-target size on the smallest viewport |
 | a11y | axe-core + design.md | Deterministic axe violations (rule/impact) + visual notes: contrast, visible focus, heading order |
@@ -51,7 +51,7 @@ Each finding is also tagged `type: ux | functional | a11y`. An *expected* error 
 ## Scope, Path & Numbering
 
 - **Scope:** SF folder when scoped to a subfeature (`SCOPE_DIR = .../subfeatures/SFxx-*`), feature folder otherwise.
-- **Report path:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots in `SCOPE_DIR/_tests/run-NNN/screenshots/` named `<screen>.<viewport>.png`.
+- **Report path:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots in `SCOPE_DIR/_tests/run-NNN/screenshots/` named `<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` for single-state screens).
 - **Numbering:** per scope, `qa-validation-NNN` starting `001`; each SF keeps its own regression history. The report and its screenshots share the same `run-NNN`. See `{{skill:add-id-convention/SKILL.md}}` (per-scope sequence IDs) and the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ## Config & Catalog Formats (reference)
@@ -105,6 +105,12 @@ viewports: <from docs/qa/config.json>
 | Minor | N |
 | Polish | N |
 
+## Coverage (contract-anchored, vs design.md)
+| Screen (design.md) | States captured | Viewports | Judged | Gap |
+|---|---|---|---|---|
+| <screen> | empty,filled,list | desktop,tablet,mobile | yes | — |
+| <screen> | — | — | no | BLOCKER: declared in design.md, no evidence |
+
 ## Functional delivery (vs about.md)
 | Acceptance criterion / RF | Result | Evidence |
 |---|---|---|
@@ -114,7 +120,7 @@ viewports: <from docs/qa/config.json>
 ### [SEVERITY · ux|functional|a11y] <screen> @<viewport> — <short title>
 - **Screen:** <route> · **Spec:** <about.md criterion> · **Design:** <design.md ref>
 - **Type:** ux | functional | a11y
-- **Evidence:** ![](screenshots/<screen>.<viewport>.png) · `<log line if functional>`
+- **Evidence:** ![](screenshots/<screen>.<state>.<viewport>.png) · `<log line if functional>`
 - **Observed:** <what is wrong / what the behavior did>
 - **Expected:** <what design.md shows OR what the about.md criterion promises>
 - **Fix hint:** <where/what to change>
@@ -138,6 +144,7 @@ captured, etc.>
 
 ```
 [ ] Both axes judged (UX vs design.md, functional vs about.md) — neither silently skipped
+[ ] Coverage reconciled vs design.md — every declared screen captured + judged; reachable, in-contract gaps raised as blockers (not soft notes)
 [ ] Every finding has evidence (screenshot path and/or log line) + severity + type
 [ ] Functional roll-up lists each criterion tested (met/not met/partial)
 [ ] Report numbered per scope (qa-validation-NNN, start 001); run-NNN matches

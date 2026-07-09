@@ -136,7 +136,7 @@ description: Use when authoring E2E specs (/add.test) or running QA (/add.qa) in
 - **Run full suite:** `<command to run all specs>`
 - **Spec location + naming:** `<dir>` · `<surface>.qa.spec.<ext>`
 - **Selectors:** MANDATORY `getByRole` / `data-testid` — never brittle CSS/xpath.
-- **Screenshots:** `<screenshot API>` → `_tests/run-NNN/screenshots/<screen>.<viewport>.png`
+- **Screenshots:** `<screenshot API>` → `_tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` when single-state)
 - **a11y:** `<axe-core wiring, e.g. @axe-core/playwright>`
 
 ## Managed App Lifecycle

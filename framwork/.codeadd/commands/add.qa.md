@@ -75,7 +75,7 @@ For each subfeature in scope, read:
 4.1 Run the surface's <surface>.qa.spec via the qa-project Managed App Lifecycle
     (probe → boot-bg + wait-ready if down → run → teardown-iff-booted).
     Collect: functional assertion pass/fail, axe-core results, PNGs written to
-    _tests/run-NNN/screenshots/<screen>.<viewport>.png.
+    _tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png (one per screen × state × viewport).
     If persisted specs are ABSENT → branch on WHY (see 4.0).
 
 4.0 Specs absent:
@@ -90,7 +90,9 @@ For each subfeature in scope, read:
       captured; judge UX. No browser_* calls.
     - plugin ON → read-PNG PLUS live driving (open unscripted states, read
       console/network interactively, capture extra evidence).
-    Each agent folds in the axe-core results + functional assertion roll-up.
+    Each agent folds in the axe-core results + functional assertion roll-up, and
+    reconciles captured evidence against the design.md-declared screen set —
+    a reachable, in-contract screen with no evidence is a coverage blocker, not a note.
     If @qa-agent is not available in this engine, dispatch a generic subagent with
     this same directive + the add-qa skill (soft-degrade — the judged arm still runs
     where agents don't build; the deterministic assertion + axe results from 4.1 are
@@ -108,7 +110,7 @@ For each subfeature in scope, read:
 
 Determine the next `run-NNN` **per scope**: scan `SCOPE_DIR/_tests/run-*/`, take the highest `NNN`, add 1 (start `001`).
 
-Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill). Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<viewport>.png` names so the report's relative links resolve.
+Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill). Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
 
 ---
 
