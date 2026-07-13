@@ -355,6 +355,42 @@ if [ -d "$FEATURES_DIR" ]; then
 fi
 
 # =============================================================================
+# OUTPUT: PENDING FEATURES (docs exist, not built, no branch yet)
+# =============================================================================
+# A feature is PENDING when its docs dir has about.md, lacks changelog.md, and
+# no local branch */<dirname> exists. These are invisible to branch detection —
+# this backlog keeps pre-created feature docs visible before /add.build runs.
+
+PENDING_FIRST_ID=""
+for _fdir in docs/features/[0-9][0-9][0-9][0-9][A-Z]-*; do
+    [ -d "$_fdir" ] || continue
+    _dname=$(basename "$_fdir")
+    [ -f "$_fdir/about.md" ] || continue
+    [ -f "$_fdir/changelog.md" ] && continue
+    [ -n "$(git branch --list "*/$_dname" 2>/dev/null)" ] && continue
+
+    # Phase via the same ladder as the current-feature block above
+    if [ -f "$_fdir/plan.md" ]; then
+        _phase="planned"
+    elif [ -f "$_fdir/design.md" ]; then
+        _phase="designed"
+    elif [ -f "$_fdir/discovery.md" ]; then
+        if grep -q "^## Summary for Planning" "$_fdir/discovery.md" 2>/dev/null; then
+            _phase="discovered"
+        else
+            _phase="discovering"
+        fi
+    elif grep -q "\[Clear description" "$_fdir/about.md" 2>/dev/null; then
+        _phase="created"
+    else
+        _phase="documented"
+    fi
+
+    echo "PENDING:$_dname PHASE:$_phase"
+    [ -z "$PENDING_FIRST_ID" ] && PENDING_FIRST_ID=$(echo "$_dname" | grep -oE '^[0-9]{4}[A-Z]' | head -1 || true) || true
+done
+
+# =============================================================================
 # OUTPUT: GIT STATUS (only if has changes)
 # =============================================================================
 
@@ -527,7 +563,11 @@ RECS=""
 
 # Based on state
 if [ "$BRANCH_TYPE" = "main" ]; then
-    RECS="/feature to start"
+    if [ -n "$PENDING_FIRST_ID" ]; then
+        RECS="/add.build $PENDING_FIRST_ID or /feature to start"
+    else
+        RECS="/feature to start"
+    fi
 elif [ -n "$FEATURE_ID" ]; then
     if [ ! -d "$FEATURE_DIR" ]; then
         RECS="/feature to setup"

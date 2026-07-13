@@ -19,13 +19,13 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add-investigation on ambiguous findings | add-doc-schemas, add-health-check, add-ecosystem, add-investigation |
 | add.autopilot | Autonomous Feature Coordinator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-tasks-checklist |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
-| add.build | Development Execution Specialist. QA-Fix mode (`/add.build qa`) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
+| add.build | Development Execution Specialist. STEP 1.5 create-or-checkout of the feature branch via build-setup.sh (`F[NNNN]` + `--worktree` args). QA-Fix mode (`/add.build qa`) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
-| add.new | Feature discovery, creates about.md | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem |
+| add.new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add.build) | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem, add-id-convention |
 | add.plan | Technical Planning Orchestrator. QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
 | add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches @qa-agent per SF, judged across 4 axes (UX, functional, responsiveness, a11y). **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
@@ -56,7 +56,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic |
 | add-gitnexus | [plugin-bound] Code knowledge-graph navigation via GitNexus MCP — call graph, refs, blast-radius, trace flows, safe refactors. Enabled by `codeadd plugins enable gitnexus` |
 | add-health-check | Health check of environment and project dependencies |
-| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, done.sh) |
+| add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, build-setup.sh, done.sh) |
 | add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases |
 | add-plan-based-features | Implement subscription plan-based features |
@@ -127,7 +127,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (UX axis judges fidelity vs the design spec) |
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |
-| add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming) |
+| add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 | add-tdd | add.build, add.test |
 | add-test-specification | add.plan (STEP 9) |
@@ -145,6 +145,8 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | Triage | diagnose → (hotfix OR new OR no-action) | Vague symptom, unsure if bug/feature |
 | New Project | init → build → done | Create new project/feature |
 | Analysis | xray / audit | Check project health |
+
+> **Branch creation:** the documental steps (brainstorm → new → design → plan) make no git writes — `/add.new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** (or **autopilot**) step via `build-setup.sh`.
 
 ## Command Next-Steps Routing
 

@@ -6,6 +6,7 @@ Analyzes developed code and generates automated tests. Uses parallel subagents p
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
+> **ARGS:** `/add.test [F[NNNN]]` — target a feature off-branch (equivalent to `feature N`); no arg = git-diff scope.
 
 ---
 
@@ -102,6 +103,7 @@ REPORT: Framework, test command, coverage command, areas detected.
 |-------|------|-------|
 | `add-test` (no args) | `diff` | Files changed in git diff |
 | `add-test feature N` | `feature` | Entire feature N scope |
+| `add-test F[NNNN]` | `feature` | Entire feature `[NNNN]` scope (equivalent to `feature N`) |
 
 ### 2.2 Detect Existing Contract Tests (TDD Awareness)
 

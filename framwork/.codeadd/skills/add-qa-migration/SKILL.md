@@ -36,12 +36,12 @@ Dispatch each command autonomously via the platform's subagent mechanism, follow
 
 | Order | Command | Purpose | Autonomy directive in dispatch prompt |
 |-------|---------|---------|----------------------------------------|
-| 1 | `/add.new` | Capture the migration itself as a real feature. `about.md` describes the migration: "migrate the existing QA flow (`<detected tooling>`) to the code-addiction QA pipeline." | Decide feature framing autonomously; create the feature + its branch |
+| 1 | `/add.new` | Capture the migration itself as a real feature. `about.md` describes the migration: "migrate the existing QA flow (`<detected tooling>`) to the code-addiction QA pipeline." | Decide feature framing autonomously; create the feature (branch is recorded in `branch:`; created at the add.build step) |
 | 2 | `/add.plan` | Plan the adaptation: which existing specs map to which screens/scenarios, what is re-authored, what is dropped | Decide mapping autonomously; do not pause for routine choices |
 | 3 | `/add.build` | Execute the migration plan (adapt/re-author specs against `qa-project` conventions + `screens.json`) | Implement autonomously; **pause only at critical checkpoints** (below) |
 | 4 | `/add.review` | Validate the migrated pipeline against the plan | Review autonomously; report findings for user review before merge |
 
-Work happens on the branch `add.new` creates — no worktree.
+Work happens on the branch `add.build`'s setup creates — no worktree (migration runs in-place).
 
 ---
 
@@ -59,7 +59,7 @@ Everything between checkpoints (mappings, spec adaptation, naming, selector stra
 ## Traceability & Isolation
 
 - The migration is a first-class feature: standard `about.md` / `plan.md` / review artefacts exist, so the work is auditable like any other feature.
-- All migration work stays on the branch `add.new` created; the **Decision Log** (from `add-subagent-driven-development`) records every autonomous decision for the user to review **before merge**.
+- All migration work stays on the migration branch (created at `add.build`); the **Decision Log** (from `add-subagent-driven-development`) records every autonomous decision for the user to review **before merge**.
 - Never merge the migration branch autonomously — hand it back for review.
 
 ---
@@ -74,5 +74,5 @@ Before reporting the migration complete:
 - [ ] Autonomy directed via dispatch prompts only — no dispatched command's source was edited
 - [ ] Paused at every install and every file overwrite
 - [ ] Decision Log records each autonomous decision
-- [ ] Work isolated on `add.new`'s branch; branch NOT merged autonomously
+- [ ] Work isolated on the migration branch; branch NOT merged autonomously
 - [ ] Existing specs mapped/adapted, not blindly discarded

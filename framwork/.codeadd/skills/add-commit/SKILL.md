@@ -59,6 +59,21 @@ When ambiguous, show the inferred type and ask the user to confirm.
 
 ---
 
+## Staging Rules
+
+Feature docs live **untracked** until their build starts, so a documental command run mid-development can leave **another feature's** `docs/features/<other>/` untracked in the working tree. NEVER sweep those into the current feature's commit.
+
+**Canonical feature-scoped staging** (stage all code changes + ONLY the current feature's docs):
+
+```bash
+git add -A -- . ':(exclude)docs/features/*'
+[ -d "${FEATURE_DIR}" ] && git add -A -- "${FEATURE_DIR}"
+```
+
+`${FEATURE_DIR}` is the current feature's `docs/features/[NNNN][L]-<slug>` dir. The exclude pathspec keeps every other feature's untracked docs out of the index; the second `add` re-includes only the current one.
+
+---
+
 ## Examples
 
 **Few files (≤ 3):**

@@ -176,3 +176,57 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"MERGE_COMMIT=SKIPPED"* ]]
 }
+
+# ─── Feature-scoped staging ─────────────────────────────────────────
+
+@test "merge mode: does not sweep another feature's untracked docs into the commit" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  # Current feature's own doc (must be committed)
+  mkdir -p docs/features/0001F-test
+  echo "own" > docs/features/0001F-test/about.md
+  # Another feature's untracked doc (must stay untracked)
+  mkdir -p docs/features/0002F-other
+  echo "other" > docs/features/0002F-other/about.md
+  git push -u origin feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  # After merge (now on main): own doc tracked, other's doc still untracked
+  run git ls-files docs/features/0001F-test/about.md
+  [ -n "$output" ]
+  run git ls-files docs/features/0002F-other/about.md
+  [ -z "$output" ]
+  [ -f docs/features/0002F-other/about.md ]
+}
+
+# ─── Worktree awareness ─────────────────────────────────────────────
+
+@test "start guard: fails when run from inside a linked worktree" {
+  git checkout -b feature/0001F-test -q
+  git worktree add -b feature/0002F-wt .worktrees/0002F-wt -q
+  cd .worktrees/0002F-wt
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"primary checkout"* ]]
+}
+
+@test "start guard: does not false-positive from a subdirectory of the primary checkout" {
+  git checkout -b feature/0001F-test -q
+  mkdir -p sub/dir
+  cd sub/dir
+  run "$SCRIPTS_DIR/done.sh"
+  # Primary checkout must never be mistaken for a linked worktree, even when
+  # invoked from a subdir (where --git-common-dir returns an absolute path).
+  [[ "$output" != *"linked worktree"* ]]
+  [[ "$output" != *"primary checkout"* ]]
+}
+
+@test "merge mode: worktree-cleanup step does not break a normal (no-worktree) merge" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  echo "code" > src.txt && git add src.txt && git commit -m "feat" -q
+  git push -u origin feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLEANUP=OK"* ]]
+}

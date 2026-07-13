@@ -99,7 +99,8 @@ Brainstorm docs capture exploration, not decisions. Voice rules:
 
 For `/add.new` (creates `docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `related: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`
+  - **`branch:`** (required for new docs) — the branch `/add.build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add.new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
 - **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · References
 - **Depth floor:**
   - **Problem** — who is affected, what breaks or is missing, observable signal/evidence, current workaround if any.

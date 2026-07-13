@@ -127,6 +127,7 @@ related: [F0042, PRD0009, H0013]
 - Always bump `updated:` on any edit.
 - Optionally set `by:` to signal the editor.
 - Never change `id:` once allocated. If the doc fundamentally changes type, create a new doc with a new ID.
+- Never change `branch:` once set — `/add.new` decides it; `build-setup.sh` executes it.
 - Never edit `related:` to hide a broken link.
 
 ## Universal Document Requirements
@@ -187,6 +188,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
    - `type: <SCHEMA>` exact match
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
+   - **`feature-about` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 
 2. **TL;DR present and complete.** Grep `^## TL;DR$`. The body MUST convey: what the doc is, why it exists, and the headline outcome/decision. If any is missing: rewrite extractively — do NOT summarize abstractively, do NOT shrink by dropping the headline.
