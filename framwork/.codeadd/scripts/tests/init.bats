@@ -155,3 +155,21 @@ EOF
   [[ "$output" == *"RECENT_CHANGELOGS:"* ]]
   [[ "$output" == *"0001F-done"* ]]
 }
+
+# ─── Read-only invariant ────────────────────────────────────────────
+
+@test "performs no git write operations (branch/HEAD/refs/tree unchanged)" {
+  local head_before branch_before refs_before status_before
+  head_before=$(git rev-parse HEAD)
+  branch_before=$(git branch --show-current)
+  refs_before=$(git show-ref | sort)
+  status_before=$(git status --porcelain)
+
+  run "$SCRIPTS_DIR/init.sh"
+  [ "$status" -eq 0 ]
+
+  [ "$(git rev-parse HEAD)" = "$head_before" ]
+  [ "$(git branch --show-current)" = "$branch_before" ]
+  [ "$(git show-ref | sort)" = "$refs_before" ]
+  [ "$(git status --porcelain)" = "$status_before" ]
+}

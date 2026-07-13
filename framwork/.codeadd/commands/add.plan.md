@@ -3,6 +3,7 @@
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
+> **ARGS:** `/add.plan [F[NNNN]] [--yolo]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
 Coordinator for technical planning. Loads context, dispatches specialized subagents (Database, Backend, Frontend), consolidates plan with APPEND + VALIDATE + FILL GAPS, and validates 100% requirements coverage.
 
@@ -126,6 +127,8 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 ## STEP 4: Parse Key Variables (GATE: feature_identified)
 
 Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `designed`), `HAS_DESIGN`, `HAS_FOUNDATIONS`.
+
+**Feature targeting (detection order):** explicit `F[NNNN]` argument > `FEATURE_ID` from status.sh (branch) > `feature_identified` ask-gate (list features, WAIT — see GATES table).
 
 **IF feature identified:** Display metadata and proceed to STEP 5.
 **IF feature_identified gate fails:** Show feature list and WAIT for user choice. Ref: GATES table.

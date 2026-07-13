@@ -22,8 +22,8 @@ All subsequent steps reference these loaded skills; DO NOT reload.
 
 **Validate Execution Context:**
 
-- [CONTINUE MODE] Read detected feature branch. If `about.md` exists AND validated (contains filled sections 1-3 from questionnaire) → skip STEP 2 and STEP 3, proceed to STEP 4.
-- [NEW FEATURE] If no existing feature branch, proceed to STEP 2.
+- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND validated (contains filled sections 1-3 from questionnaire) → skip STEP 2 and STEP 3, proceed to STEP 4.
+- [NEW FEATURE] If no existing feature docs match, proceed to STEP 2.
 
 ---
 
@@ -32,12 +32,12 @@ All subsequent steps reference these loaded skills; DO NOT reload.
 **READ-ONLY GUARANTEE:**
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
-- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh, git checkout -b
+- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh (NO git writes — branch is created later by /add.build)
 
 **Operation Modes:**
 - `/add.new [description]` — Create new feature
 - `/add.new F0018` — Continue existing feature (F-ID)
-- `/add.new continue` — Continue feature from current branch
+- `/add.new continue` — Continue feature from current branch **or most recent pending feature**
 
 **Complexity Classification** (inferred in STEP 2):
 - **SIMPLE:** "add field", "fix", "adjust", "bug", "remove" (4 steps)
@@ -59,11 +59,11 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
 **Allocate ID** (e.g., `0042F`). Using ID/branch conventions from STEP 1 skills, infer branch type (`feature`|`fix`|`refactor`|`docs`) and name (kebab-case, 2-4 words).
 
 **Create structure:**
-1. `git checkout -b [type]/[NNNN]F-[name]`
+1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO git writes — /add.build creates the branch)
 2. `mkdir docs/features/[NNNN]F-[name]/`
-3. Create skeleton `about.md` with frontmatter only (full content in STEP 4)
+3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP 4)
 
-**Output:** Feature ID, branch, directory.
+**Output:** Feature ID, branch (recorded — created by /add.build), directory.
 
 ---
 
@@ -281,7 +281,7 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ## Continue Mode (Re-Invocation)
 
-**Detect:** Feature ID from argument or current branch.
+**Detect:** Feature ID from argument, from current branch (if feature branch), else list pending features and ask.
 
 **Skip Logic:**
 - If `about.md` exists AND contains completed questionnaire sections (1, 3, validated decisions) → Skip STEP 4 questionnaire, proceed to STEP 5

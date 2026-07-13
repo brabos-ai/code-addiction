@@ -240,7 +240,7 @@ On FAIL, compose a correction instruction from the findings and autonomously dis
 
 Tell the user, in order:
 1. Any prerequisite they declined / must finish manually (from STEP 3).
-2. Migration outcome (if `MIGRATE` ran): the branch `add.new` created, the Decision Log location, and that it awaits their review before merge.
+2. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
 3. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
 4. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
 5. Verify the MCP server is connected (`/mcp` lists `playwright`).

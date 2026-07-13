@@ -194,8 +194,12 @@ Can I stage your changes?
 ```
 
 **If user agrees (Yes):**
+
+Resolve the current feature first (`bash .codeadd/scripts/status.sh` → `FEATURE_ID`), then stage feature-scoped — all code changes plus ONLY this feature's docs; other features' untracked docs stay untracked (see `{{skill:add-commit/SKILL.md}}` Staging Rules):
+
 ```bash
-git add -A
+git add -A -- . ':(exclude)docs/features/*'
+[ -n "${FEATURE_ID}" ] && [ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
 ```
 Save `STAGED_CHANGES=true` for tracking.
 

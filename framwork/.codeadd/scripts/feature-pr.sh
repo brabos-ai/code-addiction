@@ -239,7 +239,10 @@ fi
 # Step 1: Commit pending changes if any
 if [ "$HAS_UNCOMMITTED" = true ]; then
     echo "STEP=Committing pending changes..."
-    git add -A
+    # Feature-scoped staging: stage all code changes but ONLY the current
+    # feature's docs; other features' untracked docs stay untracked.
+    git add -A -- . ':(exclude)docs/features/*'
+    [ -n "$FEATURE_ID" ] && [ -d "$FEATURE_DIR" ] && git add -A -- "$FEATURE_DIR" || true
     git commit -m "feat($FEATURE_ID): finalize feature implementation
 
 Generated with ADD by https://brabos.ai

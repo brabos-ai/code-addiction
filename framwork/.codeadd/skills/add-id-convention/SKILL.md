@@ -1,6 +1,6 @@
 ---
 name: add-id-convention
-description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creating branches — canonical `[NNNN][L]` format that the scripts (next-id.sh, get-branch-metadata.sh, done.sh) expect
+description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creating branches — canonical `[NNNN][L]` format that the scripts (next-id.sh, get-branch-metadata.sh, build-setup.sh, done.sh) expect
 ---
 
 # ID & Branch Naming Convention
@@ -12,13 +12,13 @@ Scripts enforce this format; commands that diverge (e.g., letter-first `H0001` i
 ## When to Use
 
 - Before allocating a new ID via `status.sh next-id`
-- Before running `git checkout -b` for feature/hotfix/refactor/chore/docs branches
+- Before `/add.new` records `branch:` in about.md frontmatter, and before `/add.build`'s `build-setup.sh` runs `git checkout -b` for feature/hotfix/refactor/chore/docs branches
 - Before writing `id:` in a doc frontmatter
 - When writing `{{doc:ID}}` references
 
 ## When NOT to Use
 
-- Scripts that already implement the convention (`next-id.sh`, `get-branch-metadata.sh`) — they are the authority, not this doc
+- Scripts that already implement the convention (`next-id.sh`, `get-branch-metadata.sh`, `build-setup.sh`) — they are the authority, not this doc
 - Unrelated IDs (e.g., `CHG[NNNN]` for changelogs — different namespace, no letter suffix)
 - Provider-specific issue trackers (Jira/Linear) — they own their own ID schemes
 

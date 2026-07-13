@@ -51,7 +51,7 @@ npx codeadd uninstall --force
   - Claude Code -> `.claude/`
   - Codex (OpenAI) -> `.agents/`
   - Google Antigravity -> `.agent/`
-  - KiloCode -> `.kilocode/`
+  - Cursor -> `.cursor/`
   - OpenCode -> `.opencode/`
 
 ## Requirements
