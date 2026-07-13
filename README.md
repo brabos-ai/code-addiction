@@ -14,7 +14,7 @@ Most AI coding setups are fragmented across custom prompts, scripts, and editor-
 
 Code Addiction standardizes this with:
 - A shared core in `.codeadd/` (commands, scripts, skills, templates)
-- Provider-specific integrations (Claude, Codex, Antigravity, KiloCode, OpenCode)
+- Provider-specific integrations (Claude, Codex, Antigravity, Cursor, OpenCode)
 - A versioned installer (`codeadd`) with `install`, `update`, `uninstall`, `doctor`, and `validate`
 
 ## Quickstart
@@ -130,7 +130,7 @@ ANALYSIS  (understand existing codebase)
   - Claude Code -> `.claude/`
   - Codex (OpenAI) -> `.agents/`
   - Google Antigravity -> `.agent/`
-  - KiloCode -> `.kilocode/`
+  - Cursor -> `.cursor/`
   - OpenCode -> `.opencode/`
 
 ## Repository structure

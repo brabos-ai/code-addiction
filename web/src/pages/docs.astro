@@ -95,7 +95,7 @@ import "../styles/global.css";
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">Provider adapters</div>
-            <p class="text-muted-light text-sm">Claude, Codex, Antigravity, KiloCode, OpenCode</p>
+            <p class="text-muted-light text-sm">Claude, Codex, Antigravity, Cursor, OpenCode</p>
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">codeadd CLI</div>
@@ -125,7 +125,7 @@ import "../styles/global.css";
           <span class="text-foreground">├── .claude/</span><span class="text-muted ml-8">← Claude Code</span><br/>
           <span class="text-foreground">├── .agents/</span><span class="text-muted ml-7">← Codex (OpenAI)</span><br/>
           <span class="text-foreground">├── .agent/</span><span class="text-muted ml-8">← Antigravity</span><br/>
-          <span class="text-foreground">├── .kilocode/</span><span class="text-muted ml-4">← KiloCode</span><br/>
+          <span class="text-foreground">├── .cursor/</span><span class="text-muted ml-6">← Cursor</span><br/>
           <span class="text-foreground">└── .opencode/</span><span class="text-muted ml-4">← OpenCode</span>
         </div>
       </section>
@@ -562,6 +562,7 @@ import "../styles/global.css";
             { name: "add-test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add.plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
             { name: "add-qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md. Loaded by add.plan's qa-pipeline QA-Spec step." },
             { name: "add-qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and the qa-agent." },
+            { name: "add-qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over — defines the autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints. Consumed by /add.qa-setup when migration is detected and confirmed." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
@@ -777,7 +778,7 @@ import "../styles/global.css";
               <tr><td class="py-3 pr-4 text-muted-light">Claude Code</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.claude/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
               <tr><td class="py-3 pr-4 text-muted-light">Codex (OpenAI)</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agents/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
               <tr><td class="py-3 pr-4 text-muted-light">Google Antigravity</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agent/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
-              <tr><td class="py-3 pr-4 text-muted-light">KiloCode</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.kilocode/</code></td><td class="py-3 text-muted-light">workflows/</td></tr>
+              <tr><td class="py-3 pr-4 text-muted-light">Cursor</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.cursor/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
               <tr><td class="py-3 pr-4 text-muted-light">OpenCode</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.opencode/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
             </tbody>
           </table>
@@ -1014,6 +1015,7 @@ import "../styles/global.css";
         {data:{id:'add-test-specification',label:'test-specification',type:'skill'}},
         {data:{id:'add-qa',label:'qa',type:'skill'}},
         {data:{id:'add-qa-spec',label:'qa-spec',type:'skill'}},
+        {data:{id:'add-qa-migration',label:'qa-migration',type:'skill'}},
       ];
 
       var RAW = [
@@ -1089,6 +1091,7 @@ import "../styles/global.css";
         ['add.qa','add-qa','loads'],
         ['add.qa-setup','add-doc-schemas','loads'],
         ['add.qa-setup','add-dev-environment-setup','loads'],
+        ['add.qa-setup','add-qa-migration','loads'],
         ['add.plan','add-qa-spec','loads'],
         // command → agent (dispatches)
         ['add.autopilot','backend-agent','dispatches'],

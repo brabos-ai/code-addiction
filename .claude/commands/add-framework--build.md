@@ -180,7 +180,7 @@ framwork/.codeadd/skills/                                      # Reference of ex
 }
 ```
 
-Default providers = all (claude, codex, antigrav, kilocode, opencode). Omit `providers` field to use all.
+Default providers = all (claude, codex, antigrav, cursor, opencode). Omit `providers` field to use all.
 
 **Mandatory command structure:**
 
@@ -225,7 +225,7 @@ NEVER:
 
 ```json
 "skills": {
-  "[name]": { "providers": ["claude", "antigrav", "kilocode", "opencode"] }
+  "[name]": { "providers": ["claude", "antigrav", "cursor", "opencode"] }
 }
 ```
 
