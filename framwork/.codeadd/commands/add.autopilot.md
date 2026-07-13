@@ -70,6 +70,7 @@ ${COORDINATOR_NOTES}
 STEP 1: status.sh       → RUN FIRST
 STEP 2: Load Recent Context     → INTELLIGENT context loading
 STEP 3: Validate Prerequisites  → about.md + discovery.md MUST exist
+STEP 3.5: Branch setup          → build-setup.sh (in-place; target resolved deterministically)
 STEP 4: Determine Execution Mode → Epic vs Simple
 STEP 5: Planning Agent          → ONLY AFTER 1-4 (or SKIP if simple)
 STEP 6: Development Agents      → ONLY AFTER plan exists
@@ -89,6 +90,11 @@ IF DISCOVERY NOT COMPLETE (about.md missing):
   ⛔ DO NOT Edit/Write code files
   ⛔ DO NOT start any development step
   ✅ DO inform user to run /feature first
+
+IF BRANCH SETUP NOT RUN (build-setup.sh has not exited 0):
+  ⛔ DO NOT dispatch any development or review agent
+  ⛔ DO NOT Edit/Write code files
+  ✅ DO run STEP 3.5 build-setup.sh first (MUST exit 0)
 
 IF FEATURE N REQUESTED BUT DEPENDENCY NOT MET:
   ⛔ DO NOT Edit/Write code files
@@ -200,6 +206,17 @@ bash .codeadd/scripts/status.sh
 - `about.md` exists? → If not, inform user to run `/feature` and STOP
 - `discovery.md` exists? → If not, inform user to run `/feature` and STOP
 - Feature has frontend components AND `design.md` missing? → Warn user to run `/design`
+
+---
+
+## STEP 3.5: Branch Setup
+
+**Runs the feature's recorded branch decision (from `about.md` `branch:`) — autopilot executes it in-place; no `--worktree` in v1. Fully autonomous: resolve deterministically, NEVER ask.**
+
+1. Resolve target deterministically: explicit `F[NNNN]` arg > `FEATURE_ID` from status.sh (branch). If neither resolves → ABORT with a report naming the inputs checked — NEVER open an ask-gate. Normalize to the canonical `[NNNN][L]` ID the script expects.
+2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID>`.
+3. On non-zero exit: ABORT and report stderr verbatim (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve, NEVER ask the user.
+4. Re-run `status.sh` (now on the feature branch) and continue to STEP 4.
 
 ---
 

@@ -4,6 +4,7 @@
 > **DOCS:** Feature design -> `docs/features/${FEATURE_ID}/design.md`. Foundations only when user requests.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
+> **ARGS:** `/add.design [F[NNNN]]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
 Coordinator for SaaS UX design specs. Dispatches specialized subagents for complex features (>=3 screens) or works inline for simple ones. Analyzes existing design system, detects SaaS context, maps screen flows, classifies actions, and creates text-based layout and component specs for AI agents.
 
@@ -42,6 +43,7 @@ STEP 10: Completion                  -> INFORM user
 - **SUBAGENT MODE / FLOW INCOMPLETE (STEP 5):** Do NOT dispatch Layout subagent. Flow must complete FIRST (Layout depends on Flow output).
 - **DESIGN NOT CONFIRMED BY USER:** Do NOT write design.md. Present design and WAIT for confirmation.
 - **NO FRONTEND EXISTS:** Inform user, skip design.
+- **FEATURE NOT RESOLVED (STEP 1.2):** Do NOT propose or write design. List `docs/features/` and WAIT for user choice.
 
 ---
 
@@ -57,7 +59,9 @@ Read skill `add-ux-design`.
 
 ### 1.2: Load Feature Context
 
-Run `status.sh`, then read `about.md` and `discovery.md` for the feature.
+Run `status.sh`. **Feature targeting (detection order):** explicit `F[NNNN]` argument > `FEATURE_ID` from status.sh (branch) > **ask-gate**: list features from `docs/features/` and WAIT for user choice (NEVER proceed without a resolved feature).
+
+Then read `about.md` and `discovery.md` for the resolved feature.
 
 **Extract:** `FEATURE_ID`, `FEATURE_DIR`, `HAS_FOUNDATIONS`, `FRONTEND.EXISTS`, `FRONTEND.UI_COMPONENTS`
 

@@ -14,6 +14,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **ARGS:** `/add.build [F[NNNN]] [--worktree]` — explicit feature target + opt-in worktree; composable with `feature N` (legacy epic) and `qa` (qa-pipeline).
 
 ---
 
@@ -22,6 +23,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 **STEPS IN ORDER:**
 ```
 STEP 1: Run context mapper         → FIRST COMMAND (status.sh)
+STEP 1.5: Branch setup             → build-setup.sh (create-or-checkout feature branch)
 STEP 2: Detect context             → Epic subfeature | Legacy feature flag | Simple mode
 STEP 3: Parse key variables        → Extract FEATURE_ID, flags, phase
 STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE | QA-FIX (/add.build qa)
@@ -49,6 +51,7 @@ STEP 15: Completion                → Inform user based on mode
 - **IDEMPOTENCY:** Check file existence before writing. Never overwrite artefacts without reading first
 - **BUILD GATE:** Code MUST compile 100%. Fix errors before advancing
 - **GIT CLEAN:** Leave files unstaged. Never git add/commit/stage
+- **BRANCH SETUP FIRST:** build-setup.sh MUST have exited 0 before any implementation step
 
 ---
 
@@ -68,6 +71,18 @@ This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS
 3. TAKE last 20 entries
 4. ADD to working context as: "Previous pivots to avoid repeating:"
    - `[agent] pivoted from "[from]" → "[decision]": [reason]`
+
+---
+
+## STEP 1.5: Branch Setup
+
+**Runs the feature's recorded branch decision (from `about.md` `branch:`) — build executes, never decides the name.**
+
+1. Resolve target: explicit `F[NNNN]` arg > `FEATURE_ID` from status.sh (branch) > ask-gate listing `PENDING:` features from status.sh output. Normalize to the canonical `[NNNN][L]` ID the script expects.
+2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID> [--worktree]`.
+3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve.
+4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory).
+5. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 2.
 
 ---
 

@@ -34,6 +34,20 @@ if [ -z "$CURRENT_BRANCH" ]; then
     exit 1
 fi
 
+# Start guard: refuse to run from inside a linked worktree.
+# In the primary checkout --git-dir and --git-common-dir resolve to the same
+# path; in a linked worktree --git-dir points at .git/worktrees/<name> while
+# --git-common-dir points at the primary .git. Resolve both to physical paths
+# before comparing — git returns one absolute and one cwd-relative from a
+# subdir, so a raw string compare (or a literal `.git` check) false-positives.
+GIT_DIR=$(cd "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null && pwd || echo "")
+GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd || echo "")
+if [ -n "$GIT_DIR" ] && [ "$GIT_DIR" != "$GIT_COMMON_DIR" ]; then
+    echo "STATUS=ERROR"
+    echo "ERROR=Running inside a linked worktree. Run /add.done from the primary checkout."
+    exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # [FIX-3] Verify that the dependency script exists and is executable before
@@ -216,7 +230,10 @@ if [ "$MODE" = "merge" ]; then
 
     if [ "$HAS_UNCOMMITTED" = true ]; then
         echo "STEP=Committing pending changes..."
-        git add -A
+        # Feature-scoped staging: stage all code changes but ONLY the current
+        # feature's docs; other features' untracked docs stay untracked.
+        git add -A -- . ':(exclude)docs/features/*'
+        [ -n "$DOCS_DIR" ] && [ -d "$DOCS_DIR" ] && git add -A -- "$DOCS_DIR" || true
         git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): finalize before merge
 
 Generated with ADD by https://brabos.ai
@@ -297,6 +314,13 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
 
     # Step 8: Cleanup branches
     echo "STEP=Cleaning up branches..."
+    # Remove the feature's worktree first: `git branch -d` fails while the branch
+    # is checked out in a linked worktree. No --force — fail loud if dirty.
+    if [ -n "$FEATURE_SLUG" ] && git worktree list --porcelain 2>/dev/null | grep -qE "^worktree .*/\.worktrees/${FEATURE_SLUG}$"; then
+        echo "STEP=Removing worktree .worktrees/${FEATURE_SLUG}..."
+        git worktree remove ".worktrees/${FEATURE_SLUG}"
+        echo "WORKTREE_CLEANUP=OK"
+    fi
     git branch -d "$CURRENT_BRANCH" 2>/dev/null || echo "LOCAL_DELETE=SKIPPED"
     git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || echo "REMOTE_DELETE=SKIPPED"
     echo "CLEANUP=OK"

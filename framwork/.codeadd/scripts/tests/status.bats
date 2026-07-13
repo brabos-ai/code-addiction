@@ -299,3 +299,49 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"LAST_CHECKPOINT:checkpoint/0001F-test-v1-done"* ]]
 }
+
+# ─── PENDING backlog ─────────────────────────────────────────────────
+
+@test "PENDING: lists a feature with docs but no branch and no changelog" {
+  mkdir -p docs/features/0005F-pending
+  echo "# About" > docs/features/0005F-pending/about.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PENDING:0005F-pending PHASE:documented"* ]]
+}
+
+@test "PENDING: excludes a feature that already has a local branch" {
+  mkdir -p docs/features/0005F-pending
+  echo "# About" > docs/features/0005F-pending/about.md
+  git branch feature/0005F-pending
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"PENDING:0005F-pending"* ]]
+}
+
+@test "PENDING: still lists a feature when only an unrelated branch exists" {
+  mkdir -p docs/features/0005F-pending
+  echo "# About" > docs/features/0005F-pending/about.md
+  # A branch that does NOT match */0005F-pending must not exclude it
+  git branch feature/9999F-unrelated
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PENDING:0005F-pending"* ]]
+}
+
+@test "PENDING: excludes a feature that already has changelog.md" {
+  mkdir -p docs/features/0006F-done
+  echo "# About" > docs/features/0006F-done/about.md
+  echo "# Changelog" > docs/features/0006F-done/changelog.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"PENDING:0006F-done"* ]]
+}
+
+@test "PENDING: REC recommends /add.build for the first pending feature on main" {
+  mkdir -p docs/features/0005F-pending
+  echo "# About" > docs/features/0005F-pending/about.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/add.build 0005F"* ]]
+}

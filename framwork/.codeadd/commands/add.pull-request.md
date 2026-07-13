@@ -192,8 +192,11 @@ Apply `{{skill:add-commit/SKILL.md}}` adaptive logic:
 
 ### 4.4 Stage and commit
 
+**Feature-scoped staging** (stage all code changes + ONLY the current feature's docs; other features' untracked docs stay untracked — see `{{skill:add-commit/SKILL.md}}` Staging Rules):
+
 ```bash
-git add -A
+git add -A -- . ':(exclude)docs/features/*'
+[ -d "${FEATURE_DIR}" ] && git add -A -- "${FEATURE_DIR}"
 git commit -m "<generated message>"
 ```
 
