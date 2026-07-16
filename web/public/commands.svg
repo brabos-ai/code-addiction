@@ -32,8 +32,8 @@
   <line x1="40" y1="254" x2="310" y2="254" class="cat-line"/>
 
   <rect x="40" y="266" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="284" class="cmd-name">/add.xray</text>
-  <text x="56" y="296" class="cmd-desc">Map architecture, classify apps</text>
+  <text x="56" y="284" class="cmd-name">/add.wiki</text>
+  <text x="56" y="296" class="cmd-desc">Generate portable project wiki</text>
 
   <rect x="40" y="310" width="270" height="36" class="cmd-box"/>
   <text x="56" y="328" class="cmd-name">/add.audit</text>
