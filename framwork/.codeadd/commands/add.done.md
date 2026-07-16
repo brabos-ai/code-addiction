@@ -298,6 +298,22 @@ fi
 
 ---
 
+### 4.9 Update Project Wiki (best-effort, non-blocking)
+
+**IF `.codeadd/wiki/index.md` exists:**
+
+Load skill `{{skill:add-wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP 1) + the feature context already loaded in this session (about.md from 4.3, the changelog just generated in 4.5).
+
+Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merge` (STEP 6) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
+
+**ELSE:** Skip silently — no wiki step runs. Add ONE line to the final summary after merge: "Project wiki not found — run /add.wiki to generate the knowledge base."
+
+**NEVER block the close flow on wiki failures.** If the update fails or is inconclusive, note it in the final summary and continue to STEP 5.
+
+⛔ DO NOT USE: Bash for git operations in this substep — wiki edits are plain file edits; `done.sh --merge` owns the commit.
+
+---
+
 ## STEP 5: Preview (INFORMATIVE ONLY)
 
 Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any).
@@ -317,6 +333,9 @@ bash .codeadd/scripts/done.sh --merge
 `done.sh --merge` handles everything: commit, push, merge to main, checkpoint cleanup, branch cleanup. It also deletes all `checkpoint/*` tags for the feature (local + remote) created by `/add.build` during implementation.
 
 ⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
+
+**After merge, include in the final summary:**
+- Wiki result from 4.9 — pages touched, explicit no-op, or the "wiki not found" suggestion.
 
 **After merge, MUST suggest next command from ecosystem map:**
 READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.

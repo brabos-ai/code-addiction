@@ -122,6 +122,8 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **Goal:** Use knowledge from recent deliveries to inform planning, avoiding reinventing the wheel.
 
+**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block.
+
 ---
 
 ## STEP 4: Parse Key Variables (GATE: feature_identified)
@@ -144,6 +146,7 @@ Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `
 | Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists) | PRIMARY |
 | Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
 | Design data | Use design.md to inform backend contracts (endpoints serve UI needs) | IF HAS_DESIGN=true |
+| Knowledge base | Selected wiki pages from STEP 3's Consult Knowledge Base sub-step (paths + freshness verdicts) | IF WIKI:present |
 
 **Gate enforcement:** about.md AND discovery.md are MANDATORY. IF either missing, STOP and inform user. Ref: GATES table.
 
@@ -221,13 +224,16 @@ Present questions with options and a RECOMMENDED default. Format: `### 1. [Quest
 
 ### Subagent Bootstrap (shared across 8.1-8.3)
 
-Every area subagent receives this bootstrap block before its specific task:
+Every area subagent receives this bootstrap block before its specific task. `${WIKI_PAGES}` = the page paths selected in STEP 3's Consult Knowledge Base sub-step, one line each: path + one-line reason + freshness verdict. Empty if no wiki was consulted — subagents read the listed pages themselves (JIT), never inlined content:
 
 ```
 ## TASK_DOCUMENTS (read ALL before starting -- source of truth)
 ${TASK_DOCUMENTS}
 
 ${CROSS_SF_CONTEXT}
+
+## Knowledge Base (JIT -- read only the pages relevant to your area)
+${WIKI_PAGES}
 
 ## MANDATORY: Load Context (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh

@@ -62,7 +62,7 @@
   },
   "commands": {
     "add":           { "description": "Intelligent ecosystem gateway - answers questions, guides flow, suggests next command" },
-    "add.xray":      { "description": "Architecture discovery and mapping - classifies apps, dispatches analyzer agents, consolidates reports" },
+    "add.wiki":      { "description": "Project knowledge base generator - classifies apps, dispatches analyzer agents, writes the .codeadd/wiki (patterns, conventions, workflows, architecture) and keeps it fresh via update mode" },
     "add.audit":     { "description": "Complete technical project audit with health analysis and recommendations" },
     "add.autopilot": { "description": "Autonomous feature coordinator - executes planning, development, and review without interaction" },
     "add.brainstorm":{ "description": "Project conversation partner for exploring ideas (READ-ONLY)" },
@@ -118,7 +118,9 @@
     "add-ux-design":                   {},
     "add-resource-path-convention":    {},
     "add-investigation":               {},
-    "add-id-convention":               {}
+    "add-id-convention":               {},
+    "add-wiki-maintenance":            {},
+    "add-knowledge-discovery":         {}
   },
   "agents": {
     "ux-agent":            { "description": "UX specialist for design decisions, interface analysis, and interaction patterns" },

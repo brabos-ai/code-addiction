@@ -28,7 +28,7 @@ STEP 2: Detect context             → Epic subfeature | Legacy feature flag | S
 STEP 3: Parse key variables        → Extract FEATURE_ID, flags, phase
 STEP 4: Determine mode             → DEVELOPMENT | CORRECTION | FEATURE | QA-FIX (/add.build qa)
 STEP 5: Load feature docs          → BEFORE any implementation
-STEP 6: Load project patterns      → IF PROJECT_SKILL or PROJECT_DOCS exist
+STEP 6: Load project knowledge     → IF WIKI:present (status.sh)
 STEP 7: Determine scope            → Database, Backend, Workers, Frontend
 STEP 8: Execution decision         → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP 9: Implementation             → Per mode (development/correction/feature)
@@ -193,18 +193,14 @@ Read all relevant feature docs based on status.sh flags:
 <!-- feature:qa-pipeline:qa-fix -->
 <!-- /feature:qa-pipeline:qa-fix -->
 
-## STEP 6: Load Project Patterns (IF exist)
+## STEP 6: Load Project Knowledge (IF wiki exists)
 
-**IF status.sh outputs PROJECT_SKILL (new format):**
+**IF WIKI:present (status.sh):**
 1. Identify the relevant area(s) for this task (backend, frontend, database, etc.)
-2. Run: `bash .codeadd/scripts/pattern-search.sh [area]` → get TOPIC names + LINES ranges
-3. Read ONLY the topics relevant to the current task using `Read offset:START limit:LENGTH`
-4. Follow patterns documented. These are project-specific conventions.
+2. Read {{addpath:wiki/index.md}}, then the {{addpath:wiki/domains/<area>.md}} page(s) for the areas being touched (+ {{addpath:wiki/conventions.md}} when conventions matter for the work at hand)
+3. Follow patterns documented. These are project-specific conventions.
 
-**IF status.sh outputs PROJECT_DOCS (legacy format):**
-Read ALL project pattern files listed in PROJECT_DOCS from status.sh output.
-
-**If neither exists:** Run `/add.xray` to generate, or continue with generic best practices.
+**If WIKI:absent:** Run `/add.wiki` to generate, or continue with generic best practices.
 
 **If ITERATIONS output exists from script:** Previous /add.build sessions context - avoid repeating fixes.
 
@@ -334,8 +330,7 @@ You are implementing the ${AREA} for feature ${FEATURE_ID}.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
 2. Read ALL files in TASK_DOCUMENTS below
-3. IF PROJECT_SKILL in output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` → read relevant topics
-   ELSE IF PROJECT_DOCS: read matching app patterns (database patterns cross-app)
+3. IF WIKI:present in output: read {{addpath:wiki/index.md}}, then {{addpath:wiki/domains/${AREA}.md}} (+ {{addpath:wiki/conventions.md}} when conventions matter for this task)
 
 ## TASK_DOCUMENTS (read ALL — source of truth)
 ${TASK_DOCUMENTS}

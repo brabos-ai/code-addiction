@@ -62,7 +62,7 @@ graph LR
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
   AUDIT(add.audit)
-  XRAY(add.xray)
+  WIKI(add.wiki)
   BRAINSTORM(add.brainstorm)
   UX_CMD(add.ux)
   QASETUP(add.qa-setup)
@@ -87,7 +87,7 @@ graph LR
   DIAGNOSE --> DS & ECO & IV
   HOTFIX --> DS & ID & IV & UX & ECO
   AUDIT --> DS & HC & IV & ECO
-  XRAY --> DS & AD & CMS & ECO
+  WIKI --> DS & AD & CMS & ECO
   BRAINSTORM --> DS & DR
   UX_CMD --> UX
   QASETUP --> DE & DS

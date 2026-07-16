@@ -4,9 +4,11 @@ Analyzes and documents the database strategy IMPLEMENTED in the project.
 
 ## Objective
 
-Generate `{{addpath:skills/project-patterns/database.md}}` with real project patterns. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Generate `{{addpath:wiki/domains/database.md}}` with real project patterns. Follows the shared wiki page contract in `{{skill:add-architecture-discovery/SKILL.md}}` (frontmatter schema, TL;DR + TOC + topic-first `##` chunks, content rules) — this file only adds database-specific discovery and section structure.
 
 **IMPORTANT:** Do NOT document schema, tables, or indexes. They are dynamic and go stale.
+
+**Scope rule:** domain-LOCAL database conventions (this project's entity naming, this project's migration workflow) belong on this page. Project-WIDE conventions (naming, ID/commit conventions, cross-app error-handling philosophy) belong on `{{addpath:wiki/conventions.md}}` — link to it, don't restate it.
 
 ## FIRST: Discover IF Database Exists
 
@@ -106,14 +108,17 @@ cat .env .env.example .env.local 2>/dev/null | grep -i "database\|db_\|postgres\
 
 ## Output Format
 
-Write to `{{addpath:skills/project-patterns/database.md}}` using this structure:
+Write to `{{addpath:wiki/domains/database.md}}` using this structure:
 
 ```markdown
 ---
+type: reference
 area: database
+description: [1-2 sentences, keyword-rich — engine, ORM, migration tool, when to read this page]
+sources: [libs/database/**]   # ≤8 globs covering every path cited below; "cross-app" scope noted in description
+commit: [short-sha at generation]
 generated: YYYY-MM-DD
-app-path: [actual lib path, e.g., libs/database, or "cross-app"]
-engine: [detected database engine]
+tags: [detected engine, ORM, key patterns — ≤6]
 ---
 
 ## TL;DR
@@ -186,7 +191,7 @@ Config: `{"status":"[enabled/disabled]","policies":"[path]","pattern":"[by tenan
 
 ## Database Conventions
 
-[Topic sentence: how database code is organized.]
+[Topic sentence: how database code is organized — domain-local only. Project-wide conventions live in `{{addpath:wiki/conventions.md}}`; link there instead of restating.]
 
 Entity naming: [singular/plural, PascalCase]
 Migration naming: [timestamp prefix, CLI command to create]
@@ -197,9 +202,15 @@ New entity registration: [how to register with ORM]
 
 [Topic sentence: seed file, command.]
 Config: `{"file":"[path]","run":"[command]"}`
+
+## Related
+
+- [wiki/conventions.md](../conventions.md): project-wide naming/error-handling/style conventions
+- [wiki/architecture.md](../architecture.md): system shape and layer boundaries this database layer serves
+- [wiki/domains/backend.md](backend.md): consumers of this repository layer, if applicable
 ```
 
-**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist.
+**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist. Full frontmatter schema, body contract, and content rules (sources/commit/tags, no-structural-facts, page size caps): see `{{skill:add-architecture-discovery/SKILL.md}}` → Wiki Page Contract.
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Database Conventions are the highest-value sections — they prevent agents from writing raw queries when helpers exist, and ensure new entities/migrations follow the established pattern.
 
