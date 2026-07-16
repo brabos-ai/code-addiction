@@ -206,8 +206,8 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Project onboarding → <code class="text-foreground">owner.md</code></p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.xray</code>
-                <p class="text-muted text-xs mt-0.5">Map architecture, classify apps</p>
+                <code class="text-accent font-mono text-sm">/add.wiki</code>
+                <p class="text-muted text-xs mt-0.5">Generate a portable project wiki (.codeadd/wiki/)</p>
               </div>
             </div>
           </div>
@@ -563,6 +563,8 @@ import "../styles/global.css";
             { name: "add-qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md. Loaded by add.plan's qa-pipeline QA-Spec step." },
             { name: "add-qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and the qa-agent." },
             { name: "add-qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over — defines the autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints. Consumed by /add.qa-setup when migration is detected and confirmed." },
+            { name: "add-knowledge-discovery", desc: "Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review — consult the project wiki (and code knowledge graph) for minimal token cost before dispatching agents." },
+            { name: "add-wiki-maintenance", desc: "Use for incremental project-wiki updates — loaded by /add.wiki update (manual drift) and add.done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
@@ -621,7 +623,7 @@ import "../styles/global.css";
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
             <p class="text-muted-light text-sm mb-1">Code knowledge-graph navigation (call graph, refs, blast-radius) via MCP. Enables structural code navigation across discovery, planning, diagnosis, and hotfix commands — going beyond grep to understand actual call chains and impact.</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.plan</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code>, <code class="font-mono">add.xray</code></p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.plan</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code>, <code class="font-mono">add.wiki</code></p>
             <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-gitnexus</code> — structural/relational code navigation (call graph, references, blast-radius, trace flows, safe refactors)</p>
             <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/abhigyanpatwari/GitNexus</a></p>
           </div>
@@ -972,7 +974,7 @@ import "../styles/global.css";
         {data:{id:'add.review',label:'add.review',type:'command'}},
         {data:{id:'add.test',label:'add.test',type:'command'}},
         {data:{id:'add.ux',label:'add.ux',type:'command'}},
-        {data:{id:'add.xray',label:'add.xray',type:'command'}},
+        {data:{id:'add.wiki',label:'add.wiki',type:'command'}},
         // Agents
         {data:{id:'architecture-agent',label:'architecture',type:'agent'}},
         {data:{id:'backend-agent',label:'backend',type:'agent'}},
@@ -1084,9 +1086,9 @@ import "../styles/global.css";
         ['add.test','add-frontend-development','loads'],
         ['add.test','add-ecosystem','loads'],
         ['add.ux','add-ux-design','loads'],
-        ['add.xray','add-doc-schemas','loads'],
-        ['add.xray','add-architecture-discovery','loads'],
-        ['add.xray','add-claude-md-style','loads'],
+        ['add.wiki','add-doc-schemas','loads'],
+        ['add.wiki','add-architecture-discovery','loads'],
+        ['add.wiki','add-claude-md-style','loads'],
         ['add.qa','add-doc-schemas','loads'],
         ['add.qa','add-qa','loads'],
         ['add.qa-setup','add-doc-schemas','loads'],
@@ -1105,7 +1107,7 @@ import "../styles/global.css";
         ['add.design','ux-agent','dispatches'],
         ['add.new','discovery-agent','dispatches'],
         ['add.new','doc-reviewer-agent','dispatches'],
-        ['add.xray','architecture-agent','dispatches'],
+        ['add.wiki','architecture-agent','dispatches'],
         ['add.qa','qa-agent','dispatches'],
         ['add.test','e2e-agent','dispatches'],
         ['add.diagnose','discovery-agent','dispatches'],

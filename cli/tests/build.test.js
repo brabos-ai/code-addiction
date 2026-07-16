@@ -438,10 +438,10 @@ describe('resolveResourcePaths', () => {
   });
 
   it('resolves {{addpath:X}} to literal .codeadd/X regardless of provider', () => {
-    expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', claudeProvider))
-      .toBe('.codeadd/skills/project-patterns/backend.md');
-    expect(resolveResourcePaths('{{addpath:skills/project-patterns/backend.md}}', cursorProvider))
-      .toBe('.codeadd/skills/project-patterns/backend.md');
+    expect(resolveResourcePaths('{{addpath:wiki/domains/backend.md}}', claudeProvider))
+      .toBe('.codeadd/wiki/domains/backend.md');
+    expect(resolveResourcePaths('{{addpath:wiki/domains/backend.md}}', cursorProvider))
+      .toBe('.codeadd/wiki/domains/backend.md');
     expect(resolveResourcePaths('{{addpath:manifest.json}}', claudeProvider))
       .toBe('.codeadd/manifest.json');
   });
@@ -573,10 +573,10 @@ describe('copyDirRecursive', () => {
   });
 
   it('with provider: resolves {{addpath:}} to literal .codeadd/X', () => {
-    fs.writeFileSync(path.join(src, 'note.md'), 'Write {{addpath:skills/project-patterns/backend.md}}');
+    fs.writeFileSync(path.join(src, 'note.md'), 'Write {{addpath:wiki/domains/backend.md}}');
     copyDirRecursive(src, dest, provider);
     const out = fs.readFileSync(path.join(dest, 'note.md'), 'utf8');
-    expect(out).toBe('Write .codeadd/skills/project-patterns/backend.md');
+    expect(out).toBe('Write .codeadd/wiki/domains/backend.md');
   });
 
   it('with provider: copies non-md files verbatim (no transformation)', () => {
@@ -623,8 +623,8 @@ describe('skill sibling files integration', () => {
     const cursorOut = fs.readFileSync(cursorPath, 'utf8');
 
     // {{addpath:}} resolves identically across providers
-    expect(claudeOut).toContain('.codeadd/skills/project-patterns/backend.md');
-    expect(cursorOut).toContain('.codeadd/skills/project-patterns/backend.md');
+    expect(claudeOut).toContain('.codeadd/wiki/domains/backend.md');
+    expect(cursorOut).toContain('.codeadd/wiki/domains/backend.md');
 
     // No leaked variable placeholders
     expect(claudeOut).not.toContain('{{addpath:');

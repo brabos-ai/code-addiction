@@ -319,7 +319,7 @@ Each `module/` and `shared/` from Starter maps 1:1 to a `package/` or `apps/` in
 
 ## Next Steps
 
-After the project structure is created, run `/add.xray` to generate:
+After the project structure is created, run `/add.wiki` to generate:
 - `.codeadd/project/stack-context.md` — stack key-value file consumed by dev skills
-- `{{skill:project-patterns/}}` — implementation patterns skill with backend, frontend, database area files
+- `{{addpath:wiki/index.md}}` and `{{addpath:wiki/domains/}}` pages — portable project wiki with backend, frontend, database area pages
 - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` — context files with architecture contract and technical spec

@@ -4,7 +4,9 @@ Analyzes and documents frontend patterns IMPLEMENTED in the project.
 
 ## Objective
 
-Generate `{{addpath:skills/project-patterns/frontend.md}}` with real project patterns. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Generate `{{addpath:wiki/domains/frontend.md}}` with real project patterns. Follows the shared wiki page contract in `{{skill:add-architecture-discovery/SKILL.md}}` (frontmatter schema, TL;DR + TOC + topic-first `##` chunks, content rules) — this file only adds frontend-specific discovery and section structure.
+
+**Scope rule:** domain-LOCAL frontend conventions (this app's component structure, this app's form pattern) belong on this page. Project-WIDE conventions (naming, ID/commit conventions, cross-app style philosophy) belong on `{{addpath:wiki/conventions.md}}` — link to it, don't restate it.
 
 ## FIRST: Discover IF Frontend Exists
 
@@ -122,14 +124,17 @@ find . -type f \( -name "vite.config*" -o -name "next.config*" -o -name "webpack
 
 ## Output Format
 
-Write to `{{addpath:skills/project-patterns/frontend.md}}` using this structure:
+Write to `{{addpath:wiki/domains/frontend.md}}` using this structure:
 
 ```markdown
 ---
+type: reference
 area: frontend
+description: [1-2 sentences, keyword-rich — framework, key patterns, when to read this page]
+sources: [apps/web/**, libs/frontend/**]   # ≤8 globs covering every path cited below
+commit: [short-sha at generation]
 generated: YYYY-MM-DD
-app-path: [actual app path, e.g., apps/web]
-framework: [detected framework]
+tags: [detected framework, key patterns — ≤6]
 ---
 
 ## TL;DR
@@ -238,7 +243,7 @@ Config: `{"prefix":"[VITE_/NEXT_PUBLIC_/etc]","location":"[.env.local/etc]","acc
 
 ## Project Conventions
 
-[Topic sentence: how the project is organized and where new code should go.]
+[Topic sentence: how THIS app is organized and where new frontend code should go — domain-local only. Project-wide conventions live in `{{addpath:wiki/conventions.md}}`; link there instead of restating.]
 
 File naming: [pattern]
 Feature organization: [by route/domain/flat]
@@ -251,9 +256,15 @@ Co-location: [styles/tests next to component?]
 
 [Topic sentence: framework, file pattern.]
 Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
+
+## Related
+
+- [wiki/conventions.md](../conventions.md): project-wide naming/error-handling/style conventions
+- [wiki/architecture.md](../architecture.md): system shape and layer boundaries this app fits into
+- [wiki/domains/backend.md](backend.md): API contract this frontend consumes, if applicable
 ```
 
-**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist.
+**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist. Full frontmatter schema, body contract, and content rules (sources/commit/tags, no-structural-facts, page size caps): see `{{skill:add-architecture-discovery/SKILL.md}}` → Wiki Page Contract.
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing hooks/components and violating established patterns. Prioritize discovering these over documenting library configs.
 

@@ -4,7 +4,9 @@ Analyzes and documents backend patterns IMPLEMENTED in the project.
 
 ## Objective
 
-Generate `{{addpath:skills/project-patterns/backend.md}}` with real project patterns. Follows context engineering principles: frontmatter + TL;DR + TOC + topic-first ## chunks (~128 tokens each) with extractive-only content and real code examples.
+Generate `{{addpath:wiki/domains/backend.md}}` with real project patterns. Follows the shared wiki page contract in `{{skill:add-architecture-discovery/SKILL.md}}` (frontmatter schema, TL;DR + TOC + topic-first `##` chunks, content rules) — this file only adds backend-specific discovery and section structure.
+
+**Scope rule:** domain-LOCAL backend conventions (this app's error handling, this app's DTO pattern) belong on this page. Project-WIDE conventions (naming, ID/commit conventions, cross-app error-handling philosophy) belong on `{{addpath:wiki/conventions.md}}` — link to it, don't restate it.
 
 ## FIRST: Discover IF Backend Exists
 
@@ -123,14 +125,17 @@ grep -rE "JwtService|passport|@UseGuards" --include="*.ts" | head -5
 
 ## Output Format
 
-Write to `{{addpath:skills/project-patterns/backend.md}}` using this structure:
+Write to `{{addpath:wiki/domains/backend.md}}` using this structure:
 
 ```markdown
 ---
+type: reference
 area: backend
+description: [1-2 sentences, keyword-rich — framework, key patterns, when to read this page]
+sources: [apps/server/**, libs/backend/**]   # ≤8 globs covering every path cited below
+commit: [short-sha at generation]
 generated: YYYY-MM-DD
-app-path: [actual app path, e.g., apps/server]
-framework: [detected framework]
+tags: [detected framework, key patterns — ≤6]
 ---
 
 ## TL;DR
@@ -231,7 +236,7 @@ Config: `{"orm":"[name]","entities":"[path glob]","repositories":"[path glob]"}`
 
 ## Project Conventions
 
-[Topic sentence: how the project is organized and where new code should go.]
+[Topic sentence: how THIS app is organized and where new backend code should go — domain-local only. Project-wide conventions live in `{{addpath:wiki/conventions.md}}`; link there instead of restating.]
 
 File naming: [pattern]
 Module organization: [by domain/layer/feature]
@@ -243,9 +248,15 @@ Import ordering: [convention if any]
 
 [Topic sentence: framework, file pattern.]
 Config: `{"framework":"[name]","files":"[pattern]","run":"[command]"}`
+
+## Related
+
+- [wiki/conventions.md](../conventions.md): project-wide naming/error-handling/style conventions
+- [wiki/architecture.md](../architecture.md): system shape and layer boundaries this app fits into
+- [wiki/domains/database.md](database.md): shared DB access patterns, if this app uses them
 ```
 
-**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist.
+**CRITICAL:** Skip sections that don't exist. Each ## chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add-doc-schemas/SKILL.md}}` for the output-length doctrine). Code examples always with `// path:line` comment. TOC only includes sections that exist. Full frontmatter schema, body contract, and content rules (sources/commit/tags, no-structural-facts, page size caps): see `{{skill:add-architecture-discovery/SKILL.md}}` → Wiki Page Contract.
 
 **MOST IMPORTANT SECTIONS:** Reusable Abstractions and Project Conventions are the highest-value sections — they prevent agents from duplicating existing code and violating established patterns. Prioritize discovering these over documenting library configs.
 

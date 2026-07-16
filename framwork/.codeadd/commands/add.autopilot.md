@@ -32,8 +32,7 @@ You are the **Autopilot Coordinator** — a master orchestrator that coordinates
 2. Load required skills from REQUIRED section above
 3. Run: `bash .codeadd/scripts/status.sh`
 4. Read ALL files listed in TASK_DOCUMENTS
-5. IF PROJECT_SKILL in script output: run `bash .codeadd/scripts/pattern-search.sh ${AREA}` and read relevant topic ranges
-   IF PROJECT_DOCS in script output: read the matching project pattern files
+5. IF WIKI:present in script output: read {{addpath:wiki/index.md}}, then {{addpath:wiki/domains/${AREA}.md}} (+ {{addpath:wiki/conventions.md}} when conventions matter for this task)
 6. Read your area's skill file: `add-${AREA}-development`
 ```
 
@@ -132,7 +131,7 @@ IF tasks.md HAS `## Validation Gates` SECTION:
 
 IF CLAUDE.md HAS NO `validation_gates` BLOCK:
   ⛔ DO NOT: Fabricate gate items in tasks.md
-  ✅ DO: Emit ONE single line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Continue without blocking.
+  ✅ DO: Emit ONE single line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.wiki to enable validation gates." Continue without blocking.
 
 ALWAYS:
   ⛔ DO NOT ask user questions (100% autonomous)
@@ -356,7 +355,7 @@ You are the ${AREA} developer for feature ${FEATURE_ID}.
 1. Read `{{cmd:add.build}}` (scope: LIMITED to ${AREA}).
 2. Load: add-doc-schemas, add-id-convention, add-${AREA}-development
 3. Run: `bash .codeadd/scripts/status.sh` and read TASK_DOCUMENTS
-4. IF PROJECT_SKILL/PROJECT_DOCS: load via pattern-search.sh ${AREA}
+4. IF WIKI:present: read {{addpath:wiki/index.md}}, then {{addpath:wiki/domains/${AREA}.md}} (+ {{addpath:wiki/conventions.md}} when conventions matter for this task)
 5. Load your area's skill (contains Validation Checklist)
 
 ## DECISION LOG
@@ -607,7 +606,7 @@ Checklist: Build passes, all expected docs exist, review.md has Quality Gate Rep
 The coordinator (NOT area validators) is the sole writer of `## Validation Gates` ticks. Run **Validation Gates Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}`:
 
 1. Read CLAUDE.md `validation_gates` block.
-   - Missing? → emit one-line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Skip rest of 10.2.
+   - Missing? → emit one-line nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.wiki to enable validation gates." Skip rest of 10.2.
 2. For each `(intent, command)`: invoke via Bash, capture exit code.
 3. Exit ≠ 0 → partition failures via `git diff --name-only` against feature base
    - Touched-file failures → dispatch fix agent, re-run, tick `[x]` only on green

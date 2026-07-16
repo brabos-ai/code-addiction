@@ -502,39 +502,36 @@ if [ "$BRANCH_TYPE" != "main" ]; then
 fi
 
 # =============================================================================
-# OUTPUT: PROJECT PATTERNS (from .codeadd/skills/project-patterns/)
+# OUTPUT: WIKI (staleness signal from .codeadd/wiki/)
 # =============================================================================
 
-PATTERNS_DIR=".codeadd/skills/project-patterns"
-if [ -d "$PATTERNS_DIR" ] && [ -f "$PATTERNS_DIR/SKILL.md" ]; then
-    # List area files (backend.md, frontend.md, database.md, etc — excluding SKILL.md)
-    AREAS=""
-    TOTAL_TOPICS=0
+WIKI_INDEX=".codeadd/wiki/index.md"
+WIKI_META=".codeadd/wiki/.meta.json"
 
-    for md_file in "$PATTERNS_DIR"/*.md; do
-        [ -f "$md_file" ] || continue
-        fname=$(basename "$md_file" .md)
-        [ "$fname" = "SKILL" ] && continue
+if [ -f "$WIKI_INDEX" ]; then
+    echo "WIKI:present"
 
-        AREAS="${AREAS:+$AREAS,}$fname"
+    WIKI_SHA=""
+    if [ -f "$WIKI_META" ]; then
+        # Pure bash/grep/sed extraction (no jq) of the "gitHead" field.
+        WIKI_SHA=$(grep -o '"gitHead"[[:space:]]*:[[:space:]]*"[^"]*"' "$WIKI_META" 2>/dev/null | \
+            sed -E 's/.*:[[:space:]]*"([^"]*)"/\1/' | head -1 || true)
+    fi
 
-        # Count ## headers excluding TL;DR and TOC
-        count=$(grep -cE '^## ' "$md_file" 2>/dev/null || true)
-        has_tldr=$(grep -c '^## TL;DR' "$md_file" 2>/dev/null || true)
-        has_toc=$(grep -c '^## TOC' "$md_file" 2>/dev/null || true)
-        count=$((count - has_tldr - has_toc))
-        [ "$count" -lt 0 ] && count=0
-        TOTAL_TOPICS=$((TOTAL_TOPICS + count))
-    done
+    if [ -n "$WIKI_SHA" ] && git cat-file -e "${WIKI_SHA}^{commit}" 2>/dev/null; then
+        WIKI_SHORT=$(git rev-parse --short "$WIKI_SHA" 2>/dev/null || echo "$WIKI_SHA")
+        echo "WIKI_COMMIT:$WIKI_SHORT"
 
-    if [ -n "$AREAS" ]; then
-        echo "PROJECT_SKILL:$PATTERNS_DIR"
-        echo "PROJECT_AREAS:$AREAS"
-        echo "PROJECT_TOPICS:$TOTAL_TOPICS"
+        STALE_COUNT=$(git diff --name-only "${WIKI_SHA}..HEAD" 2>/dev/null | wc -l | tr -d ' \r\n')
+        STALE_COUNT="${STALE_COUNT:-0}"
+        echo "WIKI_STALE_COUNT:$STALE_COUNT"
+
+        if [ "$STALE_COUNT" -gt 0 ]; then
+            echo "WIKI_HINT:Wiki may be stale ($STALE_COUNT source changes) — /add.wiki update"
+        fi
     else
-        echo "PROJECT_SKILL:$PATTERNS_DIR"
-        echo "PROJECT_AREAS:none"
-        echo "PROJECT_TOPICS:0"
+        echo "WIKI_STALE_COUNT:unknown"
+        echo "WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"
     fi
 elif [ -d ".codeadd/project" ]; then
     # Legacy: fall back to old .codeadd/project/*.md format
@@ -548,11 +545,11 @@ elif [ -d ".codeadd/project" ]; then
         PROJECT_COUNT=$(echo "$PROJECT_FILES" | tr ',' '\n' | wc -l | tr -d ' \r\n')
         echo "PROJECT_PATTERNS:$PROJECT_COUNT"
         echo "PROJECT_DOCS:.codeadd/project/{$PROJECT_FILES}.md"
-        echo "PROJECT_HINT:Run /add.xray to upgrade to project-patterns skill"
+        echo "PROJECT_HINT:Run /add.wiki to upgrade to the wiki knowledge base"
     fi
 else
-    echo "PROJECT_PATTERNS:0"
-    echo "PROJECT_HINT:Run /add.xray to generate project patterns"
+    echo "WIKI:absent"
+    echo "WIKI_HINT:Run /add.wiki to generate the knowledge base"
 fi
 
 # =============================================================================
