@@ -54,7 +54,7 @@ STEP 9: Validation Gate       → diagnose-report schema gate
 bash .codeadd/scripts/status.sh
 ```
 
-Parse: OWNER (name + level), BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGELOGS.
+Parse: OWNER (name + level), BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
 
 ### 1.2 Load ecosystem map
 
@@ -64,6 +64,10 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 - If OWNER not found → inform user to run `/add.init`, continue with `intermediate` defaults
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
+
+### 1.4 Consult Knowledge Base
+
+Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation.
 
 ---
 
@@ -112,6 +116,7 @@ Assemble from prior STEPs:
 - Symptom class from Phase 0
 - Affected area keywords (nouns/verbs from reformulation)
 - Optional window (default: 30 days for git)
+- Knowledge base page paths + one-line reasons + freshness verdicts (STEP 1.4), if any were selected
 
 This payload is passed to BOTH Fase A agents.
 
@@ -120,10 +125,10 @@ This payload is passed to BOTH Fase A agents.
 ⛔ **CRITICAL:** Dispatch BOTH agents in a SINGLE message with TWO Agent tool calls (parallel execution). Do NOT dispatch sequentially.
 
 **DISPATCH AGENT: @feature-history-agent**
-Prompt: "Reconstruct feature relevance for this symptom. Predicate: <predicate>. Symptom class: <class>. Keywords: <keywords>. Scan `docs/features/`, score relevance, deep-read top-10, return structured Feature History Report."
+Prompt: "Reconstruct feature relevance for this symptom. Predicate: <predicate>. Symptom class: <class>. Keywords: <keywords>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Scan `docs/features/`, score relevance, deep-read top-10, return structured Feature History Report."
 
 **DISPATCH AGENT: @git-history-agent**
-Prompt: "Correlate recent git history with this symptom. Predicate: <predicate>. Keywords: <keywords>. Window: 30 days. Use git log/show/diff/branch (read-only) to identify suspicious commits and active branches. Return structured Git History Report."
+Prompt: "Correlate recent git history with this symptom. Predicate: <predicate>. Keywords: <keywords>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Window: 30 days. Use git log/show/diff/branch (read-only) to identify suspicious commits and active branches. Return structured Git History Report."
 
 **WAIT** for both reports before proceeding.
 
@@ -139,7 +144,7 @@ If BOTH reports return "no strong matches", Fase B receives a broad-scan brief (
 ### 4.4 Fase B — SEQUENTIAL dispatch (@architecture-agent)
 
 **DISPATCH AGENT: @architecture-agent**
-Prompt: "Trace control-flow and data-flow to validate or refute the hypotheses below. Predicate: <predicate>. Feature History findings: <A.1 summary with files/decisions>. Git History findings: <A.2 summary with suspicious commits + files>. Priority targets (convergent signals): <list>. Read-only — confirm or refute each hypothesis with file:line evidence."
+Prompt: "Trace control-flow and data-flow to validate or refute the hypotheses below. Predicate: <predicate>. Feature History findings: <A.1 summary with files/decisions>. Git History findings: <A.2 summary with suspicious commits + files>. Priority targets (convergent signals): <list>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Read-only — confirm or refute each hypothesis with file:line evidence."
 
 **WAIT** for the architecture report before proceeding.
 

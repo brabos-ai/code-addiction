@@ -59,11 +59,11 @@ bash .codeadd/scripts/done.sh
 
 Resolves to the literal `.codeadd/X` path — same across all providers. Use for **runtime paths** that exist in the user's installed project (the installer preserves `.codeadd/`), but are NOT distributed by the build pipeline.
 
-Typical cases: skills generated at runtime by commands like `/add.xray` (which writes `project-patterns/`), the manifest file, or any artefact materialized in the user's project after install.
+Typical cases: artefacts generated at runtime by commands like `/add.wiki` (which writes `wiki/`), the manifest file, or any artefact materialized in the user's project after install.
 
 ```
-{{addpath:skills/project-patterns/backend.md}}  # → .codeadd/skills/project-patterns/backend.md
-{{addpath:manifest.json}}                       # → .codeadd/manifest.json
+{{addpath:wiki/domains/backend.md}}  # → .codeadd/wiki/domains/backend.md
+{{addpath:manifest.json}}            # → .codeadd/manifest.json
 ```
 
 **When to use `{{addpath:}}` vs `{{skill:}}`:**

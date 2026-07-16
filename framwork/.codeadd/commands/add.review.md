@@ -57,7 +57,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 |---------|--------|--------|
 | Feature metadata | `bash .codeadd/scripts/status.sh` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
 | Feature docs | `docs/features/${FEATURE_ID}/*` | about.md, discovery.md, plan.md, design.md (opt), iterations.jsonl, decisions.jsonl |
-| Project patterns | `bash .codeadd/scripts/pattern-search.sh [area]` (if PROJECT_SKILL) | Frontend, Backend, Database patterns |
+| Knowledge base | via `{{skill:add-knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
 | Architecture reference | `CLAUDE.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
 
@@ -137,7 +137,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Failure:** Any `[!]` on touched file. Mark review BLOCKED. Report reason to user.
 
 **Special Cases:**
-- CLAUDE.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates." Skip rest of STEP 7.
+- CLAUDE.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.wiki to enable validation gates." Skip rest of STEP 7.
 
 ### Gate 7: Review Document Writable (STEP 8)
 
@@ -247,10 +247,10 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
    - Cross-reference with changed files to validate completeness
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
-7. Load project patterns for validation:
-   - IF `PROJECT_SKILL` in script output: run `bash .codeadd/scripts/pattern-search.sh --list` to see areas, then `pattern-search.sh [area]` for each relevant area to get topic ranges. Read only topics related to the changed code.
-   - IF `PROJECT_DOCS` in script output: read ALL listed project pattern files
-   - These contain implementation patterns to validate against
+7. Consult knowledge base for validation:
+   - IF `WIKI:present` (from script output): Load `{{skill:add-knowledge-discovery/SKILL.md}}`, read the hub (`{{addpath:wiki/index.md}}`), then SELECT + read the `{{addpath:wiki/domains/<area>.md}}` page(s) matching the changed code's areas, plus `{{addpath:wiki/conventions.md}}`. Freshness-check each selected page.
+   - IF `WIKI:present` is false: note "knowledge base unavailable — /add.wiki generates it" and continue with code-derived patterns only.
+   - These pages contain implementation patterns and conventions to validate against
 
 ### 2.3 Load Project Architecture Reference
 
@@ -378,7 +378,7 @@ prompt: |
   ## BOOTSTRAP
   1. Run: bash .codeadd/scripts/status.sh
   2. Read ALL files listed in TASK_DOCUMENTS
-  3. IF PROJECT_SKILL: bash .codeadd/scripts/pattern-search.sh frontend; IF PROJECT_DOCS: read matching frontend files
+  3. IF WIKI:present: read {{addpath:wiki/domains/frontend.md}} (+ {{addpath:wiki/conventions.md}})
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
   5. Read skills: add-frontend-development (PRIMARY), add-code-review, add-ux-design (if no design.md)
 
@@ -419,7 +419,7 @@ prompt: |
   ## BOOTSTRAP
   1. Run: bash .codeadd/scripts/status.sh
   2. Read ALL files listed in TASK_DOCUMENTS
-  3. IF PROJECT_SKILL: bash .codeadd/scripts/pattern-search.sh backend,database; IF PROJECT_DOCS: read matching files
+  3. IF WIKI:present: read {{addpath:wiki/domains/backend.md}} + {{addpath:wiki/domains/database.md}} (+ {{addpath:wiki/conventions.md}})
   4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
   5. Read skills: add-backend-development (PRIMARY), add-database-development, add-code-review, add-security-audit, add-delivery-validation
 
@@ -516,7 +516,7 @@ The reviewer's job is to verify, not to trust. Existing `[x]` ticks on `## Valid
 
 Read CLAUDE.md `validation_gates` block.
 
-- **Block missing** → emit one-line nudge `Note: validation_gates not detected in CLAUDE.md. Run /add.xray to enable validation gates.` and skip the rest of STEP 7.
+- **Block missing** → emit one-line nudge `Note: validation_gates not detected in CLAUDE.md. Run /add.wiki to enable validation gates.` and skip the rest of STEP 7.
 - **Block present** → proceed.
 
 ### 7.2 Re-Run Procedure

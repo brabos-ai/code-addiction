@@ -109,7 +109,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 ### `## Validation Gates`
 
-- **Auto-derived** from the `validation_gates` JSON block in CLAUDE.md (written by `add-architecture-discovery` / `add.xray`). One checklist line per detected gate. If the block is absent or empty, **omit this section entirely** — never fabricate gate items.
+- **Auto-derived** from the `validation_gates` JSON block in CLAUDE.md (written by `add-architecture-discovery` / `add.wiki`). One checklist line per detected gate. If the block is absent or empty, **omit this section entirely** — never fabricate gate items.
 - Item line format: `- [ ] Run \`<gate command>\` and fix failures in files touched by this work` (drop "in files touched by this work" for the `build` gate, which is global).
 - The `format` gate appears only when CLAUDE.md provides a non-mutating check command (e.g. `prettier --check`, `ruff format --check`, `dotnet format --verify-no-changes`).
 - **Tick rule (build/autopilot):** the validator MUST actually invoke the gate command via Bash, capture exit code and output, then:
@@ -265,9 +265,9 @@ Used by `add.build` (or autopilot coordinator, or `add.review`) AFTER all area v
 
 Read CLAUDE.md. If no `validation_gates` JSON block exists, emit ONE single line to the user:
 
-> Note: `validation_gates` not detected in CLAUDE.md. Run `/add.xray` to enable validation gates.
+> Note: `validation_gates` not detected in CLAUDE.md. Run `/add.wiki` to enable validation gates.
 
-Do NOT auto-run xray. Do NOT block. Skip the rest of this procedure when the block is absent (no gates to enforce). When the block is present but `## Validation Gates` is missing from `tasks.md`, that is a planning bug — surface it but still run the gates from CLAUDE.md.
+Do NOT auto-run wiki generation. Do NOT block. Skip the rest of this procedure when the block is absent (no gates to enforce). When the block is present but `## Validation Gates` is missing from `tasks.md`, that is a planning bug — surface it but still run the gates from CLAUDE.md.
 
 ### Steps
 

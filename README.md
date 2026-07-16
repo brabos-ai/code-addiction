@@ -110,7 +110,7 @@ NEW PROJECT  (starting from scratch)
   init --> build --> done
 
 ANALYSIS  (understand existing codebase)
-  xray / audit
+  wiki / audit
 ```
 
 > **That's it.** No config files to tweak, no boilerplate to write, no decision fatigue.

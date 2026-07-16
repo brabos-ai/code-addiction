@@ -39,7 +39,7 @@ describe('gitnexus catalog entry', () => {
   });
 
   it('injects exactly the six target commands', () => {
-    expect(catalogEntry().injects.sort()).toEqual(['add.diagnose', 'add.done', 'add.hotfix', 'add.new', 'add.plan', 'add.xray']);
+    expect(catalogEntry().injects.sort()).toEqual(['add.diagnose', 'add.done', 'add.hotfix', 'add.new', 'add.plan', 'add.wiki']);
   });
 
   it('ships the add-gitnexus skill', () => {

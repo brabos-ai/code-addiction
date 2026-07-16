@@ -83,8 +83,9 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
    - **WAIT:** Verify past-features.md exists before continuing.
 
 2. **Agent: Codebase Discovery**
-   - **Input:** past-features.md + skeleton about.md + feature request
+   - **Input:** past-features.md + skeleton about.md + feature request + selected wiki pages (if any, see Knowledge Base Check below)
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
+   - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}`. This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
 <!-- plugin:gitnexus:graph-map -->

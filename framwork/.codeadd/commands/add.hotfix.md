@@ -74,6 +74,7 @@ bash .codeadd/scripts/status.sh
 **AFTER EXECUTION, CHECK OUTPUT:**
 - `BRANCH`: Current branch (main/hotfix/feature/other)
 - `RECENT_CHANGELOGS`: Last 5 completed items (identify related features)
+- `WIKI:present` / `WIKI_STALE_COUNT`: Knowledge base availability (used in STEP 8.1)
 
 ---
 
@@ -223,9 +224,9 @@ LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 2-3 (Pattern Analysis
 <!-- plugin:gitnexus:graph-impact -->
 <!-- /plugin:gitnexus:graph-impact -->
 
-### 8.1 Check Project Patterns
+### 8.1 Consult Knowledge Base
 
-**If PROJECT_PATTERNS > 0 (from script output):** Read project patterns and follow them in implementation.
+Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure. **If `WIKI:present` (from STEP 1 script output):** SELECT `{{addpath:wiki/conventions.md}}` + the domain page for the affected area (`{{addpath:wiki/domains/<area>.md}}`), freshness-check both. Conventions govern HOW to fix — follow them in implementation. **If wiki absent:** note "knowledge base unavailable — /add.wiki generates it" and follow existing code patterns instead.
 
 ### 8.2 Implement
 

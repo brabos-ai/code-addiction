@@ -345,3 +345,75 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"/add.build 0005F"* ]]
 }
+
+# ─── WIKI block ──────────────────────────────────────────────────────
+
+@test "WIKI: absent when .codeadd/wiki/index.md does not exist" {
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WIKI:absent"* ]]
+  [[ "$output" == *"WIKI_HINT:Run /add.wiki to generate the knowledge base"* ]]
+}
+
+@test "WIKI: present with 0 stale changes when sha == HEAD" {
+  mkdir -p .codeadd/wiki
+  echo "# Wiki" > .codeadd/wiki/index.md
+  HEAD_SHA=$(git rev-parse HEAD)
+  printf '{"updatedAt":"2026-07-15","command":"/add.wiki","gitHead":"%s"}\n' "$HEAD_SHA" > .codeadd/wiki/.meta.json
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WIKI:present"* ]]
+  [[ "$output" == *"WIKI_COMMIT:"* ]]
+  [[ "$output" == *"WIKI_STALE_COUNT:0"* ]]
+  [[ "$output" != *"WIKI_HINT:"* ]]
+}
+
+@test "WIKI: present with N stale changes when sha is behind HEAD" {
+  mkdir -p .codeadd/wiki
+  echo "# Wiki" > .codeadd/wiki/index.md
+  OLD_SHA=$(git rev-parse HEAD)
+  printf '{"updatedAt":"2026-07-15","command":"/add.wiki","gitHead":"%s"}\n' "$OLD_SHA" > .codeadd/wiki/.meta.json
+  git add .codeadd/wiki/index.md .codeadd/wiki/.meta.json
+  git commit -m "add wiki" -q
+  echo "change1" > file1.txt
+  echo "change2" > file2.txt
+  git add file1.txt file2.txt
+  git commit -m "two changes" -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WIKI:present"* ]]
+  [[ "$output" =~ WIKI_STALE_COUNT:[1-9] ]]
+  [[ "$output" == *"WIKI_HINT:Wiki may be stale ("*") — /add.wiki update"* ]]
+}
+
+@test "WIKI: unresolvable sha (garbage .meta.json) yields unknown + unreachable hint" {
+  mkdir -p .codeadd/wiki
+  echo "# Wiki" > .codeadd/wiki/index.md
+  echo "not valid json {{{" > .codeadd/wiki/.meta.json
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WIKI:present"* ]]
+  [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+}
+
+@test "WIKI: missing .meta.json yields unknown + unreachable hint" {
+  mkdir -p .codeadd/wiki
+  echo "# Wiki" > .codeadd/wiki/index.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WIKI:present"* ]]
+  [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+}
+
+@test "WIKI: unreachable sha (well-formed but nonexistent commit) yields unknown + unreachable hint" {
+  mkdir -p .codeadd/wiki
+  echo "# Wiki" > .codeadd/wiki/index.md
+  printf '{"updatedAt":"2026-07-15","command":"/add.wiki","gitHead":"0000000000000000000000000000000000dead"}\n' > .codeadd/wiki/.meta.json
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WIKI:present"* ]]
+  [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+}

@@ -61,10 +61,10 @@ JSON minified is exclusively for **data the agent looks up**: configs, specs, te
 domain → backend → apps. Inner never imports outer.
 
 # ❌ WRONG — instruction inside JSON
-{"note":"Use pattern-search.sh for JIT loading"}
+{"note":"Read .codeadd/wiki/index.md, then the relevant domain page"}
 
 # ✅ RIGHT — instruction as markdown
-Use pattern-search.sh for JIT loading.
+Read the wiki hub, then the relevant domain page.
 
 # ❌ WRONG — placement guidance as JSON
 {"Entities":"libs/domain/src/entities","Repos":"libs/app-database/src/repositories"}
