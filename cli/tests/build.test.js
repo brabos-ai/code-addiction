@@ -311,7 +311,6 @@ describe('agent source files', () => {
     'architecture-agent',
     'system-design-agent',
     'database-agent',
-    'qa-agent',
   ]) {
     describe(`${name}`, () => {
       const filePath = path.join(agentsDir, `${name}.md`);
@@ -373,6 +372,42 @@ describe('agent source files', () => {
     });
 
     it('has NO memory: line (critique-mode judge, no cross-run recall)', () => {
+      expect(content).not.toMatch(/^memory:/m);
+    });
+
+    it('has "leaf agent" constraint in body', () => {
+      expect(content).toContain('do NOT dispatch other agents');
+    });
+  });
+
+  // qa-agent is the other role-scoped exception (plan 0059 task 3): a
+  // deterministic/forensic judge that reads persisted evidence and never
+  // recalls prior-run rationale between dispatches, so `memory:` is
+  // deliberately absent — mirrors ux-agent's 0057 removal.
+  describe('qa-agent', () => {
+    const filePath = path.join(agentsDir, 'qa-agent.md');
+    const content = fs.readFileSync(filePath, 'utf8');
+
+    it('has YAML frontmatter', () => {
+      expect(content).toMatch(/^---\n/);
+      expect(content.indexOf('---', 3)).toBeGreaterThan(3);
+    });
+
+    it('has name field matching filename', () => {
+      const match = content.match(/^name:\s*(.+)$/m);
+      expect(match, 'missing name field').not.toBeNull();
+      expect(match[1].trim()).toBe('qa-agent');
+    });
+
+    it('has description field', () => {
+      expect(content).toMatch(/^description:\s*.+$/m);
+    });
+
+    it('has model field', () => {
+      expect(content).toMatch(/^model:\s*(sonnet|opus|haiku|inherit)/m);
+    });
+
+    it('has NO memory: line (judge reads evidence, no cross-run recall)', () => {
       expect(content).not.toMatch(/^memory:/m);
     });
 
