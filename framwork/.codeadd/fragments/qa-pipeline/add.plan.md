@@ -31,6 +31,8 @@ ALSO write the screen catalog `FEATURE_DIR/_tests/screens.json` with READ-MERGE-
          never reorder, reformat, or "clean up" them.
       3. An in-scope entry (same `sf` AND same `id`) is REPLACED by the newly derived one.
       4. A newly derived in-scope entry with no match is APPENDED.
+      5. An in-scope entry whose screen no longer exists in the consolidated design.md is
+         REMOVED (out-of-scope entries stay untouchable — rule 2 above).
       Entry shape (as scaffolded by add.qa-setup): `id`, `sf`, `name`,
       `kind` (route|modal|overlay|portal), `path` for routes OR an ordered `open` recipe for
       non-route surfaces, `auth`, `design`, `expect`. Each entry's `design` field points at the

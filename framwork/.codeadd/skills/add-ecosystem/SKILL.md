@@ -145,7 +145,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (UX axis judges fidelity vs the design spec) |
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |
-| add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; add.build's build-setup.sh enforces the format at branch creation) |
+| add-id-convention | add.plan, add.design, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add-doc-schemas' `references/new-feature.md`; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 | add-tdd | add.plan, add.build, add.review, add.test |
 | add-test-specification | add.plan (STEP 9) |

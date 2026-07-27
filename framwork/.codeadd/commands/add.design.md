@@ -64,7 +64,7 @@ Read skill `add-ux-design`.
 
 Run `status.sh`. **Feature targeting (detection order):** explicit `F[NNNN]` argument > `FEATURE_ID` from status.sh (branch) > **ask-gate**: list features from `docs/features/` and WAIT for user choice (NEVER proceed without a resolved feature).
 
-**Extract from status.sh:** `FEATURE_ID`, `FEATURE_DIR`, `HAS_FOUNDATIONS`, `HAS_DESIGN`, `HAS_EPIC`, `EPIC_CURRENT_SF`.
+**Extract from status.sh:** `FEATURE_ID`, `FEATURE_DIR`, `HAS_FOUNDATIONS`, `HAS_EPIC`, `EPIC_CURRENT_SF`.
 
 **Scope dir (epic awareness — identical rule to `add.plan` 8.1 and `/add.qa`):**
 
@@ -78,7 +78,7 @@ ELSE:              SCOPE_DIR = ${FEATURE_DIR}
 
 ALL temps AND the final `design.md` live in `${SCOPE_DIR}`. Never write them to `${FEATURE_DIR}` when `HAS_EPIC=true`.
 
-**`design.md` resolution (for consumers, and for the re-run `created:` lookup):** prefer `${SF_DIR}/design.md`; when the SF-level file is absent but `${FEATURE_DIR}/design.md` exists, fall back to the feature-level file (legacy path).
+**`design.md` resolution (for consumers, and for the re-run `created:` lookup):** when `HAS_EPIC=true`, prefer `${SF_DIR}/design.md`; when the SF-level file is absent but `${FEATURE_DIR}/design.md` exists, fall back to the feature-level file (legacy path).
 
 **Read:** `${ABOUT_PATH}` (= `${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) and `${FEATURE_DIR}/discovery.md`.
 
@@ -133,6 +133,7 @@ The design-system inspection lives INSIDE this agent (Step 0 of its definition) 
 - **Early exit:** IF the agent reports `frontend_false` → no `design.md` is written. Inform the user (backend-only scope), skip STEPS 4-8, and STOP.
 - **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
 - **Always dispatch — never reuse a leftover temp.** If `design-context.md` / `design-flow.md` survive an interrupted run, the agent OVERWRITES them. Reusing them would let a temp derived from an older `about.md` be consolidated under the CURRENT `${ABOUT_SHA}` in STEP 6, and `add.plan` 8.1.0 would then skip regeneration on that false provenance match. There is no mtime/"looks recent" escape hatch — see the ⛔ in STEP 6.
+- **(add.design-only, intentional):** STEP 2's `${SAAS_CONTEXT}`/`${PATTERNS_TO_APPLY}` signal passed into this dispatch has no equivalent in `add.plan` 8.1.1 — the automatic pipeline lets `@ux-flow-agent` derive context on its own; the manual entry point pre-computes it for a faster, more deliberate standalone run.
 
 ---
 
@@ -190,7 +191,7 @@ YOU (the coordinator) do this work — do NOT re-dispatch `@ux-layout-agent` to 
 1. Read `design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`.
 2. Decide EVERY critique item: `accepted` or `rejected`, each with a one-line rationale. Apply the accepted items YOURSELF while writing `design.md`.
 3. Validate coherence: every classified action has a UI element, every screen has a layout, entry points match navigation. Fill gaps found here yourself.
-4. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · TOC · Screens · Components · Flows · Tokens · References — respect its compression rules and hard bans), consolidating the flow + layout outputs. Extractive only — tables, bullets, `step → step` sequences, minified JSON for tokens. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the STEP 7 gate checks both):
+4. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · TOC · Screens · Components · Flows · Tokens · References — the doc always exceeds 3 H2 sections, so the universal TOC rule applies; respect the schema's compression rules and hard bans), consolidating the flow + layout outputs. Extractive only — tables, bullets, `step → step` sequences, minified JSON for tokens. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the STEP 7 gate checks both):
 
 ```yaml
 ---

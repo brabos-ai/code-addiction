@@ -232,7 +232,7 @@ BACKEND_SELECTED  = true|false
 
 **Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.qa` resolves). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
-**`design.md` resolution (for every consumer, including the skip path):** prefer `${SF_DIR}/design.md`; when the SF-level file is absent but `${FEATURE_DIR}/design.md` exists, fall back to the feature-level file (legacy path).
+**`design.md` resolution (for every consumer, including the skip path):** when `HAS_EPIC=true`, prefer `${SF_DIR}/design.md`; when the SF-level file is absent but `${FEATURE_DIR}/design.md` exists, fall back to the feature-level file (legacy path).
 
 #### 8.1.0 Gate (evaluate BEFORE any dispatch)
 
@@ -310,7 +310,8 @@ YOU (the coordinator) do this work — do NOT re-dispatch `@ux-layout-agent` to 
 
 1. Read `design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`.
 2. Decide EVERY critique item: `accepted` or `rejected`, each with a one-line rationale. Apply the accepted items YOURSELF while writing `design.md`.
-3. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · TOC · Screens · Components · Flows · Tokens · References — the doc always exceeds 3 H2 sections, so the universal TOC rule applies; respect the schema's compression rules and hard bans), consolidating the flow + layout outputs. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the 8.1.5 gate checks both):
+3. Validate coherence: every classified action has a UI element, every screen has a layout, entry points match navigation. Fill gaps found here yourself.
+4. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · TOC · Screens · Components · Flows · Tokens · References — the doc always exceeds 3 H2 sections, so the universal TOC rule applies; respect the schema's compression rules and hard bans), consolidating the flow + layout outputs. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the 8.1.5 gate checks both):
 
 ```yaml
 ---
@@ -323,7 +324,7 @@ provenance: sha256:${ABOUT_SHA}
 ---
 ```
 
-4. Append a `## Design Review` section recording the full decision trail:
+5. Append a `## Design Review` section recording the full decision trail:
 
 | Item | Severity | Decision | Rationale |
 |------|----------|----------|-----------|
@@ -632,7 +633,7 @@ Separate each section with `---`. **NEVER rewrite or summarize subagent content.
 
 ### 10.2 Validate Completeness
 
-Read discovery.md and design.md (if exists). Verify:
+Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 8.1.4: SF-level first, feature-level fallback). Verify:
 - All entities/tables from discovery → complete schema in plan-database
 - JSONB fields → detailed TypeScript structures
 - Endpoints → complete request/response DTOs

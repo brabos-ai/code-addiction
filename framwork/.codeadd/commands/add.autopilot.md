@@ -284,7 +284,7 @@ If feature is very simple (single component, < 5 files, no new database entities
 You are the PLANNING agent for feature ${FEATURE_ID}.
 
 ## MANDATORY: Load Command + Context (FIRST STEP)
-1. Read `{{cmd:add.plan}}` — PRIMARY reference (execute as if --yolo, skip [STOP] points).
+1. Read `{{cmd:add.plan}}` — PRIMARY reference (add.plan has no human approval gates — agent critique replaces them; run it normally).
 2. Load skills: add-doc-schemas, add-id-convention, add-tasks-checklist
 3. Run: `bash .codeadd/scripts/status.sh`
 4. Read feature docs as specified in add.plan.md
@@ -512,7 +512,7 @@ You are the CODE REVIEWER for feature ${FEATURE_ID}.
 Validate code AND product (requirements 100% implemented).
 
 ## MANDATORY: Load Command & Context
-1. Read `{{cmd:add.review}}` — PRIMARY reference (execute as --yolo, skip [STOP] points, no confirmations).
+1. Read `{{cmd:add.review}}` — PRIMARY reference (execute with `--yolo`: skip STEP 1 confirmation, auto-stage, auto-correct without confirmation).
 2. Load skills: add-doc-schemas, add-id-convention, add-tasks-checklist
 3. Run: `bash .codeadd/scripts/status.sh`
 4. Read feature docs as specified in add.review.md

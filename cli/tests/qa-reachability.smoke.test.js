@@ -138,3 +138,56 @@ describe('scenario 4 — add.qa preflight contract + shared probe script', () =>
     expect(setup).toContain('.codeadd/scripts/qa-preflight.sh');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Scenario 5 — UX agent trio ownership (plan 0057: ux-agent, ux-flow-agent,
+// ux-layout-agent own the design contract; add.design is a thin dispatcher)
+// ---------------------------------------------------------------------------
+
+describe('scenario 5 — UX agent design ownership', () => {
+  const mapPath = path.join(ROOT, 'framwork', 'provider-map.json');
+  const map = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+  const agentFile = (name) =>
+    path.join(ROOT, 'framwork', '.claude', 'agents', `${name}.md`);
+
+  it('built add.plan contains the 8.1 UX step and the 8.4 Frontend Specialist line', () => {
+    const plan = builtCommand('add.plan');
+    expect(plan).toContain('### 8.1 UX Design Specialist');
+    expect(plan).toContain('- 8.4: Frontend Specialist');
+  });
+
+  it('the qa-pipeline enable/disable round-trip is still byte-identical after the anchor rename', () => {
+    // Re-asserts scenario 1's invariant explicitly under this topic: the STEP
+    // 8.1 renumber (plan 0057) must not have broken the anchor-based injection.
+    const targets = ['add.plan', 'add.test', 'add.build'].map((n) =>
+      path.join(tmp, '.claude', 'commands', `${n}.md`),
+    );
+    const before = Object.fromEntries(targets.map((f) => [f, snapshot(f)]));
+
+    enableFeature(tmp, 'qa-pipeline');
+    expect(warnSpy).not.toHaveBeenCalled();
+    disableFeature(tmp, 'qa-pipeline');
+
+    for (const f of targets) expect(snapshot(f)).toBe(before[f]);
+  });
+
+  it('provider-map registers ux-flow-agent and ux-layout-agent, and their built agent files exist', () => {
+    expect(map.agents).toHaveProperty('ux-flow-agent');
+    expect(map.agents).toHaveProperty('ux-layout-agent');
+    expect(fs.existsSync(agentFile('ux-flow-agent'))).toBe(true);
+    expect(fs.existsSync(agentFile('ux-layout-agent'))).toBe(true);
+  });
+
+  it('built ux-agent.md has no memory: line; built ux-flow-agent.md has memory: project', () => {
+    const uxAgent = fs.readFileSync(agentFile('ux-agent'), 'utf8');
+    const uxFlowAgent = fs.readFileSync(agentFile('ux-flow-agent'), 'utf8');
+    expect(uxAgent).not.toMatch(/^memory:/m);
+    expect(uxFlowAgent).toMatch(/^memory: project$/m);
+  });
+
+  it('built add.design has no [STOP] and no COMPLEXITY GATE (thin dispatcher, no approval gates)', () => {
+    const design = builtCommand('add.design');
+    expect(design).not.toContain('[STOP]');
+    expect(design).not.toContain('COMPLEXITY GATE');
+  });
+});
