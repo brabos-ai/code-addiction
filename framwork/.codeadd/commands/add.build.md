@@ -187,7 +187,8 @@ Read all relevant feature docs based on status.sh flags:
 - `${ARCHITECTURE_REF}` — from script output
 - `design-system.md` (if HAS_FOUNDATIONS=true)
 
-**Priority:** plan.md > design.md + about.md > about.md + discovery.md
+**Priority (domain-scoped):** `plan.md` wins on technical contracts (endpoints, DTOs, schemas, module structure, types); `design.md` wins on layout, hierarchy, tokens, states, and every `## Design Contract` dimension; `about.md` remains the functional authority.
+Fallback for anything not covered: plan.md > design.md + about.md > about.md + discovery.md.
 
 ---
 <!-- feature:qa-pipeline:qa-fix -->

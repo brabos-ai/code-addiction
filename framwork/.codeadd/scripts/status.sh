@@ -133,9 +133,23 @@ if [ -n "$FEATURE_ID" ]; then
     DOCS_LIST=""
 
     if [ -d "$FEATURE_DIR" ]; then
+        # Detect design.md at feature level OR under any subfeature (subfeatures/SF*/design.md)
+        HAS_DESIGN="false"
+        if [ -f "$FEATURE_DIR/design.md" ]; then
+            HAS_DESIGN="true"
+        else
+            for _sf_design in "$FEATURE_DIR"/subfeatures/SF*/design.md; do
+                [ -f "$_sf_design" ] && HAS_DESIGN="true" && break
+            done
+        fi
+
         # Collect existing docs
         for doc in about.md discovery.md design.md plan.md changelog.md; do
-            [ -f "$FEATURE_DIR/$doc" ] && DOCS_LIST="${DOCS_LIST}${doc},"
+            if [ "$doc" = "design.md" ]; then
+                [ "$HAS_DESIGN" = "true" ] && DOCS_LIST="${DOCS_LIST}${doc},"
+            else
+                [ -f "$FEATURE_DIR/$doc" ] && DOCS_LIST="${DOCS_LIST}${doc},"
+            fi
         done
         DOCS_LIST="${DOCS_LIST%,}"  # Remove trailing comma
 
@@ -144,7 +158,7 @@ if [ -n "$FEATURE_ID" ]; then
             PHASE="done"
         elif [ -f "$FEATURE_DIR/plan.md" ]; then
             PHASE="planned"
-        elif [ -f "$FEATURE_DIR/design.md" ]; then
+        elif [ "$HAS_DESIGN" = "true" ]; then
             PHASE="designed"
         elif [ -f "$FEATURE_DIR/discovery.md" ]; then
             if grep -q "^## Summary for Planning" "$FEATURE_DIR/discovery.md" 2>/dev/null; then
@@ -164,6 +178,7 @@ if [ -n "$FEATURE_ID" ]; then
 
         echo "FEATURE:$FEATURE_ID PHASE:$PHASE DIR:$FEATURE_DIR"
         [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST" || true
+        echo "HAS_DESIGN:$HAS_DESIGN"
 
         # Iterations context (previous /add-dev sessions) — JSONL format
         ITERATIONS_FILE="$FEATURE_DIR/iterations.jsonl"
@@ -370,9 +385,18 @@ for _fdir in docs/features/[0-9][0-9][0-9][0-9][A-Z]-*; do
     [ -n "$(git branch --list "*/$_dname" 2>/dev/null)" ] && continue
 
     # Phase via the same ladder as the current-feature block above
+    _has_design="false"
+    if [ -f "$_fdir/design.md" ]; then
+        _has_design="true"
+    else
+        for _sf_design in "$_fdir"/subfeatures/SF*/design.md; do
+            [ -f "$_sf_design" ] && _has_design="true" && break
+        done
+    fi
+
     if [ -f "$_fdir/plan.md" ]; then
         _phase="planned"
-    elif [ -f "$_fdir/design.md" ]; then
+    elif [ "$_has_design" = "true" ]; then
         _phase="designed"
     elif [ -f "$_fdir/discovery.md" ]; then
         if grep -q "^## Summary for Planning" "$_fdir/discovery.md" 2>/dev/null; then
