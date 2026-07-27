@@ -236,3 +236,62 @@ describe('scenario 6 — layout notation & Design Contract', () => {
     expect(uxDesignSkill).toContain('## Design Contract Dimensions');
   });
 });
+
+describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
+  const builtAgent = (name) =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'agents', `${name}.md`), 'utf8');
+  const builtSkill = (name, file = 'SKILL.md') =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'skills', name, file), 'utf8');
+  const sidecar = () =>
+    JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
+
+  it('built add.qa dispatches @ux-agent ∥ @qa-agent and resolves run-NNN at STEP 4.1', () => {
+    const qa = builtCommand('add.qa');
+    expect(qa).toContain('@ux-agent');
+    expect(qa).toContain('@qa-agent');
+    expect(qa).toMatch(/PARALLEL, WAIT-ALL/);
+    expect(qa).toMatch(/4\.1 RESOLVE run-NNN FIRST/);
+  });
+
+  it('built qa-agent carries no memory: line and a root-cause taxonomy', () => {
+    const qaAgent = builtAgent('qa-agent');
+    expect(qaAgent).not.toMatch(/^memory:/m);
+    expect(qaAgent.toLowerCase()).toContain('root cause');
+    expect(qaAgent).toContain('missing-implementation');
+  });
+
+  it('built ux-agent carries the review-mode rubric (context, not immunity) and spec-gap', () => {
+    const uxAgent = builtAgent('ux-agent');
+    expect(uxAgent).toContain('context, not immunity');
+    expect(uxAgent).toContain('spec-gap');
+  });
+
+  it('built qa-validation schema reference declares spec-gap + unverifiable', () => {
+    const review = builtSkill('add-doc-schemas', path.join('references', 'review.md'));
+    expect(review).toContain('spec-gap');
+    expect(review).toContain('unverifiable');
+  });
+
+  it('built add-qa skill documents the axis split + merge rules, no stale N-axis wording', () => {
+    const skill = builtSkill('add-qa');
+    expect(skill).toMatch(/Axis ownership/i);
+    expect(skill).toContain('Root-cause Taxonomy');
+    expect(skill).toContain('Merge Rules');
+    expect(skill).not.toMatch(/\d-axis|dual-axis/i);
+  });
+
+  // Pins the plugin:playwright:drive anchor text on both resources so the STEP 4
+  // restructure (or any future edit to the adjacent prose) can never silently
+  // move the injection point — an anchor rename would fail this immediately.
+  it('the playwright:drive anchor text stays pinned on add.qa and qa-agent', () => {
+    const pts = sidecar().points.filter(
+      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.section === 'drive',
+    );
+    const qaAgentPt = pts.find((p) => p.resource.name === 'qa-agent');
+    const addQaPt = pts.find((p) => p.resource.name === 'add.qa');
+    expect(qaAgentPt.anchor.text).toBe(
+      'By default you judge from the persisted evidence (read-PNG mode). If the Playwright plugin is enabled, the live-driving playbook below is injected and you may additionally drive the app.',
+    );
+    expect(addQaPt.anchor.text).toBe('WAIT-ALL before STEP 5.');
+  });
+});

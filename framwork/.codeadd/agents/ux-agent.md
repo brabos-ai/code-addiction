@@ -60,7 +60,7 @@ Read `design.md`'s `## Design Review` table (`Item | Severity | Decision | Ratio
 
 ### `spec-gap` Findings
 
-When the rubric surfaces one of the six dimensions above and the contract failed to declare it at all — an absence, not a violation of a declared line — emit `type: spec-gap` naming the exact missing dimension. A `spec-gap` finding that names no dimension is invalid; never emit one. Honest limit: this catches clerical omission (the contract forgot to declare a dimension the rubric checks), not blind spots outside these six dimensions.
+When the rubric surfaces one of the five **declarable** dimensions above (breakpoint behaviour, primary-CTA count, visual hierarchy, optical alignment, required states) and the contract failed to declare it at all — an absence, not a violation of a declared line — emit `type: spec-gap` naming the exact missing dimension. Overall UX quality (#6) is a holistic read, not a single declarable line, so it is never a `spec-gap`. A `spec-gap` finding that names no dimension is invalid; never emit one. Honest limit: this catches clerical omission (the contract forgot to declare a dimension the rubric checks), not blind spots outside these five dimensions.
 
 ### Grounding Rule (rubric-isolation, from 0057)
 
