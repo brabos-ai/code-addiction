@@ -300,6 +300,8 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl"
 | Backend | `@backend-agent` | Generic subagent + skill add-backend-development |
 | Frontend | `@frontend-agent` | Generic subagent + skill add-frontend-development |
 | Validation | `@reviewer-agent` | Generic subagent + skill add-code-review |
+| E2E / test files | `@e2e-agent` | Generic subagent (test files only, no MCP) |
+| Design spec | `@ux-agent` | Generic subagent + skill add-ux-design (design spec only, never application code) |
 
 **Named agents have skills preloaded, model optimized, and tool restrictions enforced via their definition.** When dispatching a named agent, skills in the prompt are already loaded — include them as reference for the agent's task, not as load instructions.
 
