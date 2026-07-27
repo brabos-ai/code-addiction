@@ -136,18 +136,22 @@ For `/add.plan` (feature mode, creates `docs/features/<slug>/plan.md`).
 
 ### feature-design
 
-For `/add.design` (creates `docs/features/<slug>/design.md`).
+For `/add.plan` STEP 8.1 and `/add.design` — both write the same doc through the same UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature-design`, `related: [[NNNN]F]`
-- **Sections:** TL;DR · Screens · Components · Flows · Tokens · References
+**Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
+
+- **Frontmatter:** `id: [NNNN]F` (SF-qualified `[NNNN]F-SFxx` when the design is scoped to a subfeature — see `{{skill:add-id-convention/SKILL.md}}`), `type: feature-design`, `related: [[NNNN]F]`, plus `provenance: sha256:<hash of the about.md bytes the design was derived from>` — the only freshness signal (never mtime); `/add.plan` 8.1.0 skips regeneration on a provenance match.
+- **Sections:** TL;DR · TOC · Screens · Components · Flows · Tokens · References · Design Review
+- **TOC:** always present — the section list exceeds 3 H2s, so the universal TOC rule in `{{skill:add-doc-schemas/SKILL.md}}` applies unconditionally to this schema.
 - **Depth floor:**
   - **Screens** — per screen: purpose, primary action, entry points, empty/loading/error states noted.
   - **Components** — per component: name, source (shadcn path or `new`), props if new, states it owns.
   - **Flows** — the critical user journeys as `step → step → step` with decision branches annotated.
   - **Tokens** — any non-default tokens the feature introduces (colors, spacing, breakpoints).
   - **References** — design-system doc, inspiration links, related feature designs.
-- **Compression:** Screens = table `screen | purpose | primary action | entry`. Components = bullets `name — source — props/states`. Flows = sequence lines (arrow notation as in `feature-plan` above). Tokens = minified JSON.
-- **Hard bans:** inline SVG, ASCII wireframes, fabricated component libraries.
+  - **Design Review** — the critic's decision trail: table `Item | Severity | Decision | Rationale`, one row per defect the critique raised, each `accepted`/`rejected` with a one-line rationale. An empty critique yields the row-free section carrying the critic's rubric-by-rubric justification in one line.
+- **Compression:** Screens = table `screen | purpose | primary action | entry`. Components = bullets `name — source — props/states`. Flows = sequence lines (arrow notation as in `feature-plan` above). Tokens = minified JSON. Design Review = table only.
+- **Hard bans:** inline SVG, ASCII wireframes, fabricated component libraries, a `Design Review` section that omits the rationale column.
 - **Avoid unless load-bearing:** multiple canonical examples per component (one suffices).
 
 ### brainstorm

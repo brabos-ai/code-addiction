@@ -20,13 +20,13 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.autopilot | Autonomous Feature Coordinator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-tasks-checklist |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
 | add.build | Development Execution Specialist. STEP 1.5 create-or-checkout of the feature branch via build-setup.sh (`F[NNNN]` + `--worktree` args). QA-Fix mode (`/add.build qa`) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
-| add.design | Mobile-first UX specification, coordinates subagents for complex features | add-ux-design, add-doc-schemas |
+| add.design | Thin dispatcher for the UX design contract — @ux-flow-agent → @ux-layout-agent → @ux-agent (critique), then coordinator consolidation into `design.md`. Manual entry point to the same pipeline add.plan 8.1 runs automatically; epic-aware (writes to the subfeature dir) | add-ux-design, add-doc-schemas, add-id-convention |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, generate changelog. Validates epics + requirements. Detects branch protection and routes to PR or direct merge | add-ecosystem, add-id-convention |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add.build) | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem, add-id-convention |
-| add.plan | Technical Planning Orchestrator. QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
+| add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
 | add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches @qa-agent per SF, judged across 4 axes (UX, functional, responsiveness, a11y). **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
 | add.qa-setup | QA prerequisites + project config bootstrap — installs the `@playwright/test` runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific `qa-project` skill, and scaffolds `docs/qa/config.json` + reachability-aware `FEATURE_DIR/_tests/screens.json`. Base command (runs before the plugin is enabled) | add-dev-environment-setup, add-doc-schemas |
@@ -82,7 +82,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 | Agent | Purpose | Dispatched by |
 |-------|---------|---------------|
-| ux-agent | UX specialist for design decisions, interface analysis | add.design, add.ux |
+| ux-flow-agent | Flow & interaction architect — design-system inspection (tokens, shell, component audit, visual patterns) then screen inventory, action classification, entry points, state transitions. Writes temp design-context.md + design-flow.md; early-exits `frontend_false` | add.plan (8.1.1), add.design |
+| ux-layout-agent | Layout & component specialist — mobile-first ASCII layout per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2), add.design |
+| ux-agent | UX critic — adversarial review of the flow/layout pair against the Critique Rubric in add-ux-design (read-only, writes temp design-review.md); also free-form UX assistance on direct use | add.plan (8.1.3 critique), add.design |
 | backend-agent | Backend implementation specialist | add.build, add.autopilot |
 | frontend-agent | Frontend implementation specialist | add.build, add.autopilot |
 | reviewer-agent | Code review (read-only) | add.review |
@@ -121,7 +123,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-backend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-frontend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-database-development | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan |
+| add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `## Critique Rubric (ux-agent critique mode)` section is the critic's canonical rubric |
 | add-code-review | add.review, add.build |
 | add-security-audit | add.audit, add.review |
 | add-feature-discovery | add.new, add.plan |
@@ -136,7 +138,10 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | qa-agent | add.qa (dispatched per SF) |
 | e2e-agent | add.test (dispatched when qa-pipeline feature enabled) |
-| add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) |
+| ux-flow-agent | add.plan (STEP 8.1.1), add.design (STEP 3) — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
+| ux-layout-agent | add.plan (STEP 8.1.2), add.design (STEP 4) — depends on ux-flow-agent's design-flow.md |
+| ux-agent | add.plan (STEP 8.1.3 critique), add.design (STEP 5), free-form direct use |
+| add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (UX axis judges fidelity vs the design spec) |
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |
@@ -176,7 +181,7 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.diagnose | route=feature | `/add.new` | Confirmed functional gap |
 | add.diagnose | route=extend | `/add.new` or `/add.plan` | Extend existing feature — load prior context |
 | add.diagnose | route=no-action | done | No real problem — stop here |
-| add.new | feature has complex UI (3+ screens) | `/add.design` | UX spec needed before planning |
+| add.new | feature has complex UI (3+ screens) | `/add.design` | Produce the UX contract up front. Optional now — `/add.plan` STEP 8.1 runs the same pipeline automatically whenever a screen is involved; route here when the user wants the design settled before planning, or wants to regenerate it standalone |
 | add.new | feature needs technical planning | `/add.plan` | Architect before building |
 | add.new | feature is simple (1-2 files) | `/add.build` | Skip planning, build directly |
 | add.new | user wants zero interaction | `/add.autopilot` | Autonomous end-to-end |

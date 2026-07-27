@@ -310,7 +310,7 @@ YOU (the coordinator) do this work — do NOT re-dispatch `@ux-layout-agent` to 
 
 1. Read `design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`.
 2. Decide EVERY critique item: `accepted` or `rejected`, each with a one-line rationale. Apply the accepted items YOURSELF while writing `design.md`.
-3. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · Screens · Components · Flows · Tokens · References — respect its compression rules and hard bans), consolidating the flow + layout outputs. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the 8.1.5 gate checks both):
+3. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · TOC · Screens · Components · Flows · Tokens · References — the doc always exceeds 3 H2 sections, so the universal TOC rule applies; respect the schema's compression rules and hard bans), consolidating the flow + layout outputs. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the 8.1.5 gate checks both):
 
 ```yaml
 ---
