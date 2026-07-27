@@ -290,3 +290,24 @@ Recorded so they are not mistaken for covered:
 - **Run-evidence lifecycle** — no policy on retention, cross-run comparison, or surfacing regressions between `run-NNN` versions.
 - **`screens.json` maintenance** — no documented workflow for re-indexing after route refactors, deprecating screens, or validating catalog completeness when a feature is deleted.
 - **`design.md` drift — partially resolved, narrowed.** `02` adds an `about.md` provenance hash that triggers a re-run when requirements move, and `05` specifies the fix-wave path: amendments append to `## Design Review` with the originating `run-NNN`, and `qa-validation` frontmatter records the contract hash it judged so a red→green flip under an amended contract is never reported as a fix. **What remains open:** a hand edit to `design.md` outside both paths — no command detects it, and whether the contract should be locked after spec generation is undecided.
+
+## Implementation Status (2026-07-27) — umbrella CLOSED
+
+All five topics are implemented and reviewed on branch `feature/0056-qa-pipeline-reachability`:
+
+| Topic | Plan | Status |
+|---|---|---|
+| 01 Pipeline reachability | `0056-PLAN--qa-pipeline-reachability.md` | ✅ implemented |
+| 02 UX agent ownership / always-on design contract | `0057-PLAN--ux-agent-design-ownership.md` | ✅ implemented |
+| 03 Layout notation + measurable Design Contract | `0058-PLAN--layout-notation-design-contract.md` | ✅ implemented |
+| 04 Dual-judge QA validation | `0059-PLAN--dual-judge-qa-validation.md` | ✅ implemented, whole-topic review clean |
+| 05 Fix routing | `0060-PLAN--qa-fix-routing.md` | ✅ implemented, whole-topic review clean |
+
+Each plan has an `--evidence-v01.md` file and a dated changelog. The `qa-validation` doc schema changed (topics 04–05), so the release that ships this must bump the framework version.
+
+**Still-open deferred follow-ups (NOT delivered — carried forward as their own future work):**
+
+- **QA for non-web surfaces** (worker / bot / CLI) — no coherent QA answer beyond functional assertions.
+- **Run-evidence lifecycle** — no retention / cross-run-comparison / regression-surfacing policy across `run-NNN`.
+- **`screens.json` maintenance workflow** — no re-indexing after route refactors, screen deprecation, or catalog-completeness validation on feature deletion.
+- **Hand-edit `design.md` drift** — an edit outside the provenance path + fix-wave amendment trail is undetected; whether to lock the contract after spec generation is undecided.

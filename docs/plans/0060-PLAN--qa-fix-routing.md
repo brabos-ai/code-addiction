@@ -1,6 +1,6 @@
 # Plan: Fix Routing in the QA Report
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** schema + skill + command fragment
 > **Created:** 2026-07-27
 > **Author:** Maicon + Claude (ADD Strategy)

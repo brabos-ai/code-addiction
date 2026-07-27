@@ -295,3 +295,61 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
     expect(addQaPt.anchor.text).toBe('WAIT-ALL before STEP 5.');
   });
 });
+
+describe('scenario 8 — QA fix routing (plan 0060)', () => {
+  const builtSkill = (name, file = 'SKILL.md') =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'skills', name, file), 'utf8');
+
+  it('built qa-validation schema declares Fix Routing + judged-contract + required route', () => {
+    const review = builtSkill('add-doc-schemas', path.join('references', 'review.md'));
+    expect(review).toContain('Fix Routing');
+    expect(review).toContain('judged-contract');
+    expect(review).toContain('REQUIRED `route`');
+  });
+
+  it('built add-qa skill carries the routing rules table + capability validation, no confidence field', () => {
+    const skill = builtSkill('add-qa');
+    expect(skill).toContain('## Fix Routing');
+    expect(skill).toMatch(/Routing rules/i);
+    expect(skill).toContain('Capability validation');
+    expect(skill).toContain('contract-inadequate');
+    expect(skill).toMatch(/no confidence score/i);
+  });
+
+  it('built add.qa STEP 5.5 derives routes and STEP 6 reports per responsible agent', () => {
+    const qa = builtCommand('add.qa');
+    expect(qa).toMatch(/5\.5 Derive routes/);
+    expect(qa).toContain('judged-contract');
+    expect(qa).toMatch(/per responsible agent/i);
+  });
+
+  it('qa-fix fragment dispatches by route with a legacy fallback, and injects into add.build', () => {
+    const fragment = fs.readFileSync(
+      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
+      'utf8',
+    );
+    expect(fragment).toMatch(/DISPATCH by ROUTE/);
+    expect(fragment).toMatch(/Legacy fallback/i);
+
+    const { modified } = enableFeature(tmp, 'qa-pipeline');
+    expect(modified).toBeGreaterThan(0);
+    const injected = snapshot(path.join(tmp, '.claude', 'commands', 'add.build.md'));
+    expect(injected).toMatch(/DISPATCH by ROUTE/);
+    disableFeature(tmp, 'qa-pipeline');
+  });
+
+  it('built add.build Named Agent Mapping lists @e2e-agent and @ux-agent', () => {
+    const build = builtCommand('add.build');
+    const mapping = build.slice(build.indexOf('Named Agent Mapping'));
+    expect(mapping).toContain('@e2e-agent');
+    expect(mapping).toContain('@ux-agent');
+  });
+
+  it('plugins.json keeps playwright.agents = [qa-agent] (ux-agent never live-drives)', () => {
+    const plugins = JSON.parse(
+      fs.readFileSync(path.join(ROOT, 'cli', 'src', 'plugins.json'), 'utf8'),
+    );
+    const pw = plugins.playwright ?? plugins.plugins?.playwright;
+    expect(pw.agents.map((a) => a.agent)).toEqual(['qa-agent']);
+  });
+});
