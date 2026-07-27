@@ -19,7 +19,7 @@ description: Generate a code-free QA/E2E specification (reachability intent, UX 
 ## Inputs
 
 - `about.md` — RF/RN + acceptance criteria.
-- `design.md` — UX contract (layout/hierarchy/spacing/tokens/state). Resolve SF-level `${SF_DIR}/design.md` first; fall back to `${FEATURE_DIR}/design.md` (legacy path).
+- `design.md` — UX contract (layout/hierarchy/spacing/tokens/state). Resolve SF-level `${SF_DIR}/design.md` first (epics); otherwise `${FEATURE_DIR}/design.md` (normal features). Both are current paths — the scope rule is SF-level for epics, feature-level otherwise.
 - Area `plan-*.md` (plan-database.md, plan-backend.md, plan-frontend.md) — technical contracts, if they exist.
 - `FEATURE_DIR/_tests/screens.json` — the existing catalog (scaffolded by `add.qa-setup`, or written by a previous plan run). Absent on a first run.
 - `docs/qa/config.json` — default viewport set (required to resolve the viewports column).

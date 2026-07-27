@@ -323,13 +323,18 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     expect(qa).toMatch(/per responsible agent/i);
   });
 
-  it('qa-fix fragment dispatches by route with a legacy fallback, and injects into add.build', () => {
+  it('qa-fix fragment dispatches by route, stops with a remedy when unrouted, and injects into add.build', () => {
     const fragment = fs.readFileSync(
       path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
       'utf8',
     );
     expect(fragment).toMatch(/DISPATCH by ROUTE/);
-    expect(fragment).toMatch(/Legacy fallback/i);
+    // No backward-compat path: an unrouted report must stop with the re-run remedy,
+    // never silently degrade to severity grouping. The only surviving mention of
+    // that degradation is the prohibition itself ("do NOT fall back to ...").
+    expect(fragment).toMatch(/STOP with the remedy/i);
+    expect(fragment).toMatch(/do NOT fall back to severity grouping/i);
+    expect(fragment).not.toMatch(/Legacy fallback/i);
 
     const { modified } = enableFeature(tmp, 'qa-pipeline');
     expect(modified).toBeGreaterThan(0);

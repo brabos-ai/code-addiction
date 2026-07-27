@@ -14,8 +14,8 @@ STEP 10.0: QA-Spec subagent       -> BEFORE assembly, generates plan-qa-spec.md 
 You are the QA/E2E SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
 Load {{skill:add-qa-spec/SKILL.md}} and follow ALL rules.
 Read: about.md (RF/RN + acceptance criteria), the consolidated design.md STEP 8.1 wrote
-      (UX contract — SF-level `${SF_DIR}/design.md` when it exists, feature-level
-      `${FEATURE_DIR}/design.md` as the legacy fallback),
+      (UX contract — SF-level `${SF_DIR}/design.md` for epics, feature-level
+      `${FEATURE_DIR}/design.md` for normal features; both are current paths),
       plan-database.md/plan-backend.md/plan-frontend.md (if exist),
       FEATURE_DIR/_tests/screens.json (if exists), and docs/qa/config.json (viewport defaults).
 Produce a code-free QA/E2E spec — ONE row per screen design.md declares: reachability

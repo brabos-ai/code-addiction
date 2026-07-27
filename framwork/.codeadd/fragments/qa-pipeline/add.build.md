@@ -25,8 +25,10 @@ never trigger it implicitly.
      amendment to `design.md`'s `## Design Review` with the originating `run-NNN` +
      finding ID — so the next `/add.qa` sees why the contract changed and never reads
      a green-under-amended-contract flip as a fix.
-   - **Legacy fallback:** when the report has NO `## Fix Routing` section (older run),
-     fall back to today's severity/axis grouping and fix by root cause directly.
+   - **No `## Fix Routing` section → STOP with the remedy.** The report predates
+     routing. Do NOT guess a dispatch and do NOT fall back to severity grouping —
+     tell the user to re-run `/add.qa <feature-id> [SFxx]`, which writes a fresh
+     run-NNN carrying routes, then re-run `/add.build qa`.
 4. Apply fixes reusing CORRECTION MODE (C2) discipline: follow project patterns,
    frontend loads add-ux-design, the build must compile 100%. Surface all severities;
    the user chooses the fix scope.

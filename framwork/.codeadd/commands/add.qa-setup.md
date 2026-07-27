@@ -198,9 +198,11 @@ Write this shape (values are free-text hints; viewports default to the v1 set):
 
 ---
 
-## STEP 8: Scaffold Per-Feature Screen Catalog
+## STEP 8: Scaffold Per-Feature Screen Catalog (bootstrap path)
 
 Target: `FEATURE_DIR/_tests/screens.json` (the reachability-aware route map for the UX axis).
+
+> **Ownership:** `{{cmd:add.plan}}` STEP 10.0 owns the catalog on an ongoing basis — it writes `screens.json` by read-merge-write after consolidating `design.md`, so features planned with `qa-pipeline` on are born with their entries. THIS step is the **bootstrap path**: it seeds the catalog for features that already exist at setup time. Both write the same shape; 10.0 preserves out-of-scope entries byte-identically.
 
 Read every `design.md` under the feature (feature-level and each subfeature). For each screen the design describes, derive one entry. Flag screens that require an authenticated session with `auth: true`. Do NOT store functional intent here — the functional axis is read from each SF's `about.md` at run time.
 
