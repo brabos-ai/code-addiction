@@ -44,6 +44,7 @@ STEP 9: Completion                     -> INFORM user (no approval ask)
 - **FLOW INCOMPLETE (STEP 3):** Do NOT dispatch `@ux-layout-agent`. `design-flow.md` must exist FIRST (Layout depends on Flow).
 - **LAYOUT INCOMPLETE (STEP 4):** Do NOT dispatch the critic. `design-layout.md` must exist FIRST.
 - **NO FRONTEND EXISTS:** `@ux-flow-agent` reports `frontend_false` -> inform user, skip design, STOP.
+- **STALE TEMP REUSE:** Do NOT skip a dispatch because its temp file already exists. Every run re-derives all temps from the CURRENT `about.md` — reusing one and then stamping the current `provenance` hash on `design.md` is a lie that makes `add.plan` 8.1.0 skip regeneration forever.
 - **COORDINATOR RE-DISPATCH:** Do NOT re-dispatch `@ux-layout-agent` to apply the critique. YOU apply accepted items while writing `design.md`.
 - **HUMAN APPROVAL GATE:** This command has NO stop-and-wait-for-approval step. Every accept/reject decision belongs to the coordinator. Do NOT invent one.
 
@@ -89,7 +90,7 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 
 → `${ABOUT_SHA}`. STEP 6 writes it as `provenance: sha256:${ABOUT_SHA}`.
 
-**No idempotency skip here.** `add.plan` 8.1.0 skips on a provenance match because it runs automatically; invoking `/add.design` IS the explicit intent to (re)produce the design, so the pipeline always runs. If `design.md` already exists, say so and note that it will be regenerated.
+**No idempotency skip here.** `add.plan` 8.1.0 skips on a provenance match because it runs automatically; invoking `/add.design` IS the explicit intent to (re)produce the design, so the pipeline always runs — end to end. If `design.md` already exists, say so and note that it will be regenerated. The same applies to every temp: STEPS 3-5 re-derive `design-context.md`, `design-flow.md`, `design-layout.md` and `design-review.md` from the `about.md` you just hashed, so the `${ABOUT_SHA}` STEP 6 stamps is always truthful.
 
 ### 1.3: Skill Docs Lookup (as needed)
 
@@ -131,7 +132,7 @@ The design-system inspection lives INSIDE this agent (Step 0 of its definition) 
   ```
 - **Early exit:** IF the agent reports `frontend_false` → no `design.md` is written. Inform the user (backend-only scope), skip STEPS 4-8, and STOP.
 - **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
-- **Idempotency guard:** if `design-flow.md` already exists from an interrupted run, skip the dispatch and proceed to STEP 4.
+- **Always dispatch — never reuse a leftover temp.** If `design-context.md` / `design-flow.md` survive an interrupted run, the agent OVERWRITES them. Reusing them would let a temp derived from an older `about.md` be consolidated under the CURRENT `${ABOUT_SHA}` in STEP 6, and `add.plan` 8.1.0 would then skip regeneration on that false provenance match. There is no mtime/"looks recent" escape hatch — see the ⛔ in STEP 6.
 
 ---
 
@@ -154,7 +155,7 @@ The design-system inspection lives INSIDE this agent (Step 0 of its definition) 
   Action Classification Matrix served by a UI element.
   ```
 - **Soft-degrade:** if `@ux-layout-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
-- **Idempotency guard:** if `design-layout.md` already exists from an interrupted run, skip the dispatch and proceed to STEP 5.
+- **Always dispatch — never reuse a leftover temp.** A surviving `design-layout.md` is OVERWRITTEN, for the same false-provenance reason as STEP 3.
 
 ---
 
@@ -209,6 +210,8 @@ provenance: sha256:${ABOUT_SHA}
 | [defect, ~10 words] | blocker/major/minor/polish | accepted/rejected | [why — 1 line] |
 
    An empty critique yields the row-free section carrying the critic's justification summary in one line.
+
+⛔ **Provenance truthfulness.** `provenance: sha256:${ABOUT_SHA}` asserts that the temps you just consolidated were derived from the CURRENT `about.md`. It is only true because STEPS 3-5 always re-ran — never stamp it over a reused or partially stale temp. A false provenance value makes `add.plan` 8.1.0 skip regeneration forever after.
 
 ⛔ These frontmatter and section semantics are shared with `add.plan` 8.1.4 — one artefact, two callers. Change them in BOTH or in NEITHER.
 
@@ -289,7 +292,8 @@ Inform the user that design is complete — this is a report, NOT an approval as
 - Do NOT duplicate patterns (use ux-design skill)
 - Do NOT auto-create design-system.md (Foundations mode only on user request)
 - Do NOT dispatch Layout before Flow completes, nor the critic before Layout completes
-- Do NOT leave temp files after consolidation
+- Do NOT leave temp files after consolidation, and do NOT reuse leftovers from an interrupted run — re-derive them
+- Do NOT judge any artefact "still fresh" from file mtime or git status; the `about.md` provenance hash is the only freshness signal
 - Do NOT ask aesthetic questions, present multiple options, or ask the user to approve the design
 - Do NOT omit critical info (props, paths, states, actions)
 - Do NOT use generic layouts when project has established patterns
@@ -309,5 +313,5 @@ Inform the user that design is complete — this is a report, NOT an approval as
 | Subagent fails to write its output | Re-dispatch ONCE with the same prompt; if it fails again, STOP and report |
 | design-flow.md missing before Layout dispatch | STOP. Re-run STEP 3 |
 | design-review.md missing before consolidation | Re-run STEP 5 once; if still missing, consolidate and record "critique unavailable" in `## Design Review` |
-| Temp files exist from previous run | Reuse them via the STEP 3/4 idempotency guards; delete stale ones that predate the current `about.md` |
+| Temp files exist from previous run | Ignore them and run STEPS 3-5 normally — each dispatch overwrites its own output. NEVER reuse a temp, and NEVER judge one "still fresh" by mtime or git status |
 | Validation gate returns FAIL | Fix `design.md` and re-run STEP 7 — do NOT clean up temps until it passes |
