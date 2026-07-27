@@ -1,13 +1,13 @@
 ---
 name: add-qa
-description: Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-axis (UX + functional) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and the qa-agent.
+description: Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and both judges.
 ---
 
 # add-qa — QA Validation Methodology
 
 ## Overview
 
-The QA capability **judges from the persisted run evidence (screenshots + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agent be the judge** (Level C): the run captures evidence, the agent assesses it. It validates two axes — **UX quality** vs `design.md` (looking at screenshots) and **functional delivery** vs `about.md` (judged from functional-assertion results; with the plugin, additionally by live driving). It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes. Each screen's `design.md` `## Design Contract` is the UX axis's source of truth — the dimensions it names, and how each is verified, drive judgement (a later plan splits the deterministic contract dimensions into their own judge; here the agent still reads the contract directly).
+The QA capability **judges from the persisted run evidence (screenshots + computed styles + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agents be the judges** (Level C): the run captures evidence, the judges assess it. `/add.qa` dispatches **two specialist judges per subfeature, in parallel** — `@ux-agent` in review mode (the judgement axes: UX quality, judgement conformance, responsiveness) and `@qa-agent` (functional delivery vs `about.md`, deterministic Design Contract conformance from measured computed styles, ALL accessibility, and failure forensics) — and the coordinator reconciles coverage once, then merges the two finding sets. It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes. Each screen's `design.md` `## Design Contract` is the source of truth for both conformance judgements — the dimensions it names, and how each is verified, decide which judge owns each row: computed-style rows are `@qa-agent`'s deterministic comparison, the judgement rows are `@ux-agent`'s.
 
 Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT here — they live in `/add.qa-setup` (must run before the plugin is enabled).
 
@@ -15,8 +15,8 @@ Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT 
 
 ## When to Use
 
-- `/add.qa` dispatches a `qa-agent` to validate a subfeature.
-- A `qa-agent` needs the judge rubric, severity taxonomy, or the finding/report shape.
+- `/add.qa` dispatches the judge pair (`@ux-agent` review ∥ `@qa-agent`) to validate a subfeature.
+- Either judge needs the rubric, severity taxonomy, root-cause taxonomy, or the finding/report shape.
 
 ## When NOT to Use
 
@@ -26,18 +26,58 @@ Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT 
 
 ## Validation Model — Level C
 
-The persisted spec (or, with the plugin, live driving) **captures and exercises**; only the **agent judges** fidelity and responsiveness. There is no pixel-diff and no Figma baseline — fidelity is agent judgement against `design.md`, plus regression-by-eye across runs. Both axes are default-on and spec-derived: pointing at the spec is enough, no manual "validate UX and functionality" instruction needed.
+The persisted spec (or, with the plugin, live driving) **captures and exercises**; only the **agents judge** fidelity, conformance, and delivery. There is no pixel-diff and no Figma baseline — fidelity is agent judgement against `design.md`, plus regression-by-eye across runs. **Deterministic conformance is not an exception to "no pixel-diff": it compares captured computed-style NUMBERS (font-size, gap, token values) against the contract's declared values — never images.** Both arms are default-on and spec-derived: pointing at the spec is enough, no manual "validate UX and functionality" instruction needed.
 
-| Axis | Source of truth | Method |
+### Axis ownership — two judges, no axis judged twice
+
+`/add.qa` STEP 4.5 dispatches `@ux-agent` (review mode) ∥ `@qa-agent`, one pair per SF. Each axis has exactly one owner so the STEP 5 dedupe is well-defined:
+
+| Axis | Judge | Source of truth |
 |---|---|---|
-| UX quality | `design.md`, contract-anchored to its `## Design Contract` | Judge against the contract's named dimensions and verification methods; look at full-page screenshots per screen × **state** × viewport for layout/hierarchy/spacing, tokens/color/type, single primary CTA, responsiveness, correct state. **Coverage is contract-anchored: every screen `design.md` declares must have evidence — a reachable declared screen with none is a `blocker`.** |
-| Functional delivery | `about.md` (RF/RN + acceptance criteria) | Judge each criterion from the persisted spec's functional-assertion results (and, with the plugin, additionally by live driving); mark met / not met / partial; fold in console/network/4xx–5xx diagnostics |
-| Responsiveness | config.json viewports | Per-viewport screenshots: overflow / clipping / wrapping / off-canvas, tap-target size on the smallest viewport |
-| a11y | axe-core + design.md | Deterministic axe violations (rule/impact) + visual notes: contrast, visible focus, heading order |
+| UX quality (judgement) | `@ux-agent` | `## Design Contract` + `## Design Review` |
+| Conformance — deterministic | `@qa-agent` | captured computed styles vs the contract |
+| Conformance — judgement (hierarchy, optical alignment, primary-CTA reading, declared reflow) | `@ux-agent` | contract + screenshots |
+| Responsiveness | `@ux-agent` | declared breakpoint behaviour + per-viewport PNGs |
+| Functional delivery | `@qa-agent` | `about.md` criteria + assertion roll-up |
+| Failure forensics | `@qa-agent` | assertion error + failure PNG + console/network |
+| a11y — ALL of it | `@qa-agent` | axe-core (incl. `color-contrast`, `target-size`) |
+
+`@ux-agent` receives NO axe results and NO computed-style JSON; `@qa-agent` receives no `design.md` judgement content. Handing either the other's input is a dispatch error. Coverage is the **coordinator's** reconciliation (STEP 4.4), computed once and handed to both — never a judge's finding.
 
 Viewports (v1, configurable in `config.json`): desktop 1440, tablet 768, mobile 375.
 
-**Read-PNG mode:** with the plugin off, judge UX/responsiveness from the persisted PNGs + axe/assertion artifacts (no `browser_*`); with it on, additionally live-drive.
+**Read-PNG mode:** with the plugin off, both judges work from the persisted PNGs + axe/assertion/computed-style artifacts (no `browser_*`); with it on, they additionally live-drive.
+
+## Review-mode Approval Rubric (`@ux-agent`) — summary
+
+`@ux-agent` review mode judges ONLY the judgement dimensions (full rubric in the `ux-agent` definition, section "Approval Rubric"): breakpoint behaviour (declared reflow happened), primary-CTA count vs declared, visual hierarchy leads to the primary action, optical alignment, required-state RENDER quality, and the overall UX read vs the contract. Spacing/token/type/grid values and ALL a11y are OUT — those are `@qa-agent`'s deterministic rows. When the rubric needs a dimension the contract never declared, the reviewer emits `type: spec-gap` naming the exact missing dimension.
+
+## Root-cause Taxonomy (`@qa-agent`) — functional findings
+
+Every `type: functional` finding carries **exactly one** root cause, cited to the evidence that grounds it:
+
+| Root cause | Signature |
+|---|---|
+| `missing-implementation` | the element/behaviour the criterion promises does not exist |
+| `contract-mismatch` | frontend and backend disagree on field, shape, or status code |
+| `selector-drift` | element exists but the spec's selector no longer matches |
+| `spec-defect` | the assertion itself is wrong or over-specified |
+| `data-seed` | flow needs state the run did not seed (authSeed gap) |
+| `env-boot` | app or dependency not up; environmental |
+| `regression` | a criterion that passed in the immediately previous run now fails |
+
+`regression` reads ONLY the immediately previous `run-NNN` report — no deeper history walk; the first run has no regression class. Expected error states are correct behavior, never classified. `@qa-agent`'s deterministic conformance findings are `type: ux` and instead carry one of `contract-violated | contract-inadequate`.
+
+## Merge Rules (coordinator, STEP 5)
+
+The two judges return independent finding sets; the coordinator merges them in order:
+
+1. **Dedupe key** `(screen, state, viewport, symptom)` — on collision keep ONE finding, merge the evidence.
+2. **Domain precedence** — a visual symptom keeps `@ux-agent`'s wording; a behavioural one keeps `@qa-agent`'s; a visual symptom with a functional root cause keeps BOTH the root cause and the visual description.
+3. **Severity** — the HIGHER of the two survives; the losing judge's rationale is kept as a note, never dropped.
+4. **Contradiction** — when the judges disagree on whether something is a finding at all, report it ONCE at the LOWER severity with both positions stated verbatim. Silent omission of a contradicted finding is hard-banned.
+
+Coverage blockers (STEP 4.4) enter as coordinator findings and bypass dedupe (no judge produced a competing version).
 
 ## Severity Taxonomy
 
@@ -48,7 +88,7 @@ Viewports (v1, configurable in `config.json`): desktop 1440, tablet 768, mobile 
 | `minor` | Small visual/functional issue |
 | `polish` | Cosmetic / low-confidence |
 
-Each finding is also tagged `type: ux | functional | a11y`. An *expected* error state (e.g. invalid-token) is correct behavior, not a finding.
+Each finding is also tagged `type: ux | functional | a11y | spec-gap`. An *expected* error state (e.g. invalid-token) is correct behavior, not a finding. A declared dimension whose verification method did not run (computed styles not captured, axe absent, a state never reached) is recorded `unverifiable` with the reason — never as passing, never silently dropped.
 
 ## Scope, Path & Numbering
 
@@ -89,12 +129,15 @@ type: qa-validation
 created: <YYYY-MM-DD>
 feature: <feature-id>
 scope: [<SFxx>, ...]
-method: <read-png | read-png+live-drive> — dual-axis (UX + functional) + responsiveness + a11y (Level C)
+method: <read-png | read-png+live-drive> — dual-judge (@ux-agent review ∥ @qa-agent) (Level C)
 specs: { about: <about.md ref>, design: <design.md ref> }
 viewports: <from docs/qa/config.json>
 ---
 
 # QA Validation NNN — <feature-id>
+
+## TOC
+- [TL;DR](#tldr) · [Summary](#summary) · [Coverage](#coverage-contract-anchored-vs-designmd) · [Functional delivery](#functional-delivery-vs-aboutmd) · [Findings](#findings) · [Responsiveness](#responsiveness-per-viewport) · [Accessibility](#accessibility-axe-core--visual) · [Clean screens](#clean-screens) · [Not covered / caveats](#not-covered--caveats)
 
 ## TL;DR
 <1–2 lines: overall health + headline problems for next wave.>
@@ -106,6 +149,14 @@ viewports: <from docs/qa/config.json>
 | Major | N |
 | Minor | N |
 | Polish | N |
+
+| By judge | Count |
+|---|---|
+| @ux-agent | N |
+| @qa-agent | N |
+| coordinator (coverage) | N |
+| merged duplicates | N |
+| contradictions | N |
 
 ## Coverage (contract-anchored, vs design.md)
 | Screen (design.md) | States captured | Viewports | Judged | Gap |
@@ -119,12 +170,13 @@ viewports: <from docs/qa/config.json>
 | <criterion from about.md> | met / not met / partial | <screenshot or note> |
 
 ## Findings
-### [SEVERITY · ux|functional|a11y] <screen> @<viewport> — <short title>
-- **Screen:** <route> · **Spec:** <about.md criterion> · **Design:** <design.md ref>
-- **Type:** ux | functional | a11y
-- **Evidence:** ![](screenshots/<screen>.<state>.<viewport>.png) · `<log line if functional>`
+### [SEVERITY · ux|functional|a11y|spec-gap] <screen> @<viewport> — <short title>
+- **Screen:** <route> · **Spec:** <about.md criterion> · **Design:** <design.md contract row / ref>
+- **Type:** ux | functional | a11y | spec-gap
+- **Root cause:** <one of the 7 — `type: functional` only> · **Conformance:** <contract-violated | contract-inadequate — `type: ux` conformance only>
+- **Evidence:** ![](screenshots/<screen>.<state>.<viewport>.png) · `<log line if functional>` · <measured value vs declared set if conformance>
 - **Observed:** <what is wrong / what the behavior did>
-- **Expected:** <what design.md shows OR what the about.md criterion promises>
+- **Expected:** <what design.md's Design Contract row shows OR what the about.md criterion promises>
 - **Fix hint:** <where/what to change>
 
 ## Responsiveness (per viewport)
@@ -145,11 +197,14 @@ captured, etc.>
 ## Validation Checklist
 
 ```
-[ ] Both axes judged (UX vs design.md, functional vs about.md) — neither silently skipped
-[ ] Coverage reconciled vs design.md — every declared screen captured + judged; reachable, in-contract gaps raised as blockers (not soft notes)
-[ ] Every finding has evidence (screenshot path and/or log line) + severity + type
+[ ] Both judges ran (@ux-agent review ∥ @qa-agent) — neither arm silently skipped; a soft-degrade to a generic subagent still counts as run
+[ ] Coverage reconciled by the coordinator vs design.md — every declared screen captured + judged; reachable, in-contract gaps raised as blockers (not soft notes)
+[ ] No axis judged twice — @ux-agent got no axe/computed-style input, @qa-agent got no design.md judgement content
+[ ] Every finding has evidence (screenshot path, measured value, and/or log line) + severity + type
+[ ] Every functional finding carries exactly one root cause; not-run checks recorded `unverifiable`, never passing
+[ ] Findings merged per the STEP 5 rules — deduped, higher severity wins, contradictions reported at the lower severity with both positions
 [ ] Functional roll-up lists each criterion tested (met/not met/partial)
-[ ] Report numbered per scope (qa-validation-NNN, start 001); run-NNN matches
+[ ] Report numbered per scope (qa-validation-NNN, start 001); run-NNN matches; TOC present
 [ ] Unreached screens/criteria recorded under "Not covered"
 [ ] No code modified — audit only
 ```

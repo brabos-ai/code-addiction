@@ -28,7 +28,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add.build) | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem, add-id-convention |
 | add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
-| add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches @qa-agent per SF, judged across 4 axes (UX, functional, responsiveness, a11y). **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
+| add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches a **dual judge** per SF in parallel — @ux-agent (review) for the judgement axes ∥ @qa-agent for functional + deterministic conformance + ALL a11y + failure forensics; the coordinator reconciles coverage and merges. **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
 | add.qa-setup | QA prerequisites + project config bootstrap — installs the `@playwright/test` runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific `qa-project` skill, and scaffolds `docs/qa/config.json` + reachability-aware `FEATURE_DIR/_tests/screens.json`. Base command (runs before the plugin is enabled) | add-dev-environment-setup, add-doc-schemas |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation. Parallel subagents per area; reports coverage (informational). Dispatches @e2e-agent when qa-pipeline feature enabled | add-backend-development, add-frontend-development, add-ecosystem |
@@ -64,7 +64,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
-| add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, 4-axis (UX + functional + responsiveness + a11y) method, report schema/template, config.json/screens.json formats |
+| add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, root-cause taxonomy, merge rules, report schema/template, config.json/screens.json formats |
 | add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
@@ -84,7 +84,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 |-------|---------|---------------|
 | ux-flow-agent | Flow & interaction architect — design-system inspection (tokens, shell, component audit, visual patterns) then screen inventory, action classification, entry points, state transitions. Writes temp design-context.md + design-flow.md; early-exits `frontend_false` | add.plan (8.1.1), add.design |
 | ux-layout-agent | Layout & component specialist — layout tree + component composition + Design Contract per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2), add.design |
-| ux-agent | UX critic — adversarial review of the flow/layout pair against the Critique Rubric in add-ux-design (read-only, writes temp design-review.md); also free-form UX assistance on direct use | add.plan (8.1.3 critique), add.design |
+| ux-agent | UX critic & reviewer — critique mode: adversarial review of the flow/layout pair vs the Critique Rubric in add-ux-design (writes temp design-review.md); review mode: post-delivery judgement of shipped screens vs the `## Design Contract` (judgement axes + spec-gap); free-form UX assistance on direct use. Read-only, no memory | add.plan (8.1.3 critique), add.design, add.qa (STEP 4.5 review, ∥ qa-agent) |
 | backend-agent | Backend implementation specialist | add.build, add.autopilot |
 | frontend-agent | Frontend implementation specialist | add.build, add.autopilot |
 | reviewer-agent | Code review (read-only) | add.review |
@@ -95,7 +95,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | doc-reviewer-agent | Fresh-context doc review (read-only) | add.new, add.brainstorm |
 | feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
 | git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
-| qa-agent | 4-axis QA judge (UX, functional, responsiveness, a11y) — judges from persisted run evidence (screenshots + axe/assertion results, read-PNG); with the playwright plugin, additionally drives live | add.qa (per SF, parallel) |
+| qa-agent | Deterministic + forensic QA judge (the qa-agent half of the dual panel) — functional delivery vs about.md, deterministic Design Contract conformance from measured computed styles, ALL a11y (axe-core), and root-caused failure forensics; judges from persisted run evidence (read-PNG), live-drives with the playwright plugin. No memory | add.qa (per SF, parallel, ∥ ux-agent review) |
 | e2e-agent | Cross-cutting E2E spec author — authors `<surface>.qa.spec` (functional assertions + multi-viewport capture + axe a11y), finalizes screens.json reachability recipe, green-confirms via `@playwright/test` (no MCP, test files only) | add.test (qa-pipeline feature) |
 
 ## Features
@@ -136,14 +136,14 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-investigation | add.diagnose (primary, agent-dispatched mode), add.hotfix (STEP 6.1 escalation, agent-dispatched mode), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
 | feature-history-agent | add.diagnose (STEP 4 Fase A.1), add.hotfix (STEP 4) |
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
-| qa-agent | add.qa (dispatched per SF) |
+| qa-agent | add.qa (dispatched per SF, parallel with ux-agent review) |
 | e2e-agent | add.test (dispatched when qa-pipeline feature enabled) |
 | ux-flow-agent | add.plan (STEP 8.1.1), add.design (STEP 3) — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
 | ux-layout-agent | add.plan (STEP 8.1.2), add.design (STEP 4) — depends on ux-flow-agent's design-flow.md |
-| ux-agent | add.plan (STEP 8.1.3 critique), add.design (STEP 5), free-form direct use |
+| ux-agent | add.plan (STEP 8.1.3 critique), add.design (STEP 5), add.qa (STEP 4.5 review mode, ∥ qa-agent), free-form direct use |
 | add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
-| add-ux-design (design.md) | add.qa (UX axis judges fidelity vs the design spec) |
+| add-ux-design (design.md) | add.qa (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |
 | add-id-convention | add.plan, add.design, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add-doc-schemas' `references/new-feature.md`; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
