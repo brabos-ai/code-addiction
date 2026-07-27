@@ -7,7 +7,7 @@ description: Use when running agent-judged QA validation (read-PNG by default; t
 
 ## Overview
 
-The QA capability **judges from the persisted run evidence (screenshots + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agent be the judge** (Level C): the run captures evidence, the agent assesses it. It validates two axes — **UX quality** vs `design.md` (looking at screenshots) and **functional delivery** vs `about.md` (judged from functional-assertion results; with the plugin, additionally by live driving). It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes.
+The QA capability **judges from the persisted run evidence (screenshots + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agent be the judge** (Level C): the run captures evidence, the agent assesses it. It validates two axes — **UX quality** vs `design.md` (looking at screenshots) and **functional delivery** vs `about.md` (judged from functional-assertion results; with the plugin, additionally by live driving). It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes. Each screen's `design.md` `## Design Contract` is the UX axis's source of truth — the dimensions it names, and how each is verified, drive judgement (a later plan splits the deterministic contract dimensions into their own judge; here the agent still reads the contract directly).
 
 Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT here — they live in `/add.qa-setup` (must run before the plugin is enabled).
 
@@ -30,7 +30,7 @@ The persisted spec (or, with the plugin, live driving) **captures and exercises*
 
 | Axis | Source of truth | Method |
 |---|---|---|
-| UX quality | `design.md` | Look at full-page screenshots per screen × **state** × viewport; judge layout/hierarchy/spacing, tokens/color/type, single primary CTA, responsiveness, correct state. **Coverage is contract-anchored: every screen `design.md` declares must have evidence — a reachable declared screen with none is a `blocker`.** |
+| UX quality | `design.md`, contract-anchored to its `## Design Contract` | Judge against the contract's named dimensions and verification methods; look at full-page screenshots per screen × **state** × viewport for layout/hierarchy/spacing, tokens/color/type, single primary CTA, responsiveness, correct state. **Coverage is contract-anchored: every screen `design.md` declares must have evidence — a reachable declared screen with none is a `blocker`.** |
 | Functional delivery | `about.md` (RF/RN + acceptance criteria) | Judge each criterion from the persisted spec's functional-assertion results (and, with the plugin, additionally by live driving); mark met / not met / partial; fold in console/network/4xx–5xx diagnostics |
 | Responsiveness | config.json viewports | Per-viewport screenshots: overflow / clipping / wrapping / off-canvas, tap-target size on the smallest viewport |
 | a11y | axe-core + design.md | Deterministic axe violations (rule/impact) + visual notes: contrast, visible focus, heading order |

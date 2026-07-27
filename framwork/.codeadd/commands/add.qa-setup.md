@@ -161,6 +161,7 @@ description: Use when authoring E2E specs (/add.test) or running QA (/add.qa) in
 - **Spec location + naming:** `<dir>` · `<surface>.qa.spec.<ext>`
 - **Selectors:** MANDATORY `getByRole` / `data-testid` — never brittle CSS/xpath.
 - **Screenshots:** `<screenshot API>` → `_tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` when single-state)
+- **Computed styles:** `_tests/run-NNN/computed-styles/<screen>.<viewport>.json` (minified; one file per screen × viewport, capturing the resolved values for each `## Design Contract` dimension verified by computed style)
 - **a11y:** `<axe-core wiring, e.g. @axe-core/playwright>`
 
 ## Managed App Lifecycle
