@@ -141,14 +141,14 @@ For `/add.plan` STEP 8.1 and `/add.design` — both write the same doc through t
 **Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
 
 - **Frontmatter:** `id: [NNNN]F` (SF-qualified `[NNNN]F-SFxx` when the design is scoped to a subfeature — see `{{skill:add-id-convention/SKILL.md}}`), `type: feature-design`, `related: [[NNNN]F]`, plus `provenance: sha256:<hash of the about.md bytes the design was derived from>` — the only freshness signal (never mtime); `/add.plan` 8.1.0 skips regeneration on a provenance match.
-- **Sections:** TL;DR · TOC · Screens · Components · Flows · Tokens · Design Contract · References · Design Review. `Design Contract` sits after `Tokens` (it inherits and restates the token/scale commitments declared there) and before `References`.
+- **Sections:** TL;DR · TOC · Screens · Components · Flows · Tokens · Design Contract · References · Design Review. The section's exact heading is `## Design Contract` (pre-referenced by `add.build.md`'s domain-scoped priority rule — must match verbatim); it sits after `Tokens` (it inherits and restates the token/scale commitments declared there) and before `References`.
 - **TOC:** always present — the section list exceeds 3 H2s, so the universal TOC rule in `{{skill:add-doc-schemas/SKILL.md}}` applies unconditionally to this schema.
 - **Depth floor:**
   - **Screens** — per screen: purpose, primary action, entry points, empty/loading/error states noted, plus the layout tree (see Compression below).
   - **Components** — per component: name, source (shadcn path or `new`), props if new, states it owns, and what it is composed of (child components, named from the real inventory in `design-context.md`).
   - **Flows** — the critical user journeys as `step → step → step` with decision branches annotated; a branching journey may instead use a Mermaid `flowchart` block (see Compression below).
   - **Tokens** — any non-default tokens the feature introduces (colors, spacing, breakpoints).
-  - **Design Contract** — per dimension this feature commits to: what it declares, how it is verified, by what method. Values are inherited from `design-context.md` — this section restates only this feature's commitments and justified deviations. A project dimension left undefined is written `unknown — <why>`, never invented.
+  - **`## Design Contract`** — per dimension this feature commits to: what it declares, how it is verified, by what method. Values are inherited from `design-context.md` — this section restates only this feature's commitments and justified deviations. A project dimension left undefined is written `unknown — <why>`, never invented.
   - **References** — design-system doc, inspiration links, related feature designs.
   - **Design Review** — the critic's decision trail: table `Item | Severity | Decision | Rationale`, one row per defect the critique raised, each `accepted`/`rejected` with a one-line rationale. An empty critique yields the row-free section carrying the critic's rubric-by-rubric justification in one line.
 - **Compression:**

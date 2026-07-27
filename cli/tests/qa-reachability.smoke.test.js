@@ -191,3 +191,48 @@ describe('scenario 5 — UX agent design ownership', () => {
     expect(design).not.toContain('COMPLEXITY GATE');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Scenario 6 — layout notation & the measurable Design Contract (plan 0058:
+// layout tree replaces ASCII, ## Design Contract schema, computed-style capture)
+// ---------------------------------------------------------------------------
+
+describe('scenario 6 — layout notation & Design Contract', () => {
+  const builtAgent = (name) =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'agents', `${name}.md`), 'utf8');
+  const builtSkill = (name, file = 'SKILL.md') =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'skills', name, file), 'utf8');
+
+  it('built ux-layout-agent contains "layout tree" and no "ASCII layout"', () => {
+    const uxLayoutAgent = builtAgent('ux-layout-agent');
+    expect(uxLayoutAgent).toContain('layout tree');
+    expect(uxLayoutAgent).not.toContain('ASCII layout');
+  });
+
+  it('built new-feature.md reference file ships the exact "## Design Contract" string', () => {
+    const newFeature = builtSkill('add-doc-schemas', path.join('references', 'new-feature.md'));
+    expect(newFeature).toContain('## Design Contract');
+  });
+
+  it('e2e-dispatch fragment content mentions computed-styles', () => {
+    const fragment = fs.readFileSync(
+      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.test.md'),
+      'utf8',
+    );
+    expect(fragment).toContain('computed-styles');
+
+    // Confirm it actually lands in a real installed project via the same
+    // enable path scenario 1 exercises (byte-for-byte injected content).
+    const { modified } = enableFeature(tmp, 'qa-pipeline');
+    expect(modified).toBeGreaterThan(0);
+    const injected = snapshot(path.join(tmp, '.claude', 'commands', 'add.test.md'));
+    expect(injected).toContain('computed-styles');
+    disableFeature(tmp, 'qa-pipeline');
+  });
+
+  it('built add-ux-design skill carries the Design Contract dimensions table (Verified by header)', () => {
+    const uxDesignSkill = builtSkill('add-ux-design');
+    expect(uxDesignSkill).toContain('Verified by');
+    expect(uxDesignSkill).toContain('## Design Contract Dimensions');
+  });
+});

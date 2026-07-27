@@ -230,6 +230,8 @@ BACKEND_SELECTED  = true|false
 
 ⛔ NO human `[STOP]` anywhere in 8.1 — every accept/reject decision here belongs to the coordinator.
 
+**SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `add.design` STEP 1.2 and `status.sh`'s `SF_DIR_GLOB` resolve).
+
 **Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.qa` resolves). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
 **`design.md` resolution (for every consumer, including the skip path):** when `HAS_EPIC=true`, prefer `${SF_DIR}/design.md`; when the SF-level file is absent but `${FEATURE_DIR}/design.md` exists, fall back to the feature-level file (legacy path).

@@ -224,6 +224,8 @@ Each entry gains `kind` (`route` | `modal` | `overlay` | `portal`) and, for non-
 
 Route surfaces keep `path`; non-route (`modal`/`overlay`/`portal`) declare `kind` + `open`. Both forms coexist.
 
+**`expect` is never freehand:** derive it from the screen's `## Design Contract` rows and layout tree in `design.md` (see `add-qa-spec`) — the example values above stand for "the derived one-liner," not invented prose. A screen whose `design.md` carries no contract or layout tree gets a gap note instead.
+
 **`open` recipe grammar (fixed mini-schema):** an ordered array of step objects, each exactly one of — `{ "goto": "<path>" }`, `{ "click": "<selector>" }`, `{ "fill": ["<selector>", "<value>"] }`, `{ "select": ["<selector>", "<value>"] }`, `{ "wait": "<selector | ms>" }`. Selectors use Playwright role/testid syntax (`role=button[name=…]`, `testid=…`) — never brittle CSS.
 
 Setup scaffolds the recipe **intent** from **`design.md` only** (the plan's QA axis does not exist yet at setup time); **selectors are finalized post-implementation by the `e2e-agent`**, which merges the richer intent from `plan.md`'s `## QA/E2E Specification`. This STEP stores thin intent, flags thin/missing designs rather than inventing routes.
