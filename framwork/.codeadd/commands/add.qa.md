@@ -38,10 +38,10 @@ STEP 7: Validation Gate → qa-validation schema gate
 | **STEP 1-2 preflight** | Any `block` row failed | Run specs, dispatch agents, stop at the FIRST failure | Collect every row, report the ONE consolidated diagnosis with per-row remedy, then stop |
 | **STEP 1-2 preflight** | Only `degrade` rows failed | Stopping the run | Record each degraded axis under "Not covered / caveats" and continue |
 | **STEP 1** | `baseUrl` is a production/remote host (`QA_BASEURL_LOCAL=broken`) | Run at all | Refuse — the specs submit forms and create records; require a local/throwaway env |
-| **STEP 4** | Before 4.1 writes anything | Writing evidence under a `run-NNN` not yet resolved; recomputing the number later | Resolve `run-NNN` at the top of STEP 4; every later path reuses it |
-| **STEP 4.2** | Coverage reconciliation | Delegating coverage to a judge; downgrading an uncaptured in-contract screen to a note | Coordinator builds the table; uncaptured reachable screen = `blocker` |
-| **STEP 4.3** | Dispatch | Handing `@ux-agent` axe results or the computed-style JSON; letting one axis be judged twice | Split strictly per the axis ownership table |
-| **STEP 4.3** | A declared dimension's verification method did not run | Recording it as passing, or omitting it | Record `unverifiable` + the reason |
+| **STEP 4.1** | Before 4.2 writes anything | Writing evidence under a `run-NNN` not yet resolved; recomputing the number later | Resolve `run-NNN` in 4.1; every later path reuses it |
+| **STEP 4.4** | Coverage reconciliation | Delegating coverage to a judge; downgrading an uncaptured in-contract screen to a note | Coordinator builds the table; uncaptured reachable screen = `blocker` |
+| **STEP 4.5** | Dispatch | Handing `@ux-agent` axe results or the computed-style JSON; letting one axis be judged twice | Split strictly per the axis ownership table |
+| **STEP 4.5** | A declared dimension's verification method did not run | Recording it as passing, or omitting it | Record `unverifiable` + the reason |
 | **STEP 5** | The two judges contradict each other | Dropping either position, or picking a winner silently | Report once at the LOWER severity with both positions verbatim |
 | **READ-ONLY** | Always — `@ux-agent` and `@qa-agent` alike | Edit/Write on source code, app config, migrations; fixing findings | Write only under `SCOPE_DIR/_tests/run-NNN/` |
 | **STEP 7** | Report not written | Mark complete | Run the gate first |
@@ -94,7 +94,7 @@ Resolve the spec glob from the generated `qa-project` skill's conventions — ne
 | 9 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
 | 10 | `design.md` at `SCOPE_DIR` | file read | **degrade** — the UX axis cannot run; the functional axis still can |
 | 11 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `/add.qa-setup` scaffolds the catalog |
-| 12 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP 4.0's stopgap |
+| 12 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP 4.3's stopgap |
 
 Now emit the ONE consolidated preflight report (Phase A + Phase B): every failed row with its severity and exact remedy, `missing` vs `broken` distinguished, `not-probed` rows listed as such. The header states this is a **diagnosis**, not a verdict. Then:
 - Any `block` row failed → STOP. `add.qa` repairs nothing — the diagnosis is the deliverable.
@@ -113,11 +113,16 @@ For each subfeature in scope, read:
 
 ## STEP 4: Run Persisted Specs + Dispatch the Dual Judge (one pair per SF, parallel)
 
-**4.α — Resolve `run-NNN` FIRST, before any evidence is written.** Scan `SCOPE_DIR/_tests/run-*/`, take the highest `NNN`, add 1 (start `001`). This ONE number names every path below — `screenshots/`, `computed-styles/`, and the STEP 5 report. STEP 5 **consumes** it; it does NOT recompute it. Resolving it late is how evidence lands under a directory the report never points at.
+4.1 RESOLVE run-NNN FIRST — before any evidence is written.
+    Scan SCOPE_DIR/_tests/run-*/, take the highest NNN, add 1 (start 001).
+    This ONE number names every path below — screenshots/, computed-styles/,
+    and the STEP 5 report. STEP 5 CONSUMES it; it does NOT recompute it.
+    Resolving it late is how evidence lands under a directory the report
+    never points at.
 
-4.1 Run the surface's <surface>.qa.spec via the qa-project Managed App Lifecycle
+4.2 Run the surface's <surface>.qa.spec via the qa-project Managed App Lifecycle
     (probe → boot-bg + wait-ready if down → run → teardown-iff-booted).
-    Collect, all under the run-NNN resolved in 4.α:
+    Collect, all under the run-NNN resolved in 4.1:
       - the functional assertion pass/fail roll-up
       - axe-core results (per screen × state × viewport)
       - PNGs at _tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png
@@ -125,18 +130,18 @@ For each subfeature in scope, read:
       - the captured computed styles at
         _tests/run-NNN/computed-styles/<screen>.<viewport>.json
         — the deterministic conformance input. If the capture did not run, say
-        so and mark those checks `unverifiable` (4.3); never substitute a
+        so and mark those checks `unverifiable` (4.5); never substitute a
         visual guess for a measured value.
-    If persisted specs are ABSENT → branch on WHY (see 4.0).
+    If persisted specs are ABSENT → branch on WHY (see 4.3).
 
-4.0 Specs absent:
+4.3 Specs absent:
     - qa-pipeline OFF → specs were never authored. Tell the user:
       `codeadd features enable qa-pipeline` + `/add.qa-setup` + `/add.test`.
       Do NOT bounce to /add.test (it won't author E2E with the feature off).
     - qa-pipeline ON, not yet generated → route to /add.test to author them;
       or (plugin ON) fall back to today's live-drive-from-catalog as a stopgap.
 
-4.2 COVERAGE RECONCILIATION — coordinator-owned, BEFORE dispatch.
+4.4 COVERAGE RECONCILIATION — coordinator-owned, BEFORE dispatch.
     Extract the expected screen set from design.md (the layout tree + the
     Screens section), then compare it against the evidence actually captured
     under run-NNN. Two binding rules:
@@ -146,11 +151,11 @@ For each subfeature in scope, read:
         drift is noted in the report.
     Emit a reconciliation table (screen · expected states/viewports · evidence
     present · verdict). It is SHARED INPUT — the SAME table goes to BOTH judges
-    in 4.3.
+    in 4.5.
     ⛔ Coverage blockers are the COORDINATOR's findings, never a judge's.
        Neither judge re-derives coverage; both consume the table as given.
 
-4.3 DISPATCH THE JUDGE PAIR — @ux-agent (review mode) AND @qa-agent, one pair
+4.5 DISPATCH THE JUDGE PAIR — @ux-agent (review mode) AND @qa-agent, one pair
     per SF, PARALLEL, WAIT-ALL. Axis ownership (no axis is judged twice):
 
 | Axis | Judge | Source of truth |
@@ -173,7 +178,7 @@ For each subfeature in scope, read:
         (@ux-agent → screenshots/ ;
          @qa-agent → screenshots/ + computed-styles/ + axe results + the
          assertion roll-up + console/network artifacts);
-      - the 4.2 reconciliation table (identical copy to both);
+      - the 4.4 reconciliation table (identical copy to both);
       - the relevant skill — `{{skill:add-qa/SKILL.md}}` carries the rubric,
         the severity scale and the finding schema both judges report in.
 
@@ -186,7 +191,7 @@ For each subfeature in scope, read:
     Soft-degrade, evaluated per dispatch INDEPENDENTLY: if @ux-agent or
     @qa-agent is not available in this engine, dispatch a generic subagent with
     that judge's directive + the add-qa skill. The judged arm still runs where
-    agents don't build; the deterministic assertion + axe results from 4.1 are
+    agents don't build; the deterministic assertion + axe results from 4.2 are
     provider-independent.
 
     ⛔ EVERY check has an `unverifiable` outcome. A declared dimension whose
@@ -216,9 +221,9 @@ The two judges return independent finding sets. Merge them with these rules, app
 
 **5.4 Contradiction.** When the judges disagree on whether something is a finding at all, report it ONCE at the **LOWER** severity, with BOTH positions stated **verbatim**. ⛔ Silently omitting a contradicted finding is HARD-BANNED — an unresolved disagreement is itself information the reader needs.
 
-Coverage blockers from 4.2 enter the merged set as **coordinator** findings and bypass 5.1-5.4 (no judge produced a competing version).
+Coverage blockers from 4.4 enter the merged set as **coordinator** findings and bypass 5.1-5.4 (no judge produced a competing version).
 
-Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.α — do NOT recompute it here. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
+Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
 
 ---
 
