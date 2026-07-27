@@ -23,12 +23,10 @@ Inspect the project's design system by searching and reading relevant files. Eac
 
 1. **Theme & Tokens.** Analyze tailwind config files and CSS files with custom properties (globals.css, index.css, etc). Extract: colors (primary, secondary, accent, muted, background, foreground, border, destructive), spacing (base unit, common gaps, padding), border-radius values, font families (headings, body, mono), dark mode (yes/no, strategy).
 2. **Layout Shell.** Find and read layout-related components (layout, shell, sidebar, header, topbar, navbar, footer, app-shell, dashboard-layout, page-layout). Extract: shell (name, path, structure), sidebar (width, collapsible, position), topbar (height, position, contents), content area (max-width, padding, responsive).
-3. **Component Library Audit.** Audit available UI components and check for a component index/exports.
+3. **Component Library Audit.** Audit available UI components and check for a component index/exports. Extract: full list of existing UI components with paths, shadcn status (yes/no, which installed).
 
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
-
-Extract: full list of existing UI components with paths, shadcn status (yes/no, which installed).
 
 4. **Visual Patterns Reference.** Find and read 3-5 representative pages (dashboard, settings, list, detail, form). Extract: page headers, cards, lists, forms, buttons usage patterns.
 5. **Frontend Readiness Check (early exit).** If the project has no frontend at all, report `frontend_false` to the dispatching command and STOP — do not write any temp file, do not proceed to Step 1. Otherwise classify: new project (fewer than 5 components — use `add-ux-design` skill defaults) or established (5+ components — MUST follow the patterns found in this inspection).
@@ -49,7 +47,7 @@ Write the inspection to temp `design-context.md` (extractive JSON, no prose):
 
 Read `about.md` and `discovery.md` for the feature. Load skill `add-ux-design` files `ux-laws-principles.md` and `modern-patterns.md` and apply them.
 
-1. Map ALL screens the feature introduces or touches and create an ASCII flow diagram.
+1. Map ALL screens the feature introduces or touches and create the flow diagram: arrow notation (`Screen A → Screen B`) for linear flows; a Mermaid `flowchart` block is permitted for branching journeys.
 2. Classify ALL user actions (Action Classification Matrix: action / frequency / type / access / screen).
 3. Map entry points per screen (nav, Cmd+K, URL, notification, breadcrumb).
 4. Define state transitions between screens.
@@ -57,7 +55,7 @@ Read `about.md` and `discovery.md` for the feature. Load skill `add-ux-design` f
 ## Output
 
 Write temp `design-flow.md`:
-- Flow Diagram (ASCII)
+- Flow Diagram (arrow notation; Mermaid `flowchart` for branching journeys)
 - Screen Inventory (screen / purpose / parent / depth)
 - Action Classification Matrix (action / frequency / type / access / screen)
 - Entry Points (per screen)

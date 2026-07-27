@@ -83,7 +83,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | Agent | Purpose | Dispatched by |
 |-------|---------|---------------|
 | ux-flow-agent | Flow & interaction architect — design-system inspection (tokens, shell, component audit, visual patterns) then screen inventory, action classification, entry points, state transitions. Writes temp design-context.md + design-flow.md; early-exits `frontend_false` | add.plan (8.1.1), add.design |
-| ux-layout-agent | Layout & component specialist — mobile-first ASCII layout per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2), add.design |
+| ux-layout-agent | Layout & component specialist — layout tree + component composition + Design Contract per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2), add.design |
 | ux-agent | UX critic — adversarial review of the flow/layout pair against the Critique Rubric in add-ux-design (read-only, writes temp design-review.md); also free-form UX assistance on direct use | add.plan (8.1.3 critique), add.design |
 | backend-agent | Backend implementation specialist | add.build, add.autopilot |
 | frontend-agent | Frontend implementation specialist | add.build, add.autopilot |

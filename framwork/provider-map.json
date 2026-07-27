@@ -125,7 +125,7 @@
   "agents": {
     "ux-agent":            { "description": "UX critic — adversarially reviews design-flow.md + design-layout.md for defects before design.md is written (critique mode); free-form UX assistance for direct use" },
     "ux-flow-agent":       { "description": "Flow & interaction architect — inspects the design system, maps screen inventory, action classification, entry points, and state transitions; writes design-context.md + design-flow.md" },
-    "ux-layout-agent":     { "description": "Layout & component specialist — reads design-flow.md + design-context.md, specs mobile-first ASCII layout, component inventory, and states per screen; writes design-layout.md" },
+    "ux-layout-agent":     { "description": "Layout & component specialist — reads design-flow.md + design-context.md, specs the layout tree, component composition, Design Contract, and states per screen; writes design-layout.md" },
     "backend-agent":       { "description": "Backend implementation specialist for services, repositories, DTOs, and Clean Architecture" },
     "frontend-agent":      { "description": "Frontend implementation specialist for components, pages, hooks, and state management" },
     "reviewer-agent":      { "description": "Code review specialist for quality, security (OWASP), and architecture compliance (read-only)" },
