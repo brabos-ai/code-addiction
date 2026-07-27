@@ -11,6 +11,8 @@ The QA capability **judges from the persisted run evidence (screenshots + axe/as
 
 Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT here — they live in `/add.qa-setup` (must run before the plugin is enabled).
 
+**Feature vs plugin (canonical statement):** `qa-pipeline` (feature) decides whether QA artefacts are **authored** — the plan QA-spec, the E2E specs, the `/add.build qa` mode. `playwright` (plugin) decides whether the judge can additionally **drive the app live**. They are orthogonal: enabling the plugin does not enable the pipeline. Features toggle via `codeadd features enable|disable qa-pipeline`; every consumer references this statement instead of restating it.
+
 ## When to Use
 
 - `/add.qa` dispatches a `qa-agent` to validate a subfeature.

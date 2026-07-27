@@ -210,6 +210,8 @@ Report: AREA, FILES_CREATED, FILES_MODIFIED, TESTS_PASSING (true/false), TEST_CO
 <!-- feature:qa-pipeline:e2e-dispatch -->
 <!-- /feature:qa-pipeline:e2e-dispatch -->
 
+**QA axis self-check:** IF no E2E dispatch section is present above (the `qa-pipeline` feature is disabled) → no `<surface>.qa.spec` will be authored. State it in the STEP 5 report with the remedy: `codeadd features enable qa-pipeline` (+ `/add.qa-setup` if QA was never bootstrapped). Do NOT stop — unit/integration generation proceeds unchanged.
+
 ---
 
 ## STEP 4: Run Tests + Coverage Check

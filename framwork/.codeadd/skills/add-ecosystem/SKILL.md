@@ -96,6 +96,15 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | qa-agent | 4-axis QA judge (UX, functional, responsiveness, a11y) — judges from persisted run evidence (screenshots + axe/assertion results, read-PNG); with the playwright plugin, additionally drives live | add.qa (per SF, parallel) |
 | e2e-agent | Cross-cutting E2E spec author — authors `<surface>.qa.spec` (functional assertions + multi-viewport capture + axe a11y), finalizes screens.json reachability recipe, green-confirms via `@playwright/test` (no MCP, test files only) | add.test (qa-pipeline feature) |
 
+## Features
+
+| Feature | Default | Injects into | Purpose |
+|---------|---------|--------------|---------|
+| tdd | enabled | add.plan, add.build, add.review | RED-GREEN-REFACTOR discipline + contract-test specs |
+| qa-pipeline | disabled | add.plan, add.test, add.build | E2E spec authoring + agent QA validation |
+
+Enable/disable via `codeadd features enable|disable|list <name>` — fragments are injected into the installed commands post-install. `qa-pipeline` (feature) governs whether QA artefacts are **authored**; the `playwright` plugin below only adds live driving to the judge — enabling the plugin does not enable the pipeline (canonical statement in add-qa).
+
 ## Plugins
 
 | Plugin | Type | Description | Injects into | Plugin skill |
@@ -133,7 +142,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
-| add-tdd | add.build, add.test |
+| add-tdd | add.plan, add.build, add.review, add.test |
 | add-test-specification | add.plan (STEP 9) |
 
 ## Main Flows

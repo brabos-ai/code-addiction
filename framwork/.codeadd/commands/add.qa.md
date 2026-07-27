@@ -22,8 +22,8 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 5 (the `qa-validation` sch
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Gate            → config present + baseUrl reachable/local (plugin optional)
-STEP 2: Resolve scope   → spec-driven (about.md path) or id-driven (feature-id [SFxx])
+STEP 1: Preflight Phase A → deterministic project-level probes (qa-preflight.sh) — collect ALL rows, no stop-at-first
+STEP 2: Resolve scope   → spec-driven (about.md path) or id-driven (feature-id [SFxx]), then Phase B + consolidated diagnosis
 STEP 3: Read specs      → about.md + design.md + _tests/screens.json
 STEP 4: Run specs + dispatch → run <surface>.qa.spec, then qa-agent per SF (functional/UX/responsiveness/a11y)
 STEP 5: Aggregate+write → _tests/run-NNN/{qa-validation-NNN.md, screenshots/}
@@ -35,29 +35,65 @@ STEP 7: Validation Gate → qa-validation schema gate
 
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
-| **STEP 1** | `baseUrl` not reachable | Run specs, dispatch agents | Route to the config `bootHint` (start the app), then retry |
-| **STEP 1** | `baseUrl` is a production/remote host | Run at all | Refuse — the specs submit forms and create records; require a local/throwaway env |
-| **STEP 3** | `screens.json` absent for the feature | Dispatch agents, guess routes | Route to `/add.qa-setup` to scaffold the catalog |
+| **STEP 1-2 preflight** | Any `block` row failed | Run specs, dispatch agents, stop at the FIRST failure | Collect every row, report the ONE consolidated diagnosis with per-row remedy, then stop |
+| **STEP 1-2 preflight** | Only `degrade` rows failed | Stopping the run | Record each degraded axis under "Not covered / caveats" and continue |
+| **STEP 1** | `baseUrl` is a production/remote host (`QA_BASEURL_LOCAL=broken`) | Run at all | Refuse — the specs submit forms and create records; require a local/throwaway env |
 | **READ-ONLY** | Always | Edit/Write on source code, app config, migrations; fixing findings | Write only under `SCOPE_DIR/_tests/run-NNN/` |
 | **STEP 7** | Report not written | Mark complete | Run the gate first |
 
 ---
 
-## STEP 1: Gate
+## STEP 1: Preflight — Phase A (project-level)
 
-### 1.1 Capability gate
-The `playwright` plugin is **optional**. If enabled + MCP connected → live-driving mode is available. If not → **degraded mode** (run persisted specs via the runner + read persisted PNGs). Do NOT stop for a missing plugin.
+### 1.1 Capability context
+The `playwright` plugin is **optional**. If enabled + MCP connected → live-driving mode is available. If not → **degraded mode** (run persisted specs via the runner + read persisted PNGs). Do NOT stop for a missing plugin. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin") — enabling the plugin does NOT enable the `qa-pipeline` feature.
 
-### 1.2 Reachability + safety gate
-Read `docs/qa/config.json`. Confirm `baseUrl` is reachable; if not, surface the config `bootHint` and stop until the app is up. Confirm `baseUrl` is a local/throwaway environment — refuse to run against production (the functional axis submits forms and creates records).
+### 1.2 Run the deterministic probes
+```bash
+bash .codeadd/scripts/qa-preflight.sh a
+```
+Parse the `KEY=STATUS` lines. `missing` and `broken` are distinct diagnoses (absent vs present-but-non-functional); `not-probed` means a cheaper blocker short-circuited the row — report it as not probed, never as passing. `QA_FEATURE_STATE=unset|no-manifest` resolves by the feature's default: `qa-pipeline` defaults to **disabled**.
+
+### 1.3 Phase A rows
+
+| # | Prerequisite | Probe | Severity |
+|---|---|---|---|
+| 1 | `qa-pipeline` feature enabled | `QA_FEATURE_STATE` + default | **degrade** — no authored specs; live-drive stopgap still possible with the plugin. Remedy: `codeadd features enable qa-pipeline` |
+| 2 | `docs/qa/config.json` present + parseable + has `baseUrl` | `QA_CONFIG` | block |
+| 3 | `baseUrl` local/throwaway | `QA_BASEURL_LOCAL` | block — refuse production |
+| 4 | `baseUrl` reachable | `QA_BASEURL_REACHABLE` | block — surface the config `bootHint` |
+| 5 | `@playwright/test` functional in the project | `QA_RUNNER` | block |
+| 6 | chromium launchable | `QA_CHROMIUM` | block |
+| 7 | `qa-project` skill present | `QA_PROJECT_SKILL` | block — it carries the run commands |
+| 8 | `playwright` MCP connected | provider MCP listing (not scripted) | **degrade** — read-PNG mode |
+
+Collect ALL rows — the consolidated diagnosis is assembled after Phase B (STEP 2.2). Do NOT stop here even on a `block` failure; the user gets every problem and its remedy at once.
 
 ---
 
 ## STEP 2: Resolve Scope
 
+### 2.1 Scope resolution
 Two input forms — detect from the first token:
 - **Spec-driven** (a path ending in `about.md`, or a subfeature/feature folder path): `SCOPE_DIR` = the doc's containing folder; read that `about.md` + the sibling `design.md`; infer `feature-id` + `SFxx` from the path.
 - **Id-driven** (`feature-id [SFxx]`): `FEATURE_DIR = docs/features/<feature-id>-*`. If `SFxx` given → `SCOPE_DIR = FEATURE_DIR/subfeatures/SFxx-*` (probe that SF). Else → `SCOPE_DIR = FEATURE_DIR` (probe every SF in the catalog).
+
+### 2.2 Preflight — Phase B (feature-scoped) + consolidated diagnosis
+```bash
+bash .codeadd/scripts/qa-preflight.sh b "<FEATURE_DIR>" "<spec glob from the qa-project skill>"
+```
+Resolve the spec glob from the generated `qa-project` skill's conventions — never guess it; if the skill is absent (row 7 already blocks), pass no glob and the row reports `not-probed`.
+
+| # | Prerequisite | Probe | Severity |
+|---|---|---|---|
+| 9 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
+| 10 | `design.md` at `SCOPE_DIR` | file read | **degrade** — the UX axis cannot run; the functional axis still can |
+| 11 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `/add.qa-setup` scaffolds the catalog |
+| 12 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP 4.0's stopgap |
+
+Now emit the ONE consolidated preflight report (Phase A + Phase B): every failed row with its severity and exact remedy, `missing` vs `broken` distinguished, `not-probed` rows listed as such. The header states this is a **diagnosis**, not a verdict. Then:
+- Any `block` row failed → STOP. `add.qa` repairs nothing — the diagnosis is the deliverable.
+- Only `degrade` rows failed → record each under "Not covered / caveats" for the STEP 5 report and continue.
 
 ---
 
