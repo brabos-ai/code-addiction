@@ -223,13 +223,19 @@ The two judges return independent finding sets. Merge them with these rules, app
 
 Coverage blockers from 4.4 enter the merged set as **coordinator** findings and bypass 5.1-5.4 (no judge produced a competing version).
 
-Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
+**5.5 Derive routes — coordinator work, NEVER the judges.** The judges emit `type` + root cause (and, for `ux`, the `contract-violated`/`contract-inadequate` classification with its contract-line citation); routing is derived here, once, over the merged and deduped set. For every finding, assign a `route` by the deterministic lookup on `type` + root cause in `{{skill:add-qa/SKILL.md}}` → **Fix Routing** (there is no confidence score). Then:
+
+- **Citation gate:** a `ux`/`spec-gap` route to `@ux-agent` MISSING its required contract-line citation is **presented, never dispatched** (flag it in the row, do not assign an ordered slot).
+- **Capability validation (fail loud):** `@e2e-agent`→`test-file` only; `@ux-agent`→`design-spec` only; `@qa-agent` is never a route (read-only); implementation agents never route to `design-spec`. ⛔ An invalid route is a schema violation — do NOT write the report with it; fix the derivation.
+- Write the **`## Fix Routing`** section: the ordered dispatch table `Order | Agent | Findings | Target class | Blocked by` in the fixed layer order `@database-agent → @backend-agent → @frontend-agent → @e2e-agent`; `@ux-agent`, `data-seed`/`env-boot`, and user routes are unordered (`—`). A finding on a chain appears under each agent it involves.
+
+Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Set the report's `judged-contract` frontmatter to the `provenance` hash of the `design.md` it judged; if that hash differs from the previous run's `judged-contract`, note *"contract amended since run-(NNN-1)"* plus the amended dimensions — a criterion that flipped green ONLY because the contract was amended is not a fix. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
 
 ---
 
 ## STEP 6: Console Summary
 
-Report to the user: counts by severity (blocker / major / minor / polish); **per-judge counts** — findings from `@ux-agent`, from `@qa-agent`, coordinator coverage findings, how many were merged as duplicates (5.1) and how many contradictions were reported (5.4); the functional-delivery roll-up (criteria met / not met / partial); the number of `unverifiable` checks with their reasons; and the report path. **Do not fix anything** — surface the next route (`/add.build` or `/add.review`) per the ecosystem map.
+Report to the user: counts by severity (blocker / major / minor / polish); **per-judge counts** — findings from `@ux-agent`, from `@qa-agent`, coordinator coverage findings, how many were merged as duplicates (5.1) and how many contradictions were reported (5.4); **per responsible agent** — distinct-finding counts per routed agent from the 5.5 `## Fix Routing` table (so the dispatch is visible without opening the report), plus any presented-not-dispatched routes (manual `data-seed`/`env-boot`, citation-missing); the functional-delivery roll-up (criteria met / not met / partial); the number of `unverifiable` checks with their reasons; and the report path. **Do not fix anything** — surface the next route (`/add.build` or `/add.review`) per the ecosystem map.
 
 ---
 
