@@ -79,6 +79,69 @@ The two judges return independent finding sets; the coordinator merges them in o
 
 Coverage blockers (STEP 4.4) enter as coordinator findings and bypass dedupe (no judge produced a competing version).
 
+## Fix Routing (coordinator, STEP 5 — after the merge)
+
+Routing turns each merged finding into a dispatch target for `/add.build qa`. It is a **deterministic lookup** on `type` + root cause — there is no confidence score. The **coordinator** derives it after the merge (never a judge — routing needs the merged, deduped set and the global order). Every finding gets a `route`.
+
+### Routing rules
+
+| type + root cause | Route | Target class |
+|---|---|---|
+| functional / `missing-implementation` (backend or data) | `@backend-agent` (+ `@database-agent` if a schema change) | api, schema |
+| functional / `missing-implementation` (UI) | `@frontend-agent` | component |
+| functional / `contract-mismatch` | `@backend-agent` → `@frontend-agent` | api-contract |
+| functional / `selector-drift` | `@e2e-agent` | test-file |
+| functional / `spec-defect` | `@e2e-agent` | test-file |
+| functional / `data-seed` | **user (manual)** | env-config |
+| functional / `env-boot` | **user (manual)** | env-config |
+| functional / `regression` | route by the underlying cause, flagged `regression` | varies |
+| ux / `contract-violated` | `@frontend-agent` | component |
+| ux / `contract-inadequate` | `@ux-agent` | design-spec |
+| a11y (markup / semantics / heading order) | `@frontend-agent` | component |
+| a11y (contrast / token) | `@frontend-agent` (usage) or `@ux-agent` (contract) | component, design-spec |
+| `spec-gap` | `@ux-agent` | design-spec |
+| coverage blocker | `@e2e-agent` | test-file |
+
+### The `ux` two-value classification (the one place routing is judgement, not lookup)
+
+- `contract-violated` — the rendered value contradicts a declared dimension → `@frontend-agent`.
+- `contract-inadequate` — the contract declares nothing covering the observed problem → `@ux-agent`.
+
+A `ux` finding routed to `@ux-agent` MUST cite the missing or wrong contract line. Without the citation the route is **presented, never dispatched**.
+
+### Capability validation (hard rule)
+
+- `@e2e-agent` may only be routed to `test-file`.
+- `@ux-agent` may only be routed to `design-spec`.
+- `@qa-agent` is never a route (read-only).
+- Implementation agents (`@backend-agent`, `@frontend-agent`, `@database-agent`) may not be routed to `design-spec`.
+
+An invalid route is a **schema violation**, not a warning — do not write the report with it.
+
+### Dependency ordering
+
+Fixed by layer: `@database-agent → @backend-agent → @frontend-agent → @e2e-agent`. `@ux-agent` and user routes are unordered (no code dependency).
+
+### `## Fix Routing` template
+
+```markdown
+## Fix Routing
+| Order | Agent | Findings | Target class | Blocked by |
+|---|---|---|---|---|
+| 1 | @database-agent | F3 | schema | — |
+| 2 | @backend-agent | F1, F3 | api | @database-agent |
+| 3 | @frontend-agent | F1, F2 | component, api-contract | @backend-agent |
+| 4 | @e2e-agent | F5 | test-file | @frontend-agent |
+| — | @ux-agent | F4 | design-spec | — |
+| — | user (manual) | F6 (data-seed: authSeed) | env-config | — |
+```
+
+A finding may appear under more than one agent when its route is a chain — each slice states what that agent owns. Counts in summaries are **involvement, not ownership**: count distinct findings.
+
+### Contract-amendment trail (required — else the audit self-heals)
+
+A fix wave that amends `design.md` (a `design-spec` route) MUST append to `design.md`'s `## Design Review` the originating `run-NNN` + finding ID. Because `qa-validation` frontmatter records `judged-contract`, when the next run's hash differs the report states *"contract amended since run-NNN"* and lists the amended dimensions. A criterion that flipped to green **only because the contract was amended** is NEVER reported as a fix.
+
 ## Severity Taxonomy
 
 | Severity | Meaning |
@@ -132,12 +195,13 @@ scope: [<SFxx>, ...]
 method: <read-png | read-png+live-drive> — dual-judge (@ux-agent review ∥ @qa-agent) (Level C)
 specs: { about: <about.md ref>, design: <design.md ref> }
 viewports: <from docs/qa/config.json>
+judged-contract: sha256:<design.md provenance hash>
 ---
 
 # QA Validation NNN — <feature-id>
 
 ## TOC
-- [TL;DR](#tldr) · [Summary](#summary) · [Coverage](#coverage-contract-anchored-vs-designmd) · [Functional delivery](#functional-delivery-vs-aboutmd) · [Findings](#findings) · [Responsiveness](#responsiveness-per-viewport) · [Accessibility](#accessibility-axe-core--visual) · [Clean screens](#clean-screens) · [Not covered / caveats](#not-covered--caveats)
+- [TL;DR](#tldr) · [Summary](#summary) · [Coverage](#coverage-contract-anchored-vs-designmd) · [Functional delivery](#functional-delivery-vs-aboutmd) · [Findings](#findings) · [Responsiveness](#responsiveness-per-viewport) · [Accessibility](#accessibility-axe-core--visual) · [Fix Routing](#fix-routing) · [Clean screens](#clean-screens) · [Not covered / caveats](#not-covered--caveats)
 
 ## TL;DR
 <1–2 lines: overall health + headline problems for next wave.>
@@ -178,12 +242,23 @@ viewports: <from docs/qa/config.json>
 - **Observed:** <what is wrong / what the behavior did>
 - **Expected:** <what design.md's Design Contract row shows OR what the about.md criterion promises>
 - **Fix hint:** <where/what to change>
+- **Route:** <@agent → @agent · target: class — coordinator-derived, see Fix Routing>
 
 ## Responsiveness (per viewport)
 <overflow / clipping / tap-target notes per viewport, or "clean">
 
 ## Accessibility (axe-core + visual)
 <axe violations by rule/impact + visual notes: contrast, focus, heading order, or "clean">
+
+## Fix Routing
+<the coordinator's dispatch plan for `/add.build qa` — see the Fix Routing template above.
+`data-seed`/`env-boot` and @ux-agent/user routes are unordered (—); if the contract was
+amended since the previous run, note "contract amended since run-NNN" + the dimensions.>
+| Order | Agent | Findings | Target class | Blocked by |
+|---|---|---|---|---|
+| 1 | @backend-agent | F1 | api | — |
+| — | @ux-agent | F4 | design-spec | — |
+| — | user (manual) | F6 (data-seed: authSeed) | env-config | — |
 
 ## Clean screens
 <screens that passed UX + functional with no findings>
@@ -203,6 +278,7 @@ captured, etc.>
 [ ] Every finding has evidence (screenshot path, measured value, and/or log line) + severity + type
 [ ] Every functional finding carries exactly one root cause; not-run checks recorded `unverifiable`, never passing
 [ ] Findings merged per the STEP 5 rules — deduped, higher severity wins, contradictions reported at the lower severity with both positions
+[ ] Every finding carries a coordinator-derived `route`; routes pass capability validation (@e2e-agent→test-file, @ux-agent→design-spec, @qa-agent never); `## Fix Routing` table present with the fixed layer ordering
 [ ] Functional roll-up lists each criterion tested (met/not met/partial)
 [ ] Report numbered per scope (qa-validation-NNN, start 001); run-NNN matches; TOC present
 [ ] Unreached screens/criteria recorded under "Not covered"
