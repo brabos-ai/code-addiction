@@ -284,7 +284,7 @@ If feature is very simple (single component, < 5 files, no new database entities
 You are the PLANNING agent for feature ${FEATURE_ID}.
 
 ## MANDATORY: Load Command + Context (FIRST STEP)
-1. Read `{{cmd:add.plan}}` — PRIMARY reference (add.plan has no human approval gates — agent critique replaces them; run it normally).
+1. Read `{{cmd:add.plan}}` — PRIMARY reference (add.plan has no human approval gates — agent critique replaces them; run it normally). If add.plan's STEP 6 raises clarification questions, the coordinator answers them itself from the DECISION_LOG — a dispatched add.plan has no human addressee.
 2. Load skills: add-doc-schemas, add-id-convention, add-tasks-checklist
 3. Run: `bash .codeadd/scripts/status.sh`
 4. Read feature docs as specified in add.plan.md

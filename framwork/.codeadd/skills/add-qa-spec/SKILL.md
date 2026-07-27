@@ -88,6 +88,7 @@ The catalog is **feature-wide** while a plan run is scoped to **one SF** — so 
 2. Entries whose `sf` is OUT of this run's scope are preserved **byte-identically** — never reorder, reformat, or "clean up" them.
 3. An in-scope entry (same `sf` AND same `id`) is **replaced** by the newly derived one.
 4. A newly derived in-scope entry with no match is **appended**.
+5. An in-scope entry whose screen no longer exists in the consolidated design.md is **removed** (out-of-scope entries stay untouchable — rule 2 above).
 
 Store reachability INTENT only. If a design doc is missing or thin, list the screen with a note rather than inventing a route — flag it as a gap for the user.
 

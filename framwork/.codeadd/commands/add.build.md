@@ -98,6 +98,7 @@ This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS
 7. ASSEMBLE `TASK_DOCUMENTS`:
    - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
    - `docs/features/${FEATURE_ID}/discovery.md`
+   - `${SF_DIR}/design.md` (if `HAS_DESIGN`) — SF-level first, falling back to `docs/features/${FEATURE_ID}/design.md` (feature-level) when absent
    - `${SF_DIR}/plan.md` (if exists)
    - `${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
 
@@ -181,7 +182,7 @@ Starting...
 
 Read all relevant feature docs based on status.sh flags:
 - `plan.md` (if HAS_PLAN=true) — use as primary source
-- `design.md` (if HAS_DESIGN=true) — follow mobile-first layouts, component specs, design tokens
+- `design.md` (if HAS_DESIGN=true) — follow mobile-first layouts, component specs, design tokens. Resolve SF-level first (`${SF_DIR}/design.md`), falling back to feature-level (`docs/features/${FEATURE_ID}/design.md`) when absent
 - `about.md` — ALWAYS
 - `discovery.md` — ALWAYS
 - `${ARCHITECTURE_REF}` — from script output

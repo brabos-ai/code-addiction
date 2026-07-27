@@ -633,7 +633,7 @@ Separate each section with `---`. **NEVER rewrite or summarize subagent content.
 
 ### 10.2 Validate Completeness
 
-Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 8.1.4: SF-level first, feature-level fallback). Verify:
+Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 8.1: SF-level first, feature-level fallback). Verify:
 - All entities/tables from discovery → complete schema in plan-database
 - JSONB fields → detailed TypeScript structures
 - Endpoints → complete request/response DTOs
