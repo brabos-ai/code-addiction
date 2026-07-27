@@ -107,7 +107,7 @@ Routing turns each merged finding into a dispatch target for `/add.build qa`. It
 - `contract-violated` — the rendered value contradicts a declared dimension → `@frontend-agent`.
 - `contract-inadequate` — the contract declares nothing covering the observed problem → `@ux-agent`.
 
-A `ux` finding routed to `@ux-agent` MUST cite the missing or wrong contract line. Without the citation the route is **presented, never dispatched**.
+A `ux` or `spec-gap` finding routed to `@ux-agent` MUST cite the missing or wrong contract line (for `spec-gap`, the named missing dimension is that citation). Without the citation the route is **presented, never dispatched**.
 
 ### Capability validation (hard rule)
 
