@@ -62,9 +62,9 @@ Does it need LLM reasoning?
 
 | Type | Source path | Format | Count |
 |------|------------|--------|-------|
-| Command | `framwork/.codeadd/commands/{name}.md` | Markdown with structured sections | 21 |
+| Command | `framwork/.codeadd/commands/{name}.md` | Markdown with structured sections | 19 |
 | Skill | `framwork/.codeadd/skills/{name}/SKILL.md` | Markdown with YAML frontmatter | 34 |
-| Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter | 8 |
+| Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter | 15 |
 | Script | `framwork/.codeadd/scripts/{name}.sh` | Bash | variable |
 
 Internal-only artefacts (NOT distributed): `.claude/skills/`, `.claude/commands/`
@@ -138,8 +138,6 @@ Prompt: [full prompt with ${FEATURE_ID}, output path, format template]
 - `docs/features/${FEATURE_ID}/plan.md`
 - `docs/features/${FEATURE_ID}/design.md`
 - Temp files: `plan-database.md`, `plan-backend.md`, etc.
-
-**Yolo Mode** (optional) — `--yolo` flag skips all STOP points and gates.
 
 **Completion** — Always reference `add-ecosystem` skill for next steps.
 

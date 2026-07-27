@@ -64,7 +64,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
-| add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, root-cause taxonomy, merge rules, report schema/template, config.json/screens.json formats |
+| add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, config.json/screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded by /add.qa, never by a judge |
 | add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
@@ -84,7 +84,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 |-------|---------|---------------|
 | ux-flow-agent | Flow & interaction architect — design-system inspection (tokens, shell, component audit, visual patterns) then screen inventory, action classification, entry points, state transitions. Writes temp design-context.md + design-flow.md; early-exits `frontend_false` | add.plan (8.1.1), add.design |
 | ux-layout-agent | Layout & component specialist — layout tree + component composition + Design Contract per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2), add.design |
-| ux-agent | UX critic & reviewer — critique mode: adversarial review of the flow/layout pair vs the Critique Rubric in add-ux-design (writes temp design-review.md); review mode: post-delivery judgement of shipped screens vs the `## Design Contract` (judgement axes + spec-gap); free-form UX assistance on direct use. Read-only, no memory | add.plan (8.1.3 critique), add.design, add.qa (STEP 4.5 review, ∥ qa-agent), add.build qa (routed design-spec fixes) |
+| ux-agent | UX design owner (three modes) — critique mode: adversarial review of the flow/layout pair vs the Critique Rubric in add-ux-design (writes temp design-review.md); review mode: post-delivery judgement of shipped screens vs the `## Design Contract` (judgement axes + spec-gap); fix mode: amends `design.md`'s Design Contract + Design Review on a routed `design-spec` finding (the ONLY mode that writes, and the only agent permitted to write `design.md`); free-form UX assistance on direct use. No memory | add.plan (critique), add.design, add.qa (review, ∥ qa-agent), add.build qa (routed design-spec fixes) |
 | backend-agent | Backend implementation specialist | add.build, add.autopilot |
 | frontend-agent | Frontend implementation specialist | add.build, add.autopilot |
 | reviewer-agent | Code review (read-only) | add.review |
@@ -123,7 +123,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-backend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-frontend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-database-development | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `## Critique Rubric (ux-agent critique mode)` section is the critic's canonical rubric |
+| add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.review, add.build |
 | add-security-audit | add.audit, add.review |
 | add-feature-discovery | add.new, add.plan |
@@ -138,9 +138,9 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | qa-agent | add.qa (dispatched per SF, parallel with ux-agent review) |
 | e2e-agent | add.test (dispatched when qa-pipeline feature enabled), add.build qa (routed test-file fixes) |
-| ux-flow-agent | add.plan (STEP 8.1.1), add.design (STEP 3) — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
+| ux-flow-agent | add.plan (design step), add.design — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
 | ux-layout-agent | add.plan (STEP 8.1.2), add.design (STEP 4) — depends on ux-flow-agent's design-flow.md |
-| ux-agent | add.plan (STEP 8.1.3 critique), add.design (STEP 5), add.qa (STEP 4.5 review mode, ∥ qa-agent), add.build qa (routed design-spec fixes), free-form direct use |
+| ux-agent | add.plan (critique), add.design, add.qa (review mode, ∥ qa-agent), add.build qa (fix mode — routed design-spec amendments), free-form direct use |
 | add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |

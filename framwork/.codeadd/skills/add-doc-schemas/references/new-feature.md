@@ -140,7 +140,22 @@ For `/add.plan` STEP 8.1 and `/add.design` — both write the same doc through t
 
 **Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
 
-- **Frontmatter:** `id: [NNNN]F` (SF-qualified `[NNNN]F-SFxx` when the design is scoped to a subfeature — see `{{skill:add-id-convention/SKILL.md}}`), `type: feature-design`, `related: [[NNNN]F]`, plus `provenance: sha256:<hash of the about.md bytes the design was derived from>` — the only freshness signal (never mtime); `/add.plan` 8.1.0 skips regeneration on a provenance match.
+- **Frontmatter** — the exact block both callers write, verbatim:
+
+```yaml
+---
+id: [NNNN]F            # SF-qualified as [NNNN]F-SFxx when the design is scoped to a subfeature
+type: feature-design
+created: YYYY-MM-DD    # today on FIRST write; NEVER overwritten on a re-run
+updated: YYYY-MM-DD    # today, on EVERY write
+related: [[NNNN]F]
+provenance: sha256:<hash of the about.md bytes the design was derived from>
+---
+```
+
+  `id` follows `{{skill:add-id-convention/SKILL.md}}`. `provenance` is the ONLY freshness signal (never mtime, never git status, never "it looks recent") — `/add.plan`'s design gate skips regeneration on a provenance match. ⛔ **Provenance truthfulness:** the hash asserts that the temps just consolidated were derived from the CURRENT `about.md`. It is true only because the authoring dispatches always re-ran — never stamp it over a reused or partially stale temp, or the design gate skips regeneration forever after.
+
+- **Consolidation contract (both callers).** `design.md` is written by the COORDINATOR, never by re-dispatching an authoring agent to apply the critique: read the four temps (`design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`); decide EVERY critique item `accepted`/`rejected` with a one-line rationale and apply the accepted ones while writing; validate coherence (every classified action has a UI element, every screen a layout, entry points match navigation) and fill the gaps found; write the doc; append `## Design Review`; run this schema's validation gate; only then delete the temps. This shape is shared by `/add.plan`'s design step and `/add.design` — one artefact, two callers. Change it HERE, never in one command alone.
 - **Sections:** TL;DR · TOC · Screens · Components · Flows · Tokens · Design Contract · References · Design Review. The section's exact heading is `## Design Contract` (pre-referenced by `add.build.md`'s domain-scoped priority rule — must match verbatim); it sits after `Tokens` (it inherits and restates the token/scale commitments declared there) and before `References`.
 - **TOC:** always present — the section list exceeds 3 H2s, so the universal TOC rule in `{{skill:add-doc-schemas/SKILL.md}}` applies unconditionally to this schema.
 - **Depth floor:**

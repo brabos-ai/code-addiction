@@ -22,6 +22,8 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `feature_identified` | STEP 4 | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection |
 | `docs_loaded` | STEP 5 | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents |
 | `scope_determined` | STEP 7 | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first |
+| `design_gate` | STEP 8.1.0 | Any of the three checks (frontend / scope / provenance) returns a skip verdict | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
+| `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
 
 ---
@@ -234,7 +236,7 @@ BACKEND_SELECTED  = true|false
 
 **Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.qa` resolves). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
-**`design.md` resolution (for every consumer, including the skip path):** when `HAS_EPIC=true`, prefer `${SF_DIR}/design.md`; when the SF-level file is absent but `${FEATURE_DIR}/design.md` exists, fall back to the feature-level file (legacy path).
+**`design.md` resolution (for every consumer, including the skip path):** resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).
 
 #### 8.1.0 Gate (evaluate BEFORE any dispatch)
 
@@ -255,84 +257,28 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 #### 8.1.1 DISPATCH @ux-flow-agent (flow & interaction)
 
 - **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
-- **Prompt:**
-  ```
-  You are the FLOW & INTERACTION ARCHITECT for feature ${FEATURE_ID}${SF_SUFFIX}.
-
-  Target directory (exact — never invent a path): ${SCOPE_DIR}
-  Write: ${SCOPE_DIR}/design-context.md and ${SCOPE_DIR}/design-flow.md
-  Read:  ${ABOUT_PATH} and ${FEATURE_DIR}/discovery.md
-  HAS_FOUNDATIONS=${HAS_FOUNDATIONS} — if true, read docs/design-system.md and prefer its tokens.
-
-  Follow your agent definition: design-system inspection FIRST, then flow & interaction analysis.
-  If the project has NO frontend at all, report `frontend_false` and STOP without writing any file.
-  ```
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}` (exact — never invent a path), the two output paths above, the inputs `${ABOUT_PATH}` + `${FEATURE_DIR}/discovery.md`, and `HAS_FOUNDATIONS=${HAS_FOUNDATIONS}` (if true it reads `docs/design-system.md` and prefers its tokens). Instruct it to follow its own agent definition — do NOT restate the method here — and to report `frontend_false` and STOP without writing, if the project has no frontend at all.
 - **Early exit:** IF the agent reports `frontend_false` → SKIP the remainder of 8.1 (no `design.md` is written), note it in your output, and continue with 8.2-8.4 as selected in STEP 7.
 - **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
 
 #### 8.1.2 DISPATCH @ux-layout-agent (layout & components)
 
 - **Output (temp):** `${SCOPE_DIR}/design-layout.md`
-- **Prompt:**
-  ```
-  You are the LAYOUT & COMPONENT SPECIALIST for feature ${FEATURE_ID}${SF_SUFFIX}.
-
-  Target directory (exact — never invent a path): ${SCOPE_DIR}
-  Read FIRST (MANDATORY): ${SCOPE_DIR}/design-flow.md and ${SCOPE_DIR}/design-context.md
-  Further context if needed: ${ABOUT_PATH}, ${FEATURE_DIR}/discovery.md
-  Write: ${SCOPE_DIR}/design-layout.md
-
-  Follow your agent definition: mobile-first layout per screen, spec ONLY new components
-  (existing ones are referenced by path), states per screen, every action from the flow's
-  Action Classification Matrix served by a UI element.
-  ```
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}`, the MANDATORY inputs `${SCOPE_DIR}/design-flow.md` + `${SCOPE_DIR}/design-context.md` (read FIRST), the fallback context `${ABOUT_PATH}` / `${FEATURE_DIR}/discovery.md`, and the output path above. Instruct it to follow its own agent definition — the layout method lives there, not here.
 - **Soft-degrade:** if `@ux-layout-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
 
 #### 8.1.3 DISPATCH @ux-agent (critique mode — adversarial, ONE bounded pass)
 
 - **Output (temp):** `${SCOPE_DIR}/design-review.md`
-- **Prompt:**
-  ```
-  You are the UX CRITIC for feature ${FEATURE_ID}${SF_SUFFIX}. CRITIQUE MODE — read-only.
-
-  Target directory (exact — never invent a path): ${SCOPE_DIR}
-  Read: ${SCOPE_DIR}/design-flow.md, ${SCOPE_DIR}/design-layout.md, ${SCOPE_DIR}/design-context.md
-  Write: ${SCOPE_DIR}/design-review.md
-
-  ONE bounded adversarial pass against your critique rubric. Per defect: screen/section,
-  rule violated, fix hint, severity (blocker | major | minor | polish) and rationale.
-  An empty critique MUST carry the rubric-by-rubric justification — never a bare "no issues".
-  NEVER edit design-flow.md, design-layout.md, or design.md — you report, the coordinator decides.
-  ```
-- **Soft-degrade:** if `@ux-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}` and state **CRITIQUE MODE — read-only**, then pass ONLY: target directory `${SCOPE_DIR}`, the inputs `design-flow.md` / `design-layout.md` / `design-context.md` at that directory, and the output path above. The rubric, the per-defect shape, the severity scale and the empty-critique rule are its agent definition's — do NOT restate them. State that it NEVER edits `design-flow.md`, `design-layout.md`, or `design.md`: it reports, the coordinator decides.
+- **Soft-degrade:** if `@ux-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill (the rubric is `{{skill:add-ux-design/critique-rubric.md}}`).
 
 #### 8.1.4 Coordinator Consolidation → `design.md`
 
-YOU (the coordinator) do this work — do NOT re-dispatch `@ux-layout-agent` to apply the critique.
+Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, and the `## Design Review` table shape all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at 8.1.0) and write to `${SCOPE_DIR}/design.md`.
 
-1. Read `design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`.
-2. Decide EVERY critique item: `accepted` or `rejected`, each with a one-line rationale. Apply the accepted items YOURSELF while writing `design.md`.
-3. Validate coherence: every classified action has a UI element, every screen has a layout, entry points match navigation. Fill gaps found here yourself.
-4. Write `${SCOPE_DIR}/design.md` per the `feature-design` schema (TL;DR · TOC · Screens · Components · Flows · Tokens · Design Contract · References — the doc always exceeds 3 H2 sections, so the universal TOC rule applies; respect the schema's compression rules and hard bans), consolidating the flow + layout outputs. Frontmatter (`created`/`updated` are ISO `YYYY-MM-DD`, both = TODAY on a first write; on a re-run PRESERVE the existing `created` and set `updated` to today — the 8.1.5 gate checks both):
-
-```yaml
----
-id: [NNNN]F            # SF-qualified as [NNNN]F-SFxx when HAS_EPIC=true
-type: feature-design
-created: YYYY-MM-DD    # today on first write; NEVER overwritten on a re-run
-updated: YYYY-MM-DD    # today, every write
-related: [[NNNN]F]
-provenance: sha256:${ABOUT_SHA}
----
-```
-
-5. Append a `## Design Review` section recording the full decision trail:
-
-| Item | Severity | Decision | Rationale |
-|------|----------|----------|-----------|
-| [defect, ~10 words] | blocker/major/minor/polish | accepted/rejected | [why — 1 line] |
-
-   An empty critique yields the row-free section carrying the critic's justification summary in one line.
+⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
+⛔ DO NOT restate the frontmatter or section shape here. It is shared with `/add.design`; both cite the schema so they cannot drift apart.
 
 #### 8.1.5 Validation Gate (`feature-design`)
 
@@ -537,6 +483,8 @@ ${WIKI_PAGES}
   - NEVER restate design.md layout/tokens/states — reference them (Reference, Never Repeat)
   - Keep it under 40 lines
   ```
+
+**End of the area subagents.** 8.2-8.4 have run sequentially; every selected area now has its `plan-<area>.md` temp.
 
 <!-- feature:tdd:step9 -->
 

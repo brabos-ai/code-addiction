@@ -26,7 +26,7 @@ Playwright anchor preserved: `add.qa` `plugin:playwright:drive` anchor stays `te
 
 Commit `e21e2d9`.
 
-`framwork/.codeadd/fragments/qa-pipeline/add.build.md` (between its `section:qa-fix` markers): DISPATCH by ROUTE (read `## Fix Routing`, dispatch each agent in `Order` respecting `Blocked by`, layer-sequential / slice-parallel), severity stays presentation-only, the confirmation gate stays mandatory (routing decides *who*, never *whether*). Present-not-dispatch for manual `data-seed`/`env-boot` (naming the `config.json` field `authSeed`/`bootHint`), capability-invalid, and citation-missing `@ux-agent` routes; a dispatched `design-spec` fix appends the amendment trail to `design.md` `## Design Review`; legacy reports fall back to severity/axis grouping. C2 discipline / add-ux-design / 100% compile / re-run suggestion retained.
+`framwork/.codeadd/fragments/qa-pipeline/add.build.md` (between its `section:qa-fix` markers): DISPATCH by ROUTE (read `## Fix Routing`, dispatch each agent in `Order` respecting `Blocked by`, layer-sequential / slice-parallel), severity stays presentation-only, the confirmation gate stays mandatory (routing decides *who*, never *whether*). Present-not-dispatch for manual `data-seed`/`env-boot` (naming the `config.json` field `authSeed`/`bootHint`), capability-invalid, and citation-missing `@ux-agent` routes; a dispatched `design-spec` fix appends the amendment trail to `design.md` `## Design Review`; a report without `## Fix Routing` **STOPs with the re-run remedy** (plan amendment A1, commit `a7eeb52` — the originally planned severity/axis fallback was withdrawn). C2 discipline / add-ux-design / 100% compile / re-run suggestion retained.
 
 `framwork/.codeadd/commands/add.build.md` Named Agent Mapping (~:302, far from the qa-fix anchor at :195): rows for `@e2e-agent` (test files only, no MCP) and `@ux-agent` (design spec only, never application code), each with a soft-degrade fallback.
 
@@ -51,7 +51,7 @@ add.qa.md         → "(there is no confidence score)"   # ditto
 
 No stray `confidence` FIELD anywhere; dispatch-by-severity appears only in the new correct "DISPATCH by ROUTE, not by severity" lines; `fix hint` retained as a required finding field (`review.md:69`, `add-qa` template) but no longer the dispatch signal.
 
-**Smoke scenario 8 (+6 tests → 29 total):** built `review.md` declares `## Fix Routing` + `judged-contract` + required `route`; built `add-qa` carries the routing-rules table + capability validation + `contract-inadequate` + "no confidence score"; built `add.qa` STEP 5.5 derives routes, writes `judged-contract`, STEP 6 reports per responsible agent; the qa-fix fragment dispatches by route + legacy fallback and injects into `add.build` on enable; built `add.build` Named Agent Mapping lists `@e2e-agent` + `@ux-agent`; `plugins.json` keeps `playwright.agents = [qa-agent]`.
+**Smoke scenario 8 (+6 tests → 29 total):** built `review.md` declares `## Fix Routing` + `judged-contract` + required `route`; built `add-qa` carries the routing-rules table + capability validation + `contract-inadequate` + "no confidence score"; built `add.qa` STEP 5.5 derives routes, writes `judged-contract`, STEP 6 reports per responsible agent; the qa-fix fragment dispatches by route, asserts the **absence** of a legacy fallback (`not.toMatch(/Legacy fallback/i)`, per amendment A1) and injects into `add.build` on enable; built `add.build` Named Agent Mapping lists `@e2e-agent` + `@ux-agent`; `plugins.json` keeps `playwright.agents = [qa-agent]`.
 
 **Verification:**
 
@@ -62,6 +62,18 @@ $ npx vitest run                →  26 files, 470 passed (470)      # LF checko
 ```
 
 bats not installed on this checkout; 0060 changed **no shell scripts**, so the bats suite is unaffected.
+
+### Re-measured after the umbrella review v01 fix wave (2026-07-27)
+
+The figures above are the as-of-Task-4 snapshot and are kept for the record. Re-measured on the same LF checkout after the review fixes (amendment A1 recorded, `@ux-agent` Fix Mode, SF-level `design.md` resolution in `add.review`/`add.autopilot`/`add.qa`, the `add-qa` and `add-ux-design` reference splits, `qa-preflight.sh` docker-bridge allowlist):
+
+```
+$ node scripts/build.js         →  650 files, 35 injection points, clean (no LINT warnings)
+$ npx vitest run                →  479 passed (479)
+$ npx bats framwork/.codeadd/scripts/tests/*.bats   →  180 passed, 0 failed
+```
+
+File count moved 635 → 650 because two skills gained reference subdocs (`add-qa/references/coordinator.md`, `add-ux-design/{design-contract,critique-rubric}.md`), each copied per provider. Injection-point count is unchanged at 35; the only anchor that moved is `add.plan` `feature:tdd:step9`, deliberately re-anchored from a bare ` ``` ` at ordinal 23 to unique prose at ordinal 1 (review finding S7).
 
 **Umbrella closure:** `docs/brainstorming/2026-07-26-00-qa-ux-umbrella.md` gained an "Implementation Status (2026-07-27) — umbrella CLOSED" section recording topics 01–05 → plans 0056–0060 and the four still-open deferred follow-ups (non-web-surface QA, run-evidence lifecycle, screens.json maintenance, hand-edit design.md drift).
 

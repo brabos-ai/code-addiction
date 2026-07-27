@@ -12,9 +12,9 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 
 | Type | Path | Count |
 |------|------|-------|
-| Commands | `framwork/.codeadd/commands/*.md` | ~20 |
-| Skills | `framwork/.codeadd/skills/*/SKILL.md` | ~34 |
-| Agents | `framwork/.codeadd/agents/*-agent.md` | ~8 |
+| Commands | `framwork/.codeadd/commands/*.md` | 19 |
+| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 39 |
+| Agents | `framwork/.codeadd/agents/*-agent.md` | 15 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
 ### Internal Layer — `.claude/`
@@ -27,6 +27,8 @@ Development tools that build and maintain the framework itself. NOT distributed 
 | Skills | `.claude/skills/` (`building-commands`, `add-framework-development`, `add-commit`) |
 | Agents | `.claude/agents/` (`readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`). Agents with tool restrictions use full product-layer frontmatter (`tools`, `disallowedTools`, `memory`). Agents that inherit all tools use minimal frontmatter (`name`, `description`, `model` only). |
 | Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
+
+**`docs/` tracking policy.** `.gitignore` ignores `docs/*`: plans, evidence, changelogs and brainstorms are working artefacts and stay local by default. The QA/UX umbrella set (topics 01–05, plans 0056–0060) is a **deliberate force-added exception** (`git add -f`, commit `b49352e`) because those plans are the spec of record for a shipped schema change and had to survive the branch. Plans 0001–0055 remain untracked by design — a fresh clone showing no earlier plans is expected, not drift. Do NOT "fix" this by un-ignoring `docs/`; to make another artefact durable, force-add it and say why here.
 
 Internal commands (all under `add-framework--` namespace):
 

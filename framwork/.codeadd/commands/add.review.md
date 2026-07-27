@@ -56,7 +56,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Context | Source | Status |
 |---------|--------|--------|
 | Feature metadata | `bash .codeadd/scripts/status.sh` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
-| Feature docs | `docs/features/${FEATURE_ID}/*` | about.md, discovery.md, plan.md, design.md (opt), iterations.jsonl, decisions.jsonl |
+| Feature docs | `docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
 | Knowledge base | via `{{skill:add-knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
 | Architecture reference | `CLAUDE.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
@@ -241,7 +241,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 1. `about.md` - Feature specification (EXTRACT: RF, RN, Acceptance Criteria)
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
-4. `design.md` - UX design (if exists)
+4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
@@ -380,14 +380,14 @@ prompt: |
   2. Read ALL files listed in TASK_DOCUMENTS
   3. IF WIKI:present: read {{addpath:wiki/domains/frontend.md}} (+ {{addpath:wiki/conventions.md}})
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
-  5. Read skills: add-frontend-development (PRIMARY), add-code-review, add-ux-design (if no design.md)
+  5. Read skills: add-frontend-development (PRIMARY), add-code-review, add-ux-design (ONLY if HAS_DESIGN=false — a design.md resolved at SF level counts, so never load it as a substitute for an epic's subfeature contract)
 
   ## TASK_DOCUMENTS (read ALL — source of truth)
   ${TASK_DOCUMENTS}
 
   ## VALIDATION CHECKLIST
   - [ ] React patterns: Hooks, composition, state management, TanStack Query
-  - [ ] UX: Design specs (if design.md), responsive, accessibility (ARIA), loading/error states
+  - [ ] UX: every `## Design Contract` dimension in each resolved design.md verified against the code, responsive, accessibility (ARIA), loading/error states
   - [ ] Code: No `any` types, no console.log, no dead code, no hardcoded values
   - [ ] Security: XSS sanitized, URLs validated, no sensitive data in localStorage
   - [ ] Contracts: Frontend types match backend DTOs, API calls use correct endpoints
@@ -396,7 +396,7 @@ prompt: |
   ## RULES
   - NO questions — fix automatically
   - Use skills as source of truth
-  - Design specs are MANDATORY (if design.md exists)
+  - Design specs are MANDATORY whenever HAS_DESIGN=true, including SF-level design.md on an epic
   - Fix ALL violations; no deferrals
   - DO NOT run build (coordinator does it)
 

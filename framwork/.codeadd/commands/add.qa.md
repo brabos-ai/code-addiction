@@ -15,6 +15,7 @@ Runs the persisted `<surface>.qa.spec` and judges the result with **two parallel
 
 Load skill `{{skill:add-qa/SKILL.md}}` (now default-shipped; methodology — rubric, severity, report schema, numbering, read-PNG mode) before STEP 4.
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 5 (the `qa-validation` schema + `_tests/run-NNN/` path + validation gate).
+Load `{{skill:add-qa/references/coordinator.md}}` before STEP 5 (merge rules + Fix Routing) — coordinator-only; do NOT pass it to either judge.
 
 ---
 
@@ -24,7 +25,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 5 (the `qa-validation` sch
 ```
 STEP 1: Preflight Phase A → deterministic project-level probes (qa-preflight.sh) — collect ALL rows, no stop-at-first
 STEP 2: Resolve scope   → spec-driven (about.md path) or id-driven (feature-id [SFxx]), then Phase B + consolidated diagnosis
-STEP 3: Read specs      → about.md + design.md + _tests/screens.json
+STEP 3: Read specs      → about.md + DESIGN_FILE + _tests/screens.json
 STEP 4: Resolve run-NNN → run <surface>.qa.spec → reconcile coverage → dispatch @ux-agent ∥ @qa-agent per SF
 STEP 5: Merge + write   → merge rules (dedupe/precedence/severity/contradiction) → _tests/run-NNN/{qa-validation-NNN.md, screenshots/}
 STEP 6: Summary         → counts by severity + per-judge counts + report path
@@ -80,8 +81,10 @@ Collect ALL rows — the consolidated diagnosis is assembled after Phase B (STEP
 
 ### 2.1 Scope resolution
 Two input forms — detect from the first token:
-- **Spec-driven** (a path ending in `about.md`, or a subfeature/feature folder path): `SCOPE_DIR` = the doc's containing folder; read that `about.md` + the sibling `design.md`; infer `feature-id` + `SFxx` from the path.
+- **Spec-driven** (a path ending in `about.md`, or a subfeature/feature folder path): `SCOPE_DIR` = the doc's containing folder; read that `about.md`; infer `feature-id`, `SFxx` and `FEATURE_DIR` from the path.
 - **Id-driven** (`feature-id [SFxx]`): `FEATURE_DIR = docs/features/<feature-id>-*`. If `SFxx` given → `SCOPE_DIR = FEATURE_DIR/subfeatures/SFxx-*` (probe that SF). Else → `SCOPE_DIR = FEATURE_DIR` (probe every SF in the catalog).
+
+SET `DESIGN_FILE` per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback) — i.e. `SCOPE_DIR/design.md`, else `FEATURE_DIR/design.md`. Every later step (preflight row 10, STEP 3, the `@ux-agent` dispatch) consumes `DESIGN_FILE`, never a re-derived path.
 
 ### 2.2 Preflight — Phase B (feature-scoped) + consolidated diagnosis
 ```bash
@@ -92,7 +95,7 @@ Resolve the spec glob from the generated `qa-project` skill's conventions — ne
 | # | Prerequisite | Probe | Severity |
 |---|---|---|---|
 | 9 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
-| 10 | `design.md` at `SCOPE_DIR` | file read | **degrade** — the UX axis cannot run; the functional axis still can |
+| 10 | `DESIGN_FILE` (SF-level, else feature-level — see 2.1) | file read | **degrade** — the UX axis cannot run; the functional axis still can |
 | 11 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `/add.qa-setup` scaffolds the catalog |
 | 12 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP 4.3's stopgap |
 
@@ -106,7 +109,7 @@ Now emit the ONE consolidated preflight report (Phase A + Phase B): every failed
 
 For each subfeature in scope, read:
 - `about.md` — the **functional contract**: RF/RN, acceptance criteria, rules, flows. Source of truth for *what behavior to prove*.
-- `design.md` — the **UX contract**: source of truth for *what it should look like*.
+- `DESIGN_FILE` (resolved at 2.1) — the **UX contract**: source of truth for *what it should look like*.
 - `FEATURE_DIR/_tests/screens.json` — the route map (which screens to visit + the design ref). If absent → route to `/add.qa-setup`.
 
 ---
@@ -142,12 +145,12 @@ For each subfeature in scope, read:
       or (plugin ON) fall back to today's live-drive-from-catalog as a stopgap.
 
 4.4 COVERAGE RECONCILIATION — coordinator-owned, BEFORE dispatch.
-    Extract the expected screen set from design.md (the layout tree + the
+    Extract the expected screen set from DESIGN_FILE (the layout tree + the
     Screens section), then compare it against the evidence actually captured
     under run-NNN. Two binding rules:
       - a reachable, in-contract screen with no evidence is a `blocker` titled
         `coverage: <screen> not captured` — not a note;
-      - design.md wins over _tests/screens.json when they disagree, and the
+      - DESIGN_FILE wins over _tests/screens.json when they disagree, and the
         drift is noted in the report.
     Emit a reconciliation table (screen · expected states/viewports · evidence
     present · verdict). It is SHARED INPUT — the SAME table goes to BOTH judges
@@ -156,24 +159,16 @@ For each subfeature in scope, read:
        Neither judge re-derives coverage; both consume the table as given.
 
 4.5 DISPATCH THE JUDGE PAIR — @ux-agent (review mode) AND @qa-agent, one pair
-    per SF, PARALLEL, WAIT-ALL. Axis ownership (no axis is judged twice):
-
-| Axis | Judge | Source of truth |
-|---|---|---|
-| UX quality (judgement) | `@ux-agent` | `## Design Contract` + `## Design Review` |
-| Conformance — deterministic | `@qa-agent` | captured computed styles vs the contract |
-| Conformance — judgement (hierarchy, optical alignment, primary-CTA reading, declared reflow) | `@ux-agent` | contract + screenshots |
-| Responsiveness | `@ux-agent` | declared breakpoint behaviour + per-viewport PNGs |
-| Functional delivery | `@qa-agent` | `about.md` criteria + assertion roll-up |
-| Failure forensics | `@qa-agent` | assertion error + failure PNG + console/network |
-| a11y — ALL of it | `@qa-agent` | axe-core (incl. `color-contrast`, `target-size`) |
+    per SF, PARALLEL, WAIT-ALL. Split the work strictly by the **Axis ownership**
+    table in `{{skill:add-qa/SKILL.md}}` — that table is canonical and no axis is
+    judged twice. Do NOT restate or reinterpret it here.
 
     ⛔ `@ux-agent` gets NO a11y and NO deterministic conformance — do not hand
        it the axe results or the computed-style JSON. Overlap on those axes
        makes the STEP 5 dedupe impossible.
 
     Each dispatch passes:
-      - the SCOPE_DIR paths — `about.md` and `design.md`;
+      - the resolved paths — `SCOPE_DIR/about.md` and `DESIGN_FILE`;
       - the run-NNN evidence dirs that judge owns per the table
         (@ux-agent → screenshots/ ;
          @qa-agent → screenshots/ + computed-styles/ + axe results + the
@@ -211,31 +206,25 @@ For each subfeature in scope, read:
 
 ## STEP 5: Merge Judgements, Aggregate & Write Report
 
-The two judges return independent finding sets. Merge them with these rules, applied in order:
+⛔ BEFORE merging, READ `{{skill:add-qa/references/coordinator.md}}` — it carries the canonical **Merge Rules** (dedupe key, domain precedence, severity, contradiction) and the **Fix Routing** rules. It is coordinator-only; neither judge received it.
 
-**5.1 Dedupe key — `(screen, state, viewport, symptom)`.** On collision, keep ONE finding and merge the evidence onto it (both judges' screenshots, computed-style deltas, axe rule ids, console excerpts). Never emit the same symptom twice because two judges saw it.
+**5.1 Merge.** Apply the coordinator reference's Merge Rules in the order it states. Coverage blockers from 4.4 enter the merged set as **coordinator** findings and bypass the merge rules (no judge produced a competing version).
 
-**5.2 Domain precedence.** A **visual** symptom keeps `@ux-agent`'s wording; a **behavioural** symptom keeps `@qa-agent`'s. A visual symptom with a **functional root cause** keeps the functional root cause AND the visual description — both, in one finding.
+⛔ Silently omitting a contradicted finding is HARD-BANNED — an unresolved disagreement is itself information the reader needs.
 
-**5.3 Severity.** The HIGHER of the two severities survives. The losing judge's rationale is kept as a note on the finding — it is never dropped.
-
-**5.4 Contradiction.** When the judges disagree on whether something is a finding at all, report it ONCE at the **LOWER** severity, with BOTH positions stated **verbatim**. ⛔ Silently omitting a contradicted finding is HARD-BANNED — an unresolved disagreement is itself information the reader needs.
-
-Coverage blockers from 4.4 enter the merged set as **coordinator** findings and bypass 5.1-5.4 (no judge produced a competing version).
-
-**5.5 Derive routes — coordinator work, NEVER the judges.** The judges emit `type` + root cause (and, for `ux`, the `contract-violated`/`contract-inadequate` classification with its contract-line citation); routing is derived here, once, over the merged and deduped set. For every finding, assign a `route` by the deterministic lookup on `type` + root cause in `{{skill:add-qa/SKILL.md}}` → **Fix Routing** (there is no confidence score). Then:
+**5.5 Derive routes — coordinator work, NEVER the judges.** The judges emit `type` + root cause (and, for `ux`, the `contract-violated`/`contract-inadequate` classification with its contract-line citation); routing is derived here, once, over the merged and deduped set. For every finding, assign a `route` by the deterministic lookup on `type` + root cause in the coordinator reference's **Fix Routing** table (there is no confidence score). Then:
 
 - **Citation gate:** a `ux`/`spec-gap` route to `@ux-agent` MISSING its required contract-line citation is **presented, never dispatched** (flag it in the row, do not assign an ordered slot).
 - **Capability validation (fail loud):** `@e2e-agent`→`test-file` only; `@ux-agent`→`design-spec` only; `@qa-agent` is never a route (read-only); implementation agents never route to `design-spec`. ⛔ An invalid route is a schema violation — do NOT write the report with it; fix the derivation.
 - Write the **`## Fix Routing`** section: the ordered dispatch table `Order | Agent | Findings | Target class | Blocked by` in the fixed layer order `@database-agent → @backend-agent → @frontend-agent → @e2e-agent`; `@ux-agent`, `data-seed`/`env-boot`, and user routes are unordered (`—`). A finding on a chain appears under each agent it involves.
 
-Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Set the report's `judged-contract` frontmatter to the `provenance` hash of the `design.md` it judged; if that hash differs from the previous run's `judged-contract`, note *"contract amended since run-(NNN-1)"* plus the amended dimensions — a criterion that flipped green ONLY because the contract was amended is not a fix. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
+Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Set the report's `judged-contract` frontmatter to the `provenance` hash of the `DESIGN_FILE` it judged; if that hash differs from the previous run's `judged-contract`, note *"contract amended since run-(NNN-1)"* plus the amended dimensions — a criterion that flipped green ONLY because the contract was amended is not a fix. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
 
 ---
 
 ## STEP 6: Console Summary
 
-Report to the user: counts by severity (blocker / major / minor / polish); **per-judge counts** — findings from `@ux-agent`, from `@qa-agent`, coordinator coverage findings, how many were merged as duplicates (5.1) and how many contradictions were reported (5.4); **per responsible agent** — distinct-finding counts per routed agent from the 5.5 `## Fix Routing` table (so the dispatch is visible without opening the report), plus any presented-not-dispatched routes (manual `data-seed`/`env-boot`, citation-missing); the functional-delivery roll-up (criteria met / not met / partial); the number of `unverifiable` checks with their reasons; and the report path. **Do not fix anything** — surface the next route (`/add.build` or `/add.review`) per the ecosystem map.
+Report to the user: counts by severity (blocker / major / minor / polish); **per-judge counts** — findings from `@ux-agent`, from `@qa-agent`, coordinator coverage findings, how many were merged as duplicates and how many contradictions were reported; **per responsible agent** — distinct-finding counts per routed agent from the 5.5 `## Fix Routing` table (so the dispatch is visible without opening the report), plus any presented-not-dispatched routes (manual `data-seed`/`env-boot`, citation-missing); the functional-delivery roll-up (criteria met / not met / partial); the number of `unverifiable` checks with their reasons; and the report path. **Do not fix anything** — surface the next route (`/add.build qa`, which consumes `## Fix Routing`, or `/add.review`) per the ecosystem map.
 
 ---
 

@@ -270,11 +270,11 @@ On FAIL, compose a correction instruction from the findings and autonomously dis
 Tell the user, in order:
 1. The `qa-pipeline` feature outcome (from STEP 2): enabled + verified, declined (remaining manual step: `codeadd features enable qa-pipeline`), or enable no-op detected (route: `codeadd update` / re-install).
 2. Any prerequisite they declined / must finish manually (from STEP 4).
-2. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
-3. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
-4. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
-5. Verify the MCP server is connected (`/mcp` lists `playwright`).
-6. Run the audit: `/add.qa <feature-id> [SFxx]` (or `/add.qa @docs/features/.../about.md`).
+3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
+4. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
+5. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
+6. Verify the MCP server is connected (`/mcp` lists `playwright`).
+7. Run the audit: `/add.qa <feature-id> [SFxx]` (or `/add.qa @docs/features/.../about.md`).
 
 `/add.qa-setup` does NOT modify application code, and does NOT merge the migration branch.
 

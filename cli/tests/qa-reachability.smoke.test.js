@@ -230,10 +230,22 @@ describe('scenario 6 — layout notation & Design Contract', () => {
     disableFeature(tmp, 'qa-pipeline');
   });
 
-  it('built add-ux-design skill carries the Design Contract dimensions table (Verified by header)', () => {
+  it('Design Contract dimensions table ships in add-ux-design/design-contract.md, indexed from SKILL.md', () => {
+    const contract = builtSkill('add-ux-design', 'design-contract.md');
+    expect(contract).toContain('Verified by');
+    expect(contract).toContain('## Design Contract Dimensions');
+    expect(contract).toContain('## Layout Tree Notation');
+    // Progressive disclosure: the dispatcher indexes, it does not restate.
     const uxDesignSkill = builtSkill('add-ux-design');
-    expect(uxDesignSkill).toContain('Verified by');
-    expect(uxDesignSkill).toContain('## Design Contract Dimensions');
+    expect(uxDesignSkill).toContain('design-contract.md');
+    expect(uxDesignSkill).not.toContain('## Design Contract Dimensions');
+  });
+
+  it('critique rubric ships as its own reference file, indexed from SKILL.md', () => {
+    const rubric = builtSkill('add-ux-design', 'critique-rubric.md');
+    expect(rubric).toMatch(/Binds the CRITIC only/i);
+    expect(rubric).toMatch(/empty critique/i);
+    expect(builtSkill('add-ux-design')).not.toMatch(/^ONE bounded adversarial pass/m);
   });
 });
 
@@ -253,11 +265,14 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
     expect(qa).toMatch(/4\.1 RESOLVE run-NNN FIRST/);
   });
 
-  it('built qa-agent carries no memory: line and a root-cause taxonomy', () => {
+  it('built qa-agent is read-only, memory-free, and cites the taxonomy rather than copying it', () => {
     const qaAgent = builtAgent('qa-agent');
     expect(qaAgent).not.toMatch(/^memory:/m);
+    expect(qaAgent).toMatch(/^disallowedTools:.*Write.*Edit/m);
     expect(qaAgent.toLowerCase()).toContain('root cause');
-    expect(qaAgent).toContain('missing-implementation');
+    // Canonical taxonomy lives in the skill; the agent must not restate it.
+    expect(qaAgent).not.toContain('missing-implementation');
+    expect(builtSkill('add-qa')).toContain('missing-implementation');
   });
 
   it('built ux-agent carries the review-mode rubric (context, not immunity) and spec-gap', () => {
@@ -272,12 +287,18 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
     expect(review).toContain('unverifiable');
   });
 
-  it('built add-qa skill documents the axis split + merge rules, no stale N-axis wording', () => {
+  it('built add-qa skill documents the axis split + taxonomy, no stale N-axis wording', () => {
     const skill = builtSkill('add-qa');
     expect(skill).toMatch(/Axis ownership/i);
     expect(skill).toContain('Root-cause Taxonomy');
-    expect(skill).toContain('Merge Rules');
     expect(skill).not.toMatch(/\d-axis|dual-axis/i);
+  });
+
+  // Coordinator-only content lives in a reference file the judges never load.
+  it('merge rules live in add-qa/references/coordinator.md, not in the judge-loaded SKILL.md', () => {
+    const coordinator = builtSkill('add-qa', path.join('references', 'coordinator.md'));
+    expect(coordinator).toContain('## Merge Rules');
+    expect(builtSkill('add-qa')).not.toContain('## Merge Rules');
   });
 
   // Pins the plugin:playwright:drive anchor text on both resources so the STEP 4
@@ -307,13 +328,26 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     expect(review).toContain('REQUIRED `route`');
   });
 
-  it('built add-qa skill carries the routing rules table + capability validation, no confidence field', () => {
+  it('built add-qa coordinator reference carries the routing rules + capability validation, no confidence field', () => {
+    const coordinator = builtSkill('add-qa', path.join('references', 'coordinator.md'));
+    expect(coordinator).toContain('## Fix Routing');
+    expect(coordinator).toMatch(/Routing rules/i);
+    expect(coordinator).toContain('Capability validation');
+    expect(coordinator).toContain('contract-inadequate');
+    expect(coordinator).toMatch(/no confidence score/i);
+    // The judges are told not to emit routes — the routing RULES must not ride
+    // along in the skill they preload. (The report template legitimately keeps
+    // the `## Fix Routing` heading: it names a section of the output document.)
     const skill = builtSkill('add-qa');
-    expect(skill).toContain('## Fix Routing');
-    expect(skill).toMatch(/Routing rules/i);
-    expect(skill).toContain('Capability validation');
-    expect(skill).toContain('contract-inadequate');
-    expect(skill).toMatch(/no confidence score/i);
+    expect(skill).not.toMatch(/Routing rules/i);
+    expect(skill).not.toContain('Capability validation');
+  });
+
+  it('add.qa cites the canonical axis table and merge rules instead of restating them', () => {
+    const qa = builtCommand('add.qa');
+    expect(qa).not.toContain('| Failure forensics | `@qa-agent` |');
+    expect(qa).toMatch(/Axis ownership/i);
+    expect(qa).toMatch(/references\/coordinator\.md|coordinator\.md/);
   });
 
   it('built add.qa STEP 5.5 derives routes and STEP 6 reports per responsible agent', () => {
@@ -356,5 +390,60 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     );
     const pw = plugins.playwright ?? plugins.plugins?.playwright;
     expect(pw.agents.map((a) => a.agent)).toEqual(['qa-agent']);
+  });
+});
+
+// The umbrella review v01 found three seams the plans never covered: @ux-agent was
+// routed to a mode it refused to perform, and two commands resolved design.md at
+// feature level only — silently skipping the Design Contract on epics, which is
+// exactly where this umbrella exists to enforce it.
+describe('scenario 9 — umbrella review v01 fixes', () => {
+  const builtAgent = (name) =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'agents', `${name}.md`), 'utf8');
+
+  it('ux-agent defines a Fix Mode with the design.md amendment trail', () => {
+    const uxAgent = builtAgent('ux-agent');
+    expect(uxAgent).toMatch(/## Fix Mode/);
+    expect(uxAgent).toMatch(/design-spec/);
+    // The trail is what stops a green-under-amended-contract flip reading as a fix.
+    expect(uxAgent).toMatch(/## Design Review/);
+    expect(uxAgent).toMatch(/run-NNN/);
+    // Write scope is explicit rather than a blanket read-only claim.
+    expect(uxAgent).toMatch(/Write scope/i);
+  });
+
+  it('ux-agent still refuses fixes inside a review dispatch', () => {
+    const reviewSection = builtAgent('ux-agent').match(
+      /## Review Mode[\s\S]*?(?=## Fix Mode)/,
+    )[0];
+    expect(reviewSection).toMatch(/READ-ONLY/);
+    expect(reviewSection).toMatch(/Refuse/i);
+  });
+
+  it('add.review and add.autopilot resolve design.md at subfeature scope', () => {
+    for (const name of ['add.review', 'add.autopilot', 'add.build', 'add.qa']) {
+      expect(builtCommand(name)).toMatch(/SF-level first, feature-level fallback/);
+    }
+  });
+
+  it('add.autopilot points at /add.design, not the non-existent /design', () => {
+    const autopilot = builtCommand('add.autopilot');
+    expect(autopilot).toMatch(/run `\/add\.design`/);
+    expect(autopilot).not.toMatch(/run `\/design`/);
+  });
+
+  it('add.plan GATES table declares the design gates it enforces at 8.1', () => {
+    const plan = builtCommand('add.plan');
+    const gates = plan.slice(plan.indexOf('## GATES'), plan.indexOf('## INVARIANT'));
+    expect(gates).toContain('design_gate');
+    expect(gates).toContain('design_validated');
+  });
+
+  it('the tdd:step9 injection anchor is unique prose, not a bare code fence', () => {
+    const point = JSON.parse(
+      fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'),
+    ).points.find((p) => p.section === 'step9');
+    expect(point.anchor.text).not.toBe('```');
+    expect(point.anchor.ordinal).toBe(1);
   });
 });

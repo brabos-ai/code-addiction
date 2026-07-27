@@ -49,6 +49,8 @@ Do NOT load this skill for:
 | `{{skill:add-ux-design/modern-patterns.md}}` | Interaction patterns, visual trends, performance UX |
 | `{{skill:add-ux-design/saas-patterns.md}}` | SaaS surface patterns (Dashboard, Settings, Billing, etc.) |
 | `{{skill:add-ux-design/ux-writing.md}}` | Microcopy, error messages, empty states |
+| `{{skill:add-ux-design/design-contract.md}}` | Layout tree notation, component composition, Design Contract Dimensions |
+| `{{skill:add-ux-design/critique-rubric.md}}` | The 9-item critique rubric (`@ux-agent` critique mode only) |
 
 ### Docs Lookup
 
@@ -485,76 +487,13 @@ When generating ANY frontend work, ALWAYS include:
 
 ---
 
-## Layout Tree Notation
+## Design Contract & Layout Notation
 
-Screens are specified as a **layout tree**, not an ASCII wireframe — the layout tree replaces wireframes entirely. One minified JSON object per screen:
+The **layout tree notation**, **component composition** notation, and the canonical **Design Contract Dimensions** table (11 dimensions, each naming its verification method) live in `{{skill:add-ux-design/design-contract.md}}`. `@ux-layout-agent` loads it to author a spec; `@qa-agent` reads it to know which dimensions are computed-style-verified. Do not restate the table anywhere else.
 
-```json
-{"screen":"<id>","regions":[{"role":"header","order":1,"span":{"mobile":"full","desktop":"full"},"component":"<real component name>","contains":["..."],"primaryCta":"<action id, on the region that holds it>"}]}
-```
+## Critique Rubric
 
-- **Fields only:** region `role`, `order`, `span` (per breakpoint), `component` (real name — shadcn path or a `new` component already specced), `contains` (child element/content labels), `primaryCta` (the action id, placed on whichever region holds it).
-- **No leaf-level styling.** No CSS, no `px`, no Tailwind classes, no color/spacing values inside the tree — those live in code, not the design doc. A region declares role and composition, never appearance.
-
-**Example** (mobile-first, two regions):
-
-```json
-{"screen":"notifications-list","regions":[{"role":"header","order":1,"span":{"mobile":"full","desktop":"full"},"component":"PageHeader","contains":["title","filter-menu"]},{"role":"content","order":2,"span":{"mobile":"full","desktop":"8col"},"component":"NotificationList","contains":["NotificationCard"],"primaryCta":"mark-all-read"}]}
-```
-
-## Component Composition
-
-Every component in the design's inventory states what it renders inside itself:
-
-- **Notation:** `name — source — props/states — composed-of: [child component names]`.
-- Child names resolve to the real inventory — existing library components (shadcn/etc.) or other `new` components already specced in the same doc. Never a fabricated library or an invented primitive.
-- A leaf component (renders no children) states `composed-of: []` rather than omitting the field.
-
-## Design Contract Dimensions
-
-A feature's `## Design Contract` section (see `{{skill:add-doc-schemas/references/new-feature.md}}`, `feature-design` schema) is a markdown table, columns `Dimension | Declares | Verified by | Method`. These are the dimensions and how each is verified:
-
-| Dimension | Declares | Verified by | Method |
-|---|---|---|---|
-| Spacing scale | Permitted step set | Computed style | Captured gap/margin/padding vs step set |
-| Token allowlist | Colour/type tokens permitted | Computed style | Resolved custom-property names (never sampled pixels) |
-| Typographic scale | Sizes/weights per role | Computed style | Captured font-size/font-weight |
-| Grid/container | Max width, gutters, columns per breakpoint | Computed style | Captured container width + column count |
-| Minimum tap target | e.g. 44px | axe-core (`target-size`) | Deterministic rule |
-| Contrast target | WCAG level | axe-core (`color-contrast`) | Deterministic rule |
-| Breakpoint behaviour | Declared reflow per screen/viewport | Screenshot | Agent judgement |
-| Required states | Which of empty/loading/error/success must exist per screen | Evidence set | Set comparison of captured state files |
-| Primary CTA count | Normally 1 per screen | Screenshot | Agent judgement |
-| Visual hierarchy | Intended reading order | Screenshot | Agent judgement |
-| Optical alignment | Baselines, icon/label pairing | Screenshot | Agent judgement |
-
-**Verifiability rule.** A line belongs in the contract only if it names a verification method from this table. "Uses TanStack Query" is a plan concern, not a contract line — it names no verification method here.
-
-**Inherit, don't invent.** Values are inherited from `design-context.md`; the feature's `Design Contract` section restates only this feature's commitments and justified deviations. A project dimension left undefined is written `unknown — <why>`, never invented.
-
----
-
-## Critique Rubric (ux-agent critique mode)
-
-> **Binds the CRITIC only.** This is the canonical rubric `@ux-agent` runs in critique mode against a `design-flow.md` + `design-layout.md` pair (dispatched by `add.plan` 8.1.3 / `add.design`). The authoring guidance in the rest of this skill — and in `@ux-flow-agent` / `@ux-layout-agent` — deliberately does NOT restate this list: an author who mechanically pre-satisfies the checklist produces a design that passes the critic without being better. Authors follow the craft guidance; the critic hunts against this rubric.
-
-ONE bounded adversarial pass. Hunt for:
-
-1. Ambiguous hierarchy — no clear primary focus on a screen.
-2. More than one primary CTA on a screen.
-3. A missing required state (empty / loading / error / success).
-4. A classified action (from the Action Classification Matrix) with no corresponding UI element in the layout.
-5. An off-scale value — spacing, radius, or type size not on the declared scale.
-6. A custom pattern where an existing component already covers the case.
-7. A tap target under 44px at the smallest viewport.
-8. Contrast below WCAG AA against the declared tokens.
-9. An entry point from `design-flow.md` that no layout accounts for.
-
-**Per defect:** cite the screen/section, the rule violated, and a fix hint. Classify severity `blocker` / `major` / `minor` / `polish`.
-
-**Empty critique:** never a bare "no issues found" — carry a rubric-by-rubric justification for why each of the 9 items does not apply (e.g. "single CTA per screen confirmed on all N screens").
-
-**Read-only:** the critic reports; the dispatching coordinator decides accept/reject and applies changes.
+The 9-item adversarial rubric `@ux-agent` runs in critique mode, its severity scale, and the empty-critique rule live in `{{skill:add-ux-design/critique-rubric.md}}`. It binds the CRITIC only — authors deliberately do not pre-satisfy it.
 
 ---
 

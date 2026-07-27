@@ -19,7 +19,7 @@ The QA report is the handoff artefact between judging and fixing, and today the 
 - **Injection anchors:** `fragments/qa-pipeline/add.build.md` content may change freely BETWEEN its `<!-- section:qa-fix -->` markers, but `framwork/.codeadd/commands/add.build.md`'s marker pair (~:195) and its adjacent anchor lines must NOT be disturbed — the Named Agent Mapping edit lives elsewhere in that file (~:293-300). `add.qa.md` carries the `plugin:playwright:drive` pair. Rebuild verifies; `tests/qa-reachability.smoke.test.js` scenario 1 round-trips the qa-pipeline injection.
 - The `/add.build qa` confirmation gate stays MANDATORY and untouched — routing decides *who*, never *whether*. QA never fixes; `add.qa` stays read-only.
 - Judges emit `type` + root cause; the **coordinator** derives `route` at STEP 5 after the merge (never the judges — routing needs the merged, deduped set and global ordering).
-- Legacy reports without `## Fix Routing` must still work (fallback to severity/axis grouping).
+- ~~Legacy reports without `## Fix Routing` must still work (fallback to severity/axis grouping).~~ **Superseded 2026-07-27 (amendment A1, commit `a7eeb52`):** a report without `## Fix Routing` makes `/add.build qa` **STOP with the remedy** (re-run `/add.qa`, which writes a fresh run-NNN carrying routes). Rationale: the QA pipeline is an opt-in, disabled-by-default feature with no released consumer holding pre-0060 reports, and a silent severity/axis fallback would dispatch un-routed findings to the wrong agents — the exact failure routing exists to prevent. See the Amendments section.
 - Vitest baseline: 27 environmental failures. English only. Conventional commit per task + `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
 
 ## Task 1: qa-validation schema + add-qa routing rules
@@ -47,7 +47,7 @@ The QA report is the handoff artefact between judging and fixing, and today the 
 
 **Files:** `framwork/.codeadd/fragments/qa-pipeline/add.build.md`, `framwork/.codeadd/commands/add.build.md`.
 
-1. **Fragment** (between its section markers): read `## Fix Routing` and group by agent for DISPATCH; retain severity grouping for PRESENTATION (the user still sees blocker→polish). After the existing mandatory confirmation, dispatch each agent in the table's order respecting `Blocked by`; sequential across layers, parallel within one agent's slice when its findings are independent. Surface as user decisions and do NOT dispatch: manual routes (`data-seed`/`env-boot`, naming the `config.json` field to fix — `authSeed`/`bootHint`), capability-invalid routes, and `@ux-agent` routes missing their contract-line citation. **Legacy fallback:** when `## Fix Routing` is absent (older report), fall back to today's severity/axis grouping. **Amendment trail:** a dispatched `@ux-agent` design-spec fix MUST append its amendment to `design.md` `## Design Review` with the originating `run-NNN` + finding ID. Everything else unchanged: explicit `/add.build qa` trigger only, outside the §4.2 mode ladder, CORRECTION MODE (C2) discipline, `add-ux-design` loaded for frontend work, 100% compile, non-blocking, re-run suggestion.
+1. **Fragment** (between its section markers): read `## Fix Routing` and group by agent for DISPATCH; retain severity grouping for PRESENTATION (the user still sees blocker→polish). After the existing mandatory confirmation, dispatch each agent in the table's order respecting `Blocked by`; sequential across layers, parallel within one agent's slice when its findings are independent. Surface as user decisions and do NOT dispatch: manual routes (`data-seed`/`env-boot`, naming the `config.json` field to fix — `authSeed`/`bootHint`), capability-invalid routes, and `@ux-agent` routes missing their contract-line citation. **Absent `## Fix Routing` (amended A1 — was "legacy fallback"):** STOP with the remedy (re-run `/add.qa <feature-id> [SFxx]`, then `/add.build qa`); never guess a dispatch and never fall back to severity grouping. **Amendment trail:** a dispatched `@ux-agent` design-spec fix MUST append its amendment to `design.md` `## Design Review` with the originating `run-NNN` + finding ID. Everything else unchanged: explicit `/add.build qa` trigger only, outside the §4.2 mode ladder, CORRECTION MODE (C2) discipline, `add-ux-design` loaded for frontend work, 100% compile, non-blocking, re-run suggestion.
 2. **`add.build.md` Named Agent Mapping** (~:293-300, far from the qa-fix marker): add rows for `@e2e-agent` (test files only, no MCP) and `@ux-agent` (design spec only, never application code), each with the soft-degrade fallback the table already uses for the other agents.
 3. **Verify** `cli/src/plugins.json`: `playwright.agents[]` lists only `qa-agent`. Since 0059 put `@ux-agent` on the judging path, decide and record: if `@ux-agent` never needs live driving (it judges from persisted PNGs + contract), leave the catalog as-is and state that in the report; only add a row if a drive fragment genuinely exists for it. Do not add a catalog row without a matching `plugins/playwright/fragments/agents/ux-agent.md` file — a row alone injects nothing (and a marker alone likewise).
 
@@ -63,13 +63,25 @@ The QA report is the handoff artefact between judging and fixing, and today the 
 
 `route` required on every finding; routing is a lookup, not fresh judgement; multiple ordered agents allowed; capability validation is a hard ban; manual routes go to the user; `spec-gap` → design-spec only; coverage blockers → `@e2e-agent`; layer ordering database→backend→frontend→e2e; **no `confidence` field** — gating on manual/capability-invalid/citation-missing instead; confirmation gate untouched; severity for presentation, agent for dispatch; per-agent counts in the console summary; contract amendments leave a trail and never read as fixes.
 
+## Amendments
+
+### A1 — no legacy fallback for un-routed reports (2026-07-27, commit `a7eeb52`)
+
+**Changed:** the Global Constraint "legacy reports must still work (fallback to severity/axis grouping)" and Task 3's matching fragment sentence are withdrawn. `/add.build qa` now STOPs when the report carries no `## Fix Routing`, telling the user to re-run `/add.qa`.
+
+**Why:** `qa-pipeline` ships **disabled by default** and no released version ever wrote a routed report, so no user holds a report the fallback would have served. Against that empty benefit, a severity/axis fallback silently dispatches findings whose owner was never derived — precisely the mis-dispatch that capability validation and the citation gate exist to block. A hard STOP with an exact remedy costs one `/add.qa` re-run and cannot mis-dispatch.
+
+**Migration impact:** any `qa-validation-NNN.md` written before this branch must be regenerated by re-running `/add.qa <feature-id> [SFxx]`; the stale run is never consumed. `/add.build qa` states this remedy verbatim. The `_qa-report/` migration note that plan 0057 T4.3 cited was removed in the same commit and is superseded by this amendment.
+
+**Artefacts reconciled with A1:** `fragments/qa-pipeline/add.build.md`, `skills/add-doc-schemas/references/review.md` (route REQUIRED), `cli/tests/qa-reachability.smoke.test.js` scenario 8, `docs/plans/0060-PLAN--qa-fix-routing--evidence-v01.md`, `docs/changelog/2026-07-27-update-qa-fix-routing.md`.
+
 ## Risks
 
 | Risk | Mitigation |
 |---|---|
 | Roster drift stales the routing rules | Rules live in the `add-qa` skill, not the command; `add-framework--sync` surfaces drift |
 | Wrong route dispatches an agent that cannot fix it | Capability validation as a hard ban + the confirmation gate + citation-missing never dispatched |
-| Legacy report lacks `## Fix Routing` | Explicit fallback to severity/axis grouping |
+| Legacy report lacks `## Fix Routing` | **A1:** hard STOP with the re-run remedy — no silent severity/axis fallback (a fallback would dispatch un-routed findings to the wrong agents) |
 | Chains produce partial fixes when a link is skipped | Each slice states what it owns; skipped links reported unresolved; next `/add.qa` catches |
 | Amendment trail ignored → self-healing audit | `judged-contract` hash + mandatory `## Design Review` append; flipped-green-under-amended-contract never reported as a fix |
 
@@ -82,3 +94,5 @@ Executed via subagent-driven development in-session; closes the QA/UX umbrella.
 | Date | Change |
 |------|--------|
 | 2026-07-27 | Created from brainstorm 05 (post coherence pass: no confidence field), task-structured for SDD |
+| 2026-07-27 | Tasks 1–4 implemented (commits `e21e2d9`, `5975816`, `fcad3ee`); status → implemented |
+| 2026-07-27 | **Amendment A1** — legacy severity/axis fallback withdrawn in favour of a hard STOP + re-run remedy (commit `a7eeb52`); recorded after umbrella review v01 flagged the plan-vs-code contradiction |

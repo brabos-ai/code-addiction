@@ -52,6 +52,14 @@ write_config() {
   [[ "$output" == *"QA_FEATURE_STATE=false"* ]]
 }
 
+@test "phase a: malformed manifest → QA_FEATURE_STATE=unset, still exit 0" {
+  write_manifest '{"features":{"qa-pipeline":'
+  run bash "$SCRIPTS_DIR/qa-preflight.sh" a
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"QA_FEATURE_STATE=unset"* ]]
+  [[ "$output" == *"QA_PROJECT_SKILL="* ]]
+}
+
 # ─── Phase A: config.json + short-circuit of dependent probes ───────────────
 
 @test "phase a: config missing → QA_CONFIG=missing, baseUrl probes not-probed" {
@@ -94,9 +102,35 @@ write_config() {
   [[ "$output" == *"QA_BASEURL_LOCAL=broken"* ]]
 }
 
+@test "phase a: docker bridge baseUrl (172.16/12) → QA_BASEURL_LOCAL=ok" {
+  write_config '{"baseUrl":"http://172.17.0.2:3000"}'
+  run bash "$SCRIPTS_DIR/qa-preflight.sh" a
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"QA_BASEURL_LOCAL=ok"* ]]
+}
+
+@test "phase a: host.docker.internal baseUrl → QA_BASEURL_LOCAL=ok" {
+  write_config '{"baseUrl":"http://host.docker.internal:3000"}'
+  run bash "$SCRIPTS_DIR/qa-preflight.sh" a
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"QA_BASEURL_LOCAL=ok"* ]]
+}
+
+@test "phase a: 172.32.x is public, NOT the docker bridge → QA_BASEURL_LOCAL=broken" {
+  write_config '{"baseUrl":"http://172.32.0.5:3000"}'
+  run bash "$SCRIPTS_DIR/qa-preflight.sh" a
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"QA_BASEURL_LOCAL=broken"* ]]
+}
+
 # ─── Phase A: runner + chromium short-circuit ───────────────────────────────
 
+# Pinned environment: TEST_REPO is created outside any JS project, but
+# require.resolve walks parent dirs — a node_modules ABOVE the temp dir would
+# make this pass for the wrong reason. Assert the absence explicitly first.
 @test "phase a: runner absent in project → QA_RUNNER=missing, QA_CHROMIUM=not-probed" {
+  run node -e "require.resolve('@playwright/test')"
+  [ "$status" -ne 0 ]
   run bash "$SCRIPTS_DIR/qa-preflight.sh" a
   [ "$status" -eq 0 ]
   [[ "$output" == *"QA_RUNNER=missing"* ]]

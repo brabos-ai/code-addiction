@@ -13,6 +13,10 @@
 # Exit: always 0 — this is a diagnosis, never a gate. Exit 2 only on CLI misuse.
 # ============================================
 
+# -u only: -e would defeat the always-exit-0 diagnosis contract, and every
+# probe already reports its own failure as a STATUS rather than a non-zero exit.
+set -u
+
 usage() {
   echo "Usage: qa-preflight.sh a | qa-preflight.sh b <FEATURE_DIR> [SPEC_GLOB]"
   exit 2
@@ -22,6 +26,8 @@ PHASE="${1:-}"
 
 # --- Phase A: project-level probes ---
 phase_a() {
+  local FEATURE_STATE CONFIG BASEURL HOST LOCAL SKILL d
+
   # Feature state (raw manifest read)
   if [ ! -f .codeadd/manifest.json ]; then
     echo "QA_FEATURE_STATE=no-manifest"
@@ -57,6 +63,9 @@ phase_a() {
       HOST=$(node -e "console.log(new URL(process.argv[1]).hostname)" "$BASEURL" 2>/dev/null)
       case "$HOST" in
         localhost|127.*|0.0.0.0|::1|\[::1\]|*.local|*.test|192.168.*|10.*) LOCAL=ok ;;
+        # Docker: the bridge network is 172.16.0.0/12 (172.16-172.31 ONLY —
+        # 172.32.* is public), plus the host gateway alias.
+        172.1[6-9].*|172.2[0-9].*|172.3[01].*|host.docker.internal) LOCAL=ok ;;
         *) LOCAL=broken ;;
       esac
       echo "QA_BASEURL_LOCAL=$LOCAL"
@@ -110,8 +119,9 @@ phase_a() {
 
 # --- Phase B: feature-scoped probes ---
 phase_b() {
-  FEATURE_DIR="$1"
-  SPEC_GLOB="$2"
+  local FEATURE_DIR="$1"
+  local SPEC_GLOB="$2"
+  local SCREENS
   [ -n "$FEATURE_DIR" ] || usage
 
   SCREENS="$FEATURE_DIR/_tests/screens.json"

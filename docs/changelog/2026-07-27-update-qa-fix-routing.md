@@ -20,7 +20,10 @@ The QA report now carries routing metadata, turning the judging→fixing handoff
 - `add.build` — Named Agent Mapping gains `@e2e-agent` (test files only, no MCP) and `@ux-agent` (design spec only) rows.
 
 ### Fragments
-- `qa-pipeline/add.build.md` (qa-fix) — dispatch by route (Order + Blocked by), severity for presentation only, mandatory confirmation, present-not-dispatch for manual/capability-invalid/citation-missing routes, amendment trail, legacy fallback.
+- `qa-pipeline/add.build.md` (qa-fix) — dispatch by route (Order + Blocked by), severity for presentation only, mandatory confirmation, present-not-dispatch for manual/capability-invalid/citation-missing routes, amendment trail.
+
+### Breaking (plan 0060 amendment A1)
+- A `qa-validation` report without a `## Fix Routing` section is **no longer consumable**: `/add.build qa` STOPs and tells the user to re-run `/add.qa <feature-id> [SFxx]`. The originally planned severity/axis fallback was withdrawn — a fallback would dispatch findings whose owner was never derived. **Migration:** regenerate any report written before this release by re-running `/add.qa`. Low blast radius: `qa-pipeline` is disabled by default and no released version wrote routed reports.
 
 ### Not changed (recorded decision)
 - `cli/src/plugins.json` — `playwright.agents` stays `[qa-agent]`; `@ux-agent` judges from persisted PNGs and never live-drives (no drive fragment exists).

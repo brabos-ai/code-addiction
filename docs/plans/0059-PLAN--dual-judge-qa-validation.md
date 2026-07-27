@@ -120,3 +120,5 @@ Executed via subagent-driven development in-session.
 | Date | Change |
 |------|--------|
 | 2026-07-27 | Created from brainstorm 04 (post coherence pass: full-severity override, no ux-agent a11y), task-structured for SDD |
+| 2026-07-27 | Tasks 1–5 implemented; status → implemented. See `docs/changelog/2026-07-27-update-dual-judge-qa-validation.md`. Injection-anchor question raised at T3 answered in umbrella review v01 (§ Side-Effect Detection): a changed `next` drift hint is safe in both the fresh-install and already-installed paths |
+| 2026-07-27 | Umbrella review v01 fix wave: merge rules moved from `add-qa/SKILL.md` to `add-qa/references/coordinator.md` (coordinator-only, judges never load it); `@qa-agent` gains `disallowedTools` and cites the root-cause taxonomy instead of restating it |
