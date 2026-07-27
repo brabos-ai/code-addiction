@@ -138,9 +138,9 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | qa-agent | add.qa (dispatched per SF, parallel with ux-agent review) |
 | e2e-agent | add.test (dispatched when qa-pipeline feature enabled), add.build qa (routed test-file fixes) |
-| ux-flow-agent | add.plan (design step), add.design — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
+| ux-flow-agent | add.plan (STEP 8.1.1), add.design (STEP 3) — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
 | ux-layout-agent | add.plan (STEP 8.1.2), add.design (STEP 4) — depends on ux-flow-agent's design-flow.md |
-| ux-agent | add.plan (critique), add.design, add.qa (review mode, ∥ qa-agent), add.build qa (fix mode — routed design-spec amendments), free-form direct use |
+| ux-agent | add.plan (STEP 8.1.3 critique), add.design (STEP 5), add.qa (STEP 4.5 review mode, ∥ qa-agent), add.build qa (fix mode — routed design-spec amendments), free-form direct use |
 | add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |

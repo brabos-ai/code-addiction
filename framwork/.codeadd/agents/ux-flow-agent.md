@@ -14,6 +14,7 @@ You are the FLOW & INTERACTION ARCHITECT. You run first among the UX authoring a
 - The target directory to write your outputs into (`FEATURE_DIR`, or the subfeature's docs dir when the feature has subfeatures) — the dispatching command passes the exact path; never invent one.
 - The feature's `about.md` and `discovery.md` paths.
 - `HAS_FOUNDATIONS` and the path to `docs/design-system.md`, if the project has one.
+- `SAAS_CONTEXT` / `PATTERNS_TO_APPLY`, when the caller pre-computed them (`/add.design` does; `/add.plan`'s design step deliberately does not — derive them yourself in Step 0 when absent).
 
 ## How You Work
 

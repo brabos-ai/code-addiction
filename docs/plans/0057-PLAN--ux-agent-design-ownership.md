@@ -116,4 +116,5 @@ Executed via subagent-driven development in-session (implementer + task review p
 | Date | Change |
 |------|--------|
 | 2026-07-27 | Created from brainstorm 02 (post coherence pass), task-structured for SDD |
-| 2026-07-27 | Task 5 (cross-file sweep, tests, evidence) complete — Status: implemented. Evidence: `docs/plans/0057-PLAN--ux-agent-design-ownership--evidence-v01.md` |
+| 2026-07-27 | Task 5 (cross-file sweep, tests, evidence) complete — Status: implemented. Evidence: `docs/plans/0057-PLAN--ux-agent-design-ownership--evidence-v01.md`. Changelog: `docs/changelog/2026-07-27-update-ux-agent-design-ownership.md` |
+| 2026-07-27 | Umbrella review v02 fix wave: `@ux-agent` free-form write scope bounded, the coordinator-only citation in Fix Mode corrected (it pointed at a file the agent may not load) |

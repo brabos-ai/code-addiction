@@ -44,7 +44,7 @@ STEP 7: Validation Gate → qa-validation schema gate
 | **STEP 4.5** | Dispatch | Handing `@ux-agent` axe results or the computed-style JSON; letting one axis be judged twice | Split strictly per the axis ownership table |
 | **STEP 4.5** | A declared dimension's verification method did not run | Recording it as passing, or omitting it | Record `unverifiable` + the reason |
 | **STEP 5** | The two judges contradict each other | Dropping either position, or picking a winner silently | Report once at the LOWER severity with both positions verbatim |
-| **READ-ONLY** | Always — `@ux-agent` and `@qa-agent` alike | Edit/Write on source code, app config, migrations; fixing findings | Write only under `SCOPE_DIR/_tests/run-NNN/` |
+| **READ-ONLY** | Always — `@ux-agent` and `@qa-agent` alike | Edit/Write on ANY file; fixing findings | Both judges return findings and write NOTHING — `@qa-agent` carries `disallowedTools` enforcing it. The coordinator alone writes under `SCOPE_DIR/_tests/run-NNN/` |
 | **STEP 7** | Report not written | Mark complete | Run the gate first |
 
 ---
@@ -215,8 +215,8 @@ For each subfeature in scope, read:
 **5.5 Derive routes — coordinator work, NEVER the judges.** The judges emit `type` + root cause (and, for `ux`, the `contract-violated`/`contract-inadequate` classification with its contract-line citation); routing is derived here, once, over the merged and deduped set. For every finding, assign a `route` by the deterministic lookup on `type` + root cause in the coordinator reference's **Fix Routing** table (there is no confidence score). Then:
 
 - **Citation gate:** a `ux`/`spec-gap` route to `@ux-agent` MISSING its required contract-line citation is **presented, never dispatched** (flag it in the row, do not assign an ordered slot).
-- **Capability validation (fail loud):** `@e2e-agent`→`test-file` only; `@ux-agent`→`design-spec` only; `@qa-agent` is never a route (read-only); implementation agents never route to `design-spec`. ⛔ An invalid route is a schema violation — do NOT write the report with it; fix the derivation.
-- Write the **`## Fix Routing`** section: the ordered dispatch table `Order | Agent | Findings | Target class | Blocked by` in the fixed layer order `@database-agent → @backend-agent → @frontend-agent → @e2e-agent`; `@ux-agent`, `data-seed`/`env-boot`, and user routes are unordered (`—`). A finding on a chain appears under each agent it involves.
+- ⛔ Run the reference's **capability validation** before writing. An invalid route is a schema violation — do NOT write the report with it; fix the derivation.
+- Write the **`## Fix Routing`** section per the reference's template and layer ordering.
 
 Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Set the report's `judged-contract` frontmatter to the `provenance` hash of the `DESIGN_FILE` it judged; if that hash differs from the previous run's `judged-contract`, note *"contract amended since run-(NNN-1)"* plus the amended dimensions — a criterion that flipped green ONLY because the contract was amended is not a fix. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
 

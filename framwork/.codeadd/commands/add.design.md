@@ -56,7 +56,7 @@ STEP 9: Completion                     -> INFORM user (no approval ask)
 
 Read skill `add-ux-design`.
 
-**Skill provides:** SaaS UX patterns, Context Detection, Mobile-first, States, Typography/Colors/Spacing, Components, Critique Rubric, Checklist
+**Skill provides:** SaaS UX patterns, Context Detection, Mobile-first, States, Typography/Colors/Spacing, Components, Checklist — plus an index of its reference files. The **Critique Rubric** and the **Design Contract notation** are separate loads (`critique-rubric.md`, `design-contract.md`); STEP 5's critique dispatch is what pulls the rubric, not this step.
 
 **RULE:** The ux-design skill is the SINGLE SOURCE OF TRUTH. NEVER duplicate patterns here.
 
@@ -150,10 +150,12 @@ The design-system inspection lives INSIDE this agent (Step 0 of its definition) 
 
 **Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply the cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
-Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` and write to `${SCOPE_DIR}/design.md`. Keep the prose extractive — tables, bullets, `step → step` sequences, minified JSON for tokens.
+Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at STEP 2) and write to `${SCOPE_DIR}/design.md`.
 
 ⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
-⛔ DO NOT restate the frontmatter or section shape here. It is shared with `/add.plan`'s design step; both cite the schema so they cannot drift apart. `${ABOUT_SHA}` is only truthful because STEPS 3-5 always re-ran — never stamp it over a reused temp.
+⛔ `${ABOUT_SHA}` is only truthful because STEPS 3-5 always re-ran — never stamp it over a reused temp.
+
+<!-- MAINTAINER: do not restate the frontmatter or section shape here. It is shared with /add.plan's design step; both cite the schema so they cannot drift apart. Change it in the schema, never in one command alone. -->
 
 ---
 

@@ -207,8 +207,8 @@ captured, etc.>
 [ ] No axis judged twice — @ux-agent got no axe/computed-style input, @qa-agent got no design.md judgement content
 [ ] Every finding has evidence (screenshot path, measured value, and/or log line) + severity + type
 [ ] Every functional finding carries exactly one root cause; not-run checks recorded `unverifiable`, never passing
-[ ] Findings merged per the STEP 5 rules — deduped, higher severity wins, contradictions reported at the lower severity with both positions
-[ ] Every finding carries a coordinator-derived `route`; routes pass capability validation (@e2e-agent→test-file, @ux-agent→design-spec, @qa-agent never); `## Fix Routing` table present with the fixed layer ordering
+[ ] Findings merged per the Merge Rules in `{{skill:add-qa/references/coordinator.md}}` — coordinator work; a judge neither loads that file nor runs this row
+[ ] Every finding carries a coordinator-derived `route`, valid per that same reference — coordinator work
 [ ] Functional roll-up lists each criterion tested (met/not met/partial)
 [ ] Report numbered per scope (qa-validation-NNN, start 001); run-NNN matches; TOC present
 [ ] Unreached screens/criteria recorded under "Not covered"

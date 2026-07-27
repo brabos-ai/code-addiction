@@ -19,7 +19,7 @@ Load skill `add-qa` for the judge rubric (Level C), severity taxonomy, root-caus
 - Viewport list, `baseUrl`, and the `authSeed` hint from `config.json`.
 - The run's persisted evidence, all under `_tests/run-NNN/`: PNG paths under `screenshots/`, the captured computed styles under `computed-styles/<screen>.<viewport>.json` (the deterministic-conformance input — if this dir is absent or a screen/viewport is missing from it, say so and mark those checks `unverifiable`, never a visual guess), axe-core results, and the functional-assertion pass/fail roll-up.
 - Failure-forensics evidence for every failed assertion: the assertion's error text, the failure-state PNG, console/page errors, failed network requests + status codes, and the relevant `<surface>.qa.spec` source.
-- The STEP 4.4 coverage reconciliation table — coordinator-computed, an identical copy also goes to `@ux-agent`. Consume it as given; do NOT re-derive or re-emit coverage — a coverage gap is the coordinator's finding, never yours.
+- The coordinator's coverage reconciliation table — coordinator-computed, an identical copy also goes to `@ux-agent`. Consume it as given; do NOT re-derive or re-emit coverage — a coverage gap is the coordinator's finding, never yours.
 - For `regression` classification only: the immediately previous run's report, `SCOPE_DIR/_tests/run-(NNN-1)/qa-validation-(NNN-1).md`, if one exists.
 
 ⛔ You do not receive `design.md`'s judgement content (hierarchy, CTA count, breakpoint reflow, optical alignment, overall UX read) or the coverage table's re-derivation — those are dispatch errors. Report only what you were asked to judge.
@@ -50,7 +50,7 @@ By default you judge from the persisted evidence (read-PNG mode). If the Playwri
 4. Fold in the full deterministic axe-core results for every screen × state × viewport captured — violations by rule/impact, including `color-contrast` and `target-size`. `type: a11y`. These are deterministic rule hits, not diagnosed — no root cause required.
 
 ### Axis 4 — Failure forensics (every failed functional assertion)
-5. On a failed assertion, diagnose BEFORE reporting. Gather: the assertion's error text, the failure-state PNG, console/page errors, failed requests + status codes, and the relevant spec source. Every functional finding carries **exactly one** root cause from the canonical taxonomy — section `## Root-cause Taxonomy` in skill `add-qa` (already loaded above); the seven classes and their signatures live there, not here.
+5. On a failed assertion, diagnose BEFORE reporting. Gather: the assertion's error text, the failure-state PNG, console/page errors, failed requests + status codes, and the relevant spec source. Every functional finding carries **exactly one** root cause from the canonical taxonomy — section ``## Root-cause Taxonomy (`@qa-agent`) — functional findings`` in skill `add-qa` (already loaded above); the seven classes and their signatures live there, not here.
 
    Classification requires citing the supporting evidence (the log line / PNG / request that grounds it) — an uncited class is invalid.
 

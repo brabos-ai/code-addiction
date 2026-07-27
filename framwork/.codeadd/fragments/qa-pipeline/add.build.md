@@ -21,6 +21,10 @@ never trigger it implicitly.
      `data-seed` / `env-boot` (name the `docs/qa/config.json` field to fix —
      `authSeed` / `bootHint`), capability-invalid routes, and `@ux-agent` routes
      missing their contract-line citation.
+   - **Name the mode verbatim.** `@ux-agent` has three modes and only one may write;
+     dispatch it stating **"FIX MODE — design-spec route"** in the prompt. Without the
+     mode named, the agent must infer it from the target class and may land in a
+     read-only mode that refuses the fix outright.
    - **Amendment trail:** a dispatched `@ux-agent` `design-spec` fix MUST append its
      amendment to `design.md`'s `## Design Review` with the originating `run-NNN` +
      finding ID — so the next `/add.qa` sees why the contract changed and never reads

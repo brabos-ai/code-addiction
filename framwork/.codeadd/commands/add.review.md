@@ -241,7 +241,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 1. `about.md` - Feature specification (EXTRACT: RF, RN, Acceptance Criteria)
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
-4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
+4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections

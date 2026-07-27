@@ -275,10 +275,12 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 
 #### 8.1.4 Coordinator Consolidation → `design.md`
 
-Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, and the `## Design Review` table shape all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at 8.1.0) and write to `${SCOPE_DIR}/design.md`.
+Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at 8.1.0) and write to `${SCOPE_DIR}/design.md`.
 
 ⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
-⛔ DO NOT restate the frontmatter or section shape here. It is shared with `/add.design`; both cite the schema so they cannot drift apart.
+⛔ `${ABOUT_SHA}` is only truthful because 8.1.0 recomputed it — never stamp it over a reused temp.
+
+<!-- MAINTAINER: do not restate the frontmatter or section shape here. It is shared with /add.design; both cite the schema so they cannot drift apart. Change it in the schema, never in one command alone. -->
 
 #### 8.1.5 Validation Gate (`feature-design`)
 

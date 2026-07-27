@@ -245,7 +245,13 @@ describe('scenario 6 — layout notation & Design Contract', () => {
     const rubric = builtSkill('add-ux-design', 'critique-rubric.md');
     expect(rubric).toMatch(/Binds the CRITIC only/i);
     expect(rubric).toMatch(/empty critique/i);
-    expect(builtSkill('add-ux-design')).not.toMatch(/^ONE bounded adversarial pass/m);
+    // Structural invariant, not a reworded-prose pin (L6): the rubric's numbered
+    // item list lives in the reference file and nowhere else. SKILL.md keeps only
+    // a one-line index pointing at it.
+    const skill = builtSkill('add-ux-design');
+    expect(skill).toMatch(/critique-rubric\.md/);
+    expect(rubric).toMatch(/^\s*\|?\s*1[.|]/m);
+    expect(skill).not.toMatch(/adversarial pass/i);
   });
 });
 
@@ -340,12 +346,21 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     // the `## Fix Routing` heading: it names a section of the output document.)
     const skill = builtSkill('add-qa');
     expect(skill).not.toMatch(/Routing rules/i);
-    expect(skill).not.toContain('Capability validation');
+    // Assert the RULE CONTENT is absent, not the words (M7). The old guard was
+    // case-SENSITIVE on a phrase that had leaked back in lowercase, so it stayed
+    // green while the duplication lived. Naming a topic in the "lives elsewhere"
+    // pointer at :73 is legitimate; spelling out the agent→target mappings is not.
+    expect(skill).not.toMatch(/@e2e-agent\s*(?:→|->|may only be routed to)\s*`?test-file/i);
+    expect(skill).not.toMatch(/@ux-agent\s*(?:→|->|may only be routed to)\s*`?design-spec/i);
+    // ...and the pointer to the canonical home must be present.
+    expect(skill).toMatch(/references\/coordinator\.md/);
   });
 
   it('add.qa cites the canonical axis table and merge rules instead of restating them', () => {
     const qa = builtCommand('add.qa');
-    expect(qa).not.toContain('| Failure forensics | `@qa-agent` |');
+    // Structural, not formatting-pinned: no axis-ownership row may be restated here,
+    // whatever the cell spacing. (L5 — the old guard matched one exact rendering.)
+    expect(qa).not.toMatch(/^\|\s*(Failure forensics|UX quality|Functional delivery|Accessibility|Responsiveness)\s*\|/mi);
     expect(qa).toMatch(/Axis ownership/i);
     expect(qa).toMatch(/references\/coordinator\.md|coordinator\.md/);
   });
@@ -421,8 +436,12 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
   });
 
   it('add.review and add.autopilot resolve design.md at subfeature scope', () => {
+    // Assert the CITATION, not the prose (L7): the authority is the schema's
+    // Location rule. Pinning the parenthetical here would test-lock the exact
+    // wording Q18 asked to single-source.
     for (const name of ['add.review', 'add.autopilot', 'add.build', 'add.qa']) {
-      expect(builtCommand(name)).toMatch(/SF-level first, feature-level fallback/);
+      expect(builtCommand(name)).toMatch(/new-feature\.md/);
+      expect(builtCommand(name)).toMatch(/feature-design/);
     }
   });
 

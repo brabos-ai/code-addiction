@@ -1,6 +1,6 @@
 # add-ux-design — Critique Rubric
 
-## Critique Rubric (ux-agent critique mode)
+Loaded by `@ux-agent` in critique mode, and by nothing else. The authoring agents (`@ux-flow-agent`, `@ux-layout-agent`) deliberately do not load it.
 
 > **Binds the CRITIC only.** This is the canonical rubric `@ux-agent` runs in critique mode against a `design-flow.md` + `design-layout.md` pair (dispatched by the design step of `/add.plan`, and by `/add.design`). The authoring guidance in the rest of this skill — and in `@ux-flow-agent` / `@ux-layout-agent` — deliberately does NOT restate this list: an author who mechanically pre-satisfies the checklist produces a design that passes the critic without being better. Authors follow the craft guidance; the critic hunts against this rubric.
 

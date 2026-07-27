@@ -63,7 +63,7 @@ Does it need LLM reasoning?
 | Type | Source path | Format | Count |
 |------|------------|--------|-------|
 | Command | `framwork/.codeadd/commands/{name}.md` | Markdown with structured sections | 19 |
-| Skill | `framwork/.codeadd/skills/{name}/SKILL.md` | Markdown with YAML frontmatter | 34 |
+| Skill | `framwork/.codeadd/skills/{name}/SKILL.md` | Markdown with YAML frontmatter | 39 |
 | Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter | 15 |
 | Script | `framwork/.codeadd/scripts/{name}.sh` | Bash | variable |
 
@@ -183,14 +183,18 @@ category: [meta|technique|reference|discipline]  # optional
 | 2 (medium) | 100-300 | JSON spec blocks, templates, checklists | add-planning |
 | 3 (complex) | 300+ | SKILL.md dispatcher + reference subdocs | add-ux-design |
 
-**Tier 3 modular pattern:**
+**Subdoc pattern (canonical — `references/`, any tier):**
 ```
-add-ux-design/
-  SKILL.md              ← dispatcher/index
-  design-direction.md   ← concept doc
-  ux-laws-principles.md ← reference doc
-  shadcn-docs.md        ← library reference
+add-qa/
+  SKILL.md                    ← dispatcher/index
+  references/coordinator.md   ← reference doc
 ```
+
+⛔ **One convention only: `references/`.** It is what `add-skill-creator` prescribes (anti-pattern table + pre-deploy checklist) and what the majority of skills use — `add-doc-schemas`, `add-investigation`, `add-skill-creator`, `add-backend-architecture`, `add-frontend-architecture`, `add-subagent-driven-development`, `add-qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
+
+**Flat siblings are legacy**, not an alternative: `add-ux-design` (14 files), `add-architecture-discovery`, `add-health-check`, `add-stripe`. Adding a subdoc to one of those may follow its existing flat layout — mixing both inside one skill is worse than either. Do NOT introduce a flat subdoc in a skill that has none.
+
+`scripts/build.js` (`skillStrategy.postWrite`) copies subdirs and siblings recursively, so both layouts distribute identically — the choice is purely about authoring consistency. Reference a subdoc as `{{skill:NAME/references/FILE.md}}` (the `{{skill:}}` resolver matches greedily past `/`).
 
 ### Conventions
 
@@ -199,6 +203,7 @@ add-ux-design/
 - **Enforcement:** `⚠️ REGRA OBRIGATÓRIA`, `NEVER/MUST`, `**OBRIGATÓRIO**`
 - **Cross-references:** `{{skill:add-[name]/[file]}}` for files, `/add.[name]` for commands
 - **Token efficiency:** JSON minified, max 10 words per description, no decorative formatting
+- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review` and `add.autopilot` (which forwards it). Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
 
 ---
 
