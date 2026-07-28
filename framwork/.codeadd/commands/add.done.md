@@ -109,15 +109,31 @@ All recognized types proceed to STEP 4. Quality gates (4.0-4.2) apply to `featur
 1. CHECK if `docs/features/${FEATURE_ID}/review.md` exists
 2. IF NOT EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
 3. IF EXISTS: READ review.md, find "| **Overall**" row
-4. IF Overall = PASSED: Proceed to 4.1
-5. IF Overall = BLOCKED: Show table of BLOCKED gates -> BLOCKED
+4. IF Overall = BLOCKED: Show table of BLOCKED gates -> BLOCKED
+5. IF Overall = PASSED: run the **staleness check** below, then proceed to 4.0b
+
+**Staleness check (a QA fix wave invalidates the review).** `/add.build qa` dispatches implementation agents that WRITE CODE. A `review.md` produced before that wave describes a tree that no longer exists, and merging on it ships never-reviewed code.
+
+Compare **run numbers, never dates** — a fix wave and a re-review on the same day are indistinguishable by date, and `run-NNN` is the exact counter that increments per audit.
+
+1. READ the `> **QA baseline:**` line from `review.md` (written by `/add.review` STEP 2.2 item 4b). It holds one `scope:run-NNN` pair per scope, e.g. `SF01:run-003 · SF02:run-001`, or `none`.
+2. Glob the CURRENT state: every `_tests/run-*/qa-validation-*.md` under the feature (feature-level + each subfeature); take the highest `NNN` per scope key.
+3. Compare per scope key — `run-NNN` is a **per-scope sequence**, so never compare an `SF01` number against an `SF02` one:
+   - any scope whose current highest `NNN` is **greater** than the baseline → **BLOCKED**
+   - any scope present now but **absent** from the baseline → **BLOCKED**
+   - all scopes equal → PROCEED
+4. **BLOCKED message:** "QA ran after the last review — `<scope>` is at `run-NNN`, the review was taken at `run-MMM`. Re-run `/add.review` so it judges the post-fix tree."
+
+Two remaining cases:
+- `QA baseline: none` AND no `_tests/run-*/` exists → no QA ran; PROCEED. QA is optional; this check never forces it.
+- `QA baseline` line **ABSENT** → **BLOCKED**: "review.md is missing its QA baseline. Re-run `/add.review`." `/add.review` always emits the line (`none` when no run exists), so an absent one means a malformed or hand-edited report — never a valid state to merge on. Do NOT infer, do NOT fall back to comparing dates.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
 - ✅ DO: Show blocked gates and instructions to re-run /add.review
 
-**NOTE:** Done does NOT re-run validations. It only reads the existing review.md report.
+**NOTE:** Done does NOT re-run validations. It only reads the existing review.md report — and compares its recency against the newest QA run.
 
 ---
 
@@ -247,6 +263,8 @@ Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[
 
 **IF discovery.md has no "Identified Patterns" section:** infer patterns from the narrative changelog.
 
+**QA trail (IF a `_tests/run-*/` exists for the feature):** cite the newest QA run in the changelog narrative — `run-NNN`, its date, and the final severity counts. Extractive only: read the report's `## Summary`, never re-judge. A feature validated by `/add.qa` should say so in its permanent record; a feature merged with open findings should say that too.
+
 ---
 
 ### 4.6: Validation Gate
@@ -316,7 +334,7 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 
 ## STEP 5: Preview (INFORMATIVE ONLY)
 
-Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any).
+Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and — IF a `_tests/run-*/` exists for the feature — the newest QA run's severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: `/add.qa` is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
 
 **DO NOT ask for confirmation. Proceed directly to STEP 6.**
 

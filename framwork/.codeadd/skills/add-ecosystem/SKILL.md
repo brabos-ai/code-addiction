@@ -155,6 +155,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | Flow | Sequence | When to use |
 |------|----------|-------------|
 | Complete | brainstorm → new → design → plan → build → review → done | Complex features with UI |
+| QA-validated | new → plan → build → test → **qa ⇄ build qa** → review → done | UI features with the `qa-pipeline` feature on. QA loops until clean; **review runs LAST** so it judges the tree the fix waves produced |
 | Standard | new → plan → build → review → done | Features without complex UI |
 | Lean | new → build → done | Small changes, quick tasks |
 | Autonomous | new → autopilot → done | Want zero-interaction implementation |
@@ -188,14 +189,16 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.design | always | `/add.plan` or `/add.build` | UX spec done, plan or implement |
 | add.plan | default | `/add.build` | Most common path |
 | add.plan | user wants zero interaction | `/add.autopilot` | Autonomous implementation |
+| add.build | mode=QA-FIX (`/add.build qa`) | `/add.qa` | Re-run the audit — writes the next `run-NNN` for side-by-side comparison. Loop until clean, THEN `/add.review` |
 | add.build | mode=DEVELOPMENT, wants tests | `/add.test` | Validate with automated tests |
 | add.build | mode=DEVELOPMENT, skip tests | `/add.review` | Code review before merge |
 | add.build | mode=CORRECTION | `/add.review` | Re-validate after fixes |
 | add.build | epic, more subfeatures pending | `/add.build feature N` | Next subfeature in epic |
 | add.autopilot | always | `/add.done` | Autopilot includes review; finalize |
+| add.test | tests passing, feature has UI (`design.md` resolved) | `/add.qa` | Validate the rendered result BEFORE code review — the QA fix wave writes code, so review must judge the post-fix tree |
 | add.test | tests passing | `/add.review` | Validate code quality |
 | add.test | tests failing | fix + `/add.test` | Iterate until green |
-| add.review | status=PASSED, has UI | `/add.qa` | Validate the rendered result (UX + functional) before finalizing |
+| add.review | status=PASSED, has UI, no `_tests/run-*/` for the scope | `/add.qa` | The rendered result was never validated (review reached directly, e.g. tests skipped) — run the QA loop, then return here |
 | add.review | status=PASSED | `/add.done` | All gates green, finalize |
 | add.review | status=BLOCKED | fix + `/add.review` | Iterate until PASSED |
 | add.hotfix | always | `/add.done` | Hotfix ready, finalize branch |
@@ -213,6 +216,6 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.wiki | standalone analysis | done | Analysis delivered |
 | add.audit | critical issues found | `/add.new` per issue | Create features to fix findings |
 | add.qa-setup | prereqs + config ready | `/add.qa` | Validate the rendered result (UX + functional) — optionally `codeadd plugins enable playwright` first for live driving |
-| add.qa | findings present | `/add.build qa` or `/add.review` | Audit is non-blocking — the report's `## Fix Routing` table routes each finding to the responsible agent; `/add.build qa` dispatches by route |
-| add.qa | clean (no findings) | `/add.done` | QA audit clean — finalize |
+| add.qa | findings present | `/add.build qa` | Audit is non-blocking — the report's `## Fix Routing` table routes each finding to the responsible agent; `/add.build qa` dispatches by route, then re-run `/add.qa` |
+| add.qa | clean (no findings) | `/add.review` | QA audit clean — code review is the LAST gate, so it judges the tree the QA fix waves produced |
 | add.audit | project healthy | done | No action needed |

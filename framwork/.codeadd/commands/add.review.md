@@ -148,6 +148,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Collect data | Build: status from STEP 6. Spec: status from STEP 3. Scores: from STEP 5. Gates: from STEP 7. |
 | Build table | Quality Gate Report (see STEP 8.1) |
 | Write review.md | `docs/features/${FEATURE_ID}/review.md` with all consolidated findings |
+| QA baseline | The `> **QA baseline:**` line is MANDATORY — `${QA_BASELINE}` from STEP 2.2 item 4b, resolved from the filesystem this run. Emit `none` when no run exists; NEVER omit the line. `/add.done` BLOCKS a review.md without it |
 | Idempotency | If review.md already exists → back it up as `review.md.prev`, write new |
 
 **Success Criteria:** review.md written with all gates populated.
@@ -242,6 +243,11 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
 4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
+4b. **QA baseline (`QA_BASELINE`) — resolve now, emit in 8.2.** Glob every `_tests/run-*/qa-validation-*.md` under the feature (feature-level AND each subfeature). `run-NNN` is a **per-scope sequence** — SF01 at `run-003` and SF02 at `run-001` are unrelated counters — so record one entry PER SCOPE, never a single global number:
+   - Per scope key (`SFxx`, or `feature` for a feature-level run), take the HIGHEST `NNN` present.
+   - `QA_BASELINE` = those pairs joined by ` · `, e.g. `SF01:run-003 · SF02:run-001`, or `feature:run-002` on a non-epic.
+   - No `_tests/run-*/` anywhere → `QA_BASELINE = none`.
+   This string is what `/add.done` 4.0 compares against to detect a QA fix wave that landed AFTER this review. Resolve it from the filesystem at review time — never copy it from a previous `review.md`.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
@@ -586,6 +592,7 @@ Content:
 # Review: ${FEATURE_ID}
 
 > **Date:** ${TODAY} | **Branch:** ${BRANCH_NAME}
+> **QA baseline:** ${QA_BASELINE}
 
 ## Quality Gate Report
 [table from 8.1]
@@ -604,7 +611,14 @@ Content:
 
 ### 8.3 Console Output
 
-Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps (add.done if PASSED, fix + re-check if BLOCKED).
+Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps.
+
+**Next steps (evaluate top-to-bottom, use FIRST match):**
+- `BLOCKED` → fix + re-run `/add.review`.
+- `PASSED`, `HAS_DESIGN=true` (STEP 2.2), and NO `_tests/run-*/` directory exists for the scope → `/add.qa` — the rendered result was never validated. Run the QA loop (`/add.qa` ⇄ `/add.build qa`), then return here so review judges the post-fix tree. State this explicitly; do NOT route a never-QA'd UI feature straight to `/add.done`.
+- `PASSED` → `/add.done`.
+
+⛔ Code review is the LAST gate in the QA-validated flow. If `/add.build qa` runs AFTER this review, this `review.md` is stale — `/add.done` will detect it and send the user back here.
 
 ---
 
@@ -620,6 +634,7 @@ Output quality gate summary including: reviewers dispatched (files reviewed per 
 - Re-run validation gates independently (STEP 7)
 - Write review.md before console output (STEP 8)
 - Track STAGED_CHANGES flag throughout execution
+- Resolve `QA_BASELINE` from the filesystem (STEP 2.2 item 4b) and emit it in review.md (STEP 8.2) — per scope, `run-NNN`, never copied from a previous review.md
 
 **NEVER:**
 - Dispatch reviewers without completing Gates 1-3

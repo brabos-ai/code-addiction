@@ -234,6 +234,8 @@ Setup scaffolds the recipe **intent** from **`design.md` only** (the plan's QA a
 
 If a design doc is missing or thin, list the screen with a note rather than inventing routes — flag it for the user.
 
+**Name the remedy, don't just flag it.** A `design.md` that carries no `## Design Contract` or layout tree predates the current design schema — the gap is NOT fixable by hand-editing `screens.json`, because `expect` is derived from the contract. For every screen in that state, tell the user to regenerate the design: `/add.design <feature-id> [SFxx]` (or re-run `/add.plan`, whose STEP 8.1.0 check 4 detects the same drift and regenerates automatically). Carry the list into the STEP 11 hand-off — until those designs are regenerated, `@qa-agent`'s deterministic conformance axis has nothing to compare against.
+
 ---
 
 ## STEP 9: Autonomous Migration (IF MIGRATE)

@@ -22,7 +22,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `feature_identified` | STEP 4 | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection |
 | `docs_loaded` | STEP 5 | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents |
 | `scope_determined` | STEP 7 | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first |
-| `design_gate` | STEP 8.1.0 | Any of the three checks (frontend / scope / provenance) returns a skip verdict | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
+| `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
 | `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
 
@@ -240,7 +240,7 @@ BACKEND_SELECTED  = true|false
 
 #### 8.1.0 Gate (evaluate BEFORE any dispatch)
 
-Evaluate all three checks IN ORDER and STATE the verdict + reason in your output. ANY skip verdict means 8.1 does NOT run — 8.1 executes only when all three pass:
+Evaluate all four checks IN ORDER and STATE the verdict + reason in your output. Checks 1-3 are skip gates — ANY skip verdict there means 8.1 does NOT run. Check 4 is a **schema override**: it can force 8.1 to run even when check 3 said skip.
 
 1. **Frontend gate:** `FRONTEND_SELECTED = true` (the value stated in STEP 7). IF false → SKIP 8.1, note "no UI in scope".
 2. **Scope gate:** count the screens/pages declared in `about.md` + `discovery.md` and check for structural keywords (wizard, onboarding, multi-step, flow, dashboard, settings-panel). SKIP 8.1 when the feature introduces NO new or restructured screen AND declares NO new component — i.e. changes confined to existing components on existing screens. On skip → note it; `@frontend-agent` (8.4) then plans against the EXISTING `design.md` (resolution above).
@@ -252,7 +252,11 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 
    → `${ABOUT_SHA}`. IF `${SCOPE_DIR}/design.md` exists AND its frontmatter carries `provenance: sha256:${ABOUT_SHA}` → SKIP 8.1, note "design.md up to date (provenance match)". IF the file exists and the value differs or is absent → RUN 8.1 and record WHY in the output ("about.md changed since design.md was written" / "design.md predates provenance tracking").
 
+4. **Contract-schema override (runs even when check 3 said SKIP):** a `design.md` written before the layout-tree + `## Design Contract` schema carries a perfectly valid `provenance` hash, so check 3 alone would skip regeneration **forever** while the contract stays absent. Read the existing `${SCOPE_DIR}/design.md` and check for BOTH a `## Design Contract` section and a layout tree. IF either is missing → **OVERRIDE the check-3 skip and RUN 8.1**, recording the reason "design.md predates the Design Contract schema — regenerating". IF check 3 already decided RUN, this check changes nothing.
+
 ⛔ NEVER decide freshness from file mtime, git status, or "it looks recent". The provenance hash is the only signal.
+
+⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis, turns every `screens.json` `expect` into a gap note, and leaves `/add.review`'s contract check with nothing to verify. Never let a provenance match preserve one.
 
 #### 8.1.1 DISPATCH @ux-flow-agent (flow & interaction)
 

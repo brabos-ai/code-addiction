@@ -38,5 +38,8 @@ never trigger it implicitly.
    the user chooses the fix scope.
 5. On completion, suggest re-running `/add.qa <feature-id> [SFxx]` — which writes the
    next run-NNN for side-by-side comparison. Non-blocking; no forced iteration.
+   Once the audit comes back clean, the next hop is `/add.review`, NOT `/add.done`:
+   this flow just wrote code, so code review must run AFTER the last fix wave.
+   `/add.done` enforces it — a `review.md` older than the newest run-NNN is BLOCKED.
 
 <!-- /section:qa-fix -->

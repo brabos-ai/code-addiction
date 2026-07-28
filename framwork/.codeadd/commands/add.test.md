@@ -244,7 +244,8 @@ REPORT: Tests passing/total and coverage % (overall + per file). Coverage is an 
 | **Files** | [list of all test files created/modified] |
 | **Gaps** | Uncovered areas with recommendations (informational) |
 
-**Next Steps (from ecosystem map):**
+**Next Steps (from ecosystem map — evaluate top-to-bottom, use FIRST match):**
+- Tests passing AND the feature has UI (a `design.md` resolves for the scope) → `/add.qa` — validate the rendered result BEFORE code review. QA loops with `/add.build qa` until clean, and `/add.review` runs LAST so it judges the tree the fix waves produced.
 - Tests passing → `/add.review`
 - Want more tests on flagged gaps → re-run `/add.test`
 
