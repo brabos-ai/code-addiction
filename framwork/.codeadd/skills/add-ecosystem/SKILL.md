@@ -68,6 +68,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
+| add-setup-contract | Reconcile a project's materialized state with the shipped setup contract — compare recorded vs current, execute declared upgrade deltas sequentially, refuse on a chain hole |
 | add-skill-creator | Create and test skills under real pressure |
 | add-stripe | Stripe integration, price versioning, grandfathering |
 | add-subagent-driven-development | Subagent coordination with quality gates |
@@ -126,6 +127,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.review, add.build |
 | add-security-audit | add.audit, add.review |
+| add-setup-contract | add.qa-setup |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
 | add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.wiki, add.diagnose |

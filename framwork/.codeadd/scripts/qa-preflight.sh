@@ -111,7 +111,9 @@ phase_a() {
 
   # qa-project skill — generated at setup time into a provider skills dir
   SKILL=missing
-  for d in .claude .agents .gemini .cursor .opencode; do
+  # Provider install destinations per cli/src/providers.js — `.agent` (antigrav)
+  # and `.agents` (codex) are different providers; `.gemini` is not a provider.
+  for d in .claude .agents .agent .cursor .opencode; do
     if [ -f "$d/skills/qa-project/SKILL.md" ]; then SKILL=ok; break; fi
   done
   echo "QA_PROJECT_SKILL=$SKILL"

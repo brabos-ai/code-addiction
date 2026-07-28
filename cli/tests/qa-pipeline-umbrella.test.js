@@ -7,7 +7,12 @@ import { loadCatalog } from '../src/plugins.js';
 import { FEATURES } from '../src/features.js';
 
 const require = createRequire(import.meta.url);
-const { readMap, extractInjectionPoints } = require('../../scripts/build.js');
+const {
+  readMap,
+  extractInjectionPoints,
+  sliceContractBlock,
+  CONTRACT_VARIABLE_RE,
+} = require('../../scripts/build.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
@@ -124,5 +129,88 @@ describe('QA umbrella — playwright drive anchors survive reclassification', ()
 
   it('e2e-agent carries NO injection marker (runner-only, no MCP)', () => {
     expect(points('agents/e2e-agent.md', 'e2e-agent', 'agent')).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Setup receipt & upgrade contract (0061)
+// ---------------------------------------------------------------------------
+describe('setup contract (0061)', () => {
+  const src = readSource('commands/add.qa-setup.md');
+
+  it('declares a ## Materializes block carrying every materialized shape', () => {
+    expect(src).toMatch(/^## Materializes[ \t]*$/m);
+    const block = sliceContractBlock(src);
+    for (const p of ['docs/qa/config.json', '_tests/screens.json', 'qa-project/SKILL.md']) {
+      expect(block).toContain(p);
+    }
+  });
+
+  it('carries no resolvable resource-path variable inside the contract block', () => {
+    // The boundary MUST come from build.js's fence-aware slicer. A hand-rolled
+    // `^## ` search here would end the block at the embedded template's
+    // `## Conventions` and pass while a variable sat unguarded below it —
+    // reproducing the exact blind spot the build gate exists to close.
+    // The regex is IMPORTED, never re-rolled: a local copy would silently diverge
+    // the moment the build's ban is tightened or loosened — two descriptions of
+    // one rule, the drift shape this whole design rejects.
+    const block = sliceContractBlock(src);
+    expect(block).toContain('## Auth / Seed'); // proves we got the WHOLE block
+    expect(CONTRACT_VARIABLE_RE.test(block)).toBe(false);
+  });
+
+  it('retires the FIRST_RUN file-presence proxy as a mechanism', () => {
+    // The one surviving mention is the ⛔ notice that forbids reintroducing it.
+    // Any second occurrence means the flag came back as an operative gate.
+    const hits = src.match(/FIRST_RUN/g) || [];
+    expect(hits).toHaveLength(1);
+    expect(src).toMatch(/`FIRST_RUN`[^\n]*is RETIRED/);
+  });
+
+  it('declares the --migrate and --upgrade flags', () => {
+    expect(src).toContain('--migrate');
+    expect(src).toContain('--upgrade');
+  });
+
+  it('gates migration on a fingerprint comparison, not on first-run', () => {
+    // Slice STEP 5 and assert against IT. A file-wide /fingerprint/i match would
+    // pass on the prohibitions table alone, staying green even if STEP 5 were
+    // reverted to the first-run proxy wholesale.
+    const start = src.indexOf('## STEP 5: Detect Migration');
+    expect(start).toBeGreaterThan(-1);
+    const step5 = src.slice(start, src.indexOf('\n## ', start + 4));
+
+    expect(step5).toMatch(/scan on \*\*every\*\* run/i);
+    expect(step5).toContain('migration.detected'); // compares against the recorded fingerprint
+    expect(step5).toMatch(/FORCE_MIGRATE/);        // the flag is the override, not the gate
+    // The retired proxy may appear ONLY as the ⛔ prohibition against reusing it.
+    for (const line of step5.split('\n').filter((l) => l.includes('docs/qa/config.json'))) {
+      expect(line).toMatch(/⛔ Do NOT gate/);
+    }
+  });
+
+  it('writes the receipt and runs the schema gate before hand-off', () => {
+    const receipt = src.indexOf('## STEP 11: Write the Receipt');
+    const gate = src.indexOf('## STEP 12: Validation Gate');
+    const handoff = src.indexOf('## STEP 13: Hand-off');
+    expect(receipt).toBeGreaterThan(-1);
+    expect(gate).toBeGreaterThan(receipt);
+    expect(handoff).toBeGreaterThan(gate);
+  });
+
+  it('registers add-setup-contract in the provider map', () => {
+    expect(readMap().skills['add-setup-contract']).toBeDefined();
+  });
+
+  it('resolves RECIPES against the provider skills dir, never .codeadd/', () => {
+    // The wording IS the fix. `.codeadd/` ships only scripts/fragments/templates/
+    // plugins + the sidecars — no skills/ — so an agent told to look there finds
+    // nothing and the first contract bump becomes a hard refusal for every project.
+    // The packaging test pins that the file SHIPS; this pins where we send the agent.
+    const skill = readSource('skills/add-setup-contract/SKILL.md');
+    const row = skill.split('\n').find((l) => l.includes('`RECIPES`'));
+    expect(row).toBeDefined();
+    expect(row).toMatch(/provider/i);
+    expect(row).toMatch(/NOT under `\.codeadd\/`/);
   });
 });

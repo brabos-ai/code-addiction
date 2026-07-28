@@ -13,7 +13,7 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 | Type | Path | Count |
 |------|------|-------|
 | Commands | `framwork/.codeadd/commands/*.md` | 19 |
-| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 39 |
+| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 40 |
 | Agents | `framwork/.codeadd/agents/*-agent.md` | 15 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
@@ -94,6 +94,8 @@ Three strategies with different behaviors:
 
 Key mechanics: HTML comments (`<!-- -->`) are stripped at build time uniformly (use for source-only dev notes), **including** `feature:`/`plugin:` injection markers. Those markers are not shipped — `extractInjectionPoints()` consumes each one into a build-emitted **content-anchored sidecar** (`framwork/.codeadd/injection-points.json`) keyed by adjacent prose text, and the built provider files ship **marker-free**. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. All providers use markdown (the build is markdown-only).
 
+The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A command that materializes state into the user's project declares a `## Materializes` H2 that is the single source of every shape it writes; `extractContract()` derives `{ version, shape, recipes, paths }` from it. Three gates fail the build loud: a resource-path variable inside the block (it would resolve per provider), a declared `shape` that does not match the computed one (the forgotten-bump guard — the build prints the value to paste), and a declared version with no matching `## vN` section in its recipe file, or a hole in the `1..N` chain. Like `injection-points.json` it is gitignored and packaged explicitly by `release.yml`.
+
 ### Resource Path Variables (build-time)
 
 | Variable | Resolves to (per provider) |
@@ -131,6 +133,26 @@ Current features:
 |---------|---------|-------------------|
 | `tdd` | enabled | add.plan, add.build, add.review |
 | `qa-pipeline` | disabled | add.plan, add.test, add.build |
+
+## Setup Contracts
+
+Commands that materialize state into a user's project record what they wrote in a **receipt**, and the framework ships the **contract** that state was written under, so a later version can compute whether the project is behind.
+
+| Component | Path |
+|---|---|
+| Contract declaration | `## Materializes` H2 in the command source |
+| Contract sidecar | `framwork/.codeadd/contracts.json` (build-emitted, gitignored, packaged at release) |
+| Upgrade recipes | `framwork/.codeadd/skills/add-qa/references/setup-contract.md` (per command) |
+| Receipt schema | `add-doc-schemas/references/receipt.md` (`setup-receipt`) |
+| Receipt (in user project) | `docs/qa/qa-setup.md` |
+| Reconciliation procedure | `add-setup-contract` skill |
+| Signal | `SETUP_QA:` / `SETUP_QA_CONTRACT:` / `SETUP_QA_BEHIND:` from `status.sh` |
+
+`setup-contract` is a monotonic integer decoupled from the framework semver: it rises only when the materialized shape changes, so a release that does not touch the command stays silent. Reconciliation executes the declared v(N-1)→vN deltas **sequentially** and **refuses** on a chain hole or a framework downgrade — it never reads a changelog to decide what to upgrade. Hashes in the receipt are `owner`-scoped: only paths this command solely owns carry one, because a hash on a co-owned file (`screens.json`, co-written by `add.plan` STEP 10.0) would report drift on every healthy project.
+
+The `## Materializes` block boundary is **fence-aware**: it embeds a fenced template carrying its own H2s, and a naive `^## ` scan would truncate it — silently excusing everything below from both the shape hash and the variable ban. The contract variable ban targets *resolvable* references (`{{cmd:NAME}}`); the empty forms (`{{cmd:}}`) resolve to nothing, ship identically to every provider, and are how the block documents the ban itself.
+
+Current consumer: `add.qa-setup` only. `add.wiki` keeps its git-based `.meta.json` staleness — the two mechanisms coexist deliberately (contract-based for materialized state, git-based for corpus-derived docs).
 
 ## Plugin System
 

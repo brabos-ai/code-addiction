@@ -107,6 +107,7 @@
     "add-qa-migration":                {},
     "add-qa-spec":                     {},
     "add-security-audit":              {},
+    "add-setup-contract":              {},
     "add-skill-creator":               {},
     "add-stripe":                      {},
     "add-subagent-driven-development": {},
