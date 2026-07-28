@@ -204,7 +204,7 @@ bash .codeadd/scripts/status.sh
 
 - `about.md` exists? → If not, inform user to run `/feature` and STOP
 - `discovery.md` exists? → If not, inform user to run `/feature` and STOP
-- Feature has frontend components AND `design.md` missing? → Warn user to run `/design`
+- Feature has frontend components AND `design.md` missing? → Warn user to run `/add.design`. Resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback) — on an epic the feature-level path is normally empty, so warning from it alone is a false alarm
 
 ---
 
@@ -230,6 +230,7 @@ bash .codeadd/scripts/status.sh
 - Assemble TASK_DOCUMENTS from subfeature dir:
   - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
   - `docs/features/${FEATURE_ID}/discovery.md` (shared)
+  - `design.md` (if `HAS_DESIGN=true`) — resolved per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)
   - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/plan.md` (if exists)
   - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/tasks.md` (if exists)
 
@@ -284,7 +285,7 @@ If feature is very simple (single component, < 5 files, no new database entities
 You are the PLANNING agent for feature ${FEATURE_ID}.
 
 ## MANDATORY: Load Command + Context (FIRST STEP)
-1. Read `{{cmd:add.plan}}` — PRIMARY reference (execute as if --yolo, skip [STOP] points).
+1. Read `{{cmd:add.plan}}` — PRIMARY reference (add.plan has no human approval gates — agent critique replaces them; run it normally). If add.plan's STEP 6 raises clarification questions, the coordinator answers them itself from the DECISION_LOG — a dispatched add.plan has no human addressee.
 2. Load skills: add-doc-schemas, add-id-convention, add-tasks-checklist
 3. Run: `bash .codeadd/scripts/status.sh`
 4. Read feature docs as specified in add.plan.md
@@ -383,7 +384,7 @@ Search codebase for reference files. Update all barrel exports.
 |------|-------|-------------------|-------------|
 | DATABASE | @database-agent | Implement entity, enum, types, migration, repository per plan.md | FILES_CREATED, FILES_MODIFIED, MIGRATION_NAME, BUILD_STATUS |
 | BACKEND | @backend-agent | Implement module, DTOs, commands, events, controller, service per plan.md. Register module. | FILES_CREATED, FILES_MODIFIED, ENDPOINTS, BUILD_STATUS, DTO_CONTRACTS |
-| FRONTEND | @frontend-agent | Implement types, hooks, store, components, pages per plan.md+design.md. Update routes. (If NO design.md: also load add-ux-design) | FILES_CREATED, FILES_MODIFIED, ROUTES_ADDED, BUILD_STATUS |
+| FRONTEND | @frontend-agent | Implement types, hooks, store, components, pages per plan.md+design.md, honouring every `## Design Contract` dimension. Update routes. (Load add-ux-design ONLY if no design.md resolved at either scope — an SF-level design.md counts) | FILES_CREATED, FILES_MODIFIED, ROUTES_ADDED, BUILD_STATUS |
 
 ### Validator Dispatch Pattern
 
@@ -512,7 +513,7 @@ You are the CODE REVIEWER for feature ${FEATURE_ID}.
 Validate code AND product (requirements 100% implemented).
 
 ## MANDATORY: Load Command & Context
-1. Read `{{cmd:add.review}}` — PRIMARY reference (execute as --yolo, skip [STOP] points, no confirmations).
+1. Read `{{cmd:add.review}}` — PRIMARY reference (execute with `--yolo`: skip STEP 1 confirmation, auto-stage, auto-correct without confirmation).
 2. Load skills: add-doc-schemas, add-id-convention, add-tasks-checklist
 3. Run: `bash .codeadd/scripts/status.sh`
 4. Read feature docs as specified in add.review.md
@@ -597,7 +598,7 @@ Log: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations
 ### 10.1 Project Build & Doc Existence Check
 Run project build. Verify expected docs in feature directory:
 - Required: `about.md`, `discovery.md`, `plan.md`, `review.md`
-- Optional: `design.md`
+- Optional: `design.md` — probe the subfeature dir first, then the feature dir (same Location rule as STEP 3)
 
 Checklist: Build passes, all expected docs exist, review.md has Quality Gate Report, review status is READY (not BLOCKED).
 

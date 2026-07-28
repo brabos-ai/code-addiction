@@ -16,6 +16,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -252,6 +253,269 @@ function writeInjectionPoints(outPath) {
 }
 
 // ---------------------------------------------------------------------------
+// Setup contracts (source-declared → build-extracted sidecar)
+//
+// A command that materializes state into the user's project declares a
+// "## Materializes" H2. That block is the SINGLE source of every shape the
+// command writes; `shape` is a hand-declared hash of it, recomputed here so a
+// changed shape cannot ship without a `version` bump. The build has no previous
+// shape to diff against — the declared value IS the baseline.
+// ---------------------------------------------------------------------------
+
+const CONTRACT_HEADING_RE = /^## Materializes[ \t]*$/m;
+// A RESOLVABLE resource-path variable — anything resolveResourcePaths() would
+// substitute. Its three patterns each require [^}]+, so this mirrors them exactly:
+// one or more characters after the colon. The ONLY tolerated form is the exactly
+// empty `{{cmd:}}` / `{{skill:}}` / `{{addpath:}}`, which matches no resolver,
+// ships identically to every provider, and is how the block's own prose documents
+// this ban — banning it would leave the declaration unable to describe itself.
+// Do NOT relax this to [^}\s]+: `{{cmd: add.plan}}` DOES resolve (to a path with a
+// leading space) and must stay banned.
+const CONTRACT_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):[^}]+\}\}/;
+const SHAPE_LINE_RE = /^shape:[ \t]*\S+[ \t]*$/;
+const FENCE_RE = /^[ \t]*(`{3,})/;
+
+/** Default `.codeadd` root; overridable so tests can supply a throwaway tree. */
+const CODEADD_DIR = path.join(ROOT, 'framwork', '.codeadd');
+
+/**
+ * Slice the "## Materializes" block: everything after the heading up to the next
+ * H2 that lies OUTSIDE every fenced code block, with HTML comments removed.
+ *
+ * Fence-awareness is load-bearing, not tidiness. The declaration embeds a fenced
+ * markdown template carrying its own H2s (`## Conventions`, `## Managed App
+ * Lifecycle`, `## Auth / Seed`). A naive `^## ` scan ends the block at the first
+ * of them, and everything below silently stops participating in BOTH the shape
+ * hash (drift ships green) and the resource-path-variable ban.
+ *
+ * @returns {string|null} the block, or null when the command declares none
+ */
+function sliceContractBlock(rawContent) {
+  const m = CONTRACT_HEADING_RE.exec(rawContent);
+  if (!m) return null;
+
+  const lines = rawContent.slice(m.index + m[0].length).split('\n');
+  let openFence = 0; // backtick count of the open fence; 0 when none is open
+  let end = lines.length;
+
+  for (let i = 0; i < lines.length; i++) {
+    const fence = FENCE_RE.exec(lines[i]);
+    if (fence) {
+      // Standard markdown: a fence closes on a run at least as long as the one
+      // that opened it. So an embedded template must open with MORE backticks
+      // than any fence it contains — a 3-backtick inner fence closes a
+      // 3-backtick outer one, which would truncate the block here.
+      if (openFence === 0) openFence = fence[1].length;
+      else if (fence[1].length >= openFence) openFence = 0;
+      continue;
+    }
+    if (openFence === 0 && /^## /.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+
+  return stripHtmlComments(lines.slice(0, end).join('\n'));
+}
+
+/**
+ * Canonical form hashed by `shape`: the block minus its own `shape:` line, with
+ * per-line trailing whitespace removed. Changing any declared character —
+ * including inside a fence — must move the hash.
+ *
+ * Blank-line normalization is NOT repeated here: sliceContractBlock already runs
+ * stripHtmlComments, which collapses 3+ newlines and trims. A duplicate trim on
+ * this side was unreachable (contractShape is only ever fed sliced output) and
+ * read as the enforcing code while a test could not isolate it.
+ */
+function canonicalContractBody(block) {
+  // Drop only the FIRST `shape:` line — the declaration's own. A `shape:` line
+  // at column 0 inside an embedded template is declared content: excluding it
+  // would make it invisible to drift detection.
+  let shapeDropped = false;
+  return block
+    .split('\n')
+    .filter((l) => {
+      if (!shapeDropped && SHAPE_LINE_RE.test(l)) { shapeDropped = true; return false; }
+      return true;
+    })
+    .map((l) => l.replace(/[ \t]+$/, ''))
+    .join('\n');
+}
+
+/** sha256:<first 16 hex chars> — short enough to hand-paste, unique enough to gate. */
+function contractShape(block) {
+  const hex = crypto.createHash('sha256').update(canonicalContractBody(block), 'utf8').digest('hex');
+  return `sha256:${hex.slice(0, 16)}`;
+}
+
+/**
+ * Read the YAML preamble of a "## Materializes" block. Deliberately a hand-rolled
+ * reader over the flat, fixed shape this contract declares — the build has no
+ * YAML dependency and must not acquire one.
+ */
+function parseContractDeclaration(block) {
+  const fence = block.match(/```yaml\n([\s\S]*?)\n```/);
+  if (!fence) return null;
+
+  const out = { paths: [] };
+  let current = null;
+  for (const raw of fence[1].split('\n')) {
+    const line = raw.replace(/[ \t]+$/, '');
+    if (!line.trim()) continue;
+
+    const top = line.match(/^([a-z-]+):[ \t]*(.*)$/);
+    if (top) {
+      if (top[1] === 'paths') { current = null; continue; }
+      out[top[1]] = top[2];
+      continue;
+    }
+    const item = line.match(/^[ \t]*-[ \t]*([a-z-]+):[ \t]*(.*)$/);
+    if (item) { current = { [item[1]]: item[2] }; out.paths.push(current); continue; }
+    const field = line.match(/^[ \t]+([a-z-]+):[ \t]*(.*)$/);
+    if (field && current) current[field[1]] = field[2];
+  }
+  out.version = /^\d+$/.test(String(out.version).trim()) ? Number(out.version) : out.version;
+  return out;
+}
+
+/**
+ * Extract + validate one command's contract.
+ * @param {string} rawContent   command source (pre-strip, markers intact)
+ * @param {string} resourceName logical command name (e.g. "add.qa-setup")
+ * @param {string} [codeaddDir] `.codeadd` root the `recipes` path resolves under
+ * @returns {object|null} { contract, version, shape, recipes, paths } or null
+ * @throws on a resource-path variable in the block, a shape mismatch, a missing
+ *         recipe section, a hole in the 1..N recipe chain, or a missing field
+ */
+function extractContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
+  const block = sliceContractBlock(rawContent);
+  if (block === null) return null;
+
+  if (CONTRACT_VARIABLE_RE.test(block)) {
+    throw new Error(
+      `Contract block in ${resourceName} carries a resource-path variable — ` +
+        `{{cmd:}}/{{skill:}}/{{addpath:}} resolve per provider and would produce a different shape ` +
+        `per build target. Write the literal path inside "## Materializes".`,
+    );
+  }
+
+  const decl = parseContractDeclaration(block);
+  if (!decl || !decl.contract || !Number.isInteger(decl.version) || !decl.shape || !decl.recipes) {
+    throw new Error(
+      `Contract block in ${resourceName} is missing a required field — ` +
+        `"contract", "version" (integer), "shape" and "recipes" are all mandatory.`,
+    );
+  }
+  if (decl.contract !== resourceName) {
+    throw new Error(
+      `Contract block in ${resourceName} declares contract: ${decl.contract}. ` +
+        `The sidecar is keyed by this value and both status.sh and add-setup-contract ` +
+        `look it up by command name — a mismatch keys the contract under a name nothing ` +
+        `ever finds, leaving every project's staleness check silently blind.`,
+    );
+  }
+  for (const p of decl.paths) {
+    if (!p.path || (p.owner !== 'setup' && p.owner !== 'shared')) {
+      throw new Error(
+        `Contract block in ${resourceName} declares a path without a "path" or with an ` +
+          `owner outside {setup, shared}: ${JSON.stringify(p)}. A partially extracted ` +
+          `contract is worse than none — it would ship as authoritative.`,
+      );
+    }
+  }
+
+  const computed = contractShape(block);
+  if (decl.shape !== computed) {
+    throw new Error(
+      `Contract shape changed in ${resourceName}.\n` +
+        `  declared: ${decl.shape}\n  computed: ${computed}\n` +
+        `Set shape: ${computed} and bump \`version\` (currently ${decl.version}), ` +
+        `then add the matching "## v${decl.version + 1}" section to ${decl.recipes}.`,
+    );
+  }
+
+  // One string, two resolution roots: the build resolves it under framwork/.codeadd/,
+  // while the runtime agent (add-setup-contract) resolves it under the active
+  // provider's resource root, because skills install per-provider. Only a
+  // `skills/…` value satisfies both — `scripts/foo.md` would pass the build here
+  // and send the agent to `.claude/scripts/foo.md`, which never exists.
+  if (!decl.recipes.startsWith('skills/')) {
+    throw new Error(
+      `Contract in ${resourceName} declares recipes: ${decl.recipes}. It MUST start with ` +
+        `"skills/" — the build resolves it under framwork/.codeadd/ but reconciliation ` +
+        `resolves it under the installed provider's resource root, and only a skills/ ` +
+        `path exists in both.`,
+    );
+  }
+
+  const recipePath = path.join(codeaddDir, decl.recipes);
+  if (!fs.existsSync(recipePath)) {
+    throw new Error(`Contract in ${resourceName} points at a missing recipe file: ${decl.recipes}`);
+  }
+  const recipes = readFile(recipePath);
+  for (let v = 1; v <= decl.version; v++) {
+    if (!new RegExp(`^## v${v}[ \\t]*$`, 'm').test(recipes)) {
+      throw new Error(
+        v === decl.version
+          ? `${decl.recipes} has no "## v${v}" section for the version declared in ${resourceName}.`
+          : `${decl.recipes} has a hole in the version chain: "## v${v}" is missing, ` +
+            `so reconciliation could not walk 1..${decl.version} sequentially.`,
+      );
+    }
+  }
+
+  return {
+    contract: decl.contract,
+    version: decl.version,
+    shape: decl.shape,
+    recipes: decl.recipes,
+    paths: decl.paths,
+  };
+}
+
+// Build-run accumulator (reset per build).
+let CONTRACTS = {};
+
+/**
+ * Extract + accumulate one command's contract. Throws before anything is
+ * accumulated, so a firing gate can never leave a half-built sidecar.
+ */
+function collectContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
+  const c = extractContract(rawContent, resourceName, codeaddDir);
+  if (c) {
+    // Unreachable by construction during a real build: the name gate above forces
+    // c.contract to equal the provider-map.json key, and JSON keys are unique.
+    // Kept as defence-in-depth for direct callers (and tests) — a silent overwrite
+    // would ship a sidecar describing only one of two commands.
+    if (Object.prototype.hasOwnProperty.call(CONTRACTS, c.contract)) {
+      throw new Error(
+        `Duplicate contract "${c.contract}" — two commands declare it. The second would ` +
+          `silently overwrite the first, so the sidecar would describe only one of them.`,
+      );
+    }
+    CONTRACTS[c.contract] = {
+      version: c.version,
+      shape: c.shape,
+      recipes: c.recipes,
+      paths: c.paths,
+    };
+  }
+}
+
+/**
+ * Write the contracts sidecar. Keys sorted for clean diffs + byte-identical
+ * rebuilds from unchanged sources.
+ * @returns {number} number of contracts written
+ */
+function writeContracts(outPath) {
+  const sorted = {};
+  for (const k of Object.keys(CONTRACTS).sort()) sorted[k] = CONTRACTS[k];
+  writeFile(outPath, JSON.stringify({ version: 1, contracts: sorted }, null, 2) + '\n');
+  return Object.keys(sorted).length;
+}
+
+// ---------------------------------------------------------------------------
 // Metadata generators (format-specific wrappers around content)
 // ---------------------------------------------------------------------------
 
@@ -386,6 +650,8 @@ function buildResources(map, strategy) {
     const raw = readFile(srcPath);
     lintResourcePaths(raw, srcPath);
     if (strategy.injectionKind) collectInjectionPoints(raw, name, strategy.injectionKind);
+    // Commands only — skills and agents materialize nothing into a user's project.
+    if (strategy.injectionKind === 'command') collectContract(raw, name);
     const cleaned = stripHtmlComments(raw);
     const providers = strategy.resolveProviders(entry, map);
 
@@ -520,6 +786,15 @@ function main() {
   console.log('Building provider files...\n');
 
   INJECTION_POINTS = [];
+  CONTRACTS = {};
+
+  // Clear the sidecar BEFORE building. A gate firing mid-build aborts before
+  // writeContracts(), and a leftover file from an earlier run would let status.sh
+  // read a stale `version` and report a behind project as current — the exact
+  // outcome I8 exists to prevent.
+  const contractsPath = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
+  fs.rmSync(contractsPath, { force: true });
+
   const map = readMap();
   const commandCount = buildCommands(map);
   const skillCount = buildSkills(map);
@@ -528,12 +803,15 @@ function main() {
   const sidecarPath = path.join(ROOT, 'framwork', '.codeadd', 'injection-points.json');
   const pointCount = writeInjectionPoints(sidecarPath);
 
+  const contractCount = writeContracts(contractsPath);
+
   const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
   console.log(`  Skills   : ${Object.keys(map.skills).length} skills  → ${skillCount} files`);
   console.log(`  Agents   : ${Object.keys(map.agents || {}).length} agents  → ${agentCount} files`);
   console.log(`  Injection points : ${pointCount} → ${path.relative(ROOT, sidecarPath)}`);
+  console.log(`  Contracts        : ${contractCount} → ${path.relative(ROOT, contractsPath)}`);
   console.log(`  Total    : ${total} files generated`);
 }
 
@@ -545,6 +823,13 @@ module.exports = {
   getInjectionPoints,
   writeInjectionPoints,
   _resetInjectionPoints: () => { INJECTION_POINTS = []; },
+  sliceContractBlock,
+  contractShape,
+  CONTRACT_VARIABLE_RE,
+  extractContract,
+  collectContract,
+  writeContracts,
+  _resetContracts: () => { CONTRACTS = {}; },
   resolveResourcePaths,
   lintResourcePaths,
   copyDirRecursive,

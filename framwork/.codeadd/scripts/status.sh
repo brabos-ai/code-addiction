@@ -133,9 +133,23 @@ if [ -n "$FEATURE_ID" ]; then
     DOCS_LIST=""
 
     if [ -d "$FEATURE_DIR" ]; then
+        # Detect design.md at feature level OR under any subfeature (subfeatures/SF*/design.md)
+        HAS_DESIGN="false"
+        if [ -f "$FEATURE_DIR/design.md" ]; then
+            HAS_DESIGN="true"
+        else
+            for _sf_design in "$FEATURE_DIR"/subfeatures/SF*/design.md; do
+                [ -f "$_sf_design" ] && HAS_DESIGN="true" && break
+            done
+        fi
+
         # Collect existing docs
         for doc in about.md discovery.md design.md plan.md changelog.md; do
-            [ -f "$FEATURE_DIR/$doc" ] && DOCS_LIST="${DOCS_LIST}${doc},"
+            if [ "$doc" = "design.md" ]; then
+                [ "$HAS_DESIGN" = "true" ] && DOCS_LIST="${DOCS_LIST}${doc},"
+            else
+                [ -f "$FEATURE_DIR/$doc" ] && DOCS_LIST="${DOCS_LIST}${doc},"
+            fi
         done
         DOCS_LIST="${DOCS_LIST%,}"  # Remove trailing comma
 
@@ -144,7 +158,7 @@ if [ -n "$FEATURE_ID" ]; then
             PHASE="done"
         elif [ -f "$FEATURE_DIR/plan.md" ]; then
             PHASE="planned"
-        elif [ -f "$FEATURE_DIR/design.md" ]; then
+        elif [ "$HAS_DESIGN" = "true" ]; then
             PHASE="designed"
         elif [ -f "$FEATURE_DIR/discovery.md" ]; then
             if grep -q "^## Summary for Planning" "$FEATURE_DIR/discovery.md" 2>/dev/null; then
@@ -164,6 +178,7 @@ if [ -n "$FEATURE_ID" ]; then
 
         echo "FEATURE:$FEATURE_ID PHASE:$PHASE DIR:$FEATURE_DIR"
         [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST" || true
+        echo "HAS_DESIGN:$HAS_DESIGN"
 
         # Iterations context (previous /add-dev sessions) — JSONL format
         ITERATIONS_FILE="$FEATURE_DIR/iterations.jsonl"
@@ -370,9 +385,18 @@ for _fdir in docs/features/[0-9][0-9][0-9][0-9][A-Z]-*; do
     [ -n "$(git branch --list "*/$_dname" 2>/dev/null)" ] && continue
 
     # Phase via the same ladder as the current-feature block above
+    _has_design="false"
+    if [ -f "$_fdir/design.md" ]; then
+        _has_design="true"
+    else
+        for _sf_design in "$_fdir"/subfeatures/SF*/design.md; do
+            [ -f "$_sf_design" ] && _has_design="true" && break
+        done
+    fi
+
     if [ -f "$_fdir/plan.md" ]; then
         _phase="planned"
-    elif [ -f "$_fdir/design.md" ]; then
+    elif [ "$_has_design" = "true" ]; then
         _phase="designed"
     elif [ -f "$_fdir/discovery.md" ]; then
         if grep -q "^## Summary for Planning" "$_fdir/discovery.md" 2>/dev/null; then
@@ -550,6 +574,86 @@ elif [ -d ".codeadd/project" ]; then
 else
     echo "WIKI:absent"
     echo "WIKI_HINT:Run /add.wiki to generate the knowledge base"
+fi
+
+# =============================================================================
+# OUTPUT: SETUP CONTRACT (materialized-state staleness — add.qa-setup)
+# =============================================================================
+# Mirrors the WIKI block above: a value recorded in the project vs the current
+# reality shipped by the framework. Pure grep/sed/awk (no jq — the user's project
+# is not guaranteed to have it), and every capture guarded because this script
+# runs under `set -euo pipefail` as STEP 1 of every command in the framework.
+# A crash here breaks everything; a WRONG number is worse than none, because it
+# produces a confident, false "current".
+
+SETUP_RECEIPT="docs/qa/qa-setup.md"
+CONTRACTS_SIDECAR=".codeadd/contracts.json"
+
+if [ -f "$SETUP_RECEIPT" ]; then
+    echo "SETUP_QA:present"
+
+    # Frontmatter-bounded: stop at the closing ---, so the agent-written
+    # Decision Log body can never be matched. Digit-only, so `v1` or a quoted
+    # value yields "unknown" rather than a guess.
+    # CRLF-tolerant, like the WIKI block: a receipt authored on Windows must not
+    # silently degrade to "unknown".
+    RECORDED=$(awk 'NR==1 && $0~/^---\r?$/{f=1;next} f && $0~/^---\r?$/{exit} f' "$SETUP_RECEIPT" 2>/dev/null | \
+        grep -E '^setup-contract:[[:space:]]*[0-9]+[[:space:]]*\r?$' | \
+        sed -E 's/^setup-contract:[[:space:]]*([0-9]+).*$/\1/' | head -1 || true)
+
+    # The sidecar is pretty-printed and each contract nests a "paths" array, so
+    # take the first "version" AFTER the command key — never the top-level one.
+    CURRENT=""
+    if [ -f "$CONTRACTS_SIDECAR" ]; then
+        CURRENT=$(awk '/"add\.qa-setup"[[:space:]]*:/{f=1}
+                       f && /"version"[[:space:]]*:[[:space:]]*[0-9]+/{
+                           if (match($0, /[0-9]+/)) print substr($0, RSTART, RLENGTH);
+                           exit
+                       }' "$CONTRACTS_SIDECAR" 2>/dev/null || true)
+    fi
+    CURRENT="${CURRENT:-}"
+
+    if [ -n "$RECORDED" ] && [ -n "$CURRENT" ]; then
+        echo "SETUP_QA_CONTRACT:$RECORDED/$CURRENT"
+        if [ "$RECORDED" -lt "$CURRENT" ] 2>/dev/null; then
+            echo "SETUP_QA_BEHIND:$((CURRENT - RECORDED))"
+            echo "SETUP_QA_HINT:QA setup predates the current contract (v$RECORDED < v$CURRENT) — /add.qa-setup --upgrade"
+        fi
+    elif [ -z "$CURRENT" ]; then
+        # Pre-contracts install or unreadable sidecar — stay silent, never guess.
+        # A project installed before this mechanism must not be nagged about a
+        # version it has no way to know.
+        echo "SETUP_QA_CONTRACT:${RECORDED:-unknown}/unknown"
+    else
+        echo "SETUP_QA_CONTRACT:unknown/$CURRENT"
+        echo "SETUP_QA_HINT:QA receipt carries no readable setup-contract — /add.qa-setup --upgrade"
+    fi
+else
+    # "Materialized" means ANY owner:setup path in the contract exists — not just
+    # config.json. A project holding qa-project/SKILL.md but no config.json (deleted,
+    # or a run aborted between STEP 6 and STEP 7) must NOT read as absent: STEP 1.5
+    # would classify it FIRST-RUN and re-materialize over the user's configuration.
+    SETUP_MATERIALIZED=""
+    [ -f "docs/qa/config.json" ] && SETUP_MATERIALIZED="yes"
+    if [ -z "$SETUP_MATERIALIZED" ]; then
+        # The five provider install destinations (cli/src/providers.js): claude
+        # .claude, codex .agents, antigrav .agent, cursor .cursor, opencode
+        # .opencode. `.agent` and `.agents` are DIFFERENT providers — dropping
+        # either re-opens the re-materialize-over-an-existing-install path.
+        for SETUP_SKILL_DIR in .claude .agents .agent .cursor .opencode; do
+            if [ -f "$SETUP_SKILL_DIR/skills/qa-project/SKILL.md" ]; then
+                SETUP_MATERIALIZED="yes"
+                break
+            fi
+        done
+    fi
+
+    if [ -n "$SETUP_MATERIALIZED" ]; then
+        echo "SETUP_QA:unreceipted"
+        echo "SETUP_QA_HINT:QA state exists without a setup receipt — /add.qa-setup --upgrade to backfill"
+    else
+        echo "SETUP_QA:absent"
+    fi
 fi
 
 # =============================================================================

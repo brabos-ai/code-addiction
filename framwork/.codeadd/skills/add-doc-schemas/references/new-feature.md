@@ -136,18 +136,44 @@ For `/add.plan` (feature mode, creates `docs/features/<slug>/plan.md`).
 
 ### feature-design
 
-For `/add.design` (creates `docs/features/<slug>/design.md`).
+For `/add.plan` STEP 8.1 and `/add.design` — both write the same doc through the same UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature-design`, `related: [[NNNN]F]`
-- **Sections:** TL;DR · Screens · Components · Flows · Tokens · References
+**Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
+
+- **Frontmatter** — the exact block both callers write, verbatim:
+
+```yaml
+---
+id: [NNNN]F            # SF-qualified as [NNNN]F-SFxx when the design is scoped to a subfeature
+type: feature-design
+created: YYYY-MM-DD    # today on FIRST write; NEVER overwritten on a re-run
+updated: YYYY-MM-DD    # today, on EVERY write
+related: [[NNNN]F]
+provenance: sha256:<hash of the about.md bytes the design was derived from>
+---
+```
+
+  `id` follows `{{skill:add-id-convention/SKILL.md}}`. `provenance` is the ONLY freshness signal (never mtime, never git status, never "it looks recent") — `/add.plan`'s design gate skips regeneration on a provenance match. ⛔ **Provenance truthfulness:** the hash asserts that the temps just consolidated were derived from the CURRENT `about.md`. It is true only because the authoring dispatches always re-ran — never stamp it over a reused or partially stale temp, or the design gate skips regeneration forever after.
+
+- **Consolidation contract (both callers).** `design.md` is written by the COORDINATOR, never by re-dispatching an authoring agent to apply the critique: read the four temps (`design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`); decide EVERY critique item `accepted`/`rejected` with a one-line rationale and apply the accepted ones while writing; validate coherence (every classified action has a UI element, every screen a layout, entry points match navigation) and fill the gaps found; write the doc; append `## Design Review`; run this schema's validation gate; only then delete the temps. Keep the prose extractive throughout — tables, bullets, `step → step` sequences, minified JSON for tokens (see Compression below). This shape is shared by `/add.plan`'s design step and `/add.design` — one artefact, two callers. Change it HERE, never in one command alone.
+- **Sections:** TL;DR · TOC · Screens · Components · Flows · Tokens · Design Contract · References · Design Review. The section's exact heading is `## Design Contract` (pre-referenced by `add.build.md`'s domain-scoped priority rule — must match verbatim); it sits after `Tokens` (it inherits and restates the token/scale commitments declared there) and before `References`.
+- **TOC:** always present — the section list exceeds 3 H2s, so the universal TOC rule in `{{skill:add-doc-schemas/SKILL.md}}` applies unconditionally to this schema.
 - **Depth floor:**
-  - **Screens** — per screen: purpose, primary action, entry points, empty/loading/error states noted.
-  - **Components** — per component: name, source (shadcn path or `new`), props if new, states it owns.
-  - **Flows** — the critical user journeys as `step → step → step` with decision branches annotated.
+  - **Screens** — per screen: purpose, primary action, entry points, empty/loading/error states noted, plus the layout tree (see Compression below).
+  - **Components** — per component: name, source (shadcn path or `new`), props if new, states it owns, and what it is composed of (child components, named from the real inventory in `design-context.md`).
+  - **Flows** — the critical user journeys as `step → step → step` with decision branches annotated; a branching journey may instead use a Mermaid `flowchart` block (see Compression below).
   - **Tokens** — any non-default tokens the feature introduces (colors, spacing, breakpoints).
+  - **`## Design Contract`** — per dimension this feature commits to: what it declares, how it is verified, by what method. Values are inherited from `design-context.md` — this section restates only this feature's commitments and justified deviations. A project dimension left undefined is written `unknown — <why>`, never invented.
   - **References** — design-system doc, inspiration links, related feature designs.
-- **Compression:** Screens = table `screen | purpose | primary action | entry`. Components = bullets `name — source — props/states`. Flows = sequence lines (arrow notation as in `feature-plan` above). Tokens = minified JSON.
-- **Hard bans:** inline SVG, ASCII wireframes, fabricated component libraries.
+  - **Design Review** — the critic's decision trail: table `Item | Severity | Decision | Rationale`, one row per defect the critique raised, each `accepted`/`rejected` with a one-line rationale. An empty critique yields the row-free section carrying the critic's rubric-by-rubric justification in one line.
+- **Compression:**
+  - Screens = table `screen | purpose | primary action | entry` plus one minified JSON **layout tree** per screen: `{"screen":"<id>","regions":[{"role":"header","order":1,"span":{"mobile":"full","desktop":"full"},"component":"<real component name>","contains":["..."],"primaryCta":"<action id, on the region that holds it>"}]}`. Regions/roles/spans/order/component names ONLY — no CSS, no `px`, no per-element styling in the tree.
+  - Components = bullets `name — source — props/states — composed-of: [child component names]`.
+  - Flows = sequence lines (arrow notation as in `feature-plan` above) for linear flows; a Mermaid `flowchart` block is permitted for branching journeys (neither inline SVG nor ASCII — see Hard bans).
+  - Tokens = minified JSON.
+  - Design Contract = markdown table only, columns `Dimension | Declares | Verified by | Method`. Only dimensions with a named verification method belong — the verifiability rule; a claim with no verification method (e.g. "uses TanStack Query") is a plan concern, not a contract line.
+  - Design Review = table only.
+- **Hard bans:** inline SVG, ASCII wireframes (the layout tree above replaces wireframes), fabricated component libraries, per-element styling in the layout tree (no CSS, no `px` — regions/roles/spans/order/component names only), a `Design Review` section that omits the rationale column.
 - **Avoid unless load-bearing:** multiple canonical examples per component (one suffices).
 
 ### brainstorm

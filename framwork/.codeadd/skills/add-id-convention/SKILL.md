@@ -92,6 +92,21 @@ Not every artefact uses the global `[NNNN][L]` convention. QA validation reports
 
 Distinct from `[NNNN][L]`: `NNN` is a 3-digit per-scope run number, no letter suffix, NOT globally unique. See the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
 
+## SF-Qualified IDs (subfeature-scoped docs)
+
+An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add.plan` STEP 8.1 and `/add.design` write into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
+
+- **Format:** `[NNNN]F-SFxx` (e.g. `0042F-SF03`) — the feature ID, a hyphen, then the subfeature key exactly as `epic.md` spells it (`SF` + 2-digit zero-padded).
+- **When:** the doc lives under `subfeatures/SFxx-*/`. A feature-level `design.md` (non-epic feature) keeps the plain `[NNNN]F`.
+- **`related:`** still points at the plain feature ID: `related: [[NNNN]F]`. The suffix disambiguates the document, not the feature it belongs to.
+- **Not a new namespace:** `-SFxx` is a qualifier on an existing ID, never allocated via `status.sh next-id`.
+
+```yaml
+id: 0042F-SF03         # docs/features/0042F-billing/subfeatures/SF03-invoices/design.md
+type: feature-design
+related: [0042F]
+```
+
 ## Forbidden Patterns
 
 | Wrong | Right | Why |
@@ -101,11 +116,13 @@ Distinct from `[NNNN][L]`: `NNN` is a 3-digit per-scope run number, no letter su
 | `0001h` | `0001H` | Letter must be uppercase |
 | `hotfix/H0001-x` | `hotfix/0001H-x` | Branch format follows ID format |
 | `F[NNNN]` (in docs) | `[NNNN]F` | Placeholder follows canonical order |
+| `0042F-sf3` | `0042F-SF03` | SF key is uppercase and 2-digit zero-padded |
+| Same `0042F` on every subfeature `design.md` | `0042F-SF01`, `0042F-SF02`, … | N docs with one ID break single-path ID resolution |
 
 ## Validation Checklist
 
 ```
-[ ] ID matches /^[0-9]{4}[A-Z]$/
+[ ] ID matches /^[0-9]{4}[A-Z]$/ (or /^[0-9]{4}F-SF[0-9]{2}$/ for a subfeature-scoped doc)
 [ ] Branch matches /^[a-z]+\/[0-9]{4}[A-Z]-[a-z0-9-]+$/
 [ ] ID allocated via `status.sh next-id <LETTER>` (not hand-rolled)
 [ ] Frontmatter `id:` uses the same format (no `L[NNNN]` variant)

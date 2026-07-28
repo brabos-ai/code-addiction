@@ -3,26 +3,15 @@
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
-> **ARGS:** `/add.plan [F[NNNN]] [--yolo]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
+> **ARGS:** `/add.plan [F[NNNN]]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
-Coordinator for technical planning. Loads context, dispatches specialized subagents (Database, Backend, Frontend), consolidates plan with APPEND + VALIDATE + FILL GAPS, and validates 100% requirements coverage.
+Coordinator for technical planning. Loads context, dispatches specialized subagents (UX Design, Database, Backend, Frontend), consolidates plan with APPEND + VALIDATE + FILL GAPS, and validates 100% requirements coverage.
 
 ---
 
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
-
----
-
-## Yolo Mode
-
-If argument contains `--yolo`:
-- Skip ALL [STOP] points and clarification questions (STEP 6)
-- Accept default scope automatically
-- Do NOT ask for confirmation at any gate
-- Execute to completion without human interaction
-- Log all auto-decisions in console output
 
 ---
 
@@ -33,6 +22,8 @@ If argument contains `--yolo`:
 | `feature_identified` | STEP 4 | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection |
 | `docs_loaded` | STEP 5 | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents |
 | `scope_determined` | STEP 7 | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first |
+| `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
+| `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
 
 ---
@@ -59,9 +50,10 @@ STEP 6:  Clarification questions  -> IF NEEDED ONLY
 STEP 7:  Analyze scope            -> Epic/Feature type + subagent selection (GATE: scope_determined)
 STEP 8:  Execute subagents        -> SEQUENTIAL by area
   - 8.0: Cross-SF context (EPIC ONLY)
-  - 8.1: Database Specialist
-  - 8.2: Backend Specialist
-  - 8.3: Frontend Specialist
+  - 8.1: UX Design Specialist (gated -> design.md)
+  - 8.2: Database Specialist
+  - 8.3: Backend Specialist
+  - 8.4: Frontend Specialist
 <!-- feature:qa-pipeline:step-list -->
 <!-- /feature:qa-pipeline:step-list -->
 <!-- feature:tdd:step-list -->
@@ -143,12 +135,14 @@ Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `
 
 | Type | Files to read | Priority |
 |------|---------------|----------|
-| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists) | PRIMARY |
+| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists) | PRIMARY |
 | Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
 | Design data | Use design.md to inform backend contracts (endpoints serve UI needs) | IF HAS_DESIGN=true |
 | Knowledge base | Selected wiki pages from STEP 3's Consult Knowledge Base sub-step (paths + freshness verdicts) | IF WIKI:present |
 
 **Gate enforcement:** about.md AND discovery.md are MANDATORY. IF either missing, STOP and inform user. Ref: GATES table.
+
+**Provenance source:** the `about.md` read in this step is the provenance source for STEP 8.1. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — 8.1.0 and 8.1.4 hash those same bytes.
 
 ---
 
@@ -183,6 +177,16 @@ Present questions with options and a RECOMMENDED default. Format: `### 1. [Quest
 - Backend-only feature → Database + Backend Specialist only
 - Full-stack feature → All three
 - Simple UI change → Frontend Specialist only
+
+**Persist the selection (MANDATORY):** the selection is not just informational — later steps branch on it. State these variables explicitly in this step's output, one line each, and carry them forward in context:
+
+```
+FRONTEND_SELECTED = true|false   # Frontend Specialist is in the subagent list
+DATABASE_SELECTED = true|false
+BACKEND_SELECTED  = true|false
+```
+
+`FRONTEND_SELECTED` is read by STEP 8.1's gate (no UX design work happens when it is `false`) and by 8.4. NEVER re-derive it later from prose — read the value stated here.
 
 **Inform user:** Type (FEATURE/EPIC), scope summary, subagent list. Ref: GATES table for scope_determined requirements.
 
@@ -222,7 +226,82 @@ Present questions with options and a RECOMMENDED default. Format: `### 1. [Quest
 
 ---
 
-### Subagent Bootstrap (shared across 8.1-8.3)
+### 8.1 UX Design Specialist (gated — produces `design.md`)
+
+`add.plan` OWNS the design contract. When the feature touches UI, this sub-step produces the consolidated `design.md` that 8.4 (Frontend), STEP 10 and `/add.qa` all read. Three dispatches + one coordinator consolidation.
+
+⛔ NO human `[STOP]` anywhere in 8.1 — every accept/reject decision here belongs to the coordinator.
+
+**SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `add.design` STEP 1.2 and `status.sh`'s `SF_DIR_GLOB` resolve).
+
+**Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.qa` resolves). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
+
+**`design.md` resolution (for every consumer, including the skip path):** resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).
+
+#### 8.1.0 Gate (evaluate BEFORE any dispatch)
+
+Evaluate all four checks IN ORDER and STATE the verdict + reason in your output. Checks 1-3 are skip gates — ANY skip verdict there means 8.1 does NOT run. Check 4 is a **schema override**: it can force 8.1 to run even when check 3 said skip.
+
+1. **Frontend gate:** `FRONTEND_SELECTED = true` (the value stated in STEP 7). IF false → SKIP 8.1, note "no UI in scope".
+2. **Scope gate:** count the screens/pages declared in `about.md` + `discovery.md` and check for structural keywords (wizard, onboarding, multi-step, flow, dashboard, settings-panel). SKIP 8.1 when the feature introduces NO new or restructured screen AND declares NO new component — i.e. changes confined to existing components on existing screens. On skip → note it; `@frontend-agent` (8.4) then plans against the EXISTING `design.md` (resolution above).
+3. **Idempotency by provenance (NEVER mtime):** compute the hash of the exact `about.md` bytes read in STEP 5:
+
+```bash
+sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PATH}" | cut -d' ' -f1
+```
+
+   → `${ABOUT_SHA}`. IF `${SCOPE_DIR}/design.md` exists AND its frontmatter carries `provenance: sha256:${ABOUT_SHA}` → SKIP 8.1, note "design.md up to date (provenance match)". IF the file exists and the value differs or is absent → RUN 8.1 and record WHY in the output ("about.md changed since design.md was written" / "design.md predates provenance tracking").
+
+4. **Contract-schema override (runs even when check 3 said SKIP):** a `design.md` written before the layout-tree + `## Design Contract` schema carries a perfectly valid `provenance` hash, so check 3 alone would skip regeneration **forever** while the contract stays absent. Read the existing `${SCOPE_DIR}/design.md` and check for BOTH a `## Design Contract` section and a layout tree. IF either is missing → **OVERRIDE the check-3 skip and RUN 8.1**, recording the reason "design.md predates the Design Contract schema — regenerating". IF check 3 already decided RUN, this check changes nothing.
+
+⛔ NEVER decide freshness from file mtime, git status, or "it looks recent". The provenance hash is the only signal.
+
+⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis, turns every `screens.json` `expect` into a gap note, and leaves `/add.review`'s contract check with nothing to verify. Never let a provenance match preserve one.
+
+#### 8.1.1 DISPATCH @ux-flow-agent (flow & interaction)
+
+- **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}` (exact — never invent a path), the two output paths above, the inputs `${ABOUT_PATH}` + `${FEATURE_DIR}/discovery.md`, and `HAS_FOUNDATIONS=${HAS_FOUNDATIONS}` (if true it reads `docs/design-system.md` and prefers its tokens). Instruct it to follow its own agent definition — do NOT restate the method here — and to report `frontend_false` and STOP without writing, if the project has no frontend at all.
+- **Early exit:** IF the agent reports `frontend_false` → SKIP the remainder of 8.1 (no `design.md` is written), note it in your output, and continue with 8.2-8.4 as selected in STEP 7.
+- **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
+
+#### 8.1.2 DISPATCH @ux-layout-agent (layout & components)
+
+- **Output (temp):** `${SCOPE_DIR}/design-layout.md`
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}`, the MANDATORY inputs `${SCOPE_DIR}/design-flow.md` + `${SCOPE_DIR}/design-context.md` (read FIRST), the fallback context `${ABOUT_PATH}` / `${FEATURE_DIR}/discovery.md`, and the output path above. Instruct it to follow its own agent definition — the layout method lives there, not here.
+- **Soft-degrade:** if `@ux-layout-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
+
+#### 8.1.3 DISPATCH @ux-agent (critique mode — adversarial, ONE bounded pass)
+
+- **Output (temp):** `${SCOPE_DIR}/design-review.md`
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}` and state **CRITIQUE MODE — read-only**, then pass ONLY: target directory `${SCOPE_DIR}`, the inputs `design-flow.md` / `design-layout.md` / `design-context.md` at that directory, and the output path above. The rubric, the per-defect shape, the severity scale and the empty-critique rule are its agent definition's — do NOT restate them. State that it NEVER edits `design-flow.md`, `design-layout.md`, or `design.md`: it reports, the coordinator decides.
+- **Soft-degrade:** if `@ux-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill (the rubric is `{{skill:add-ux-design/critique-rubric.md}}`).
+
+#### 8.1.4 Coordinator Consolidation → `design.md`
+
+Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at 8.1.0) and write to `${SCOPE_DIR}/design.md`.
+
+⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
+⛔ `${ABOUT_SHA}` is only truthful because 8.1.0 recomputed it — never stamp it over a reused temp.
+
+<!-- MAINTAINER: do not restate the frontmatter or section shape here. It is shared with /add.design; both cite the schema so they cannot drift apart. Change it in the schema, never in one command alone. -->
+
+#### 8.1.5 Validation Gate (`feature-design`)
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-design` against the `design.md` you just wrote. ⛔ DO NOT skip. Require `PASS` before 8.1.6.
+
+#### 8.1.6 Cleanup Temporary Files
+
+```bash
+cd "${SCOPE_DIR}"
+rm -f design-context.md design-flow.md design-layout.md design-review.md
+```
+
+Delete only AFTER `design.md` is written and the 8.1.5 gate returned `PASS`.
+
+---
+
+### Subagent Bootstrap (shared across 8.2-8.4)
 
 Every area subagent receives this bootstrap block before its specific task. `${WIKI_PAGES}` = the page paths selected in STEP 3's Consult Knowledge Base sub-step, one line each: path + one-line reason + freshness verdict. Empty if no wiki was consulted — subagents read the listed pages themselves (JIT), never inlined content:
 
@@ -243,7 +322,7 @@ ${WIKI_PAGES}
 
 ---
 
-### 8.1 Database Specialist
+### 8.2 Database Specialist
 
 **When to create:** Feature requires new entities, tables, or data changes.
 
@@ -290,7 +369,7 @@ ${WIKI_PAGES}
 
 ---
 
-### 8.2 Backend Specialist
+### 8.3 Backend Specialist
 
 **When to create:** Feature requires API, business logic, workers, or events.
 
@@ -358,9 +437,11 @@ ${WIKI_PAGES}
 
 ---
 
-### 8.3 Frontend Specialist
+### 8.4 Frontend Specialist
 
 **When to create:** Feature requires UI changes.
+
+**Reference, Never Repeat:** the frontend section REFERENCES `design.md` for layout, tokens, and states — it NEVER restates them. The layout contract lives in `design.md` only (written by 8.1, or the pre-existing one when 8.1 was skipped); `plan-frontend.md` carries the code-side structure (pages, components, hooks, types) and points at `design.md` for the visual contract.
 
 **DISPATCH AGENT: @frontend-agent**
 - **Output:** `docs/features/${FEATURE_ID}/plan-frontend.md`
@@ -373,7 +454,9 @@ ${WIKI_PAGES}
 
   ## Your Task
   Create the frontend planning section.
-  **If design.md exists:** Follow its layout specs, component inventory, and mobile-first requirements.
+  **If design.md exists:** Follow its layout specs, component inventory, and mobile-first
+  requirements, and REFERENCE it — cite `design.md` (plus screen name) for layout, tokens,
+  and states instead of restating them. The layout lives in design.md only.
   **If not:** Find similar pages/components in the codebase to use as references.
 
   ## Output Format
@@ -403,8 +486,11 @@ ${WIKI_PAGES}
   - NO code examples, only structure
   - Types MUST mirror backend DTOs
   - MUST search codebase for similar files as references (paths from CLAUDE.md)
+  - NEVER restate design.md layout/tokens/states — reference them (Reference, Never Repeat)
   - Keep it under 40 lines
   ```
+
+**End of the area subagents.** 8.2-8.4 have run sequentially; every selected area now has its `plan-<area>.md` temp.
 
 <!-- feature:tdd:step9 -->
 
@@ -484,6 +570,8 @@ ${WIKI_PAGES}
 <!-- feature:qa-pipeline:qa-spec -->
 <!-- /feature:qa-pipeline:qa-spec -->
 
+**QA axis self-check:** IF no `10.0 QA-Spec Subagent` section is present above (the `qa-pipeline` feature is disabled) → `plan-qa-spec.md` will NOT be generated. Add one line to the STEP 13 completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
+
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
 **Schema load (MANDATORY):** Execute schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per skill.
@@ -501,7 +589,7 @@ Separate each section with `---`. **NEVER rewrite or summarize subagent content.
 
 ### 10.2 Validate Completeness
 
-Read discovery.md and design.md (if exists). Verify:
+Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 8.1: SF-level first, feature-level fallback). Verify:
 - All entities/tables from discovery → complete schema in plan-database
 - JSONB fields → detailed TypeScript structures
 - Endpoints → complete request/response DTOs
@@ -590,7 +678,8 @@ Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `fe
 
 Inform user with summary:
 - Feature ID and plan path
-- Areas planned (Database/Backend/Frontend)
+- Areas planned (UX Design/Database/Backend/Frontend)
+- Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
 - Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build`, `/add.autopilot`, or `/add.design`
 

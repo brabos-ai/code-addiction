@@ -159,6 +159,35 @@ teardown() {
   [[ "$output" == *"PHASE:designed"* ]]
 }
 
+@test "HAS_DESIGN:true when feature-level design.md exists" {
+  mkdir -p docs/features/0001F-test
+  echo "# Design" > docs/features/0001F-test/design.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_DESIGN:true"* ]]
+}
+
+@test "HAS_DESIGN:true and PHASE:designed when only a subfeature has design.md" {
+  mkdir -p docs/features/0001F-test/subfeatures/SF01-x
+  echo "# Design" > docs/features/0001F-test/subfeatures/SF01-x/design.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_DESIGN:true"* ]]
+  [[ "$output" == *"PHASE:designed"* ]]
+  [[ "$output" == *"DOCS:design.md"* ]]
+}
+
+@test "HAS_DESIGN:false when no design.md exists at feature or subfeature level" {
+  mkdir -p docs/features/0001F-test
+  echo "# About" > docs/features/0001F-test/about.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_DESIGN:false"* ]]
+}
+
 @test "phase=discovering when discovery.md exists without Summary for Planning section" {
   mkdir -p docs/features/0001F-test
   echo "# Discovery - work in progress" > docs/features/0001F-test/discovery.md
@@ -416,4 +445,106 @@ teardown() {
   [[ "$output" == *"WIKI:present"* ]]
   [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
   [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+}
+
+# ─── SETUP CONTRACT (materialized-state staleness) ───────────────────
+
+mk_receipt() { # $1 = setup-contract value, $2 = optional line ending
+  mkdir -p docs/qa
+  if [ "${2:-}" = "crlf" ]; then
+    printf -- '---\r\ntype: setup-receipt\r\nsetup-contract: %s\r\n---\r\n\r\n## Decision Log\r\n\r\n| d | setup-contract: 99 | x |\r\n' "$1" > docs/qa/qa-setup.md
+  else
+    printf -- '---\ntype: setup-receipt\nsetup-contract: %s\n---\n\n## Decision Log\n\n| d | setup-contract: 99 | x |\n' "$1" > docs/qa/qa-setup.md
+  fi
+}
+
+mk_sidecar() { # $1 = version
+  mkdir -p .codeadd
+  printf '{\n  "version": 1,\n  "contracts": {\n    "add.qa-setup": {\n      "version": %s,\n      "shape": "sha256:x",\n      "paths": [\n        { "path": "a", "owner": "setup" }\n      ]\n    }\n  }\n}\n' "$1" > .codeadd/contracts.json
+}
+
+@test "SETUP_QA: absent when no QA state exists" {
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA:absent"* ]]
+}
+
+@test "SETUP_QA: unreceipted when config.json exists without a receipt" {
+  mkdir -p docs/qa
+  echo '{}' > docs/qa/config.json
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA:unreceipted"* ]]
+  [[ "$output" == *"SETUP_QA_HINT:QA state exists without a setup receipt"* ]]
+}
+
+# The contract declares TWO owner:setup paths. A project holding only the
+# qa-project skill must NOT read as absent: STEP 1.5 would classify it
+# FIRST-RUN and re-materialize over the user's configuration.
+# One case per provider install destination (cli/src/providers.js).
+@test "SETUP_QA: unreceipted from the qa-project skill alone, for EVERY provider dest" {
+  for d in .claude .agents .agent .cursor .opencode; do
+    rm -rf .claude .agents .agent .cursor .opencode
+    mkdir -p "$d/skills/qa-project"
+    echo "x" > "$d/skills/qa-project/SKILL.md"
+    run "$SCRIPTS_DIR/status.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SETUP_QA:unreceipted"* ]] || { echo "provider dest $d not probed"; return 1; }
+  done
+}
+
+@test "SETUP_QA: current when recorded equals shipped" {
+  mk_receipt 1
+  mk_sidecar 1
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA:present"* ]]
+  [[ "$output" == *"SETUP_QA_CONTRACT:1/1"* ]]
+  [[ "$output" != *"SETUP_QA_BEHIND"* ]]
+}
+
+@test "SETUP_QA: behind reports the integer delta plus a hint" {
+  mk_receipt 1
+  mk_sidecar 3
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA_CONTRACT:1/3"* ]]
+  [[ "$output" == *"SETUP_QA_BEHIND:2"* ]]
+}
+
+@test "SETUP_QA: a malformed setup-contract yields unknown, never a wrong number" {
+  mkdir -p docs/qa
+  printf -- '---\nsetup-contract: v1\n---\n' > docs/qa/qa-setup.md
+  mk_sidecar 1
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA_CONTRACT:unknown/1"* ]]
+}
+
+@test "SETUP_QA: pre-contracts install stays silent (no sidecar, no hint)" {
+  mk_receipt 1
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA_CONTRACT:1/unknown"* ]]
+  [[ "$output" != *"SETUP_QA_HINT"* ]]
+}
+
+@test "SETUP_QA: a CRLF receipt is read, not degraded to unknown" {
+  mk_receipt 1 crlf
+  mk_sidecar 2
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA_CONTRACT:1/2"* ]]
+  [[ "$output" == *"SETUP_QA_BEHIND:1"* ]]
+}
+
+# The frontmatter-bounded read must never match the agent-written body, where
+# mk_receipt plants a `setup-contract: 99` decoy inside the Decision Log.
+@test "SETUP_QA: the Decision Log body never leaks into the recorded value" {
+  mk_receipt 4
+  mk_sidecar 4
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SETUP_QA_CONTRACT:4/4"* ]]
+  [[ "$output" != *"99"* ]]
 }

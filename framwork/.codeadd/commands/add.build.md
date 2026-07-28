@@ -98,6 +98,7 @@ This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS
 7. ASSEMBLE `TASK_DOCUMENTS`:
    - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
    - `docs/features/${FEATURE_ID}/discovery.md`
+   - `design.md` (if `HAS_DESIGN`) — resolved per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)
    - `${SF_DIR}/plan.md` (if exists)
    - `${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
 
@@ -181,13 +182,14 @@ Starting...
 
 Read all relevant feature docs based on status.sh flags:
 - `plan.md` (if HAS_PLAN=true) — use as primary source
-- `design.md` (if HAS_DESIGN=true) — follow mobile-first layouts, component specs, design tokens
+- `design.md` (if HAS_DESIGN=true) — follow mobile-first layouts, component specs, design tokens. Resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)
 - `about.md` — ALWAYS
 - `discovery.md` — ALWAYS
 - `${ARCHITECTURE_REF}` — from script output
 - `design-system.md` (if HAS_FOUNDATIONS=true)
 
-**Priority:** plan.md > design.md + about.md > about.md + discovery.md
+**Priority (domain-scoped):** `plan.md` wins on technical contracts (endpoints, DTOs, schemas, module structure, types); `design.md` wins on layout, hierarchy, tokens, states, and every `## Design Contract` dimension; `about.md` remains the functional authority.
+Fallback for anything not covered: plan.md > design.md + about.md > about.md + discovery.md.
 
 ---
 <!-- feature:qa-pipeline:qa-fix -->
@@ -298,6 +300,8 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl"
 | Backend | `@backend-agent` | Generic subagent + skill add-backend-development |
 | Frontend | `@frontend-agent` | Generic subagent + skill add-frontend-development |
 | Validation | `@reviewer-agent` | Generic subagent + skill add-code-review |
+| E2E / test files | `@e2e-agent` | Generic subagent (test files only, no MCP) |
+| Design spec | `@ux-agent` | Generic subagent + skill add-ux-design (design spec only, never application code) |
 
 **Named agents have skills preloaded, model optimized, and tool restrictions enforced via their definition.** When dispatching a named agent, skills in the prompt are already loaded — include them as reference for the agent's task, not as load instructions.
 

@@ -15,7 +15,7 @@ jobs:
         working-directory: cli
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -98,7 +98,13 @@ jobs:
           done
           # Single-file build outputs (not subdirs) packaged explicitly.
           FILES=""
-          [ -f "framwork/.codeadd/injection-points.json" ] && FILES="$FILES framwork/.codeadd/injection-points.json"
+          # `|| true` is defensive, not load-bearing: `bash -e` exempts a failing
+          # command inside an && list unless it is the step's LAST command. These
+          # lines are followed by `zip`, so they are safe either way — the guard
+          # keeps them safe if that ever stops being true. Same applies to the
+          # `[ -d ] && DIRS=…` loop above.
+          [ -f "framwork/.codeadd/injection-points.json" ] && FILES="$FILES framwork/.codeadd/injection-points.json" || true
+          [ -f "framwork/.codeadd/contracts.json" ] && FILES="$FILES framwork/.codeadd/contracts.json" || true
           zip -r "code-addiction-${TAG}.zip" $DIRS $FILES
           echo "ASSET_NAME=code-addiction-${TAG}.zip" >> "$GITHUB_ENV"
 

@@ -49,6 +49,8 @@ Do NOT load this skill for:
 | `{{skill:add-ux-design/modern-patterns.md}}` | Interaction patterns, visual trends, performance UX |
 | `{{skill:add-ux-design/saas-patterns.md}}` | SaaS surface patterns (Dashboard, Settings, Billing, etc.) |
 | `{{skill:add-ux-design/ux-writing.md}}` | Microcopy, error messages, empty states |
+| `{{skill:add-ux-design/design-contract.md}}` | Layout tree notation, component composition, Design Contract Dimensions |
+| `{{skill:add-ux-design/critique-rubric.md}}` | The 9-item critique rubric (`@ux-agent` critique mode only) |
 
 ### Docs Lookup
 
@@ -482,6 +484,16 @@ When generating ANY frontend work, ALWAYS include:
   </ResponsiveContainer>
 </div>
 ```
+
+---
+
+## Design Contract & Layout Notation
+
+The **layout tree notation**, **component composition** notation, and the canonical **Design Contract Dimensions** table (11 dimensions, each naming its verification method) live in `{{skill:add-ux-design/design-contract.md}}`. `@ux-layout-agent` loads it to author a spec; `@qa-agent` reads it to know which dimensions are computed-style-verified. Do not restate the table anywhere else.
+
+## Critique Rubric
+
+The 9-item adversarial rubric `@ux-agent` runs in critique mode, its severity scale, and the empty-critique rule live in `{{skill:add-ux-design/critique-rubric.md}}`. It binds the CRITIC only — authors deliberately do not pre-satisfy it.
 
 ---
 

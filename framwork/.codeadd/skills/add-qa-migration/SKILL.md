@@ -19,7 +19,7 @@ Domain layer that turns an existing QA/test setup into the code-addiction QA pip
 ## When to Use
 
 - `/add.qa-setup` detected an existing QA/test flow (Cypress, Jest, Vitest, Playwright-standalone, or a custom runner) on a project's **first** setup run and the user **confirmed** they want to migrate/adapt it.
-- The goal is to adopt code-addiction's dual-axis QA model over an existing suite, preserving intent, not to author QA from a blank slate.
+- The goal is to adopt code-addiction's dual-judge QA model over an existing suite, preserving intent, not to author QA from a blank slate.
 
 ## When NOT to Use
 

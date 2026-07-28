@@ -50,11 +50,11 @@
 
   <rect x="370" y="56" width="270" height="36" class="cmd-box"/>
   <text x="386" y="74" class="cmd-name">/add.design</text>
-  <text x="386" y="86" class="cmd-desc">UX spec, mobile-first</text>
+  <text x="386" y="86" class="cmd-desc">UX spec pipeline (optional entry point)</text>
 
   <rect x="370" y="100" width="270" height="36" class="cmd-box"/>
   <text x="386" y="118" class="cmd-name">/add.plan</text>
-  <text x="386" y="130" class="cmd-desc">Technical Planning Orchestrator</text>
+  <text x="386" y="130" class="cmd-desc">Technical planning + UX design pipeline</text>
 
   <!-- IMPLEMENTATION GROUP -->
   <rect x="350" y="174" width="310" height="150" class="group-bg"/>
@@ -97,7 +97,7 @@
 
   <rect x="700" y="144" width="260" height="36" class="cmd-box"/>
   <text x="716" y="162" class="cmd-name">/add.qa</text>
-  <text x="716" y="174" class="cmd-desc">Agent-judged QA from persisted evidence</text>
+  <text x="716" y="174" class="cmd-desc">Dual-judge QA panel from persisted evidence</text>
 
   <rect x="700" y="188" width="260" height="36" class="cmd-box"/>
   <text x="716" y="206" class="cmd-name">/add.qa-setup</text>
