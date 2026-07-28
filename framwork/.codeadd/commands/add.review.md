@@ -56,7 +56,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Context | Source | Status |
 |---------|--------|--------|
 | Feature metadata | `bash .codeadd/scripts/status.sh` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
-| Feature docs | `docs/features/${FEATURE_ID}/*` | about.md, discovery.md, plan.md, design.md (opt), iterations.jsonl, decisions.jsonl |
+| Feature docs | `docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
 | Knowledge base | via `{{skill:add-knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
 | Architecture reference | `CLAUDE.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
@@ -148,6 +148,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Collect data | Build: status from STEP 6. Spec: status from STEP 3. Scores: from STEP 5. Gates: from STEP 7. |
 | Build table | Quality Gate Report (see STEP 8.1) |
 | Write review.md | `docs/features/${FEATURE_ID}/review.md` with all consolidated findings |
+| QA baseline | The `> **QA baseline:**` line is MANDATORY — `${QA_BASELINE}` from STEP 2.2 item 4b, resolved from the filesystem this run. Emit `none` when no run exists; NEVER omit the line. `/add.done` BLOCKS a review.md without it |
 | Idempotency | If review.md already exists → back it up as `review.md.prev`, write new |
 
 **Success Criteria:** review.md written with all gates populated.
@@ -241,7 +242,12 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 1. `about.md` - Feature specification (EXTRACT: RF, RN, Acceptance Criteria)
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
-4. `design.md` - UX design (if exists)
+4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
+4b. **QA baseline (`QA_BASELINE`) — resolve now, emit in 8.2.** Glob every `_tests/run-*/qa-validation-*.md` under the feature (feature-level AND each subfeature). `run-NNN` is a **per-scope sequence** — SF01 at `run-003` and SF02 at `run-001` are unrelated counters — so record one entry PER SCOPE, never a single global number:
+   - Per scope key (`SFxx`, or `feature` for a feature-level run), take the HIGHEST `NNN` present.
+   - `QA_BASELINE` = those pairs joined by ` · `, e.g. `SF01:run-003 · SF02:run-001`, or `feature:run-002` on a non-epic.
+   - No `_tests/run-*/` anywhere → `QA_BASELINE = none`.
+   This string is what `/add.done` 4.0 compares against to detect a QA fix wave that landed AFTER this review. Resolve it from the filesystem at review time — never copy it from a previous `review.md`.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
@@ -380,14 +386,14 @@ prompt: |
   2. Read ALL files listed in TASK_DOCUMENTS
   3. IF WIKI:present: read {{addpath:wiki/domains/frontend.md}} (+ {{addpath:wiki/conventions.md}})
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
-  5. Read skills: add-frontend-development (PRIMARY), add-code-review, add-ux-design (if no design.md)
+  5. Read skills: add-frontend-development (PRIMARY), add-code-review, add-ux-design (ONLY if HAS_DESIGN=false — a design.md resolved at SF level counts, so never load it as a substitute for an epic's subfeature contract)
 
   ## TASK_DOCUMENTS (read ALL — source of truth)
   ${TASK_DOCUMENTS}
 
   ## VALIDATION CHECKLIST
   - [ ] React patterns: Hooks, composition, state management, TanStack Query
-  - [ ] UX: Design specs (if design.md), responsive, accessibility (ARIA), loading/error states
+  - [ ] UX: every `## Design Contract` dimension in each resolved design.md verified against the code, responsive, accessibility (ARIA), loading/error states
   - [ ] Code: No `any` types, no console.log, no dead code, no hardcoded values
   - [ ] Security: XSS sanitized, URLs validated, no sensitive data in localStorage
   - [ ] Contracts: Frontend types match backend DTOs, API calls use correct endpoints
@@ -396,7 +402,7 @@ prompt: |
   ## RULES
   - NO questions — fix automatically
   - Use skills as source of truth
-  - Design specs are MANDATORY (if design.md exists)
+  - Design specs are MANDATORY whenever HAS_DESIGN=true, including SF-level design.md on an epic
   - Fix ALL violations; no deferrals
   - DO NOT run build (coordinator does it)
 
@@ -586,6 +592,7 @@ Content:
 # Review: ${FEATURE_ID}
 
 > **Date:** ${TODAY} | **Branch:** ${BRANCH_NAME}
+> **QA baseline:** ${QA_BASELINE}
 
 ## Quality Gate Report
 [table from 8.1]
@@ -604,7 +611,14 @@ Content:
 
 ### 8.3 Console Output
 
-Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps (add.done if PASSED, fix + re-check if BLOCKED).
+Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps.
+
+**Next steps (evaluate top-to-bottom, use FIRST match):**
+- `BLOCKED` → fix + re-run `/add.review`.
+- `PASSED`, `HAS_DESIGN=true` (STEP 2.2), and NO `_tests/run-*/` directory exists for the scope → `/add.qa` — the rendered result was never validated. Run the QA loop (`/add.qa` ⇄ `/add.build qa`), then return here so review judges the post-fix tree. State this explicitly; do NOT route a never-QA'd UI feature straight to `/add.done`.
+- `PASSED` → `/add.done`.
+
+⛔ Code review is the LAST gate in the QA-validated flow. If `/add.build qa` runs AFTER this review, this `review.md` is stale — `/add.done` will detect it and send the user back here.
 
 ---
 
@@ -620,6 +634,7 @@ Output quality gate summary including: reviewers dispatched (files reviewed per 
 - Re-run validation gates independently (STEP 7)
 - Write review.md before console output (STEP 8)
 - Track STAGED_CHANGES flag throughout execution
+- Resolve `QA_BASELINE` from the filesystem (STEP 2.2 item 4b) and emit it in review.md (STEP 8.2) — per scope, `run-NNN`, never copied from a previous review.md
 
 **NEVER:**
 - Dispatch reviewers without completing Gates 1-3

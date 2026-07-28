@@ -159,6 +159,35 @@ teardown() {
   [[ "$output" == *"PHASE:designed"* ]]
 }
 
+@test "HAS_DESIGN:true when feature-level design.md exists" {
+  mkdir -p docs/features/0001F-test
+  echo "# Design" > docs/features/0001F-test/design.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_DESIGN:true"* ]]
+}
+
+@test "HAS_DESIGN:true and PHASE:designed when only a subfeature has design.md" {
+  mkdir -p docs/features/0001F-test/subfeatures/SF01-x
+  echo "# Design" > docs/features/0001F-test/subfeatures/SF01-x/design.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_DESIGN:true"* ]]
+  [[ "$output" == *"PHASE:designed"* ]]
+  [[ "$output" == *"DOCS:design.md"* ]]
+}
+
+@test "HAS_DESIGN:false when no design.md exists at feature or subfeature level" {
+  mkdir -p docs/features/0001F-test
+  echo "# About" > docs/features/0001F-test/about.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_DESIGN:false"* ]]
+}
+
 @test "phase=discovering when discovery.md exists without Summary for Planning section" {
   mkdir -p docs/features/0001F-test
   echo "# Discovery - work in progress" > docs/features/0001F-test/discovery.md

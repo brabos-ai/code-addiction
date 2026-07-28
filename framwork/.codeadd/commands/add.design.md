@@ -1,14 +1,16 @@
 # Design UX Specialist for SaaS
 
-> **MODE:** AUTONOMOUS for features (infer->confirm->execute). INVESTIGATIVE only for foundations.
-> **DOCS:** Feature design -> `docs/features/${FEATURE_ID}/design.md`. Foundations only when user requests.
+> **MODE:** AUTONOMOUS for features (dispatch -> critique -> consolidate, no approval ask). INVESTIGATIVE only for foundations.
+> **DOCS:** Feature design -> `${SCOPE_DIR}/design.md`. Foundations only when user requests.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
 > **ARGS:** `/add.design [F[NNNN]]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
-Coordinator for SaaS UX design specs. Dispatches specialized subagents for complex features (>=3 screens) or works inline for simple ones. Analyzes existing design system, detects SaaS context, maps screen flows, classifies actions, and creates text-based layout and component specs for AI agents.
+Thin coordinator for SaaS UX design specs. Dispatches three specialized agents — `@ux-flow-agent` (design-system inspection + flow) then `@ux-layout-agent` (layout + components) then `@ux-agent` in critique mode — and consolidates their outputs into `design.md` itself. The coordinator authors nothing but the consolidation; all inspection, flow, and layout work lives in the agents.
 
-Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
+**Same artefact, two entry points.** `/add.plan` STEP 8.1 runs this exact pipeline automatically whenever a feature touches UI. This command is the manual entry point: run it when you want the design contract produced (or regenerated) on its own, before or independently of planning. Both write the same `design.md` with the same conventions — never diverge from `add.plan` 8.1's semantics when editing this command.
+
+Runs AFTER `/add.new`, BEFORE `/add.plan` or `/add.build`.
 
 ---
 
@@ -16,34 +18,35 @@ Runs AFTER `/feature`, BEFORE `/plan` or `/dev`.
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
-**Reuse feature ID:** `add.design` does NOT allocate a new ID. Read `id: [NNNN]F` from the feature's `about.md` in STEP 1.2. The generated `design.md` carries the SAME `[NNNN]F` with `related: [[NNNN]F]`.
+**Reuse feature ID:** `add.design` does NOT allocate a new ID. Read `id: [NNNN]F` from the resolved scope's `about.md` in STEP 1.2. The generated `design.md` carries `[NNNN]F` with `related: [[NNNN]F]` — or the SF-qualified form `[NNNN]F-SFxx` when the design is scoped to a subfeature (see `{{skill:add-id-convention/SKILL.md}}`).
 
 ---
 
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 ```
-STEP 1:  Load Context & Skills       -> RUN FIRST
-STEP 2:  Detect SaaS Context         -> AFTER skill loaded
-STEP 3:  Inspect Design System       -> MANDATORY before any proposal
-STEP 4:  Complexity Gate             -> Decide inline vs subagent mode
-STEP 5:  Flow & Interaction Analysis -> Subagent dispatch OR inline
-STEP 6:  Layout & Component Spec    -> Subagent dispatch OR inline (AFTER Step 5)
-STEP 7:  Confirm Design [STOP]      -> WAIT for user confirmation
-STEP 8:  Write Documentation        -> Consolidation + write design.md + cleanup
-STEP 9:  Validation Gate             -> feature-design schema gate
-STEP 10: Completion                  -> INFORM user
+STEP 1: Load Context & Skills          -> RUN FIRST (resolve FEATURE + SCOPE_DIR + ABOUT_SHA)
+STEP 2: Detect SaaS Context            -> AFTER skill loaded
+STEP 3: DISPATCH @ux-flow-agent        -> design-context.md + design-flow.md
+STEP 4: DISPATCH @ux-layout-agent      -> design-layout.md (AFTER Step 3)
+STEP 5: DISPATCH @ux-agent (critique)  -> design-review.md (AFTER Step 4)
+STEP 6: Coordinator Consolidation      -> write design.md + ## Design Review
+STEP 7: Validation Gate                -> feature-design schema gate
+STEP 8: Cleanup Temporary Files        -> only AFTER the gate returns PASS
+STEP 9: Completion                     -> INFORM user (no approval ask)
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS (DO NOT SKIP):**
 
 - **UX-DESIGN SKILL NOT LOADED:** Stop immediately. Read skill add-ux-design FIRST before any work.
-- **DESIGN SYSTEM INSPECTION NOT COMPLETE (STEP 3):** Do NOT propose layouts. Complete inspection FIRST.
-- **COMPLEXITY GATE NOT EVALUATED (STEP 4):** Do NOT dispatch subagents. Evaluate gate FIRST.
-- **SUBAGENT MODE / FLOW INCOMPLETE (STEP 5):** Do NOT dispatch Layout subagent. Flow must complete FIRST (Layout depends on Flow output).
-- **DESIGN NOT CONFIRMED BY USER:** Do NOT write design.md. Present design and WAIT for confirmation.
-- **NO FRONTEND EXISTS:** Inform user, skip design.
-- **FEATURE NOT RESOLVED (STEP 1.2):** Do NOT propose or write design. List `docs/features/` and WAIT for user choice.
+- **FEATURE NOT RESOLVED (STEP 1.2):** Do NOT dispatch or write design. List `docs/features/` and WAIT for user choice.
+- **SCOPE_DIR NOT RESOLVED (STEP 1.2):** Do NOT dispatch. Temps and `design.md` both live in `${SCOPE_DIR}`; an unresolved scope writes the design to the wrong directory.
+- **FLOW INCOMPLETE (STEP 3):** Do NOT dispatch `@ux-layout-agent`. `design-flow.md` must exist FIRST (Layout depends on Flow).
+- **LAYOUT INCOMPLETE (STEP 4):** Do NOT dispatch the critic. `design-layout.md` must exist FIRST.
+- **NO FRONTEND EXISTS:** `@ux-flow-agent` reports `frontend_false` -> inform user, skip design, STOP.
+- **STALE TEMP REUSE:** Do NOT skip a dispatch because its temp file already exists. Every run re-derives all temps from the CURRENT `about.md` — reusing one and then stamping the current `provenance` hash on `design.md` is a lie that makes `add.plan` 8.1.0 skip regeneration forever.
+- **COORDINATOR RE-DISPATCH:** Do NOT re-dispatch `@ux-layout-agent` to apply the critique. YOU apply accepted items while writing `design.md`.
+- **HUMAN APPROVAL GATE:** This command has NO stop-and-wait-for-approval step. Every accept/reject decision belongs to the coordinator. Do NOT invent one.
 
 ---
 
@@ -53,23 +56,47 @@ STEP 10: Completion                  -> INFORM user
 
 Read skill `add-ux-design`.
 
-**Skill provides:** SaaS UX patterns, Context Detection, Mobile-first, States, Typography/Colors/Spacing, Components, Checklist
+**Skill provides:** SaaS UX patterns, Context Detection, Mobile-first, States, Typography/Colors/Spacing, Components, Checklist — plus an index of its reference files. The **Critique Rubric** and the **Design Contract notation** are separate loads (`critique-rubric.md`, `design-contract.md`); STEP 5's critique dispatch is what pulls the rubric, not this step.
 
 **RULE:** The ux-design skill is the SINGLE SOURCE OF TRUTH. NEVER duplicate patterns here.
 
-### 1.2: Load Feature Context
+### 1.2: Load Feature Context & Resolve Scope
 
 Run `status.sh`. **Feature targeting (detection order):** explicit `F[NNNN]` argument > `FEATURE_ID` from status.sh (branch) > **ask-gate**: list features from `docs/features/` and WAIT for user choice (NEVER proceed without a resolved feature).
 
-Then read `about.md` and `discovery.md` for the resolved feature.
+**Extract from status.sh:** `FEATURE_ID`, `FEATURE_DIR`, `HAS_FOUNDATIONS`, `HAS_EPIC`, `EPIC_CURRENT_SF`.
 
-**Extract:** `FEATURE_ID`, `FEATURE_DIR`, `HAS_FOUNDATIONS`, `FRONTEND.EXISTS`, `FRONTEND.UI_COMPONENTS`
+**Scope dir (epic awareness — identical rule to `add.plan` 8.1 and `/add.qa`):**
+
+```
+IF HAS_EPIC=true:  SF_DIR    = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*   (single match)
+                   SCOPE_DIR = ${SF_DIR}
+                   SF_SUFFIX = " (subfeature ${EPIC_CURRENT_SF})"
+ELSE:              SCOPE_DIR = ${FEATURE_DIR}
+                   SF_SUFFIX = ""     (empty)
+```
+
+ALL temps AND the final `design.md` live in `${SCOPE_DIR}`. Never write them to `${FEATURE_DIR}` when `HAS_EPIC=true`.
+
+**`design.md` resolution (for consumers, and for the re-run `created:` lookup):** resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).
+
+**Read:** `${ABOUT_PATH}` (= `${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) and `${FEATURE_DIR}/discovery.md`.
+
+**Provenance hash (same bytes `add.plan` 8.1 hashes):**
+
+```bash
+sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PATH}" | cut -d' ' -f1
+```
+
+→ `${ABOUT_SHA}`. STEP 6 writes it as `provenance: sha256:${ABOUT_SHA}`.
+
+**No idempotency skip here.** `add.plan` 8.1.0 skips on a provenance match because it runs automatically; invoking `/add.design` IS the explicit intent to (re)produce the design, so the pipeline always runs — end to end. If `design.md` already exists, say so and note that it will be regenerated. The same applies to every temp: STEPS 3-5 re-derive `design-context.md`, `design-flow.md`, `design-layout.md` and `design-review.md` from the `about.md` you just hashed, so the `${ABOUT_SHA}` STEP 6 stamps is always truthful.
 
 ### 1.3: Skill Docs Lookup (as needed)
 
 When you need reference docs for specific components, utilities, patterns, charts, or tables, search the corresponding doc files within skill `add-ux-design`.
 
-**GATE CHECK:** Is ux-design skill loaded? IF NO -> STOP. Load skill FIRST.
+**GATE CHECK:** Is ux-design skill loaded? Is FEATURE resolved? Is SCOPE_DIR resolved? IF NO to any -> STOP and resolve it FIRST.
 
 ---
 
@@ -77,7 +104,7 @@ When you need reference docs for specific components, utilities, patterns, chart
 
 USE the Context Detection table from ux-design skill. Analyze about.md/discovery.md for keywords -> Apply matching SaaS patterns. Multiple contexts supported (e.g. "Team Settings" -> Settings + Workspace).
 
-**Store:**
+**Store (passed into the STEP 3 dispatch as a context signal — the agents still derive their own):**
 ```
 SAAS_CONTEXT=[detected from ux-design Context Detection table]
 PATTERNS_TO_APPLY=[matching patterns from SaaS UX Pattern Library]
@@ -85,203 +112,75 @@ PATTERNS_TO_APPLY=[matching patterns from SaaS UX Pattern Library]
 
 ---
 
-## STEP 3: Inspect Design System (MANDATORY)
+## STEP 3: DISPATCH @ux-flow-agent (flow & interaction)
 
-> **CRITICAL:** NEVER propose layouts without completing this step. All proposals MUST align with existing visual patterns.
+The design-system inspection lives INSIDE this agent (Step 0 of its definition) — the coordinator does not inspect anything itself.
 
-Inspect the project's design system by searching and reading relevant files in each area. Each subsection is independent — extract only what is specified.
-
-### 3.1: Theme & Tokens (Required)
-
-Analyze tailwind config files and CSS files with custom properties (globals.css, index.css, etc.).
-
-**Extract:** colors (primary, secondary, accent, muted, background, foreground, border, destructive), spacing (base unit, common gaps, padding), border-radius values, font families (headings, body, mono), dark mode (yes/no, strategy).
-
-### 3.2: Layout Shell (Required)
-
-Find and read layout-related components (layout, shell, sidebar, header, topbar, navbar, footer, app-shell, dashboard-layout, page-layout).
-
-**Extract:** shell (name, path, structure), sidebar (width, collapsible, position), topbar (height, position, contents), content area (max-width, padding, responsive).
-
-### 3.3: Component Library Audit (Required)
-
-Audit available UI components and check for component index/exports.
-
-**Extract:** full list of existing UI components with paths, shadcn status (yes/no, which installed).
-
-### 3.4: Visual Patterns Reference (Required for Subagent Mode)
-
-Find and read 3-5 representative pages (dashboard, settings, list, detail, form).
-
-**Extract:** page headers, cards, lists, forms, buttons usage patterns.
-
-### 3.5: Frontend Readiness Check
-
-```json
-{"frontend_false":"Backend-only, skip design","frontend_true_lt5":"New project, use ux-design defaults","frontend_true_gte5":"MUST follow patterns from inspection"}
-```
-
-**IF HAS_FOUNDATIONS=true:** Read `docs/design-system.md` and use tokens.
-
-### 3.6: Write Design Context (Required Output for Subagent Mode)
-
-Write temp file: `docs/features/${FEATURE_ID}/design-context.md`
-
-**Structure (Extractive format, no prose):**
-
-```json
-{
-  "theme": {
-    "colors": {"primary":"[hsl]","secondary":"[hsl]","...":"..."},
-    "spacing": {"1":"0.25rem","2":"0.5rem","...":"..."},
-    "fonts": {"display":"[family]","body":"[family]","mono":"[family]"},
-    "radius": "[value]",
-    "darkMode": true|false
-  },
-  "layout": {
-    "shell": "[name]",
-    "sidebar": {"width":"[px]","collapsible":true|false},
-    "topbar": {"height":"[px]","fixed":true|false},
-    "contentMaxWidth": "[px/css]"
-  },
-  "components": ["[path/name]",...],
-  "constraints": ["MUST use [token]", "AVOID [pattern]", "MATCH [value]"]
-}
-```
-
-**GATE CHECK:** No frontend -> inform user, skip design, STOP. Missing 3.1-3.3 -> Complete FIRST. Complete -> STEP 4.
+- **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}` (exact — never invent a path), the two output paths above, the inputs `${ABOUT_PATH}` + `${FEATURE_DIR}/discovery.md`, `HAS_FOUNDATIONS=${HAS_FOUNDATIONS}`, and the STEP 2 signal `${SAAS_CONTEXT}` / `${PATTERNS_TO_APPLY}`. Instruct it to follow its own agent definition — do NOT restate the method here — and to report `frontend_false` and STOP without writing, if the project has no frontend at all.
+- **Early exit:** IF the agent reports `frontend_false` → no `design.md` is written. Inform the user (backend-only scope), skip STEPS 4-8, and STOP.
+- **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
+- **Always dispatch — never reuse a leftover temp.** If `design-context.md` / `design-flow.md` survive an interrupted run, the agent OVERWRITES them. Reusing them would let a temp derived from an older `about.md` be consolidated under the CURRENT `${ABOUT_SHA}` in STEP 6, and `add.plan` 8.1.0 would then skip regeneration on that false provenance match. There is no mtime/"looks recent" escape hatch — see the ⛔ in STEP 6.
+- **(add.design-only, intentional):** STEP 2's `${SAAS_CONTEXT}`/`${PATTERNS_TO_APPLY}` signal passed into this dispatch has no equivalent in `add.plan` 8.1.1 — the automatic pipeline lets `@ux-flow-agent` derive context on its own; the manual entry point pre-computes it for a faster, more deliberate standalone run.
 
 ---
 
-## STEP 4: Complexity Gate
+## STEP 4: DISPATCH @ux-layout-agent (layout & components)
 
-Count screens/pages from about.md and discovery.md. Check for complexity keywords (wizard, onboarding, multi-step, flow, dashboard, settings-panel).
+**PREREQUISITE:** `${SCOPE_DIR}/design-flow.md` MUST exist. IF missing -> re-run STEP 3.
 
-```
-IF SCREEN_COUNT < 3 AND no complexity keywords:
-  -> MODE = INLINE (coordinator handles Steps 5-6 directly)
-
-IF SCREEN_COUNT >= 3 OR complexity keywords found:
-  -> MODE = SUBAGENT (verify design-context.md exists, dispatch subagents)
-```
-
-Inform user which mode was selected and why.
-
-**GATE CHECK:** Steps 1-3 must be complete before evaluating.
+- **Output (temp):** `${SCOPE_DIR}/design-layout.md`
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}`, the MANDATORY inputs `${SCOPE_DIR}/design-flow.md` + `${SCOPE_DIR}/design-context.md` (read FIRST), the fallback context `${ABOUT_PATH}` / `${FEATURE_DIR}/discovery.md`, and the output path above. Instruct it to follow its own agent definition — the layout method lives there, not here.
+- **Soft-degrade:** if `@ux-layout-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill.
+- **Always dispatch — never reuse a leftover temp.** A surviving `design-layout.md` is OVERWRITTEN, for the same false-provenance reason as STEP 3.
 
 ---
 
-## STEP 5 & 6: Subagent Dispatch (Parameterized Template)
+## STEP 5: DISPATCH @ux-agent (critique mode — adversarial, ONE bounded pass)
 
-### Subagent Template (Reducer Pattern)
+**PREREQUISITE:** `${SCOPE_DIR}/design-layout.md` MUST exist.
 
-DISPATCH AGENT: @ux-agent with parameters below.
-
-```
-You are the {{FLOW_TYPE}} SPECIALIST for feature ${FEATURE_ID}.
-
-## Bootstrap
-Read: design-context.md{{READ_PRIOR_FLOW}}, about.md, discovery.md for ${FEATURE_ID}.
-Load: skill add-ux-design files {{SKILL_FILES}}.
-
-## Task
-{{TASK_BULLETS}}
-
-## Output
-Write to: {{OUTPUT_PATH}}
-{{OUTPUT_SPEC}}
-
-## Rules
-- {{CORE_CONSTRAINT}}
-- Keep output under {{LINE_LIMIT}} lines
-{{NO_OVERLAP_RULE}}
-```
-
-### Parameter Sets (Dispatch Configuration)
-
-**FLOW DISPATCH (STEP 5):**
-```json
-{
-  "FLOW_TYPE": "FLOW & INTERACTION ARCHITECT",
-  "READ_PRIOR_FLOW": "",
-  "SKILL_FILES": "ux-laws-principles.md, modern-patterns.md",
-  "TASK_BULLETS": "- Map ALL screens and create ASCII flow diagram\n- Classify ALL user actions (Action Classification Matrix)\n- Map entry points per screen (nav, Cmd+K, URL, notification, breadcrumb)\n- Define state transitions between screens",
-  "OUTPUT_PATH": "docs/features/${FEATURE_ID}/design-flow.md",
-  "OUTPUT_SPEC": "Tables: Flow Diagram, Screen Inventory (screen/purpose/parent/depth), Action Classification Matrix (action/frequency/type/access/screen), Entry Points, State Transitions.",
-  "CORE_CONSTRAINT": "Apply UX laws and modern patterns from skill docs",
-  "LINE_LIMIT": "80",
-  "NO_OVERLAP_RULE": "- NO layout specs (Layout subagent handles that)"
-}
-```
-
-**LAYOUT DISPATCH (STEP 6, only after FLOW complete):**
-```json
-{
-  "FLOW_TYPE": "LAYOUT & COMPONENT SPECIALIST",
-  "READ_PRIOR_FLOW": ", design-flow.md (MANDATORY)",
-  "SKILL_FILES": "shadcn-docs.md, tailwind-v3-docs.md, motion-dev-docs.md",
-  "TASK_BULLETS": "- ASCII layout per screen (mobile-first 320px, md/lg breakpoint notes)\n- Spec new components only (existing = path reference)\n- Map states (loading/empty/error) per screen\n- Ensure ALL actions from matrix have UI elements\n- Flow context per layout (where user comes from / goes to)",
-  "OUTPUT_PATH": "docs/features/${FEATURE_ID}/design-layout.md",
-  "OUTPUT_SPEC": "Per screen: pattern, flow context, mobile ASCII layout, breakpoints, components table, states.\nNew components: location, pattern, props, uses, mobile specs, actions served, behavior.",
-  "CORE_CONSTRAINT": "Follow design-context.md constraints; reuse existing components by path reference",
-  "LINE_LIMIT": "100",
-  "NO_OVERLAP_RULE": "- NO flow analysis (already in design-flow.md)"
-}
-```
-
-**Dispatch idempotency guard:** Check if output file exists before dispatching. If yes, skip and proceed to next step. If FLOW exists but LAYOUT missing, dispatch LAYOUT only (Layout depends on Flow).
-
-### Inline Mode (Complexity < 3 screens)
-
-**STEP 5 (Flow):** Coordinator creates compact Action Classification table directly. Store in memory for Step 7.
-
-**STEP 6 (Layout):** Coordinator creates layout specs directly using patterns from ux-design skill. Per page: pattern, mobile ASCII layout (320px), md/lg breakpoints, components table (existing w/ path, new w/ location), states. For new components: location, pattern, props, uses, mobile specs, actions served, behavior. Store in memory for Step 7.
+- **Output (temp):** `${SCOPE_DIR}/design-review.md`
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}` and state **CRITIQUE MODE — read-only**, then pass ONLY: target directory `${SCOPE_DIR}`, the inputs `design-flow.md` / `design-layout.md` / `design-context.md` at that directory, and the output path above. The rubric, the per-defect shape, the severity scale and the empty-critique rule are its agent definition's — do NOT restate them. State that it NEVER edits `design-flow.md`, `design-layout.md`, or `design.md`: it reports, the coordinator decides.
+- **Soft-degrade:** if `@ux-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add-ux-design` skill (the rubric is `{{skill:add-ux-design/critique-rubric.md}}`).
 
 ---
 
-## STEP 7: Confirm Design [STOP]
+## STEP 6: Coordinator Consolidation → `design.md`
 
-**PREREQUISITE:** Steps 1-6 MUST be complete.
+**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Apply the cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
 
-Present consolidated design summary to user. Include: SaaS context, patterns, mode, alignment with existing system. In subagent mode: read temp files, show flow diagram, screen inventory, action matrix, layouts summary, new components. In inline mode: show pages, reuse/new components, action classification, design constraints applied.
+Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add-doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at STEP 2) and write to `${SCOPE_DIR}/design.md`.
 
-**ONE question only.** No aesthetic preferences, no alternatives.
+⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
+⛔ `${ABOUT_SHA}` is only truthful because STEPS 3-5 always re-ran — never stamp it over a reused temp.
 
-**GATE CHECK:** User must confirm before proceeding. IF NO -> WAIT. DO NOT proceed.
-
----
-
-## STEP 8: Write Documentation
-
-**Schema load (MANDATORY).** EXECUTE schema `feature-design` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per `{{skill:add-doc-schemas/SKILL.md}}`.
-
-### 8A: Subagent Mode -- Consolidation
-
-1. Read design-flow.md and design-layout.md
-2. Validate: every action has a UI element, every screen has a layout, entry points match navigation
-3. Fill gaps if validation finds missing items
-4. Write to `docs/features/${FEATURE_ID}/design.md` following the `feature-design` schema
-5. Cleanup temp files: delete design-context.md, design-flow.md, design-layout.md
-
-### 8B: Inline Mode -- Direct Write
-
-Write to `docs/features/${FEATURE_ID}/design.md` following the `feature-design` schema. Delete design-context.md if exists.
-
-Extractive only — tables, bullets, `step → step` sequences, minified JSON for tokens.
+<!-- MAINTAINER: do not restate the frontmatter or section shape here. It is shared with /add.plan's design step; both cite the schema so they cannot drift apart. Change it in the schema, never in one command alone. -->
 
 ---
 
-## STEP 9: Validation Gate
+## STEP 7: Validation Gate
 
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-design`.
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-design` against the `design.md` you just wrote.
 
-⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
+⛔ DO NOT skip. DO NOT proceed to cleanup or mark the command complete until the gate returns `PASS`.
 
 ---
 
-## STEP 10: Completion
+## STEP 8: Cleanup Temporary Files
 
-Inform the user that design is complete. Include: feature ID, SaaS context, patterns applied, mode used, path to design.md, artifact summary (screen flow, actions classified, entry points mapped), and next steps (`/plan`, `/dev`, `/autopilot`).
+```bash
+cd "${SCOPE_DIR}"
+rm -f design-context.md design-flow.md design-layout.md design-review.md
+```
+
+Delete only AFTER `design.md` is written and the STEP 7 gate returned `PASS`.
+
+---
+
+## STEP 9: Completion
+
+Inform the user that design is complete — this is a report, NOT an approval ask. Include: feature ID (SF-qualified when epic), SaaS context, patterns applied, path to `design.md`, artifact summary (screens, actions classified, entry points mapped, new components), the `## Design Review` outcome (how many items accepted/rejected, or the empty-critique justification), and next steps (`/add.plan`, `/add.build`, `/add.autopilot`).
 
 ---
 
@@ -314,16 +213,15 @@ Inform the user that design is complete. Include: feature ID, SaaS context, patt
 
 **MANDATORY FLOW:**
 1. Load ux-design skill (STEP 1) — single source of truth
-2. Complete STEP 3 inspection before any layout proposal
-3. Output Design Context Summary before STEP 4
-4. Evaluate complexity gate before dispatching subagents
-5. Execute subagents sequentially: Flow → Layout (Layout depends on Flow)
-6. User confirmation (STEP 7) before consolidation
-7. Validate coherence during consolidation (Step 8)
-8. Cleanup all temp files after writing design.md
+2. Resolve FEATURE and SCOPE_DIR before any dispatch (STEP 1.2) — epic runs write to the subfeature dir
+3. Execute the three dispatches SEQUENTIALLY: Flow → Layout → Critique (each depends on the previous)
+4. The coordinator — never a subagent — decides every critique item and writes `design.md` (STEP 6)
+5. Validation gate must return `PASS` (STEP 7) before cleanup (STEP 8)
+6. Cleanup all temp files after `design.md` passes the gate
+7. Report the result (STEP 9); never ask for approval
 
 **DESIGN INVARIANTS:**
-- Align with existing theme/layout/patterns — map existing before proposing
+- Align with existing theme/layout/patterns — `@ux-flow-agent`'s inspection maps what exists before anything is proposed
 - Use mobile-first (320px base)
 - Reuse existing components by path reference
 - New components must follow project conventions
@@ -331,13 +229,14 @@ Inform the user that design is complete. Include: feature ID, SaaS context, patt
 - Entry points and actions classified and matched to UI elements
 
 **PROHIBITIONS (enforce in all steps):**
-- Do NOT propose layouts that conflict with detected patterns
-- Do NOT skip STEP 3 inspection, even for simple features
+- Do NOT propose layouts yourself — the agents author, the coordinator consolidates
+- Do NOT skip the design-system inspection by dispatching layout work before `@ux-flow-agent` ran
 - Do NOT duplicate patterns (use ux-design skill)
 - Do NOT auto-create design-system.md (Foundations mode only on user request)
-- Do NOT dispatch Layout before Flow completes
-- Do NOT leave temp files after consolidation
-- Do NOT ask aesthetic questions or present multiple options in feature mode
+- Do NOT dispatch Layout before Flow completes, nor the critic before Layout completes
+- Do NOT leave temp files after consolidation, and do NOT reuse leftovers from an interrupted run — re-derive them
+- Do NOT judge any artefact "still fresh" from file mtime or git status; the `about.md` provenance hash is the only freshness signal
+- Do NOT ask aesthetic questions, present multiple options, or ask the user to approve the design
 - Do NOT omit critical info (props, paths, states, actions)
 - Do NOT use generic layouts when project has established patterns
 - Do NOT run Foundations mode without discovery questions and user decisions
@@ -348,11 +247,13 @@ Inform the user that design is complete. Include: feature ID, SaaS context, patt
 
 | Error | Action |
 |-------|--------|
-| No frontend detected | Inform user, skip design |
-| about.md not found | Degrade: design without feature context |
-| discovery.md not found | Proceed with about.md only |
-| No UI components found | Treat as new project (use ux-design defaults) |
-| Subagent fails to write output | Re-dispatch ONCE, then handle inline |
-| design-flow.md missing before Layout dispatch | STOP. Re-run Flow subagent |
-| Temp files exist from previous run | Delete before starting new run |
-| Major pattern inconsistencies | Flag to user before proceeding |
+| `@ux-flow-agent` reports `frontend_false` | Inform user, skip design, STOP |
+| about.md not found | STOP — the feature is unresolved; list `docs/features/` and ask |
+| discovery.md not found | Proceed with about.md only; note the degraded context in the dispatch prompts |
+| HAS_EPIC=true but no `EPIC_CURRENT_SF` | STOP. Ask which subfeature to design — never default to `${FEATURE_DIR}` |
+| No UI components found | `@ux-flow-agent` treats it as a new project (ux-design defaults) |
+| Subagent fails to write its output | Re-dispatch ONCE with the same prompt; if it fails again, STOP and report |
+| design-flow.md missing before Layout dispatch | STOP. Re-run STEP 3 |
+| design-review.md missing before consolidation | Re-run STEP 5 once; if still missing, consolidate and record "critique unavailable" in `## Design Review` |
+| Temp files exist from previous run | Ignore them and run STEPS 3-5 normally — each dispatch overwrites its own output. NEVER reuse a temp, and NEVER judge one "still fresh" by mtime or git status |
+| Validation gate returns FAIL | Fix `design.md` and re-run STEP 7 — do NOT clean up temps until it passes |

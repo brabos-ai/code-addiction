@@ -66,7 +66,7 @@
     "add.audit":     { "description": "Complete technical project audit with health analysis and recommendations" },
     "add.autopilot": { "description": "Autonomous feature coordinator - executes planning, development, and review without interaction" },
     "add.brainstorm":{ "description": "Project conversation partner for exploring ideas (READ-ONLY)" },
-    "add.design":    { "description": "UX specialist for SaaS - autonomous mobile-first design with screen flows and component specs" },
+    "add.design":    { "description": "Thin dispatcher of the UX agent trio (ux-flow-agent -> ux-layout-agent -> ux-agent critique) producing design.md - epic-aware, manual entry point to add.plan 8.1's pipeline" },
     "add.build":     { "description": "Development execution specialist - coordinates subagents for feature implementation and bug fixes" },
     "add.done":      { "description": "Branch completion and merge - finalize feature/hotfix branches with changelog and documentation" },
     "add.new":       { "description": "Full feature discovery and documentation - creates about.md before implementation" },
@@ -123,7 +123,9 @@
     "add-knowledge-discovery":         {}
   },
   "agents": {
-    "ux-agent":            { "description": "UX specialist for design decisions, interface analysis, and interaction patterns" },
+    "ux-agent":            { "description": "UX design owner — critiques design-flow.md + design-layout.md before design.md is written, judges shipped screens against the Design Contract in QA, and amends design.md on design-spec fix routes; free-form UX assistance for direct use" },
+    "ux-flow-agent":       { "description": "Flow & interaction architect — inspects the design system, maps screen inventory, action classification, entry points, and state transitions; writes design-context.md + design-flow.md" },
+    "ux-layout-agent":     { "description": "Layout & component specialist — reads design-flow.md + design-context.md, specs the layout tree, component composition, Design Contract, and states per screen; writes design-layout.md" },
     "backend-agent":       { "description": "Backend implementation specialist for services, repositories, DTOs, and Clean Architecture" },
     "frontend-agent":      { "description": "Frontend implementation specialist for components, pages, hooks, and state management" },
     "reviewer-agent":      { "description": "Code review specialist for quality, security (OWASP), and architecture compliance (read-only)" },
@@ -134,7 +136,7 @@
     "doc-reviewer-agent":  { "description": "Documentation review specialist - reads generated docs in fresh context and surfaces gaps, clarity issues, and scope questions (read-only)" },
     "feature-history-agent": { "description": "Feature history archaeologist — scans docs/features/ to find feature docs (about/changelog/plan) relevant to a symptom predicate (read-only, docs/ only)" },
     "git-history-agent":     { "description": "Git history correlator — surfaces recent commits (log/show/diff/branch) plausibly related to a symptom predicate (read-only git)" },
-    "qa-agent":              { "description": "Dual-axis QA judge. Reads persisted run screenshots + axe/assertion results to validate (1) UX quality vs design.md and (2) functional delivery vs about.md acceptance criteria, across viewports (responsiveness) and a11y — classifying findings. With the playwright plugin it additionally drives the app live. Read-only on the codebase." },
+    "qa-agent":              { "description": "Deterministic + forensic QA judge — the half of the dual panel paired with @ux-agent (review mode). Reads persisted run evidence to validate functional delivery vs about.md acceptance criteria, deterministic Design Contract conformance from measured computed styles, and ALL accessibility (axe-core), diagnosing every failed assertion to a root cause. Declines the judgement axes (UX quality, judgement conformance, responsiveness) — those belong to @ux-agent. With the playwright plugin it additionally drives the app live. Read-only on the codebase." },
     "e2e-agent":             { "description": "Cross-cutting E2E spec author — authors <surface>.qa.spec (functional assertions + multi-viewport capture + axe a11y), finalizes the screens.json reachability recipe, green-confirms via the @playwright/test runner (no MCP, read-write on test files only)" }
   }
 }

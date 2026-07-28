@@ -82,7 +82,7 @@ describe('gitnexus agent injection targets', () => {
     }
   });
 
-  it('targets exactly the eight code-navigating MCP-reachable agents', () => {
+  it('targets exactly the nine code-navigating MCP-reachable agents', () => {
     expect(entry.agents.map((t) => t.agent).sort()).toEqual(
       [
         'architecture-agent',
@@ -93,6 +93,7 @@ describe('gitnexus agent injection targets', () => {
         'reviewer-agent',
         'system-design-agent',
         'ux-agent',
+        'ux-flow-agent',
       ],
     );
   });

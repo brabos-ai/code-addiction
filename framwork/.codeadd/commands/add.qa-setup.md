@@ -13,10 +13,10 @@ Conversational bootstrap for QA validation that proves it works end-to-end. Func
 
 ## Required Skills
 
-Load `{{skill:add-dev-environment-setup/SKILL.md}}` before STEP 2 (OS detection + confirm-before-install methodology).
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 7 (feature doc layout, `_tests/` per-run path + `screens.json` reachability schema, `qa-validation` conventions).
-Load `{{skill:add-qa-migration/SKILL.md}}` before STEP 4 (existing-QA migration sequence + checkpoints).
-Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 8 (dispatch template, decision log, review gates — the mechanism reused by migration + correction dispatch).
+Load `{{skill:add-dev-environment-setup/SKILL.md}}` before STEP 3 (OS detection + confirm-before-install methodology).
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 8 (feature doc layout, `_tests/` per-run path + `screens.json` reachability schema, `qa-validation` conventions).
+Load `{{skill:add-qa-migration/SKILL.md}}` before STEP 5 (existing-QA migration sequence + checkpoints).
+Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 9 (dispatch template, decision log, review gates — the mechanism reused by migration + correction dispatch).
 
 ---
 
@@ -25,33 +25,37 @@ Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 8 (dispatc
 **STEPS IN ORDER:**
 ```
 STEP 1: Load context             → status.sh + add-dev-environment-setup + FIRST_RUN flag
-STEP 2: Diagnose + verify        → OS/pkg/node; FUNCTIONALLY invoke runner + chromium + MCP (no install yet)
-STEP 3: Install prerequisites    → runner (mandatory) + chromium + MCP (optional) → CONFIRM → execute → functionally verify
-STEP 4: Detect migration         → FIRST_RUN only: scan existing QA tooling → CONFIRM → set MIGRATE
-STEP 5: Generate qa-project      → <provider skills dir>/qa-project/SKILL.md (conventions + managed app lifecycle)
-STEP 6: Scaffold QA config       → docs/qa/config.json (interactive, project-wide)
-STEP 7: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (reachability-aware: route OR open-recipe)
-STEP 8: Autonomous migration     → IF MIGRATE: dispatch add.new→add.plan→add.build→add.review (checkpoints only)
-STEP 9: Smoke test + correction  → dispatch /add.qa, analyze; on failure dispatch /add.build qa (max 3), else defer/escalate
-STEP 10: Hand-off                → enable plugin (optional) + run /add.qa + migration/smoke summary
+STEP 2: Feature gate             → qa-pipeline opt-in: probe state → CONFIRM → enable → VERIFY the fragment landed
+STEP 3: Diagnose + verify        → OS/pkg/node; FUNCTIONALLY invoke runner + chromium + MCP (no install yet)
+STEP 4: Install prerequisites    → runner (mandatory) + chromium + MCP (optional) → CONFIRM → execute → functionally verify
+STEP 5: Detect migration         → FIRST_RUN only: scan existing QA tooling → CONFIRM → set MIGRATE
+STEP 6: Generate qa-project      → <provider skills dir>/qa-project/SKILL.md (conventions + managed app lifecycle)
+STEP 7: Scaffold QA config       → docs/qa/config.json (interactive, project-wide)
+STEP 8: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (reachability-aware: route OR open-recipe)
+STEP 9: Autonomous migration     → IF MIGRATE: dispatch add.new→add.plan→add.build→add.review (checkpoints only)
+STEP 10: Smoke test + correction → dispatch /add.qa, analyze; on failure dispatch /add.build qa (max 3), else defer/escalate
+STEP 11: Hand-off                → enable plugin (optional) + run /add.qa + migration/smoke summary
 ```
 
 ## ⛔ ABSOLUTE PROHIBITIONS (by checkpoint)
 
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
-| **STEP 2** | Environment not diagnosed | Bash install commands, downloads | Detect OS/pkg-manager/node; functionally probe existing prereqs |
-| **STEP 3** | User has not confirmed the shown commands | Bash to run any install/download | Show exact commands + WAIT for explicit confirmation |
-| **STEP 3** | Install runs | Silent/unattended install | Confirm-then-execute, one command set at a time, functionally verify after |
-| **STEP 3** | Runner not installed | Authoring/running specs | Install `@playwright/test` first |
-| **STEP 4** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
-| **STEP 4** | `FIRST_RUN` is false (config.json present) | Scanning for tooling / offering migration | Skip STEP 4 and STEP 8 entirely |
-| **STEP 5-7** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, and the resolved provider skills dir (`qa-project/`) |
-| **STEP 7** | `design.md` not read | Invent screens/routes | Derive each screen entry from the design docs |
-| **STEP 8** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
-| **STEP 8** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
-| **STEP 9** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
-| **STEP 9** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
+| **STEP 2** | User has not confirmed the enable | Running `codeadd features enable` | Show the command + what stays broken with the feature off; WAIT for explicit confirmation |
+| **STEP 2** | User declined the enable | Re-asking, marking QA as on | Record it as a remaining manual step for the STEP 11 hand-off; continue setup |
+| **STEP 2** | Enable ran but the injected section is absent (pre-sidecar no-op) | Reporting QA as on | Route to `codeadd update` / re-install; record QA as NOT active |
+| **STEP 3** | Environment not diagnosed | Bash install commands, downloads | Detect OS/pkg-manager/node; functionally probe existing prereqs |
+| **STEP 4** | User has not confirmed the shown commands | Bash to run any install/download | Show exact commands + WAIT for explicit confirmation |
+| **STEP 4** | Install runs | Silent/unattended install | Confirm-then-execute, one command set at a time, functionally verify after |
+| **STEP 4** | Runner not installed | Authoring/running specs | Install `@playwright/test` first |
+| **STEP 5** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
+| **STEP 5** | `FIRST_RUN` is false (config.json present) | Scanning for tooling / offering migration | Skip STEP 5 and STEP 9 entirely |
+| **STEP 6-8** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, and the resolved provider skills dir (`qa-project/`). Single named exception: STEP 2's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
+| **STEP 8** | `design.md` not read | Invent screens/routes | Derive each screen entry from the design docs |
+| **STEP 9** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
+| **STEP 9** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
+| **STEP 10** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
+| **STEP 10** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
 
 ---
 
@@ -67,17 +71,37 @@ Parse: OWNER (name + level), PROJECT_DOCS, package manager hints, features under
 Read {{skill:add-dev-environment-setup/SKILL.md}} — reuse its OS-detection + confirm-before-install discipline. This command installs (confirm-then-execute), it does NOT merely instruct.
 
 ### 1.3 Capture FIRST_RUN
-Set `FIRST_RUN = true` iff `docs/qa/config.json` is ABSENT. This flag gates migration detection (STEP 4) and autonomous migration (STEP 8) — a re-run (config present) skips both. Capture it now, before any config is written.
+Set `FIRST_RUN = true` iff `docs/qa/config.json` is ABSENT. This flag gates migration detection (STEP 5) and autonomous migration (STEP 9) — a re-run (config present) skips both. Capture it now, before any config is written.
 
 ### 1.4 Resolve target feature (optional)
 - If a `feature-id` arg was given → `FEATURE_DIR = docs/features/<feature-id>-*`.
-- Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP 7). Config (STEP 6) is project-wide regardless.
+- Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP 8). Config (STEP 7) is project-wide regardless.
 
 ---
 
-## STEP 2: Diagnose + Functionally Verify (silent — no installs)
+## STEP 2: Feature Gate — qa-pipeline opt-in
 
-Detect the environment, then **functionally verify** each prerequisite — invoke it trivially, do not stop at "present in package.json." A prerequisite counts as present ONLY if its trivial invocation works:
+Running this command is unambiguous QA intent, and everything it installs is inert while the `qa-pipeline` feature is off: `add.plan` authors no QA spec, `add.test` dispatches no `@e2e-agent`, `/add.build qa` refuses. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin").
+
+### 2.1 Probe the feature state
+```bash
+bash .codeadd/scripts/qa-preflight.sh a
+```
+Read `QA_FEATURE_STATE` — the RAW manifest value. Resolve `unset` / `no-manifest` by the feature's default: `qa-pipeline` defaults to **disabled**. (The manifest lives at `{{addpath:manifest.json}}`; never probe the raw `features` field alone — a project that never toggled a feature has no `features` key at all.)
+
+### 2.2 Offer the enable (confirm-then-execute)
+IF the feature resolves to disabled → explain what stays broken while it is off, show the exact command `codeadd features enable qa-pipeline`, and run it ONLY after explicit confirmation — the same discipline as the STEP 4 installs.
+On decline → record it for the STEP 11 hand-off and continue setup.
+
+### 2.3 Verify the enable actually landed
+After a confirmed enable, probe the installed plan command ({{cmd:add.plan}}) for the injected `STEP 10.0` QA-Spec section. On a pre-sidecar install (`injection-points.json` absent) the CLI reports success while injecting nothing.
+IF the section is absent → the enable was a silent no-op: route the user to `codeadd update` / re-install, record QA as NOT active for the hand-off, and continue.
+
+---
+
+## STEP 3: Diagnose + Functionally Verify (silent — no installs)
+
+Detect the environment, then **functionally verify** each prerequisite — invoke it trivially, do not stop at "present in package.json." For the deterministic rows (config presence, runner, chromium, `qa-project` skill), reuse the shared probe: `bash .codeadd/scripts/qa-preflight.sh a` — do not re-derive what it already reports. A prerequisite counts as present ONLY if its trivial invocation works:
 
 - OS + package manager + node/npx availability (per `add-dev-environment-setup`).
 - **`@playwright/test` runner** — resolvable AND runnable: a trivial `npx playwright --version` / spec-list invocation succeeds (not just listed in devDependencies).
@@ -89,24 +113,24 @@ Build a gap list distinguishing **missing** from **present-but-non-functional** 
 
 ---
 
-## STEP 3: Install Prerequisites (confirm-then-execute + functional verify)
+## STEP 4: Install Prerequisites (confirm-then-execute + functional verify)
 
-For each missing or non-functional prerequisite, show the EXACT command, explain what it does, then **WAIT for explicit confirmation** before running it. Never batch-run without confirmation. After each install, **functionally verify** it (re-run the STEP 2 trivial invocation) — a successful install is one whose invocation now works, not one that merely completed.
+For each missing or non-functional prerequisite, show the EXACT command, explain what it does, then **WAIT for explicit confirmation** before running it. Never batch-run without confirmation. After each install, **functionally verify** it (re-run the STEP 3 trivial invocation) — a successful install is one whose invocation now works, not one that merely completed.
 
 Prerequisites (adapt commands to the detected OS/provider):
 - **`@playwright/test` runner (mandatory)** — e.g. `npm i -D @playwright/test` (adapt to detected pkg manager). Powers the deterministic layer + plugin-off degradation. If declined → record as a blocking manual step; downstream authoring cannot run.
 - **chromium for Playwright** — e.g. `npx playwright install chromium`. Verify with a trivial headless launch.
 - **Playwright MCP server (optional — only the live-driving arm of `/add.qa` needs it)** — the server runs via `npx @playwright/mcp@latest`; wire it as an MCP server for the active provider. For Claude Code: `claude mcp add playwright -- npx @playwright/mcp@latest`. For other providers, add the equivalent MCP server entry to that provider's MCP config (the same `npx @playwright/mcp@latest` command).
 
-⛔ Skip a prerequisite only if STEP 2 proved it already **functional**. ⛔ If the user declines a command, stop that install and record it as a remaining manual step in the hand-off (STEP 10).
+⛔ Skip a prerequisite only if STEP 3 proved it already **functional**. ⛔ If the user declines a command, stop that install and record it as a remaining manual step in the hand-off (STEP 11).
 
 After installs, confirm the MCP server is reachable AND answers a trivial call. If it does not, the wiring is incomplete — surface it; `/add.qa` cannot drive without it.
 
 ---
 
-## STEP 4: Detect Migration (first-run only)
+## STEP 5: Detect Migration (first-run only)
 
-⛔ IF `FIRST_RUN` is false → SKIP this step and STEP 8 entirely (avoid repeat-run friction).
+⛔ IF `FIRST_RUN` is false → SKIP this step and STEP 9 entirely (avoid repeat-run friction).
 
 On a project's first setup run, scan for an existing QA/test flow — Cypress (`cypress.config.*`), Jest (`jest.config.*`), Vitest (`vitest.config.*`), standalone Playwright, or a custom runner (test scripts in `package.json`, a `tests/`/`e2e/`/`cypress/` dir).
 
@@ -115,7 +139,7 @@ On a project's first setup run, scan for an existing QA/test flow — Cypress (`
 
 ---
 
-## STEP 5: Generate Project QA Skill (`qa-project`)
+## STEP 6: Generate Project QA Skill (`qa-project`)
 
 Resolve the target skills dir for **each installed provider** (from the manifest / the engine's skills path) and write `qa-project/SKILL.md` there — e.g. `.claude/skills/qa-project/SKILL.md` on Claude Code. If the active engine exposes no skills dir, note it and skip (the QA pipeline is agent-driven and functions where agents build — Claude today; other providers are out of scope per the v1 distribution decision). If the file exists → regenerate only drifted sections after confirmation.
 
@@ -137,6 +161,7 @@ description: Use when authoring E2E specs (/add.test) or running QA (/add.qa) in
 - **Spec location + naming:** `<dir>` · `<surface>.qa.spec.<ext>`
 - **Selectors:** MANDATORY `getByRole` / `data-testid` — never brittle CSS/xpath.
 - **Screenshots:** `<screenshot API>` → `_tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` when single-state)
+- **Computed styles:** `_tests/run-NNN/computed-styles/<screen>.<viewport>.json` (minified; one file per screen × viewport, capturing the resolved values for each `## Design Contract` dimension verified by computed style)
 - **a11y:** `<axe-core wiring, e.g. @axe-core/playwright>`
 
 ## Managed App Lifecycle
@@ -153,7 +178,7 @@ Both `/add.test` (green-confirm) and `/add.qa` (run) invoke this procedure:
 
 ---
 
-## STEP 6: Scaffold Project QA Config
+## STEP 7: Scaffold Project QA Config
 
 Target: `docs/qa/config.json` (git-tracked, project-wide).
 
@@ -173,9 +198,11 @@ Write this shape (values are free-text hints; viewports default to the v1 set):
 
 ---
 
-## STEP 7: Scaffold Per-Feature Screen Catalog
+## STEP 8: Scaffold Per-Feature Screen Catalog (bootstrap path)
 
 Target: `FEATURE_DIR/_tests/screens.json` (the reachability-aware route map for the UX axis).
+
+> **Ownership:** `{{cmd:add.plan}}` STEP 10.0 owns the catalog on an ongoing basis — it writes `screens.json` by read-merge-write after consolidating `design.md`, so features planned with `qa-pipeline` on are born with their entries. THIS step is the **bootstrap path**: it seeds the catalog for features that already exist at setup time. Both write the same shape; 10.0 preserves out-of-scope entries byte-identically.
 
 Read every `design.md` under the feature (feature-level and each subfeature). For each screen the design describes, derive one entry. Flag screens that require an authenticated session with `auth: true`. Do NOT store functional intent here — the functional axis is read from each SF's `about.md` at run time.
 
@@ -199,15 +226,19 @@ Each entry gains `kind` (`route` | `modal` | `overlay` | `portal`) and, for non-
 
 Route surfaces keep `path`; non-route (`modal`/`overlay`/`portal`) declare `kind` + `open`. Both forms coexist.
 
+**`expect` is never freehand:** derive it from the screen's `## Design Contract` rows and layout tree in `design.md` (see `add-qa-spec`) — the example values above stand for "the derived one-liner," not invented prose. A screen whose `design.md` carries no contract or layout tree gets a gap note instead.
+
 **`open` recipe grammar (fixed mini-schema):** an ordered array of step objects, each exactly one of — `{ "goto": "<path>" }`, `{ "click": "<selector>" }`, `{ "fill": ["<selector>", "<value>"] }`, `{ "select": ["<selector>", "<value>"] }`, `{ "wait": "<selector | ms>" }`. Selectors use Playwright role/testid syntax (`role=button[name=…]`, `testid=…`) — never brittle CSS.
 
 Setup scaffolds the recipe **intent** from **`design.md` only** (the plan's QA axis does not exist yet at setup time); **selectors are finalized post-implementation by the `e2e-agent`**, which merges the richer intent from `plan.md`'s `## QA/E2E Specification`. This STEP stores thin intent, flags thin/missing designs rather than inventing routes.
 
 If a design doc is missing or thin, list the screen with a note rather than inventing routes — flag it for the user.
 
+**Name the remedy, don't just flag it.** A `design.md` that carries no `## Design Contract` or layout tree predates the current design schema — the gap is NOT fixable by hand-editing `screens.json`, because `expect` is derived from the contract. For every screen in that state, tell the user to regenerate the design: `/add.design <feature-id> [SFxx]` (or re-run `/add.plan`, whose STEP 8.1.0 check 4 detects the same drift and regenerates automatically). Carry the list into the STEP 11 hand-off — until those designs are regenerated, `@qa-agent`'s deterministic conformance axis has nothing to compare against.
+
 ---
 
-## STEP 8: Autonomous Migration (IF MIGRATE)
+## STEP 9: Autonomous Migration (IF MIGRATE)
 
 ⛔ IF `MIGRATE` is false → SKIP this step.
 
@@ -215,36 +246,37 @@ Run the migration per {{skill:add-qa-migration/SKILL.md}}, which defines the ful
 
 Dispatch each command in the chain as a subagent via the Agent tool — autonomous dispatch is **Claude-only in v1** (per the pipeline's distribution decision). Direct autonomy through the **dispatch prompt only**; never edit a dispatched command's source.
 
-⛔ Do NOT merge the migration branch — hand it back for review in STEP 10.
+⛔ Do NOT merge the migration branch — hand it back for review in STEP 11.
 
 ---
 
-## STEP 9: Universal Smoke Test + Bounded Correction Loop
+## STEP 10: Universal Smoke Test + Bounded Correction Loop
 
-⛔ IF no feature with a scaffolded `screens.json` exists → DEFER the smoke test (there is nothing for `/add.qa` to validate). Do NOT scaffold a synthetic feature to force it. Note the deferral in STEP 10, then skip to hand-off.
+⛔ IF no feature with a scaffolded `screens.json` exists → DEFER the smoke test (there is nothing for `/add.qa` to validate). Do NOT scaffold a synthetic feature to force it. Note the deferral in STEP 11, then skip to hand-off.
 
 Otherwise, close the loop on every run:
 
-### 9.1 Smoke test
+### 10.1 Smoke test
 Autonomously dispatch `/add.qa <feature-id>` (Agent tool) against the scaffolded feature. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
 
-### 9.2 Correction loop (max 3 attempts)
-On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build qa` to fix it, then re-run 9.1.
+### 10.2 Correction loop (max 3 attempts)
+On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build qa` to fix it, then re-run 10.1.
 
-- Guard: `/add.build qa` requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline`.
-- ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP 10 with the accumulated findings from all attempts.
+- Guard: `/add.build qa` requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP 2 offers the enable).
+- ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP 11 with the accumulated findings from all attempts.
 
 ---
 
-## STEP 10: Hand-off
+## STEP 11: Hand-off
 
 Tell the user, in order:
-1. Any prerequisite they declined / must finish manually (from STEP 3).
-2. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
-3. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
-4. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
-5. Verify the MCP server is connected (`/mcp` lists `playwright`).
-6. Run the audit: `/add.qa <feature-id> [SFxx]` (or `/add.qa @docs/features/.../about.md`).
+1. The `qa-pipeline` feature outcome (from STEP 2): enabled + verified, declined (remaining manual step: `codeadd features enable qa-pipeline`), or enable no-op detected (route: `codeadd update` / re-install).
+2. Any prerequisite they declined / must finish manually (from STEP 4).
+3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
+4. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
+5. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
+6. Verify the MCP server is connected (`/mcp` lists `playwright`).
+7. Run the audit: `/add.qa <feature-id> [SFxx]` (or `/add.qa @docs/features/.../about.md`).
 
 `/add.qa-setup` does NOT modify application code, and does NOT merge the migration branch.
 

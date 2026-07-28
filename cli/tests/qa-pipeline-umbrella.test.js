@@ -87,7 +87,8 @@ describe('QA umbrella — qa-pipeline feature registry', () => {
 describe('QA umbrella — qa-pipeline injection wiring', () => {
   it('add.plan carries step-list + qa-spec anchored on stable non-tdd lines', () => {
     const pts = points('commands/add.plan.md', 'add.plan', 'command');
-    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 8.3: Frontend Specialist', position: 'after' });
+    // Renumbered by plan 0057 (new 8.1 UX Design Specialist step pushed Frontend 8.3 -> 8.4).
+    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 8.4: Frontend Specialist', position: 'after' });
     expect(qa(pts, 'qa-spec').anchor).toMatchObject({
       text: '## STEP 10: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
       position: 'after',

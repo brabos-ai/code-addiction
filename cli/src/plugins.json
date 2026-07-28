@@ -30,6 +30,7 @@
       { "agent": "database-agent", "sections": ["graph"] },
       { "agent": "frontend-agent", "sections": ["graph"] },
       { "agent": "ux-agent", "sections": ["graph"] },
+      { "agent": "ux-flow-agent", "sections": ["graph"] },
       { "agent": "reviewer-agent", "sections": ["graph"] }
     ]
   },
