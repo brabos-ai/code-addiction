@@ -25,7 +25,7 @@
 
   <!-- ============ COMPLETE FLOW ============ -->
   <text x="40" y="30" class="label">COMPLETE FLOW</text>
-  <text x="40" y="44" class="sublabel">Complex features with UI — full discovery, design, planning, implementation, review</text>
+  <text x="40" y="44" class="sublabel">Complex features with UI — full discovery, design, planning, implementation, review (/add.design optional: /add.plan runs the UX pipeline)</text>
 
   <g transform="translate(40, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
@@ -74,7 +74,7 @@
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
-  <text x="40" y="120" class="sublabel" style="fill:#999">/add.qa runs here from persisted QA-Spec evidence; the playwright plugin adds live driving (optional, audit not a gate)</text>
+  <text x="40" y="120" class="sublabel" style="fill:#999">/add.qa runs here as a dual-judge panel (@ux-agent review ∥ @qa-agent) over persisted QA-Spec evidence; the playwright plugin adds live driving (optional, audit not a gate)</text>
 
   <!-- ============ STANDARD FLOW ============ -->
   <text x="40" y="150" class="label">STANDARD FLOW</text>

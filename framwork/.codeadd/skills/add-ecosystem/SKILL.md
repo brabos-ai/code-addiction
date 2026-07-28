@@ -29,7 +29,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
 | add.qa | Agent-judged QA validation — runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX (vs design.md) AND functional delivery (vs about.md), writes versioned `_tests/run-NNN/qa-validation-NNN.md` (audit, not a gate). Dispatches a **dual judge** per SF in parallel — @ux-agent (review) for the judgement axes ∥ @qa-agent for functional + deterministic conformance + ALL a11y + failure forensics; the coordinator reconciles coverage and merges. **Plugin optional** (degrades to read-PNG) | add-qa (default), add-doc-schemas |
-| add.qa-setup | QA prerequisites + project config bootstrap — installs the `@playwright/test` runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific `qa-project` skill, and scaffolds `docs/qa/config.json` + reachability-aware `FEATURE_DIR/_tests/screens.json`. Base command (runs before the plugin is enabled) | add-dev-environment-setup, add-doc-schemas |
+| add.qa-setup | End-to-end-verified QA bootstrap — installs the `@playwright/test` runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific `qa-project` skill, scaffolds `docs/qa/config.json` + reachability-aware `FEATURE_DIR/_tests/screens.json`, migrates an existing QA flow on first run (`--migrate`, confirm-then-dogfood), reconciles the **setup contract** against the receipt (`--upgrade`), and ends with a `/add.qa` smoke test + bounded correction loop. Base command (runs before the plugin is enabled) | add-dev-environment-setup, add-doc-schemas, add-qa-migration, add-setup-contract, add-subagent-driven-development |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation. Parallel subagents per area; reports coverage (informational). Dispatches @e2e-agent when qa-pipeline feature enabled | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
@@ -48,7 +48,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |
 | add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code |
-| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate — single source of truth for all generated docs |
+| add-doc-reviewer | Fresh-stakeholder review of a just-written ADD doc — surfaces gaps, clarity and scope questions, never reads the conversation that produced it |
+| add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate (incl. the `setup-receipt` schema) — single source of truth for all generated docs |
 | add-ecosystem | Consolidated ecosystem view (source of truth) |
 | add-feature-discovery | Feature discovery process, codebase analysis |
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria |
@@ -65,7 +66,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
 | add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, config.json/screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded by /add.qa, never by a judge |
-| add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md — loaded by add.plan's qa-pipeline QA-Spec step |
+| add-qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints; consumed by /add.qa-setup |
+| add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md, **and** author the `_tests/screens.json` screen catalog by read-merge-write — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
 | add-setup-contract | Reconcile a project's materialized state with the shipped setup contract — compare recorded vs current, execute declared upgrade deltas sequentially, refuse on a chain hole |
@@ -127,7 +129,10 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.review, add.build |
 | add-security-audit | add.audit, add.review |
-| add-setup-contract | add.qa-setup |
+| add-setup-contract | add.qa-setup (STEP 1.5 reconciliation + STEP 11 receipt rewrite) |
+| add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
+| add-subagent-driven-development | add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
+| add-doc-reviewer | add.new, add.brainstorm (via doc-reviewer-agent) |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
 | add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.wiki, add.diagnose |
