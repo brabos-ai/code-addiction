@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import os from 'node:os';
-import { resolveTarget } from '../bin/codeadd.js';
+import { resolveTarget } from '../src/cli.js';
 
 describe('resolveTarget', () => {
   it('defaults to project scope (cwd) when no flag is present', () => {

@@ -141,6 +141,12 @@ vite.config.ts.timestamp-*
 docs/*
 .agents/*
 .opencode/*
+!.opencode/
+!.opencode/commands/
+!.opencode/commands/**
+!.opencode/agents/
+!.opencode/agents/**
+!.opencode/bootstrap-framework-context.sh
 .pff/*
 .pff-builder/*
 nul
