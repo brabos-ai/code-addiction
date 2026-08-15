@@ -17,15 +17,15 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 | Agents | `framwork/.codeadd/agents/*-agent.md` | 15 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
-### Internal Layer — `.claude/`
+### Internal Layer — `.claude/` and `.opencode/`
 
-Development tools that build and maintain the framework itself. NOT distributed to users.
+Development tools that build and maintain the framework itself. `.claude/` is the canonical source and `.opencode/` contains OpenCode adapters. NOT distributed to users.
 
 | Type | Path |
 |------|------|
-| Commands | `.claude/commands/*.md` — namespace `add-framework--*`. Sub-prefixes: framework default (implicit), `self-` (internal infrastructure), `shared-` (usable in both contexts) |
-| Skills | `.claude/skills/` (`building-commands`, `add-framework-development`, `add-commit`) |
-| Agents | `.claude/agents/` (`readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`). Agents with tool restrictions use full product-layer frontmatter (`tools`, `disallowedTools`, `memory`). Agents that inherit all tools use minimal frontmatter (`name`, `description`, `model` only). |
+| Commands | `.claude/commands/*.md` (canonical) and `.opencode/commands/*.md` (OpenCode adapters) — namespace `add-framework--*`. Sub-prefixes: framework default (implicit), `self-` (internal infrastructure), `shared-` (usable in both contexts) |
+| Skills | `.claude/skills/` (canonical and natively discovered by OpenCode): `building-commands`, `add-framework-development`, `add-commit` |
+| Agents | `.claude/agents/` (canonical) and `.opencode/agents/` (OpenCode adapters): `readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`. OpenCode agents use `mode: subagent` and `permission` frontmatter. |
 | Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
 
 **`docs/` tracking policy.** `.gitignore` ignores `docs/*`: plans, evidence, changelogs and brainstorms are working artefacts and stay local by default. The QA/UX umbrella set (topics 01–05, plans 0056–0060) is a **deliberate force-added exception** (`git add -f`, commits `b49352e` + the review-v02 fix wave) because those artefacts are the spec of record for a shipped schema change and had to survive the branch. The exception covers the umbrella's **plans, evidence files, reviews (`HANDOFF-*--review-vNN.md`) and changelogs** — a plan whose changelog or review is untracked reads as unimplemented from a fresh clone, which is the failure this policy exists to prevent. Plans 0001–0055 remain untracked by design — a fresh clone showing no earlier plans is expected, not drift. Do NOT "fix" this by un-ignoring `docs/`; to make another artefact durable, force-add it and say why here.

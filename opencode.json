@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "npx --version": "allow",
+      "npx playwright *": "allow",
+      "npm run *": "allow",
+      "echo \"started pid: $!\"": "allow"
+    },
+    "read": {
+      "/home/fnd/.cache/ms-playwright/**": "allow",
+      "/tmp/**": "allow"
+    },
+    "external_directory": {
+      "/tmp/**": "allow"
+    }
+  }
+}

@@ -36,6 +36,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run package smoke test
+        run: npm run test:package
+
   test-scripts:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,18 @@
+{
+  "terminal.integrated.defaultProfile.linux": "💀 OpenCode (Debian)",
+  "terminal.integrated.profiles.linux": {
+    "💀 OpenCode (Debian)": {
+      "path": "bash",
+      "args": ["-lc", "opencode --yolo"],
+      "icon": "terminal-linux"
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "💀 OpenCode (Debian)",
+  "terminal.integrated.profiles.windows": {
+    "💀 OpenCode (Debian)": {
+      "path": "C:\\Windows\\System32\\wsl.exe",
+      "args": ["-d", "Debian", "--", "opencode", "--yolo"],
+      "icon": "terminal-linux"
+    }
+  }
+}

@@ -85,6 +85,12 @@ jobs:
         if: steps.cli_changes.outputs.changed == 'true'
         run: npm test
 
+      # GATE: pack the CLI and execute the npm-generated bin before any
+      # publication work. A silent entrypoint (0.6.2 regression) must fail here.
+      - name: Run package smoke test
+        if: steps.cli_changes.outputs.changed == 'true'
+        run: npm run test:package
+
       # Runs AFTER "Build framework" (node scripts/build.js) above, so the
       # gitignored, build-emitted .codeadd/injection-points.json is fresh in the
       # tree before it is packaged here. Do not reorder these steps.

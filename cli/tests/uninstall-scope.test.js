@@ -27,7 +27,7 @@ vi.mock('@clack/prompts', () => ({
   log: { message: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-import { resolveUninstallScope, resolveTarget } from '../bin/codeadd.js';
+import { resolveUninstallScope, resolveTarget } from '../src/cli.js';
 
 let fakeHome;
 let fakeCwd;
