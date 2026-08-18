@@ -7,8 +7,11 @@ This flow is OUTSIDE the §4.2 mode ladder — it never competes with bug→CORR
 HAS_TASKS→TASKS, `feature N`→FEATURE, or pending→DEVELOPMENT, and a stale run must
 never trigger it implicitly.
 
-1. Detect the highest run-NNN under the in-scope feature/subfeature _tests/ and read
-   its qa-validation-NNN.md.
+1. Detect the highest WORKING `_tests/run-NNN/` under the in-scope feature/subfeature
+   and read its `qa-validation-NNN.md`. Do not scan `_tests/final/`: final snapshots
+   are immutable delivery history, never a live fix queue. If no working routed
+   report exists but final evidence does, STOP and require `/add.qa <feature-id>
+   [SFxx]`, then `/add.build qa`; never apply fixes from the final report.
 2. Present unresolved findings grouped by SEVERITY (blocker → polish) — presentation
    stays severity-first — and CONFIRM before changing any code. The confirmation gate
    is mandatory; routing decides *who* fixes, never *whether*.

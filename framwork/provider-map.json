@@ -68,7 +68,7 @@
     "add.brainstorm":{ "description": "Project conversation partner for exploring ideas (READ-ONLY)" },
     "add.design":    { "description": "Thin dispatcher of the UX agent trio (ux-flow-agent -> ux-layout-agent -> ux-agent critique) producing design.md - epic-aware, manual entry point to add.plan 8.1's pipeline" },
     "add.build":     { "description": "Development execution specialist - coordinates subagents for feature implementation and bug fixes" },
-    "add.done":      { "description": "Branch completion and merge - finalize feature/hotfix branches with changelog and documentation" },
+    "add.done":      { "description": "Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges" },
     "add.new":       { "description": "Full feature discovery and documentation - creates about.md before implementation" },
     "add.hotfix":    { "description": "Rapid bug fix workflow with dual mode - urgent production fixes" },
     "add.init":      { "description": "Project onboarding - collect founder profile and generate product blueprint" },
@@ -79,7 +79,7 @@
     "add.ux":        { "description": "Lightweight UX refinement - loads ux-design skill and applies to free-form instructions" },
     "add.diagnose":  { "description": "Pre-decision investigative triage for ambiguous symptoms — applies 5-phase methodology and recommends route (hotfix/feature/extend/no-action)" },
     "add.qa":        { "description": "Agent-judged QA validation — runs persisted specs + reads persisted PNGs, validates UX quality (vs design.md) AND functional delivery (vs about.md), writes a versioned _tests/run-NNN/qa-validation-NNN.md (audit, not a gate). Plugin optional: runs persisted specs + reads PNGs without it, live-drives with it" },
-    "add.qa-setup":  { "description": "End-to-end-verified QA bootstrap — functionally verifies + installs the @playwright/test runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific qa-project skill, scaffolds docs/qa/config.json + FEATURE_DIR/_tests/screens.json, migrates an existing QA flow on first run (confirm-then-dogfood), and ends with a /add.qa smoke test + bounded correction loop" }
+    "add.qa-setup":  { "description": "End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests /add.qa" }
   },
   "skills": {
     "add-architecture-discovery":      {},

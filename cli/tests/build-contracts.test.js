@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 /**
- * Setup-contract extraction guard (plan 0061, Task 4).
+ * Setup-contract extraction guard (plan 0061, Task 2).
  *
  * `scripts/build.js` extracts a command's `## Materializes` declaration into the
  * build-emitted sidecar `framwork/.codeadd/contracts.json`. The declaration is the
@@ -421,18 +421,19 @@ describe('I7/I8 — sidecar output', () => {
 // ---------------------------------------------------------------------------
 
 describe('the shipped add.qa-setup contract', () => {
-  it('case 15 — extracts at version 1 with three paths owned setup/setup/shared', () => {
+  it('case 15 — extracts at version 2 with .gitignore as shared state', () => {
     const c = extractContract(fs.readFileSync(REAL_COMMAND, 'utf8'), 'add.qa-setup');
     expect(c).not.toBeNull();
     expect(c.contract).toBe('add.qa-setup');
-    expect(c.version).toBe(1);
+    expect(c.version).toBe(2);
     expect(c.recipes).toBe(RECIPES);
     expect(c.paths.map((p) => p.path)).toEqual([
       'docs/qa/config.json',
       '<provider skills dir>/qa-project/SKILL.md',
       'FEATURE_DIR/_tests/screens.json',
+      '.gitignore',
     ]);
-    expect(c.paths.map((p) => p.owner)).toEqual(['setup', 'setup', 'shared']);
+    expect(c.paths.map((p) => p.owner)).toEqual(['setup', 'setup', 'shared', 'shared']);
   });
 
   it('the declaration embeds fenced H2s — the structure cases 3-5 guard', () => {

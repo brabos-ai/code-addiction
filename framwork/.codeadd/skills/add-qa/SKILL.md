@@ -66,7 +66,7 @@ Every `type: functional` finding carries **exactly one** root cause, cited to th
 | `env-boot` | app or dependency not up; environmental |
 | `regression` | a criterion that passed in the immediately previous run now fails |
 
-`regression` reads ONLY the immediately previous `run-NNN` report — no deeper history walk; the first run has no regression class. Expected error states are correct behavior, never classified. `@qa-agent`'s deterministic conformance findings are `type: ux` and instead carry one of `contract-violated | contract-inadequate`.
+`regression` reads ONLY the immediately previous numeric `run-NNN` report from the union of working and final evidence — no deeper history walk; the first run has no regression class. Resolve it through `.codeadd/scripts/qa-evidence.sh previous`, never by assuming `NNN-1` exists. Expected error states are correct behavior, never classified. `@qa-agent`'s deterministic conformance findings are `type: ux` and instead carry one of `contract-violated | contract-inadequate`.
 
 ## Coordinator-only knowledge (NOT for the judges)
 
@@ -86,8 +86,10 @@ Each finding is also tagged `type: ux | functional | a11y | spec-gap`. An *expec
 ## Scope, Path & Numbering
 
 - **Scope:** SF folder when scoped to a subfeature (`SCOPE_DIR = .../subfeatures/SFxx-*`), feature folder otherwise.
-- **Report path:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots in `SCOPE_DIR/_tests/run-NNN/screenshots/` named `<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` for single-state screens).
-- **Numbering:** per scope, `qa-validation-NNN` starting `001`; each SF keeps its own regression history. The report and its screenshots share the same `run-NNN`. See `{{skill:add-id-convention/SKILL.md}}` (per-scope sequence IDs) and the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
+- **Working evidence:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots stay in the same complete run directory. Working runs are local, ephemeral, and remain the only live fix queue for `/add.build qa`.
+- **Final evidence:** `/add.done` copies the exact reviewed baseline to `SCOPE_DIR/_tests/final/run-NNN/`. A final snapshot is immutable delivery evidence, may retain unresolved findings, and is not a pass certificate.
+- **Numbering:** per scope, `qa-validation-NNN` starts at `001`; the next ID is `max(working IDs, final IDs) + 1`, resolved by `.codeadd/scripts/qa-evidence.sh next`. Each SF keeps its own sequence. See `{{skill:add-id-convention/SKILL.md}}` and the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
+- **Fresh clones:** final-only history participates in numbering and predecessor lookup, but never becomes a live fix queue. Run `/add.qa` to create working evidence before `/add.build qa`.
 
 ## Config & Catalog Formats (reference)
 
@@ -211,6 +213,7 @@ captured, etc.>
 [ ] Every finding carries a coordinator-derived `route`, valid per that same reference — coordinator work
 [ ] Functional roll-up lists each criterion tested (met/not met/partial)
 [ ] Report numbered per scope (qa-validation-NNN, start 001); run-NNN matches; TOC present
+[ ] Number allocated from working + final evidence; report written to working `_tests/run-NNN/` only
 [ ] Unreached screens/criteria recorded under "Not covered"
 [ ] No code modified — audit only
 ```

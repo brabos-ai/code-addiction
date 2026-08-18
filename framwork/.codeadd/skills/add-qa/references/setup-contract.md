@@ -27,3 +27,25 @@ Shapes are declared in `add.qa-setup`'s `## Materializes` block, which is the si
 ### Delta v0 → v1
 
 Not applicable — v1 is the initial contract. A project holding materialized state with no receipt is **backfilled** at v1: write the receipt from the observed state, change no other file, and log the backfill in the Decision Log.
+
+## v2
+
+### Materializes
+
+| Path | Owner | Written by |
+|---|---|---|
+| `docs/qa/config.json` | setup | STEP 7 |
+| `<provider skills dir>/qa-project/SKILL.md` | setup | STEP 6 |
+| `FEATURE_DIR/_tests/screens.json` | shared (co-owner: `add.plan` STEP 10.0) | STEP 8 |
+| `.gitignore` | shared | STEP 9 |
+
+Shapes are declared in `add.qa-setup`'s `## Materializes` block. The `.gitignore` entry carries `hash: null` in the receipt because users and installer logic co-own the file.
+
+### Delta v1 → v2
+
+1. EXECUTE `bash .codeadd/scripts/qa-evidence.sh ensure-ignore "."`; refuse the upgrade if it fails.
+2. VERIFY the operation preserved user-authored lines and the installer-owned `# ADD - managed by code-addiction` block.
+3. VERIFY exactly one QA evidence block exists and contains only `docs/features/**/_tests/run-*/`.
+4. DO NOT add a `!final/` or `!approved/` exception.
+5. RECORD `.gitignore` under `materialized` with `owner: shared` and `hash: null`.
+6. APPEND the accepted upgrade to the receipt Decision Log; never edit an existing row.

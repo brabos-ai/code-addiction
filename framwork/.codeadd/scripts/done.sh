@@ -50,6 +50,36 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+verify_final_snapshots() {
+    [ "$BRANCH_TYPE" = "feature" ] || return 0
+    [ -n "${DOCS_DIR:-}" ] && [ -d "$DOCS_DIR" ] || return 0
+    local file snapshot
+    while IFS= read -r snapshot; do
+        [ -n "$snapshot" ] || continue
+        if ! git diff --cached --quiet HEAD -- "$snapshot" || ! git diff --quiet -- "$snapshot"; then
+            echo "STATUS=ERROR"
+            echo "ERROR=Immutable final QA snapshot differs from HEAD: $snapshot"
+            return 1
+        fi
+    done < <(
+        git ls-tree -r --name-only HEAD -- "$DOCS_DIR" |
+            sed -nE 's#^(.*/_tests/final/run-[0-9][0-9][0-9])/.*#\1#p' |
+            sort -u
+    )
+    while IFS= read -r -d '' file; do
+        if git check-ignore -q -- "$file"; then
+            echo "STATUS=ERROR"
+            echo "ERROR=Final QA snapshot is ignored and cannot enter finalization: $file"
+            return 1
+        fi
+        if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then
+            echo "STATUS=ERROR"
+            echo "ERROR=Final QA snapshot was not staged for finalization: $file"
+            return 1
+        fi
+    done < <(find "$DOCS_DIR" -type f -path '*/_tests/final/run-[0-9][0-9][0-9]/*' -print0)
+}
+
 # [FIX-3] Verify that the dependency script exists and is executable before
 # calling it. Failure here produced a shell error message without clear context.
 if [ ! -f "$SCRIPT_DIR/get-main-branch.sh" ]; then
@@ -234,6 +264,13 @@ if [ "$MODE" = "merge" ]; then
         # feature's docs; other features' untracked docs stay untracked.
         git add -A -- . ':(exclude)docs/features/*'
         [ -n "$DOCS_DIR" ] && [ -d "$DOCS_DIR" ] && git add -A -- "$DOCS_DIR" || true
+    fi
+
+    # A promoted final snapshot is permanent delivery evidence. Refuse before
+    # commit if an ignore rule or staging regression would silently omit it.
+    verify_final_snapshots
+
+    if [ "$HAS_UNCOMMITTED" = true ]; then
         git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): finalize before merge
 
 Generated with ADD by https://brabos.ai
