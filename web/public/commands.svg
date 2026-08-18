@@ -89,7 +89,7 @@
 
   <rect x="700" y="56" width="260" height="36" class="cmd-box"/>
   <text x="716" y="74" class="cmd-name">/add.review</text>
-  <text x="716" y="86" class="cmd-desc">Feature Code Review Specialist</text>
+  <text x="716" y="86" class="cmd-desc">Review code + record working QA baseline</text>
 
   <rect x="700" y="100" width="260" height="36" class="cmd-box"/>
   <text x="716" y="118" class="cmd-name">/add.test</text>
@@ -97,11 +97,11 @@
 
   <rect x="700" y="144" width="260" height="36" class="cmd-box"/>
   <text x="716" y="162" class="cmd-name">/add.qa</text>
-  <text x="716" y="174" class="cmd-desc">Dual-judge QA panel from persisted evidence</text>
+  <text x="716" y="174" class="cmd-desc">Dual-judge QA over working evidence</text>
 
   <rect x="700" y="188" width="260" height="36" class="cmd-box"/>
   <text x="716" y="206" class="cmd-name">/add.qa-setup</text>
-  <text x="716" y="218" class="cmd-desc">Bootstrap QA runner + config (MCP optional)</text>
+  <text x="716" y="218" class="cmd-desc">Bootstrap QA + ignored working evidence</text>
 
   <!-- DELIVERY GROUP -->
   <rect x="680" y="268" width="300" height="150" class="group-bg"/>
@@ -110,7 +110,7 @@
 
   <rect x="700" y="314" width="260" height="36" class="cmd-box"/>
   <text x="716" y="332" class="cmd-name">/add.done</text>
-  <text x="716" y="344" class="cmd-desc">Changelog, docs, finalize</text>
+  <text x="716" y="344" class="cmd-desc">Validate + promote QA evidence, then finalize</text>
 
   <rect x="700" y="358" width="260" height="36" class="cmd-box"/>
   <text x="716" y="376" class="cmd-name">/add.pull-request</text>

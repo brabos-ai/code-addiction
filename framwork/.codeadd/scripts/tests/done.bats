@@ -199,6 +199,63 @@ teardown() {
   [ -f docs/features/0002F-other/about.md ]
 }
 
+@test "merge mode: commits final QA snapshots and leaves ignored working runs local" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test/_tests/run-001 docs/features/0001F-test/_tests/final/run-001
+  echo "working" > docs/features/0001F-test/_tests/run-001/qa-validation-001.md
+  echo "final" > docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+  printf '# ADD QA evidence - managed by add.qa-setup\ndocs/features/**/_tests/run-*/\n# END ADD QA evidence\n' > .gitignore
+  git push -u origin feature/0001F-test -q
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  run git ls-files docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+  [ -n "$output" ]
+  run git ls-files docs/features/0001F-test/_tests/run-001/qa-validation-001.md
+  [ -z "$output" ]
+  [ -f docs/features/0001F-test/_tests/run-001/qa-validation-001.md ]
+}
+
+@test "merge mode: blocks when a broad ignore rule would omit final QA evidence" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test/_tests/final/run-001
+  echo "final" > docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+  printf 'docs/features/**/_tests/\n' > .gitignore
+  git push -u origin feature/0001F-test -q
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Final QA snapshot is ignored"* ]]
+}
+
+@test "merge mode: blocks modification of an already tracked final snapshot" {
+  setup_remote
+  mkdir -p docs/features/0001F-test/_tests/final/run-001
+  echo "original" > docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+  git add . && git commit -m "add final evidence" -q && git push origin main -q
+  git checkout -b feature/0001F-test -q
+  echo "modified" > docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Immutable final QA snapshot differs from HEAD"* ]]
+}
+
+@test "merge mode: blocks deletion of an already tracked final snapshot" {
+  setup_remote
+  mkdir -p docs/features/0001F-test/_tests/final/run-001
+  echo "original" > docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+  git add . && git commit -m "add final evidence" -q && git push origin main -q
+  git checkout -b feature/0001F-test -q
+  rm docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Immutable final QA snapshot differs from HEAD"* ]]
+}
+
 # ─── Worktree awareness ─────────────────────────────────────────────
 
 @test "start guard: fails when run from inside a linked worktree" {

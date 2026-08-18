@@ -1,16 +1,9 @@
 # Branch Completion & Merge
 
-> **MODEL:** Use `haiku` model
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **MODEL:** Use `haiku` model
 
 Coordinator for branch finalization. Generates the changelog from changeset analysis and auto-merges to main. Same flow for all branch types (feature, hotfix, refactor, chore, docs) — review gate applies to features only.
-
----
-
-## Required Skills
-
-- `{{skill:add-doc-schemas/SKILL.md}}` — schemas, IDs, validation gate
-- `{{skill:add-id-convention/SKILL.md}}` — branch/ID format
 
 ---
 
@@ -21,9 +14,11 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 STEP 1: done.sh                 -> RUN FIRST (collect context)
 STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate + changelog    -> Quality gates (feature only) + changelog generation
-STEP 5: Preview                 -> INFORMATIVE ONLY (NO confirmation)
-STEP 6: Execute merge           -> AUTOMATIC after preview
+STEP 4: Validate delivery       -> Review + epic + requirements gates (feature only)
+STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
+STEP 6: Generate documentation -> Changelog + decisions + wiki
+STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
+STEP 8: Execute merge           -> AUTOMATIC after preview
 ```
 
 **ABSOLUTE PROHIBITIONS (invariants — per-step gates live in their steps):**
@@ -39,12 +34,24 @@ IF BRANCH_TYPE = unknown:
   ⛔ DO NOT USE: Bash for git operations
   ✅ DO: Show error and stop
 
+IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
+  ⛔ DO NOT USE: Write to create changelog.md
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ✅ DO: Report the qa-evidence.sh validation/promotion failure and stop
+
 ALWAYS:
   ⛔ DO NOT USE: Bash for git add/commit/push (done.sh --merge handles everything)
   ⛔ DO NOT USE: Bash for git branch -m (NEVER rename branches)
   ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT: Suggest renaming branches to fix unknown type errors -- the branch prefix is intentional
 ```
+
+---
+
+## Required Skills
+
+- `{{skill:add-doc-schemas/SKILL.md}}` — schemas, IDs, validation gate
+- `{{skill:add-id-convention/SKILL.md}}` — branch/ID format
 
 ---
 
@@ -81,7 +88,7 @@ bash .codeadd/scripts/done.sh
 | `docs` | Branch: docs/[NNNN]D-* |
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
-All recognized types proceed to STEP 4. Quality gates (4.0-4.2) apply to `feature` only — other types skip directly to changelog generation.
+All recognized types proceed to STEP 4. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
 
 ---
 
@@ -98,7 +105,7 @@ All recognized types proceed to STEP 4. Quality gates (4.0-4.2) apply to `featur
 
 ---
 
-## STEP 4: Validate & Generate Changelog
+## STEP 4: Validate Delivery
 
 ### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
 
@@ -110,30 +117,16 @@ All recognized types proceed to STEP 4. Quality gates (4.0-4.2) apply to `featur
 2. IF NOT EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
 3. IF EXISTS: READ review.md, find "| **Overall**" row
 4. IF Overall = BLOCKED: Show table of BLOCKED gates -> BLOCKED
-5. IF Overall = PASSED: run the **staleness check** below, then proceed to 4.0b
+5. IF Overall = PASSED: READ the mandatory `> **QA baseline:**` line and store it as `QA_BASELINE` for STEP 5.
 
-**Staleness check (a QA fix wave invalidates the review).** `/add.build qa` dispatches implementation agents that WRITE CODE. A `review.md` produced before that wave describes a tree that no longer exists, and merging on it ships never-reviewed code.
-
-Compare **run numbers, never dates** — a fix wave and a re-review on the same day are indistinguishable by date, and `run-NNN` is the exact counter that increments per audit.
-
-1. READ the `> **QA baseline:**` line from `review.md` (written by `/add.review` STEP 2.2 item 4b). It holds one `scope:run-NNN` pair per scope, e.g. `SF01:run-003 · SF02:run-001`, or `none`.
-2. Glob the CURRENT state: every `_tests/run-*/qa-validation-*.md` under the feature (feature-level + each subfeature); take the highest `NNN` per scope key.
-3. Compare per scope key — `run-NNN` is a **per-scope sequence**, so never compare an `SF01` number against an `SF02` one:
-   - any scope whose current highest `NNN` is **greater** than the baseline → **BLOCKED**
-   - any scope present now but **absent** from the baseline → **BLOCKED**
-   - all scopes equal → PROCEED
-4. **BLOCKED message:** "QA ran after the last review — `<scope>` is at `run-NNN`, the review was taken at `run-MMM`. Re-run `/add.review` so it judges the post-fix tree."
-
-Two remaining cases:
-- `QA baseline: none` AND no `_tests/run-*/` exists → no QA ran; PROCEED. QA is optional; this check never forces it.
-- `QA baseline` line **ABSENT** → **BLOCKED**: "review.md is missing its QA baseline. Re-run `/add.review`." `/add.review` always emits the line (`none` when no run exists), so an absent one means a malformed or hand-edited report — never a valid state to merge on. Do NOT infer, do NOT fall back to comparing dates.
+`QA baseline` line **ABSENT** → **BLOCKED**. Re-run `/add.review`; never infer a baseline or compare dates. STEP 5 performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
 - ✅ DO: Show blocked gates and instructions to re-run /add.review
 
-**NOTE:** Done does NOT re-run validations. It only reads the existing review.md report — and compares its recency against the newest QA run.
+**NOTE:** Done does NOT re-run product validations. It reads the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
 
 ---
 
@@ -193,7 +186,32 @@ Options:
 
 ---
 
-### 4.3: Load Feature Context (BEFORE analyzing files)
+## STEP 5: Validate and Promote Reviewed QA Evidence
+
+**SKIP this STEP entirely if `BRANCH_TYPE` is not `feature`.** Set `QA_PROMOTION_STATUS=skipped` and continue to STEP 6.
+
+For a feature branch, `QA_BASELINE` from STEP 4 is the only promotion manifest. Run in this exact order:
+
+1. Execute `bash .codeadd/scripts/qa-evidence.sh validate "${DIR}" "${QA_BASELINE}"`.
+2. Require exact per-scope equality between the review baseline and the current highest working runs. A newer run, missing scope, malformed ID, incomplete source, report-number mismatch, or schema-invalid report blocks finalization.
+3. Execute `bash .codeadd/scripts/qa-evidence.sh promote "${DIR}" "${QA_BASELINE}"` only after validation succeeds.
+4. Parse every `ACTION`, `SCOPE`, `FINAL`, and `FINAL_REPORT` line for STEP 6 and STEP 7.
+5. Set `QA_PROMOTION_STATUS=passed`. `BASELINE=none` with no working runs is a valid no-op.
+
+Promotion copies each complete working run to `_tests/final/run-NNN/` through a temporary sibling and rename. Existing byte-identical snapshots are no-ops; different content at the same final run ID is an immutable conflict. Findings and severity are preserved verbatim — `final` means reviewed delivery evidence, not clean QA.
+
+**IF either script call fails:**
+- ⛔ DO NOT USE: Write to create `changelog.md`
+- ⛔ DO NOT USE: Bash for `done.sh --merge`
+- ✅ DO: Surface the exact script error. For baseline drift, require `/add.review`; for incomplete/conflicting evidence, require correction before retrying `/add.done`
+
+Do NOT stage, commit, push, move, or delete evidence here. `done.sh --merge` remains the sole git owner and promotion remains retry-safe.
+
+---
+
+## STEP 6: Generate Changelog and Documentation
+
+### 6.1: Load Feature Context (BEFORE analyzing files)
 
 **Read `${DIR}/about.md`.** Extract: Objective, Scope (Included/Excluded), Business Rules, Technical Decisions, Acceptance Criteria.
 
@@ -205,7 +223,7 @@ Options:
 
 ---
 
-### 4.4: Intelligent File Analysis
+### 6.2: Intelligent File Analysis
 
 **Classify each file in CHANGED_FILES:**
 
@@ -225,11 +243,11 @@ Options:
 
 ---
 
-### 4.5: Generate Changelog (schema: changelog)
+### 6.3: Generate Changelog (schema: changelog)
 
 **Path:** `${DIR}/changelog.md`
 
-**Idempotency guard (RUN FIRST).** If `${DIR}/changelog.md` already exists, **SKIP** schema execution, ID allocation, and Quick Ref generation. Proceed directly to STEP 4.6 (validation still runs against the existing file).
+**Idempotency guard (RUN FIRST).** If `${DIR}/changelog.md` already exists, **SKIP** schema execution, ID allocation, and Quick Ref generation, but DO NOT skip the QA trail below. Existing changelogs must receive the same permanent evidence references before STEP 6.4.
 
 ```bash
 [ -f "${DIR}/changelog.md" ] && echo "CHANGELOG_EXISTS — skipping generation"
@@ -263,11 +281,11 @@ Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[
 
 **IF discovery.md has no "Identified Patterns" section:** infer patterns from the narrative changelog.
 
-**QA trail (IF a `_tests/run-*/` exists for the feature):** cite the newest QA run in the changelog narrative — `run-NNN`, its date, and the final severity counts. Extractive only: read the report's `## Summary`, never re-judge. A feature validated by `/add.qa` should say so in its permanent record; a feature merged with open findings should say that too.
+**QA trail (IF STEP 5 emitted any `FINAL_REPORT`, for new AND existing changelogs):** upsert one `## QA Evidence` section citing every promoted per-scope final snapshot — scope, `run-NNN`, permanent `_tests/final/run-NNN/` path, report date, and severity counts. Replace that section on rerun rather than appending a duplicate. Extractive only: consume the metadata emitted by `qa-evidence.sh promote` and preserve open findings as audit history.
 
 ---
 
-### 4.6: Validation Gate
+### 6.4: Validation Gate
 
 Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `changelog`.
 
@@ -275,7 +293,7 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 ---
 
-### 4.7: Update about.md (IF out-of-scope detected)
+### 6.5: Update about.md (IF out-of-scope detected)
 
 IF out-of-scope detected, append to about.md:
 
@@ -292,7 +310,7 @@ IF out-of-scope detected, append to about.md:
 
 ---
 
-### 4.8: Consolidate decisions.jsonl
+### 6.6: Consolidate decisions.jsonl
 
 Append feature-level `decisions.jsonl` entries into the project-central `.codeadd/project/decisions.jsonl`, deduplicating by `ts`.
 
@@ -316,33 +334,33 @@ fi
 
 ---
 
-### 4.9 Update Project Wiki (best-effort, non-blocking)
+### 6.7 Update Project Wiki (best-effort, non-blocking)
 
 **IF `.codeadd/wiki/index.md` exists:**
 
-Load skill `{{skill:add-wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP 1) + the feature context already loaded in this session (about.md from 4.3, the changelog just generated in 4.5).
+Load skill `{{skill:add-wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP 1) + the feature context already loaded in this session (about.md from 6.1, the changelog just generated in 6.3).
 
-Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merge` (STEP 6) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
+Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merge` (STEP 8) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
 
 **ELSE:** Skip silently — no wiki step runs. Add ONE line to the final summary after merge: "Project wiki not found — run /add.wiki to generate the knowledge base."
 
-**NEVER block the close flow on wiki failures.** If the update fails or is inconclusive, note it in the final summary and continue to STEP 5.
+**NEVER block the close flow on wiki failures.** If the update fails or is inconclusive, note it in the final summary and continue to STEP 7.
 
 ⛔ DO NOT USE: Bash for git operations in this substep — wiki edits are plain file edits; `done.sh --merge` owns the commit.
 
 ---
 
-## STEP 5: Preview (INFORMATIVE ONLY)
+## STEP 7: Preview (INFORMATIVE ONLY)
 
-Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and — IF a `_tests/run-*/` exists for the feature — the newest QA run's severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: `/add.qa` is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
+Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and each permanent final snapshot emitted by STEP 5 with its scope, path, and severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: `/add.qa` is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
 
-**DO NOT ask for confirmation. Proceed directly to STEP 6.**
+**DO NOT ask for confirmation. Proceed directly to STEP 8.**
 
 ---
 
-## STEP 6: Execute Merge (AUTOMATIC)
+## STEP 8: Execute Merge (AUTOMATIC)
 
-**Execute immediately after STEP 5.**
+**Execute immediately after STEP 7.**
 
 ```bash
 bash .codeadd/scripts/done.sh --merge
@@ -353,7 +371,7 @@ bash .codeadd/scripts/done.sh --merge
 ⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
 
 **After merge, include in the final summary:**
-- Wiki result from 4.9 — pages touched, explicit no-op, or the "wiki not found" suggestion.
+- Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
 
 **After merge, MUST suggest next command from ecosystem map:**
 READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.

@@ -408,6 +408,62 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
   });
 });
 
+describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
+  const builtSkill = (name, file = 'SKILL.md') =>
+    fs.readFileSync(path.join(BUILT_CLAUDE, 'skills', name, file), 'utf8');
+
+  it('ships the deterministic evidence lifecycle script', () => {
+    expect(fs.existsSync(path.join(CODEADD, 'scripts', 'qa-evidence.sh'))).toBe(true);
+  });
+
+  it('add.qa allocates and resolves predecessors through qa-evidence.sh', () => {
+    const qa = builtCommand('add.qa');
+    expect(qa).toContain('.codeadd/scripts/qa-evidence.sh next');
+    expect(qa).toContain('.codeadd/scripts/qa-evidence.sh previous');
+    expect(qa).toMatch(/working plus final evidence/i);
+    expect(qa).toMatch(/NEVER write a new audit\s+under `final\/`/i);
+  });
+
+  it('the QA skill and schema distinguish working evidence from immutable final evidence', () => {
+    const qa = builtSkill('add-qa');
+    const schema = builtSkill('add-doc-schemas', path.join('references', 'review.md'));
+    expect(qa).toContain('_tests/final/run-NNN/');
+    expect(qa).toMatch(/not a pass certificate/i);
+    expect(schema).toContain('_tests/final/run-NNN/');
+  });
+
+  it('QA-fix refuses final-only evidence as a live fix queue', () => {
+    const fragment = fs.readFileSync(
+      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
+      'utf8',
+    );
+    expect(fragment).toMatch(/highest WORKING/i);
+    expect(fragment).toMatch(/never a live fix queue/i);
+    expect(fragment).toMatch(/If no working routed\s+report exists but final evidence does, STOP/i);
+  });
+
+  it('review captures the working baseline and done promotes it before changelog and merge', () => {
+    const review = builtCommand('add.review');
+    const done = builtCommand('add.done');
+    expect(review).toContain('.codeadd/scripts/qa-evidence.sh working-baseline');
+    const promote = done.indexOf('## STEP 5: Validate and Promote Reviewed QA Evidence');
+    const changelog = done.indexOf('## STEP 6: Generate Changelog and Documentation');
+    const merge = done.indexOf('## STEP 8: Execute Merge');
+    expect(promote).toBeGreaterThan(-1);
+    expect(changelog).toBeGreaterThan(promote);
+    expect(merge).toBeGreaterThan(changelog);
+    expect(done).toContain('.codeadd/scripts/qa-evidence.sh validate');
+    expect(done).toContain('.codeadd/scripts/qa-evidence.sh promote');
+    expect(done).toMatch(/DO NOT USE: Write to create `changelog\.md`/);
+    expect(done).toMatch(/DO NOT USE: Bash for `done\.sh --merge`/);
+    expect(review).toContain('QA_BASELINE_INVALIDATED');
+    expect(review).toContain('Require `/add.qa`, then a new `/add.review`');
+    expect(review).toMatch(/NEVER route directly to `\/add\.done`/i);
+    expect(done).toMatch(/new AND existing changelogs/i);
+    expect(done).toMatch(/upsert one `## QA Evidence` section/i);
+  });
+});
+
 // The umbrella review v01 found three seams the plans never covered: @ux-agent was
 // routed to a mode it refused to perform, and two commands resolved design.md at
 // feature level only — silently skipping the Design Contract on epics, which is

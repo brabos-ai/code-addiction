@@ -149,6 +149,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Build table | Quality Gate Report (see STEP 8.1) |
 | Write review.md | `docs/features/${FEATURE_ID}/review.md` with all consolidated findings |
 | QA baseline | The `> **QA baseline:**` line is MANDATORY — `${QA_BASELINE}` from STEP 2.2 item 4b, resolved from the filesystem this run. Emit `none` when no run exists; NEVER omit the line. `/add.done` BLOCKS a review.md without it |
+| QA provenance | If this review changed QA-relevant files after capturing a non-`none` baseline, set `QA_BASELINE_INVALIDATED=true`, mark Overall BLOCKED, and route through `/add.qa` then `/add.review` |
 | Idempotency | If review.md already exists → back it up as `review.md.prev`, write new |
 
 **Success Criteria:** review.md written with all gates populated.
@@ -171,6 +172,7 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT skip review silently | CLAUDE.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
 | Do NOT use Bash git commit | Any point in workflow | Use /add-commit skill instead |
 | Do NOT stage files silently | Pre-Review Setup (STEP 1) | Ask user permission first via AskUserQuestion |
+| Do NOT mark review PASSED or route to `/add.done` | `QA_BASELINE_INVALIDATED=true` | Require `/add.qa`, then a new `/add.review` |
 
 ---
 
@@ -243,11 +245,8 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
 4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
-4b. **QA baseline (`QA_BASELINE`) — resolve now, emit in 8.2.** Glob every `_tests/run-*/qa-validation-*.md` under the feature (feature-level AND each subfeature). `run-NNN` is a **per-scope sequence** — SF01 at `run-003` and SF02 at `run-001` are unrelated counters — so record one entry PER SCOPE, never a single global number:
-   - Per scope key (`SFxx`, or `feature` for a feature-level run), take the HIGHEST `NNN` present.
-   - `QA_BASELINE` = those pairs joined by ` · `, e.g. `SF01:run-003 · SF02:run-001`, or `feature:run-002` on a non-epic.
-   - No `_tests/run-*/` anywhere → `QA_BASELINE = none`.
-   This string is what `/add.done` 4.0 compares against to detect a QA fix wave that landed AFTER this review. Resolve it from the filesystem at review time — never copy it from a previous `review.md`.
+4b. **QA baseline (`QA_BASELINE`) — resolve now, emit in 8.2.** Run `bash .codeadd/scripts/qa-evidence.sh working-baseline "${FEATURE_DIR}"` and parse `BASELINE`. The script returns the highest WORKING run independently per scope (`feature`, `SFxx`), or `none`; final snapshots never enter a new review baseline. Preserve the returned scope/run pairs as the promotion manifest `/add.done` consumes. Resolve it from the filesystem at review time — never copy it from a previous `review.md`. Initialize `QA_BASELINE_INVALIDATED=false`.
+4c. **Reviewed-tree fingerprint (`REVIEW_TREE_BEFORE`).** Compute a deterministic digest over every tracked or nonignored untracked file in the working tree, including each relative path and current content. Represent deleted tracked files explicitly. Exclude only this review's bookkeeping paths: `${FEATURE_DIR}/review.md`, `${FEATURE_DIR}/review.md.prev`, `${FEATURE_DIR}/tasks.md`, and `${FEATURE_DIR}/iterations.jsonl`. Store the digest before dispatching reviewers.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
@@ -485,13 +484,18 @@ prompt: |
    - Product validation status (from Backend Reviewer)
 
 3. **Calculate overall score:**
-   ```
+    ```
    Frontend Score: X/10
    Backend Score: Y/10
    Overall Score: (X + Y) / 2
 
    Product Status: PASSED/BLOCKED
    ```
+
+4. **Bind QA evidence to the corrected tree:**
+   - Track reviewer correction paths for reporting, but use the STEP 2.2 tree fingerprint as the authority.
+   - If `QA_BASELINE != none` and the final fingerprint differs, set `QA_BASELINE_INVALIDATED=true`.
+   - Do NOT recapture the same run ID: its evidence predates these corrections.
 
 ---
 
@@ -554,6 +558,8 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 
 Do NOT skip iteration logging if files were modified during review.
 
+Before STEP 8, compute `REVIEW_TREE_AFTER` with the exact STEP 2.2 fingerprint procedure and exclusions. If `QA_BASELINE != none` and `REVIEW_TREE_AFTER != REVIEW_TREE_BEFORE`, set `QA_BASELINE_INVALIDATED=true`; this deterministic final check supersedes the provisional STEP 5 value.
+
 ---
 
 ## STEP 8: Quality Gate Report (PRD0034)
@@ -580,8 +586,8 @@ Collect results from all previous steps:
 > Reviewed by: /add.review (model: ${MODEL})
 ```
 
-**Overall = PASSED** only if ALL gates are PASSED or SKIPPED.
-**Overall = BLOCKED** if ANY gate is BLOCKED.
+**Overall = PASSED** only if ALL gates are PASSED or SKIPPED and `QA_BASELINE_INVALIDATED=false`.
+**Overall = BLOCKED** if ANY gate is BLOCKED or `QA_BASELINE_INVALIDATED=true`. Add a QA provenance row explaining that corrections changed the tree after the recorded baseline.
 
 ### 8.2 Write review.md (Gate 7)
 
@@ -614,6 +620,7 @@ Content:
 Output quality gate summary including: reviewers dispatched (files reviewed per reviewer), issues found/fixed with severity breakdown, spec compliance status, product validation (RF/RN/prerequisites), scores (frontend/backend/overall), gate statuses table, link to review.md, list of modified files, and next steps.
 
 **Next steps (evaluate top-to-bottom, use FIRST match):**
+- `QA_BASELINE_INVALIDATED=true` → `/add.qa` to capture the corrected tree, then `/add.review` to bind that new run. NEVER route directly to `/add.done`.
 - `BLOCKED` → fix + re-run `/add.review`.
 - `PASSED`, `HAS_DESIGN=true` (STEP 2.2), and NO `_tests/run-*/` directory exists for the scope → `/add.qa` — the rendered result was never validated. Run the QA loop (`/add.qa` ⇄ `/add.build qa`), then return here so review judges the post-fix tree. State this explicitly; do NOT route a never-QA'd UI feature straight to `/add.done`.
 - `PASSED` → `/add.done`.
@@ -634,7 +641,8 @@ Output quality gate summary including: reviewers dispatched (files reviewed per 
 - Re-run validation gates independently (STEP 7)
 - Write review.md before console output (STEP 8)
 - Track STAGED_CHANGES flag throughout execution
-- Resolve `QA_BASELINE` from the filesystem (STEP 2.2 item 4b) and emit it in review.md (STEP 8.2) — per scope, `run-NNN`, never copied from a previous review.md
+- Resolve `QA_BASELINE` through `qa-evidence.sh working-baseline` and emit it in review.md — per scope, working `run-NNN`, never copied from a previous review.md
+- Invalidate a non-empty QA baseline when review corrections change QA-relevant files; require QA then re-review
 
 **NEVER:**
 - Dispatch reviewers without completing Gates 1-3

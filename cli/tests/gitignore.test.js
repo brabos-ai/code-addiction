@@ -193,4 +193,22 @@ describe('writeGitignoreBlock', () => {
     expect(codeaddIdx).toBeLessThan(claudeIdx);
     expect(claudeIdx).toBeLessThan(endIdx);
   });
+
+  it('installer block replacement preserves the separate QA evidence block', () => {
+    const gitignorePath = path.join(tmpDir, '.gitignore');
+    const qaBlock = '# ADD QA evidence - managed by add.qa-setup\ndocs/features/**/_tests/run-*/\n# END ADD QA evidence\n';
+    fs.writeFileSync(
+      gitignorePath,
+      `node_modules/\n# ADD - managed by code-addiction\n.codeadd/\n# END ADD\n\n${qaBlock}`,
+      'utf8'
+    );
+
+    writeGitignoreBlock(tmpDir, ['.codeadd/', '.claude/']);
+
+    const content = fs.readFileSync(gitignorePath, 'utf8');
+    expect(content).toContain('node_modules/');
+    expect(content).toContain('.claude/');
+    expect(content).toContain(qaBlock.trim());
+    expect((content.match(/# ADD QA evidence - managed by add\.qa-setup/g) || [])).toHaveLength(1);
+  });
 });

@@ -268,7 +268,7 @@ import "../styles/global.css";
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa-setup</code>
-                <p class="text-muted text-xs mt-0.5">QA prerequisites + config bootstrap — installs the @playwright/test runner + chromium, generates a qa-project skill, scaffolds QA config. Reconciles the setup contract on start; <code class="text-foreground">--migrate</code> reopens the migration decision, <code class="text-foreground">--upgrade</code> forces reconciliation</p>
+                <p class="text-muted text-xs mt-0.5">End-to-end-verified QA bootstrap — verifies and installs the QA runner, generates a qa-project skill, scaffolds config/screens, and keeps ephemeral working evidence local through the setup contract. <code class="text-foreground">--migrate</code> reopens the migration decision; <code class="text-foreground">--upgrade</code> forces reconciliation</p>
               </div>
             </div>
           </div>
@@ -279,7 +279,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.done</code>
-                <p class="text-muted text-xs mt-0.5">Changelog, docs, finalize. Routes to PR or merge</p>
+                <p class="text-muted text-xs mt-0.5">Validates and promotes reviewed working QA evidence to immutable final snapshots, finalizes changelog and docs, then automatically merges</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.pull-request</code>

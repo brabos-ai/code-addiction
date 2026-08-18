@@ -141,9 +141,11 @@ describe('setup contract (0061)', () => {
   it('declares a ## Materializes block carrying every materialized shape', () => {
     expect(src).toMatch(/^## Materializes[ \t]*$/m);
     const block = sliceContractBlock(src);
-    for (const p of ['docs/qa/config.json', '_tests/screens.json', 'qa-project/SKILL.md']) {
+    for (const p of ['docs/qa/config.json', '_tests/screens.json', 'qa-project/SKILL.md', '.gitignore']) {
       expect(block).toContain(p);
     }
+    expect(block).toMatch(/version:\s*2/);
+    expect(block).toContain('docs/features/**/_tests/run-*/');
   });
 
   it('carries no resolvable resource-path variable inside the contract block', () => {
@@ -190,12 +192,34 @@ describe('setup contract (0061)', () => {
   });
 
   it('writes the receipt and runs the schema gate before hand-off', () => {
-    const receipt = src.indexOf('## STEP 11: Write the Receipt');
-    const gate = src.indexOf('## STEP 12: Validation Gate');
-    const handoff = src.indexOf('## STEP 13: Hand-off');
+    const receipt = src.indexOf('## STEP 12: Write the Receipt');
+    const gate = src.indexOf('## STEP 13: Validation Gate');
+    const handoff = src.indexOf('## STEP 14: Hand-off');
     expect(receipt).toBeGreaterThan(-1);
     expect(gate).toBeGreaterThan(receipt);
     expect(handoff).toBeGreaterThan(gate);
+  });
+
+  it('materializes a dedicated QA ignore block before migration and smoke testing', () => {
+    const ignore = src.indexOf('## STEP 9: Ignore Working QA Evidence');
+    const migration = src.indexOf('## STEP 10: Autonomous Migration');
+    const smoke = src.indexOf('## STEP 11: Universal Smoke Test');
+    expect(ignore).toBeGreaterThan(-1);
+    expect(migration).toBeGreaterThan(ignore);
+    expect(smoke).toBeGreaterThan(migration);
+    expect(src).toContain('# ADD QA evidence - managed by add.qa-setup');
+    expect(src).not.toMatch(/^!final\/$/m);
+    expect(src).toContain('.codeadd/scripts/qa-evidence.sh ensure-ignore');
+  });
+
+  it('no-screens deferral still writes and validates the receipt', () => {
+    const smoke = src.slice(
+      src.indexOf('## STEP 11: Universal Smoke Test'),
+      src.indexOf('## STEP 12: Write the Receipt'),
+    );
+    expect(smoke).toMatch(/DEFER only the smoke dispatch and correction loop/i);
+    expect(smoke).toMatch(/continue to STEP 12/i);
+    expect(smoke).not.toMatch(/skip to hand-off/i);
   });
 
   it('registers add-setup-contract in the provider map', () => {

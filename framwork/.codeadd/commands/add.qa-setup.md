@@ -1,5 +1,5 @@
 ---
-description: End-to-end-verified QA bootstrap — functionally verifies + installs the @playwright/test runner (mandatory) + chromium + Playwright MCP (optional, confirm-then-execute), generates a project-specific qa-project skill, scaffolds docs/qa/config.json + FEATURE_DIR/_tests/screens.json, migrates an existing QA flow on first run (confirm-then-dogfood), and ends with a /add.qa smoke test + bounded correction loop
+description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests /add.qa
 argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that feature's screen catalog, e.g. /add.qa-setup 0001F; --migrate reopens the migration decision; --upgrade forces contract reconciliation)"
 ---
 
@@ -16,9 +16,9 @@ Conversational bootstrap for QA validation that proves it works end-to-end. Func
 Load `{{skill:add-dev-environment-setup/SKILL.md}}` before STEP 3 (OS detection + confirm-before-install methodology).
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 8 (feature doc layout, `_tests/` per-run path + `screens.json` reachability schema, `qa-validation` conventions).
 Load `{{skill:add-qa-migration/SKILL.md}}` before STEP 5 (existing-QA migration sequence + checkpoints).
-Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 9 (dispatch template, decision log, review gates — the mechanism reused by migration + correction dispatch).
+Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 10 (dispatch template, decision log, review gates — the mechanism reused by migration + correction dispatch).
 Load {{skill:add-setup-contract/SKILL.md}} before STEP 1.5 (receipt classification, contract comparison, delta execution, receipt rewrite).
-Load {{skill:add-doc-schemas/SKILL.md}} + its `references/receipt.md` before STEP 11 (the `setup-receipt` schema).
+Load {{skill:add-doc-schemas/SKILL.md}} + its `references/receipt.md` before STEP 12 (the `setup-receipt` schema).
 
 ---
 
@@ -34,11 +34,12 @@ STEP 5: Detect migration         → ALWAYS scan; ask only when the detected fin
 STEP 6: Generate qa-project      → <provider skills dir>/qa-project/SKILL.md (shape from ## Materializes)
 STEP 7: Scaffold QA config       → docs/qa/config.json (interactive, project-wide; shape from ## Materializes)
 STEP 8: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (shape from ## Materializes)
-STEP 9: Autonomous migration     → IF MIGRATE: dispatch add.new→add.plan→add.build→add.review (checkpoints only)
-STEP 10: Smoke test + correction → dispatch /add.qa, analyze; on failure dispatch /add.build qa (max 3), else defer/escalate
-STEP 11: Write the receipt       → docs/qa/qa-setup.md (state + decisions; rewritten even on a no-op)
-STEP 12: Validation gate         → add-doc-schemas gate against the setup-receipt schema
-STEP 13: Hand-off                → enable plugin (optional) + run /add.qa + migration/smoke/contract summary
+STEP 9: Ignore working evidence  → materialize the dedicated QA block in .gitignore
+STEP 10: Autonomous migration    → IF MIGRATE: dispatch add.new→add.plan→add.build→add.review (checkpoints only)
+STEP 11: Smoke test + correction → dispatch /add.qa, analyze; on failure dispatch /add.build qa (max 3), else defer/escalate
+STEP 12: Write the receipt       → docs/qa/qa-setup.md (state + decisions; rewritten even on a no-op)
+STEP 13: Validation gate         → add-doc-schemas gate against the setup-receipt schema
+STEP 14: Hand-off                → enable plugin (optional) + run /add.qa + migration/smoke/contract summary
 ```
 
 ## ⛔ ABSOLUTE PROHIBITIONS (by checkpoint)
@@ -46,7 +47,7 @@ STEP 13: Hand-off                → enable plugin (optional) + run /add.qa + mi
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
 | **STEP 2** | User has not confirmed the enable | Running `codeadd features enable` | Show the command + what stays broken with the feature off; WAIT for explicit confirmation |
-| **STEP 2** | User declined the enable | Re-asking, marking QA as on | Record it as a remaining manual step for the STEP 13 hand-off; continue setup |
+| **STEP 2** | User declined the enable | Re-asking, marking QA as on | Record it as a remaining manual step for the STEP 14 hand-off; continue setup |
 | **STEP 2** | Enable ran but the injected section is absent (pre-sidecar no-op) | Reporting QA as on | Route to `codeadd update` / re-install; record QA as NOT active |
 | **STEP 3** | Environment not diagnosed | Bash install commands, downloads | Detect OS/pkg-manager/node; functionally probe existing prereqs |
 | **STEP 4** | User has not confirmed the shown commands | Bash to run any install/download | Show exact commands + WAIT for explicit confirmation |
@@ -55,26 +56,27 @@ STEP 13: Hand-off                → enable plugin (optional) + run /add.qa + mi
 | **STEP 5** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
 | **STEP 5** | Always | Skipping the scan because the project is not first-run | Scan on every run; compare against `migration.detected` in the receipt; ASK only on a fingerprint change or `--migrate` |
 | **STEP 5** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
-| **STEP 6-8** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, and the resolved provider skills dir (`qa-project/`). Single named exception: STEP 2's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
+| **STEP 6-9** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and STEP 9's root `.gitignore`. Single named exception: STEP 2's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
 | **STEP 8** | `design.md` not read | Invent screens/routes | Derive each screen entry from the design docs |
-| **STEP 9** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
-| **STEP 9** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
-| **STEP 10** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
-| **STEP 10** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
+| **STEP 9** | QA evidence block not materialized exactly once | Running migration or smoke test | Normalize the QA block while preserving installer-managed and user-authored content |
+| **STEP 10** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
+| **STEP 10** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
+| **STEP 11** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
+| **STEP 11** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
 | **STEP 1.5** | Receipt absent but materialized state present | Treating the project as first-run and re-materializing | Backfill the receipt at contract 1 per `add-setup-contract`, then continue |
 | **STEP 1.5** | Recipe chain has a hole, or `RECORDED > CURRENT` | Improvising an upgrade | REFUSE and escalate to the user |
-| **STEP 11** | Always | Editing or deleting an existing Decision Log row | Append only |
+| **STEP 12** | Always | Editing or deleting an existing Decision Log row | Append only |
 
 ---
 
 ## Materializes
 
-> **Single source of truth for every shape this command writes.** STEP 6, STEP 7 and STEP 8 write exactly what is declared here — they do not restate a shape. The framework build extracts this block into `.codeadd/contracts.json`; changing anything below moves `shape` and the build will demand a `version` bump. Resource-path variables (`{{cmd:}}`, `{{skill:}}`, `{{addpath:}}`) are FORBIDDEN inside this block — they resolve per provider and would produce a different `shape` per build target.
+> **Single source of truth for every shape this command writes.** STEP 6 through STEP 9 write exactly what is declared here — they do not restate a shape. The framework build extracts this block into `.codeadd/contracts.json`; changing anything below moves `shape` and the build will demand a `version` bump. Resource-path variables (`{{cmd:}}`, `{{skill:}}`, `{{addpath:}}`) are FORBIDDEN inside this block — they resolve per provider and would produce a different `shape` per build target.
 
 ```yaml
 contract: add.qa-setup
-version: 1
-shape: sha256:7e209afe495cef57
+version: 2
+shape: sha256:4352695bba17be46
 recipes: skills/add-qa/references/setup-contract.md
 paths:
   - path: docs/qa/config.json
@@ -87,6 +89,9 @@ paths:
     owner: shared
     co-owner: add.plan STEP 10.0
     step: 8
+  - path: .gitignore
+    owner: shared
+    step: 9
 ```
 
 ### docs/qa/config.json
@@ -119,6 +124,14 @@ paths:
 }
 ```
 
+### .gitignore
+
+```gitignore
+# ADD QA evidence - managed by add.qa-setup
+docs/features/**/_tests/run-*/
+# END ADD QA evidence
+```
+
 ### `<provider skills dir>/qa-project/SKILL.md`
 
 ```markdown
@@ -138,6 +151,7 @@ description: Use when authoring E2E specs (/add.test) or running QA (/add.qa) in
 - **Screenshots:** `<screenshot API>` → `_tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` when single-state)
 - **Computed styles:** `_tests/run-NNN/computed-styles/<screen>.<viewport>.json` (minified; one file per screen × viewport, capturing the resolved values for each `## Design Contract` dimension verified by computed style)
 - **a11y:** <axe-core wiring, e.g. @axe-core/playwright>
+- **Evidence lifecycle:** allocate with `.codeadd/scripts/qa-evidence.sh next`; new runs write only to `_tests/run-NNN/`. `/add.done` alone promotes the reviewed baseline to immutable `_tests/final/run-NNN/`.
 
 ## Managed App Lifecycle
 Both `/add.test` (green-confirm) and `/add.qa` (run) invoke this procedure:
@@ -176,7 +190,7 @@ Read {{skill:add-dev-environment-setup/SKILL.md}} — reuse its OS-detection + c
 Read `SETUP_QA:` / `SETUP_QA_CONTRACT:` / `SETUP_QA_BEHIND:` from the STEP 1.1 output, then run the {{skill:add-setup-contract/SKILL.md}} procedure against `docs/qa/qa-setup.md`.
 
 Outcome sets `SETUP_STATE` for the rest of the run:
-- `FIRST-RUN` — no receipt, no materialized state. Materialize normally; STEP 11 creates the receipt.
+- `FIRST-RUN` — no receipt, no materialized state. Materialize normally; STEP 12 creates the receipt.
 - `UNRECEIPTED` — materialized state, no receipt. Backfill at contract 1 (⛔ never re-materialize over it), then reconcile.
 - `CURRENT` — recorded contract equals the shipped one. Drift check only.
 - `BEHIND` — present the declared deltas, CONFIRM, execute sequentially.
@@ -198,8 +212,8 @@ Read `QA_FEATURE_STATE` — the RAW manifest value. Resolve `unset` / `no-manife
 
 ### 2.2 Offer the enable (confirm-then-execute)
 IF the feature resolves to disabled → explain what stays broken while it is off, show the exact command `codeadd features enable qa-pipeline`, and run it ONLY after explicit confirmation — the same discipline as the STEP 4 installs.
-On decline → record it for the STEP 13 hand-off and continue setup.
-Record the outcome for STEP 11 as `qa-pipeline-feature`: `enabled` | `already-enabled` | `declined` | `enable-noop`.
+On decline → record it for the STEP 14 hand-off and continue setup.
+Record the outcome for STEP 12 as `qa-pipeline-feature`: `enabled` | `already-enabled` | `declined` | `enable-noop`.
 
 ### 2.3 Verify the enable actually landed
 After a confirmed enable, probe the installed plan command ({{cmd:add.plan}}) for the injected `STEP 10.0` QA-Spec section. On a pre-sidecar install (`injection-points.json` absent) the CLI reports success while injecting nothing.
@@ -230,11 +244,11 @@ Prerequisites (adapt commands to the detected OS/provider):
 - **chromium for Playwright** — e.g. `npx playwright install chromium`. Verify with a trivial headless launch.
 - **Playwright MCP server (optional — only the live-driving arm of `/add.qa` needs it)** — the server runs via `npx @playwright/mcp@latest`; wire it as an MCP server for the active provider. For Claude Code: `claude mcp add playwright -- npx @playwright/mcp@latest`. For other providers, add the equivalent MCP server entry to that provider's MCP config (the same `npx @playwright/mcp@latest` command).
 
-⛔ Skip a prerequisite only if STEP 3 proved it already **functional**. ⛔ If the user declines a command, stop that install and record it as a remaining manual step in the hand-off (STEP 13).
+⛔ Skip a prerequisite only if STEP 3 proved it already **functional**. ⛔ If the user declines a command, stop that install and record it as a remaining manual step in the hand-off (STEP 14).
 
 After installs, confirm the MCP server is reachable AND answers a trivial call. If it does not, the wiring is incomplete — surface it; `/add.qa` cannot drive without it.
 
-Record each prerequisite's outcome for STEP 11 as `installed` | `already-present` | `declined` | `failed` | `not-offered`. A declined prerequisite is a recorded decision, not an unfinished install — it must never be re-asked on a later run unless the user passes `--upgrade`.
+Record each prerequisite's outcome for STEP 12 as `installed` | `already-present` | `declined` | `failed` | `not-offered`. A declined prerequisite is a recorded decision, not an unfinished install — it must never be re-asked on a later run unless the user passes `--upgrade`.
 
 ---
 
@@ -259,7 +273,7 @@ Read `migration.detected` + `migration.decision` from the receipt (empty when `S
 
 ### 5.3 Decide
 - **ASK** → describe what was detected and ask whether to migrate it into the code-addiction QA pipeline. Set `MIGRATE = true` ONLY on explicit confirmation. Never enter migration mode silently.
-- Record for STEP 11: `migration.detected = DETECTED`, `migration.decision` = `migrated` | `declined` | `none-found`, `migration.decided-at` = today (omit when `none-found`).
+- Record for STEP 12: `migration.detected = DETECTED`, `migration.decision` = `migrated` | `declined` | `none-found`, `migration.decided-at` = today (omit when `none-found`).
 
 ⛔ Do NOT gate this step on whether `docs/qa/config.json` exists. That proxy is what made migration permanently unreachable for a project that adopted a test runner after its first setup run.
 
@@ -307,11 +321,23 @@ Setup scaffolds the recipe **intent** from **`design.md` only** (the plan's QA a
 
 If a design doc is missing or thin, list the screen with a note rather than inventing routes — flag it for the user.
 
-**Name the remedy, don't just flag it.** A `design.md` that carries no `## Design Contract` or layout tree predates the current design schema — the gap is NOT fixable by hand-editing `screens.json`, because `expect` is derived from the contract. For every screen in that state, tell the user to regenerate the design: `/add.design <feature-id> [SFxx]` (or re-run `/add.plan`, whose STEP 8.1.0 check 4 detects the same drift and regenerates automatically). Carry the list into the STEP 13 hand-off — until those designs are regenerated, `@qa-agent`'s deterministic conformance axis has nothing to compare against.
+**Name the remedy, don't just flag it.** A `design.md` that carries no `## Design Contract` or layout tree predates the current design schema — the gap is NOT fixable by hand-editing `screens.json`, because `expect` is derived from the contract. For every screen in that state, tell the user to regenerate the design: `/add.design <feature-id> [SFxx]` (or re-run `/add.plan`, whose STEP 8.1.0 check 4 detects the same drift and regenerates automatically). Carry the list into the STEP 14 hand-off — until those designs are regenerated, `@qa-agent`'s deterministic conformance axis has nothing to compare against.
 
 ---
 
-## STEP 9: Autonomous Migration (IF MIGRATE)
+## STEP 9: Ignore Working QA Evidence
+
+Target: root `.gitignore` (shared, co-owned state; never receipt-hashed).
+
+Execute `bash .codeadd/scripts/qa-evidence.sh ensure-ignore "."`. The deterministic operation materializes the exact block declared in `## Materializes` → `.gitignore`, keeps it separate from the installer-owned block, preserves unrelated lines, normalizes duplicates, and is byte-idempotent.
+
+The pattern intentionally ignores only working `docs/features/**/_tests/run-*/` directories. Do NOT add a `!final/` exception: `_tests/final/run-NNN/` does not match the working-run pattern and remains trackable.
+
+⛔ Do NOT continue to migration or smoke testing until the canonical QA block exists exactly once.
+
+---
+
+## STEP 10: Autonomous Migration (IF MIGRATE)
 
 ⛔ IF `MIGRATE` is false → SKIP this step.
 
@@ -319,28 +345,28 @@ Run the migration per {{skill:add-qa-migration/SKILL.md}}, which defines the ful
 
 Dispatch each command in the chain as a subagent via the Agent tool — autonomous dispatch is **Claude-only in v1** (per the pipeline's distribution decision). Direct autonomy through the **dispatch prompt only**; never edit a dispatched command's source.
 
-⛔ Do NOT merge the migration branch — hand it back for review in STEP 13.
+⛔ Do NOT merge the migration branch — hand it back for review in STEP 14.
 
 ---
 
-## STEP 10: Universal Smoke Test + Bounded Correction Loop
+## STEP 11: Universal Smoke Test + Bounded Correction Loop
 
-⛔ IF no feature with a scaffolded `screens.json` exists → DEFER the smoke test (there is nothing for `/add.qa` to validate). Do NOT scaffold a synthetic feature to force it. Note the deferral in STEP 13, then skip to hand-off.
+⛔ IF no feature with a scaffolded `screens.json` exists → DEFER only the smoke dispatch and correction loop (there is nothing for `/add.qa` to validate). Do NOT scaffold a synthetic feature. Record the deferral, then continue to STEP 12 so the receipt is written and validated before hand-off.
 
 Otherwise, close the loop on every run:
 
-### 10.1 Smoke test
+### 11.1 Smoke test
 Autonomously dispatch `/add.qa <feature-id>` (Agent tool) against the scaffolded feature. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
 
-### 10.2 Correction loop (max 3 attempts)
-On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build qa` to fix it, then re-run 10.1.
+### 11.2 Correction loop (max 3 attempts)
+On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build qa` to fix it, then re-run 11.1.
 
 - Guard: `/add.build qa` requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP 2 offers the enable).
-- ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP 13 with the accumulated findings from all attempts.
+- ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP 14 with the accumulated findings from all attempts.
 
 ---
 
-## STEP 11: Write the Receipt
+## STEP 12: Write the Receipt
 
 Target: `docs/qa/qa-setup.md`. Schema: `setup-receipt` in {{skill:add-doc-schemas/SKILL.md}} → `references/receipt.md`. Procedure: {{skill:add-setup-contract/SKILL.md}} step 5.
 
@@ -348,13 +374,13 @@ Write it on **every** run — including a run that changed nothing. A verified-c
 
 1. **Frontmatter.** `setup-contract` = the contract version now in force (from `.codeadd/contracts.json`, or the highest version fully applied if reconciliation stopped mid-chain). `framework-version` from the manifest (informational). `first-run` preserved byte-identically, or set to today on a true first run. `last-run` = today.
 2. **`materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift.
-3. **`prereqs`** from STEP 4, `qa-pipeline-feature` from STEP 2, `migration` from STEP 5.
+3. **`prereqs`** from STEP 4, `qa-pipeline-feature` from STEP 2, `migration` from STEP 5. Record `.gitignore` in `materialized` with `owner: shared` and `hash: null`.
 4. **`## Decision Log`.** APPEND one row per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, an accepted or declined upgrade, a backfill. ⛔ Never edit or delete an existing row. ⛔ Never log narration or instructions — a row records a choice, not a step.
 5. **`## TL;DR`.** State what the doc is, why it exists, and whether the project is current or behind.
 
 ---
 
-## STEP 12: Validation Gate (add-doc-schemas)
+## STEP 13: Validation Gate (add-doc-schemas)
 
 Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the command complete until every check passes or warns.
 
@@ -389,7 +415,7 @@ Output at end:
 
 ---
 
-## STEP 13: Hand-off
+## STEP 14: Hand-off
 
 Tell the user, in order:
 1. The `qa-pipeline` feature outcome (from STEP 2): enabled + verified, declined (remaining manual step: `codeadd features enable qa-pipeline`), or enable no-op detected (route: `codeadd update` / re-install).

@@ -26,7 +26,7 @@ Load `{{skill:add-qa/references/coordinator.md}}` before STEP 5 (merge rules + F
 STEP 1: Preflight Phase A → deterministic project-level probes (qa-preflight.sh) — collect ALL rows, no stop-at-first
 STEP 2: Resolve scope   → spec-driven (about.md path) or id-driven (feature-id [SFxx]), then Phase B + consolidated diagnosis
 STEP 3: Read specs      → about.md + DESIGN_FILE + _tests/screens.json
-STEP 4: Resolve run-NNN → run <surface>.qa.spec → reconcile coverage → dispatch @ux-agent ∥ @qa-agent per SF
+STEP 4: Resolve run-NNN → qa-evidence.sh union allocation → run spec → reconcile coverage → dispatch judge pair per SF
 STEP 5: Merge + write   → merge rules (dedupe/precedence/severity/contradiction) → _tests/run-NNN/{qa-validation-NNN.md, screenshots/}
 STEP 6: Summary         → counts by severity + per-judge counts + report path
 STEP 7: Validation Gate → qa-validation schema gate
@@ -40,6 +40,7 @@ STEP 7: Validation Gate → qa-validation schema gate
 | **STEP 1-2 preflight** | Only `degrade` rows failed | Stopping the run | Record each degraded axis under "Not covered / caveats" and continue |
 | **STEP 1** | `baseUrl` is a production/remote host (`QA_BASEURL_LOCAL=broken`) | Run at all | Refuse — the specs submit forms and create records; require a local/throwaway env |
 | **STEP 4.1** | Before 4.2 writes anything | Writing evidence under a `run-NNN` not yet resolved; recomputing the number later | Resolve `run-NNN` in 4.1; every later path reuses it |
+| **STEP 4.1** | Always | Scanning only working runs; writing directly under `_tests/final/` | Use `qa-evidence.sh next`; write the new audit under `_tests/run-NNN/` only |
 | **STEP 4.4** | Coverage reconciliation | Delegating coverage to a judge; downgrading an uncaptured in-contract screen to a note | Coordinator builds the table; uncaptured reachable screen = `blocker` |
 | **STEP 4.5** | Dispatch | Handing `@ux-agent` axe results or the computed-style JSON; letting one axis be judged twice | Split strictly per the axis ownership table |
 | **STEP 4.5** | A declared dimension's verification method did not run | Recording it as passing, or omitting it | Record `unverifiable` + the reason |
@@ -117,11 +118,20 @@ For each subfeature in scope, read:
 ## STEP 4: Run Persisted Specs + Dispatch the Dual Judge (one pair per SF, parallel)
 
 4.1 RESOLVE run-NNN FIRST — before any evidence is written.
-    Scan SCOPE_DIR/_tests/run-*/, take the highest NNN, add 1 (start 001).
+    Run `bash .codeadd/scripts/qa-evidence.sh next "${SCOPE_DIR}"` and parse
+    `RUN_ID` / `RUN_NUMBER`. It allocates from the union of working
+    `_tests/run-NNN/` and immutable `_tests/final/run-NNN/` evidence, so a fresh
+    clone with final evidence cannot reset the counter.
     This ONE number names every path below — screenshots/, computed-styles/,
     and the STEP 5 report. STEP 5 CONSUMES it; it does NOT recompute it.
     Resolving it late is how evidence lands under a directory the report
     never points at.
+    The destination remains `SCOPE_DIR/_tests/run-NNN/`. NEVER write a new audit
+    under `final/`; only `/add.done` promotes a reviewed working run.
+    Then run `bash .codeadd/scripts/qa-evidence.sh previous "${SCOPE_DIR}"
+    "${RUN_ID}"`; retain `PREVIOUS_REPORT` when present for the judge dispatch and
+    contract-amendment comparison. It resolves the immediate numeric predecessor
+    from working plus final evidence, never a deeper history walk.
 
 4.2 Run the surface's <surface>.qa.spec via the qa-project Managed App Lifecycle
     (probe → boot-bg + wait-ready if down → run → teardown-iff-booted).
@@ -218,7 +228,7 @@ For each subfeature in scope, read:
 - ⛔ Run the reference's **capability validation** before writing. An invalid route is a schema violation — do NOT write the report with it; fix the derivation.
 - Write the **`## Fix Routing`** section per the reference's template and layer ordering.
 
-Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` already resolved in STEP 4.1 — do NOT recompute it here. Set the report's `judged-contract` frontmatter to the `provenance` hash of the `DESIGN_FILE` it judged; if that hash differs from the previous run's `judged-contract`, note *"contract amended since run-(NNN-1)"* plus the amended dimensions — a criterion that flipped green ONLY because the contract was amended is not a fix. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
+Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation` schema (template carried by the `add-qa` skill), using the `run-NNN` and `PREVIOUS_REPORT` already resolved in STEP 4.1 — do NOT recompute either here. Set the report's `judged-contract` frontmatter to the `provenance` hash of the `DESIGN_FILE` it judged; if that hash differs from the previous report's `judged-contract`, note *"contract amended since run-NNN"* plus the amended dimensions — a criterion that flipped green ONLY because the contract was amended is not a fix. Copy each curated screenshot into `SCOPE_DIR/_tests/run-NNN/screenshots/`, preserving `<screen>.<state>.<viewport>.png` names so the report's relative links resolve.
 
 ---
 
