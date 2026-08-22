@@ -153,6 +153,47 @@ describe('extractInjectionPoints', () => {
     expect(() => extractInjectionPoints(skillSrc, 'c', 'command')).toThrow(/anchor/i);
     expect(() => extractInjectionPoints(pathSrc, 'c', 'command')).toThrow(/anchor/i);
   });
+
+  it('FAILS the build when a standalone feature pair has non-empty content', () => {
+    const src = [
+      'Anchor line.',
+      '<!-- feature:tdd:step9 -->',
+      '## STEP 9: baked leftover',
+      '<!-- /feature:tdd:step9 -->',
+    ].join('\n');
+    expect(() => extractInjectionPoints(src, 'add.plan.md', 'command')).toThrow(/add\.plan\.md:2/);
+    expect(() => extractInjectionPoints(src, 'add.plan.md', 'command')).toThrow(/feature:tdd:step9/);
+  });
+
+  it('FAILS the build when a standalone plugin pair has non-empty content', () => {
+    const src = [
+      'Anchor line.',
+      '<!-- plugin:gitnexus:graph -->',
+      'leftover',
+      '<!-- /plugin:gitnexus:graph -->',
+    ].join('\n');
+    expect(() => extractInjectionPoints(src, 'backend-agent.md', 'agent')).toThrow(/backend-agent\.md:2/);
+    expect(() => extractInjectionPoints(src, 'backend-agent.md', 'agent')).toThrow(/plugin:gitnexus:graph/);
+  });
+
+  it('FAILS the build when a standalone open marker has no close', () => {
+    const src = ['Anchor line.', '<!-- feature:tdd:gate -->', 'more prose'].join('\n');
+    expect(() => extractInjectionPoints(src, 'add.build.md', 'command')).toThrow(/add\.build\.md:2/);
+    expect(() => extractInjectionPoints(src, 'add.build.md', 'command')).toThrow(/feature:tdd:gate/);
+    expect(() => extractInjectionPoints(src, 'add.build.md', 'command')).toThrow(/unbalanced/i);
+  });
+
+  it('ignores non-empty content inside a prose-embedded (non-standalone) marker pair', () => {
+    const src = [
+      'Real anchor.',
+      'See `<!-- feature:tdd:gate --> leftover <!-- /feature:tdd:gate -->` in docs.',
+      '<!-- feature:tdd:gate -->',
+      '<!-- /feature:tdd:gate -->',
+    ].join('\n');
+    const pts = extractInjectionPoints(src, 'add.build', 'command');
+    expect(pts).toHaveLength(1);
+    expect(pts[0].section).toBe('gate');
+  });
 });
 
 // ---------------------------------------------------------------------------
