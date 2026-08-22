@@ -122,7 +122,7 @@ describe('plugins', () => {
     it('reads from CODEADD_PLUGINS_CATALOG and filters $schema-doc', () => {
       writeCatalog(catDir, {
         '$schema-doc': { description: 'doc' },
-        demo: { type: 'mcp', description: 'demo', detect: 'true' },
+        demo: { type: 'mcp', description: 'demo', detect: 'node -e "process.exit(0)"' },
       });
       const catalog = loadCatalog();
       expect(catalog).toHaveProperty('demo');
@@ -137,7 +137,7 @@ describe('plugins', () => {
 
   describe('validate', () => {
     it('returns true when the detect probe exits 0', () => {
-      expect(validate({ detect: 'true' })).toBe(true);
+      expect(validate({ detect: 'node -e "process.exit(0)"' })).toBe(true);
     });
 
     it('returns false when the detect probe exits non-zero', () => {
@@ -182,7 +182,7 @@ describe('plugins', () => {
 
     it('injects fragments across providers (marker-free) and activates skills', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: ['gx-skill'] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: ['gx-skill'] },
       });
       scaffoldProject(cwd, {
         providers: ['claude', 'cursor'],
@@ -209,7 +209,7 @@ describe('plugins', () => {
 
     it('records hashes for modified command files', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: [] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [] },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
@@ -226,7 +226,7 @@ describe('plugins', () => {
   describe('disablePlugin', () => {
     it('removes injections and skills, restores the file, flips manifest', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: ['gx-skill'] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: ['gx-skill'] },
       });
       scaffoldProject(cwd, {
         providers: ['claude', 'cursor'],
@@ -260,7 +260,7 @@ describe('plugins', () => {
     it('enablePlugin injects agents alongside commands and reports a count', () => {
       writeCatalog(catDir, {
         gx: {
-          type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: [],
+          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [],
           agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
         },
       });
@@ -287,7 +287,7 @@ describe('plugins', () => {
     it('disablePlugin removes agent injection — byte-identical round-trip', () => {
       writeCatalog(catDir, {
         gx: {
-          type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: [],
+          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [],
           agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
         },
       });
@@ -310,7 +310,7 @@ describe('plugins', () => {
     it('re-enable is idempotent (no drift)', () => {
       writeCatalog(catDir, {
         gx: {
-          type: 'mcp', description: 'g', detect: 'true', injects: [], skills: [],
+          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: [], skills: [],
           agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
         },
       });
@@ -331,7 +331,7 @@ describe('plugins', () => {
     it('applyEnabledPlugins re-applies agent injection', () => {
       writeCatalog(catDir, {
         gx: {
-          type: 'mcp', description: 'g', detect: 'true', injects: [], skills: [],
+          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: [], skills: [],
           agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
         },
       });
@@ -356,7 +356,7 @@ describe('plugins', () => {
   describe('applyEnabledPlugins', () => {
     it('re-applies only enabled plugins from the manifest', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'true', injects: ['add.new'], skills: [] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [] },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
@@ -384,7 +384,7 @@ describe('plugins', () => {
   describe('getPluginStates', () => {
     it('lists catalog plugins with enabled defaulting to false', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'graph nav', detect: 'true' },
+        gx: { type: 'mcp', description: 'graph nav', detect: 'node -e "process.exit(0)"' },
       });
       scaffoldProject(cwd, { providers: ['claude'], pluginName: 'gx', sectionsByCommand: {}, skills: [] });
       const states = getPluginStates(cwd);

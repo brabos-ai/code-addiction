@@ -29,7 +29,7 @@ function readMap() {
 }
 
 function readFile(filePath) {
-  return fs.readFileSync(filePath, 'utf8');
+  return fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
 }
 
 function writeFile(filePath, content) {
@@ -92,8 +92,9 @@ function stripHtmlComments(content) {
 // offsets, line shifts, and most user edits). The markers are then stripped.
 // ---------------------------------------------------------------------------
 
-// Matches an OPEN injection marker (closers start with `/` and are ignored).
+// Matches an OPEN injection marker (closers start with `/`).
 const OPEN_MARKER_RE = /^\s*(feature|plugin):([^:\s]+):(\S+?)\s*$/;
+const CLOSE_MARKER_RE = /^\s*\/(feature|plugin):([^:\s]+):(\S+?)\s*$/;
 // Resource-path variables that resolve differently per provider — illegal in an anchor.
 const ANCHOR_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):/;
 
@@ -135,7 +136,52 @@ function nonBlankLines(text) {
  * @returns {Array<{namespace,name,section,resource:{name,kind},anchor:{text,ordinal,position,next}}>}
  * @throws if a chosen anchor line carries a {{cmd:}}/{{skill:}}/{{addpath:}} variable
  */
+/**
+ * Standalone feature/plugin pairs must be empty and balanced. Non-empty
+ * content between markers ships in every provider baseline; an open without
+ * a close is authoring drift. Prose-embedded markers are ignored.
+ * @param {string} rawContent
+ * @param {string} resourceName
+ */
+function assertEmptyMarkerPairs(rawContent, resourceName) {
+  const commentRe = /<!--([\s\S]*?)-->/g;
+  const markers = [];
+  let m;
+  while ((m = commentRe.exec(rawContent)) !== null) {
+    const start = m.index;
+    const end = m.index + m[0].length;
+    if (!isStandaloneMarker(rawContent, start, end)) continue;
+    const line = rawContent.slice(0, start).split('\n').length;
+    const open = m[1].match(OPEN_MARKER_RE);
+    const close = m[1].match(CLOSE_MARKER_RE);
+    if (open) {
+      markers.push({ kind: 'open', ns: open[1], name: open[2], section: open[3], start, end, line });
+    } else if (close) {
+      markers.push({ kind: 'close', ns: close[1], name: close[2], section: close[3], start, end, line });
+    }
+  }
+
+  for (let i = 0; i < markers.length; i++) {
+    const mk = markers[i];
+    if (mk.kind !== 'open') continue;
+    const key = `${mk.ns}:${mk.name}:${mk.section}`;
+    const close = markers.slice(i + 1).find((c) => c.kind === 'close' && `${c.ns}:${c.name}:${c.section}` === key);
+    if (!close) {
+      throw new Error(
+        `Unbalanced injection marker ${key} in ${resourceName}:${mk.line} — open has no close`,
+      );
+    }
+    if (rawContent.slice(mk.end, close.start).trim().length > 0) {
+      throw new Error(
+        `Non-empty injection pair ${key} in ${resourceName}:${mk.line} — marker pairs must be empty`,
+      );
+    }
+  }
+}
+
 function extractInjectionPoints(rawContent, resourceName, resourceKind) {
+  assertEmptyMarkerPairs(rawContent, resourceName);
+
   const commentRe = /<!--([\s\S]*?)-->/g;
   let surviving = '';
   let lastIndex = 0;

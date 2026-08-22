@@ -25,7 +25,7 @@ import { resolveSelected } from './providers.js';
  */
 export function parseFragmentSections(fragmentContent) {
   const sections = new Map();
-  const regex = /<!-- section:(\S+) -->\n([\s\S]*?)<!-- \/section:\1 -->/g;
+  const regex = /<!-- section:(\S+) -->\r?\n([\s\S]*?)<!-- \/section:\1 -->/g;
   let match;
   while ((match = regex.exec(fragmentContent)) !== null) {
     sections.set(match[1], match[2]);

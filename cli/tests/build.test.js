@@ -7,6 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const {
   stripHtmlComments,
+  extractInjectionPoints,
   resolveResourcePaths,
   lintResourcePaths,
   copyDirRecursive,
@@ -42,9 +43,11 @@ describe('stripHtmlComments', () => {
     expect(stripHtmlComments(input)).toBe('Content');
   });
 
-  it('strips feature/plugin injection markers (consumed into the sidecar at build)', () => {
-    const input = '<!-- feature:tdd:step -->injected content<!-- /feature:tdd:step -->';
-    expect(stripHtmlComments(input)).toBe('injected content');
+  it('does not let between-marker feature content survive the build', () => {
+    const src = ['# Title', '<!-- feature:tdd:step -->', 'injected content', '<!-- /feature:tdd:step -->'].join('\n');
+    expect(() => extractInjectionPoints(src, 'fixture.md', 'command')).toThrow(/fixture\.md:\d+/);
+    expect(() => extractInjectionPoints(src, 'fixture.md', 'command')).toThrow(/feature:tdd:step/);
+    expect(stripHtmlComments('<!-- feature:tdd:step --><!-- /feature:tdd:step -->')).toBe('');
   });
 
   it('collapses triple+ newlines to double', () => {
@@ -715,4 +718,15 @@ describe('skill sibling files integration', () => {
     expect(claudeOut).not.toContain('{{skill:');
     expect(cursorOut).not.toContain('{{skill:');
   });
+});
+
+describe('built add.plan baseline is marker-pair-empty', () => {
+  for (const provider of ['claude', 'cursor', 'opencode']) {
+    it(`${provider} add.plan has zero baked STEP 9 headings`, () => {
+      const file = path.resolve(import.meta.dirname, '..', '..', 'framwork', `.${provider}`, 'commands', 'add.plan.md');
+      const text = fs.readFileSync(file, 'utf8');
+      const hits = text.match(/## STEP 9: Test-Spec Subagent/g) ?? [];
+      expect(hits).toHaveLength(0);
+    });
+  }
 });

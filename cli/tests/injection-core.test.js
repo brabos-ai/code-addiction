@@ -36,6 +36,11 @@ describe('parseFragmentSections', () => {
   it('returns empty map when no sections', () => {
     expect(parseFragmentSections('no markers here').size).toBe(0);
   });
+
+  it('parses sections when the fragment uses CRLF line endings', () => {
+    const frag = '<!-- section:a -->\r\nbody\r\n<!-- /section:a -->';
+    expect(parseFragmentSections(frag).get('a')).toBe('body\r\n');
+  });
 });
 
 // ---------------------------------------------------------------------------

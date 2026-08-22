@@ -80,7 +80,7 @@ describe('feature injection round-trip on real built files', () => {
 describe('gitnexus plugin injection round-trip on real built files', () => {
   function forceDetectableCatalog() {
     const real = JSON.parse(fs.readFileSync(path.join(ROOT, 'cli', 'src', 'plugins.json'), 'utf8'));
-    const entry = { ...real.gitnexus, detect: 'true' }; // bypass the MCP probe in this hermetic test
+    const entry = { ...real.gitnexus, detect: 'node -e "process.exit(0)"' };
     const p = path.join(tmp, 'catalog.json');
     fs.writeFileSync(p, JSON.stringify({ gitnexus: entry }, null, 2));
     process.env.CODEADD_PLUGINS_CATALOG = p;
