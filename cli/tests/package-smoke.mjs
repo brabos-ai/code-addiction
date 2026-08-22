@@ -18,7 +18,8 @@ const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const USAGE = 'Usage: codeadd <command>';
 
 function run(cmd, args, options = {}) {
-  const result = spawnSync(cmd, args, { encoding: 'utf8', timeout: 120000, ...options });
+  const shell = process.platform === 'win32' && cmd.endsWith('.cmd');
+  const result = spawnSync(cmd, args, { encoding: 'utf8', timeout: 120000, shell, ...options });
   if (result.error) {
     throw new Error(`could not run ${cmd} ${args.join(' ')}: ${result.error.message}`);
   }
