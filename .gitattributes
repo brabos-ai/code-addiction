@@ -1,0 +1,8 @@
+# Normalize all line endings to LF in the repository and working tree.
+# The test suite asserts LF-strict content (e.g. /^---\n/ frontmatter checks),
+# and CI runs on Linux — Windows checkouts must not smudge text files to CRLF.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
