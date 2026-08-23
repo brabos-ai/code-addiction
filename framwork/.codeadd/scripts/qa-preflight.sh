@@ -26,7 +26,7 @@ PHASE="${1:-}"
 
 # --- Phase A: project-level probes ---
 phase_a() {
-  local FEATURE_STATE CONFIG BASEURL HOST LOCAL SKILL d
+  local FEATURE_STATE CONFIG BASEURL HOST LOCAL SKILL d RECEIPT SIDECAR RECORDED CURRENT
 
   # Feature state (raw manifest read)
   if [ ! -f .codeadd/manifest.json ]; then
@@ -117,6 +117,40 @@ phase_a() {
     if [ -f "$d/skills/qa-project/SKILL.md" ]; then SKILL=ok; break; fi
   done
   echo "QA_PROJECT_SKILL=$SKILL"
+
+  # Receipt + shipped shape. Diagnosis only — callers decide block vs work-to-do.
+  RECEIPT="docs/qa/qa-setup.md"
+  SIDECAR=".codeadd/contracts.json"
+  if [ ! -f "$RECEIPT" ]; then
+    echo "QA_RECEIPT=missing"
+    echo "QA_CONTRACT_MATCH=not-probed"
+  else
+    RECORDED=$(awk 'NR==1 && $0~/^---\r?$/{f=1;next} f && $0~/^---\r?$/{exit} f' "$RECEIPT" 2>/dev/null | \
+      grep -E '^setup-shape:[[:space:]]*sha256:[0-9a-f]+[[:space:]]*\r?$' | \
+      sed -E 's/^setup-shape:[[:space:]]*(sha256:[0-9a-f]+).*$/\1/' | head -1 || true)
+    if [ -z "${RECORDED:-}" ]; then
+      echo "QA_RECEIPT=broken"
+      echo "QA_CONTRACT_MATCH=not-probed"
+    else
+      echo "QA_RECEIPT=ok"
+      if [ ! -f "$SIDECAR" ]; then
+        echo "QA_CONTRACT_MATCH=missing"
+      else
+        CURRENT=$(awk '/"add\.qa-setup"[[:space:]]*:/{f=1}
+                       f && /"shape"[[:space:]]*:[[:space:]]*"sha256:[0-9a-f]+"/{
+                           if (match($0, /sha256:[0-9a-f]+/)) print substr($0, RSTART, RLENGTH);
+                           exit
+                       }' "$SIDECAR" 2>/dev/null || true)
+        if [ -z "${CURRENT:-}" ]; then
+          echo "QA_CONTRACT_MATCH=missing"
+        elif [ "$RECORDED" = "$CURRENT" ]; then
+          echo "QA_CONTRACT_MATCH=ok"
+        else
+          echo "QA_CONTRACT_MATCH=broken"
+        fi
+      fi
+    fi
+  fi
 }
 
 # --- Phase B: feature-scoped probes ---

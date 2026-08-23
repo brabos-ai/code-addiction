@@ -20,7 +20,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.autopilot | Autonomous Feature Coordinator | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-tasks-checklist |
 | add.brainstorm | Explore ideas (READ-ONLY) | add-doc-schemas, add-ecosystem |
 | add.build | Development Execution Specialist. STEP 1.5 create-or-checkout of the feature branch via build-setup.sh (`F[NNNN]` + `--worktree` args). QA-Fix mode (`/add.build qa`) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
-| add.design | Thin dispatcher for the UX design contract — @ux-flow-agent → @ux-layout-agent → @ux-agent (critique), then coordinator consolidation into `design.md`. Manual entry point to the same pipeline add.plan 8.1 runs automatically; epic-aware (writes to the subfeature dir) | add-ux-design, add-doc-schemas, add-id-convention |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Final evidence preserves open findings; it is not a pass certificate | add-ecosystem, add-id-convention |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
@@ -29,7 +28,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-id-convention |
 | add.qa | Agent-judged QA validation — writes local working `_tests/run-NNN/` evidence, allocating and resolving predecessors across working + final history. Runs persisted specs + reads PNGs (live-drives with the `playwright` plugin), validates UX and functional delivery, and remains an audit, not a gate | add-qa (default), add-doc-schemas |
-| add.qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Setup contract v2 records `.gitignore` as shared state | add-dev-environment-setup, add-doc-schemas, add-qa-migration, add-setup-contract, add-subagent-driven-development |
+| add.qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add-dev-environment-setup, add-doc-schemas, add-qa-migration, add-setup-contract, add-subagent-driven-development |
 | add.review | Feature Code Review Specialist | add-code-review, add-delivery-validation, add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-security-audit, add-investigation |
 | add.test | Automated test generation. Parallel subagents per area; reports coverage (informational). Dispatches @e2e-agent when qa-pipeline feature enabled | add-backend-development, add-frontend-development, add-ecosystem |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
@@ -70,7 +69,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md, **and** author the `_tests/screens.json` screen catalog by read-merge-write — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
-| add-setup-contract | Reconcile a project's materialized state with the shipped setup contract — compare recorded vs current, execute declared upgrade deltas sequentially, refuse on a chain hole |
+| add-setup-contract | Compare a project's receipt `setup-shape` to the shipped sidecar `shape` and route FIRST-RUN / CURRENT / STALE |
 | add-skill-creator | Create and test skills under real pressure |
 | add-stripe | Stripe integration, price versioning, grandfathering |
 | add-subagent-driven-development | Subagent coordination with quality gates |
@@ -85,9 +84,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 | Agent | Purpose | Dispatched by |
 |-------|---------|---------------|
-| ux-flow-agent | Flow & interaction architect — design-system inspection (tokens, shell, component audit, visual patterns) then screen inventory, action classification, entry points, state transitions. Writes temp design-context.md + design-flow.md; early-exits `frontend_false` | add.plan (8.1.1), add.design |
-| ux-layout-agent | Layout & component specialist — layout tree + component composition + Design Contract per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2), add.design |
-| ux-agent | UX design owner (three modes) — critique mode: adversarial review of the flow/layout pair vs the Critique Rubric in add-ux-design (writes temp design-review.md); review mode: post-delivery judgement of shipped screens vs the `## Design Contract` (judgement axes + spec-gap); fix mode: amends `design.md`'s Design Contract + Design Review on a routed `design-spec` finding (the ONLY mode that writes, and the only agent permitted to write `design.md`); free-form UX assistance on direct use. No memory | add.plan (critique), add.design, add.qa (review, ∥ qa-agent), add.build qa (routed design-spec fixes) |
+| ux-flow-agent | Flow & interaction architect — design-system inspection (tokens, shell, component audit, visual patterns) then screen inventory, action classification, entry points, state transitions. Writes temp design-context.md + design-flow.md; early-exits `frontend_false` | add.plan (8.1.1) |
+| ux-layout-agent | Layout & component specialist — layout tree + component composition + Design Contract per screen, new-component specs, states, every classified action served by a UI element. Writes temp design-layout.md (needs design-flow.md) | add.plan (8.1.2) |
+| ux-agent | UX design owner (three modes) — critique mode: adversarial review of the flow/layout pair vs the Critique Rubric in add-ux-design (writes temp design-review.md); review mode: post-delivery judgement of shipped screens vs the `## Design Contract` (judgement axes + spec-gap); fix mode: amends `design.md`'s Design Contract + Design Review on a routed `design-spec` finding (the ONLY mode that writes, and the only agent permitted to write `design.md`); free-form UX assistance on direct use. No memory | add.plan (critique), add.qa (review, ∥ qa-agent), add.build qa (routed design-spec fixes) |
 | backend-agent | Backend implementation specialist | add.build, add.autopilot |
 | frontend-agent | Frontend implementation specialist | add.build, add.autopilot |
 | reviewer-agent | Code review (read-only) | add.review |
@@ -126,16 +125,16 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-backend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-frontend-development | add.build, add.autopilot, add.plan, add.review, add.test |
 | add-database-development | add.build, add.autopilot, add.plan, add.review, add.test |
-| add-ux-design | add.design, add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
+| add-ux-design | add.ux, add.build, add.autopilot, add.review, add.hotfix, add.plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.review, add.build |
 | add-security-audit | add.audit, add.review |
-| add-setup-contract | add.qa-setup (STEP 1.5 reconciliation + STEP 11 receipt rewrite) |
+| add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
 | add-doc-reviewer | add.new, add.brainstorm (via doc-reviewer-agent) |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
-| add-doc-schemas | add.new, add.design, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.wiki, add.diagnose |
+| add-doc-schemas | add.new, add.brainstorm, add.audit, add.plan, add.build, add.autopilot, add.hotfix, add.done, add.pull-request, add.init, add.wiki, add.diagnose |
 | add-architecture-discovery | add.audit, add.wiki |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-wiki-maintenance | add.wiki (update mode), add.done (STEP 4.9) |
@@ -145,14 +144,14 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | qa-agent | add.qa (dispatched per SF, parallel with ux-agent review) |
 | e2e-agent | add.test (dispatched when qa-pipeline feature enabled), add.build qa (routed test-file fixes) |
-| ux-flow-agent | add.plan (STEP 8.1.1), add.design (STEP 3) — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
-| ux-layout-agent | add.plan (STEP 8.1.2), add.design (STEP 4) — depends on ux-flow-agent's design-flow.md |
-| ux-agent | add.plan (STEP 8.1.3 critique), add.design (STEP 5), add.qa (STEP 4.5 review mode, ∥ qa-agent), add.build qa (fix mode — routed design-spec amendments), free-form direct use |
+| ux-flow-agent | add.plan (STEP 8.1.1) — and everything downstream of `design.md`: add.plan 8.4 frontend, add.qa UX axis, add-qa-spec |
+| ux-layout-agent | add.plan (STEP 8.1.2) — depends on ux-flow-agent's design-flow.md |
+| ux-agent | add.plan (STEP 8.1.3 critique), add.qa (STEP 4.5 review mode, ∥ qa-agent), add.build qa (fix mode — routed design-spec amendments), free-form direct use |
 | add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
 | add-feature-specification (about.md) | add.qa (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.qa (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add.qa (drive), qa-agent (drive) — enhancement/live arm; add.qa runs without it (read-PNG) |
-| add-id-convention | add.plan, add.design, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add-doc-schemas' `references/new-feature.md`; add.build's build-setup.sh enforces the format at branch creation) |
+| add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add-doc-schemas' `references/new-feature.md`; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.autopilot (tasks.md schema and tick rules) |
 | add-tdd | add.plan, add.build, add.review, add.test |
 | add-test-specification | add.plan (STEP 9) |
@@ -161,7 +160,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 
 | Flow | Sequence | When to use |
 |------|----------|-------------|
-| Complete | brainstorm → new → design → plan → build → review → done | Complex features with UI |
+| Complete | brainstorm → new → plan → build → review → done | Complex features with UI (design is produced inside plan STEP 8.1) |
 | QA-validated | new → plan → build → test → **qa ⇄ build qa** → review → done | UI features with `qa-pipeline` on. Working runs stay local; review binds the final tree to exact runs and done snapshots them automatically before merge |
 | Standard | new → plan → build → review → done | Features without complex UI |
 | Lean | new → build → done | Small changes, quick tasks |
@@ -172,7 +171,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | New Project | init → build → done | Create new project/feature |
 | Analysis | wiki / audit | Check project health |
 
-> **Branch creation:** the documental steps (brainstorm → new → design → plan) make no git writes — `/add.new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** (or **autopilot**) step via `build-setup.sh`.
+> **Branch creation:** the documental steps (brainstorm → new → plan) make no git writes — `/add.new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** (or **autopilot**) step via `build-setup.sh`.
 
 ## Command Next-Steps Routing
 
@@ -189,11 +188,9 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.diagnose | route=feature | `/add.new` | Confirmed functional gap |
 | add.diagnose | route=extend | `/add.new` or `/add.plan` | Extend existing feature — load prior context |
 | add.diagnose | route=no-action | done | No real problem — stop here |
-| add.new | feature has complex UI (3+ screens) | `/add.design` | Produce the UX contract up front. Optional now — `/add.plan` STEP 8.1 runs the same pipeline automatically whenever a screen is involved; route here when the user wants the design settled before planning, or wants to regenerate it standalone |
-| add.new | feature needs technical planning | `/add.plan` | Architect before building |
+| add.new | feature needs technical planning | `/add.plan` | Architect before building. STEP 8.1 produces the UX contract when the feature touches UI |
 | add.new | feature is simple (1-2 files) | `/add.build` | Skip planning, build directly |
 | add.new | user wants zero interaction | `/add.autopilot` | Autonomous end-to-end |
-| add.design | always | `/add.plan` or `/add.build` | UX spec done, plan or implement |
 | add.plan | default | `/add.build` | Most common path |
 | add.plan | user wants zero interaction | `/add.autopilot` | Autonomous implementation |
 | add.build | mode=QA-FIX (`/add.build qa`) | `/add.qa` | Re-run the audit — writes the next `run-NNN` for side-by-side comparison. Loop until clean, THEN `/add.review` |

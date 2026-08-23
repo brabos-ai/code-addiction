@@ -73,11 +73,10 @@ Step        Command             What happens                        Output
 ───────────────────────────────────────────────────────────────────────────────
 0. Explore  /add.brainstorm     Brainstorm ideas (read-only)        Initial concept
 1. Discover /add.new            AI-guided feature discovery          about.md
-2. Design   /add.design         UX spec (auto-run inside /add.plan)  UI/UX specification
-3. Plan     /add.plan           Technical planning + checklist       plan.md
-4. Code     /add.build          Subagent-driven implementation       Working code
-5. Review   /add.review          Automated code review + validation   Quality gate
-6. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
+2. Plan     /add.plan           Technical planning + UX contract     plan.md + design.md
+3. Code     /add.build          Subagent-driven implementation       Working code
+4. Review   /add.review          Automated code review + validation   Quality gate
+5. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
 ```
 
 ### Choose your flow
@@ -86,9 +85,8 @@ Pick the shortest path that fits. Less ceremony, same quality.
 
 ```
 COMPLETE  (complex features with UI)
-  brainstorm --> new --> design --> plan --> build --> review --> done
-                         (design is optional: /add.plan runs the same
-                          UX pipeline automatically for UI features)
+  brainstorm --> new --> plan --> build --> review --> done
+                         (design is produced inside /add.plan STEP 8.1)
 
 STANDARD  (features without complex UI)
   new --> plan --> build --> review --> done

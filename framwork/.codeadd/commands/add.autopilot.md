@@ -204,7 +204,7 @@ bash .codeadd/scripts/status.sh
 
 - `about.md` exists? → If not, inform user to run `/feature` and STOP
 - `discovery.md` exists? → If not, inform user to run `/feature` and STOP
-- Feature has frontend components AND `design.md` missing? → Warn user to run `/add.design`. Resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback) — on an epic the feature-level path is normally empty, so warning from it alone is a false alarm
+- Feature has frontend components AND `design.md` missing? → Run `{{cmd:add.plan}}` (STEP 8.1 writes the contract). Resolve the path per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback) — on an epic the feature-level path is normally empty, so warning from it alone is a false alarm
 
 ---
 

@@ -297,7 +297,7 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ## Completion
 
-Summarize created artifacts. Suggest next command based on discovery: `/add.plan` for technical planning, `/add.build` for implementation, `/add.design` for UI features.
+Summarize created artifacts. Suggest next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
 
 ---
 

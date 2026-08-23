@@ -144,7 +144,9 @@ describe('setup contract (0061)', () => {
     for (const p of ['docs/qa/config.json', '_tests/screens.json', 'qa-project/SKILL.md', '.gitignore']) {
       expect(block).toContain(p);
     }
-    expect(block).toMatch(/version:\s*2/);
+    expect(block).toMatch(/^shape:\s*sha256:[0-9a-f]{16}\s*$/m);
+    expect(block).not.toMatch(/^version:/m);
+    expect(block).not.toMatch(/^recipes:/m);
     expect(block).toContain('docs/features/**/_tests/run-*/');
   });
 
@@ -226,15 +228,13 @@ describe('setup contract (0061)', () => {
     expect(readMap().skills['add-setup-contract']).toBeDefined();
   });
 
-  it('resolves RECIPES against the provider skills dir, never .codeadd/', () => {
-    // The wording IS the fix. `.codeadd/` ships only scripts/fragments/templates/
-    // plugins + the sidecars — no skills/ — so an agent told to look there finds
-    // nothing and the first contract bump becomes a hard refusal for every project.
-    // The packaging test pins that the file SHIPS; this pins where we send the agent.
+  it('add-setup-contract compares shapes and has no recipe/delta/backfill path', () => {
     const skill = readSource('skills/add-setup-contract/SKILL.md');
-    const row = skill.split('\n').find((l) => l.includes('`RECIPES`'));
-    expect(row).toBeDefined();
-    expect(row).toMatch(/provider/i);
-    expect(row).toMatch(/NOT under `\.codeadd\/`/);
+    expect(skill).toMatch(/setup-shape/);
+    expect(skill).toMatch(/FIRST-RUN/);
+    expect(skill).toMatch(/STALE/);
+    expect(skill).not.toMatch(/`RECIPES`/);
+    expect(skill).not.toMatch(/v\(N-1\)/);
+    expect(skill).not.toMatch(/^## v\d/m);
   });
 });

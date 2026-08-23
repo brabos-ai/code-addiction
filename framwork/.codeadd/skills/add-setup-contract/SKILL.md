@@ -1,82 +1,83 @@
 ---
 name: add-setup-contract
-description: Use when a state-materializing command starts or is asked to upgrade — reads the setup receipt, compares the recorded contract against the shipped one, executes the declared upgrade deltas sequentially, and rewrites the receipt even on a verified-current no-op. Consumed by /add.qa-setup STEP 1.5 and STEP 11.
+description: Use when a state-materializing command starts — compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add.qa-setup STEP 1.5 and STEP 12.
 ---
 
-# Setup Contract Reconciliation
+# Setup Shape Comparison
 
 ## Overview
 
-Procedure for reconciling a project's materialized state with the contract the framework currently ships. It compares two integers, executes a declared delta list, and refuses when the declaration is incomplete. It never reads a changelog and never decides what to improve — an agent interpreting prose produces a different upgrade on every run, which is the failure this procedure exists to prevent.
+Procedure for comparing a project's materialized state with the shape the framework currently ships. It compares two hashes and routes. It never reads a changelog and never decides what to improve.
 
 ## When to Use
 
-- A state-materializing command starts and must establish whether the project is first-run, current, behind, or unreceipted.
+- A state-materializing command starts and must establish whether the project is first-run, current, or stale.
 - The user passes `--upgrade` to such a command.
-- A command finishes materializing and must write or advance its receipt.
+- A command finishes materializing and must write or refresh its receipt.
 
 ## When NOT to Use
 
-- Corpus-derived staleness (the project wiki) — that is git-based and owned by `{{skill:add-wiki-maintenance/SKILL.md}}`. Two staleness mechanisms coexist deliberately: contract-based for materialized state, git-based for derived docs.
-- Deciding *whether* a feature is worth adopting. This procedure executes declared deltas; it takes no product decisions.
+- Corpus-derived staleness (the project wiki) — that is git-based and owned by `{{skill:add-wiki-maintenance/SKILL.md}}`. Two staleness mechanisms coexist deliberately: shape-based for materialized state, git-based for derived docs.
+- Deciding *whether* a feature is worth adopting. This procedure takes no product decisions.
 
 ## Inputs
 
 | Input | Source |
 |---|---|
 | `RECEIPT_PATH` | ``<command's doc root>/<command name without `add.`>.md`` — `add.qa-setup` → `docs/qa/qa-setup.md` |
-| `RECORDED` | `setup-contract` in the receipt frontmatter |
-| `CURRENT` | `contracts.<command>.version` in `{{addpath:contracts.json}}` |
-| `RECIPES` | `contracts.<command>.recipes` — a path relative to the **active provider's resource root**, e.g. `.claude/skills/add-qa/references/setup-contract.md` on Claude Code. ⛔ NOT under `.codeadd/`: skills install into per-provider directories, and `.codeadd/` carries only scripts, fragments, templates, plugins and the sidecars |
-| `SIGNAL` | `SETUP_QA:` / `SETUP_QA_CONTRACT:` / `SETUP_QA_BEHIND:` from `status.sh` |
+| `RECORDED` | `setup-shape` in the receipt frontmatter (`sha256:` + 16 hex) |
+| `CURRENT` | `contracts.<command>.shape` in `{{addpath:contracts.json}}` |
+| `SIGNAL` | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
+| `FORCE_UPGRADE` | `--upgrade` flag on the calling command |
 
 ## Procedure
 
 ### 1. Classify the project state
 
+Materialized state is present when any `owner: setup` path declared in the command's contract exists.
+
 | Receipt | Materialized state | Classification | Action |
 |---|---|---|---|
 | absent | absent | **FIRST-RUN** | Materialize normally, then write the receipt at `CURRENT` |
-| absent | present | **UNRECEIPTED** | Backfill: reconstruct the receipt from observed state at `setup-contract: 1`, change no other file, log the backfill. Then continue at step 2 |
-| present | any | **RECEIPTED** | Continue at step 2 |
+| absent | present | **STALE** | Re-materialize under the merge rules. Do not treat as FIRST-RUN |
+| present | any | Compare at step 2 | |
 
-Materialized state is "present" when any `owner: setup` path declared in the command's contract exists.
-
-⛔ Never treat an UNRECEIPTED project as FIRST-RUN. Re-materializing over an existing installation destroys the user's configuration.
+⛔ Never treat a project that already holds an `owner: setup` path as FIRST-RUN.
 
 ### 2. Compare
 
 | Condition | Action |
 |---|---|
-| `CURRENT` unreadable (no sidecar) | Pre-contracts install. Skip reconciliation entirely, report it, continue. Never guess a version |
-| `RECORDED > CURRENT` | **REFUSE.** The framework was downgraded, or the receipt is corrupt. Report both values and stop — do not downgrade materialized state |
-| `RECORDED == CURRENT` | Verified-current. Go to step 4 (drift check), then step 5 |
-| `RECORDED < CURRENT` | Behind by `CURRENT - RECORDED`. Go to step 3 |
+| `CURRENT` unreadable (no sidecar) | Pre-contracts install. Skip the compare, report it, continue. Never guess a shape |
+| `RECORDED` unreadable | **STALE** |
+| `RECORDED == CURRENT` and not `FORCE_UPGRADE` | **CURRENT**. Go to step 3 (drift check), then step 4 |
+| `RECORDED != CURRENT` or `FORCE_UPGRADE` | **STALE**. Re-materialize, then step 3, then step 4 |
 
-### 3. Execute the deltas (behind only)
+### 3. Re-materialize (STALE and `--upgrade`) + drift check
 
-1. Read `RECIPES`. Collect sections `## v(RECORDED+1)` through `## v(CURRENT)`, in order.
-2. **If any section in that range is missing → REFUSE.** Report which version is absent and stop. Never skip a version, never jump straight to `CURRENT`, never infer a delta from the difference between two `### Materializes` tables.
-3. Present the collected deltas to the user as one list, grouped by version, and **WAIT for explicit confirmation** — reconciliation is confirm-then-execute, like every other mutation these commands perform.
-4. On confirmation, execute **sequentially, one version at a time**: apply every item of `v(N-1) → vN` before reading `vN → v(N+1)`. After each version, set `setup-contract: N` in the receipt. A run interrupted mid-chain leaves a truthful receipt at the last fully applied version.
-5. On decline, stop. Record the decline as a Decision Log row and leave `setup-contract` unchanged.
+Apply the calling command's merge rules. For `add.qa-setup`:
 
-### 4. Drift check
+- `qa-project` skill: always regenerate.
+- `docs/qa/config.json`: per-key merge. Keep every existing key, including extras. Fill missing declared keys with defaults. Never drop a user key. Drift-check applies: report a user-edited value that differs from the default; do not silently overwrite it.
+- `screens.json`: leave it if it exists; write `{ "feature": "<id>", "screens": [] }` only when absent.
+- `.gitignore`: idempotent `ensure-ignore`.
+- Missing declared paths: create.
 
-For every `materialized` entry with `owner: setup`, recompute the file hash and compare with the recorded one:
+For every `materialized` entry with `owner: setup` that this run did not just regenerate:
 
 | Result | Action |
 |---|---|
-| Match | Nothing to report |
-| Mismatch | **Report the drift; do not silently overwrite.** Offer to regenerate the file from the current contract, and only rewrite the recorded hash after the user confirms which side wins |
+| Hash match | Nothing to report |
+| Hash mismatch | **Report the drift; do not silently overwrite.** Offer to regenerate, rewrite the recorded hash only after the user confirms which side wins |
 | File missing | Report it as a gap; offer to re-materialize |
 
-⛔ Entries with `owner: shared` carry `hash: null` and are checked for **existence only**. They are co-owned by another command and a content difference is expected, not drift.
+⛔ Entries with `owner: shared` carry `hash: null` and are checked for **existence only**.
 
-### 5. Rewrite the receipt — always
+### 4. Rewrite the receipt — always
 
-Rewrite the receipt on **every** run, including a verified-current no-op with no drift. A verified-current run is information, not nothing.
+Rewrite the receipt on **every** run, including a verified-current no-op.
 
+- `setup-shape` = `CURRENT` (the shipped hash).
 - Advance `last-run` and `updated` to today.
 - Preserve `first-run` and `created` byte-identically.
 - Refresh `framework-version` from the manifest (informational only).
@@ -89,24 +90,20 @@ Schema and field vocabulary: `{{skill:add-doc-schemas/SKILL.md}}` → `reference
 
 | Situation | Response |
 |---|---|
-| Recipe chain has a hole in `RECORDED+1 .. CURRENT` | Refuse, name the missing version, stop |
-| `RECORDED > CURRENT` | Refuse, report both values, stop |
-| Receipt frontmatter is unparseable | Refuse to guess. Offer to rebuild it as a backfill at contract 1, with user confirmation |
-| A delta item is ambiguous | Refuse to improvise. Surface the item verbatim and ask |
-
-An improvised upgrade is worse than no upgrade: it produces state no recipe describes, which no later version can reconcile.
+| Receipt frontmatter is unparseable | Treat as STALE. Do not invent a `setup-shape` |
+| A merge item is ambiguous | Surface the item verbatim and ask. Do not improvise |
 
 ## Rules
 
 ALWAYS:
-- Apply deltas sequentially, one contract version at a time
 - Rewrite the receipt on every run, including no-ops
 - Treat `owner: shared` paths as existence-checked only
-- Confirm before executing any delta
+- Keep every existing `config.json` key on a STALE merge
 
 NEVER:
-- Read a changelog, release notes, or command diff to decide what to upgrade
-- Skip a version or infer a delta not declared in the recipe file
-- Overwrite a drifted `owner: setup` file without the user choosing which side wins
-- Re-materialize over an UNRECEIPTED project as if it were first-run
+- Read a changelog, release notes, or command diff to decide what to change
+- Reconstruct a missing receipt at a historical integer
+- Execute a versioned delta list
+- Treat no-receipt-plus-state as FIRST-RUN
+- Overwrite a user-authored `config.json` key with a default without confirmation
 - Edit or remove an existing Decision Log row

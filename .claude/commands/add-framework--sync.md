@@ -161,7 +161,7 @@ Graph 1 — Core Pipeline:
   → skills they load (loads relationship)
 
 Graph 2 — Support Commands:
-  Auxiliary commands (add, add.init, add.design, add.diagnose, add.hotfix, add.audit, add.wiki, add.brainstorm, add.ux)
+   Auxiliary commands (add, add.init, add.diagnose, add.hotfix, add.audit, add.wiki, add.brainstorm, add.ux)
   → skills they load (loads relationship)
 
 Graph 3 — Agent Dispatch:

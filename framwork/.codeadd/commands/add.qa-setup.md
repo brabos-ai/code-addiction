@@ -1,6 +1,6 @@
 ---
 description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests /add.qa
-argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that feature's screen catalog, e.g. /add.qa-setup 0001F; --migrate reopens the migration decision; --upgrade forces contract reconciliation)"
+argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that feature's screen catalog, e.g. /add.qa-setup 0001F; --migrate reopens the migration decision; --upgrade forces a full re-materialize even when the shape matches)"
 ---
 
 # QA Setup - Prerequisites, Config Bootstrap & End-to-End Verification
@@ -17,7 +17,7 @@ Load `{{skill:add-dev-environment-setup/SKILL.md}}` before STEP 3 (OS detection 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 8 (feature doc layout, `_tests/` per-run path + `screens.json` reachability schema, `qa-validation` conventions).
 Load `{{skill:add-qa-migration/SKILL.md}}` before STEP 5 (existing-QA migration sequence + checkpoints).
 Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 10 (dispatch template, decision log, review gates — the mechanism reused by migration + correction dispatch).
-Load {{skill:add-setup-contract/SKILL.md}} before STEP 1.5 (receipt classification, contract comparison, delta execution, receipt rewrite).
+Load {{skill:add-setup-contract/SKILL.md}} before STEP 1.5 (receipt classification, shape comparison, receipt rewrite).
 Load {{skill:add-doc-schemas/SKILL.md}} + its `references/receipt.md` before STEP 12 (the `setup-receipt` schema).
 
 ---
@@ -57,27 +57,25 @@ STEP 14: Hand-off                → enable plugin (optional) + run /add.qa + mi
 | **STEP 5** | Always | Skipping the scan because the project is not first-run | Scan on every run; compare against `migration.detected` in the receipt; ASK only on a fingerprint change or `--migrate` |
 | **STEP 5** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
 | **STEP 6-9** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and STEP 9's root `.gitignore`. Single named exception: STEP 2's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
-| **STEP 8** | `design.md` not read | Invent screens/routes | Derive each screen entry from the design docs |
+| **STEP 8** | `FEATURE_DIR/_tests/screens.json` already exists | Overwriting catalog content | Leave the file — `{{cmd:add.plan}}` owns content |
 | **STEP 9** | QA evidence block not materialized exactly once | Running migration or smoke test | Normalize the QA block while preserving installer-managed and user-authored content |
 | **STEP 10** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
 | **STEP 10** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
 | **STEP 11** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
 | **STEP 11** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
-| **STEP 1.5** | Receipt absent but materialized state present | Treating the project as first-run and re-materializing | Backfill the receipt at contract 1 per `add-setup-contract`, then continue |
-| **STEP 1.5** | Recipe chain has a hole, or `RECORDED > CURRENT` | Improvising an upgrade | REFUSE and escalate to the user |
+| **STEP 1.5** | Receipt absent but materialized state present | Treating the project as FIRST-RUN | Classify STALE and re-materialize under the merge rules |
+| **STEP 2.1 Phase A rows 9–10** | `QA_RECEIPT` or `QA_CONTRACT_MATCH` is not `ok` | Stopping the setup run | Treat as work-to-do — this command is the remedy |
 | **STEP 12** | Always | Editing or deleting an existing Decision Log row | Append only |
 
 ---
 
 ## Materializes
 
-> **Single source of truth for every shape this command writes.** STEP 6 through STEP 9 write exactly what is declared here — they do not restate a shape. The framework build extracts this block into `.codeadd/contracts.json`; changing anything below moves `shape` and the build will demand a `version` bump. Resource-path variables (`{{cmd:}}`, `{{skill:}}`, `{{addpath:}}`) are FORBIDDEN inside this block — they resolve per provider and would produce a different `shape` per build target.
+> **Single source of truth for every shape this command writes.** STEP 6 through STEP 9 write exactly what is declared here — they do not restate a shape. The framework build extracts this block into `.codeadd/contracts.json`; changing anything below moves `shape` and every installed project will need `/add.qa-setup`. Resource-path variables (`{{cmd:}}`, `{{skill:}}`, `{{addpath:}}`) are FORBIDDEN inside this block — they resolve per provider and would produce a different `shape` per build target.
 
 ```yaml
 contract: add.qa-setup
-version: 2
-shape: sha256:4352695bba17be46
-recipes: skills/add-qa/references/setup-contract.md
+shape: sha256:ea7856fb4e1a72e2
 paths:
   - path: docs/qa/config.json
     owner: setup
@@ -87,7 +85,6 @@ paths:
     step: 6
   - path: FEATURE_DIR/_tests/screens.json
     owner: shared
-    co-owner: add.plan STEP 10.0
     step: 8
   - path: .gitignore
     owner: shared
@@ -113,13 +110,11 @@ paths:
   "screens": [
     { "id": "login", "sf": "SF02", "name": "Login", "kind": "route",
       "path": "/login", "auth": false,
-      "design": "docs/features/<id>-.../subfeatures/SF02-.../design.md",
-      "expect": "what a correct render looks like" },
+      "design": "docs/features/<id>-.../subfeatures/SF02-.../design.md" },
     { "id": "entry-form", "sf": "SF01", "name": "Entry form", "kind": "modal",
       "open": [{ "goto": "/entries" }, { "click": "role=button[name=New entry]" }],
       "auth": true,
-      "design": "docs/features/<id>-.../subfeatures/SF01-.../design.md",
-      "expect": "modal open with all fields visible" }
+      "design": "docs/features/<id>-.../subfeatures/SF01-.../design.md" }
   ]
 }
 ```
@@ -179,24 +174,24 @@ Read {{skill:add-dev-environment-setup/SKILL.md}} — reuse its OS-detection + c
 
 ### 1.3 Parse flags
 - `--migrate` → `FORCE_MIGRATE = true`: STEP 5 asks about migration even when the fingerprint is unchanged and a decision is already recorded.
-- `--upgrade` → `FORCE_UPGRADE = true`: STEP 1.5 runs reconciliation even when `status.sh` reports no `SETUP_QA_BEHIND`, and performs the drift check unconditionally.
-- Neither flag is required for normal operation. Behind-detection and migration re-offer are automatic.
+- `--upgrade` → `FORCE_UPGRADE = true`: STEP 1.5 re-materializes even when the recorded shape matches the shipped one, and performs the drift check unconditionally.
+- Neither flag is required for normal operation. Stale-detection and migration re-offer are automatic.
 
 ### 1.4 Resolve target feature (optional)
 - If a `feature-id` arg was given → `FEATURE_DIR = docs/features/<feature-id>-*`.
 - Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP 8). Config (STEP 7) is project-wide regardless.
 
-### 1.5 Classify + reconcile (add-setup-contract)
-Read `SETUP_QA:` / `SETUP_QA_CONTRACT:` / `SETUP_QA_BEHIND:` from the STEP 1.1 output, then run the {{skill:add-setup-contract/SKILL.md}} procedure against `docs/qa/qa-setup.md`.
+### 1.5 Classify + compare (add-setup-contract)
+Read `SETUP_QA:` / `SETUP_QA_STALE:` from the STEP 1.1 output, then run the {{skill:add-setup-contract/SKILL.md}} procedure against `docs/qa/qa-setup.md`.
 
 Outcome sets `SETUP_STATE` for the rest of the run:
-- `FIRST-RUN` — no receipt, no materialized state. Materialize normally; STEP 12 creates the receipt.
-- `UNRECEIPTED` — materialized state, no receipt. Backfill at contract 1 (⛔ never re-materialize over it), then reconcile.
-- `CURRENT` — recorded contract equals the shipped one. Drift check only.
-- `BEHIND` — present the declared deltas, CONFIRM, execute sequentially.
-- `REFUSED` — chain hole or framework downgrade. Report and stop reconciliation; the rest of setup may still proceed.
+- `FIRST-RUN` — no receipt AND no `owner: setup` path exists. Materialize normally; STEP 12 creates the receipt.
+- `CURRENT` — recorded `setup-shape` equals the shipped sidecar `shape`. Drift check only (unless `--upgrade`).
+- `STALE` — anything else: no receipt but state present, unreadable `setup-shape`, or hash mismatch. Re-materialize under the merge rules (per-key `config.json`, regenerate `qa-project`, create-if-absent empty `screens.json`).
 
-⛔ `FIRST_RUN` (the old `docs/qa/config.json`-presence proxy) is RETIRED. It permanently locked out migration and could not distinguish "declined" from "never offered". Do not reintroduce it under any name.
+Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a` are **work-to-do in this command**, never a stop. `{{cmd:add.qa}}` interprets the same rows as `block`.
+
+⛔ `FIRST_RUN` (the old `docs/qa/config.json`-presence proxy) is RETIRED. Do not reintroduce it. Do not backfill a missing receipt. Do not walk a versioned delta list.
 
 ---
 
@@ -281,7 +276,7 @@ Read `migration.detected` + `migration.decision` from the receipt (empty when `S
 
 ## STEP 6: Generate Project QA Skill (`qa-project`)
 
-Resolve the target skills dir for **each installed provider** (from the manifest / the engine's skills path) and write `qa-project/SKILL.md` there — e.g. `.claude/skills/qa-project/SKILL.md` on Claude Code. If the active engine exposes no skills dir, note it and skip (the QA pipeline is agent-driven and functions where agents build — Claude today; other providers are out of scope per the v1 distribution decision). If the file exists → regenerate only drifted sections after confirmation.
+Resolve the target skills dir for **each installed provider** (from the manifest / the engine's skills path) and write `qa-project/SKILL.md` there — e.g. `.claude/skills/qa-project/SKILL.md` on Claude Code. If the active engine exposes no skills dir, note it and skip (the QA pipeline is agent-driven and functions where agents build — Claude today; other providers are out of scope per the v1 distribution decision). If the file exists → regenerate it (generated file, not user-authored).
 
 Detect the stack (runner, test dir + extension, pkg manager, boot command, screenshot API, axe wiring). Then **verify the run command works** (dry `--help`/list) before finalizing, and flag any convention you had to guess for user confirmation.
 
@@ -293,7 +288,7 @@ The skeleton to write is declared in `## Materializes` → `<provider skills dir
 
 Target: `docs/qa/config.json` (git-tracked, project-wide).
 
-If it exists → read, confirm/refresh values with the user, bump only what changed. If absent → create it interactively, asking for the project-specific values (do NOT guess base URL or auth/seed flow).
+If it exists → per-key merge: keep every existing key (including extras the user added). Fill missing declared keys with defaults. Never drop a user key. Confirm/refresh values with the user; do not silently overwrite a user-edited value with the default. If absent → create it interactively, asking for the project-specific values (do NOT guess base URL or auth/seed flow).
 
 Write the shape declared in `## Materializes` → `docs/qa/config.json`. Values are free-text hints; viewports default to the declared set.
 
@@ -301,27 +296,23 @@ Write the shape declared in `## Materializes` → `docs/qa/config.json`. Values 
 
 ---
 
-## STEP 8: Scaffold Per-Feature Screen Catalog (bootstrap path)
+## STEP 8: Scaffold Per-Feature Screen Catalog (empty bootstrap)
 
-Target: `FEATURE_DIR/_tests/screens.json` (the reachability-aware route map for the UX axis).
+Target: `FEATURE_DIR/_tests/screens.json`.
 
-> **Ownership:** `{{cmd:add.plan}}` STEP 10.0 owns the catalog on an ongoing basis — it writes `screens.json` by read-merge-write after consolidating `design.md`, so features planned with `qa-pipeline` on are born with their entries. THIS step is the **bootstrap path**: it seeds the catalog for features that already exist at setup time. Both write the same shape; 10.0 preserves out-of-scope entries byte-identically.
+> **Ownership:** `{{cmd:add.plan}}` STEP 10.0 is the sole writer of catalog **content**. THIS step creates the file only when it is absent.
 
-Read every `design.md` under the feature (feature-level and each subfeature). For each screen the design describes, derive one entry. Flag screens that require an authenticated session with `auth: true`. Do NOT store functional intent here — the functional axis is read from each SF's `about.md` at run time.
+IF `FEATURE_DIR/_tests/screens.json` exists → leave it. Do not merge, do not derive, do not rewrite.
 
-Each entry gains `kind` (`route` | `modal` | `overlay` | `portal`) and, for non-route surfaces, an ordered `open` recipe. Write the shape declared in `## Materializes` → `FEATURE_DIR/_tests/screens.json`.
+IF it is absent → write the empty scaffold:
 
-Route surfaces keep `path`; non-route (`modal`/`overlay`/`portal`) declare `kind` + `open`. Both forms coexist.
+```json
+{ "feature": "<feature-id>", "screens": [] }
+```
 
-**`expect` is never freehand:** derive it from the screen's `## Design Contract` rows and layout tree in `design.md` (see `add-qa-spec`) — the example values in the declared shape stand for "the derived one-liner," not invented prose. A screen whose `design.md` carries no contract or layout tree gets a gap note instead.
+`{{cmd:add.plan}}` fills entries. Each entry carries a `design:` path as the only contract pointer — there is no `expect` key. Visual values live in `design.md` `## Design Contract` only.
 
-**`open` recipe grammar (fixed mini-schema):** an ordered array of step objects, each exactly one of — `{ "goto": "<path>" }`, `{ "click": "<selector>" }`, `{ "fill": ["<selector>", "<value>"] }`, `{ "select": ["<selector>", "<value>"] }`, `{ "wait": "<selector | ms>" }`. Selectors use Playwright role/testid syntax (`role=button[name=…]`, `testid=…`) — never brittle CSS.
-
-Setup scaffolds the recipe **intent** from **`design.md` only** (the plan's QA axis does not exist yet at setup time); **selectors are finalized post-implementation by the `e2e-agent`**, which merges the richer intent from `plan.md`'s `## QA/E2E Specification`. This STEP stores thin intent, flags thin/missing designs rather than inventing routes.
-
-If a design doc is missing or thin, list the screen with a note rather than inventing routes — flag it for the user.
-
-**Name the remedy, don't just flag it.** A `design.md` that carries no `## Design Contract` or layout tree predates the current design schema — the gap is NOT fixable by hand-editing `screens.json`, because `expect` is derived from the contract. For every screen in that state, tell the user to regenerate the design: `/add.design <feature-id> [SFxx]` (or re-run `/add.plan`, whose STEP 8.1.0 check 4 detects the same drift and regenerates automatically). Carry the list into the STEP 14 hand-off — until those designs are regenerated, `@qa-agent`'s deterministic conformance axis has nothing to compare against.
+A missing or pre-schema `design.md` is a planning gap. Remedy: re-run `{{cmd:add.plan}}` (STEP 8.1 regenerates the contract). Do not invent screens here.
 
 ---
 
@@ -372,11 +363,11 @@ Target: `docs/qa/qa-setup.md`. Schema: `setup-receipt` in {{skill:add-doc-schema
 
 Write it on **every** run — including a run that changed nothing. A verified-current run is information, not nothing.
 
-1. **Frontmatter.** `setup-contract` = the contract version now in force (from `.codeadd/contracts.json`, or the highest version fully applied if reconciliation stopped mid-chain). `framework-version` from the manifest (informational). `first-run` preserved byte-identically, or set to today on a true first run. `last-run` = today.
+1. **Frontmatter.** `setup-shape` = the shipped hash from `.codeadd/contracts.json` → `contracts["add.qa-setup"].shape` (bare `sha256:<16 hex>`, own line, unquoted). `framework-version` from the manifest (informational). `first-run` preserved byte-identically, or set to today on a true first run. `last-run` = today.
 2. **`materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift.
 3. **`prereqs`** from STEP 4, `qa-pipeline-feature` from STEP 2, `migration` from STEP 5. Record `.gitignore` in `materialized` with `owner: shared` and `hash: null`.
-4. **`## Decision Log`.** APPEND one row per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, an accepted or declined upgrade, a backfill. ⛔ Never edit or delete an existing row. ⛔ Never log narration or instructions — a row records a choice, not a step.
-5. **`## TL;DR`.** State what the doc is, why it exists, and whether the project is current or behind.
+4. **`## Decision Log`.** APPEND one row per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, a STALE re-materialize. ⛔ Never edit or delete an existing row. ⛔ Never log narration or instructions — a row records a choice, not a step.
+5. **`## TL;DR`.** State what the doc is, why it exists, and whether the recorded shape matches the shipped one.
 
 ---
 
@@ -422,7 +413,7 @@ Tell the user, in order:
 2. Any prerequisite they declined / must finish manually (from STEP 4).
 3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
 4. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
-5. Contract state: `setup-contract vN` — current, or upgraded from vM (list the applied deltas), or reconciliation refused (state why), or a backfill was written for a project that predates receipts.
+5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
 6. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
 8. Run the audit: `/add.qa <feature-id> [SFxx]` (or `/add.qa @docs/features/.../about.md`).

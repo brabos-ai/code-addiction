@@ -12,7 +12,7 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 
 | Type | Path | Count |
 |------|------|-------|
-| Commands | `framwork/.codeadd/commands/*.md` | 19 |
+| Commands | `framwork/.codeadd/commands/*.md` | 18 |
 | Skills | `framwork/.codeadd/skills/*/SKILL.md` | 40 |
 | Agents | `framwork/.codeadd/agents/*-agent.md` | 15 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
@@ -25,7 +25,7 @@ Development tools that build and maintain the framework itself. `.claude/` is th
 |------|------|
 | Commands | `.claude/commands/*.md` (canonical) and `.opencode/commands/*.md` (OpenCode adapters) — namespace `add-framework--*`. Sub-prefixes: framework default (implicit), `self-` (internal infrastructure), `shared-` (usable in both contexts) |
 | Skills | `.claude/skills/` (canonical and natively discovered by OpenCode): `building-commands`, `add-framework-development`, `add-commit` |
-| Agents | `.claude/agents/` (canonical) and `.opencode/agents/` (OpenCode adapters): `readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`. OpenCode agents use `mode: subagent` and `permission` frontmatter. |
+| Agents | `.claude/agents/` (canonical) and `.opencode/agents/` (OpenCode adapters): `readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`, `plan-review-agent`. OpenCode agents use `mode: subagent` and `permission` frontmatter. |
 | Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
 
 **`docs/` tracking policy.** `.gitignore` ignores `docs/*`: plans, evidence, changelogs and brainstorms are working artefacts and stay local by default. The QA/UX umbrella set (topics 01–05, plans 0056–0060) is a **deliberate force-added exception** (`git add -f`, commits `b49352e` + the review-v02 fix wave) because those artefacts are the spec of record for a shipped schema change and had to survive the branch. The exception covers the umbrella's **plans, evidence files, reviews (`HANDOFF-*--review-vNN.md`) and changelogs** — a plan whose changelog or review is untracked reads as unimplemented from a fresh clone, which is the failure this policy exists to prevent. Plans 0001–0055 remain untracked by design — a fresh clone showing no earlier plans is expected, not drift. Do NOT "fix" this by un-ignoring `docs/`; to make another artefact durable, force-add it and say why here.
@@ -136,19 +136,18 @@ Current features:
 
 ## Setup Contracts
 
-Commands that materialize state into a user's project record what they wrote in a **receipt**, and the framework ships the **contract** that state was written under, so a later version can compute whether the project is behind.
+Commands that materialize state into a user's project record what they wrote in a **receipt**, and the framework ships the **shape** that state was written under, so a later release can compute whether the project is current.
 
 | Component | Path |
 |---|---|
 | Contract declaration | `## Materializes` H2 in the command source |
 | Contract sidecar | `framwork/.codeadd/contracts.json` (build-emitted, gitignored, packaged at release) |
-| Upgrade recipes | `framwork/.codeadd/skills/add-qa/references/setup-contract.md` (per command) |
 | Receipt schema | `add-doc-schemas/references/receipt.md` (`setup-receipt`) |
 | Receipt (in user project) | `docs/qa/qa-setup.md` |
-| Reconciliation procedure | `add-setup-contract` skill |
-| Signal | `SETUP_QA:` / `SETUP_QA_CONTRACT:` / `SETUP_QA_BEHIND:` from `status.sh` |
+| Comparison procedure | `add-setup-contract` skill |
+| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
 
-`setup-contract` is a monotonic integer decoupled from the framework semver: it rises only when the materialized shape changes, so a release that does not touch the command stays silent. Reconciliation executes the declared v(N-1)→vN deltas **sequentially** and **refuses** on a chain hole or a framework downgrade — it never reads a changelog to decide what to upgrade. Hashes in the receipt are `owner`-scoped: only paths this command solely owns carry one, because a hash on a co-owned file (`screens.json`, co-written by `add.plan` STEP 10.0) would report drift on every healthy project.
+Identity is the `shape` hash of the `## Materializes` block. The receipt stores it as `setup-shape`. Equal to the sidecar → current. Anything else → stale → `/add.qa-setup` (hard gate in `/add.qa` preflight). There is no version integer and no recipe chain. Hashes in the receipt are `owner`-scoped: only paths this command solely owns carry one, because a hash on a shared file (`screens.json`, content owned by `add.plan` STEP 10.0) would report drift on every healthy project.
 
 The `## Materializes` block boundary is **fence-aware**: it embeds a fenced template carrying its own H2s, and a naive `^## ` scan would truncate it — silently excusing everything below from both the shape hash and the variable ban. The contract variable ban targets *resolvable* references (`{{cmd:NAME}}`); the empty forms (`{{cmd:}}`) resolve to nothing, ship identically to every provider, and are how the block documents the ban itself.
 

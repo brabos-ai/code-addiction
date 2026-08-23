@@ -77,6 +77,8 @@ function copyDirRecursive(src, dest, provider = null) {
  */
 function stripHtmlComments(content) {
   return content
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -304,8 +306,9 @@ function writeInjectionPoints(outPath) {
 // A command that materializes state into the user's project declares a
 // "## Materializes" H2. That block is the SINGLE source of every shape the
 // command writes; `shape` is a hand-declared hash of it, recomputed here so a
-// changed shape cannot ship without a `version` bump. The build has no previous
-// shape to diff against — the declared value IS the baseline.
+// changed shape cannot ship silently. The build has no previous shape to diff
+// against — the declared value IS the baseline. Identity is the hash: there
+// is no version integer and no recipe chain.
 // ---------------------------------------------------------------------------
 
 const CONTRACT_HEADING_RE = /^## Materializes[ \t]*$/m;
@@ -385,7 +388,7 @@ function canonicalContractBody(block) {
       if (!shapeDropped && SHAPE_LINE_RE.test(l)) { shapeDropped = true; return false; }
       return true;
     })
-    .map((l) => l.replace(/[ \t]+$/, ''))
+    .map((l) => l.replace(/[ \t\r]+$/, ''))
     .join('\n');
 }
 
@@ -401,13 +404,13 @@ function contractShape(block) {
  * YAML dependency and must not acquire one.
  */
 function parseContractDeclaration(block) {
-  const fence = block.match(/```yaml\n([\s\S]*?)\n```/);
+  const fence = block.match(/```yaml\r?\n([\s\S]*?)\r?\n```/);
   if (!fence) return null;
 
   const out = { paths: [] };
   let current = null;
   for (const raw of fence[1].split('\n')) {
-    const line = raw.replace(/[ \t]+$/, '');
+    const line = raw.replace(/[ \t\r]+$/, '');
     if (!line.trim()) continue;
 
     const top = line.match(/^([a-z-]+):[ \t]*(.*)$/);
@@ -421,7 +424,6 @@ function parseContractDeclaration(block) {
     const field = line.match(/^[ \t]+([a-z-]+):[ \t]*(.*)$/);
     if (field && current) current[field[1]] = field[2];
   }
-  out.version = /^\d+$/.test(String(out.version).trim()) ? Number(out.version) : out.version;
   return out;
 }
 
@@ -429,12 +431,12 @@ function parseContractDeclaration(block) {
  * Extract + validate one command's contract.
  * @param {string} rawContent   command source (pre-strip, markers intact)
  * @param {string} resourceName logical command name (e.g. "add.qa-setup")
- * @param {string} [codeaddDir] `.codeadd` root the `recipes` path resolves under
- * @returns {object|null} { contract, version, shape, recipes, paths } or null
- * @throws on a resource-path variable in the block, a shape mismatch, a missing
- *         recipe section, a hole in the 1..N recipe chain, or a missing field
+ * @param {string} [_codeaddDir] unused; kept so existing call sites that pass a
+ *        throwaway `.codeadd` root keep working
+ * @returns {object|null} { contract, shape, paths } or null
+ * @throws on a resource-path variable in the block, a shape mismatch, or a missing field
  */
-function extractContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
+function extractContract(rawContent, resourceName, _codeaddDir = CODEADD_DIR) {
   const block = sliceContractBlock(rawContent);
   if (block === null) return null;
 
@@ -447,10 +449,10 @@ function extractContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
   }
 
   const decl = parseContractDeclaration(block);
-  if (!decl || !decl.contract || !Number.isInteger(decl.version) || !decl.shape || !decl.recipes) {
+  if (!decl || !decl.contract || !decl.shape) {
     throw new Error(
       `Contract block in ${resourceName} is missing a required field — ` +
-        `"contract", "version" (integer), "shape" and "recipes" are all mandatory.`,
+        `"contract" and "shape" are mandatory.`,
     );
   }
   if (decl.contract !== resourceName) {
@@ -476,46 +478,13 @@ function extractContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
     throw new Error(
       `Contract shape changed in ${resourceName}.\n` +
         `  declared: ${decl.shape}\n  computed: ${computed}\n` +
-        `Set shape: ${computed} and bump \`version\` (currently ${decl.version}), ` +
-        `then add the matching "## v${decl.version + 1}" section to ${decl.recipes}.`,
+        `Set shape: ${computed}. Every installed project will need /add.qa-setup.`,
     );
-  }
-
-  // One string, two resolution roots: the build resolves it under framwork/.codeadd/,
-  // while the runtime agent (add-setup-contract) resolves it under the active
-  // provider's resource root, because skills install per-provider. Only a
-  // `skills/…` value satisfies both — `scripts/foo.md` would pass the build here
-  // and send the agent to `.claude/scripts/foo.md`, which never exists.
-  if (!decl.recipes.startsWith('skills/')) {
-    throw new Error(
-      `Contract in ${resourceName} declares recipes: ${decl.recipes}. It MUST start with ` +
-        `"skills/" — the build resolves it under framwork/.codeadd/ but reconciliation ` +
-        `resolves it under the installed provider's resource root, and only a skills/ ` +
-        `path exists in both.`,
-    );
-  }
-
-  const recipePath = path.join(codeaddDir, decl.recipes);
-  if (!fs.existsSync(recipePath)) {
-    throw new Error(`Contract in ${resourceName} points at a missing recipe file: ${decl.recipes}`);
-  }
-  const recipes = readFile(recipePath);
-  for (let v = 1; v <= decl.version; v++) {
-    if (!new RegExp(`^## v${v}[ \\t]*$`, 'm').test(recipes)) {
-      throw new Error(
-        v === decl.version
-          ? `${decl.recipes} has no "## v${v}" section for the version declared in ${resourceName}.`
-          : `${decl.recipes} has a hole in the version chain: "## v${v}" is missing, ` +
-            `so reconciliation could not walk 1..${decl.version} sequentially.`,
-      );
-    }
   }
 
   return {
     contract: decl.contract,
-    version: decl.version,
     shape: decl.shape,
-    recipes: decl.recipes,
     paths: decl.paths,
   };
 }
@@ -541,9 +510,7 @@ function collectContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
       );
     }
     CONTRACTS[c.contract] = {
-      version: c.version,
       shape: c.shape,
-      recipes: c.recipes,
       paths: c.paths,
     };
   }

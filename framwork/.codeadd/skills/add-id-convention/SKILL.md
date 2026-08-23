@@ -94,7 +94,7 @@ Distinct from `[NNNN][L]`: `NNN` is a 3-digit per-scope run number, no letter su
 
 ## SF-Qualified IDs (subfeature-scoped docs)
 
-An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add.plan` STEP 8.1 and `/add.design` write into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
+An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add.plan` STEP 8.1 writes into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
 
 - **Format:** `[NNNN]F-SFxx` (e.g. `0042F-SF03`) — the feature ID, a hyphen, then the subfeature key exactly as `epic.md` spells it (`SF` + 2-digit zero-padded).
 - **When:** the doc lives under `subfeatures/SFxx-*/`. A feature-level `design.md` (non-epic feature) keeps the plain `[NNNN]F`.

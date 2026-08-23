@@ -1,6 +1,6 @@
 # Receipt Schemas
 
-Docs in this category are **machine-first install receipts**: a command records what it materialized into the user's project, under which contract, and which decisions the user took. They exist so a later framework version can compute whether the project's state is current, and so a deliberate `no` is never mistaken for an unfinished install.
+Docs in this category are **machine-first install receipts**: a command records what it materialized into the user's project, under which shipped shape, and which decisions the user took. They exist so a later framework release can compute whether the project's state is current, and so a deliberate `no` is never mistaken for an unfinished install.
 
 All machine state lives in frontmatter. The body carries only `## TL;DR` and `## Decision Log`, which keeps the H2 count at 2 — below the universal TOC threshold — so no rule in `SKILL.md` is relaxed for this category.
 
@@ -20,7 +20,7 @@ created: 2026-07-27
 updated: 2026-07-27
 related: []
 command: add.qa-setup
-setup-contract: 1
+setup-shape: sha256:ea7856fb4e1a72e2
 framework-version: 0.7.0
 first-run: 2026-07-27
 last-run: 2026-07-27
@@ -56,7 +56,7 @@ migration:
 | `updated` | ISO date of the most recent write, advanced on every run — including a no-op |
 | `related` | YAML list of related doc IDs. `[]` when none |
 | `command` | The command that owns this receipt, e.g. `add.qa-setup`. One receipt per command; never merge two commands into one file |
-| `setup-contract` | Integer. The contract version in force when the recorded state was materialized. Read by `status.sh` with a frontmatter-bounded grep — it MUST be a bare integer on its own line, never quoted, never inline-commented |
+| `setup-shape` | The shipped shape hash in force when the recorded state was materialized (`sha256:` + 16 hex). Read by `status.sh` with a frontmatter-bounded grep — it MUST be a bare `sha256:<hex>` on its own line, never quoted, never inline-commented |
 | `framework-version` | Informational only. Never compared to compute staleness — a release that did not touch the command must stay silent |
 | `first-run` | ISO date of the first setup run. Never rewritten once set |
 | `last-run` | ISO date of the most recent run, **including a verified-current no-op**. A run that changed nothing still advances this field — a verified-current run is information, not nothing |
@@ -73,34 +73,33 @@ migration:
 ```markdown
 ## TL;DR
 
-<What this receipt is (the install record for <command>), why it exists (so a later framework version can compute whether this project's state is current), and the headline state: contract vN, last run YYYY-MM-DD, and whether the project is current or behind.>
+<What this receipt is (the install record for <command>), why it exists (so a later framework release can compute whether this project's state is current), and the headline state: setup-shape, last run YYYY-MM-DD, and whether the recorded shape matches the shipped one.>
 
 ## Decision Log
 
-| Date | Contract | Decision | Rationale |
+| Date | Shape | Decision | Rationale |
 |---|---|---|---|
-| 2026-07-27 | 1 | Declined Playwright MCP wiring | Team runs QA in CI only; live driving not needed |
+| 2026-07-27 | sha256:ea7856fb4e1a72e2 | Declined Playwright MCP wiring | Team runs QA in CI only; live driving not needed |
 ```
 
 ### Decision Log rules
 
 - **Append-only.** Never edit or delete an existing row. A reversed decision is a NEW row, not an edit.
-- **Decisions only, never instructions.** A row records a choice that changes behaviour: a declined prerequisite, a declined migration, an accepted upgrade, a backfill. Never step-by-step narration, never "next time do X" — that would make the log the changelog-interpretation mechanism this design exists to prevent.
-- **One row per decision**, with the contract version in force when it was taken.
-- **Backfill** (receipt reconstructed from pre-receipt state) is itself a row: `Backfilled receipt at contract 1 from existing materialized state`.
+- **Decisions only, never instructions.** A row records a choice that changes behaviour: a declined prerequisite, a declined migration, a STALE re-materialize. Never step-by-step narration, never "next time do X".
+- **One row per decision**, with the `setup-shape` in force when it was taken.
 
 ### Depth floors
 
 | Section | Required facts |
 |---|---|
 | Frontmatter | Every field in the table above, in the declared vocabulary. No invented values |
-| `## TL;DR` | The three facts listed in the body template: what the doc is, why it exists, current-vs-behind state |
+| `## TL;DR` | The three facts listed in the body template: what the doc is, why it exists, whether the recorded shape matches the shipped one |
 | `## Decision Log` | Every behaviour-changing decision taken across all runs, oldest first |
 
 ### Hard bans
 
 - Any `materialized` entry with `owner: shared` carrying a non-null `hash`.
-- A `setup-contract` value that is not a bare integer.
+- A `setup-shape` value that is not a bare `sha256:` + 16 hex.
 - Editing or removing an existing Decision Log row.
 - Narration, instructions, or aspirational language in any row.
 - Rewriting `first-run`.

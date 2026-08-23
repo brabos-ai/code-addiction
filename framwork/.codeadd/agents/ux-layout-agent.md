@@ -1,6 +1,6 @@
 ---
 name: ux-layout-agent
-description: Layout & component specialist. Reads design-flow.md + design-context.md and specs the layout tree, component composition (existing by path reference, new components fully specced), Design Contract, and states per screen. Writes temp design-layout.md. Dispatched by the design step of add.plan and by add.design, after design-flow.md exists.
+description: Layout & component specialist. Reads design-flow.md + design-context.md and specs the layout tree, component composition (existing by path reference, new components fully specced), Design Contract, and states per screen. Writes temp design-layout.md. Dispatched by the design step of add.plan, after design-flow.md exists.
 model: sonnet
 skills:
   - add-ux-design
