@@ -217,12 +217,8 @@ import "../styles/global.css";
             <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Planning</h3>
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.design</code>
-                <p class="text-muted text-xs mt-0.5">UX spec, mobile-first. Thin coordinator — dispatches <code class="text-foreground">ux-flow-agent</code> → <code class="text-foreground">ux-layout-agent</code> → <code class="text-foreground">ux-agent</code> (critique), then consolidates <code class="text-foreground">design.md</code>. Also run automatically by /add.plan STEP 8.1</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.plan</code>
-                <p class="text-muted text-xs mt-0.5">Technical Planning Orchestrator — dispatches UX Design, Database, Backend and Frontend agents. Owns the UX design pipeline (STEP 8.1) for UI-touching features</p>
+                <p class="text-muted text-xs mt-0.5">Technical Planning Orchestrator — dispatches UX Design, Database, Backend and Frontend agents. Sole writer of <code class="text-foreground">design.md</code> (STEP 8.1) for UI-touching features</p>
               </div>
             </div>
           </div>
@@ -326,13 +322,11 @@ import "../styles/global.css";
           <!-- Complete -->
           <div>
             <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Complete Flow</h3>
-            <p class="text-muted text-xs mb-4">Complex features with UI — full discovery, design, planning, implementation, review. <span class="text-muted-light">/add.design is now optional: /add.plan runs the same UX design pipeline automatically (STEP 8.1) whenever a feature touches UI.</span></p>
+            <p class="text-muted text-xs mb-4">Complex features with UI — full discovery, planning (design is produced inside /add.plan STEP 8.1), implementation, review.</p>
             <div class="flex flex-wrap items-center gap-2">
               <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add.brainstorm</span></span>
               <span class="flow-arrow">→</span>
               <span class="flow-node">New<br/><span class="flow-cmd">/add.new</span></span>
-              <span class="flow-arrow">→</span>
-              <span class="flow-node">Design<br/><span class="flow-cmd">/add.design</span></span>
               <span class="flow-arrow">→</span>
               <span class="flow-node">Plan<br/><span class="flow-cmd">/add.plan</span></span>
               <span class="flow-arrow">→</span>
@@ -432,8 +426,7 @@ import "../styles/global.css";
             <div class="font-mono text-sm text-muted-light">
               <span class="text-accent">/add.brainstorm</span> → explore scope and requirements<br/>
               <span class="text-accent">/add.new</span> → define requirements, acceptance criteria<br/>
-              <span class="text-accent">/add.design</span> → UX spec, mobile-first layouts<br/>
-              <span class="text-accent">/add.plan</span> → technical architecture, task breakdown<br/>
+              <span class="text-accent">/add.plan</span> → technical architecture, UX contract, task breakdown<br/>
               <span class="text-accent">/add.build</span> → subagent-driven implementation<br/>
               <span class="text-accent">/add.review</span> → automated code review<br/>
               <span class="text-accent">/add.done</span> → changelog, docs, merge
@@ -565,7 +558,7 @@ import "../styles/global.css";
             { name: "add-qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over — defines the autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints. Consumed by /add.qa-setup when migration is detected and confirmed." },
             { name: "add-knowledge-discovery", desc: "Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review — consult the project wiki (and code knowledge graph) for minimal token cost before dispatching agents." },
             { name: "add-wiki-maintenance", desc: "Use for incremental project-wiki updates — loaded by /add.wiki update (manual drift) and add.done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
-            { name: "add-setup-contract", desc: "Use when a state-materializing command starts or is asked to upgrade — reads the setup receipt, compares the recorded contract against the shipped one, executes the declared upgrade deltas sequentially, and rewrites the receipt even on a verified-current no-op. Consumed by /add.qa-setup STEP 1.5 and STEP 11." },
+            { name: "add-setup-contract", desc: "Use when a state-materializing command starts — compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add.qa-setup STEP 1.5 and STEP 12." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
@@ -963,7 +956,6 @@ import "../styles/global.css";
         {data:{id:'add.autopilot',label:'add.autopilot',type:'command'}},
         {data:{id:'add.brainstorm',label:'add.brainstorm',type:'command'}},
         {data:{id:'add.build',label:'add.build',type:'command'}},
-        {data:{id:'add.design',label:'add.design',type:'command'}},
         {data:{id:'add.diagnose',label:'add.diagnose',type:'command'}},
         {data:{id:'add.done',label:'add.done',type:'command'}},
         {data:{id:'add.hotfix',label:'add.hotfix',type:'command'}},
@@ -1050,9 +1042,6 @@ import "../styles/global.css";
         ['add.build','add-database-development','loads'],
         ['add.build','add-backend-development','loads'],
         ['add.build','add-frontend-development','loads'],
-        ['add.design','add-doc-schemas','loads'],
-        ['add.design','add-id-convention','loads'],
-        ['add.design','add-ux-design','loads'],
         ['add.diagnose','add-doc-schemas','loads'],
         ['add.diagnose','add-ecosystem','loads'],
         ['add.diagnose','add-investigation','loads'],
@@ -1110,9 +1099,6 @@ import "../styles/global.css";
         ['add.build','frontend-agent','dispatches'],
         ['add.build','database-agent','dispatches'],
         ['add.build','reviewer-agent','dispatches'],
-        ['add.design','ux-agent','dispatches'],
-        ['add.design','ux-flow-agent','dispatches'],
-        ['add.design','ux-layout-agent','dispatches'],
         ['add.plan','ux-flow-agent','dispatches'],
         ['add.plan','ux-layout-agent','dispatches'],
         ['add.plan','ux-agent','dispatches'],

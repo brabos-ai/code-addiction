@@ -110,7 +110,7 @@ Each finding is also tagged `type: ux | functional | a11y | spec-gap`. An *expec
 {
   "feature": "0001F",
   "screens": [
-    { "id": "login", "sf": "SF02", "name": "Login", "path": "/login", "auth": false, "design": "docs/features/0001F-.../subfeatures/SF02-.../design.md", "expect": "what a correct render / expected state looks like" }
+    { "id": "login", "sf": "SF02", "name": "Login", "path": "/login", "auth": false, "design": "docs/features/0001F-.../subfeatures/SF02-.../design.md" }
   ]
 }
 ```

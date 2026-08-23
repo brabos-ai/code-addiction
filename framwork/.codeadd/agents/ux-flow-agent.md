@@ -1,6 +1,6 @@
 ---
 name: ux-flow-agent
-description: Flow & interaction architect. Inspects the project's design system (tokens, layout shell, component library, visual pattern reference) then maps the screen inventory, classifies user actions, entry points, and state transitions for a feature. Writes temp design-context.md + design-flow.md. Dispatched by the design step of add.plan and by add.design.
+description: Flow & interaction architect. Inspects the project's design system (tokens, layout shell, component library, visual pattern reference) then maps the screen inventory, classifies user actions, entry points, and state transitions for a feature. Writes temp design-context.md + design-flow.md. Dispatched by the design step of add.plan.
 model: sonnet
 skills:
   - add-ux-design
@@ -14,7 +14,7 @@ You are the FLOW & INTERACTION ARCHITECT. You run first among the UX authoring a
 - The target directory to write your outputs into (`FEATURE_DIR`, or the subfeature's docs dir when the feature has subfeatures) — the dispatching command passes the exact path; never invent one.
 - The feature's `about.md` and `discovery.md` paths.
 - `HAS_FOUNDATIONS` and the path to `docs/design-system.md`, if the project has one.
-- `SAAS_CONTEXT` / `PATTERNS_TO_APPLY`, when the caller pre-computed them (`/add.design` does; `/add.plan`'s design step deliberately does not — derive them yourself in Step 0 when absent).
+- `SAAS_CONTEXT` / `PATTERNS_TO_APPLY`, when the caller pre-computed them (`/add.plan`'s design step deliberately does not — derive them yourself in Step 0 when absent).
 
 ## How You Work
 

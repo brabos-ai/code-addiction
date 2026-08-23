@@ -73,6 +73,10 @@ Parse the `KEY=STATUS` lines. `missing` and `broken` are distinct diagnoses (abs
 | 6 | chromium launchable | `QA_CHROMIUM` | block |
 | 7 | `qa-project` skill present | `QA_PROJECT_SKILL` | block — it carries the run commands |
 | 8 | `playwright` MCP connected | provider MCP listing (not scripted) | **degrade** — read-PNG mode |
+| 9 | Receipt `docs/qa/qa-setup.md` present with readable `setup-shape` | `QA_RECEIPT` | **block** — remedy: `{{cmd:add.qa-setup}}` |
+| 10 | Receipt `setup-shape` equals shipped `contracts.json` shape | `QA_CONTRACT_MATCH` | **block** — remedy: `{{cmd:add.qa-setup}}` (full re-materialize) |
+
+`{{cmd:add.qa-setup}}` interprets rows 9–10 as work-to-do, never a stop. This command interprets them as `block`.
 
 Collect ALL rows — the consolidated diagnosis is assembled after Phase B (STEP 2.2). Do NOT stop here even on a `block` failure; the user gets every problem and its remedy at once.
 
@@ -85,7 +89,7 @@ Two input forms — detect from the first token:
 - **Spec-driven** (a path ending in `about.md`, or a subfeature/feature folder path): `SCOPE_DIR` = the doc's containing folder; read that `about.md`; infer `feature-id`, `SFxx` and `FEATURE_DIR` from the path.
 - **Id-driven** (`feature-id [SFxx]`): `FEATURE_DIR = docs/features/<feature-id>-*`. If `SFxx` given → `SCOPE_DIR = FEATURE_DIR/subfeatures/SFxx-*` (probe that SF). Else → `SCOPE_DIR = FEATURE_DIR` (probe every SF in the catalog).
 
-SET `DESIGN_FILE` per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback) — i.e. `SCOPE_DIR/design.md`, else `FEATURE_DIR/design.md`. Every later step (preflight row 10, STEP 3, the `@ux-agent` dispatch) consumes `DESIGN_FILE`, never a re-derived path.
+SET `DESIGN_FILE` per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback) — i.e. `SCOPE_DIR/design.md`, else `FEATURE_DIR/design.md`. Every later step (preflight row 12, STEP 3, the `@ux-agent` dispatch) consumes `DESIGN_FILE`, never a re-derived path.
 
 ### 2.2 Preflight — Phase B (feature-scoped) + consolidated diagnosis
 ```bash
@@ -95,10 +99,10 @@ Resolve the spec glob from the generated `qa-project` skill's conventions — ne
 
 | # | Prerequisite | Probe | Severity |
 |---|---|---|---|
-| 9 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
-| 10 | `DESIGN_FILE` (SF-level, else feature-level — see 2.1) | file read | **degrade** — the UX axis cannot run; the functional axis still can |
-| 11 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `/add.qa-setup` scaffolds the catalog |
-| 12 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP 4.3's stopgap |
+| 11 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
+| 12 | `DESIGN_FILE` (SF-level, else feature-level — see 2.1) | file read | **degrade** — the UX axis cannot run; the functional axis still can |
+| 13 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `{{cmd:add.qa-setup}}` scaffolds the empty catalog; `{{cmd:add.plan}}` fills it |
+| 14 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP 4.3's stopgap |
 
 Now emit the ONE consolidated preflight report (Phase A + Phase B): every failed row with its severity and exact remedy, `missing` vs `broken` distinguished, `not-probed` rows listed as such. The header states this is a **diagnosis**, not a verdict. Then:
 - Any `block` row failed → STOP. `add.qa` repairs nothing — the diagnosis is the deliverable.

@@ -185,10 +185,11 @@ describe('scenario 5 — UX agent design ownership', () => {
     expect(uxFlowAgent).toMatch(/^memory: project$/m);
   });
 
-  it('built add.design has no [STOP] and no COMPLEXITY GATE (thin dispatcher, no approval gates)', () => {
-    const design = builtCommand('add.design');
-    expect(design).not.toContain('[STOP]');
-    expect(design).not.toContain('COMPLEXITY GATE');
+  it('add.design is not a shipped command', () => {
+    const src = path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.design.md');
+    expect(fs.existsSync(src)).toBe(false);
+    const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+    expect(map.commands['add.design']).toBeUndefined();
   });
 });
 
@@ -501,10 +502,10 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
     }
   });
 
-  it('add.autopilot points at /add.design, not the non-existent /design', () => {
+  it('add.autopilot points at add.plan for a missing design.md, not /add.design', () => {
     const autopilot = builtCommand('add.autopilot');
-    expect(autopilot).toMatch(/run `\/add\.design`/);
-    expect(autopilot).not.toMatch(/run `\/design`/);
+    expect(autopilot).toMatch(/add\.plan/);
+    expect(autopilot).not.toMatch(/\/add\.design/);
   });
 
   it('add.plan GATES table declares the design gates it enforces at 8.1', () => {

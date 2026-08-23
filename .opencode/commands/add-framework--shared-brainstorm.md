@@ -20,9 +20,10 @@ STEP 1: Capture topic & discover context → detect mode, capture topic, dispatc
 STEP 2: Understand the idea            → ask clarifying questions (one at a time)
 STEP 3: Validate complexity            → detect if scope is simple or umbrella-worthy
 STEP 4: Explore & validate decisions   → conversational ideation until all questions answered
-STEP 5: Generate design document       → write final design (no open questions)
-STEP 6: Completion & next steps [HARD STOP] → print suggested command as text, STOP
-STEP 7: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
+STEP 5: Generate design document       → write draft design (no open questions)
+STEP 6: Review design                  → @plan-review-agent before any delivery
+STEP 7: Completion & next steps [HARD STOP] → print suggested command as text, STOP
+STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
 ```
 
 **⛔ HARD GATE — ROLE BOUNDARY:**
@@ -36,7 +37,7 @@ IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
   ⛔ DO NOT invoke: /add-framework--self-plan
   ⛔ DO NOT invoke: /add-framework--build
   ⛔ DO NOT invoke: /add-framework--self-build
-  ✅ DO: At STEP 6 handoff, print the suggested command as plain text, then STOP
+  ✅ DO: At STEP 7 handoff, print the suggested command as plain text, then STOP
 ```
 
 ---
@@ -54,6 +55,15 @@ IF DESIGN DOCUMENT IS INCOMPLETE:
   ⛔ DO NOT SUGGEST /add-framework--plan
   ⛔ DO NOT MARK AS ready-for-implementation
   ✅ DO: Return to STEP 4, identify missing sections, continue exploration
+
+IF DESIGN FILE NOT YET REVIEWED BY @plan-review-agent:
+  ⛔ DO NOT: Present the design path or next-step commands as delivered
+  ✅ DO: Run STEP 6
+
+IF REVIEW VERDICT IS blocked:
+  ⛔ DO NOT present the design as ready
+  ⛔ DO NOT print next-step commands
+  ✅ DO: Return to STEP 4 with the blockers — do not invent answers
 
 IF USER WANTS TO REFINE A TOPIC FROM UMBRELLA:
   ⛔ DO NOT PROCEED WITHOUT UMBRELLA SPEC REFERENCE
@@ -73,7 +83,7 @@ Inspect the user's invocation string:
   - Extract `[topic]` and `[path]`
   - IF `[path]` missing → STOP and ask user to provide `-> ref: YYYY-MM-DD-[name]-umbrella.md`
   - Verify file exists at `docs/brainstorming/[path]`
-  - → JUMP to **STEP 7 (Continue Mode)**
+  - → JUMP to **STEP 8 (Continue Mode)**
 - ELSE (new idea) → proceed to STEP 1.1
 
 ### 1.1 Capture Topic
@@ -301,21 +311,62 @@ Same structure +
 
 ### 5.3 Write to File
 
-Create file in `docs/brainstorming/` with content from 5.2. Do NOT commit — wait for explicit user request.
+Create file in `docs/brainstorming/` with content from 5.2. Do NOT commit — wait for explicit user request. DO NOT announce the path as delivered — proceed immediately to STEP 6.
 
 ---
 
-## STEP 6: Completion & Next Steps [HARD STOP]
+## STEP 6: Review Design (BEFORE ANY DELIVERY)
 
-### 6.1 Display Design Document Path
+**GATE CHECK:** Design file from STEP 5 exists? IF NO → return to STEP 5. DO NOT proceed.
 
-Show: "Design document created: `docs/brainstorming/YYYY-MM-DD-[topic].md`"
+DO NOT show the design path or next-step commands until this STEP completes with a deliverable verdict.
 
-### 6.2 Summarize Key Decisions
+**DISPATCH AGENT:** `@plan-review-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:**
+  - `path`: design file written in STEP 5
+  - `kind`: `design`
+  - `layer`: `both`
+
+**WAIT:** Agent report received. ⛔ DO NOT proceed without it.
+
+### 6.1 Act on Verdict
+
+| Verdict | Action |
+|---------|--------|
+| `ok` | Proceed to STEP 7 |
+| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Re-dispatch `@plan-review-agent` ONCE. After re-review: `ok` or only nits → STEP 7. Remaining blockers → 6.2 |
+| `blocked` | Go to 6.2 |
+
+### 6.2 User decisions required [STOP]
+
+Present only the blockers that need a user decision. DO NOT present the design as delivered. WAIT. After answers: apply, or return to STEP 4 if exploration is still open, then re-enter STEP 6.
+
+⛔ DO NOT invent decisions to clear blockers.
+
+### Agent Dispatch Rules
+
+When this command instructs you to DISPATCH AGENT:
+1. Read the **Capability** required (read-only)
+2. Read the **Complexity** hint (`standard`)
+3. Choose the best available agent/task mechanism that satisfies the capability
+4. Prefer `@plan-review-agent` when the engine can address it by name
+5. Verify the report is received before acting on the verdict
+
+---
+
+## STEP 7: Completion & Next Steps [HARD STOP]
+
+### 7.1 Display Design Document Path
+
+Show: "Design document created: `docs/brainstorming/YYYY-MM-DD-[topic].md`" plus review verdict and fixes applied (one line each, if any).
+
+### 7.2 Summarize Key Decisions
 
 Bullet list of 3-5 key validated decisions from the design.
 
-### 6.3 Next Step Guidance [HARD STOP]
+### 7.3 Next Step Guidance [HARD STOP]
 
 Determine the target layer from STEP 2.2 "Framework impact" classification:
 - IF product layer (`framwork/.codeadd/`) → suggest `/add-framework--plan`
@@ -330,35 +381,35 @@ Print ONLY one of the following (matching the detected layer), then STOP:
 (shared-brainstorm stops here — it does not run the next command for you.)
 ```
 
-### 6.4 Offer Refinement (If Umbrella)
+### 7.4 Offer Refinement (If Umbrella)
 
 If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DD-[name]-umbrella.md`"
 
 ---
 
-## STEP 7: Continue Mode (Topic Refinement from Umbrella)
+## STEP 8: Continue Mode (Topic Refinement from Umbrella)
 
 Triggered when STEP 1.0 detects a refinement invocation.
 
-### 7.1 Load Umbrella Spec
+### 8.1 Load Umbrella Spec
 
 Read the referenced umbrella spec file at the path captured in STEP 1.0.
 
-### 7.2 Dispatch Framework Discovery Agent (SILENT)
+### 8.2 Dispatch Framework Discovery Agent (SILENT)
 
 Dispatch `@framework-discovery-agent` with:
-- `topic`: subtopic extracted in STEP 7.1
+- `topic`: subtopic extracted in STEP 8.1
 - `scope`: `both`
 
 Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
-### 7.3 Start STEP 2 (Understand the Idea)
+### 8.3 Start STEP 2 (Understand the Idea)
 
 Ask clarifying questions specific to the subtopic, grounded in the umbrella's context.
 
-### 7.4 Follow STEP 4-6 for Subtopic
+### 8.4 Follow STEP 4-7 for Subtopic
 
-Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DD-[subtopic].md`.
+Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DD-[subtopic].md`. Review via STEP 6 before STEP 7 delivery.
 
 ---
 
@@ -372,6 +423,7 @@ ALWAYS:
 - Write design documents in Markdown (100% English)
 - Store outputs in `docs/brainstorming/` only
 - Confirm no open questions before printing the next-command suggestion
+- Dispatch `@plan-review-agent` before any design delivery, including Continue Mode
 - Route internal-layer ideas to `/add-framework--self-plan`, not `/add-framework--plan`
 - Use natural language invocation (no flags/modes in command itself)
 
@@ -386,3 +438,5 @@ NEVER:
 - Write full class/method implementations in design docs (one illustrative snippet allowed)
 - Use informative language ("it's recommended") — use imperative ("CONFIRM", "VALIDATE")
 - Create design docs until all validation checkboxes pass
+- Present an unreviewed design as delivered
+- Invent decisions to clear review blockers

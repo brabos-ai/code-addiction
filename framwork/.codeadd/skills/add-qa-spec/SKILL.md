@@ -1,6 +1,6 @@
 ---
 name: add-qa-spec
-description: Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md, and author the _tests/screens.json screen catalog by read-merge-write. Loaded by add.plan's qa-pipeline QA-Spec step.
+description: Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md, and author the _tests/screens.json catalog (design: path only — no expect). Loaded by add.plan's qa-pipeline QA-Spec step.
 ---
 
 # QA/E2E Specification — Case Generation Rubric
@@ -55,13 +55,11 @@ You OWN this file when dispatched by `add.plan` STEP 10.0. (`add.qa-setup` STEP 
   "screens": [
     { "id": "login", "sf": "SF02", "name": "Login", "kind": "route",
       "path": "/login", "auth": false,
-      "design": "docs/features/<id>-.../subfeatures/SF02-.../design.md",
-      "expect": "what a correct render looks like" },
+      "design": "docs/features/<id>-.../subfeatures/SF02-.../design.md" },
     { "id": "entry-form", "sf": "SF01", "name": "Entry form", "kind": "modal",
       "open": [{ "goto": "/entries" }, { "click": "role=button[name=New entry]" }],
       "auth": true,
-      "design": "docs/features/<id>-.../subfeatures/SF01-.../design.md",
-      "expect": "modal open with all fields visible" }
+      "design": "docs/features/<id>-.../subfeatures/SF01-.../design.md" }
   ]
 }
 ```
@@ -75,8 +73,7 @@ You OWN this file when dispatched by `add.plan` STEP 10.0. (`add.qa-setup` STEP 
 | `path` | route surfaces only |
 | `open` | non-route surfaces only — ordered recipe, each step exactly one of `{"goto":"<path>"}`, `{"click":"<selector>"}`, `{"fill":["<selector>","<value>"]}`, `{"select":["<selector>","<value>"]}`, `{"wait":"<selector \| ms>"}`. Playwright role/testid syntax — never brittle CSS |
 | `auth` | true when the surface requires an authenticated session |
-| `design` | the `design.md` path actually used for that screen (SF-level when it exists, feature-level fallback) |
-| `expect` | one line describing a correct render — derived from the screen's `## Design Contract` rows (`Dimension`/`Declares`) plus its layout tree, never freehand |
+| `design` | the `design.md` path actually used for that screen (SF-level when it exists, feature-level fallback). The only contract pointer — visual values live in that file's `## Design Contract`. There is no `expect` key |
 
 Route surfaces keep `path`; non-route surfaces declare `kind` + `open`. Both forms coexist in one catalog.
 
@@ -102,4 +99,4 @@ Store reachability INTENT only. If a design doc is missing or thin, list the scr
 - `capture states` uses the canonical vocabulary only; single-state screens use `default`. Do not invent a passing CRUD scenario for an operation `about.md` does not cover — mark it a gap.
 - Every `plan-qa-spec.md` row has a matching `screens.json` entry (same `sf` + `id`) and vice versa for in-scope surfaces — the two outputs are one specification in two shapes.
 - NEVER rewrite `screens.json` wholesale — out-of-scope SF entries survive byte-identically.
-- `expect` is never freehand: derive it from the screen's `## Design Contract` rows (what it declares per dimension) and its layout tree, both in `design.md` — a screen whose `design.md` carries no contract or layout tree gets a gap note instead of an invented `expect` line.
+- NEVER write an `expect` key. `@qa-agent` reads `DESIGN_FILE` for declared values.

@@ -231,7 +231,7 @@ BACKEND_SELECTED  = true|false
 
 ⛔ NO human `[STOP]` anywhere in 8.1 — every accept/reject decision here belongs to the coordinator.
 
-**SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `add.design` STEP 1.2 and `status.sh`'s `SF_DIR_GLOB` resolve).
+**SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `status.sh`'s `SF_DIR_GLOB` resolves).
 
 **Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.qa` resolves). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
@@ -255,7 +255,7 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 
 ⛔ NEVER decide freshness from file mtime, git status, or "it looks recent". The provenance hash is the only signal.
 
-⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis, turns every `screens.json` `expect` into a gap note, and leaves `/add.review`'s contract check with nothing to verify. Never let a provenance match preserve one.
+⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis and leaves `/add.review`'s contract check with nothing to verify. Never let a provenance match preserve one.
 
 #### 8.1.1 DISPATCH @ux-flow-agent (flow & interaction)
 
@@ -283,7 +283,7 @@ Execute the **Consolidation contract** for schema `feature-design` in `{{skill:a
 ⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
 ⛔ `${ABOUT_SHA}` is only truthful because 8.1.0 recomputed it — never stamp it over a reused temp.
 
-<!-- MAINTAINER: do not restate the frontmatter or section shape here. It is shared with /add.design; both cite the schema so they cannot drift apart. Change it in the schema, never in one command alone. -->
+<!-- MAINTAINER: do not restate the frontmatter or section shape here. Cite the schema so this command cannot drift from it. Change it in the schema, never here. -->
 
 #### 8.1.5 Validation Gate (`feature-design`)
 
@@ -611,7 +611,7 @@ Inform user with summary:
 - Areas planned (UX Design/Database/Backend/Frontend)
 - Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
-- Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build`, `/add.autopilot`, or `/add.design`
+- Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build` or `/add.autopilot`
 
 ---
 

@@ -50,7 +50,6 @@ graph LR
 graph LR
   ADD(add)
   INIT(add.init)
-  DESIGN(add.design)
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
   AUDIT(add.audit)
@@ -74,7 +73,6 @@ graph LR
 
   ADD --> ECO & DE
   INIT --> DS & PD
-  DESIGN --> DS & ID & UX
   DIAGNOSE --> DS & ECO & IV & KD
   HOTFIX --> DS & ECO & ID & IV & KD & UX
   AUDIT --> DS & ECO & HC & IV
@@ -90,7 +88,6 @@ graph LR
   AUTO(add.autopilot)
   BRAINSTORM(add.brainstorm)
   BUILD(add.build)
-  DESIGN(add.design)
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
   NEW(add.new)
@@ -132,7 +129,6 @@ graph LR
   AUTO --> ARCH & BA & DA & FA & RA
   BRAINSTORM --> DOCR
   BUILD --> BA & DA & E2EA & FA & RA & UXA
-  DESIGN --> UXF & UXL & UXA
   DIAGNOSE --> ARCH & FHA & GHA
   HOTFIX --> ARCH & FHA & GHA
   NEW --> DISCO & DOCR

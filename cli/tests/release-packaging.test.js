@@ -48,25 +48,12 @@ describe('release packaging', () => {
     expect(packagedSubdirs()).toContain('.codeadd/plugins');
   });
 
-  it('ships the contracts.json sidecar (setup-contract versions for status.sh)', () => {
+  it('ships the contracts.json sidecar (setup-shape for status.sh)', () => {
     // Gitignored + build-emitted like injection-points.json, so the directory list
     // never sweeps it up and it must be added to the zip explicitly. Without it,
-    // every SETUP_QA_BEHIND check in every installed project is permanently blind.
+    // every SETUP_QA_STALE check in every installed project is permanently blind.
     const yml = fs.readFileSync(RELEASE_WORKFLOW, 'utf8');
     expect(yml).toContain('framwork/.codeadd/contracts.json');
-  });
-
-  it('ships the setup-contract upgrade recipes to a reachable runtime path', () => {
-    // `add-setup-contract` step 3 reads RECIPES to execute the declared deltas. The
-    // contract emits `skills/add-qa/references/setup-contract.md`, and `.codeadd/`
-    // ships ONLY scripts/fragments/templates/plugins + the two sidecar files — no
-    // skills/. The recipes therefore reach a project solely via the per-provider
-    // skills dir. If that stops shipping, the first contract bump becomes a hard
-    // refusal for every installed project.
-    const built = path.join(ROOT, 'framwork', '.claude', 'skills', 'add-qa', 'references', 'setup-contract.md');
-    expect(fs.existsSync(built), 'recipes missing from the provider skills dir — run `node scripts/build.js` first').toBe(true);
-    expect(packagedSubdirs()).toContain('.claude');
-    expect(packagedSubdirs()).not.toContain('.codeadd/skills');
   });
 
   it('ships the injection-points.json sidecar (anchors for post-install injection)', () => {

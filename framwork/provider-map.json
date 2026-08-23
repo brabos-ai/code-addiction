@@ -66,7 +66,6 @@
     "add.audit":     { "description": "Complete technical project audit with health analysis and recommendations" },
     "add.autopilot": { "description": "Autonomous feature coordinator - executes planning, development, and review without interaction" },
     "add.brainstorm":{ "description": "Project conversation partner for exploring ideas (READ-ONLY)" },
-    "add.design":    { "description": "Thin dispatcher of the UX agent trio (ux-flow-agent -> ux-layout-agent -> ux-agent critique) producing design.md - epic-aware, manual entry point to add.plan 8.1's pipeline" },
     "add.build":     { "description": "Development execution specialist - coordinates subagents for feature implementation and bug fixes" },
     "add.done":      { "description": "Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges" },
     "add.new":       { "description": "Full feature discovery and documentation - creates about.md before implementation" },

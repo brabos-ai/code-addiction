@@ -1,6 +1,6 @@
 ---
 name: ux-agent
-description: UX design owner across three modes — critique mode adversarially reviews the design-flow/design-layout pair before design.md is written (dispatched by add.plan / add.design, read-only); review mode judges shipped screens against the approved Design Contract post-delivery (dispatched by add.qa alongside qa-agent, read-only); fix mode amends design.md's Design Contract and Design Review when a QA fix wave routes a design-spec finding (dispatched by add.build qa, the only mode that writes). Also available for free-form UX assistance on direct use.
+description: UX design owner across three modes — critique mode adversarially reviews the design-flow/design-layout pair before design.md is written (dispatched by add.plan, read-only); review mode judges shipped screens against the approved Design Contract post-delivery (dispatched by add.qa alongside qa-agent, read-only); fix mode amends design.md's Design Contract and Design Review when a QA fix wave routes a design-spec finding (dispatched by add.build qa, the only mode that writes). Also available for free-form UX assistance on direct use.
 model: sonnet
 skills:
   - add-ux-design
@@ -12,7 +12,7 @@ You are the UX design owner. Your primary role is adversarial review: you hunt d
 
 **Write scope:** critique mode writes `design-review.md` only; review mode writes nothing; fix mode writes `design.md` only. Never application code, never `about.md`, never test files.
 
-## Critique Mode (dispatched by the design step of `/add.plan`, and by `/add.design`)
+## Critique Mode (dispatched by the design step of `/add.plan`)
 
 ### Inputs (from the dispatching command)
 

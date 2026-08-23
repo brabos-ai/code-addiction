@@ -18,8 +18,9 @@ STEP 0: Load context              → CLAUDE.md + affected artefacts + dispatch 
 STEP 1: Understand the demand     → classify type and scope
 STEP 2: Impact analysis           → map dependencies between internal artefacts
 STEP 3: Consultative questions    → [STOP] present analysis, wait for answers
-STEP 4: Generate plan             → write plan document
-STEP 5: Completion                → [HARD STOP] show path + next steps
+STEP 4: Generate plan             → write draft plan document
+STEP 5: Review plan               → @plan-review-agent before any delivery
+STEP 6: Completion                → [HARD STOP] show path + next steps
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
@@ -36,6 +37,10 @@ ALWAYS:
   ⛔ DO NOT: Implement any change — that is /add-framework--self-build's job
   ⛔ DO NOT: Write outside docs/plans/
   ⛔ DO NOT: Create branches, commits, or PRs
+
+IF PLAN FILE NOT YET REVIEWED BY @plan-review-agent:
+  ⛔ DO NOT: Present the plan path, summary, or next-step commands as delivered
+  ✅ DO: Run STEP 5
 
 ---
 
@@ -131,6 +136,8 @@ After user responds → summarize confirmed decisions, then ask to proceed to pl
 
 ## STEP 4: Generate Plan
 
+Write the draft file. DO NOT present the path or next steps — proceed immediately to STEP 5.
+
 ### 4.1 Path and Naming
 
 Find next available plan in `docs/plans/`. If directory doesn't exist, create it.
@@ -180,9 +187,51 @@ Write the plan document:
 
 ---
 
-## STEP 5: Completion [HARD STOP]
+## STEP 5: Review Plan (BEFORE ANY DELIVERY)
 
-Show: plan file path, status (draft), and two next-step commands:
+**GATE CHECK:** Plan file from STEP 4 exists? IF NO → return to STEP 4. DO NOT proceed.
+
+DO NOT show the plan path, summary, or next-step commands until this STEP completes with a deliverable verdict.
+
+**DISPATCH AGENT:** `@plan-review-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:**
+  - `path`: plan file written in STEP 4
+  - `kind`: `self-plan`
+  - `layer`: `internal`
+
+**WAIT:** Agent report received. ⛔ DO NOT proceed without it.
+
+### 5.1 Act on Verdict
+
+| Verdict | Action |
+|---------|--------|
+| `ok` | Proceed to STEP 6 |
+| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Re-dispatch `@plan-review-agent` ONCE. After re-review: `ok` or only nits → STEP 6. Remaining blockers → 5.2 |
+| `blocked` | Go to 5.2 |
+
+### 5.2 User decisions required [STOP]
+
+Present only the blockers that need a user decision. DO NOT present the plan as delivered. WAIT. After answers: apply, re-enter STEP 5.
+
+⛔ DO NOT invent decisions to clear blockers.
+⛔ DO NOT skip this STEP in Continue Mode.
+
+### Agent Dispatch Rules
+
+When this command instructs you to DISPATCH AGENT:
+1. Read the **Capability** required (read-only)
+2. Read the **Complexity** hint (`standard`)
+3. Choose the best available agent/task mechanism that satisfies the capability
+4. Prefer `@plan-review-agent` when the engine can address it by name
+5. Verify the report is received before acting on the verdict
+
+---
+
+## STEP 6: Completion [HARD STOP]
+
+Show: plan file path, status (draft), review verdict, fixes applied (one line each, if any), and two next-step commands:
 - `/add-framework--self-build [NNNN]-SELF-PLAN--[slug]` to implement
 - `/add-framework--self-plan [NNNN]-SELF-PLAN--[slug]` to revise
 
@@ -199,6 +248,7 @@ If `/add-framework--self-plan [NNNN]-SELF-PLAN--[slug]`:
 2. Show summary of what was already decided
 3. Ask: "What do you want to adjust?"
 4. Update plan with changelog entry
+5. Execute STEP 5 (Review), then STEP 6 (Completion). DO NOT treat the update as delivered before review.
 
 ---
 
@@ -221,6 +271,7 @@ ALWAYS:
 - Generate complete, actionable plan with exact file paths
 - Consider impact on all dependent artefacts
 - Present analysis and wait for user validation before writing plan
+- Dispatch `@plan-review-agent` before any plan delivery, including Continue Mode
 
 NEVER:
 - Write outside `docs/plans/`
@@ -228,4 +279,6 @@ NEVER:
 - Modify any file in `framwork/.codeadd/`
 - Skip impact analysis
 - Generate plan without user validation of decisions
+- Present an unreviewed plan as delivered
+- Invent decisions to clear review blockers
 - Create branches or commits

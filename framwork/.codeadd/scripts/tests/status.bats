@@ -449,18 +449,18 @@ teardown() {
 
 # ─── SETUP CONTRACT (materialized-state staleness) ───────────────────
 
-mk_receipt() { # $1 = setup-contract value, $2 = optional line ending
+mk_receipt() { # $1 = setup-shape value, $2 = optional line ending
   mkdir -p docs/qa
   if [ "${2:-}" = "crlf" ]; then
-    printf -- '---\r\ntype: setup-receipt\r\nsetup-contract: %s\r\n---\r\n\r\n## Decision Log\r\n\r\n| d | setup-contract: 99 | x |\r\n' "$1" > docs/qa/qa-setup.md
+    printf -- '---\r\ntype: setup-receipt\r\nsetup-shape: %s\r\n---\r\n\r\n## Decision Log\r\n\r\n| d | setup-shape: sha256:deadbeefdeadbeef | x |\r\n' "$1" > docs/qa/qa-setup.md
   else
-    printf -- '---\ntype: setup-receipt\nsetup-contract: %s\n---\n\n## Decision Log\n\n| d | setup-contract: 99 | x |\n' "$1" > docs/qa/qa-setup.md
+    printf -- '---\ntype: setup-receipt\nsetup-shape: %s\n---\n\n## Decision Log\n\n| d | setup-shape: sha256:deadbeefdeadbeef | x |\n' "$1" > docs/qa/qa-setup.md
   fi
 }
 
-mk_sidecar() { # $1 = version
+mk_sidecar() { # $1 = shape
   mkdir -p .codeadd
-  printf '{\n  "version": 1,\n  "contracts": {\n    "add.qa-setup": {\n      "version": %s,\n      "shape": "sha256:x",\n      "paths": [\n        { "path": "a", "owner": "setup" }\n      ]\n    }\n  }\n}\n' "$1" > .codeadd/contracts.json
+  printf '{\n  "version": 1,\n  "contracts": {\n    "add.qa-setup": {\n      "shape": "%s",\n      "paths": [\n        { "path": "a", "owner": "setup" }\n      ]\n    }\n  }\n}\n' "$1" > .codeadd/contracts.json
 }
 
 @test "SETUP_QA: absent when no QA state exists" {
@@ -469,82 +469,87 @@ mk_sidecar() { # $1 = version
   [[ "$output" == *"SETUP_QA:absent"* ]]
 }
 
-@test "SETUP_QA: unreceipted when config.json exists without a receipt" {
+@test "SETUP_QA: stale when config.json exists without a receipt" {
   mkdir -p docs/qa
   echo '{}' > docs/qa/config.json
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SETUP_QA:unreceipted"* ]]
-  [[ "$output" == *"SETUP_QA_HINT:QA state exists without a setup receipt"* ]]
+  [[ "$output" == *"SETUP_QA:stale"* ]]
+  [[ "$output" == *"SETUP_QA_STALE:yes"* ]]
+  [[ "$output" == *"SETUP_QA_HINT:"*"/add.qa-setup"* ]]
+  [[ "$output" != *"SETUP_QA:unreceipted"* ]]
 }
 
-# The contract declares TWO owner:setup paths. A project holding only the
-# qa-project skill must NOT read as absent: STEP 1.5 would classify it
-# FIRST-RUN and re-materialize over the user's configuration.
+# A project holding only the qa-project skill must NOT read as absent:
+# STEP 1.5 would classify it FIRST-RUN and re-materialize over the install.
 # One case per provider install destination (cli/src/providers.js).
-@test "SETUP_QA: unreceipted from the qa-project skill alone, for EVERY provider dest" {
+@test "SETUP_QA: stale from the qa-project skill alone, for EVERY provider dest" {
   for d in .claude .agents .agent .cursor .opencode; do
     rm -rf .claude .agents .agent .cursor .opencode
     mkdir -p "$d/skills/qa-project"
     echo "x" > "$d/skills/qa-project/SKILL.md"
     run "$SCRIPTS_DIR/status.sh"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SETUP_QA:unreceipted"* ]] || { echo "provider dest $d not probed"; return 1; }
+    [[ "$output" == *"SETUP_QA:stale"* ]] || { echo "provider dest $d not probed"; return 1; }
   done
 }
 
-@test "SETUP_QA: current when recorded equals shipped" {
-  mk_receipt 1
-  mk_sidecar 1
+@test "SETUP_QA: current when recorded shape equals shipped" {
+  mk_receipt sha256:aaaaaaaaaaaaaaaa
+  mk_sidecar sha256:aaaaaaaaaaaaaaaa
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"SETUP_QA:present"* ]]
-  [[ "$output" == *"SETUP_QA_CONTRACT:1/1"* ]]
+  [[ "$output" != *"SETUP_QA_STALE"* ]]
+  [[ "$output" != *"SETUP_QA_CONTRACT"* ]]
   [[ "$output" != *"SETUP_QA_BEHIND"* ]]
 }
 
-@test "SETUP_QA: behind reports the integer delta plus a hint" {
-  mk_receipt 1
-  mk_sidecar 3
+@test "SETUP_QA: stale when recorded shape differs from shipped" {
+  mk_receipt sha256:aaaaaaaaaaaaaaaa
+  mk_sidecar sha256:bbbbbbbbbbbbbbbb
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SETUP_QA_CONTRACT:1/3"* ]]
-  [[ "$output" == *"SETUP_QA_BEHIND:2"* ]]
+  [[ "$output" == *"SETUP_QA_STALE:yes"* ]]
+  [[ "$output" == *"SETUP_QA_HINT:"*"/add.qa-setup"* ]]
+  [[ "$output" != *"SETUP_QA_BEHIND"* ]]
 }
 
-@test "SETUP_QA: a malformed setup-contract yields unknown, never a wrong number" {
+@test "SETUP_QA: a malformed setup-shape is stale, never guessed current" {
   mkdir -p docs/qa
-  printf -- '---\nsetup-contract: v1\n---\n' > docs/qa/qa-setup.md
-  mk_sidecar 1
+  printf -- '---\nsetup-shape: v1\n---\n' > docs/qa/qa-setup.md
+  mk_sidecar sha256:aaaaaaaaaaaaaaaa
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SETUP_QA_CONTRACT:unknown/1"* ]]
+  [[ "$output" == *"SETUP_QA_STALE:yes"* ]]
+  [[ "$output" != *"SETUP_QA_CONTRACT"* ]]
 }
 
 @test "SETUP_QA: pre-contracts install stays silent (no sidecar, no hint)" {
-  mk_receipt 1
+  mk_receipt sha256:aaaaaaaaaaaaaaaa
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SETUP_QA_CONTRACT:1/unknown"* ]]
+  [[ "$output" == *"SETUP_QA:present"* ]]
   [[ "$output" != *"SETUP_QA_HINT"* ]]
+  [[ "$output" != *"SETUP_QA_STALE"* ]]
 }
 
-@test "SETUP_QA: a CRLF receipt is read, not degraded to unknown" {
-  mk_receipt 1 crlf
-  mk_sidecar 2
+@test "SETUP_QA: a CRLF receipt is read, not degraded to unreadable" {
+  mk_receipt sha256:aaaaaaaaaaaaaaaa crlf
+  mk_sidecar sha256:bbbbbbbbbbbbbbbb
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SETUP_QA_CONTRACT:1/2"* ]]
-  [[ "$output" == *"SETUP_QA_BEHIND:1"* ]]
+  [[ "$output" == *"SETUP_QA_STALE:yes"* ]]
 }
 
 # The frontmatter-bounded read must never match the agent-written body, where
-# mk_receipt plants a `setup-contract: 99` decoy inside the Decision Log.
+# mk_receipt plants a decoy shape inside the Decision Log.
 @test "SETUP_QA: the Decision Log body never leaks into the recorded value" {
-  mk_receipt 4
-  mk_sidecar 4
+  mk_receipt sha256:aaaaaaaaaaaaaaaa
+  mk_sidecar sha256:aaaaaaaaaaaaaaaa
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SETUP_QA_CONTRACT:4/4"* ]]
-  [[ "$output" != *"99"* ]]
+  [[ "$output" == *"SETUP_QA:present"* ]]
+  [[ "$output" != *"SETUP_QA_STALE"* ]]
+  [[ "$output" != *"deadbeef"* ]]
 }
