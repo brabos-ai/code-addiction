@@ -26,6 +26,12 @@ npx codeadd install
 # install a specific version (e.g., v0.2.20)
 npx codeadd install --version v0.2.20
 
+# install from a release channel
+npx codeadd install --channel beta
+
+# install at user level (home directory)
+npx codeadd install --global
+
 # check environment health
 npx codeadd doctor
 
@@ -40,6 +46,9 @@ npx codeadd update
 
 # update to a specific version
 npx codeadd update --version v0.2.14
+
+# switch release channels while updating
+npx codeadd update --channel stable
 
 # remove Code Addiction files from your project
 npx codeadd uninstall

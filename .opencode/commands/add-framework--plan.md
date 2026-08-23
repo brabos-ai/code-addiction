@@ -63,12 +63,16 @@ IF IDEA IS BAD OR UNNECESSARY:
 **ONLY PERMITTED OUTPUT:** `.md` file in `docs/plans/`
 
 ```
-⛔ DO NOT USE: Edit on ANY file
+⛔ DO NOT USE: Edit outside docs/plans/
 ⛔ DO NOT USE: Write outside docs/plans/
 ⛔ DO NOT USE: Bash for implementations, builds, tests, or scripts
 ⛔ DO NOT: Create branches, commits, or PRs
 ⛔ DO NOT: Modify source code, commands, skills, or scripts
 ⛔ DO NOT: Implement ANYTHING discussed — that is /add-framework--build's job
+
+IF PLAN FILE NOT YET REVIEWED BY @plan-review-agent:
+  ⛔ DO NOT: Present the plan path, summary, or next-step commands as delivered
+  ✅ DO: Run STEP 5
 
 IF TEMPTED TO IMPLEMENT:
   → STOP. Write it in the plan. User decides when/how to execute via /add-framework--build.
@@ -79,7 +83,7 @@ IF TEMPTED TO IMPLEMENT:
 ## Operation Mode
 
 ```
-/add-framework--plan [idea]        → New strategic analysis (STEP 0-5)
+/add-framework--plan [idea]        → New strategic analysis (STEP 0-6)
 /add-framework--plan PLAN[NNNN]     → Continue existing plan
 /add-framework--plan               → List plans in draft
 ```
@@ -213,7 +217,7 @@ After user responds → summarize confirmed decisions, then ask to proceed to pl
 
 ## STEP 4: Generate plan
 
-Confirm ALL decisions are taken before writing.
+Confirm ALL decisions are taken before writing. Write the draft file. DO NOT present the path or next steps — proceed immediately to STEP 5.
 
 ### Path and Sequential Numbering
 
@@ -300,9 +304,51 @@ Find the next available plan number in `docs/plans/`. If none exist, start at 00
 
 ---
 
-## STEP 5: Completion [HARD STOP]
+## STEP 5: Review Plan (BEFORE ANY DELIVERY)
 
-Show: plan file path, status (draft), and the two next-step commands (`/add-framework--build [NNNN]-PLAN--[slug]` to implement, `/add-framework--plan PLAN[NNNN]` to revise).
+**GATE CHECK:** Plan file from STEP 4 exists? IF NO → return to STEP 4. DO NOT proceed.
+
+DO NOT show the plan path, summary, or next-step commands until this STEP completes with a deliverable verdict.
+
+**DISPATCH AGENT:** `@plan-review-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:**
+  - `path`: plan file written in STEP 4
+  - `kind`: `product-plan`
+  - `layer`: `product`
+
+**WAIT:** Agent report received. ⛔ DO NOT proceed without it.
+
+### 5.1 Act on Verdict
+
+| Verdict | Action |
+|---------|--------|
+| `ok` | Proceed to STEP 6 |
+| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Add a changelog line. Re-dispatch `@plan-review-agent` ONCE. After re-review: `ok` or only nits → STEP 6. Remaining blockers → 5.2 |
+| `blocked` | Go to 5.2 |
+
+### 5.2 User decisions required [STOP]
+
+Present only the blockers that need a user decision. DO NOT present the plan as delivered. WAIT. After answers: apply, update changelog, re-enter STEP 5.
+
+⛔ DO NOT invent decisions to clear blockers.
+⛔ DO NOT skip this STEP in Continue Mode.
+
+### Agent Dispatch Rules
+
+When this command instructs you to DISPATCH AGENT:
+1. Read the **Capability** required (read-only)
+2. Read the **Complexity** hint (`standard`)
+3. Choose the best available agent/task mechanism that satisfies the capability
+4. Prefer `@plan-review-agent` when the engine can address it by name
+5. Verify the report is received before acting on the verdict
+
+---
+
+## STEP 6: Completion [HARD STOP]
+
+Show: plan file path, status (draft), review verdict, fixes applied (one line each, if any), and the two next-step commands (`/add-framework--build [NNNN]-PLAN--[slug]` to implement, `/add-framework--plan PLAN[NNNN]` to revise).
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
 add-framework--plan ends here. Execution is `/add-framework--build`'s responsibility.
@@ -317,6 +363,7 @@ If `/add-framework--plan PLAN[NNNN]`:
 2. Show summary of what was already decided
 3. Ask: "What do you want to adjust?"
 4. Update plan with changelog entry
+5. Execute STEP 5 (Review), then STEP 6 (Completion). DO NOT treat the update as delivered before review.
 
 ---
 
@@ -341,12 +388,15 @@ ALWAYS:
 - Consider community and framework consumers in every decision
 - Generate complete, actionable plan with validated decisions
 - Connect proposals with existing ecosystem strategy
+- Dispatch `@plan-review-agent` before any plan delivery, including Continue Mode
 
 NEVER:
 - Accept ideas without questioning
 - Ignore what already exists in the ecosystem
 - Skip impact analysis
 - Generate plan without user validation of decisions
+- Present an unreviewed plan as delivered
+- Invent decisions to clear review blockers
 - Be passive/executor — this is a consultant role
 - Write outside `docs/plans/`
 - Implement anything — that is `/add-framework--build`'s job
