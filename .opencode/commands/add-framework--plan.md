@@ -225,13 +225,37 @@ Find the next available plan number in `docs/plans/`. If none exist, start at 00
 
 **Path:** `docs/plans/[NNNN]-PLAN--[slug].md`
 
+### ⛔ Authoring Rules (READ BEFORE WRITING)
+
+**A plan states WHAT WE WILL DO, not what will be written to the file.**
+
+```
+IF TEMPTED TO PASTE THE CONTENT A FILE WILL RECEIVE:
+  ⛔ DO NOT: Write the command body, the skill body, the agent prompt, the fragment text
+  ⛔ DO NOT: Turn the plan into something /add-framework--build copy-pastes
+  ✅ DO: Name the file, name the change, and POINT at the design doc that carries the contract
+```
+
+| Belongs in the plan | Belongs in the brainstorm/design doc it points at |
+|---|---|
+| Which files change and what changes about them | The contract, the schema, the worked example |
+| Why an F-block exists and what it must not lose | The rejected alternatives and their rationale |
+| The order of work and its dependencies | The conversation that produced the decision |
+| How each F-block is proven correct | — |
+
+If a design doc exists in `docs/brainstorming/`, the plan **references it and does not restate it**. If no design doc exists, the plan carries the decision inline — but still states the decision, never the file content.
+
+**Every F-block MUST be covered by at least one validation level.** An F-block with no proof is a gap the reviewer cannot see.
+
 ### Plan Structure
 
+Sections marked *(multi-topic)* apply when the plan implements more than one design doc or spans more than one subsystem; a single-artefact plan may omit them.
+
 ```markdown
-# Plan: [Name]
+# Plan: [Name] — [one-line what changes]
 
 > **Status:** draft | approved | implemented
-> **Type:** command | skill | script | workflow
+> **Type:** command | skill | script | workflow | architecture
 > **Created:** YYYY-MM-DD
 > **Author:** Maicon + Claude (ADD Strategy)
 
@@ -241,27 +265,41 @@ Find the next available plan number in `docs/plans/`. If none exist, start at 00
 
 [Why this need arose - connect with ecosystem strategy]
 
+[IF design docs exist:]
+**Every decision in this plan was taken and reviewed in the design set below. This plan does not re-derive them — it points at them.**
+
+| Document | Carries |
+|---|---|
+| `docs/brainstorming/[file].md` | [which decisions/contracts live there] |
+
 ## Problem
 
-[What is bad today / what is missing / user pain]
+1. **[Headline]** — [what is bad today / what is missing / user pain]
+2. ...
 
 ## Proposal
 
-[Recommended solution at high level - 2-3 paragraphs]
+[Recommended solution at high level - 2-3 paragraphs. Name the sequencing logic if the work has stages.]
 
 ## Scope
 
 ### Includes
-- [concrete item]
+
+[Multi-topic: group F-blocks under `#### T[N] — [topic] (ref: [design doc])` headings.]
+
+- **F1** — `path/to/file`: [what changes about it]. [What it must NOT lose.] [Ref to the design section carrying its contract.]
+- **F2** — ...
 
 ### Does NOT Include (important!)
-- [item explicitly out of scope]
+
+- [item explicitly out of scope, with the reason if non-obvious]
+- [anything the executing command cannot reach — e.g. `CLAUDE.md` and `.claude/` require a companion `/add-framework--self-plan`]
 
 ## Validated Decisions
 
-| Question | Decision | Rationale |
-|----------|----------|-----------|
-| [questionnaire question] | [choice] | [why this one] |
+| Question | Decision | Rationale / Ref |
+|----------|----------|-----------------|
+| [questionnaire question] | [choice] | [why this one, or the design doc that argues it] |
 
 ## Accepted Trade-offs
 
@@ -273,25 +311,88 @@ Find the next available plan number in `docs/plans/`. If none exist, start at 00
 
 | Risk | Probability | Mitigation |
 |------|-------------|------------|
-| [risk] | High/Medium/Low | [how to avoid] |
+| [risk] | High/Medium/Low | [how to avoid — name the F-block or validation level that operationalizes it] |
 
 ## Ecosystem Impact
 
 | Component | Necessary action |
 |-----------|------------------|
-| [command X] | [update/none] |
-| [skill Y] | [create/update/none] |
+| [file/command/skill] | [what happens, with the F-block id] |
+
+[Must be the COMPLETE map. Any file an F-block touches and this table omits is a file the reviewer will miss.]
+
+---
+
+## Red-Green Validation Matrix (spec for the build phase)
+
+**Discipline: RED first.** Write every level below BEFORE any F-block lands, and verify each fails against the current tree — that is the proof the tests bite. Then drive them GREEN. No F-block lands without its failing test already on record.
+
+[IF the change touches feature/plugin injection: state the EXPECTED END-STATE MAP (which namespace injects which sections into which resource, and the total count). The build must ASSERT the map, not assume it.]
+
+### L1 — [Unit / build-side] (RED → GREEN)
+
+1. [assertion] *RED today: [why it currently fails].*
+
+### L2 — [Integration]
+
+1. [assertion]
+
+### L[N] — Combination matrix
+
+[When more than one toggle exists, assert the END STATE of every combination, not merely that a replace happened:]
+
+1. **All toggle states** — every expected section exactly once, every unexpected section absent, artefact still coherent in each state.
+2. **Shared-anchor non-collision** — sections sharing an anchor all land, deterministically ordered, none clobbering another.
+3. **Partial disable** — disabling one leaves siblings byte-untouched.
+4. **Order independence** — reversed enable order produces identical final bytes.
+5. **Full round-trip** — enable everything, disable everything, bytes equal the pristine baseline.
+
+### L[N] — Behavioural acceptance
+
+1. [what the change must DO, not just what it must contain]
+
+**RED expectations against the current tree:** [which levels fail today and why]. **GREEN = all levels pass after F1–F[N].**
+
+---
+
+## Execution Order *(multi-topic)*
+
+`T1 → T2 → ...`, with the validation matrix written before any of it.
+
+- **T1 first** because [dependency reason].
+- ...
+
+[State which T-boundaries leave the framework in a working state, so a build that must stop knows where.]
+
+## Reviewer Handoff
+
+`/add-framework--shared-review` must be able to audit this without re-reading the design docs. For each F-block the build must leave, in the evidence file:
+
+- **What changed** — files touched, with the F-block id.
+- **Which validation levels cover it**, and their pass state.
+- **Any decision deferred or altered**, with the design section it departs from and why.
+
+Specific gaps a reviewer must actively hunt, because they are the ones this plan is most likely to leak:
+
+1. An F-block marked done whose validation level was never RED (a test written after the fix proves nothing).
+2. [plan-specific gap]
 
 ## References
 
-- [links to strategic docs]
-- [related commands/skills]
+- Design set: [brainstorm paths]
+- Prior art this plan builds on: [plan NNNN — what it established]
+- [key source files / contracts]
 
 ---
 
 ## Next Steps
 
 /add-framework--build [NNNN]-PLAN--[slug]
+
+[IF the plan names internal-layer work:]
+Then, for the internal layer (`/add-framework--build` reaches neither `CLAUDE.md` nor `.claude/`):
+
+- `/add-framework--self-plan [what]`
 
 ---
 
@@ -388,9 +489,18 @@ ALWAYS:
 - Consider community and framework consumers in every decision
 - Generate complete, actionable plan with validated decisions
 - Connect proposals with existing ecosystem strategy
+- Break scope into numbered **F-blocks**, each naming its files and its proof
+- Specify a **Red-Green Validation Matrix** — tests written first, RED before any F-block lands
+- Assert the expected end state (counts, maps, combinations), never merely that a change happened
+- Point at the design doc for contracts and examples instead of restating them
+- Keep the Ecosystem Impact table a complete map of every file an F-block touches
+- Route work the executing command cannot reach (`CLAUDE.md`, `.claude/`) to a companion `/add-framework--self-plan`
 - Dispatch `@plan-review-agent` before any plan delivery, including Continue Mode
 
 NEVER:
+- Paste the content a file will receive — the plan says what we will do, not what will be written
+- Leave an F-block with no validation level covering it
+- Name a risk whose mitigation no F-block or validation level operationalizes
 - Accept ideas without questioning
 - Ignore what already exists in the ecosystem
 - Skip impact analysis
