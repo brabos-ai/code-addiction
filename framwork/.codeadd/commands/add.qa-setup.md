@@ -1,5 +1,5 @@
 ---
-description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests /add.qa
+description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests the QA judgement via /add.review
 argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that feature's screen catalog, e.g. /add.qa-setup 0001F; --migrate reopens the migration decision; --upgrade forces a full re-materialize even when the shape matches)"
 ---
 
@@ -7,7 +7,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow on a project's first run (confirm-then-dogfood), and closes the loop with a universal `/add.qa` smoke test plus a bounded auto-correction loop. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
+Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow on a project's first run (confirm-then-dogfood), and closes the loop with a universal `/add.review` smoke test plus a bounded auto-correction loop. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
 
 ---
 
@@ -36,10 +36,10 @@ STEP 7: Scaffold QA config       → docs/qa/config.json (interactive, project-w
 STEP 8: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (shape from ## Materializes)
 STEP 9: Ignore working evidence  → materialize the dedicated QA block in .gitignore
 STEP 10: Autonomous migration    → IF MIGRATE: dispatch add.new→add.plan→add.build→add.review (checkpoints only)
-STEP 11: Smoke test + correction → dispatch /add.qa, analyze; on failure dispatch /add.build qa (max 3), else defer/escalate
+STEP 11: Smoke test + correction → dispatch /add.review, analyze; on failure dispatch /add.build (max 3), else defer/escalate
 STEP 12: Write the receipt       → docs/qa/qa-setup.md (state + decisions; rewritten even on a no-op)
 STEP 13: Validation gate         → add-doc-schemas gate against the setup-receipt schema
-STEP 14: Hand-off                → enable plugin (optional) + run /add.qa + migration/smoke/contract summary
+STEP 14: Hand-off                → enable plugin (optional) + run /add.review + migration/smoke/contract summary
 ```
 
 ## ⛔ ABSOLUTE PROHIBITIONS (by checkpoint)
@@ -75,7 +75,7 @@ STEP 14: Hand-off                → enable plugin (optional) + run /add.qa + mi
 
 ```yaml
 contract: add.qa-setup
-shape: sha256:ea7856fb4e1a72e2
+shape: sha256:d599ad3ab3c9f345
 paths:
   - path: docs/qa/config.json
     owner: setup
@@ -132,7 +132,7 @@ docs/features/**/_tests/run-*/
 ```markdown
 ---
 name: qa-project
-description: Use when authoring E2E specs (/add.test) or running QA (/add.qa) in this project — carries the project-specific runner conventions + managed app lifecycle.
+description: Use when authoring E2E specs (/add.build) or judging QA (/add.review) in this project — carries the project-specific runner conventions + managed app lifecycle.
 ---
 
 # Project QA Conventions
@@ -149,12 +149,12 @@ description: Use when authoring E2E specs (/add.test) or running QA (/add.qa) in
 - **Evidence lifecycle:** allocate with `.codeadd/scripts/qa-evidence.sh next`; new runs write only to `_tests/run-NNN/`. `/add.done` alone promotes the reviewed baseline to immutable `_tests/final/run-NNN/`.
 
 ## Managed App Lifecycle
-Both `/add.test` (green-confirm) and `/add.qa` (run) invoke this procedure:
+Both `/add.build` (E2E green-confirm) and `/add.review` (QA run) invoke this procedure:
 1. **Probe** `baseUrl` (from `docs/qa/config.json`).
 2. If **down**: boot the app **in the background** using `<boot command / config.json bootHint>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
 3. **Run** the spec(s).
 4. **Teardown** the app **iff we booted it** — never kill a dev server the user already had running.
-5. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add.qa`** with a flagged note.
+5. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add.review`** with a flagged note.
 
 ## Auth / Seed
 - `<how an authenticated session is obtained for auth:true surfaces, from config.json.authSeed>`
@@ -189,7 +189,7 @@ Outcome sets `SETUP_STATE` for the rest of the run:
 - `CURRENT` — recorded `setup-shape` equals the shipped sidecar `shape`. Drift check only (unless `--upgrade`).
 - `STALE` — anything else: no receipt but state present, unreadable `setup-shape`, or hash mismatch. Re-materialize under the merge rules (per-key `config.json`, regenerate `qa-project`, create-if-absent empty `screens.json`).
 
-Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a` are **work-to-do in this command**, never a stop. `{{cmd:add.qa}}` interprets the same rows as `block`.
+Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a` are **work-to-do in this command**, never a stop. `{{cmd:add.review}}` interprets the same rows as `block`.
 
 ⛔ `FIRST_RUN` (the old `docs/qa/config.json`-presence proxy) is RETIRED. Do not reintroduce it. Do not backfill a missing receipt. Do not walk a versioned delta list.
 
@@ -197,7 +197,7 @@ Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a`
 
 ## STEP 2: Feature Gate — qa-pipeline opt-in
 
-Running this command is unambiguous QA intent, and everything it installs is inert while the `qa-pipeline` feature is off: `add.plan` authors no QA spec, `add.test` dispatches no `@e2e-agent`, `/add.build qa` refuses. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin").
+Running this command is unambiguous QA intent, and everything it installs is inert while the `qa-pipeline` feature is off: `add.plan` authors no QA spec and `add.build` dispatches no `@e2e-agent`. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin").
 
 ### 2.1 Probe the feature state
 ```bash
@@ -224,7 +224,7 @@ Detect the environment, then **functionally verify** each prerequisite — invok
 - **`@playwright/test` runner** — resolvable AND runnable: a trivial `npx playwright --version` / spec-list invocation succeeds (not just listed in devDependencies).
 - **chromium for Playwright** — actually launchable: a trivial headless launch/health probe succeeds (not just present in the browsers cache).
 - **`@playwright/mcp`** — the server binary responds to a trivial invocation, and if already wired for the active provider, the MCP tool answers a trivial call (for Claude Code, `claude mcp list` shows it AND it is reachable).
-- **`add.qa` / `add.test` working dependencies** — confirm the pieces those commands rely on (runner + browsers + config surface) are functionally available, not merely declared.
+- **`add.review` / `add.build` QA working dependencies** — confirm the pieces those commands rely on (runner + browsers + config surface) are functionally available, not merely declared.
 
 Build a gap list distinguishing **missing** from **present-but-non-functional** (declared yet failing invocation) — the runner is mandatory, chromium/MCP optional. Present it before proposing any command.
 
@@ -237,11 +237,11 @@ For each missing or non-functional prerequisite, show the EXACT command, explain
 Prerequisites (adapt commands to the detected OS/provider):
 - **`@playwright/test` runner (mandatory)** — e.g. `npm i -D @playwright/test` (adapt to detected pkg manager). Powers the deterministic layer + plugin-off degradation. If declined → record as a blocking manual step; downstream authoring cannot run.
 - **chromium for Playwright** — e.g. `npx playwright install chromium`. Verify with a trivial headless launch.
-- **Playwright MCP server (optional — only the live-driving arm of `/add.qa` needs it)** — the server runs via `npx @playwright/mcp@latest`; wire it as an MCP server for the active provider. For Claude Code: `claude mcp add playwright -- npx @playwright/mcp@latest`. For other providers, add the equivalent MCP server entry to that provider's MCP config (the same `npx @playwright/mcp@latest` command).
+- **Playwright MCP server (optional — only the live-driving arm of `/add.review` needs it)** — the server runs via `npx @playwright/mcp@latest`; wire it as an MCP server for the active provider. For Claude Code: `claude mcp add playwright -- npx @playwright/mcp@latest`. For other providers, add the equivalent MCP server entry to that provider's MCP config (the same `npx @playwright/mcp@latest` command).
 
 ⛔ Skip a prerequisite only if STEP 3 proved it already **functional**. ⛔ If the user declines a command, stop that install and record it as a remaining manual step in the hand-off (STEP 14).
 
-After installs, confirm the MCP server is reachable AND answers a trivial call. If it does not, the wiring is incomplete — surface it; `/add.qa` cannot drive without it.
+After installs, confirm the MCP server is reachable AND answers a trivial call. If it does not, the wiring is incomplete — surface it; the QA judgement cannot drive without it.
 
 Record each prerequisite's outcome for STEP 12 as `installed` | `already-present` | `declined` | `failed` | `not-offered`. A declined prerequisite is a recorded decision, not an unfinished install — it must never be re-asked on a later run unless the user passes `--upgrade`.
 
@@ -292,7 +292,7 @@ If it exists → per-key merge: keep every existing key (including extras the us
 
 Write the shape declared in `## Materializes` → `docs/qa/config.json`. Values are free-text hints; viewports default to the declared set.
 
-⛔ `baseUrl` MUST point at a local/throwaway environment — `/add.qa` actively exercises flows (submits forms, creates records). Never a production URL.
+⛔ `baseUrl` MUST point at a local/throwaway environment — the QA judgement actively exercises flows (submits forms, creates records). Never a production URL.
 
 ---
 
@@ -342,17 +342,17 @@ Dispatch each command in the chain as a subagent via the Agent tool — autonomo
 
 ## STEP 11: Universal Smoke Test + Bounded Correction Loop
 
-⛔ IF no feature with a scaffolded `screens.json` exists → DEFER only the smoke dispatch and correction loop (there is nothing for `/add.qa` to validate). Do NOT scaffold a synthetic feature. Record the deferral, then continue to STEP 12 so the receipt is written and validated before hand-off.
+⛔ IF no feature with a scaffolded `screens.json` exists → DEFER only the smoke dispatch and correction loop (there is nothing for the QA judgement to validate). Do NOT scaffold a synthetic feature. Record the deferral, then continue to STEP 12 so the receipt is written and validated before hand-off.
 
 Otherwise, close the loop on every run:
 
 ### 11.1 Smoke test
-Autonomously dispatch `/add.qa <feature-id>` (Agent tool) against the scaffolded feature. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
+Autonomously dispatch `/add.review <feature-id>` (Agent tool) against the scaffolded feature — its STEP 8–10 QA sections are what this setup enables. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
 
 ### 11.2 Correction loop (max 3 attempts)
-On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build qa` to fix it, then re-run 11.1.
+On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build` to work the routed rows, then re-run 11.1.
 
-- Guard: `/add.build qa` requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP 2 offers the enable).
+- Guard: routed QA correction requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP 2 offers the enable).
 - ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP 14 with the accumulated findings from all attempts.
 
 ---
@@ -414,9 +414,9 @@ Tell the user, in order:
 3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.
 4. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
 5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
-6. Enable the capability (optional — `/add.qa` degrades without it): `codeadd plugins enable playwright`.
+6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
-8. Run the audit: `/add.qa <feature-id> [SFxx]` (or `/add.qa @docs/features/.../about.md`).
+8. Run the audit: `/add.review <feature-id> [SFxx]` — its QA sections judge the rendered result.
 
 `/add.qa-setup` does NOT modify application code, and does NOT merge the migration branch.
 

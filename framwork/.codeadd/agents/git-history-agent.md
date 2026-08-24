@@ -2,6 +2,7 @@
 name: git-history-agent
 description: Git history correlator. Given a symptom predicate, surfaces recent commits whose messages or diffs plausibly relate, builds a timeline, and flags highly suspicious commits. Read-only — runs only git read commands (log, show, diff, branch); never writes code or modifies git state.
 model: haiku
+readonly: true
 tools: Bash, Read
 disallowedTools: Write, Edit, NotebookEdit, Glob, Grep
 memory: project

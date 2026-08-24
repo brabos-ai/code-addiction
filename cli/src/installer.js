@@ -8,7 +8,7 @@ import { promptProviders, promptScope, promptConfirm, promptGitignore } from './
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
-import { resolveSelected } from './providers.js';
+import { resolveSelected, agentDest } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 
 /**
@@ -250,6 +250,13 @@ export async function install(cwd, options = {}) {
     const destDir = path.join(targetDir, p.dest);
     const pFiles = copyFromZip(zip, p.src, destDir, targetDir);
     allFiles.push(...pFiles);
+
+    // A provider whose agents live outside its main root (Codex: skills under
+    // .agents/, agents under .codex/agents/) needs a second copy pass.
+    if (p.agentsSrc) {
+      const agentDir = path.join(targetDir, agentDest(p));
+      allFiles.push(...copyFromZip(zip, p.agentsSrc, agentDir, targetDir));
+    }
   }
 
   s.stop(`Installed ${allFiles.length} files.`);
@@ -284,7 +291,7 @@ export async function install(cwd, options = {}) {
     log.success(`Applied ${featuresApplied} feature injection(s).`);
   }
 
-  log.info('TDD is enabled by default. Run `codeadd features` to adjust.');
+  log.info('The tdd-pipeline feature is enabled by default. Run `codeadd features` to adjust.');
 
   // Apply enabled plugins (disabled by default — no-op on fresh install)
   const pluginsApplied = applyEnabledPlugins(targetDir);

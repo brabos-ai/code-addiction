@@ -32,19 +32,89 @@ function warnMissed(namespace, name, resourceName, missed) {
 
 /**
  * Feature registry — each optional feature that can be toggled.
+ *
+ * The key doubles as the fragment directory name (see getFragments), so a key
+ * rename is also a directory rename. `aliases` carries retired keys so a
+ * manifest written before the rename still resolves to the user's choice
+ * instead of silently falling back to `default`.
  */
 export const FEATURES = {
-  tdd: {
-    description: 'TDD Pipeline (test-first development)',
+  'tdd-pipeline': {
+    description: 'TDD pipeline (test-first ordering + unit/integration generation)',
     default: true,
+    aliases: ['tdd'],
     commands: ['add.plan', 'add.build', 'add.review'],
   },
   'qa-pipeline': {
     description: 'QA pipeline (E2E authoring + agent QA validation)',
     default: false,
-    commands: ['add.plan', 'add.test', 'add.build'],
+    commands: ['add.plan', 'add.build'],
   },
 };
+
+/**
+ * Resolve a user-supplied feature name to its canonical registry key.
+ * Accepts the canonical key or any retired alias.
+ * @param {string} name
+ * @returns {{ key: string, alias: string|null } | null}
+ */
+export function resolveFeatureName(name) {
+  if (FEATURES[name]) return { key: name, alias: null };
+  for (const [key, meta] of Object.entries(FEATURES)) {
+    if (meta.aliases?.includes(name)) return { key, alias: name };
+  }
+  return null;
+}
+
+/**
+ * Resolve one feature's enabled state from a manifest's `features` map.
+ *
+ * Order is load-bearing: explicit canonical key, THEN any alias key, THEN
+ * `meta.default`. Reaching the default before consulting aliases is what
+ * silently re-enables a feature the user explicitly disabled under its old key.
+ *
+ * @param {Record<string, boolean>} featureStates
+ * @param {string} key      canonical registry key
+ * @param {object} meta     registry entry
+ * @returns {{ enabled: boolean, legacyKey: string|null }}
+ */
+function resolveFeatureState(featureStates, key, meta) {
+  if (Object.prototype.hasOwnProperty.call(featureStates, key)) {
+    return { enabled: featureStates[key], legacyKey: null };
+  }
+  for (const alias of meta.aliases ?? []) {
+    if (Object.prototype.hasOwnProperty.call(featureStates, alias)) {
+      return { enabled: featureStates[alias], legacyKey: alias };
+    }
+  }
+  return { enabled: meta.default, legacyKey: null };
+}
+
+/**
+ * Rewrite a manifest's `features` map with canonical keys, dropping any alias
+ * key that was resolved into one. Pure — returns a new map plus whether the
+ * rewrite changed anything.
+ *
+ * @param {Record<string, boolean>} featureStates
+ * @returns {{ states: Record<string, boolean>, changed: boolean }}
+ */
+export function normalizeFeatureStates(featureStates) {
+  const states = { ...featureStates };
+  let changed = false;
+
+  for (const [key, meta] of Object.entries(FEATURES)) {
+    for (const alias of meta.aliases ?? []) {
+      if (!Object.prototype.hasOwnProperty.call(states, alias)) continue;
+      if (!Object.prototype.hasOwnProperty.call(states, key)) {
+        states[key] = states[alias];
+      }
+      delete states[alias];
+      changed = true;
+    }
+  }
+
+  return { states, changed };
+}
 
 /**
  * Get fragment files for a feature.
@@ -99,6 +169,7 @@ export function enableFeature(cwd, featureName) {
   if (manifest) {
     if (!manifest.features) manifest.features = {};
     manifest.features[featureName] = true;
+    manifest.features = normalizeFeatureStates(manifest.features).states;
     recalculateHashes(cwd, manifest, modifiedPaths);
     saveManifest(cwd, manifest);
   }
@@ -138,6 +209,7 @@ export function disableFeature(cwd, featureName) {
   if (manifest) {
     if (!manifest.features) manifest.features = {};
     manifest.features[featureName] = false;
+    manifest.features = normalizeFeatureStates(manifest.features).states;
     recalculateHashes(cwd, manifest, modifiedPaths);
     saveManifest(cwd, manifest);
   }
@@ -157,10 +229,23 @@ export function applyEnabledFeatures(cwd) {
   let totalModified = 0;
 
   for (const [name, meta] of Object.entries(FEATURES)) {
-    const enabled = featureStates[name] ?? meta.default;
+    const { enabled } = resolveFeatureState(featureStates, name, meta);
     if (enabled) {
       const { modified } = enableFeature(cwd, name);
       totalModified += modified;
+    }
+  }
+
+  // Unconditional normalisation. enableFeature reaches saveManifest only for a
+  // feature that resolves ENABLED, so a manifest holding a disabled legacy key
+  // — the exact motivating case — would otherwise never be rewritten and the
+  // orphaned key would linger as dead data forever.
+  const current = readManifest(cwd);
+  if (current) {
+    const { states, changed } = normalizeFeatureStates(current.features ?? {});
+    if (changed) {
+      current.features = states;
+      saveManifest(cwd, current);
     }
   }
 
@@ -176,11 +261,10 @@ export function getFeatureStates(cwd) {
   const manifest = readManifest(cwd);
   const featureStates = manifest?.features ?? {};
 
-  return Object.entries(FEATURES).map(([name, meta]) => ({
-    name,
-    description: meta.description,
-    enabled: featureStates[name] ?? meta.default,
-  }));
+  return Object.entries(FEATURES).map(([name, meta]) => {
+    const { enabled, legacyKey } = resolveFeatureState(featureStates, name, meta);
+    return { name, description: meta.description, enabled, legacyKey };
+  });
 }
 
 /**
@@ -201,6 +285,12 @@ export async function features(cwd, args, scope = 'project') {
 
     const states = getFeatureStates(cwd);
     const currentlyEnabled = states.filter((f) => f.enabled).map((f) => f.name);
+
+    for (const { name, legacyKey } of states) {
+      if (legacyKey) {
+        log.warn(`Manifest still carries the retired key "${legacyKey}". It resolves to "${name}" and is normalised on the next update.`);
+      }
+    }
 
     const selected = await promptFeatures(currentlyEnabled);
 
@@ -232,19 +322,27 @@ export async function features(cwd, args, scope = 'project') {
       outro(`ERROR: Missing feature name. Usage: codeadd features ${action} <name>`);
       process.exit(1);
     }
-    if (!FEATURES[featureName]) {
+    const resolved = resolveFeatureName(featureName);
+    if (!resolved) {
       outro(`ERROR: Unknown feature "${featureName}". Available: ${Object.keys(FEATURES).join(', ')}`);
       process.exit(1);
     }
 
     intro(`ADD CLI - Features ${action}`);
 
+    // An alias is honoured, never rejected: somebody's setup script calls
+    // `features disable tdd`, and failing it turns a rename into an outage.
+    if (resolved.alias) {
+      log.warn(`"${resolved.alias}" is deprecated and now means "${resolved.key}". Update your scripts.`);
+    }
+
+    const canonical = resolved.key;
     if (action === 'enable') {
-      const { modified } = enableFeature(cwd, featureName);
-      log.success(`Feature "${featureName}" enabled. ${modified} file(s) modified.`);
+      const { modified } = enableFeature(cwd, canonical);
+      log.success(`Feature "${canonical}" enabled. ${modified} file(s) modified.`);
     } else {
-      const { modified } = disableFeature(cwd, featureName);
-      log.success(`Feature "${featureName}" disabled. ${modified} file(s) modified.`);
+      const { modified } = disableFeature(cwd, canonical);
+      log.success(`Feature "${canonical}" disabled. ${modified} file(s) modified.`);
     }
 
     outro('Done.');

@@ -162,7 +162,7 @@ import "../styles/global.css";
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd features</code>
-            <span class="text-muted-light text-sm">List, enable, or disable optional features (e.g. TDD, Startup Test)</span>
+            <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline)</span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
@@ -579,11 +579,11 @@ import "../styles/global.css";
         <div class="space-y-3">
           <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">tdd</code>
+              <code class="text-accent font-mono text-sm">tdd-pipeline</code>
               <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">TDD Pipeline (test-first development)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code></p>
+            <p class="text-muted-light text-sm mb-1">TDD pipeline (test-first ordering + unit/integration generation)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
           </div>
           <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-2">
@@ -591,7 +591,7 @@ import "../styles/global.css";
               <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
             </div>
             <p class="text-muted-light text-sm mb-1">QA pipeline (E2E authoring + agent QA validation)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.test</code>, <code class="font-mono">add.build</code></p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code></p>
           </div>
         </div>
       </section>

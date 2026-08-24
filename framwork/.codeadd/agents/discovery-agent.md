@@ -2,6 +2,7 @@
 name: discovery-agent
 description: Feature discovery and specification specialist for codebase analysis, requirement extraction, and feature scoping. Use when exploring the codebase for a new feature or documenting requirements.
 model: haiku
+readonly: true
 skills:
   - add-feature-discovery
   - add-feature-specification

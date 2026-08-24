@@ -8,6 +8,7 @@
 .augment/
 .bob/
 .claude/
+.codex/
 .cursor/
 .gemini/
 .github/

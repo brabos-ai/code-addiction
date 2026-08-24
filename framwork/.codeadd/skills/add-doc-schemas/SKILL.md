@@ -164,7 +164,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 |----------|------|---------|
 | `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm |
 | `fix` | `references/fix.md` | hotfix-about, hotfix-related |
-| `review` | `references/review.md` | audit-report, diagnose-report, qa-validation |
+| `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
 | `product` | `references/product.md` | owner, product |
 | `strategy` | `references/strategy.md` | prd |

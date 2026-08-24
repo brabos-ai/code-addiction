@@ -84,7 +84,7 @@ Never hand-roll IDs. Never reuse an ID from another namespace.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
 
-Not every artefact uses the global `[NNNN][L]` convention. QA validation reports (`/add.qa`) use a **per-scope sequence** so each scope keeps its own local regression history.
+Not every artefact uses the global `[NNNN][L]` convention. QA validation reports (written by `/add.review`) use a **per-scope sequence** so each scope keeps its own local regression history.
 
 - **Format:** `<feature-id>-qa-validation-NNN` (e.g. `0001F-qa-validation-003`), `NNN` zero-padded from `001`. Filename: `_tests/run-NNN/qa-validation-NNN.md` (the `id:` stem matches the filename).
 - **Scope = the report's folder:** the subfeature folder when scoped to an SF, the feature folder otherwise. Two SFs of the same feature each have their own `qa-validation-001`.

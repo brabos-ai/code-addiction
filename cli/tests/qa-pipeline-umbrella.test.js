@@ -56,8 +56,9 @@ describe('QA umbrella — add-qa reclassification (plugin → default)', () => {
     expect(pw.skills).not.toContain('add-qa');
   });
 
-  it('playwright plugin keeps its add.qa live-drive injection', () => {
-    expect(pw.injects).toContain('add.qa');
+  it('playwright plugin keeps its live-drive injection, retargeted to add.review', () => {
+    expect(pw.injects).toContain('add.review');
+    expect(pw.injects).not.toContain('add.qa');
   });
 
   it('playwright plugin keeps the qa-agent drive injection', () => {
@@ -76,10 +77,10 @@ describe('QA umbrella — add-qa reclassification (plugin → default)', () => {
 // qa-pipeline feature registry (0051 B3)
 // ---------------------------------------------------------------------------
 describe('QA umbrella — qa-pipeline feature registry', () => {
-  it('is registered, default off, gating plan/test/build with no provider restriction', () => {
+  it('is registered, default off, gating plan/build with no provider restriction', () => {
     expect(FEATURES['qa-pipeline']).toBeDefined();
     expect(FEATURES['qa-pipeline'].default).toBe(false);
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.test', 'add.build']);
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build']);
     expect(FEATURES['qa-pipeline']).not.toHaveProperty('providers');
   });
 });
@@ -100,25 +101,30 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     });
   });
 
-  it('add.test carries e2e-dispatch anchored at the end of STEP 3', () => {
-    const pts = points('commands/add.test.md', 'add.test', 'command');
+  // Plan 0070: add.test was absorbed into add.build. e2e-dispatch now anchors
+  // AFTER the area validators return — @e2e-agent needs existing components
+  // and stable selectors, and that WAIT-ALL is already in place there.
+  it('add.build carries e2e-dispatch anchored after the area validators return', () => {
+    const pts = points('commands/add.build.md', 'add.build', 'command');
     expect(qa(pts, 'e2e-dispatch').anchor).toMatchObject({
-      text: '| **Ready** | Proceed to STEP 4 only if all generators completed |',
+      text: '**CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.',
       position: 'after',
     });
   });
 
-  it('add.build carries qa-fix anchored on the STEP 5 → STEP 6 separator', () => {
+  it('add.build carries qa-fix anchored on the separator above the wiki step', () => {
     const pts = points('commands/add.build.md', 'add.build', 'command');
     const anchor = qa(pts, 'qa-fix').anchor;
     expect(anchor).toMatchObject({ text: '---', position: 'after' });
-    expect(anchor.next).toMatch(/^## STEP 6/);
+    expect(anchor.next).toMatch(/^## STEP 7/);
   });
 });
 
 describe('QA umbrella — playwright drive anchors survive reclassification', () => {
-  it('add.qa command retains its plugin:playwright:drive anchor', () => {
-    expect(drive(points('commands/add.qa.md', 'add.qa', 'command'))).toBeDefined();
+  // Plan 0070: add.qa was absorbed into add.review's base body; the drive
+  // anchor moved with the judgement section it belongs to.
+  it('add.review carries the plugin:playwright:drive anchor', () => {
+    expect(drive(points('commands/add.review.md', 'add.review', 'command'))).toBeDefined();
   });
 
   it('qa-agent retains its plugin:playwright:drive anchor and carries no stray feature marker', () => {

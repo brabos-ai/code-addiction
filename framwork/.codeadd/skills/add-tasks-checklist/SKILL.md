@@ -15,7 +15,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - Per-area validator ticking sections after implementation
 - Deciding whether a section/item gets `[x]` or `[!]`
 - Reading tick state to gate review or delivery
-- Coordinator merging multi-area validator reports in autopilot
+- Coordinator merging multi-area validator reports in `/add.plan-to-ready`
 
 ## When NOT to Use
 
@@ -112,7 +112,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - **Auto-derived** from the `validation_gates` JSON block in CLAUDE.md (written by `add-architecture-discovery` / `add.wiki`). One checklist line per detected gate. If the block is absent or empty, **omit this section entirely** — never fabricate gate items.
 - Item line format: `- [ ] Run \`<gate command>\` and fix failures in files touched by this work` (drop "in files touched by this work" for the `build` gate, which is global).
 - The `format` gate appears only when CLAUDE.md provides a non-mutating check command (e.g. `prettier --check`, `ruff format --check`, `dotnet format --verify-no-changes`).
-- **Tick rule (build/autopilot):** the validator MUST actually invoke the gate command via Bash, capture exit code and output, then:
+- **Tick rule (build / loop coordinator):** the validator MUST actually invoke the gate command via Bash, capture exit code and output, then:
   - Exit 0 → tick `[x]`.
   - Exit ≠ 0 → identify failures restricted to files in `git diff --name-only` against the feature base; fix only those; re-run; tick `[x]` only when the re-run is green. Never tick on red. Never tick based on self-attestation.
   - Pre-existing failures in untouched files → record under `### Known Issues` (see below). Do not block the tick on touched-file fixes.
@@ -152,7 +152,7 @@ A change is **trivial** (does NOT count) when it is exclusively:
 
 ## Tick Authority (who writes ticks)
 
-| Section | `add.build` | `add.autopilot` |
+| Section | `add.build` | `add.plan-to-ready` |
 |---------|-------------|-----------------|
 | §1 Requirements Coverage | derived after validator writes | coordinator recomputes after batch write |
 | §2 TDD | per-area validator | coordinator merges per-area reports |
@@ -161,11 +161,11 @@ A change is **trivial** (does NOT count) when it is exclusively:
 | §5 Validation Gates | post-validator final step (must run real commands) | coordinator final step (must run real commands) |
 | `[!]` setting | per-area validator | coordinator (from validator reports) |
 
-In `add.autopilot`, **only the coordinator writes** to `tasks.md`. Area validators emit a structured report and the coordinator performs a single merge-write per batch — this avoids parallel-write contention without locks.
+In `/add.plan-to-ready`, **only the coordinator writes** to `tasks.md`. Area validators emit a structured report and the coordinator performs a single merge-write per batch — this avoids parallel-write contention without locks.
 
-## Validator Report Shape (autopilot)
+## Validator Report Shape (loop coordinator)
 
-Per-area validators in `add.autopilot` MUST return a JSON-shaped report:
+Per-area validators dispatched by a coordinator that owns the `tasks.md` write (`/add.plan-to-ready`) MUST return a JSON-shaped report:
 
 ```json
 {
@@ -234,7 +234,7 @@ Used at the start of `add.build` TASKS MODE (and any consumer that re-enters a f
 
 ## Tick Application Procedure (per area validator)
 
-Used by the per-area validator subagent in `add.build` (writes directly) and `add.autopilot` (emits report; coordinator writes). Follow exactly:
+Used by the per-area validator subagent in `add.build` (writes directly) and under `/add.plan-to-ready` (emits report; coordinator writes). Follow exactly:
 
 1. **Inspect diff:** run `git diff` against the feature branch base. This is the source of truth for what changed — NOT any FILES_CREATED/FILES_MODIFIED list, which can lie.
 2. **Filter** `tasks.md` items for the CURRENT AREA:
@@ -245,21 +245,21 @@ Used by the per-area validator subagent in `add.build` (writes directly) and `ad
 4. **Auto-fix** divergent items where safe (wrong status code, missing field, etc.); re-tick on success.
 5. **Output:**
    - In `add.build`: write the updated `tasks.md` directly (full file).
-   - In `add.autopilot`: emit the JSON validator report (see "Validator Report Shape"); the coordinator merges and writes.
+   - Under `/add.plan-to-ready`: emit the JSON validator report (see "Validator Report Shape"); the coordinator merges and writes.
 6. **Set** `SPEC_STATUS = INCOMPLETE` if any §3 or §4 item for this area is `[!]` or `[ ]`.
 
-## Coordinator Merge Procedure (autopilot only)
+## Coordinator Merge Procedure (loop coordinator only)
 
-Used by the coordinator after collecting all per-area validator reports. Coordinator is the SOLE writer of `tasks.md` in autopilot.
+Used by the coordinator after collecting all per-area validator reports. The coordinator is the SOLE writer of `tasks.md` under `/add.plan-to-ready`.
 
 1. **Collect** the JSON tick report from every area validator.
 2. **Merge** ticks across areas (no conflicts expected — areas don't overlap on §3 tasks; if conflict, last-writer-wins is acceptable since both must agree on diff state).
 3. **Recompute** §1 Requirements Coverage: a RF/RN line ticks `[x]` only if ALL §3 Execution AND §4 Acceptance items referencing it (via `(RFNN/RNNN)`) are `[x]`.
 4. **Write** `tasks.md` ONCE per batch with all merged ticks.
 
-## Validation Gates Procedure (end of build / autopilot / review)
+## Validation Gates Procedure (end of build / loop / review)
 
-Used by `add.build` (or autopilot coordinator, or `add.review`) AFTER all area validators complete. This is where `## Validation Gates` items get ticked. **Self-attestation is forbidden.** Every tick must correspond to an actual command invocation captured in this session.
+Used by `add.build` (or the `/add.plan-to-ready` coordinator, or `add.review`) AFTER all area validators complete. This is where `## Validation Gates` items get ticked. **Self-attestation is forbidden.** Every tick must correspond to an actual command invocation captured in this session.
 
 ### Pre-condition: migration nudge
 
@@ -273,7 +273,7 @@ Do NOT auto-run wiki generation. Do NOT block. Skip the rest of this procedure w
 
 1. Parse `validation_gates` from CLAUDE.md → ordered list of `(intent, command)` pairs.
 2. Compute `TOUCHED_FILES = git diff --name-only <feature-base>...HEAD` (plus uncommitted changes for `add.build`).
-3. For EACH `(intent, command)`: invoke per §Section Rules → `## Validation Gates` (build/autopilot tick rule). On red touched-file failures after fix-and-rerun, set `[!]` with reason. Append untouched failures to `### Known Issues` (cap 10; truncate with `- +N more (run \`<command>\` for full list)`).
+3. For EACH `(intent, command)`: invoke per §Section Rules → `## Validation Gates` (build / loop coordinator tick rule). On red touched-file failures after fix-and-rerun, set `[!]` with reason. Append untouched failures to `### Known Issues` (cap 10; truncate with `- +N more (run \`<command>\` for full list)`).
 4. Recompute `## Requirements Coverage` derived state one final time.
 5. Single write to `tasks.md`.
 
