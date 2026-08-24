@@ -2,6 +2,7 @@
 name: architecture-agent
 description: Architecture consultant for structural decisions, layer organization, module boundaries, and technology choices. Use when making architectural decisions or analyzing project structure. Read-only — advises, never modifies.
 model: inherit
+readonly: true
 skills:
   - add-architecture-discovery
   - add-backend-architecture

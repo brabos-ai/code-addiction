@@ -8,7 +8,7 @@
 # Args:
 #   file   - target JSONL file path (relative or absolute)
 #   type   - entry type (pivot|add|fix|refactor|test|docs)
-#   agent  - agent/area identifier (database|backend|frontend|coordinator|/dev|/hotfix|/autopilot)
+#   agent  - agent/area identifier (database|backend|frontend|coordinator|/add.build|/add.hotfix|/add.plan-to-ready)
 #   fields - remaining JSON fields as raw key:value pairs (already quoted)
 #
 # Examples:

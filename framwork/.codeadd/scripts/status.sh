@@ -647,15 +647,15 @@ if [ "$BRANCH_TYPE" = "main" ]; then
     fi
 elif [ -n "$FEATURE_ID" ]; then
     if [ ! -d "$FEATURE_DIR" ]; then
-        RECS="/feature to setup"
+        RECS="/add.new to setup"
     elif [ "$PHASE" = "created" ] || [ "$PHASE" = "documented" ]; then
-        RECS="/feature to complete discovery"
+        RECS="/add.new to complete discovery"
     elif [ "$PHASE" = "discovered" ] || [ "$PHASE" = "designed" ]; then
-        RECS="/plan to create plan"
+        RECS="/add.plan to create plan"
     elif [ "$PHASE" = "planned" ]; then
-        RECS="/add-dev to implement"
+        RECS="/add.build to implement"
     elif [ "$PHASE" = "done" ]; then
-        RECS="/review or /add-done"
+        RECS="/add.review or /add.done"
     fi
 fi
 

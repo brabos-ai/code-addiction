@@ -9,7 +9,7 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 
 ## When to Use
 
-- Writing a command that references another command (e.g., autopilot loading add.plan)
+- Writing a command that references another command (e.g., add.plan-to-ready naming add.done)
 - Writing a command or skill that references a skill file
 - Reviewing existing commands/skills for broken path references
 - Creating new commands via `/add.make`

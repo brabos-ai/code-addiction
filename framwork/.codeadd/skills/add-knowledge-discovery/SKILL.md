@@ -19,7 +19,7 @@ Defines the ONE procedure for consulting `{{addpath:wiki/}}` at a command's exis
 
 ## When NOT to Use
 
-- `add.build`, `add.autopilot`, `add.test` — these read `{{addpath:wiki/index.md}}` + the already-known `domains/<area>.md` directly (pages were selected upstream by `add.plan`); do not load this full skill, it duplicates SELECT work already done
+- `add.build`, `add.plan-to-ready` — these read `{{addpath:wiki/index.md}}` + the already-known `domains/<area>.md` directly (pages were selected upstream by `add.plan`); do not load this full skill, it duplicates SELECT work already done
 - Bug-cause investigation in `add.hotfix` STEPs 4-6 — diagnosis stays history/code-driven and wiki-blind; this skill enters only at fix time
 - No wiki exists → this skill still runs (PRESENCE handles absence); do not skip the command's context step waiting for a wiki
 

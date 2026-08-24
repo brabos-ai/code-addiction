@@ -10,7 +10,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
   return { ...actual, intro: vi.fn(), outro: vi.fn(), log: { ...actual.log, success: vi.fn(), info: vi.fn(), error: vi.fn(), warn: warnSpy } };
 });
 
-import { enableFeature, disableFeature } from '../src/features.js';
+import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin, disablePlugin } from '../src/plugins.js';
 
 /**
@@ -52,7 +52,7 @@ afterEach(() => {
 const sidecarPoints = () => JSON.parse(fs.readFileSync(SIDECAR, 'utf8')).points;
 
 describe('feature injection round-trip on real built files', () => {
-  for (const feature of ['tdd']) {
+  for (const feature of Object.keys(FEATURES)) {
     it(`${feature}: enable injects, never misses an anchor, disable restores byte-identically`, () => {
       // All command files carrying a sidecar point for this feature.
       const targets = [

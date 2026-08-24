@@ -2,6 +2,7 @@
 name: feature-history-agent
 description: Feature history archaeologist. Discovers which existing features in docs/features/ are relevant to a given symptom by scanning about.md/changelog.md/plan.md, scoring overlap, and returning a ranked hypothesis list. Read-only and scoped strictly to docs/ — does NOT touch code or git.
 model: haiku
+readonly: true
 tools: Glob, Read
 disallowedTools: Write, Edit, NotebookEdit, Bash, Grep
 memory: project

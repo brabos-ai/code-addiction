@@ -655,6 +655,15 @@ function buildResources(map, strategy) {
     const srcPath = strategy.sourcePath(name);
 
     if (!fs.existsSync(srcPath)) {
+      // A registered resource with no source is a registry/tree mismatch. For
+      // agents that must fail loud: a silently missing agent file degrades every
+      // named dispatch to a generic subagent with no signal that it happened.
+      if (strategy.requireSource) {
+        throw new Error(
+          `Registered ${strategy.injectionKind || 'resource'} "${name}" has no source at ` +
+            `${path.relative(ROOT, srcPath)}. Remove it from provider-map.json or add the file.`,
+        );
+      }
       console.warn(`  SKIP (not found): ${path.relative(ROOT, srcPath)}`);
       continue;
     }
@@ -684,8 +693,9 @@ function buildResources(map, strategy) {
       const withPaths = resolveResourcePaths(cleaned, provider);
 
       const resolved = patternStr.replace('{name}', name);
-      const outPath = path.join(ROOT, provider.dir, resolved);
-      const meta = strategy.meta(name, entry, resolved);
+      const outRoot = strategy.outRoot ? strategy.outRoot(provider) : provider.dir;
+      const outPath = path.join(ROOT, outRoot, resolved);
+      const meta = strategy.meta(name, entry, resolved, key, provider);
       const output = transformer(withPaths, meta);
 
       writeFile(outPath, output);
@@ -764,15 +774,142 @@ const skillStrategy = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Agent frontmatter dialects
+//
+// Every provider reads a different agent frontmatter. The BODY is identical
+// everywhere; only the header changes. Reference: brainstorm 002 Discovery
+// table (verified 2026-08-24).
+//
+//   claude    .claude/agents/<name>.md      name, description, model, tools
+//   opencode  .opencode/agents/<name>.md    description, mode: subagent, model, permission
+//   cursor    .cursor/agents/<name>.md      name, description, model, readonly
+//   codex     .codex/agents/<name>.toml     name, description, developer_instructions, model
+//
+// antigrav is deliberately absent: its native agents live at .agents/agents/,
+// which collides with this repo's Codex skills root, and resolving that means
+// relocating installed projects. Deferred with the decision recorded, not
+// guessed. It carries no `agents` pattern, so buildResources skips it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Split `---\nkey: value\n---\n\nbody` into its frontmatter and body.
+ *
+ * Returns both a scalar map (`fields`) and the verbatim source text per key
+ * (`blocks`). The verbatim form matters: `skills:` is a multi-line YAML list,
+ * and re-serialising it from a scalar would silently drop every entry.
+ *
+ * @returns {{fields: Record<string,string>, blocks: Record<string,string>, body: string}}
+ */
+function splitFrontmatter(content) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(content);
+  if (!match) return { fields: {}, blocks: {}, body: content.trim() };
+
+  const fields = {};
+  const blocks = {};
+  const lines = match[1].split(/\r?\n/);
+  let current = null;
+
+  for (const line of lines) {
+    const kv = /^([A-Za-z_][A-Za-z0-9_-]*):\s*(.*)$/.exec(line);
+    if (kv) {
+      current = kv[1];
+      fields[current] = kv[2].trim();
+      blocks[current] = line;
+    } else if (current !== null && line.trim() !== '') {
+      // Continuation of the previous key (list item / block scalar).
+      blocks[current] += `\n${line}`;
+    }
+  }
+
+  return { fields, blocks, body: content.slice(match[0].length).trim() };
+}
+
+/** Quote a value for single-line YAML when it carries YAML-significant chars. */
+function yamlScalar(value) {
+  const safe = /^[^"'\n]*$/.test(value) && !/^[&*!|>%@`-]/.test(value) && !/:\s/.test(value) && !/\s#/.test(value);
+  return safe ? value : `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/** TOML basic string (single line). */
+function tomlString(value) {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r?\n/g, ' ')}"`;
+}
+
+/**
+ * TOML multi-line basic string. Escapes backslashes, then any `"""` that would
+ * close the literal early, then a trailing quote adjacent to the delimiter.
+ */
+function tomlMultiline(value) {
+  const escaped = value.replace(/\\/g, '\\\\').replace(/"""/g, '\\"\\"\\"');
+  return `"""\n${escaped.replace(/"$/, '\\"')}\n"""`;
+}
+
+const AGENT_DIALECTS = {
+  claude({ blocks }, body, meta) {
+    const out = [`name: ${meta.name}`, `description: ${yamlScalar(meta.description)}`];
+    // Verbatim passthrough — `skills:` and `tools:` are multi-line YAML lists,
+    // so re-serialising them from a scalar would silently drop every entry.
+    for (const key of ['model', 'tools', 'disallowedTools', 'skills', 'memory']) {
+      if (blocks[key]) out.push(blocks[key]);
+    }
+    return `---\n${out.join('\n')}\n---\n\n${body}\n`;
+  },
+
+  opencode({ fields }, body, meta) {
+    const out = [`description: ${yamlScalar(meta.description)}`, 'mode: subagent'];
+    if (fields.model) out.push(`model: ${fields.model}`);
+    // A read-only agent gets its constraint enforced by the engine, not merely
+    // stated in prose. OpenCode's permission map is the only dialect that can.
+    if (meta.readonly) out.push('permission:', '  edit: deny', '  bash: deny', '  webfetch: allow');
+    return `---\n${out.join('\n')}\n---\n\n${body}\n`;
+  },
+
+  cursor({ fields }, body, meta) {
+    const out = [`name: ${meta.name}`, `description: ${yamlScalar(meta.description)}`];
+    if (fields.model) out.push(`model: ${fields.model}`);
+    if (meta.readonly) out.push('readonly: true');
+    return `---\n${out.join('\n')}\n---\n\n${body}\n`;
+  },
+
+  codex({ fields }, body, meta) {
+    const out = [`name = ${tomlString(meta.name)}`, `description = ${tomlString(meta.description)}`];
+    if (fields.model) out.push(`model = ${tomlString(fields.model)}`);
+    out.push(`developer_instructions = ${tomlMultiline(body)}`);
+    return `${out.join('\n')}\n`;
+  },
+};
+
 const agentStrategy = {
   entries: (map) => Object.entries(map.agents || {}),
   sourcePath: (name) => path.join(ROOT, 'framwork', '.codeadd', 'agents', `${name}.md`),
   providerPattern: (provider) => provider.agents || null,
   resolveProviders: (entry, map) => entry.providers ?? Object.keys(map.providers),
   injectionKind: 'agent',
-  meta: (name, entry) => ({ name, description: entry.description }),
-  /** Passthrough — agents keep their own frontmatter (name, model, tools, skills, memory) */
-  transform: (content) => content,
+  /** A registered agent with no source file must fail the build, never warn-and-skip. */
+  requireSource: true,
+  /** Codex agents live outside its skills root — see the agentsDir note in provider-map.json. */
+  outRoot: (provider) => provider.agentsDir || provider.dir,
+  meta: (name, entry, _resolved, providerKey) => ({
+    name,
+    description: entry.description,
+    providerKey,
+  }),
+
+  transform(content, meta) {
+    const { fields, blocks, body } = splitFrontmatter(content);
+    const dialect = AGENT_DIALECTS[meta.providerKey];
+    if (!dialect) {
+      throw new Error(
+        `No agent frontmatter dialect for provider "${meta.providerKey}". An agent emitted ` +
+          `with the wrong header silently never loads — add a dialect, or drop that provider's ` +
+          `"agents" pattern from provider-map.json.`,
+      );
+    }
+    // `readonly: true` in the source frontmatter is the single declaration of a
+    // read-only agent; each dialect renders it however that engine expresses it.
+    return dialect({ fields, blocks }, body, { ...meta, readonly: fields.readonly === 'true' });
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -795,6 +932,74 @@ function buildAgents(map) {
 // Main
 // ---------------------------------------------------------------------------
 
+/**
+ * Delete provider output files for resources the registry no longer declares.
+ *
+ * The build writes but never deletes, so a removed command kept shipping its
+ * stale output forever — invisible locally because provider dirs are gitignored,
+ * and invisible in CI because CI always builds from a clean checkout. Pruning
+ * makes a local build byte-match a CI build, which is what makes the removal
+ * tests trustworthy wherever they run.
+ *
+ * Scoped to commands and agents: both are registry-declared with a
+ * one-file-per-name pattern. Skills own arbitrary sibling files, so pruning them
+ * would need a manifest this build does not keep.
+ *
+ * @param {object} map  provider-map.json
+ * @returns {number} files removed
+ */
+function pruneStaleOutputs(map) {
+  let removed = 0;
+
+  for (const [key, provider] of Object.entries(map.providers)) {
+    for (const [kind, registry] of [['commands', map.commands], ['agents', map.agents || {}]]) {
+      const pattern = provider[kind];
+      if (!pattern) continue;
+
+      const root = kind === 'agents' ? provider.agentsDir || provider.dir : provider.dir;
+
+      // Flat layout: "<dir>/{name}.<ext>" → prune stale files.
+      const flat = /^([^/]+)\/\{name\}(\.[A-Za-z0-9]+)$/.exec(pattern);
+      if (flat) {
+        const [, subdir, ext] = flat;
+        const outDir = path.join(ROOT, root, subdir);
+        if (!fs.existsSync(outDir)) continue;
+
+        const declared = new Set(Object.keys(registry).map((n) => `${n}${ext}`));
+        for (const entry of fs.readdirSync(outDir, { withFileTypes: true })) {
+          if (!entry.isFile() || !entry.name.endsWith(ext)) continue;
+          if (declared.has(entry.name)) continue;
+          fs.rmSync(path.join(outDir, entry.name));
+          console.log(`  PRUNED (not in registry): ${key}/${subdir}/${entry.name}`);
+          removed++;
+        }
+        continue;
+      }
+
+      // Directory layout: "<dir>/{name}/<file>" — Codex and Antigravity emit
+      // commands as skills. Prune only a directory whose name is not declared
+      // in EITHER registry: commands and skills share this tree, so a name
+      // absent from `commands` may still be a legitimate skill.
+      const nested = /^([^/]+)\/\{name\}\//.exec(pattern);
+      if (!nested) continue;
+
+      const [, subdir] = nested;
+      const outDir = path.join(ROOT, root, subdir);
+      if (!fs.existsSync(outDir)) continue;
+
+      const declared = new Set([...Object.keys(map.commands), ...Object.keys(map.skills)]);
+      for (const entry of fs.readdirSync(outDir, { withFileTypes: true })) {
+        if (!entry.isDirectory() || declared.has(entry.name)) continue;
+        fs.rmSync(path.join(outDir, entry.name), { recursive: true });
+        console.log(`  PRUNED (not in registry): ${key}/${subdir}/${entry.name}/`);
+        removed++;
+      }
+    }
+  }
+
+  return removed;
+}
+
 function main() {
   console.log('Building provider files...\n');
 
@@ -809,6 +1014,7 @@ function main() {
   fs.rmSync(contractsPath, { force: true });
 
   const map = readMap();
+  const prunedCount = pruneStaleOutputs(map);
   const commandCount = buildCommands(map);
   const skillCount = buildSkills(map);
   const agentCount = buildAgents(map);
@@ -823,6 +1029,7 @@ function main() {
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
   console.log(`  Skills   : ${Object.keys(map.skills).length} skills  → ${skillCount} files`);
   console.log(`  Agents   : ${Object.keys(map.agents || {}).length} agents  → ${agentCount} files`);
+  if (prunedCount) console.log(`  Pruned   : ${prunedCount} stale output file(s)`);
   console.log(`  Injection points : ${pointCount} → ${path.relative(ROOT, sidecarPath)}`);
   console.log(`  Contracts        : ${contractCount} → ${path.relative(ROOT, contractsPath)}`);
   console.log(`  Total    : ${total} files generated`);
@@ -853,6 +1060,11 @@ module.exports = {
   buildSkills,
   buildAgents,
   buildResources,
+  pruneStaleOutputs,
+  splitFrontmatter,
+  tomlString,
+  tomlMultiline,
+  AGENT_DIALECTS,
   readMap,
 };
 

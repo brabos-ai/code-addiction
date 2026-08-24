@@ -15,8 +15,10 @@ export function getInstalledDirs(selectedKeys) {
   const dirs = new Set(['.codeadd/']);
   for (const key of selectedKeys) {
     if (PROVIDERS[key]) {
-      const dest = PROVIDERS[key].dest;
+      const { dest, agentsDest } = PROVIDERS[key];
       dirs.add(dest.endsWith('/') ? dest : `${dest}/`);
+      // Codex installs agents outside its main dest; ignore that root too.
+      if (agentsDest) dirs.add(agentsDest.endsWith('/') ? agentsDest : `${agentsDest}/`);
     }
   }
   return [...dirs];

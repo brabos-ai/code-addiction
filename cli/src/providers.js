@@ -8,6 +8,14 @@
  * (used by plugin-bound skill activation).
  * agentsSubdir is the subdirectory within dest that holds agent definition files
  * eligible for plugin agent-injection (null means the provider has no agents).
+ * agentsSrc/agentsDest override src/dest for agent files only. Codex needs this:
+ * its skills install to .agents/ while its agents belong at .codex/agents/, so
+ * one src/dest pair cannot express both. Absent means agents follow src/dest.
+ * agentInjection gates plugin agent-fragment injection. It is deliberately NOT
+ * the same flag as agentsSubdir: four providers now receive agent FILES, but
+ * only Claude receives plugin agent INJECTION. Extending injection to the rest
+ * is a follow-on (brainstorm 002 scopes it out), and Codex agents are TOML —
+ * the markdown-anchored injection engine cannot address them at all.
  * globalDest is the destination root relative to the user home dir for a
  * global/user-level install; null means the provider is not offered in global scope.
  */
@@ -20,6 +28,7 @@ export const PROVIDERS = {
     commandsSubdir: 'commands',
     skillsSubdir: 'skills',
     agentsSubdir: 'agents',
+    agentInjection: true,
     globalDest: '.claude',
   },
   codex: {
@@ -29,7 +38,9 @@ export const PROVIDERS = {
     dest: '.agents',
     commandsSubdir: null,
     skillsSubdir: 'skills',
-    agentsSubdir: null,
+    agentsSubdir: 'agents',
+    agentsSrc: 'framwork/.codex',
+    agentsDest: '.codex',
     globalDest: '.agents',
   },
   cursor: {
@@ -39,7 +50,7 @@ export const PROVIDERS = {
     dest: '.cursor',
     commandsSubdir: 'commands',
     skillsSubdir: 'skills',
-    agentsSubdir: null,
+    agentsSubdir: 'agents',
     globalDest: null,
   },
   antigrav: {
@@ -59,7 +70,7 @@ export const PROVIDERS = {
     dest: '.opencode',
     commandsSubdir: 'commands',
     skillsSubdir: 'skills',
-    agentsSubdir: null,
+    agentsSubdir: 'agents',
     globalDest: '.config/opencode',
   },
 };
@@ -90,6 +101,15 @@ export function resolveSelected(keys, scope = 'project') {
       return { key, ...p, dest };
     })
     .filter((p) => p.dest != null);
+}
+
+/**
+ * Agent files for a provider live under agentsDest when it overrides dest.
+ * @param {{dest: string, agentsDest?: string}} p  a resolveSelected() entry
+ * @returns {string}
+ */
+export function agentDest(p) {
+  return p.agentsDest ?? p.dest;
 }
 
 /**

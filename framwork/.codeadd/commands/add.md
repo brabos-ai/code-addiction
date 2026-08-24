@@ -103,7 +103,7 @@ Include: feature ID, name, summary from changelog, explanation, main files (if a
 
 Use output from STEP 3 (status.sh).
 
-Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, review.md).
+Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, the highest review-NNN.md).
 
 ---
 
@@ -152,7 +152,7 @@ ALWAYS include at end of response (except if question was only about a specific 
 | No docs/owner.md | `/add.init` | Project onboarding |
 | Branch main, no feature | `/add.new` | Start new functionality |
 | Feature without plan.md | `/add.plan` | Next phase of flow |
-| Feature with plan, no implementation | `/add.build` or `/add.autopilot` | Time to implement |
+| Feature with plan, no implementation | `/add.build`, or `/add.plan-to-ready` to run the bounded build ⇄ review loop | Time to implement |
 | Feature implemented, no review | `/add.review` | Validate before finalizing |
 | Feature reviewed | `/add.done` | Finalize and generate changelog |
 | Epic with pending sub-features | `/add.build feature N` | Next sub-feature |

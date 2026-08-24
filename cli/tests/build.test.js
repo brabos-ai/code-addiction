@@ -221,11 +221,19 @@ describe('provider-map.json capabilities', () => {
     expect(map.providers.claude.agents).toBe('agents/{name}.md');
   });
 
-  it('providers without agents pattern are skipped by agentStrategy', () => {
-    for (const [key, p] of Object.entries(map.providers)) {
-      if (key === 'claude') continue;
-      expect(p.agents, `provider ${key} should NOT have agents pattern`).toBeUndefined();
+  it('agent-capable providers declare an agents pattern; antigrav is deferred', () => {
+    // antigrav's native agents path (.agents/agents/) collides with this repo's
+    // Codex skills root; resolving it means relocating installed projects, so it
+    // is deferred with the decision recorded rather than guessed.
+    for (const key of ['claude', 'cursor', 'opencode', 'codex']) {
+      expect(map.providers[key].agents, `provider ${key} should have an agents pattern`).toBeDefined();
     }
+    expect(map.providers.antigrav.agents, 'antigrav is deliberately deferred').toBeUndefined();
+  });
+
+  it('codex agents are emitted outside its shared skills root', () => {
+    expect(map.providers.codex.agentsDir).toBe('framwork/.codex');
+    expect(map.providers.codex.agents).toBe('agents/{name}.toml');
   });
 });
 
@@ -260,12 +268,12 @@ describe('provider-map.json agents section', () => {
     expect(typeof map.agents).toBe('object');
   });
 
-  it('contains all 15 expected agents', () => {
+  it('contains all 17 expected agents', () => {
     const agentNames = Object.keys(map.agents);
     for (const name of expectedAgents) {
       expect(agentNames, `missing agent: ${name}`).toContain(name);
     }
-    expect(agentNames).toHaveLength(15);
+    expect(agentNames).toHaveLength(17);
   });
 
   it('every agent has a description', () => {
@@ -447,17 +455,24 @@ describe('buildAgents', () => {
   const map = readMap();
   const builtDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'agents');
 
-  it('builds agent files to .claude/agents/', () => {
+  it('builds agent files for every agent-capable provider', () => {
+    // 17 agents × 4 providers (claude, cursor, opencode, codex).
     const count = buildAgents(map);
-    expect(count).toBe(15);
+    expect(count).toBe(68);
   });
 
-  it('built files preserve original frontmatter (passthrough)', () => {
+  it('fails loud when a registered agent has no source file', () => {
+    // A silently missing agent degrades every named dispatch to a generic
+    // subagent with no signal that it happened.
+    const bogus = { ...map, agents: { ...map.agents, 'ghost-agent': { description: 'nope' } } };
+    expect(() => buildAgents(bogus)).toThrow(/ghost-agent/);
+  });
+
+  it('the claude dialect preserves the source frontmatter', () => {
     const builtPath = path.join(builtDir, 'reviewer-agent.md');
 
     const built = fs.readFileSync(builtPath, 'utf8');
 
-    // Passthrough means content is identical (only HTML comments stripped)
     expect(built).toContain('name: reviewer-agent');
     expect(built).toContain('model: sonnet');
     expect(built).toContain('memory: project');
@@ -465,9 +480,9 @@ describe('buildAgents', () => {
     expect(built).not.toMatch(/^---\ndescription:/);
   });
 
-  it('does not build agents for providers without agents pattern', () => {
-    const cursorAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'agents');
-    expect(fs.existsSync(cursorAgentsDir)).toBe(false);
+  it('does not build agents for antigrav (no agents pattern)', () => {
+    const antigravAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.agent', 'agents');
+    expect(fs.existsSync(antigravAgentsDir)).toBe(false);
   });
 
   it('handles missing agents section gracefully', () => {
