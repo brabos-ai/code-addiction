@@ -10,6 +10,9 @@ const {
   extractInjectionPoints,
   resolveResourcePaths,
   lintResourcePaths,
+  collectLintableSources,
+  assertNoLintableSources,
+  LINTABLE_EXTENSIONS,
   copyDirRecursive,
   _resetLintCache,
   TRANSFORMERS,
@@ -744,4 +747,92 @@ describe('built add.plan baseline is marker-pair-empty', () => {
       expect(hits).toHaveLength(0);
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// assertNoLintableSources — shipped-surface source guard
+// ---------------------------------------------------------------------------
+
+describe('assertNoLintableSources', () => {
+  let tmp;
+
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-guard-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  const writeSkill = (name, file, body = '// x') => {
+    const dir = path.join(tmp, 'skills', name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, file), body);
+  };
+
+  it('passes when a registered skill ships only prose and data', () => {
+    writeSkill('add-demo', 'SKILL.md', '# Demo');
+    writeSkill('add-demo', 'evals.json', '{}');
+    writeSkill('add-demo', 'conventions.dot', 'digraph {}');
+    expect(() => assertNoLintableSources({ skills: { 'add-demo': {} } }, tmp)).not.toThrow();
+  });
+
+  it('throws when a registered skill ships a .js file', () => {
+    writeSkill('add-demo', 'SKILL.md', '# Demo');
+    writeSkill('add-demo', 'render-graphs.js', 'const fs = require("fs");');
+    expect(() => assertNoLintableSources({ skills: { 'add-demo': {} } }, tmp))
+      .toThrow(/render-graphs\.js/);
+  });
+
+  it('ignores an unregistered skill dir — it is never built, so it never ships', () => {
+    writeSkill('add-dev-workspace', 'helper.ts', 'export const a = 1;');
+    expect(() => assertNoLintableSources({ skills: {} }, tmp)).not.toThrow();
+  });
+
+  it('walks nested dirs inside a registered skill', () => {
+    const nested = path.join(tmp, 'skills', 'add-demo', 'references', 'deep');
+    fs.mkdirSync(nested, { recursive: true });
+    fs.writeFileSync(path.join(nested, 'widget.tsx'), 'export default null;');
+    expect(() => assertNoLintableSources({ skills: { 'add-demo': {} } }, tmp))
+      .toThrow(/widget\.tsx/);
+  });
+
+  it('guards the scripts tree, not just skills', () => {
+    const dir = path.join(tmp, 'scripts');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'status.sh'), '#!/bin/bash');
+    fs.writeFileSync(path.join(dir, 'helper.mjs'), 'export const a = 1;');
+    expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.mjs/);
+  });
+
+  it('reports every offender in one message, sorted', () => {
+    writeSkill('add-demo', 'b.js');
+    writeSkill('add-demo', 'a.css');
+    let message = '';
+    try {
+      assertNoLintableSources({ skills: { 'add-demo': {} } }, tmp);
+    } catch (err) {
+      message = err.message;
+    }
+    expect(message).toMatch(/a\.css/);
+    expect(message).toMatch(/b\.js/);
+    expect(message.indexOf('a.css')).toBeLessThan(message.indexOf('b.js'));
+  });
+
+  it('does not flag .json — contracts.json and injection-points.json ship by design', () => {
+    expect(LINTABLE_EXTENSIONS.has('.json')).toBe(false);
+    expect(LINTABLE_EXTENSIONS.has('.md')).toBe(false);
+    expect(LINTABLE_EXTENSIONS.has('.sh')).toBe(false);
+  });
+
+  it('collectLintableSources returns [] for a missing dir', () => {
+    expect(collectLintableSources(path.join(tmp, 'nope'))).toEqual([]);
+  });
+
+  it('the real shipped tree is clean', () => {
+    const root = path.resolve(import.meta.dirname, '..', '..');
+    expect(() =>
+      assertNoLintableSources(readMap(), path.join(root, 'framwork', '.codeadd')),
+    ).not.toThrow();
+  });
 });

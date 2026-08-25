@@ -633,6 +633,73 @@ function lintResourcePaths(content, srcPath) {
 }
 
 // ---------------------------------------------------------------------------
+// Shipped-surface source guard
+//
+// Everything under the trees below lands verbatim in a consumer's repository:
+// release.yml packages .codeadd/{scripts,fragments,templates,plugins} plus every
+// provider dir, and the installer unpacks them into the project root. A file the
+// consumer's toolchain recognises as source therefore becomes their CI failure,
+// and we control neither their ruleset nor their formatter config — so silencing
+// today's warnings only postpones the next one. Ship prose, shell and data.
+//
+// Regression this exists to prevent: v0.7.1 shipped
+// skills/add-skill-creator/render-graphs.js (an unreferenced upstream orphan),
+// which reddened `biome lint` and `biome format` repo-wide for every installer.
+// ---------------------------------------------------------------------------
+
+const LINTABLE_EXTENSIONS = new Set([
+  '.js', '.jsx', '.mjs', '.cjs',
+  '.ts', '.tsx', '.mts', '.cts',
+  '.css', '.scss', '.sass', '.less',
+  '.vue', '.svelte',
+]);
+
+// .json is deliberately absent: contracts.json and injection-points.json are
+// shipped by design, and JSON only ever trips a formatter's indent preference,
+// never a lint rule.
+const SHIPPED_SUBDIRS = ['scripts', 'fragments', 'templates', 'plugins'];
+
+function collectLintableSources(dir, offenders = []) {
+  if (!fs.existsSync(dir)) return offenders;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectLintableSources(entryPath, offenders);
+    } else if (LINTABLE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      offenders.push(path.relative(ROOT, entryPath).split(path.sep).join('/'));
+    }
+  }
+  return offenders;
+}
+
+/**
+ * Fail the build when a shipped tree carries a linter-visible source file.
+ *
+ * Skills are walked per registry entry rather than by listing the skills dir:
+ * an unregistered directory is never built and never reaches a user, so
+ * flagging it would block the build over a file nobody receives.
+ */
+function assertNoLintableSources(map, codeaddDir = CODEADD_DIR) {
+  const offenders = [];
+
+  for (const subdir of SHIPPED_SUBDIRS) {
+    collectLintableSources(path.join(codeaddDir, subdir), offenders);
+  }
+  for (const name of Object.keys(map.skills || {})) {
+    collectLintableSources(path.join(codeaddDir, 'skills', name), offenders);
+  }
+
+  if (offenders.length === 0) return;
+
+  const list = offenders.sort().map((f) => `  ${f}`).join('\n');
+  throw new Error(
+    `Shipped tree carries linter-visible source file(s):\n${list}\n\n` +
+      `These install into the consumer's repository and break their lint/format run.\n` +
+      `Delete the file, or move the logic into a .sh script under .codeadd/scripts/.`,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Generic resource builder
 // ---------------------------------------------------------------------------
 
@@ -1014,6 +1081,7 @@ function main() {
   fs.rmSync(contractsPath, { force: true });
 
   const map = readMap();
+  assertNoLintableSources(map);
   const prunedCount = pruneStaleOutputs(map);
   const commandCount = buildCommands(map);
   const skillCount = buildSkills(map);
@@ -1052,6 +1120,9 @@ module.exports = {
   _resetContracts: () => { CONTRACTS = {}; },
   resolveResourcePaths,
   lintResourcePaths,
+  collectLintableSources,
+  assertNoLintableSources,
+  LINTABLE_EXTENSIONS,
   copyDirRecursive,
   _resetLintCache: () => LINTED_PATHS.clear(),
   TRANSFORMERS,
