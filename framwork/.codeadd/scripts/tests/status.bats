@@ -107,19 +107,19 @@ teardown() {
 
 # ─── Recommendations ────────────────────────────────────────────────
 
-@test "recommends /feature when on main" {
+@test "recommends /add.new when on main" {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"REC:/feature to start"* ]]
+  [[ "$output" == *"REC:/add.new to start"* ]]
 }
 
-@test "recommends /add-dev when phase=planned" {
+@test "recommends /add.build when phase=planned" {
   mkdir -p docs/features/0001F-test
   echo "# Plan" > docs/features/0001F-test/plan.md
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"REC:/add-dev to implement"* ]]
+  [[ "$output" == *"REC:/add.build to implement"* ]]
 }
 
 # ─── Git status ──────────────────────────────────────────────────────

@@ -242,3 +242,150 @@ describe('install command e2e — global scope', () => {
     expect(mocks.promptGitignore).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Install-path orphan prune (F1) and migration ledger (F4)
+// ---------------------------------------------------------------------------
+
+import { allMigrationIds } from '../src/migrations.js';
+
+function seedManifest(dir, data) {
+  const addDir = path.join(dir, '.codeadd');
+  fs.mkdirSync(addDir, { recursive: true });
+  fs.writeFileSync(path.join(addDir, 'manifest.json'), JSON.stringify(data, null, 2) + '\n', 'utf8');
+}
+
+function seedFile(dir, rel, body = 'x') {
+  const full = path.join(dir, rel);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, body);
+  return full;
+}
+
+function readManifest(dir) {
+  return JSON.parse(fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8'));
+}
+
+describe('install-path orphan prune (L2.1, L2.3, L2.4)', () => {
+  it('L2.1 — unlinks a file the prior manifest listed and the new install did not write', async () => {
+    const orphan = seedFile(tmpDir, '.agents/skills/obsolete/SKILL.md');
+    seedManifest(tmpDir, {
+      version: '0.7.0',
+      providers: ['codex'],
+      files: ['.agents/skills/obsolete/SKILL.md'],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(fs.existsSync(orphan)).toBe(false);
+    expect(readManifest(tmpDir).files).not.toContain('.agents/skills/obsolete/SKILL.md');
+  });
+
+  it('L2.1b — never unlinks a file the new install DID write', async () => {
+    seedManifest(tmpDir, {
+      version: '0.7.0',
+      providers: ['codex'],
+      files: ['.codeadd/scripts/health.sh'],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'scripts', 'health.sh'))).toBe(true);
+  });
+
+  it('L2.1c — honours the shared preservation rules', async () => {
+    const hist = seedFile(tmpDir, '.codeadd/history/session.json', '{}');
+    const local = seedFile(tmpDir, '.codeadd/my.local.json', '{}');
+    seedManifest(tmpDir, {
+      version: '0.7.0',
+      providers: ['codex'],
+      files: ['.codeadd/history/session.json', '.codeadd/my.local.json'],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(fs.existsSync(hist)).toBe(true);
+    expect(fs.existsSync(local)).toBe(true);
+  });
+
+  it('L2.3 — a first-time install with no prior manifest deletes nothing', async () => {
+    const bystander = seedFile(tmpDir, 'src/app.ts', 'export const a = 1;');
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(fs.existsSync(bystander)).toBe(true);
+  });
+
+  it('L2.4 — an unparseable prior manifest prunes nothing rather than throwing', async () => {
+    const bystander = seedFile(tmpDir, '.agents/skills/obsolete/SKILL.md');
+    fs.mkdirSync(path.join(tmpDir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), '{ not json', 'utf8');
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await expect(install(tmpDir)).resolves.not.toThrow();
+    expect(fs.existsSync(bystander)).toBe(true);
+  });
+});
+
+describe('install-path migration ledger (L2.7, L2.8)', () => {
+  it('L2.7 — a fresh install records every known id and executes no migration', async () => {
+    // The legacy orphan is present but must NOT be touched: a pristine project
+    // has nothing to migrate, so the back-catalogue is stamped, not executed.
+    const planted = seedFile(tmpDir, '.agents/skills/add-skill-creator/render-graphs.js', '// x');
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(readManifest(tmpDir).migrations).toEqual(allMigrationIds());
+    expect(fs.existsSync(planted)).toBe(true);
+  });
+
+  it('L2.8 — a re-install over an existing manifest preserves its ledger', async () => {
+    seedManifest(tmpDir, {
+      version: '0.7.0',
+      providers: ['codex'],
+      files: [],
+      migrations: [],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    // Empty, not baseline-stamped: this project still needs those migrations.
+    expect(readManifest(tmpDir).migrations).toEqual([]);
+  });
+
+  it('L2.8b — a re-install carries a partially applied ledger forward verbatim', async () => {
+    seedManifest(tmpDir, {
+      version: '0.7.0',
+      providers: ['codex'],
+      files: [],
+      migrations: ['0001-prune-legacy-orphans'],
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(readManifest(tmpDir).migrations).toEqual(['0001-prune-legacy-orphans']);
+  });
+});

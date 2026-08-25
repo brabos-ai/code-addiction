@@ -5,6 +5,8 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import {
   fixLineEndings,
+  shouldPreserve,
+  PRESERVE_PATTERNS,
   writeManifest,
   resolveInstallSource,
 } from '../src/installer.js';
@@ -367,5 +369,46 @@ describe('resolveInstallSource', () => {
       ref: null,
       downloadValue: 'v9.9.9',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// shouldPreserve — the single definition of "never delete this" (L1.1)
+//
+// Moved here from updater.js so install and update cannot diverge on it.
+// These cases mirror the behaviour updater.js had before the move; a
+// reimplementation that differs on any of them is a regression, not a refactor.
+// ---------------------------------------------------------------------------
+
+describe('shouldPreserve (L1.1)', () => {
+  it('preserves anything under a history/ segment', () => {
+    expect(shouldPreserve('.codeadd/history/session.json')).toBe(true);
+    expect(shouldPreserve('.codeadd/history/nested/deep.json')).toBe(true);
+  });
+
+  it('preserves any *.local.json file', () => {
+    expect(shouldPreserve('.codeadd/my.local.json')).toBe(true);
+    expect(shouldPreserve('.claude/commands/x.local.json')).toBe(true);
+  });
+
+  it('does not preserve ordinary framework files', () => {
+    expect(shouldPreserve('.codeadd/scripts/status.sh')).toBe(false);
+    expect(shouldPreserve('.claude/commands/add.plan.md')).toBe(false);
+    expect(shouldPreserve('.codeadd/manifest.json')).toBe(false);
+  });
+
+  it('does not preserve a file merely named history', () => {
+    expect(shouldPreserve('.codeadd/history.md')).toBe(false);
+  });
+
+  it('does not preserve a .json that is not .local.json', () => {
+    expect(shouldPreserve('.codeadd/local.json')).toBe(false);
+    expect(shouldPreserve('.codeadd/contracts.json')).toBe(false);
+  });
+
+  it('exposes the patterns it is built from', () => {
+    expect(Array.isArray(PRESERVE_PATTERNS)).toBe(true);
+    expect(PRESERVE_PATTERNS.length).toBeGreaterThan(0);
+    for (const p of PRESERVE_PATTERNS) expect(p).toBeInstanceOf(RegExp);
   });
 });

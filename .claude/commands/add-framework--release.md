@@ -17,7 +17,7 @@ STEP 3: Detect version         → fetch tags, choose bump [STOP]
 STEP 4: Update CLI version     → npm version (package.json + lock) + commit + push
 STEP 5: Merge to production    → --no-ff + push (SKIP if beta)
 STEP 6: Changelog + preview    → generate, confirm [STOP]
-STEP 7: Push tag               → save notes + run script → pipeline handles the rest
+STEP 7: Push tag               → checkout tag source + run script → pipeline takes over
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -43,6 +43,10 @@ IF release type = beta:
 IF merge to production failed (stable only):
   ⛔ DO NOT USE: Bash for git tag, git push (tag)
   ✅ DO: Show merge error and STOP
+
+IF release type = stable AND current branch is not production:
+  ⛔ DO NOT: Run `./scripts/create-release-tag.sh`
+  ✅ DO: Checkout `production` (merged in STEP 5) first — the script tags the CHECKED-OUT branch
 
 IF preview not approved:
   ⛔ DO NOT USE: Bash for git tag, git push (tag)
@@ -135,7 +139,7 @@ Merge main into production with `--no-ff`. Push production.
 
 If merge fails → show error and STOP.
 
-After merge, checkout main to restore working branch.
+STAY on `production` — STEP 7 tags from it. DO NOT checkout main yet.
 
 ---
 
@@ -208,6 +212,19 @@ Show release preview (tag, type, from branch, changelog). Ask: "Create this rele
 
 Save the approved release notes to `/tmp/release-notes-v[VERSION].md`.
 
+### Tag source branch
+
+The script tags whatever branch is CHECKED OUT. Checkout the right one first:
+
+| RELEASE_TYPE | Tag from |
+|---|---|
+| stable | `production` — the merge commit from STEP 5 |
+| beta | `main` |
+
+Tagging `main` on a stable release produces a tag that does not point at the released production merge. This happened on v0.7.0.
+
+After the tag is pushed, checkout `main` to restore the working branch.
+
 Run:
 ```bash
 ./scripts/create-release-tag.sh
@@ -244,6 +261,7 @@ ALWAYS:
 - Treat provider dirs as generated — exclude from individual listing
 
 NEVER:
+- Tag a stable release from `main` — the tag must point at the production merge
 - Hand-edit the version field in `cli/package.json` — leaves `package-lock.json` stale
 - Create or push the tag with `git tag` — use `./scripts/create-release-tag.sh`
 - Run `node scripts/build.js` — pipeline's job
