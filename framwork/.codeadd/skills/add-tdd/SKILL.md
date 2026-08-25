@@ -1,6 +1,6 @@
 ---
 name: add-tdd
-description: RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add.build and add.test.
+description: RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add.build.
 ---
 
 # TDD — RED-GREEN-REFACTOR Discipline

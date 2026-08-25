@@ -18,7 +18,7 @@ import { enableFeature, disableFeature } from '../src/features.js';
  *   1. qa-pipeline enable/disable round-trip (byte-identical restore)
  *   2. pre-sidecar enable no-op (silent success the setup step must detect)
  *   3. fragment self-detection notices in always-present built body text
- *   4. add.qa two-phase preflight contract + shared probe script
+ *   4. the two-phase QA preflight contract (absorbed into add.review) + shared probe script
  *
  * Requires `node scripts/build.js` to have produced framwork/.claude +
  * framwork/.codeadd/injection-points.json (CI builds before testing).
@@ -519,7 +519,7 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
     expect(reviewSection).toMatch(/Refuse/i);
   });
 
-  it('add.review and add.autopilot resolve design.md at subfeature scope', () => {
+  it('add.review, add.plan-to-ready and add.build resolve design.md at subfeature scope', () => {
     // Assert the CITATION, not the prose (L7): the authority is the schema's
     // Location rule. Pinning the parenthetical here would test-lock the exact
     // wording Q18 asked to single-source.

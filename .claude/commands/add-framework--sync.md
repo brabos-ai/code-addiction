@@ -157,7 +157,7 @@ This file is the human-facing integration map. Contains 3 Mermaid graphs only �
 
 ```
 Graph 1 — Core Pipeline:
-  Commands in main feature flow (add.new, add.plan, add.build, add.review, add.done, add.test, add.autopilot)
+  Commands in main feature flow (add.new, add.plan, add.build, add.review, add.done, add.plan-to-ready)
   → skills they load (loads relationship)
 
 Graph 2 — Support Commands:

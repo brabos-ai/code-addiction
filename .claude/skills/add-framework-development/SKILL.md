@@ -203,7 +203,7 @@ add-qa/
 - **Enforcement:** `⚠️ REGRA OBRIGATÓRIA`, `NEVER/MUST`, `**OBRIGATÓRIO**`
 - **Cross-references:** `{{skill:add-[name]/[file]}}` for files, `/add.[name]` for commands
 - **Token efficiency:** JSON minified, max 10 words per description, no decorative formatting
-- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review` and `add.autopilot` (which forwards it). Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
+- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review`. `/add.plan-to-ready` does NOT inherit it: it is autonomous by contract, and with a read-only `add.review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
 
 ---
 

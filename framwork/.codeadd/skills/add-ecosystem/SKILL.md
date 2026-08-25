@@ -161,17 +161,17 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | Flow | Sequence | When to use |
 |------|----------|-------------|
 | Complete | brainstorm → new → plan → build → review → done | Complex features with UI (design is produced inside plan STEP 8.1) |
-| QA-validated | new → plan → build → test → **qa ⇄ build qa** → review → done | UI features with `qa-pipeline` on. Working runs stay local; review binds the final tree to exact runs and done snapshots them automatically before merge |
+| QA-validated | new → plan → build → **review ⇄ build** → done | UI features that ran `/add.qa-setup`. The review judges the rendered result and routes every finding; the build applies them and closes the round in the same `review-NNN.md`. Working runs stay local; done snapshots them before merge |
 | Standard | new → plan → build → review → done | Features without complex UI |
 | Lean | new → build → done | Small changes, quick tasks |
-| Autonomous | new → autopilot → done | Want zero-interaction implementation |
+| Autonomous | new → **plan-to-ready** → done | Want zero-interaction implementation. The loop converges and returns control — the merge stays human |
 | Emergency | hotfix → done | Critical production bug |
 | Exploration | brainstorm → new → ... | Don't know where to start |
 | Triage | diagnose → (hotfix OR new OR no-action) | Vague symptom, unsure if bug/feature |
 | New Project | init → build → done | Create new project/feature |
 | Analysis | wiki / audit | Check project health |
 
-> **Branch creation:** the documental steps (brainstorm → new → plan) make no git writes — `/add.new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** (or **autopilot**) step via `build-setup.sh`.
+> **Branch creation:** the documental steps (brainstorm → new → plan) make no git writes — `/add.new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** (or **plan-to-ready**) step via `build-setup.sh`.
 
 ## Command Next-Steps Routing
 

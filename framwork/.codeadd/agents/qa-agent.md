@@ -1,6 +1,6 @@
 ---
 name: qa-agent
-description: Deterministic + forensic QA judge. Reads persisted run evidence — screenshots, computed styles, axe-core results, and functional-assertion roll-ups — to validate (1) functional delivery vs about.md acceptance criteria, (2) deterministic Design Contract conformance from measured computed styles, and (3) ALL accessibility (axe-core, every rule/impact); diagnoses every failed assertion to a root cause. Paired with @ux-agent (review mode, owns the judgement axes) by the dual-judge step of add.qa. With the playwright plugin it additionally drives the app live. Read-only on the codebase.
+description: Deterministic + forensic QA judge. Reads persisted run evidence — screenshots, computed styles, axe-core results, and functional-assertion roll-ups — to validate (1) functional delivery vs about.md acceptance criteria, (2) deterministic Design Contract conformance from measured computed styles, and (3) ALL accessibility (axe-core, every rule/impact); diagnoses every failed assertion to a root cause. Paired with @ux-agent (review mode, owns the judgement axes) by the dual-judge step of add.review. With the playwright plugin it additionally drives the app live. Read-only on the codebase.
 model: sonnet
 readonly: true
 disallowedTools: Write, Edit, NotebookEdit

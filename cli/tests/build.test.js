@@ -112,13 +112,13 @@ describe('METADATA', () => {
 describe('TRANSFORMERS', () => {
   describe('md', () => {
     it('adds frontmatter with description', () => {
-      const result = TRANSFORMERS.md('# Hello', { name: 'add.test', description: 'Test cmd', skillFormat: false });
+      const result = TRANSFORMERS.md('# Hello', { name: 'add.example', description: 'Test cmd', skillFormat: false });
       expect(result).toBe('---\ndescription: Test cmd\n---\n\n# Hello');
     });
 
     it('adds skill frontmatter when skillFormat is true', () => {
-      const result = TRANSFORMERS.md('# Hello', { name: 'add.test', description: 'Test cmd', skillFormat: true });
-      expect(result).toBe('---\nname: add.test\ndescription: Test cmd\n---\n\n# Hello');
+      const result = TRANSFORMERS.md('# Hello', { name: 'add.example', description: 'Test cmd', skillFormat: true });
+      expect(result).toBe('---\nname: add.example\ndescription: Test cmd\n---\n\n# Hello');
     });
   });
 });

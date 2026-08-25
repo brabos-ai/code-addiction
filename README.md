@@ -84,9 +84,11 @@ Step        Command             What happens                        Output
 1. Discover /add.new            AI-guided feature discovery          about.md
 2. Plan     /add.plan           Technical planning + UX contract     plan.md + design.md
 3. Code     /add.build          Subagent-driven implementation       Working code
-4. Review   /add.review          Automated code review + validation   Quality gate
+4. Review   /add.review         Code review + spec audit + QA        review-NNN.md
 5. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
 ```
+
+Steps 2-4 can also run as one bounded loop: `/add.plan-to-ready` plans, then loops build <-> review up to 3 times against the `/add.done` gates before handing control back — the merge stays human.
 
 ### Choose your flow
 
@@ -103,8 +105,9 @@ STANDARD  (features without complex UI)
 LEAN      (small changes, quick tasks)
   new --> build --> done
 
-AUTONOMOUS  (full AI implementation, no interaction)
-  new --> autopilot --> done
+AUTONOMOUS  (bounded build <-> review loop, no interaction)
+  new --> plan-to-ready --> done
+          (plans, then loops build <-> review up to 3x against the /add.done gates)
 
 EXPLORATION  (don't know where to start?)
   brainstorm --> new --> ...pick your flow above
@@ -141,6 +144,8 @@ ANALYSIS  (understand existing codebase)
   - Google Antigravity -> `.agent/`
   - Cursor -> `.cursor/`
   - OpenCode -> `.opencode/`
+
+Commands and skills install to every provider you select. Subagents install to Claude Code, Cursor, OpenCode and Codex (Antigravity is not yet supported for agents).
 
 ## Repository structure
 

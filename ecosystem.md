@@ -12,36 +12,33 @@ graph LR
   BUILD(add.build)
   REVIEW(add.review)
   DONE(add.done)
-  TEST(add.test)
-  AUTO(add.autopilot)
+  PLANTOREADY(add.plan-to-ready)
 
-  ADOC{{add-doc-reviewer}}
-  BE{{add-backend-development}}
-  CR{{add-code-review}}
-  DB{{add-database-development}}
-  DS{{add-doc-schemas}}
-  DV{{add-delivery-validation}}
-  FD{{add-feature-discovery}}
-  FE{{add-frontend-development}}
-  FS{{add-feature-specification}}
-  ID{{add-id-convention}}
-  IV{{add-investigation}}
-  KD{{add-knowledge-discovery}}
-  QSPEC{{add-qa-spec}}
-  SA{{add-security-audit}}
-  TC{{add-tasks-checklist}}
-  TDD{{add-tdd}}
-  TSPEC{{add-test-specification}}
-  UX{{add-ux-design}}
-  WM{{add-wiki-maintenance}}
+  BADE{{add-backend-development}}
+  CORE{{add-code-review}}
+  CO{{add-commit}}
+  DADE{{add-database-development}}
+  DEVA{{add-delivery-validation}}
+  DORE{{add-doc-reviewer}}
+  DOSC{{add-doc-schemas}}
+  EC{{add-ecosystem}}
+  FEDI{{add-feature-discovery}}
+  FRDE{{add-frontend-development}}
+  IDCO{{add-id-convention}}
+  IN{{add-investigation}}
+  KNDI{{add-knowledge-discovery}}
+  QA{{add-qa}}
+  SEAU{{add-security-audit}}
+  TACH{{add-tasks-checklist}}
+  UXDE{{add-ux-design}}
+  WIMA{{add-wiki-maintenance}}
 
-  NEW --> DS & ID & ADOC & KD & FD & FS
-  PLAN --> DS & ID & KD & TC & BE & DB & FE & FD & UX & TSPEC & QSPEC
-  BUILD --> DS & ID & TC & BE & CR & DB & FE & UX & TDD
-  REVIEW --> BE & CR & DB & DV & FE & IV & KD & SA & UX
-  DONE --> DS & ID & WM
-  TEST --> BE & FE & TDD
-  AUTO --> DS & ID & TC & BE & DB & FE & UX
+  NEW --> DORE & DOSC & IDCO & KNDI
+  PLAN --> BADE & DADE & DOSC & EC & FEDI & FRDE & IDCO & KNDI & TACH & UXDE
+  BUILD --> BADE & CORE & DADE & DOSC & EC & FRDE & IDCO & TACH & UXDE
+  REVIEW --> BADE & CORE & CO & DADE & DEVA & DOSC & FRDE & IN & KNDI & QA & SEAU & TACH & UXDE
+  DONE --> DOSC & EC & IDCO & WIMA
+  PLANTOREADY --> DOSC
 ```
 
 ## Graph 2 - Support Commands
@@ -55,99 +52,98 @@ graph LR
   AUDIT(add.audit)
   WIKI(add.wiki)
   BRAINSTORM(add.brainstorm)
-  UX_CMD(add.ux)
+  UX(add.ux)
+  QASETUP(add.qa-setup)
+  PULLREQUEST(add.pull-request)
 
-  AD{{add-architecture-discovery}}
-  CMS{{add-claude-md-style}}
-  DE{{add-dev-environment-setup}}
-  DR{{add-doc-reviewer}}
-  DS{{add-doc-schemas}}
-  ECO{{add-ecosystem}}
-  HC{{add-health-check}}
-  ID{{add-id-convention}}
-  IV{{add-investigation}}
-  KD{{add-knowledge-discovery}}
-  PD{{add-product-discovery}}
-  UX{{add-ux-design}}
-  WM{{add-wiki-maintenance}}
+  ARDI{{add-architecture-discovery}}
+  CLMDST{{add-claude-md-style}}
+  CO{{add-commit}}
+  DEENSE{{add-dev-environment-setup}}
+  DORE{{add-doc-reviewer}}
+  DOSC{{add-doc-schemas}}
+  EC{{add-ecosystem}}
+  HECH{{add-health-check}}
+  IDCO{{add-id-convention}}
+  IN{{add-investigation}}
+  KNDI{{add-knowledge-discovery}}
+  PRDI{{add-product-discovery}}
+  QA{{add-qa}}
+  QAMI{{add-qa-migration}}
+  SECO{{add-setup-contract}}
+  SUDRDE{{add-subagent-driven-development}}
+  UXDE{{add-ux-design}}
+  WIMA{{add-wiki-maintenance}}
 
-  ADD --> ECO & DE
-  INIT --> DS & PD
-  DIAGNOSE --> DS & ECO & IV & KD
-  HOTFIX --> DS & ECO & ID & IV & KD & UX
-  AUDIT --> DS & ECO & HC & IV
-  WIKI --> AD & CMS & DS & ECO & WM
-  BRAINSTORM --> DR & DS
-  UX_CMD --> UX
+  ADD --> DEENSE & EC
+  INIT --> DOSC & PRDI
+  DIAGNOSE --> DOSC & EC & IN & KNDI
+  HOTFIX --> DOSC & EC & IDCO & IN & KNDI & UXDE
+  AUDIT --> DOSC & EC & HECH & IN
+  WIKI --> ARDI & CLMDST & DOSC & EC & WIMA
+  BRAINSTORM --> DORE & DOSC
+  UX --> UXDE
+  QASETUP --> DEENSE & DOSC & QA & QAMI & SECO & SUDRDE
+  PULLREQUEST --> CO & DOSC & IDCO
 ```
 
 ## Graph 3 - Agent Dispatch
 
 ```mermaid
 graph LR
-  AUTO(add.autopilot)
-  BRAINSTORM(add.brainstorm)
   BUILD(add.build)
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
-  NEW(add.new)
   PLAN(add.plan)
-  QA(add.qa)
+  PLANTOREADY(add.plan-to-ready)
   QASETUP(add.qa-setup)
   REVIEW(add.review)
-  TEST(add.test)
 
-  ARCH>architecture-agent]
-  BA>backend-agent]
-  DA>database-agent]
-  DISCO>discovery-agent]
-  DOCR>doc-reviewer-agent]
-  E2EA>e2e-agent]
-  FA>frontend-agent]
-  FHA>feature-history-agent]
-  GHA>git-history-agent]
+  ARA>architecture-agent]
+  BAA>backend-agent]
+  DAA>database-agent]
+  DIA>discovery-agent]
+  E2A>e2e-agent]
+  FEHIA>feature-history-agent]
+  FIA>fix-agent]
+  FRA>frontend-agent]
+  GIHIA>git-history-agent]
   QAA>qa-agent]
-  RA>reviewer-agent]
+  REA>reviewer-agent]
+  TEA>test-agent]
   UXA>ux-agent]
-  UXF>ux-flow-agent]
-  UXL>ux-layout-agent]
+  UXFLA>ux-flow-agent]
+  UXLAA>ux-layout-agent]
 
-  AD{{add-architecture-discovery}}
-  BARCH{{add-backend-architecture}}
-  BE{{add-backend-development}}
-  CR{{add-code-review}}
-  DB{{add-database-development}}
-  DR{{add-doc-reviewer}}
-  DS{{add-doc-schemas}}
-  FD{{add-feature-discovery}}
-  FE{{add-frontend-development}}
-  FARCH{{add-frontend-architecture}}
-  FS{{add-feature-specification}}
-  SA{{add-security-audit}}
-  UX{{add-ux-design}}
+  ARDI{{add-architecture-discovery}}
+  BAAR{{add-backend-architecture}}
+  BADE{{add-backend-development}}
+  CORE{{add-code-review}}
+  DADE{{add-database-development}}
+  FEDI{{add-feature-discovery}}
+  FESP{{add-feature-specification}}
+  FRAR{{add-frontend-architecture}}
+  FRDE{{add-frontend-development}}
+  SEAU{{add-security-audit}}
+  UXDE{{add-ux-design}}
 
-  AUTO --> ARCH & BA & DA & FA & RA
-  BRAINSTORM --> DOCR
-  BUILD --> BA & DA & E2EA & FA & RA & UXA
-  DIAGNOSE --> ARCH & FHA & GHA
-  HOTFIX --> ARCH & FHA & GHA
-  NEW --> DISCO & DOCR
-  PLAN --> ARCH & BA & DA & DISCO & FA & UXF & UXL & UXA
-  QA --> QAA & UXA
-  QASETUP --> E2EA & QAA
-  REVIEW --> RA
-  TEST --> E2EA
+  BUILD --> BAA & DAA & E2A & FIA & FRA & REA & TEA & UXA
+  DIAGNOSE --> ARA & FEHIA & GIHIA
+  HOTFIX --> ARA & FEHIA & GIHIA
+  PLAN --> ARA & BAA & DAA & DIA & FRA & QAA & UXA & UXFLA & UXLAA
+  PLANTOREADY --> ARA & BAA & DAA & DIA & E2A & FIA & FRA & QAA & REA & TEA & UXA & UXFLA & UXLAA
+  QASETUP --> E2A
+  REVIEW --> E2A & QAA & REA & UXA
 
-  ARCH --> AD & BARCH & FARCH
-  BA --> BE & DB
-  DA --> DB
-  DISCO --> FD & FS
-  DOCR --> DR & DS
-  FA --> FE
-  RA --> CR & SA
-  UXA --> UX
-  UXF --> UX
-  UXL --> UX
+  ARA --> ARDI & BAAR & FRAR
+  BAA --> BADE & DADE
+  DAA --> DADE
+  DIA --> FEDI & FESP
+  FRA --> FRDE
+  REA --> CORE & SEAU
+  UXA --> UXDE
+  UXFLA --> UXDE
+  UXLAA --> UXDE
 ```
 
 > Source of truth for AI agents: `framwork/.codeadd/skills/add-ecosystem/SKILL.md`
