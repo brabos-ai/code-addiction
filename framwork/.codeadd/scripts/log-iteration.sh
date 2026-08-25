@@ -3,7 +3,7 @@
 # =============================================================================
 # log-iteration.sh
 # Append iteration entry to feature's iterations.md (token-optimized)
-# Used by: /add-dev command (automatic at completion)
+# Used by: /add.build command (automatic at completion)
 # =============================================================================
 # Usage: bash .codeadd/scripts/log-iteration.sh <type> <slug> <what> <files> [cmd] [--feature N] [--epic name]
 #

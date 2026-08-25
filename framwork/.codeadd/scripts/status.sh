@@ -180,7 +180,7 @@ if [ -n "$FEATURE_ID" ]; then
         [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST" || true
         echo "HAS_DESIGN:$HAS_DESIGN"
 
-        # Iterations context (previous /add-dev sessions) — JSONL format
+        # Iterations context (previous /add.build sessions) — JSONL format
         ITERATIONS_FILE="$FEATURE_DIR/iterations.jsonl"
         if [ -f "$ITERATIONS_FILE" ]; then
             # Count iterations (each line is a JSON entry)
@@ -641,9 +641,9 @@ RECS=""
 # Based on state
 if [ "$BRANCH_TYPE" = "main" ]; then
     if [ -n "$PENDING_FIRST_ID" ]; then
-        RECS="/add.build $PENDING_FIRST_ID or /feature to start"
+        RECS="/add.build $PENDING_FIRST_ID or /add.new to start"
     else
-        RECS="/feature to start"
+        RECS="/add.new to start"
     fi
 elif [ -n "$FEATURE_ID" ]; then
     if [ ! -d "$FEATURE_DIR" ]; then
