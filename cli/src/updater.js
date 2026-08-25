@@ -4,21 +4,11 @@ import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected, agentDest } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
-import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
+import { fixLineEndings, writeManifest, resolveInstallSource, shouldPreserve } from './installer.js';
 import { applyEnabledFeatures } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
+import { runMigrations } from './migrations.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-
-const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
-
-/**
- * Check if a relative path should be preserved during update.
- * @param {string} relPath
- * @returns {boolean}
- */
-function shouldPreserve(relPath) {
-  return PRESERVE_PATTERNS.some((p) => p.test(relPath));
-}
 
 /**
  * Copy entries from zip that match a source prefix to a destination directory,
@@ -160,13 +150,29 @@ export async function update(cwd, options = {}, scope = 'project') {
   const previousFeatures = manifest.features ?? {};
   const previousPlugins = manifest.plugins ?? {};
 
+  // Repairs the release payload cannot carry. Runs AFTER the new files land, so
+  // a migration sees the version it was written against, and BEFORE
+  // writeManifest, so its ledger is threaded through the same metadata argument
+  // that already preserves features and plugins — one write, no field dropped.
+  const previousMigrations = Array.isArray(manifest.migrations) ? manifest.migrations : [];
+  const migrationResult = runMigrations({ cwd, providers }, previousMigrations);
+  for (const change of migrationResult.changes) log.success(`Migration removed ${change}`);
+  for (const failure of migrationResult.failed) {
+    // Reported, not recorded, not fatal: the next update retries it.
+    log.warn(`Migration ${failure.id} failed: ${failure.error}`);
+  }
+  if (migrationResult.applied.length > 0) {
+    log.success(`Applied ${migrationResult.applied.length} migration(s).`);
+  }
+  const nextMigrations = [...previousMigrations, ...migrationResult.applied].sort();
+
   writeManifest(
     cwd,
     installSource.manifestVersion,
     providerKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope: installScope, features: previousFeatures, plugins: previousPlugins }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope: installScope, features: previousFeatures, plugins: previousPlugins, migrations: nextMigrations }
   );
 
   // Re-apply enabled features on updated commands (files were overwritten by the new version)

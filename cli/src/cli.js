@@ -10,6 +10,7 @@ import { validate } from './validator.js';
 import { config } from './config.js';
 import { features } from './features.js';
 import { plugins } from './plugins.js';
+import { migrate } from './migrations.js';
 import { promptUninstallScope } from './prompt.js';
 
 export function getArgValue(argv, flag) {
@@ -96,6 +97,9 @@ Commands:
   plugins list                 List external-tool plugins and their state
   plugins enable <name>        Enable a plugin (validate tool, inject + activate skills)
   plugins disable <name>       Disable a plugin (remove injections + skills)
+  migrate                      Apply pending one-off repairs to this install
+  migrate --list               List applied and pending migrations
+  migrate --dry-run            Show what migrate would do, write nothing
   config show                  Display installation configuration
   config show --verbose         Display config + check for updates
 
@@ -164,6 +168,10 @@ export async function runCli(argv) {
       await features(targetDir, args, scope);
     } else if (subcommand === 'plugins') {
       await plugins(targetDir, args, scope);
+    } else if (subcommand === 'migrate') {
+      // Reachable even when `update` would early-return on an already-current
+      // project — which is the only way such a project can be repaired.
+      await migrate(targetDir, args, scope);
     } else if (subcommand === 'config') {
       const subCmd = args[0];
       if (subCmd === 'show') {

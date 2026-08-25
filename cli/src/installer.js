@@ -10,6 +10,24 @@ import { applyEnabledFeatures, FEATURES } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
 import { resolveSelected, agentDest } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
+import { readManifest } from './injection-core.js';
+import { allMigrationIds } from './migrations.js';
+
+/**
+ * Paths that survive an overwrite. This is the single definition of "never
+ * delete this" for BOTH install and update — updater.js imports it rather than
+ * keeping a copy, because two definitions will diverge and the one that
+ * diverges deletes someone's session history.
+ */
+export const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
+
+/**
+ * @param {string} relPath  path relative to the install root
+ * @returns {boolean}
+ */
+export function shouldPreserve(relPath) {
+  return PRESERVE_PATTERNS.some((p) => p.test(relPath));
+}
 
 /**
  * Force LF line endings on all .sh files under a directory.
@@ -234,6 +252,13 @@ export async function install(cwd, options = {}) {
     }
   }
 
+  // Read BEFORE the overwrite. Without this the prior file list is lost and
+  // any file the new release stopped shipping becomes invisible to every
+  // future manifest diff — the install-path blind spot update never had.
+  // readManifest returns null for both a missing and an unparseable manifest,
+  // and null means "no prior list", therefore no prune.
+  const priorManifest = readManifest(targetDir);
+
   s.start('Downloading...');
   const zipBuffer = await downloadReleaseAsset(installSource.downloadValue);
   s.stop('Downloaded.');
@@ -269,6 +294,32 @@ export async function install(cwd, options = {}) {
     log.success('.gitignore updated.');
   }
 
+  // Mirror of the update-path prune (updater.js): anything the prior install
+  // wrote that this one did not is obsolete. Same shared preservation rules.
+  if (priorManifest) {
+    const written = new Set(allFiles);
+    let removed = 0;
+    for (const old of priorManifest.files ?? []) {
+      if (written.has(old) || shouldPreserve(old)) continue;
+      try {
+        const full = path.join(targetDir, old);
+        if (fs.existsSync(full)) {
+          fs.unlinkSync(full);
+          removed++;
+        }
+      } catch {
+        // A file we cannot remove is not worth failing an install over.
+      }
+    }
+    if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
+  }
+
+  // A pristine project has nothing to migrate, so stamp the back-catalogue as
+  // applied. An existing project keeps its ledger verbatim — baseline-stamping
+  // it would erase migrations it still needs. readManifest() === null is the
+  // only signal that authorises the stamp.
+  const migrations = priorManifest ? (priorManifest.migrations ?? []) : allMigrationIds();
+
   // Features default to their registry defaults (no install-time prompt).
   // Users toggle post-install via `codeadd features enable|disable <name>`.
   const defaultFeatures = {};
@@ -282,7 +333,7 @@ export async function install(cwd, options = {}) {
     selectedKeys,
     allFiles,
     installSource.releaseTag,
-    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope, features: defaultFeatures, plugins: {}, gitignore: addToGitignore }
+    { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope, features: defaultFeatures, plugins: {}, gitignore: addToGitignore, migrations }
   );
 
   // Apply enabled features (inject fragment content into commands)
