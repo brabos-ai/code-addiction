@@ -28,7 +28,7 @@ You are a cross-cutting E2E spec author. You run after implementation, when the 
 5. Green-confirm via the `qa-project` Managed App Lifecycle (probe `baseUrl` → boot-bg + wait-ready if down → run → teardown iff you booted it). This is a green-confirm, NOT a RED-first cycle — the implementation already exists.
    - Fails on a **spec defect** → fix the spec.
    - Fails because the feature genuinely does not deliver → **surface it as a real gap; NEVER soften the assertion**.
-   - **Boot fails / times out** → author-only and **defer the first run to `/add.qa`** with a flagged note (no hang; `add.test` gains no hard app-boot dependency).
+   - **Boot fails / times out** → author-only and **defer the first run to `/add.review`** with a flagged note (no hang; `add.build` gains no hard app-boot dependency).
 
 ## Constraints
 

@@ -1,28 +1,28 @@
 ---
 name: add-qa
-description: Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and both judges.
+description: Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.review and both judges.
 ---
 
 # add-qa — QA Validation Methodology
 
 ## Overview
 
-The QA capability **judges from the persisted run evidence (screenshots + computed styles + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agents be the judges** (Level C): the run captures evidence, the judges assess it. `/add.qa` dispatches **two specialist judges per subfeature, in parallel** — `@ux-agent` in review mode (the judgement axes: UX quality, judgement conformance, responsiveness) and `@qa-agent` (functional delivery vs `about.md`, deterministic Design Contract conformance from measured computed styles, ALL accessibility, and failure forensics) — and the coordinator reconciles coverage once, then merges the two finding sets. It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes. Each screen's `design.md` `## Design Contract` is the source of truth for both conformance judgements — the dimensions it names, and how each is verified, decide which judge owns each row: computed-style rows are `@qa-agent`'s deterministic comparison, the judgement rows are `@ux-agent`'s.
+The QA capability **judges from the persisted run evidence (screenshots + computed styles + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agents be the judges** (Level C): the run captures evidence, the judges assess it. `/add.review` dispatches **two specialist judges per subfeature, in parallel** — `@ux-agent` in review mode (the judgement axes: UX quality, judgement conformance, responsiveness) and `@qa-agent` (functional delivery vs `about.md`, deterministic Design Contract conformance from measured computed styles, ALL accessibility, and failure forensics) — and the coordinator reconciles coverage once, then merges the two finding sets. It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes. Each screen's `design.md` `## Design Contract` is the source of truth for both conformance judgements — the dimensions it names, and how each is verified, decide which judge owns each row: computed-style rows are `@qa-agent`'s deterministic comparison, the judgement rows are `@ux-agent`'s.
 
 Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT here — they live in `/add.qa-setup` (must run before the plugin is enabled).
 
-**Feature vs plugin (canonical statement):** `qa-pipeline` (feature) decides whether QA artefacts are **authored** — the plan QA-spec, the E2E specs, the `/add.build qa` mode. `playwright` (plugin) decides whether the judge can additionally **drive the app live**. They are orthogonal: enabling the plugin does not enable the pipeline. Features toggle via `codeadd features enable|disable qa-pipeline`; every consumer references this statement instead of restating it.
+**Feature vs plugin (canonical statement):** `qa-pipeline` (feature) decides whether QA artefacts are **authored** — the plan QA-spec, the E2E specs, and the routed QA correction in `/add.build`. `playwright` (plugin) decides whether the judge can additionally **drive the app live**. They are orthogonal: enabling the plugin does not enable the pipeline. Features toggle via `codeadd features enable|disable qa-pipeline`; every consumer references this statement instead of restating it.
 
 ## When to Use
 
-- `/add.qa` dispatches the judge pair (`@ux-agent` review ∥ `@qa-agent`) to validate a subfeature.
+- `/add.review` dispatches the judge pair (`@ux-agent` review ∥ `@qa-agent`) to validate a subfeature.
 - Either judge needs the rubric, severity taxonomy, root-cause taxonomy, or the finding/report shape.
 
 ## When NOT to Use
 
 - Installing prereqs or scaffolding `config.json`/`screens.json` → `/add.qa-setup`.
 - Static code review (no rendered result) → `/add.review`.
-- Unit/integration test generation → `/add.test`.
+- Unit/integration test generation → `/add.build` (tdd-pipeline feature, via `@test-agent`).
 
 ## Validation Model — Level C
 
@@ -30,7 +30,7 @@ The persisted spec (or, with the plugin, live driving) **captures and exercises*
 
 ### Axis ownership — two judges, no axis judged twice
 
-`/add.qa` STEP 4.5 dispatches `@ux-agent` (review mode) ∥ `@qa-agent`, one pair per SF. Each axis has exactly one owner so the STEP 5 dedupe is well-defined:
+`/add.review` STEP 10.1 dispatches `@ux-agent` (review mode) ∥ `@qa-agent`, one pair per SF. Each axis has exactly one owner so the STEP 10.2 dedupe is well-defined:
 
 | Axis | Judge | Source of truth |
 |---|---|---|
@@ -70,7 +70,7 @@ Every `type: functional` finding carries **exactly one** root cause, cited to th
 
 ## Coordinator-only knowledge (NOT for the judges)
 
-The **merge rules** (dedupe / domain precedence / severity / contradiction) and the **Fix Routing** rules (routing lookup table, the `ux` two-value classification, capability validation, dependency ordering, the `## Fix Routing` template, the contract-amendment trail) live in `{{skill:add-qa/references/coordinator.md}}`. `/add.qa` loads that file before it merges; **a judge never does** — judges emit `type` + root cause and never a `route`.
+The **merge rules** (dedupe / domain precedence / severity / contradiction) and the **Fix Routing** rules (routing lookup table, the `ux` two-value classification, capability validation, dependency ordering, the `## Fix Routing` template, the contract-amendment trail) live in `{{skill:add-qa/references/coordinator.md}}`. `/add.review` loads that file before it merges; **a judge never does** — judges emit `type` + root cause and never a `route`.
 
 ## Severity Taxonomy
 
@@ -86,10 +86,10 @@ Each finding is also tagged `type: ux | functional | a11y | spec-gap`. An *expec
 ## Scope, Path & Numbering
 
 - **Scope:** SF folder when scoped to a subfeature (`SCOPE_DIR = .../subfeatures/SFxx-*`), feature folder otherwise.
-- **Working evidence:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots stay in the same complete run directory. Working runs are local, ephemeral, and remain the only live fix queue for `/add.build qa`.
+- **Working evidence:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots stay in the same complete run directory. Working runs are local, ephemeral, and remain the only live fix queue the review draws its routed rows from.
 - **Final evidence:** `/add.done` copies the exact reviewed baseline to `SCOPE_DIR/_tests/final/run-NNN/`. A final snapshot is immutable delivery evidence, may retain unresolved findings, and is not a pass certificate.
 - **Numbering:** per scope, `qa-validation-NNN` starts at `001`; the next ID is `max(working IDs, final IDs) + 1`, resolved by `.codeadd/scripts/qa-evidence.sh next`. Each SF keeps its own sequence. See `{{skill:add-id-convention/SKILL.md}}` and the `qa-validation` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
-- **Fresh clones:** final-only history participates in numbering and predecessor lookup, but never becomes a live fix queue. Run `/add.qa` to create working evidence before `/add.build qa`.
+- **Fresh clones:** final-only history participates in numbering and predecessor lookup, but never becomes a live fix queue. Run `/add.review` to create working evidence before `/add.build` applies its routed fixes.
 
 ## Config & Catalog Formats (reference)
 
@@ -183,7 +183,7 @@ judged-contract: sha256:<design.md provenance hash>
 <axe violations by rule/impact + visual notes: contrast, focus, heading order, or "clean">
 
 ## Fix Routing
-<the coordinator's dispatch plan for `/add.build qa` — table shape + rules in `{{skill:add-qa/references/coordinator.md}}`.
+<the coordinator's dispatch plan for `/add.build` — table shape + rules in `{{skill:add-qa/references/coordinator.md}}`.
 `data-seed`/`env-boot` and @ux-agent/user routes are unordered (—); if the contract was
 amended since the previous run, note "contract amended since run-NNN" + the dimensions.>
 | Order | Agent | Findings | Target class | Blocked by |

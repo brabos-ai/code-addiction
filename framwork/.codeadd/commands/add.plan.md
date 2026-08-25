@@ -56,8 +56,8 @@ STEP 8:  Execute subagents        -> SEQUENTIAL by area
   - 8.4: Frontend Specialist
 <!-- feature:qa-pipeline:step-list -->
 <!-- /feature:qa-pipeline:step-list -->
-<!-- feature:tdd:step-list -->
-<!-- /feature:tdd:step-list -->
+<!-- feature:tdd-pipeline:step-list -->
+<!-- /feature:tdd-pipeline:step-list -->
 STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
 STEP 11: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP 12: Validation Gate          -> feature-plan schema gate
@@ -227,13 +227,13 @@ BACKEND_SELECTED  = true|false
 
 ### 8.1 UX Design Specialist (gated — produces `design.md`)
 
-`add.plan` OWNS the design contract. When the feature touches UI, this sub-step produces the consolidated `design.md` that 8.4 (Frontend), STEP 10 and `/add.qa` all read. Three dispatches + one coordinator consolidation.
+`add.plan` OWNS the design contract. When the feature touches UI, this sub-step produces the consolidated `design.md` that 8.4 (Frontend), STEP 10 and the QA judgement in `/add.review` all read. Three dispatches + one coordinator consolidation.
 
 ⛔ NO human `[STOP]` anywhere in 8.1 — every accept/reject decision here belongs to the coordinator.
 
 **SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `status.sh`'s `SF_DIR_GLOB` resolves).
 
-**Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.qa` resolves). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
+**Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add.review`'s QA scope resolution uses). All 8.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
 **`design.md` resolution (for every consumer, including the skip path):** resolve it per the `feature-design` **Location** rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).
 
@@ -491,8 +491,8 @@ ${WIKI_PAGES}
 
 **End of the area subagents.** 8.2-8.4 have run sequentially; every selected area now has its `plan-<area>.md` temp.
 
-<!-- feature:tdd:step9 -->
-<!-- /feature:tdd:step9 -->
+<!-- feature:tdd-pipeline:step9 -->
+<!-- /feature:tdd-pipeline:step9 -->
 
 ---
 
@@ -611,7 +611,7 @@ Inform user with summary:
 - Areas planned (UX Design/Database/Backend/Frontend)
 - Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
-- Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build` or `/add.autopilot`
+- Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build` or `/add.plan-to-ready`
 
 ---
 

@@ -1,6 +1,6 @@
 # add-qa — Coordinator Reference
 
-Loaded by `/add.qa` at the merge step, and by nothing else. `@ux-agent` and `@qa-agent` must NOT load this file: both emit `type` + root cause only, and routing needs the merged, deduped set plus a global order that no single judge can see.
+Loaded by `/add.review` at its QA merge step (STEP 10.2), and by nothing else. `@ux-agent` and `@qa-agent` must NOT load this file: both emit `type` + root cause only, and routing needs the merged, deduped set plus a global order that no single judge can see.
 
 ## Merge Rules (coordinator, at the merge step)
 
@@ -15,7 +15,7 @@ Coverage blockers (the coordinator's own coverage reconciliation) enter as coord
 
 ## Fix Routing (coordinator, immediately after the merge)
 
-Routing turns each merged finding into a dispatch target for `/add.build qa`. It is a **deterministic lookup** on `type` + root cause — there is no confidence score. The **coordinator** derives it after the merge (never a judge — routing needs the merged, deduped set and the global order). Every finding gets a `route`.
+Routing turns each merged finding into a dispatch target for `/add.build`. It is a **deterministic lookup** on `type` + root cause — there is no confidence score. The **coordinator** derives it after the merge (never a judge — routing needs the merged, deduped set and the global order). Every finding gets a `route`.
 
 ### Routing rules
 

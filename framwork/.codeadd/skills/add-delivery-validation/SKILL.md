@@ -22,7 +22,7 @@ Skill for PRODUCT validation — checks whether requirements were 100% implement
 | Build compiles? | Functionality works end-to-end? |
 | Technical patterns | Implicit dependencies created? |
 
-**Runtime arm — `/add.qa`:** this skill validates delivery **statically** (reads the code/docs, checks the RF/RN checklist). `/add.qa` (the `playwright` plugin, opt-in) is the **runtime** arm of the same goal — it drives the running app to prove functional delivery against `about.md` acceptance criteria (and UX fidelity vs `design.md`), producing a `_tests/run-NNN/qa-validation-NNN.md` audit. Use them together when the feature has UI: this skill confirms the requirements exist in code; `/add.qa` confirms they actually work in the browser.
+**Runtime arm — the QA judgement in `/add.review`:** this skill validates delivery **statically** (reads the code/docs, checks the RF/RN checklist). `/add.review`'s QA sections are the **runtime** arm of the same goal (the `playwright` plugin adds live driving) — it drives the running app to prove functional delivery against `about.md` acceptance criteria (and UX fidelity vs `design.md`), producing a `_tests/run-NNN/qa-validation-NNN.md` audit. Use them together when the feature has UI: this skill confirms the requirements exist in code; the QA judgement confirms they actually work in the browser.
 
 ### When NOT to Use
 
@@ -56,7 +56,7 @@ cat docs/features/${FEATURE_ID}/tasks.md 2>/dev/null # Tick state (## Acceptance
 **Extract contracts from plan.md (prose) + tick state from tasks.md → ## Acceptance Checklist:**
 
 From `plan.md` (prose): routes, services, DTOs, guards, migrations, queues — as defined in the plan.
-From `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build`/`add.autopilot` validators.
+From `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build` validators (or by `/add.plan-to-ready` when it holds the coordinator role).
 
 Map each `## Acceptance Checklist` item to the corresponding RF/RN from `about.md`. Use `## Requirements Coverage` from `tasks.md` as a derived index — every RF/RN must have coverage by ≥1 item from `## Acceptance Checklist`.
 

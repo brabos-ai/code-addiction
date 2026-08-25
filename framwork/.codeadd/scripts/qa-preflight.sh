@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # QA-PREFLIGHT
-# Deterministic QA prerequisite probes shared by /add.qa and /add.qa-setup
+# Deterministic QA prerequisite probes shared by /add.review and /add.qa-setup
 # ============================================
 # Usage: bash .codeadd/scripts/qa-preflight.sh a
 #        bash .codeadd/scripts/qa-preflight.sh b <FEATURE_DIR> [SPEC_GLOB]
@@ -24,6 +24,11 @@ usage() {
 
 PHASE="${1:-}"
 
+# Single source of the manifest feature key. cli/src/features.js owns the
+# registry; this is the one place a shipped script names the key, so a future
+# rename has exactly one line to change here.
+QA_FEATURE_KEY="qa-pipeline"
+
 # --- Phase A: project-level probes ---
 phase_a() {
   local FEATURE_STATE CONFIG BASEURL HOST LOCAL SKILL d RECEIPT SIDECAR RECORDED CURRENT
@@ -34,11 +39,12 @@ phase_a() {
   else
     FEATURE_STATE=$(node -e "
       try {
+        const key = process.argv[1];
         const j = JSON.parse(require('fs').readFileSync('.codeadd/manifest.json', 'utf8'));
-        const has = j.features && Object.prototype.hasOwnProperty.call(j.features, 'qa-pipeline');
-        console.log(has ? String(j.features['qa-pipeline']) : 'unset');
+        const has = j.features && Object.prototype.hasOwnProperty.call(j.features, key);
+        console.log(has ? String(j.features[key]) : 'unset');
       } catch (e) { console.log('unset'); }
-    " 2>/dev/null)
+    " "$QA_FEATURE_KEY" 2>/dev/null)
     echo "QA_FEATURE_STATE=${FEATURE_STATE:-unset}"
   fi
 

@@ -120,7 +120,7 @@ Data the agent looks up. Uses **minified JSON** (one object per line).
 
 ### Validation Gates
 
-Auto-derived data block emitted by `add-architecture-discovery`. Maps the 5 universal gate intents (lint, typecheck, test, build, format) to the actual command this project uses. Consumed by `add.plan`, `add.build`, `add.autopilot`, `add.review` to inject and enforce checklist items in `tasks.md`.
+Auto-derived data block emitted by `add-architecture-discovery`. Maps the 5 universal gate intents (lint, typecheck, test, build, format) to the actual command this project uses. Consumed by `add.plan`, `add.build`, `add.review`, `add.plan-to-ready` to inject and enforce checklist items in `tasks.md`.
 
 Uses **minified JSON** (it's data, not behavior). Only includes gates that actually exist — absence is meaningful. The `format` gate, when present, MUST be a non-mutating check command.
 

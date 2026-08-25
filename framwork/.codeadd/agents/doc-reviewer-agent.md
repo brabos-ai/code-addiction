@@ -2,6 +2,7 @@
 name: doc-reviewer-agent
 description: Doc review specialist for generated documentation (about.md, brainstorms, plans). Reads only the target doc and its schema — never the conversation that produced it. Returns a three-bucket textual review (Gap / Clarity / Scope). Read-only.
 model: sonnet
+readonly: true
 skills:
   - add-doc-reviewer
   - add-doc-schemas

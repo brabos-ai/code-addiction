@@ -4,8 +4,8 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptConfirm } from './prompt.js';
 import { removeGitignoreBlock } from './gitignore.js';
 
-const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.kilocode', '.opencode'];
-const GLOBAL_ADD_DIRS = ['.codeadd', '.claude', '.agents', '.config/opencode'];
+const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.codex', '.cursor', '.kilocode', '.opencode'];
+const GLOBAL_ADD_DIRS = ['.codeadd', '.claude', '.agents', '.codex', '.config/opencode'];
 
 /**
  * Read and parse .codeadd/manifest.json.

@@ -12,9 +12,9 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 
 | Type | Path | Count |
 |------|------|-------|
-| Commands | `framwork/.codeadd/commands/*.md` | 18 |
+| Commands | `framwork/.codeadd/commands/*.md` | 16 |
 | Skills | `framwork/.codeadd/skills/*/SKILL.md` | 40 |
-| Agents | `framwork/.codeadd/agents/*-agent.md` | 15 |
+| Agents | `framwork/.codeadd/agents/*-agent.md` | 17 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
 ### Internal Layer — `.claude/` and `.opencode/`
@@ -90,11 +90,11 @@ Three strategies with different behaviors:
 |----------|----------|-----------|------------|
 | Commands | YAML frontmatter (description) | MD or TOML | — |
 | Skills | YAML frontmatter (name + description) | MD or TOML | Copies extra files (subdirs, siblings) |
-| Agents | Passthrough (keeps original frontmatter) | None | — |
+| Agents | Per-provider frontmatter dialect | MD or TOML (Codex) | — |
 
-Key mechanics: HTML comments (`<!-- -->`) are stripped at build time uniformly (use for source-only dev notes), **including** `feature:`/`plugin:` injection markers. Those markers are not shipped — `extractInjectionPoints()` consumes each one into a build-emitted **content-anchored sidecar** (`framwork/.codeadd/injection-points.json`) keyed by adjacent prose text, and the built provider files ship **marker-free**. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. All providers use markdown (the build is markdown-only).
+Key mechanics: HTML comments (`<!-- -->`) are stripped at build time uniformly (use for source-only dev notes), **including** `feature:`/`plugin:` injection markers. Those markers are not shipped — `extractInjectionPoints()` consumes each one into a build-emitted **content-anchored sidecar** (`framwork/.codeadd/injection-points.json`) keyed by adjacent prose text, and the built provider files ship **marker-free**. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. Commands and skills are markdown on every provider. Agents carry a per-provider frontmatter dialect (`AGENT_DIALECTS` in `scripts/build.js`); Codex emits TOML with the body in `developer_instructions`.
 
-The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A command that materializes state into the user's project declares a `## Materializes` H2 that is the single source of every shape it writes; `extractContract()` derives `{ version, shape, recipes, paths }` from it. Three gates fail the build loud: a resource-path variable inside the block (it would resolve per provider), a declared `shape` that does not match the computed one (the forgotten-bump guard — the build prints the value to paste), and a declared version with no matching `## vN` section in its recipe file, or a hole in the `1..N` chain. Like `injection-points.json` it is gitignored and packaged explicitly by `release.yml`.
+The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A command that materializes state into the user's project declares a `## Materializes` H2 that is the single source of every shape it writes; `extractContract()` derives `{ contract, shape, paths }` from it. Two gates fail the build loud: a resource-path variable inside the block (it would resolve per provider), and a declared `shape` that does not match the computed one (the forgotten-bump guard — the build prints the value to paste). Like `injection-points.json` it is gitignored and packaged explicitly by `release.yml`.
 
 ### Resource Path Variables (build-time)
 
@@ -108,7 +108,7 @@ The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A comm
 
 The 5 supported providers (claude, codex, cursor, antigrav, opencode) are all MCP-capable and markdown-native. Minor differences remain: antigrav has no hooks; codex has no slashCommands. All support `agentDispatch` and `mcp`. Per-provider capability flags live in `provider-map.json` → `providers.{name}.capabilities`.
 
-Distribution rules: all commands/skills build to all 5 providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents only build for providers with an `agents` pattern (currently only claude).
+Distribution rules: all commands/skills build to all 5 providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents build for providers with an `agents` pattern: claude, cursor and opencode as markdown, codex as TOML. A provider whose agents live outside its main root declares `agentsDir` (codex: skills under `.agents/`, agents under `.codex/agents/`). Antigravity is deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. Plugin agent-fragment injection is separately gated on `agentInjection` in `cli/src/providers.js` and remains Claude-only.
 
 ## Feature Injection System
 
@@ -131,8 +131,8 @@ Current features:
 
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
-| `tdd` | enabled | add.plan, add.build, add.review |
-| `qa-pipeline` | disabled | add.plan, add.test, add.build |
+| `tdd-pipeline` | enabled | add.plan, add.build, add.review |
+| `qa-pipeline` | disabled | add.plan, add.build |
 
 ## Setup Contracts
 
@@ -147,7 +147,7 @@ Commands that materialize state into a user's project record what they wrote in 
 | Comparison procedure | `add-setup-contract` skill |
 | Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
 
-Identity is the `shape` hash of the `## Materializes` block. The receipt stores it as `setup-shape`. Equal to the sidecar → current. Anything else → stale → `/add.qa-setup` (hard gate in `/add.qa` preflight). There is no version integer and no recipe chain. Hashes in the receipt are `owner`-scoped: only paths this command solely owns carry one, because a hash on a shared file (`screens.json`, content owned by `add.plan` STEP 10.0) would report drift on every healthy project.
+Identity is the `shape` hash of the `## Materializes` block. The receipt stores it as `setup-shape`. Equal to the sidecar → current. Anything else → stale → `/add.qa-setup` (hard gate in `/add.review`'s QA preflight). There is no version integer and no recipe chain. Hashes in the receipt are `owner`-scoped: only paths this command solely owns carry one, because a hash on a shared file (`screens.json`, content owned by `add.plan` STEP 10.0) would report drift on every healthy project.
 
 The `## Materializes` block boundary is **fence-aware**: it embeds a fenced template carrying its own H2s, and a naive `^## ` scan would truncate it — silently excusing everything below from both the shape hash and the variable ban. The contract variable ban targets *resolvable* references (`{{cmd:NAME}}`); the empty forms (`{{cmd:}}`) resolve to nothing, ship identically to every provider, and are how the block documents the ban itself.
 

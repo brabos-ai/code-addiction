@@ -111,12 +111,12 @@ All recognized types proceed to STEP 4. Quality gates apply to `feature` only �
 
 **SKIP this substep entirely if `BRANCH_TYPE` ≠ `feature`.** Hotfix/refactor/chore/docs branches do not require `/add.review`.
 
-**GATE CHECK (feature only): review.md must exist and PASSED before merge.**
+**GATE CHECK (feature only): a `review-NNN.md` must exist and be PASSED before merge.**
 
-1. CHECK if `docs/features/${FEATURE_ID}/review.md` exists
-2. IF NOT EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
-3. IF EXISTS: READ review.md, find "| **Overall**" row
-4. IF Overall = BLOCKED: Show table of BLOCKED gates -> BLOCKED
+1. RESOLVE the **highest-numbered** `docs/features/${FEATURE_ID}/review-NNN.md`. That one is the delivery receipt; earlier rounds are history and are never read here.
+2. IF NONE EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
+3. IF EXISTS: READ it, find the "| **Overall**" row
+4. IF Overall = BLOCKED: Show the table of BLOCKED gates -> BLOCKED
 5. IF Overall = PASSED: READ the mandatory `> **QA baseline:**` line and store it as `QA_BASELINE` for STEP 5.
 
 `QA baseline` line **ABSENT** → **BLOCKED**. Re-run `/add.review`; never infer a baseline or compare dates. STEP 5 performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
@@ -352,7 +352,7 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 
 ## STEP 7: Preview (INFORMATIVE ONLY)
 
-Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and each permanent final snapshot emitted by STEP 5 with its scope, path, and severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: `/add.qa` is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
+Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and each permanent final snapshot emitted by STEP 5 with its scope, path, and severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: the QA judgement is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
 
 **DO NOT ask for confirmation. Proceed directly to STEP 8.**
 

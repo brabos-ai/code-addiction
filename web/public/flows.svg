@@ -59,22 +59,16 @@
   <line x1="672" y1="82" x2="696" y2="82" class="arrow-w"/>
   <g transform="translate(700, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-warn"/>
-    <text x="50" y="18" text-anchor="middle" class="ntxt">QA</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add.qa</text>
-  </g>
-  <line x1="804" y1="82" x2="828" y2="82" class="arrow-w"/>
-  <g transform="translate(832, 60)">
-    <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Review</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd">/add.review</text>
+    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add.review</text>
   </g>
-  <line x1="936" y1="82" x2="960" y2="82" class="arrow"/>
-  <g transform="translate(964, 60)">
+  <line x1="804" y1="82" x2="828" y2="82" class="arrow"/>
+  <g transform="translate(832, 60)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
-  <text x="40" y="120" class="sublabel" style="fill:#999">/add.qa evaluates working QA evidence; /add.review records the exact per-scope baseline, and /add.done validates and promotes it to immutable final snapshots (findings may remain)</text>
+  <text x="40" y="120" class="sublabel" style="fill:#999">/add.review runs code review, spec audit and dual-judge QA over working evidence; /add.done validates and promotes it to immutable final snapshots (findings may remain)</text>
 
   <!-- ============ STANDARD FLOW ============ -->
   <text x="40" y="150" class="label">STANDARD FLOW</text>
@@ -127,8 +121,8 @@
   </g>
 
   <!-- ============ AUTONOMOUS FLOW ============ -->
-  <text x="40" y="386" class="label" style="fill:#ffaa00">AUTONOMOUS FLOW</text>
-  <text x="40" y="400" class="sublabel">Autonomous Feature Coordinator</text>
+  <text x="40" y="386" class="label" style="fill:#ffaa00">CONVERGENCE FLOW</text>
+  <text x="40" y="400" class="sublabel">Bounded build + review loop, 3x max — converges and hands control back</text>
 
   <g transform="translate(40, 414)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
@@ -137,12 +131,12 @@
   </g>
   <line x1="144" y1="436" x2="168" y2="436" class="arrow-w"/>
   <g transform="translate(172, 414)">
-    <rect x="0" y="0" width="100" height="44" rx="6" class="node-warn"/>
-    <text x="50" y="18" text-anchor="middle" class="ntxt">Autopilot</text>
-    <text x="50" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add.autopilot</text>
+    <rect x="0" y="0" width="130" height="44" rx="6" class="node-warn"/>
+    <text x="65" y="18" text-anchor="middle" class="ntxt">Plan to Ready</text>
+    <text x="65" y="32" text-anchor="middle" class="cmd" style="fill:#ffaa00">/add.plan-to-ready</text>
   </g>
-  <line x1="276" y1="436" x2="300" y2="436" class="arrow-w"/>
-  <g transform="translate(304, 414)">
+  <line x1="306" y1="436" x2="330" y2="436" class="arrow-w"/>
+  <g transform="translate(334, 414)">
     <rect x="0" y="0" width="100" height="44" rx="6" class="node-on"/>
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>

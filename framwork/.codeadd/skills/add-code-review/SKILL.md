@@ -7,7 +7,7 @@ description: 'Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Arch
 
 Skill for validating implemented code against project standards.
 
-**Use for:** Validate code, identify violations, auto-fix (autopilot)
+**Use for:** Validate code and identify violations; apply routed fixes when dispatched by `/add.build`
 **Do not use for:**
 
 - Implementing new features (use `add-backend-development` / `add-frontend-development`)
@@ -255,7 +255,7 @@ For EACH changed file, validate in order, marking each todo `in_progress` → `c
 8. **Code Quality** — see §8
 9. **Database** — see §9
 
-### Phase 3: Fix (autopilot)
+### Phase 3: Fix (build-side, routed)
 
 1. For each issue found:
    - Create specific todo: "Fix [issue] in [file]"
@@ -267,7 +267,7 @@ For EACH changed file, validate in order, marking each todo `in_progress` → `c
 
 ### Phase 4: Report
 
-Generate the review report at `docs/features/${featureId}/review.md`. The exact output template (score table, issue format, build status) is owned by the consuming command (`add.review`) — this skill validates; the command formats.
+Generate the review report at `docs/features/${featureId}/review-NNN.md` (next number in the per-feature sequence). The exact output template (score table, issue format, build status) is owned by the consuming command (`add.review`) — this skill validates; the command formats.
 
 ---
 
@@ -278,7 +278,7 @@ Generate the review report at `docs/features/${featureId}/review.md`. The exact 
 - Create TodoWrite BEFORE starting review and update it during each phase
 - Load reference skills BEFORE review
 - Run `status.sh` FIRST
-- Auto-fix in autopilot
+- Apply routed fixes when dispatched by `/add.build`
 - Verify build
 - Document before/after
 
@@ -287,7 +287,7 @@ Generate the review report at `docs/features/${featureId}/review.md`. The exact 
 - Start review without creating TodoWrite
 - Skip Architecture Contract validation (MOST critical)
 - Skip IoC validation
-- Report without fixing (autopilot)
+- Report without fixing (review-side)
 - Ignore skill patterns
 - Accept "works" as justification
 - Leave non-compiling code

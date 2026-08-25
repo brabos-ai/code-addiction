@@ -161,7 +161,11 @@ describe('update command', () => {
     await update(tmpDir);
 
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    expect(manifest.features.tdd).toBe(true); // feature state preserved
+    // Plan 0070: the legacy `tdd` key resolves to `tdd-pipeline` and is
+    // normalised away on the first update — the user's choice is preserved,
+    // the orphaned key is not left behind as dead data.
+    expect(manifest.features['tdd-pipeline']).toBe(true);
+    expect(manifest.features).not.toHaveProperty('tdd');
     expect(manifest.plugins).toEqual({ gitnexus: { enabled: true } }); // plugin state NOT dropped
   });
 

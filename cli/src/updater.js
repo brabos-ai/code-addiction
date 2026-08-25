@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { resolveSelected } from './providers.js';
+import { resolveSelected, agentDest } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { fixLineEndings, writeManifest, resolveInstallSource } from './installer.js';
 import { applyEnabledFeatures } from './features.js';
@@ -124,6 +124,13 @@ export async function update(cwd, options = {}, scope = 'project') {
     const destDir = path.join(cwd, p.dest);
     const pFiles = copyFromZip(zip, p.src, destDir, cwd);
     allFiles.push(...pFiles);
+
+    // A provider whose agents live outside its main root (Codex: skills under
+    // .agents/, agents under .codex/agents/) needs a second copy pass.
+    if (p.agentsSrc) {
+      const agentDir = path.join(cwd, agentDest(p));
+      allFiles.push(...copyFromZip(zip, p.agentsSrc, agentDir, cwd));
+    }
   }
 
   s.stop(`Updated ${allFiles.length} files.`);

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { resolveSelected } from './providers.js';
+import { resolveSelected, agentDest } from './providers.js';
 
 /**
  * injection-core — shared helpers + manifest IO for the two additive injection
@@ -246,10 +246,18 @@ export function resolveResourceFiles(cwd, resource) {
   // Scope-aware: a global install resolves provider dests under the home dir
   // (e.g. OpenCode .config/opencode, not .opencode). manifest.scope is authoritative.
   const providers = resolveSelected(manifest?.providers ?? [], manifest?.scope ?? 'project');
-  const subKey = resource.kind === 'agent' ? 'agentsSubdir' : 'commandsSubdir';
+  if (resource.kind === 'agent') {
+    // Injection is pinned to providers declaring agentInjection (Claude today).
+    // Others receive agent FILES without receiving plugin agent fragments —
+    // see the agentInjection note in providers.js.
+    return providers
+      .filter((p) => p.agentInjection && p.agentsSubdir)
+      .map((p) => path.join(cwd, agentDest(p), p.agentsSubdir, `${resource.name}.md`))
+      .filter((f) => fs.existsSync(f));
+  }
   return providers
-    .filter((p) => p[subKey])
-    .map((p) => path.join(cwd, p.dest, p[subKey], `${resource.name}.md`))
+    .filter((p) => p.commandsSubdir)
+    .map((p) => path.join(cwd, p.dest, p.commandsSubdir, `${resource.name}.md`))
     .filter((f) => fs.existsSync(f));
 }
 

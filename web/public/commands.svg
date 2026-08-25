@@ -66,8 +66,8 @@
   <text x="386" y="250" class="cmd-desc">Development Execution Specialist</text>
 
   <rect x="370" y="264" width="270" height="36" class="cmd-box"/>
-  <text x="386" y="282" class="cmd-name">/add.autopilot</text>
-  <text x="386" y="294" class="cmd-desc">Autonomous Feature Coordinator</text>
+  <text x="386" y="282" class="cmd-name">/add.plan-to-ready</text>
+  <text x="386" y="294" class="cmd-desc">Bounded build + review convergence loop</text>
 
   <!-- HOTFIX GROUP -->
   <rect x="350" y="338" width="310" height="150" class="group-bg"/>
@@ -83,25 +83,17 @@
   <text x="386" y="458" class="cmd-desc">Smart commit with adaptive message</text>
 
   <!-- QUALITY GROUP -->
-  <rect x="680" y="10" width="300" height="244" class="group-bg"/>
+  <rect x="680" y="10" width="300" height="156" class="group-bg"/>
   <text x="700" y="36" class="group-title">QUALITY</text>
   <line x1="700" y1="44" x2="960" y2="44" class="cat-line"/>
 
   <rect x="700" y="56" width="260" height="36" class="cmd-box"/>
   <text x="716" y="74" class="cmd-name">/add.review</text>
-  <text x="716" y="86" class="cmd-desc">Review code + record working QA baseline</text>
+  <text x="716" y="86" class="cmd-desc">Code review + spec audit + dual-judge QA</text>
 
   <rect x="700" y="100" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="118" class="cmd-name">/add.test</text>
-  <text x="716" y="130" class="cmd-desc">Generate automated tests</text>
-
-  <rect x="700" y="144" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="162" class="cmd-name">/add.qa</text>
-  <text x="716" y="174" class="cmd-desc">Dual-judge QA over working evidence</text>
-
-  <rect x="700" y="188" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="206" class="cmd-name">/add.qa-setup</text>
-  <text x="716" y="218" class="cmd-desc">Bootstrap QA + ignored working evidence</text>
+  <text x="716" y="118" class="cmd-name">/add.qa-setup</text>
+  <text x="716" y="130" class="cmd-desc">Bootstrap QA + ignored working evidence</text>
 
   <!-- DELIVERY GROUP -->
   <rect x="680" y="268" width="300" height="150" class="group-bg"/>

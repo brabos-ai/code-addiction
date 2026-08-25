@@ -162,7 +162,7 @@ import "../styles/global.css";
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd features</code>
-            <span class="text-muted-light text-sm">List, enable, or disable optional features (e.g. TDD, Startup Test)</span>
+            <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline)</span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
@@ -232,8 +232,8 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Development Execution Specialist</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.autopilot</code>
-                <p class="text-muted text-xs mt-0.5">Autonomous Feature Coordinator</p>
+                <code class="text-accent font-mono text-sm">/add.plan-to-ready</code>
+                <p class="text-muted text-xs mt-0.5">Bounded convergence loop — plans, then loops build ⇄ review at most 3 times against the <code class="text-foreground">/add.done</code> gates evaluated in dry-run, dispatching named leaf agents at depth 1. Converges and returns control; the merge stays human</p>
               </div>
             </div>
           </div>
@@ -244,11 +244,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.review</code>
-                <p class="text-muted text-xs mt-0.5">Feature Code Review Specialist</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.test</code>
-                <p class="text-muted text-xs mt-0.5">Generate tests — coverage reported as signal, not enforced target</p>
+                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review, spec-compliance audit and agent-judged QA (dual-judge panel over persisted run evidence); consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.audit</code>
@@ -259,12 +255,8 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only)</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.qa</code>
-                <p class="text-muted text-xs mt-0.5">Agent-judged QA — dual-judge panel (<code class="text-foreground">ux-agent</code> review ∥ <code class="text-foreground">qa-agent</code>) judges the persisted qa.spec run across UX, functional, responsiveness, and a11y (audit, not a gate). playwright plugin adds live driving</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa-setup</code>
-                <p class="text-muted text-xs mt-0.5">End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests /add.qa</p>
+                <p class="text-muted text-xs mt-0.5">End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests the QA judgement via <code class="text-foreground">/add.review</code></p>
               </div>
             </div>
           </div>
@@ -366,14 +358,14 @@ import "../styles/global.css";
             </div>
           </div>
 
-          <!-- Autonomous -->
+          <!-- Convergence -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Autonomous Flow</h3>
-            <p class="text-muted text-xs mb-4">Full AI implementation, no human interaction needed</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Convergence Flow</h3>
+            <p class="text-muted text-xs mb-4">Bounded build ⇄ review loop — converges against the /add.done gates, then hands control back. The merge stays human</p>
             <div class="flex flex-wrap items-center gap-2">
               <span class="flow-node">New<br/><span class="flow-cmd">/add.new</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Autopilot<br/><span class="flow-cmd" style="color:#ffaa00">/add.autopilot</span></span>
+              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Plan to Ready<br/><span class="flow-cmd" style="color:#ffaa00">/add.plan-to-ready</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
               <span class="flow-node">Done<br/><span class="flow-cmd">/add.done</span></span>
             </div>
@@ -465,13 +457,13 @@ import "../styles/global.css";
           <!-- Scenario 4 -->
           <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-3">
-              <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ffaa00;background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.2)">AUTONOMOUS</span>
+              <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ffaa00;background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.2)">CONVERGENCE</span>
               <h3 class="font-display font-semibold">"Implement the 5 API endpoints from the spec"</h3>
             </div>
-            <p class="text-muted-light text-sm mb-4">Well-specified work. Let the AI handle it end-to-end with no interaction.</p>
+            <p class="text-muted-light text-sm mb-4">Well-specified work. Let the bounded loop converge against the delivery gates, then take the merge decision yourself.</p>
             <div class="font-mono text-sm text-muted-light">
               <span style="color:#ffaa00">/add.new</span> → define scope<br/>
-              <span style="color:#ffaa00">/add.autopilot</span> → AI implements everything autonomously<br/>
+              <span style="color:#ffaa00">/add.plan-to-ready</span> → plans, then loops build ⇄ review until the /add.done gates pass<br/>
               <span class="text-accent">/add.done</span> → finalize
             </div>
           </div>
@@ -551,10 +543,10 @@ import "../styles/global.css";
             { name: "id-convention", desc: "Canonical [NNNN][L] ID and branch naming format expected by next-id.sh, get-branch-metadata.sh, done.sh" },
             { name: "skill-creator", desc: "Create and structure new ADD skills" },
             { name: "claude-md-style", desc: "Use when generating or updating CLAUDE.md files — defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget" },
-            { name: "add-tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add.build and add.test." },
+            { name: "add-tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add.build." },
             { name: "add-test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add.plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
             { name: "add-qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md, and author the _tests/screens.json screen catalog by read-merge-write. Loaded by add.plan's qa-pipeline QA-Spec step." },
-            { name: "add-qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.qa and both judges." },
+            { name: "add-qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add.review and both judges." },
             { name: "add-qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over — defines the autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints. Consumed by /add.qa-setup when migration is detected and confirmed." },
             { name: "add-knowledge-discovery", desc: "Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review — consult the project wiki (and code knowledge graph) for minimal token cost before dispatching agents." },
             { name: "add-wiki-maintenance", desc: "Use for incremental project-wiki updates — loaded by /add.wiki update (manual drift) and add.done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
@@ -579,11 +571,11 @@ import "../styles/global.css";
         <div class="space-y-3">
           <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">tdd</code>
+              <code class="text-accent font-mono text-sm">tdd-pipeline</code>
               <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">TDD Pipeline (test-first development)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code></p>
+            <p class="text-muted-light text-sm mb-1">TDD pipeline (test-first ordering + unit/integration generation)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
           </div>
           <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-2">
@@ -591,7 +583,7 @@ import "../styles/global.css";
               <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
             </div>
             <p class="text-muted-light text-sm mb-1">QA pipeline (E2E authoring + agent QA validation)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.test</code>, <code class="font-mono">add.build</code></p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code></p>
           </div>
         </div>
       </section>
@@ -685,8 +677,8 @@ import "../styles/global.css";
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Adds live browser driving (screenshots + console/network) to the already-present agent-judged QA validation via Playwright MCP. QA works out of the box from persisted run evidence (screenshots + assertion/axe results) — this plugin lets the /add.qa judge pair additionally drive the app live for richer evidence.</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.qa</code></p>
+            <p class="text-muted-light text-sm mb-1">Adds live browser driving (screenshots + console/network) to the already-present agent-judged QA validation via Playwright MCP. QA works out of the box from persisted run evidence (screenshots + assertion/axe results) — this plugin lets the /add.review judge pair additionally drive the app live for richer evidence.</p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.review</code></p>
             <p class="text-muted text-xs">Injects into agent: <code class="font-mono">qa-agent</code></p>
             <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/microsoft/playwright-mcp</a></p>
           </div>
@@ -734,11 +726,11 @@ import "../styles/global.css";
               </div>
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
                 <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-pw-run">/add.qa &lt;feature-id&gt;</span>
+                <span class="flex-1 text-foreground" id="cmd-pw-run">/add.review &lt;feature-id&gt;</span>
                 <button onclick="copyCmd('cmd-pw-run', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
               </div>
             </div>
-            <p class="text-muted text-xs mt-2">Verify: the Playwright MCP server must be connected (e.g. <code class="font-mono">/mcp</code>) — if it does not appear, <code class="font-mono">/add.qa</code> cannot drive the browser.</p>
+            <p class="text-muted text-xs mt-2">Verify: the Playwright MCP server must be connected (e.g. <code class="font-mono">/mcp</code>) — if it does not appear, <code class="font-mono">/add.review</code> cannot drive the browser.</p>
           </div>
 
         </div>
@@ -780,6 +772,9 @@ import "../styles/global.css";
             </tbody>
           </table>
         </div>
+        <p class="text-muted text-xs mt-4">
+          Commands and skills build to all five providers. Agent definitions ship to Claude Code, Cursor, OpenCode and Codex — Antigravity is deferred because its native <code class="font-mono">.agents/agents/</code> path collides with the Codex skills root.
+        </p>
       </section>
 
       <!-- STRUCTURE -->
@@ -953,7 +948,6 @@ import "../styles/global.css";
         // Commands
         {data:{id:'add',label:'add',type:'command'}},
         {data:{id:'add.audit',label:'add.audit',type:'command'}},
-        {data:{id:'add.autopilot',label:'add.autopilot',type:'command'}},
         {data:{id:'add.brainstorm',label:'add.brainstorm',type:'command'}},
         {data:{id:'add.build',label:'add.build',type:'command'}},
         {data:{id:'add.diagnose',label:'add.diagnose',type:'command'}},
@@ -962,11 +956,10 @@ import "../styles/global.css";
         {data:{id:'add.init',label:'add.init',type:'command'}},
         {data:{id:'add.new',label:'add.new',type:'command'}},
         {data:{id:'add.plan',label:'add.plan',type:'command'}},
+        {data:{id:'add.plan-to-ready',label:'add.plan-to-ready',type:'command'}},
         {data:{id:'add.pull-request',label:'add.pull-request',type:'command'}},
-        {data:{id:'add.qa',label:'add.qa',type:'command'}},
         {data:{id:'add.qa-setup',label:'add.qa-setup',type:'command'}},
         {data:{id:'add.review',label:'add.review',type:'command'}},
-        {data:{id:'add.test',label:'add.test',type:'command'}},
         {data:{id:'add.ux',label:'add.ux',type:'command'}},
         {data:{id:'add.wiki',label:'add.wiki',type:'command'}},
         // Agents
@@ -976,12 +969,14 @@ import "../styles/global.css";
         {data:{id:'discovery-agent',label:'discovery',type:'agent'}},
         {data:{id:'doc-reviewer-agent',label:'doc-reviewer',type:'agent'}},
         {data:{id:'feature-history-agent',label:'feature-history',type:'agent'}},
+        {data:{id:'fix-agent',label:'fix',type:'agent'}},
         {data:{id:'frontend-agent',label:'frontend',type:'agent'}},
         {data:{id:'git-history-agent',label:'git-history',type:'agent'}},
         {data:{id:'qa-agent',label:'qa',type:'agent'}},
         {data:{id:'e2e-agent',label:'e2e',type:'agent'}},
         {data:{id:'reviewer-agent',label:'reviewer',type:'agent'}},
         {data:{id:'system-design-agent',label:'system-design',type:'agent'}},
+        {data:{id:'test-agent',label:'test',type:'agent'}},
         {data:{id:'ux-agent',label:'ux',type:'agent'}},
         {data:{id:'ux-flow-agent',label:'ux-flow',type:'agent'}},
         {data:{id:'ux-layout-agent',label:'ux-layout',type:'agent'}},
@@ -1024,15 +1019,15 @@ import "../styles/global.css";
         ['add.audit','add-doc-schemas','loads'],
         ['add.audit','add-health-check','loads'],
         ['add.audit','add-investigation','loads'],
-        ['add.autopilot','add-doc-schemas','loads'],
-        ['add.autopilot','add-id-convention','loads'],
-        ['add.autopilot','add-tasks-checklist','loads'],
-        ['add.autopilot','add-ecosystem','loads'],
-        ['add.autopilot','add-ux-design','loads'],
-        ['add.autopilot','add-database-development','loads'],
-        ['add.autopilot','add-backend-development','loads'],
-        ['add.autopilot','add-frontend-development','loads'],
-        ['add.autopilot','add-code-review','loads'],
+        ['add.plan-to-ready','add-doc-schemas','loads'],
+        ['add.plan-to-ready','add-id-convention','loads'],
+        ['add.plan-to-ready','add-tasks-checklist','loads'],
+        ['add.plan-to-ready','add-ecosystem','loads'],
+        ['add.plan-to-ready','add-ux-design','loads'],
+        ['add.plan-to-ready','add-database-development','loads'],
+        ['add.plan-to-ready','add-backend-development','loads'],
+        ['add.plan-to-ready','add-frontend-development','loads'],
+        ['add.plan-to-ready','add-code-review','loads'],
         ['add.brainstorm','add-doc-schemas','loads'],
         ['add.brainstorm','add-ecosystem','loads'],
         ['add.build','add-doc-schemas','loads'],
@@ -1076,25 +1071,22 @@ import "../styles/global.css";
         ['add.review','add-delivery-validation','loads'],
         ['add.review','add-tasks-checklist','loads'],
         ['add.review','add-investigation','loads'],
-        ['add.test','add-backend-development','loads'],
-        ['add.test','add-frontend-development','loads'],
-        ['add.test','add-ecosystem','loads'],
         ['add.ux','add-ux-design','loads'],
         ['add.wiki','add-doc-schemas','loads'],
         ['add.wiki','add-architecture-discovery','loads'],
         ['add.wiki','add-claude-md-style','loads'],
-        ['add.qa','add-doc-schemas','loads'],
-        ['add.qa','add-qa','loads'],
+        ['add.review','add-doc-schemas','loads'],
+        ['add.review','add-qa','loads'],
         ['add.qa-setup','add-doc-schemas','loads'],
         ['add.qa-setup','add-dev-environment-setup','loads'],
         ['add.qa-setup','add-qa-migration','loads'],
         ['add.qa-setup','add-setup-contract','loads'],
         ['add.plan','add-qa-spec','loads'],
         // command → agent (dispatches)
-        ['add.autopilot','backend-agent','dispatches'],
-        ['add.autopilot','frontend-agent','dispatches'],
-        ['add.autopilot','database-agent','dispatches'],
-        ['add.autopilot','reviewer-agent','dispatches'],
+        ['add.plan-to-ready','backend-agent','dispatches'],
+        ['add.plan-to-ready','frontend-agent','dispatches'],
+        ['add.plan-to-ready','database-agent','dispatches'],
+        ['add.plan-to-ready','reviewer-agent','dispatches'],
         ['add.build','backend-agent','dispatches'],
         ['add.build','frontend-agent','dispatches'],
         ['add.build','database-agent','dispatches'],
@@ -1105,9 +1097,13 @@ import "../styles/global.css";
         ['add.new','discovery-agent','dispatches'],
         ['add.new','doc-reviewer-agent','dispatches'],
         ['add.wiki','architecture-agent','dispatches'],
-        ['add.qa','qa-agent','dispatches'],
-        ['add.qa','ux-agent','dispatches'],
-        ['add.test','e2e-agent','dispatches'],
+        ['add.review','qa-agent','dispatches'],
+        ['add.review','ux-agent','dispatches'],
+        ['add.build','e2e-agent','dispatches'],
+        ['add.build','test-agent','dispatches'],
+        ['add.build','fix-agent','dispatches'],
+        ['add.plan-to-ready','test-agent','dispatches'],
+        ['add.plan-to-ready','fix-agent','dispatches'],
         ['add.diagnose','discovery-agent','dispatches'],
         ['add.diagnose','architecture-agent','dispatches'],
         ['add.diagnose','feature-history-agent','dispatches'],
@@ -1134,6 +1130,7 @@ import "../styles/global.css";
         ['system-design-agent','add-architecture-discovery','uses'],
         ['qa-agent','add-qa','uses'],
         ['ux-agent','add-qa','uses'],
+        ['test-agent','add-tdd','uses'],
       ];
 
       var edges = RAW.map(function(r, i) {

@@ -33,7 +33,11 @@ const STALE = {
 
 const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir).map(([k]) => k);
 const SKILL_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.skillsSubdir).map(([k]) => k);
-const AGENT_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.agentsSubdir).map(([k]) => k);
+// Agent INJECTION is gated on agentInjection, not on agentsSubdir: four
+// providers now receive agent files, but only Claude receives plugin agent
+// fragments (Codex agents are TOML, which the markdown-anchored engine cannot
+// address at all). See the agentInjection note in cli/src/providers.js.
+const AGENT_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.agentInjection && p.agentsSubdir).map(([k]) => k);
 
 let tmp;
 
@@ -262,13 +266,13 @@ afterEach(() => {
 });
 
 describe('substitution completeness (catalog × fragments × sidecar × built anchors)', () => {
-  it('sidecar, fragments, and catalog declare the same 35 substitutions', () => {
+  it('sidecar, fragments, and catalog declare the same 38 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(35);
-    expect(all).toHaveLength(35);
+    expect(points).toHaveLength(38);
+    expect(all).toHaveLength(38);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -368,10 +372,10 @@ describe('plugin substitution on real built files', () => {
 });
 
 describe('combined substitution and sibling isolation', () => {
-  it('all 35 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('all 38 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(35);
+    expect(features.length + plugins.length).toBe(38);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);
