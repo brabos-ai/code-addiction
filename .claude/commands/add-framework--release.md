@@ -121,7 +121,7 @@ Bump `cli/package.json` AND `cli/package-lock.json` in a single operation:
 cd cli && npm version [NEXT_VERSION without v prefix] --no-git-tag-version
 ```
 
-CRITICAL: Editing `cli/package.json` by hand leaves `cli/package-lock.json` on the old version. `cli/tests/package-smoke.mjs` compares both fields and hard-fails the pipeline (`FAIL: package-lock.json version X != package.json version Y`) — after the tag is already pushed. `--no-git-tag-version` stops npm from creating its own commit and tag.
+CRITICAL: Editing `cli/package.json` by hand leaves `cli/package-lock.json` on the old version. `cli/tests/package-smoke.mjs` compares both fields and hard-fails the pipeline (`FAIL: package-lock.json version X != package.json version Y`) — after the tag is already pushed. `./scripts/create-release-tag.sh` re-checks the same sync before tagging (STEP 7) — a backstop, not a substitute for this step. `--no-git-tag-version` stops npm from creating its own commit and tag.
 
 ### Verify before committing
 
@@ -230,7 +230,7 @@ Run:
 ./scripts/create-release-tag.sh
 ```
 
-The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
+The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, hard-fails while `cli/package-lock.json` is out of sync (the v0.8.0 lesson: the CI smoke gate fires only after the tag is pushed), fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
 
 ### Division of Labor
 
