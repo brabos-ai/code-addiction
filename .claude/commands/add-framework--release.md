@@ -14,7 +14,7 @@ STEP 0: Prerequisites          → gh CLI + auth
 STEP 1: Validate branch        → must be main
 STEP 2: Release type           → stable | beta [STOP]
 STEP 3: Detect version         → fetch tags, choose bump [STOP]
-STEP 4: Update CLI version     → cli/package.json + commit + push
+STEP 4: Update CLI version     → npm version (package.json + lock) + commit + push
 STEP 5: Merge to production    → --no-ff + push (SKIP if beta)
 STEP 6: Changelog + preview    → generate, confirm [STOP]
 STEP 7: Push tag               → save notes + run script → pipeline handles the rest
@@ -29,6 +29,12 @@ IF gh CLI missing or unauthenticated:
 IF branch is not main:
   ⛔ DO NOT USE: Bash for merge, tag, push
   ✅ DO: Instruct user to switch to main and STOP
+
+IF cli/package-lock.json version != cli/package.json version:
+  ⛔ DO NOT USE: Bash for git commit, git push
+  ⛔ DO NOT USE: Bash for git merge, git tag
+  ⛔ DO NOT: Proceed to STEP 5, 6 or 7
+  ✅ DO: Re-run `npm version` in `cli/` and re-verify both files
 
 IF release type = beta:
   ⛔ DO NOT USE: Bash for git checkout production, git merge, git push origin production
@@ -105,7 +111,19 @@ Store as `NEXT_VERSION`.
 
 ## STEP 4: Update CLI Version
 
-Update `cli/package.json` version field to `NEXT_VERSION` (without `v` prefix). Commit with message `chore: bump version to $NEXT_VERSION` and push to main.
+Bump `cli/package.json` AND `cli/package-lock.json` in a single operation:
+
+```bash
+cd cli && npm version [NEXT_VERSION without v prefix] --no-git-tag-version
+```
+
+CRITICAL: Editing `cli/package.json` by hand leaves `cli/package-lock.json` on the old version. `cli/tests/package-smoke.mjs` compares both fields and hard-fails the pipeline (`FAIL: package-lock.json version X != package.json version Y`) — after the tag is already pushed. `--no-git-tag-version` stops npm from creating its own commit and tag.
+
+### Verify before committing
+
+Read the `version` field of `cli/package.json` and of `cli/package-lock.json`. Both MUST equal `NEXT_VERSION` without the `v` prefix. If they differ → STOP, do not commit.
+
+Commit BOTH files with message `chore: bump version to $NEXT_VERSION` and push to main.
 
 ---
 
@@ -195,7 +213,21 @@ Run:
 ./scripts/create-release-tag.sh
 ```
 
-The script reads the version from `cli/package.json`, creates an annotated tag with the release notes, and pushes it to origin. The CI pipeline then builds the framework, packages the ZIP, creates the GitHub Release, and publishes to npm.
+The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
+
+### Division of Labor
+
+`.github/workflows/release.yml` triggers on `push: tags: v*` — the pipeline is **started by** the tag, it does not create it. Nothing runs until the tag is pushed.
+
+| Local (this command) | CI pipeline |
+|---|---|
+| Version bump (`package.json` + lock) | Build framework (`node scripts/build.js`) |
+| Merge to production (stable only) | Run tests + package smoke gate |
+| Annotated tag + push | Package the ZIP asset |
+| — | Create the GitHub Release (`gh release create`) |
+| — | Publish to npm |
+
+DO NOT run `git tag` / `git push origin <tag>` by hand — the script handles stale-tag cleanup that a bare `git tag` does not. DO NOT create the GitHub Release — the pipeline reads the annotated tag's message and creates it.
 
 Monitor at: `https://github.com/brabos-ai/code-addiction/actions`
 
@@ -205,12 +237,15 @@ Monitor at: `https://github.com/brabos-ai/code-addiction/actions`
 
 ALWAYS:
 - Fetch tags from remote before reading (`git fetch --tags`) — without this, remote tags are invisible
+- Bump the version with `npm version` in `cli/` so `package-lock.json` stays in sync
 - Use annotated tags with release notes as tag message — pipeline extracts them for the GitHub Release
 - Generate changelog from commits AND file diff — commits primary, file diff enriches
 - Write release notes from the user's perspective (what changed, not which files)
 - Treat provider dirs as generated — exclude from individual listing
 
 NEVER:
+- Hand-edit the version field in `cli/package.json` — leaves `package-lock.json` stale
+- Create or push the tag with `git tag` — use `./scripts/create-release-tag.sh`
 - Run `node scripts/build.js` — pipeline's job
 - Commit generated provider files (`framwork/.claude/`, `.agent/`, etc.)
 - Merge to production for beta releases — beta tags come from main
