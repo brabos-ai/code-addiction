@@ -264,6 +264,9 @@ describe('provider-map.json agents section', () => {
     'git-history-agent',
     'qa-agent',
     'e2e-agent',
+    'security-agent',
+    'conformance-agent',
+    'failure-analysis-agent',
   ];
 
   it('has agents section', () => {
@@ -271,12 +274,12 @@ describe('provider-map.json agents section', () => {
     expect(typeof map.agents).toBe('object');
   });
 
-  it('contains all 17 expected agents', () => {
+  it('contains all 20 expected agents', () => {
     const agentNames = Object.keys(map.agents);
     for (const name of expectedAgents) {
       expect(agentNames, `missing agent: ${name}`).toContain(name);
     }
-    expect(agentNames).toHaveLength(17);
+    expect(agentNames).toHaveLength(20);
   });
 
   it('every agent has a description', () => {
@@ -308,6 +311,9 @@ describe('agent source files', () => {
     'git-history-agent',
     'qa-agent',
     'e2e-agent',
+    'security-agent',
+    'conformance-agent',
+    'failure-analysis-agent',
   ];
 
   it('all agent source files exist', () => {
@@ -459,9 +465,9 @@ describe('buildAgents', () => {
   const builtDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'agents');
 
   it('builds agent files for every agent-capable provider', () => {
-    // 17 agents × 4 providers (claude, cursor, opencode, codex).
+    // 20 agents × 4 providers (claude, cursor, opencode, codex).
     const count = buildAgents(map);
-    expect(count).toBe(68);
+    expect(count).toBe(80);
   });
 
   it('fails loud when a registered agent has no source file', () => {

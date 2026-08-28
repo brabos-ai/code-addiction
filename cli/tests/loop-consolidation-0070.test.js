@@ -82,6 +82,7 @@ const EXPECTED_MAP = [
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.plan', count: 2 },
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.build', count: 8 },
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.review', count: 2 },
+  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.hotfix', count: 1 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add.plan', count: 2 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add.build', count: 2 },
   { namespace: 'plugin', name: 'playwright', resource: 'add.review', count: 1 },
@@ -89,8 +90,9 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 38 points', () => {
-    expect(sidecarPoints()).toHaveLength(38);
+  it('L1.0 injection map totals exactly 39 points', () => {
+    // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073).
+    expect(sidecarPoints()).toHaveLength(39);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {
@@ -119,7 +121,7 @@ describe('0070 L1 — build-side unit', () => {
   });
 
   it('L1.1 re-keyed tdd-pipeline marker pairs stay empty (0067 guard regression)', () => {
-    for (const file of ['add.plan.md', 'add.build.md', 'add.review.md']) {
+    for (const file of ['add.plan.md', 'add.build.md', 'add.review.md', 'add.hotfix.md']) {
       const src = read(path.join(COMMANDS, file));
       const pairs =
         src.match(/<!-- feature:tdd-pipeline:([a-z0-9-]+) -->\s*<!-- \/feature:tdd-pipeline:\1 -->/g) || [];

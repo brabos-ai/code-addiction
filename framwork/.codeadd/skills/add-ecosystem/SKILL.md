@@ -21,7 +21,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.build | Development Execution Specialist. STEP 2 create-or-checkout of the feature branch via build-setup.sh (`F[NNNN]` + `--worktree` args). Consumes the review's `## Fix Routing` table and writes the resolution annex back. Generates unit/integration tests via @test-agent (tdd-pipeline) and E2E specs via @e2e-agent (qa-pipeline) | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-code-review, add-ecosystem, add-id-convention, add-tasks-checklist |
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-investigation, add-ecosystem |
 | add.done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Final evidence preserves open findings; it is not a pass certificate | add-ecosystem, add-id-convention |
-| add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md. Escalates to add-investigation when root cause not obvious | add-ux-design, add-ecosystem, add-investigation, add-id-convention |
+| add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. With tdd-pipeline, pins the confirmed root cause with a coordinator-verified RED test before any edit. After the fix, dispatches @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent (read-only) and triages their findings in one bounded corrective pass, recording the outcome in about.md `## Review`. Creates isolated doc in docs/features/[NNNN]H-*, documents relationships in related.md | add-ux-design, add-ecosystem, add-investigation, add-id-convention, add-tdd, add-knowledge-discovery |
 | add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-product-discovery |
 | add.new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add.build) | add-feature-discovery, add-feature-specification, add-doc-schemas, add-ecosystem, add-id-convention |
 | add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled | add-backend-development, add-database-development, add-frontend-development, add-ux-design, add-feature-discovery, add-ecosystem, add-id-convention, add-tasks-checklist, add-qa-spec (qa-pipeline) |
@@ -88,6 +88,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | backend-agent | Backend implementation specialist | add.build, add.plan-to-ready |
 | frontend-agent | Frontend implementation specialist | add.build, add.plan-to-ready |
 | reviewer-agent | Code review (read-only) | add.review, add.plan-to-ready |
+| security-agent | OWASP judge for a delivered change — judges the diff against A01-A10 plus XSS and mass assignment, asking first whether the change removed or weakened an existing control. Owns the security axis exclusively; a pre-existing finding is an observation, never a blocker (read-only) | add.hotfix |
+| conformance-agent | Documented-rules judge — judges the diff against the wiki when present, CLAUDE.md plus surrounding code when absent. Freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift for /add.wiki update (read-only) | add.hotfix |
+| failure-analysis-agent | Failure-mode judge — unhandled error paths, null propagation, missing rollback or idempotency, resource leaks, retry and ordering assumptions, reasoned against the blast radius of related features and suspicious commits confirmed earlier in the flow (read-only) | add.hotfix |
 | test-agent | Unit + integration test generator for ONE area — reads the area's target files and feature docs, generates tests at the project's conventional location, runs them until green. CORRECTION mode writes one RED test pinning the bug instead of regenerating. Read-write on test files only | add.build (tdd-pipeline feature), add.plan-to-ready |
 | fix-agent | Correction specialist for ONE area — consumes one area-scoped slice of the review's `## Fix Routing` table (code-review findings, build errors, red validation gates, QA findings) and applies the fix. The attempt counter is supplied by the caller, never decided by the agent | add.build, add.plan-to-ready |
 | discovery-agent | Feature discovery and specification (read-only) | add.new |
@@ -127,7 +130,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-database-development | add.build, add.plan, add.review, add.plan-to-ready |
 | add-ux-design | add.ux, add.build, add.review, add.hotfix, add.plan, add.plan-to-ready; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.review, add.build |
-| add-security-audit | add.audit, add.review |
+| add-security-audit | add.audit, add.review; @security-agent and @reviewer-agent declare it as a skill |
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
@@ -153,7 +156,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | playwright (plugin) | add.review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done, add.pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add-doc-schemas' `references/new-feature.md`; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.plan-to-ready (tasks.md schema and tick rules) |
-| add-tdd | add.plan, add.build, add.review |
+| add-tdd | add.plan, add.build, add.review, add.hotfix (tdd-pipeline RED gate) |
 | add-test-specification | add.plan (STEP 9) |
 
 ## Main Flows
