@@ -14,7 +14,7 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 |------|------|-------|
 | Commands | `framwork/.codeadd/commands/*.md` | 16 |
 | Skills | `framwork/.codeadd/skills/*/SKILL.md` | 40 |
-| Agents | `framwork/.codeadd/agents/*-agent.md` | 17 |
+| Agents | `framwork/.codeadd/agents/*-agent.md` | 20 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
 ### Internal Layer — `.claude/` and `.opencode/`
@@ -131,7 +131,7 @@ Current features:
 
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
-| `tdd-pipeline` | enabled | add.plan, add.build, add.review |
+| `tdd-pipeline` | enabled | add.plan, add.build, add.review, add.hotfix |
 | `qa-pipeline` | disabled | add.plan, add.build |
 
 ## Setup Contracts
