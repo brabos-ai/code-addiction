@@ -107,26 +107,33 @@ All recognized types proceed to STEP 4. Quality gates apply to `feature` only �
 
 ## STEP 4: Validate Delivery
 
+**Preflight (FEATURE BRANCHES ONLY) — run once, before 4.0–4.2:**
+
+```bash
+bash .codeadd/scripts/converge-gates.sh "${DIR}"
+```
+
+**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_EPIC`, `GATE_COVERAGE`, `REVIEW_PATH`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_EPIC_DETAIL`, and `GATE_COVERAGE_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1 and 4.2 pass.** DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, or `plan.md` and counting/parsing them yourself — that restates the gate the script exists to own.
+
 ### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
 
 **SKIP this substep entirely if `BRANCH_TYPE` ≠ `feature`.** Hotfix/refactor/chore/docs branches do not require `/add.review`.
 
-**GATE CHECK (feature only): a `review-NNN.md` must exist and be PASSED before merge.**
+**GATE CHECK (feature only): `GATE_REVIEW` must be `ok`.**
 
-1. RESOLVE the **highest-numbered** `docs/features/${FEATURE_ID}/review-NNN.md`. That one is the delivery receipt; earlier rounds are history and are never read here.
-2. IF NONE EXISTS: "Review not executed. Run /add.review before /add.done." -> BLOCKED
-3. IF EXISTS: READ it, find the "| **Overall**" row
-4. IF Overall = BLOCKED: Show the table of BLOCKED gates -> BLOCKED
-5. IF Overall = PASSED: READ the mandatory `> **QA baseline:**` line and store it as `QA_BASELINE` for STEP 5.
+1. `REVIEW_PATH` from the preflight names the **highest-numbered** `docs/features/${FEATURE_ID}/review-NNN.md`. That one is the delivery receipt; earlier rounds are history and are never read here.
+2. IF `GATE_REVIEW=missing`: "Review not executed. Run /add.review before /add.done." -> BLOCKED
+3. IF `GATE_REVIEW=broken` or `not-probed`: Show `GATE_REVIEW_DETAIL` (the table of BLOCKED gates it names) -> BLOCKED
+4. IF `GATE_REVIEW=ok`: Take `BASELINE` from the preflight output verbatim and store it as `QA_BASELINE` for STEP 5.
 
-`QA baseline` line **ABSENT** → **BLOCKED**. Re-run `/add.review`; never infer a baseline or compare dates. STEP 5 performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
+`QA_BASELINE` **ABSENT or `GATE_REVIEW` not `ok`** → **BLOCKED**. Re-run `/add.review`; never infer a baseline or compare dates. STEP 5 performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
 - ✅ DO: Show blocked gates and instructions to re-run /add.review
 
-**NOTE:** Done does NOT re-run product validations. It reads the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
+**NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict on the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
 
 ---
 
@@ -134,17 +141,16 @@ All recognized types proceed to STEP 4. Quality gates apply to `feature` only �
 
 **SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
-IF `docs/features/${FEATURE_ID}/epic.md` exists:
-- READ epic.md, COUNT total subfeatures (rows in table), COUNT done subfeatures (rows with "done")
+**GATE CHECK (feature only): `GATE_EPIC` must be `ok`.** `ok` covers both "every subfeature done" and "no `epic.md` at all" — a feature with no epic is not an incomplete one.
 
-**IF epic.md AND not all subfeatures done:**
+**IF `GATE_EPIC` is `broken` or `not-probed`:**
 
 ```
 Incomplete Epic!
-Subfeatures: ${DONE_SF}/${TOTAL_SF} complete
+Subfeatures: ${GATE_EPIC_DETAIL}
 
 Pending:
-- ${SF_ID}: [name] (status: pending)
+${EPIC_PENDING}
 
 Run /add.build to implement the next subfeature.
 ```
@@ -154,7 +160,7 @@ Run /add.build to implement the next subfeature.
 - ⛔ DO NOT USE: Bash for done.sh --merge
 - ✅ DO: Show pending subfeatures and STOP
 
-**IF epic.md AND all subfeatures done:** Proceed normally.
+**IF `GATE_EPIC=ok`:** Proceed normally.
 
 ---
 
@@ -162,17 +168,15 @@ Run /add.build to implement the next subfeature.
 
 **SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
-**IF plan.md has `## Cobertura de Requisitos` section:**
+**GATE CHECK (feature only): `GATE_COVERAGE` must be `ok`.**
 
-Count rows matching `| .* | X |` (uncovered) in plan.md.
-
-**IF coverage < 100% (UNCOVERED > 0):**
+**IF `GATE_COVERAGE` is `broken` or `not-probed`:**
 
 ```
 Uncovered Requirements!
 
 Requirements without coverage:
-- [List of RF/RN with X]
+${COVERAGE_UNCOVERED}
 
 Options:
 1. Implement missing: /add.build
@@ -183,6 +187,8 @@ Options:
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
 - ✅ DO: Show uncovered requirements and STOP
+
+**IF `GATE_COVERAGE=ok`:** Proceed normally.
 
 ---
 

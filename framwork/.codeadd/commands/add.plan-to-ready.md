@@ -23,10 +23,10 @@ and receive their reports. You never dispatch a command.
 ```
 STEP 1: Bootstrap            → status.sh, validate prerequisites, build-setup.sh
 STEP 2: Initialize Decision Log → seeded from status.sh + about.md + decisions.jsonl
-STEP 3: Plan leg             → dispatch the planning roster; mutator cache rule
-STEP 4: Build leg            → implementation roster; from iteration 2 a correction leg
-STEP 5: Review leg           → read-only; produces review-NNN.md + ## Fix Routing
-STEP 6: Convergence check    → /add.done STEP 4.0–4.2 in dry-run (pure reads)
+STEP 3: Plan leg             → dispatch the planning roster; mutator cache rule; checks plan.md (+ design.md) exist
+STEP 4: Build leg            → implementation roster; from iteration 2 a correction leg; checks the resolution annex landed
+STEP 5: Review leg           → read-only; produces review-NNN.md + ## Fix Routing; checks outputs exist on disk
+STEP 6: Convergence check    → converge-gates.sh; all four gates ok, not-probed never counts as a pass
 STEP 7: No-progress check    → two consecutive identical finding sets
 STEP 8: Loop or exit         → back to STEP 4, or out with one of three states
 STEP 9: Report               → CONVERGED | CAP_REACHED | BLOCKED, never softened
@@ -53,7 +53,7 @@ IF DISPATCHING ANY AGENT:
 DURING THE CONVERGENCE CHECK (STEP 6):
   ⛔ DO NOT USE: Bash to run `qa-evidence.sh promote`
   ⛔ DO NOT USE: Write, Edit, or any filesystem mutation
-  ✅ DO: Read only — /add.done STEP 4.0 through 4.2 and nothing beyond
+  ✅ DO: Any read-only probe — the boundary is side effects, not a step number
 
 IF ITERATION COUNT WOULD EXCEED 3:
   ⛔ DO NOT: Start another build leg
@@ -161,6 +161,12 @@ user — that is what makes this loop autonomous.
 scope (no new requirements in `about.md` since its `updated:`), skip the roster
 and record the skip in the Decision Log.
 
+**Output check (MANDATORY, before advancing).** Stat `plan.md` at
+`docs/features/${FEATURE_ID}/plan.md` and, when the feature touches UI,
+`design.md` at the Location resolved above — the filesystem, never the roster's
+own report that it wrote either. Missing → report BLOCKED naming the exact path,
+and do not advance to STEP 4.
+
 ---
 
 ## STEP 4: Build Leg
@@ -188,6 +194,12 @@ re-validating, check `iterations.jsonl` for a validator entry from this round.
 **Coordinator-only `tasks.md` writes.** Validators emit tick reports; merge them
 and perform the single write.
 
+**Output check (MANDATORY, before advancing, iteration 2+).** Stat the previous
+round's `review-NNN.md` and confirm its `## Resolution Annex` now carries a row
+per routed ID from this iteration — the write just performed, verified on disk,
+not assumed because it was dispatched. Missing → report BLOCKED naming the exact
+`review-NNN.md` path, and do not advance to STEP 5.
+
 ---
 
 ## STEP 5: Review Leg (read-only)
@@ -203,6 +215,19 @@ It emits, for the scope:
 treat it as a contract violation: STOP the loop and report BLOCKED naming the
 paths. A judge that moves what it judges cannot converge.
 
+**Output check (MANDATORY, before advancing).** Stat `review-NNN.md` at
+`docs/features/${FEATURE_ID}/review-NNN.md` and confirm it contains a `## Fix
+Routing` table — the filesystem, never the roster's own report that it wrote
+either. Determine whether QA validation output is required from the
+`/add.qa-setup` receipt (`SETUP_QA:` from `status.sh`) together with
+`QA_FEATURE_STATE`, read from
+`bash .codeadd/scripts/converge-gates.sh docs/features/${FEATURE_ID}` — never
+from a hardcoded default. When both confirm QA applies, confirm one
+`_tests/run-NNN/qa-validation-NNN.md` exists per in-scope `SCOPE_DIR`. Missing →
+report BLOCKED naming the exact path, and do not advance to STEP 6. This is the
+check that would have caught the skipped dual-judge panel in the `0028F`
+incident.
+
 ---
 
 ## STEP 6: Convergence Check (DRY-RUN)
@@ -211,24 +236,36 @@ Convergence **is** `/add.done`'s gate set, evaluated without side effects. One
 definition of "ready", shared by this loop and by the step that consumes it — so
 it is impossible to converge on something `/add.done` then rejects.
 
-Evaluate `/add.done` **STEP 4.0 through 4.2 only**. Those are pure reads.
+Run the script and read its output. Do not evaluate the gates yourself by
+re-reading `review-NNN.md`, the QA baseline, `epic.md` or `plan.md` and
+reasoning about them — the coordinator's own judgement of these same files is
+exactly what this script exists to replace:
 
-| # | Gate | Pass condition |
-|---|------|----------------|
-| 1 | Review verdict | The highest `review-NNN.md` exists and its `\| **Overall** \|` row reads PASSED |
-| 2 | QA baseline | Its `> **QA baseline:**` line is present and valid. NEVER inferred |
-| 3 | Epic completeness | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
-| 4 | Requirements coverage | `plan.md` `## Cobertura de Requisitos` shows zero uncovered |
+```bash
+bash .codeadd/scripts/converge-gates.sh docs/features/${FEATURE_ID} [SFxx]
+```
 
-⛔ DO NOT evaluate `/add.done` STEP 5 or beyond. `qa-evidence.sh promote` has
-side effects and must never run here — promotion belongs to `/add.done` alone.
+Parse its `KEY=VALUE` lines. The table below documents what each gate probes —
+it is documentation of the script's contract, not the evaluation itself:
+
+| # | Gate | Key | What it probes |
+|---|------|-----|----------------|
+| 1 | Review verdict | `GATE_REVIEW` | The highest `review-NNN.md` exists and its `\| **Overall** \|` row reads PASSED |
+| 2 | QA baseline | `GATE_QA_BASELINE` | Its `> **QA baseline:**` line is present and valid, checked against `qa-evidence.sh validate` |
+| 3 | Epic completeness | `GATE_EPIC` | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
+| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md` `## Cobertura de Requisitos` shows zero uncovered |
+
+**CONVERGED requires all four gates `ok`.** `missing`, `broken` and `not-probed`
+are each non-convergence — `not-probed` NEVER counts as a pass, even on a gate
+that emits it in no case today. Read `GATES_OK=N/4` alongside the individual
+keys as the single pass/fail summary; anything short of `4/4` blocks.
 
 **Subfeature-scoped invocation.** Gate 3 can never be satisfied by a run
 targeting one non-final subfeature, and would report non-convergence for a reason
-unrelated to any finding. For a subfeature-scoped run, replace **gate 3 only**
-with its scoped equivalent: the targeted subfeature's own `tasks.md` acceptance
-checklist is complete and its `epic.md` row is ready to move to `done`. Gates 1,
-2 and 4 are evaluated unchanged.
+unrelated to any finding. Pass the target `SFxx` as the script's second
+argument — it applies the scoped rule in gate 3's place: the targeted
+subfeature's own `tasks.md` acceptance checklist is complete and its `epic.md`
+row is ready to move to `done`. Gates 1, 2 and 4 are evaluated unchanged.
 
 CONVERGED then means "**this subfeature** is ready" — and STEP 9 MUST name the
 remaining subfeatures so it is never read as "the epic is ready".
@@ -276,7 +313,7 @@ into one another:
 
 | State | Meaning | Next command |
 |-------|---------|--------------|
-| **CONVERGED** | Every dry-run gate passed | `{{cmd:add.done}}` — or `/add.plan-to-ready` for the next subfeature |
+| **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) | `{{cmd:add.done}}` — or `/add.plan-to-ready` for the next subfeature |
 | **CAP_REACHED** | 3 iterations spent, gates still failing | `{{cmd:add.build}}` for the open `## Fix Routing` rows, or re-invoke after triage |
 | **BLOCKED** | No progress detected, or a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup) | The specific remedy, named |
 
@@ -284,6 +321,12 @@ into one another:
 "done with minor issues". A run that spent its budget with gates still red did
 not deliver a ready feature, and reporting it as if it did is the failure this
 three-state split exists to prevent.
+
+⛔ DO NOT print the state word alone. The state line MUST be immediately followed
+by `converge-gates.sh`'s own output from STEP 6, one line per gate —
+`GATE_REVIEW=`, `GATE_QA_BASELINE=`, `GATE_EPIC=`, `GATE_COVERAGE=`,
+`GATES_OK=`. A state costs nothing to produce; printing one without the script's
+own lines beneath it is BANNED.
 
 Alongside the state, report:
 - iterations spent this invocation, and the **cumulative** round count read from `iterations.jsonl` — the cap is per invocation, so only the cumulative figure shows the true total;
@@ -298,7 +341,8 @@ Alongside the state, report:
 
 ALWAYS:
 - Dispatch named leaf agents at depth 1, passing the Decision Log
-- Re-read convergence signals from disk each round rather than remembering them
+- Re-derive convergence each round from `converge-gates.sh`'s output, not memory
+- Verify each leg's declared outputs exist on disk before advancing to the next STEP
 - Write the resolution annex into the previous round's review document yourself
 - Answer the plan roster's clarification questions from the Decision Log
 - State the cumulative round count alongside the per-invocation count
@@ -307,5 +351,7 @@ NEVER:
 - Run `/add.done`, merge, or promote QA evidence
 - Dispatch an agent that must dispatch another agent
 - Invent a state file — every signal already exists on disk
+- Accept a leg's own report of what it wrote as proof the file exists
+- Print a state without the script's own gate-by-gate output beneath it
 - Stop to ask the user mid-loop; this command is autonomous by contract
 - Accept `--yolo`; it is autonomous already, and the review it drives has no auto-correct half to unlock
