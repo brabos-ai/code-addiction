@@ -225,7 +225,7 @@ Decompose as subfeatures? (yes/no)
 ```
 
 **IF epic confirmed:**
-1. Create `docs/features/${FEATURE_ID}/epic.md` with subfeature table + order + notes
+1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema (`{{skill:add-doc-schemas/SKILL.md}}`, loaded in STEP 1): frontmatter `id: ${FEATURE_ID}`, `type: epic`, `related: [${FEATURE_ID}]`; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
 2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
 3. Create compact `about.md` per subfeature
 4. Continue to STEP 6

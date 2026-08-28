@@ -628,24 +628,33 @@ IF `HAS_EPIC=true`, add `"sf"` field: `"sf":"${EPIC_CURRENT_SF}"`
 
 **Types:** `add | fix | refactor | test | docs`
 
-**14.2 Create Checkpoint Tag (MANDATORY):**
+**14.2 Checkpoint Tag — NOT created here (MANDATORY):**
 
-Check if tag exists before creating (idempotency guard):
+⛔ DO NOT create a `checkpoint/*` tag here. This is one pinned path, not a
+condition to satisfy: the `GIT CLEAN` invariant (line 54) — leave files
+unstaged, never git add/commit/stage — means `/add.build` never makes a
+commit. A tag created at this point would land on the commit that already
+existed BEFORE this subfeature's work, so restoring from it would restore the
+state before the subfeature. The tag has always been a lie, and gating its
+creation behind a condition would only wrap the same lie in a different hat —
+there is no condition this block could ever evaluate to true.
 
-```bash
-# Simple feature
-git tag "checkpoint/${FEATURE_ID}-done" 2>/dev/null || true
-
-# Epic subfeature (HAS_EPIC=true)
-git tag "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done" 2>/dev/null || true
-```
-
-NOTE: Checkpoint tags use `checkpoint/` prefix (separate from release `v*`). Temporarily — cleaned up by `/add.done`.
+`{{cmd:add.plan-to-ready}}` re-creates `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done`
+(or `checkpoint/${FEATURE_ID}-done` on a simple feature) at the moment it makes
+the real commit. Until that command runs, `status.sh:322`'s `LAST_CHECKPOINT`
+correctly reports nothing — there is no commit yet for a tag to point at.
 
 **14.3 Update epic.md (IF HAS_EPIC=true only):**
 
-IF file exists, update subfeature status line:
-`| ${EPIC_CURRENT_SF} | [name] | [obj] | pending |` → `| ${EPIC_CURRENT_SF} | [name] | [obj] | done | ${FEATURE_ID}-${EPIC_CURRENT_SF}-done |`
+IF file exists, resolve the Subfeatures row whose `id` cell equals
+`${EPIC_CURRENT_SF}` and set that row's `status` column to `done`. Read and
+write columns **by header name**, per the `epic` schema
+(`{{skill:add-doc-schemas/references/new-feature.md}}`) — never by
+string-matching the row's old text.
+
+⛔ DO NOT write the `checkpoint` cell. Per 14.2, this step creates no commit,
+so it owns none of that column: the schema writes `checkpoint` only from the
+command that creates the commit the tag points at (`{{cmd:add.plan-to-ready}}`).
 
 ---
 

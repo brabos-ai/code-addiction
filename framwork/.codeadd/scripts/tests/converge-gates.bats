@@ -396,6 +396,89 @@ build_ok_tree() {
   [[ "$output" == *"GATE_EPIC=broken"* ]]
 }
 
+# ─── Gate 3 (F19) — schema read closes the string rule's blind spots ─────────
+# T1 read epic.md as text, exactly as status.sh does: any row not matching
+# `| done |` counts as pending. That rule cannot tell WHICH column it matched,
+# so a cell reading `done` anywhere in the row passes the whole row. F19 makes
+# the read resolve `status` by header name. These two rows are the blind spots.
+
+# write_epic_blindspot <feature_abs_dir> <mode: notes-done|name-done>
+write_epic_blindspot() {
+  local dir=$1 mode=$2
+  mkdir -p "$dir"
+  {
+    echo "# Epic"
+    echo
+    echo "| SF | Name | Status | Notes |"
+    echo "|----|------|--------|-------|"
+    echo "| SF01 | Alpha | done | — |"
+    if [ "$mode" = "notes-done" ]; then
+      # status is pending; the NOTES cell happens to read exactly "done"
+      echo "| SF02 | Beta | pending | done |"
+    else
+      # the subfeature is NAMED done; its status is pending
+      echo "| SF02 | done | pending | — |"
+    fi
+  } > "$dir/epic.md"
+}
+
+@test "F19 blind spot 1: a Notes cell reading done must not pass a pending row" {
+  DIR="docs/features/0035F-notesdone"
+  ABS="$TEST_REPO/$DIR"
+  write_epic_blindspot "$ABS" notes-done
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+  [[ "$output" == *"EPIC_PENDING="*"SF02"* ]]
+}
+
+@test "F19 blind spot 2: a subfeature NAMED done must not pass while pending" {
+  DIR="docs/features/0036F-namedone"
+  ABS="$TEST_REPO/$DIR"
+  write_epic_blindspot "$ABS" name-done
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+  [[ "$output" == *"EPIC_PENDING="*"SF02"* ]]
+}
+
+@test "F19: status resolved by header name, not by column position" {
+  DIR="docs/features/0037F-reordered"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS"
+  {
+    echo "# Epic"
+    echo
+    echo "| SF | Status | Name | Objective |"
+    echo "|----|--------|------|-----------|"
+    echo "| SF01 | done | Alpha | build alpha |"
+    echo "| SF02 | pending | Beta | build beta |"
+  } > "$ABS/epic.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+  [[ "$output" == *"EPIC_PENDING="*"SF02"* ]]
+}
+
+@test "F19 legacy: a done row carrying the extra checkpoint cell still reads done" {
+  DIR="docs/features/0038F-legacycheckpoint"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS"
+  {
+    echo "# Epic"
+    echo
+    echo "| SF | Name | Objective | Status |"
+    echo "|----|------|-----------|--------|"
+    # exactly what add.build block 14.3 has always written: a 4-column header
+    # with a 5-cell done row, the extra trailing cell being the checkpoint tag
+    echo "| SF01 | Alpha | build alpha | done | 0038F-SF01-done |"
+    echo "| SF02 | Beta | build beta | done | 0038F-SF02-done |"
+  } > "$ABS/epic.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_EPIC=ok"* ]]
+}
+
 # ─── Gate 4 — requirements coverage ──────────────────────────────────────────
 
 @test "gate 4: Cobertura de Requisitos with zero uncovered rows → GATE_COVERAGE=ok" {

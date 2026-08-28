@@ -134,7 +134,7 @@ Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `
 
 | Type | Files to read | Priority |
 |------|---------------|----------|
-| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists) | PRIMARY |
+| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md` (schema `epic`), `docs/design-system.md` (if exists) | PRIMARY |
 | Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
 | Design data | Use design.md to inform backend contracts (endpoints serve UI needs) | IF HAS_DESIGN=true |
 | Knowledge base | Selected wiki pages from STEP 3's Consult Knowledge Base sub-step (paths + freshness verdicts) | IF WIKI:present |
@@ -204,7 +204,7 @@ BACKEND_SELECTED  = true|false
 
 ### 8.0 Cross-SF Context (EPIC ONLY)
 
-**IF HAS_EPIC=true:** Read epic.md dependency graph, identify consumers + providers of this SF, read their about.md + plan.md (if exists), build `${CROSS_SF_CONTEXT}` block below, and INJECT it into every subagent prompt:
+**IF HAS_EPIC=true:** Resolve the dependency graph from `epic.md` per the `epic` schema in `{{skill:add-doc-schemas/references/new-feature.md}}` — read the Subfeatures table **by header name**, never by column position, and take dependencies from the `dependencies` column when populated, falling back to the `## Order` narrative section only when `dependencies` is absent (the schema's own precedence rule). **Providers** = the SF ids in this SF's own `dependencies` cell (or Order entry). **Consumers** = every other SF whose `dependencies` cell (or Order entry) names this SF. Read each provider's/consumer's about.md + plan.md (if exists), build `${CROSS_SF_CONTEXT}` block below, and INJECT it into every subagent prompt:
 
 ```
 ## Cross-SF Context (EPIC -- read for integration awareness)

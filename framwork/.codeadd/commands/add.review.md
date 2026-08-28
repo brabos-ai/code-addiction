@@ -958,6 +958,11 @@ WRITE docs/features/${FEATURE_ID}/review-NNN.md   (per the `review` schema)
 [empty on write — /add.build appends here and sets status: finalized]
 ```
 
+Set `scope` in the frontmatter to the in-scope `SFxx` list resolved in 8.3
+(every `SCOPE_DIR` this round covers), or `[feature]` when
+`SCOPE_DIR = FEATURE_DIR` on a simple feature — per the `review` schema,
+mirroring `qa-validation`'s `scope` field.
+
 ⛔ NEVER overwrite an existing `review-NNN.md`. Numbering replaces the old
 single-file backup rule; the sequence is what lets a loop compare rounds.
 

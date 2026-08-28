@@ -161,10 +161,40 @@ elif [ ! -f "$EPIC_MD" ]; then
   emit "GATE_EPIC=ok"
   pass
 else
-  EPIC_PENDING=$(grep -E '^\|[[:space:]]*SF[0-9]+' "$EPIC_MD" 2>/dev/null \
-    | grep -Ev '\|[[:space:]]*done[[:space:]]*\|' \
-    | sed -E 's/^\|[[:space:]]*(SF[0-9]+).*/\1/' \
-    | paste -sd, - 2>/dev/null || true)
+  EPIC_READ=$(awk '
+    function trim(v) { gsub(/^[ \t]+|[ \t]+$/, "", v); return v }
+    BEGIN { FS = "|"; statusidx = 0; ididx = 2; header = 0 }
+    # The header is the first pipe row carrying a cell named "status". The
+    # separator row below it can never match, and data rows are only read
+    # once a header has been found.
+    !header && /^\|/ {
+      for (i = 2; i <= NF; i++) {
+        cell = tolower(trim($i))
+        if (cell == "status") { statusidx = i; header = 1 }
+        if (cell == "sf" || cell == "id") { ididx = i }
+      }
+      if (header) next
+    }
+    header && /^\|[[:space:]]*SF[0-9]+/ {
+      st = tolower(trim($statusidx))
+      id = trim($ididx)
+      if (st != "done") { pending = pending (pending ? "," : "") id }
+    }
+    END { print (header ? "HEADER" : "NOHEADER") "\t" pending }
+  ' "$EPIC_MD" 2>/dev/null)
+
+  EPIC_MODE=$(printf '%s' "$EPIC_READ" | cut -f1)
+  EPIC_PENDING=$(printf '%s' "$EPIC_READ" | cut -f2)
+
+  if [ "$EPIC_MODE" = "NOHEADER" ]; then
+    # Pre-schema document: no header names its columns, so fall back to the
+    # rule status.sh has always applied. Less precise, and the only reason it
+    # is acceptable is that it is exactly what this doc was written against.
+    EPIC_PENDING=$(grep -E '^\|[[:space:]]*SF[0-9]+' "$EPIC_MD" 2>/dev/null \
+      | grep -Ev '\|[[:space:]]*done[[:space:]]*\|' \
+      | sed -E 's/^\|[[:space:]]*(SF[0-9]+).*/\1/' \
+      | paste -sd, - 2>/dev/null || true)
+  fi
   if [ -z "$EPIC_PENDING" ]; then
     emit "GATE_EPIC=ok"
     pass

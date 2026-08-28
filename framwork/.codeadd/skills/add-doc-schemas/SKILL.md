@@ -162,7 +162,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | Category | File | Schemas |
 |----------|------|---------|
-| `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm |
+| `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm, epic |
 | `fix` | `references/fix.md` | hotfix-about, hotfix-related |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
