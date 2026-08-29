@@ -105,10 +105,46 @@ Stated plainly rather than implied by silence:
 - **L0.3** (deliberately break an anchor, confirm the build fails loudly, revert) was not run. The guard's positive path is proven 39/39; its failure path is not.
 - **L3.1, L3.2, L4.1-L4.6** exercise `/add.plan-to-ready` and `/add.done` as *commands*, which needs a real feature branch with QA evidence in a real project. They are verified by inspection of the edited instructions only. The script beneath them is fully tested; the wiring is not.
 - No `cli/` code changed in T1, so the vitest suite is not implicated.
-- **Existing bats suites: full run completed — 245 tests, 1 failure, and the failure is pre-existing.** `qa-preflight.bats` test 183 (*"phase a: runner absent in project"*) fails deterministically. Baselined properly rather than assumed: `qa-preflight.sh` and `qa-preflight.bats` are byte-identical to `main` on this branch, and the same test was re-run **on `main` itself** (stash -> checkout main -> run -> return) and failed there too. **Delta introduced by T1: zero.** The failure is environmental — the test asserts a probe exits non-zero when no runner is installed, and something on this machine makes it succeed.
+- **Existing bats suites: 245 tests, 1 failure, pre-existing.** `qa-preflight.bats` test 183 (*"phase a: runner absent in project"*) fails deterministically. Baselined properly rather than assumed: `qa-preflight.sh` and `qa-preflight.bats` are byte-identical to `main` on this branch, and the same test was re-run **on `main` itself** (stash -> checkout main -> run -> return) and failed there too. **Delta introduced by T1: zero.** The failure is environmental — the test asserts a probe exits non-zero when no runner is installed, and something on this machine makes it succeed.
 
 _Appended as each F-block lands._
 
 ## Validation levels
 
 _Appended as each level is run._
+
+
+---
+
+## Adversarial review round (post-C4)
+
+Three independent reviewers were dispatched with instructions to REFUTE, not to confirm. They found real defects **in the layer this plan set claimed would be proven by a script** — the layer it admitted was only inspected came out clean. That inversion is the finding worth keeping.
+
+### What they broke, and what it cost
+
+| Defect | Consequence if shipped |
+|---|---|
+| **Gate 1 grepped the whole row for `PASSED`** | A `BLOCKED` verdict whose Details cell read *"5/6 gates PASSED"* scored `ok`. `NOT PASSED` also passed — it contains its own negation. **This made `/add.done` STEP 4.0 weaker than the prose F6 replaced**, which read the cell |
+| **Gate 4 keyed on `## Cobertura de Requisitos`** | Nothing in the framework writes that heading. `/add.plan` STEP 11 writes an unnamed `Covered?` table with `YES`/`EXCLUDED`. So `GATES_OK` could never reach 4/4 and **the loop could not converge on any real feature, ever**. A conditional rule was converted into a permanent deadlock |
+| **Gate 4 read the feature-level `plan.md` when scoped to `SFxx`** | `missing` on exactly the scope the epic loop runs |
+| **Gate 3 scoped: no `## Acceptance Checklist` counted as zero unchecked** | A stub `tasks.md` earned a real checkpoint tag. Silence and completeness indistinguishable — the 0028F failure mode |
+| **Gate 3 epic-wide broke three ways** | A second table poisoned the header; an unrelated earlier `Status` column hijacked the index; rows were found by assuming `SFxx` is first, so `Name \| SF \| Status` was invisible and a pending epic scored `ok` |
+
+**Why 38/38 did not catch any of it:** the fixtures were built from the same assumptions as the implementation. `write_plan_coverage` invented both the heading and the `X` marker; `write_review` hardcoded a benign Details cell; every epic fixture put `SF` first. The suite validated the script against itself.
+
+### Fixed — commit `3d832a7`, then `63c13cf`
+
+14 tests written RED first, all failing against the implementation that passed 38/38. Suite **38 -> 52, all green**, independently re-run by the reviewer at HEAD.
+
+**One existing test was CHANGED**, and the reason is written into the file above it: it asserted `GATE_COVERAGE=missing` for a plan with no coverage section, which is precisely the deadlock. The test was wrong, not the code.
+
+`63c13cf` then closed three doc-vs-script divergences the fix itself created — the STEP 6 gate table still described the old gate 4, its snippet passed a literal `[SFxx]` that now exits 2, and a script comment claimed parity with `/add.done` 4.2 that no longer holds.
+
+### Corrections to earlier claims in this file
+
+- The note that several suites "did not finish inside the time budget" was **environmental**: `NODE_OPTIONS` in that shell carried `--inspect`, and bats spawns a node per assertion. With it cleared, `converge-gates.bats` runs 52 tests in seconds. `status.bats` + `done.bats` were re-run unpiped: **76/76**.
+- The "delta introduced by T1: zero" claim stands as I verified it (stash -> checkout `main` -> re-run -> return), but one reviewer could **not** independently reproduce it before its budget ran out and downgraded its own tick to unverified. Recorded here so the record is not stronger than the evidence.
+
+### A finding this round produced that no test can close
+
+`status.sh` was **not** migrated to header-name resolution (`:277`, `:283-291` still string-match), while the `epic` schema names it as a consumer and three commands were migrated. Its suite is green because **the blind-spot case was never written there**. So on `| SF02 | Beta | pending | done |`, `converge-gates.sh` says pending and `status.sh` counts it done. A green suite is evidence the case is untested, not absent.
