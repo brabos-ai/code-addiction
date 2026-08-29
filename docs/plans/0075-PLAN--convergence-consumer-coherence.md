@@ -13,7 +13,7 @@ Plan set 0074 migrated the convergence machinery: `epic.md` gained a schema, thr
 
 Its adversarial round found nine defects, all fixed. **This plan carries the residue** — four places where 0074 changed one consumer and left a sibling on the old rule, or created an ownership question it did not answer. None is a regression 0074 introduced; each is a coherence gap 0074 made visible.
 
-**Two of the four need a decision from the owner before they can be built.** They are marked `PENDING` in Validated Decisions and named in Next Steps. The other two are determinate and could be built today.
+Two of the four needed an owner decision; both were taken on 2026-08-29 and both went to option (a). All four topics are buildable.
 
 ## Problem
 
@@ -31,11 +31,11 @@ Four topics, independent of one another. T1 and T3 are determinate. T2 and T4 ne
 
 **T1** migrates `status.sh` to header-name resolution with the same string fallback `converge-gates.sh` uses for pre-schema documents, and writes the two blind-spot tests `status.bats` never had.
 
-**T2** *(decision pending)* draws the boundary between `/add.plan` 10.5 and `@consistency-agent`, and makes each file name the other.
+**T2** draws the boundary between `/add.plan` 10.5 and `@consistency-agent`, and makes each file name the other.
 
 **T3** completes `/add.plan-to-ready`'s `QA_FEATURE_STATE` instruction with the same default-resolution rule its two sibling commands already carry.
 
-**T4** *(decision pending)* makes a DELTA `blocker` actually block, or demotes it honestly.
+**T4** makes a DELTA `blocker` actually block.
 
 ## Scope
 
@@ -48,7 +48,7 @@ Four topics, independent of one another. T1 and T3 are determinate. T2 and T4 ne
   **`converge-gates.sh` is only a PARTIAL model, and F1 must not assume otherwise.** Its awk reduces the status cell to a boolean (`if (st != "done")`) because a gate needs only done-vs-not-done. `EPIC_CURRENT_SF` needs three states — `status.sh:283-291` picks `in_progress` first, then the first `pending`. F1 must read the header-resolved cell's **literal value**, not a boolean, and reproduce that ordering. Nothing in the cited reference models this half.
 - **F2** — `framwork/.codeadd/scripts/tests/status.bats`: the two blind-spot tests the file has never had — a Notes cell reading `done` on a `pending` row, and a subfeature literally named `done`. Both RED first. Plus a header-resolution test with the id column not first, and a legacy no-header regression guard.
 
-#### T2 — cross-SF ownership boundary *(decision pending — see Validated Decisions)*
+#### T2 — cross-SF ownership boundary
 
 - **F3** — `framwork/.codeadd/commands/add.plan.md` 10.5 and `framwork/.codeadd/agents/consistency-agent.md` + `framwork/.codeadd/skills/add-cross-sf-consistency/SKILL.md`: whichever split the decision picks, each artefact must name the other and state what it does NOT own. Two agents silently covering the same ground is how a finding gets fixed by one and re-raised by the other forever.
 - **F4** — `framwork/.codeadd/skills/add-ecosystem/SKILL.md`: reflect the boundary in both rows.
@@ -57,7 +57,7 @@ Four topics, independent of one another. T1 and T3 are determinate. T2 and T4 ne
 
 - **F5** — `framwork/.codeadd/commands/add.plan-to-ready.md` STEP 5's output check: after reading `QA_FEATURE_STATE` from the script, resolve `unset` / `no-manifest` by the feature default (`qa-pipeline` defaults to **disabled**), wording it as `/add.review:640` and `/add.qa-setup:206` already do. Keep the existing ban on hardcoding a value in place of reading the script — the two rules are compatible and the file should say so.
 
-#### T4 — a DELTA `blocker` blocks, or stops claiming to *(decision pending)*
+#### T4 — a DELTA `blocker` actually blocks
 
 - **F6** — `framwork/.codeadd/commands/add.plan-to-ready.md` and `framwork/.codeadd/skills/add-cross-sf-consistency/SKILL.md`: implement whichever option the decision picks, and make the severity table's `blocker` row describe what actually happens.
 
@@ -75,8 +75,8 @@ Four topics, independent of one another. T1 and T3 are determinate. T2 and T4 ne
 | Migrate `status.sh` or leave it | **Migrate** | The schema names it a consumer of header-name resolution. Leaving one consumer on the old rule means two commands disagree about whether an epic is done, and the disagreement is silent |
 | Keep the string fallback in `status.sh` | **Yes** | Every pre-schema `epic.md` has no header. `converge-gates.sh` already sets this precedent; diverging would strand old projects |
 | `QA_FEATURE_STATE` resolution owner | **The command resolves; the script stays raw** | The defaults registry lives in `cli/src/features.js`. A shell script duplicating it is how the two drift — `qa-preflight.sh` established this and `converge-gates.sh` follows it. `/add.plan-to-ready` is simply missing the sentence its siblings have |
-| **T2 — cross-SF boundary** | **PENDING — owner decision** | See options below |
-| **T4 — DELTA blocker** | **PENDING — owner decision** | See options below |
+| **T2 — cross-SF boundary** | **Option (a)** — `@consistency-agent` owns detection on the five dimensions; 10.5 keeps the three completeness checks (shared-resource centralization, fallback/degradation, DI registration) and consumes the agent's findings instead of re-deriving schema and contract checks | Splits on a real line: divergence between plans goes to the read-only judge, completeness of one plan stays with the in-place fixer. Decided by the owner, 2026-08-29 |
+| **T4 — DELTA blocker** | **Option (a)** — run the DELTA pass BEFORE the final subfeature's checkpoint, AND give the checkpoint sequence a pre-check that refuses to commit while an unresolved `blocker`-severity row stands in that `review-NNN.md`'s `## Fix Routing` | Moving the pass alone blocks nothing; the pre-check is the mechanism. Decided by the owner, 2026-08-29 |
 
 ### T2 options
 
@@ -222,12 +222,7 @@ Gaps to hunt:
 
 ## Next Steps
 
-**Two decisions are required before T2 and T4 can be built.** Fill in their Validated Decisions rows first:
-
-- **T2** — cross-SF boundary: option (a), (b) or (c).
-- **T4** — DELTA blocker: option (a), (b) or (c).
-
-T1 and T3 need no decision and can be built immediately:
+All decisions are recorded. Build in execution order:
 
 ```
 /add-framework--build 0075-PLAN--convergence-consumer-coherence
@@ -240,4 +235,5 @@ T1 and T3 need no decision and can be built immediately:
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Initial creation. T1 and T3 decided; T2 and T4 carry recorded options awaiting the owner's call |
+| 2026-08-29 | Owner took both pending decisions: T2 option (a), T4 option (a). All four topics buildable |
 | 2026-08-29 | Review v01: all five of 10.5's checks now have a stated destination — #2 had none under any option, the exact failure the plan's own Reviewer Handoff names as top risk (B1). L6's injection claim corrected (A1). L2.1 gained the count-vs-list bridge (A2). F1 states that converge-gates.sh models only the done/not-done half (A3). T4 option (a) names the pre-check that blocks (A4). status.sh line reference (N1) |
