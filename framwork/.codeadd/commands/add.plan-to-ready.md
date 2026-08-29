@@ -1,6 +1,6 @@
 ---
-description: Bounded convergence loop — plans, then loops build ⇄ review at most 3 times against the /add.done gates evaluated in dry-run, dispatching named leaf agents at depth 1. Converges and returns control; the merge stays human
-argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-to-ready F0042 SF03)"
+description: Bounded convergence loop — plans, then loops build ⇄ review at most 3 times against the /add.done gates evaluated in dry-run, dispatching named leaf agents at depth 1. On an epic target given with no SFxx, runs every pending subfeature in dependency order, checkpointing (commit + tag + push) between each. Converges and returns control; the merge stays human
+argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-to-ready F0042 SF03  ·  /add.plan-to-ready F0042 alone on an epic runs every pending subfeature)"
 ---
 
 # Plan-to-Ready — Bounded Convergence Loop
@@ -31,6 +31,11 @@ STEP 7: No-progress check    → two consecutive identical finding sets
 STEP 8: Loop or exit         → back to STEP 4, or out with one of three states
 STEP 9: Report               → CONVERGED | CAP_REACHED | BLOCKED, never softened
 ```
+
+**Epic target (no `SFxx`, `HAS_EPIC=true`):** STEP 3 through STEP 8 repeat once
+per pending subfeature, in dependency order — see "Epic Mode: The Outer Loop"
+below STEP 2. STEP 9 still fires exactly ONCE, after the last subfeature or a
+halt — never once per subfeature.
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
@@ -64,7 +69,7 @@ IF ITERATION COUNT WOULD EXCEED 3:
 **ABSOLUTE INVARIANTS:**
 
 - **DEPTH 1 ONLY:** every dispatch is a named leaf agent. Subagents are leaf-only; an agent told to run a command must dispatch further and silently degrades to inline execution, losing the fan-out.
-- **CAP IS 3 PER INVOCATION, NOT CUMULATIVE.** Re-invoking grants a fresh budget deliberately — re-invocation is a human act, and that human is the circuit breaker.
+- **CAP IS 3 PER SUBFEATURE, RESET AT EACH SUBFEATURE BOUNDARY.** Supersedes the old "3 per invocation" wording now that one invocation can cover a whole epic (see "Epic Mode: The Outer Loop"). A `3 × N_SF` global backstop and re-invocation's fresh budget remain the outer circuit breakers beyond that.
 - **NO NEW STATE.** `tasks.md`, `review-NNN.md`, `iterations.jsonl` and `qa-evidence.sh` already carry every signal. A new state file would be a second source of truth that drifts.
 - **REPORTS, NEVER TRANSCRIPTS.** Agents return reports; convergence is re-read from files each round rather than remembered.
 - **COORDINATOR IS THE SOLE `tasks.md` WRITER.** Validators emit tick reports; this command merges and writes.
@@ -107,11 +112,30 @@ depth-2 defect this command exists to avoid. Dispatch the roster.
 
 ## STEP 1: Bootstrap
 
-1. Run `bash .codeadd/scripts/status.sh`. Parse `FEATURE_ID`, `HAS_PLAN`, `HAS_DESIGN`, `HAS_EPIC`, `EPIC_CURRENT_SF`, `HAS_TASKS`, `LAST_CHECKPOINT`, `WIKI:`, `SETUP_QA:`.
-2. Resolve the target: explicit `F[NNNN]` arg > `FEATURE_ID` from the branch. With `SFxx` given, or `HAS_EPIC=true`, the scope is that one subfeature.
+1. Run `bash .codeadd/scripts/status.sh`. Parse `FEATURE_ID`, `HAS_PLAN`, `HAS_DESIGN`, `HAS_EPIC`, `EPIC_PROGRESS`, `EPIC_CURRENT_SF`, `HAS_TASKS`, `LAST_CHECKPOINT`, `WIKI:`, `SETUP_QA:`.
+2. Resolve the target: explicit `F[NNNN]` arg > `FEATURE_ID` from the branch. **With `SFxx` given → the scope is that one subfeature, exactly as today — unchanged by everything below.** **With no `SFxx` and `HAS_EPIC=true` → the scope is the whole epic** (see Epic Scope Resolution below). With no `SFxx` and `HAS_EPIC=false`, the scope is the whole feature, as today.
 3. Validate `about.md` and `discovery.md` exist for the scope. If either is missing → report BLOCKED naming `{{cmd:add.new}}` and STOP.
 4. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID>`. It MUST exit 0 before any implementation. On non-zero: show stderr verbatim, report BLOCKED, STOP — never auto-resolve.
 5. Re-run `status.sh` on the feature branch.
+
+**Epic scope resolution (target has no `SFxx` and `HAS_EPIC=true`).** Read
+`epic.md`'s Subfeatures table per the `epic` schema in
+`{{skill:add-doc-schemas/references/new-feature.md}}` — resolve every column
+**by header name**, never by position. Build the pending roster from the
+`status` column: `pending` and `in_progress` rows are in scope; `done` rows are
+skipped, and the skip is recorded in the Decision Log. Order the roster by the
+`dependencies` column when populated, by the legacy `Order` section otherwise —
+never by raw table row order alone.
+
+**Why the `status` column is trustworthy here.** Elsewhere in the ecosystem
+this row flip is written by `/add.build` STEP 16 block 14.3, or by
+`/add.done`. This command calls neither: it dispatches the build roster
+directly (see Agent Rosters) and never runs `/add.build`, and it never runs
+`/add.done` either. **The Epic Mode checkpoint below is what writes the
+row** — on a subfeature reaching CONVERGED, this command flips its own
+`epic.md` row to `done` before it commits. Without that write, the `status`
+column would never change, and every re-invocation would restart at SF01
+regardless of how much of the epic already shipped.
 
 **Feature flags.** Read the enabled features once; they change what the legs do:
 `tdd-pipeline` on → test generation and the RED gate are part of the build leg;
@@ -132,6 +156,138 @@ Seed it from:
 - the last 20 `"type":"pivot"` entries from `.codeadd/project/decisions.jsonl`, formatted `[agent] pivoted from "[from]" → "[decision]": [reason]`.
 
 Append to it after every leg. It is working memory, not a persisted artefact.
+
+---
+
+## Epic Mode: The Outer Loop
+
+Applies only when STEP 1 resolved the scope to a whole epic (no `SFxx` given,
+`HAS_EPIC=true`). **On a single-subfeature or single-feature target, skip this
+entire section** — proceed from STEP 2 straight into STEP 3, unchanged.
+
+Throughout this section, `EPIC_CURRENT_SF` names whichever subfeature the
+outer loop is currently processing — re-resolved from `epic.md`'s next
+pending row at each subfeature boundary, not frozen at STEP 1's initial
+parse. `status.sh` and `{{cmd:add.build}}` use the same name for the same
+concept.
+
+**The loop.** For each subfeature in the pending roster STEP 1 resolved, in
+dependency order: run STEP 3 through STEP 8 scoped to that one subfeature,
+exactly as a single-subfeature invocation runs them. The inner loop's three
+exit states (CONVERGED, CAP_REACHED, BLOCKED) and its no-progress rule are
+UNCHANGED by this wrapper — it reuses them, it does not rewrite them.
+
+**STEP 9 fires once, at epic end.** Each subfeature's own STEP 8 exit is read
+back internally by this loop; it is never printed as its own report.
+Accumulate outcomes across every subfeature and report exactly once, when the
+outer loop itself ends — converged, halted on a subfeature, or halted on the
+backstop.
+
+**Budget and halt.**
+- **Per-subfeature cap:** 3 iterations — the same number STEP 8 already
+  enforces — reset to 0 every time a new subfeature's STEP 3 begins. This
+  supersedes the old "3 per invocation" framing (see ABSOLUTE INVARIANTS):
+  one invocation now spans several subfeatures, so "per invocation" and "per
+  subfeature" are no longer the same thing.
+- **Global backstop:** `3 × N_SF` **iterations**, where `N_SF` = the total
+  subfeature rows in `epic.md` (the denominator of `status.sh`'s
+  `EPIC_PROGRESS`, or a fresh count of `^| SFxx` rows). Count this in
+  **iterations only, never in legs** — per-leg logging below records a
+  finer-grained unit than an iteration, and a backstop measured in legs would
+  trip inside the first subfeature and stop meaning what its name says.
+  Before starting each subfeature's STEP 3, sum every `"leg":"decision"`
+  entry in `iterations.jsonl` for `FEATURE_ID` — across this invocation and
+  any earlier one against the same epic, since a resumed subfeature's own
+  counter resets (see Resume below) but the file's cumulative record does
+  not. If the sum has already reached `3 × N_SF`, halt without starting the
+  next subfeature.
+- **Halt on the first subfeature whose STEP 8 exits non-CONVERGED**
+  (`CAP_REACHED` or `BLOCKED`). Do not start the next subfeature. Skipping a
+  blocked subfeature to reach a later one is NOT implemented — the
+  dependency graph is trusted for ordering here, not for proving
+  independence.
+- **Precedence.** Evaluate the per-subfeature halt FIRST. If it fires, name
+  that subfeature and stop — the global backstop is reported only when
+  nothing else already stopped the run.
+
+**Checkpoint on CONVERGED — MANDATORY, in this exact order, before advancing
+to the next subfeature.** When a subfeature's STEP 8 exits CONVERGED:
+
+1. **Flip the row.** Edit `epic.md`'s Subfeatures table: set this
+   subfeature's `status` cell to `done`. This is the coordinator's own
+   write — the same ownership this command already claims for `tasks.md` and
+   the review resolution annex.
+2. **Stage exactly three paths.** `add-commit`'s Staging Rules
+   (`{{skill:add-commit/SKILL.md}}`) exclude all of `docs/features/*`, then
+   re-include ONE path, `${FEATURE_DIR}`. Neither reading works for a
+   mid-epic checkpoint: re-including only `${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*`
+   leaves `epic.md` out — it lives at `${FEATURE_DIR}/epic.md`, a SIBLING of
+   `subfeatures/`, not inside it — so the row flip from step 1 would never
+   reach the commit; re-including the whole `${FEATURE_DIR}` sweeps in a
+   later, still-pending subfeature's half-written files. `add-commit` has no
+   subfeature-scoped re-include today, so it is spelled out here:
+   ```bash
+   git add -A -- . ':(exclude)docs/features/*'
+   git add -A -- "${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*" "${FEATURE_DIR}/epic.md" "${FEATURE_DIR}/review-NNN.md" "${FEATURE_DIR}/_tests/run-NNN/"
+   ```
+   (`review-NNN.md` and `run-NNN/` are this subfeature's highest-numbered
+   ones — this round's.)
+3. **Commit — gated.** Commit here ONLY when STEP 8 exited CONVERGED. A
+   subfeature that did not converge produces NO row flip and NO commit; the
+   absence of a commit is itself the signal, never a separate flag to check.
+   Follow `add-commit`'s type and message conventions for the body.
+   **Trailer:** append `converge-gates.sh`'s STEP 6 stdout verbatim as
+   Conventional Commits trailer lines — one line per key, exactly as STEP 6
+   parsed them (`GATE_REVIEW=`, `GATE_QA_BASELINE=`, `GATE_EPIC=`,
+   `GATE_COVERAGE=`, `GATES_OK=`). Do not invent a second trailer format.
+4. **Tag.** Re-create `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done` ON
+   the commit just made. `{{cmd:add.build}}` no longer creates this tag;
+   this is the first point in the epic loop where it would point at real,
+   committed work.
+5. **Push, carrying the tag explicitly.** `git push --follow-tags`, or push
+   naming both the branch and the tag. Plain `git push` leaves the tag
+   local — a local-only tag is invisible to a fresh clone or a different
+   engine resuming this epic.
+
+**Decision Log compaction.** Immediately after the checkpoint above (or
+immediately after a halt, so the halted state stays legible), compact the
+Decision Log: replace everything accumulated for the finished (or halted)
+subfeature with ONE summary line, and drop the rest. This is what keeps the
+coordinator's working memory alive across several subfeatures instead of
+exhausting it by the third or fourth.
+
+**Resume.** On re-invocation of an epic target, resume at the last checkpoint
+commit (`LAST_CHECKPOINT` from `status.sh`, or the highest
+`checkpoint/${FEATURE_ID}-*-done` tag): subfeatures whose `epic.md` row
+already reads `done` are skipped, and the in-flight subfeature — the first
+`pending` or `in_progress` row — starts over. "Starts over" means only its
+**iteration counter** resets to 0; STEP 3's mutator cache rule and STEP 4's
+idempotency guards STILL APPLY exactly as on any other invocation — a
+`plan.md` already current for that subfeature is still skipped, area files
+from a completed round are still reused. The guards are what make a restart
+cheap; bypassing them would throw away correct work to prove a point.
+
+**Log at every leg boundary, not once per iteration.** STEP 3, STEP 4, STEP
+5 and STEP 6 each log their own boundary to `iterations.jsonl` before
+advancing — see each STEP for the exact call — carrying `"leg"` and
+`"sf":"${EPIC_CURRENT_SF}"`. STEP 8's existing per-iteration call also gains
+these two fields. A crash mid-iteration used to leave no entry at all;
+now the last logged leg pins exactly how far it got. **None of this applies
+outside epic mode** — a single-subfeature or non-epic run keeps today's one
+call, in STEP 8 only, unchanged.
+
+**Cross-subfeature judge — DELTA pass (epic end only).** After the LAST
+subfeature's checkpoint above (or immediately before reporting a halt),
+dispatch `@consistency-agent` once more with `mode: DELTA`, the full resolved
+subfeature roster, `HAS_DESIGN`, and the last `FULL`-pass verdict recorded
+for each subfeature. It re-checks only the dimensions whose inputs changed
+since their last verdict, and states which it skipped and why. Route its
+findings into the highest `review-NNN.md`'s `## Fix Routing` table using
+`{{skill:add-cross-sf-consistency/SKILL.md}}`'s Routing Hints — this is the
+ONLY place a consistency finding is ever written into a review document; the
+plan-time `FULL` pass (STEP 3) never touches `## Fix Routing`.
+`informational` findings are noted in that document's notes, never routed as
+a blocking row.
 
 ---
 
@@ -191,6 +347,45 @@ never runs, so nothing else here re-validates `plan.md` after a fix is applied.
 3. ⛔ Never stop to ask the user during this exchange — the loop is autonomous
    by contract, same as the clarification-questions rule above.
 
+**Epic mode only — cross-subfeature judge, FULL pass.** When STEP 1 resolved
+an epic scope, run this immediately after the plan review verdict above
+resolves to advance (`ok`, or `fix-then-ok` resolved within its one
+re-dispatch) — never before STEP 3's own plan review gate. On a
+single-subfeature or non-epic target, skip this dispatch entirely: with
+fewer than two subfeatures in scope there is nothing to compare against.
+
+1. **DISPATCH** `@consistency-agent` with `mode: FULL`, this subfeature's
+   `plan.md` (+ `about.md`, `design.md` if present), `epic.md`'s resolved
+   roster, `HAS_DESIGN`, and the same three documents for every
+   already-converged sibling.
+2. **Act on its findings** — routed differently from the DELTA pass, because
+   `review-NNN.md` does not exist yet at this point in a subfeature's life:
+   - Apply each finding as a concrete edit to THIS subfeature's `plan.md`
+     only — never to an already-converged sibling's `plan.md`, those are
+     frozen.
+   - **Re-run the `feature-plan` validation gate**
+     (`{{skill:add-doc-schemas/SKILL.md}}`) against the fixed `plan.md`.
+   - Re-dispatch `@consistency-agent` **once** to confirm the conflict is
+     resolved.
+   - Still unresolved after that single re-dispatch, or the conflict needs a
+     product decision no edit can make unilaterally → `blocked`, a hard exit
+     for the WHOLE epic run, naming the subfeature and the dimension.
+   - `informational` findings are noted in the Decision Log, never applied
+     as a `plan.md` edit.
+
+This is the same apply → re-gate → one-re-dispatch → hard-exit shape
+`@plan-reviewer-agent`'s `fix-then-ok`/`blocked` loop above already uses —
+reused here, not reinvented.
+
+**Epic mode only — log the plan-leg boundary.** Before advancing to STEP 4:
+```bash
+bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "loop" "/add.plan-to-ready" '"leg":"plan","state":"<verdict>","sf":"${EPIC_CURRENT_SF}"'
+```
+This entry does not fire outside epic mode — a single-subfeature or
+non-epic run keeps today's one entry per iteration, logged in STEP 8 only.
+It exists so a crash between the plan leg and the first build leg of an
+epic subfeature still leaves a record; today none does.
+
 ---
 
 ## STEP 4: Build Leg
@@ -224,6 +419,15 @@ per routed ID from this iteration — the write just performed, verified on disk
 not assumed because it was dispatched. Missing → report BLOCKED naming the exact
 `review-NNN.md` path, and do not advance to STEP 5.
 
+**Epic mode only — log the build-leg boundary.** Before advancing to STEP 5,
+every iteration:
+```bash
+bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "loop" "/add.plan-to-ready" '"leg":"build","iteration":N,"sf":"${EPIC_CURRENT_SF}"'
+```
+Does not fire outside epic mode. A crash mid-build-leg — several areas
+dispatched, only some validated — currently leaves no trace of how far the
+leg got; this boundary is that trace.
+
 ---
 
 ## STEP 5: Review Leg (read-only)
@@ -251,6 +455,13 @@ from a hardcoded default. When both confirm QA applies, confirm one
 report BLOCKED naming the exact path, and do not advance to STEP 6. This is the
 check that would have caught the skipped dual-judge panel in the `0028F`
 incident.
+
+**Epic mode only — log the review-leg boundary.** Before advancing to STEP 6:
+```bash
+bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "loop" "/add.plan-to-ready" '"leg":"review","iteration":N,"findings":N,"sf":"${EPIC_CURRENT_SF}"'
+```
+Does not fire outside epic mode. `findings` is the `## Fix Routing` row
+count just confirmed on disk above.
 
 ---
 
@@ -294,6 +505,24 @@ row is ready to move to `done`. Gates 1, 2 and 4 are evaluated unchanged.
 CONVERGED then means "**this subfeature** is ready" — and STEP 9 MUST name the
 remaining subfeatures so it is never read as "the epic is ready".
 
+**Which gate-3 form applies where (epic mode).** Every subfeature the outer
+loop runs — including the LAST one — is evaluated with the SCOPED rule above
+while STEP 6 is inside that subfeature's own STEP 3–8 legs; pass its `SFxx`
+every time, with no exception for "this is the final one." The EPIC-WIDE
+form — `epic.md` has no row still pending — is evaluated exactly ONCE, after
+the final subfeature's checkpoint (row flip + commit) has landed, as the
+condition for the epic-level CONVERGED that STEP 9 reports. The checkpoint is
+what writes the rows, so the epic-wide form only becomes reachable once it
+has run at least once — which is exactly why the scoped form is used instead
+while the loop is still inside a subfeature.
+
+**Epic mode only — log the convergence-leg boundary.** Before advancing to
+STEP 7:
+```bash
+bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "loop" "/add.plan-to-ready" '"leg":"convergence","iteration":N,"state":"<GATES_OK>","sf":"${EPIC_CURRENT_SF}"'
+```
+Does not fire outside epic mode.
+
 ---
 
 ## STEP 7: No-Progress Check
@@ -328,18 +557,37 @@ Log each iteration before continuing:
 bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "loop" "/add.plan-to-ready" '"iteration":N,"state":"<state>","findings":N'
 ```
 
+IF epic mode is active (the outer loop above is driving this run), add
+`"leg":"decision","sf":"${EPIC_CURRENT_SF}"` to the fields — this call is
+then just one of several leg-boundary entries this iteration produced (see
+"Log at every leg boundary" in "Epic Mode: The Outer Loop"). Outside epic
+mode this remains the single entry per iteration, exactly as before.
+
+**Epic mode: on CONVERGED, do not fall through to STEP 9 yet.** Run the
+Checkpoint sequence in "Epic Mode: The Outer Loop" (above STEP 3) first,
+then return to STEP 3 for the next pending subfeature, or continue to STEP 9
+if none remain. On CAP_REACHED or BLOCKED, halt the outer loop per that same
+section's precedence rule and go straight to STEP 9 — no checkpoint, no next
+subfeature.
+
 ---
 
 ## STEP 9: Report
+
+**Fires exactly once.** On a single-subfeature or single-feature run, once
+per invocation, as before. On an epic run, once after the outer loop above
+completes or halts — never once per subfeature; per-subfeature outcomes were
+already read from each subfeature's own STEP 8 internally and are not
+printed as separate reports.
 
 Report exactly ONE of three states. They are distinct outcomes and NEVER softened
 into one another:
 
 | State | Meaning | Next command |
 |-------|---------|--------------|
-| **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) | `{{cmd:add.done}}` — or `/add.plan-to-ready` for the next subfeature |
-| **CAP_REACHED** | 3 iterations spent, gates still failing | `{{cmd:add.build}}` for the open `## Fix Routing` rows, or re-invoke after triage |
-| **BLOCKED** | No progress detected, or a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup, `@plan-reviewer-agent` verdict `blocked` or blockers standing after its one re-dispatch) | The specific remedy, named |
+| **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) | `{{cmd:add.done}}` once every subfeature is done — or `/add.plan-to-ready` to continue an epic that halted, or for the next subfeature outside epic mode |
+| **CAP_REACHED** | 3 iterations spent on the subfeature (or feature) that halted the run, gates still failing | `{{cmd:add.build}}` for the open `## Fix Routing` rows, or re-invoke after triage |
+| **BLOCKED** | No progress detected, a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup, `@plan-reviewer-agent` or `@consistency-agent` verdict `blocked` or blockers standing after its one re-dispatch), or — epic mode only — the global backstop fired | The specific remedy, named |
 
 ⛔ NEVER word CAP_REACHED or BLOCKED as success, and NEVER present either as
 "done with minor issues". A run that spent its budget with gates still red did
@@ -353,11 +601,12 @@ by `converge-gates.sh`'s own output from STEP 6, one line per gate —
 own lines beneath it is BANNED.
 
 Alongside the state, report:
-- iterations spent this invocation, and the **cumulative** round count read from `iterations.jsonl` — the cap is per invocation, so only the cumulative figure shows the true total;
+- iterations spent — per subfeature under an epic run (e.g. `SF01: 2/3, SF02: 1/3`), or the single count for a single-subfeature/feature run — and the **cumulative** round count read from `iterations.jsonl`, since a per-subfeature counter resets at every boundary and only the cumulative figure shows the true total;
+- on a halt, name what stopped the run: the specific subfeature (per-subfeature halt) or the global `3 × N_SF` backstop, per the precedence rule in "Epic Mode: The Outer Loop";
 - resistant findings, if any;
 - rows returned `NOT_MINE` or presented-not-dispatched, as user decisions;
 - the path to the highest `review-NNN.md`;
-- on a subfeature-scoped CONVERGED run, the remaining subfeatures.
+- on a subfeature-scoped CONVERGED run (not a full epic), the remaining subfeatures; on an epic-run CONVERGED, confirmation that none remain.
 
 ---
 
@@ -369,7 +618,9 @@ ALWAYS:
 - Verify each leg's declared outputs exist on disk before advancing to the next STEP
 - Write the resolution annex into the previous round's review document yourself
 - Answer the plan roster's clarification questions from the Decision Log
-- State the cumulative round count alongside the per-invocation count
+- State the cumulative round count alongside each subfeature's own iteration count
+- Gate an epic checkpoint commit on CONVERGED only, and push its tag explicitly
+- Halt the epic outer loop on the first subfeature that exits non-CONVERGED
 
 NEVER:
 - Run `/add.done`, merge, or promote QA evidence
@@ -379,3 +630,6 @@ NEVER:
 - Print a state without the script's own gate-by-gate output beneath it
 - Stop to ask the user mid-loop; this command is autonomous by contract
 - Accept `--yolo`; it is autonomous already, and the review it drives has no auto-correct half to unlock
+- Commit, tag, or push a subfeature's checkpoint when it did not converge
+- Skip a blocked subfeature to reach a later one in the epic
+- Re-include the whole `${FEATURE_DIR}` when staging an epic checkpoint — it sweeps in a later subfeature's half-written files

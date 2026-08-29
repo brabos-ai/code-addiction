@@ -74,6 +74,45 @@ git add -A -- . ':(exclude)docs/features/*'
 
 ---
 
+## Checkpoint Trailer (autonomous runs only)
+
+A commit made by `{{cmd:add.plan-to-ready}}` at a subfeature boundary carries the
+convergence result as a **trailer**, so the checkpoint says why it was safe to
+stop there. The commit hash then points at the work AND at the proof.
+
+The trailer is `converge-gates.sh`'s **stdout, verbatim** — the same `KEY=STATUS`
+lines the command read to decide convergence, appended below the Conventional
+Commits body:
+
+```
+feat(0028F-SF02): persist receipt line total on duplicate
+
+- backend: enforce RN03 on the duplicate path
+- frontend: surface the persisted total in the header
+
+GATE_REVIEW=ok
+GATE_QA_BASELINE=ok
+GATE_EPIC=ok
+GATE_COVERAGE=ok
+GATES_OK=4/4
+```
+
+⛔ DO NOT reformat, summarise, or re-word the gate lines. They are copied, not
+authored — a reformatted trailer is indistinguishable from an invented one, and
+the whole point is that `git log --grep=GATES_OK` reconstructs which
+subfeatures converged and on what evidence, using nothing but git.
+
+⛔ DO NOT write a trailer on a commit whose subfeature did not converge. That
+commit does not exist: the checkpoint is gated on all four gates reading `ok`,
+and the ABSENCE of a commit is itself the signal.
+
+**No new state file.** The trailer lives in the commit message, which is why
+this mechanism does not violate `{{cmd:add.plan-to-ready}}`'s NO NEW STATE
+invariant — a commit message is not a second source of truth that can drift
+from the tree, it is part of the object that carries the tree.
+
+---
+
 ## Examples
 
 **Few files (≤ 3):**
