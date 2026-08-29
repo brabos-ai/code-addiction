@@ -13,8 +13,8 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 | Type | Path | Count |
 |------|------|-------|
 | Commands | `framwork/.codeadd/commands/*.md` | 16 |
-| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 40 |
-| Agents | `framwork/.codeadd/agents/*-agent.md` | 20 |
+| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 42 |
+| Agents | `framwork/.codeadd/agents/*-agent.md` | 22 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
 ### Internal Layer — `.claude/` and `.opencode/`
@@ -28,7 +28,7 @@ Development tools that build and maintain the framework itself. `.claude/` is th
 | Agents | `.claude/agents/` (canonical) and `.opencode/agents/` (OpenCode adapters): `readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`, `plan-review-agent`. OpenCode agents use `mode: subagent` and `permission` frontmatter. |
 | Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
 
-**`docs/` tracking policy.** `.gitignore` ignores `docs/*`: plans, evidence, changelogs and brainstorms are working artefacts and stay local by default. The QA/UX umbrella set (topics 01–05, plans 0056–0060) is a **deliberate force-added exception** (`git add -f`, commits `b49352e` + the review-v02 fix wave) because those artefacts are the spec of record for a shipped schema change and had to survive the branch. The exception covers the umbrella's **plans, evidence files, reviews (`HANDOFF-*--review-vNN.md`) and changelogs** — a plan whose changelog or review is untracked reads as unimplemented from a fresh clone, which is the failure this policy exists to prevent. Plans 0001–0055 remain untracked by design — a fresh clone showing no earlier plans is expected, not drift. Do NOT "fix" this by un-ignoring `docs/`; to make another artefact durable, force-add it and say why here.
+**`docs/` tracking policy.** `.gitignore` ignores `docs/*`: plans, evidence, changelogs and brainstorms are working artefacts and stay local by default. The QA/UX umbrella set (topics 01–05, plans 0056–0060) is a **deliberate force-added exception** (`git add -f`, commits `b49352e` + the review-v02 fix wave) because those artefacts are the spec of record for a shipped schema change and had to survive the branch. The exception covers the umbrella's **plans, evidence files, reviews (`HANDOFF-*--review-vNN.md`) and changelogs** — a plan whose changelog or review is untracked reads as unimplemented from a fresh clone, which is the failure this policy exists to prevent. Plan set **0074** (umbrella + topics 001–004, their four evidence files) is force-added on the same grounds: it is the spec of record for a shipped convergence-gate change spanning a script, a schema, five commands and two new agents, and its evidence files carry the adversarial round that found the gate shipped four of the defects it existed to kill. Plans 0001–0055 remain untracked by design — a fresh clone showing no earlier plans is expected, not drift. Do NOT "fix" this by un-ignoring `docs/`; to make another artefact durable, force-add it and say why here.
 
 Internal commands (all under `add-framework--` namespace):
 
@@ -80,6 +80,7 @@ user's project (.claude/, .gemini/, .cursor/, ...)
 - `framwork/provider-map.json` — single registry of all commands, skills, agents and their provider distribution
 - `scripts/build.js` — compiles `.codeadd/` source → provider-specific output dirs
 - `scripts/release.sh` — release automation helpers
+- `framwork/.codeadd/scripts/converge-gates.sh` — read-only probe for the four `/add.done` delivery gates (review verdict, QA baseline, epic completeness, requirements coverage). `KEY=STATUS` lines, always exit 0, exit 2 only on CLI misuse — the `qa-preflight.sh` contract. **One script backs both `/add.plan-to-ready` STEP 6 and `/add.done` STEP 4**, so the two cannot drift into disagreeing about what "ready" means. Gate 2 wraps `qa-evidence.sh validate` and translates its `set -e` exit rather than propagating it
 - `cli/` — npm CLI package (`npx code-addiction`) that installs the framework
 
 ### Build Transform Details
