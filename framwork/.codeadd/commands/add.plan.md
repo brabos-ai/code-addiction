@@ -559,16 +559,20 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 **IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent for integration review.
 **IF normal feature:** Skip to 10.6.
 
-**Purpose:** Cross-validate all existing SF plans (schema mismatches, fragmented enums, missing config, undocumented handoffs).
+**Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. 10.5 is the **in-place fixer**.
 
-**Checks to fix in-place:**
-1. Schema ↔ Consumer Alignment (column names, jsonb, types match)
-2. Shared Resource Centralization (enums/config added ONCE in earliest SF)
-3. Cross-SF Handoff Contracts (each dependency edge documented)
-4. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
-5. Worker/DI Registration (new services have DI tasks)
+**What 10.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add-cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by `/add.plan-to-ready`. Two checks 10.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 10.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
 
-**Output:** Summary of changes (file + what changed) to stdout. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
+**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. The agent judges and never edits; 10.5 edits.
+
+**Checks to fix in-place — these three, and only these three:**
+1. Shared Resource Centralization (enums/config added ONCE in earliest SF)
+2. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
+3. Worker/DI Registration (new services have DI tasks)
+
+**Consumed, never derived:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives as a concrete `plan.md` edit — apply it in place here. Do NOT open your own schema-alignment or handoff-contract comparison.
+
+**Output:** Summary of changes (file + what changed) to stdout, marking which edits came from a `@consistency-agent` finding. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
 
 ### 10.6 Add Navigation Sections
 
