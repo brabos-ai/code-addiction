@@ -931,6 +931,16 @@ directory root.
 ```
 WRITE docs/features/${FEATURE_ID}/review-NNN.md   (per the `review` schema)
 
+---
+id: ${FEATURE_NUMBER}-review-NNN
+type: review
+created: ${TODAY}
+feature: ${FEATURE_NUMBER}
+scope: ${REVIEW_SCOPE}
+branch: ${BRANCH_NAME}
+status: open
+---
+
 # Review NNN: ${FEATURE_ID}
 
 > **Date:** ${TODAY} | **Branch:** ${BRANCH_NAME}
@@ -957,11 +967,19 @@ WRITE docs/features/${FEATURE_ID}/review-NNN.md   (per the `review` schema)
 ## Resolution Annex
 [empty on write — /add.build appends here and sets status: finalized]
 ```
+⛔ `${FEATURE_NUMBER}` is the **bare** feature id (`0042F`) — the `[NNNN]F` prefix of the directory name, NOT `${FEATURE_ID}`, which `status.sh:88` sets to the full slug (`0042F-user-preferences`). The sibling `qa-validation` schema is validated against the bare form by `qa-evidence.sh` (it derives it from the directory basename), so a slug here produces an id the schema rejects.
 
-Set `scope` in the frontmatter to the in-scope `SFxx` list resolved in 8.3
-(every `SCOPE_DIR` this round covers), or `[feature]` when
-`SCOPE_DIR = FEATURE_DIR` on a simple feature — per the `review` schema,
-mirroring `qa-validation`'s `scope` field.
+The frontmatter block above is REQUIRED and its seven fields are the exact set
+the `review` schema declares, in that order — `id`, `type`, `created`,
+`feature`, `scope`, `branch`, `status`. Do NOT add fields, drop fields, or
+reorder them. `NNN` in `id` is the number resolved at the top of this substep.
+`status` is written `open` here and ONLY `{{cmd:add.build}}` ever sets it to
+`finalized`, exactly once, when it appends the Resolution Annex.
+
+`${REVIEW_SCOPE}` is the YAML list of in-scope `SFxx` resolved in 8.3 — every
+`SCOPE_DIR` this round covers, e.g. `[SF01, SF02]` — or `[feature]` when
+`SCOPE_DIR = FEATURE_DIR` on a simple feature. This mirrors `qa-validation`'s
+`scope` field.
 
 ⛔ NEVER overwrite an existing `review-NNN.md`. Numbering replaces the old
 single-file backup rule; the sequence is what lets a loop compare rounds.

@@ -1,5 +1,5 @@
 ---
-description: Bounded convergence loop — plans, then loops build ⇄ review at most 3 times against the /add.done gates evaluated in dry-run, dispatching named leaf agents at depth 1. On an epic target given with no SFxx, runs every pending subfeature in dependency order, checkpointing (commit + tag + push) between each. Converges and returns control; the merge stays human
+description: Bounded convergence loop — plans, then loops build ⇄ review at most 3 times against the /add.done gates evaluated in dry-run, dispatching named leaf agents at depth 1. On an epic target given with no SFxx, runs every pending subfeature in dependency order, checkpointing (commit + tag + push) between each. Every subfeature that converges is checkpointed — epic run or SFxx-scoped run alike. Converges and returns control; the merge stays human
 argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-to-ready F0042 SF03  ·  /add.plan-to-ready F0042 alone on an epic runs every pending subfeature)"
 ---
 
@@ -64,6 +64,11 @@ IF ITERATION COUNT WOULD EXCEED 3:
   ⛔ DO NOT: Start another build leg
   ⛔ DO NOT: Report the outcome as success
   ✅ DO: Exit reporting CAP_REACHED with the open rows
+
+IF STAGING A CHECKPOINT COMMIT:
+  ⛔ DO NOT USE: One `git add` carrying several pathspecs — one non-match aborts it and stages NOTHING
+  ⛔ DO NOT: Commit before confirming `epic.md` is in the index
+  ✅ DO: Run "The Checkpoint Sequence" path by path, every `git add` guarded
 ```
 
 **ABSOLUTE INVARIANTS:**
@@ -113,7 +118,7 @@ depth-2 defect this command exists to avoid. Dispatch the roster.
 ## STEP 1: Bootstrap
 
 1. Run `bash .codeadd/scripts/status.sh`. Parse `FEATURE_ID`, `HAS_PLAN`, `HAS_DESIGN`, `HAS_EPIC`, `EPIC_PROGRESS`, `EPIC_CURRENT_SF`, `HAS_TASKS`, `LAST_CHECKPOINT`, `WIKI:`, `SETUP_QA:`.
-2. Resolve the target: explicit `F[NNNN]` arg > `FEATURE_ID` from the branch. **With `SFxx` given → the scope is that one subfeature, exactly as today — unchanged by everything below.** **With no `SFxx` and `HAS_EPIC=true` → the scope is the whole epic** (see Epic Scope Resolution below). With no `SFxx` and `HAS_EPIC=false`, the scope is the whole feature, as today.
+2. Resolve the target: explicit `F[NNNN]` arg > `FEATURE_ID` from the branch. **With `SFxx` given → the scope is that one subfeature** — it runs STEP 3 through STEP 8 exactly as today, and on CONVERGED it also runs "The Checkpoint Sequence" below (see that section's recorded departure from F23). **With no `SFxx` and `HAS_EPIC=true` → the scope is the whole epic** (see Epic Scope Resolution below). With no `SFxx` and `HAS_EPIC=false`, the scope is the whole feature, as today.
 3. Validate `about.md` and `discovery.md` exist for the scope. If either is missing → report BLOCKED naming `{{cmd:add.new}}` and STOP.
 4. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID>`. It MUST exit 0 before any implementation. On non-zero: show stderr verbatim, report BLOCKED, STOP — never auto-resolve.
 5. Re-run `status.sh` on the feature branch.
@@ -131,11 +136,12 @@ never by raw table row order alone.
 this row flip is written by `/add.build` STEP 16 block 14.3, or by
 `/add.done`. This command calls neither: it dispatches the build roster
 directly (see Agent Rosters) and never runs `/add.build`, and it never runs
-`/add.done` either. **The Epic Mode checkpoint below is what writes the
-row** — on a subfeature reaching CONVERGED, this command flips its own
-`epic.md` row to `done` before it commits. Without that write, the `status`
-column would never change, and every re-invocation would restart at SF01
-regardless of how much of the epic already shipped.
+`/add.done` either. **"The Checkpoint Sequence" below is what writes the
+row** — on a subfeature reaching CONVERGED, in epic mode and on a
+`SFxx`-scoped run alike, this command flips its own `epic.md` row to `done`
+(and fills that row's `checkpoint` cell) before it commits. Without that
+write, the `status` column would never change, and every re-invocation would
+restart at SF01 regardless of how much of the epic already shipped.
 
 **Feature flags.** Read the enabled features once; they change what the legs do:
 `tdd-pipeline` on → test generation and the RED gate are part of the build leg;
@@ -164,6 +170,8 @@ Append to it after every leg. It is working memory, not a persisted artefact.
 Applies only when STEP 1 resolved the scope to a whole epic (no `SFxx` given,
 `HAS_EPIC=true`). **On a single-subfeature or single-feature target, skip this
 entire section** — proceed from STEP 2 straight into STEP 3, unchanged.
+`## The Checkpoint Sequence` is a SEPARATE section and is NOT skipped with
+this one: a `SFxx`-scoped run still checkpoints when it converges.
 
 Throughout this section, `EPIC_CURRENT_SF` names whichever subfeature the
 outer loop is currently processing — re-resolved from `epic.md`'s next
@@ -210,44 +218,11 @@ backstop.
   that subfeature and stop — the global backstop is reported only when
   nothing else already stopped the run.
 
-**Checkpoint on CONVERGED — MANDATORY, in this exact order, before advancing
-to the next subfeature.** When a subfeature's STEP 8 exits CONVERGED:
-
-1. **Flip the row.** Edit `epic.md`'s Subfeatures table: set this
-   subfeature's `status` cell to `done`. This is the coordinator's own
-   write — the same ownership this command already claims for `tasks.md` and
-   the review resolution annex.
-2. **Stage exactly three paths.** `add-commit`'s Staging Rules
-   (`{{skill:add-commit/SKILL.md}}`) exclude all of `docs/features/*`, then
-   re-include ONE path, `${FEATURE_DIR}`. Neither reading works for a
-   mid-epic checkpoint: re-including only `${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*`
-   leaves `epic.md` out — it lives at `${FEATURE_DIR}/epic.md`, a SIBLING of
-   `subfeatures/`, not inside it — so the row flip from step 1 would never
-   reach the commit; re-including the whole `${FEATURE_DIR}` sweeps in a
-   later, still-pending subfeature's half-written files. `add-commit` has no
-   subfeature-scoped re-include today, so it is spelled out here:
-   ```bash
-   git add -A -- . ':(exclude)docs/features/*'
-   git add -A -- "${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*" "${FEATURE_DIR}/epic.md" "${FEATURE_DIR}/review-NNN.md" "${FEATURE_DIR}/_tests/run-NNN/"
-   ```
-   (`review-NNN.md` and `run-NNN/` are this subfeature's highest-numbered
-   ones — this round's.)
-3. **Commit — gated.** Commit here ONLY when STEP 8 exited CONVERGED. A
-   subfeature that did not converge produces NO row flip and NO commit; the
-   absence of a commit is itself the signal, never a separate flag to check.
-   Follow `add-commit`'s type and message conventions for the body.
-   **Trailer:** append `converge-gates.sh`'s STEP 6 stdout verbatim as
-   Conventional Commits trailer lines — one line per key, exactly as STEP 6
-   parsed them (`GATE_REVIEW=`, `GATE_QA_BASELINE=`, `GATE_EPIC=`,
-   `GATE_COVERAGE=`, `GATES_OK=`). Do not invent a second trailer format.
-4. **Tag.** Re-create `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done` ON
-   the commit just made. `{{cmd:add.build}}` no longer creates this tag;
-   this is the first point in the epic loop where it would point at real,
-   committed work.
-5. **Push, carrying the tag explicitly.** `git push --follow-tags`, or push
-   naming both the branch and the tag. Plain `git push` leaves the tag
-   local — a local-only tag is invisible to a fresh clone or a different
-   engine resuming this epic.
+**Checkpoint on CONVERGED — MANDATORY, before advancing to the next
+subfeature.** When a subfeature's STEP 8 exits CONVERGED, run the
+`## The Checkpoint Sequence` section below, in its exact order. It is defined
+ONCE and shared with the `SFxx`-scoped invocation; there is no epic-only
+second copy of it to drift.
 
 **Decision Log compaction.** Immediately after the checkpoint above (or
 immediately after a halt, so the halted state stays legible), compact the
@@ -276,6 +251,29 @@ now the last logged leg pins exactly how far it got. **None of this applies
 outside epic mode** — a single-subfeature or non-epic run keeps today's one
 call, in STEP 8 only, unchanged.
 
+**Epic-wide gate 3 — RUN IT, exactly once, at epic end.** After the LAST
+subfeature's checkpoint has landed and BEFORE STEP 9, run the script again
+with NO `SFxx` argument:
+```bash
+bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}"
+```
+Require `GATE_EPIC=ok`. This is the EPIC-WIDE gate-3 form STEP 6 describes,
+and this line is the only place it is ever evaluated — every STEP 6 inside a
+subfeature's own legs ran the SCOPED form. It becomes reachable only now,
+because the checkpoints are what flipped the rows: each one flipped exactly
+one, so after the last checkpoint every row must read `done`.
+
+```
+IF GATE_EPIC IS NOT ok:
+  ⛔ DO NOT: Report the epic as CONVERGED
+  ⛔ DO NOT: Flip the missing row now to make the gate pass
+  ✅ DO: Exit BLOCKED naming every id in EPIC_PENDING, and STOP
+```
+
+A row still not `done` here means that subfeature's checkpoint row flip never
+landed — the epic is NOT ready. That is a BLOCKED exit naming the rows, never
+a soft note appended beneath a CONVERGED report.
+
 **Cross-subfeature judge — DELTA pass (epic end only).** After the LAST
 subfeature's checkpoint above (or immediately before reporting a halt),
 dispatch `@consistency-agent` once more with `mode: DELTA`, the full resolved
@@ -288,6 +286,111 @@ ONLY place a consistency finding is ever written into a review document; the
 plan-time `FULL` pass (STEP 3) never touches `## Fix Routing`.
 `informational` findings are noted in that document's notes, never routed as
 a blocking row.
+
+---
+
+## The Checkpoint Sequence
+
+**ONE definition, TWO callers.** STEP 8 runs this every time a subfeature exits
+CONVERGED — under the epic outer loop above AND on a `SFxx`-scoped invocation.
+It is NOT part of "Epic Mode: The Outer Loop" and is NOT skipped along with it.
+
+**Departure from F23 — recorded here, not hidden.** F23 specified that with
+`SFxx` given the behaviour is UNCHANGED; that constraint was written before it
+was known that the `epic.md` row flip has no other writer in this command (STEP
+1, "Why the `status` column is trustworthy here"), and honouring it literally
+would leave the schema's `status` column dead for every user who drives an epic
+one subfeature at a time.
+
+**Not for a non-epic feature target.** With no `epic.md` there is no row to flip
+and no subfeature tag to name — skip this section entirely; `/add.done` owns
+that feature's commit. `EPIC_CURRENT_SF` below is the outer loop's current
+subfeature in epic mode, and the `SFxx` argument itself on a scoped run.
+
+1. **Flip the row AND write the `checkpoint` cell — ONE edit.** In `epic.md`'s
+   Subfeatures table, set this subfeature's `status` cell to `done` and its
+   `checkpoint` cell to `${FEATURE_ID}-${EPIC_CURRENT_SF}-done` — step 4's tag
+   name minus its `checkpoint/` prefix, the exact shape the `epic` schema
+   specifies (`{{skill:add-doc-schemas/references/new-feature.md}}`). Resolve
+   both columns **by header name**; add a `checkpoint` column to the header when
+   the document carries none yet. This command is that cell's named owner in the
+   schema — `{{cmd:add.build}}` never commits, so it is forbidden to write it,
+   and nothing else in this run writes it either. Both writes are the
+   coordinator's own, the same ownership it already claims for `tasks.md` and
+   the review resolution annex.
+
+2. **Stage path by path, each one guarded — NEVER one multi-pathspec `git
+   add`.** `add-commit`'s Staging Rules (`{{skill:add-commit/SKILL.md}}`)
+   exclude all of `docs/features/*`, then re-include ONE path,
+   `${FEATURE_DIR}`. Neither reading works for a subfeature checkpoint:
+   re-including only `${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` leaves
+   `epic.md` out — it lives at `${FEATURE_DIR}/epic.md`, a SIBLING of
+   `subfeatures/`, not inside it — so step 1's row flip would never reach the
+   commit; re-including the whole `${FEATURE_DIR}` sweeps in a later,
+   still-pending subfeature's half-written files. `add-commit` has no
+   subfeature-scoped re-include today, so it is spelled out here:
+   ```bash
+   git add -A -- . ':(exclude)docs/features/*'
+   for p in "${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}"-* \
+            "${FEATURE_DIR}/epic.md" \
+            "${FEATURE_DIR}/review-NNN.md"; do
+     [ -e "$p" ] || continue        # absent path → SKIP it, never abort the run
+     git add -A -- "$p" || exit 1   # an add that fails on a path that EXISTS is fatal
+   done
+   git diff --cached --name-only -- "${FEATURE_DIR}/epic.md" | grep -q . \
+     || { echo "epic.md not staged — refusing to checkpoint"; exit 1; }
+   ```
+   ⛔ **One `git add` per path, and the `[ -e ]` guard is mandatory.** `git add`
+   aborts the WHOLE invocation on the first pathspec matching nothing (`fatal:
+   pathspec ... did not match any files`, exit 128, nothing staged) — and the
+   `':(exclude)docs/features/*'` add above it already succeeded, so a
+   coordinator that does not check the exit status commits the code files and
+   silently loses step 1's row flip, then tags THAT commit as the checkpoint.
+   One non-matching pathspec must never cost you the row flip. The guard is what
+   turns an absent path into a skip instead of an abort.
+
+   **QA evidence lives under the SUBFEATURE, not the feature root.** On an epic
+   it is `${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*/_tests/run-NNN/` —
+   already swept in by the first path above — and with `qa-pipeline` disabled it
+   exists nowhere at all. `${FEATURE_DIR}/_tests/run-NNN/` is NOT a path to
+   stage here; it is precisely the non-matching pathspec that aborts the run.
+   (`review-NNN.md` is this round's highest-numbered one, at `${FEATURE_DIR}`,
+   where STEP 5 writes it and `converge-gates.sh` reads it.)
+
+   **Verify the index before committing.** The `git diff --cached` line is not
+   optional: `epic.md` is the one file whose absence from the index is both
+   invisible and fatal — the commit still succeeds, the tag still lands, and the
+   epic silently never progresses. Empty output → report BLOCKED and do NOT
+   commit.
+
+3. **Commit — gated.** Commit here ONLY when STEP 8 exited CONVERGED. A
+   subfeature that did not converge produces NO row flip and NO commit; the
+   absence of a commit is itself the signal, never a separate flag to check.
+   Follow `add-commit`'s type and message conventions for the body.
+   **Gate lines:** the commit carries **the five gate lines** — `GATE_REVIEW`,
+   `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATES_OK` — **copied
+   verbatim from `converge-gates.sh`'s output** in STEP 6, as **body lines**
+   beneath the Conventional Commits body, NOT as git trailers: `GATE_REVIEW=ok`
+   carries no `Key: value` colon, so `git interpret-trailers` never sees it as a
+   trailer, and calling it one invites someone to "fix" it into a shape
+   `git log --grep=GATES_OK` no longer finds. The script prints more keys than
+   these five (`REVIEW_PATH=`, `BASELINE=`, `EPIC_PENDING=`,
+   `COVERAGE_UNCOVERED=`, `QA_FEATURE_STATE=`, plus any `*_DETAIL=`) — copy the
+   five, and only the five.
+   ⛔ DO NOT reformat, summarise, re-word or author these lines. They are
+   copied, not written — `git log --grep=GATES_OK` reconstructs which
+   subfeatures converged and on what evidence, and a reformatted line is
+   indistinguishable from an invented one. Do not invent a second format.
+
+4. **Tag.** Re-create `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done` ON the
+   commit just made — the same name step 1 recorded in the `checkpoint` cell.
+   `{{cmd:add.build}}` no longer creates this tag; this is the first point in
+   the run where it would point at real, committed work.
+
+5. **Push, carrying the tag explicitly.** `git push --follow-tags`, or push
+   naming both the branch and the tag. Plain `git push` leaves the tag local — a
+   local-only tag is invisible to a fresh clone or a different engine resuming
+   this epic.
 
 ---
 
@@ -353,6 +456,12 @@ resolves to advance (`ok`, or `fix-then-ok` resolved within its one
 re-dispatch) — never before STEP 3's own plan review gate. On a
 single-subfeature or non-epic target, skip this dispatch entirely: with
 fewer than two subfeatures in scope there is nothing to compare against.
+
+**Skip it too when no sibling has converged yet.** Dispatch ONLY when at
+least one other row in `epic.md` already reads `done` — on the epic's FIRST
+subfeature the already-converged set is empty, and
+`{{skill:add-cross-sf-consistency/SKILL.md}}`'s rubric "only fires when there
+are two or more subfeatures to compare". Record the skip in the Decision Log.
 
 1. **DISPATCH** `@consistency-agent` with `mode: FULL`, this subfeature's
    `plan.md` (+ `about.md`, `design.md` if present), `epic.md`'s resolved
@@ -505,8 +614,8 @@ keys as the single pass/fail summary; anything short of `4/4` blocks.
 targeting one non-final subfeature, and would report non-convergence for a reason
 unrelated to any finding. Pass the target `SFxx` as the script's second
 argument — it applies the scoped rule in gate 3's place: the targeted
-subfeature's own `tasks.md` acceptance checklist is complete and its `epic.md`
-row is ready to move to `done`. Gates 1, 2 and 4 are evaluated unchanged.
+subfeature's own `tasks.md` acceptance checklist is complete. The scoped branch
+never opens `epic.md`. Gates 1, 2 and 4 are evaluated unchanged.
 
 CONVERGED then means "**this subfeature** is ready" — and STEP 9 MUST name the
 remaining subfeatures so it is never read as "the epic is ready".
@@ -517,7 +626,10 @@ while STEP 6 is inside that subfeature's own STEP 3–8 legs; pass its `SFxx`
 every time, with no exception for "this is the final one." The EPIC-WIDE
 form — `epic.md` has no row still pending — is evaluated exactly ONCE, after
 the final subfeature's checkpoint (row flip + commit) has landed, as the
-condition for the epic-level CONVERGED that STEP 9 reports. The checkpoint is
+condition for the epic-level CONVERGED that STEP 9 reports. **No pass of this
+STEP runs it: "Epic-wide gate 3" in "Epic Mode: The Outer Loop" is the line
+that does**, and a specification with no invocation is a gate that never
+fires. The checkpoint is
 what writes the rows, so the epic-wide form only becomes reachable once it
 has run at least once — which is exactly why the scoped form is used instead
 while the loop is still inside a subfeature.
@@ -569,12 +681,21 @@ then just one of several leg-boundary entries this iteration produced (see
 "Log at every leg boundary" in "Epic Mode: The Outer Loop"). Outside epic
 mode this remains the single entry per iteration, exactly as before.
 
-**Epic mode: on CONVERGED, do not fall through to STEP 9 yet.** Run the
-Checkpoint sequence in "Epic Mode: The Outer Loop" (above STEP 3) first,
-then return to STEP 3 for the next pending subfeature, or continue to STEP 9
-if none remain. On CAP_REACHED or BLOCKED, halt the outer loop per that same
-section's precedence rule and go straight to STEP 9 — no checkpoint, no next
-subfeature.
+**On CONVERGED, do not fall through to STEP 9 yet.** Run "The Checkpoint
+Sequence" (above STEP 3) FIRST — in epic mode AND on a `SFxx`-scoped
+invocation alike; it is one shared definition, not an epic-only step. Then:
+
+- **Epic mode** → return to STEP 3 for the next pending subfeature. When none
+  remain, run "Epic-wide gate 3" in "Epic Mode: The Outer Loop" and only then
+  continue to STEP 9.
+- **`SFxx`-scoped run** → continue to STEP 9. Do NOT run the epic-wide gate-3
+  pass: this invocation converged one subfeature, not the epic.
+- **Non-epic feature target** → no `epic.md`, so no row, no checkpoint and no
+  tag; continue to STEP 9 exactly as before.
+
+On CAP_REACHED or BLOCKED, halt the outer loop per the precedence rule in
+"Epic Mode: The Outer Loop" and go straight to STEP 9 — no checkpoint, no
+epic-wide gate-3 pass, no next subfeature.
 
 ---
 
@@ -591,7 +712,7 @@ into one another:
 
 | State | Meaning | Next command |
 |-------|---------|--------------|
-| **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) | `{{cmd:add.done}}` once every subfeature is done — or `/add.plan-to-ready` to continue an epic that halted, or for the next subfeature outside epic mode |
+| **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) — and, on an epic run, the epic-wide gate-3 pass at epic end also read `GATE_EPIC=ok` | `{{cmd:add.done}}` once every subfeature is done — or `/add.plan-to-ready` to continue an epic that halted, or for the next subfeature outside epic mode |
 | **CAP_REACHED** | 3 iterations spent on the subfeature (or feature) that halted the run, gates still failing | `{{cmd:add.build}}` for the open `## Fix Routing` rows, or re-invoke after triage |
 | **BLOCKED** | No progress detected, a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup, `@plan-reviewer-agent` or `@consistency-agent` verdict `blocked` or blockers standing after its one re-dispatch), or — epic mode only — the global backstop fired | The specific remedy, named |
 
@@ -612,7 +733,7 @@ Alongside the state, report:
 - resistant findings, if any;
 - rows returned `NOT_MINE` or presented-not-dispatched, as user decisions;
 - the path to the highest `review-NNN.md`;
-- on a subfeature-scoped CONVERGED run (not a full epic), the remaining subfeatures; on an epic-run CONVERGED, confirmation that none remain.
+- on a subfeature-scoped CONVERGED run (not a full epic), the remaining subfeatures; on an epic-run CONVERGED, the epic-wide pass's `GATE_EPIC=ok` as the evidence that none remain.
 
 ---
 
@@ -625,7 +746,8 @@ ALWAYS:
 - Write the resolution annex into the previous round's review document yourself
 - Answer the plan roster's clarification questions from the Decision Log
 - State the cumulative round count alongside each subfeature's own iteration count
-- Gate an epic checkpoint commit on CONVERGED only, and push its tag explicitly
+- Gate every checkpoint commit on CONVERGED only, and push its tag explicitly
+- Confirm `epic.md` is in the index before making a checkpoint commit
 - Halt the epic outer loop on the first subfeature that exits non-CONVERGED
 
 NEVER:
@@ -638,4 +760,5 @@ NEVER:
 - Accept `--yolo`; it is autonomous already, and the review it drives has no auto-correct half to unlock
 - Commit, tag, or push a subfeature's checkpoint when it did not converge
 - Skip a blocked subfeature to reach a later one in the epic
-- Re-include the whole `${FEATURE_DIR}` when staging an epic checkpoint — it sweeps in a later subfeature's half-written files
+- Re-include the whole `${FEATURE_DIR}` when staging a checkpoint — it sweeps in a later subfeature's half-written files
+- Pass several pathspecs to one `git add` — one non-match aborts the whole invocation and stages nothing
