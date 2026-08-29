@@ -570,6 +570,42 @@ write_review_detail() {
   [[ "$output" == *"GATE_COVERAGE=ok"* ]]
 }
 
+@test "S1: an epic-wide run aggregates the SUBFEATURE plans for coverage" {
+  DIR="docs/features/0054F-s1"; ABS="$TEST_REPO/$DIR"
+  write_epic "$ABS" all-done
+  # On an epic there is NO feature-level plan.md — add.plan STEP 5 puts it at SF level.
+  mkdir -p "$ABS/subfeatures/SF01-alpha" "$ABS/subfeatures/SF02-beta"
+  printf '| ID | Requirement | Covered? |
+|----|---|---|
+| RF01 | a | YES |
+' > "$ABS/subfeatures/SF01-alpha/plan.md"
+  printf '| ID | Requirement | Covered? |
+|----|---|---|
+| RF02 | b | YES |
+' > "$ABS/subfeatures/SF02-beta/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_COVERAGE=ok"* ]]
+  [[ "$output" != *"GATE_COVERAGE=missing"* ]]
+}
+
+@test "S2: an epic-wide run reports an uncovered requirement from ANY subfeature plan" {
+  DIR="docs/features/0055F-s2"; ABS="$TEST_REPO/$DIR"
+  write_epic "$ABS" all-done
+  mkdir -p "$ABS/subfeatures/SF01-alpha" "$ABS/subfeatures/SF02-beta"
+  printf '| ID | Requirement | Covered? |
+|----|---|---|
+| RF01 | a | YES |
+' > "$ABS/subfeatures/SF01-alpha/plan.md"
+  printf '| ID | Requirement | Covered? |
+|----|---|---|
+| RF02 | b | NO |
+' > "$ABS/subfeatures/SF02-beta/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_COVERAGE=broken"* ]]
+  [[ "$output" == *"COVERAGE_UNCOVERED=1"* ]]
+}
+
 @test "C8: a subfeature-scoped run reads the SUBFEATURE's plan.md, not the feature's" {
   DIR="docs/features/0053F-c8"; ABS="$TEST_REPO/$DIR"
   write_epic "$ABS" pending

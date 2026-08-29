@@ -260,10 +260,22 @@ emit "EPIC_PENDING=$EPIC_PENDING"
 # for every subfeature — the gate could never pass on the exact scope the epic
 # loop runs.
 PLAN_MD="$FEATURE_DIR/plan.md"
+PLAN_SET=""
 if [ -n "$SF_ARG" ]; then
   for sfdir in "$FEATURE_DIR/subfeatures/${SF_ARG}"-*; do
     [ -f "$sfdir/plan.md" ] || continue
     PLAN_MD="$sfdir/plan.md"
+  done
+elif [ ! -f "$PLAN_MD" ] && [ -d "$FEATURE_DIR/subfeatures" ]; then
+  # Epic-wide run: an epic normally has NO feature-level plan.md — /add.plan
+  # STEP 5 puts the plan at SF level. Reading only the feature root reported
+  # `missing` on every healthy epic, which is the same shape as the defect
+  # that made this gate unpassable before: a real document in a place the
+  # gate did not look. An epic's coverage is the union of its subfeatures'.
+  for sfplan in "$FEATURE_DIR/subfeatures"/*/plan.md; do
+    [ -f "$sfplan" ] || continue
+    PLAN_SET="$PLAN_SET$sfplan
+"
   done
 fi
 COVERAGE_UNCOVERED=""
@@ -279,10 +291,11 @@ COVERAGE_UNCOVERED=""
 # plan time. Making absence blocking would mean no schema-conforming feature
 # could ever converge.
 
-if [ ! -f "$PLAN_MD" ]; then
+if [ ! -f "$PLAN_MD" ] && [ -z "$PLAN_SET" ]; then
   emit "GATE_COVERAGE=missing"
   emit "GATE_COVERAGE_DETAIL=No plan.md under $FEATURE_DIR_ARG"
 else
+  [ -n "$PLAN_SET" ] || PLAN_SET="$PLAN_MD"
   COV_READ=$(awk '
     function trim(v) { gsub(/^[ \t]+|[ \t]+$/, "", v); return v }
     function isseparator(row,   i, c, only) {
@@ -291,17 +304,22 @@ else
       return only
     }
     BEGIN { FS = "|"; mode = "none"; n = 0 }
+    # Reset per FILE. An epic-wide run passes several subfeature plans at once,
+    # and a latched covidx would read the HEADER row of the next file as a data
+    # row whose Covered cell reads "Covered?" — one phantom uncovered
+    # requirement per extra plan. Found by a smoke test, not by the unit suite.
+    FNR == 1 { covidx = 0; inblock = 0; fence = 0; if (mode == "column") mode = "none" }
     # Fence-aware: a fenced example below the last heading is documentation,
     # not data. CLAUDE.md records this same lesson for the ## Materializes block.
     /^[[:space:]]*```/ { fence = !fence; next }
     fence { next }
-    tolower($0) ~ /^##[[:space:]]+cobertura de requisitos/ { mode = "legacy"; inblock = 1; next }
+    tolower($0) ~ /^##[[:space:]]+cobertura de requisitos/ { mode = "legacy"; found = "legacy"; inblock = 1; next }
     mode == "legacy" && /^##[[:space:]]/ { inblock = 0 }
     mode == "legacy" && inblock && /^\|/ && /\|[[:space:]]*[Xx][[:space:]]*\|/ { n++; next }
     # Header-named form: find the Covered? column, then read each data row.
     mode != "legacy" && /^\|/ && !covidx {
       for (i = 2; i <= NF; i++) { c = tolower(trim($i)); gsub(/\?/, "", c)
-        if (c == "covered") { covidx = i; mode = "column" } }
+        if (c == "covered") { covidx = i; mode = "column"; found = "column" } }
       next
     }
     mode == "column" && /^\|/ {
@@ -311,7 +329,7 @@ else
       next
     }
     END { print mode "\t" n }
-  ' "$PLAN_MD")
+  ' $PLAN_SET)
 
   COV_MODE=$(printf '%s' "$COV_READ" | cut -f1)
   COVERAGE_UNCOVERED=$(printf '%s' "$COV_READ" | cut -f2)

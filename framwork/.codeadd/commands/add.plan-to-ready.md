@@ -410,15 +410,34 @@ subfeature in epic mode, and the `SFxx` argument itself on a scoped run.
    subfeatures converged and on what evidence, and a reformatted line is
    indistinguishable from an invented one. Do not invent a second format.
 
-4. **Tag.** Re-create `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done` ON the
-   commit just made — the same name step 1 recorded in the `checkpoint` cell.
-   `{{cmd:add.build}}` no longer creates this tag; this is the first point in
-   the run where it would point at real, committed work.
+4. **Tag — ANNOTATED, not lightweight.** Create
+   `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done` ON the commit just made,
+   with `git tag -a <name> -m <message>`. `{{cmd:add.build}}` no longer creates
+   this tag; this is the first point in the loop where it would point at real,
+   committed work.
 
-5. **Push, carrying the tag explicitly.** `git push --follow-tags`, or push
-   naming both the branch and the tag. Plain `git push` leaves the tag local — a
-   local-only tag is invisible to a fresh clone or a different engine resuming
-   this epic.
+   ⛔ **A lightweight tag (`git tag <name>`, no `-a`) is NOT acceptable here,
+   and the reason is step 5.** `git push --follow-tags` pushes **annotated tags
+   only** — it silently skips lightweight ones. A checkpoint tag that never
+   leaves the machine is invisible to the fresh-clone and other-engine resume
+   this whole sequence exists to serve, and nothing reports the omission.
+
+5. **Push, naming the branch AND the tag explicitly.**
+
+   ```bash
+   git push origin "${BRANCH_NAME}" "checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
+   ```
+
+   `--follow-tags` alone is not enough on its own: it covers annotated tags
+   only, so it depends on step 4 having used `-a` and fails silently if that
+   ever regresses. Naming the tag works either way. Verify it landed:
+
+   ```bash
+   git ls-remote --tags origin | grep "${FEATURE_ID}-${EPIC_CURRENT_SF}-done"
+   ```
+
+   Empty output → the tag is local-only. Report BLOCKED; do not advance to the
+   next subfeature on a checkpoint the remote cannot see.
 
 ---
 
