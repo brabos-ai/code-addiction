@@ -23,7 +23,7 @@ and receive their reports. You never dispatch a command.
 ```
 STEP 1: Bootstrap            → status.sh, validate prerequisites, build-setup.sh
 STEP 2: Initialize Decision Log → seeded from status.sh + about.md + decisions.jsonl
-STEP 3: Plan leg             → dispatch the planning roster; mutator cache rule; checks plan.md (+ design.md) exist
+STEP 3: Plan leg             → dispatch the planning roster; mutator cache rule; checks plan.md (+ design.md) exist; @plan-reviewer-agent verdict gate
 STEP 4: Build leg            → implementation roster; from iteration 2 a correction leg; checks the resolution annex landed
 STEP 5: Review leg           → read-only; produces review-NNN.md + ## Fix Routing; checks outputs exist on disk
 STEP 6: Convergence check    → converge-gates.sh; all four gates ok, not-probed never counts as a pass
@@ -96,7 +96,7 @@ This command takes over the coordinator role of `/add.plan`, `/add.build` and
 
 | Leg | Roster |
 |-----|--------|
-| Plan | `@discovery-agent`, `@ux-flow-agent`, `@ux-layout-agent`, `@ux-agent` (critique), `@database-agent`, `@backend-agent`, `@frontend-agent`, `@architecture-agent` |
+| Plan | `@discovery-agent`, `@ux-flow-agent`, `@ux-layout-agent`, `@ux-agent` (critique), `@database-agent`, `@backend-agent`, `@frontend-agent`, `@architecture-agent`, `@plan-reviewer-agent` (verdict gate, after consolidation) |
 | Build | `@database-agent`, `@backend-agent`, `@frontend-agent`, `@test-agent` (with `tdd-pipeline`), `@e2e-agent` (with `qa-pipeline`), `@reviewer-agent` (area validation), `@fix-agent` (correction) |
 | Review | `@reviewer-agent` (frontend ∥ backend, read-only), `@ux-agent` (review mode) ∥ `@qa-agent` (with the QA receipt present) |
 
@@ -166,6 +166,30 @@ and record the skip in the Decision Log.
 `design.md` at the Location resolved above — the filesystem, never the roster's
 own report that it wrote either. Missing → report BLOCKED naming the exact path,
 and do not advance to STEP 4.
+
+**Plan review (MANDATORY, after the output check passes).** This is new
+behaviour beyond "applying `/add.plan`'s own consolidation rules" above — the
+`feature-plan` schema gate is `/add.plan` STEP 12, a separate step this loop
+never runs, so nothing else here re-validates `plan.md` after a fix is applied.
+
+1. **DISPATCH** `@plan-reviewer-agent` with `path` = the `plan.md` just
+   confirmed on disk, `kind: feature-plan`.
+2. **Act on the verdict:**
+   - `ok` → advance to STEP 4.
+   - `fix-then-ok` → apply only the Required fixes that do not invent a user
+     decision — answer any clarification from the Decision Log, exactly as the
+     roster's own clarification questions are answered above; never stop for
+     the user. **Re-run the `feature-plan` validation gate**
+     (`{{skill:add-doc-schemas/SKILL.md}}`) against the fixed `plan.md` before
+     re-review — this re-run is the step `/add.plan` STEP 12 would otherwise
+     have owned. Re-dispatch `@plan-reviewer-agent` **once**. After that single
+     re-dispatch, advance to STEP 4 unless the verdict is still `blocked` or
+     blockers remain.
+   - `blocked`, or blockers still standing after the one re-dispatch →
+     **BLOCKED exit for this subfeature.** Report the blockers verbatim, and do
+     NOT advance to STEP 4.
+3. ⛔ Never stop to ask the user during this exchange — the loop is autonomous
+   by contract, same as the clarification-questions rule above.
 
 ---
 
@@ -315,7 +339,7 @@ into one another:
 |-------|---------|--------------|
 | **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) | `{{cmd:add.done}}` — or `/add.plan-to-ready` for the next subfeature |
 | **CAP_REACHED** | 3 iterations spent, gates still failing | `{{cmd:add.build}}` for the open `## Fix Routing` rows, or re-invoke after triage |
-| **BLOCKED** | No progress detected, or a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup) | The specific remedy, named |
+| **BLOCKED** | No progress detected, or a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup, `@plan-reviewer-agent` verdict `blocked` or blockers standing after its one re-dispatch) | The specific remedy, named |
 
 ⛔ NEVER word CAP_REACHED or BLOCKED as success, and NEVER present either as
 "done with minor issues". A run that spent its budget with gates still red did

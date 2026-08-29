@@ -11,7 +11,7 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ## Required Skills
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format. Load `{{skill:add-plan-review/SKILL.md}}` before STEP 13 (pre-delivery review rubric + verdict contract).
 
 ---
 
@@ -25,6 +25,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
 | `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
+| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the one `fix-then-ok` re-dispatch | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
 
 ---
 
@@ -61,7 +62,8 @@ STEP 8:  Execute subagents        -> SEQUENTIAL by area
 STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
 STEP 11: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP 12: Validation Gate          -> feature-plan schema gate
-STEP 13: Completion               -> Inform user
+STEP 13: Plan Review              -> @plan-reviewer-agent verdict + fix loop (GATE: plan_reviewed)
+STEP 14: Completion               -> Inform user
 ```
 
 **Reuse feature ID:** `add.plan` does NOT allocate a new ID. Read `id: [NNNN]F` from the feature's `about.md` frontmatter in STEP 5. The generated `plan.md` carries the SAME `[NNNN]F` with `related: [[NNNN]F]`.
@@ -500,7 +502,7 @@ ${WIKI_PAGES}
 <!-- feature:qa-pipeline:qa-spec -->
 <!-- /feature:qa-pipeline:qa-spec -->
 
-**QA axis self-check:** IF no `10.0 QA-Spec Subagent` section is present above (the `qa-pipeline` feature is disabled) → `plan-qa-spec.md` will NOT be generated. Add one line to the STEP 13 completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
+**QA axis self-check:** IF no `10.0 QA-Spec Subagent` section is present above (the `qa-pipeline` feature is disabled) → `plan-qa-spec.md` will NOT be generated. Add one line to the STEP 14 completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
@@ -604,13 +606,27 @@ Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `fe
 
 ---
 
-## STEP 13: Completion
+## STEP 13: Plan Review (GATE: plan_reviewed)
+
+Schema gate PASSED. Do not present `plan.md` or the next command as delivered yet.
+
+1. **DISPATCH** `@plan-reviewer-agent` with `path` = `plan.md`'s path and `kind: feature-plan`. **Soft-degrade:** if the engine has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
+2. **Act on the verdict:**
+   - `ok` → proceed to STEP 14.
+   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision, **re-run STEP 12's validation gate on `plan.md`**, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 14 unless the verdict is still `blocked` or blockers remain.
+   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Ref: GATES table (`plan_reviewed`). Present the blockers to the user; do NOT proceed to STEP 14.
+3. ⛔ Do NOT re-dispatch `@ux-flow-agent`, `@ux-layout-agent`, or `@ux-agent` to satisfy a plan-review finding — those subagents own `design.md`, not `plan.md`; a `design.md` finding is out of scope for this review.
+
+---
+
+## STEP 14: Completion
 
 Inform user with summary:
 - Feature ID and plan path
 - Areas planned (UX Design/Database/Backend/Frontend)
 - Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
+- Plan review verdict from STEP 13, and a one-line summary of any applied fixes
 - Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build` or `/add.plan-to-ready`
 
 ---
@@ -641,6 +657,7 @@ Inform user with summary:
 - ID Convention: `add-id-convention`
 - Tasks Checklist: `add-tasks-checklist`
 - Feature Discovery: `add-feature-discovery`
+- Plan Review: `add-plan-review`
 
 ---
 

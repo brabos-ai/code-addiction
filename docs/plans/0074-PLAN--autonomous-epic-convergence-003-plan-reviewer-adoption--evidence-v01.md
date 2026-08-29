@@ -41,6 +41,61 @@ Checker: `C:/tmp/check-anchors.py` — compares namespace/name/section/resource 
 
 ## F-block log
 
+### F20 — plan 0069 executed
+
+New artefacts: `framwork/.codeadd/agents/plan-reviewer-agent.md`, `framwork/.codeadd/skills/add-plan-review/SKILL.md`, both registered in `provider-map.json`. Build now reports **41 skills** (was 40) and **21 agents** (was 20).
+
+Rewired: `/add.plan` (new `## STEP 13: Plan Review (GATE: plan_reviewed)`, Completion renamed to STEP 14, STEPS IN ORDER updated), `/add.new` STEP 8, `/add.brainstorm` STEP 5, plus `add-ecosystem`, `add-doc-reviewer` and the `add-doc-schemas` Validation Gate parenthetical.
+
+STEP 13 implements 0069's contract literally: dispatch, `ok` -> proceed, `fix-then-ok` -> apply Required fixes, **re-run STEP 12's gate**, re-dispatch **once**, `blocked` or remaining blockers -> STOP. Plus 0069's `add.plan`-only rule that UX subagents are never re-dispatched to satisfy a plan-review finding.
+
+### The L503 amendment — resolved as case 3, from the sidecar, not from a guess
+
+Read `injection-points.json` directly before any edit. For `feature:qa-pipeline:qa-spec` in `add.plan.md`:
+
+```
+anchor.text = "## STEP 10: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)"   <- L499
+anchor.next = "**QA axis self-check:** ... Add one line to the STEP 13 completion output ..."   <- L503
+```
+
+**L503 is the `next` drift hint, not the anchor text.** That is case 3 of the mandatory amendment: the edit is allowed, with an immediate rebuild. It was made — the line now reads `STEP 14 completion output` — and **L499 is byte-identical to HEAD**, verified by diffing against `git show HEAD:...`.
+
+Both `step-list` markers (L57, L59) share `anchor.text = "- 8.4: Frontend Specialist"` (L56) with `anchor.next` at L61. 0069's STEPS IN ORDER edit lands at L63-L64, below both. Neither line was touched.
+
+### The one allowed renumber, and its manual check
+
+`/add.plan` STEP 13 -> 14 is the only renumber in this plan set. **Nothing in the build validates fragment step references**, so this was checked by hand and the result is recorded here rather than assumed:
+
+| Fragment | References | Still correct? |
+|---|---|---|
+| `tdd-pipeline/add.plan.md` | defines `STEP 9`, cites `STEP 9` | Yes — below 13, unaffected |
+| `qa-pipeline/add.plan.md` | defines `STEP 10.0`, cites `STEP 9`, `STEP 8.1` | Yes — all below 13 |
+| `gitnexus/add.plan.md` | no `STEP N` references at all | N/A |
+
+### F21, F22
+
+- **F21** `add.plan-to-ready.md` STEP 3 gained a `Plan review (MANDATORY, after the output check passes)` block. It states in the file itself that the schema re-run is **new behaviour beyond** *"applying /add.plan's own consolidation rules"*, because the `feature-plan` gate is `/add.plan` STEP 12 — a step this loop never runs. Required fixes are answered from the Decision Log; the loop never stops for the user. One re-dispatch. `blocked` is a BLOCKED exit. The plan roster table now lists `@plan-reviewer-agent`.
+- **F22** `add-ecosystem/SKILL.md` lists `/add.plan-to-ready` as a dispatcher.
+
+## Validation levels
+
+| Level | Result | Evidence |
+|---|---|---|
+| **L1.1-L1.4** 0069 delivered, checked against what it actually contains | **PASS** | Nine files present and changed as its Scope>Includes lists; STEP 13 matches its six-step command loop including step 5's gate re-run and the UX no-re-dispatch rule |
+| **L1.5** agent + skill registered and built | **PASS** | build: 41 skills, 21 agents |
+| **L1.6** ecosystem lists the loop as dispatcher (F22) | **PASS** | grep |
+| **L2.1** build after the `add.plan` edits | **PASS** | `Injection points : 39`; checker 39/39 intact **by anchor text** |
+| **L2.3** fragment step references re-verified by hand | **PASS** | table above; no reference went stale |
+| **L2.4** the L503 case recorded | **PASS** | case 3, with the sidecar entry that decided it, quoted above |
+| **L2.2** feature/plugin enable-disable round-trip | **NOT RUN** | needs an install target |
+| **L3.1-L3.5** loop dispatch behaviour | **NOT RUN** | needs a live epic run; the instruction is written and inspected only |
+
+## Gaps — what is NOT proven
+
+- **L3 entirely.** F21 is an instruction to a coordinator. Whether a live run actually dispatches the reviewer, honours the one-re-dispatch cap and exits BLOCKED correctly cannot be shown without running an epic. Inspected, not executed.
+- **L2.2 round-trip** not run — no project installed from this build.
+- **`add-plan-review` and `plan-reviewer-agent` are unexercised.** They are authored to 0069's contract and they build, but no plan has been reviewed by them yet.
+
 _Appended as each F-block lands._
 
 ## Validation levels
