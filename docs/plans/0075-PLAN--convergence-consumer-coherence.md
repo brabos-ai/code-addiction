@@ -1,6 +1,6 @@
 # Plan: Convergence Consumer Coherence — the siblings 0074 left behind
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** script + command + agent boundary
 > **Created:** 2026-08-29
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -237,3 +237,4 @@ All decisions are recorded. Build in execution order:
 | 2026-08-29 | Initial creation. T1 and T3 decided; T2 and T4 carry recorded options awaiting the owner's call |
 | 2026-08-29 | Owner took both pending decisions: T2 option (a), T4 option (a). All four topics buildable |
 | 2026-08-29 | Review v01: all five of 10.5's checks now have a stated destination — #2 had none under any option, the exact failure the plan's own Reviewer Handoff names as top risk (B1). L6's injection claim corrected (A1). L2.1 gained the count-vs-list bridge (A2). F1 states that converge-gates.sh models only the done/not-done half (A3). T4 option (a) names the pre-check that blocks (A4). status.sh line reference (N1) |
+| 2026-08-29 | Implemented. T1 `02ebf05` (status.bats 57/57, three levels RED first, L2 shown DISAGREE before and AGREE after), T3 `a18c3a6`, T2 `ca58f16`, T4 in the following commit. Status -> implemented |
