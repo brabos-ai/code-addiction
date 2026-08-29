@@ -1,6 +1,6 @@
 # Plan: T1 — Deterministic convergence gate
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** command + script + schema
 > **Created:** 2026-08-27
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -182,3 +182,4 @@ This topic is built as part of the 0074 set; the invocation order is in the umbr
 | 2026-08-27 | Initial creation |
 | 2026-08-27 | Review v02: L4.5 split so the review-document half names its catching step and expected message (A2). L4.7 added — F8 and F9 had no covering level, so the GREEN claim overstated what was verified (A1) |
 | 2026-08-27 | Review v01: gate 3 is scripted in T1 with today's string rule instead of deferring to `not-probed`, which would have blocked every epic and subfeature run at C1 (B1). Gate 2 now wraps `qa-evidence.sh` and translates its non-zero exit rather than passing it through (B2). F4 extended to STEP 3 so the plan leg's outputs are checked, with L4.5 to prove it (B3). F9 states it adds a script-keyed row (A1). Suite count corrected, feature-default instruction tied to F4, Next Steps cross-reference added (N1–N3) |
+| 2026-08-29 | Implemented at C1 (1b8631c). Adversarial round fixed five gate defects (3d832a7, 63c13cf) and the plan-reviewer tool restriction (fd36dfc). Suite 34 -> 52. Status -> implemented |

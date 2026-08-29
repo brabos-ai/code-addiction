@@ -1,6 +1,6 @@
 # Plan: T4 — Epic loop and cross-SF judge
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** command + agent + skill
 > **Created:** 2026-08-27
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -227,3 +227,4 @@ This topic is built as part of the 0074 set; the full invocation order is in the
 | 2026-08-27 | Initial creation |
 | 2026-08-27 | Review v02: F27's staging rewritten to name three re-include paths — `epic.md` and `review-NNN.md` live at the feature root, so a subfeature-scoped re-include would have left the row flip out of the commit and silently reopened round-1's B1 (B1, found independently by two reviewers). L5.7 added; L5.6 no longer claims to cover F36 (B2). New L2b greps the shipped file for stale per-invocation wording and counts STEP 9's report blocks (A1). New L3.8 proves the plan-time vs end-of-epic routing split (A2). Push now carries the tag explicitly (A3). Staging citation widened, `N_SF` defined (N1, N2) |
 | 2026-08-27 | Review v01: F27 now flips the `epic.md` row inside the checkpoint commit — nothing else in the loop writes it, so resume had no source of truth (B1). Trailer pinned to `converge-gates.sh` stdout verbatim (B2). F25 states STEP 9 fires once per epic and that the per-invocation cap invariant is superseded (B3). Backstop restated in iterations, not legs, with halt precedence (B4). F29 reconciled with the existing idempotency guards (A1); F27 points at `add-commit`'s Staging Rules (A2); L5.6 covers F34/F36 (A3); gate-3 form per subfeature stated (A4); halt precedence (A5). F13's dropped tag re-created here. F31 splits plan-time and end-of-epic routing. References cited by block label (N1, N2) |
+| 2026-08-29 | Implemented at C4 (eb6f472). Four grave defects fixed in 4b8cd62: the checkpoint staged nothing, the epic-wide gate never ran, /add.done ignored gate 2, and a scoped run made no checkpoint. Status -> implemented |

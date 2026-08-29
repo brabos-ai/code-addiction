@@ -1,6 +1,6 @@
 # Plan: T2 — Epic foundations
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** schema + command
 > **Created:** 2026-08-27
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -182,3 +182,4 @@ This topic is built as part of the 0074 set; the full invocation order is in the
 | 2026-08-27 | Initial creation |
 | 2026-08-27 | Review v02: Validated Decisions rows for the checkpoint tag and for existing `epic.md` files reworded to the single pinned decision — the Scope text was fixed in v01 but the summary table still read as an open either/or (B1, B2). Gate 3's outcomes stated as `ok`/`broken` only, with no invented `not-applicable` status (AT1). L3.3 marked a regression guard; F19's level citation corrected to L1.4 + L3.3 (N1, N2) |
 | 2026-08-27 | Review v01: F13 pinned to dropping the tag, with T4's F27 named as the half that re-creates it (A1). F10 pinned to optional-with-default columns, removing the normalisation either/or (A2). F13/F14 now cite the file's literal `14.x` block labels under heading STEP 16 (A3). L2.4 added to cover F12 (A4). Line numbers corrected for `8.0` and `add.new` (N1, N3); L5.3's manual-check scope enumerated (N2) |
+| 2026-08-29 | Implemented at C2 (af7cce6). F19's gate-3 reader later hardened against three parser breaks found adversarially. Status -> implemented |

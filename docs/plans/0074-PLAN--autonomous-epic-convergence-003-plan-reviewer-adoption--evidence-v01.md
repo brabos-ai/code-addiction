@@ -2,7 +2,8 @@
 
 > **Plan:** `docs/plans/0074-PLAN--autonomous-epic-convergence-003-plan-reviewer-adoption.md`
 > **Umbrella:** `docs/plans/0074-PLAN--autonomous-epic-convergence-000-umbrella.md`
-> **Status:** in progress
+> **Status:** complete
+> **Closed:** 2026-08-29 — after the adversarial round and its fixes
 > **Started:** 2026-08-27
 
 ---

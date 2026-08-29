@@ -1,6 +1,6 @@
 # Plan: T3 — Plan-reviewer adoption
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** agent + skill + command
 > **Created:** 2026-08-27
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -157,3 +157,4 @@ This topic is built as part of the 0074 set; the full invocation order is in the
 |------|--------|
 | 2026-08-27 | Initial creation |
 | 2026-08-27 | Review v01: L1 rewritten — 0069 has no validation matrix, so T3 checks its Scope, contracts and command loop instead (B1). Third branch added to the L503 procedure (A1). STEPS IN ORDER shown safe, edit confined below L61 (A2). F22 now covered by L1.6 (A3). Schema-gate re-run named as new behaviour in F21 (A4). Marker-pair wording (N1) |
+| 2026-08-29 | Implemented at C3 (54cbe9b). The agent shipped to Claude without a tool restriction (readonly is dropped by that dialect); fixed in fd36dfc. Status -> implemented |

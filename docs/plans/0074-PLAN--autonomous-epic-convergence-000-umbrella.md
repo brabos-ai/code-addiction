@@ -1,6 +1,6 @@
 # Plan: Autonomous Epic Convergence — umbrella
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** architecture (command + script + schema + agent + skill)
 > **Created:** 2026-08-27
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -322,3 +322,4 @@ Then, for the internal layer (`/add-framework--build` reaches neither `CLAUDE.md
 | 2026-08-27 | Initial creation |
 | 2026-08-27 | Review v02: C2's row reworded — T2 drops the tag rather than correcting it, so "no longer lies" read as if a correct tag existed from C2 (A1). T4's F27 staging corrected to name `epic.md` and `review-NNN.md` at the feature root; both reviewers found it independently (B1). T2's gate-3 outcome vocabulary aligned to `ok`/`broken` (A2) |
 | 2026-08-27 | Review v01: Next Steps rewritten as four ordered `/add-framework--build` invocations — the command reads one plan file and cannot fan out from an umbrella (B1). Evidence Artefacts section added, naming the four files and the force-add decision (A1). C0's contents stated (A2). F31's plan-time findings routed to `plan.md` in T4, not to a review document that does not exist yet (A3). Marker figures corrected from marker-lines to injection points (N1). `add.plan` STEP 7 corrected to STEP 8.0 throughout. T1's gate 3 no longer deferred to `not-probed`; T2's F13 pinned to dropping the tag, re-created by T4's F27 |
+| 2026-08-29 | Implemented across commits 4cb00ec (C0) .. 4b8cd62. All 36 F-blocks landed. An adversarial round then found five defects in the script layer and four in the command layer; all nine fixed, each reproduced before the fix. Status -> implemented |
