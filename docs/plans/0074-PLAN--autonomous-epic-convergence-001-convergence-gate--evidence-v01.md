@@ -148,3 +148,9 @@ Three independent reviewers were dispatched with instructions to REFUTE, not to 
 ### A finding this round produced that no test can close
 
 `status.sh` was **not** migrated to header-name resolution (`:277`, `:283-291` still string-match), while the `epic` schema names it as a consumer and three commands were migrated. Its suite is green because **the blind-spot case was never written there**. So on `| SF02 | Beta | pending | done |`, `converge-gates.sh` says pending and `status.sh` counts it done. A green suite is evidence the case is untested, not absent.
+
+### Full sweep, closed at the end of the round
+
+All 13 `.bats` suites run with `NODE_OPTIONS` cleared: **one failure**, `qa-preflight.bats` *"phase a: runner absent in project"* — the same pre-existing, environment-dependent test baselined against `main` at the start (its index moved from 183 to 201 only because `converge-gates.bats` grew 34 -> 52 and shifted the numbering).
+
+**Delta introduced by the whole 0074 branch: zero.** This closes the last verification gap this file had flagged as open.
