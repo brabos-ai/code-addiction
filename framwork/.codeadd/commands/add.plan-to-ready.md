@@ -274,8 +274,8 @@ A row still not `done` here means that subfeature's checkpoint row flip never
 landed — the epic is NOT ready. That is a BLOCKED exit naming the rows, never
 a soft note appended beneath a CONVERGED report.
 
-**Cross-subfeature judge — DELTA pass (epic end only).** After the LAST
-subfeature's checkpoint above (or immediately before reporting a halt),
+**Cross-subfeature judge — DELTA pass (epic end only).** **BEFORE** the LAST
+subfeature's checkpoint (or immediately before reporting a halt),
 dispatch `@consistency-agent` once more with `mode: DELTA`, the full resolved
 subfeature roster, `HAS_DESIGN`, and the last `FULL`-pass verdict recorded
 for each subfeature. It re-checks only the dimensions whose inputs changed
@@ -286,6 +286,18 @@ ONLY place a consistency finding is ever written into a review document; the
 plan-time `FULL` pass (STEP 3) never touches `## Fix Routing`.
 `informational` findings are noted in that document's notes, never routed as
 a blocking row.
+
+⛔ **The ordering is the mechanism, and it is why this pass runs before the
+checkpoint rather than after it.** A judgement that runs after the thing it
+judges has been committed, tagged and pushed cannot gate anything, whatever
+severity it assigns — and its findings would land in a `review-NNN.md` that no
+later step ever commits, because the loop makes no further commit. Running it
+first puts its rows in the version of the document the checkpoint stages, and
+lets the checkpoint's own pre-check (step 0 below) refuse to proceed. Moving
+this pass back after the checkpoint silently makes `blocker` decorative again.
+
+It judges the already-converged siblings plus the one in flight — a superset
+of what an after-the-fact pass could see, not a subset.
 
 ---
 
@@ -306,6 +318,22 @@ one subfeature at a time.
 and no subfeature tag to name — skip this section entirely; `/add.done` owns
 that feature's commit. `EPIC_CURRENT_SF` below is the outer loop's current
 subfeature in epic mode, and the `SFxx` argument itself on a scoped run.
+
+0. **Pre-check — no unresolved `blocker` stands.** Read the highest
+   `review-NNN.md` for this scope and scan its `## Fix Routing` table. If any
+   row carries `blocker` severity and is not marked resolved, **do not
+   proceed**: no row flip, no commit, no tag, no push.
+
+   ```
+   IF AN UNRESOLVED blocker ROW STANDS IN ## Fix Routing:
+     ⛔ DO NOT USE: Bash for git add, git commit, git tag or git push
+     ⛔ DO NOT: Edit epic.md to flip the row
+     ✅ DO: Exit BLOCKED naming the subfeature and every blocker row, and STOP
+   ```
+
+   This is what gives the cross-subfeature judge's `blocker` severity teeth.
+   Without it the severity is a word in a rubric that no step reads, and the
+   DELTA pass's placement above buys nothing.
 
 1. **Flip the row AND write the `checkpoint` cell — ONE edit.** In `epic.md`'s
    Subfeatures table, set this subfeature's `status` cell to `done` and its
