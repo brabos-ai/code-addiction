@@ -477,7 +477,13 @@ reasoning about them — the coordinator's own judgement of these same files is
 exactly what this script exists to replace:
 
 ```bash
-bash .codeadd/scripts/converge-gates.sh docs/features/${FEATURE_ID} [SFxx]
+# Epic or simple feature — no second argument:
+bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}"
+
+# Subfeature-scoped — pass the SF id. It is validated against ^SF[0-9][0-9]$;
+# an empty or malformed second argument is CLI misuse (exit 2), never a silent
+# fall-through to the epic-wide rule.
+bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}" "${EPIC_CURRENT_SF}"
 ```
 
 Parse its `KEY=VALUE` lines. The table below documents what each gate probes —
@@ -488,7 +494,7 @@ it is documentation of the script's contract, not the evaluation itself:
 | 1 | Review verdict | `GATE_REVIEW` | The highest `review-NNN.md` exists and its `\| **Overall** \|` row reads PASSED |
 | 2 | QA baseline | `GATE_QA_BASELINE` | Its `> **QA baseline:**` line is present and valid, checked against `qa-evidence.sh validate` |
 | 3 | Epic completeness | `GATE_EPIC` | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
-| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md` `## Cobertura de Requisitos` shows zero uncovered |
+| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 11's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 11 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
 
 **CONVERGED requires all four gates `ok`.** `missing`, `broken` and `not-probed`
 are each non-convergence — `not-probed` NEVER counts as a pass, even on a gate

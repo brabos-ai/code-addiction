@@ -251,8 +251,9 @@ fi
 emit "EPIC_PENDING=$EPIC_PENDING"
 
 # ─── Gate 4: requirements coverage ───────────────────────────────────────────
-# plan.md's `## Cobertura de Requisitos` section, counting rows marked
-# uncovered. Same rule /add.done STEP 4.2 applies today.
+# plan.md's coverage table. This is DELIBERATELY broader than /add.done STEP
+# 4.2's rule, which only ever knew the `| ... | X |` form — that form is written
+# by nothing in the framework, so keying on it alone made the gate unpassable.
 
 # On an epic, plan.md lives at SF level (`add.plan` STEP 5's table, and
 # SCOPE_DIR). Reading the feature-level path on a scoped run reported `missing`
