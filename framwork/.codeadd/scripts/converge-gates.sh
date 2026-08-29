@@ -35,6 +35,13 @@ usage() {
 FEATURE_DIR_ARG="$1"
 SF_ARG="${2:-}"
 
+# A second argument that is present but not a well-formed SFxx is misuse, not a
+# silent fall-through to the epic-wide rule. An empty ${EPIC_CURRENT_SF} in the
+# caller would otherwise swap gate 3's form without saying so.
+if [ "$#" -eq 2 ] && ! printf '%s' "$SF_ARG" | grep -qE '^SF[0-9][0-9]$'; then
+  usage
+fi
+
 [ -d "$FEATURE_DIR_ARG" ] || usage
 FEATURE_DIR="$(cd "$FEATURE_DIR_ARG" && pwd)"
 
@@ -67,16 +74,32 @@ if [ -z "$REVIEW_PATH" ]; then
   emit "GATE_REVIEW=missing"
   emit "GATE_REVIEW_DETAIL=No review-NNN.md under $FEATURE_DIR_ARG"
 else
-  OVERALL_ROW=$(grep -m1 -F '**Overall**' "$REVIEW_PATH" 2>/dev/null || true)
+  # The verdict is a CELL, not a substring of the row. Grepping the whole row
+  # for PASSED passes a BLOCKED review whose Details cell happens to read
+  # "5/6 gates PASSED", and passes "NOT PASSED", which contains its own
+  # negation. Anchoring to `^|` also stops a prose sentence mentioning
+  # **Overall** from being read as the verdict row.
+  OVERALL_ROW=$(grep -m1 -E '^\|.*\*\*Overall\*\*' "$REVIEW_PATH" 2>/dev/null || true)
+  OVERALL_CELL=$(printf '%s' "$OVERALL_ROW" | awk '
+    function trim(v) { gsub(/^[ 	]+|[ 	]+$/, "", v); return v }
+    BEGIN { FS = "|" }
+    {
+      for (i = 2; i <= NF; i++) {
+        cell = trim($i); gsub(/\*/, "", cell)
+        if (cell == "Overall" && i < NF) {
+          v = trim($(i+1)); gsub(/\*/, "", v); print trim(v); exit
+        }
+      }
+    }')
   if [ -z "$OVERALL_ROW" ]; then
     emit "GATE_REVIEW=broken"
-    emit "GATE_REVIEW_DETAIL=No | **Overall** | row in $(basename "$REVIEW_PATH")"
-  elif printf '%s' "$OVERALL_ROW" | grep -q 'PASSED'; then
+    emit "GATE_REVIEW_DETAIL=No | **Overall** | table row in $(basename "$REVIEW_PATH")"
+  elif printf '%s' "$OVERALL_CELL" | grep -qE '(^|[^A-Z])PASSED$' && ! printf '%s' "$OVERALL_CELL" | grep -qE 'NOT[[:space:]]+PASSED'; then
     emit "GATE_REVIEW=ok"
     pass
   else
     emit "GATE_REVIEW=broken"
-    emit "GATE_REVIEW_DETAIL=Overall row is not PASSED: $(flatten "$OVERALL_ROW")"
+    emit "GATE_REVIEW_DETAIL=Overall verdict cell is not PASSED: $(flatten "$OVERALL_CELL")"
   fi
 fi
 emit "REVIEW_PATH=$REVIEW_PATH"
@@ -142,13 +165,27 @@ if [ -n "$SF_ARG" ]; then
     emit "GATE_EPIC_DETAIL=No tasks.md for $SF_ARG under $FEATURE_DIR_ARG/subfeatures/"
     EPIC_PENDING="$SF_ARG"
   else
-    UNCHECKED=$(awk '
-      /^##[[:space:]]+Acceptance Checklist/ { inblock = 1; next }
+    SF_READ=$(awk '
+      BEGIN { found = 0; unchecked = 0 }
+      # Heading match is case-insensitive: "## Acceptance checklist" is the same
+      # section as "## Acceptance Checklist", and a stub tasks.md that omits it
+      # entirely must NOT be indistinguishable from one with zero unchecked
+      # boxes — that silence is what let an unfinished subfeature earn a real
+      # checkpoint tag.
+      tolower($0) ~ /^##[[:space:]]+acceptance checklist/ { found = 1; inblock = 1; next }
       inblock && /^##[[:space:]]/ { inblock = 0 }
-      inblock && /^-[[:space:]]+\[[[:space:]]\]/ { n++ }
-      END { print n + 0 }
+      # Accept "-" or "*" bullets at any indentation. Requiring a hyphen in
+      # column 0 silently skipped every nested item.
+      inblock && /^[[:space:]]*[-*][[:space:]]+\[[[:space:]]\]/ { unchecked++ }
+      END { print (found ? "FOUND" : "ABSENT") "\t" unchecked }
     ' "$SF_TASKS")
-    if [ "$UNCHECKED" -eq 0 ]; then
+    SF_FOUND=$(printf '%s' "$SF_READ" | cut -f1)
+    UNCHECKED=$(printf '%s' "$SF_READ" | cut -f2)
+    if [ "$SF_FOUND" = "ABSENT" ]; then
+      emit "GATE_EPIC=broken"
+      emit "GATE_EPIC_DETAIL=$SF_ARG tasks.md has no ## Acceptance Checklist section"
+      EPIC_PENDING="$SF_ARG"
+    elif [ "${UNCHECKED:-1}" -eq 0 ]; then
       emit "GATE_EPIC=ok"
       pass
     else
@@ -163,24 +200,32 @@ elif [ ! -f "$EPIC_MD" ]; then
 else
   EPIC_READ=$(awk '
     function trim(v) { gsub(/^[ \t]+|[ \t]+$/, "", v); return v }
-    BEGIN { FS = "|"; statusidx = 0; ididx = 2; header = 0 }
-    # The header is the first pipe row carrying a cell named "status". The
-    # separator row below it can never match, and data rows are only read
-    # once a header has been found.
-    !header && /^\|/ {
+    BEGIN { FS = "|"; statusidx = 0; ididx = 0; header = 0 }
+    # A table ends at the first line that is not a pipe row. Without this the
+    # header latched for the whole file, so a Notes table below the Subfeatures
+    # table was read against the wrong column indices.
+    !/^\|/ { header = 0; statusidx = 0; ididx = 0; next }
+    # A header only counts when it names BOTH a status column AND an id column.
+    # Requiring only "status" let an unrelated earlier table (Environments |
+    # Status) pin the index and misread every real row.
+    !header {
+      s_i = 0; i_i = 0
       for (i = 2; i <= NF; i++) {
         cell = tolower(trim($i))
-        if (cell == "status") { statusidx = i; header = 1 }
-        if (cell == "sf" || cell == "id") { ididx = i }
+        if (cell == "status") { s_i = i }
+        if (cell == "sf" || cell == "id") { i_i = i }
       }
-      if (header) next
+      if (s_i && i_i) { statusidx = s_i; ididx = i_i; header = 1; anyheader = 1 }
+      next
     }
-    header && /^\|[[:space:]]*SF[0-9]+/ {
+    # Rows are found through the resolved id column, not by assuming SFxx is
+    # first — a table ordered Name | SF | Status was previously invisible.
+    header && trim($ididx) ~ /^SF[0-9]+$/ {
       st = tolower(trim($statusidx))
       id = trim($ididx)
       if (st != "done") { pending = pending (pending ? "," : "") id }
     }
-    END { print (header ? "HEADER" : "NOHEADER") "\t" pending }
+    END { print (anyheader ? "HEADER" : "NOHEADER") "\t" pending }
   ' "$EPIC_MD" 2>/dev/null)
 
   EPIC_MODE=$(printf '%s' "$EPIC_READ" | cut -f1)
@@ -209,28 +254,78 @@ emit "EPIC_PENDING=$EPIC_PENDING"
 # plan.md's `## Cobertura de Requisitos` section, counting rows marked
 # uncovered. Same rule /add.done STEP 4.2 applies today.
 
+# On an epic, plan.md lives at SF level (`add.plan` STEP 5's table, and
+# SCOPE_DIR). Reading the feature-level path on a scoped run reported `missing`
+# for every subfeature — the gate could never pass on the exact scope the epic
+# loop runs.
 PLAN_MD="$FEATURE_DIR/plan.md"
+if [ -n "$SF_ARG" ]; then
+  for sfdir in "$FEATURE_DIR/subfeatures/${SF_ARG}"-*; do
+    [ -f "$sfdir/plan.md" ] || continue
+    PLAN_MD="$sfdir/plan.md"
+  done
+fi
 COVERAGE_UNCOVERED=""
+
+# Two shapes are recognised, because two exist. /add.plan STEP 11 writes an
+# UNNAMED table headed `| ID | Requirement | Covered? | ... |` with values
+# YES / EXCLUDED — that is what real plans carry. `## Cobertura de Requisitos`
+# with an `X` marker is the older shape /add.done STEP 4.2 looked for.
+#
+# When NEITHER exists the gate is `ok`, not `missing`. /add.done's rule was
+# conditional ("IF plan.md has ## Cobertura de Requisitos"), so an absent table
+# was always a pass-through, and /add.plan STEP 11 is itself a coverage gate at
+# plan time. Making absence blocking would mean no schema-conforming feature
+# could ever converge.
 
 if [ ! -f "$PLAN_MD" ]; then
   emit "GATE_COVERAGE=missing"
   emit "GATE_COVERAGE_DETAIL=No plan.md under $FEATURE_DIR_ARG"
-elif ! grep -qE '^##[[:space:]]+Cobertura de Requisitos' "$PLAN_MD"; then
-  emit "GATE_COVERAGE=missing"
-  emit "GATE_COVERAGE_DETAIL=No ## Cobertura de Requisitos section in plan.md"
 else
-  COVERAGE_UNCOVERED=$(awk '
-    /^##[[:space:]]+Cobertura de Requisitos/ { inblock = 1; next }
-    inblock && /^##[[:space:]]/ { inblock = 0 }
-    inblock && /^\|/ && /\|[[:space:]]*X[[:space:]]*\|/ { n++ }
-    END { print n + 0 }
+  COV_READ=$(awk '
+    function trim(v) { gsub(/^[ \t]+|[ \t]+$/, "", v); return v }
+    function isseparator(row,   i, c, only) {
+      only = 1
+      for (i = 2; i <= NF; i++) { c = trim($i); if (c != "" && c !~ /^:?-+:?$/) only = 0 }
+      return only
+    }
+    BEGIN { FS = "|"; mode = "none"; n = 0 }
+    # Fence-aware: a fenced example below the last heading is documentation,
+    # not data. CLAUDE.md records this same lesson for the ## Materializes block.
+    /^[[:space:]]*```/ { fence = !fence; next }
+    fence { next }
+    tolower($0) ~ /^##[[:space:]]+cobertura de requisitos/ { mode = "legacy"; inblock = 1; next }
+    mode == "legacy" && /^##[[:space:]]/ { inblock = 0 }
+    mode == "legacy" && inblock && /^\|/ && /\|[[:space:]]*[Xx][[:space:]]*\|/ { n++; next }
+    # Header-named form: find the Covered? column, then read each data row.
+    mode != "legacy" && /^\|/ && !covidx {
+      for (i = 2; i <= NF; i++) { c = tolower(trim($i)); gsub(/\?/, "", c)
+        if (c == "covered") { covidx = i; mode = "column" } }
+      next
+    }
+    mode == "column" && /^\|/ {
+      if (isseparator()) next
+      v = toupper(trim($covidx))
+      if (v != "YES" && v != "EXCLUDED" && v != "N/A" && v !~ /✅/) { n++ }
+      next
+    }
+    END { print mode "\t" n }
   ' "$PLAN_MD")
-  if [ "$COVERAGE_UNCOVERED" -eq 0 ]; then
+
+  COV_MODE=$(printf '%s' "$COV_READ" | cut -f1)
+  COVERAGE_UNCOVERED=$(printf '%s' "$COV_READ" | cut -f2)
+
+  if [ "$COV_MODE" = "none" ]; then
+    emit "GATE_COVERAGE=ok"
+    emit "GATE_COVERAGE_DETAIL=No coverage table in plan.md; /add.plan STEP 11 owns this gate at plan time"
+    COVERAGE_UNCOVERED=0
+    pass
+  elif [ "${COVERAGE_UNCOVERED:-1}" -eq 0 ]; then
     emit "GATE_COVERAGE=ok"
     pass
   else
     emit "GATE_COVERAGE=broken"
-    emit "GATE_COVERAGE_DETAIL=$COVERAGE_UNCOVERED requirement(s) uncovered in plan.md"
+    emit "GATE_COVERAGE_DETAIL=$COVERAGE_UNCOVERED requirement(s) uncovered in plan.md ($COV_MODE form)"
   fi
 fi
 emit "COVERAGE_UNCOVERED=$COVERAGE_UNCOVERED"

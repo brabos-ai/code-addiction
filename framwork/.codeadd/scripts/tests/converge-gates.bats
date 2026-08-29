@@ -396,6 +396,203 @@ build_ok_tree() {
   [[ "$output" == *"GATE_EPIC=broken"* ]]
 }
 
+# ─── Adversarial round: defects the first 38 tests could not see ─────────────
+# Every test below was RED against the implementation that passed 38/38.
+
+# write_review_detail <dir> <nnn> <overall> <baseline_line> <details_cell>
+write_review_detail() {
+  local dir=$1 nnn=$2 overall=$3 baseline=$4 details=$5
+  {
+    echo "# Review $nnn"
+    echo
+    [ -n "$baseline" ] && echo "$baseline"
+    echo
+    echo "| Gate | Status | Details |"
+    echo "|------|--------|---------|"
+    echo "| **Overall** | **${overall}** | ${details} |"
+    echo
+    echo "## Fix Routing"
+  } > "$dir/review-$nnn.md"
+}
+
+@test "C1: a BLOCKED verdict whose Details cell says PASSED must not pass gate 1" {
+  DIR="docs/features/0040F-c1"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  write_review_detail "$ABS" 001 '❌ BLOCKED' '> **QA baseline:** none' '5/6 gates PASSED — Code Review BLOCKED'
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+}
+
+@test "C1b: NOT PASSED must not pass gate 1 (it contains its own negation)" {
+  DIR="docs/features/0041F-c1b"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  write_review_detail "$ABS" 001 '❌ NOT PASSED' '> **QA baseline:** none' 'blocked on review'
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+}
+
+@test "C2: a prose line mentioning Overall must not be read as the verdict row" {
+  DIR="docs/features/0042F-c2"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "# Review 001"
+    echo "> **QA baseline:** none"
+    echo
+    echo "**Overall** the build PASSED but product validation did not."
+    echo
+    echo "| Gate | Status | Details |"
+    echo "|------|--------|---------|"
+    echo "| **Overall** | **❌ BLOCKED** | product validation failed |"
+  } > "$ABS/review-001.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+}
+
+@test "C3: a plan.md written to add.plan STEP 11's real shape must not block gate 4" {
+  DIR="docs/features/0043F-c3"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "# Plan"
+    echo
+    echo "## Tasks"
+    echo
+    echo "| ID | Requirement | Covered? | Feature/Area | Tasks |"
+    echo "|----|-------------|----------|--------------|-------|"
+    echo "| RF01 | User creates account | YES | Backend | 1.1 |"
+    echo "| RF05 | Admin toggle RLS | EXCLUDED | - | Out of scope |"
+  } > "$ABS/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_COVERAGE=ok"* ]]
+  [[ "$output" != *"GATE_COVERAGE=missing"* ]]
+}
+
+@test "C3b: a plan.md with NO coverage table at all must not block — the old rule was conditional" {
+  DIR="docs/features/0044F-c3b"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  printf '# Plan\n\n## Architecture Decisions\nnothing coverage-related\n' > "$ABS/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_COVERAGE=ok"* ]]
+}
+
+@test "C4: NO and ❌ in the Covered? column count as uncovered" {
+  DIR="docs/features/0045F-c4"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "| ID | Requirement | Covered? | Feature/Area | Tasks |"
+    echo "|----|-------------|----------|--------------|-------|"
+    echo "| RF01 | ok one | YES | Backend | 1.1 |"
+    echo "| RF05 | Admin toggle RLS | NO | - | none |"
+    echo "| RF06 | Bulk export | ❌ | - | none |"
+  } > "$ABS/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_COVERAGE=broken"* ]]
+  [[ "$output" == *"COVERAGE_UNCOVERED=2"* ]]
+}
+
+@test "C5: a tasks.md with no Acceptance Checklist section is not a silent pass" {
+  DIR="docs/features/0046F-c5"; ABS="$TEST_REPO/$DIR"
+  write_epic "$ABS" pending
+  mkdir -p "$ABS/subfeatures/SF02-beta"
+  printf '# Tasks\n\n## Execution\nnothing here\n' > "$ABS/subfeatures/SF02-beta/tasks.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR" SF02
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+}
+
+@test "C5b: star bullets and indented boxes in the Acceptance Checklist are still counted" {
+  DIR="docs/features/0047F-c5b"; ABS="$TEST_REPO/$DIR"
+  write_epic "$ABS" pending
+  mkdir -p "$ABS/subfeatures/SF02-beta"
+  printf '# Tasks\n\n## Acceptance Checklist\n* [x] one\n  - [ ] nested unchecked\n' > "$ABS/subfeatures/SF02-beta/tasks.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR" SF02
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+}
+
+@test "C6a: a second table below the Subfeatures table must not poison gate 3" {
+  DIR="docs/features/0048F-c6a"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "## Subfeatures"
+    echo "| SF | Name | Status |"
+    echo "|----|------|--------|"
+    echo "| SF01 | Alpha | done |"
+    echo "| SF02 | Beta | done |"
+    echo
+    echo "## Notes"
+    echo "| SF | Depends on |"
+    echo "|----|------------|"
+    echo "| SF02 | SF01 |"
+  } > "$ABS/epic.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_EPIC=ok"* ]]
+}
+
+@test "C6b: an unrelated earlier Status column must not hijack the header index" {
+  DIR="docs/features/0049F-c6b"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "## Environments"
+    echo "| Env | Status |"
+    echo "|-----|--------|"
+    echo "| staging | up |"
+    echo
+    echo "## Subfeatures"
+    echo "| SF | Name | Status |"
+    echo "|----|------|--------|"
+    echo "| SF01 | Alpha | done |"
+    echo "| SF02 | Beta | pending |"
+  } > "$ABS/epic.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+  [[ "$output" == *"EPIC_PENDING=SF02"* ]]
+  [[ "$output" != *"EPIC_PENDING=SF01"* ]]
+}
+
+@test "C6c: the id column is resolved by header, not assumed to be first" {
+  DIR="docs/features/0050F-c6c"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "| Name | SF | Status |"
+    echo "|------|----|--------|"
+    echo "| Alpha | SF01 | done |"
+    echo "| Beta | SF02 | pending |"
+  } > "$ABS/epic.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_EPIC=broken"* ]]
+  [[ "$output" == *"SF02"* ]]
+}
+
+@test "C7: gate 4 is fence-aware — a fenced example is not a real uncovered row" {
+  DIR="docs/features/0051F-c7"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  {
+    echo "## Cobertura de Requisitos"
+    echo "| Requisito | Coberto |"
+    echo "|-----------|---------|"
+    echo "| RF01 | ✅ |"
+    echo
+    echo '```markdown'
+    echo "| RF99 | X |"
+    echo '```'
+  } > "$ABS/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [[ "$output" == *"GATE_COVERAGE=ok"* ]]
+}
+
+@test "C8: a subfeature-scoped run reads the SUBFEATURE's plan.md, not the feature's" {
+  DIR="docs/features/0053F-c8"; ABS="$TEST_REPO/$DIR"
+  write_epic "$ABS" pending
+  write_sf_tasks "$ABS/subfeatures/SF02-beta" complete
+  # the plan lives at SF level on an epic — add.plan.md:139 and SCOPE_DIR
+  {
+    echo "| ID | Requirement | Covered? |"
+    echo "|----|-------------|----------|"
+    echo "| RF01 | thing | YES |"
+  } > "$ABS/subfeatures/SF02-beta/plan.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR" SF02
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_COVERAGE=ok"* ]]
+  [[ "$output" != *"GATE_COVERAGE=missing"* ]]
+}
+
+@test "M2: an empty SF argument is CLI misuse, not a silent switch to the epic-wide rule" {
+  DIR="docs/features/0052F-m2"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
+  write_epic "$ABS" all-done
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR" ""
+  [ "$status" -eq 2 ]
+}
+
 # ─── Gate 3 (F19) — schema read closes the string rule's blind spots ─────────
 # T1 read epic.md as text, exactly as status.sh does: any row not matching
 # `| done |` counts as pending. That rule cannot tell WHICH column it matched,
@@ -503,14 +700,21 @@ write_epic_blindspot() {
   [[ "$output" == *"COVERAGE_UNCOVERED=1"* ]]
 }
 
-@test "gate 4: plan.md present but without the Cobertura de Requisitos section → GATE_COVERAGE=missing" {
-  DIR="docs/features/0042F-nosection"
+# CHANGED BY THE ADVERSARIAL ROUND. This test previously asserted
+# GATE_COVERAGE=missing for a plan with no coverage section, and that assertion
+# encoded the C3 defect: /add.done STEP 4.2's rule was always conditional
+# ("IF plan.md has ## Cobertura de Requisitos"), so an absent section was a
+# pass-through. Making it `missing` — which blocks — meant NO schema-conforming
+# feature could ever reach GATES_OK=4/4. The test was wrong, not the code.
+@test "gate 4: plan.md with no coverage table at all is ok, not missing (the rule is conditional)" {
+  DIR="docs/features/0026F-nosection"
   ABS="$TEST_REPO/$DIR"
   mkdir -p "$ABS"
   write_plan_coverage "$ABS" absent-section
   run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"GATE_COVERAGE=missing"* ]]
+  [[ "$output" == *"GATE_COVERAGE=ok"* ]]
+  [[ "$output" != *"GATE_COVERAGE=missing"* ]]
 }
 
 @test "gate 4: no plan.md at all → GATE_COVERAGE=missing" {
