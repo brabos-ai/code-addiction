@@ -559,7 +559,19 @@ either. Determine whether QA validation output is required from the
 `/add.qa-setup` receipt (`SETUP_QA:` from `status.sh`) together with
 `QA_FEATURE_STATE`, read from
 `bash .codeadd/scripts/converge-gates.sh docs/features/${FEATURE_ID}` — never
-from a hardcoded default. When both confirm QA applies, confirm one
+from a hardcoded default.
+
+**Then resolve it.** The script returns the RAW manifest value by contract
+(`true | false | unset | no-manifest`); the defaults registry lives in
+`cli/src/features.js` and a shell script duplicating it is how the two drift.
+Resolve `unset` / `no-manifest` by the feature's own default: **`qa-pipeline`
+defaults to disabled** — the same rule `{{cmd:add.review}}` and
+`{{cmd:add.qa-setup}}` already apply to the same value.
+
+The two rules are compatible, not in tension: read the STATE from the script
+rather than assuming one, then apply the registry's DEFAULT to the two values
+that mean "the manifest did not say". Inventing a state is banned; resolving an
+absent one is required. When both confirm QA applies, confirm one
 `_tests/run-NNN/qa-validation-NNN.md` exists per in-scope `SCOPE_DIR`. Missing →
 report BLOCKED naming the exact path, and do not advance to STEP 6. This is the
 check that would have caught the skipped dual-judge panel in the `0028F`
