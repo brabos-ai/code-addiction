@@ -277,6 +277,125 @@ teardown() {
   [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
 }
 
+# ─── epic.md header-name resolution (0075 T1 / F2) ───────────────────
+# status.sh used to read epic.md by string: any row carrying a `| done |`
+# cell counted as done, whichever column that cell belonged to. That rule
+# cannot tell WHICH column it matched, so a Notes cell or a subfeature NAME
+# reading `done` passed the whole row — and a table whose id column is not
+# first was invisible. converge-gates.sh already resolves both columns by
+# header name; these tests use the SAME epic.md shapes as converge-gates.bats
+# (write_epic_blindspot, C6c) so the two suites stay comparable.
+
+# write_epic_blindspot <feature_abs_dir> <mode: notes-done|name-done>
+# Byte-identical to converge-gates.bats' helper of the same name.
+write_epic_blindspot() {
+  local dir=$1 mode=$2
+  mkdir -p "$dir"
+  {
+    echo "# Epic"
+    echo
+    echo "| SF | Name | Status | Notes |"
+    echo "|----|------|--------|-------|"
+    echo "| SF01 | Alpha | done | — |"
+    if [ "$mode" = "notes-done" ]; then
+      # status is pending; the NOTES cell happens to read exactly "done"
+      echo "| SF02 | Beta | pending | done |"
+    else
+      # the subfeature is NAMED done; its status is pending
+      echo "| SF02 | done | pending | — |"
+    fi
+  } > "$dir/epic.md"
+}
+
+@test "L1.1 blind spot: a Notes cell reading done must not count the row as done" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  write_epic_blindspot "docs/features/0001F-test" notes-done
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_EPIC:true"* ]]
+  # SF02's status is pending; only its Notes cell reads done → 1 of 2 done
+  [[ "$output" == *"EPIC_PROGRESS:1/2"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
+}
+
+@test "L1.2 blind spot: a subfeature NAMED done must not count the row as done" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  write_epic_blindspot "docs/features/0001F-test" name-done
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"EPIC_PROGRESS:1/2"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
+}
+
+@test "L1.3: status and id resolved by header name, id column NOT first" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  # Same shape as converge-gates.bats C6c — rows are found through the
+  # RESOLVED id column, never by assuming SFxx is the first cell.
+  {
+    echo "| Name | SF | Status |"
+    echo "|------|----|--------|"
+    echo "| Alpha | SF01 | done |"
+    echo "| Beta | SF02 | pending |"
+  } > docs/features/0001F-test/epic.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"EPIC_PROGRESS:1/2"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
+}
+
+@test "L1.3b: in_progress still wins over pending under header resolution" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  # The gate script reduces status to done/not-done; EPIC_CURRENT_SF needs
+  # three states — in_progress first, then the FIRST pending in file order.
+  {
+    echo "| Name | SF | Status | Notes |"
+    echo "|------|----|--------|-------|"
+    echo "| Alpha | SF01 | done | — |"
+    echo "| Beta | SF02 | pending | — |"
+    echo "| Gamma | SF03 | in_progress | — |"
+  } > docs/features/0001F-test/epic.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"EPIC_PROGRESS:1/3"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF03"* ]]
+}
+
+@test "L1.4 legacy guard: a pre-schema epic.md with NO header still reads as today" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  # No header row names any column — every pre-schema epic.md looks like this,
+  # including the legacy 5-cell done row block 14.3 appends a checkpoint to.
+  printf '| SF01 | Alpha | build alpha | done | 0001F-test-SF01-done |\n| SF02 | Beta | build beta | pending |\n| SF03 | Gamma | build gamma | in_progress |\n' \
+    > docs/features/0001F-test/epic.md
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_EPIC:true"* ]]
+  [[ "$output" == *"EPIC_PROGRESS:1/3"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF03"* ]]
+}
+
+@test "L1.5: the emitted keys are unchanged on a well-formed epic" {
+  mkdir -p docs/features/0001F-test
+  git checkout -b feature/0001F-test -q
+  {
+    echo "| SF | Name | Objective | Status | Checkpoint |"
+    echo "|----|------|-----------|--------|------------|"
+    echo "| SF01 | Alpha | build alpha | done | 0001F-test-SF01-done |"
+    echo "| SF02 | Beta | build beta | pending | — |"
+  } > docs/features/0001F-test/epic.md
+  git tag "checkpoint/0001F-test-SF01-done"
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"HAS_EPIC:true"* ]]
+  [[ "$output" == *"EPIC_PROGRESS:1/2"* ]]
+  [[ "$output" == *"EPIC_CURRENT_SF:SF02"* ]]
+  [[ "$output" == *"LAST_CHECKPOINT:checkpoint/0001F-test-SF01-done"* ]]
+}
+
 # ─── tasks.md ────────────────────────────────────────────────────────
 
 @test "shows tasks.md progress when present (no epic)" {

@@ -17,7 +17,7 @@ STEP 1: Load context (status.sh)     → SILENT, FIRST
 STEP 2: Interactive Exploration      → one question at a time + 2–3 directions
 STEP 3: Generate brainstorm doc      → ONLY on user request
 STEP 4: Validation gate              → must return PASS
-STEP 5: Fresh-reader review          → doc-reviewer-agent
+STEP 5: Plan review                  → @plan-reviewer-agent (kind: brainstorm)
 STEP 6: Handoff                      → TEXT-ONLY suggestion [HARD STOP]
 ```
 
@@ -119,17 +119,16 @@ DO NOT skip. DO NOT mark complete until the gate returns `PASS`.
 
 ---
 
-## STEP 5: Fresh-Reader Review (Non-Blocking)
+## STEP 5: Plan Review
 
-After the gate passes, dispatch `doc-reviewer-agent` as a subagent in fresh context (it MUST NOT see this conversation). Pass the doc path and schema name `brainstorm`. The reviewer surfaces Gaps, Clarity, and Scope items.
+After the gate passes, dispatch `@plan-reviewer-agent` as a subagent in fresh context (it MUST NOT see this conversation). Pass the doc path and `kind: brainstorm`.
 
-**Present findings verbatim to user:**
-- **Gap or Clarity:** Offer to update doc
-- **Scope:** Ask user per item: *extend & address* / *mark out-of-scope* / *ignore*
+**Act on the verdict:**
+- `ok` → proceed to STEP 6.
+- `fix-then-ok` → apply only the Required fixes that do not invent a user decision (read → preserve → complement), re-run STEP 4's gate, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 6 unless the verdict is still `blocked` or blockers remain — leftover attention never blocks.
+- `blocked`, or blockers still standing after the one re-dispatch → do NOT run STEP 6. STOP, present the blockers to the user.
 
-**Iterate max 2 rounds:** Re-write sections (read → preserve → complement), re-run gate, re-dispatch reviewer. After round 2, present remaining items as informational. DO NOT loop indefinitely.
-
-If the provider does not support subagent dispatch, apply `{{skill:add-doc-reviewer/SKILL.md}}` inline, explicitly forgetting the conversation.
+If the provider does not support subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting the conversation.
 
 ---
 

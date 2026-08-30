@@ -11,10 +11,9 @@ Reviews a generated documentation asset as a fresh stakeholder, surfacing the qu
 
 ## When to Use
 
-- After `/add.brainstorm` writes a BRN doc — surface loose ends before the idea moves to planning
-- After `/add.new` writes `about.md` — catch missing requirements, unclear scope, undocumented edge cases
-- Any command that produces a schema-bound doc and wants a cold-read sanity check before declaring done
-- Manual: user asks for a second-pass review of an existing doc
+- Any command that produces a schema-bound doc other than `about.md`, a brainstorm doc, or `plan.md` — those three use `add-plan-review` (fix-oriented verdict, not a questionnaire) instead
+- Any generator command that wants a cold-read, question-only sanity check before declaring done
+- Manual: user asks for a second-pass, question-only review of an existing doc — including `about.md`, a brainstorm doc, or `plan.md`, when a second opinion beyond `add-plan-review`'s verdict is wanted
 
 ## When NOT to Use
 

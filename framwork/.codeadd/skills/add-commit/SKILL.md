@@ -74,6 +74,53 @@ git add -A -- . ':(exclude)docs/features/*'
 
 ---
 
+## Checkpoint Receipt (autonomous runs only)
+
+A commit made by `{{cmd:add.plan-to-ready}}` at a subfeature boundary carries the
+convergence result as a **trailer**, so the checkpoint says why it was safe to
+stop there. The commit hash then points at the work AND at the proof.
+
+The commit carries **the five gate lines** — `GATE_REVIEW`, `GATE_QA_BASELINE`,
+`GATE_EPIC`, `GATE_COVERAGE`, `GATES_OK` — **copied verbatim** from
+`converge-gates.sh`'s output, as **body lines** below the Conventional Commits
+body. The script emits more keys than these (`REVIEW_PATH`, `BASELINE`,
+`EPIC_PENDING`, `COVERAGE_UNCOVERED`, `QA_FEATURE_STATE`); only the five above
+belong in the message.
+
+They are **body lines, not git trailers.** `GATE_REVIEW=ok` has no `Key: value`
+colon, so `git interpret-trailers` will never parse it — calling them trailers
+would promise tooling behaviour that does not exist. `git log --grep=GATES_OK`
+works on body lines, which is the only retrieval this needs:
+
+```
+feat(0028F-SF02): persist receipt line total on duplicate
+
+- backend: enforce RN03 on the duplicate path
+- frontend: surface the persisted total in the header
+
+GATE_REVIEW=ok
+GATE_QA_BASELINE=ok
+GATE_EPIC=ok
+GATE_COVERAGE=ok
+GATES_OK=4/4
+```
+
+⛔ DO NOT reformat, summarise, or re-word the gate lines. They are copied, not
+authored — a reformatted receipt is indistinguishable from an invented one, and
+the whole point is that `git log --grep=GATES_OK` reconstructs which
+subfeatures converged and on what evidence, using nothing but git.
+
+⛔ DO NOT write these lines on a commit whose subfeature did not converge. That
+commit does not exist: the checkpoint is gated on all four gates reading `ok`,
+and the ABSENCE of a commit is itself the signal.
+
+**No new state file.** The receipt lives in the commit message, which is why
+this mechanism does not violate `{{cmd:add.plan-to-ready}}`'s NO NEW STATE
+invariant — a commit message is not a second source of truth that can drift
+from the tree, it is part of the object that carries the tree.
+
+---
+
 ## Examples
 
 **Few files (≤ 3):**
