@@ -504,7 +504,14 @@ describe('0070 L7 — loop acceptance', () => {
   it('L7.3 the dry-run convergence check never invokes qa-evidence.sh promote', () => {
     const src = loop();
     expect(src).toMatch(/dry-run/i);
-    expect(src).toMatch(/4\.0[^\n]{0,6}4\.2/);
+    // Plan 0074 replaced the "STEP 4.0 through 4.2" boundary this line used
+    // to assert. That step-number boundary WAS the defect: it excluded
+    // `qa-evidence.sh validate` — a pure read — only because of where it sat
+    // in /add.done's numbering, so the loop converged on a QA gate it never
+    // ran. The rule this test guards is unchanged (no side effects in the
+    // dry-run); only its expression moved from a step number to the property
+    // it always meant. Asserting the old wording would re-require the bug.
+    expect(src).toMatch(/side[- ]effect/i);
     expect(src).toMatch(/NEVER[\s\S]{0,120}promote|promote[\s\S]{0,80}never/i);
   });
 

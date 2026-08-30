@@ -397,6 +397,22 @@ registered without a file breaks the build — either way the disagreement is a
 real bug in what you just built, not a documentation nit. Report it; never
 paper over it by writing whichever number is larger.
 
+**The CLI test suite is a THIRD copy of these counts, and it fails the build if
+you skip it.** `cli/tests/build.test.js` hardcodes the expected agent list and
+asserts `agents x providers` as a literal number; other suites assert prose in
+the command files themselves. So a registry change has three consumers, not
+two, and only one of them is in this repo's documentation.
+
+```bash
+cd cli && npx vitest run --no-file-parallelism
+```
+
+Run it whenever this build added, removed or renamed a command, skill or
+agent, or edited a command whose text another test asserts. A test that
+encodes an OLD rule the build deliberately replaced is updated, not deleted —
+and the reason goes in a comment above it, so the next reader does not
+"restore" the bug the assertion was guarding.
+
 ```
 IF THE FILESYSTEM COUNT AND provider-map.json DISAGREE:
   ⛔ DO NOT: Write either number into CLAUDE.md
@@ -471,6 +487,7 @@ ALWAYS:
 - Renumber steps when inserting new ones
 - Register new command/skill in framwork/provider-map.json
 - Compute the CLAUDE.md Project Anatomy counts from the filesystem and cross-check them against provider-map.json
+- Run the cli/ suite after any registry change — it is the third copy of those counts
 - Update every CLAUDE.md section this build invalidated, and load add-claude-md-style before writing it
 - Create source file in framwork/.codeadd/ (source of truth)
 - Run the cli/ suite serially before reporting any result from it
@@ -488,6 +505,8 @@ NEVER:
 - Use fractional numbering (2.5, 6.5)
 - Insert steps without renumbering
 - Carry a CLAUDE.md count over by hand instead of computing it
+- Change a registry and skip the cli/ suite, which asserts the same numbers
+- Delete a test that asserts a rule this build replaced — update it and say why
 - Reword a CLAUDE.md section this build did not invalidate
 - Defer CLAUDE.md to a separate command — this build finishes it
 - Create provider files manually (use framwork/.codeadd/ + provider-map.json)
