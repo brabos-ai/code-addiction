@@ -31,6 +31,19 @@ fi
 echo -e "${GREEN}✓ Version format valid${NC}"
 echo ""
 
+# GATE: lockfile sync. The CI package smoke test enforces this only AFTER the
+# tag is pushed (v0.8.0's first pipeline run failed there). Fail HERE, before
+# any tag is touched.
+LOCK_VERSION=$(grep '"version"' cli/package-lock.json 2>/dev/null | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+if [ "$LOCK_VERSION" != "$VERSION" ]; then
+    echo -e "${RED}❌ cli/package-lock.json version '${LOCK_VERSION:-missing}' != cli/package.json version '${VERSION}'${NC}"
+    echo -e "${RED}   The CI package smoke test would fail only after the tag is pushed.${NC}"
+    echo -e "${RED}   Fix: cd cli && npm version ${VERSION} --no-git-tag-version, commit and push, merge to production (stable only), re-run this script.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ package-lock.json in sync (${LOCK_VERSION})${NC}"
+echo ""
+
 # Fetch latest tags from remote
 echo -e "${YELLOW}Fetching tags from remote...${NC}"
 git fetch --tags origin 2>/dev/null || true

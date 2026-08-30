@@ -16,7 +16,7 @@ Full feature discovery command BEFORE implementation.
 **Load schemas and conventions (ONE-TIME):**
 - `{{skill:add-doc-schemas/SKILL.md}}` (feature-about schema, validation gate)
 - `{{skill:add-id-convention/SKILL.md}}` (ID/branch format)
-- `{{skill:add-doc-reviewer/SKILL.md}}` (fresh-reader review)
+- `{{skill:add-plan-review/SKILL.md}}` (fresh-reader review)
 
 All subsequent steps reference these loaded skills; DO NOT reload.
 
@@ -225,7 +225,7 @@ Decompose as subfeatures? (yes/no)
 ```
 
 **IF epic confirmed:**
-1. Create `docs/features/${FEATURE_ID}/epic.md` with subfeature table + order + notes
+1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add-doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP 1): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
 2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
 3. Create compact `about.md` per subfeature
 4. Continue to STEP 6
@@ -265,18 +265,15 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ---
 
-## STEP 8: Fresh-Reader Review (Max 2 Rounds)
+## STEP 8: Plan Review (fresh-reader, max one re-dispatch)
 
-**Dispatch:** `doc-reviewer-agent` in fresh context (does NOT see this conversation). Pass about.md path + schema name.
+Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
-**Present findings:** Three buckets: Gap (schema expected something missing), Clarity (doc is ambiguous), Scope (reasonable questions outside discussion).
-
-**Resolve per item:**
-- **Gap:** Update doc → re-run STEP 7 gate + STEP 8 reviewer
-- **Clarity:** Rewrite passage → re-run STEP 7 gate + STEP 8 reviewer
-- **Scope:** User decides: extend scope + address now / mark out-of-scope with reason / ignore
-
-**Hard cap:** 2 review rounds per invocation. After round 2, present findings as informational. Advise re-invoking `/add.new F[NNNN]` in continue mode later for deeper iteration.
+1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md's path and `kind: feature-about`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
+2. **Act on the verdict:**
+   - `ok` → proceed to Completion.
+   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision (read → preserve → complement), re-run STEP 7's validation gate, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to Completion unless the verdict is still `blocked` or blockers remain — leftover attention never blocks.
+   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Present the blockers to the user; do NOT mark `about.md` delivered.
 
 ---
 
@@ -320,6 +317,6 @@ Summarize created artifacts. Suggest next command based on discovery: `/add.plan
 - Proceed without response to [STOP] points
 - Exclude layers that make feature unusable
 - Document incomplete questionnaire
-- Skip fresh-reader review after gate passes
-- Exceed 2 review rounds per invocation
-- Let reviewer see conversation (fresh context only)
+- Skip the STEP 8 plan review after the gate passes
+- Exceed one re-dispatch of `@plan-reviewer-agent` per invocation
+- Let the reviewer see this conversation (fresh context only)

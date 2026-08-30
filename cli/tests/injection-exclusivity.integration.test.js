@@ -266,13 +266,13 @@ afterEach(() => {
 });
 
 describe('substitution completeness (catalog × fragments × sidecar × built anchors)', () => {
-  it('sidecar, fragments, and catalog declare the same 38 substitutions', () => {
+  it('sidecar, fragments, and catalog declare the same 39 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(38);
-    expect(all).toHaveLength(38);
+    expect(points).toHaveLength(39);
+    expect(all).toHaveLength(39);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -375,7 +375,7 @@ describe('combined substitution and sibling isolation', () => {
   it('all 38 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(38);
+    expect(features.length + plugins.length).toBe(39);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);

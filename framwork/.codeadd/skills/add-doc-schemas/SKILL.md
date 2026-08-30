@@ -162,7 +162,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | Category | File | Schemas |
 |----------|------|---------|
-| `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm |
+| `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm, epic |
 | `fix` | `references/fix.md` | hotfix-about, hotfix-related |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
@@ -177,7 +177,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 ## Validation Gate Block
 
-Every generator command MUST paste the following block as **the final STEP that operates on the doc** — i.e. after every step that writes, edits, or transforms the doc, and before any post-doc step (completion summary, fresh-reader review via `add-doc-reviewer`, next-step routing, merge execution, iteration logging). Steps that do not modify the gated doc may follow the gate. The block is self-contained and imperative. Replace `<SCHEMA>` with the schema type in use.
+Every generator command MUST paste the following block as **the final STEP that operates on the doc** — i.e. after every step that writes, edits, or transforms the doc, and before any post-doc step (completion summary, fresh-reader review via `add-plan-review` (`add.new` / `add.brainstorm` / `add.plan`) or `add-doc-reviewer` (other generators), next-step routing, merge execution, iteration logging). Steps that do not modify the gated doc may follow the gate. The block is self-contained and imperative. Replace `<SCHEMA>` with the schema type in use.
 
 ```markdown
 ## STEP N: Validation Gate (add-doc-schemas)

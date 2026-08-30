@@ -11,7 +11,7 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ## Required Skills
 
-Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
+Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format. Load `{{skill:add-plan-review/SKILL.md}}` before STEP 13 (pre-delivery review rubric + verdict contract).
 
 ---
 
@@ -25,6 +25,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
 | `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
+| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the one `fix-then-ok` re-dispatch | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
 
 ---
 
@@ -61,7 +62,8 @@ STEP 8:  Execute subagents        -> SEQUENTIAL by area
 STEP 10: Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
 STEP 11: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP 12: Validation Gate          -> feature-plan schema gate
-STEP 13: Completion               -> Inform user
+STEP 13: Plan Review              -> @plan-reviewer-agent verdict + fix loop (GATE: plan_reviewed)
+STEP 14: Completion               -> Inform user
 ```
 
 **Reuse feature ID:** `add.plan` does NOT allocate a new ID. Read `id: [NNNN]F` from the feature's `about.md` frontmatter in STEP 5. The generated `plan.md` carries the SAME `[NNNN]F` with `related: [[NNNN]F]`.
@@ -134,7 +136,7 @@ Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `
 
 | Type | Files to read | Priority |
 |------|---------------|----------|
-| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md`, `docs/design-system.md` (if exists) | PRIMARY |
+| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md` (schema `epic`), `docs/design-system.md` (if exists) | PRIMARY |
 | Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
 | Design data | Use design.md to inform backend contracts (endpoints serve UI needs) | IF HAS_DESIGN=true |
 | Knowledge base | Selected wiki pages from STEP 3's Consult Knowledge Base sub-step (paths + freshness verdicts) | IF WIKI:present |
@@ -204,7 +206,7 @@ BACKEND_SELECTED  = true|false
 
 ### 8.0 Cross-SF Context (EPIC ONLY)
 
-**IF HAS_EPIC=true:** Read epic.md dependency graph, identify consumers + providers of this SF, read their about.md + plan.md (if exists), build `${CROSS_SF_CONTEXT}` block below, and INJECT it into every subagent prompt:
+**IF HAS_EPIC=true:** Resolve the dependency graph from `epic.md` per the `epic` schema in `{{skill:add-doc-schemas/references/new-feature.md}}` — read the Subfeatures table **by header name**, never by column position, and take dependencies from the `dependencies` column when populated, falling back to the `## Order` narrative section only when `dependencies` is absent (the schema's own precedence rule). **Providers** = the SF ids in this SF's own `dependencies` cell (or Order entry). **Consumers** = every other SF whose `dependencies` cell (or Order entry) names this SF. Read each provider's/consumer's about.md + plan.md (if exists), build `${CROSS_SF_CONTEXT}` block below, and INJECT it into every subagent prompt:
 
 ```
 ## Cross-SF Context (EPIC -- read for integration awareness)
@@ -500,7 +502,7 @@ ${WIKI_PAGES}
 <!-- feature:qa-pipeline:qa-spec -->
 <!-- /feature:qa-pipeline:qa-spec -->
 
-**QA axis self-check:** IF no `10.0 QA-Spec Subagent` section is present above (the `qa-pipeline` feature is disabled) → `plan-qa-spec.md` will NOT be generated. Add one line to the STEP 13 completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
+**QA axis self-check:** IF no `10.0 QA-Spec Subagent` section is present above (the `qa-pipeline` feature is disabled) → `plan-qa-spec.md` will NOT be generated. Add one line to the STEP 14 completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
@@ -557,16 +559,20 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 **IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent for integration review.
 **IF normal feature:** Skip to 10.6.
 
-**Purpose:** Cross-validate all existing SF plans (schema mismatches, fragmented enums, missing config, undocumented handoffs).
+**Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. 10.5 is the **in-place fixer**.
 
-**Checks to fix in-place:**
-1. Schema ↔ Consumer Alignment (column names, jsonb, types match)
-2. Shared Resource Centralization (enums/config added ONCE in earliest SF)
-3. Cross-SF Handoff Contracts (each dependency edge documented)
-4. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
-5. Worker/DI Registration (new services have DI tasks)
+**What 10.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add-cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by `/add.plan-to-ready`. Two checks 10.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 10.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
 
-**Output:** Summary of changes (file + what changed) to stdout. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
+**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. The agent judges and never edits; 10.5 edits.
+
+**Checks to fix in-place — these three, and only these three:**
+1. Shared Resource Centralization (enums/config added ONCE in earliest SF)
+2. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
+3. Worker/DI Registration (new services have DI tasks)
+
+**Consumed, never derived:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives as a concrete `plan.md` edit — apply it in place here. Do NOT open your own schema-alignment or handoff-contract comparison.
+
+**Output:** Summary of changes (file + what changed) to stdout, marking which edits came from a `@consistency-agent` finding. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
 
 ### 10.6 Add Navigation Sections
 
@@ -604,13 +610,27 @@ Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `fe
 
 ---
 
-## STEP 13: Completion
+## STEP 13: Plan Review (GATE: plan_reviewed)
+
+Schema gate PASSED. Do not present `plan.md` or the next command as delivered yet.
+
+1. **DISPATCH** `@plan-reviewer-agent` with `path` = `plan.md`'s path and `kind: feature-plan`. **Soft-degrade:** if the engine has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
+2. **Act on the verdict:**
+   - `ok` → proceed to STEP 14.
+   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision, **re-run STEP 12's validation gate on `plan.md`**, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 14 unless the verdict is still `blocked` or blockers remain.
+   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Ref: GATES table (`plan_reviewed`). Present the blockers to the user; do NOT proceed to STEP 14.
+3. ⛔ Do NOT re-dispatch `@ux-flow-agent`, `@ux-layout-agent`, or `@ux-agent` to satisfy a plan-review finding — those subagents own `design.md`, not `plan.md`; a `design.md` finding is out of scope for this review.
+
+---
+
+## STEP 14: Completion
 
 Inform user with summary:
 - Feature ID and plan path
 - Areas planned (UX Design/Database/Backend/Frontend)
 - Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
+- Plan review verdict from STEP 13, and a one-line summary of any applied fixes
 - Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build` or `/add.plan-to-ready`
 
 ---
@@ -641,6 +661,7 @@ Inform user with summary:
 - ID Convention: `add-id-convention`
 - Tasks Checklist: `add-tasks-checklist`
 - Feature Discovery: `add-feature-discovery`
+- Plan Review: `add-plan-review`
 
 ---
 

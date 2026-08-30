@@ -1,8 +1,8 @@
 # New-Feature Category — Schemas & Voice
 
-Category file for the new-feature lifecycle: discovery, specification, planning, design, exploratory ideation. Universal rules (output-length doctrine, language, formatting, ID convention, validation gate) live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns only what is specific to new-feature docs — section-shape conventions, requirement notation, decision notation, scope notation, and voice rules shared across the four schemas below.
+Category file for the new-feature lifecycle: discovery, specification, planning, design, exploratory ideation. Universal rules (output-length doctrine, language, formatting, ID convention, validation gate) live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns only what is specific to new-feature docs — section-shape conventions, requirement notation, decision notation, scope notation, and voice rules shared across the five schemas below.
 
-**Schemas in this category:** `feature-about`, `feature-plan`, `feature-design`, `brainstorm`.
+**Schemas in this category:** `feature-about`, `feature-plan`, `feature-design`, `brainstorm`, `epic`.
 
 ## Shared Notation
 
@@ -188,6 +188,23 @@ For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DD-<slug>.md`). Date pre
   - **Open Threads** — unresolved questions that must be decided before committing to a direction.
 - **Compression:** bullets only. Directions = `name — summary — pros/cons — open issues`. Voice follows Brainstorm Voice rules above.
 - **Hard bans:** committing to implementation, final decisions (those belong in plan), technical jargon that obscures the user-perspective framing, full class/method implementations or multi-line code blocks (a single illustrative one-shot snippet is allowed to anchor a direction).
+
+### epic
+
+For `/add.new` STEP 5 (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add.build` STEP 16 (block 14.3) and by `/add.plan-to-ready`'s checkpoint step; the `checkpoint` cell is written **only by whoever creates the checkpoint commit and its tag**. Read by `/add.plan` STEP 8.0, `/add.done` STEP 4.1, `status.sh`, and `converge-gates.sh`.
+
+**Compatibility.** `/add.new` STEP 5 has always written this doc freeform ("subfeature table + order + notes" — no fixed frontmatter, TL;DR, or section headings). This schema is additive: every existing `epic.md` is valid as written, nothing gets rewritten. Universal Document Requirements (frontmatter, TL;DR, TOC) bind schema-aware writes going forward; a pre-schema doc missing any of them is read as-is — warn, never fail. The one contract that already binds every `epic.md`, old or new, is the Subfeatures row shape below.
+
+**Reading a legacy table.** `/add.new` STEP 5 never specified a header, so pre-schema docs carry whatever header that run invented. Consumers resolve columns **by header name**, and apply exactly one rule for the legacy case: *a data row with more cells than the header declares has its trailing extra cell read as `checkpoint`* — that cell is the only one `/add.build` STEP 16 has ever appended (block 14.3 turns a 4-cell `pending` row into a 5-cell `done` row). One deterministic rule, no inspection of cell contents. A schema-conforming doc never hits it, because its header declares every column it uses.
+
+- **Frontmatter:** `id: [NNNN]F` (same as about), `type: epic`, `related: [[NNNN]F]`
+- **Sections:** TL;DR · Subfeatures · Order (optional) · Notes (optional)
+- **Depth floor:**
+  - **Subfeatures** — one markdown table with a **required header row naming every column it uses**, then one row per subfeature. The header is what makes this table machine-readable and is the single thing this schema adds that `/add.new` never had. Columns: `id` (`SFxx`, zero-padded, unique, ascending), `name`, `objective`, `status` (required — exactly one of `pending`, `in_progress`, `done`, the only three legal values. `status.sh` still matches them as text; every schema-aware consumer resolves the `status` COLUMN by header name and reads its cell — never by string-matching the row), `dependencies` (**optional** — comma-separated `SFxx` ids this row depends on; absent cell = no dependencies), `checkpoint` (**optional** — the checkpoint tag name minus its `checkpoint/` prefix, shape `<FEATURE_ID>-<SFxx>-done`, written by the command that creates the checkpoint commit the tag points at — `/add.build` never commits, so it never writes this cell; absent cell = no checkpoint recorded yet). Both optional columns are resolved **by header name**, never by guessing at cell contents — see the Compatibility rule above for the one legacy case where a header is absent or short.
+  - **Order** (when present) — legacy narrative dependency order (`1. SF01 (no deps)`, `2. SF02 (depends on SF01)`); superseded by the `dependencies` column but still valid on existing docs. Resolve order from `dependencies` when populated, from this section otherwise.
+  - **Notes** — anything not captured by the table (cross-SF constraints, shared resources). Extractive bullets only.
+- **Compression:** Subfeatures = markdown table `id | name | objective | status | dependencies | checkpoint`. Order = numbered list, one SF per line. Notes = bullets.
+- **Hard bans:** a `status` value outside `pending`/`in_progress`/`done`; a `dependencies` cell naming an id absent from the table; a dependency cycle (an epic whose order cannot be resolved is invalid at the document, not at the loop); a duplicate subfeature `id`; hand-editing `checkpoint` (machine-written only, and only by the command that made the commit it names — a checkpoint cell naming a tag that resolves to no commit is the defect this column exists to make visible).
 
 ## Anti-Patterns
 

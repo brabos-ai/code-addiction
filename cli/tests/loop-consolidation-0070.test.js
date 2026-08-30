@@ -82,6 +82,7 @@ const EXPECTED_MAP = [
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.plan', count: 2 },
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.build', count: 8 },
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.review', count: 2 },
+  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.hotfix', count: 1 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add.plan', count: 2 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add.build', count: 2 },
   { namespace: 'plugin', name: 'playwright', resource: 'add.review', count: 1 },
@@ -89,8 +90,9 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 38 points', () => {
-    expect(sidecarPoints()).toHaveLength(38);
+  it('L1.0 injection map totals exactly 39 points', () => {
+    // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073).
+    expect(sidecarPoints()).toHaveLength(39);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {
@@ -119,7 +121,7 @@ describe('0070 L1 — build-side unit', () => {
   });
 
   it('L1.1 re-keyed tdd-pipeline marker pairs stay empty (0067 guard regression)', () => {
-    for (const file of ['add.plan.md', 'add.build.md', 'add.review.md']) {
+    for (const file of ['add.plan.md', 'add.build.md', 'add.review.md', 'add.hotfix.md']) {
       const src = read(path.join(COMMANDS, file));
       const pairs =
         src.match(/<!-- feature:tdd-pipeline:([a-z0-9-]+) -->\s*<!-- \/feature:tdd-pipeline:\1 -->/g) || [];
@@ -502,7 +504,14 @@ describe('0070 L7 — loop acceptance', () => {
   it('L7.3 the dry-run convergence check never invokes qa-evidence.sh promote', () => {
     const src = loop();
     expect(src).toMatch(/dry-run/i);
-    expect(src).toMatch(/4\.0[^\n]{0,6}4\.2/);
+    // Plan 0074 replaced the "STEP 4.0 through 4.2" boundary this line used
+    // to assert. That step-number boundary WAS the defect: it excluded
+    // `qa-evidence.sh validate` — a pure read — only because of where it sat
+    // in /add.done's numbering, so the loop converged on a QA gate it never
+    // ran. The rule this test guards is unchanged (no side effects in the
+    // dry-run); only its expression moved from a step number to the property
+    // it always meant. Asserting the old wording would re-require the bug.
+    expect(src).toMatch(/side[- ]effect/i);
     expect(src).toMatch(/NEVER[\s\S]{0,120}promote|promote[\s\S]{0,80}never/i);
   });
 

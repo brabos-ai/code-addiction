@@ -271,24 +271,82 @@ if [ -n "$FEATURE_ID" ]; then
         if [ -f "$EPIC_MD_FILE" ]; then
             echo "HAS_EPIC:true"
 
-            # Count total subfeatures (rows in epic.md table: | SF01 | ...)
-            TOTAL_SF=$(grep -cE '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null || true)
+            # Read the Subfeatures table by HEADER NAME, exactly as
+            # converge-gates.sh gate 3 does (0075 T1/F1). The old rule matched
+            # `| done |` anywhere in the row, so a Notes cell or a subfeature
+            # NAMED done passed a pending row, and a table whose id column was
+            # not first was invisible. Two readers of one file disagreeing
+            # silently is the defect this closes.
+            #
+            # converge-gates.sh models only HALF of this: its awk collapses the
+            # status cell to a boolean (`st != "done"`) because a gate needs
+            # only done-vs-not-done. EPIC_CURRENT_SF needs THREE states, so the
+            # awk below reads the header-resolved cell's LITERAL value and keeps
+            # the original ordering — first in_progress, else first pending.
+            #
+            # Hardening mirrored from converge-gates.sh (found by its
+            # adversarial round): a header counts only when it names BOTH a
+            # status and an sf/id column; the header RESETS at every table
+            # boundary; rows are found through the RESOLVED id column.
+            EPIC_READ=$(awk '
+                function trim(v) { gsub(/^[ \t]+|[ \t]+$/, "", v); return v }
+                BEGIN { FS = "|"; header = 0; statusidx = 0; ididx = 0
+                        total = 0; done = 0; inprog = ""; pend = "" }
+                # A table ends at the first line that is not a pipe row —
+                # otherwise a Notes table below the Subfeatures table is read
+                # against the wrong column indices.
+                !/^\|/ { header = 0; statusidx = 0; ididx = 0; next }
+                # A header counts only when it names BOTH columns. Requiring
+                # only "status" lets an unrelated earlier table (Env | Status)
+                # pin the index and misread every real row.
+                !header {
+                    s_i = 0; i_i = 0
+                    for (i = 2; i <= NF; i++) {
+                        cell = tolower(trim($i))
+                        if (cell == "status") { s_i = i }
+                        if (cell == "sf" || cell == "id") { i_i = i }
+                    }
+                    if (s_i && i_i) { statusidx = s_i; ididx = i_i; header = 1; anyheader = 1 }
+                    next
+                }
+                header && trim($ididx) ~ /^SF[0-9]+$/ {
+                    st = tolower(trim($statusidx))
+                    id = trim($ididx)
+                    total++
+                    if (st == "done") { done++ }
+                    else if (st == "in_progress") { if (inprog == "") inprog = id }
+                    else if (st == "pending") { if (pend == "") pend = id }
+                }
+                END { print (anyheader ? "HEADER" : "NOHEADER") "\t" total "\t" done "\t" inprog "\t" pend }
+            ' "$EPIC_MD_FILE" 2>/dev/null || true)
 
-            # Count done subfeatures
-            DONE_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | grep -Ec '\|[[:space:]]*done[[:space:]]*\|' || true)
+            EPIC_MODE=$(printf '%s' "$EPIC_READ" | cut -f1)
+            TOTAL_SF=$(printf '%s' "$EPIC_READ" | cut -f2)
+            DONE_SF=$(printf '%s' "$EPIC_READ" | cut -f3)
+            CURRENT_SF=$(printf '%s' "$EPIC_READ" | cut -f4)
+            [ -n "$CURRENT_SF" ] || CURRENT_SF=$(printf '%s' "$EPIC_READ" | cut -f5)
 
-            echo "EPIC_PROGRESS:$DONE_SF/$TOTAL_SF"
+            if [ "$EPIC_MODE" != "HEADER" ]; then
+                # Pre-schema document: no header names its columns, so fall back
+                # to the string rule this script has always applied — every
+                # epic.md written before the schema depends on this path.
+                # converge-gates.sh keeps the same fallback for the same reason.
+                TOTAL_SF=$(grep -cE '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null || true)
+                DONE_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | grep -Ec '\|[[:space:]]*done[[:space:]]*\|' || true)
 
-            # Find current SF: in_progress first, then first pending
-            CURRENT_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | \
-                grep -E '\|[[:space:]]*in_progress[[:space:]]*\|' | \
-                grep -oE 'SF[0-9]+' | head -1 || echo "")
-
-            if [ -z "$CURRENT_SF" ]; then
+                # Find current SF: in_progress first, then first pending
                 CURRENT_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | \
-                    grep -E '\|[[:space:]]*pending[[:space:]]*\|' | \
+                    grep -E '\|[[:space:]]*in_progress[[:space:]]*\|' | \
                     grep -oE 'SF[0-9]+' | head -1 || echo "")
+
+                if [ -z "$CURRENT_SF" ]; then
+                    CURRENT_SF=$(grep -E '^\| SF[0-9]+' "$EPIC_MD_FILE" 2>/dev/null | \
+                        grep -E '\|[[:space:]]*pending[[:space:]]*\|' | \
+                        grep -oE 'SF[0-9]+' | head -1 || echo "")
+                fi
             fi
+
+            echo "EPIC_PROGRESS:${DONE_SF:-0}/${TOTAL_SF:-0}"
 
             [ -n "$CURRENT_SF" ] && echo "EPIC_CURRENT_SF:$CURRENT_SF" || true
 

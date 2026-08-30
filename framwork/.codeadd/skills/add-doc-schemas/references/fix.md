@@ -15,6 +15,10 @@ The shape used by both schemas in this category (and shared with `diagnose-repor
 - **impact** — observable user-facing or system-facing effect
 - **detection** — the signal that surfaces it (alert, log line, user report, metric)
 
+### Finding Evidence (delegated)
+
+The `## Review` section of `hotfix-about` records judged findings. Those findings obey the **Finding & Evidence Discipline** defined in `{{skill:add-doc-schemas/references/review.md}}` — evidence reference forms, and the rule that a severity without supporting evidence is an opinion in disguise. One definition governs both categories; it is referenced here, never restated.
+
 ### Root Cause Notation
 
 A root-cause section MUST explain *why*, not just *where*:
@@ -32,14 +36,15 @@ Skipping the third point is the most common failure mode of a hotfix postmortem.
 For `/add.hotfix` (creates `docs/features/[NNNN]H-<slug>/about.md`).
 
 - **Frontmatter:** `id: [NNNN]H`, `type: hotfix-about`, `severity:`, `related: []`
-- **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification
+- **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification · Review
 - **Depth floor:**
   - **Symptom** — when it occurs, where (component/endpoint/file), observable impact, affected users or scope, detection signal. Use Symptom Notation above.
   - **Root Cause** — the actual mechanism per Root Cause Notation above. The trigger, the faulty code path or data state, why existing safeguards (tests, types, validation) failed to catch it. This section MUST explain *why*, not just *where*.
   - **Fix** — file-level list of changes with the intent of each change (not a diff).
-  - **Verification** — the check that proves the fix works: test added, manual repro no longer reproduces, metric returned to baseline.
-- **Compression:** Symptom = bullets `when / where / impact / detection`. Root Cause = topic sentence + extractive bullets tracing the mechanism. Fix = bullets `path:line — what changed — why`. Verification = checklist.
-- **Hard bans:** blame narrative, long stack traces inline (link instead), post-mortem opinion without evidence.
+  - **Verification** — the check that proves the fix works: test added, manual repro no longer reproduces, metric returned to baseline. When a test pinned the bug, name it (`path::test name`); when none could, carry the recorded escape `RED_TEST: none — REASON: <…>` verbatim.
+  - **Review** — the triaged outcome of the delivery review, one row per finding: axis (security / conformance / failure), severity, `path:line`, the rule cited, and **disposition** (`fixed` / `accepted` / `unverifiable` / `pre-existing`). List every axis that was judged, including one that could not run and why — an omitted axis is indistinguishable from a passed one. Empty of findings is a valid state; the section itself is not optional.
+- **Compression:** Symptom = bullets `when / where / impact / detection`. Root Cause = topic sentence + extractive bullets tracing the mechanism. Fix = bullets `path:line — what changed — why`. Verification = checklist. Review = table.
+- **Hard bans:** blame narrative, long stack traces inline (link instead), post-mortem opinion without evidence, a Review row with no `path:line`, and recording a `pre-existing` finding as though this change caused it.
 - **Avoid unless load-bearing:** skipping the "why safeguards missed it" — that failure analysis is the whole point of the Root Cause section.
 
 ### hotfix-related

@@ -43,7 +43,7 @@ export const FEATURES = {
     description: 'TDD pipeline (test-first ordering + unit/integration generation)',
     default: true,
     aliases: ['tdd'],
-    commands: ['add.plan', 'add.build', 'add.review'],
+    commands: ['add.plan', 'add.build', 'add.review', 'add.hotfix'],
   },
   'qa-pipeline': {
     description: 'QA pipeline (E2E authoring + agent QA validation)',

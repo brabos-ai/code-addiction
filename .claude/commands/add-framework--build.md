@@ -373,13 +373,106 @@ docs/changelog/YYYY-MM-DD-[action]-[what].md
 
 ### 6.2 Update plan (if exists)
 
-Set plan status: `draft` → `implemented`
+Set plan status: `draft` → `implemented`, and append a changelog row naming the commit it landed in.
+
+### 6.3 Sync the Project Anatomy counts in CLAUDE.md (MANDATORY)
+
+`CLAUDE.md` is loaded into every session. A stale count there misinforms every
+future session, not just the one that forgot to update it. The counts are
+**derived facts** — compute them, never carry a number over by hand:
+
+```bash
+ls framwork/.codeadd/commands/*.md | wc -l          # Commands
+ls framwork/.codeadd/skills/*/SKILL.md | wc -l      # Skills
+ls framwork/.codeadd/agents/*-agent.md | wc -l      # Agents
+```
+
+Those are the same globs the Project Anatomy table itself documents. Write the
+results into it. If a number already matches, leave the line untouched.
+
+**Cross-check against the registry, and report a mismatch as a defect.** Every
+count above MUST equal its entry count in `framwork/provider-map.json`. An
+artefact on disk but unregistered does not ship to any provider, and an entry
+registered without a file breaks the build — either way the disagreement is a
+real bug in what you just built, not a documentation nit. Report it; never
+paper over it by writing whichever number is larger.
+
+**The CLI test suite is a THIRD copy of these counts, and it fails the build if
+you skip it.** `cli/tests/build.test.js` hardcodes the expected agent list and
+asserts `agents x providers` as a literal number; other suites assert prose in
+the command files themselves. So a registry change has three consumers, not
+two, and only one of them is in this repo's documentation.
+
+```bash
+cd cli && npx vitest run --no-file-parallelism
+```
+
+Run it whenever this build added, removed or renamed a command, skill or
+agent, or edited a command whose text another test asserts. A test that
+encodes an OLD rule the build deliberately replaced is updated, not deleted —
+and the reason goes in a comment above it, so the next reader does not
+"restore" the bug the assertion was guarding.
+
+```
+IF THE FILESYSTEM COUNT AND provider-map.json DISAGREE:
+  ⛔ DO NOT: Write either number into CLAUDE.md
+  ⛔ DO NOT: Report the build as complete
+  ✅ DO: Name the artefacts in the difference and fix the registration
+```
+
+### 6.4 Update the rest of CLAUDE.md for what THIS build changed (MANDATORY)
+
+Counts are not the only thing that goes stale. A build that adds a feature
+flag, a plugin, a command, or changes the pipeline leaves `CLAUDE.md`
+describing a framework that no longer exists. Update it here — this command
+finishes the job, it does not hand a chore to another one.
+
+Walk the sections `CLAUDE.md` actually has and update every one this build
+touched:
+
+| If this build… | Update |
+|---|---|
+| added or removed a command | the internal/product command table, and its row's purpose |
+| added or removed a skill or agent | the cross-reference table, and any "used by" column naming it |
+| changed the build pipeline or a transform | the Pipeline section and its transform table |
+| added or changed a feature flag | the Feature Injection System table |
+| added or changed a plugin, fragment or injection point | the Plugin System section |
+| added a schema, contract or sidecar | the section that documents that mechanism |
+| force-added something under `docs/` | the tracking-policy paragraph — **and say WHY**, which that paragraph explicitly requires |
+
+**Discipline: edit what this build changed, nothing else.**
+
+```
+IF A CLAUDE.md SECTION IS UNRELATED TO WHAT YOU BUILT:
+  ⛔ DO NOT USE: Edit to reword, reorganise or "improve" it
+  ✅ DO: Leave it byte-identical
+```
+
+A build that rewrites the plugin section because it added a skill produces a
+diff nobody can review. Touch the rows your own work invalidated.
+
+Read `framwork/.codeadd/skills/add-claude-md-style/SKILL.md` before writing — it owns what belongs in
+`CLAUDE.md` versus what belongs in a skill, the format rules, and the line
+budget. A build that grows `CLAUDE.md` past its budget has traded one problem
+for another.
+
+**Why 6.3 and 6.4 are here at all:** neither a derived number nor a table row
+describing what you just shipped ever needed its own plan-and-build cycle.
+`/add-framework--self-plan` is for *designing* the internal layer — changing
+how these commands work — not for bookkeeping the product layer's own facts.
 
 ---
 
 ## STEP 7: Completion
 
 Show summary: artefact path, type, plan link, files created/updated, validations passed, usage instructions.
+
+**Also report, always:**
+
+- the Project Anatomy counts as 6.3 computed them, and whether any changed;
+- every `CLAUDE.md` section 6.4 updated, and why. If nothing beyond the counts needed changing, say so — silence is indistinguishable from not having looked.
+
+Do NOT name `/add-framework--self-plan` for anything 6.3 or 6.4 already did. Name it only when this build revealed that the internal layer's own **design** needs to change — a command whose steps are now wrong, a skill that needs rewriting.
 
 ---
 
@@ -393,6 +486,9 @@ ALWAYS:
 - Use sequential INTEGER numbering (1,2,3)
 - Renumber steps when inserting new ones
 - Register new command/skill in framwork/provider-map.json
+- Compute the CLAUDE.md Project Anatomy counts from the filesystem and cross-check them against provider-map.json
+- Run the cli/ suite after any registry change — it is the third copy of those counts
+- Update every CLAUDE.md section this build invalidated, and load add-claude-md-style before writing it
 - Create source file in framwork/.codeadd/ (source of truth)
 - Run the cli/ suite serially before reporting any result from it
 - Baseline a failing cli/ test against a clean tree before blaming the change
@@ -408,5 +504,10 @@ NEVER:
 - Use Phase instead of STEP
 - Use fractional numbering (2.5, 6.5)
 - Insert steps without renumbering
+- Carry a CLAUDE.md count over by hand instead of computing it
+- Change a registry and skip the cli/ suite, which asserts the same numbers
+- Delete a test that asserts a rule this build replaced — update it and say why
+- Reword a CLAUDE.md section this build did not invalidate
+- Defer CLAUDE.md to a separate command — this build finishes it
 - Create provider files manually (use framwork/.codeadd/ + provider-map.json)
 - Add a `## Spec` section to commands or skills (prohibited)

@@ -101,6 +101,8 @@
     "add-health-check":                {},
     "add-optimizing-git-workflow":     {},
     "add-plan-based-features":         {},
+    "add-cross-sf-consistency":        {},
+    "add-plan-review":                 {},
     "add-planning":                    {},
     "add-product-discovery":           {},
     "add-project-scaffolding":         {},
@@ -136,11 +138,16 @@
     "system-design-agent": { "description": "System design specialist for scalable solutions, data flows, and infrastructure decisions" },
     "database-agent":      { "description": "Database specialist for schema design, migrations, entity modeling, and query optimization" },
     "doc-reviewer-agent":  { "description": "Documentation review specialist - reads generated docs in fresh context and surfaces gaps, clarity issues, and scope questions (read-only)" },
+    "plan-reviewer-agent": { "description": "Pre-delivery executability reviewer for about.md, brainstorm docs, and plan.md — fresh context, returns a verdict (ok / fix-then-ok / blocked) with required fixes, not questions (read-only)" },
+    "consistency-agent":     { "description": "Cross-subfeature consistency judge for an epic — compares contracts declared across subfeature plan.md / about.md / design.md, document against document and never code, on exactly five dimensions (API contracts, data schema, requirements, design tokens when HAS_DESIGN, auth/permission model); anything outside them is informational and never blocks (read-only)" },
     "feature-history-agent": { "description": "Feature history archaeologist — scans docs/features/ to find feature docs (about/changelog/plan) relevant to a symptom predicate (read-only, docs/ only)" },
     "git-history-agent":     { "description": "Git history correlator — surfaces recent commits (log/show/diff/branch) plausibly related to a symptom predicate (read-only git)" },
     "qa-agent":              { "description": "Deterministic + forensic QA judge — the half of the dual panel paired with @ux-agent (review mode). Reads persisted run evidence to validate functional delivery vs about.md acceptance criteria, deterministic Design Contract conformance from measured computed styles, and ALL accessibility (axe-core), diagnosing every failed assertion to a root cause. Declines the judgement axes (UX quality, judgement conformance, responsiveness) — those belong to @ux-agent. With the playwright plugin it additionally drives the app live. Read-only on the codebase." },
     "test-agent":            { "description": "Unit + integration test generator for ONE area (database, backend, frontend, workers) — reads the area's target files and feature docs, generates tests at the project's conventional location, runs them until green. CORRECTION mode writes one RED test pinning the bug instead of regenerating. Read-write on test files only" },
   "fix-agent":             { "description": "Correction specialist for ONE area — consumes one area-scoped slice of a review's ## Fix Routing table (code-review findings, build errors, red validation gates, QA findings) and applies the fix. The attempt counter is supplied by the caller, never decided by the agent" },
-  "e2e-agent":             { "description": "Cross-cutting E2E spec author — authors <surface>.qa.spec (functional assertions + multi-viewport capture + axe a11y), finalizes the screens.json reachability recipe, green-confirms via the @playwright/test runner (no MCP, read-write on test files only)" }
+  "e2e-agent":             { "description": "Cross-cutting E2E spec author — authors <surface>.qa.spec (functional assertions + multi-viewport capture + axe a11y), finalizes the screens.json reachability recipe, green-confirms via the @playwright/test runner (no MCP, read-write on test files only)" },
+    "security-agent":        { "description": "OWASP security judge for a delivered change — judges the diff against A01-A10 plus XSS and mass assignment, asking first whether the change removed or weakened an existing control. Owns the security axis exclusively (read-only)" },
+    "conformance-agent":     { "description": "Documented-rules judge for a delivered change — judges the diff against the wiki when present (conventions, architecture, domains) or CLAUDE.md plus surrounding code when absent; freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift (read-only)" },
+    "failure-analysis-agent": { "description": "Failure-mode judge for a delivered change — unhandled error paths, null propagation, missing rollback or idempotency, resource leaks, retry and ordering assumptions, reasoned against the confirmed blast radius of related features and suspicious commits (read-only)" }
   }
 }
