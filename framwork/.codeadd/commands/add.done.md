@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-doc-schemas/references/delivery-index.md
 - skill: add-ecosystem
 - skill: add-id-convention
 - skill: add-wiki-maintenance
@@ -11,6 +12,7 @@
 - command: /add.review
 - command: /add.wiki
 - script: converge-gates.sh
+- script: delivered.sh
 - script: done.sh
 - script: qa-evidence.sh
 -->
@@ -31,7 +33,7 @@ STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
 STEP 4: Validate delivery       -> Review + epic + requirements gates (feature only)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
-STEP 6: Generate documentation -> Changelog + decisions + wiki
+STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
 STEP 8: Execute merge           -> AUTOMATIC after preview
 ```
@@ -378,6 +380,83 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 **NEVER block the close flow on wiki failures.** If the update fails or is inconclusive, note it in the final summary and continue to STEP 7.
 
 ⛔ DO NOT USE: Bash for git operations in this substep — wiki edits are plain file edits; `done.sh --merge` owns the commit.
+
+---
+
+### 6.8 Write the Delivery Index Entry
+
+Record what this branch delivered in `docs/delivered.jsonl`, the per-project delivery index. `delivered.sh` is its only writer; nothing here edits the file directly. The entry is authored HERE and **left in the working tree** — the same path the changelog and the wiki edits already take. `done.sh --merge` (STEP 8) commits it with everything else.
+
+Load `{{skill:add-doc-schemas/references/delivery-index.md}}` for the record shape, the `{what, at, find}` anchor and the hard bans. Do not restate them here; the reference is the contract.
+
+```
+IF BRANCH_TYPE = docs:
+  ⛔ DO NOT USE: Bash for delivered.sh write
+  ✅ DO: Skip 6.8 entirely, set INDEX_ENTRY=none, continue to STEP 7
+
+IF THE ENTRY HAS NOT BEEN WRITTEN OR EXPLICITLY SKIPPED:
+  ⛔ DO NOT: Proceed to STEP 7
+  ✅ DO: Complete 6.8, or record why it wrote nothing
+```
+
+**6.8.1 — Resolve which entry this branch belongs to.**
+
+| BRANCH_TYPE | Entry |
+|---|---|
+| `feature` | A new entry under this branch's `FEATURE_ID` |
+| `hotfix` / `refactor` / `chore` | Resolved by the match below — never by asking |
+| `docs` | None. No source surface changed |
+
+For hotfix, refactor and chore, run the report-only verify FIRST, then match:
+
+```bash
+bash .codeadd/scripts/delivered.sh verify
+```
+
+Verify first because an item that has already moved carries a stale `at`; a branch touching its *current* location would intersect nothing and silently get no line. Then, for every existing entry, match an item when **the branch's diff touches a hunk containing that item's `find` string** — not merely when it touches the same file — **or** when the branch renames the item's `at` file by path. Both clauses exist, for opposite failure modes: hunk-matching alone misses a pure rename (`R100`, zero hunks), and path-matching alone attributes every change in a shared routes or schema file to every entry with an item in it.
+
+Every entry with at least one matched item gets a new line carrying this branch's commit. **No match anywhere** means the branch created new surface rather than changing existing surface, so it gets its own entry under its own `[NNNN][L]` id.
+
+**6.8.2 — Select the items. This is a shape filter, not a judgement.** Two runs over one diff must produce one list. Derive from the HIGH-priority files already described in 6.2, plus `tasks.md` when it exists — its absence is routine on hotfix, refactor and chore branches, and items then come from the diff plus `about.md` and the commit messages.
+
+| Include | Exclude |
+|---|---|
+| A route or endpoint path | A file that only gained an import or an export line |
+| A table, collection or migration name | A config key, env var or dependency bump |
+| A screen, route or exported component | An internal helper, type or private function |
+| A CLI command, flag or feature name | A test file |
+| A public function others call across a module boundary | Anything whose name does not appear outside its own file |
+
+The last exclusion is the general rule the others are instances of: **if nothing outside the defining file names it, no document will cite it**, and it does not belong in an index built to stop miscitation.
+
+**More than five survive the filter:** keep the five whose `find` strings are most specific and record how many were dropped, for STEP 7 to show. Never truncate silently — the overflow is exactly the signal that the feature was too big.
+
+**6.8.3 — Take each `find` from the item's own identifier**, never from a description: `oauth_tokens`, `/auth/google`, `LoginGoogle`. One contiguous token, byte-exact. `POST /auth/google` is a `what`, not a `find`.
+
+**6.8.4 — Write it.** Compose the record and pass it on stdin. The script generates `v` and `ts`; supply everything else. `commits` comes from a read-only `git log --format=%h` over the branch's own commits.
+
+```bash
+bash .codeadd/scripts/delivered.sh write < "$RECORD_FILE"
+```
+
+Parse `ENTRY`, `CREATED`, `LINES` and every `LOOSE` line for STEP 7. Set `INDEX_ENTRY` to the composed record so STEP 7 can render it in full.
+
+```
+IF delivered.sh EXITS 2 WITH REFUSED=find-absent OR REFUSED=find-over-matched:
+  ⛔ DO NOT: Retry with the same find string
+  ⛔ DO NOT: Drop the item to make the write pass
+  ✅ DO: Pick a more specific identifier for that item and write again
+
+IF delivered.sh EXITS 2 WITH ANY OTHER REFUSED= VALUE:
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ✅ DO: Show the REFUSED value and the record, and stop — the record breaks a hard ban
+
+IF delivered.sh EXITS 1:
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ✅ DO: Show the write error and stop — the filesystem refused the entry
+```
+
+⛔ DO NOT USE: Bash for git add/commit/push in this substep. `done.sh --merge` remains the sole git owner, exactly as it is for the changelog and the wiki.
 
 ---
 
