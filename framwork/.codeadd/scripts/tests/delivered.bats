@@ -116,7 +116,10 @@ json_lines() { printf '%s\n' "$output" | grep '^{'; }
 node_free_path() {
   local d="$TEST_TEMP_DIR/nonode" b real
   mkdir -p "$d"
-  for b in git grep sed awk sort mktemp cat date dirname basename rm mkdir wc head tail tr cut find; do
+  # `bash` and `sh` are in the list because `run bash <script>` resolves the
+  # interpreter through this PATH too — without them the test would report 127
+  # (command not found) instead of the 2 it is asserting.
+  for b in bash sh env git grep sed awk sort mktemp cat date dirname basename rm mkdir wc head tail tr cut find; do
     real=$(command -v "$b" 2>/dev/null) || continue
     printf '#!/bin/sh\nexec "%s" "$@"\n' "$real" > "$d/$b"
     chmod +x "$d/$b"
@@ -205,7 +208,7 @@ node_free_path() {
   commit_all
   write_index \
     "$(entry 0004F gone     'q gone'       'q gone'       src/gone.ts    goneThing)" \
-    "$(entry 0003F superseded 'q superseded' 'q superseded' src/sup.ts   supThing ',\"superseded_by\":\"0009F\"')" \
+    "$(entry 0003F superseded 'q superseded' 'q superseded' src/sup.ts   supThing ',"superseded_by":"0009F"')" \
     "$(entry 0002F changed  'q changed'    'q changed'    src/moved.ts   changedThing)" \
     "$(entry 0001F live     'q live'       'q live'       src/live.ts    liveThing)"
 
@@ -453,7 +456,7 @@ node_free_path() {
 
 @test "L1.8: a refused write creates no index and appends nothing" {
   valid_source; commit_all
-  bash -c 'printf "%s" "not a record" | bash "$0" write' "$SCRIPTS_DIR/delivered.sh" >/dev/null 2>&1
+  bash -c 'printf "%s" "not a record" | bash "$0" write' "$SCRIPTS_DIR/delivered.sh" >/dev/null 2>&1 || true
   [ ! -f "$INDEX" ]
 }
 
