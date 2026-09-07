@@ -35,6 +35,7 @@ const {
   collectNodes,
   buildArtefactGraph,
   writeArtefactGraph,
+  checkArtefactGraph,
   readMap,
 } = require('../../scripts/build.js');
 
@@ -302,6 +303,186 @@ describe('L2 collectNodes', () => {
 
     expect(internal.length).toBeGreaterThan(0);
     expect(internal.every((n) => n.registered)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L3 — guard
+// ---------------------------------------------------------------------------
+
+describe('L3 checkArtefactGraph', () => {
+  /** A minimal graph: one command node plus whatever else a case needs. */
+  function graphOf(nodes, edges = []) {
+    return { nodes, edges };
+  }
+
+  const node = (over) => ({
+    id: 'product/command/add.build',
+    kind: 'command',
+    layer: 'product',
+    name: 'add.build',
+    path: 'framwork/.codeadd/commands/add.build.md',
+    registered: true,
+    providers: [],
+    declares: true,
+    ...over,
+  });
+
+  const noSource = () => ''; // sniffing sees nothing; isolates the hard gates
+
+  it('L3.1 a declared entry naming a nonexistent artefact FAILS, naming path and target', () => {
+    const g = graphOf(
+      [node()],
+      [{
+        from: 'product/command/add.build',
+        to: 'product/skill/add-typo',
+        type: 'USES_SKILL',
+        origin: 'declared',
+        modifier: null,
+      }],
+    );
+
+    const { failures } = checkArtefactGraph(g, { readSource: noSource });
+
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toMatch(/add-typo/);
+    expect(failures[0]).toMatch(/add\.build\.md/);
+  });
+
+  it('L3.2 an unregistered artefact FAILS — the readback shape', () => {
+    // An agent on disk with no provider-map.json entry reads correctly, is
+    // referenced in prose, and ships to nobody. Nothing catches it today.
+    const g = graphOf([
+      node(),
+      node({
+        id: 'product/agent/readback-agent',
+        kind: 'agent',
+        name: 'readback-agent',
+        path: 'framwork/.codeadd/agents/readback-agent.md',
+        registered: false,
+      }),
+    ]);
+
+    const { failures } = checkArtefactGraph(g, { readSource: noSource });
+
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toMatch(/readback-agent/);
+    expect(failures[0]).toMatch(/provider-map\.json/);
+  });
+
+  it('L3.3 the unregistered gate does NOT fire on a non-declaring node', () => {
+    // L2.2 from the gate's side. A reference file, a script and a fragment are
+    // not registry-managed; reporting them would fail the build on 105 correct
+    // files. A SKILL.md-less directory produces no node at all (L2.2), so the
+    // only way it could reach the gate is as some other kind.
+    const g = graphOf([
+      node(),
+      node({
+        id: 'product/reference/add-qa/references/coordinator.md',
+        kind: 'reference',
+        name: 'add-qa/references/coordinator.md',
+        registered: false,
+        declares: false,
+      }),
+    ]);
+
+    expect(checkArtefactGraph(g, { readSource: noSource }).failures).toEqual([]);
+  });
+
+  it('L3.3 an internal artefact is never reported unregistered', () => {
+    const g = graphOf([
+      node({
+        id: 'internal/command/add-framework--build',
+        layer: 'internal',
+        name: 'add-framework--build',
+        path: '.claude/commands/add-framework--build.md',
+        registered: true,
+      }),
+    ]);
+
+    expect(checkArtefactGraph(g, { readSource: noSource }).failures).toEqual([]);
+  });
+
+  it('L3.4 a prose mention with no declaration WARNS and does not fail', () => {
+    // Shipping this as a failure blocks every build in wave 1: almost no
+    // artefact declares yet, and every command mentions skills in prose.
+    const g = graphOf([
+      node(),
+      node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md', declares: true }),
+    ]);
+
+    const { failures, warnings } = checkArtefactGraph(g, {
+      readSource: (n) => (n.name === 'add.build' ? 'Load the add-tdd skill in STEP 3.' : ''),
+    });
+
+    expect(failures).toEqual([]);
+    expect(warnings.join('\n')).toMatch(/add-tdd/);
+  });
+
+  it('L3.5 a declaration absent from prose and unmarked WARNS and does not fail', () => {
+    const g = graphOf(
+      [
+        node(),
+        node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md' }),
+      ],
+      [{
+        from: 'product/command/add.build',
+        to: 'product/skill/add-tdd',
+        type: 'USES_SKILL',
+        origin: 'declared',
+        modifier: null,
+      }],
+    );
+
+    const { failures, warnings } = checkArtefactGraph(g, { readSource: noSource });
+
+    expect(failures).toEqual([]);
+    expect(warnings.join('\n')).toMatch(/add-tdd/);
+  });
+
+  it('L3.6 (conditional) suppresses the phantom-edge warning, and nothing else does', () => {
+    const mk = (modifier) => graphOf(
+      [
+        node(),
+        node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md' }),
+      ],
+      [{
+        from: 'product/command/add.build',
+        to: 'product/skill/add-tdd',
+        type: 'USES_SKILL',
+        origin: 'declared',
+        modifier,
+      }],
+    );
+
+    expect(checkArtefactGraph(mk('conditional'), { readSource: noSource }).warnings).toEqual([]);
+    // A free-text modifier is documentation, not a waiver.
+    expect(checkArtefactGraph(mk('loaded in STEP 4'), { readSource: noSource }).warnings.length)
+      .toBeGreaterThan(0);
+  });
+
+  it('L3.4 a longer name is not matched inside another name', () => {
+    // `/add` matches inside `/add.plan` and `add-qa` inside `add-qa-migration`
+    // under a naive \b boundary. Both produced wrong counts while specifying
+    // this change; a sniffer that does it fires warnings nobody can act on.
+    const g = graphOf([
+      node(),
+      node({ id: 'product/skill/add-qa', kind: 'skill', name: 'add-qa', path: 'x/SKILL.md' }),
+      node({ id: 'product/command/add', kind: 'command', name: 'add', path: 'y.md' }),
+    ]);
+
+    const { warnings } = checkArtefactGraph(g, {
+      readSource: (n) => (n.name === 'add.build' ? 'See add-qa-migration and /add.plan for details.' : ''),
+    });
+
+    expect(warnings.join('\n')).not.toMatch(/add-qa\b(?!-)/);
+    expect(warnings.join('\n')).not.toMatch(/"add"/);
+  });
+
+  it('L3.7 the real tree produces no failures', () => {
+    // The gate must be clean on a correct repo before it is worth anything.
+    const graph = buildArtefactGraph(readMap(), CODEADD, ROOT);
+    expect(checkArtefactGraph(graph).failures).toEqual([]);
   });
 });
 

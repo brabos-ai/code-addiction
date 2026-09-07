@@ -904,7 +904,11 @@ function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, p
 
 /** Total order over edges — stable output is what makes a graph diffable. */
 function edgeSortKey(e) {
-  return `${e.from} ${e.type} ${e.to} ${e.modifier ?? ''}`;
+  // Joined on U+001F (unit separator) written as an ESCAPE, never as a raw
+  // byte. A raw control character is invisible in every editor and diff, so a
+  // careless edit destroys it silently. It cannot occur in an id or a
+  // modifier, so unlike a space it cannot let two edges collide on one key.
+  return [e.from, e.type, e.to, e.modifier ?? ''].join('\u001f');
 }
 
 /**
@@ -919,6 +923,152 @@ function writeArtefactGraph(outPath, graph) {
 
   writeFile(outPath, JSON.stringify({ version: 1, nodes, edges }, null, 2) + '\n');
   return { nodes: nodes.length, edges: edges.length };
+}
+
+// ---------------------------------------------------------------------------
+// Artefact graph guard
+//
+// Three levels, and the SPLIT matters more than the checks. The two hard gates
+// compare declarations against the filesystem and the registry, where no
+// false-positive path exists. The two sniff levels compare declarations against
+// PROSE, which is measurably unreliable — three crude probes written while
+// specifying this change each produced wrong answers. A gate that cries wolf is
+// a gate someone switches off, so sniffing warns and never fails.
+//
+// The sniff levels become failures in wave 2, once all 97 artefacts declare.
+// Shipping them as failures now would block every build in the repo.
+// ---------------------------------------------------------------------------
+
+/** Kinds a prose sniffer can look for. Fragment names are paths; prose never carries them. */
+const SNIFFABLE_KINDS = new Set(['command', 'skill', 'agent', 'script', 'reference']);
+
+function escapeRe(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Match a name only when it stands alone.
+ *
+ * Both guards are load-bearing. Under a naive `\b`, `/add` matches inside
+ * `/add.plan` (`.` is a word boundary) and `add-qa` matches inside
+ * `add-qa-migration`. Those two mistakes produced a 43× overcount and 11 false
+ * orphans out of 13 in the probes that motivated this work.
+ */
+function mentionRe(name) {
+  return new RegExp(`(?<![\\w.-])${escapeRe(name)}(?![\\w.-])`);
+}
+
+/** Body with fenced blocks and any `uses:` declaration removed — neither is prose. */
+function proseOf(raw) {
+  let out = raw.replace(/<!--[ \t]*uses:[\s\S]*?-->/g, '');
+  // Splice from the end so earlier removals do not shift later spans.
+  for (const [s, e] of fencedSpans(out).reverse()) out = out.slice(0, s) + out.slice(e);
+  return out;
+}
+
+/**
+ * Check a graph. Returns findings; throwing is the caller's job.
+ *
+ * Returning instead of throwing is what lets the suite assert on BOTH lists
+ * without catching, and what keeps "fails" and "warns" from collapsing into one
+ * another by accident.
+ *
+ * @param {{nodes: Array, edges: Array}} graph
+ * @param {{readSource?: (node) => string}} opts
+ * @returns {{failures: string[], warnings: string[]}}
+ */
+function checkArtefactGraph(graph, { readSource } = {}) {
+  const read = readSource || ((n) => {
+    try { return readFile(path.join(ROOT, n.path)); } catch { return ''; }
+  });
+
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const failures = [];
+  const warnings = [];
+
+  // --- FAIL: a declaration names something that does not exist ---------------
+  for (const e of graph.edges) {
+    if (e.origin !== 'declared' || byId.has(e.to)) continue;
+    failures.push(
+      'artefact-graph: dangling reference\n' +
+        `  ${byId.get(e.from)?.path ?? e.from}\n` +
+        `  declares  ${e.to}\n` +
+        '  no such artefact. Fix the name, or add the file.',
+    );
+  }
+
+  // --- FAIL: on disk, absent from the registry, therefore built for nobody ---
+  for (const n of graph.nodes) {
+    if (!n.declares || n.registered) continue;
+    failures.push(
+      'artefact-graph: unregistered artefact\n' +
+        `  ${n.path}\n` +
+        '  exists on disk, absent from framwork/provider-map.json → never built for any provider\n' +
+        `  add an entry under "${n.kind}s", or delete the file.`,
+    );
+  }
+
+  // --- WARN: declaration vs prose, both directions ---------------------------
+  const declaredFrom = new Map();
+  for (const e of graph.edges) {
+    if (e.origin !== 'declared') continue;
+    if (!declaredFrom.has(e.from)) declaredFrom.set(e.from, new Map());
+    declaredFrom.get(e.from).set(e.to, e.modifier);
+  }
+
+  const sniffable = graph.nodes.filter((n) => SNIFFABLE_KINDS.has(n.kind));
+
+  for (const n of graph.nodes) {
+    if (!n.declares) continue;
+
+    const prose = proseOf(read(n));
+    const declared = declaredFrom.get(n.id) ?? new Map();
+    const observed = new Set();
+
+    for (const t of sniffable) {
+      // Same layer only: `add-commit` exists in both, and a product command
+      // mentioning it means the product one.
+      if (t.id === n.id || t.layer !== n.layer) continue;
+      if (mentionRe(t.name).test(prose)) observed.add(t.id);
+    }
+
+    for (const id of observed) {
+      if (declared.has(id)) continue;
+      warnings.push(`${n.path}: mentions ${id} in prose but does not declare it`);
+    }
+
+    for (const [id, modifier] of declared) {
+      // `conditional` is the reserved waiver for a legitimate non-greppable
+      // load. Free text is documentation, not a waiver.
+      if (modifier === 'conditional' || observed.has(id)) continue;
+      const t = byId.get(id);
+      if (!t || !SNIFFABLE_KINDS.has(t.kind)) continue;
+      warnings.push(
+        `${n.path}: declares ${id} but its prose never mentions it (phantom edge). ` +
+          'Remove it, or mark it (conditional).',
+      );
+    }
+  }
+
+  return { failures, warnings };
+}
+
+/**
+ * Throw on failures; summarise warnings.
+ *
+ * The summary is deliberate. Wave 1 has ~97 artefacts declaring almost nothing,
+ * so printing every sniff warning would bury the two hard gates under hundreds
+ * of lines nobody can act on yet. Set ADD_GRAPH_WARNINGS=1 for the full list.
+ */
+function assertArtefactGraph(graph) {
+  const { failures, warnings } = checkArtefactGraph(graph);
+
+  if (warnings.length) {
+    if (process.env.ADD_GRAPH_WARNINGS) for (const w of warnings) console.warn(`  WARN ${w}`);
+    else console.warn(`  ${warnings.length} graph warning(s) — ADD_GRAPH_WARNINGS=1 to list`);
+  }
+
+  if (failures.length) throw new Error(`\n\n${failures.join('\n\n')}\n`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1472,6 +1622,7 @@ function main() {
   // outcome I8 exists to prevent.
   const contractsPath = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
   fs.rmSync(contractsPath, { force: true });
+  fs.rmSync(path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json'), { force: true });
 
   const map = readMap();
   assertNoLintableSources(map);
@@ -1488,7 +1639,11 @@ function main() {
   // Built AFTER the resource passes so INJECTION_POINTS is fully populated —
   // the INJECTS_INTO edges are derived from it, never re-extracted.
   const graphPath = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
-  const graph = writeArtefactGraph(graphPath, buildArtefactGraph(map));
+  const artefactGraph = buildArtefactGraph(map);
+  // Gate BEFORE writing, so a failed build never leaves a sidecar describing a
+  // tree the gate rejected — the same reason contracts.json is cleared upfront.
+  assertArtefactGraph(artefactGraph);
+  const graph = writeArtefactGraph(graphPath, artefactGraph);
 
   const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
@@ -1514,6 +1669,8 @@ module.exports = {
   collectNodes,
   buildArtefactGraph,
   writeArtefactGraph,
+  checkArtefactGraph,
+  assertArtefactGraph,
   fragmentNodeName,
   fencedSpans,
   sliceContractBlock,
