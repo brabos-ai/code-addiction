@@ -193,8 +193,86 @@ function stats(graph) {
   return { nodes: graph.nodes.length, edges: graph.edges.length, byKind, byEdge, byLayer, hubs };
 }
 
+// ---------------------------------------------------------------------------
+// Mermaid emission
+// ---------------------------------------------------------------------------
+
+/** Node shape per kind, so the diagram reads without a legend lookup. */
+const MERMAID_SHAPE = {
+  command: (id, label) => `${id}(["${label}"])`,
+  skill: (id, label) => `${id}["${label}"]`,
+  agent: (id, label) => `${id}[/"${label}"/]`,
+  script: (id, label) => `${id}[("${label}")]`,
+  reference: (id, label) => `${id}>"${label}"]`,
+  fragment: (id, label) => `${id}{{"${label}"}}`,
+};
+
+/**
+ * Mermaid identifiers allow only word characters, but a node id is
+ * `product/command/add.plan`. Emitted raw it produces a diagram that silently
+ * fails to render — no error, just a blank panel on the docs site.
+ */
+function mermaidId(nodeId) {
+  return `n_${nodeId.replace(/[^A-Za-z0-9]/g, '_')}`;
+}
+
+/**
+ * Render a SCOPED slice of the graph as a mermaid flowchart.
+ *
+ * Scoping is the design, not a limitation: 202 nodes and 625 edges rendered at
+ * once is an unreadable hairball that tells a reader nothing.
+ *
+ * @param {object} graph
+ * @param {{root?: string, depth?: number, kinds?: string[], direction?: string}} opts
+ *   root  — centre the diagram on one artefact and walk out from it
+ *   kinds — otherwise, include only these node kinds
+ */
+function toMermaid(graph, opts = {}) {
+  const { depth = 2, direction = 'LR' } = opts;
+  let keep;
+
+  if (opts.root) {
+    const rootId = resolve(graph, opts.root);
+    keep = new Set([rootId, ...walk(graph, rootId, { reverse: false, depth }).map((r) => r.id)]);
+    // MENTIONS is excluded from the walk (it is not a dependency) but belongs
+    // in a picture: a reader wants to see the pointer, drawn so it cannot be
+    // mistaken for one.
+    for (const e of graph.edges) {
+      if (e.type === 'MENTIONS' && keep.has(e.from)) keep.add(e.to);
+    }
+  } else {
+    const kinds = new Set(opts.kinds || ['command', 'skill', 'agent']);
+    keep = new Set(graph.nodes.filter((n) => kinds.has(n.kind)).map((n) => n.id));
+  }
+
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const lines = [`flowchart ${direction}`];
+
+  for (const id of [...keep].sort()) {
+    const n = byId.get(id);
+    if (!n) continue;
+    const shape = MERMAID_SHAPE[n.kind] || MERMAID_SHAPE.skill;
+    lines.push(`    ${shape(mermaidId(id), n.name)}`);
+  }
+
+  const drawn = new Set();
+  for (const e of graph.edges) {
+    if (!keep.has(e.from) || !keep.has(e.to)) continue;
+    const key = `${e.from}|${e.type}|${e.to}`;
+    if (drawn.has(key)) continue;
+    drawn.add(key);
+    // A dotted link for MENTIONS — the picture must not let a "use X instead"
+    // pointer read as a dependency.
+    const link = e.type === 'MENTIONS' ? '-.->' : '-->';
+    lines.push(`    ${mermaidId(e.from)} ${link} ${mermaidId(e.to)}`);
+  }
+
+  return `${lines.join('\n')}\n`;
+}
+
 module.exports = {
   loadGraph, resolve, impact, dependencies, neighbors, orphans, pathBetween, stats,
+  toMermaid, mermaidId,
   DEPENDENCY_TYPES, DEFAULT_GRAPH,
 };
 
@@ -238,6 +316,21 @@ function main(argv) {
       return emit(orphans(graph), (r) =>
         `${r.length} artefact(s) nothing depends on:\n` +
         (r.map((n) => `  ${n.id}`).join('\n') || '  (none)'));
+    case 'mermaid': {
+      const kindsAt = argv.indexOf('--kinds');
+      const out = toMermaid(graph, {
+        root: a,
+        depth,
+        kinds: kindsAt >= 0 ? argv[kindsAt + 1].split(',') : undefined,
+      });
+      if (argv.includes('--write')) {
+        const dest = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, out, 'utf8');
+        return console.log(`wrote ${path.relative(ROOT, dest)}`);
+      }
+      return console.log(out);
+    }
     case 'stats':
       return emit(stats(graph), (s) =>
         `nodes ${s.nodes} | edges ${s.edges}\n` +

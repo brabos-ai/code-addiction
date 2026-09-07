@@ -1,0 +1,92 @@
+flowchart LR
+    n_internal_command_add_framework__build(["add-framework--build"])
+    n_internal_command_add_framework__plan(["add-framework--plan"])
+    n_internal_command_add_framework__release(["add-framework--release"])
+    n_internal_command_add_framework__self_build(["add-framework--self-build"])
+    n_internal_command_add_framework__self_plan(["add-framework--self-plan"])
+    n_internal_command_add_framework__shared_brainstorm(["add-framework--shared-brainstorm"])
+    n_internal_command_add_framework__shared_review(["add-framework--shared-review"])
+    n_internal_command_add_framework__sync(["add-framework--sync"])
+    n_product_command_add(["add"])
+    n_product_command_add_audit(["add.audit"])
+    n_product_command_add_brainstorm(["add.brainstorm"])
+    n_product_command_add_build(["add.build"])
+    n_product_command_add_diagnose(["add.diagnose"])
+    n_product_command_add_done(["add.done"])
+    n_product_command_add_hotfix(["add.hotfix"])
+    n_product_command_add_init(["add.init"])
+    n_product_command_add_new(["add.new"])
+    n_product_command_add_plan(["add.plan"])
+    n_product_command_add_plan_to_ready(["add.plan-to-ready"])
+    n_product_command_add_pull_request(["add.pull-request"])
+    n_product_command_add_qa_setup(["add.qa-setup"])
+    n_product_command_add_review(["add.review"])
+    n_product_command_add_ux(["add.ux"])
+    n_product_command_add_wiki(["add.wiki"])
+    n_internal_command_add_framework__build --> n_internal_command_add_framework__plan
+    n_internal_command_add_framework__build --> n_internal_command_add_framework__release
+    n_internal_command_add_framework__build --> n_internal_command_add_framework__self_plan
+    n_internal_command_add_framework__plan --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__plan --> n_internal_command_add_framework__self_plan
+    n_internal_command_add_framework__self_build --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__self_build --> n_internal_command_add_framework__self_plan
+    n_internal_command_add_framework__self_plan --> n_internal_command_add_framework__plan
+    n_internal_command_add_framework__self_plan --> n_internal_command_add_framework__self_build
+    n_internal_command_add_framework__shared_brainstorm --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__shared_brainstorm --> n_internal_command_add_framework__plan
+    n_internal_command_add_framework__shared_brainstorm --> n_internal_command_add_framework__self_plan
+    n_internal_command_add_framework__shared_review --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__shared_review --> n_internal_command_add_framework__self_build
+    n_internal_command_add_framework__sync --> n_internal_command_add_framework__release
+    n_product_command_add --> n_product_command_add_brainstorm
+    n_product_command_add --> n_product_command_add_build
+    n_product_command_add --> n_product_command_add_diagnose
+    n_product_command_add --> n_product_command_add_done
+    n_product_command_add --> n_product_command_add_hotfix
+    n_product_command_add --> n_product_command_add_init
+    n_product_command_add --> n_product_command_add_new
+    n_product_command_add --> n_product_command_add_plan
+    n_product_command_add --> n_product_command_add_plan_to_ready
+    n_product_command_add --> n_product_command_add_review
+    n_product_command_add_audit --> n_product_command_add_new
+    n_product_command_add_brainstorm --> n_product_command_add_diagnose
+    n_product_command_add_brainstorm --> n_product_command_add_hotfix
+    n_product_command_add_brainstorm --> n_product_command_add_new
+    n_product_command_add_build --> n_product_command_add_done
+    n_product_command_add_build --> n_product_command_add_new
+    n_product_command_add_build --> n_product_command_add_qa_setup
+    n_product_command_add_build --> n_product_command_add_review
+    n_product_command_add_build --> n_product_command_add_wiki
+    n_product_command_add_diagnose --> n_product_command_add_hotfix
+    n_product_command_add_diagnose --> n_product_command_add_init
+    n_product_command_add_diagnose --> n_product_command_add_new
+    n_product_command_add_diagnose --> n_product_command_add_plan
+    n_product_command_add_diagnose --> n_product_command_add_wiki
+    n_product_command_add_done --> n_product_command_add_build
+    n_product_command_add_done --> n_product_command_add_hotfix
+    n_product_command_add_done --> n_product_command_add_plan_to_ready
+    n_product_command_add_done --> n_product_command_add_review
+    n_product_command_add_done --> n_product_command_add_wiki
+    n_product_command_add_hotfix --> n_product_command_add_wiki
+    n_product_command_add_init --> n_product_command_add_new
+    n_product_command_add_new --> n_product_command_add_build
+    n_product_command_add_new --> n_product_command_add_plan
+    n_product_command_add_new --> n_product_command_add_wiki
+    n_product_command_add_plan --> n_product_command_add_build
+    n_product_command_add_plan --> n_product_command_add_done
+    n_product_command_add_plan --> n_product_command_add_plan_to_ready
+    n_product_command_add_plan --> n_product_command_add_review
+    n_product_command_add_plan --> n_product_command_add_wiki
+    n_product_command_add_plan_to_ready --> n_product_command_add_build
+    n_product_command_add_plan_to_ready --> n_product_command_add_done
+    n_product_command_add_plan_to_ready --> n_product_command_add_plan
+    n_product_command_add_plan_to_ready --> n_product_command_add_qa_setup
+    n_product_command_add_plan_to_ready --> n_product_command_add_review
+    n_product_command_add_pull_request --> n_product_command_add_done
+    n_product_command_add_qa_setup --> n_product_command_add_build
+    n_product_command_add_qa_setup --> n_product_command_add_review
+    n_product_command_add_review --> n_product_command_add_build
+    n_product_command_add_review --> n_product_command_add_done
+    n_product_command_add_review --> n_product_command_add_plan
+    n_product_command_add_review --> n_product_command_add_qa_setup
+    n_product_command_add_review --> n_product_command_add_wiki
