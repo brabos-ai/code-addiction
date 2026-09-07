@@ -82,7 +82,10 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: /add.review
 - mention: /add.wiki
 - mention: build-setup.sh
+- mention: build-ledger.sh
 - mention: converge-gates.sh
+- mention: review-package.sh
+- mention: task-brief.sh
 - mention: done.sh
 - mention: get-branch-metadata.sh
 - mention: next-id.sh
@@ -246,6 +249,9 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-tdd | add.plan, add.build, add.review, add.hotfix (tdd-pipeline RED gate) |
 | add-test-specification | add.plan (STEP 9) |
 | converge-gates.sh | add.plan-to-ready (STEP 6, convergence check), add.done (STEP 4, delivery-gate preflight) — read-only probe for the four gates (review, QA baseline, epic, coverage); one script backs both commands' verdicts so they can't drift apart |
+| build-ledger.sh | add.build (STEPS 1, 16), add-subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
+| task-brief.sh | add.build (STEP 10), add-subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
+| review-package.sh | add.build (STEPS 11, 12), add-subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
 ## Main Flows
 
