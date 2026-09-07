@@ -1,6 +1,7 @@
 # ADD Build - Command, Skill & Script Executor
 
 <!-- uses:
+- skill: add-commit
 - skill: building-commands
 - command: /add-framework--plan
 - command: /add-framework--release
@@ -21,10 +22,10 @@ Executor that transforms plans into functional artefacts (commands, skills, scri
 STEP 1: Load plan/context         → READ FIRST
 STEP 2: Design approved?         → IF NO: STOP AND PRESENT
 STEP 3: Load skills              → building-commands + ecosystem-map
-STEP 4: Implement                → ONLY AFTER 1-3 (in framwork/)
-STEP 5: Test                     → ONLY AFTER implementing
+STEP 4: Implement                → ONLY AFTER 1-3 (in framwork/); ledger first, then one F-block at a time
+STEP 5: Test                     → ONLY AFTER implementing; the F-block is committed once it passes
 STEP 6: Document                 → ONLY AFTER tests pass
-STEP 7: Completion               → Final summary
+STEP 7: Completion               → Final summary + every ruling made
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -45,6 +46,18 @@ IF building-commands SKILL NOT LOADED:
   ⛔ DO NOT USE: Write on commands
   ⛔ DO NOT: Create command structure
   ✅ DO: Read .claude/skills/building-commands/SKILL.md
+
+IF THE LEDGER HAS NOT BEEN READ (planned mode, STEP 4.1 not complete):
+  ⛔ DO NOT USE: Write in framwork/
+  ⛔ DO NOT USE: Edit in framwork/
+  ⛔ DO NOT: Re-execute any F-block
+  ✅ DO: Read docs/plans/<plan-basename>--ledger.md and apply the resume rule
+
+IF AN F-BLOCK'S VALIDATION HAS NOT PASSED:
+  ⛔ DO NOT USE: Bash to run git commit for that block
+  ⛔ DO NOT: Append that block's `complete` line to the ledger
+  ⛔ DO NOT: Start the next F-block
+  ✅ DO: Fix it, rule on it, or STOP — see STEP 4.3
 ```
 
 ---
@@ -52,13 +65,14 @@ IF building-commands SKILL NOT LOADED:
 ## Operation Mode
 
 ```
-/add-framework--build [NNNN]-PLAN--[slug]                 → Execute specific plan
+/add-framework--build [plan]                    → Execute specific plan (full basename or unique slug substring)
 /add-framework--build [type] [name]             → Direct build (no plan, for simple artefacts)
 ```
 
 **Examples:**
 ```
-/add-framework--build 0042-PLAN--hotfix-optimization
+/add-framework--build 2026-09-07T005046-PLAN--hotfix-optimization
+/add-framework--build hotfix-optimization
 /add-framework--build command add-diagnose
 /add-framework--build skill skill-creator
 /add-framework--build cli migrations
@@ -88,7 +102,11 @@ Verify `framwork/` exists and list its provider directories.
 
 ### 1.1 If plan specified
 
-Read `docs/plans/[NNNN]-PLAN--[slug].md`.
+**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*-PLAN--*.md` **minus every `*-SELF-PLAN--*.md`** (and excluding `--review-v*` / `--evidence-v*` companions). The exclusion is load-bearing: the glob `*-PLAN--*` also matches `*-SELF-PLAN--*`, and a topic is normally split into a product plan and an internal one **sharing the slug** — so without it every paired set resolves to two candidates and stops — a 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument. **Both naming forms resolve**: the timestamped `YYYY-MM-DDTHHMMSS-PLAN--[slug]` and the legacy `NNNN-PLAN--[slug]`.
+
+- **Exactly one match** → that is the plan. Read it.
+- **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
+- **No match** → list the plans in `docs/plans/` and STOP.
 
 **Extract from plan:**
 - Artefact type (command/skill/script/workflow)
@@ -177,7 +195,92 @@ framwork/.codeadd/skills/                                      # Reference of ex
 
 ## STEP 4: Implement
 
-### 4.1 By Artefact Type
+### 4.1 The Build Ledger (MANDATORY in planned mode, BEFORE the first F-block)
+
+**Path:** `docs/plans/<plan-basename>--ledger.md` — the plan's own basename with `--ledger.md` appended.
+Direct-build mode (no plan) has no F-blocks, so it has no ledger: skip to 4.4.
+
+**Tracked, not scratch.** It carries the rulings, and a reviewer who cannot see what was decided on their
+behalf cannot review it. `docs/plans/` is already where this repo force-adds the artefacts that must survive.
+
+**Append-only, one line per event, identity on the first line:**
+
+```markdown
+# Build ledger — plan: docs/plans/0078-PLAN--durable-executor.md
+
+F1: complete (commits a1b2c3d..a1b2c3d, build.js clean)
+F2: Ruling: kept the existing key name — the plan names both — costs a rename in F4 if wrong
+F2: complete (commits d4e5f6a..b7c8d9e, cli suite 0 new failures)
+F3: complete (commits b7c8d9e..c1d2e3f, build.js clean)
+```
+
+**The identity first line is written once, on creation.** A ledger whose identity changes mid-build is a
+ledger that cannot be trusted, so the header is never rewritten. The internal layer ships no
+`build-ledger.sh` — append the line yourself, and never rewrite a line already written. It is a **log, not a
+set**: the same line twice appends twice.
+
+**The resume rule.** On entry — every entry, not only after a crash — read the ledger if it exists BEFORE
+deciding anything:
+
+- **An F-block with a `complete` line is NEVER re-executed.** Not "probably done", not "let me re-check by
+  re-running it". Done.
+- **An F-block with no line at all is the next one to execute.**
+- **After a compaction, trust the ledger and `git log` over your own recollection.** Your recollection is the
+  thing that was just erased; the ledger and the commit graph are not. Where the two disagree, git wins for
+  *what exists* — a commit in `git log` happened, whatever the ledger says — and the ledger wins for *what
+  was decided*, because a ruling leaves no trace in a diff.
+
+### 4.2 One Commit per F-block
+
+Execute the plan's F-blocks one at a time, in its execution order:
+
+1. **Record `BASE`** — `git rev-parse HEAD`, before touching anything for this block.
+2. **Implement the block** — 4.4 for the artefact type, 4.5 while writing.
+3. **Validate it** — STEP 5, for this block only.
+4. **Commit it**, once that validation passed. Message follows the Conventional Commits logic in
+   `.claude/skills/add-commit/SKILL.md`, with the F-block id as a trailer so the ledger, the commit and the
+   plan can be joined later.
+5. **Record `HEAD`** and append the block's `complete` line with its `BASE..HEAD` bracket.
+
+**Commit after validation, never before.** An F-block whose `node scripts/build.js` run failed gets no
+commit — it gets a fix, a ruling or a stop. A commit of unvalidated work is worse than no commit: it looks
+like delivered work and is not.
+
+### 4.3 Rulings, and the Four Hard Stops
+
+**Rule and continue. Do not stall on a judgement.** A conflict between two readings of the plan, an
+ambiguity, a plan defect with a defensible fix — decide it yourself, record it in the ledger, and keep going:
+
+```
+Ruling: <what you decided> — <why> — <what it costs if wrong>
+```
+
+All three parts are required. The cost clause is what makes a ruling reviewable — a human reading "the
+existing key name wins" cannot tell whether to check it; a human reading "costs a rename in F4 if wrong"
+can. A session parked on a question costs a day. A wrong ruling costs rework the human can see and undo.
+
+**A red build is not a finding, and rule-and-continue does not cover it.** Rulings are for judgements a
+reasonable person could decide either way. A build that does not compile is not a judgement and there is
+nothing to weigh: STEP 5 still stands, and an F-block whose `node scripts/build.js` run or `cli/` suite is
+red reports what failed and STOPS. Ruling a red build away would make every other ruling worthless, because
+the reader could no longer tell which ones were judgements.
+
+**Four things stop the session and ask the human, and only these:**
+
+1. **An irreversible or destructive operation** — a history rewrite, a data deletion, a dropped table.
+2. **A security-sensitive action** — anything touching credentials, auth, permissions or secrets.
+3. **A side effect outside this working tree that norms say you ask about first** — a merge, a push to a
+   shared branch, a publish.
+4. **A plan so broken that every path forward is a guess.** Not "a decision I would rather not make" — one
+   where no reading of the plan supports any option over the others.
+
+Everything else is a ruling. "I am not sure" is not a fifth stop.
+
+**The plan-level `Design [STOP]` gate at STEP 2 is unchanged.** That gate is the human's real decision point
+and nothing here touches it. What this section removes is the per-judgement stall *during* execution, never
+the approval that let execution start.
+
+### 4.4 By Artefact Type
 
 #### Command (framwork/.claude/commands/*.md + framwork/.codeadd/commands/*.md)
 
@@ -319,7 +422,7 @@ If node output is polluted by `Debugger listening on ws://...`, an editor inject
 
 **Before claiming done:** compare failures against a baseline on a clean tree (`git stash`), because this suite has pre-existing flakiness. Report the delta, never the raw count.
 
-### 4.2 Validate During Implementation
+### 4.5 Validate During Implementation
 
 At each section written, verify:
 
@@ -365,6 +468,22 @@ IF any test fails:
 Verify every RED-first assertion the plan specified was observed failing BEFORE its implementation landed. An assertion that was never RED is an untested F-block regardless of its current colour.
 
 **If fails:** Go back to STEP 4 and fix.
+
+### 5.4 Commit the F-block and Record It (MANDATORY in planned mode)
+
+This STEP is per F-block, not once at the end. As soon as this block's validation above passed:
+
+1. Commit the block — message per `.claude/skills/add-commit/SKILL.md`, F-block id as a trailer.
+2. `git rev-parse HEAD` for `HEAD`.
+3. Append `F<n>: complete (commits <BASE>..<HEAD>, <what validated it>)` to the ledger.
+4. Return to STEP 4.2 for the next F-block.
+
+```
+IF THE VALIDATION ABOVE DID NOT PASS:
+  ⛔ DO NOT USE: Bash to run git commit
+  ⛔ DO NOT: Append a `complete` line
+  ✅ DO: Fix it (STEP 4) or STOP — a red build is not a finding (STEP 4.3)
+```
 
 ---
 
@@ -474,8 +593,16 @@ how these commands work — not for bookkeeping the product layer's own facts.
 
 Show summary: artefact path, type, plan link, files created/updated, validations passed, usage instructions.
 
-**Also report, always:**
+### 7.1 Rulings I Made (MANDATORY in planned mode)
 
+Collect **every** `Ruling:` line from the ledger into a "Rulings I made" section, in the order they were
+made, each with what it costs if wrong. Exhaustive, not representative: if the ledger holds a ruling, this
+section holds it. A ruling that stays in the ledger and never reaches the human is a decision made in
+secret. If no ruling was made, say so — silence is indistinguishable from not having looked.
+
+### 7.2 Also Report, Always
+
+- the ledger path and the `BASE..HEAD` range of every committed F-block;
 - the Project Anatomy counts as 6.3 computed them, and whether any changed;
 - every `CLAUDE.md` section 6.4 updated, and why. If nothing beyond the counts needed changing, say so — silence is indistinguishable from not having looked.
 
@@ -486,6 +613,11 @@ Do NOT name `/add-framework--self-plan` for anything 6.3 or 6.4 already did. Nam
 ## Rules
 
 ALWAYS:
+- Read the ledger on entry and apply the resume rule before executing anything
+- Record BASE before an F-block and commit it only after its validation passed
+- Append one ledger line per F-block, carrying its BASE..HEAD bracket
+- Record a judgement as `Ruling: <what> — <why> — <cost if wrong>` and continue
+- Surface EVERY ruling in the completion report
 - Load building-commands skill before creating any command
 - Apply ALL patterns from the skill
 - Test mentally before finalizing
@@ -501,6 +633,12 @@ ALWAYS:
 - Baseline a failing cli/ test against a clean tree before blaming the change
 
 NEVER:
+- Re-execute an F-block that already has a `complete` line in the ledger
+- Commit an F-block before its validation passed
+- Rule away a red build — a failing build.js or cli/ run reports and STOPS
+- Rewrite the ledger's identity line, or edit a line already written
+- Stall on a judgement — only the four hard stops stop the session
+- Skip the STEP 2 `Design [STOP]` gate — rulings replace per-judgement stalls, never that approval
 - Register cli/ artefacts in provider-map.json — cli/ is outside the build registry
 - Bump cli/package.json version — that belongs to /add-framework--release
 - Report a cli/ build complete on a mental test alone

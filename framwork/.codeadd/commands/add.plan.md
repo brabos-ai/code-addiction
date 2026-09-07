@@ -554,6 +554,19 @@ Create plan.md header: `# Plan: ${FEATURE_ID}`. Append subagent outputs in order
 
 Separate each section with `---`. **NEVER rewrite or summarize subagent content. Append directly.**
 
+**Write `## Global Constraints`** immediately after `## Context`, per the `feature-plan` schema. One line per requirement that binds the WHOLE plan rather than one task — RNFs from `about.md`, stack pins and validation gates from `CLAUDE.md`, tokens from `design-system.md`. Copy each value **verbatim from its source** and cite that source in parentheses:
+
+```markdown
+## Global Constraints
+
+- List renders in under 200ms for up to 100 items (about.md RNF01)
+- Node 20.x; no `^` or `~` in package.json (CLAUDE.md stack)
+- `npm run lint` and `npm run typecheck` exit 0 (CLAUDE.md validation_gates)
+- Spacing only through `--space-*` tokens (design-system.md)
+```
+
+⛔ **Verbatim is load-bearing** — this block is handed to a downstream reviewer as its attention lens. "fast enough" cannot be reviewed; "under 200ms" can. Never paraphrase, never write a vague range, never state a constraint without its source. **With no project-wide constraints the section reads the single word `None`** — never omit the section, because an absent section is a question and `None` is an assertion.
+
 ### 10.2 Validate Completeness
 
 Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 8.1: SF-level first, feature-level fallback). Verify:
@@ -585,6 +598,7 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 
 **Rules:**
 - tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (validators parse by text)
+- Every `## Execution` task carries **6** metadata sub-bullets in order: `Service`, `Files`, `Deps`, `Consumes`, `Produces`, `Verify` — never 4. `Produces` is the **exact signature** a later task will call (`-` when nothing); `Consumes` is the **exact signature** plus the producing task ID in parentheses (`-` when nothing). Every `Consumes` MUST match a `Produces` on an **earlier** task **character for character** — STEP 12 checks this mechanically, and a `Consumes` written as prose fails there
 - plan.md FROZEN after this step (no spec checklist section)
 - Every RF/RN in Requirements Coverage MUST link to ≥1 Acceptance Checklist item
 - All checkboxes start as `[ ]` (no pre-ticking)
@@ -642,6 +656,23 @@ Delete only after plan.md complete AND coverage validated.
 ## STEP 12: Validation Gate
 
 Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-plan`. ⛔ DO NOT skip. Require `PASS` before proceeding.
+
+### 12.1 Interface Pair Check (`tasks.md`) — MECHANICAL
+
+⛔ This is a **string comparison, not a judgement**. Do NOT decide whether two signatures "mean the same thing" — compare the characters.
+
+1. Read `${PLAN_DIR}/tasks.md`. From `## Execution`, extract for each task `TNN`: every `Produces` value and every `Consumes` value. Strip only the surrounding backticks and the trailing `(TNN)` producer reference on a `Consumes`. A value of `-` is skipped.
+2. For each `Consumes` value on task `TNN`, find a task `TMM` with **`MM` < `NN`** whose `Produces` contains that **exact same string, character for character**.
+3. **PASS** when every `Consumes` has such a match, and the producer ID cited in the `Consumes` parentheses is that same `TMM`.
+4. **FAIL** on any miss. ⛔ STOP and print **both strings verbatim**, so the difference is visible:
+
+```
+INTERFACE MISMATCH — T04 Consumes has no matching Produces on an earlier task
+  Consumes (T04): <the exact consumed string>
+  Nearest Produces (T02): <the exact produced string, or "none">
+```
+
+Then fix `tasks.md` so the two agree character for character and re-run this check. A `Consumes` written as prose rather than a signature fails here by design: a string no machine can match is a contract no dispatched subagent can implement against. **Do NOT weaken the comparison to make a prose `Consumes` pass.**
 
 ---
 

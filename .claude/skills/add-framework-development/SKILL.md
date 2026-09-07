@@ -185,7 +185,7 @@ category: [meta|technique|reference|discipline]  # optional
 | Tier | Lines | Structure | Example |
 |------|-------|-----------|---------|
 | 1 (simple) | <100 | Single SKILL.md, basic sections | add-commit |
-| 2 (medium) | 100-300 | JSON spec blocks, templates, checklists | add-planning |
+| 2 (medium) | 100-300 | JSON spec blocks, templates, checklists | add-tasks-checklist |
 | 3 (complex) | 300+ | SKILL.md dispatcher + reference subdocs | add-ux-design |
 
 **Subdoc pattern (canonical — `references/`, any tier):**

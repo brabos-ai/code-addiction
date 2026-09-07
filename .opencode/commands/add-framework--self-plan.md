@@ -173,9 +173,24 @@ Write the draft file. DO NOT present the path or next steps — proceed immediat
 
 ### 4.1 Path and Naming
 
-Find next available plan in `docs/plans/`. If directory doesn't exist, create it.
+If `docs/plans/` doesn't exist, create it.
 
-**Path:** `docs/plans/[NNNN]-SELF-PLAN--[slug].md`
+**Path:** `docs/plans/YYYY-MM-DDTHHMMSS-SELF-PLAN--[slug].md`
+
+The prefix is a timestamp in **local time**, `T` between the date and the time, and **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort therefore equals chronological sort.
+
+⛔ **There is nothing to look up.** Do NOT read `docs/plans/` to find a next number, and do NOT allocate a sequential `NNNN`. Take the timestamp from the clock.
+
+**A plan SET allocates its timestamp once, at the umbrella, and every topic reuses it verbatim** — that is what keeps a set grouped in the directory now that a shared number no longer does:
+
+```
+docs/plans/2026-09-07T005046-SELF-PLAN--[slug]-000-umbrella.md
+docs/plans/2026-09-07T005046-SELF-PLAN--[slug]-001-[topic].md
+```
+
+Companion files keep suffixing the plan basename: `...-SELF-PLAN--[slug]--evidence-v01.md`, `...-SELF-PLAN--[slug]--review-v01.md`.
+
+**Pre-existing plans keep their names.** The legacy form `docs/plans/NNNN-SELF-PLAN--[slug].md` is still on disk and still valid to *read* and *resolve* — `CLAUDE.md` cites several of those plans by number. Both forms coexist; only a NEW plan uses the timestamp.
 
 ### 4.2 Plan Structure
 
@@ -193,11 +208,26 @@ Write the plan document:
 ## Context
 [Why this change is needed — connect with current pain point]
 
+## Global Constraints
+[Every requirement that binds the WHOLE plan rather than one change — layer boundaries and pipeline gates from `CLAUDE.md`, distribution rules from `provider-map.json`, contracts fixed by the design doc. One line each, the exact value copied verbatim from its source, with that source cited in parentheses.]
+- `.opencode/` adapters mirror their `.claude/` canonical twin (CLAUDE.md, Internal Layer)
+- The internal layer is not built by `scripts/build.js` and is not distributed to users (CLAUDE.md, Project Anatomy)
+
+[⛔ Verbatim is load-bearing — this block is handed to the reviewer as its attention lens. "keep it consistent" cannot be reviewed; the lines above can. Never paraphrase, never write a vague range, never state a constraint without its source. With no plan-wide constraints the section reads the single word `None` — never omit it, because an absent section is a question and `None` is an assertion.]
+
 ## Current State
 [What exists today and how it works]
 
 ## Proposed Changes
-[Ordered list of changes with exact file paths and what changes in each]
+[Ordered list of changes with exact file paths and what changes in each.]
+
+[Where one item hands something to a later one, the item declares the interface:]
+1. **`path/to/file`** — [what changes about it]
+   - **Produces:** [what a later item reads — a `KEY=STATUS` line, a sidecar key, a frontmatter field, an anchor name. Omit the line when nothing.]
+2. **`path/to/other`** — [what changes about it]
+   - **Consumes:** [that same string, verbatim] ([the earlier item that produces it]). [Omit the line when nothing.]
+
+[⛔ The interface is never a function signature here. Every `Consumes` MUST name an EARLIER item that `Produces` it, using the SAME string — a `Consumes` with no matching `Produces` is a change built against a name someone still has to invent.]
 
 ## Impact
 | Artefact | Action | Reason |
@@ -215,7 +245,7 @@ Write the plan document:
 ---
 
 ## Next Steps
-/add-framework--self-build [NNNN]-SELF-PLAN--[slug]
+/add-framework--self-build [slug]
 ```
 
 ---
@@ -304,8 +334,8 @@ Emit the blocks below. Skip one only when it is genuinely empty — never pad it
 ### 6.2 Plan metadata [AFTER the summary]
 
 Then, and only then: plan file path, status (`draft`), review verdict, fixes applied (one line each, if any), and the two next-step commands:
-- `/add-framework--self-build [NNNN]-SELF-PLAN--[slug]` to implement
-- `/add-framework--self-plan [NNNN]-SELF-PLAN--[slug]` to revise
+- `/add-framework--self-build [slug]` to implement
+- `/add-framework--self-plan [slug]` to revise
 
 ### 6.3 Self-check before sending
 
@@ -326,7 +356,13 @@ add-framework--self-plan ends here. Execution is `/add-framework--self-build`'s 
 
 ## Continue Mode (existing plan)
 
-If `/add-framework--self-plan [NNNN]-SELF-PLAN--[slug]`:
+If `/add-framework--self-plan [plan]`:
+
+**Resolve the argument BEFORE loading anything.** Match `[plan]` as a **substring** of the basenames of `docs/plans/*SELF-PLAN--*.md` (excluding `--review-v*` and `--evidence-v*` companions). A 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument; the full basename always works. **Both naming forms resolve** — the timestamped `YYYY-MM-DDTHHMMSS-SELF-PLAN--[slug]` and the legacy `NNNN-SELF-PLAN--[slug]`.
+
+- **Exactly one match** → that is the plan.
+- **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
+- **No match** → list the plans in `docs/plans/` and STOP.
 
 1. Load existing plan
 2. Show summary of what was already decided

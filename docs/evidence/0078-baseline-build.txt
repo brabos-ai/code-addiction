@@ -1,0 +1,15 @@
+Debugger listening on ws://127.0.0.1:56357/ff2048e6-6018-4f73-a5e3-70419d60926f
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Building provider files...
+
+
+Build complete:
+  Commands : 16 × providers → 80 files
+  Skills   : 42 skills  → 555 files
+  Agents   : 22 agents  → 88 files
+  Injection points : 39 → framwork\.codeadd\injection-points.json
+  Contracts        : 1 → framwork\.codeadd\contracts.json
+  Artefact graph   : 202 nodes, 665 edges → framwork\.codeadd\artefact-graph.json
+  Total    : 723 files generated
+Waiting for the debugger to disconnect...

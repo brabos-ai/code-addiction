@@ -3,11 +3,13 @@
 <!-- uses:
 - skill: add-backend-development
 - skill: add-code-review
+- skill: add-commit
 - skill: add-database-development
 - skill: add-doc-schemas
 - skill: add-ecosystem
 - skill: add-frontend-development
 - skill: add-id-convention
+- skill: add-subagent-driven-development
 - skill: add-tasks-checklist
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
@@ -21,11 +23,17 @@
 - agent: ux-agent
 - command: /add.done
 - command: /add.new
+- command: /add.plan-to-ready
 - command: /add.qa-setup
 - command: /add.review
 - command: /add.wiki
+- script: build-ledger.sh
 - script: build-setup.sh
+- script: converge-gates.sh
+- script: done.sh
+- script: review-package.sh
 - script: status.sh
+- script: task-brief.sh
 -->
 
 Coordinator for feature implementation, bug fixes, and epic feature execution. Detects context automatically, coordinates subagents, validates against skill checklists, and ensures 100% compilation.
@@ -35,6 +43,8 @@ Coordinator for feature implementation, bug fixes, and epic feature execution. D
 ## Required Skills
 
 Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules). Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
+
+Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 1 as well. It **defines** the loop this command runs — the build ledger and its canonical format, the resume rule, the pre-flight scan, handoff by path, the scoped re-review, model escalation, the breaker and the `Ruling:` format, and the four hard stops. This command **implements** that definition; it never invents a second vocabulary for it. Where a step below and the skill disagree, the skill is the definition and the disagreement is a defect to report.
 
 `/add.build` is a **mutator**: it updates existing `plan.md`/`about.md` during/after implementation. It MUST NOT allocate new IDs — always reuse the `[NNNN]F` from existing frontmatter. Every write MUST follow the cache rule: read existing doc → preserve valid content → complement with new info → bump `updated:` to today. `created:`, `id:`, and `type:` are immutable.
 
@@ -50,18 +60,18 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 
 **STEPS IN ORDER:**
 ```
-STEP 1:  Run context mapper          → FIRST COMMAND (status.sh)
+STEP 1:  Run context mapper          → FIRST COMMAND (status.sh) + read the build ledger
 STEP 2:  Branch setup                → build-setup.sh (create-or-checkout feature branch)
 STEP 3:  Detect context              → Epic subfeature | Legacy feature flag | Simple mode
 STEP 4:  Parse key variables         → Extract FEATURE_ID, flags, phase
-STEP 5:  Determine mode              → DEVELOPMENT | TASKS | CORRECTION | FEATURE
+STEP 5:  Determine mode              → Apply the resume rule, THEN DEVELOPMENT | TASKS | CORRECTION | FEATURE
 STEP 6:  Load feature docs           → BEFORE any implementation
 STEP 7:  Load project knowledge      → IF WIKI:present (status.sh)
 STEP 8:  Determine scope             → Database, Backend, Workers, Frontend
 STEP 9:  Execution decision          → DIRECT (1 area) | SUBAGENTS (2+ areas)
-STEP 10: Implementation              → Per mode, over the Agent Roster
-STEP 11: Area validation             → Validator agents (MANDATORY per area)
-STEP 12: Routed correction           → Consume ## Fix Routing; write the resolution annex
+STEP 10: Implementation              → Pre-flight scan, then dispatch by path over the Agent Roster
+STEP 11: Area validation → COMMIT    → Validator agents (MANDATORY per area), build gate, THEN the commit
+STEP 12: Routed correction           → Consume ## Fix Routing; re-review every fix; write the resolution annex
 STEP 13: Compliance Gate             → Cross-reference RF/RN vs implementation
 STEP 14: Integration verification    → Build MUST pass
 STEP 15: Mutate docs + Validation Gate → Cache rule + schema gate on plan.md/about.md
@@ -79,7 +89,8 @@ STEP 17: Completion                  → Inform user based on mode
 - **IMMUTABILITY:** Never allocate new [NNNN]F ID. Always reuse from existing frontmatter. Preserve created:, id:, type:
 - **IDEMPOTENCY:** Check file existence before writing. Never overwrite artefacts without reading first
 - **BUILD GATE:** Code MUST compile 100%. Fix errors before advancing
-- **GIT CLEAN:** Leave files unstaged. Never git add/commit/stage
+- **COMMIT CONTRACT:** **One semantic commit per batch.** In TASKS MODE a batch is one `tasks.md` task (`T01`, `T02`, …); in DEVELOPMENT and CORRECTION MODE a batch is one area dispatch, because there are no task ids to commit against. Message follows `{{skill:add-commit/SKILL.md}}`, with the task id and the feature id as **trailers** (`Task-Id: T02`, `Feature-Id: ${FEATURE_ID}`) so the ledger, the commit and `tasks.md` can be joined later. ⛔ **The commit lands ONLY after the area validator returned AND the build passed** — STEP 11.3 is the single place any commit happens, and a commit that lands before validation is a commit of unvalidated code
+- **LEDGER:** `${FEATURE_DIR}/build-ledger.md` (or `${SF_DIR}/build-ledger.md` on an epic) is read on entry and appended after **every** task, fix round, deferred minor, parked finding and ruling — always through `bash .codeadd/scripts/build-ledger.sh`, never by hand. A task carrying a `complete` line is NEVER re-dispatched
 - **BRANCH SETUP FIRST:** build-setup.sh MUST have exited 0 before any implementation step
 
 ---
@@ -91,6 +102,19 @@ bash .codeadd/scripts/status.sh
 ```
 
 This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_PLAN, HAS_DESIGN, HAS_IMPLEMENTATION), DESIGN_SYSTEM, FRONTEND (path, components), PROJECT_CONTEXT (ARCHITECTURE_REF), ALL_FEATURES (count, list), FEATURES (X/Y if Legacy Epic), HAS_EPIC, EPIC_CURRENT_SF, HAS_TASKS, TASKS_FILE, LAST_CHECKPOINT.
+
+### 1.0 Read the Build Ledger (the resume map)
+
+**Read the ledger before you decide anything.** `${FEATURE_DIR}/build-ledger.md` on a simple feature,
+`${SF_DIR}/build-ledger.md` on an epic — the epic path resolves in STEP 3, so on an epic read it the
+moment `SF_DIR` is known and before STEP 5.
+
+- **Absent** → this is a fresh build. It is created by the first line you append; do not create it by hand.
+- **Present** → it is the record of a previous run of this same build, and it outranks your recollection.
+  Read it in full, then reconcile it against `git log --oneline` for the branch.
+
+⛔ DO NOT skip this because the conversation "looks like" a fresh start. That is exactly what a compacted
+session looks like, and re-dispatching a finished task is the failure this read exists to prevent.
 
 ### 1.1 Cross-Feature Decisions Context (PRD0031)
 
@@ -165,6 +189,26 @@ Extract from status.sh output:
 ---
 
 ## STEP 5: Determine Mode (MANDATORY OUTPUT)
+
+### 5.0 Apply the Resume Rule (BEFORE mode detection)
+
+The ledger read in STEP 1.0 is consumed here, before anything is detected. Apply the resume rule exactly
+as `{{skill:add-subagent-driven-development/SKILL.md}}` states it:
+
+| Ledger state for a task | What you do |
+|---|---|
+| a `complete` line exists | **NEVER re-dispatch it.** Not "probably done", not "let me re-check by re-running it". Done |
+| the last line is `fix round N/3` | resume at round **N+1**, not at round 1 |
+| no line at all | this is the first task to dispatch |
+
+Set `RESUME_FROM` = the first `## Execution` task with no `complete` line. In TASKS MODE this feeds the
+**Resume vs Rerun Procedure** in STEP 10 — the ledger decides `resume`, and only an explicit user request
+to redo the work sets `rerun_all`.
+
+**Where the ledger and `git log` disagree, git wins for *what exists* and the ledger wins for *what was
+decided*.** A commit in `git log` happened whatever the ledger says; a ruling leaves no trace in a diff.
+
+**Output one line before proceeding:** `LEDGER: <path> — <n> entries — resuming at <TASK_ID | Task 1 (fresh)>`.
 
 ### 5.1 Context Detection (AUTOMATIC)
 
@@ -285,6 +329,95 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 ## STEP 10: Implementation (Per Mode)
 
+### 10.0 Pre-Flight Scan and the Handoff Contract (BEFORE the first dispatch)
+
+Both blocks below run **once, before the first subagent of this run is dispatched**. Neither is optional,
+and neither is satisfied by asserting it happened.
+
+#### 10.0.1 Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
+
+Read `TASKS_FILE` **once** and write a table to the ledger. Tasks carry six sub-bullets — Service, Files,
+Deps, Consumes, Produces, Verify (`{{skill:add-tasks-checklist/SKILL.md}}`) — and `Consumes` / `Produces`
+are what make the scan possible: they are the exact signatures each task calls and each task provides.
+
+Two kinds of row, **both required**:
+
+1. **One row per pair of tasks sharing a file or an interface** — what one `Produces` against what the
+   other `Consumes`, and what was found. A `Consumes` that does not match a `Produces` character for
+   character is a **conflict**, not a nuance.
+2. **One row per task, for self-consistency** — whether the task's own text agrees with itself (its
+   `Files` cover its `Produces`; its `Deps` cover the tasks its `Consumes` names).
+
+Append every row to the ledger, one line each:
+
+```bash
+bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" "Preflight: T02 produces \`UserDto.fullName\`, T05 consumes \`UserDto.name\` — CONFLICT"
+```
+
+⛔ **The output is a table, not a verdict.** Writing `Preflight: clean` without the rows is not a scan that
+ran — it is a claim that one did, and it is rejected.
+
+✅ **Every conflict is ruled on BEFORE Task 1 is dispatched**, with the `Ruling:` recorded beside its row
+in the format 10.0.3 defines. A conflict carried into execution becomes two subagents building against two
+different names, discovered at integration, when both are already committed.
+
+**On resume:** if the ledger already holds `Preflight:` rows for this build, the scan already ran — do not
+re-run it and do not re-rule its conflicts.
+
+**No `tasks.md` (DEVELOPMENT / CORRECTION / FEATURE MODE):** there are no `Consumes` / `Produces` pairs to
+scan. Write one ledger line saying so — `Preflight: skipped — no tasks.md (DEVELOPMENT MODE)` — and
+proceed. Silence is not the same as a recorded skip.
+
+#### 10.0.2 Handoff by Path — what a dispatch carries
+
+The coordinator hands each agent **paths, not pasted content**. A pasted brief and an inline report stay
+resident in context and are re-read on every turn for the rest of the session.
+
+**Before each dispatch, in this order:**
+
+1. **Record `BASE`** — `BASE=$(git rev-parse HEAD)`, taken *before* the dispatch. This is half of the
+   bracket every ledger line and every review package needs.
+2. **Write the brief:**
+   ```bash
+   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build"
+   ```
+   It prints `BRIEF=`, `TASK=` and `SUBBULLETS=`, and **exits 2** when the id is not an `## Execution`
+   task — an empty brief is how an agent gets dispatched against nothing and reports success. On exit 2,
+   STOP and show stderr verbatim; never hand-write a substitute brief.
+3. **Choose `REPORT_FILE`** — `${FEATURE_DIR}/_build/<task-id>-report.md`. `_build/` is scratch: the
+   scripts create it with a `.gitignore` containing `*`, so briefs, reports and diff packages never reach
+   a commit. The **ledger is not scratch** and never lives there.
+
+| Field the dispatch carries | Content |
+|---|---|
+| `TASK_DOCUMENTS` | file paths, as always — never summaries |
+| `BRIEF` | the path `task-brief.sh` printed. The agent reads it |
+| `REPORT_FILE` | the path where the agent writes its full report |
+| `INTERFACES` | the exact `Produces` signatures from earlier tasks that this task `Consumes` — the brief cannot know them |
+| `GLOBAL CONSTRAINTS` | the plan's `## Global Constraints` block, **copied verbatim from `plan.md`** |
+
+⛔ **`## Global Constraints` is copied, never summarised.** It is the reviewer's attention lens and it is
+written with exact values copied from their sources. "Fast enough" cannot be reviewed; "under 200ms" can.
+Paraphrasing destroys the only property that makes it usable. If `plan.md` carries no such block, say so
+in the dispatch (`GLOBAL CONSTRAINTS: none declared in plan.md`) rather than inventing one.
+
+**What the agent returns inline:** `STATUS`, `COMMITS` (`BASE..HEAD`), a one-line `TESTS` summary, and
+`CONCERNS`. Nothing else — the full report is on disk at `REPORT_FILE` for whoever needs it.
+
+#### 10.0.3 The `Ruling:` format
+
+Every ruling this command makes — a pre-flight conflict, a finding open at the cap — is one ledger line:
+
+```
+Ruling: <what you decided> — <why> — <what it costs if wrong>
+```
+
+All three parts are required. The cost clause is what makes a ruling reviewable: a human reading "the
+caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong" can.
+STEP 17 reprints every one of them.
+
+---
+
 ### TASKS MODE (when tasks.md exists)
 
 **Activated when:** `HAS_TASKS=true` and `TASKS_FILE` is set.
@@ -293,15 +426,24 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 **FIRST in TASKS MODE:** Run the **Resume vs Rerun Procedure** from `add-tasks-checklist`. This sets `RESUME_MODE = resume | rerun_all`.
 
+⛔ **The ledger outranks the tick.** A task the ledger marks `complete` is never re-dispatched, whatever
+`RESUME_MODE` or a stale `[ ]` in `tasks.md` says. Where the two disagree, reconcile against `git log` and
+record the reconciliation as a ledger line.
+
 **Flow:**
 
 ```
-1. FILTER §3 Execution tasks per RESUME_MODE (rules defined in skill).
+1. FILTER §3 Execution tasks per RESUME_MODE, then SUBTRACT every task the ledger marks complete.
 2. GROUP filtered tasks by service (database, backend, frontend, test).
 3. VALIDATE deps: build execution graph (tasks with no deps first).
 4. EXECUTION ORDER: test → database → backend → frontend.
-5. AFTER all task groups complete: proceed to STEP 11 (validation).
+5. PER TASK: record BASE → write brief (10.0.2) → dispatch → validator + build gate (STEP 11)
+   → COMMIT the task (STEP 11.3) → append the ledger line with its BASE..HEAD bracket.
+6. AFTER all task groups complete: proceed to STEP 11.4 (validation gates tick).
 ```
+
+**One commit per task in this mode** — tasks are already service-scoped and capped at 3 files, so a task
+is the right commit. See the COMMIT CONTRACT invariant and STEP 11.3.
 
 <!-- feature:tdd-pipeline:tasks-flow -->
 <!-- /feature:tdd-pipeline:tasks-flow -->
@@ -312,12 +454,13 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 **Subagent prompt addition for TASKS MODE:**
 
-Include in each subagent's prompt the relevant tasks from tasks.md:
+Hand **brief paths**, never a pasted task table — one `task-brief.sh` call per task in this agent's service
+area (10.0.2). The brief carries all six sub-bullets; a table copied into the prompt loses `Consumes` and
+`Produces`, which are the only thing making two tasks build against the same name.
 ```
-## YOUR TASKS (from tasks.md)
-| ID | Description | Files | Verify |
-|----|-------------|-------|--------|
-| [only tasks for your service area] |
+## YOUR TASKS (briefs — read each one first)
+- T02 → ${BRIEF path printed by task-brief.sh}
+- T04 → ${BRIEF path printed by task-brief.sh}
 
 Execute ALL tasks in order. After each task, confirm the verify command passes.
 <!-- feature:tdd-pipeline:awareness -->
@@ -344,9 +487,9 @@ agents directly, at depth 1.
 | `@database-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
-| `@reviewer-agent` | read-only | area `FILES_CREATED`/`FILES_MODIFIED`, checklist | `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND`, `SPEC_STATUS` |
+| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
 | `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `RED_TEST` (CORRECTION) |
-| `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS` | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
+| `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
 | `@ux-agent` | read-write (`design.md` only) | routed design-spec finding + contract-line citation | amendment appended to `## Design Review` |
 
@@ -367,10 +510,36 @@ anonymous fix subagent.
 - **Inputs:** `AREA`, this area's `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS = 3`, `BUILD_ERRORS` verbatim.
 - **`ATTEMPT` is supplied by this command, never by the agent.** A leaf agent cannot see its own history, so the cap lives here where the loop can see it.
 
-⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`:
-  ⛔ DO NOT dispatch `@fix-agent` again
-  ⛔ DO NOT continue to the next STEP as if the build passed
-  ✅ DO report the unresolved rows, the last `BUILD_ERRORS`, and STOP
+**`MAX_ATTEMPTS` is 3, and the model escalates at round 3 — not at round 2:**
+
+| Round | Model passed to `@fix-agent` |
+|---|---|
+| 1 | the agent's declared model — pass no `MODEL` |
+| 2 | the agent's declared model — pass no `MODEL` |
+| 3 | an explicit `MODEL`, **one tier above** the agent's declared model |
+
+Two rounds on the declared model is a fair trial. A loop that survives two rounds usually means the agent
+cannot see its own problem, and a third round on the same model buys nothing.
+
+**Every fix round is re-reviewed** — record `FIX_BASE` before the dispatch and run the scoped re-review in
+STEP 12.2 after it returns. Append one ledger line per round:
+`T02: fix round 1/3 (2 addressed, 0 open; commits d4e5f6a..b7c8d9e)`.
+
+⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`, stop dispatching — then split on what is still open:
+
+- **Open review findings → THE BREAKER: rule and continue. Do NOT stop the session.** Adjudicate each open
+  finding yourself and write one `Ruling:` line per finding to the ledger in the 10.0.3 format. Then move
+  to the next task. A session parked on a question costs a day; a wrong ruling costs rework the human can
+  see and undo, and STEP 17 puts every ruling in front of them.
+- **A red build → the BUILD GATE stands.** A failing build is not a finding to adjudicate. Report the
+  unresolved rows and the last `BUILD_ERRORS`, append the failure to the ledger, and STOP. ⛔ DO NOT
+  continue to the next STEP as if the build passed, and ⛔ DO NOT rule a compile error away.
+
+**Four things — and only these — stop the session and ask the human:** an irreversible or destructive
+operation; a security-sensitive action (credentials, auth, permissions, secrets); a side effect outside
+this working tree that norms say you ask about first (a merge, a push to a shared branch, a publish); and
+a plan so broken that every path forward is a guess. Everything else is a ruling. "I am not sure" is not a
+fifth stop.
 
 Rows the agent returns as `NOT_MINE` (`data-seed`, `env-boot`,
 capability-invalid, `@ux-agent` design-spec) are surfaced to the user as
@@ -399,7 +568,9 @@ Contract Tests (if exist) -> Database -> Backend API -> [parallel: Workers, Fron
 
 #### 10.2 Universal Subagent Prompt Template
 
-Use this template for ALL area subagents (database, backend, frontend, workers):
+Use this template for ALL area subagents (database, backend, frontend, workers). Every `${...}` below that
+names a file is a **path** the coordinator resolved in 10.0.2 — pasted briefs and pasted diffs are a defect
+in this template, not a shortcut.
 
 ```
 You are implementing the ${AREA} for feature ${FEATURE_ID}.
@@ -407,10 +578,23 @@ You are implementing the ${AREA} for feature ${FEATURE_ID}.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
 2. Read ALL files in TASK_DOCUMENTS below
-3. IF WIKI:present in output: read {{addpath:wiki/index.md}}, then {{addpath:wiki/domains/${AREA}.md}} (+ {{addpath:wiki/conventions.md}} when conventions matter for this task)
+3. Read the file at BRIEF
+4. IF WIKI:present in output: read {{addpath:wiki/index.md}}, then {{addpath:wiki/domains/${AREA}.md}} (+ {{addpath:wiki/conventions.md}} when conventions matter for this task)
 
 ## TASK_DOCUMENTS (read ALL — source of truth)
 ${TASK_DOCUMENTS}
+
+## BRIEF (your task's full block — read it, it is not summarised anywhere)
+${BRIEF}
+
+## REPORT_FILE (write your FULL report here — do not paste it back)
+${REPORT_FILE}
+
+## INTERFACES (exact `Produces` signatures from earlier tasks that your task Consumes)
+${INTERFACES}
+
+## GLOBAL CONSTRAINTS (copied verbatim from plan.md — do not paraphrase, do not trade away)
+${GLOBAL_CONSTRAINTS}
 
 ## MANDATORY: Load Development Skill
 Read: skill add-${AREA}-development (patterns, validation, code style)
@@ -428,10 +612,24 @@ ${TASK_LIST}
 ## DECISION LOGGING (PRD0031 — pivots only)
 On approach change: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
 
+## REPORT FORMAT
+Write your full report to REPORT_FILE. Return inline ONLY:
+1. STATUS: [complete/blocked]
+2. FILES: [created/modified — the coordinator commits them at STEP 11.3, you do not]
+3. COMMITS: [none — the coordinator owns the commit in this command]
+4. TESTS: [one line]
+5. CONCERNS: [if any]
+
 ## Deliverables
-- Files created/modified + decisions logged
+- Files created/modified + decisions logged, full report written to REPORT_FILE
 - Build passes: ${BUILD_COMMAND}
 ```
+
+⛔ **The subagent does not commit — the coordinator does, in STEP 11.3, after the validator returned and
+the build passed.** This is where `/add.build` pins the skill's "commit after validation, never before":
+the validator is a separate dispatch, so an implementer that committed its own work would put the commit
+*upstream* of the only thing that validates it. A subagent that reports having committed anyway has broken
+the contract — record it as a ledger line and reconcile `BASE..HEAD` against `git log` before continuing.
 
 #### 10.3 Area-Specific Notes
 
@@ -453,16 +651,20 @@ On approach change: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE
 
 **CRITICAL:** When dispatching multiple independent subagents, send ALL Task tool calls in a SINGLE message.
 
-**DISPATCH AGENT: @${AREA}-agent** (see Named Agent Mapping in section 9)
-- **Prompt:** Use Universal Subagent Prompt Template (section 9.2)
+**DISPATCH AGENT: @${AREA}-agent** (see the Agent Roster in STEP 10)
+- **Prompt:** Use the Universal Subagent Prompt Template (10.2), filled from the paths 10.0.2 resolved
 
 #### 10.5 Coordination Flow
 
+**One commit per area dispatch in this mode** — there are no task ids to commit against.
+
 ```
-Dispatch DB agent -> Wait -> Verify build
+Record BASE -> Dispatch DB agent -> Wait -> Validator (STEP 11) -> Verify build
     | (if fails, dispatch @fix-agent with ATTEMPT)
-Dispatch Backend + Frontend (parallel) -> Wait -> Verify build
+  -> COMMIT the area batch (STEP 11.3) -> ledger line with BASE..HEAD
+Record BASE -> Dispatch Backend + Frontend (parallel) -> Wait -> Validators -> Verify build
     | (if fails, dispatch @fix-agent with ATTEMPT)
+  -> COMMIT each area batch (STEP 11.3) -> ledger line per area
 Documentation -> DONE
 ```
 
@@ -489,6 +691,8 @@ above: one per affected area, `ROUTED_ROWS` derived from the build errors, and t
 - Fix root cause, not symptom. Follow existing code patterns. Add defensive checks if needed.
 - **Frontend fixes:** FIRST load skill `add-ux-design`, follow all patterns, Grep skill docs for relevant components/styling/animation. Read design-system.md if exists.
 - **CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
+- **One commit per area dispatch**, at STEP 11.3 and not before — a correction has no task ids either.
+  Record `BASE` before the fix dispatch and the ledger line carries the `BASE..HEAD` bracket.
 
 ---
 
@@ -501,6 +705,11 @@ above: one per affected area, `ROUTED_ROWS` derived from the build errors, and t
 
 **MANDATORY:** Validator MUST load `{{skill:add-tasks-checklist/SKILL.md}}` to apply tick rules, "non-trivial change" definition, and `[!]` failure-marker semantics.
 
+**This validator runs on the WORKING TREE, not on a diff — deliberately.** It is the gate the commit waits
+on (11.3), so at this point nothing is committed yet and `BASE..HEAD` is still empty. `review-package.sh`
+belongs to the **re-review** in 12.2, after a fix batch is committed. Dispatch this one with `MODE: task`
+and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exist yet.
+
 ### 11.1 Validator Subagent Prompt Template
 
 **DISPATCH AGENT: @reviewer-agent**
@@ -509,6 +718,11 @@ above: one per affected area, `ROUTED_ROWS` derived from the build errors, and t
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
 Validate implemented code against skill checklist, audit spec compliance against plan.md prose,
 and tick tasks.md (§2 TDD, §3 Execution, §4 Acceptance Checklist) for items covered by your area.
+
+## MODE: task
+
+## GLOBAL CONSTRAINTS (copied verbatim from plan.md — your attention lens)
+${GLOBAL_CONSTRAINTS}
 
 ## Self-Bootstrap (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
@@ -547,7 +761,56 @@ TICKS_APPLIED (count of [x] set), TICKS_FAILED (count of [!] set with reasons), 
 
 Dispatch validator for each area immediately after its implementation agent returns. After ALL validators complete, run build verification. If the build fails, dispatch `@fix-agent` per the **Correction Dispatch** contract, passing the validator outputs and build errors as `ROUTED_ROWS` + `BUILD_ERRORS`, and the tracked `ATTEMPT`.
 
-### 11.3 Validation Gates Tick (END OF BUILD)
+### 11.3 Commit the Batch [THE ONLY PLACE THIS COMMAND COMMITS]
+
+**Read this sub-step top to bottom. The order IS the requirement — a commit that lands before validation
+is a commit of unvalidated code, and it is worse than no commit because it looks like delivered work.**
+
+Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 all held:
+
+1. **The area validator has RETURNED.** Not "was dispatched", not "is running" — returned, with its
+   report in hand. ⛔ IF no validator report exists for this batch: DO NOT commit. Go back to 11.2.
+2. **`SPEC_STATUS` is not `INCOMPLETE`.** ⛔ IF it is: DO NOT commit. Implement the missing spec items or
+   escalate, then re-validate.
+3. **The build PASSED.** Run the project build command (CLAUDE.md) and read its exit status in this
+   session. ⛔ IF it is red: DO NOT commit. Dispatch `@fix-agent` per the **Correction Dispatch** contract
+   and return to gate 1 afterwards. `BUILD_STATUS: pass` is a fact you observed, never one you assumed.
+4. **NOW commit — and record the bracket.**
+
+```bash
+# BATCH_BASE is this batch's own anchor, taken immediately before ITS staging.
+# With one batch it equals the 10.0.2 pre-dispatch BASE; with several it does not.
+BATCH_BASE=$(git rev-parse HEAD)
+# Stage THIS batch's files BY PATH — from the validator's FILES_CREATED + FILES_MODIFIED.
+for f in ${AREA_FILES}; do [ -e "$f" ] || continue; git add -- "$f" || exit 1; done
+[ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
+# _build/ ignores itself, so briefs, reports and diff packages never enter the index.
+git commit -m "<type>(<scope>): <subject per add-commit>" \
+           -m "Task-Id: ${TASK_ID}" -m "Feature-Id: ${FEATURE_ID}"
+HEAD=$(git rev-parse HEAD)
+bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
+  "${TASK_ID}: complete (commits ${BATCH_BASE}..${HEAD}, BUILD_STATUS=pass, review clean)"
+```
+
+- **Message** follows `{{skill:add-commit/SKILL.md}}`'s Conventional Commits logic and its Staging Rules.
+- **Trailers are mandatory:** `Task-Id:` (the `tasks.md` id, or the area name in DEVELOPMENT / CORRECTION
+  MODE, where there are no task ids) and `Feature-Id:`. They are what joins the ledger, the commit and
+  `tasks.md` later.
+- **One commit per batch** — one `tasks.md` task in TASKS MODE, one area dispatch otherwise.
+- ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
+  way, and only when more than one batch exists — the normal case, since STEP 9 dispatches Backend and
+  Frontend in parallel. `git add -A` on the first area sweeps the second area's files into that commit,
+  leaving the second commit empty and its `${BATCH_BASE}..${HEAD}` range empty too — and
+  `review-package.sh` exits 2 on an empty range, so the fix loop would have nothing to review.
+- ⛔ **`${AREA_FILES}` comes from the validator's report, never from a glob.** A glob cannot tell this
+  area's files from its sibling's, which is the failure this block exists to prevent.
+- **The ledger line carries `BASE..HEAD` and `BUILD_STATUS`.** A `complete` line without the bracket is
+  not a resume marker, because nothing can reconcile it against `git log`.
+
+⛔ DO NOT commit from any other step, and DO NOT let a subagent commit. Every git write in this command
+lives here, so there is exactly one place to check that validation came first.
+
+### 11.4 Validation Gates Tick (END OF BUILD)
 
 After ALL area validators return AND build verification passes, run the **Validation Gates Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
 
@@ -574,11 +837,58 @@ feature-gated either.
 ### 12.1 Consume
 
 Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
-Work rows in the table's given order, respecting `Blocked by`. Dispatch
+Work rows in the table's given order, respecting `Blocked by`. **Record
+`FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — 12.3 cannot run without it. Dispatch
 `@fix-agent` per area per the **Correction Dispatch** contract, with the tracked
-`ATTEMPT`.
+`ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
-### 12.2 Resolution annex (write-back)
+### 12.2 Scoped Re-Review (after EVERY fix round) [HARD GATE]
+
+**A fix that compiles and misses the finding passes today. This is the step that catches it.**
+
+After `@fix-agent` returns and its batch is committed (STEP 11.3), package the **fix diff only** and
+re-dispatch the reviewer:
+
+```bash
+bash .codeadd/scripts/review-package.sh "${FIX_BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
+```
+
+It prints `PACKAGE=`, `COMMITS=` and `FILES=`, and **exits 2 on an empty range** — an empty package is how
+a reviewer gets dispatched against nothing and returns "looks fine". ⛔ On exit 2, DO NOT dispatch and DO
+NOT mark the round re-reviewed: an empty range means the fix produced no commit, which is itself the
+finding.
+
+**DISPATCH AGENT: `@reviewer-agent`** [read-only] with:
+
+| Field | Content |
+|---|---|
+| `MODE` | `re-review` — **explicit, never omitted**; an absent `MODE` is a full task review |
+| `REVIEW PACKAGE` | the path `review-package.sh` printed |
+| `OPEN FINDINGS` | the findings from the previous review, verbatim, with their ids |
+| `TASK_DOCUMENTS` | the same docs the implementation subagent received |
+
+It returns one verdict per open finding — `ADDRESSED` or `NOT ADDRESSED` — plus `NEW_BREAKAGE` **scoped to
+the fix diff only** and `DEFERRED_MINORS`. Deferred minors go to the ledger as
+`T0N: minor (deferred): <one line>` and **never extend the loop**; a re-review that grows new blocking
+findings every round is a loop that never ends.
+
+Append one ledger line per round, before the next round starts:
+
+```bash
+bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
+  "${TASK_ID}: fix round ${ATTEMPT}/3 (${N_ADDRESSED} addressed, ${N_OPEN} open; commits ${FIX_BASE}..${HEAD})"
+```
+
+- **`NOT ADDRESSED` findings stay open** and go into the next round's `ROUTED_ROWS` — the round counter
+  advances, `MAX_ATTEMPTS` stays 3, and round 3 carries the escalated `MODEL`.
+- **All `ADDRESSED`** → the task is done; write its `complete` line.
+- **At the cap with findings still open** → the breaker in **Correction Dispatch**: rule each one, record
+  the `Ruling:` line, continue.
+
+⛔ A fix round with no `fix round N/3` ledger line naming its re-review is an **unverified fix**, whatever
+the build says. STEP 13's Compliance Gate refuses completion on exactly that.
+
+### 12.3 Resolution annex (write-back)
 
 After the fix wave, append to the SAME `review-NNN.md` you consumed:
 
@@ -606,10 +916,14 @@ After the fix wave, append to the SAME `review-NNN.md` you consumed:
 DO NOT report completion without executing this step.
 
 1. Re-read TASK_DOCUMENTS to extract RF/RN list
-2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED
+2. Cross-reference each RF/RN against FILES_CREATED/FILES_MODIFIED **and against the ledger + `git log`** —
+   the coordinator is the only actor holding both the full spec and the full ledger
 3. Quick-read implementation files to confirm requirement exists in code
 4. IF any RF/RN missing: list items → dispatch `@fix-agent` (routed rows = the missing RF/RN, with the tracked `ATTEMPT`) → re-run gate
-5. IF ALL RF/RN covered: proceed to STEP 13
+5. **Ledger integrity check [REFUSAL]:** scan the ledger for every `fix round N/3` line. ⛔ IF any fix
+   round has no matching re-review line recorded by STEP 12.2, DO NOT report completion — that fix is
+   unverified whatever the build says. Run the missing re-review, then re-run this gate.
+6. IF ALL RF/RN covered AND every fix round is re-reviewed: proceed to STEP 14
 
 ---
 
@@ -644,7 +958,7 @@ Reference: **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`
 
 ## STEP 16: Log Iteration + Checkpoint
 
-**14.1 Log Iteration (MANDATORY before user notification):**
+**16.1 Log Iteration (MANDATORY before user notification):**
 
 Check if `docs/features/${FEATURE_ID}/iterations.jsonl` exists. If not, create empty file. Append entry:
 
@@ -656,23 +970,48 @@ IF `HAS_EPIC=true`, add `"sf"` field: `"sf":"${EPIC_CURRENT_SF}"`
 
 **Types:** `add | fix | refactor | test | docs`
 
-**14.2 Checkpoint Tag — NOT created here (MANDATORY):**
+**16.2 Close the ledger for this run (MANDATORY):**
 
-⛔ DO NOT create a `checkpoint/*` tag here. This is one pinned path, not a
-condition to satisfy: the `GIT CLEAN` invariant (line 54) — leave files
-unstaged, never git add/commit/stage — means `/add.build` never makes a
-commit. A tag created at this point would land on the commit that already
-existed BEFORE this subfeature's work, so restoring from it would restore the
-state before the subfeature. The tag has always been a lie, and gating its
-creation behind a condition would only wrap the same lie in a different hat —
-there is no condition this block could ever evaluate to true.
+By the time this step runs the ledger must already hold **one line for every event of this run** — every
+task, every fix round, every deferred minor, every parked finding and every ruling. This sub-step is where
+you verify that, not where you write them in bulk after the fact; a ledger written from memory at the end
+is the conversation again, which is the thing the ledger replaced.
 
-`{{cmd:add.plan-to-ready}}` re-creates `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done`
-(or `checkpoint/${FEATURE_ID}-done` on a simple feature) at the moment it makes
-the real commit. Until that command runs, `status.sh:322`'s `LAST_CHECKPOINT`
-correctly reports nothing — there is no commit yet for a tag to point at.
+Walk the run and confirm one line exists for each of:
 
-**14.3 Update epic.md (IF HAS_EPIC=true only):**
+| Event | Ledger line shape |
+|---|---|
+| pre-flight scan | `Preflight: <row>` — one per pair and per task, plus a `Ruling:` per conflict |
+| task completed | `T0N: complete (commits BASE..HEAD, BUILD_STATUS=pass, review clean)` |
+| fix round | `T0N: fix round N/3 (X addressed, Y open; commits FIX_BASE..HEAD)` |
+| deferred minor | `T0N: minor (deferred): <one line>` |
+| parked finding | `T0N: parked — <finding> — Ruling: <decision> — <why> — <cost if wrong>` |
+| ruling | `Ruling: <what you decided> — <why> — <what it costs if wrong>` |
+| subagent failure | `T0N: failed — <error excerpt>` |
+
+Append any missing line now with `bash .codeadd/scripts/build-ledger.sh`, and say in the completion report
+that it was appended late. ⛔ DO NOT hand-edit the ledger and ⛔ DO NOT rewrite its identity header — the
+script owns both, and a ledger whose identity changes mid-build cannot be trusted.
+
+**16.3 Checkpoint Tag — NOT created here (MANDATORY):**
+
+⛔ DO NOT create a `checkpoint/*` tag here. **The reason is ownership, not absence: there is exactly ONE
+tag owner, and it is `/add.plan-to-ready` (`{{cmd:add.plan-to-ready}}`).**
+
+`/add.build` now commits per batch (STEP 11.3), so a tag created here would point at real work — that is
+precisely why the prohibition has to be stated as ownership. A `checkpoint/*` tag does not mean "code was
+committed"; it means **this subfeature converged**, and convergence is decided by
+`{{cmd:add.plan-to-ready}}`'s gate run (`converge-gates.sh`), which this command never runs and cannot
+speak for. A second creator would put the same tag name on two different commits with two different
+meanings, and `done.sh --merge`'s checkpoint cleanup deletes by name — it cannot tell them apart.
+
+`{{cmd:add.plan-to-ready}}` creates `checkpoint/${FEATURE_ID}-${EPIC_CURRENT_SF}-done` (or
+`checkpoint/${FEATURE_ID}-done` on a simple feature), annotated, on its own gated checkpoint commit. Until
+it runs, `status.sh`'s `LAST_CHECKPOINT` correctly reports nothing — and **that silence is the signal that
+this subfeature has not converged.** Commits on the branch prove work happened; only the tag proves it
+converged.
+
+**16.4 Update epic.md (IF HAS_EPIC=true only):**
 
 IF file exists, resolve the Subfeatures row whose `id` cell equals
 `${EPIC_CURRENT_SF}` and set that row's `status` column to `done`. Read and
@@ -680,15 +1019,51 @@ write columns **by header name**, per the `epic` schema
 (`{{skill:add-doc-schemas/references/new-feature.md}}`) — never by
 string-matching the row's old text.
 
-⛔ DO NOT write the `checkpoint` cell. Per 14.2, this step creates no commit,
-so it owns none of that column: the schema writes `checkpoint` only from the
-command that creates the commit the tag points at (`{{cmd:add.plan-to-ready}}`).
+⛔ DO NOT write the `checkpoint` cell. Per 16.3, this command creates no
+checkpoint **tag**, so it owns none of that column — the cell names a tag, and
+naming a tag you did not create is how the column starts pointing at nothing.
+The schema writes `checkpoint` only from the command that creates the tag and
+the commit it points at (`{{cmd:add.plan-to-ready}}`). That the batch commits of
+STEP 11.3 exist changes nothing here: they are not checkpoint commits.
 
 ---
 
 ## STEP 17: Completion (Inform user based on mode)
 
-Inform user of completion including: feature ID, files summary (per area count), build status, and next suggested commands.
+Inform user of completion including: feature ID, files summary (per area count), build status, the ledger
+path with its commit brackets, and next suggested commands.
+
+### 17.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
+
+**Every ruling reaches the human.** Grep the ledger for every line containing `Ruling:` — pre-flight
+conflict rulings and cap rulings alike — and reprint **all of them**, in the order they were made:
+
+```bash
+grep -n 'Ruling:' "${LEDGER_FILE}"
+```
+
+```markdown
+## Rulings I made
+
+| # | Ruling | Why | Costs if wrong |
+|---|--------|-----|----------------|
+| 1 | T02's name wins for `UserDto.fullName` | plan.md Architecture Decisions names it | a rename in T05 |
+| 2 | Shipped without the null guard the reviewer wanted | the caller already guards | a crash |
+```
+
+- **Exhaustive.** If the ledger holds a ruling, this section holds it. A ruling that stays in the ledger
+  and never surfaces is a decision made in secret, and the whole mechanism becomes decorative.
+- **Every row carries all three parts** — decision, why, cost-if-wrong. The cost column is what makes a
+  ruling reviewable: a human reading "the caller already guards" cannot tell whether to check it; a human
+  reading "costs a crash if wrong" can. ⛔ A row with an empty cost cell is a defect — go back to the
+  ledger line and supply it, or re-open the finding.
+- **Zero rulings is a valid outcome and is stated, not omitted:** "Rulings I made: none — no conflict and
+  no finding reached the cap." Silence reads as "the section was skipped".
+
+Also surface, from the same ledger: deferred minors (count + one line each), parked findings, and any
+subagent failure line. These are not rulings and go in their own short list.
+
+### 17.2 Next command
 
 **Always include suggested next command from ecosystem map:** Read skill `add-ecosystem` Main Flows section.
 - After development → `/add.review`
@@ -734,6 +1109,9 @@ Dispatching subagents..."
 | Dependency not met (Epic) | Block and inform which feature must complete first |
 | Build fails after implementation | Dispatch `@fix-agent` with the error output as `ROUTED_ROWS` + `BUILD_ERRORS` |
 | Build fails after validation | Dispatch `@fix-agent` with validator output + build errors |
-| `@fix-agent` exhausted `MAX_ATTEMPTS` | Report unresolved rows and last errors; STOP. Never advance as if the build passed |
+| `@fix-agent` exhausted `MAX_ATTEMPTS`, findings still open | THE BREAKER: rule each open finding into the ledger (`Ruling:` format, 10.0.3) and continue. Do NOT stop the session |
+| `@fix-agent` exhausted `MAX_ATTEMPTS`, build still red | Report unresolved rows and last errors; STOP. The BUILD GATE is not a finding to rule on. Never advance as if the build passed |
+| `review-package.sh` exits 2 (empty range) | The fix produced no commit — that is the finding. Do NOT dispatch the re-reviewer against nothing; re-open the round |
+| Ledger and `git log` disagree | git wins for what EXISTS, the ledger wins for what was DECIDED. Record the reconciliation as a ledger line |
 | >4 areas detected | Split into maximum parallel groups |
 | No plan.md or about.md | Inform user to run /feature or /plan first |

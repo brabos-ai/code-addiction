@@ -84,7 +84,7 @@ IF TEMPTED TO IMPLEMENT:
 
 ```
 /add-framework--plan [idea]        → New strategic analysis (STEP 0-6)
-/add-framework--plan PLAN[NNNN]     → Continue existing plan
+/add-framework--plan [plan]        → Continue existing plan (full basename or unique slug substring)
 /add-framework--plan               → List plans in draft
 ```
 
@@ -219,11 +219,24 @@ After user responds → summarize confirmed decisions, then ask to proceed to pl
 
 Confirm ALL decisions are taken before writing. Write the draft file. DO NOT present the path or next steps — proceed immediately to STEP 5.
 
-### Path and Sequential Numbering
+### Path and Naming
 
-Find the next available plan number in `docs/plans/`. If none exist, start at 0001.
+**Path:** `docs/plans/YYYY-MM-DDTHHMMSS-PLAN--[slug].md`
 
-**Path:** `docs/plans/[NNNN]-PLAN--[slug].md`
+The prefix is a timestamp in **local time**, `T` between the date and the time, and **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort therefore equals chronological sort.
+
+⛔ **There is nothing to look up.** Do NOT read `docs/plans/` to find a next number, and do NOT allocate a sequential `NNNN`. Take the timestamp from the clock.
+
+**A plan SET allocates its timestamp once, at the umbrella, and every topic reuses it verbatim** — that is what keeps a set grouped in the directory now that a shared number no longer does:
+
+```
+docs/plans/2026-09-07T005046-PLAN--[slug]-000-umbrella.md
+docs/plans/2026-09-07T005046-PLAN--[slug]-001-[topic].md
+```
+
+Companion files keep suffixing the plan basename: `...-PLAN--[slug]--evidence-v01.md`, `...-PLAN--[slug]--review-v01.md`.
+
+**Pre-existing plans keep their names.** The legacy form `docs/plans/NNNN-PLAN--[slug].md` is still on disk and still valid to *read* and *resolve* — `CLAUDE.md` cites several of those plans by number. Both forms coexist; only a NEW plan uses the timestamp.
 
 ### ⛔ Authoring Rules (READ BEFORE WRITING)
 
@@ -246,6 +259,8 @@ IF TEMPTED TO PASTE THE CONTENT A FILE WILL RECEIVE:
 If a design doc exists in `docs/brainstorming/`, the plan **references it and does not restate it**. If no design doc exists, the plan carries the decision inline — but still states the decision, never the file content.
 
 **Every F-block MUST be covered by at least one validation level.** An F-block with no proof is a gap the reviewer cannot see.
+
+**Every F-block that hands something to a later one MUST declare it.** The F-block states `Produces:`, the later one states `Consumes:` with the same string plus the producing F-block id. ⛔ The interface here is **not a function signature** — it is the `KEY=STATUS` line a script emits, a sidecar key, a frontmatter field, an injection anchor name: whatever one F-block writes down and a later one reads. Every `Consumes` MUST name an **earlier** F-block that `Produces` it, using the **same string**. A `Consumes` with no matching `Produces` is an F-block built against a name someone still has to invent.
 
 ### Plan Structure
 
@@ -270,7 +285,17 @@ Sections marked *(multi-topic)* apply when the plan implements more than one des
 
 | Document | Carries |
 |---|---|
-| `docs/brainstorming/[file].md` | [which decisions/contracts live there] |
+| `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` | [which decisions/contracts live there] |
+
+## Global Constraints
+
+[Every requirement that binds the WHOLE plan rather than one F-block — distribution and capability rules from `provider-map.json`, layer boundaries and pipeline gates from `CLAUDE.md`, contracts fixed by the design doc. One line each, the **exact value copied verbatim from its source**, with that source cited in parentheses.]
+
+- Agents build only for a provider that declares an `agents` pattern (provider-map.json → providers)
+- `.opencode/` adapters mirror their `.claude/` canonical twin (CLAUDE.md, Internal Layer)
+- `node scripts/build.js` exits 0 and emits no new warning (CLAUDE.md, Pipeline)
+
+⛔ **Verbatim is load-bearing** — this block is handed to the reviewer as its attention lens. "keep it consistent" cannot be reviewed; the lines above can. Never paraphrase, never write a vague range, never state a constraint without its source. **With no plan-wide constraints the section reads the single word `None`** — never omit the section, because an absent section is a question and `None` is an assertion.
 
 ## Problem
 
@@ -288,7 +313,16 @@ Sections marked *(multi-topic)* apply when the plan implements more than one des
 [Multi-topic: group F-blocks under `#### T[N] — [topic] (ref: [design doc])` headings.]
 
 - **F1** — `path/to/file`: [what changes about it]. [What it must NOT lose.] [Ref to the design section carrying its contract.]
+  - **Produces:** [what a later F-block reads — a `KEY=STATUS` line, a sidecar key, a frontmatter field, an anchor name. Omit the line when nothing.]
+  - **Consumes:** [that same string, verbatim] ([the earlier F-block that produces it]). [Omit the line when nothing.]
 - **F2** — ...
+
+[Worked example — the interface is never a function signature here:]
+
+- **F3** — `framwork/.codeadd/scripts/converge-gates.sh`: adds the fifth delivery gate.
+  - **Produces:** `converge-gates.sh` emits `GATE5=pass|fail|skip`
+- **F7** — `framwork/.codeadd/commands/add.done.md`: STEP 4 reads the new gate.
+  - **Consumes:** `GATE5` (F3)
 
 ### Does NOT Include (important!)
 
@@ -380,17 +414,17 @@ Specific gaps a reviewer must actively hunt, because they are the ones this plan
 ## References
 
 - Design set: [brainstorm paths]
-- Prior art this plan builds on: [plan NNNN — what it established]
+- Prior art this plan builds on: [plan basename — what it established]
 - [key source files / contracts]
 
 ---
 
 ## Next Steps
 
-/add-framework--build [NNNN]-PLAN--[slug]
+/add-framework--build [slug]
 
 [IF the plan names internal-layer work:]
-Then, for the internal layer (`/add-framework--build` reaches neither `CLAUDE.md` nor `.claude/`):
+Then, for the internal layer (this adapter's `/add-framework--build` reaches neither `.claude/` nor `CLAUDE.md` — it carries no Project Anatomy sync. Both belong to `/add-framework--self-build` here. The Claude Code build DOES sync the derived counts and the prose for what it changed; the two adapters differ on this and the difference is deliberate, not drift):
 
 - `/add-framework--self-plan [what]`
 
@@ -487,7 +521,7 @@ Emit the blocks below. Skip one only when it is genuinely empty — never pad it
 
 ### 6.2 Plan metadata [AFTER the summary]
 
-Then, and only then: plan file path, status (`draft`), review verdict, fixes applied (one line each, if any), and the two next-step commands (`/add-framework--build [NNNN]-PLAN--[slug]` to implement, `/add-framework--plan PLAN[NNNN]` to revise).
+Then, and only then: plan file path, status (`draft`), review verdict, fixes applied (one line each, if any), and the two next-step commands (`/add-framework--build [slug]` to implement, `/add-framework--plan [slug]` to revise).
 
 ### 6.3 Self-check before sending
 
@@ -507,7 +541,13 @@ add-framework--plan ends here. Execution is `/add-framework--build`'s responsibi
 
 ## Continue Mode (existing plan)
 
-If `/add-framework--plan PLAN[NNNN]`:
+If `/add-framework--plan [plan]`:
+
+**Resolve the argument BEFORE loading anything.** Match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*` and `--evidence-v*` companions). A 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument; the full basename always works. **Both naming forms resolve** — the timestamped `YYYY-MM-DDTHHMMSS-PLAN--[slug]` and the legacy `NNNN-PLAN--[slug]`.
+
+- **Exactly one match** → that is the plan.
+- **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
+- **No match** → list the plans in `docs/plans/` and STOP.
 
 1. Load existing plan
 2. Show summary of what was already decided

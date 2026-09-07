@@ -29,7 +29,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-optimizing-git-workflow
 - mention: add-plan-based-features
 - mention: add-plan-review
-- mention: add-planning
 - mention: add-product-discovery
 - mention: add-project-scaffolding
 - mention: add-qa
@@ -83,7 +82,10 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: /add.review
 - mention: /add.wiki
 - mention: build-setup.sh
+- mention: build-ledger.sh
 - mention: converge-gates.sh
+- mention: review-package.sh
+- mention: task-brief.sh
 - mention: done.sh
 - mention: get-branch-metadata.sh
 - mention: next-id.sh
@@ -145,7 +147,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-plan-based-features | Implement subscription plan-based features |
 | add-plan-review | Pre-delivery executability rubric for about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` |
 | add-cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` |
-| add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
 | add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, config.json/screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded by /add.review at its QA merge step, never by a judge |
@@ -248,6 +249,9 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-tdd | add.plan, add.build, add.review, add.hotfix (tdd-pipeline RED gate) |
 | add-test-specification | add.plan (STEP 9) |
 | converge-gates.sh | add.plan-to-ready (STEP 6, convergence check), add.done (STEP 4, delivery-gate preflight) — read-only probe for the four gates (review, QA baseline, epic, coverage); one script backs both commands' verdicts so they can't drift apart |
+| build-ledger.sh | add.build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add-subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
+| task-brief.sh | add.build (STEP 10 dispatch), add-subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
+| review-package.sh | add.build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add-subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
 ## Main Flows
 
