@@ -177,7 +177,9 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 ## Validation Gate Block
 
-Every generator command MUST paste the following block as **the final STEP that operates on the doc** — i.e. after every step that writes, edits, or transforms the doc, and before any post-doc step (completion summary, fresh-reader review via `add-plan-review`, the comprehension readback via `add-feature-readback` that follows it, next-step routing, merge execution, iteration logging). Steps that do not modify the gated doc may follow the gate. The block is self-contained and imperative. Replace `<SCHEMA>` with the schema type in use.
+Every generator command MUST paste the following block as **the final STEP that operates on the doc** — i.e. after every step that writes, edits, or transforms the doc, and before any post-doc step (completion summary, fresh-reader review via `add-plan-review` then the comprehension readback via `add-feature-readback`, next-step routing, merge execution, iteration logging). Steps that do not modify the gated doc may follow the gate. The block is self-contained and imperative. Replace `<SCHEMA>` with the schema type in use.
+
+**Known gap — generators with no fresh-reader review.** Only `add.new`, `add.brainstorm`, `add.plan` and `add.plan-to-ready` run the review + readback pair. Every other generator that writes a schema-gated doc (`add.hotfix`, `add.wiki`, `add.audit`, `add.diagnose`) passes the validation gate and stops there. An earlier version of this line routed those "other generators" to a question-only reviewer, but no command ever implemented that step and the agent it named was deleted in plan 0076. The route is not restored here: pointing at a reviewer nobody dispatches is what produced the confusion in the first place. Giving those commands a real review step is open work, not a documented behaviour.
 
 ```markdown
 ## STEP N: Validation Gate (add-doc-schemas)
