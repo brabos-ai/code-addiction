@@ -426,7 +426,7 @@ Specific gaps a reviewer must actively hunt, because they are the ones this plan
 /add-framework--build [slug]
 
 [IF the plan names internal-layer work:]
-Then, for the internal layer (`/add-framework--build` reaches neither `CLAUDE.md` nor `.claude/`):
+Then, for the internal layer (`/add-framework--build` does not reach `.claude/`, and it does reach `CLAUDE.md` — but only for the derived Project Anatomy counts, its STEP 6.3, and the prose describing what that build changed, its STEP 6.4. Every other part of `CLAUDE.md` — policy paragraphs, the Internal Layer tables, the pipeline narrative — belongs to `/add-framework--self-build`):
 
 - `/add-framework--self-plan [what]`
 
