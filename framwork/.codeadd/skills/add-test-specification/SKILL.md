@@ -5,6 +5,10 @@ description: Generate contract test cases from feature requirements (RFs/RNs) an
 
 # Test Specification — Contract Test Cases
 
+<!-- uses:
+- skill: add-tdd
+-->
+
 > **LANG:** Respond in user's native language. Tech terms in English.
 
 ## Purpose

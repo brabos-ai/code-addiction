@@ -5,6 +5,13 @@ description: Frontend architecture consultant for project structure, folder orga
 
 # Frontend Architecture Consultant
 
+<!-- uses:
+- skill: add-frontend-development
+- mention: add-backend-architecture
+- mention: add-project-scaffolding
+- mention: add-ux-design
+-->
+
 Guide structural decisions for frontend projects. Choose the **simplest** pattern that keeps the team productive as the project grows.
 
 ---

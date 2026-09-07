@@ -5,6 +5,10 @@ description: Use when designing command workflows or refactoring existing comman
 
 # Building Commands
 
+<!-- uses:
+- command: /add-framework--build
+-->
+
 ## Overview
 
 **Commands fail not from unclear logic but from unclear PRESSURE POINTS.** Agents skip steps when gates are implicit, execute wrong order when sequence isn't mandatory, and rationalize when checklists are vague timelines instead of checkboxes.

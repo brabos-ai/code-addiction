@@ -1,5 +1,11 @@
 # ADD Shared-Review — Plan-vs-Implementation Auditor
 
+<!-- uses:
+- skill: building-commands
+- command: /add-framework--build
+- command: /add-framework--self-build
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Audits an existing plan in `docs/plans/` against actual repository state via 4 parallel read-only subagents. Produces a versioned review file alongside the plan. Used for both framework plans (`NNNN-PLAN--slug`) and self plans (`NNNN-SELF-PLAN--slug`).

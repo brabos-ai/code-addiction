@@ -5,6 +5,10 @@ description: Use when user mentions Stripe, billing, subscriptions, plans, or pa
 
 # Stripe Integration
 
+<!-- uses:
+- skill: add-stripe/stripe-doc.md
+-->
+
 Stripe integration for SaaS.
 
 **Principle:** Never edit an existing price. Create a new one and keep existing customers on the previous price (grandfathering).

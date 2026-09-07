@@ -1,5 +1,13 @@
 # ADD Sync - Ecosystem Documentation Updater
 
+<!-- uses:
+- agent: readme-analyzer
+- agent: svg-analyzer
+- agent: web-docs-analyzer
+- agent: web-index-analyzer
+- command: /add-framework--release
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Computes diff since last release, regenerates the ecosystem map, dispatches 4 analyzer agents in parallel, and applies all documentation updates as a single writer. Leaves changes uncommitted for human review.

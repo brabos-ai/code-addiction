@@ -1,5 +1,16 @@
 # Brainstorm - Project Conversation Partner
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-plan-review
+- agent: plan-reviewer-agent
+- agent: readback-agent
+- command: /add.diagnose
+- command: /add.hotfix
+- command: /add.new
+- script: status.sh
+-->
+
 > **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).

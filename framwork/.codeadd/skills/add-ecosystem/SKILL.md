@@ -5,6 +5,90 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 # Ecosystem Map - add-pro
 
+<!-- uses:
+- skill: add-architecture-discovery
+- skill: add-backend-architecture
+- skill: add-backend-development
+- skill: add-claude-md-style
+- skill: add-code-review
+- skill: add-commit
+- skill: add-cross-sf-consistency
+- skill: add-database-development
+- skill: add-delivery-validation
+- skill: add-dev-environment-setup
+- skill: add-doc-schemas
+- skill: add-feature-discovery
+- skill: add-feature-readback
+- skill: add-feature-specification
+- skill: add-frontend-architecture
+- skill: add-frontend-development
+- skill: add-health-check
+- skill: add-id-convention
+- skill: add-investigation
+- skill: add-knowledge-discovery
+- skill: add-optimizing-git-workflow
+- skill: add-plan-based-features
+- skill: add-plan-review
+- skill: add-planning
+- skill: add-product-discovery
+- skill: add-project-scaffolding
+- skill: add-qa
+- skill: add-qa-migration
+- skill: add-qa-spec
+- skill: add-resource-path-convention
+- skill: add-security-audit
+- skill: add-setup-contract
+- skill: add-skill-creator
+- skill: add-stripe
+- skill: add-subagent-driven-development
+- skill: add-tasks-checklist
+- skill: add-tdd
+- skill: add-test-specification
+- skill: add-token-efficiency
+- skill: add-ux-design
+- skill: add-wiki-maintenance
+- agent: architecture-agent
+- agent: backend-agent
+- agent: conformance-agent
+- agent: consistency-agent
+- agent: database-agent
+- agent: discovery-agent
+- agent: e2e-agent
+- agent: failure-analysis-agent
+- agent: feature-history-agent
+- agent: fix-agent
+- agent: frontend-agent
+- agent: git-history-agent
+- agent: plan-reviewer-agent
+- agent: qa-agent
+- agent: readback-agent
+- agent: reviewer-agent
+- agent: security-agent
+- agent: system-design-agent
+- agent: test-agent
+- agent: ux-agent
+- agent: ux-flow-agent
+- agent: ux-layout-agent
+- command: /add
+- command: /add.audit
+- command: /add.build
+- command: /add.diagnose
+- command: /add.done
+- command: /add.hotfix
+- command: /add.new
+- command: /add.plan
+- command: /add.plan-to-ready
+- command: /add.pull-request
+- command: /add.qa-setup
+- command: /add.review
+- command: /add.wiki
+- script: build-setup.sh
+- script: converge-gates.sh
+- script: done.sh
+- script: get-branch-metadata.sh
+- script: next-id.sh
+-->
+
 ## When NOT to Use
 
 - Not a how-to guide — load the specific skill for execution detail.

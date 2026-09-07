@@ -5,6 +5,38 @@ argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-
 
 # Plan-to-Ready — Bounded Convergence Loop
 
+<!-- uses:
+- skill: add-commit
+- skill: add-cross-sf-consistency
+- skill: add-doc-schemas
+- skill: add-doc-schemas/references/new-feature.md
+- agent: architecture-agent
+- agent: backend-agent
+- agent: consistency-agent
+- agent: database-agent
+- agent: discovery-agent
+- agent: e2e-agent
+- agent: fix-agent
+- agent: frontend-agent
+- agent: plan-reviewer-agent
+- agent: qa-agent
+- agent: readback-agent
+- agent: reviewer-agent
+- agent: test-agent
+- agent: ux-agent
+- agent: ux-flow-agent
+- agent: ux-layout-agent
+- command: /add.build
+- command: /add.done
+- command: /add.plan
+- command: /add.qa-setup
+- command: /add.review
+- script: build-setup.sh
+- script: converge-gates.sh
+- script: qa-evidence.sh
+- script: status.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 

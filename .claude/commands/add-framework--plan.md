@@ -1,5 +1,12 @@
 # ADD Strategy - Ecosystem Strategic Consultant
 
+<!-- uses:
+- agent: framework-discovery-agent
+- agent: plan-review-agent
+- command: /add-framework--build
+- command: /add-framework--self-plan
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.

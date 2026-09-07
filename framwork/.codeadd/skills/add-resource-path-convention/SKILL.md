@@ -5,6 +5,10 @@ description: Use when writing commands or skills that reference other commands, 
 
 # Resource Path Convention
 
+<!-- uses:
+- command: /add.wiki
+-->
+
 Commands and skills in `framwork/.codeadd/` are the source of truth. After build, they are placed in provider-specific directories (`.claude/commands/`, `.agents/skills/`, `.gemini/commands/`, etc.). Hardcoded `.codeadd/commands/` or `.codeadd/skills/` paths break because these directories do not exist in the installed project. Use build-time variables to reference resources.
 
 ## When to Use

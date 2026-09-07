@@ -1,5 +1,13 @@
 # Pull Request — Create or Update
 
+<!-- uses:
+- skill: add-commit
+- skill: add-doc-schemas
+- skill: add-id-convention
+- command: /add.done
+- script: feature-pr.sh
+-->
+
 > **MODEL:** Use `haiku` model
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 

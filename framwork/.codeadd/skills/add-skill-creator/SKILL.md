@@ -9,6 +9,10 @@ date_added: "2026-02-27"
 
 # Skill Creator (Excellence)
 
+<!-- uses:
+- mention: /add.build
+-->
+
 ## Quick Decision Tree
 
 Use this dispatcher when:

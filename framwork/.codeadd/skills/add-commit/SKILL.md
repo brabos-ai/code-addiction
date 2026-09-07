@@ -5,6 +5,12 @@ description: "Knowledge reference for smart mid-workflow commits: adaptive Conve
 
 # add-commit — Smart Commit
 
+<!-- uses:
+- mention: /add.done
+- mention: /add.pull-request
+- script: converge-gates.sh
+-->
+
 ## When to Use
 
 - Mid-workflow commits during feature development

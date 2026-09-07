@@ -5,6 +5,15 @@ description: Use when analyzing codebase for a specific feature - creates/update
 
 # Feature Discovery
 
+<!-- uses:
+- skill: add-knowledge-discovery
+- mention: add-architecture-discovery
+- mention: add-code-review
+- mention: add-investigation
+- script: init.sh
+- script: status.sh
+-->
+
 Skill for technical codebase analysis focused on a specific feature. Persists analysis in `discovery.md` for reuse across sessions.
 
 **Principle:** Analyze once, use always. Cache per feature.

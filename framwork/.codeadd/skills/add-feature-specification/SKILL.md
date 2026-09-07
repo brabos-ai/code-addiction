@@ -5,6 +5,12 @@ description: Document feature requirements - creates/updates about.md with busin
 
 # Feature Specification
 
+<!-- uses:
+- mention: add-feature-discovery
+- mention: add-planning
+- mention: add-product-discovery
+-->
+
 Skill for documenting feature specifications. Creates/updates `about.md` with requirements, business rules, scope and decisions.
 
 **Principle:** Document WHAT and WHY, not HOW.

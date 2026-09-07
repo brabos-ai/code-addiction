@@ -1,5 +1,14 @@
 # Tech Audit - Complete Technical Project Audit
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-health-check
+- skill: add-investigation
+- command: /add.new
+- script: status.sh
+-->
+
 > **DOCUMENTATION STYLE:** Follow standards defined in skill `add-doc-schemas`
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.

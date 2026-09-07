@@ -5,6 +5,12 @@ description: Use at the context/discovery step of add.plan, add.hotfix, add.new,
 
 # Knowledge Discovery — Wiki Consumption Procedure
 
+<!-- uses:
+- skill: add-wiki-maintenance
+- command: /add.wiki
+- script: status.sh
+-->
+
 ## Overview
 
 Defines the ONE procedure for consulting `{{addpath:wiki/}}` at a command's existing context step. Five commands load this skill: `add.plan`, `add.hotfix`, `add.new`, `add.diagnose`, `add.review`. Loading happens where the command already gathers context — never a new preamble.

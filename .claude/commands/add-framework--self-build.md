@@ -1,5 +1,13 @@
 # ADD Self-Build — Internal Infrastructure Builder
 
+<!-- uses:
+- skill: add-framework-development
+- skill: building-commands
+- agent: readme-analyzer
+- command: /add-framework--build
+- command: /add-framework--self-plan
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **SKILL:** Apply `building-commands` to ALL command/skill outputs
 

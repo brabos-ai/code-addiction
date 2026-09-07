@@ -6,6 +6,10 @@ description: |
 
 # Health Check
 
+<!-- uses:
+- mention: add-security-audit
+-->
+
 Suite of skills for complete technical analysis of the project. Always consult `CLAUDE.md` for general project standards.
 
 ## When NOT to Use

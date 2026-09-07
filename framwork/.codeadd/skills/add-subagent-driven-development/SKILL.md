@@ -5,6 +5,21 @@ description: Use when executing implementation plans via dispatched subagents wi
 
 # Subagent-Driven Development
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-code-review
+- skill: add-database-development
+- skill: add-frontend-development
+- skill: add-ux-design
+- agent: architecture-agent
+- agent: backend-agent
+- agent: database-agent
+- agent: discovery-agent
+- agent: frontend-agent
+- agent: reviewer-agent
+- script: status.sh
+-->
+
 Execute a plan by dispatching named specialist agents per task, with code review after each.
 
 **Core principle:** Named agent per task + review between tasks = high quality, fast iteration.

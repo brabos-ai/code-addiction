@@ -5,6 +5,13 @@ description: Guides backend architecture decisions — over-engineering, folder 
 
 # Backend Architecture Consultant
 
+<!-- uses:
+- mention: add-architecture-discovery
+- mention: add-backend-development
+- mention: add-frontend-architecture
+- mention: add-project-scaffolding
+-->
+
 Guide architectural decisions for backend projects. Language and framework agnostic. Choose between Vertical Slice, Clean Architecture, Simple Modular, or a Combined strategy based on project context.
 
 **Use for:** Choosing architecture patterns, organizing features, structuring folders, deciding boundaries, avoiding over-engineering.

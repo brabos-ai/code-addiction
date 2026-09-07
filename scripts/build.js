@@ -549,7 +549,19 @@ const USES_EDGE_TYPES = {
   agent: 'DISPATCHES',
   command: 'HANDS_OFF_TO',
   script: 'RUNS_SCRIPT',
+  // An acknowledged reference that is NOT a dependency. A name-matching sniffer
+  // cannot tell "uses X" from "explicitly does not use X" — add-health-check's
+  // only reference to add-security-audit is "Security-only audit (use
+  // add-security-audit)", a pointer AWAY inside a list of when not to use the
+  // skill. Declaring it `skill:` puts a false edge in the graph; omitting it
+  // fails the build on correct prose once wave 2 hardens the sniff levels.
+  // `mention:` is the third option, and it is a real edge: the graph gains the
+  // fact, and the dangling gate validates the target like any other.
+  mention: 'MENTIONS',
 };
+
+/** Edge types that assert a dependency. MENTIONS deliberately does not. */
+const DEPENDENCY_EDGE_TYPES = new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT']);
 
 /** `- <kind>: <target>` with an optional trailing `(<modifier>)`. */
 const USES_ENTRY_RE = /^-\s+([A-Za-z]+)\s*:\s*(.+?)\s*(?:\(([^)]*)\))?\s*$/;
@@ -604,6 +616,16 @@ function fencedSpans(raw) {
  * gate unable to tell a missing file from a missing skill.
  */
 function usesTargetId(kind, target) {
+  if (kind === 'mention') {
+    // Reuses sigils the framework's prose already uses, so a mention is written
+    // the way the thing is written where it was mentioned:
+    //   @reviewer-agent -> agent   /add.plan -> command   *.sh -> script
+    //   anything else   -> skill (much the commonest case)
+    if (target.startsWith('@')) return `agent/${target.slice(1)}`;
+    if (target.startsWith('/')) return `command/${target.slice(1)}`;
+    if (/\.(sh|js|mjs)$/.test(target)) return `script/${target}`;
+    return usesTargetId('skill', target);
+  }
   if (kind === 'skill') {
     // `{{skill:NAME/SKILL.md}}` is how a source points at the SKILL itself, not
     // at a file beside it. SKILL.md files are skill nodes, so a bare
@@ -965,6 +987,21 @@ function mentionRe(name) {
   return new RegExp(`(?<![\\w.-])${escapeRe(name)}(?![\\w.-])`);
 }
 
+/**
+ * The pattern that counts as naming a node in prose.
+ *
+ * Commands require their slash. Without it the command named `add` matches
+ * inside "git add/commit/push" and the graph gains an edge invented out of an
+ * English sentence — a real finding from `add.done`. Every genuine reference
+ * writes `/add.plan`, so the slash costs nothing and removes a whole class of
+ * false positive.
+ */
+function nodeMentionRe(node) {
+  return node.kind === 'command'
+    ? new RegExp(`/${escapeRe(node.name)}(?![\\w.-])`)
+    : mentionRe(node.name);
+}
+
 /** Body with fenced blocks and any `uses:` declaration removed — neither is prose. */
 function proseOf(raw) {
   let out = raw.replace(/<!--[ \t]*uses:[\s\S]*?-->/g, '');
@@ -1016,11 +1053,14 @@ function checkArtefactGraph(graph, { readSource } = {}) {
   }
 
   // --- WARN: declaration vs prose, both directions ---------------------------
+  // Both dependency edges AND `mention:` acknowledgements count as "declared"
+  // for the sniff levels: the point of a mention is to say "yes, that name is
+  // in my prose on purpose, and no, I do not depend on it".
   const declaredFrom = new Map();
   for (const e of graph.edges) {
     if (e.origin !== 'declared') continue;
     if (!declaredFrom.has(e.from)) declaredFrom.set(e.from, new Map());
-    declaredFrom.get(e.from).set(e.to, e.modifier);
+    declaredFrom.get(e.from).set(e.to, { modifier: e.modifier, type: e.type });
   }
 
   const sniffable = graph.nodes.filter((n) => SNIFFABLE_KINDS.has(n.kind));
@@ -1036,23 +1076,36 @@ function checkArtefactGraph(graph, { readSource } = {}) {
       // Same layer only: `add-commit` exists in both, and a product command
       // mentioning it means the product one.
       if (t.id === n.id || t.layer !== n.layer) continue;
-      if (mentionRe(t.name).test(prose)) observed.add(t.id);
+      if (nodeMentionRe(t).test(prose)) observed.add(t.id);
     }
 
     for (const id of observed) {
       if (declared.has(id)) continue;
-      warnings.push(`${n.path}: mentions ${id} in prose but does not declare it`);
+      failures.push(
+        'artefact-graph: undeclared reference\n' +
+          `  ${n.path}\n` +
+          `  names ${id} in prose but declares no relationship to it\n` +
+          '  add it to the `uses:` block — or, if the prose points AWAY from it\n' +
+          '  ("use X instead", "do not use for"), add `- mention: <target>`.',
+      );
     }
 
-    for (const [id, modifier] of declared) {
+    for (const [id, { modifier, type }] of declared) {
       // `conditional` is the reserved waiver for a legitimate non-greppable
       // load. Free text is documentation, not a waiver.
       if (modifier === 'conditional' || observed.has(id)) continue;
       const t = byId.get(id);
       if (!t || !SNIFFABLE_KINDS.has(t.kind)) continue;
-      warnings.push(
-        `${n.path}: declares ${id} but its prose never mentions it (phantom edge). ` +
-          'Remove it, or mark it (conditional).',
+      failures.push(
+        type === 'MENTIONS'
+          ? 'artefact-graph: stale acknowledgement\n' +
+            `  ${n.path}\n` +
+            `  acknowledges ${id} with mention: but its prose no longer names it\n` +
+            '  remove the entry — a stale acknowledgement silences a real finding later.'
+          : 'artefact-graph: phantom edge\n' +
+            `  ${n.path}\n` +
+            `  declares ${id} but its prose never names it\n` +
+            '  remove it, or mark it (conditional) if the load is real but not greppable.',
       );
     }
   }
@@ -1700,6 +1753,7 @@ module.exports = {
   SIDECARS,
   fragmentNodeName,
   fencedSpans,
+  nodeMentionRe,
   sliceContractBlock,
   contractShape,
   CONTRACT_VARIABLE_RE,

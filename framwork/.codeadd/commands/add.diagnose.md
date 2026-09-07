@@ -1,5 +1,23 @@
 # Diagnose - Pre-Decision Investigative Triage
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-investigation
+- skill: add-knowledge-discovery
+- skill: add-investigation/references/differential-diagnosis.md
+- skill: add-investigation/references/symptom-disambiguation.md
+- agent: architecture-agent
+- agent: feature-history-agent
+- agent: git-history-agent
+- command: /add.hotfix
+- command: /add.init
+- command: /add.new
+- command: /add.plan
+- command: /add.wiki
+- script: status.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 

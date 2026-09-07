@@ -5,6 +5,12 @@ description: 'Product validation: Requirements 100% implemented, prerequisites e
 
 # Delivery Validation
 
+<!-- uses:
+- command: /add.plan
+- command: /add.plan-to-ready
+- command: /add.review
+-->
+
 Skill for PRODUCT validation — checks whether requirements were 100% implemented.
 
 ## When to Use

@@ -1,5 +1,20 @@
 # Feature Discovery & Documentation
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-id-convention
+- skill: add-knowledge-discovery
+- skill: add-plan-review
+- skill: add-doc-schemas/references/new-feature.md
+- agent: plan-reviewer-agent
+- agent: readback-agent
+- command: /add.build
+- command: /add.plan
+- command: /add.wiki
+- script: init.sh
+- script: status.sh
+-->
+
 > **REF:** `CLAUDE.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.

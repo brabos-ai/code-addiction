@@ -5,6 +5,10 @@ description: Guide Node.js project scaffolding — Starter monolith, Scale monor
 
 # Project Scaffolding
 
+<!-- uses:
+- command: /add.wiki
+-->
+
 Guide AI-assisted creation of Node.js projects from scratch with consistent architecture across stacks.
 
 **Use for:** Creating new projects, choosing stack, scaffolding folder structure, migrating Starter to Scale

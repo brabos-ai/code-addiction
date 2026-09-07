@@ -5,6 +5,24 @@ description: Use when judging contract consistency across an epic's subfeature p
 
 # add-cross-sf-consistency — Cross-Subfeature Consistency Rubric
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-plan-review
+- skill: add-qa
+- mention: add-code-review
+- skill: add-doc-schemas/references/review.md
+- mention: @qa-agent
+- agent: backend-agent
+- agent: consistency-agent
+- agent: database-agent
+- agent: frontend-agent
+- agent: plan-reviewer-agent
+- agent: reviewer-agent
+- agent: ux-agent
+- command: /add.plan
+- command: /add.plan-to-ready
+-->
+
 ## Overview
 
 The rubric `consistency-agent` loads before it reports. `/add.plan-to-ready`'s epic loop dispatches that agent twice per epic run: a **FULL pass** after each subfeature's `plan.md` is consolidated and reviewed (comparing it against every already-converged sibling), and one **DELTA pass** at the end of the epic (re-checking only what changed since the last verdict). The agent compares declared contracts **document against document** — `plan.md`, `about.md`, `design.md` — and never opens source code; code-level review stays `@reviewer-agent`'s job.

@@ -5,6 +5,10 @@ description: Create/update plan.md with sequenced tasks, file mapping, dependenc
 
 # Technical Planning
 
+<!-- uses:
+- skill: add-commit
+-->
+
 Skill for creating technical implementation plans. Creates/updates `plan.md` with tasks, file mapping and estimates.
 
 **Principle:** Concrete, executable plan — not a wishlist.

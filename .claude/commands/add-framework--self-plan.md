@@ -1,5 +1,13 @@
 # ADD Self-Plan — Internal Infrastructure Planner
 
+<!-- uses:
+- skill: add-framework-development
+- agent: framework-discovery-agent
+- agent: plan-review-agent
+- command: /add-framework--plan
+- command: /add-framework--self-build
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Plans structural changes to the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Generates documented plan for execution by `/add-framework--self-build`.

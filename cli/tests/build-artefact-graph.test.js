@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 /**
- * Artefact graph extraction guard (plan 0077, wave 1).
+ * Artefact graph extraction + gate guard (plan 0077, waves 1-2).
  *
  * `scripts/build.js` emits a third content-derived sidecar,
  * `framwork/.codeadd/artefact-graph.json`, holding every artefact node and the
@@ -139,6 +139,73 @@ describe('L1 extractUses', () => {
 
     // Guard the guard: skipping every path would make this level vacuous.
     expect(checked).toBeGreaterThan(2);
+  });
+
+  it('L1.11 `mention:` records an acknowledged reference and creates NO edge', () => {
+    // Wave 2 turns "mentioned but not declared" into a build failure, and a
+    // name-matching sniffer cannot tell "uses X" from "explicitly does NOT use
+    // X". add-health-check's only reference to add-security-audit is
+    // "- Security-only audit (use add-security-audit)" — a pointer AWAY, inside
+    // a list of when not to use the skill. Declaring it would put a false edge
+    // in the graph; leaving it undeclared would fail the build on correct prose.
+    // `mention:` is the third option: acknowledged, reviewable, edge-free.
+    // It is a typed edge, not a side channel: the graph gains the fact that one
+    // doc points at another without depending on it, and the dangling gate
+    // validates the target for free.
+    const src = '<!-- uses:\n- skill: add-qa\n- mention: add-security-audit\n-->\n';
+    const edges = extractUses(src, 'add-health-check', 'skill');
+
+    expect(edges).toHaveLength(2);
+    expect(edges[0]).toMatchObject({ to: 'product/skill/add-qa', type: 'USES_SKILL' });
+    expect(edges[1]).toMatchObject({ to: 'product/skill/add-security-audit', type: 'MENTIONS' });
+  });
+
+  it('L1.11 a MENTIONS edge suppresses the undeclared-reference failure', () => {
+    const nodes = [
+      {
+        id: 'product/skill/add-health-check', kind: 'skill', layer: 'product',
+        name: 'add-health-check', path: 'x/SKILL.md', registered: true,
+        providers: [], declares: true,
+      },
+      {
+        id: 'product/skill/add-security-audit', kind: 'skill', layer: 'product',
+        name: 'add-security-audit', path: 'y/SKILL.md', registered: true,
+        providers: [], declares: false,
+      },
+    ];
+    const prose = () => 'Security-only audit (use add-security-audit)';
+
+    // Undeclared: fails.
+    expect(checkArtefactGraph({ nodes, edges: [] }, { readSource: prose }).failures.length)
+      .toBeGreaterThan(0);
+
+    // Acknowledged: silent, and no USES_SKILL edge was invented to get there.
+    const edges = [{
+      from: 'product/skill/add-health-check',
+      to: 'product/skill/add-security-audit',
+      type: 'MENTIONS', origin: 'declared', modifier: null,
+    }];
+    expect(checkArtefactGraph({ nodes, edges }, { readSource: prose }).failures).toEqual([]);
+  });
+
+  it('L1.11 a typo in a `mention:` target still fails the dangling gate', () => {
+    // Acknowledging a name is not a licence to invent one — a typo'd mention
+    // would silence the sniffer forever against a name nothing will ever match.
+    const graph = {
+      nodes: [{
+        id: 'product/skill/add-health-check', kind: 'skill', layer: 'product',
+        name: 'add-health-check', path: 'x/SKILL.md', registered: true,
+        providers: [], declares: true,
+      }],
+      edges: [{
+        from: 'product/skill/add-health-check',
+        to: 'product/skill/add-securty-audit',
+        type: 'MENTIONS', origin: 'declared', modifier: null,
+      }],
+    };
+
+    expect(checkArtefactGraph(graph, { readSource: () => '' }).failures.join('\n'))
+      .toMatch(/add-securty-audit/);
   });
 
   it('L1.10 a target ending in /SKILL.md names the SKILL, not a reference file', () => {
@@ -452,23 +519,25 @@ describe('L3 checkArtefactGraph', () => {
     expect(checkArtefactGraph(g, { readSource: noSource }).failures).toEqual([]);
   });
 
-  it('L3.4 a prose mention with no declaration WARNS and does not fail', () => {
-    // Shipping this as a failure blocks every build in wave 1: almost no
-    // artefact declares yet, and every command mentions skills in prose.
+  it('L3.4 a prose mention with no declaration FAILS', () => {
+    // Hardened in wave 2, once all 97 artefacts declare and the tree is clean.
+    // Shipping this in wave 1 would have blocked every build in the repo — the
+    // three-level split existed precisely so it could wait for the declarations.
     const g = graphOf([
       node(),
       node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md', declares: true }),
     ]);
 
-    const { failures, warnings } = checkArtefactGraph(g, {
+    const { failures } = checkArtefactGraph(g, {
       readSource: (n) => (n.name === 'add.build' ? 'Load the add-tdd skill in STEP 3.' : ''),
     });
 
-    expect(failures).toEqual([]);
-    expect(warnings.join('\n')).toMatch(/add-tdd/);
+    expect(failures.join('\n')).toMatch(/add-tdd/);
+    // The message must offer both fixes, or an author hits it and guesses.
+    expect(failures.join('\n')).toMatch(/mention:/);
   });
 
-  it('L3.5 a declaration absent from prose and unmarked WARNS and does not fail', () => {
+  it('L3.5 a declaration absent from prose and unmarked FAILS as a phantom edge', () => {
     const g = graphOf(
       [
         node(),
@@ -483,13 +552,13 @@ describe('L3 checkArtefactGraph', () => {
       }],
     );
 
-    const { failures, warnings } = checkArtefactGraph(g, { readSource: noSource });
+    const { failures } = checkArtefactGraph(g, { readSource: noSource });
 
-    expect(failures).toEqual([]);
-    expect(warnings.join('\n')).toMatch(/add-tdd/);
+    expect(failures.join('\n')).toMatch(/add-tdd/);
+    expect(failures.join('\n')).toMatch(/phantom edge/);
   });
 
-  it('L3.6 (conditional) suppresses the phantom-edge warning, and nothing else does', () => {
+  it('L3.6 (conditional) suppresses the phantom-edge failure, and nothing else does', () => {
     const mk = (modifier) => graphOf(
       [
         node(),
@@ -504,9 +573,9 @@ describe('L3 checkArtefactGraph', () => {
       }],
     );
 
-    expect(checkArtefactGraph(mk('conditional'), { readSource: noSource }).warnings).toEqual([]);
+    expect(checkArtefactGraph(mk('conditional'), { readSource: noSource }).failures).toEqual([]);
     // A free-text modifier is documentation, not a waiver.
-    expect(checkArtefactGraph(mk('loaded in STEP 4'), { readSource: noSource }).warnings.length)
+    expect(checkArtefactGraph(mk('loaded in STEP 4'), { readSource: noSource }).failures.length)
       .toBeGreaterThan(0);
   });
 
@@ -520,12 +589,40 @@ describe('L3 checkArtefactGraph', () => {
       node({ id: 'product/command/add', kind: 'command', name: 'add', path: 'y.md' }),
     ]);
 
-    const { warnings } = checkArtefactGraph(g, {
+    const { failures: warnings } = checkArtefactGraph(g, {
       readSource: (n) => (n.name === 'add.build' ? 'See add-qa-migration and /add.plan for details.' : ''),
     });
 
     expect(warnings.join('\n')).not.toMatch(/add-qa\b(?!-)/);
     expect(warnings.join('\n')).not.toMatch(/"add"/);
+  });
+
+  it('L3.8 a command is only matched with its slash, never as a bare word', () => {
+    // `add.done` carries "DO NOT USE Bash for git add/commit/push". Under a
+    // bare-word match the command named `add` matches inside `git add`, and the
+    // graph gains an edge invented out of an English sentence. Commands are
+    // always written `/add.plan` where they are actually referenced, so the
+    // slash is part of the name for sniffing purposes.
+    const nodes = [
+      {
+        id: 'product/command/add.done', kind: 'command', layer: 'product',
+        name: 'add.done', path: 'x.md', registered: true, providers: [], declares: true,
+      },
+      {
+        id: 'product/command/add', kind: 'command', layer: 'product',
+        name: 'add', path: 'y.md', registered: true, providers: [], declares: false,
+      },
+    ];
+
+    const bare = checkArtefactGraph({ nodes, edges: [] }, {
+      readSource: (n) => (n.name === 'add.done' ? 'DO NOT USE Bash for git add/commit/push.' : ''),
+    });
+    expect(bare.failures).toEqual([]);
+
+    const slashed = checkArtefactGraph({ nodes, edges: [] }, {
+      readSource: (n) => (n.name === 'add.done' ? 'Route back to /add when unsure.' : ''),
+    });
+    expect(slashed.failures.join('\n')).toMatch(/product\/command\/add\b/);
   });
 
   it('L3.7 the real tree produces no failures', () => {

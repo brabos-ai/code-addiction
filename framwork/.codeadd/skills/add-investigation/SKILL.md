@@ -5,6 +5,14 @@ description: Use when investigating vague symptoms or information-flow bugs requ
 
 # Investigation Skill
 
+<!-- uses:
+- agent: architecture-agent
+- agent: feature-history-agent
+- agent: git-history-agent
+- command: /add.diagnose
+- command: /add.hotfix
+-->
+
 ## Overview
 
 Vague symptoms, hard-to-find bugs, and information-flow inconsistencies are NOT solved by jumping into code — they require rigorous disambiguation, backward tracing, and differential diagnosis BEFORE any fix or route decision. This skill encodes a 5-phase methodology with a hard Iron Law (see Credits for attribution).

@@ -1,5 +1,40 @@
 # Technical Planning Orchestrator
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-cross-sf-consistency
+- skill: add-database-development
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-feature-discovery
+- skill: add-frontend-development
+- skill: add-id-convention
+- skill: add-knowledge-discovery
+- skill: add-plan-review
+- skill: add-tasks-checklist
+- skill: add-ux-design
+- skill: add-doc-schemas/references/new-feature.md
+- skill: add-ux-design/critique-rubric.md
+- agent: architecture-agent
+- agent: backend-agent
+- agent: consistency-agent
+- agent: database-agent
+- agent: discovery-agent
+- agent: frontend-agent
+- agent: plan-reviewer-agent
+- agent: qa-agent
+- agent: readback-agent
+- agent: ux-agent
+- agent: ux-flow-agent
+- agent: ux-layout-agent
+- command: /add.build
+- command: /add.done
+- command: /add.plan-to-ready
+- command: /add.review
+- command: /add.wiki
+- script: status.sh
+-->
+
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).

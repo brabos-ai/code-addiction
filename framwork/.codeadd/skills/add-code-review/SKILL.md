@@ -5,6 +5,20 @@ description: 'Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Arch
 
 # Code Review
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-database-development
+- skill: add-frontend-development
+- skill: add-security-audit
+- skill: add-ux-design
+- mention: add-architecture-discovery
+- mention: add-feature-discovery
+- mention: add-feature-specification
+- mention: add-planning
+- command: /add.build
+- script: status.sh
+-->
+
 Skill for validating implemented code against project standards.
 
 **Use for:** Validate code and identify violations; apply routed fixes when dispatched by `/add.build`

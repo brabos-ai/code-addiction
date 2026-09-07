@@ -5,6 +5,20 @@ description: Use when running agent-judged QA validation (read-PNG by default; t
 
 # add-qa — QA Validation Methodology
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-id-convention
+- mention: add-qa/references/coordinator.md
+- mention: @test-agent
+- agent: qa-agent
+- agent: ux-agent
+- command: /add.build
+- command: /add.done
+- command: /add.qa-setup
+- command: /add.review
+- script: qa-evidence.sh
+-->
+
 ## Overview
 
 The QA capability **judges from the persisted run evidence (screenshots + computed styles + axe/assertion results); with the playwright plugin it additionally drives the app live** and lets the **agents be the judges** (Level C): the run captures evidence, the judges assess it. `/add.review` dispatches **two specialist judges per subfeature, in parallel** — `@ux-agent` in review mode (the judgement axes: UX quality, judgement conformance, responsiveness) and `@qa-agent` (functional delivery vs `about.md`, deterministic Design Contract conformance from measured computed styles, ALL accessibility, and failure forensics) — and the coordinator reconciles coverage once, then merges the two finding sets. It is an **audit, not a gate**: it documents findings that feed the next fix wave; it never fixes. Each screen's `design.md` `## Design Contract` is the source of truth for both conformance judgements — the dimensions it names, and how each is verified, decide which judge owns each row: computed-style rows are `@qa-agent`'s deterministic comparison, the judgement rows are `@ux-agent`'s.
