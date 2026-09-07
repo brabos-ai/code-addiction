@@ -328,6 +328,8 @@ Report:
 
 Post-merge guidance: "After PR is merged on GitHub, run `/add.done` for branch cleanup."
 
+State that a delivery index entry is still owed and that `{{cmd:add.done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
+
 ---
 
 ## Rules
