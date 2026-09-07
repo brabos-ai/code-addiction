@@ -8,7 +8,7 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Audits an existing plan in `docs/plans/` against actual repository state via 4 parallel read-only subagents. Produces a versioned review file alongside the plan. Used for both framework plans (`NNNN-PLAN--slug`) and self plans (`NNNN-SELF-PLAN--slug`).
+Audits an existing plan in `docs/plans/` against actual repository state via 4 parallel read-only subagents. Produces a versioned review file alongside the plan. Used for both framework plans (`...-PLAN--slug`) and self plans (`...-SELF-PLAN--slug`), in either naming form — the timestamped `YYYY-MM-DDTHHMMSS-` prefix or the legacy `NNNN-` one.
 
 ---
 
@@ -42,9 +42,10 @@ ALWAYS (this command is READ-ONLY for the codebase):
 ## Operation Mode
 
 ```
-/add-framework--shared-review NNNN                       → audit by plan number
-/add-framework--shared-review NNNN-PLAN--slug            → audit by full slug
-/add-framework--shared-review NNNN-SELF-PLAN--slug       → audit a self-plan
+/add-framework--shared-review [plan]                     → audit by unique slug substring
+/add-framework--shared-review <ts>-PLAN--slug            → audit by full basename
+/add-framework--shared-review <ts>-SELF-PLAN--slug       → audit a self-plan
+/add-framework--shared-review NNNN                       → audit a legacy plan by its number
 ```
 
 Re-invocation creates `--review-v02`, `--review-v03`, etc. Old reviews are never overwritten.
@@ -56,9 +57,12 @@ Re-invocation creates `--review-v02`, `--review-v03`, etc. Old reviews are never
 ### 1.1 Resolve Plan File
 
 Given the argument:
-- If it matches `^\d{4}$` → glob `docs/plans/NNNN-*PLAN--*.md` (both PLAN and SELF-PLAN). If multiple match, STOP and list candidates.
-- If it contains `-PLAN--` or `-SELF-PLAN--` → treat as full slug; locate exact file at `docs/plans/<arg>.md`.
-- Otherwise (or if not found) → list available plans in `docs/plans/` and STOP.
+- If `docs/plans/<arg>.md` exists → that is the plan (full basename, either naming form).
+- If it matches `^\d{4}$` → glob `docs/plans/<arg>-*PLAN--*.md` (both PLAN and SELF-PLAN) — the legacy number form, still on disk.
+- Otherwise → match `<arg>` as a **substring** of the basenames of `docs/plans/*PLAN--*.md`, excluding `--review-v*` and `--evidence-v*` companions. A 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument.
+- **Exactly one match** → that is the plan.
+- **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
+- **No match** → list available plans in `docs/plans/` and STOP.
 
 ### 1.2 Parse Plan Content
 
@@ -197,7 +201,7 @@ If subagents disagree on the same item:
 
 ### 4.1 Compute Output Path
 
-`docs/plans/<plan-basename>--review-v<NN>.md` where `<plan-basename>` is the plan filename without `.md` extension (e.g., `0028-PLAN--restructure-internal-commands-and-add-review--review-v01.md`).
+`docs/plans/<plan-basename>--review-v<NN>.md` where `<plan-basename>` is the plan filename without `.md` extension (e.g., `2026-09-07T005046-PLAN--restructure-internal-commands-and-add-review--review-v01.md`).
 
 ### 4.2 Review File Structure
 

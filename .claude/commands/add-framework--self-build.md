@@ -59,11 +59,12 @@ ALWAYS:
 
 ## Operation Mode
 
-/add-framework--self-build [NNNN]-SELF-PLAN--[slug]                → Execute plan from add-framework--self-plan
+/add-framework--self-build [plan]                     → Execute plan from add-framework--self-plan (full basename or unique slug substring)
 /add-framework--self-build [target] [description]     → Pontual change (no plan required)
 
 **Examples:**
-/add-framework--self-build 0001-SELF-PLAN--refactor-gates
+/add-framework--self-build 2026-09-07T005046-SELF-PLAN--refactor-gates
+/add-framework--self-build refactor-gates
 /add-framework--self-build add-framework--sync "add retry logic for failed agent dispatches"
 /add-framework--self-build building-commands "add section about agent memory patterns"
 /add-framework--self-build CLAUDE.md "update pipeline section with new provider"
@@ -80,7 +81,11 @@ Read `CLAUDE.md` at project root.
 
 ### 1.2 If Plan specified
 
-Read `docs/plans/[NNNN]-SELF-PLAN--[slug].md`.
+**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*-SELF-PLAN--*.md` (excluding `--review-v*` and `--evidence-v*` companions) — a 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument. **Both naming forms resolve**: the timestamped `YYYY-MM-DDTHHMMSS-SELF-PLAN--[slug]` and the legacy `NNNN-SELF-PLAN--[slug]`.
+
+- **Exactly one match** → that is the plan. Read it.
+- **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
+- **No match** → list the plans in `docs/plans/` and STOP.
 
 **Extract from plan:**
 - Artefacts to modify/create/remove

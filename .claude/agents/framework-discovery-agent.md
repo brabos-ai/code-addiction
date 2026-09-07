@@ -36,7 +36,9 @@ Scan filenames and read first ~20 lines of each artefact:
 ### 2. Plan Scan (always, regardless of scope)
 
 - `Glob docs/plans/*.md` → list all plan files
-- Extract slug words from each filename (e.g., `0031-SELF-PLAN--framework-discovery-agent-for-planning-commands` → words: framework, discovery, agent, planning, commands)
+- **Strip the leading token first**, then extract slug words. The leading token is the timestamp (`2026-09-07T005046`) on a new plan or the `NNNN` number on a legacy one — both forms are on disk. Drop the `PLAN` / `SELF-PLAN` marker too. ⛔ Never score `2026`, `09` or `07T005046` as a topic keyword.
+  - `2026-09-07T005046-SELF-PLAN--framework-discovery-agent-for-planning-commands` → words: framework, discovery, agent, planning, commands
+  - `0031-SELF-PLAN--framework-discovery-agent-for-planning-commands` → the same words
 - Score each plan slug against topic keywords (0–3 overlap scale)
 - Deep-read the top-5 scoring plans in full for prior decisions and context
 - Remaining plans: slug score only (no content read)
@@ -81,8 +83,8 @@ Emit the structured report below. Be honest: if nothing scores ≥2, say so expl
 
 ### Key Prior Decisions (from deep-read plans)
 
-- [Plan NNNN] — [decision or pattern directly relevant to topic]
-- [Plan NNNN] — [decision or pattern]
+- [Plan <slug>] — [decision or pattern directly relevant to topic]
+- [Plan <slug>] — [decision or pattern]
 
 ### Convergent Signals
 

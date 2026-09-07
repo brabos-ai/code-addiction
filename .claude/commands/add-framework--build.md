@@ -52,13 +52,14 @@ IF building-commands SKILL NOT LOADED:
 ## Operation Mode
 
 ```
-/add-framework--build [NNNN]-PLAN--[slug]                 → Execute specific plan
+/add-framework--build [plan]                    → Execute specific plan (full basename or unique slug substring)
 /add-framework--build [type] [name]             → Direct build (no plan, for simple artefacts)
 ```
 
 **Examples:**
 ```
-/add-framework--build 0042-PLAN--hotfix-optimization
+/add-framework--build 2026-09-07T005046-PLAN--hotfix-optimization
+/add-framework--build hotfix-optimization
 /add-framework--build command add-diagnose
 /add-framework--build skill skill-creator
 /add-framework--build cli migrations
@@ -88,7 +89,11 @@ Verify `framwork/` exists and list its provider directories.
 
 ### 1.1 If plan specified
 
-Read `docs/plans/[NNNN]-PLAN--[slug].md`.
+**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*-PLAN--*.md` (excluding `--review-v*` and `--evidence-v*` companions) — a 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument. **Both naming forms resolve**: the timestamped `YYYY-MM-DDTHHMMSS-PLAN--[slug]` and the legacy `NNNN-PLAN--[slug]`.
+
+- **Exactly one match** → that is the plan. Read it.
+- **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
+- **No match** → list the plans in `docs/plans/` and STOP.
 
 **Extract from plan:**
 - Artefact type (command/skill/script/workflow)
