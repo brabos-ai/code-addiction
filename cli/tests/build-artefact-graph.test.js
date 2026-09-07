@@ -852,10 +852,10 @@ describe('node inventory snapshot', () => {
       skill: 44,
       agent: 28,
       reference: 68,
-      script: 14,
+      script: 17,
       fragment: 23,
     });
-    expect(nodes).toHaveLength(201);
+    expect(nodes).toHaveLength(204);
     expect(nodes.filter((n) => n.declares)).toHaveLength(96);
   });
 });
