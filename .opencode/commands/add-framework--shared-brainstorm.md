@@ -67,7 +67,7 @@ IF REVIEW VERDICT IS blocked:
 
 IF USER WANTS TO REFINE A TOPIC FROM UMBRELLA:
   ⛔ DO NOT PROCEED WITHOUT UMBRELLA SPEC REFERENCE
-  ✅ DO: Ask user to provide -> ref: YYYY-MM-DD-[name]-umbrella.md path
+  ✅ DO: Ask user to provide -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md path (a unique slug fragment also resolves)
 
 ```
 
@@ -81,8 +81,9 @@ Inspect the user's invocation string:
 
 - IF input matches pattern `vamos refinar [topic] -> ref: [path-to-umbrella.md]` (or English equivalent `refine [topic] -> ref: [path]`):
   - Extract `[topic]` and `[path]`
-  - IF `[path]` missing → STOP and ask user to provide `-> ref: YYYY-MM-DD-[name]-umbrella.md`
-  - Verify file exists at `docs/brainstorming/[path]`
+  - IF `[path]` missing → STOP and ask user to provide `-> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`
+  - **Resolve `[path]`:** the full basename always works; otherwise match it as a **substring** of the basenames in `docs/brainstorming/` (a 24-character timestamp prefix is not typeable). Both naming forms resolve — the timestamped one and the legacy `YYYY-MM-DD-[topic]` one. Exactly one match → use it. More than one → ⛔ STOP, print every candidate and ask which. **NEVER guess.** No match → list `docs/brainstorming/` and STOP.
+  - Verify file exists at `docs/brainstorming/[resolved path]`
   - → JUMP to **STEP 8 (Continue Mode)**
 - ELSE (new idea) → proceed to STEP 1.1
 
@@ -215,10 +216,21 @@ If ANY checkbox fails → return to relevant section and continue exploring.
 
 ### 5.1 Determine Output Path
 
-- Simple idea → `docs/brainstorming/YYYY-MM-DD-[topic].md`
-- Umbrella spec → `docs/brainstorming/YYYY-MM-DD-[topic]-umbrella.md`
+- Simple idea → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
+- Umbrella spec → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic]-umbrella.md`
 
-Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
+Timestamp format: `YYYY-MM-DDTHHMMSS`, **local time**, `T` between the date and the time, **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort equals chronological sort, so two brainstorms written the same day no longer sort arbitrarily. Topic slug: kebab-case from idea.
+
+**Brainstorms carry NO kind marker** — unlike plans, which keep `PLAN` / `SELF-PLAN`. Internal brainstorms live in `docs/brainstorming/` of this repo, product ones in `docs/brainstorm/` of the user's repo: different directories in different repositories, so a marker would carry no information.
+
+**A brainstorm SET allocates its timestamp once, at the umbrella, and every subtopic reuses it verbatim:**
+
+```
+docs/brainstorming/2026-09-07T005046-[topic]-umbrella.md
+docs/brainstorming/2026-09-07T005046-[topic]-[subtopic].md
+```
+
+**Pre-existing brainstorms keep their `YYYY-MM-DD-[topic].md` names.** Both forms coexist; only a NEW brainstorm uses the timestamp.
 
 ### 5.2 Write Design Document
 
@@ -237,7 +249,7 @@ Date format: YYYY-MM-DD (today's date). Topic slug: kebab-case from idea.
 
 [Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
 - [Skill/Agent/Command] — what it does, why it's relevant to this idea
-- [Plan NNNN] — prior decision relevant to this design
+- [Plan <slug>] — prior decision relevant to this design
 
 ## Context & Motivation
 
@@ -301,8 +313,10 @@ Same structure +
 
 | Subtopic | Design Path | Purpose |
 |----------|-------------|---------|
-| [Topic 1] | YYYY-MM-DD-[topic1].md | [what it covers] |
-| [Topic 2] | YYYY-MM-DD-[topic2].md | [what it covers] |
+| [Topic 1] | YYYY-MM-DDTHHMMSS-[topic1].md | [what it covers] |
+| [Topic 2] | YYYY-MM-DDTHHMMSS-[topic2].md | [what it covers] |
+
+[Every row reuses the umbrella's timestamp verbatim — that is what keeps the set grouped in the directory.]
 
 ## Dependencies & Relationships
 
@@ -360,7 +374,7 @@ When this command instructs you to DISPATCH AGENT:
 
 ### 7.1 Display Design Document Path
 
-Show: "Design document created: `docs/brainstorming/YYYY-MM-DD-[topic].md`" plus review verdict and fixes applied (one line each, if any).
+Show: "Design document created: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`" plus review verdict and fixes applied (one line each, if any).
 
 ### 7.2 Summarize Key Decisions
 
@@ -383,7 +397,7 @@ Print ONLY one of the following (matching the detected layer), then STOP:
 
 ### 7.4 Offer Refinement (If Umbrella)
 
-If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DD-[name]-umbrella.md`"
+If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`"
 
 ---
 
@@ -409,7 +423,7 @@ Ask clarifying questions specific to the subtopic, grounded in the umbrella's co
 
 ### 8.4 Follow STEP 4-7 for Subtopic
 
-Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DD-[subtopic].md`. Review via STEP 6 before STEP 7 delivery.
+Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DDTHHMMSS-[subtopic].md` — reusing the umbrella's timestamp verbatim. Review via STEP 6 before STEP 7 delivery.
 
 ---
 
