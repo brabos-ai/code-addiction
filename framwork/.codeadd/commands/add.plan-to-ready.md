@@ -165,7 +165,7 @@ skipped, and the skip is recorded in the Decision Log. Order the roster by the
 never by raw table row order alone.
 
 **Why the `status` column is trustworthy here.** Elsewhere in the ecosystem
-this row flip is written by `/add.build` STEP 16 block 14.3, or by
+this row flip is written by `/add.build` STEP 16 block 16.4, or by
 `/add.done`. This command calls neither: it dispatches the build roster
 directly (see Agent Rosters) and never runs `/add.build`, and it never runs
 `/add.done` either. **"The Checkpoint Sequence" below is what writes the
@@ -374,8 +374,10 @@ subfeature in epic mode, and the `SFxx` argument itself on a scoped run.
    specifies (`{{skill:add-doc-schemas/references/new-feature.md}}`). Resolve
    both columns **by header name**; add a `checkpoint` column to the header when
    the document carries none yet. This command is that cell's named owner in the
-   schema — `{{cmd:add.build}}` never commits, so it is forbidden to write it,
-   and nothing else in this run writes it either. Both writes are the
+   schema — the cell names a checkpoint **tag**, and `{{cmd:add.build}}` never
+   creates one (it commits per task, but a batch commit is not a checkpoint
+   commit), so it is forbidden to write it, and nothing else in this run writes
+   it either. Both writes are the
    coordinator's own, the same ownership it already claims for `tasks.md` and
    the review resolution annex.
 
@@ -424,8 +426,17 @@ subfeature in epic mode, and the `SFxx` argument itself on a scoped run.
    commit.
 
 3. **Commit — gated.** Commit here ONLY when STEP 8 exited CONVERGED. A
-   subfeature that did not converge produces NO row flip and NO commit; the
-   absence of a commit is itself the signal, never a separate flag to check.
+   subfeature that did not converge produces NO row flip, NO checkpoint commit
+   and NO tag — and **the absence of the checkpoint TAG is the signal, never the
+   absence of a commit and never a separate flag to check.**
+   ⛔ **Do not read commits as evidence of convergence.** `{{cmd:add.build}}`
+   commits once per task (and once per area dispatch outside TASKS MODE), so a
+   subfeature that failed every gate still leaves a branch full of commits. The
+   tag is the only artefact that exists solely on the converged path, because
+   step 4 below is the only thing that creates it and this step is gated on
+   `CONVERGED`. `status.sh` already reports exactly that signal — it derives
+   `LAST_CHECKPOINT` from `git tag -l "checkpoint/${FEATURE_ID}-*-done"` — so
+   read `LAST_CHECKPOINT`, and read no tag as "did not converge".
    Follow `add-commit`'s type and message conventions for the body.
    **Gate lines:** the commit carries **the five gate lines** — `GATE_REVIEW`,
    `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATES_OK` — **copied

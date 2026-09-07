@@ -317,9 +317,12 @@ Dispatch `@${AREA}-agent` (see Named Agent Mapping) with a prompt that fills eve
 ## REPORT FORMAT
 Write your full report to REPORT_FILE. Return inline ONLY:
 1. STATUS: [complete/blocked]
-2. COMMITS: [BASE..HEAD]
+2. FILES: [created + modified]
 3. TESTS: [one line]
 4. CONCERNS: [if any]
+
+⛔ DO NOT run git add, git commit or git tag. You leave your work in the tree;
+   the coordinator commits it after the validator returns and the build passes.
 ```
 
 ### 5. Commit and Record
@@ -327,9 +330,14 @@ Write your full report to REPORT_FILE. Return inline ONLY:
 After the area validator returns and the build passes: commit the batch, record `HEAD`, and append the
 ledger line with its `BASE..HEAD` bracket and `BUILD_STATUS`.
 
+**The coordinator commits, never the implementer.** The validator is a separate dispatch, so an
+implementer that committed its own work would put the commit **upstream of validation** — which is the
+one ordering this whole step exists to prevent. `BASE` is recorded by the coordinator before dispatching
+and `HEAD` after the commit it makes itself; the implementer never sees either.
+
 ### 6. Review Subagent's Work
 
-Run `review-package.sh BASE HEAD "${FEATURE_DIR}/_build"` — it writes `git log --oneline`,
+Run `bash .codeadd/scripts/review-package.sh BASE HEAD "${FEATURE_DIR}/_build"` — it writes `git log --oneline`,
 `git diff --stat` and `git diff -U10` for the range into one file and prints `PACKAGE=`. It **refuses an
 empty range (exit 2)**, because an empty package is how a reviewer gets dispatched against nothing and
 returns "looks fine".
@@ -370,7 +378,7 @@ line stating priority. Everything else mirrors the implementation prompt.
 context with implementation detail it then carries into every later dispatch.
 
 **Every fix round is re-reviewed.** Record `FIX_BASE` before the fix dispatch, run
-`review-package.sh FIX_BASE HEAD`, and dispatch `@reviewer-agent` again with `MODE: re-review`. In that
+`bash .codeadd/scripts/review-package.sh FIX_BASE HEAD`, and dispatch `@reviewer-agent` again with `MODE: re-review`. In that
 mode the reviewer verdicts **each open finding** `ADDRESSED` or `NOT ADDRESSED` and flags new breakage
 **in the fix diff only**. Out-of-scope observations come back as deferred minors and go to the ledger;
 they never extend the loop. A fix that compiles and misses the finding is exactly what this catches.
@@ -402,6 +410,13 @@ Ruling: <what you decided> — <why> — <what it costs if wrong>
 All three parts are required. The cost clause is what makes a ruling reviewable — a human reading
 "the caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong"
 can. Then continue to the next task.
+
+**A red build is not a finding, and the breaker does not cover it.** The cap's rule-and-continue applies
+to **review findings** — judgements a reasonable reviewer could be wrong about. A build that does not
+compile is not a judgement, and there is nothing to weigh: the `BUILD GATE` still stands, and an
+exhausted fix loop over a red build reports the unresolved rows and the last `BUILD_ERRORS`, then STOPS.
+Ruling a compile error away would make every other ruling worthless, because the reader could no longer
+tell which ones were judgements.
 
 A session parked on a question costs a day. A wrong ruling costs rework the human can see and undo.
 
