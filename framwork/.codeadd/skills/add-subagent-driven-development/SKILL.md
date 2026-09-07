@@ -8,22 +8,33 @@ description: Use when executing implementation plans via dispatched subagents wi
 <!-- uses:
 - skill: add-backend-development
 - skill: add-code-review
+- skill: add-commit
 - skill: add-database-development
 - skill: add-frontend-development
+- skill: add-tasks-checklist
 - skill: add-ux-design
 - agent: architecture-agent
 - agent: backend-agent
 - agent: database-agent
 - agent: discovery-agent
+- agent: fix-agent
 - agent: frontend-agent
 - agent: reviewer-agent
+- script: build-ledger.sh
+- script: review-package.sh
 - script: status.sh
+- script: task-brief.sh
 - skill: add-subagent-driven-development/references/persistent-logging-and-tasks.md
 -->
 
 Execute a plan by dispatching named specialist agents per task, with code review after each.
 
 **Core principle:** Named agent per task + review between tasks = high quality, fast iteration.
+
+**Second principle, equally load-bearing:** the coordinator forgets. A compaction erases the answer to
+"is task 4 done?", and a coordinator that lost its place re-dispatches finished work. Everything that
+must survive a compaction lives on disk — in the **build ledger** and in `git log` — never in the
+conversation.
 
 > **Provider-Agnostic:** This skill describes WHAT to dispatch (intent + prompt), not HOW. Use your platform's subagent mechanism (Task tool, sub-process, agent call, etc.).
 
@@ -47,7 +58,7 @@ Execute a plan by dispatching named specialist agents per task, with code review
 - **Plan needs review first** — use `executing-plans` (separate session) so the human can vet the plan before any code is written.
 - **Tasks are tightly coupled** — manual execution avoids the conflict risk of resetting context between dependent steps.
 - **Plan needs revision** — brainstorm/refine first; dispatching subagents over a shaky plan compounds rework.
-- **Single trivial task** — dispatch overhead (TASK_DOCUMENTS, decision log, review) outweighs benefit; just do it inline.
+- **Single trivial task** — dispatch overhead (TASK_DOCUMENTS, ledger, brief, review) outweighs benefit; just do it inline.
 - **Exploratory / spike work** — no spec to anchor TASK_DOCUMENTS; use a discovery agent instead.
 
 ---
@@ -62,6 +73,7 @@ When dispatching, prefer named agents over generic subagents. Named agents have 
 | Backend | `@backend-agent` | Implementation (read-write) |
 | Frontend | `@frontend-agent` | Implementation (read-write) |
 | Review | `@reviewer-agent` | Validation (read-only) |
+| Fix | `@fix-agent` | Remediation (read-write) |
 | Discovery | `@discovery-agent` | Exploration (read-only) |
 | Architecture | `@architecture-agent` | Advisory (read-only) |
 
@@ -101,13 +113,134 @@ The coordinator already knows if it's a simple feature or epic, which subfeature
 
 ---
 
+## The Build Ledger
+
+**Path:** `${FEATURE_DIR}/build-ledger.md`, or `${SF_DIR}/build-ledger.md` on an epic.
+
+**Tracked, not scratch.** It carries the rulings, and a reviewer who cannot see what was decided on their
+behalf cannot review it. `git clean -fdx` cannot destroy it. Scratch — briefs, agent reports, diff
+packages — lives in `${FEATURE_DIR}/_build/`, which ignores itself and never reaches a commit.
+
+**Append with the script, never by hand:**
+
+```bash
+bash .codeadd/scripts/build-ledger.sh "${FEATURE_DIR}/build-ledger.md" "T01: complete (commits a1b2c3d..a1b2c3d, review clean)"
+```
+
+It creates the file with its identity header when absent and appends otherwise, printing `LEDGER=`,
+`CREATED=` and `LINES=`. It is a **log, not a set** — the same line twice appends twice, because
+de-duplicating would erase "fix round 1" followed by "fix round 2" of the same finding.
+
+### Canonical format
+
+Append-only, one line per event, identity on the first line:
+
+```markdown
+# Build ledger — feature: F0003 — plan: docs/features/F0003/plan.md
+
+Preflight: 4 pairs checked, 1 conflict — T05 consumes `UserDto.name`, T02 produces `UserDto.fullName`
+Preflight: Ruling: T02's name wins (plan.md Architecture Decisions names it) — costs a rename in T05 if wrong
+T01: complete (commits a1b2c3d..a1b2c3d, review clean)
+T02: fix round 1/3 (2 addressed, 0 open; commits d4e5f6a..b7c8d9e)
+T02: complete (commits d4e5f6a..b7c8d9e, review clean)
+T03: minor (deferred): magic number in retry backoff
+T04: parked — reviewer wants a null guard — Ruling: the caller already guards; costs a crash if wrong
+T04: complete (commits c1d2e3f..f9a8b7c, 1 parked)
+```
+
+**The identity first line is written once, on creation.** A ledger whose identity changes mid-build is a
+ledger that cannot be trusted, so the header is never rewritten.
+
+**Every line that records work records its hash bracket** — `BASE..HEAD`, where `BASE` is
+`git rev-parse HEAD` taken *before* the dispatch and `HEAD` is taken *after* the agent's commits land.
+That bracket is what makes the scoped diff possible.
+
+### The resume rule
+
+The ledger is the recovery map. On entry — every entry, not only after a crash — read the ledger if it
+exists before deciding anything:
+
+- **A task with a `complete` line is NEVER re-dispatched.** Not "probably done", not "let me re-check by
+  re-running it". Done.
+- **A task whose last line is a fix round resumes at the next round** — a task whose last line is
+  `fix round 2/3` resumes at round 3, not at round 1.
+- **A task with no line at all is the first task to dispatch.**
+
+**After a compaction, trust the ledger and `git log` over your own recollection.** Your recollection is
+the thing that was just erased; the ledger and the commit graph are not. Where the two disagree, git wins
+for *what exists* — a commit that is in `git log` happened, whatever the ledger says — and the ledger wins
+for *what was decided*, because a ruling leaves no trace in a diff.
+
+---
+
+## The Pre-Flight Scan
+
+**Before dispatching Task 1**, read `tasks.md` once and write a table to the ledger. Tasks carry six
+sub-bullets — Service, Files, Deps, Consumes, Produces, Verify (see `add-tasks-checklist`) — and
+`Consumes` / `Produces` are what make this scan possible: they are the exact signatures each task calls
+and each task provides.
+
+Two kinds of row, and both are required:
+
+1. **One row per pair of tasks sharing a file or an interface** — what one `Produces` against what the
+   other `Consumes`, and what was found. A `Consumes` that does not match a `Produces` character for
+   character is a conflict, not a nuance.
+2. **One row per task, for self-consistency** — whether the task's own text agrees with itself (its
+   `Files` cover its `Produces`, its `Deps` cover the tasks its `Consumes` names).
+
+**The output is a table, not a verdict.** Writing "the scan is clean" without the rows is not a scan that
+ran — it is a claim that one did. Append the rows to the ledger with `build-ledger.sh`, one line each.
+
+**Every conflict is ruled on before Task 1 is dispatched**, with the `Ruling:` recorded beside its row.
+A conflict carried into execution becomes two subagents building against two different names, discovered
+at integration, when both are already committed.
+
+---
+
+## Handoff by Path
+
+The coordinator hands the agent **paths, not pasted content**. Pasted briefs and inline reports stay
+resident in context and are re-read on every turn for the rest of the session.
+
+**Before the dispatch:**
+
+```bash
+bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build"
+```
+
+It writes one task's full block — description plus all six sub-bullets — into its own file and prints
+`BRIEF=`, `TASK=` and `SUBBULLETS=`. It **exits 2** when the task id is not an `## Execution` task: an
+empty brief is how an agent gets dispatched against nothing and reports success.
+
+**What the dispatch carries:**
+
+| Field | Content |
+|---|---|
+| `BRIEF` | the path `task-brief.sh` printed — the agent reads it |
+| `REPORT_FILE` | the path in `_build/` where the agent writes its full report |
+| `INTERFACES` | the exact `Produces` signatures from earlier tasks that this task `Consumes` — the brief cannot know them |
+| `GLOBAL CONSTRAINTS` | the plan's `## Global Constraints` block, **copied verbatim** |
+| `TASK_DOCUMENTS` | file paths, as always |
+
+`## Global Constraints` travels verbatim because it is the reviewer's attention lens, and it is written
+with exact values copied from their sources. "Fast enough" cannot be reviewed; "under 200ms" can.
+Paraphrasing it destroys the only property that makes it usable.
+
+**What the agent returns inline:** status, the commits it made (`BASE..HEAD`), a one-line test summary,
+and concerns. Nothing else. The full report is on disk at `REPORT_FILE` for whoever needs it.
+
+---
+
 ## Subagent Prompt Template
 
 All subagent prompts include these fields, in order:
 
 - **ROLE** — `You are the [AREA] [agent type] for task [N].`
 - **TASK_DOCUMENTS** — file paths the subagent must read first (source of truth).
-- **DECISION LOG** — accumulated decisions from previous tasks.
+- **BRIEF** — path to the task brief written by `task-brief.sh`.
+- **REPORT_FILE** — path where the subagent writes its full report.
+- **INTERFACES** — signatures produced by earlier tasks that this task consumes.
+- **GLOBAL CONSTRAINTS** — the plan's block, verbatim.
 - **SKILLS** — `MANDATORY:` (always for this area) + `ADDITIONAL:` (detected from context).
 - **COORDINATOR NOTES** — decisions, warnings, patterns to follow/avoid.
 - **TASK** — specific deliverables for this subagent.
@@ -115,53 +248,62 @@ All subagent prompts include these fields, in order:
 
 ---
 
-## Decision Log (Canonical Format)
+## Sizing and the Commit Rule
 
-The coordinator maintains a single decision log throughout the session, appending after each task.
+Estimate every task before dispatching it — size is what tells you whether one dispatch is one commit or
+whether the task should have been split in planning.
 
-```markdown
-### DECISION LOG
-<!-- Coordinator maintains, updates after each task -->
+| Size | Criteria |
+|------|----------|
+| S — Small | 1–2 files, localized change |
+| M — Medium | 3–5 files, moderate logic |
+| L — Large | 6+ files, complex logic |
 
-#### Session Info
-- Plan: [plan-file location]
-- Started: [timestamp]
-- Working Directory: [path]
-- Tasks: [count]
+**Complexity signals — each adds one size:** a new entity; a migration; an external integration; complex
+UI (forms, tables).
 
-#### Task N: [task name]
-- Status: completed | in_progress | failed
-- Depends On: [Task IDs, or -]
-- Files Created: [list]
-- Files Modified: [list]
-- Decisions: [from subagent report]
-- Review Score: [X/10]
+**The commit rule: one semantic commit per batch.**
 
-#### Accumulated Decisions
-- [Decision 1 from Task 1]
-- [Decision 2 from Task 2]
-```
+| Mode | A batch is |
+|---|---|
+| TASKS MODE | one `tasks.md` task (`T01`, `T02`, …) — tasks are already service-scoped and capped at 3 files |
+| DEVELOPMENT / CORRECTION MODE | one area dispatch — there are no task IDs to commit against |
 
-This block is the only canonical decision-log shape — every dispatch (implementer, reviewer, fix) receives an excerpt of it under a `## DECISION LOG` heading.
+Message follows the Conventional Commits logic in `add-commit`, with the task id and the feature id as
+trailers so the ledger, the commit and `tasks.md` can be joined later.
+
+**Commit after validation, never before.** The commit happens once the area validator has returned **and
+the build passes**. A commit of unvalidated code is worse than no commit: it looks like delivered work
+and is not.
 
 ---
 
 ## The Process
 
-### 1. Load Plan + Initialize Decision Log
+### 1. Load Plan + Read the Ledger
 
-Read the plan file, create TodoWrite with all tasks, write the `Session Info` block of the Decision Log (see canonical format above).
+Read the plan file, create TodoWrite with all tasks, then **read the ledger if it exists** and apply the
+resume rule. On a fresh build, create it with the first line you append. Reconcile against `git log`
+before dispatching anything.
 
-### 2. Pre-Dispatch Preparation (Coordinator's Job)
+### 2. Pre-Flight Scan
+
+Run the scan, write its rows to the ledger, and rule on every conflict. This happens **before Task 1**,
+not before the task where the conflict bites.
+
+### 3. Pre-Dispatch Preparation (Coordinator's Job)
 
 Before dispatching ANY subagent:
 
 1. **Assemble TASK_DOCUMENTS** — list all doc paths the subagent needs (epic-aware)
-2. **Identify Reference Files** — find similar files in codebase via Glob/Grep
-3. **Compose Skills** — determine mandatory + additional skills for this area
-4. **Write Coordinator Notes** — specific guidance, warnings, patterns from previous tasks
+2. **Write the brief** — `task-brief.sh` for this task id
+3. **Identify Reference Files** — find similar files in codebase via Glob/Grep
+4. **Compose Skills** — determine mandatory + additional skills for this area
+5. **Collect INTERFACES** — the `Produces` signatures this task `Consumes`
+6. **Copy `## Global Constraints`** verbatim from the plan
+7. **Record `BASE`** — `git rev-parse HEAD`, before anything is dispatched
 
-### 3. Execute Task with Subagent
+### 4. Execute Task with Subagent
 
 Dispatch `@${AREA}-agent` (see Named Agent Mapping) with a prompt that fills every field of the Subagent Prompt Template, plus this mandatory first step:
 
@@ -169,71 +311,134 @@ Dispatch `@${AREA}-agent` (see Named Agent Mapping) with a prompt that fills eve
 ## MANDATORY: Load Context (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
 2. Read ALL files listed in TASK_DOCUMENTS above
-3. Read your area's skill file (see SKILLS section)
+3. Read the file at BRIEF
+4. Read your area's skill file (see SKILLS section)
 
 ## REPORT FORMAT
-Return:
-1. FILES_CREATED: [list]
-2. FILES_MODIFIED: [list]
-3. BUILD_STATUS: [pass/fail]
-4. DECISIONS_MADE: [list]
-5. ISSUES_ENCOUNTERED: [if any]
+Write your full report to REPORT_FILE. Return inline ONLY:
+1. STATUS: [complete/blocked]
+2. COMMITS: [BASE..HEAD]
+3. TESTS: [one line]
+4. CONCERNS: [if any]
 ```
 
-### 4. Update Decision Log
+### 5. Commit and Record
 
-After the subagent returns, append a `#### Task N` block to the Decision Log using the canonical format.
+After the area validator returns and the build passes: commit the batch, record `HEAD`, and append the
+ledger line with its `BASE..HEAD` bracket and `BUILD_STATUS`.
 
-### 5. Review Subagent's Work
+### 6. Review Subagent's Work
 
-Dispatch `@reviewer-agent` with the same prompt template. Review-specific deltas:
+Run `review-package.sh BASE HEAD "${FEATURE_DIR}/_build"` — it writes `git log --oneline`,
+`git diff --stat` and `git diff -U10` for the range into one file and prints `PACKAGE=`. It **refuses an
+empty range (exit 2)**, because an empty package is how a reviewer gets dispatched against nothing and
+returns "looks fine".
+
+Dispatch `@reviewer-agent` with `MODE: task` and the package path. Review-specific deltas:
 
 ```diff
   ## TASK_DOCUMENTS  (same docs as the implementation subagent received)
-+ ## FILES TO REVIEW  (FILES_CREATED + FILES_MODIFIED from Task N report)
++ ## MODE: task
++ ## REVIEW PACKAGE  (the path review-package.sh printed)
   ## SKILLS
 - - [implementation skill]
 + - {{skill:add-code-review/SKILL.md}}
   ## TASK
 - [Specific deliverables from plan]
 + 1. Read all files from TASK_DOCUMENTS (spec)
-+ 2. Read all changed files (implementation)
++ 2. Read the review package (implementation)
 + 3. Validate implementation against spec
 + 4. Check skill patterns
-+ 5. AUTO-FIX issues found
-+ 6. Report findings
++ 5. Report findings
   ## REPORT FORMAT
-- 1. FILES_CREATED / FILES_MODIFIED / BUILD_STATUS / DECISIONS_MADE / ISSUES_ENCOUNTERED
+- 1. STATUS / COMMITS / TESTS / CONCERNS
 + 1. ISSUES_FOUND: [list with severity]
-+ 2. ISSUES_FIXED: [list]
-+ 3. BUILD_STATUS: [pass/fail]
-+ 4. SCORE: [X/10]
++ 2. BUILD_STATUS: [pass/fail]
++ 3. SCORE: [X/10]
 ```
 
-### 6. Apply Review Feedback
+### 7. Fix Loop, Escalation and the Scoped Re-Review
 
-- **Critical** issues → dispatch fix subagent immediately.
+- **Critical** issues → dispatch `@fix-agent` immediately.
 - **Important** issues → fix before next task.
-- **Minor** issues → note in Decision Log, defer.
+- **Minor** issues → append a `minor (deferred)` line to the ledger, move on.
 
-Fix-subagent prompts add an `## ISSUES TO FIX` section (from the review report) and a `COORDINATOR NOTES` line stating priority. Everything else mirrors the implementation prompt.
+Fix-subagent prompts add an `## ISSUES TO FIX` section (from the review report) and a `COORDINATOR NOTES`
+line stating priority. Everything else mirrors the implementation prompt.
 
-### 7. Mark Complete, Next Task
+**Never patch manually — always dispatch a fix subagent.** Patching inline pollutes the coordinator's
+context with implementation detail it then carries into every later dispatch.
 
+**Every fix round is re-reviewed.** Record `FIX_BASE` before the fix dispatch, run
+`review-package.sh FIX_BASE HEAD`, and dispatch `@reviewer-agent` again with `MODE: re-review`. In that
+mode the reviewer verdicts **each open finding** `ADDRESSED` or `NOT ADDRESSED` and flags new breakage
+**in the fix diff only**. Out-of-scope observations come back as deferred minors and go to the ledger;
+they never extend the loop. A fix that compiles and misses the finding is exactly what this catches.
+
+**`MAX_ATTEMPTS` is 3.**
+
+| Round | Model |
+|---|---|
+| 1 | `@fix-agent`'s declared model |
+| 2 | `@fix-agent`'s declared model |
+| 3 | an explicit `MODEL` **one tier above** the declared model |
+
+Two rounds on the declared model is a fair trial. A loop that survives two rounds usually means the agent
+cannot see its own problem, and a third round on the same model buys nothing.
+
+Append one ledger line per round: `T02: fix round 1/3 (2 addressed, 0 open; commits d4e5f6a..b7c8d9e)`.
+
+### 8. The Breaker
+
+**At the cap, rule and continue. Do not stop the session.**
+
+When `MAX_ATTEMPTS` is exhausted with findings still open, stop dispatching and **adjudicate each open
+finding yourself**, writing one line per finding to the ledger in this format:
+
+```
+Ruling: <what you decided> — <why> — <what it costs if wrong>
+```
+
+All three parts are required. The cost clause is what makes a ruling reviewable — a human reading
+"the caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong"
+can. Then continue to the next task.
+
+A session parked on a question costs a day. A wrong ruling costs rework the human can see and undo.
+
+**Every ruling reaches the human.** At completion, collect every `Ruling:` line from the ledger into a
+"Rulings I made" section, in the order they were made, each with its cost-if-wrong. Exhaustive, not
+representative: if the ledger holds a ruling, the report holds it. A ruling that stays in the ledger and
+never surfaces is a decision made in secret.
+
+### 9. The Four Hard Stops
+
+Four things still stop the session and ask the human, and **only** these:
+
+1. **An irreversible or destructive operation** — a history rewrite, a data deletion, a dropped table.
+2. **A security-sensitive action** — anything touching credentials, auth, permissions or secrets.
+3. **A side effect outside this working tree that norms say you ask about first** — a merge, a push to a
+   shared branch, a publish.
+4. **A plan so broken that every path forward is a guess.** Not "a decision I would rather not make" —
+   one where no reading of the plan supports any option over the others.
+
+Everything else is a ruling. "I am not sure" is not a fifth stop.
+
+### 10. Mark Complete, Next Task
+
+- Append the `complete` line to the ledger with its `BASE..HEAD` bracket
 - Mark task as completed in TodoWrite
-- Update Decision Log with final status
-- Move to next task; repeat steps 3–6
+- Move to next task; repeat steps 3–9
 
-### 8. Coordinator Compliance Gate
+### 11. Coordinator Compliance Gate
 
 After ALL tasks complete and BEFORE reporting completion, the coordinator verifies the implementation matches the specification. This is not a review — it's a cross-reference check.
 
-**Why this exists:** Subagents may complete their tasks and pass code review yet still miss requirements from the spec. The coordinator is the only actor with both the full spec and the full Decision Log.
+**Why this exists:** Subagents may complete their tasks and pass code review yet still miss requirements from the spec. The coordinator is the only actor with both the full spec and the full ledger.
 
 **Steps:**
 
 1. **Re-read TASK_DOCUMENTS** (about.md, plan.md) to extract RF/RN list
-2. **Cross-reference** each RF/RN against FILES_CREATED/FILES_MODIFIED from the Decision Log
+2. **Cross-reference** each RF/RN against the files recorded in the ledger and in `git log`
 3. **Quick-read** relevant implementation files to confirm the requirement exists in code
 4. **If any RF/RN has no corresponding implementation:** list missing items, dispatch fix subagent with the missing requirements + TASK_DOCUMENTS, re-run this gate after the fix
 5. **If ALL RF/RN are covered:** proceed to Final Review
@@ -243,35 +448,46 @@ DO NOT report completion without executing this gate.
 DO NOT skip quick-read — file existence alone does not confirm implementation.
 ```
 
-### 9. Final Review
+**The gate also refuses a task whose ledger holds a fix round with no matching re-review line.** A fix
+round that was never re-reviewed is an unverified fix, whatever the build says.
 
-After the Compliance Gate passes, dispatch the final reviewer with the COMPLETE Decision Log + all TASK_DOCUMENTS + the plan's verification checklist. Task: review entire implementation against TASK_DOCUMENTS, verify all plan requirements met, check overall architecture, run final build verification.
+### 12. Final Review
+
+After the Compliance Gate passes, dispatch the final reviewer with the COMPLETE ledger + all TASK_DOCUMENTS + the plan's verification checklist. Task: review entire implementation against TASK_DOCUMENTS, verify all plan requirements met, check overall architecture, run final build verification.
 
 ---
 
 ## Example Workflow
 
 ```
-Coordinator: load plan, init TodoWrite + Decision Log.
+Coordinator: load plan, read ledger (absent → fresh build), init TodoWrite.
+
+Pre-flight scan
+  4 pairs checked, 1 conflict → Ruling written to the ledger before Task 1.
 
 Task 1 — Hook installation script
-  Dispatch implementer → FILES_CREATED: scripts/install-hook.sh, BUILD: pass
-  Dispatch reviewer    → Score 9/10, no issues
-  Update Decision Log, mark complete.
+  BASE recorded → brief written → dispatch implementer
+  Validator + build pass → commit → ledger: T01: complete (commits …, review clean)
+  review-package.sh → dispatch reviewer MODE: task → Score 9/10, no issues
 
 Task 2 — Recovery modes
-  Dispatch implementer → FILES_CREATED: src/recovery.ts, BUILD: pass
-  Dispatch reviewer    → Important: missing progress reporting
-  Dispatch fix         → progress every 100 items
-  Update Decision Log, mark complete.
+  BASE recorded → brief written → dispatch implementer
+  Validator + build pass → commit
+  Dispatch reviewer MODE: task → Important: missing progress reporting
+  Dispatch @fix-agent (round 1/3) → progress every 100 items → commit
+  review-package.sh FIX_BASE HEAD → reviewer MODE: re-review → ADDRESSED
+  ledger: T02: fix round 1/3 (…), then T02: complete (…)
 
 Compliance Gate
   Re-read about.md + plan.md → 8 RF extracted
-  Cross-reference Decision Log → all 8 covered
-  Quick-read key files → confirmed. PASS.
+  Cross-reference ledger + git log → all 8 covered
+  Every fix round has a re-review line → PASS.
 
 Final Review
-  Dispatch reviewer with full log + TASK_DOCUMENTS → ready to merge.
+  Dispatch reviewer with full ledger + TASK_DOCUMENTS → ready to merge.
+
+Completion
+  "Rulings I made" — every Ruling: line from the ledger, in order, with its cost.
 ```
 
 ---
@@ -280,14 +496,20 @@ Final Review
 
 Coordinator must confirm before reporting completion:
 
+- [ ] Ledger read on entry; no task with a `complete` line was re-dispatched
+- [ ] Pre-flight scan wrote its ROWS to the ledger, and every conflict carries a ruling
 - [ ] TASK_DOCUMENTS assembled (epic-aware) for every dispatch
 - [ ] No subagent received summaries — only file paths
-- [ ] Decision Log updated after every task (implementer + reviewer + fix)
+- [ ] `## Global Constraints` travelled verbatim in every dispatch
+- [ ] Ledger line appended after every task, fix round, deferred minor, parked finding and ruling
+- [ ] Every commit landed AFTER its validator returned and the build passed
 - [ ] Code review dispatched after every implementation task
+- [ ] Every fix round has a matching `MODE: re-review` line
 - [ ] Critical review issues fixed before advancing
 - [ ] Only one implementation subagent in flight at a time
 - [ ] Compliance Gate executed: each RF/RN cross-referenced + quick-read
-- [ ] Final Review dispatched with COMPLETE Decision Log
+- [ ] Final Review dispatched with the COMPLETE ledger
+- [ ] "Rulings I made" lists EVERY `Ruling:` line in the ledger
 - [ ] Build status `pass` on final task
 - [ ] TodoWrite reflects real state (no stale `in_progress`)
 
@@ -297,18 +519,23 @@ Coordinator must confirm before reporting completion:
 
 **Required patterns:**
 - **TASK_DOCUMENTS** — coordinator assembles doc paths, subagent reads originals
-- **Decision Log** — maintained throughout session
+- **Build ledger** — on disk, appended after every event, read on entry
+- **Handoff by path** — briefs, reports and diff packages travel as paths
 - **Coordinator Compliance Gate** — cross-reference spec vs implementation before completion
 
 **Reference scripts:**
 - `bash .codeadd/scripts/status.sh` — get feature context
-- `bash .codeadd/scripts/architecture-discover.sh` — codebase structure overview
+- `bash .codeadd/scripts/build-ledger.sh` — append one ledger line
+- `bash .codeadd/scripts/task-brief.sh` — extract one task's block to its own file
+- `bash .codeadd/scripts/review-package.sh` — write the scoped diff for a range
 
 **Skills to compose:**
 - Backend: `{{skill:add-backend-development/SKILL.md}}`
 - Database: `{{skill:add-database-development/SKILL.md}}`
 - Frontend: `{{skill:add-frontend-development/SKILL.md}}` + `{{skill:add-ux-design/SKILL.md}}`
 - Review: `{{skill:add-code-review/SKILL.md}}`
+- Commits: `{{skill:add-commit/SKILL.md}}`
+- Task shape: `{{skill:add-tasks-checklist/SKILL.md}}`
 
 **Extended references:**
 - Persistent decision logging (`decisions.jsonl`) and the Architect subagent pattern (`tasks.md`) live in `references/persistent-logging-and-tasks.md`. Load on demand when a feature uses persistent logs or tasks-mode execution.
@@ -317,6 +544,6 @@ Coordinator must confirm before reporting completion:
 
 ## If a Subagent Fails
 
-- Append failure to Decision Log (status: `failed`, error excerpt)
-- Dispatch a fix subagent with full context — never patch manually (context pollution)
-- Re-run review after the fix
+- Append the failure to the ledger (`T0N: failed — <error excerpt>`)
+- Dispatch a fix subagent with full context — **never patch manually** (context pollution)
+- Re-run the review after the fix, and re-review the fix diff with `MODE: re-review`
