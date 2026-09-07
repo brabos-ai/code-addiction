@@ -101,6 +101,20 @@ Two gates fail the build: a declaration naming an artefact that does not exist, 
 
 A new sidecar has **four** consumers — the build, `framwork/.gitignore`, `release.yml`, and this file. `SIDECARS` in `scripts/build.js` is the single list they are all checked against by `cli/tests/release-packaging.test.js`; a test that enumerates sidecar names instead is the bug commit `56bc22d` fixed, rewritten.
 
+**Querying the graph.** `scripts/graph.js` is the engine — `impact` (transitive blast radius), `dependencies`, `neighbors`, `path`, `orphans`, `stats`, `mermaid`. `scripts/artefact-graph-mcp.js` exposes the same six as MCP tools over stdio (hand-rolled JSON-RPC; the official SDK costs 89 transitive packages to wrap six pure functions). The CLI is the engine and MCP the wrapper, not the reverse: every provider can shell out, only some have MCP configured, and both call the same module so they cannot drift.
+
+| Question | Command |
+|---|---|
+| What breaks if I change this? | `node scripts/graph.js impact <name>` |
+| What does this need? | `node scripts/graph.js dependencies <name>` |
+| How do these two connect? | `node scripts/graph.js path <a> <b>` |
+| What does nothing depend on? | `node scripts/graph.js orphans` |
+| Regenerate the docs diagram | `node scripts/graph.js mermaid --write` |
+
+`impact` and `dependencies` exclude `MENTIONS` edges — a doc that names another only to point away from it cannot break when it changes. `orphans` excludes commands (people invoke those) and fragments (the source of every injection edge, never its target).
+
+**Consumers.** `add-framework--self-plan` STEP 2.1/2.2 derives impact and risk from it; `add-framework--sync` STEP 2 takes the ecosystem map's relationship columns from `neighbors`; `add-framework--shared-review` STEP 3.1b runs a blast-radius coverage check no single subagent can make. The docs page renders `web/public/artefact-graph.mmd`, which a test holds current against the emitted graph.
+
 The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A command that materializes state into the user's project declares a `## Materializes` H2 that is the single source of every shape it writes; `extractContract()` derives `{ contract, shape, paths }` from it. Two gates fail the build loud: a resource-path variable inside the block (it would resolve per provider), and a declared `shape` that does not match the computed one (the forgotten-bump guard — the build prints the value to paste). Like `injection-points.json` it is gitignored and packaged explicitly by `release.yml`.
 
 ### Resource Path Variables (build-time)
