@@ -1,0 +1,332 @@
+import { describe, it, expect, afterAll } from 'vitest';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+/**
+ * Artefact graph extraction guard (plan 0077, wave 1).
+ *
+ * `scripts/build.js` emits a third content-derived sidecar,
+ * `framwork/.codeadd/artefact-graph.json`, holding every artefact node and the
+ * typed edges between them. Declared edges come from a source-only
+ * `<!-- uses: -->` HTML comment read from RAW content before stripHtmlComments()
+ * runs — the same mechanism extractInjectionPoints() uses, so the block never
+ * reaches a provider file.
+ *
+ * Two cases here are load-bearing and must never be relaxed:
+ *
+ *   L2.2 — a directory under skills/ WITHOUT a SKILL.md produces no node and no
+ *   failure. Node identity is "what the build can transform", never "what sits in
+ *   the right folder". Three separate probes written while specifying this change
+ *   misread skills/*\/ as the skill set; a gate built that way fails the build on
+ *   perfectly correct files (eval workspaces, scratch dirs, tooling output).
+ *
+ *   L1.2 — the block is absent from built output for every provider. This is what
+ *   proves extraction rides the existing stripping pass instead of adding its own.
+ *   Without it, a second stripping implementation can drift from the first and
+ *   ship build metadata to users.
+ */
+
+const require = createRequire(import.meta.url);
+const {
+  extractUses,
+  collectNodes,
+  readMap,
+} = require('../../scripts/build.js');
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
+
+const TMP_DIRS = [];
+
+function tmpDir(prefix) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  TMP_DIRS.push(dir);
+  return dir;
+}
+
+afterAll(() => {
+  for (const dir of TMP_DIRS) fs.rmSync(dir, { recursive: true, force: true });
+});
+
+/** A source body carrying a well-formed declaration block. */
+const WELL_FORMED = `---
+description: a command
+---
+
+# Some Command
+
+<!-- uses:
+- skill: add-doc-schemas/references/new-feature.md
+- skill: add-tasks-checklist
+- agent: reviewer-agent (depth 1)
+- command: /add.review (handoff)
+- script: qa-evidence.sh
+- skill: add-tdd (conditional)
+-->
+
+## STEP 1
+
+Body prose.
+`;
+
+// ---------------------------------------------------------------------------
+// L1 — extractUses() unit
+// ---------------------------------------------------------------------------
+
+describe('L1 extractUses', () => {
+  it('L1.1 yields one edge per entry, with kind, target and modifier resolved', () => {
+    const edges = extractUses(WELL_FORMED, 'add.build', 'command');
+
+    expect(edges).toHaveLength(6);
+    expect(edges.every((e) => e.from === 'product/command/add.build')).toBe(true);
+    expect(edges.every((e) => e.origin === 'declared')).toBe(true);
+
+    // A skill target carrying a path is a reference node, not a skill node.
+    // The author writes `skill:` because that is how they think about it; the
+    // resolver decides the node kind. Collapsing these two would make the
+    // dangling-reference gate unable to tell a missing file from a missing skill.
+    expect(edges[0]).toMatchObject({
+      to: 'product/reference/add-doc-schemas/references/new-feature.md',
+      type: 'USES_SKILL',
+      modifier: null,
+    });
+    expect(edges[1]).toMatchObject({ to: 'product/skill/add-tasks-checklist', type: 'USES_SKILL' });
+    expect(edges[2]).toMatchObject({ to: 'product/agent/reviewer-agent', type: 'DISPATCHES', modifier: 'depth 1' });
+    expect(edges[3]).toMatchObject({ to: 'product/command/add.review', type: 'HANDS_OFF_TO', modifier: 'handoff' });
+    expect(edges[4]).toMatchObject({ to: 'product/script/qa-evidence.sh', type: 'RUNS_SCRIPT' });
+    expect(edges[5]).toMatchObject({ to: 'product/skill/add-tdd', modifier: 'conditional' });
+  });
+
+  it('L1.9 resolves targets within the declaring artefact own layer', () => {
+    // `add-commit` is BOTH a product skill and an internal skill. A bare name is
+    // ambiguous across layers and unambiguous within one, so the declaring
+    // artefact's layer decides. Without this, the two collide on one id.
+    const src = '<!-- uses:\n- skill: add-commit\n-->\n';
+
+    expect(extractUses(src, 'add.done', 'command', 'product')[0].to)
+      .toBe('product/skill/add-commit');
+    expect(extractUses(src, 'add-framework--build', 'command', 'internal')[0].to)
+      .toBe('internal/skill/add-commit');
+  });
+
+  it('L1.3 returns no edges and does not throw when the artefact declares nothing', () => {
+    // The common case during wave 1: almost no artefact declares yet. Throwing
+    // here would block every build.
+    expect(extractUses('# Plain\n\nNo block here.\n', 'add.audit', 'command')).toEqual([]);
+  });
+
+  it('L1.4 fails on an unknown kind, naming the artefact and the line', () => {
+    const src = '<!-- uses:\n- widget: something\n-->\n';
+    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/add\.build/);
+    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/widget/);
+  });
+
+  it('L1.4 fails on a missing colon', () => {
+    expect(() => extractUses('<!-- uses:\n- skill add-tdd\n-->\n', 'add.build', 'command'))
+      .toThrow(/add\.build/);
+  });
+
+  it('L1.4 fails on an empty target', () => {
+    expect(() => extractUses('<!-- uses:\n- skill:\n-->\n', 'add.build', 'command'))
+      .toThrow(/add\.build/);
+  });
+
+  it('L1.4 never silently skips an unparseable line', () => {
+    // Skipping turns a typo into a missing edge, which is invisible: the graph
+    // simply under-reports and every consumer trusts it.
+    const src = '<!-- uses:\n- skill: add-tdd\n- this is not an entry\n-->\n';
+    // A bare .toThrow() would pass on ANY throw, including "extractUses is not
+    // a function" — it cannot tell a correct rejection from a missing
+    // implementation. Assert the message identifies the artefact.
+    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/add\.build/);
+  });
+
+  it('L1.5 parses (conditional) as the reserved modifier and other text as free-form', () => {
+    const src = '<!-- uses:\n- skill: add-tdd (conditional)\n- skill: add-qa (loaded in STEP 4)\n-->\n';
+    const edges = extractUses(src, 'add.build', 'command');
+
+    expect(edges[0].modifier).toBe('conditional');
+    expect(edges[1].modifier).toBe('loaded in STEP 4');
+  });
+
+  it('L1.6 fails when one artefact carries two declaration blocks', () => {
+    // Ambiguity must not resolve to "first wins" silently — the second block
+    // would vanish from the graph while reading as declared in the source.
+    const src = '<!-- uses:\n- skill: add-tdd\n-->\n\ntext\n\n<!-- uses:\n- skill: add-qa\n-->\n';
+    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/two|second|multiple/i);
+  });
+
+  it('L1.7 ignores a block inside a fenced code region', () => {
+    // An artefact documenting this convention shows the block as an example.
+    // Treating it as a declaration would invent edges out of documentation.
+    const src = [
+      '# Docs',
+      '',
+      'Declare what you use like this:',
+      '',
+      '```markdown',
+      '<!-- uses:',
+      '- skill: add-tdd',
+      '-->',
+      '```',
+      '',
+    ].join('\n');
+
+    expect(extractUses(src, 'add-skill-creator', 'skill')).toEqual([]);
+  });
+
+  it('L1.8 accepts blank lines and indentation inside the block', () => {
+    const src = '<!-- uses:\n\n  - skill: add-tdd\n\n  - agent: qa-agent\n\n-->\n';
+    const edges = extractUses(src, 'add.build', 'command');
+    expect(edges.map((e) => e.to)).toEqual(['product/skill/add-tdd', 'product/agent/qa-agent']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L2 — collectNodes() unit
+// ---------------------------------------------------------------------------
+
+describe('L2 collectNodes', () => {
+  const map = readMap();
+
+  it('L2.1 every node has a legal kind, a non-empty path and a legal layer', () => {
+    const nodes = collectNodes(map, CODEADD);
+    const KINDS = new Set(['command', 'skill', 'agent', 'reference', 'script', 'fragment']);
+
+    expect(nodes.length).toBeGreaterThan(0);
+    for (const n of nodes) {
+      expect(KINDS.has(n.kind), `${n.id} has kind ${n.kind}`).toBe(true);
+      expect(n.path, `${n.id} has no path`).toBeTruthy();
+      expect(['product', 'internal'], `${n.id} layer`).toContain(n.layer);
+      expect(n.id).toBe(`${n.layer}/${n.kind}/${n.name}`);
+    }
+  });
+
+  it('L2.1 node ids are unique', () => {
+    const nodes = collectNodes(map, CODEADD);
+    expect(new Set(nodes.map((n) => n.id)).size).toBe(nodes.length);
+  });
+
+  it('L2.1 only command, skill and agent are declaring kinds', () => {
+    const nodes = collectNodes(map, CODEADD);
+    const declaring = nodes.filter((n) => n.declares);
+    expect(new Set(declaring.map((n) => n.kind))).toEqual(new Set(['command', 'skill', 'agent']));
+  });
+
+  it('L2.2 a directory under skills/ with no SKILL.md produces no node and no failure', () => {
+    // THE load-bearing case. Node identity is SKILL.md presence, never directory
+    // position. A scan keyed on position classifies eval workspaces and scratch
+    // dirs as unregistered artefacts and fails the build on correct files.
+    const dir = tmpDir('graph-nodes-');
+    const codeadd = path.join(dir, '.codeadd');
+
+    fs.mkdirSync(path.join(codeadd, 'skills', 'real-skill'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'skills', 'real-skill', 'SKILL.md'), '# real\n');
+
+    fs.mkdirSync(path.join(codeadd, 'skills', 'not-a-skill', 'evals'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'skills', 'not-a-skill', 'evals', 'evals.json'), '{}\n');
+
+    const nodes = collectNodes({ providers: {}, commands: {}, skills: {}, agents: {} }, codeadd);
+    const skillIds = nodes.filter((n) => n.kind === 'skill').map((n) => n.name);
+
+    expect(skillIds).toContain('real-skill');
+    expect(skillIds).not.toContain('not-a-skill');
+  });
+
+  it('L2.2 a SKILL.md-less directory does not become an unregistered node of any kind', () => {
+    // The inverse framing: it must not slip in as a `reference` node either,
+    // which would make the dangling gate resolve a target that is not an artefact.
+    const dir = tmpDir('graph-nodes-');
+    const codeadd = path.join(dir, '.codeadd');
+    fs.mkdirSync(path.join(codeadd, 'skills', 'not-a-skill'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'skills', 'not-a-skill', 'notes.md'), 'scratch\n');
+
+    const nodes = collectNodes({ providers: {}, commands: {}, skills: {}, agents: {} }, codeadd);
+    expect(nodes.filter((n) => n.name.includes('not-a-skill'))).toEqual([]);
+  });
+
+  it('L2.3 product and internal artefacts carry the right layer', () => {
+    const nodes = collectNodes(map, CODEADD);
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+
+    expect(byId.get('product/command/add.review')?.layer).toBe('product');
+    expect(byId.get('internal/command/add-framework--build')?.layer).toBe('internal');
+    expect(byId.get('internal/skill/building-commands')?.layer).toBe('internal');
+    expect(byId.get('internal/agent/readme-analyzer')?.layer).toBe('internal');
+  });
+
+  it('L2.4 registered reflects provider-map.json membership', () => {
+    const nodes = collectNodes(map, CODEADD);
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+
+    // A product command is registered; an internal command is not in the
+    // product registry and must not be reported as drift because of it.
+    expect(byId.get('product/command/add.review')?.registered).toBe(true);
+    expect(byId.get('internal/command/add-framework--build')?.registered).toBe(true);
+  });
+
+  it('L2.4 an unregistered product artefact is marked registered:false', () => {
+    const dir = tmpDir('graph-nodes-');
+    const codeadd = path.join(dir, '.codeadd');
+    fs.mkdirSync(path.join(codeadd, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'agents', 'ghost-agent.md'), '# ghost\n');
+    fs.writeFileSync(path.join(codeadd, 'agents', 'known-agent.md'), '# known\n');
+
+    const nodes = collectNodes(
+      { providers: {}, commands: {}, skills: {}, agents: { 'known-agent': {} } },
+      codeadd,
+    );
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+
+    expect(byId.get('product/agent/ghost-agent')?.registered).toBe(false);
+    expect(byId.get('product/agent/known-agent')?.registered).toBe(true);
+  });
+
+  it('L2.5 providers on a node match what the registry resolves for it', () => {
+    const nodes = collectNodes(map, CODEADD);
+    const cmd = nodes.find((n) => n.id === 'product/command/add.review');
+
+    expect(cmd.providers).toEqual(Object.keys(map.providers));
+  });
+
+  it('L2.6 internal-layer artefacts are never reported as unregistered', () => {
+    // provider-map.json registers the PRODUCT layer only. Marking internal
+    // artefacts unregistered would fire the gate on 17 correct files.
+    const nodes = collectNodes(map, CODEADD);
+    const internal = nodes.filter((n) => n.layer === 'internal' && n.declares);
+
+    expect(internal.length).toBeGreaterThan(0);
+    expect(internal.every((n) => n.registered)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Snapshot tripwire — ONE place, deliberately
+// ---------------------------------------------------------------------------
+
+describe('node inventory snapshot', () => {
+  it('matches the 2026-09-06 snapshot', () => {
+    // A moved count is FINE when it is intended — a new command, a deleted
+    // skill. Update the numbers here and say so in the commit. This lives in
+    // exactly one test on purpose: counts duplicated across assertions produce a
+    // scatter of failures for one correct change, which is how a suite teaches
+    // people to ignore it.
+    const nodes = collectNodes(readMap(), CODEADD);
+    const byKind = {};
+    for (const n of nodes) byKind[n.kind] = (byKind[n.kind] || 0) + 1;
+
+    expect(byKind).toEqual({
+      command: 24,
+      skill: 45,
+      agent: 28,
+      reference: 68,
+      script: 14,
+      fragment: 23,
+    });
+    expect(nodes).toHaveLength(202);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(97);
+  });
+});

@@ -529,6 +529,319 @@ function writeContracts(outPath) {
 }
 
 // ---------------------------------------------------------------------------
+// Artefact graph (source-declared → build-extracted sidecar)
+//
+// Every artefact may declare what it uses in a source-only `<!-- uses: -->`
+// HTML comment. It is read from RAW content here, before stripHtmlComments()
+// runs, so the block never reaches a provider file — the same arrangement the
+// feature/plugin markers use. Nothing below adds stripping logic; adding any
+// would create a second implementation free to drift from the first.
+//
+// The declaration is build metadata, not an instruction: unlike
+// "## Materializes", the agent reading the command at runtime has no use for it,
+// and shipping it would cost tokens on every invocation of every command on
+// every provider.
+// ---------------------------------------------------------------------------
+
+/** Declaration kind → edge type. A kind absent here is a hard error. */
+const USES_EDGE_TYPES = {
+  skill: 'USES_SKILL',
+  agent: 'DISPATCHES',
+  command: 'HANDS_OFF_TO',
+  script: 'RUNS_SCRIPT',
+};
+
+/** `- <kind>: <target>` with an optional trailing `(<modifier>)`. */
+const USES_ENTRY_RE = /^-\s+([A-Za-z]+)\s*:\s*(.+?)\s*(?:\(([^)]*)\))?\s*$/;
+
+/** Kinds whose artefacts may carry a declaration block. */
+const DECLARING_KINDS = new Set(['command', 'skill', 'agent']);
+
+/**
+ * Character spans covered by fenced code blocks.
+ *
+ * A declaration shown inside a fence is documentation — `add-skill-creator`
+ * teaching the convention, a plan quoting an example. Treating it as a
+ * declaration invents edges out of prose, and those edges point at artefacts the
+ * quoting file never actually uses.
+ *
+ * An unclosed fence swallows the rest of the file deliberately: that is what a
+ * markdown renderer does, so the graph agrees with what a reader sees.
+ *
+ * @param {string} raw
+ * @returns {Array<[number, number]>} [start, end) index pairs
+ */
+function fencedSpans(raw) {
+  const spans = [];
+  let open = 0; // backtick count of the open fence; 0 when none is open
+  let spanStart = 0;
+  let pos = 0;
+
+  for (const line of raw.split('\n')) {
+    const fence = FENCE_RE.exec(line);
+    if (fence) {
+      if (open === 0) {
+        open = fence[1].length;
+        spanStart = pos;
+      } else if (fence[1].length >= open) {
+        open = 0;
+        spans.push([spanStart, pos + line.length]);
+      }
+    }
+    pos += line.length + 1; // +1 for the newline consumed by split
+  }
+  if (open !== 0) spans.push([spanStart, raw.length]);
+
+  return spans;
+}
+
+/**
+ * Resolve a declaration target to a node id.
+ *
+ * A `skill:` target carrying a slash names a reference FILE, not the skill. The
+ * author writes `skill:` because that is how they think about it; the resolver
+ * decides the node kind. Collapsing the two would leave the dangling-reference
+ * gate unable to tell a missing file from a missing skill.
+ */
+function usesTargetId(kind, target) {
+  if (kind === 'skill') return target.includes('/') ? `reference/${target}` : `skill/${target}`;
+  if (kind === 'command') return `command/${target.replace(/^\//, '')}`;
+  return `${kind}/${target}`;
+}
+
+/**
+ * Extract declared edges from one artefact body.
+ *
+ * @param {string} rawContent
+ * @param {string} resourceName  logical name (e.g. "add.build", "reviewer-agent")
+ * @param {'command'|'skill'|'agent'} resourceKind
+ * @returns {Array<{from,to,type,origin,modifier}>}
+ * @throws on a malformed entry, an unknown kind, or a second declaration block
+ */
+function extractUses(rawContent, resourceName, resourceKind, layer = 'product') {
+  const spans = fencedSpans(rawContent);
+  const inFence = (i) => spans.some(([s, e]) => i >= s && i < e);
+
+  const commentRe = /<!--([\s\S]*?)-->/g;
+  const blocks = [];
+  let m;
+
+  while ((m = commentRe.exec(rawContent)) !== null) {
+    if (!/^[ \t]*uses:/.test(m[1])) continue;
+    if (inFence(m.index)) continue;
+    if (!isStandaloneMarker(rawContent, m.index, m.index + m[0].length)) continue;
+    blocks.push(m);
+  }
+
+  if (blocks.length > 1) {
+    throw new Error(
+      `${resourceKind} "${resourceName}" declares ${blocks.length} \`uses:\` blocks. ` +
+        `Only the first would be read, so the second's edges would vanish from the graph ` +
+        `while still reading as declared in the source. Merge them into one block.`,
+    );
+  }
+  if (blocks.length === 0) return [];
+
+  const block = blocks[0];
+  // Line of the `<!--` opener. Body line 0 is that same line (nothing follows
+  // `uses:` on it), so body line i sits on source line openLine + i.
+  const openLine = rawContent.slice(0, block.index).split('\n').length;
+  const body = block[1].replace(/^[ \t]*uses:[ \t]*/, '');
+
+  const edges = [];
+  const lines = body.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line === '') continue;
+
+    const at = `${path.basename(resourceName)} (${resourceKind} "${resourceName}") line ${openLine + i}`;
+    const entry = USES_ENTRY_RE.exec(line);
+
+    // Skipping an unparseable line would turn a typo into a missing edge — the
+    // graph silently under-reports and every consumer trusts it anyway.
+    if (!entry) {
+      throw new Error(
+        `${at}: cannot parse \`uses:\` entry ${JSON.stringify(line)}. ` +
+          `Expected "- <kind>: <target>" with an optional "(modifier)".`,
+      );
+    }
+
+    const [, kind, target, modifier] = entry;
+    if (!Object.prototype.hasOwnProperty.call(USES_EDGE_TYPES, kind)) {
+      throw new Error(
+        `${at}: unknown \`uses:\` kind "${kind}". ` +
+          `Expected one of: ${Object.keys(USES_EDGE_TYPES).join(', ')}.`,
+      );
+    }
+
+    edges.push({
+      from: `${layer}/${resourceKind}/${resourceName}`,
+      // Targets resolve within the declaring artefact's own layer. `add-commit`
+      // exists as BOTH a product skill and an internal skill, so a bare name is
+      // ambiguous across layers and unambiguous within one. A genuine
+      // cross-layer edge has no syntax yet — the dangling gate will name it
+      // concretely if one ever appears, which beats inventing one now.
+      to: `${layer}/${usesTargetId(kind, target)}`,
+      type: USES_EDGE_TYPES[kind],
+      origin: 'declared',
+      modifier: modifier ?? null,
+    });
+  }
+
+  return edges;
+}
+
+// ---------------------------------------------------------------------------
+// Node inventory
+// ---------------------------------------------------------------------------
+
+/**
+ * List files under `dir` matching `ext`, recursively. Missing dir → [].
+ * @returns {string[]} absolute paths
+ */
+function walkFiles(dir, ext, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) walkFiles(full, ext, out);
+    else if (e.name.endsWith(ext)) out.push(full);
+  }
+  return out;
+}
+
+/** POSIX-style path relative to `from` — node names must not vary by platform. */
+function relId(from, full) {
+  return path.relative(from, full).split(path.sep).join('/');
+}
+
+/**
+ * Build the node inventory across both layers.
+ *
+ * NODE IDENTITY IS WHAT THE BUILD CAN TRANSFORM, NEVER WHAT SITS IN THE RIGHT
+ * FOLDER. A skill is a directory *containing* SKILL.md — not a directory under
+ * skills/. Three separate probes written while specifying this change misread
+ * `skills/*​/` as the skill set; a gate built that way fails the build on
+ * perfectly correct files (eval workspaces, scratch dirs, tooling output).
+ *
+ * @param {object} map  provider-map.json
+ * @param {string} codeaddDir  product-layer root
+ * @param {string} internalDir  repo root holding `.claude/`
+ * @returns {Array<{id,kind,layer,name,path,registered,providers,declares}>}
+ */
+function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
+  const nodes = [];
+  const agentProviders = Object.keys(map.providers || {}).filter((k) => map.providers[k].agents);
+  const allProviders = Object.keys(map.providers || {});
+
+  const push = (kind, layer, name, full, registered, providers) =>
+    nodes.push({
+      // Layer is part of identity, not decoration: `add-commit` is a product
+      // skill AND an internal skill. `<kind>/<name>` alone collides on it.
+      id: `${layer}/${kind}/${name}`,
+      kind,
+      layer,
+      name,
+      path: relId(ROOT, full),
+      registered,
+      providers,
+      declares: DECLARING_KINDS.has(kind),
+    });
+
+  // --- Product layer ------------------------------------------------------
+  const commandsDir = path.join(codeaddDir, 'commands');
+  if (fs.existsSync(commandsDir)) {
+    for (const f of fs.readdirSync(commandsDir).filter((f) => f.endsWith('.md')).sort()) {
+      const name = f.slice(0, -3);
+      const entry = (map.commands || {})[name];
+      push('command', 'product', name, path.join(commandsDir, f), Boolean(entry),
+        entry?.providers ?? allProviders);
+    }
+  }
+
+  const skillsDir = path.join(codeaddDir, 'skills');
+  if (fs.existsSync(skillsDir)) {
+    for (const d of fs.readdirSync(skillsDir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (!d.isDirectory()) continue;
+      const skillFile = path.join(skillsDir, d.name, 'SKILL.md');
+      // The identity rule. A directory without SKILL.md is not a skill and must
+      // produce no node — otherwise the unregistered gate fires on it.
+      if (!fs.existsSync(skillFile)) continue;
+
+      const entry = (map.skills || {})[d.name];
+      push('skill', 'product', d.name, skillFile, Boolean(entry), entry?.providers ?? allProviders);
+
+      for (const ref of walkFiles(path.join(skillsDir, d.name), '.md').sort()) {
+        if (path.basename(ref) === 'SKILL.md') continue;
+        push('reference', 'product', relId(skillsDir, ref), ref, true, []);
+      }
+    }
+  }
+
+  const agentsDir = path.join(codeaddDir, 'agents');
+  if (fs.existsSync(agentsDir)) {
+    for (const f of fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md')).sort()) {
+      const name = f.slice(0, -3);
+      const entry = (map.agents || {})[name];
+      push('agent', 'product', name, path.join(agentsDir, f), Boolean(entry),
+        entry?.providers ?? agentProviders);
+    }
+  }
+
+  const scriptsDir = path.join(codeaddDir, 'scripts');
+  if (fs.existsSync(scriptsDir)) {
+    for (const e of fs.readdirSync(scriptsDir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (!e.isFile()) continue;
+      push('script', 'product', e.name, path.join(scriptsDir, e.name), true, []);
+    }
+  }
+
+  const fragmentRoots = [path.join(codeaddDir, 'fragments')];
+  const pluginsDir = path.join(codeaddDir, 'plugins');
+  if (fs.existsSync(pluginsDir)) {
+    for (const d of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+      if (d.isDirectory()) fragmentRoots.push(path.join(pluginsDir, d.name, 'fragments'));
+    }
+  }
+  for (const root of fragmentRoots) {
+    for (const f of walkFiles(root, '.md').sort()) {
+      push('fragment', 'product', relId(codeaddDir, f), f, true, []);
+    }
+  }
+
+  // --- Internal layer -----------------------------------------------------
+  // provider-map.json registers the PRODUCT layer only. Internal artefacts are
+  // never distributed, so `registered` is true by definition — marking them
+  // otherwise would fire the unregistered gate on 17 correct files.
+  const claudeDir = path.join(internalDir, '.claude');
+
+  for (const f of walkFiles(path.join(claudeDir, 'commands'), '.md').sort()) {
+    push('command', 'internal', path.basename(f, '.md'), f, true, []);
+  }
+
+  const internalSkills = path.join(claudeDir, 'skills');
+  if (fs.existsSync(internalSkills)) {
+    for (const d of fs.readdirSync(internalSkills, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (!d.isDirectory()) continue;
+      const skillFile = path.join(internalSkills, d.name, 'SKILL.md');
+      if (!fs.existsSync(skillFile)) continue;
+
+      push('skill', 'internal', d.name, skillFile, true, []);
+      for (const ref of walkFiles(path.join(internalSkills, d.name), '.md').sort()) {
+        if (path.basename(ref) === 'SKILL.md') continue;
+        push('reference', 'internal', relId(internalSkills, ref), ref, true, []);
+      }
+    }
+  }
+
+  for (const f of walkFiles(path.join(claudeDir, 'agents'), '.md').sort()) {
+    push('agent', 'internal', path.basename(f, '.md'), f, true, []);
+  }
+
+  return nodes;
+}
+
+// ---------------------------------------------------------------------------
 // Metadata generators (format-specific wrappers around content)
 // ---------------------------------------------------------------------------
 
@@ -1111,6 +1424,9 @@ module.exports = {
   getInjectionPoints,
   writeInjectionPoints,
   _resetInjectionPoints: () => { INJECTION_POINTS = []; },
+  extractUses,
+  collectNodes,
+  fencedSpans,
   sliceContractBlock,
   contractShape,
   CONTRACT_VARIABLE_RE,
