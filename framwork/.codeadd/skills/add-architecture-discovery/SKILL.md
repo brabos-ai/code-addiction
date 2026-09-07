@@ -10,6 +10,10 @@ description: Use when documenting project architecture — generates Technical S
 - command: /add.build
 - command: /add.plan
 - command: /add.wiki
+- skill: add-architecture-discovery/backend-analyzer.md
+- skill: add-architecture-discovery/database-analyzer.md
+- skill: add-architecture-discovery/frontend-analyzer.md
+- skill: add-architecture-discovery/spine-analyzer.md
 -->
 
 Analyzes the codebase and updates the Technical Spec section of CLAUDE.md with structured data in a token-efficient format.

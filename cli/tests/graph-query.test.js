@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -185,7 +185,11 @@ describe('pathBetween', () => {
 });
 
 describe('the real emitted graph', () => {
-  const real = loadGraph(path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json'));
+  // Loaded lazily. Calling loadGraph() in the describe body errors the WHOLE
+  // file at collection when the sidecar is missing, swallowing the "run
+  // node scripts/build.js" message the loader exists to give.
+  let real;
+  beforeAll(() => { real = loadGraph(path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json')); });
 
   it('loads and answers against what the build actually wrote', () => {
     expect(real.nodes.length).toBeGreaterThan(100);
@@ -196,6 +200,35 @@ describe('the real emitted graph', () => {
     const hit = impact(real, 'product/skill/add-doc-schemas');
     expect(hit.length).toBeGreaterThan(10);
     expect(hit.some((r) => r.depth > 1)).toBe(true);
+  });
+
+  it('a catalogue skill declares no dependencies — impact stays discriminating', () => {
+    // add-ecosystem is a MAP of the ecosystem: its body is ## Commands,
+    // ## Skills, ## Agents, ## Dependency Index. It consumes none of it.
+    //
+    // Its 81 rows were first generated as real dependency edges, and because
+    // eight commands load this skill, every artefact it lists inherited ~83
+    // transitive dependants. `impact add-stripe` — a leaf nothing uses —
+    // returned 84, one MORE than add-doc-schemas, the actual hub. The headline
+    // query had become a constant.
+    //
+    // If a --sync regeneration turns these rows back into skill:/agent:/
+    // command:/script:, that happens again and nothing else would notice.
+    const eco = real.edges.filter((e) => e.from === 'product/skill/add-ecosystem');
+
+    expect(eco.length).toBeGreaterThan(50);
+    expect(eco.every((e) => e.type === 'MENTIONS'), 'add-ecosystem must catalogue, not depend').toBe(true);
+  });
+
+  it('impact --depth 1 tells a leaf from a hub', () => {
+    // The property C1 destroyed and the wave-5 consumers grade on. The
+    // unbounded closure saturates over a densely cross-referencing command
+    // layer, so depth 1 is what carries signal.
+    const leaf = impact(real, 'product/skill/add-stripe', { depth: 1 }).length;
+    const hub = impact(real, 'product/skill/add-doc-schemas', { depth: 1 }).length;
+
+    expect(leaf).toBe(0);
+    expect(hub).toBeGreaterThan(15);
   });
 
   it('stats agree with the graph they came from', () => {

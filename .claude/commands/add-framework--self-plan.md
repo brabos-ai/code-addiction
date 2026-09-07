@@ -109,13 +109,19 @@ Internal classification only — DO NOT produce artefacts.
 For each artefact the change touches:
 
 ```bash
-node scripts/graph.js impact <artefact-name>
+node scripts/graph.js impact <artefact-name> --depth 1   # grade risk on THIS
+node scripts/graph.js impact <artefact-name>             # context, not a grade
 ```
 
-It returns every dependant **transitively**, with the number of hops. That
-number is the answer to "which commands load this skill, which commands
-reference this command, which agents do they dispatch" — all three at once, and
-one level deeper than a grep reaches.
+**Grade on the depth-1 number.** The command layer cross-references itself
+densely (122 `HANDS_OFF_TO` edges), so the transitive closure saturates: almost
+anything a command can reach reports ~82 dependants, and a hub is
+indistinguishable from a leaf. Depth 1 discriminates — `add-doc-schemas` returns
+22, `add-ux-design` 11, `add-stripe` 0.
+
+Read the unbounded run for **context**: it tells you whether the change is
+confined to a corner of the ecosystem or reaches the whole of it. It is not a
+risk score.
 
 Two things the output already accounts for, so do not re-reason about them:
 
@@ -140,17 +146,17 @@ every build.
 
 ### 2.2 Assess Risk
 
-Use the dependant count from 2.1, not an estimate.
+Use the **depth-1** count from 2.1, not an estimate and not the unbounded one.
 
 | Risk Level | Criteria |
 |-----------|----------|
-| **LOW** | Single artefact, `impact` returns nothing |
-| **MEDIUM** | `impact` returns 1-2 dependants, all at depth 1 |
-| **HIGH** | `impact` returns 3+ dependants, **or any dependant at depth 2+** |
+| **LOW** | `impact --depth 1` returns nothing |
+| **MEDIUM** | `impact --depth 1` returns 1-2 |
+| **HIGH** | `impact --depth 1` returns 3+ |
 
-A dependant at depth 2 or more is what makes a change cross-cutting: something
-depends on this through an intermediary that nobody editing the file will think
-to open.
+Grading on the unbounded count would mark almost every product artefact HIGH,
+because the transitive closure over a densely cross-referencing command layer
+saturates. A rule that is always true grades nothing.
 
 ---
 

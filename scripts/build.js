@@ -322,7 +322,10 @@ const CONTRACT_HEADING_RE = /^## Materializes[ \t]*$/m;
 // leading space) and must stay banned.
 const CONTRACT_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):[^}]+\}\}/;
 const SHAPE_LINE_RE = /^shape:[ \t]*\S+[ \t]*$/;
-const FENCE_RE = /^[ \t]*(`{3,})/;
+// Backticks OR tildes. A `~~~`-fenced example of a `uses:` block — the form
+// used when the example itself contains backticks — would otherwise be
+// extracted as a real declaration.
+const FENCE_RE = /^[ \t]*(`{3,}|~{3,})/;
 
 /** Default `.codeadd` root; overridable so tests can supply a throwaway tree. */
 const CODEADD_DIR = path.join(ROOT, 'framwork', '.codeadd');
@@ -560,14 +563,32 @@ const USES_EDGE_TYPES = {
   mention: 'MENTIONS',
 };
 
-/** Edge types that assert a dependency. MENTIONS deliberately does not. */
-const DEPENDENCY_EDGE_TYPES = new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT']);
 
 /** `- <kind>: <target>` with an optional trailing `(<modifier>)`. */
 const USES_ENTRY_RE = /^-\s+([A-Za-z]+)\s*:\s*(.+?)\s*(?:\(([^)]*)\))?\s*$/;
 
 /** Kinds whose artefacts may carry a declaration block. */
 const DECLARING_KINDS = new Set(['command', 'skill', 'agent']);
+
+/**
+ * Filenames under commands/ and agents/ that the build never transforms.
+ *
+ * The identity rule — a node is what the build can transform, never what sits
+ * in the right folder — was first applied to skills only, via the SKILL.md
+ * check. Commands and agents took every `*.md`, so a README documenting the
+ * agents directory FAILED THE BUILD as an unregistered artefact. That is the
+ * exact false-positive class the rule exists to prevent, on the two kinds it
+ * did not cover.
+ *
+ * A leading `_` is the conventional "not a resource" prefix; README and NOTES
+ * are the two that occur in practice.
+ *
+ * The name must match WHOLE, never as a prefix. A first version used
+ * `/^README\b/i`, which matches `readme-analyzer.md` — `-` is a word boundary —
+ * and silently dropped a real agent, breaking two commands that dispatch it.
+ * A guard against false positives that introduces one is worse than no guard.
+ */
+const NON_ARTEFACT_FILE = /^(_|(README|NOTES|CHANGELOG)\.[A-Za-z0-9]+$)/i;
 
 /**
  * Character spans covered by fenced code blocks.
@@ -780,7 +801,7 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   // --- Product layer ------------------------------------------------------
   const commandsDir = path.join(codeaddDir, 'commands');
   if (fs.existsSync(commandsDir)) {
-    for (const f of fs.readdirSync(commandsDir).filter((f) => f.endsWith('.md')).sort()) {
+    for (const f of fs.readdirSync(commandsDir).filter((f) => f.endsWith('.md') && !NON_ARTEFACT_FILE.test(f)).sort()) {
       const name = f.slice(0, -3);
       const entry = (map.commands || {})[name];
       push('command', 'product', name, path.join(commandsDir, f), Boolean(entry),
@@ -809,7 +830,7 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
 
   const agentsDir = path.join(codeaddDir, 'agents');
   if (fs.existsSync(agentsDir)) {
-    for (const f of fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md')).sort()) {
+    for (const f of fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md') && !NON_ARTEFACT_FILE.test(f)).sort()) {
       const name = f.slice(0, -3);
       const entry = (map.agents || {})[name];
       push('agent', 'product', name, path.join(agentsDir, f), Boolean(entry),
@@ -845,6 +866,7 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   const claudeDir = path.join(internalDir, '.claude');
 
   for (const f of walkFiles(path.join(claudeDir, 'commands'), '.md').sort()) {
+    if (NON_ARTEFACT_FILE.test(path.basename(f))) continue;
     push('command', 'internal', path.basename(f, '.md'), f, true, []);
   }
 
@@ -864,6 +886,7 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   }
 
   for (const f of walkFiles(path.join(claudeDir, 'agents'), '.md').sort()) {
+    if (NON_ARTEFACT_FILE.test(path.basename(f))) continue;
     push('agent', 'internal', path.basename(f, '.md'), f, true, []);
   }
 
@@ -1076,7 +1099,17 @@ function checkArtefactGraph(graph, { readSource } = {}) {
       // Same layer only: `add-commit` exists in both, and a product command
       // mentioning it means the product one.
       if (t.id === n.id || t.layer !== n.layer) continue;
-      if (nodeMentionRe(t).test(prose)) observed.add(t.id);
+      if (nodeMentionRe(t).test(prose)) { observed.add(t.id); continue; }
+
+      // A skill links its OWN reference files relatively — `references/foo.md`,
+      // not `add-qa/references/foo.md`. Matching only the node name reported
+      // them as unreferenced, which put 48 files that are linked from the very
+      // skill that owns them into `orphans`. Same failure the sniffer was built
+      // to avoid, one level down.
+      if (t.kind === 'reference' && n.kind === 'skill' && t.name.startsWith(`${n.name}/`)) {
+        const relative = t.name.slice(n.name.length + 1);
+        if (mentionRe(relative).test(prose)) observed.add(t.id);
+      }
     }
 
     for (const id of observed) {
@@ -1096,16 +1129,22 @@ function checkArtefactGraph(graph, { readSource } = {}) {
       if (modifier === 'conditional' || observed.has(id)) continue;
       const t = byId.get(id);
       if (!t || !SNIFFABLE_KINDS.has(t.kind)) continue;
-      failures.push(
+      // WARNING, not a failure, and the asymmetry is deliberate.
+      //
+      // "Named in prose but undeclared" is a hard gate: the name is right there,
+      // so the fix is mechanical and the author knows what to write.
+      //
+      // This is the inverse — declared, never named. It is usually stale, but a
+      // load that is genuinely real and simply not greppable also lands here,
+      // and `(conditional)` is a valve with no field use yet, so its ergonomics
+      // are unproven. Failing the build on an unproven valve trades a real
+      // finding for a blocked build. It warns until the valve has been exercised.
+      warnings.push(
         type === 'MENTIONS'
-          ? 'artefact-graph: stale acknowledgement\n' +
-            `  ${n.path}\n` +
-            `  acknowledges ${id} with mention: but its prose no longer names it\n` +
-            '  remove the entry — a stale acknowledgement silences a real finding later.'
-          : 'artefact-graph: phantom edge\n' +
-            `  ${n.path}\n` +
-            `  declares ${id} but its prose never names it\n` +
-            '  remove it, or mark it (conditional) if the load is real but not greppable.',
+          ? `${n.path}: acknowledges ${id} with mention: but its prose no longer names it — ` +
+            'remove the entry, a stale acknowledgement silences a real finding later'
+          : `${n.path}: declares ${id} but its prose never names it (phantom edge) — ` +
+            'remove it, or mark it (conditional) if the load is real but not greppable',
       );
     }
   }

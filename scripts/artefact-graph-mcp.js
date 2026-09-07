@@ -118,12 +118,21 @@ function handle(req) {
         },
       };
 
+    // Part of the base protocol: a client may ping to check liveness, and
+    // answering -32601 makes a healthy server look dead.
+    case 'ping':
+      return { jsonrpc: '2.0', id: req.id, result: {} };
+
     case 'tools/call': {
       const tool = TOOLS.find((t) => t.name === req.params?.name);
       if (!tool) {
         return { jsonrpc: '2.0', id: req.id, error: { code: -32602, message: `Unknown tool: ${req.params?.name}` } };
       }
       try {
+        // Re-read per call, deliberately. The sidecar is rewritten by every
+        // build, and a server started before one would otherwise answer from a
+        // stale graph for the rest of the session — the failure mode this whole
+        // change exists to prevent. ~190 KB parses in single-digit ms.
         const result = tool.run(G.loadGraph(), req.params.arguments || {});
         return {
           jsonrpc: '2.0',

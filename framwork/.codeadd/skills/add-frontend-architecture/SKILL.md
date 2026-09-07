@@ -10,6 +10,9 @@ description: Frontend architecture consultant for project structure, folder orga
 - mention: add-backend-architecture
 - mention: add-project-scaffolding
 - mention: add-ux-design
+- skill: add-frontend-architecture/references/angular.md
+- skill: add-frontend-architecture/references/react.md
+- skill: add-frontend-architecture/references/vue.md
 -->
 
 Guide structural decisions for frontend projects. Choose the **simplest** pattern that keeps the team productive as the project grows.

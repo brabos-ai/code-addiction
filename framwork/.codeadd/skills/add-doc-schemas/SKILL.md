@@ -20,6 +20,13 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - command: /add.new
 - command: /add.plan
 - script: build-setup.sh
+- skill: add-doc-schemas/references/fix.md
+- skill: add-doc-schemas/references/history.md
+- skill: add-doc-schemas/references/new-feature.md
+- skill: add-doc-schemas/references/product.md
+- skill: add-doc-schemas/references/receipt.md
+- skill: add-doc-schemas/references/review.md
+- skill: add-doc-schemas/references/strategy.md
 -->
 
 ## Overview

@@ -11,6 +11,12 @@ description: Use when investigating vague symptoms or information-flow bugs requ
 - agent: git-history-agent
 - command: /add.diagnose
 - command: /add.hotfix
+- skill: add-investigation/references/5-whys.md
+- skill: add-investigation/references/agans-9-rules.md
+- skill: add-investigation/references/backward-tracing.md
+- skill: add-investigation/references/differential-diagnosis.md
+- skill: add-investigation/references/flow-tracing.md
+- skill: add-investigation/references/symptom-disambiguation.md
 -->
 
 ## Overview

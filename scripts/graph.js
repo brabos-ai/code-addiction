@@ -270,10 +270,23 @@ function toMermaid(graph, opts = {}) {
   return `${lines.join('\n')}\n`;
 }
 
+/**
+ * The diagram the docs site ships, as ONE definition.
+ *
+ * `mermaid --write` renders this and the test asserts the checked-in file
+ * matches it. They previously each carried their own options: the documented
+ * command emitted 606 lines while the checked-in file was 92, so running the
+ * documented command failed the test and replaced the docs diagram with a
+ * hairball. Sharing the profile is what makes "regenerate" and "assert current"
+ * describe the same picture by construction.
+ */
+const DOCS_PROFILE = { kinds: ['command'], depth: 1 };
+const DOCS_DIAGRAM = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
+
 module.exports = {
   loadGraph, resolve, impact, dependencies, neighbors, orphans, pathBetween, stats,
   toMermaid, mermaidId,
-  DEPENDENCY_TYPES, DEFAULT_GRAPH,
+  DEPENDENCY_TYPES, DEFAULT_GRAPH, DOCS_PROFILE, DOCS_DIAGRAM,
 };
 
 // ---------------------------------------------------------------------------
@@ -282,10 +295,31 @@ module.exports = {
 
 function main(argv) {
   const json = argv.includes('--json');
-  const depthAt = argv.indexOf('--depth');
-  const depth = depthAt >= 0 ? Number(argv[depthAt + 1]) : undefined;
-  const args = argv.filter((a, i) =>
-    !a.startsWith('--') && !(depthAt >= 0 && i === depthAt + 1));
+
+  // Flags that take a value. Their value must be excluded from the positionals
+  // too — `--kinds` was not, so `mermaid --kinds command` put "command" in
+  // args[1] and it was read as the root node, failing with `No node matches
+  // "command"`. Any future valued flag must be added here or it breaks the same
+  // way.
+  const VALUED = new Set(['--depth', '--kinds']);
+  const valueIndexes = new Set();
+  argv.forEach((a, i) => { if (VALUED.has(a)) valueIndexes.add(i + 1); });
+
+  const valueOf = (flag) => {
+    const at = argv.indexOf(flag);
+    return at >= 0 ? argv[at + 1] : undefined;
+  };
+
+  const rawDepth = valueOf('--depth');
+  if (rawDepth !== undefined && !/^\d+$/.test(rawDepth)) {
+    console.error(`--depth needs a whole number, got ${JSON.stringify(rawDepth ?? '')}.`);
+    process.exitCode = 2;
+    return;
+  }
+  const depth = rawDepth === undefined ? undefined : Number(rawDepth);
+  const kinds = valueOf('--kinds')?.split(',');
+
+  const args = argv.filter((a, i) => !a.startsWith('--') && !valueIndexes.has(i));
 
   const [cmd, a, b] = args;
   const graph = loadGraph();
@@ -317,19 +351,20 @@ function main(argv) {
         `${r.length} artefact(s) nothing depends on:\n` +
         (r.map((n) => `  ${n.id}`).join('\n') || '  (none)'));
     case 'mermaid': {
-      const kindsAt = argv.indexOf('--kinds');
-      const out = toMermaid(graph, {
-        root: a,
-        depth,
-        kinds: kindsAt >= 0 ? argv[kindsAt + 1].split(',') : undefined,
-      });
+      // --write always renders the shared docs profile, never whatever flags
+      // happen to be on the command line. Otherwise `mermaid --write` and the
+      // test that holds the file current can describe different diagrams — and
+      // they did: 606 lines against 92.
       if (argv.includes('--write')) {
-        const dest = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, out, 'utf8');
-        return console.log(`wrote ${path.relative(ROOT, dest)}`);
+        const out = toMermaid(graph, DOCS_PROFILE);
+        fs.mkdirSync(path.dirname(DOCS_DIAGRAM), { recursive: true });
+        fs.writeFileSync(DOCS_DIAGRAM, out, 'utf8');
+        return console.log(
+          `wrote ${path.relative(ROOT, DOCS_DIAGRAM)} ` +
+            `(${out.split('\n').length - 1} lines, profile: ${JSON.stringify(DOCS_PROFILE)})`,
+        );
       }
-      return console.log(out);
+      return console.log(toMermaid(graph, { root: a, depth, kinds }));
     }
     case 'stats':
       return emit(stats(graph), (s) =>

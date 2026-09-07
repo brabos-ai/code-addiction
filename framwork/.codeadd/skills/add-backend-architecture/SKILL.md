@@ -10,6 +10,10 @@ description: Guides backend architecture decisions — over-engineering, folder 
 - mention: add-backend-development
 - mention: add-frontend-architecture
 - mention: add-project-scaffolding
+- skill: add-backend-architecture/references/clean-architecture.md
+- skill: add-backend-architecture/references/combined-strategy.md
+- skill: add-backend-architecture/references/universal-rules.md
+- skill: add-backend-architecture/references/vertical-slice.md
 -->
 
 Guide architectural decisions for backend projects. Language and framework agnostic. Choose between Vertical Slice, Clean Architecture, Simple Modular, or a Combined strategy based on project context.

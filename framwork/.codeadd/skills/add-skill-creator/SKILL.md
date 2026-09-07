@@ -11,6 +11,19 @@ date_added: "2026-02-27"
 
 <!-- uses:
 - mention: /add.build
+- skill: add-skill-creator/gotchas.md
+- skill: add-skill-creator/references/anti-rationalization/README.md
+- skill: add-skill-creator/references/cso/README.md
+- skill: add-skill-creator/references/standards/README.md
+- skill: add-skill-creator/references/templates/discipline.md
+- skill: add-skill-creator/references/templates/pattern.md
+- skill: add-skill-creator/references/templates/reference.md
+- skill: add-skill-creator/references/templates/technique.md
+- skill: add-skill-creator/references/templates/tier-3-platform.md
+- skill: add-skill-creator/references/testing/README.md
+- skill: add-skill-creator/references/tier-1-simple/README.md
+- skill: add-skill-creator/references/tier-2-expanded/README.md
+- skill: add-skill-creator/references/tier-3-platform/README.md
 -->
 
 ## Quick Decision Tree

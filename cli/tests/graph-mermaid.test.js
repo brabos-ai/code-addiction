@@ -13,7 +13,7 @@ import path from 'node:path';
  */
 
 const require = createRequire(import.meta.url);
-const { toMermaid, loadGraph } = require('../../scripts/graph.js');
+const { toMermaid, loadGraph, DOCS_PROFILE, DOCS_DIAGRAM } = require('../../scripts/graph.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -98,14 +98,32 @@ describe('toMermaid', () => {
 });
 
 describe('the checked-in diagram', () => {
-  const file = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
+  it('is current with the emitted graph', () => {
+    // Renders DOCS_PROFILE, the same constant `mermaid --write` uses. Each side
+    // previously carried its own options: the documented command emitted 606
+    // lines while the checked-in file was 92, so running the documented command
+    // failed this test and replaced the docs diagram with a hairball.
+    expect(fs.existsSync(DOCS_DIAGRAM), 'run `node scripts/graph.js mermaid --write`').toBe(true);
 
-  it('exists and is current with the emitted graph', () => {
-    // The diagram is generated, so a stale one is drift that ships to the docs
-    // site. Regenerate with: node scripts/graph.js mermaid --write
-    expect(fs.existsSync(file), 'run `node scripts/graph.js mermaid --write`').toBe(true);
+    const expected = toMermaid(loadGraph(), DOCS_PROFILE);
+    expect(fs.readFileSync(DOCS_DIAGRAM, 'utf8').trim()).toBe(expected.trim());
+  });
 
-    const expected = toMermaid(loadGraph(), { kinds: ['command'], depth: 1 });
-    expect(fs.readFileSync(file, 'utf8').trim()).toBe(expected.trim());
+  it('the docs prose matches what the profile actually draws', () => {
+    // docs.astro described "every command with the skills it loads, the agents
+    // it dispatches" and explained the dotted arrows — while the file held 24
+    // commands, no skills, no agents and no dotted links. That shipped to the
+    // public site. Pin the shape so the prose and the picture cannot drift.
+    const mmd = fs.readFileSync(DOCS_DIAGRAM, 'utf8');
+    const prose = fs.readFileSync(path.join(ROOT, 'web', 'src', 'pages', 'docs.astro'), 'utf8');
+    const section = prose.slice(prose.indexOf('id="graph"'), prose.indexOf('id="graph"') + 1200);
+
+    const hasSkills = /n_\w*_skill_/.test(mmd);
+    const hasAgents = /n_\w*_agent_/.test(mmd);
+    const hasDotted = /-\.->/.test(mmd);
+
+    if (!hasSkills) expect(section, 'prose promises skills the diagram omits').not.toMatch(/skills it loads/);
+    if (!hasAgents) expect(section, 'prose promises agents the diagram omits').not.toMatch(/agents it dispatches/);
+    if (!hasDotted) expect(section, 'prose explains dotted arrows the diagram has none of').not.toMatch(/dotted/i);
   });
 });

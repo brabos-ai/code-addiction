@@ -367,6 +367,50 @@ describe('L2 collectNodes', () => {
     expect(nodes.filter((n) => n.name.includes('not-a-skill'))).toEqual([]);
   });
 
+  it('L2.2 the identity rule covers COMMANDS and AGENTS, not just skills', () => {
+    // The rule was first applied to skills only, via the SKILL.md check.
+    // Commands and agents took every *.md, so a README documenting the agents
+    // directory failed the build as an unregistered artefact — the exact
+    // false-positive class the rule exists to prevent, on the kinds it missed.
+    const dir = tmpDir('graph-nodes-');
+    const codeadd = path.join(dir, '.codeadd');
+
+    fs.mkdirSync(path.join(codeadd, 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'commands', 'add.real.md'), '# real\n');
+    fs.writeFileSync(path.join(codeadd, 'commands', 'NOTES.md'), '# scratch\n');
+
+    fs.mkdirSync(path.join(codeadd, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'agents', 'real-agent.md'), '# real\n');
+    fs.writeFileSync(path.join(codeadd, 'agents', 'README.md'), '# docs\n');
+    fs.writeFileSync(path.join(codeadd, 'agents', '_draft.md'), '# wip\n');
+
+    const names = collectNodes({ providers: {}, commands: {}, skills: {}, agents: {} }, codeadd)
+      .map((n) => n.name);
+
+    expect(names).toContain('add.real');
+    expect(names).toContain('real-agent');
+    expect(names).not.toContain('NOTES');
+    expect(names).not.toContain('README');
+    expect(names).not.toContain('_draft');
+  });
+
+  it('L2.2 the non-artefact rule matches whole names, never prefixes', () => {
+    // `/^README\b/i` matches `readme-analyzer.md` — `-` is a word boundary — and
+    // silently drops a REAL agent, breaking the two commands that dispatch it.
+    // A guard against false positives that introduces one is worse than none.
+    const dir = tmpDir('graph-nodes-');
+    const codeadd = path.join(dir, '.codeadd');
+    fs.mkdirSync(path.join(codeadd, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'agents', 'readme-analyzer.md'), '# real\n');
+    fs.writeFileSync(path.join(codeadd, 'agents', 'notes-agent.md'), '# real\n');
+
+    const names = collectNodes({ providers: {}, commands: {}, skills: {}, agents: {} }, codeadd)
+      .map((n) => n.name);
+
+    expect(names).toContain('readme-analyzer');
+    expect(names).toContain('notes-agent');
+  });
+
   it('L2.3 product and internal artefacts carry the right layer', () => {
     const nodes = collectNodes(map, CODEADD);
     const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -537,7 +581,12 @@ describe('L3 checkArtefactGraph', () => {
     expect(failures.join('\n')).toMatch(/mention:/);
   });
 
-  it('L3.5 a declaration absent from prose and unmarked FAILS as a phantom edge', () => {
+  it('L3.5 a declaration absent from prose and unmarked WARNS as a phantom edge', () => {
+    // Deliberately softer than L3.4, its inverse. "Named in prose, undeclared"
+    // is mechanical to fix — the name is right there. This direction is usually
+    // stale but sometimes a real, non-greppable load, and `(conditional)` has
+    // no field use yet. Failing on an unproven valve trades a finding for a
+    // blocked build.
     const g = graphOf(
       [
         node(),
@@ -552,13 +601,14 @@ describe('L3 checkArtefactGraph', () => {
       }],
     );
 
-    const { failures } = checkArtefactGraph(g, { readSource: noSource });
+    const { failures, warnings } = checkArtefactGraph(g, { readSource: noSource });
 
-    expect(failures.join('\n')).toMatch(/add-tdd/);
-    expect(failures.join('\n')).toMatch(/phantom edge/);
+    expect(failures).toEqual([]);
+    expect(warnings.join('\n')).toMatch(/add-tdd/);
+    expect(warnings.join('\n')).toMatch(/phantom edge/);
   });
 
-  it('L3.6 (conditional) suppresses the phantom-edge failure, and nothing else does', () => {
+  it('L3.6 (conditional) suppresses the phantom-edge warning, and nothing else does', () => {
     const mk = (modifier) => graphOf(
       [
         node(),
@@ -573,9 +623,9 @@ describe('L3 checkArtefactGraph', () => {
       }],
     );
 
-    expect(checkArtefactGraph(mk('conditional'), { readSource: noSource }).failures).toEqual([]);
+    expect(checkArtefactGraph(mk('conditional'), { readSource: noSource }).warnings).toEqual([]);
     // A free-text modifier is documentation, not a waiver.
-    expect(checkArtefactGraph(mk('loaded in STEP 4'), { readSource: noSource }).failures.length)
+    expect(checkArtefactGraph(mk('loaded in STEP 4'), { readSource: noSource }).warnings.length)
       .toBeGreaterThan(0);
   });
 
@@ -589,12 +639,17 @@ describe('L3 checkArtefactGraph', () => {
       node({ id: 'product/command/add', kind: 'command', name: 'add', path: 'y.md' }),
     ]);
 
-    const { failures: warnings } = checkArtefactGraph(g, {
+    const { failures } = checkArtefactGraph(g, {
       readSource: (n) => (n.name === 'add.build' ? 'See add-qa-migration and /add.plan for details.' : ''),
     });
 
-    expect(warnings.join('\n')).not.toMatch(/add-qa\b(?!-)/);
-    expect(warnings.join('\n')).not.toMatch(/"add"/);
+    // Assert the node IDS are absent. An earlier version matched /"add"/ —
+    // the failure text carries no quotes, so it could never match whether the
+    // bug existed or not, which is a dead line dressed as coverage.
+    const text = failures.join('\n');
+    expect(text).not.toContain('product/skill/add-qa');
+    expect(text).not.toContain('product/command/add\n');
+    expect(failures).toEqual([]);
   });
 
   it('L3.8 a command is only matched with its slash, never as a bare word', () => {
@@ -775,10 +830,6 @@ describe('L5 acceptance', () => {
     expect(checkArtefactGraph(graph).failures).toEqual([]);
   });
 
-  it('L5.2 the real tree builds clean — no failures from either hard gate', () => {
-    const graph = buildArtefactGraph(readMap(), CODEADD, ROOT);
-    expect(checkArtefactGraph(graph).failures).toEqual([]);
-  });
 });
 
 // ---------------------------------------------------------------------------

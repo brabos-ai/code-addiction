@@ -18,6 +18,7 @@ description: Use when executing implementation plans via dispatched subagents wi
 - agent: frontend-agent
 - agent: reviewer-agent
 - script: status.sh
+- skill: add-subagent-driven-development/references/persistent-logging-and-tasks.md
 -->
 
 Execute a plan by dispatching named specialist agents per task, with code review after each.

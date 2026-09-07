@@ -136,8 +136,15 @@ Combine all 4 subagent reports into a single findings list. Deduplicate (same fi
 For every artefact the implementation touched:
 
 ```bash
-node scripts/graph.js impact <artefact-name>
+node scripts/graph.js impact <artefact-name> --depth 1
 ```
+
+**Depth 1, not the unbounded run.** The command layer cross-references itself
+densely, so the transitive closure saturates at ~82 for almost anything a
+command reaches — reviewing against that list would file roughly eighty findings
+per review and teach everyone to skip this step. Direct dependants are the ones
+a change plausibly breaks and a plan can reasonably be expected to have
+considered.
 
 Compare that list against the files the plan actually changed. Each dependant
 falls into one of three buckets, and the third is a finding:
@@ -146,7 +153,7 @@ falls into one of three buckets, and the third is a finding:
 |---|---|
 | Dependant was changed too | fine |
 | Plan states explicitly that it needs no change | fine |
-| Dependant neither changed nor mentioned | **finding — severity `medium`, or `high` when the dependant is at depth 1** |
+| Dependant neither changed nor mentioned | **finding — severity `medium`** |
 
 This is the check no subagent can make on its own: each reads the plan and the
 diff, and neither shows what depends on a file that nobody opened. A plan that

@@ -7,6 +7,7 @@ description: Use when designing command workflows or refactoring existing comman
 
 <!-- uses:
 - command: /add-framework--build
+- skill: building-commands/references/agent-dispatch.md
 -->
 
 ## Overview

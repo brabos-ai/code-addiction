@@ -8,6 +8,7 @@ description: |
 
 <!-- uses:
 - mention: add-security-audit
+- skill: add-health-check/context-discovery.md
 -->
 
 Suite of skills for complete technical analysis of the project. Always consult `CLAUDE.md` for general project standards.
