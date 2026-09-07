@@ -170,3 +170,19 @@ T9 SELF-PLAN--003 (internal): complete (commits b85a99b..e00939b, 2 files +212/-
 
 === ALL SIX PLANS IMPLEMENTED ===
 
+FINAL REVIEW (adversarial, fresh context, whole-branch package from our own review-package.sh):
+  9 real findings, 2 Critical. All addressed in d2e348e except one, ruled below.
+  C1 skill/command disagreed on review-before-vs-after-commit. Command was right; skill reordered.
+  C2 parallel-area commit contract could not execute (one BASE + git add -A). Per-batch anchor + stage by path.
+  I1 review-package.sh called with 2 args, needs 3. My own earlier fix touched those exact lines.
+  I2 all three SELF-PLAN changelogs cited the product twin commits (my python substring-key bug).
+  I3 OpenCode --plan adapter claimed a CLAUDE.md sync its own --build adapter does not have.
+  I4 ecosystem map misrouted 2 of 3 new scripts (my own addition).
+  I5 *-PLAN--*.md glob also matches *-SELF-PLAN--*.md, so every paired set was ambiguous.
+  Ruling: add.brainstorm STEP 1.5 fractional numbering NOT fixed. Real (banned at --build.md:650),
+    but add.wiki.md:204 already carries STEP 2.5, and renumbering costs 36 reference updates for no
+    behavioural gain. Costs one cosmetic inconsistency; fixing it risks a broken pointer.
+  Reviewer confirmed correct: all 3 cross-topic facts owned, all 5 shared-file rows carry BOTH edits,
+    add-planning fully gone, F17 sweep complete, MODE: task byte-unchanged, both preservation claims,
+    counts agree across disk/registry/CLAUDE.md/snapshot, both layers agree on Ruling shape and hard stops.
+
