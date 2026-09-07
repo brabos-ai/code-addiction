@@ -17,12 +17,12 @@ Transforms rough ideas into fully-formed, final designs ready for `/add-framewor
 
 ```
 STEP 1: Capture topic & discover context → detect mode, capture topic, dispatch agent
-STEP 2: Understand the idea            → ask clarifying questions (one at a time)
-STEP 3: Validate complexity            → detect if scope is simple or umbrella-worthy
-STEP 4: Explore & validate decisions   → conversational ideation until all questions answered
-STEP 5: Generate design document       → write draft design (no open questions)
-STEP 6: Review design                  → @plan-review-agent before any delivery
-STEP 7: Completion & next steps [HARD STOP] → print suggested command as text, STOP
+STEP 2: Understand the idea            → clarifying questions + 2.2 classification — PATH ANNOUNCED, OWN TURN
+STEP 3: Validate complexity            → ARCHITECTURAL PATH ONLY — simple or umbrella-worthy
+STEP 4: Explore & validate decisions   → conversational ideation (abbreviated on spike / bounded)
+STEP 5: Generate design document       → ARCHITECTURAL PATH ONLY — write draft design (no open questions)
+STEP 6: Review design                  → ARCHITECTURAL PATH ONLY — @plan-review-agent before any delivery
+STEP 7: Completion & next steps [HARD STOP] → ALL THREE PATHS — print suggested command as text, STOP
 STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
 ```
 
@@ -128,16 +128,100 @@ Ask questions one per message to refine understanding:
 
 ### 2.2 Classification
 
+**Two classifications run at this step, and they answer different questions. Neither replaces the other.**
+
+- **Sizing** (2.2.1) answers *which artefacts, and how many topics*. It feeds STEP 3's decomposition offer and
+  STEP 7.3's layer routing. It stays internal.
+- **Effort path** (2.2.2) answers *how much process this request needs*. It routes STEPS 3 through 7. It is
+  announced.
+
+A future reader must not collapse them: delete the sizing and STEP 3 has no input; delete the effort path and
+every request pays the architectural price.
+
+#### 2.2.1 Sizing (INTERNAL — feeds STEP 3)
+
 Internally classify:
 - **Type** — command / skill / script / workflow / product / architecture
 - **Scope** — simple (one artefact) or complex (multi-topic, needs umbrella)
 - **Framework impact** — affects existing commands/skills or additive
 
-Do NOT reveal classification explicitly yet. Continue to STEP 3.
+This sizing is **not announced**. It is an implementation detail of STEP 3's decomposition offer and STEP
+7.3's layer routing, not a decision the user needs to correct.
+
+#### 2.2.2 Effort Path (ANNOUNCED — OWN TURN)
+
+Sort the request into **exactly one** of three paths, then **say it out loud in one line and STOP**.
+
+A classification the user cannot see is one they cannot correct — and they are the one who knows whether the
+artefact being changed already exists.
+
+```
+IF you have decided the path:
+  ⛔ DO NOT: Announce the path and ask the next question in the same turn
+  ⛔ DO NOT: Classify silently and continue to STEP 3
+  ✅ DO: Print the one-line announcement, WAIT for the user's turn, THEN continue on that path
+```
+
+| Path | The request is | Announce (one line, then stop) |
+|------|---------------|-------------------------------|
+| **spike** | a feasibility question — "can we…", "is it possible…", "quick and dirty is fine" | `Path: spike — I'll probe and report back. Override with bounded or architectural.` |
+| **bounded** | a change to a command, skill, agent or script **that already exists** in this repo | `Path: bounded — questions, then a short design in chat. Override if this needs a document.` |
+| **architectural** | a **new** artefact of any kind, a change that restructures how artefacts fit together, or one that alters an interface others depend on | `Path: architectural — full exploration and a design document. Override if that is too much.` |
+
+**Bounded measures the repository, not familiarity.** Understanding the *kind* of change is not enough. Here
+the test is concrete: a change to a command, skill, agent or script **that already exists** is bounded; a
+**new** artefact of any kind is architectural — there is no existing flow to open, read and modify, whatever
+the change resembles. Bounded requires you to name the existing artefact being changed.
+
+**When in doubt between two paths, take the heavier one.** Reaching for the lighter label to skip work IS
+the doubt.
+
+#### 2.2.3 The ratchet is one-way
+
+Hidden complexity discovered mid-conversation **upgrades** the path: stop, say the path is upgrading,
+re-classify, continue on the heavier path. **Nothing ever downgrades mid-conversation.**
+
+A spike whose answer is "yes, and here is how" is **not permission to build**. That is a new request, and it
+gets its own classification.
+
+#### 2.2.4 The approval gate never scales
+
+Every path ends with the user approving the intent **before** anything is implemented. What scales with
+simplicity is the **artifact** — never the approval. A bounded design may be two sentences in chat; it is
+still presented, and this command still stops until the user says yes.
+
+#### 2.2.5 Red flags — rationalisations that defeat the mechanism
+
+| Rationalisation | Reality |
+|---|---|
+| "This is too simple to need a design" | Simple is the condition for a **short** design, never for **no** design. Two sentences still get approved. |
+| "I'll call it bounded and skip the spec" | Picking a label for the work it avoids is the doubt itself. Take the heavier path. |
+| "I know this codebase, so it's bounded" | Bounded measures the repository. A new command, skill, agent or script has no existing flow to read and modify ⇒ architectural. |
+| "The spike worked, so I'll keep it" | Spike output is throwaway by definition. Keeping it is a new request with its own classification. |
+| "It grew, but I'm almost done" | Growth upgrades the path. Nearly finished on the wrong path is not nearly finished. |
+| "The user is in a hurry — announce and ask together" | The announcement costs one line and is the only moment a misclassification is cheap to fix. |
+
+Continue to STEP 3.
 
 ---
 
 ## STEP 3: Validate Complexity
+
+**Path routing (from STEP 2.2.2) — this table governs STEPS 3 through 7:**
+
+| Path | STEPS 3 and 4 | STEPS 5 and 6 | STEP 7 |
+|------|---------------|---------------|--------|
+| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs. Enter at **7.3** — there is no document, so 7.1, 7.2 and 7.4 have nothing to show. |
+| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs. Enter at **7.3** — there is no document, so 7.1, 7.2 and 7.4 have nothing to show. |
+| **architectural** | Everything written below and in STEP 4, unchanged — including the decomposition offer. | Run as written. | Runs in full, as written. |
+
+**STEP 7's `[HARD STOP]` handoff runs on all three paths.** A spike that found a real problem still routes to
+`/add-framework--plan` or `/add-framework--self-plan`; a bounded design still routes to one of them. What
+changes is whether a document precedes the suggestion — never whether the user approves.
+
+The `⛔ HARD GATE — ROLE BOUNDARY` applies unchanged on all three paths: no path may invoke another command,
+and **only the architectural path writes a file**. The one-question-at-a-time cadence applies on all three.
+If the conversation reveals hidden complexity, apply STEP 2.2.3's one-way ratchet before continuing.
 
 ### 3.1 Detect Scope
 
@@ -432,6 +516,8 @@ Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DDTHHMMSS-[subtopic]
 ALWAYS:
 - Capture topic BEFORE dispatching discovery agent (STEP 1.1 before 1.2)
 - Dispatch `@framework-discovery-agent` silently before any exploration
+- Announce the classified effort path in its own turn, before continuing to STEP 3
+- End every path with the user approving the intent before anything is implemented
 - Ask one question at a time during exploration
 - Validate every section 100% before writing design doc
 - Write design documents in Markdown (100% English)
@@ -448,9 +534,21 @@ NEVER:
 - Create umbrella specs without explicit decomposition
 - Write documents outside `docs/brainstorming/`
 - Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
-- Invoke any command or skill via Skill tool or slash — handoff is text-only
+- Invoke any command or skill via Skill tool or slash — handoff is text-only, on every path
+- Downgrade an effort path mid-conversation — the ratchet only goes up
+- Treat a spike's answer as permission to build — that is a new request with its own classification
 - Write full class/method implementations in design docs (one illustrative snippet allowed)
 - Use informative language ("it's recommended") — use imperative ("CONFIRM", "VALIDATE")
 - Create design docs until all validation checkboxes pass
 - Present an unreviewed design as delivered
 - Invent decisions to clear review blockers
+
+---
+
+## Credits
+
+- Conversational exploration (`### 4.1`) adapted from
+  [obra/superpowers `brainstorming`](https://github.com/obra/superpowers/tree/main/skills/brainstorming)
+  by Jesse Vincent (MIT).
+- Three-path classification (spike / bounded / architectural), announcing the path before continuing, the
+  one-way ratchet and the "approval never scales" rule adapted from the same skill (MIT).
