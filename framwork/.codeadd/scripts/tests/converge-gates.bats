@@ -702,7 +702,7 @@ write_epic_blindspot() {
     echo
     echo "| SF | Name | Objective | Status |"
     echo "|----|------|-----------|--------|"
-    # exactly what add.build block 16.3 has always written: a 4-column header
+    # exactly what add.build block 16.4 has always written: a 4-column header
     # with a 5-cell done row, the extra trailing cell being the checkpoint tag
     echo "| SF01 | Alpha | build alpha | done | 0038F-SF01-done |"
     echo "| SF02 | Beta | build beta | done | 0038F-SF02-done |"

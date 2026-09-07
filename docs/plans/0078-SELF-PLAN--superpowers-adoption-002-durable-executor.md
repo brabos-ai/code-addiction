@@ -156,4 +156,4 @@ Then the `003` pair, product plan first.
 | Date | Change |
 |------|--------|
 | 2026-09-07 | Initial creation |
-| 2026-09-07 | Implemented in `a8e7f98 + 79050c3 + 3ba7fe4` on branch `feat/superpowers-adoption` (PR #34) |
+| 2026-09-07 | Implemented in `13bffe8` on branch `feat/superpowers-adoption` (PR #34) |

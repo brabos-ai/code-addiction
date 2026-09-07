@@ -102,7 +102,7 @@ Verify `framwork/` exists and list its provider directories.
 
 ### 1.1 If plan specified
 
-**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*-PLAN--*.md` (excluding `--review-v*` and `--evidence-v*` companions) — a 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument. **Both naming forms resolve**: the timestamped `YYYY-MM-DDTHHMMSS-PLAN--[slug]` and the legacy `NNNN-PLAN--[slug]`.
+**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*-PLAN--*.md` **minus every `*-SELF-PLAN--*.md`** (and excluding `--review-v*` / `--evidence-v*` companions). The exclusion is load-bearing: the glob `*-PLAN--*` also matches `*-SELF-PLAN--*`, and a topic is normally split into a product plan and an internal one **sharing the slug** — so without it every paired set resolves to two candidates and stops — a 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument. **Both naming forms resolve**: the timestamped `YYYY-MM-DDTHHMMSS-PLAN--[slug]` and the legacy `NNNN-PLAN--[slug]`.
 
 - **Exactly one match** → that is the plan. Read it.
 - **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**

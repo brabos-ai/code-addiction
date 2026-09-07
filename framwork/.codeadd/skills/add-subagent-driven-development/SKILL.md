@@ -325,45 +325,55 @@ Write your full report to REPORT_FILE. Return inline ONLY:
    the coordinator commits it after the validator returns and the build passes.
 ```
 
-### 5. Commit and Record
+### 5. Review Subagent's Work
 
-After the area validator returns and the build passes: commit the batch, record `HEAD`, and append the
-ledger line with its `BASE..HEAD` bracket and `BUILD_STATUS`.
+**The review runs on the WORKING TREE, before the commit — not on a diff.** Nothing is committed at this
+point, so `BASE..HEAD` is still empty and `review-package.sh` would refuse the range with exit 2. The
+package belongs to the **re-review** in step 7, after a fix batch has been committed.
 
-**The coordinator commits, never the implementer.** The validator is a separate dispatch, so an
-implementer that committed its own work would put the commit **upstream of validation** — which is the
-one ordering this whole step exists to prevent. `BASE` is recorded by the coordinator before dispatching
-and `HEAD` after the commit it makes itself; the implementer never sees either.
-
-### 6. Review Subagent's Work
-
-Run `bash .codeadd/scripts/review-package.sh BASE HEAD "${FEATURE_DIR}/_build"` — it writes `git log --oneline`,
-`git diff --stat` and `git diff -U10` for the range into one file and prints `PACKAGE=`. It **refuses an
-empty range (exit 2)**, because an empty package is how a reviewer gets dispatched against nothing and
-returns "looks fine".
-
-Dispatch `@reviewer-agent` with `MODE: task` and the package path. Review-specific deltas:
+Dispatch `@reviewer-agent` with `MODE: task`, the `FILES_CREATED` / `FILES_MODIFIED` lists from the
+implementer's report, and the plan's `## Global Constraints` block verbatim. Review-specific deltas:
 
 ```diff
   ## TASK_DOCUMENTS  (same docs as the implementation subagent received)
 + ## MODE: task
-+ ## REVIEW PACKAGE  (the path review-package.sh printed)
++ ## FILES TO REVIEW  (FILES_CREATED + FILES_MODIFIED from the report)
++ ## GLOBAL CONSTRAINTS  (verbatim from plan.md — the attention lens)
   ## SKILLS
 - - [implementation skill]
 + - {{skill:add-code-review/SKILL.md}}
   ## TASK
 - [Specific deliverables from plan]
 + 1. Read all files from TASK_DOCUMENTS (spec)
-+ 2. Read the review package (implementation)
++ 2. Read every file in FILES TO REVIEW (implementation)
 + 3. Validate implementation against spec
 + 4. Check skill patterns
 + 5. Report findings
   ## REPORT FORMAT
-- 1. STATUS / COMMITS / TESTS / CONCERNS
+- 1. STATUS / FILES / TESTS / CONCERNS
 + 1. ISSUES_FOUND: [list with severity]
 + 2. BUILD_STATUS: [pass/fail]
-+ 3. SCORE: [X/10]
++ 3. SPEC_STATUS: [complete/INCOMPLETE]
++ 4. SCORE: [X/10]
 ```
+
+### 6. Commit and Record
+
+**Only after the review has returned, `SPEC_STATUS` is not `INCOMPLETE`, and the build passes**: commit the
+batch, record `HEAD`, and append the ledger line with its `BASE..HEAD` bracket and `BUILD_STATUS`.
+
+That ordering is the whole point of the step. A commit made before the review is a commit of unreviewed
+code, and a commit made before the build passes is a commit that does not compile.
+
+**The coordinator commits, never the implementer.** The reviewer is a separate dispatch, so an implementer
+that committed its own work would put the commit **upstream of review** — the one ordering this step exists
+to prevent. `BASE` is recorded by the coordinator before dispatching and `HEAD` after the commit it makes
+itself; the implementer never sees either.
+
+**One commit per unit of work, and the unit is what the dispatch covered.** When several areas run in
+parallel, each area's commit stages **that area's files by path** — never `git add -A`, which would sweep a
+sibling area's work into the first commit and leave the second with an empty range that
+`review-package.sh` then refuses.
 
 ### 7. Fix Loop, Escalation and the Scoped Re-Review
 
@@ -378,7 +388,7 @@ line stating priority. Everything else mirrors the implementation prompt.
 context with implementation detail it then carries into every later dispatch.
 
 **Every fix round is re-reviewed.** Record `FIX_BASE` before the fix dispatch, run
-`bash .codeadd/scripts/review-package.sh FIX_BASE HEAD`, and dispatch `@reviewer-agent` again with `MODE: re-review`. In that
+`bash .codeadd/scripts/review-package.sh FIX_BASE HEAD "${FEATURE_DIR}/_build"`, and dispatch `@reviewer-agent` again with `MODE: re-review`. In that
 mode the reviewer verdicts **each open finding** `ADDRESSED` or `NOT ADDRESSED` and flags new breakage
 **in the fix diff only**. Out-of-scope observations come back as deferred minors and go to the ledger;
 they never extend the loop. A fix that compiles and misses the finding is exactly what this catches.
@@ -490,7 +500,7 @@ Task 2 — Recovery modes
   Validator + build pass → commit
   Dispatch reviewer MODE: task → Important: missing progress reporting
   Dispatch @fix-agent (round 1/3) → progress every 100 items → commit
-  review-package.sh FIX_BASE HEAD → reviewer MODE: re-review → ADDRESSED
+  review-package.sh FIX_BASE HEAD _build → reviewer MODE: re-review → ADDRESSED
   ledger: T02: fix round 1/3 (…), then T02: complete (…)
 
 Compliance Gate

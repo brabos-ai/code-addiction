@@ -778,16 +778,18 @@ Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 
 4. **NOW commit — and record the bracket.**
 
 ```bash
-# BASE was recorded in 10.0.2, BEFORE the dispatch. Do not re-derive it here.
-# Staging follows add-commit's Staging Rules: all code, and ONLY this feature's docs.
-git add -A -- . ':(exclude)docs/features/*'
+# BATCH_BASE is this batch's own anchor, taken immediately before ITS staging.
+# With one batch it equals the 10.0.2 pre-dispatch BASE; with several it does not.
+BATCH_BASE=$(git rev-parse HEAD)
+# Stage THIS batch's files BY PATH — from the validator's FILES_CREATED + FILES_MODIFIED.
+for f in ${AREA_FILES}; do [ -e "$f" ] || continue; git add -- "$f" || exit 1; done
 [ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
 # _build/ ignores itself, so briefs, reports and diff packages never enter the index.
 git commit -m "<type>(<scope>): <subject per add-commit>" \
            -m "Task-Id: ${TASK_ID}" -m "Feature-Id: ${FEATURE_ID}"
 HEAD=$(git rev-parse HEAD)
 bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
-  "${TASK_ID}: complete (commits ${BASE}..${HEAD}, BUILD_STATUS=pass, review clean)"
+  "${TASK_ID}: complete (commits ${BATCH_BASE}..${HEAD}, BUILD_STATUS=pass, review clean)"
 ```
 
 - **Message** follows `{{skill:add-commit/SKILL.md}}`'s Conventional Commits logic and its Staging Rules.
@@ -795,6 +797,13 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
   MODE, where there are no task ids) and `Feature-Id:`. They are what joins the ledger, the commit and
   `tasks.md` later.
 - **One commit per batch** — one `tasks.md` task in TASKS MODE, one area dispatch otherwise.
+- ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
+  way, and only when more than one batch exists — the normal case, since STEP 9 dispatches Backend and
+  Frontend in parallel. `git add -A` on the first area sweeps the second area's files into that commit,
+  leaving the second commit empty and its `${BATCH_BASE}..${HEAD}` range empty too — and
+  `review-package.sh` exits 2 on an empty range, so the fix loop would have nothing to review.
+- ⛔ **`${AREA_FILES}` comes from the validator's report, never from a glob.** A glob cannot tell this
+  area's files from its sibling's, which is the failure this block exists to prevent.
 - **The ledger line carries `BASE..HEAD` and `BUILD_STATUS`.** A `complete` line without the bracket is
   not a resume marker, because nothing can reconcile it against `git log`.
 

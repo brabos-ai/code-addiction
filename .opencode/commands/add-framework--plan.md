@@ -424,7 +424,7 @@ Specific gaps a reviewer must actively hunt, because they are the ones this plan
 /add-framework--build [slug]
 
 [IF the plan names internal-layer work:]
-Then, for the internal layer (`/add-framework--build` does not reach `.claude/`, and it does reach `CLAUDE.md` — but only for the derived Project Anatomy counts and the prose describing what that build changed. Every other part of `CLAUDE.md` — policy paragraphs, the Internal Layer tables, the pipeline narrative — belongs to `/add-framework--self-build`):
+Then, for the internal layer (this adapter's `/add-framework--build` reaches neither `.claude/` nor `CLAUDE.md` — it carries no Project Anatomy sync. Both belong to `/add-framework--self-build` here. The Claude Code build DOES sync the derived counts and the prose for what it changed; the two adapters differ on this and the difference is deliberate, not drift):
 
 - `/add-framework--self-plan [what]`
 

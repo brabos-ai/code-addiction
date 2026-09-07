@@ -368,7 +368,7 @@ write_epic_blindspot() {
   mkdir -p docs/features/0001F-test
   git checkout -b feature/0001F-test -q
   # No header row names any column — every pre-schema epic.md looks like this,
-  # including the legacy 5-cell done row block 16.3 appends a checkpoint to.
+  # including the legacy 5-cell done row block 16.4 appends a checkpoint to.
   printf '| SF01 | Alpha | build alpha | done | 0001F-test-SF01-done |\n| SF02 | Beta | build beta | pending |\n| SF03 | Gamma | build gamma | in_progress |\n' \
     > docs/features/0001F-test/epic.md
   run "$SCRIPTS_DIR/status.sh"

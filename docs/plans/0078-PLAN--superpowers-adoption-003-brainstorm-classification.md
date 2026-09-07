@@ -132,7 +132,7 @@ Nothing else. No skill, no agent, no schema, no registry entry, no script. Comma
 2. STEP 3's schema load, STEP 4's validation gate, STEP 5's `@plan-reviewer-agent` verdict loop and readback,
    and STEP 6's `[HARD STOP]` all survive in substance. **A diff that touches their logic fails this level**,
    whatever it does to the routing.
-3. The `⛔ HARD GATE — READ-ONLY + NO-INVOKE` block survives verbatim. The new paths inherit it; none of them
+3. The `⛔ HARD GATE — READ-ONLY + NO-INVOKE` block survives verbatim **relative to this plan's starting point**, not branch-wide: `PLAN--001` F5 deliberately rewrote one line inside it (the `Write outside docs/brainstorm/` boundary, which gained the filename shape). Measured against `b436e2d`, the block is byte-identical. The new paths inherit it; none of them
    may invoke another command.
 
 ### L4 — Behavioural acceptance (dogfood, manual)
