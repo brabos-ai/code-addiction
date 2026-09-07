@@ -33,6 +33,8 @@ const require = createRequire(import.meta.url);
 const {
   extractUses,
   collectNodes,
+  buildArtefactGraph,
+  writeArtefactGraph,
   readMap,
 } = require('../../scripts/build.js');
 
@@ -300,6 +302,100 @@ describe('L2 collectNodes', () => {
 
     expect(internal.length).toBeGreaterThan(0);
     expect(internal.every((n) => n.registered)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L4 — sidecar
+// ---------------------------------------------------------------------------
+
+describe('L4 artefact-graph sidecar', () => {
+  const map = readMap();
+
+  function emit() {
+    const out = path.join(tmpDir('graph-out-'), 'artefact-graph.json');
+    writeArtefactGraph(out, buildArtefactGraph(map, CODEADD, ROOT));
+    return out;
+  }
+
+  it('L4.1 parses, carries version 1, and holds no timestamp', () => {
+    const parsed = JSON.parse(fs.readFileSync(emit(), 'utf8'));
+
+    expect(parsed.version).toBe(1);
+    expect(Array.isArray(parsed.nodes)).toBe(true);
+    expect(Array.isArray(parsed.edges)).toBe(true);
+
+    // A timestamp would make every rebuild a diff and defeat L4.2 — which is
+    // what makes "did the graph actually change" an answerable question.
+    expect(JSON.stringify(parsed)).not.toMatch(/generatedAt|timestamp|\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('L4.2 is byte-identical across two consecutive builds', () => {
+    // Set and object iteration order varies more than it looks. Non-determinism
+    // here stays invisible until wave 4 starts diffing graphs.
+    expect(fs.readFileSync(emit())).toEqual(fs.readFileSync(emit()));
+  });
+
+  it('L4.2 ends with exactly one trailing newline, like its two sibling sidecars', () => {
+    const raw = fs.readFileSync(emit(), 'utf8');
+    expect(raw.endsWith('}\n')).toBe(true);
+  });
+
+  it('L4.3 emits one INJECTS_INTO edge per injection point, one per section', () => {
+    // Points are passed explicitly. Reading the module-level accumulator here
+    // would make the level VACUOUS in a fresh test process: it is empty until a
+    // build runs, and `expect(0).toHaveLength(0)` proves nothing.
+    // The two sections on one fragment must stay two edges — collapsing them
+    // would lose which section landed where.
+    const points = [
+      { namespace: 'feature', name: 'tdd-pipeline', section: 'step-list', resource: { name: 'add.build', kind: 'command' } },
+      { namespace: 'feature', name: 'tdd-pipeline', section: 'spec-audit', resource: { name: 'add.build', kind: 'command' } },
+      { namespace: 'plugin', name: 'gitnexus', section: 'graph', resource: { name: 'add.plan', kind: 'command' } },
+      { namespace: 'plugin', name: 'gitnexus', section: 'graph', resource: { name: 'backend-agent', kind: 'agent' } },
+    ];
+
+    const graph = buildArtefactGraph(map, CODEADD, ROOT, points);
+    const injects = graph.edges.filter((e) => e.type === 'INJECTS_INTO');
+
+    expect(injects).toHaveLength(4);
+    expect(injects.every((e) => e.origin === 'sidecar')).toBe(true);
+    expect(injects.map((e) => e.from)).toEqual(
+      expect.arrayContaining([
+        'product/fragment/fragments/tdd-pipeline/add.build.md',
+        'product/fragment/plugins/gitnexus/fragments/add.plan.md',
+        'product/fragment/plugins/gitnexus/fragments/agents/backend-agent.md',
+      ]),
+    );
+  });
+
+  it('L4.3 every INJECTS_INTO endpoint resolves to a node, against the REAL points', () => {
+    // The real check: the fragment path is RECONSTRUCTED from namespace + name +
+    // resource, not stored. Reconstruct it wrongly and `from` points at nothing,
+    // silently. Read the points the build actually emitted.
+    const sidecar = path.join(CODEADD, 'injection-points.json');
+    const points = JSON.parse(fs.readFileSync(sidecar, 'utf8')).points;
+
+    // Guard the guard: an empty sidecar would make this level vacuous too.
+    expect(points.length).toBeGreaterThan(0);
+
+    const graph = buildArtefactGraph(map, CODEADD, ROOT, points);
+    const ids = new Set(graph.nodes.map((n) => n.id));
+    const injects = graph.edges.filter((x) => x.type === 'INJECTS_INTO');
+
+    expect(injects).toHaveLength(points.length);
+    for (const e of injects) {
+      expect(ids.has(e.from), `no node for ${e.from}`).toBe(true);
+      expect(ids.has(e.to), `no node for ${e.to}`).toBe(true);
+    }
+  });
+
+  it('L4.1 every declared edge endpoint that is a source resolves to a node', () => {
+    const graph = buildArtefactGraph(map, CODEADD, ROOT);
+    const ids = new Set(graph.nodes.map((n) => n.id));
+
+    for (const e of graph.edges.filter((x) => x.origin === 'declared')) {
+      expect(ids.has(e.from), `no node for ${e.from}`).toBe(true);
+    }
   });
 });
 

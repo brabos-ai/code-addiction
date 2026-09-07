@@ -841,6 +841,86 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   return nodes;
 }
 
+/**
+ * The fragment FILE behind one injection point.
+ *
+ * Injection points record namespace + feature/plugin name + target resource, not
+ * the fragment path. The path is a pure function of those three, and the layout
+ * is fixed by the feature/plugin system:
+ *
+ *   feature → fragments/{name}/{command}.md
+ *   plugin  → plugins/{name}/fragments/{command}.md
+ *   plugin  → plugins/{name}/fragments/agents/{agent}.md
+ *
+ * Reconstructing it wrongly yields an edge whose `from` points at nothing, and
+ * nothing else in the build would notice — hence the endpoint-resolution level.
+ */
+function fragmentNodeName(point) {
+  const { namespace, name, resource } = point;
+  if (namespace === 'feature') return `fragments/${name}/${resource.name}.md`;
+  return resource.kind === 'agent'
+    ? `plugins/${name}/fragments/agents/${resource.name}.md`
+    : `plugins/${name}/fragments/${resource.name}.md`;
+}
+
+/**
+ * Assemble the graph: every node, plus declared edges and injection edges.
+ *
+ * Declarations are read from disk per declaring node rather than accumulated
+ * during buildResources(). That is deliberate: buildResources() only iterates
+ * REGISTERED resources, so an unregistered artefact would never be visited — and
+ * an unregistered artefact is exactly what the gate exists to find.
+ *
+ * @param {object} map  provider-map.json
+ * @param {string} codeaddDir
+ * @param {string} internalDir
+ * @param {Array} points  injection points; defaults to this build's accumulator
+ * @returns {{nodes: Array, edges: Array}}
+ */
+function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, points = INJECTION_POINTS) {
+  const nodes = collectNodes(map, codeaddDir, internalDir);
+  const edges = [];
+
+  for (const n of nodes) {
+    if (!n.declares) continue;
+    edges.push(...extractUses(readFile(path.join(ROOT, n.path)), n.name, n.kind, n.layer));
+  }
+
+  // One edge per point, not per (fragment, target) pair: a fragment with three
+  // sections injects three times, and collapsing them would lose which section
+  // landed where.
+  for (const p of points) {
+    edges.push({
+      from: `product/fragment/${fragmentNodeName(p)}`,
+      to: `product/${p.resource.kind}/${p.resource.name}`,
+      type: 'INJECTS_INTO',
+      origin: 'sidecar',
+      modifier: `${p.namespace}:${p.name}:${p.section}`,
+    });
+  }
+
+  return { nodes, edges };
+}
+
+/** Total order over edges — stable output is what makes a graph diffable. */
+function edgeSortKey(e) {
+  return `${e.from} ${e.type} ${e.to} ${e.modifier ?? ''}`;
+}
+
+/**
+ * Write the artefact-graph sidecar. Sorted for clean diffs and byte-identical
+ * rebuilds from unchanged sources; no timestamp, for the same reason.
+ * @returns {{nodes: number, edges: number}}
+ */
+function writeArtefactGraph(outPath, graph) {
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  const nodes = [...graph.nodes].sort((a, b) => cmp(a.id, b.id));
+  const edges = [...graph.edges].sort((a, b) => cmp(edgeSortKey(a), edgeSortKey(b)));
+
+  writeFile(outPath, JSON.stringify({ version: 1, nodes, edges }, null, 2) + '\n');
+  return { nodes: nodes.length, edges: edges.length };
+}
+
 // ---------------------------------------------------------------------------
 // Metadata generators (format-specific wrappers around content)
 // ---------------------------------------------------------------------------
@@ -1405,6 +1485,11 @@ function main() {
 
   const contractCount = writeContracts(contractsPath);
 
+  // Built AFTER the resource passes so INJECTION_POINTS is fully populated —
+  // the INJECTS_INTO edges are derived from it, never re-extracted.
+  const graphPath = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
+  const graph = writeArtefactGraph(graphPath, buildArtefactGraph(map));
+
   const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
@@ -1413,6 +1498,7 @@ function main() {
   if (prunedCount) console.log(`  Pruned   : ${prunedCount} stale output file(s)`);
   console.log(`  Injection points : ${pointCount} → ${path.relative(ROOT, sidecarPath)}`);
   console.log(`  Contracts        : ${contractCount} → ${path.relative(ROOT, contractsPath)}`);
+  console.log(`  Artefact graph   : ${graph.nodes} nodes, ${graph.edges} edges → ${path.relative(ROOT, graphPath)}`);
   console.log(`  Total    : ${total} files generated`);
 }
 
@@ -1426,6 +1512,9 @@ module.exports = {
   _resetInjectionPoints: () => { INJECTION_POINTS = []; },
   extractUses,
   collectNodes,
+  buildArtefactGraph,
+  writeArtefactGraph,
+  fragmentNodeName,
   fencedSpans,
   sliceContractBlock,
   contractShape,
