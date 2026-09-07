@@ -444,7 +444,56 @@ When this command instructs you to DISPATCH AGENT:
 
 ## STEP 6: Completion [HARD STOP]
 
-Show: plan file path, status (draft), review verdict, fixes applied (one line each, if any), and the two next-step commands (`/add-framework--build [NNNN]-PLAN--[slug]` to implement, `/add-framework--plan PLAN[NNNN]` to revise).
+**The user did NOT read the plan.** They read this summary and decide from it. A completion that names the file, the verdict and the next command tells them the plan exists — not what is about to happen to their codebase. If the user has to ask "but what will actually be done?", this STEP failed.
+
+### 6.1 Executive Summary [MANDATORY — emit FIRST, before any metadata]
+
+Bullet points, plain language, in the user's language. Someone who has never opened the plan must finish this section knowing what will change, what will not, and what to be careful about.
+
+⛔ **BANNED in this section:**
+
+| Banned | Why | Use instead |
+|--------|-----|-------------|
+| `F7`, `T3`, `L2.9` carrying the meaning | Internal ids say nothing to a non-reader | State the change; the id goes in parentheses at most |
+| "The plan adds a section on X" | Describes the document, not the work | "X is added to `path/file`" |
+| "Improves consistency", "makes the flow more robust" | Says nothing checkable | The concrete change and what it causes |
+| Restating the Problem section | They already agreed there is a problem | What we are going to DO about it |
+| Skipping a deletion because it is "just cleanup" | A deletion is the scariest line in any plan | Name every deleted file, always |
+| Naming a category ("the review commands") | Unverifiable | Name each file and each step |
+
+Emit the blocks below. Skip one only when it is genuinely empty — never pad it with filler.
+
+**1. What will be done** — one line per unit of work, grouped by stage when the plan has stages. Each line pairs the concrete change with the file it lands in.
+
+**2. Files touched** — a table split by verb, because the three carry very different risk:
+
+| Action | Files |
+|--------|-------|
+| Created | ... |
+| Modified | ... |
+| **Deleted** | ... (write "none" when none — never omit the row) |
+| Registered / deregistered | ... |
+
+**3. Where it plugs in** — for anything wired into an existing command, agent, skill or flow: name the **host and the exact step**. "Integrated into the review flow" is not an answer. "`add.plan` STEP 13, after the reviewer verdict resolves" is.
+
+**4. What is explicitly NOT included** — the scope boundaries the user must know, including work routed to a companion command.
+
+**5. ⚠️ Needs your attention** — only genuinely consequential items: anything deleted, anything irreversible, anything that changes behaviour for users who already installed, anything a companion command has to finish, and the one or two places the plan is most likely to be built wrong. Omit the whole block when there is nothing real — never manufacture a warning.
+
+### 6.2 Plan metadata [AFTER the summary]
+
+Then, and only then: plan file path, status (`draft`), review verdict, fixes applied (one line each, if any), and the two next-step commands (`/add-framework--build [NNNN]-PLAN--[slug]` to implement, `/add-framework--plan PLAN[NNNN]` to revise).
+
+### 6.3 Self-check before sending
+
+```
+[ ] A reader who never opened the plan knows what will change
+[ ] Every deleted file is named; the Deleted row is present even when empty
+[ ] Every integration point names its host AND its step
+[ ] No F/T/L id is load-bearing — remove them all and the summary still reads
+[ ] It describes the WORK, never the document
+[ ] Nothing in scope is missing: every F-block appears somewhere in blocks 1-3
+```
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
 add-framework--plan ends here. Execution is `/add-framework--build`'s responsibility.
@@ -491,6 +540,7 @@ ALWAYS:
 - Keep the Ecosystem Impact table a complete map of every file an F-block touches
 - Route work the executing command cannot reach (`CLAUDE.md`, `.claude/`) to a companion `/add-framework--self-plan`
 - Dispatch `@plan-review-agent` before any plan delivery, including Continue Mode
+- Close with STEP 6.1's executive summary — the user decides from it, not from the plan file
 
 NEVER:
 - Paste the content a file will receive — the plan says what we will do, not what will be written
@@ -501,6 +551,8 @@ NEVER:
 - Skip impact analysis
 - Generate plan without user validation of decisions
 - Present an unreviewed plan as delivered
+- Close with only a file path, a verdict and a next command — that is a receipt, not a summary
+- Let an F/T/L id, or a category like "the review commands", stand in for a named file or step
 - Invent decisions to clear review blockers
 - Be passive/executor — this is a consultant role
 - Write outside `docs/plans/`
