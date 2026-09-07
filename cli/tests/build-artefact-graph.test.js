@@ -851,11 +851,17 @@ describe('node inventory snapshot', () => {
       command: 24,
       skill: 44,
       agent: 28,
-      reference: 68,
-      script: 17,
-      fragment: 23,
+      // reference 68 -> 69, script 17 -> 18, fragment 23 -> 24: the delivery
+      // index added add-doc-schemas/references/delivery-index.md,
+      // scripts/delivered.sh and fragments/docs-pruning/add.done.md
+      // (plan 2026-09-07T160328-PLAN--delivery-index, F1/F3/F13).
+      reference: 69,
+      script: 18,
+      fragment: 24,
     });
-    expect(nodes).toHaveLength(204);
+    // 204 -> 207: the three new nodes above. `declares` is unchanged — none of
+    // the three carries a `<!-- uses: -->` block of its own.
+    expect(nodes).toHaveLength(207);
     expect(nodes.filter((n) => n.declares)).toHaveLength(96);
   });
 });

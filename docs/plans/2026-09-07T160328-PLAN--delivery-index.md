@@ -1,6 +1,6 @@
 # Plan: Delivery Index — a tracked, self-verifying record of what each feature shipped
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** architecture
 > **Created:** 2026-09-07
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -310,3 +310,4 @@ Then, for the internal layer — `/add-framework--build` reaches neither `.claud
 | 2026-09-07 | **Build design review.** Five rulings arrived from `/add-framework--build`; three approved, **two rejected as design gaps this plan should have closed**: entry-status aggregation (the build proposed "any item gone → entry gone"; corrected to ALL-gone, derived from `gone` meaning "absent from the source") and who supplies `v`/`ts` (corrected to the script, per `log-jsonl.sh:50`). Also recorded: F4 is written before F3 and the intra-T1 order is explicit; F7 needs no staging change (`done.sh:265` already covers it); `cli/tests/delivery-index.test.js` and the two generic injection suites added to Ecosystem Impact; the measured 39→40 injection baseline and the 0-warning baseline replace relative assertions |
 | 2026-09-07 | Review round 2 (`ok`): Ecosystem Impact's graph row now names the new `reference` and `fragment` nodes; F9 and Reviewer Handoff item 3 now name all three pieces that must land together |
 | 2026-09-07 | Review round 1 (`fix-then-ok`): F14's stage corrected — it consumes F13 and lands in T4, not T2, so the build-between-each-edit discipline spans both stages (B1). L2.5's per-provider script claim replaced — scripts have no per-provider directory (B2). F3's corpus citation split to the schema doc (A1). F5 now declares it consumes `delivered.sh verify` (A2). L2.2 extended to the new `reference` and `fragment` nodes, plus L2.4b covering F2 and F12 (A3). F9 also updates *When to Use* (N1) |
+| 2026-09-07 | **Implemented** by `/add-framework--build` — F1-F14 in 12 commits (`483f7c4..d969558`), ledger at `...--ledger.md`. Two plan corrections ruled during the build: the merge pre-check needs TWO dots, not three (three-dot is merge-base relative and would make the direct-commit mode dead code on the PR route), and F13 lands before F12 (`features.test.js` asserts key->fragment with no inverse, so registry-first leaves a real test red). Changelog: `docs/changelog/2026-09-07-add-delivery-index.md` |

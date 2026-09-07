@@ -90,9 +90,11 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 39 points', () => {
-    // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073).
-    expect(sidecarPoints()).toHaveLength(39);
+  it('L1.0 injection map totals exactly 40 points', () => {
+    // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073);
+    // +1 for feature:docs-pruning:prune on add.done
+    // (plan 2026-09-07T160328-PLAN--delivery-index, F14).
+    expect(sidecarPoints()).toHaveLength(40);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {
