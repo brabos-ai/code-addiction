@@ -14,12 +14,14 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - skill: add-tasks-checklist
 - skill: add-token-efficiency
 - mention: add-commit
+- mention: delivered.sh
 - command: /add.audit
 - command: /add.done
 - command: /add.hotfix
 - command: /add.new
 - command: /add.plan
 - script: build-setup.sh
+- skill: add-doc-schemas/references/delivery-index.md
 - skill: add-doc-schemas/references/fix.md
 - skill: add-doc-schemas/references/history.md
 - skill: add-doc-schemas/references/new-feature.md
@@ -198,6 +200,14 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 **Loading discipline.** A command that produces, say, a `feature-about` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
 
 **Schema name → category lookup.** Use the table above. Adding a new schema = (1) place it in the right category file, (2) update this table, (3) if a new ID prefix is needed, add it to the ID Prefixes table.
+
+## Format References (NOT Doc Schemas)
+
+`references/` also holds files that describe a **machine-readable format**, not a Markdown document an agent authors. They carry no frontmatter template, no `id:` under the ID convention, no TL;DR, no depth floors and no Decision Log, and **they are deliberately absent from the Schema Index above** — listing one there would declare a machine log to be a doc, and the validation gate would then run against something that has no schema type.
+
+| File | Describes | Read it when |
+|------|-----------|--------------|
+| `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.sh` |
 
 ## Validation Gate Block
 

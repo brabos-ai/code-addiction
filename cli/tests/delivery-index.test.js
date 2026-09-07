@@ -207,11 +207,19 @@ describe('L2 — build integrity', () => {
     // The Schema Index by Category table is the doc-schema registry. A row for
     // this reference inside it would declare a minified machine log to be a
     // markdown doc an agent authors — the exact miscategorisation F1 forbids.
-    const indexTable = s.slice(
-      s.indexOf('## Schema Index by Category'),
-      s.indexOf('## Validation Gate Block'),
+    // Slice to the NEXT H2, not to a named one: anything else between them is
+    // a section of its own and not part of the index.
+    const head = s.indexOf('## Schema Index by Category');
+    const rest = s.slice(head + 3);
+    const next = rest.search(/^## /m);
+    const indexSection = next === -1 ? rest : rest.slice(0, next);
+    expect(indexSection, 'delivery-index was filed as a doc schema').not.toContain(
+      'delivery-index',
     );
-    expect(indexTable, 'delivery-index was filed as a doc schema').not.toContain('delivery-index');
+    // …and it IS listed, under a heading that says what it is instead.
+    expect(s, 'no section separates format references from doc schemas').toMatch(
+      /^## Format References/m,
+    );
   });
 
   it('L2.4b: F12 — features.js registers docs-pruning, disabled by default', () => {
