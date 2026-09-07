@@ -464,6 +464,17 @@ IF delivered.sh EXITS 1:
 
 Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and each permanent final snapshot emitted by STEP 5 with its scope, path, and severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: the QA judgement is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
 
+**Render the delivery index entry from 6.8 (`INDEX_ENTRY`) IN FULL** — its `name`, its `words`, and **every** item with its `what`, its `at` and its `find` string. Not a count, not a summary: the user is seeing this list for the only time before it is committed, and a `find` they can read is a `find` they can notice is wrong. Add, when 6.8 emitted them: every `LOOSE` string, labelled as loosely anchored, and how many items the five-item cap dropped.
+
+`INDEX_ENTRY=none` (a `docs` branch) prints one line saying no entry was owed. A refused write never reaches here — 6.8 stops.
+
+```
+IF RENDERING THE ENTRY:
+  ⛔ DO NOT: Ask the user to approve, confirm or edit the item list
+  ⛔ DO NOT: Re-select items or rewrite a find string here
+  ✅ DO: Print it and continue — a wrong entry is corrected by appending a new line, which is what the format is for
+```
+
 **DO NOT ask for confirmation. Proceed directly to STEP 8.**
 
 ---
