@@ -104,20 +104,53 @@ Internal classification only — DO NOT produce artefacts.
 
 ### 2.1 Map Dependencies
 
-For each artefact affected, identify:
+**Ask the graph. Do not answer these by grepping.**
 
-- Which commands load this skill?
-- Which commands reference this command?
-- Which agents are dispatched by affected commands?
-- Does this change affect `CLAUDE.md`?
+For each artefact the change touches:
+
+```bash
+node scripts/graph.js impact <artefact-name>
+```
+
+It returns every dependant **transitively**, with the number of hops. That
+number is the answer to "which commands load this skill, which commands
+reference this command, which agents do they dispatch" — all three at once, and
+one level deeper than a grep reaches.
+
+Two things the output already accounts for, so do not re-reason about them:
+
+- `MENTIONS` edges are excluded. A doc that names an artefact only to point away
+  from it ("use X instead") cannot break when it changes.
+- A name is matched exactly. `add-qa` does not match inside `add-qa-migration`,
+  and `/add` does not match inside `/add.plan` — both mistakes produced wrong
+  counts before the graph existed.
+
+Then check what the change would break in the other direction:
+
+```bash
+node scripts/graph.js dependencies <artefact-name>   # what it needs
+node scripts/graph.js path <from> <to>               # how two artefacts connect
+```
+
+Still answer by hand: **does this change affect `CLAUDE.md`?** The graph does not
+model it.
+
+If the graph is missing or stale, run `node scripts/build.js` — it is emitted on
+every build.
 
 ### 2.2 Assess Risk
 
+Use the dependant count from 2.1, not an estimate.
+
 | Risk Level | Criteria |
 |-----------|----------|
-| **LOW** | Single artefact, no dependents |
-| **MEDIUM** | Multiple artefacts, or artefact with 1-2 dependents |
-| **HIGH** | Cross-cutting change, or artefact with 3+ dependents |
+| **LOW** | Single artefact, `impact` returns nothing |
+| **MEDIUM** | `impact` returns 1-2 dependants, all at depth 1 |
+| **HIGH** | `impact` returns 3+ dependants, **or any dependant at depth 2+** |
+
+A dependant at depth 2 or more is what makes a change cross-cutting: something
+depends on this through an intermediary that nobody editing the file will think
+to open.
 
 ---
 

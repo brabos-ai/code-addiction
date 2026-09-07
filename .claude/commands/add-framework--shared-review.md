@@ -129,6 +129,33 @@ You are the coordinator. You know your engine's capabilities. Map the intent (ca
 
 Combine all 4 subagent reports into a single findings list. Deduplicate (same file:line + same issue from multiple agents → one entry, sources merged).
 
+### 3.1b Blast-Radius Coverage Check
+
+**The subagents read the plan. The graph knows who else the change reaches.**
+
+For every artefact the implementation touched:
+
+```bash
+node scripts/graph.js impact <artefact-name>
+```
+
+Compare that list against the files the plan actually changed. Each dependant
+falls into one of three buckets, and the third is a finding:
+
+| Case | Verdict |
+|---|---|
+| Dependant was changed too | fine |
+| Plan states explicitly that it needs no change | fine |
+| Dependant neither changed nor mentioned | **finding — severity `medium`, or `high` when the dependant is at depth 1** |
+
+This is the check no subagent can make on its own: each reads the plan and the
+diff, and neither shows what depends on a file that nobody opened. A plan that
+edits a hub and its obvious neighbour but misses the four artefacts reaching it
+through an intermediary passes every other check in this command.
+
+Record it as a normal finding so 3.2 and 3.3 handle it like any other. If the
+graph is missing, run `node scripts/build.js` — do not skip the check.
+
 ### 3.2 Classify by Severity
 
 | Severity | Criteria |

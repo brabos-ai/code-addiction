@@ -136,6 +136,27 @@ If ALL dimensions are empty (no changes since last release) → inform user, STO
 
 ## STEP 2: Regenerate Ecosystem Map
 
+**The relationship columns come from the graph, not from a re-scan.**
+
+```bash
+node scripts/build.js                 # ensure the graph is current
+node scripts/graph.js stats --json    # counts by kind, edge type, and the hubs
+node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / "used by"
+```
+
+`neighbors` returns inbound and outbound edges with their types, which is exactly
+the "skills loaded" and "used by" columns below. It is derived from each
+artefact's own declaration and validated by the build, so a row written from it
+cannot claim a relationship that does not exist.
+
+Two rules when transcribing:
+
+- **A `MENTIONS` edge is not a dependency.** It records a doc naming another
+  while pointing away from it. It belongs in neither column.
+- **Do not re-derive a count by hand** to cross-check the graph. If they
+  disagree, the graph is right and the scan is what drifted — that is the whole
+  reason it exists.
+
 Regenerate `framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md` from STEP 1.3 scan data.
 
 Use the EXACT same format as the existing map:
