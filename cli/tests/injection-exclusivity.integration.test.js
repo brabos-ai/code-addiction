@@ -266,13 +266,17 @@ afterEach(() => {
 });
 
 describe('substitution completeness (catalog × fragments × sidecar × built anchors)', () => {
-  it('sidecar, fragments, and catalog declare the same 39 substitutions', () => {
+  // 39 -> 40: the docs-pruning feature adds ONE section on add.done (plan
+  // 2026-09-07T160328-PLAN--delivery-index, F12-F14). The literal is the guard
+  // — it forces a deliberate update whenever the substitution set changes, so
+  // it is bumped rather than computed.
+  it('sidecar, fragments, and catalog declare the same 40 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(39);
-    expect(all).toHaveLength(39);
+    expect(points).toHaveLength(40);
+    expect(all).toHaveLength(40);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -372,10 +376,10 @@ describe('plugin substitution on real built files', () => {
 });
 
 describe('combined substitution and sibling isolation', () => {
-  it('all 38 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('all 40 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(39);
+    expect(features.length + plugins.length).toBe(40);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);

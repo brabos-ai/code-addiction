@@ -50,6 +50,16 @@ export const FEATURES = {
     default: false,
     commands: ['add.plan', 'add.build'],
   },
+  // OFF by default, and that is the decision, not an oversight: this one
+  // DELETES the user's documentation, which is their call to make. It also
+  // refuses to run at all unless /add.done wrote a delivery index entry in the
+  // same run — pruning the scaffolding before the record exists inverts the
+  // whole design.
+  'docs-pruning': {
+    description: 'Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written',
+    default: false,
+    commands: ['add.done'],
+  },
 };
 
 /**

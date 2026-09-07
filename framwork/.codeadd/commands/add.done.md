@@ -458,6 +458,9 @@ IF delivered.sh EXITS 1:
 
 ⛔ DO NOT USE: Bash for git add/commit/push in this substep. `done.sh --merge` remains the sole git owner, exactly as it is for the changelog and the wiki.
 
+<!-- feature:docs-pruning:prune -->
+<!-- /feature:docs-pruning:prune -->
+
 ---
 
 ## STEP 7: Preview (INFORMATIVE ONLY)
