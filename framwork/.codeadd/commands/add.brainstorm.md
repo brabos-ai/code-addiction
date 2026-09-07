@@ -119,7 +119,7 @@ DO NOT skip. DO NOT mark complete until the gate returns `PASS`.
 
 ---
 
-## STEP 5: Plan Review
+## STEP 5: Plan Review + Comprehension Readback
 
 After the gate passes, dispatch `@plan-reviewer-agent` as a subagent in fresh context (it MUST NOT see this conversation). Pass the doc path and `kind: brainstorm`.
 
@@ -129,6 +129,39 @@ After the gate passes, dispatch `@plan-reviewer-agent` as a subagent in fresh co
 - `blocked`, or blockers still standing after the one re-dispatch → do NOT run STEP 6. STOP, present the blockers to the user.
 
 If the provider does not support subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting the conversation.
+
+### Readback (after the verdict resolves, before STEP 6)
+
+**DISPATCH** `@readback-agent` with `target` = the brainstorm document's path and `scope: document`. Run it ONLY after the verdict above resolved to proceed and every applied fix is on disk — a readback of text about to be edited reports a version that will never exist.
+
+**A brainstorm is one file, so the report is shorter by design.** Build order, disagreement between documents, and facts that never reach the builder's document all need more than one document and will be absent. Their absence is correct.
+
+```
+IF THE REPORT COMES BACK SHORT:
+  ⛔ DO NOT: Read the missing sections as a weak or failed readback
+  ⛔ DO NOT: Re-dispatch asking for more sections
+  ✅ DO: Judge it on the restatement, the gaps filled, the forks and the confidence
+```
+
+```
+IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
+  ⛔ DO NOT: Apply the readback inline yourself
+  ✅ DO: Skip it, and say in STEP 6 that it was skipped and why
+```
+
+There is no inline fallback because the mechanism IS the reader not holding this conversation. A readback you perform on a document you just wrote measures nothing.
+
+**Compare the readback against what was actually explored in this conversation**, using the report's closing **"In one sentence"** line.
+- **Matches** → proceed to STEP 6, citing the readback in one line.
+- **Diverges** → the document failed, not the agent. Apply the fix, **re-run STEP 4's `brainstorm` gate**, then present the divergence to the user and STOP.
+
+```
+IF THE READBACK DIVERGES:
+  ⛔ DO NOT: Summarize the divergence away as "close enough"
+  ✅ DO: Show what it understood beside what was explored, then STOP
+```
+
+⛔ The readback is NOT a gate. It returns no verdict and cannot block.
 
 ---
 

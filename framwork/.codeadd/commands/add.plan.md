@@ -610,7 +610,7 @@ Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `fe
 
 ---
 
-## STEP 13: Plan Review (GATE: plan_reviewed)
+## STEP 13: Plan Review + Comprehension Readback (GATE: plan_reviewed)
 
 Schema gate PASSED. Do not present `plan.md` or the next command as delivered yet.
 
@@ -620,6 +620,31 @@ Schema gate PASSED. Do not present `plan.md` or the next command as delivered ye
    - `fix-then-ok` → apply only the Required fixes that do not invent a user decision, **re-run STEP 12's validation gate on `plan.md`**, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 14 unless the verdict is still `blocked` or blockers remain.
    - `blocked`, or blockers still standing after the one re-dispatch → STOP. Ref: GATES table (`plan_reviewed`). Present the blockers to the user; do NOT proceed to STEP 14.
 3. ⛔ Do NOT re-dispatch `@ux-flow-agent`, `@ux-layout-agent`, or `@ux-agent` to satisfy a plan-review finding — those subagents own `design.md`, not `plan.md`; a `design.md` finding is out of scope for this review.
+
+4. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
+
+   Run it ONLY after step 2's verdict resolved to proceed and every applied fix is on disk.
+
+```
+IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
+  ⛔ DO NOT: Apply the readback inline yourself
+  ✅ DO: Skip it, and say in STEP 14 that it was skipped and why
+```
+
+   There is no inline fallback because the mechanism IS the reader not holding this conversation. A readback you perform on a plan you just wrote measures nothing.
+
+5. **Compare the readback against what was actually decided in this conversation**, using the report's closing **"In one sentence"** line.
+   - **Matches** → proceed to STEP 14, citing the readback in one line.
+   - **Diverges** → the document failed, not the agent. Apply the fix to `plan.md`, **re-run STEP 12's validation gate**, then present the divergence to the user and STOP.
+
+```
+IF THE READBACK DIVERGES:
+  ⛔ DO NOT: Summarize the divergence away as "close enough"
+  ⛔ DO NOT: Treat it as the subagent having misread the plan
+  ✅ DO: Show what it understood beside what was decided, then STOP
+```
+
+   ⛔ The readback is NOT a gate and does NOT feed `plan_reviewed`. It returns no verdict and cannot block.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer-agent
-description: Pre-delivery executability reviewer for freshly written about.md, brainstorm docs, and plan.md. Reads only the target doc, the review skill, and the matching schema section — never the conversation that produced the doc. Returns a verdict (ok / fix-then-ok / blocked) with required fixes, not questions. Use after add.new / add.brainstorm / add.plan write a doc and before it is presented as delivered. Not doc-reviewer-agent (Gap/Clarity/Scope questions, no proposed fix) and not reviewer-agent (post-implementation code review — no code exists at this phase). Read-only.
+description: Pre-delivery executability reviewer for freshly written about.md, brainstorm docs, and plan.md. Reads only the target doc, the review skill, and the matching schema section — never the conversation that produced the doc. Returns a verdict (ok / fix-then-ok / blocked) with required fixes, not questions. Use after add.new / add.brainstorm / add.plan write a doc and before it is presented as delivered. Not readback-agent (says back what it understood, no verdict, runs after this review's fixes land) and not reviewer-agent (post-implementation code review — no code exists at this phase). Read-only.
 model: sonnet
 readonly: true
 # `readonly:` is consumed by the OpenCode dialect (it becomes permission:

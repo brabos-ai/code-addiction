@@ -177,7 +177,9 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 ## Validation Gate Block
 
-Every generator command MUST paste the following block as **the final STEP that operates on the doc** — i.e. after every step that writes, edits, or transforms the doc, and before any post-doc step (completion summary, fresh-reader review via `add-plan-review` (`add.new` / `add.brainstorm` / `add.plan`) or `add-doc-reviewer` (other generators), next-step routing, merge execution, iteration logging). Steps that do not modify the gated doc may follow the gate. The block is self-contained and imperative. Replace `<SCHEMA>` with the schema type in use.
+Every generator command MUST paste the following block as **the final STEP that operates on the doc** — i.e. after every step that writes, edits, or transforms the doc, and before any post-doc step (completion summary, fresh-reader review via `add-plan-review` then the comprehension readback via `add-feature-readback`, next-step routing, merge execution, iteration logging). Steps that do not modify the gated doc may follow the gate. The block is self-contained and imperative. Replace `<SCHEMA>` with the schema type in use.
+
+**Known gap — generators with no fresh-reader review.** Only `add.new`, `add.brainstorm`, `add.plan` and `add.plan-to-ready` run the review + readback pair. Every other generator that writes a schema-gated doc (`add.hotfix`, `add.wiki`, `add.audit`, `add.diagnose`) passes the validation gate and stops there. An earlier version of this line routed those "other generators" to a question-only reviewer, but no command ever implemented that step and the agent it named was deleted in plan 0076. The route is not restored here: pointing at a reviewer nobody dispatches is what produced the confusion in the first place. Giving those commands a real review step is open work, not a documented behaviour.
 
 ```markdown
 ## STEP N: Validation Gate (add-doc-schemas)
@@ -228,7 +230,7 @@ This skill is itself at risk of becoming unmaintainable. Rules:
 - `{{skill:add-token-efficiency/SKILL.md}}` — generic compression patterns for authoring commands/skills (compression patterns only; output length is governed here)
 - `{{skill:add-resource-path-convention/SKILL.md}}` — build-time resource refs (`{{cmd:}}` / `{{skill:}}`)
 - `{{skill:add-tasks-checklist/SKILL.md}}` — `tasks.md` schema (sibling, not absorbed here)
-- `{{skill:add-doc-reviewer/SKILL.md}}` — cold-read sanity-check skill; receives `schema_name` and resolves via the Schema Index above
+- `{{skill:add-feature-readback/SKILL.md}}` — cold-read comprehension readback; takes a doc set and a scope, never a `schema_name`, and runs after the review's fixes land
 - `{{skill:add-claude-md-style/SKILL.md}}` — CLAUDE.md generation rules (separate pipeline)
 - `{{doc:PRD0009}}` — Documentation Context Engineering (originating PRD)
 - `{{doc:PRD0012}}` — Doc Skills Consolidation
