@@ -1,0 +1,47 @@
+Debugger listening on ws://127.0.0.1:55370/8f9bb218-a36b-439e-ae62-049dde637684
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+Building provider files...
+
+  PRUNED (not in registry): codex/skills/add-planning/
+  PRUNED (not in registry): antigrav/skills/add-planning/
+Waiting for the debugger to disconnect...
+C:\github\xmaiconx\code-addiction\scripts\build.js:1170
+  if (failures.length) throw new Error(`\n\n${failures.join('\n\n')}\n`);
+                       ^
+
+Error: 
+
+artefact-graph: dangling reference
+  framwork/.codeadd/skills/add-code-review/SKILL.md
+  declares  product/skill/add-planning
+  no such artefact. Fix the name, or add the file.
+
+artefact-graph: dangling reference
+  framwork/.codeadd/skills/add-ecosystem/SKILL.md
+  declares  product/skill/add-planning
+  no such artefact. Fix the name, or add the file.
+
+artefact-graph: dangling reference
+  framwork/.codeadd/skills/add-feature-specification/SKILL.md
+  declares  product/skill/add-planning
+  no such artefact. Fix the name, or add the file.
+
+artefact-graph: dangling reference
+  framwork/.codeadd/skills/add-tasks-checklist/SKILL.md
+  declares  product/skill/add-planning
+  no such artefact. Fix the name, or add the file.
+
+    at assertArtefactGraph [90m(C:\github\xmaiconx\code-addiction\[39mscripts\build.js:1170:30[90m)[39m
+    at main [90m(C:\github\xmaiconx\code-addiction\[39mscripts\build.js:1763:3[90m)[39m
+    at Object.<anonymous> [90m(C:\github\xmaiconx\code-addiction\[39mscripts\build.js:1826:3[90m)[39m
+[90m    at Module._compile (node:internal/modules/cjs/loader:1760:14)[39m
+[90m    at Object..js (node:internal/modules/cjs/loader:1893:10)[39m
+[90m    at Module.load (node:internal/modules/cjs/loader:1480:32)[39m
+[90m    at Module._load (node:internal/modules/cjs/loader:1299:12)[39m
+[90m    at TracingChannel.traceSync (node:diagnostics_channel:328:14)[39m
+[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)[39m
+[90m    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)[39m
+
+Node.js v24.11.0
+EXIT=1

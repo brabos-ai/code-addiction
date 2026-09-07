@@ -1,0 +1,214 @@
+## STEP 5: Generate Design Document
+
+### 5.1 Determine Output Path
+
+- Simple idea → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
+- Umbrella spec → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic]-umbrella.md`
+
+Timestamp format: `YYYY-MM-DDTHHMMSS`, **local time**, `T` between the date and the time, **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort equals chronological sort, so two brainstorms written the same day no longer sort arbitrarily. Topic slug: kebab-case from idea.
+
+**Brainstorms carry NO kind marker** — unlike plans, which keep `PLAN` / `SELF-PLAN`. Internal brainstorms live in `docs/brainstorming/` of this repo, product ones in `docs/brainstorm/` of the user's repo: different directories in different repositories, so a marker would carry no information.
+
+**A brainstorm SET allocates its timestamp once, at the umbrella, and every subtopic reuses it verbatim:**
+
+```
+docs/brainstorming/2026-09-07T005046-[topic]-umbrella.md
+docs/brainstorming/2026-09-07T005046-[topic]-[subtopic].md
+```
+
+**Pre-existing brainstorms keep their `YYYY-MM-DD-[topic].md` names.** Both forms coexist; only a NEW brainstorm uses the timestamp.
+
+### 5.2 Write Design Document
+
+**No-code rule:** Design docs must contain no full class/method implementations. One short illustrative snippet is allowed if it clarifies the design; describe all other behavior in prose.
+
+**For simple ideas:**
+
+```markdown
+# Brainstorm: [Topic]
+
+> **Status:** final (ready for /add-framework--plan or /add-framework--self-plan)
+> **Date:** YYYY-MM-DD
+> **Type:** [command|skill|script|workflow|product|architecture]
+
+## Discovery
+
+[Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
+- [Skill/Agent/Command] — what it does, why it's relevant to this idea
+- [Plan <slug>] — prior decision relevant to this design
+
+## Context & Motivation
+
+[From conversation: why this matters, what prompted it, connection to strategy]
+
+## Problem / Opportunity
+
+[What's bad today or what's missing]
+
+## Proposed Solution
+
+[High-level approach + 2-3 alternatives with trade-offs + recommended option]
+
+## Type of Artefact
+
+[command|skill|script|workflow|product|architecture]
+
+## Scope
+
+### Includes
+- [item]
+- [item]
+
+### Does NOT Include
+- [item]
+
+## Key Decisions
+
+| Decision | Rationale | Validated |
+|----------|-----------|-----------|
+| [decision] | [why] | ✅ |
+
+## Ecosystem Impact
+
+| Component | Impact | Action |
+|-----------|--------|--------|
+| [command/skill] | [how it's affected] | [required change or "none"] |
+
+## Trade-offs & Risks
+
+| We Gain | We Give Up |
+|---------|-----------|
+| [benefit] | [cost] |
+
+| Risk | Probability | Mitigation |
+|------|-------------|-----------|
+| [risk] | High/Med/Low | [how to avoid] |
+
+## Next Steps
+
+[product layer idea] Run: `/add-framework--plan [idea]`
+[internal layer idea] Run: `/add-framework--self-plan [idea]`
+```
+
+**For umbrella specs:**
+
+Same structure +
+
+```markdown
+## Decomposition Map
+
+| Subtopic | Design Path | Purpose |
+|----------|-------------|---------|
+| [Topic 1] | YYYY-MM-DDTHHMMSS-[topic1].md | [what it covers] |
+| [Topic 2] | YYYY-MM-DDTHHMMSS-[topic2].md | [what it covers] |
+
+[Every row reuses the umbrella's timestamp verbatim — that is what keeps the set grouped in the directory.]
+
+## Dependencies & Relationships
+
+[How subtopics relate; recommended order of refinement]
+```
+
+### 5.3 Write to File
+
+Create file in `docs/brainstorming/` with content from 5.2. Do NOT commit — wait for explicit user request. DO NOT announce the path as delivered — proceed immediately to STEP 6.
+
+---
+
+## STEP 6: Review Design (BEFORE ANY DELIVERY)
+
+**GATE CHECK:** Design file from STEP 5 exists? IF NO → return to STEP 5. DO NOT proceed.
+
+DO NOT show the design path or next-step commands until this STEP completes with a deliverable verdict.
+
+**DISPATCH AGENT:** `@plan-review-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:**
+  - `path`: design file written in STEP 5
+  - `kind`: `design`
+  - `layer`: `both`
+
+**WAIT:** Agent report received. ⛔ DO NOT proceed without it.
+
+### 6.1 Act on Verdict
+
+| Verdict | Action |
+|---------|--------|
+| `ok` | Proceed to STEP 7 |
+| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Re-dispatch `@plan-review-agent` ONCE. After re-review: `ok` or only nits → STEP 7. Remaining blockers → 6.2 |
+| `blocked` | Go to 6.2 |
+
+### 6.2 User decisions required [STOP]
+
+Present only the blockers that need a user decision. DO NOT present the design as delivered. WAIT. After answers: apply, or return to STEP 4 if exploration is still open, then re-enter STEP 6.
+
+⛔ DO NOT invent decisions to clear blockers.
+
+### Agent Dispatch Rules
+
+When this command instructs you to DISPATCH AGENT:
+1. Read the **Capability** required (read-only)
+2. Read the **Complexity** hint (`standard`)
+3. Choose the best available agent/task mechanism that satisfies the capability
+4. Prefer `@plan-review-agent` when the engine can address it by name
+5. Verify the report is received before acting on the verdict
+
+---
+
+## STEP 7: Completion & Next Steps [HARD STOP]
+
+### 7.1 Display Design Document Path
+
+Show: "Design document created: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`" plus review verdict and fixes applied (one line each, if any).
+
+### 7.2 Summarize Key Decisions
+
+Bullet list of 3-5 key validated decisions from the design.
+
+### 7.3 Next Step Guidance [HARD STOP]
+
+Determine the target layer from STEP 2.2 "Framework impact" classification:
+- IF product layer (`framwork/.codeadd/`) → suggest `/add-framework--plan`
+- IF internal layer (`.claude/`, `scripts/`, `CLAUDE.md`) → suggest `/add-framework--self-plan`
+- IF layer is ambiguous → ask the user which layer, then print the correct command
+
+Print ONLY one of the following (matching the detected layer), then STOP:
+
+```
+[product layer]  Idea is ready to formalize. Run: /add-framework--plan [idea]
+[internal layer] Idea is ready to formalize. Run: /add-framework--self-plan [idea]
+(shared-brainstorm stops here — it does not run the next command for you.)
+```
+
+### 7.4 Offer Refinement (If Umbrella)
+
+If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`"
+
+---
+
+## STEP 8: Continue Mode (Topic Refinement from Umbrella)
+
+Triggered when STEP 1.0 detects a refinement invocation.
+
+### 8.1 Load Umbrella Spec
+
+Read the referenced umbrella spec file at the path captured in STEP 1.0.
+
+### 8.2 Dispatch Framework Discovery Agent (SILENT)
+
+Dispatch `@framework-discovery-agent` with:
+- `topic`: subtopic extracted in STEP 8.1
+- `scope`: `both`
+
+Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
+
+### 8.3 Start STEP 2 (Understand the Idea)
+
+Ask clarifying questions specific to the subtopic, grounded in the umbrella's context.
+
+### 8.4 Follow STEP 4-7 for Subtopic
+
+Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DDTHHMMSS-[subtopic].md` — reusing the umbrella's timestamp verbatim. Review via STEP 6 before STEP 7 delivery.
+
+---
