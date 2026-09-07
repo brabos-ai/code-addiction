@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
+
+const { SIDECARS } = createRequire(import.meta.url)('../../scripts/build.js');
 
 /**
  * Release packaging guard.
@@ -48,18 +51,61 @@ describe('release packaging', () => {
     expect(packagedSubdirs()).toContain('.codeadd/plugins');
   });
 
-  it('ships the contracts.json sidecar (setup-shape for status.sh)', () => {
-    // Gitignored + build-emitted like injection-points.json, so the directory list
-    // never sweeps it up and it must be added to the zip explicitly. Without it,
-    // every SETUP_QA_STALE check in every installed project is permanently blind.
+  /**
+   * Every build-emitted sidecar must reach BOTH of its non-JS consumers.
+   *
+   * These levels are DERIVED from `SIDECARS` in scripts/build.js — the build's
+   * own list — and never from names written here. That distinction is the whole
+   * point. Commit 56bc22d fixed "the registry has three consumers, and the build
+   * only checked two"; a test that enumerates sidecar names is that same bug
+   * rewritten, because adding a fourth sidecar leaves it green while the file
+   * ships to nobody and dirties every working tree.
+   *
+   * A sidecar is a single file, not a subdir, so the `for subdir` loop never
+   * sweeps it up: each needs an explicit line in release.yml and in
+   * framwork/.gitignore.
+   */
+  it('ships every build-emitted sidecar in the release zip', () => {
     const yml = fs.readFileSync(RELEASE_WORKFLOW, 'utf8');
-    expect(yml).toContain('framwork/.codeadd/contracts.json');
+
+    expect(SIDECARS.length).toBeGreaterThan(0);
+    for (const name of SIDECARS) {
+      expect(yml, `release.yml does not package ${name} — it would ship to nobody`)
+        .toContain(`framwork/.codeadd/${name}`);
+    }
   });
 
-  it('ships the injection-points.json sidecar (anchors for post-install injection)', () => {
-    // The sidecar is a single file (not a subdir), so it must be added to the
-    // zip explicitly. Without it, every feature/plugin enable becomes a no-op.
-    const yml = fs.readFileSync(RELEASE_WORKFLOW, 'utf8');
-    expect(yml).toContain('framwork/.codeadd/injection-points.json');
+  it('gitignores every build-emitted sidecar', () => {
+    const ignore = fs.readFileSync(path.join(ROOT, 'framwork', '.gitignore'), 'utf8')
+      .split('\n').map((l) => l.trim());
+
+    for (const name of SIDECARS) {
+      expect(ignore, `framwork/.gitignore does not ignore ${name} — every build dirties the tree`)
+        .toContain(`.codeadd/${name}`);
+    }
+  });
+
+  it('the sidecar list matches what the build actually emitted, both ways', () => {
+    // Guards the guard, against the BUILD OUTPUT rather than build.js source.
+    // An earlier version of this level searched the source for each name and was
+    // vacuous: the SIDECARS array itself contains them, so a bogus entry
+    // satisfied its own check. Proven by adding a fake fourth sidecar — the two
+    // levels above failed and this one passed.
+    //
+    // Requires `node scripts/build.js` to have run, which CI does before
+    // `npm test` and which build-contracts.test.js already relies on.
+    const dir = path.join(ROOT, 'framwork', '.codeadd');
+
+    for (const name of SIDECARS) {
+      expect(fs.existsSync(path.join(dir, name)), `the build never emitted ${name}`).toBe(true);
+    }
+
+    // The other direction: a sidecar the build writes but SIDECARS omits would
+    // leave the packaging and gitignore levels checking the wrong set.
+    const emitted = fs.readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith('.json'))
+      .map((e) => e.name);
+
+    expect(emitted.sort()).toEqual([...SIDECARS].sort());
   });
 });

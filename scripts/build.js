@@ -1610,6 +1610,23 @@ function pruneStaleOutputs(map) {
   return removed;
 }
 
+/**
+ * The build's single-file outputs, in one place because they have FOUR
+ * consumers and only one of them is JavaScript:
+ *
+ *   1. main() below, which writes them
+ *   2. framwork/.gitignore, which must ignore each — or every build dirties the tree
+ *   3. .github/workflows/release.yml, which must package each explicitly:
+ *      a sidecar is a file, not a subdir, so the `for subdir` loop misses it
+ *   4. CLAUDE.md, which documents them
+ *
+ * Commit 56bc22d fixed exactly this class of bug ("the registry has three
+ * consumers, and the build only checked two"). The fix is not a test that
+ * enumerates names — that is the same bug rewritten — but this single list,
+ * which cli/tests/release-packaging.test.js derives its levels from.
+ */
+const SIDECARS = ['injection-points.json', 'contracts.json', 'artefact-graph.json'];
+
 function main() {
   console.log('Building provider files...\n');
 
@@ -1620,9 +1637,11 @@ function main() {
   // writeContracts(), and a leftover file from an earlier run would let status.sh
   // read a stale `version` and report a behind project as current — the exact
   // outcome I8 exists to prevent.
+  // Driven by SIDECARS so a new one is cleared without a second edit here.
+  for (const name of SIDECARS) {
+    fs.rmSync(path.join(ROOT, 'framwork', '.codeadd', name), { force: true });
+  }
   const contractsPath = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
-  fs.rmSync(contractsPath, { force: true });
-  fs.rmSync(path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json'), { force: true });
 
   const map = readMap();
   assertNoLintableSources(map);
@@ -1671,6 +1690,7 @@ module.exports = {
   writeArtefactGraph,
   checkArtefactGraph,
   assertArtefactGraph,
+  SIDECARS,
   fragmentNodeName,
   fencedSpans,
   sliceContractBlock,
