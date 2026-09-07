@@ -6,6 +6,10 @@ description: |
 
 # Frontend Development
 
+<!-- uses:
+- skill: add-ux-design/SKILL.md
+-->
+
 Stack-agnostic skill for frontend architecture and implementation patterns.
 
 **Use for:** Pages, State, Data Fetching, Types, API integration, Forms, Routing, Components

@@ -604,7 +604,14 @@ function fencedSpans(raw) {
  * gate unable to tell a missing file from a missing skill.
  */
 function usesTargetId(kind, target) {
-  if (kind === 'skill') return target.includes('/') ? `reference/${target}` : `skill/${target}`;
+  if (kind === 'skill') {
+    // `{{skill:NAME/SKILL.md}}` is how a source points at the SKILL itself, not
+    // at a file beside it. SKILL.md files are skill nodes, so a bare
+    // "contains a slash → reference" rule would resolve this to a node that
+    // does not exist and fail the build on a correct declaration.
+    const bare = target.replace(/\/SKILL\.md$/, '');
+    return bare.includes('/') ? `reference/${bare}` : `skill/${bare}`;
+  }
   if (kind === 'command') return `command/${target.replace(/^\//, '')}`;
   return `${kind}/${target}`;
 }

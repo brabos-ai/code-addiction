@@ -33,6 +33,7 @@ const require = createRequire(import.meta.url);
 const {
   extractUses,
   collectNodes,
+  stripHtmlComments,
   buildArtefactGraph,
   writeArtefactGraph,
   checkArtefactGraph,
@@ -101,6 +102,54 @@ describe('L1 extractUses', () => {
     expect(edges[3]).toMatchObject({ to: 'product/command/add.review', type: 'HANDS_OFF_TO', modifier: 'handoff' });
     expect(edges[4]).toMatchObject({ to: 'product/script/qa-evidence.sh', type: 'RUNS_SCRIPT' });
     expect(edges[5]).toMatchObject({ to: 'product/skill/add-tdd', modifier: 'conditional' });
+  });
+
+  it('L1.2 the block is removed by the EXISTING stripping pass, not a new one', () => {
+    // The mechanism, at unit level: extraction reads raw content, and the block
+    // is a plain HTML comment that stripHtmlComments() already removes. If this
+    // ever fails, someone has added a second stripping implementation — free to
+    // drift from the first and ship build metadata to users.
+    const stripped = stripHtmlComments(WELL_FORMED);
+
+    expect(stripped).not.toMatch(/uses:/);
+    expect(stripped).not.toMatch(/add-tasks-checklist/);
+    expect(stripped).toContain('## STEP 1'); // the rest of the body survives
+  });
+
+  it('L1.2 no built provider file carries a declaration block', () => {
+    // The mechanism against the real tree, across every provider that received
+    // one of the three pilots. Requires `node scripts/build.js` to have run.
+    const built = [
+      'framwork/.claude/commands/add.ux.md',
+      'framwork/.cursor/commands/add.ux.md',
+      'framwork/.opencode/commands/add.ux.md',
+      'framwork/.agents/skills/add.ux/SKILL.md',
+      'framwork/.claude/skills/add-frontend-development/SKILL.md',
+      'framwork/.claude/agents/database-agent.md',
+    ];
+
+    let checked = 0;
+    for (const rel of built) {
+      const full = path.join(ROOT, rel);
+      if (!fs.existsSync(full)) continue; // provider layouts differ; skip absent
+      expect(fs.readFileSync(full, 'utf8'), `${rel} ships the declaration block`)
+        .not.toMatch(/uses:/);
+      checked++;
+    }
+
+    // Guard the guard: skipping every path would make this level vacuous.
+    expect(checked).toBeGreaterThan(2);
+  });
+
+  it('L1.10 a target ending in /SKILL.md names the SKILL, not a reference file', () => {
+    // `{{skill:add-ux-design/SKILL.md}}` is how a source points at a skill
+    // itself. Under a bare "contains a slash → reference" rule it resolves to
+    // reference/add-ux-design/SKILL.md — a node that does not exist, because
+    // SKILL.md files are skills. The dangling gate would then fail the build on
+    // a correct declaration.
+    const src = '<!-- uses:\n- skill: add-ux-design/SKILL.md\n-->\n';
+    expect(extractUses(src, 'add-frontend-development', 'skill')[0].to)
+      .toBe('product/skill/add-ux-design');
   });
 
   it('L1.9 resolves targets within the declaring artefact own layer', () => {
@@ -577,6 +626,61 @@ describe('L4 artefact-graph sidecar', () => {
     for (const e of graph.edges.filter((x) => x.origin === 'declared')) {
       expect(ids.has(e.from), `no node for ${e.from}`).toBe(true);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// L5 — behavioural acceptance
+// ---------------------------------------------------------------------------
+
+describe('L5 acceptance', () => {
+  it('L5.1 the readback reproduction: an unregistered agent and skill fail the build', () => {
+    // THE acceptance test for wave 1, rebuilt from a real event. Commit 49422ad
+    // landed readback-agent.md and add-feature-readback/ on main. They read
+    // correctly, are referenced in prose, and — until a later commit registered
+    // them — were built for no provider at all. Nothing in the build, the suite
+    // or CI said a word.
+    const codeadd = path.join(tmpDir('graph-accept-'), '.codeadd');
+
+    fs.mkdirSync(path.join(codeadd, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'agents', 'readback-agent.md'), '# readback\n');
+
+    fs.mkdirSync(path.join(codeadd, 'skills', 'add-feature-readback'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'skills', 'add-feature-readback', 'SKILL.md'), '# readback\n');
+
+    // A registry that knows about neither — exactly the shape 49422ad shipped.
+    const map = { providers: {}, commands: {}, skills: {}, agents: {} };
+    const graph = buildArtefactGraph(map, codeadd, path.join(codeadd, 'no-internal'));
+    const { failures } = checkArtefactGraph(graph);
+
+    expect(failures).toHaveLength(2);
+
+    const joined = failures.join('\n');
+    expect(joined).toMatch(/readback-agent/);
+    expect(joined).toMatch(/add-feature-readback/);
+    // The message has to say what is wrong and what to do, or the gate costs
+    // more than it saves.
+    expect(joined).toMatch(/never built for any provider/);
+    expect(joined).toMatch(/provider-map\.json/);
+  });
+
+  it('L5.1 registering them clears the failure', () => {
+    // The other half: the gate must be satisfiable by the obvious fix, or it is
+    // just an obstacle.
+    const codeadd = path.join(tmpDir('graph-accept-'), '.codeadd');
+
+    fs.mkdirSync(path.join(codeadd, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'agents', 'readback-agent.md'), '# readback\n');
+
+    const map = { providers: {}, commands: {}, skills: {}, agents: { 'readback-agent': {} } };
+    const graph = buildArtefactGraph(map, codeadd, path.join(codeadd, 'no-internal'));
+
+    expect(checkArtefactGraph(graph).failures).toEqual([]);
+  });
+
+  it('L5.2 the real tree builds clean — no failures from either hard gate', () => {
+    const graph = buildArtefactGraph(readMap(), CODEADD, ROOT);
+    expect(checkArtefactGraph(graph).failures).toEqual([]);
   });
 });
 
