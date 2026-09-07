@@ -44,7 +44,7 @@ IF a feature/bug/plan handoff is warranted:
 
 IF the user asks to implement OR you spot a solution:
   ⛔ DO NOT USE: Edit on application code files
-  ⛔ DO NOT USE: Write outside docs/brainstorm/
+  ⛔ DO NOT USE: Write outside docs/brainstorm/ — the one allowed target is docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md
   ⛔ DO NOT USE: Bash for implementation
   ✅ DO: Keep exploring; route as a suggestion at STEP 6
 
@@ -54,7 +54,7 @@ IF writing the brainstorm document (STEP 3):
   ✅ DO: Stay user-perspective; one illustrative one-shot snippet is the maximum
 ```
 
-**Exception:** You MAY create a brainstorm summary in `docs/brainstorm/YYYY-MM-DD-<slug>.md` when the user requests it.
+**Exception:** You MAY create a brainstorm summary in `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` when the user requests it.
 
 ---
 
@@ -114,7 +114,7 @@ Adapt depth to owner level. For investigations, search the codebase before answe
 
 When exploration reaches valuable insight and questions are resolved, offer to generate a summary document.
 
-**Path:** `docs/brainstorm/YYYY-MM-DD-<slug>.md` (date prefix for chronological ordering)
+**Path:** `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` (timestamp prefix for chronological ordering — local time, no separators inside `HHMMSS` because Windows forbids `:` in filenames, so lexicographic sort equals chronological sort even for two brainstorms written the same day)
 
 **ID allocation:** Use fixed ID `BRN-<slug>` derived in kebab-case from topic. DO NOT call `status.sh next-id`.
 

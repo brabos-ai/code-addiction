@@ -849,13 +849,13 @@ describe('node inventory snapshot', () => {
 
     expect(byKind).toEqual({
       command: 24,
-      skill: 45,
+      skill: 44,
       agent: 28,
       reference: 68,
       script: 14,
       fragment: 23,
     });
-    expect(nodes).toHaveLength(202);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(97);
+    expect(nodes).toHaveLength(201);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(96);
   });
 });

@@ -117,9 +117,10 @@ For `/add.new` (creates `docs/features/<slug>/about.md`).
 For `/add.plan` (feature mode, creates `docs/features/<slug>/plan.md`).
 
 - **Frontmatter:** `id: [NNNN]F` (same as about), `type: feature-plan`, `related: [[NNNN]F]`
-- **Sections:** TL;DR · Context (link `{{doc:[NNNN]F}}`) · Architecture Decisions · Tasks · Risks · Validation
+- **Sections:** TL;DR · Context (link `{{doc:[NNNN]F}}`) · Global Constraints · Architecture Decisions · Tasks · Risks · Validation
 - **Depth floor:**
   - **Context** — one paragraph summarizing the about.md hook + what this plan adds on top. Not a restatement.
+  - **Global Constraints** — every requirement that binds the WHOLE plan rather than one task: RNFs from about.md, stack pins and validation gates from CLAUDE.md, tokens from design-system.md. One line per constraint, carrying the **exact value copied verbatim from its source**, with that source cited in parentheses. Example: `- List renders in under 200ms for up to 100 items (about.md RNF01)`. Verbatim is load-bearing — this block is handed to a reviewer as its attention lens, and "fast enough" cannot be reviewed while "under 200ms" can. **Empty is explicit:** a plan with no project-wide constraints writes the section with the single word `None`. The section is NEVER absent — an absent section is a question ("did the author forget?"), `None` is an assertion.
   - **Architecture Decisions** — per decision: the choice, the real rationale (not "because it's clean"), at least one alternative considered and why rejected, and the constraint that made it necessary. Use Decision Notation above.
   - **Tasks** — each task has: area, action, acceptance signal (how you'll know it's done). Ordered by dependency. `tasks.md` itself is owned by `{{skill:add-tasks-checklist/SKILL.md}}` — this Plan section is a higher-level breakdown that feeds into it.
   - **Risks** — per risk: probability estimate, impact if it fires, concrete mitigation or monitoring hook.
@@ -131,7 +132,7 @@ For `/add.plan` (feature mode, creates `docs/features/<slug>/plan.md`).
   - Risks = table `risk | prob | impact | mitigation`.
   - Path / dep / config blocks = minified JSON, one line per logical object: `{"files":{"create":["path/a.ts"],"modify":["path/existing.ts"]}}`, `{"deps":{"npm":["package@version"],"internal":["@add/domain"]}}`, `{"config":{"env":["VAR_NAME"],"files":["path/config.ts"]}}`. Pin versions (no `^` or `~`). Never inline secret values — names only.
   - Flow notation = arrow chains: `request → validate → enqueue → send → callback`. Branches as sub-lines. Keep flows compact per line; split by sub-heading when one line covers too many steps.
-- **Hard bans:** duplicating about.md problem statement verbatim; tasks without an acceptance signal; rules or rationale inside JSON objects (rules belong in tables/prose); pretty-printed JSON in the doc.
+- **Hard bans:** duplicating about.md problem statement verbatim; tasks without an acceptance signal; rules or rationale inside JSON objects (rules belong in tables/prose); pretty-printed JSON in the doc; **a Global Constraint paraphrased instead of copied verbatim**; **a Global Constraint stated as a vague range** ("fast", "secure", "responsive" — an unreviewable target); **a Global Constraint with no source cited**.
 - **Avoid unless load-bearing:** narrative rationale outside the decisions table.
 
 ### feature-design
@@ -178,7 +179,7 @@ provenance: sha256:<hash of the about.md bytes the design was derived from>
 
 ### brainstorm
 
-For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DD-<slug>.md`). Date prefix is mandatory for chronological tree ordering.
+For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). Date prefix is mandatory for chronological tree ordering — and the `THHMMSS` time component is what makes that sentence true: two brainstorms written on the same day sort arbitrarily without it. Local time, no separators inside the time part (Windows forbids `:` in filenames), so lexicographic sort equals chronological sort.
 
 - **Frontmatter:** `id: BRN-<slug>`, `type: brainstorm`, `related: []`
 - **Sections:** TL;DR · Questions Explored · Candidate Directions · Open Threads

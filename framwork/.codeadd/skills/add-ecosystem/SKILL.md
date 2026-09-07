@@ -29,7 +29,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-optimizing-git-workflow
 - mention: add-plan-based-features
 - mention: add-plan-review
-- mention: add-planning
 - mention: add-product-discovery
 - mention: add-project-scaffolding
 - mention: add-qa
@@ -145,7 +144,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-plan-based-features | Implement subscription plan-based features |
 | add-plan-review | Pre-delivery executability rubric for about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` |
 | add-cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` |
-| add-planning | Technical planning orchestration |
 | add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
 | add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, config.json/screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded by /add.review at its QA merge step, never by a judge |
