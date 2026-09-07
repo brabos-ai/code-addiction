@@ -299,35 +299,97 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     git pull origin "$MAIN_BRANCH"
     echo "CHECKOUT_MAIN=OK"
 
-    # Step 4: Squash merge
-    echo "STEP=Squash merging..."
-    # [FIX-13] `git merge --squash` does not create a merge commit; does not accept
-    # `--abort`. The original called `git merge --abort` on failure, which
-    # would always return error (no merge in progress), masking the real
-    # problem. Fixed to only clean the index with `git reset HEAD`.
-    if ! git merge --squash "$CURRENT_BRANCH"; then
-        echo "STATUS=ERROR"
-        echo "ERROR=Merge conflict detected"
-        echo "HINT=Resolve conflicts manually, then run: git add . && git commit"
-        git reset HEAD 2>/dev/null || true
-        exit 1
-    fi
-    echo "SQUASH=OK"
-
-    # Step 5: Create merge commit
-    # [FIX-14] After `git merge --squash` there may be nothing staged when
-    # the source branch has no commits ahead of main (e.g.: branch already integrated).
-    # In that case `git commit` would fail with "nothing to commit". Verification added.
-    echo "STEP=Creating merge commit..."
-    if git diff --cached --quiet; then
-        echo "MERGE_COMMIT=SKIPPED (nothing to commit after squash)"
+    # Step 4: Choose the merge mode — DETERMINISTICALLY, never by catching a
+    # conflict.
+    #
+    # WHY THIS EXISTS: on the /add.pull-request route the branch is still
+    # un-merged locally, but `main` already carries equivalent content, applied
+    # by GitHub's squash button as a NEW commit with a different SHA. The
+    # branch's commits are therefore not ancestors of `main`, and STEP 6 then
+    # adds one more commit on top. A squash from the original merge base
+    # re-applies content `main` already has. FIX-14 covers the FULLY redundant
+    # case; this is the PARTIALLY redundant one.
+    #
+    # The question is "is there anything here `main` does not already have,
+    # other than what STEP 6 just wrote". Discovering that as a merge failure
+    # and retrying is guessing, so it is answered before anything is attempted.
+    #
+    # TWO DOTS, NOT THREE. `git diff main...branch` is merge-base-relative: on
+    # the PR route it still reports the whole feature diff, because that diff
+    # IS what the branch added since the base — even though `main` now carries
+    # it. It would be non-empty exactly when this check needs to be empty, and
+    # the direct-commit mode below would be dead code. Two dots compare the two
+    # TREES, which is the actual question.
+    STEP6_PATHS="docs/features docs/delivered.jsonl .codeadd/wiki .codeadd/project/decisions.jsonl"
+    if git diff --quiet "$MAIN_BRANCH" "$CURRENT_BRANCH" -- . \
+        ':(exclude)docs/features' \
+        ':(exclude)docs/delivered.jsonl' \
+        ':(exclude).codeadd/wiki' \
+        ':(exclude).codeadd/project/decisions.jsonl'; then
+        MERGE_MODE="direct"
     else
-        git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): merge from $CURRENT_BRANCH
+        MERGE_MODE="squash"
+    fi
+    echo "MERGE_MODE=$MERGE_MODE"
+
+    if [ "$MERGE_MODE" = "direct" ]; then
+        # `main` already has the branch's content. The squash would contribute
+        # nothing but a duplicated diff, so commit ONLY what STEP 6 authored,
+        # straight onto `main`. This keeps done.sh --merge the sole git owner
+        # rather than introducing a second committer.
+        #
+        # Applied as a patch rather than `git checkout <branch> -- <paths>`,
+        # because checkout cannot carry a DELETION: with docs-pruning enabled
+        # STEP 6 removes files, and checkout would silently leave them on main.
+        echo "STEP=Committing STEP 6 output directly onto $MAIN_BRANCH..."
+        STEP6_DIFF=$(git diff "$MAIN_BRANCH" "$CURRENT_BRANCH" -- $STEP6_PATHS)
+        if [ -z "$STEP6_DIFF" ]; then
+            echo "MERGE_COMMIT=SKIPPED (nothing to commit: $MAIN_BRANCH already carries the branch)"
+        else
+            if ! printf '%s\n' "$STEP6_DIFF" | git apply --index --whitespace=nowarn; then
+                echo "STATUS=ERROR"
+                echo "ERROR=Could not apply STEP 6 output onto $MAIN_BRANCH"
+                echo "HINT=Resolve manually, then run: git add . && git commit"
+                git reset HEAD 2>/dev/null || true
+                exit 1
+            fi
+            git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): docs from $CURRENT_BRANCH
 
 Generated with ADD by https://brabos.ai
 
 Co-Authored-By: ADD <noreply@brabos.ai>"
-        echo "MERGE_COMMIT=OK"
+            echo "MERGE_COMMIT=OK"
+        fi
+    else
+        echo "STEP=Squash merging..."
+        # [FIX-13] `git merge --squash` does not create a merge commit; does not accept
+        # `--abort`. The original called `git merge --abort` on failure, which
+        # would always return error (no merge in progress), masking the real
+        # problem. Fixed to only clean the index with `git reset HEAD`.
+        if ! git merge --squash "$CURRENT_BRANCH"; then
+            echo "STATUS=ERROR"
+            echo "ERROR=Merge conflict detected"
+            echo "HINT=Resolve conflicts manually, then run: git add . && git commit"
+            git reset HEAD 2>/dev/null || true
+            exit 1
+        fi
+        echo "SQUASH=OK"
+
+        # Step 5: Create merge commit
+        # [FIX-14] After `git merge --squash` there may be nothing staged when
+        # the source branch has no commits ahead of main (e.g.: branch already integrated).
+        # In that case `git commit` would fail with "nothing to commit". Verification added.
+        echo "STEP=Creating merge commit..."
+        if git diff --cached --quiet; then
+            echo "MERGE_COMMIT=SKIPPED (nothing to commit after squash)"
+        else
+            git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): merge from $CURRENT_BRANCH
+
+Generated with ADD by https://brabos.ai
+
+Co-Authored-By: ADD <noreply@brabos.ai>"
+            echo "MERGE_COMMIT=OK"
+        fi
     fi
 
     # Step 6: Push to main

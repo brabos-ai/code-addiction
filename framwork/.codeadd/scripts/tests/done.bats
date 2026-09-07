@@ -287,3 +287,100 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"CLEANUP=OK"* ]]
 }
+
+# ─── Merge-mode selection: the /add.pull-request route ──────────────
+#
+# The pre-check exists because that route leaves the branch un-merged LOCALLY
+# while `main` already carries equivalent content, applied by GitHub's squash
+# button as a new commit with a different SHA. The squash from the original
+# merge base would then re-apply what `main` already has.
+#
+# The mode is chosen DETERMINISTICALLY, never by catching a conflict and
+# retrying — discovering it as a merge failure is exactly the guessing the
+# design rejects everywhere else.
+
+@test "merge mode: main already carries the branch -> direct mode, entry lands once" {
+  setup_remote
+  echo "base" > app.txt && git add app.txt && git commit -m "base" -q
+  git push origin main -q
+
+  git checkout -b feature/0001F-index -q
+  echo "feature" > app.txt && git add app.txt && git commit -m "feat" -q
+
+  # GitHub's squash button: the SAME content on main as a NEW commit, so the
+  # branch's commits are not ancestors of main.
+  git checkout main -q
+  echo "feature" > app.txt && git add app.txt && git commit -m "squash from PR" -q
+  git push origin main -q
+
+  # STEP 6 then adds its output on the branch, and only that.
+  git checkout feature/0001F-index -q
+  mkdir -p docs docs/features/0001F-index
+  printf '{"v":1,"id":"0001F"}\n' > docs/delivered.jsonl
+  echo "# changelog" > docs/features/0001F-index/changelog.md
+  git add -A && git commit -m "docs" -q
+  git push -u origin feature/0001F-index -q
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MERGE_MODE=direct"* ]]
+  [[ "$output" == *"MERGE_COMMIT=OK"* ]]
+  [[ "$output" != *"ERROR=Merge conflict detected"* ]]
+
+  # The entry landed on main, exactly once, and the code was not duplicated.
+  [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]
+  [ -f docs/delivered.jsonl ]
+  [ "$(wc -l < docs/delivered.jsonl | tr -d ' ')" = "1" ]
+  [ "$(cat app.txt)" = "feature" ]
+}
+
+@test "merge mode: a normal branch still takes the squash route" {
+  setup_remote
+  echo "base" > app.txt && git add app.txt && git commit -m "base" -q
+  git push origin main -q
+
+  git checkout -b feature/0002F-normal -q
+  echo "feature" > app.txt && git add app.txt && git commit -m "feat" -q
+  mkdir -p docs
+  printf '{"v":1,"id":"0002F"}\n' > docs/delivered.jsonl
+  git add -A && git commit -m "docs" -q
+  git push -u origin feature/0002F-normal -q
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MERGE_MODE=squash"* ]]
+  [[ "$output" == *"SQUASH=OK"* ]]
+  [ -f docs/delivered.jsonl ]
+  [ "$(cat app.txt)" = "feature" ]
+}
+
+@test "merge mode: direct mode carries a STEP 6 DELETION, not just additions" {
+  # docs-pruning deletes tracked files at STEP 6. `git checkout <branch> -- <p>`
+  # cannot carry a deletion, which is why the direct mode applies a patch.
+  setup_remote
+  echo "base" > app.txt && git add app.txt && git commit -m "base" -q
+  mkdir -p docs/features/0003F-prune
+  echo "scaffolding" > docs/features/0003F-prune/discovery.md
+  git add -A && git commit -m "docs scaffolding" -q
+  git push origin main -q
+
+  git checkout -b feature/0003F-prune -q
+  echo "feature" > app.txt && git add app.txt && git commit -m "feat" -q
+
+  git checkout main -q
+  echo "feature" > app.txt && git add app.txt && git commit -m "squash from PR" -q
+  git push origin main -q
+
+  git checkout feature/0003F-prune -q
+  rm docs/features/0003F-prune/discovery.md
+  mkdir -p docs
+  printf '{"v":1,"id":"0003F"}\n' > docs/delivered.jsonl
+  git add -A && git commit -m "docs" -q
+  git push -u origin feature/0003F-prune -q
+
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MERGE_MODE=direct"* ]]
+  [ -f docs/delivered.jsonl ]
+  [ ! -f docs/features/0003F-prune/discovery.md ]
+}
