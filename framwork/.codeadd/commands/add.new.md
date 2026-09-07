@@ -265,7 +265,7 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ---
 
-## STEP 8: Plan Review (fresh-reader, max one re-dispatch)
+## STEP 8: Plan Review + Comprehension Readback (fresh-reader, max one re-dispatch each)
 
 Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
@@ -274,6 +274,29 @@ Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as de
    - `ok` → proceed to Completion.
    - `fix-then-ok` → apply only the Required fixes that do not invent a user decision (read → preserve → complement), re-run STEP 7's validation gate, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to Completion unless the verdict is still `blocked` or blockers remain — leftover attention never blocks.
    - `blocked`, or blockers still standing after the one re-dispatch → STOP. Present the blockers to the user; do NOT mark `about.md` delivered.
+
+3. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: feature`. Run it ONLY after the verdict above resolved to proceed and every applied fix is on disk — a readback of text about to be edited reports a version that will never exist.
+
+```
+IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
+  ⛔ DO NOT: Apply the readback inline yourself
+  ✅ DO: Skip it, and say in Completion that it was skipped and why
+```
+
+   The reason there is no inline fallback here — unlike the plan review above — is that the mechanism IS the reader not holding this conversation. A readback you perform on docs you just wrote measures nothing.
+
+4. **Compare the readback against what was actually decided in this conversation.** Compare against the report's closing **"In one sentence"** line, which is short and hard to soften.
+   - **Matches** → proceed to Completion, citing the readback in one line.
+   - **Diverges** → the document failed, not the agent. Apply the fix to `about.md`, **re-run STEP 7's validation gate**, then present the divergence to the user and STOP.
+
+```
+IF THE READBACK DIVERGES:
+  ⛔ DO NOT: Summarize the divergence away as "close enough"
+  ⛔ DO NOT: Treat it as the subagent having misread the doc
+  ✅ DO: Show what it understood beside what was decided, then STOP
+```
+
+   ⛔ The readback is NOT a gate. It returns no verdict and cannot block. The STOP is to hand the user a decision, never a mechanical failure.
 
 ---
 

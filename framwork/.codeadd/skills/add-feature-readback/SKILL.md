@@ -21,33 +21,48 @@ Your blindness is the whole mechanism. Reading the source code, the referenced f
 ## When to Use
 
 - A feature's documentation set is closed (`about.md` + `epic.md` + subfeature docs written and fixed) and the flow is about to move into building.
-- Dispatched as a subagent alongside an adversarial reviewer, so the parent gets two independent reports — see [Pairing](#pairing--the-two-report-setup).
-- Manual: the user asks "read this feature and tell me what you understood" or wants a comprehension check before `/add.plan` / `/add.build`.
+- Dispatched as a subagent **after** the adversarial reviewer's fixes land, so the parent holds two independent reports — see [Pairing](#pairing--the-two-report-setup). Four commands do this today, each at the step that closes a document:
+
+| Command | Step | `scope` |
+|---|---|---|
+| `add.new` | STEP 8, after the plan-reviewer verdict, before Completion | `feature` |
+| `add.plan` | STEP 13, after the verdict, before STEP 14 | `subfeature` |
+| `add.brainstorm` | STEP 5, after the verdict, before STEP 6 | `document` |
+| `add.plan-to-ready` | STEP 3 plan leg, after the verdict **and** after the consistency pass | `subfeature` |
+
+- Manual: the user asks "read this and tell me what you understood" or wants a comprehension check before building.
 
 ## When NOT to Use
 
 - **Docs still being drafted.** The point is testing the final text. A mid-edit doc produces findings that are already being fixed.
-- **In parallel with the rubric review.** Run AFTER `@plan-reviewer-agent` / `@doc-reviewer-agent` and after their fixes are applied. Running alongside tests a version that will not exist.
+- **In parallel with the rubric review.** Run AFTER `@plan-reviewer-agent` and after its fixes are applied. Running alongside tests a version of the document that will not exist.
 - **Judging code, schema compliance, or delivery.** Not this skill — `add-code-review`, the gate in `add-doc-schemas`, `add-qa`.
-- **A single doc in isolation with a schema to check against.** That is `add-doc-reviewer` (questions) or `add-plan-review` (verdict).
+- **Grading one document against a rubric or a schema.** That is `add-plan-review`, which returns a verdict and required fixes. Reading one document *cold, for comprehension* is squarely this skill — that is what `scope: document` is for, and `add.brainstorm` dispatches exactly that. The line is not how many documents you get; it is whether you are grading them or saying them back.
 
-## Boundary — this vs. the two doc reviewers
+## Boundary — this vs. the pre-delivery reviewer
 
-Three artefacts read closed docs in fresh context. They split on the question each one asks:
+Two artefacts read closed docs in fresh context. They split on the question each one asks:
 
 | Question asked | Owner | Output shape |
 |---|---|---|
-| "Is this well written? What is missing?" | `@doc-reviewer-agent` (`add-doc-reviewer`) | Questions, bucketed Gap / Clarity / Scope |
-| "Can this be executed? What breaks?" | `@plan-reviewer-agent` (`add-plan-review`) | Verdict — `ok` / `fix-then-ok` / `blocked` |
+| "Can this be executed? What breaks?" | `@plan-reviewer-agent` (`add-plan-review`) | Verdict — `ok` / `fix-then-ok` / `blocked`, plus required fixes |
 | **"Will whoever reads this build the right thing?"** | **this skill** | **A restatement + every gap the reader silently filled** |
 
-⛔ **You never ask a question.** That is the hard line between this skill and `add-doc-reviewer`, and the easiest one to cross by accident. Where a reviewer writes *"What happens when the provider is down?"*, you write *"The docs don't say what happens when the provider is down. I assumed the turn fails with an error message. If it should retry instead, I'd build the wrong thing."* You answer your own question, out loud, and expose the answer for checking. A questionnaire hands the work back; a readback shows what the work would have produced.
+⛔ **You never ask a question.** That is the hard line, and the easiest one to cross by accident. Where a reviewer writes *"What happens when the provider is down?"*, you write *"The docs don't say what happens when the provider is down. I assumed the turn fails with an error message. If it should retry instead, I'd build the wrong thing."* You answer your own question, out loud, and expose the answer for checking. A questionnaire hands the work back; a readback shows what the work would have produced.
 
 ## Input
 
-The caller passes one thing: a **feature folder path** (e.g. `docs/features/0031F-assistant-sdk-engine`) or a feature ID to resolve inside `docs/features/`.
+The caller passes a **target** and a **scope**. No schema name and no doc type — you are never told what to check against, only what to read.
 
-No schema name, no doc type, no reading list. You take the whole folder.
+| `scope` | Target | Reading set |
+|---|---|---|
+| `feature` (default) | a feature folder, or a feature ID under `docs/features/` | the whole folder, recursively |
+| `subfeature` | a feature folder plus the subfeature id in play | the folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature** |
+| `document` | one file path | that file alone |
+
+**Why `subfeature` excludes siblings.** Divergence between two subfeatures belongs to `@consistency-agent`, which judges it on five named dimensions. Reading siblings here would duplicate that owner and make the read grow quadratically across an epic. The exclusion is a boundary, not a shortcut.
+
+**What goes empty under `document`.** A single file cannot support a build order, a disagreement between documents, or a fact that fails to reach the builder's document. Those three sections are omitted — never filled with "none". The restatement, the gaps you filled, the forks and your confidence all still apply, and they are the part that catches a reader heading down the wrong line.
 
 ## What you read — and what you must not
 
@@ -57,7 +72,7 @@ Two directories are excluded, always:
 
 | Excluded | Why |
 |---|---|
-| `_superseded/` | Replaced drafts. Reading them makes you report a comprehension built partly on text no builder will ever see. |
+| `_superseded/` (when present) | Replaced drafts. Reading them makes you report a comprehension built partly on text no builder will ever see. Not every project has this directory. |
 | `_tests/` | QA run evidence (JSON captures, screenshots). Delivery output, not specification. |
 
 Non-`.md` files (`iterations.jsonl`) are process telemetry — skip them.
@@ -119,7 +134,7 @@ Per subfeature (or per theme, when there are none): high / medium / low, one lin
 
 The user reads this report. Write for them, not for a rubric.
 
-- **Same language as the docs you read — section headings included.** This skill is written in English; the report is not. These docs are in Portuguese, so the whole report ships in Portuguese.
+- **Same language as the docs you read — section headings included.** This skill is written in English; your report is written in whatever language the doc set is written in. Do not assume it matches this skill.
 - Short sentences, one idea each. Plain everyday words.
 - A technical term from the docs is allowed once you explain it in one line. An unexplained term is a term you may not have understood.
 - No hedging filler ("it appears that", "presumably"). You either understood it, assumed it, or didn't — all three have their own place in the report, and none of them is a hedge.
@@ -129,7 +144,7 @@ The user reads this report. Write for them, not for a rubric.
 
 Markdown, prose inside the sections. No JSON — the consumers are a reasoning agent and a human. Omit any section that would be empty; never write "none" filler.
 
-The skeleton below is written in English because this skill is. **Emit it in the language of the documents you read, headings included** — for this repo that is Portuguese, so `### What I understood is going to be built` goes out as `### O que eu entendi que vai ser construído`. Translating the structure is expected; a report in a language the reader does not use is a failed report no matter how correct it is.
+The skeleton below is written in English because this skill is. **Emit it in the language of the documents you read, headings included** — if the doc set is written in Portuguese, `### What I understood is going to be built` goes out as `### O que eu entendi que vai ser construido`. Translating the structure is expected; a report in a language the reader does not use is a failed report no matter how correct it is.
 
 ```markdown
 ## Readback: <feature id> — <feature name>
@@ -224,14 +239,14 @@ The gap item is worth more than any summary paragraph: it names a decision nobod
 
 ## Pairing — the two-report setup
 
-This skill is designed to run as one of two independent subagents dispatched over the same closed docs:
+This skill is the second of two independent reports over the same closed docs. The order is fixed, not a preference:
 
-| Agent | Reads | Returns |
-|---|---|---|
-| `@readback-agent` (this skill) | The feature folder | What it understood + what it filled in |
-| `@plan-reviewer-agent` (`add-plan-review`) | The doc + its schema | A verdict + required fixes |
+| # | Agent | Reads | Returns |
+|---|---|---|---|
+| 1 | `@plan-reviewer-agent` (`add-plan-review`) | The doc + its schema | A verdict + required fixes |
+| 2 | `@readback-agent` (this skill) | The doc set | What it understood + what it filled in |
 
-Both run in clean context, both after the rubric fixes are applied, and neither sees the other's output. The parent agent — the only one holding the original conversation — reads both and edits the docs.
+**The reviewer runs first and its fixes are applied before this skill is dispatched.** Running the two together would have the readback report on text that is about to be edited — a comprehension of a version that never ships. Both run in clean context and neither sees the other's output. The parent agent — the only one holding the original conversation — reads both and edits the docs.
 
 **How the parent reads the pair:**
 
@@ -244,10 +259,22 @@ Both run in clean context, both after the rubric fixes are applied, and neither 
 
 ⛔ **A divergence is a defect in the document, never in the agent.** Treating a readback miss as "the subagent misread it" throws away the only signal this skill produces — the reader on the other end of the real handoff gets exactly as much context as this agent got, and no chance to be corrected.
 
+### Variant — inside an autonomous loop
+
+`add.plan-to-ready` dispatches this skill from a loop that is forbidden to stop for the user. Three things change there, and nothing else does:
+
+| | Interactive parent | Autonomous loop |
+|---|---|---|
+| Compared against | the conversation that produced the docs | the **Decision Log** — never the docs just read, which is circular and always matches |
+| On divergence | present it and stop for the user | apply the fix, re-run the schema gate, re-dispatch once, carry on |
+| Can it end the run? | the user decides | **no.** This skill issues no verdict, so there is nothing to block on. A real blocker still has to come from the reviewer or the consistency judge |
+
+The report itself is identical in both. The difference lives entirely in what the parent does with it.
+
 ## Constraints
 
 - **Read-only.** Never edit any file, including the docs you read.
-- **Folder-bound.** Nothing outside the feature folder. No code, no sibling features, no wiki, no git, no memory, no conversation.
+- **Bound to the doc set you were given.** Nothing outside it: no code, no sibling subfeature the scope excluded, no other feature, no wiki, no version history, no memory, no conversation.
 - **No questions.** Answer your own, out loud, as marked assumptions.
 - **No fixes, no advice.** You do not propose wording, scope, or design. The parent decides.
 - **No verdict.** No pass/fail, no severity scale, no score. You report comprehension; grading belongs to the other two agents.
@@ -272,11 +299,11 @@ Both run in clean context, both after the rubric fixes are applied, and neither 
 
 ```
 [ ] Read every in-bounds .md in the folder, recursively, before writing
-[ ] _superseded/ and _tests/ never opened
+[ ] _superseded/ and _tests/ never opened (neither is guaranteed to exist)
 [ ] No source code, no other feature's docs, no wiki, no git, no memory, no conversation
 [ ] Unresolvable {{doc:...}} references reported as findings, not chased
 [ ] Understanding written in own words — no doc sentence copied or lightly reworded
-[ ] Output written in the docs' language, section headings included (Portuguese here), short sentences, terms explained
+[ ] Output written in the docs' language, section headings included, short sentences, terms explained
 [ ] Every gap carries all three lines, including "what I'd build wrong"
 [ ] Every fork quotes the phrase and states both readings plus the one taken
 [ ] Every concrete mechanism traced to whether it reaches the subfeature doc that implements it

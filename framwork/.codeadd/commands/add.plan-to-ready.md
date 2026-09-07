@@ -533,7 +533,64 @@ This is the same apply → re-gate → one-re-dispatch → hard-exit shape
 `@plan-reviewer-agent`'s `fix-then-ok`/`blocked` loop above already uses —
 reused here, not reinvented.
 
-**Epic mode only — log the plan-leg boundary.** Before advancing to STEP 4:
+**Comprehension readback (MANDATORY, last thing in the plan leg).** Run it after
+the plan review resolved to advance AND — in epic mode — after the
+`@consistency-agent` FULL pass above, because that pass edits `plan.md`. A
+readback taken before it reads a version about to change.
+
+1. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}`,
+   `scope: subfeature`, naming the subfeature just planned. Siblings are
+   excluded — `@consistency-agent` above already owns divergence between them.
+
+2. **Compare it against the Decision Log.** Not against the documents it just
+   read.
+
+```
+IF COMPARING THE READBACK:
+  ⛔ DO NOT USE: the plan.md / about.md / design.md it just read as the comparator
+  ⛔ DO NOT: ask the user what was decided — this loop is autonomous by contract
+  ✅ DO: compare against the Decision Log, which records what THIS loop decided
+```
+
+   Comparing the report against its own source is circular: it always matches
+   and the signal is worth nothing. The Decision Log is the only independent
+   record of intent available inside a loop with no human in it.
+
+3. **This site does NOT stop and does NOT present.** Every other command that
+   dispatches this agent hands a divergence to the user; this one cannot, and
+   must not.
+
+```
+IF THE READBACK DIVERGES:
+  ⛔ DO NOT: STOP
+  ⛔ DO NOT: present the divergence to the user and wait
+  ⛔ DO NOT: report BLOCKED for this subfeature
+  ✅ DO: apply the fix to plan.md → re-run the feature-plan validation gate →
+         re-dispatch @readback-agent ONCE → record the outcome and advance
+```
+
+   Same `apply → re-gate → one re-dispatch` shape the two loops above already
+   use — reused here, not reinvented.
+
+4. **Never a BLOCKED exit on the readback alone.** It issues no verdict, so
+   there is nothing to block on. A genuine blocker still has to come from
+   `@plan-reviewer-agent` or `@consistency-agent`. A divergence still standing
+   after the one re-dispatch is recorded and the leg advances.
+
+5. **Record it in the Decision Log** — the divergence and how it was resolved.
+   The Decision Log exists on every run, epic or not, so this record is
+   unconditional.
+
+**Epic mode only — log the plan-leg boundary.** Carry the readback outcome into
+this entry's `state` alongside the review verdict. This entry is epic-gated:
+
+```
+IF THE RUN IS SFxx-SCOPED OR NON-EPIC:
+  ⛔ DO NOT: start firing the plan-leg entry to give the readback a log line
+  ✅ DO: leave the Decision Log as the only record — the per-leg convention is unchanged
+```
+
+Before advancing to STEP 4:
 ```bash
 bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "loop" "/add.plan-to-ready" '"leg":"plan","state":"<verdict>","sf":"${EPIC_CURRENT_SF}"'
 ```

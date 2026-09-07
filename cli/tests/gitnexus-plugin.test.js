@@ -19,7 +19,12 @@ const COMMANDS_DIR = path.join(ROOT, 'framwork', '.codeadd', 'commands');
 const AGENTS_DIR = path.join(ROOT, 'framwork', '.codeadd', 'agents');
 
 // Agents intentionally NOT injected (MCP-blocked allowlists or non-code purpose).
-const EXCLUDED_AGENTS = ['feature-history-agent', 'git-history-agent', 'doc-reviewer-agent'];
+const EXCLUDED_AGENTS = ['feature-history-agent', 'git-history-agent', 'readback-agent'];
+// readback-agent replaced doc-reviewer-agent here when that agent was deleted (plan 0076).
+// It belongs on this list for a stronger reason than its predecessor: its `tools: Glob, Read`
+// allowlist IS the doc-set boundary the whole skill depends on. A code-graph tool would let
+// the cold reader repair a gap from outside the docs and report a comprehension the document
+// never delivered — which is the one way to make the readback worthless.
 
 function catalogEntry() {
   const raw = JSON.parse(fs.readFileSync(CATALOG, 'utf8'));

@@ -45,9 +45,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |
 | add-delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass |
 | add-dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code |
-| add-doc-reviewer | Fresh-stakeholder review of a just-written ADD doc — surfaces gaps, clarity and scope questions, never reads the conversation that produced it |
 | add-doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate (incl. the `setup-receipt` schema) — single source of truth for all generated docs |
 | add-ecosystem | Consolidated ecosystem view (source of truth) |
+| add-feature-readback | Cold-read comprehension readback of a closed doc set — says back what it understood would be built and marks every gap the reader filled in; no questions, no verdict. Runs after the pre-delivery review's fixes land |
 | add-feature-discovery | Feature discovery process, codebase analysis |
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria |
 | add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware |
@@ -99,8 +99,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | architecture-agent | Architecture consultant, layer/module advice (read-only) | add.plan, add.diagnose (Fase B), add.hotfix |
 | system-design-agent | System design, data flows, infrastructure | add.plan, add.audit |
 | database-agent | Schema design, migrations, queries | add.build, add.plan |
-| doc-reviewer-agent | Fresh-context, question-only doc review — Gap/Clarity/Scope, no proposed fix (read-only) | None currently (manual / ad-hoc use only — add.new and add.brainstorm now dispatch plan-reviewer-agent) |
 | plan-reviewer-agent | Fresh-context, fix-oriented pre-delivery review of about.md / brainstorm / plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes (read-only) | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) |
+| readback-agent | Cold-read comprehension reporter — takes a doc set plus a `scope` (`feature` / `subfeature` / `document`) and restates what it understood would be built, marking every gap it filled in itself. Issues no verdict and asks no questions; the divergence between its restatement and what was actually decided is the signal. Dispatched AFTER `plan-reviewer-agent`'s fixes are applied, never beside it (read-only) | add.new (STEP 8), add.plan (STEP 13), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg — compares against the Decision Log, never stops, never blocks) |
 | consistency-agent | Cross-subfeature consistency judge for an epic — compares contracts declared across subfeature `plan.md` / `about.md` / `design.md`, document against document and never code, on exactly five dimensions (API contracts, data schema, requirements, design tokens when `HAS_DESIGN`, auth/permission model). Anything outside the five is informational and never blocks. FULL pass after each subfeature's plan; DELTA pass at epic end. Read-only — **detects divergence between plans and never edits**. Counterpart to `/add.plan` **STEP 10.5**, which owns single-plan **completeness** (shared-resource centralization, fallback/degradation, worker/DI registration) and fixes it in place: those three are never findings here, at any severity, and 10.5 consumes this agent's dimension 1/2 findings rather than re-deriving them | add.plan-to-ready (F31 — plan-time full pass and end-of-epic delta) |
 | feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
 | git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
@@ -138,8 +138,8 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
-| add-doc-reviewer | None currently (manual use only — add.new / add.brainstorm now use add-plan-review via plan-reviewer-agent) |
 | add-plan-review | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via plan-reviewer-agent |
+| add-feature-readback | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via readback-agent, each after the plan-review fixes land |
 | add-feature-discovery | add.new, add.plan |
 | add-feature-specification | add.new |
 | add-doc-schemas | add.new, add.brainstorm, add.audit, add.plan, add.build, add.plan-to-ready, add.hotfix, add.done, add.pull-request, add.init, add.wiki, add.diagnose |

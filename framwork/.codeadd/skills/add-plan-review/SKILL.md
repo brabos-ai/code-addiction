@@ -7,7 +7,7 @@ description: Pre-delivery executability review for freshly generated about.md, b
 
 ## Overview
 
-Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.new`, `add.brainstorm`, and `add.plan` run after their validation gate passes and before the doc is presented as delivered. The reviewer tries to break the document — find what would fail in execution — and returns a verdict with concrete, evidence-backed fixes. This is a **fix-oriented** review: unlike `add-doc-reviewer`'s Gap/Clarity/Scope questionnaire, it proposes the fix, not just the question.
+Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.new`, `add.brainstorm`, and `add.plan` run after their validation gate passes and before the doc is presented as delivered. The reviewer tries to break the document — find what would fail in execution — and returns a verdict with concrete, evidence-backed fixes. This is a **fix-oriented** review: it proposes the fix, not just the question. A review that only asks hands the work back; this one hands back a verdict and the concrete edit that clears it.
 
 ## When to Use
 
@@ -20,7 +20,8 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 - Code review — use `add-code-review` / `@reviewer-agent`. No code exists at this phase.
 - Schema-compliance enumeration (frontmatter shape, required sections, depth floors) — that is the validation gate inside `add-doc-schemas`. This review runs strictly after that gate passes.
 - A replacement for `@ux-agent` critique mode — `design.md` already has its own adversarial reviewer inside `/add.plan` STEP 8.1.
-- Gap/Clarity/Scope questioning without a proposed fix — that is `add-doc-reviewer`.
+- Questioning without a proposed fix. A finding that names a gap but not its remedy does not belong in this rubric — every Required fix must be actionable as written.
+- Saying back what the document made you understand — that is `add-feature-readback`, which issues no verdict and runs after this review's fixes are applied.
 
 ## Input Contract
 
