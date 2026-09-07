@@ -334,7 +334,10 @@ describe('L3 — command integration', () => {
     const s = skill('add-knowledge-discovery');
     const start = s.search(/^#+ .*INDEX/m);
     expect(start, 'there is no INDEX section to scope to').toBeGreaterThan(-1);
-    const rest = s.slice(start + 1);
+    // Slice past the heading LINE, not past its first character: `^` matches at
+    // index 0 under /m, so slicing at start+1 makes the next-heading search
+    // return 0 and the section collapse to the empty string.
+    const rest = s.slice(s.indexOf('\n', start) + 1);
     const end = rest.search(/^#+ /m);
     const indexStep = end === -1 ? rest : rest.slice(0, end);
     expect(indexStep, 'the INDEX step never says what happens without an index').toMatch(

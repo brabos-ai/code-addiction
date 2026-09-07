@@ -1,19 +1,21 @@
 ---
 name: add-knowledge-discovery
-description: Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review — consult the project wiki (and code knowledge graph) for minimal token cost before dispatching agents.
+description: Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review — consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents.
 ---
 
-# Knowledge Discovery — Wiki Consumption Procedure
+# Knowledge Discovery — Delivery Index and Wiki Consumption Procedure
 
 <!-- uses:
 - skill: add-wiki-maintenance
 - command: /add.wiki
+- mention: /add.done
+- script: delivered.sh
 - script: status.sh
 -->
 
 ## Overview
 
-Defines the ONE procedure for consulting `{{addpath:wiki/}}` at a command's existing context step. Five commands load this skill: `add.plan`, `add.hotfix`, `add.new`, `add.diagnose`, `add.review`. Loading happens where the command already gathers context — never a new preamble.
+Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/}}` at a command's existing context step. Five commands load this skill: `add.plan`, `add.hotfix`, `add.new`, `add.diagnose`, `add.review`. Loading happens where the command already gathers context — never a new preamble.
 
 ## When to Use
 
@@ -22,32 +24,59 @@ Defines the ONE procedure for consulting `{{addpath:wiki/}}` at a command's exis
 - `add.new` at Deep Discovery, beside the Codebase Discovery agent
 - `add.diagnose` at Load Context
 - `add.review` at Bootstrap Context, Gate 2 "Knowledge base" row
+- **`add.hotfix` at STEP 4, the INDEX step ALONE, called with `--no-verify`** — triage needs the ranked candidate list before the history agents are dispatched, and that is four steps before the full load at 8.1. Load STEP 1 by itself there; nothing below it runs
 
 ## When NOT to Use
 
 - `add.build`, `add.plan-to-ready` — these read `{{addpath:wiki/index.md}}` + the already-known `domains/<area>.md` directly (pages were selected upstream by `add.plan`); do not load this full skill, it duplicates SELECT work already done
-- Bug-cause investigation in `add.hotfix` STEPs 4-6 — diagnosis stays history/code-driven and wiki-blind; this skill enters only at fix time
+- Bug-cause investigation in `add.hotfix` STEPs 4-6 — diagnosis stays history/code-driven and **wiki-blind**; the wiki portion of this skill enters only at fix time. **The INDEX step is exempt and does enter, with `--no-verify`.** The rule guards diagnosis against narrative documentation that can lie about the code; the index is not narrative — it records what shipped, in anchored items, never what the code means — so withholding it inverts the rule's purpose. `--no-verify` is what keeps the exemption honest: a verifying read greps source, and that command forbids reading code before its history agents are dispatched. *(The rationale is inferred: no source states why hotfix is wiki-blind. If its author ever writes the reason down, revisit this exemption.)*
 - No wiki exists → this skill still runs (PRESENCE handles absence); do not skip the command's context step waiting for a wiki
+- No index exists → same; INDEX no-ops with a note
 
-## The 7-Step Procedure
+## The 8-Step Procedure
 
-### 1. PRESENCE
+### 1. INDEX
+
+Ask the cheap question first: **was this built before, and is it still there?** `delivered.sh` answers it from `docs/delivered.jsonl` — one file, one grep — while the wiki costs several pages and answers a different question entirely.
+
+```bash
+bash .codeadd/scripts/delivered.sh read "<terms from the task>"
+```
+
+Add `--no-verify` when the calling command forbids reading source at that point. Results arrive **already ordered** `live` → `changed` → `superseded` → `gone`, with the latest line per entry applied.
+
+| What you get | What to do with it |
+|---|---|
+| `live` entries | This exists. Read its `origin` before proposing to build it again |
+| `changed` entries | It exists but moved. Documentation elsewhere probably still points at the old path |
+| `superseded` entries | It was replaced. Follow `superseded_by` |
+| `gone` entries | It was built and is now absent. **The most valuable answer available** — it says this was tried and dropped |
+
+**Dead entries rank last; they are never hidden, and you never re-rank them.** A `gone` result is what stops a plan from rebuilding something the project already abandoned. Hiding it repeats the original failure with the sign flipped. The ordering is the read contract's, not yours — several consumers each sorting one shared result is how two of them come to disagree.
+
+**The index answers *whether*, never *how*.** An entry carries anchored items and, by its format's own rule, no explanation of what the code does. Do NOT stop here and call the area understood: a match tells you where to look next, and the wiki and the code are still what explain it.
+
+**This step is STANDALONE.** It loads and runs on its own, without PRESENCE and without the wiki, for a command that needs the index at a step where the wiki is out of bounds. Nothing below is a precondition for it.
+
+**Index absent → no-op.** Note ONCE: "no delivery index yet — /add.done writes one on the next delivery", then continue to PRESENCE. No project is broken by not having one, exactly as with the wiki.
+
+### 2. PRESENCE
 
 Read the WIKI fields from `status.sh`, which the command already ran for context: `WIKI:present`/`WIKI:absent`, `WIKI_COMMIT`, `WIKI_STALE_COUNT`, `WIKI_HINT`.
 
 - `WIKI:absent` → note ONCE: "knowledge base unavailable — /add.wiki generates it", then proceed with code-first discovery (grep/glob/read). Do not repeat the note within the same run.
-- `WIKI:present` → continue to ENTRY. `WIKI_STALE_COUNT` (if >0) primes suspicion for STEP 4, it does not block anything here.
+- `WIKI:present` → continue to ENTRY. `WIKI_STALE_COUNT` (if >0) primes suspicion for STEP 5 (FRESHNESS), it does not block anything here.
 
 **Exception — `add.new`:** it never runs the full context mapper (only `status.sh next-id`, which emits no WIKI fields). Check presence directly:
 ```bash
 test -f .codeadd/wiki/index.md
 ```
 
-### 2. ENTRY
+### 3. ENTRY
 
 Read `{{addpath:wiki/index.md}}` — the hub, ≤150 lines, cheap. This is the ONLY entrypoint. Never grep the wiki directory before reading the hub.
 
-### 3. SELECT
+### 4. SELECT
 
 Match the task against the hub's per-link descriptions + Terminology section. Pick the MINIMAL page set — typically 1-3 pages:
 
@@ -63,7 +92,7 @@ Match the task against the hub's per-link descriptions + Terminology section. Pi
 
 **Fallback** when hub descriptions don't match the task: `grep -ril "<term>" .codeadd/wiki/`.
 
-### 4. FRESHNESS
+### 5. FRESHNESS
 
 For each selected page, read its frontmatter `commit` + `sources`:
 ```bash
@@ -74,11 +103,11 @@ git diff --name-only <page.commit>..HEAD -- <page.sources>
 
 `status.sh` `WIKI_STALE_COUNT` primes suspicion (repo-wide signal) but this per-page check is authoritative — a nonzero repo count doesn't mean every selected page is stale, and a zero count doesn't skip this check.
 
-### 5. STRUCTURE
+### 6. STRUCTURE
 
 Structural questions — callers, blast radius, dependency chains, execution flows — are NEVER answered from wiki pages. Derive from the code knowledge graph when available, else from the code directly. Pages point; they don't enumerate. (Tool-neutral: no hard reference to any specific graph plugin — mastery of a specific tool arrives via its own plugin injection, independent of this skill.)
 
-### 6. HANDOFF
+### 7. HANDOFF
 
 When dispatching subagents, pass lightweight identifiers — NOT content:
 - Selected page path(s)
@@ -87,7 +116,7 @@ When dispatching subagents, pass lightweight identifiers — NOT content:
 
 Subagents read the pages themselves (JIT). NEVER inline page content into a dispatch prompt — that multiplies every dispatch by hundreds of lines and defeats the purpose of SELECT.
 
-### 7. CONFLICT
+### 8. CONFLICT
 
 Wiki contradicts code → CODE WINS. Report the contradiction in the command's user-facing output — it becomes evidence for the next `{{skill:add-wiki-maintenance/SKILL.md}}` run.
 
@@ -101,3 +130,6 @@ Wiki contradicts code → CODE WINS. Report the contradiction in the command's u
 | "I'll inline the page content into the dispatch prompt to save the subagent a read" | Handoff is paths + reasons + freshness verdict only. Inlining multiplies tokens across every dispatch. |
 | "The wiki is wrong here, I'll just quietly work around it" | Report the contradiction — code wins locally, but the report is what fixes the wiki for next time. |
 | "add.new can wait for status.sh to give me WIKI fields" | add.new never runs the full context mapper — check `.codeadd/wiki/index.md` existence directly. |
+| "The index returned a match, so I understand this area" | The index answers *whether* something shipped, never *how* it works. A match is where to look next, not the answer — keep going into the wiki and the code. |
+| "The `gone` entries aren't relevant, I'll show the live ones" | A `gone` entry is often the most valuable result: it says this was tried and dropped. Dropping it repeats the failure this index exists to fix, inverted. |
+| "I'll re-sort the results by what looks most relevant" | The order is the read contract's. Consumers render what they receive — several of them each re-ranking one shared result is how two of them come to disagree. |
