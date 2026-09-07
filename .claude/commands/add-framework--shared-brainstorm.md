@@ -1,5 +1,13 @@
 # ADD Brainstorm - Collaborative Ideation & Design Explorer
 
+<!-- uses:
+- agent: framework-discovery-agent
+- agent: plan-review-agent
+- command: /add-framework--build
+- command: /add-framework--plan
+- command: /add-framework--self-plan
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Transforms rough ideas into fully-formed, final designs ready for `/add-framework--plan`. Pairs discovery-first ecosystem context with conversational exploration. Outputs documented designs with zero open questions.

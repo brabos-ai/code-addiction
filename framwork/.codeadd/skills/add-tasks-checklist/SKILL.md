@@ -5,6 +5,14 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 # tasks.md Checklist Schema
 
+<!-- uses:
+- skill: add-architecture-discovery
+- mention: add-feature-specification
+- mention: add-planning
+- command: /add.plan-to-ready
+- command: /add.wiki
+-->
+
 ## Overview
 
 `tasks.md` is the **single source of progress truth** for a feature (or subfeature, in epics). `plan.md` is the frozen spec; `tasks.md` is the developer's activity breakdown that absorbs all tick state — area work, contract validation, TDD evidence, and quality gates.

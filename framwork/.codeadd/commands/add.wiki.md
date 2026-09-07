@@ -1,5 +1,14 @@
 # Wiki Knowledge Base Generator
 
+<!-- uses:
+- skill: add-architecture-discovery
+- skill: add-claude-md-style
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-wiki-maintenance
+- script: status.sh
+-->
+
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.

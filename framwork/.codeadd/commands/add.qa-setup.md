@@ -5,6 +5,22 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 
 # QA Setup - Prerequisites, Config Bootstrap & End-to-End Verification
 
+<!-- uses:
+- skill: add-dev-environment-setup
+- skill: add-doc-schemas
+- skill: add-qa
+- skill: add-qa-migration
+- skill: add-setup-contract
+- skill: add-subagent-driven-development
+- agent: e2e-agent
+- agent: qa-agent
+- command: /add.build
+- command: /add.review
+- script: qa-evidence.sh
+- script: qa-preflight.sh
+- script: status.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow on a project's first run (confirm-then-dogfood), and closes the loop with a universal `/add.review` smoke test plus a bounded auto-correction loop. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.

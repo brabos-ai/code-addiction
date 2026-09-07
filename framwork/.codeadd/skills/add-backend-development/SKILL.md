@@ -6,6 +6,14 @@ description: |
 
 # Backend Development
 
+<!-- uses:
+- mention: add-backend-architecture
+- mention: add-database-development
+- mention: add-frontend-development
+- mention: add-project-scaffolding
+- mention: add-security-audit
+-->
+
 Skill for backend API implementation following universal architectural principles.
 
 **Use for:** Routes/Controllers, Services, DTOs, Domain logic, Data access, Error handling

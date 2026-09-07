@@ -5,6 +5,19 @@ description: Pre-delivery executability review for freshly generated about.md, b
 
 # Plan Review
 
+<!-- uses:
+- mention: add-code-review
+- mention: add-doc-schemas
+- mention: add-feature-readback
+- mention: @ux-agent
+- agent: plan-reviewer-agent
+- agent: reviewer-agent
+- command: /add.brainstorm
+- command: /add.new
+- command: /add.plan
+- command: /add.plan-to-ready
+-->
+
 ## Overview
 
 Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.new`, `add.brainstorm`, and `add.plan` run after their validation gate passes and before the doc is presented as delivered. The reviewer tries to break the document — find what would fail in execution — and returns a verdict with concrete, evidence-backed fixes. This is a **fix-oriented** review: it proposes the fix, not just the question. A review that only asks hands the work back; this one hands back a verdict and the concrete edit that clears it.

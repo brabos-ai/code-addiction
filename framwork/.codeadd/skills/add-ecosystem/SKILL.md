@@ -5,6 +5,90 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 # Ecosystem Map - add-pro
 
+<!-- uses:
+- mention: add-architecture-discovery
+- mention: add-backend-architecture
+- mention: add-backend-development
+- mention: add-claude-md-style
+- mention: add-code-review
+- mention: add-commit
+- mention: add-cross-sf-consistency
+- mention: add-database-development
+- mention: add-delivery-validation
+- mention: add-dev-environment-setup
+- mention: add-doc-schemas
+- mention: add-feature-discovery
+- mention: add-feature-readback
+- mention: add-feature-specification
+- mention: add-frontend-architecture
+- mention: add-frontend-development
+- mention: add-health-check
+- mention: add-id-convention
+- mention: add-investigation
+- mention: add-knowledge-discovery
+- mention: add-optimizing-git-workflow
+- mention: add-plan-based-features
+- mention: add-plan-review
+- mention: add-planning
+- mention: add-product-discovery
+- mention: add-project-scaffolding
+- mention: add-qa
+- mention: add-qa-migration
+- mention: add-qa-spec
+- mention: add-resource-path-convention
+- mention: add-security-audit
+- mention: add-setup-contract
+- mention: add-skill-creator
+- mention: add-stripe
+- mention: add-subagent-driven-development
+- mention: add-tasks-checklist
+- mention: add-tdd
+- mention: add-test-specification
+- mention: add-token-efficiency
+- mention: add-ux-design
+- mention: add-wiki-maintenance
+- mention: @architecture-agent
+- mention: @backend-agent
+- mention: @conformance-agent
+- mention: @consistency-agent
+- mention: @database-agent
+- mention: @discovery-agent
+- mention: @e2e-agent
+- mention: @failure-analysis-agent
+- mention: @feature-history-agent
+- mention: @fix-agent
+- mention: @frontend-agent
+- mention: @git-history-agent
+- mention: @plan-reviewer-agent
+- mention: @qa-agent
+- mention: @readback-agent
+- mention: @reviewer-agent
+- mention: @security-agent
+- mention: @system-design-agent
+- mention: @test-agent
+- mention: @ux-agent
+- mention: @ux-flow-agent
+- mention: @ux-layout-agent
+- mention: /add
+- mention: /add.audit
+- mention: /add.build
+- mention: /add.diagnose
+- mention: /add.done
+- mention: /add.hotfix
+- mention: /add.new
+- mention: /add.plan
+- mention: /add.plan-to-ready
+- mention: /add.pull-request
+- mention: /add.qa-setup
+- mention: /add.review
+- mention: /add.wiki
+- mention: build-setup.sh
+- mention: converge-gates.sh
+- mention: done.sh
+- mention: get-branch-metadata.sh
+- mention: next-id.sh
+-->
+
 ## When NOT to Use
 
 - Not a how-to guide — load the specific skill for execution detail.

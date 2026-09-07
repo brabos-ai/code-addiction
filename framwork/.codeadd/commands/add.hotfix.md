@@ -1,5 +1,22 @@
 # Hotfix - Rapid Bug Fix Workflow
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-id-convention
+- skill: add-investigation
+- skill: add-knowledge-discovery
+- skill: add-ux-design
+- agent: architecture-agent
+- agent: conformance-agent
+- agent: failure-analysis-agent
+- agent: feature-history-agent
+- agent: git-history-agent
+- agent: security-agent
+- command: /add.wiki
+- script: status.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.

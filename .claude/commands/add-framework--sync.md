@@ -1,5 +1,13 @@
 # ADD Sync - Ecosystem Documentation Updater
 
+<!-- uses:
+- agent: readme-analyzer
+- agent: svg-analyzer
+- agent: web-docs-analyzer
+- agent: web-index-analyzer
+- command: /add-framework--release
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Computes diff since last release, regenerates the ecosystem map, dispatches 4 analyzer agents in parallel, and applies all documentation updates as a single writer. Leaves changes uncommitted for human review.
@@ -130,6 +138,35 @@ If ALL dimensions are empty (no changes since last release) → inform user, STO
 ---
 
 ## STEP 2: Regenerate Ecosystem Map
+
+**The relationship columns come from the graph, not from a re-scan.**
+
+```bash
+node scripts/build.js                 # ensure the graph is current
+node scripts/graph.js stats --json    # counts by kind, edge type, and the hubs
+node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / "used by"
+```
+
+`neighbors` returns inbound and outbound edges with their types, which is exactly
+the "skills loaded" and "used by" columns below. It is derived from each
+artefact's own declaration and validated by the build, so a row written from it
+cannot claim a relationship that does not exist.
+
+Three rules when transcribing:
+
+- **A `MENTIONS` edge is not a dependency.** It records a doc naming another
+  while pointing away from it. It belongs in neither column.
+- **Do not re-derive a count by hand** to cross-check the graph. If they
+  disagree, the graph is right and the scan is what drifted — that is the whole
+  reason it exists.
+- **When you rewrite this skill, every row in its own `uses:` block stays
+  `mention:`.** This file CATALOGUES the ecosystem; it consumes none of it.
+  Declaring its rows as dependencies is not a cosmetic error: eight commands
+  load this skill, so every artefact listed here inherits ~82 transitive
+  dependants and `graph.js impact` degrades into a constant — `add-stripe`,
+  which nothing uses, reported 84 before this was fixed. If a regeneration
+  turns those rows back into `skill:`/`agent:`/`command:`/`script:`, it has
+  silently destroyed the query the graph exists for.
 
 Regenerate `framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md` from STEP 1.3 scan data.
 

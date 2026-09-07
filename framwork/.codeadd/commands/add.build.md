@@ -1,5 +1,33 @@
 # Development Execution Specialist
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-code-review
+- skill: add-database-development
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-frontend-development
+- skill: add-id-convention
+- skill: add-tasks-checklist
+- skill: add-ux-design
+- skill: add-doc-schemas/references/new-feature.md
+- agent: backend-agent
+- agent: database-agent
+- agent: e2e-agent
+- agent: fix-agent
+- agent: frontend-agent
+- agent: reviewer-agent
+- agent: test-agent
+- agent: ux-agent
+- command: /add.done
+- command: /add.new
+- command: /add.qa-setup
+- command: /add.review
+- command: /add.wiki
+- script: build-setup.sh
+- script: status.sh
+-->
+
 Coordinator for feature implementation, bug fixes, and epic feature execution. Detects context automatically, coordinates subagents, validates against skill checklists, and ensures 100% compilation.
 
 ---

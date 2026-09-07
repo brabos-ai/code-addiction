@@ -5,6 +5,11 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 
 # Framework Development — Internal Reference
 
+<!-- uses:
+- skill: add-commit
+- skill: building-commands
+-->
+
 Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so `add-framework--plan` assesses viability and `add-framework--build` implements correctly.
 
 ## When to Use

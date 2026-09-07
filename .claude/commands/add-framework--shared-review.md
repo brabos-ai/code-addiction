@@ -1,5 +1,11 @@
 # ADD Shared-Review — Plan-vs-Implementation Auditor
 
+<!-- uses:
+- skill: building-commands
+- command: /add-framework--build
+- command: /add-framework--self-build
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Audits an existing plan in `docs/plans/` against actual repository state via 4 parallel read-only subagents. Produces a versioned review file alongside the plan. Used for both framework plans (`NNNN-PLAN--slug`) and self plans (`NNNN-SELF-PLAN--slug`).
@@ -122,6 +128,40 @@ You are the coordinator. You know your engine's capabilities. Map the intent (ca
 ### 3.1 Aggregate Findings
 
 Combine all 4 subagent reports into a single findings list. Deduplicate (same file:line + same issue from multiple agents → one entry, sources merged).
+
+### 3.1b Blast-Radius Coverage Check
+
+**The subagents read the plan. The graph knows who else the change reaches.**
+
+For every artefact the implementation touched:
+
+```bash
+node scripts/graph.js impact <artefact-name> --depth 1
+```
+
+**Depth 1, not the unbounded run.** The command layer cross-references itself
+densely, so the transitive closure saturates at ~82 for almost anything a
+command reaches — reviewing against that list would file roughly eighty findings
+per review and teach everyone to skip this step. Direct dependants are the ones
+a change plausibly breaks and a plan can reasonably be expected to have
+considered.
+
+Compare that list against the files the plan actually changed. Each dependant
+falls into one of three buckets, and the third is a finding:
+
+| Case | Verdict |
+|---|---|
+| Dependant was changed too | fine |
+| Plan states explicitly that it needs no change | fine |
+| Dependant neither changed nor mentioned | **finding — severity `medium`** |
+
+This is the check no subagent can make on its own: each reads the plan and the
+diff, and neither shows what depends on a file that nobody opened. A plan that
+edits a hub and its obvious neighbour but misses the four artefacts reaching it
+through an intermediary passes every other check in this command.
+
+Record it as a normal finding so 3.2 and 3.3 handle it like any other. If the
+graph is missing, run `node scripts/build.js` — do not skip the check.
 
 ### 3.2 Classify by Severity
 

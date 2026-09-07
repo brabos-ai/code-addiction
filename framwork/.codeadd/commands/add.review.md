@@ -1,5 +1,27 @@
 # Feature Review Specialist
 
+<!-- uses:
+- skill: add-commit
+- skill: add-doc-schemas
+- skill: add-investigation
+- skill: add-knowledge-discovery
+- skill: add-qa
+- skill: add-tasks-checklist
+- skill: add-doc-schemas/references/new-feature.md
+- skill: add-qa/references/coordinator.md
+- agent: e2e-agent
+- agent: qa-agent
+- agent: reviewer-agent
+- agent: ux-agent
+- command: /add.build
+- command: /add.done
+- command: /add.plan
+- command: /add.qa-setup
+- command: /add.wiki
+- script: qa-evidence.sh
+- script: status.sh
+-->
+
 > **READ-ONLY RULE:** This command **never modifies code**. Every finding — code review, spec compliance, UX, functional, a11y, build failures, red validation gates — is emitted as a routed row in `## Fix Routing` on `review-NNN.md`, and `/add.build` applies it. A judge that moves the thing it judges cannot converge, and it invalidates the QA evidence it just captured.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).

@@ -1,5 +1,12 @@
 # ADD Init - Project Onboarding
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-product-discovery
+- command: /add.new
+- script: status.sh
+-->
+
 Collects owner profile in 1 minute (3 direct questions) and optionally creates product blueprint.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.

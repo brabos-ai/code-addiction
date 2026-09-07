@@ -5,6 +5,15 @@ description: Generate a code-free QA/E2E specification (reachability intent, UX 
 
 # QA/E2E Specification — Case Generation Rubric
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-doc-schemas/references/new-feature.md
+- mention: add-qa
+- mention: add-test-specification
+- agent: e2e-agent
+- agent: qa-agent
+-->
+
 > **LANG:** Respond in user's native language. Tech terms in English.
 
 ## When to Use

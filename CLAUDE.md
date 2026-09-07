@@ -95,6 +95,33 @@ Three strategies with different behaviors:
 
 Key mechanics: HTML comments (`<!-- -->`) are stripped at build time uniformly (use for source-only dev notes), **including** `feature:`/`plugin:` injection markers. Those markers are not shipped — `extractInjectionPoints()` consumes each one into a build-emitted **content-anchored sidecar** (`framwork/.codeadd/injection-points.json`) keyed by adjacent prose text, and the built provider files ship **marker-free**. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. Commands and skills are markdown on every provider. Agents carry a per-provider frontmatter dialect (`AGENT_DIALECTS` in `scripts/build.js`); Codex emits TOML with the body in `developer_instructions`.
 
+The build emits a **third sidecar**: `framwork/.codeadd/artefact-graph.json` — the typed relationship map over `framwork/.codeadd/` and `.claude/`. (`.opencode/`, the adapter mirror, is **not** walked: drift between a canonical `.claude/` command and its OpenCode copy is currently ungated.) An artefact may declare what it uses in a source-only `<!-- uses: -->` HTML comment (`- <kind>: <target>` with an optional `(modifier)`). Five kinds: `skill`, `agent`, `command`, `script`, and **`mention:`** — an acknowledged reference that is deliberately *not* a dependency, for prose that names an artefact while pointing away from it ("use X instead"). It emits a `MENTIONS` edge, so the target is still validated, but `impact` and `dependencies` exclude it. `extractUses()` reads it from raw content *before* `stripHtmlComments()`, so the block ships to nobody — unlike `## Materializes`, which is an instruction the runtime agent needs, this is build metadata it does not. `collectNodes()` builds the inventory; **node identity is what the build can transform, never directory position** — a skill is a directory *containing* `SKILL.md`, and a node id is `<layer>/<kind>/<name>` because `add-commit` exists in both layers. `INJECTS_INTO` edges are derived from `injection-points.json`, never re-extracted.
+
+**Three gates fail the build, one warns.** A declaration naming an artefact that does not exist; an artefact on disk absent from `provider-map.json` (therefore built for no provider — the shape commit `49422ad` shipped); and a name appearing in prose with no declared relationship to it. The fourth — declared but never named in prose — **warns**, because that direction is sometimes a real load that simply is not greppable and `(conditional)`, its waiver, has no field use yet. `ADD_GRAPH_WARNINGS=1` lists warnings instead of summarising them.
+
+**A catalogue is not a consumer.** `add-ecosystem` maps the ecosystem and consumes none of it, so every row in its block is `mention:`. Declaring them as dependencies is not cosmetic: eight commands load that skill, so everything it lists inherits ~82 transitive dependants and `impact` degrades into a constant — `add-stripe`, which nothing uses, once reported 84. Grade risk on `impact --depth 1`; the unbounded number is context, not a score.
+
+A new sidecar has **four** consumers — the build, `framwork/.gitignore`, `release.yml`, and this file. `SIDECARS` in `scripts/build.js` is the single list they are all checked against by `cli/tests/release-packaging.test.js`; a test that enumerates sidecar names instead is the bug commit `56bc22d` fixed, rewritten.
+
+**Querying the graph.** `scripts/graph.js` is the engine — `impact` (transitive blast radius), `dependencies`, `neighbors`, `path`, `orphans`, `stats`, `mermaid`. `scripts/artefact-graph-mcp.js` exposes the same six as MCP tools over stdio (hand-rolled JSON-RPC; the official SDK costs 89 transitive packages to wrap six pure functions). The CLI is the engine and MCP the wrapper, not the reverse: every provider can shell out, only some have MCP configured, and both call the same module so they cannot drift.
+
+| Question | Command |
+|---|---|
+| What breaks if I change this? | `node scripts/graph.js impact <name>` |
+| What does this need? | `node scripts/graph.js dependencies <name>` |
+| How do these two connect? | `node scripts/graph.js path <a> <b>` |
+| What does nothing depend on? | `node scripts/graph.js orphans` |
+| Regenerate the docs diagram | `node scripts/graph.js mermaid --write` |
+
+`impact` and `dependencies` exclude `MENTIONS` edges — a doc that names another only to point away from it cannot break when it changes. `orphans` excludes commands (people invoke those) and fragments (the source of every injection edge, never its target).
+
+**Consumers.** `add-framework--self-plan` STEP 2.1/2.2 derives impact and risk from it; `add-framework--sync` STEP 2 takes the ecosystem map's relationship columns from `neighbors`; `add-framework--shared-review` STEP 3.1b runs a blast-radius coverage check no single subagent can make. The docs page renders `web/public/artefact-graph.mmd`, which a test holds current against the emitted graph via the shared `DOCS_PROFILE`.
+
+**Two knowingly-accepted costs**, both worth stating so neither reads as an oversight:
+
+- The ~190 KB sidecar installs into every user project and **nothing there reads it**, unlike `injection-points.json` (read by `features.js`) and `contracts.json` (read by `status.sh`). Its only consumers are internal `.claude/` commands users never receive. It ships for inspectability — a user can query their own installed framework with `graph.js` — not because anything requires it.
+- Internal-layer `<!-- uses: -->` blocks **do** reach the runtime agent. `.claude/commands/*.md` are read verbatim, not built, so the block that ships to nobody in the product layer sits in the prompt in the internal one. Small, and the alternative is a second declaration mechanism for seventeen files.
+
 The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A command that materializes state into the user's project declares a `## Materializes` H2 that is the single source of every shape it writes; `extractContract()` derives `{ contract, shape, paths }` from it. Two gates fail the build loud: a resource-path variable inside the block (it would resolve per provider), and a declared `shape` that does not match the computed one (the forgotten-bump guard — the build prints the value to paste). Like `injection-points.json` it is gitignored and packaged explicitly by `release.yml`.
 
 ### Resource Path Variables (build-time)

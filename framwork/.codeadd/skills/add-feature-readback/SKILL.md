@@ -8,6 +8,16 @@ metadata:
 
 # add-feature-readback — Cold-Read Comprehension Readback
 
+<!-- uses:
+- skill: add-plan-review
+- mention: add-code-review
+- mention: add-doc-schemas
+- mention: add-qa
+- agent: consistency-agent
+- agent: plan-reviewer-agent
+- agent: readback-agent
+-->
+
 ## Overview
 
 A **readback** is the aviation protocol: the tower gives an instruction, the pilot repeats it back in their own words, and the tower listens for the mismatch. Nobody asks the pilot "was the instruction clear?" — the pilot's own restatement is the test.

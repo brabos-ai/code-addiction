@@ -1,5 +1,13 @@
 # ADD Self-Plan — Internal Infrastructure Planner
 
+<!-- uses:
+- skill: add-framework-development
+- agent: framework-discovery-agent
+- agent: plan-review-agent
+- command: /add-framework--plan
+- command: /add-framework--self-build
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Plans structural changes to the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Generates documented plan for execution by `/add-framework--self-build`.
@@ -96,20 +104,59 @@ Internal classification only — DO NOT produce artefacts.
 
 ### 2.1 Map Dependencies
 
-For each artefact affected, identify:
+**Ask the graph. Do not answer these by grepping.**
 
-- Which commands load this skill?
-- Which commands reference this command?
-- Which agents are dispatched by affected commands?
-- Does this change affect `CLAUDE.md`?
+For each artefact the change touches:
+
+```bash
+node scripts/graph.js impact <artefact-name> --depth 1   # grade risk on THIS
+node scripts/graph.js impact <artefact-name>             # context, not a grade
+```
+
+**Grade on the depth-1 number.** The command layer cross-references itself
+densely (122 `HANDS_OFF_TO` edges), so the transitive closure saturates: almost
+anything a command can reach reports ~82 dependants, and a hub is
+indistinguishable from a leaf. Depth 1 discriminates — `add-doc-schemas` returns
+22, `add-ux-design` 11, `add-stripe` 0.
+
+Read the unbounded run for **context**: it tells you whether the change is
+confined to a corner of the ecosystem or reaches the whole of it. It is not a
+risk score.
+
+Two things the output already accounts for, so do not re-reason about them:
+
+- `MENTIONS` edges are excluded. A doc that names an artefact only to point away
+  from it ("use X instead") cannot break when it changes.
+- A name is matched exactly. `add-qa` does not match inside `add-qa-migration`,
+  and `/add` does not match inside `/add.plan` — both mistakes produced wrong
+  counts before the graph existed.
+
+Then check what the change would break in the other direction:
+
+```bash
+node scripts/graph.js dependencies <artefact-name>   # what it needs
+node scripts/graph.js path <from> <to>               # how two artefacts connect
+```
+
+Still answer by hand: **does this change affect `CLAUDE.md`?** The graph does not
+model it.
+
+If the graph is missing or stale, run `node scripts/build.js` — it is emitted on
+every build.
 
 ### 2.2 Assess Risk
 
+Use the **depth-1** count from 2.1, not an estimate and not the unbounded one.
+
 | Risk Level | Criteria |
 |-----------|----------|
-| **LOW** | Single artefact, no dependents |
-| **MEDIUM** | Multiple artefacts, or artefact with 1-2 dependents |
-| **HIGH** | Cross-cutting change, or artefact with 3+ dependents |
+| **LOW** | `impact --depth 1` returns nothing |
+| **MEDIUM** | `impact --depth 1` returns 1-2 |
+| **HIGH** | `impact --depth 1` returns 3+ |
+
+Grading on the unbounded count would mark almost every product artefact HIGH,
+because the transitive closure over a densely cross-referencing command layer
+saturates. A rule that is always true grades nothing.
 
 ---
 

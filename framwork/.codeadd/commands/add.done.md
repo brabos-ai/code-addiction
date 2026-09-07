@@ -1,5 +1,20 @@
 # Branch Completion & Merge
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-id-convention
+- skill: add-wiki-maintenance
+- command: /add.build
+- command: /add.hotfix
+- command: /add.plan-to-ready
+- command: /add.review
+- command: /add.wiki
+- script: converge-gates.sh
+- script: done.sh
+- script: qa-evidence.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **MODEL:** Use `haiku` model
 

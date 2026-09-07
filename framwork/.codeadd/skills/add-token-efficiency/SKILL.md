@@ -5,6 +5,12 @@ description: Use when creating commands, skills, or docs — defines generic com
 
 # Token Efficiency
 
+<!-- uses:
+- skill: add-claude-md-style
+- skill: add-doc-schemas
+- mention: add-id-convention
+-->
+
 ## Overview
 
 Every token counts. Resources must be compressed without losing clarity. This skill defines mandatory compression patterns for all ADD outputs (commands, skills, scripts, docs).

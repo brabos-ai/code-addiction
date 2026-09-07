@@ -1,5 +1,12 @@
 # ADD Build - Command, Skill & Script Executor
 
+<!-- uses:
+- skill: building-commands
+- command: /add-framework--plan
+- command: /add-framework--release
+- command: /add-framework--self-plan
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **SKILL:** Apply `building-commands` to ALL outputs
 

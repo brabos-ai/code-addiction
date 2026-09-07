@@ -5,6 +5,13 @@ description: Use when a state-materializing command starts — compare the recei
 
 # Setup Shape Comparison
 
+<!-- uses:
+- skill: add-doc-schemas
+- mention: add-wiki-maintenance
+- command: /add.qa-setup
+- script: status.sh
+-->
+
 ## Overview
 
 Procedure for comparing a project's materialized state with the shape the framework currently ships. It compares two hashes and routes. It never reads a changelog and never decides what to improve.

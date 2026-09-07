@@ -111,6 +111,7 @@ jobs:
           # `[ -d ] && DIRS=…` loop above.
           [ -f "framwork/.codeadd/injection-points.json" ] && FILES="$FILES framwork/.codeadd/injection-points.json" || true
           [ -f "framwork/.codeadd/contracts.json" ] && FILES="$FILES framwork/.codeadd/contracts.json" || true
+          [ -f "framwork/.codeadd/artefact-graph.json" ] && FILES="$FILES framwork/.codeadd/artefact-graph.json" || true
           zip -r "code-addiction-${TAG}.zip" $DIRS $FILES
           echo "ASSET_NAME=code-addiction-${TAG}.zip" >> "$GITHUB_ENV"
 

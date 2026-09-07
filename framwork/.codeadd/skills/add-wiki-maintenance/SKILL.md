@@ -5,6 +5,11 @@ description: Use for incremental project-wiki updates — loaded by /add.wiki up
 
 # Wiki Maintenance — Update Discipline
 
+<!-- uses:
+- command: /add.wiki
+- script: done.sh
+-->
+
 ## Overview
 
 Keeps `{{addpath:wiki/}}` accurate between full `/add.wiki` regenerations. Two triggers share this ONE discipline; only evidence collection (STEP 2) differs. Surgical edits, computed candidates before judgment, no-op is a valid outcome.

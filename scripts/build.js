@@ -322,7 +322,10 @@ const CONTRACT_HEADING_RE = /^## Materializes[ \t]*$/m;
 // leading space) and must stay banned.
 const CONTRACT_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):[^}]+\}\}/;
 const SHAPE_LINE_RE = /^shape:[ \t]*\S+[ \t]*$/;
-const FENCE_RE = /^[ \t]*(`{3,})/;
+// Backticks OR tildes. A `~~~`-fenced example of a `uses:` block — the form
+// used when the example itself contains backticks — would otherwise be
+// extracted as a real declaration.
+const FENCE_RE = /^[ \t]*(`{3,}|~{3,})/;
 
 /** Default `.codeadd` root; overridable so tests can supply a throwaway tree. */
 const CODEADD_DIR = path.join(ROOT, 'framwork', '.codeadd');
@@ -526,6 +529,645 @@ function writeContracts(outPath) {
   for (const k of Object.keys(CONTRACTS).sort()) sorted[k] = CONTRACTS[k];
   writeFile(outPath, JSON.stringify({ version: 1, contracts: sorted }, null, 2) + '\n');
   return Object.keys(sorted).length;
+}
+
+// ---------------------------------------------------------------------------
+// Artefact graph (source-declared → build-extracted sidecar)
+//
+// Every artefact may declare what it uses in a source-only `<!-- uses: -->`
+// HTML comment. It is read from RAW content here, before stripHtmlComments()
+// runs, so the block never reaches a provider file — the same arrangement the
+// feature/plugin markers use. Nothing below adds stripping logic; adding any
+// would create a second implementation free to drift from the first.
+//
+// The declaration is build metadata, not an instruction: unlike
+// "## Materializes", the agent reading the command at runtime has no use for it,
+// and shipping it would cost tokens on every invocation of every command on
+// every provider.
+// ---------------------------------------------------------------------------
+
+/** Declaration kind → edge type. A kind absent here is a hard error. */
+const USES_EDGE_TYPES = {
+  skill: 'USES_SKILL',
+  agent: 'DISPATCHES',
+  command: 'HANDS_OFF_TO',
+  script: 'RUNS_SCRIPT',
+  // An acknowledged reference that is NOT a dependency. A name-matching sniffer
+  // cannot tell "uses X" from "explicitly does not use X" — add-health-check's
+  // only reference to add-security-audit is "Security-only audit (use
+  // add-security-audit)", a pointer AWAY inside a list of when not to use the
+  // skill. Declaring it `skill:` puts a false edge in the graph; omitting it
+  // fails the build on correct prose once wave 2 hardens the sniff levels.
+  // `mention:` is the third option, and it is a real edge: the graph gains the
+  // fact, and the dangling gate validates the target like any other.
+  mention: 'MENTIONS',
+};
+
+
+/** `- <kind>: <target>` with an optional trailing `(<modifier>)`. */
+const USES_ENTRY_RE = /^-\s+([A-Za-z]+)\s*:\s*(.+?)\s*(?:\(([^)]*)\))?\s*$/;
+
+/** Kinds whose artefacts may carry a declaration block. */
+const DECLARING_KINDS = new Set(['command', 'skill', 'agent']);
+
+/**
+ * Filenames under commands/ and agents/ that the build never transforms.
+ *
+ * The identity rule — a node is what the build can transform, never what sits
+ * in the right folder — was first applied to skills only, via the SKILL.md
+ * check. Commands and agents took every `*.md`, so a README documenting the
+ * agents directory FAILED THE BUILD as an unregistered artefact. That is the
+ * exact false-positive class the rule exists to prevent, on the two kinds it
+ * did not cover.
+ *
+ * A leading `_` is the conventional "not a resource" prefix; README and NOTES
+ * are the two that occur in practice.
+ *
+ * The name must match WHOLE, never as a prefix. A first version used
+ * `/^README\b/i`, which matches `readme-analyzer.md` — `-` is a word boundary —
+ * and silently dropped a real agent, breaking two commands that dispatch it.
+ * A guard against false positives that introduces one is worse than no guard.
+ */
+const NON_ARTEFACT_FILE = /^(_|(README|NOTES|CHANGELOG)\.[A-Za-z0-9]+$)/i;
+
+/**
+ * Character spans covered by fenced code blocks.
+ *
+ * A declaration shown inside a fence is documentation — `add-skill-creator`
+ * teaching the convention, a plan quoting an example. Treating it as a
+ * declaration invents edges out of prose, and those edges point at artefacts the
+ * quoting file never actually uses.
+ *
+ * An unclosed fence swallows the rest of the file deliberately: that is what a
+ * markdown renderer does, so the graph agrees with what a reader sees.
+ *
+ * @param {string} raw
+ * @returns {Array<[number, number]>} [start, end) index pairs
+ */
+function fencedSpans(raw) {
+  const spans = [];
+  let open = 0; // backtick count of the open fence; 0 when none is open
+  let spanStart = 0;
+  let pos = 0;
+
+  for (const line of raw.split('\n')) {
+    const fence = FENCE_RE.exec(line);
+    if (fence) {
+      if (open === 0) {
+        open = fence[1].length;
+        spanStart = pos;
+      } else if (fence[1].length >= open) {
+        open = 0;
+        spans.push([spanStart, pos + line.length]);
+      }
+    }
+    pos += line.length + 1; // +1 for the newline consumed by split
+  }
+  if (open !== 0) spans.push([spanStart, raw.length]);
+
+  return spans;
+}
+
+/**
+ * Resolve a declaration target to a node id.
+ *
+ * A `skill:` target carrying a slash names a reference FILE, not the skill. The
+ * author writes `skill:` because that is how they think about it; the resolver
+ * decides the node kind. Collapsing the two would leave the dangling-reference
+ * gate unable to tell a missing file from a missing skill.
+ */
+function usesTargetId(kind, target) {
+  if (kind === 'mention') {
+    // Reuses sigils the framework's prose already uses, so a mention is written
+    // the way the thing is written where it was mentioned:
+    //   @reviewer-agent -> agent   /add.plan -> command   *.sh -> script
+    //   anything else   -> skill (much the commonest case)
+    if (target.startsWith('@')) return `agent/${target.slice(1)}`;
+    if (target.startsWith('/')) return `command/${target.slice(1)}`;
+    if (/\.(sh|js|mjs)$/.test(target)) return `script/${target}`;
+    return usesTargetId('skill', target);
+  }
+  if (kind === 'skill') {
+    // `{{skill:NAME/SKILL.md}}` is how a source points at the SKILL itself, not
+    // at a file beside it. SKILL.md files are skill nodes, so a bare
+    // "contains a slash → reference" rule would resolve this to a node that
+    // does not exist and fail the build on a correct declaration.
+    const bare = target.replace(/\/SKILL\.md$/, '');
+    return bare.includes('/') ? `reference/${bare}` : `skill/${bare}`;
+  }
+  if (kind === 'command') return `command/${target.replace(/^\//, '')}`;
+  return `${kind}/${target}`;
+}
+
+/**
+ * Extract declared edges from one artefact body.
+ *
+ * @param {string} rawContent
+ * @param {string} resourceName  logical name (e.g. "add.build", "reviewer-agent")
+ * @param {'command'|'skill'|'agent'} resourceKind
+ * @returns {Array<{from,to,type,origin,modifier}>}
+ * @throws on a malformed entry, an unknown kind, or a second declaration block
+ */
+function extractUses(rawContent, resourceName, resourceKind, layer = 'product') {
+  const spans = fencedSpans(rawContent);
+  const inFence = (i) => spans.some(([s, e]) => i >= s && i < e);
+
+  const commentRe = /<!--([\s\S]*?)-->/g;
+  const blocks = [];
+  let m;
+
+  while ((m = commentRe.exec(rawContent)) !== null) {
+    if (!/^[ \t]*uses:/.test(m[1])) continue;
+    if (inFence(m.index)) continue;
+    if (!isStandaloneMarker(rawContent, m.index, m.index + m[0].length)) continue;
+    blocks.push(m);
+  }
+
+  if (blocks.length > 1) {
+    throw new Error(
+      `${resourceKind} "${resourceName}" declares ${blocks.length} \`uses:\` blocks. ` +
+        `Only the first would be read, so the second's edges would vanish from the graph ` +
+        `while still reading as declared in the source. Merge them into one block.`,
+    );
+  }
+  if (blocks.length === 0) return [];
+
+  const block = blocks[0];
+  // Line of the `<!--` opener. Body line 0 is that same line (nothing follows
+  // `uses:` on it), so body line i sits on source line openLine + i.
+  const openLine = rawContent.slice(0, block.index).split('\n').length;
+  const body = block[1].replace(/^[ \t]*uses:[ \t]*/, '');
+
+  const edges = [];
+  const lines = body.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line === '') continue;
+
+    const at = `${path.basename(resourceName)} (${resourceKind} "${resourceName}") line ${openLine + i}`;
+    const entry = USES_ENTRY_RE.exec(line);
+
+    // Skipping an unparseable line would turn a typo into a missing edge — the
+    // graph silently under-reports and every consumer trusts it anyway.
+    if (!entry) {
+      throw new Error(
+        `${at}: cannot parse \`uses:\` entry ${JSON.stringify(line)}. ` +
+          `Expected "- <kind>: <target>" with an optional "(modifier)".`,
+      );
+    }
+
+    const [, kind, target, modifier] = entry;
+    if (!Object.prototype.hasOwnProperty.call(USES_EDGE_TYPES, kind)) {
+      throw new Error(
+        `${at}: unknown \`uses:\` kind "${kind}". ` +
+          `Expected one of: ${Object.keys(USES_EDGE_TYPES).join(', ')}.`,
+      );
+    }
+
+    edges.push({
+      from: `${layer}/${resourceKind}/${resourceName}`,
+      // Targets resolve within the declaring artefact's own layer. `add-commit`
+      // exists as BOTH a product skill and an internal skill, so a bare name is
+      // ambiguous across layers and unambiguous within one. A genuine
+      // cross-layer edge has no syntax yet — the dangling gate will name it
+      // concretely if one ever appears, which beats inventing one now.
+      to: `${layer}/${usesTargetId(kind, target)}`,
+      type: USES_EDGE_TYPES[kind],
+      origin: 'declared',
+      modifier: modifier ?? null,
+    });
+  }
+
+  return edges;
+}
+
+// ---------------------------------------------------------------------------
+// Node inventory
+// ---------------------------------------------------------------------------
+
+/**
+ * List files under `dir` matching `ext`, recursively. Missing dir → [].
+ * @returns {string[]} absolute paths
+ */
+function walkFiles(dir, ext, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) walkFiles(full, ext, out);
+    else if (e.name.endsWith(ext)) out.push(full);
+  }
+  return out;
+}
+
+/** POSIX-style path relative to `from` — node names must not vary by platform. */
+function relId(from, full) {
+  return path.relative(from, full).split(path.sep).join('/');
+}
+
+/**
+ * Build the node inventory across both layers.
+ *
+ * NODE IDENTITY IS WHAT THE BUILD CAN TRANSFORM, NEVER WHAT SITS IN THE RIGHT
+ * FOLDER. A skill is a directory *containing* SKILL.md — not a directory under
+ * skills/. Three separate probes written while specifying this change misread
+ * `skills/*​/` as the skill set; a gate built that way fails the build on
+ * perfectly correct files (eval workspaces, scratch dirs, tooling output).
+ *
+ * @param {object} map  provider-map.json
+ * @param {string} codeaddDir  product-layer root
+ * @param {string} internalDir  repo root holding `.claude/`
+ * @returns {Array<{id,kind,layer,name,path,registered,providers,declares}>}
+ */
+function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
+  const nodes = [];
+  const agentProviders = Object.keys(map.providers || {}).filter((k) => map.providers[k].agents);
+  const allProviders = Object.keys(map.providers || {});
+
+  const push = (kind, layer, name, full, registered, providers) =>
+    nodes.push({
+      // Layer is part of identity, not decoration: `add-commit` is a product
+      // skill AND an internal skill. `<kind>/<name>` alone collides on it.
+      id: `${layer}/${kind}/${name}`,
+      kind,
+      layer,
+      name,
+      path: relId(ROOT, full),
+      registered,
+      providers,
+      declares: DECLARING_KINDS.has(kind),
+    });
+
+  // --- Product layer ------------------------------------------------------
+  const commandsDir = path.join(codeaddDir, 'commands');
+  if (fs.existsSync(commandsDir)) {
+    for (const f of fs.readdirSync(commandsDir).filter((f) => f.endsWith('.md') && !NON_ARTEFACT_FILE.test(f)).sort()) {
+      const name = f.slice(0, -3);
+      const entry = (map.commands || {})[name];
+      push('command', 'product', name, path.join(commandsDir, f), Boolean(entry),
+        entry?.providers ?? allProviders);
+    }
+  }
+
+  const skillsDir = path.join(codeaddDir, 'skills');
+  if (fs.existsSync(skillsDir)) {
+    for (const d of fs.readdirSync(skillsDir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (!d.isDirectory()) continue;
+      const skillFile = path.join(skillsDir, d.name, 'SKILL.md');
+      // The identity rule. A directory without SKILL.md is not a skill and must
+      // produce no node — otherwise the unregistered gate fires on it.
+      if (!fs.existsSync(skillFile)) continue;
+
+      const entry = (map.skills || {})[d.name];
+      push('skill', 'product', d.name, skillFile, Boolean(entry), entry?.providers ?? allProviders);
+
+      for (const ref of walkFiles(path.join(skillsDir, d.name), '.md').sort()) {
+        if (path.basename(ref) === 'SKILL.md') continue;
+        push('reference', 'product', relId(skillsDir, ref), ref, true, []);
+      }
+    }
+  }
+
+  const agentsDir = path.join(codeaddDir, 'agents');
+  if (fs.existsSync(agentsDir)) {
+    for (const f of fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md') && !NON_ARTEFACT_FILE.test(f)).sort()) {
+      const name = f.slice(0, -3);
+      const entry = (map.agents || {})[name];
+      push('agent', 'product', name, path.join(agentsDir, f), Boolean(entry),
+        entry?.providers ?? agentProviders);
+    }
+  }
+
+  const scriptsDir = path.join(codeaddDir, 'scripts');
+  if (fs.existsSync(scriptsDir)) {
+    for (const e of fs.readdirSync(scriptsDir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (!e.isFile()) continue;
+      push('script', 'product', e.name, path.join(scriptsDir, e.name), true, []);
+    }
+  }
+
+  const fragmentRoots = [path.join(codeaddDir, 'fragments')];
+  const pluginsDir = path.join(codeaddDir, 'plugins');
+  if (fs.existsSync(pluginsDir)) {
+    for (const d of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+      if (d.isDirectory()) fragmentRoots.push(path.join(pluginsDir, d.name, 'fragments'));
+    }
+  }
+  for (const root of fragmentRoots) {
+    for (const f of walkFiles(root, '.md').sort()) {
+      push('fragment', 'product', relId(codeaddDir, f), f, true, []);
+    }
+  }
+
+  // --- Internal layer -----------------------------------------------------
+  // provider-map.json registers the PRODUCT layer only. Internal artefacts are
+  // never distributed, so `registered` is true by definition — marking them
+  // otherwise would fire the unregistered gate on 17 correct files.
+  const claudeDir = path.join(internalDir, '.claude');
+
+  for (const f of walkFiles(path.join(claudeDir, 'commands'), '.md').sort()) {
+    if (NON_ARTEFACT_FILE.test(path.basename(f))) continue;
+    push('command', 'internal', path.basename(f, '.md'), f, true, []);
+  }
+
+  const internalSkills = path.join(claudeDir, 'skills');
+  if (fs.existsSync(internalSkills)) {
+    for (const d of fs.readdirSync(internalSkills, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (!d.isDirectory()) continue;
+      const skillFile = path.join(internalSkills, d.name, 'SKILL.md');
+      if (!fs.existsSync(skillFile)) continue;
+
+      push('skill', 'internal', d.name, skillFile, true, []);
+      for (const ref of walkFiles(path.join(internalSkills, d.name), '.md').sort()) {
+        if (path.basename(ref) === 'SKILL.md') continue;
+        push('reference', 'internal', relId(internalSkills, ref), ref, true, []);
+      }
+    }
+  }
+
+  for (const f of walkFiles(path.join(claudeDir, 'agents'), '.md').sort()) {
+    if (NON_ARTEFACT_FILE.test(path.basename(f))) continue;
+    push('agent', 'internal', path.basename(f, '.md'), f, true, []);
+  }
+
+  return nodes;
+}
+
+/**
+ * The fragment FILE behind one injection point.
+ *
+ * Injection points record namespace + feature/plugin name + target resource, not
+ * the fragment path. The path is a pure function of those three, and the layout
+ * is fixed by the feature/plugin system:
+ *
+ *   feature → fragments/{name}/{command}.md
+ *   plugin  → plugins/{name}/fragments/{command}.md
+ *   plugin  → plugins/{name}/fragments/agents/{agent}.md
+ *
+ * Reconstructing it wrongly yields an edge whose `from` points at nothing, and
+ * nothing else in the build would notice — hence the endpoint-resolution level.
+ */
+function fragmentNodeName(point) {
+  const { namespace, name, resource } = point;
+  if (namespace === 'feature') return `fragments/${name}/${resource.name}.md`;
+  return resource.kind === 'agent'
+    ? `plugins/${name}/fragments/agents/${resource.name}.md`
+    : `plugins/${name}/fragments/${resource.name}.md`;
+}
+
+/**
+ * Assemble the graph: every node, plus declared edges and injection edges.
+ *
+ * Declarations are read from disk per declaring node rather than accumulated
+ * during buildResources(). That is deliberate: buildResources() only iterates
+ * REGISTERED resources, so an unregistered artefact would never be visited — and
+ * an unregistered artefact is exactly what the gate exists to find.
+ *
+ * @param {object} map  provider-map.json
+ * @param {string} codeaddDir
+ * @param {string} internalDir
+ * @param {Array} points  injection points; defaults to this build's accumulator
+ * @returns {{nodes: Array, edges: Array}}
+ */
+function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, points = INJECTION_POINTS) {
+  const nodes = collectNodes(map, codeaddDir, internalDir);
+  const edges = [];
+
+  for (const n of nodes) {
+    if (!n.declares) continue;
+    edges.push(...extractUses(readFile(path.join(ROOT, n.path)), n.name, n.kind, n.layer));
+  }
+
+  // One edge per point, not per (fragment, target) pair: a fragment with three
+  // sections injects three times, and collapsing them would lose which section
+  // landed where.
+  for (const p of points) {
+    edges.push({
+      from: `product/fragment/${fragmentNodeName(p)}`,
+      to: `product/${p.resource.kind}/${p.resource.name}`,
+      type: 'INJECTS_INTO',
+      origin: 'sidecar',
+      modifier: `${p.namespace}:${p.name}:${p.section}`,
+    });
+  }
+
+  return { nodes, edges };
+}
+
+/** Total order over edges — stable output is what makes a graph diffable. */
+function edgeSortKey(e) {
+  // Joined on U+001F (unit separator) written as an ESCAPE, never as a raw
+  // byte. A raw control character is invisible in every editor and diff, so a
+  // careless edit destroys it silently. It cannot occur in an id or a
+  // modifier, so unlike a space it cannot let two edges collide on one key.
+  return [e.from, e.type, e.to, e.modifier ?? ''].join('\u001f');
+}
+
+/**
+ * Write the artefact-graph sidecar. Sorted for clean diffs and byte-identical
+ * rebuilds from unchanged sources; no timestamp, for the same reason.
+ * @returns {{nodes: number, edges: number}}
+ */
+function writeArtefactGraph(outPath, graph) {
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  const nodes = [...graph.nodes].sort((a, b) => cmp(a.id, b.id));
+  const edges = [...graph.edges].sort((a, b) => cmp(edgeSortKey(a), edgeSortKey(b)));
+
+  writeFile(outPath, JSON.stringify({ version: 1, nodes, edges }, null, 2) + '\n');
+  return { nodes: nodes.length, edges: edges.length };
+}
+
+// ---------------------------------------------------------------------------
+// Artefact graph guard
+//
+// Three levels, and the SPLIT matters more than the checks. The two hard gates
+// compare declarations against the filesystem and the registry, where no
+// false-positive path exists. The two sniff levels compare declarations against
+// PROSE, which is measurably unreliable — three crude probes written while
+// specifying this change each produced wrong answers. A gate that cries wolf is
+// a gate someone switches off, so sniffing warns and never fails.
+//
+// The sniff levels become failures in wave 2, once all 97 artefacts declare.
+// Shipping them as failures now would block every build in the repo.
+// ---------------------------------------------------------------------------
+
+/** Kinds a prose sniffer can look for. Fragment names are paths; prose never carries them. */
+const SNIFFABLE_KINDS = new Set(['command', 'skill', 'agent', 'script', 'reference']);
+
+function escapeRe(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Match a name only when it stands alone.
+ *
+ * Both guards are load-bearing. Under a naive `\b`, `/add` matches inside
+ * `/add.plan` (`.` is a word boundary) and `add-qa` matches inside
+ * `add-qa-migration`. Those two mistakes produced a 43× overcount and 11 false
+ * orphans out of 13 in the probes that motivated this work.
+ */
+function mentionRe(name) {
+  return new RegExp(`(?<![\\w.-])${escapeRe(name)}(?![\\w.-])`);
+}
+
+/**
+ * The pattern that counts as naming a node in prose.
+ *
+ * Commands require their slash. Without it the command named `add` matches
+ * inside "git add/commit/push" and the graph gains an edge invented out of an
+ * English sentence — a real finding from `add.done`. Every genuine reference
+ * writes `/add.plan`, so the slash costs nothing and removes a whole class of
+ * false positive.
+ */
+function nodeMentionRe(node) {
+  return node.kind === 'command'
+    ? new RegExp(`/${escapeRe(node.name)}(?![\\w.-])`)
+    : mentionRe(node.name);
+}
+
+/** Body with fenced blocks and any `uses:` declaration removed — neither is prose. */
+function proseOf(raw) {
+  let out = raw.replace(/<!--[ \t]*uses:[\s\S]*?-->/g, '');
+  // Splice from the end so earlier removals do not shift later spans.
+  for (const [s, e] of fencedSpans(out).reverse()) out = out.slice(0, s) + out.slice(e);
+  return out;
+}
+
+/**
+ * Check a graph. Returns findings; throwing is the caller's job.
+ *
+ * Returning instead of throwing is what lets the suite assert on BOTH lists
+ * without catching, and what keeps "fails" and "warns" from collapsing into one
+ * another by accident.
+ *
+ * @param {{nodes: Array, edges: Array}} graph
+ * @param {{readSource?: (node) => string}} opts
+ * @returns {{failures: string[], warnings: string[]}}
+ */
+function checkArtefactGraph(graph, { readSource } = {}) {
+  const read = readSource || ((n) => {
+    try { return readFile(path.join(ROOT, n.path)); } catch { return ''; }
+  });
+
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  const failures = [];
+  const warnings = [];
+
+  // --- FAIL: a declaration names something that does not exist ---------------
+  for (const e of graph.edges) {
+    if (e.origin !== 'declared' || byId.has(e.to)) continue;
+    failures.push(
+      'artefact-graph: dangling reference\n' +
+        `  ${byId.get(e.from)?.path ?? e.from}\n` +
+        `  declares  ${e.to}\n` +
+        '  no such artefact. Fix the name, or add the file.',
+    );
+  }
+
+  // --- FAIL: on disk, absent from the registry, therefore built for nobody ---
+  for (const n of graph.nodes) {
+    if (!n.declares || n.registered) continue;
+    failures.push(
+      'artefact-graph: unregistered artefact\n' +
+        `  ${n.path}\n` +
+        '  exists on disk, absent from framwork/provider-map.json → never built for any provider\n' +
+        `  add an entry under "${n.kind}s", or delete the file.`,
+    );
+  }
+
+  // --- WARN: declaration vs prose, both directions ---------------------------
+  // Both dependency edges AND `mention:` acknowledgements count as "declared"
+  // for the sniff levels: the point of a mention is to say "yes, that name is
+  // in my prose on purpose, and no, I do not depend on it".
+  const declaredFrom = new Map();
+  for (const e of graph.edges) {
+    if (e.origin !== 'declared') continue;
+    if (!declaredFrom.has(e.from)) declaredFrom.set(e.from, new Map());
+    declaredFrom.get(e.from).set(e.to, { modifier: e.modifier, type: e.type });
+  }
+
+  const sniffable = graph.nodes.filter((n) => SNIFFABLE_KINDS.has(n.kind));
+
+  for (const n of graph.nodes) {
+    if (!n.declares) continue;
+
+    const prose = proseOf(read(n));
+    const declared = declaredFrom.get(n.id) ?? new Map();
+    const observed = new Set();
+
+    for (const t of sniffable) {
+      // Same layer only: `add-commit` exists in both, and a product command
+      // mentioning it means the product one.
+      if (t.id === n.id || t.layer !== n.layer) continue;
+      if (nodeMentionRe(t).test(prose)) { observed.add(t.id); continue; }
+
+      // A skill links its OWN reference files relatively — `references/foo.md`,
+      // not `add-qa/references/foo.md`. Matching only the node name reported
+      // them as unreferenced, which put 48 files that are linked from the very
+      // skill that owns them into `orphans`. Same failure the sniffer was built
+      // to avoid, one level down.
+      if (t.kind === 'reference' && n.kind === 'skill' && t.name.startsWith(`${n.name}/`)) {
+        const relative = t.name.slice(n.name.length + 1);
+        if (mentionRe(relative).test(prose)) observed.add(t.id);
+      }
+    }
+
+    for (const id of observed) {
+      if (declared.has(id)) continue;
+      failures.push(
+        'artefact-graph: undeclared reference\n' +
+          `  ${n.path}\n` +
+          `  names ${id} in prose but declares no relationship to it\n` +
+          '  add it to the `uses:` block — or, if the prose points AWAY from it\n' +
+          '  ("use X instead", "do not use for"), add `- mention: <target>`.',
+      );
+    }
+
+    for (const [id, { modifier, type }] of declared) {
+      // `conditional` is the reserved waiver for a legitimate non-greppable
+      // load. Free text is documentation, not a waiver.
+      if (modifier === 'conditional' || observed.has(id)) continue;
+      const t = byId.get(id);
+      if (!t || !SNIFFABLE_KINDS.has(t.kind)) continue;
+      // WARNING, not a failure, and the asymmetry is deliberate.
+      //
+      // "Named in prose but undeclared" is a hard gate: the name is right there,
+      // so the fix is mechanical and the author knows what to write.
+      //
+      // This is the inverse — declared, never named. It is usually stale, but a
+      // load that is genuinely real and simply not greppable also lands here,
+      // and `(conditional)` is a valve with no field use yet, so its ergonomics
+      // are unproven. Failing the build on an unproven valve trades a real
+      // finding for a blocked build. It warns until the valve has been exercised.
+      warnings.push(
+        type === 'MENTIONS'
+          ? `${n.path}: acknowledges ${id} with mention: but its prose no longer names it — ` +
+            'remove the entry, a stale acknowledgement silences a real finding later'
+          : `${n.path}: declares ${id} but its prose never names it (phantom edge) — ` +
+            'remove it, or mark it (conditional) if the load is real but not greppable',
+      );
+    }
+  }
+
+  return { failures, warnings };
+}
+
+/**
+ * Throw on failures; summarise warnings.
+ *
+ * The summary is deliberate. Wave 1 has ~97 artefacts declaring almost nothing,
+ * so printing every sniff warning would bury the two hard gates under hundreds
+ * of lines nobody can act on yet. Set ADD_GRAPH_WARNINGS=1 for the full list.
+ */
+function assertArtefactGraph(graph) {
+  const { failures, warnings } = checkArtefactGraph(graph);
+
+  if (warnings.length) {
+    if (process.env.ADD_GRAPH_WARNINGS) for (const w of warnings) console.warn(`  WARN ${w}`);
+    else console.warn(`  ${warnings.length} graph warning(s) — ADD_GRAPH_WARNINGS=1 to list`);
+  }
+
+  if (failures.length) throw new Error(`\n\n${failures.join('\n\n')}\n`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1067,6 +1709,23 @@ function pruneStaleOutputs(map) {
   return removed;
 }
 
+/**
+ * The build's single-file outputs, in one place because they have FOUR
+ * consumers and only one of them is JavaScript:
+ *
+ *   1. main() below, which writes them
+ *   2. framwork/.gitignore, which must ignore each — or every build dirties the tree
+ *   3. .github/workflows/release.yml, which must package each explicitly:
+ *      a sidecar is a file, not a subdir, so the `for subdir` loop misses it
+ *   4. CLAUDE.md, which documents them
+ *
+ * Commit 56bc22d fixed exactly this class of bug ("the registry has three
+ * consumers, and the build only checked two"). The fix is not a test that
+ * enumerates names — that is the same bug rewritten — but this single list,
+ * which cli/tests/release-packaging.test.js derives its levels from.
+ */
+const SIDECARS = ['injection-points.json', 'contracts.json', 'artefact-graph.json'];
+
 function main() {
   console.log('Building provider files...\n');
 
@@ -1077,8 +1736,11 @@ function main() {
   // writeContracts(), and a leftover file from an earlier run would let status.sh
   // read a stale `version` and report a behind project as current — the exact
   // outcome I8 exists to prevent.
+  // Driven by SIDECARS so a new one is cleared without a second edit here.
+  for (const name of SIDECARS) {
+    fs.rmSync(path.join(ROOT, 'framwork', '.codeadd', name), { force: true });
+  }
   const contractsPath = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
-  fs.rmSync(contractsPath, { force: true });
 
   const map = readMap();
   assertNoLintableSources(map);
@@ -1092,6 +1754,15 @@ function main() {
 
   const contractCount = writeContracts(contractsPath);
 
+  // Built AFTER the resource passes so INJECTION_POINTS is fully populated —
+  // the INJECTS_INTO edges are derived from it, never re-extracted.
+  const graphPath = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
+  const artefactGraph = buildArtefactGraph(map);
+  // Gate BEFORE writing, so a failed build never leaves a sidecar describing a
+  // tree the gate rejected — the same reason contracts.json is cleared upfront.
+  assertArtefactGraph(artefactGraph);
+  const graph = writeArtefactGraph(graphPath, artefactGraph);
+
   const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
@@ -1100,6 +1771,7 @@ function main() {
   if (prunedCount) console.log(`  Pruned   : ${prunedCount} stale output file(s)`);
   console.log(`  Injection points : ${pointCount} → ${path.relative(ROOT, sidecarPath)}`);
   console.log(`  Contracts        : ${contractCount} → ${path.relative(ROOT, contractsPath)}`);
+  console.log(`  Artefact graph   : ${graph.nodes} nodes, ${graph.edges} edges → ${path.relative(ROOT, graphPath)}`);
   console.log(`  Total    : ${total} files generated`);
 }
 
@@ -1111,6 +1783,16 @@ module.exports = {
   getInjectionPoints,
   writeInjectionPoints,
   _resetInjectionPoints: () => { INJECTION_POINTS = []; },
+  extractUses,
+  collectNodes,
+  buildArtefactGraph,
+  writeArtefactGraph,
+  checkArtefactGraph,
+  assertArtefactGraph,
+  SIDECARS,
+  fragmentNodeName,
+  fencedSpans,
+  nodeMentionRe,
   sliceContractBlock,
   contractShape,
   CONTRACT_VARIABLE_RE,
