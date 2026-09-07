@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-knowledge-discovery
 - skill: add-plan-review
 - agent: plan-reviewer-agent
 - agent: readback-agent
@@ -75,8 +76,21 @@ Parse output: OWNER (name + level), BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGE
 
 Then load:
 - **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `docs/features/{FEAT_ID}/changelog.md` for context
-- **ARCHITECTURE:** Read CLAUDE.md, product.md (if exists), and implemented features from docs/features/
-- **Mental inventory:** Owner profile, implemented features, architecture, business context, current work
+- **PRIOR WORK — ranked, not swept:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its INDEX step against the brainstorm topic. It returns entries ordered `live` → `changed` → `superseded` → `gone`. Then **deep-read `about.md` for the matched entries only** — the index says *whether* something shipped and never *how* it works, so the business rules and integration points still have to be read. Ranked-then-deep-read, on a handful of features instead of the whole directory.
+- **ARCHITECTURE:** Read CLAUDE.md and product.md (if exists)
+- **Mental inventory:** Owner profile, prior work from the index, architecture, business context, current work
+
+```
+IF THE TOPIC RESEMBLES SOMETHING THE INDEX RETURNED:
+  ⛔ DO NOT: Explore it as new ground
+  ✅ DO: Say what already exists and what its status is, BEFORE proposing directions
+
+IF AN ENTRY CAME BACK gone OR superseded:
+  ⛔ DO NOT: Drop it because it is dead
+  ✅ DO: Surface it — "this was built and dropped" is the answer that stops a rebuild
+```
+
+**A directory sweep is not a substitute.** Reading every folder under `docs/features/` weights abandoned work exactly like shipped work, which is the landfill read this step replaced. If no index exists yet, the INDEX step no-ops with a note; fall back to `RECENT_CHANGELOGS` and ask the user, never to the sweep.
 
 If OWNER not found: inform user to run `/founder`, continue with intermediate defaults.
 

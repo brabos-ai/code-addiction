@@ -1,6 +1,6 @@
 ---
 name: add-knowledge-discovery
-description: Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review — consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents.
+description: Use at the context/discovery step of add.plan, add.hotfix, add.new, add.diagnose, add.review, add.brainstorm — consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents.
 ---
 
 # Knowledge Discovery — Delivery Index and Wiki Consumption Procedure
@@ -15,7 +15,7 @@ description: Use at the context/discovery step of add.plan, add.hotfix, add.new,
 
 ## Overview
 
-Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/}}` at a command's existing context step. Five commands load this skill: `add.plan`, `add.hotfix`, `add.new`, `add.diagnose`, `add.review`. Loading happens where the command already gathers context — never a new preamble.
+Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/}}` at a command's existing context step. Six commands load this skill: `add.plan`, `add.hotfix`, `add.new`, `add.diagnose`, `add.review` and `add.brainstorm`. Loading happens where the command already gathers context — never a new preamble.
 
 ## When to Use
 
@@ -24,6 +24,7 @@ Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/
 - `add.new` at Deep Discovery, beside the Codebase Discovery agent
 - `add.diagnose` at Load Context
 - `add.review` at Bootstrap Context, Gate 2 "Knowledge base" row
+- `add.brainstorm` at STEP 1, for the ranked prior-work lookup that replaced its unranked directory sweep
 - **`add.hotfix` at STEP 4, the INDEX step ALONE, called with `--no-verify`** — triage needs the ranked candidate list before the history agents are dispatched, and that is four steps before the full load at 8.1. Load STEP 1 by itself there; nothing below it runs
 
 ## When NOT to Use
