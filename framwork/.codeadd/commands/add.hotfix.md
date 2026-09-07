@@ -14,6 +14,7 @@
 - agent: git-history-agent
 - agent: security-agent
 - command: /add.wiki
+- script: delivered.sh
 - script: status.sh
 -->
 
@@ -38,7 +39,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 STEP 1:  Run status.sh             → FIRST COMMAND
 STEP 2:  Check branch              → IF main: STOP (step 3 required)
 STEP 3:  Allocate ID + branch      → status.sh next-id H, branch, skeleton about.md
-STEP 4:  Discover history (parallel agents) → @feature-history-agent ∥ @git-history-agent
+STEP 4:  Discover history (index + parallel agents) → delivery index (--no-verify) → @feature-history-agent ∥ @git-history-agent
 STEP 5:  Synthesize history outputs → Confirm related features; retain blast radius for STEP 9
 STEP 6:  Investigate code          → ONLY AFTER steps 1-5
 STEP 7:  Confirm root cause        → BEFORE implementing; pin it RED when tdd-pipeline is on
@@ -169,17 +170,40 @@ DO NOT write doc contents yet — schemas are loaded and applied in STEP 11/12.
 
 ⛔ **CRITICAL:** Dispatch BOTH agents in a SINGLE message with TWO Agent tool calls (parallel execution).
 
-### 4.1 Build the symptom brief
+### 4.1 Consult the delivery index (NO code access)
+
+Load the **INDEX step of `{{skill:add-knowledge-discovery/SKILL.md}}` ALONE** — step 1 of its procedure, nothing below it. That skill's own *When NOT to Use* records this exemption: the wiki stays out of STEPs 4-6, the index does not.
+
+Query `delivered.sh` with the bug's keywords and **`--no-verify`**:
+
+```bash
+bash .codeadd/scripts/delivered.sh read "<bug keywords>" --no-verify
+```
+
+```
+IF THE INDEX READ OMITS --no-verify:
+  ⛔ DO NOT: Run it
+  ✅ DO: Add the flag — a verifying read greps source, and this command forbids reading code before the history agents are dispatched
+```
+
+`--no-verify` is what makes this step legal here. It returns the **stored** status — whatever the last verify established, not a guess — and opens no source file, so the no-code-access prohibition above stands untouched. The verifying read happens later, at STEP 8.1, once the root cause is known and a re-query is worth its cost. That is why this command reads the index twice.
+
+**Index absent → note it once and continue.** Nothing here blocks on it.
+
+### 4.2 Build the symptom brief
 
 From the user's bug report plus `RECENT_CHANGELOGS` from STEP 1, write a short brief:
 - One-sentence problem statement
 - Affected area / keywords (component, route, entity)
 - Optional window (default: 30 days)
+- **The ranked index results from 4.1**, each with its id, name and status
 
-### 4.2 Dispatch parallel
+### 4.3 Dispatch parallel
 
 **DISPATCH AGENT: @feature-history-agent**
-Prompt: "Find existing features whose docs (about.md, changelog.md, plan.md) plausibly relate to this bug. Brief: <brief>. Scan `docs/features/`, score relevance, deep-read top-10. Return structured Feature History Report."
+Prompt: "Find existing features whose docs (about.md, changelog.md, plan.md) plausibly relate to this bug. Brief: <brief>. Candidate ids already ranked by the delivery index, each with its status: <index results, or 'none — index absent or no match'>. Start from those, then scan `docs/features/`, score relevance, deep-read top-10. Return structured Feature History Report."
+
+⛔ The candidate list changes the agent's **starting point, never its method**. It still scans, scores and deep-reads. Do NOT tell it to skip the scan, and do NOT restrict it to the listed ids — a `gone` entry names a feature whose docs still exist and still matter.
 
 **DISPATCH AGENT: @git-history-agent**
 Prompt: "Correlate recent git history with this bug. Brief: <brief>. Window: 30 days. Use git log/show/diff/branch (read-only) to surface suspicious commits and active branches. Return structured Git History Report."
