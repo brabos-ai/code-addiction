@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -24,6 +27,7 @@ const {
   orphans,
   pathBetween,
   stats,
+  history,
   loadGraph,
 } = require('../../scripts/graph.js');
 
@@ -236,5 +240,139 @@ describe('the real emitted graph', () => {
     expect(s.nodes).toBe(real.nodes.length);
     expect(s.edges).toBe(real.edges.length);
     expect(Object.values(s.byKind).reduce((a, b) => a + b, 0)).toBe(real.nodes.length);
+  });
+});
+
+/**
+ * history — the time axis, delegated.
+ *
+ * The levels drive the REAL delivered.sh against a real temporary git repo
+ * rather than a stubbed reader. That is the point of the verb: it owns the join
+ * and delegates the read, so a test that mocked the read would assert the one
+ * thing the design forbids reimplementing here.
+ */
+describe('history — when this arrived, and what it replaced', () => {
+  const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
+  let repo;
+
+  const line = (o) => `${JSON.stringify(o)}\n`;
+
+  beforeAll(() => {
+    repo = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-'));
+    execFileSync('git', ['init', '-q'], { cwd: repo });
+
+    // The corpus delivered.sh verifies against: `git ls-files --cached --others
+    // --exclude-standard`, so files on disk count without a commit.
+    fs.writeFileSync(path.join(repo, 'x.md'), 'contains skillX_marker here\n');
+    fs.writeFileSync(path.join(repo, 'y.md'), 'contains skillY_marker here\n');
+    fs.writeFileSync(path.join(repo, 's.sh'), '# contains script_marker here\n');
+
+    fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'delivered.jsonl'),
+      // Written gone-first on purpose: if the verb preserved insertion order
+      // instead of delivered.sh's status ordering, this file would pass a
+      // "live comes first" assertion by accident.
+      line({
+        v: 1, ts: '2026-01-01T00:00:00Z', id: 'E-gone', layer: 'internal', by: 'done',
+        status: 'live', name: 'the old skillX', words: 'skillx old',
+        commits: ['aaaaaaa'], origin: 'docs/plans/E-gone.md',
+        items: [{ what: 'skillX (old)', at: 'x.md', find: 'skillX_vanished', node: 'product/skill/skillX' }],
+      }) +
+      line({
+        v: 1, ts: '2026-02-01T00:00:00Z', id: 'E-live', layer: 'internal', by: 'done',
+        status: 'live', name: 'the current skillX', words: 'skillx current',
+        commits: ['bbbbbbb'], origin: 'docs/plans/E-live.md',
+        items: [
+          { what: 'skillX', at: 'x.md', find: 'skillX_marker', node: 'product/skill/skillX' },
+          // No `node`: a top-level script is not a graph node.
+          { what: 'a script', at: 's.sh', find: 'script_marker' },
+        ],
+      }) +
+      line({
+        v: 1, ts: '2026-03-01T00:00:00Z', id: 'E-prose', layer: 'internal', by: 'done',
+        status: 'live', name: 'mentions skillX in prose only', words: 'skillX incidental',
+        commits: ['ccccccc'], origin: 'docs/plans/E-prose.md',
+        items: [{ what: 'skillY', at: 'y.md', find: 'skillY_marker', node: 'product/skill/skillY' }],
+      }),
+    );
+  });
+
+  const run = (ref, opts = {}) => history(G, ref, { script: DELIVERED_SH, cwd: repo, ...opts });
+
+  it('returns entries for the artefact, live before gone', () => {
+    const r = run('product/skill/skillX');
+
+    expect(r.node).toBe('product/skill/skillX');
+    expect(r.entries.map((e) => e.id)).toEqual(['E-live', 'E-gone']);
+    expect(r.entries[0].status).toBe('live');
+    // Stored `live`, verified `gone`: its anchor is absent from the corpus.
+    expect(r.entries[1].status).toBe('gone');
+  });
+
+  it('filters on the item node, not on the word', () => {
+    // E-prose carries "skillX" in `words`, so delivered.sh returns it for the
+    // free-text query. It has no item whose node is skillX, so the verb drops
+    // it — which is the whole difference between an answer about the ARTEFACT
+    // and an answer about the string.
+    const r = run('product/skill/skillX');
+    expect(r.entries.some((e) => e.id === 'E-prose')).toBe(false);
+
+    const y = run('product/skill/skillY');
+    expect(y.entries.map((e) => e.id)).toEqual(['E-prose']);
+  });
+
+  it('enriches items that carry a node, and leaves the others alone', () => {
+    const live = run('product/skill/skillX').entries.find((e) => e.id === 'E-live');
+    const [withNode, withoutNode] = live.items;
+
+    // cmdA and cmdB both use skillX.
+    expect(withNode.dependents).toBe(2);
+    // Never a fabricated id, and never an invented count.
+    expect(withoutNode.node).toBeUndefined();
+    expect(withoutNode.dependents).toBeUndefined();
+  });
+
+  it('reports a missing delivered.sh instead of throwing', () => {
+    const r = run('product/skill/skillX', { script: path.join(repo, 'no-such-script.sh') });
+
+    expect(r.unavailable.reason).toBe('script-missing');
+    expect(r.entries).toEqual([]);
+  });
+
+  it('reports a missing bash instead of throwing', () => {
+    // The case that matters is the long-lived MCP server: a throw there kills
+    // every later query, not just this one.
+    const r = run('product/skill/skillX', { bash: 'definitely-not-a-real-interpreter-xyz' });
+
+    expect(r.unavailable.reason).toBe('bash-missing');
+    expect(r.entries).toEqual([]);
+  });
+
+  it('reports an absent index as an empty answer, never an error', () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-empty-'));
+    execFileSync('git', ['init', '-q'], { cwd: empty });
+
+    const r = run('product/skill/skillX', { cwd: empty });
+
+    expect(r.unavailable).toBeNull();
+    expect(r.entries).toEqual([]);
+  });
+
+  it('passes --layer straight through to delivered.sh', () => {
+    // add-framework--plan asks a PRODUCT-layer question. The filter narrows
+    // what delivered.sh reads; it is never re-implemented as a filter here.
+    expect(run('product/skill/skillX', { layer: 'product' }).entries).toEqual([]);
+    expect(run('product/skill/skillX', { layer: 'internal' }).entries.map((e) => e.id))
+      .toEqual(['E-live', 'E-gone']);
+  });
+
+  it('never writes — the index is byte-identical after a read', () => {
+    const index = path.join(repo, 'docs', 'delivered.jsonl');
+    const before = fs.readFileSync(index);
+
+    run('product/skill/skillX');
+
+    expect(fs.readFileSync(index).equals(before)).toBe(true);
   });
 });
