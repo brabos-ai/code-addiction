@@ -69,6 +69,13 @@ Schema-agnostic rules that apply to every generated doc, even when the schema is
 - **Clarity on what and why.** Every statement carries a fact, a constraint, a decision, a link, or an observable signal — never filler.
 - **No aspirational language.** No *futuramente*, *idealmente*, *pretendemos*, "in a future version", "we plan to". Extractive docs describe what is, not what might be.
 - **No marketing copy, no superlatives, no unverified claims.** Schemas that genuinely need persuasive copy (saas-copy, landing-page) declare it explicitly; everywhere else, plain factual voice.
+- **No invented figurative language.** Describe the action, the mechanism or the state directly; never substitute a figure of speech for it. This binds every text produced under this framework — chat replies, generated docs, commit messages, PR descriptions, code comments and identifiers.
+
+  It **binds the writing, not the language of the writing**: it holds in whatever language the `### Language` table below selects. An invented figure is precisely the class of writing that has no counterpart to translate into, so a rule stated once in English governs output in every language.
+
+  **Established technical terms of figurative origin are kept.** `branch`, `tree`, `cache`, `pipeline`, `parent`, `orphan`, `handler` and `race` are the literal names of their concepts and have no plainer substitute. The rule targets a figure the writer invents to stand in for a mechanism, not the vocabulary the field already settled on.
+
+  Test each sentence before writing it: does it name the action, or name something the action resembles? Replace a resemblance with the action — "confirm the tests bite" becomes "run the tests and check they fail against the broken code". That pair illustrates the device. It is **not a list of banned words**, and MUST NOT be turned into one: a word list holds in one language only, which is the failure this rule exists to prevent.
 
 ### Language
 
