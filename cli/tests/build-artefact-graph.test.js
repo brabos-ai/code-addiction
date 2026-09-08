@@ -869,3 +869,41 @@ describe('node inventory snapshot', () => {
     expect(nodes.filter((n) => n.declares)).toHaveLength(97);
   });
 });
+
+/**
+ * The one row of the close-out's RED matrix a machine can check.
+ *
+ * The other fifteen describe runtime behaviour of an LLM-driven markdown
+ * command — it stops, it writes nothing, it asks before deleting — which no
+ * unit test can assert. This one is a string, and it guards the hazard the
+ * design named specifically: `test:package` exists ONLY in cli/package.json,
+ * so the bare form fails with "Missing script", which is a FALSE gate and
+ * worse than a failing one.
+ */
+describe('/add-framework--done — the CI gate it reproduces', () => {
+  const sources = [
+    path.join(ROOT, '.claude', 'commands', 'add-framework--done.md'),
+    path.join(ROOT, '.opencode', 'commands', 'add-framework--done.md'),
+  ];
+
+  for (const file of sources) {
+    const label = path.relative(ROOT, file).split(path.sep).join('/');
+
+    it(`${label} runs test:package through --prefix cli`, () => {
+      const src = fs.readFileSync(file, 'utf8');
+
+      expect(src).toContain('npm --prefix cli run test:package');
+      // A bare `npm run test:package` anywhere in the file would be the false
+      // gate, whatever else the file also says.
+      expect(src).not.toMatch(/(?<!--prefix cli )\bnpm run test:package\b/);
+    });
+
+    it(`${label} carries all four CI commands`, () => {
+      const src = fs.readFileSync(file, 'utf8');
+
+      for (const cmd of ['node scripts/build.js', 'npm test', 'npm run test:scripts']) {
+        expect(src, `${label} is missing the ${cmd} gate`).toContain(cmd);
+      }
+    });
+  }
+});
