@@ -165,7 +165,8 @@ Pontual mode has no F-blocks, so it has no ledger: skip to 4.4.
 **An F-block is one item of the plan's Execution Order** (`S1`, `S2`, … in a self-plan).
 
 **Tracked, not scratch.** It carries the rulings, and a reviewer who cannot see what was decided on their
-behalf cannot review it. `docs/plans/` is already where this repo force-adds the artefacts that must survive.
+behalf cannot review it. `docs/` is versioned like any other directory, so the ledger is committed with the
+work it records — there is nothing to force-add.
 
 **Append-only, one line per event, identity on the first line:**
 

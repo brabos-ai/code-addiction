@@ -1,0 +1,43 @@
+     × L1.0 injection map totals exactly 38 points
+     × L1.0 injection map matches the expected per-resource breakdown
+     × L1.0 removed commands contribute zero injection points
+     × L1.1 no legacy feature:tdd: marker survives in any command source
+     × L1.2 every sidecar anchor is unique per (resource, text, ordinal, section)
+     × L1.3 agent output patterns are registered for claude, cursor, opencode and codex
+     × L1.3 each MD provider emits its own frontmatter dialect
+     × L1.4 codex agent output is valid TOML carrying the body in developer_instructions
+     × L1.4 codex agents are emitted outside the shared .agents skills root
+     × L1.6 (F3) the qa-pipeline manifest key literal appears exactly once in qa-preflight.sh
+     × L1.7 (F5) add-ecosystem feature table reads tdd-pipeline in the built provider copy
+     × L1.7 (F5) installer and docs copy read tdd-pipeline at source
+     × L2.0 registry key is tdd-pipeline with a tdd alias
+     × L2.0 qa-pipeline gates plan and build only — add.test is gone
+     × L5.2 provider-map registers none of the removed commands
+     × L5.2 provider-map registers add.plan-to-ready for all five providers
+     × L5.2 provider-map registers test-agent and fix-agent
+     × L5.0 removed command sources are deleted
+     × L5.1 no source artefact routes to a removed command
+     × L5.1 built provider outputs route to no removed command
+     × L5.3 plugin catalog names no removed command
+     × L5.5 no artefact references review.md as the review output path
+     × L6.1 CORRECTION mode runs red-green, never a regeneration sweep
+     × L6.2 the tdd-pipeline self-check lives in the ungated base body
+     × L6.2 the qa-pipeline E2E self-check also lives in the ungated base body
+     × L6.3 generation sections exist and anchor at mode-independent points
+     × L6.4 add.review is read-only on code
+     × L6.5 the review writes both the per-scope qa-validation and the feature-level review-NNN
+     × L6.6 Fix Routing is a union across scopes, scope-qualified
+     × L6.7 the build annex is append-only and finalizes exactly once
+     × L6.0 the /add.build qa argument mode is retired
+     × L6.0 add.done reads the highest-numbered review-NNN.md
+     × L6.0 the qa-validation schema carries judged-tree and a review schema entry exists
+     × L7.0 the command exists with frontmatter and an argument hint
+     × L7.0 the cap is 3 per invocation, explicitly not cumulative
+     × L7.1 the no-progress detector keys on (area, file, symptom) over two consecutive rounds
+     × L7.2 the three outcome states are distinct and never softened into one another
+     × L7.3 the dry-run convergence check never invokes qa-evidence.sh promote
+     × L7.4 the plan leg preserves id, created and type and bumps updated
+     × L7.5 a subfeature-scoped run can converge with siblings pending and names them
+     × L7.6 depth discipline — dispatches agent rosters, never commands
+     × L7.6 no dispatched agent is instructed to dispatch another agent
+     × L7.6 fix-agent receives its attempt counter from the caller
