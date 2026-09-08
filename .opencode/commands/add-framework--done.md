@@ -22,6 +22,7 @@ STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Commit on the branch      → entry + changelog, one commit, then push
 STEP 7: Merge via gh              → gh pr create (if absent) + gh pr merge --squash
 STEP 8: Cleanup                   → worktree, branch, evidence — in that order, non-fatal
+STEP 9: Completion                → what was written, merged, removed and skipped
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
@@ -103,6 +104,8 @@ Collect, and carry forward to STEP 3:
 - **The ledger** — `docs/plans/<plan-basename>--ledger.md`, and every `S<n>:` line in it.
 - **The review companion** — the highest `docs/plans/<plan-basename>--review-v*.md`, if one exists.
 - **The graph** — `framwork/.codeadd/artefact-graph.json`, for classifying paths at STEP 3.
+
+**Three dots for the diff, two for the log, and neither is a typo.** Three-dot diff is merge-base-relative, which is exactly "what did this branch introduce" — a two-dot diff would also report, reversed, everything `main` gained since the branch point. Two-dot log is "commits on this branch and not on main", which is the question there. A sibling ruling in the product layer replaced a three-dot *pre-check* with two dots; that check asks the opposite question ("does main already have all of this?") and does not transfer here.
 
 ---
 
@@ -295,22 +298,11 @@ Report:
 ## Rules
 
 ALWAYS:
-- Probe `gh auth status` before writing anything
-- Run the ledger gate before the four CI commands
-- Attach `--prefix cli` to `test:package` — the bare form is a false gate
-- Read the review verdict from its companion file
-- Omit `node` for artefacts the graph does not model
-- Ask per deletion whether the thing was replaced or merely removed
-- Commit the entry on the branch before the PR is merged
-- Report a failed cleanup sub-step and continue
+- Attach `--prefix cli` to `test:package` — the bare form is a false gate, not a failing one
+- Add a command here when CI gains one, so the two cannot disagree
 
 NEVER:
-- Treat `GAPS_FOUND` or `BLOCKED` as a pass
-- Write a second entry for a branch whose PR is already merged
 - Synthesise a `node` id for something the graph does not model
 - Record a rename as a deletion or a supersession
-- Delete an untracked file
-- Clean up when no entry was written
-- Delete anything under `docs/plans/`, `docs/brainstorming/` or `docs/changelog/`
-- Create the branch, the worktree or the plan
 - Loosen a `find` anchor to get past a `REFUSED=` result
+- Produce a review verdict — a close-out that grades its own delivery proves nothing
