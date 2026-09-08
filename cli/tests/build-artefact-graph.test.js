@@ -848,7 +848,7 @@ describe('node inventory snapshot', () => {
     for (const n of nodes) byKind[n.kind] = (byKind[n.kind] || 0) + 1;
 
     expect(byKind).toEqual({
-      command: 24,
+      command: 25,
       skill: 44,
       agent: 28,
       // reference 68 -> 69, script 17 -> 18, fragment 23 -> 24: the delivery
@@ -861,7 +861,11 @@ describe('node inventory snapshot', () => {
     });
     // 204 -> 207: the three new nodes above. `declares` is unchanged — none of
     // the three carries a `<!-- uses: -->` block of its own.
-    expect(nodes).toHaveLength(207);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(96);
+    //
+    // 207 -> 208 and command 24 -> 25: /add-framework--done, the internal
+    // close-out (plan 2026-09-07T162415-SELF-PLAN--delivery-index-internal,
+    // S2). It DOES carry a `<!-- uses: -->` block, so `declares` moves with it.
+    expect(nodes).toHaveLength(208);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(97);
   });
 });
