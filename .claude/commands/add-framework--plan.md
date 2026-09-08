@@ -169,6 +169,16 @@ IF STEP 0.3 was skipped (no idea provided in invocation) → fall back entirely 
 
 IF STEP 0.3 ran → use the discovery agent report as the baseline. Supplement with direct search only if the report shows gaps or the idea is novel territory.
 
+**Then ask the delivery index what already shipped here.** This command reads the ecosystem for prior art, and a search of the tree finds only what survived — never what was tried, shipped and later replaced.
+
+```bash
+node scripts/graph.js history <artefact-name> --layer product
+```
+
+**`--layer product` is mandatory here.** One index serves both layers, and this command plans the product layer only. Without the filter the answer mixes in internal deliveries that have no bearing on a product proposal.
+
+A `gone` or `superseded` entry is a direct answer to "has this been attempted?" — it names what replaced the thing and where to look. An unavailable index is reported and does not block the analysis.
+
 Internal analysis only — DO NOT produce artefacts.
 
 ---
