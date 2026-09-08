@@ -9,7 +9,7 @@
  * methods a tools-only server needs: initialize, tools/list, tools/call.
  *
  * No SDK, deliberately. The official one pulls 89 transitive packages into this
- * repo to wrap six pure functions, and the surface needed here is small and
+ * repo to wrap seven small functions, and the surface needed here is small and
  * fully specified. Every answer comes from scripts/graph.js — the same module
  * the CLI uses — so the two surfaces cannot drift apart.
  *
@@ -84,6 +84,23 @@ const TOOLS = [
     description: 'Node and edge counts by kind, layer and type, plus the most depended-on hubs.',
     inputSchema: { type: 'object', properties: {} },
     run: (g) => G.stats(g),
+  },
+  {
+    name: 'history',
+    description:
+      'When this artefact was delivered, and what it replaced. Reads the delivery index through ' +
+      'delivered.sh — never its own parser — and joins each entry to the graph, so an item that ' +
+      'carries a node id also carries its current dependant count. Query-only: it never writes, ' +
+      'and an unavailable index is reported rather than thrown.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        node: NODE_ARG.properties.node,
+        limit: { type: 'number', description: 'Maximum entries to read. Defaults to 50.' },
+      },
+      required: ['node'],
+    },
+    run: (g, a) => G.history(g, a.node, { limit: a.limit }),
   },
 ];
 
