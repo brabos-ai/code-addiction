@@ -159,6 +159,16 @@ falls into one of three buckets, and the third is a finding:
 | Plan states explicitly that it needs no change | fine |
 | Dependant neither changed nor mentioned | **finding — severity `medium`** |
 
+Then ask what each touched artefact **superseded**:
+
+```bash
+node scripts/graph.js history <artefact-name>
+```
+
+**A plan that touches something a previous delivery superseded is the case the subagents cannot see.** They read the plan and the diff; neither records that an earlier delivery replaced this thing, or that the replaced thing is still cited elsewhere in the corpus. A `superseded` entry naming an id the plan never mentions is a **finding — severity `medium`**, on the same footing as an uncovered dependant.
+
+An unavailable index is reported in the verdict rationale and is never itself a finding.
+
 This is the check no subagent can make on its own: each reads the plan and the
 diff, and neither shows what depends on a file that nobody opened. A plan that
 edits a hub and its obvious neighbour but misses the four artefacts reaching it
