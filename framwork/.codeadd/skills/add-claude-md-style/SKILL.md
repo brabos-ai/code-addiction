@@ -45,7 +45,7 @@ Facts the AI needs in **every session**, not available elsewhere:
 
 ## Format Rules
 
-**Target:** 80-150 lines total (the managed Project Knowledge Base block is ~15 lines and is accounted for within this budget).
+**Target:** 80-150 lines total. The two managed blocks — Project Knowledge Base (17 lines) and Writing Style (13 lines) — are 31 lines together and are accounted for within this budget, leaving 49-119 lines for everything else.
 
 ### JSON = DATA. Markdown = INSTRUCTIONS.
 
@@ -229,6 +229,7 @@ Before finalizing any generated CLAUDE.md:
 - [ ] Technical Spec uses compact JSON, one object per line?
 - [ ] Validation Gates block present using minified JSON when gates detected; section omitted entirely when none (no empty `{}`); `format` only when non-mutating?
 - [ ] Project Knowledge Base managed block present (`[//]: # (codeadd-wiki:start)` … `[//]: # (codeadd-wiki:end)`), and no legacy unmarked "Implementation Patterns" section remains?
+- [ ] Writing Style managed block present (`[//]: # (codeadd-style:start)` … `[//]: # (codeadd-style:end)`), 14 lines or fewer, carrying no `{{...}}` variable and no framework artefact name?
 - [ ] No section explaining a single concept in >5 lines?
 - [ ] No anti-patterns: full frontend/backend/database patterns, API route lists, component/directory trees, inline code examples, feature/business-flow docs, security implementation details, domain type/struct docs, worker/job-queue details, version-specific dependency lists?
 
