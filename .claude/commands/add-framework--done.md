@@ -27,12 +27,12 @@ Closes out internal work: gates it against CI's own four commands, writes the de
 
 **STEPS IN ORDER:**
 STEP 1: Collect context           → branch, plan, ledger, diff, `gh auth status`
-STEP 2: Gates                     → ledger complete + review PASS + CI's four   [HARD STOP]
+STEP 2: Gates                     → ledger complete + review PASS + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Commit on the branch      → entry + changelog, one commit, then push
-STEP 7: Merge via gh              → gh pr create (if absent) + gh pr merge --squash
+STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
 STEP 8: Cleanup                   → worktree, branch, evidence — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
 
@@ -48,10 +48,18 @@ IF `gh auth status` FAILED (STEP 1 not complete):
 IF ANY GATE AT STEP 2 FAILED:
   ⛔ DO NOT USE: Write on docs/delivered.jsonl
   ⛔ DO NOT USE: Write on docs/changelog/
-  ⛔ DO NOT USE: Bash to run gh pr create
   ⛔ DO NOT USE: Bash to run gh pr merge
   ⛔ DO NOT: Re-run the failing gate with different arguments to make it pass
-  ✅ DO: Report which gate failed, with its output, and STOP
+  ⛔ DO NOT: Push another commit to make CI green without saying what it fixed
+  ✅ DO: Report which gate failed, with its check URL, and STOP
+
+IF CI HAS NOT CONCLUDED, OR CONCLUDED ON A DIFFERENT SHA:
+  ⛔ DO NOT USE: Bash to run gh pr merge
+  ⛔ DO NOT: Read an older green run as this commit is verdict
+  ✅ DO: Wait for the run on this SHA, or report why it cannot run and fall back to the local four
+
+NOTE: `gh pr create` is NOT prohibited here. CI triggers on `pull_request`, so the PR is what
+makes the gate runnable at all — STEP 2.4 creates it before the gate can conclude.
 
 IF THE BRANCH IMPLEMENTS A PLAN AND ITS REVIEW VERDICT IS NOT `PASS`:
   ⛔ DO NOT USE: Bash to run gh pr merge
@@ -155,20 +163,36 @@ Favourable means `PASS` and nothing else. Merging over `GAPS_FOUND` indexes the 
 
 **Read the verdict; never produce one.** `/add-framework--shared-review` owns the audit. A close-out that runs its own review is a command grading its own delivery.
 
-### 2.4 CI's own four commands
+### 2.4 CI's four commands — read the run, do not re-run them locally
 
-Run all four, **with their working directories attached**:
+CI already runs the four commands this gate needs, on the four combinations this project supports:
 
-```bash
-node scripts/build.js
-npm test
-npm --prefix cli run test:package
-npm run test:scripts
+```
+test-cli (node 20)   node scripts/build.js  →  npm test  →  the package smoke test  [working-directory: cli]
+test-cli (node 22)   the same, on the other supported major
+test-scripts         npm run test:scripts   (bats)                                  [working-directory: root]
 ```
 
-`test:package` exists **only** in `cli/package.json`. Invoked from the root without `--prefix cli` it fails with "Missing script" — a *false* gate, which is worse than a failing one.
+**Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a *second* gate that can disagree with the one that governs the merge — and the local copy is the weaker of the two: it runs on one machine, one Node version, and a developer's dirty environment. This repository has the receipts. `npm run test:scripts` takes **over an hour** on Windows and **63 seconds** on CI, and the local run reports a `qa-preflight.bats` failure that exists nowhere but here, because a `node_modules` above `TMPDIR` resolves a package the test asserts is absent.
 
-These are CI's own commands rather than a bespoke internal gate, so **a green local gate and a green PR are the same statement** and cannot disagree. If CI gains a step, add it here.
+`ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
+
+1. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
+2. **Push the branch** if `git rev-parse HEAD` and `git rev-parse origin/<branch>` disagree.
+3. **`gh pr view`** → if no PR exists, `gh pr create`.
+4. **Wait for the run**, e.g. `gh pr checks --watch --fail-fast`.
+5. **Compare the SHA before reading the verdict** — see below.
+6. Every required check concludes `success` → the gate passes. Anything else → report which check, with its URL, and STOP.
+
+⛔ **A green check is evidence only for the commit it ran on.** Compare `gh pr view --json headRefOid` against `git rev-parse HEAD` and **refuse a verdict from any other SHA**. Without this the command reads yesterday's green run and calls today's untested code gated — the same class of lie as a gate that silently invokes a script that does not exist, and harder to see, because the output says `pass`.
+
+⛔ **A skipped, queued, neutral or cancelled check is not a pass.** Only `success` is. A required check that never ran is the absence of evidence, which this gate treats exactly as it treats failure.
+
+**The fallback is local, explicit and reported.** When `gh` is unavailable, the network is down, or the repository has no CI configured, run the four commands here instead — `node scripts/build.js`, `npm test`, `npm --prefix cli run test:package`, `npm run test:scripts` — and **say in the STEP 9 report that the gate ran locally and why**. A gate that quietly changes which evidence it accepted is worse than a slow one.
+
+`test:package` exists **only** in `cli/package.json`. In the fallback, invoked from the root without `--prefix cli`, it fails with "Missing script" — a *false* gate, which is worse than a failing one. CI avoids this by setting `working-directory: cli`; the fallback must attach the prefix by hand.
+
+**If CI gains a job, this list follows it.** The whole point is that the gate and the merge cannot disagree about what green means.
 
 ---
 
@@ -265,13 +289,25 @@ Show the user, before committing: the entry as it will be written, any `LOOSE=` 
 
 Commit the entry and the changelog as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push.
 
-**The entry is committed before the PR, never after.** If the PR is never merged, the branch dies and the entry dies with it — which is correct. `main` must not acquire an entry for work that did not land, and writing the entry afterwards would need a pull and an extra commit on `main`.
+The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
+
+**The entry is committed before the merge, never after.** If the PR is never merged, the branch dies and the entry dies with it — which is correct. `main` must not acquire an entry for work that did not land, and writing the entry afterwards would need a pull and an extra commit on `main`.
 
 ---
 
 ## STEP 7: Merge via `gh`
 
-Run `gh pr view` for the current branch. If no PR exists → `gh pr create`. Then `gh pr merge --squash`.
+The PR already exists — STEP 2.4 created it, because CI cannot run without one.
+
+**STEP 6 pushed a commit CI has not tested.** The gate at 2.4 ran on the code; the entry and the changelog landed after it. Wait for the run on the new SHA before merging, applying the same SHA comparison 2.4 applies:
+
+```bash
+gh pr checks --watch --fail-fast
+```
+
+Then `gh pr merge --squash`.
+
+Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --squash --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open.
 
 If the merge is refused → report it and STOP. The entry and the changelog stay on the branch, absent from `main`, which is the honest state. **DO NOT** proceed to STEP 8.
 
@@ -315,11 +351,14 @@ Report:
 ## Rules
 
 ALWAYS:
-- Attach `--prefix cli` to `test:package` — the bare form is a false gate, not a failing one
-- Add a command here when CI gains one, so the two cannot disagree
+- Compare the CI run SHA against `git rev-parse HEAD` before reading its verdict
+- Attach `--prefix cli` to `test:package` in the local fallback — the bare form is a false gate, not a failing one
+- Say in the report which evidence the gate accepted, CI or local, and why
+- Add a job here when CI gains one, so the gate and the merge cannot disagree
 
 NEVER:
 - Synthesise a `node` id for something the graph does not model
 - Record a rename as a deletion or a supersession
 - Loosen a `find` anchor to get past a `REFUSED=` result
 - Produce a review verdict — a close-out that grades its own delivery proves nothing
+- Accept a check that is skipped, queued, neutral or cancelled as a pass — only `success` is one
