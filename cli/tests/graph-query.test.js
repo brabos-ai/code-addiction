@@ -368,13 +368,13 @@ describe('history — when this arrived, and what it replaced', () => {
   });
 
   it('matches an ENTRY-level node, which is the shape delivered.sh actually writes', () => {
-    // The regression this pins is a real one, found by writing an entry with
-    // the real script and reading it back. serialize() in delivered.sh rebuilds
-    // every item as exactly {what, at, find}, so an item-level `node` is
-    // accepted by `write` and silently dropped. A reader that matched on items
-    // alone would therefore match NOTHING any writer ever produced — and a
-    // fixture that hand-writes the JSONL, as the levels above do, hides that
-    // completely.
+    // The shape delivered.sh actually emits, and the one that matters.
+    // The schema puts `node` on the RECORD and defines an item as exactly
+    // {what, at, find}, so a node inside an item is normalised away on write —
+    // correct behaviour, pinned from the other side in delivered.bats. A reader
+    // matching on items ALONE would therefore match nothing any writer ever
+    // produced, and the hand-written fixtures above hide that completely
+    // because they emit JSONL no writer would.
     const repo2 = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-entry-'));
     execFileSync('git', ['init', '-q'], { cwd: repo2 });
     fs.writeFileSync(path.join(repo2, 'x.md'), 'contains skillX_marker here');

@@ -296,21 +296,21 @@ function history(graph, ref, opts = {}) {
     try { return impact(graph, id, { depth: 1 }).length; } catch { return null; }
   };
 
-  // `node` IS READ AT BOTH LEVELS, and that is not defensiveness — it is the
-  // only shape that works today.
+  // `node` IS READ AT BOTH LEVELS, and the entry level is the one that matters.
   //
-  // The two designs disagree. The product schema lists `node` in the RECORD
-  // field table; the internal entry-join design puts it on each ITEM, "present
-  // when, and only when, that item is a graph node". delivered.sh implemented
-  // the record reading: serialize() rebuilds every item as exactly
-  // {what, at, find}, so an item-level `node` submitted to `write` is silently
-  // dropped and only the entry-level one survives a round trip.
+  // THE SCHEMA PUTS `node` ON THE RECORD. add-doc-schemas/references/
+  // delivery-index.md lists it in "The record" table and defines an item as
+  // exactly {what, at, find}, and delivered.sh implements that: a `node` inside
+  // an item is normalised away on write. That is correct, not a defect — do not
+  // "fix" the writer to preserve it. delivered.bats pins both directions.
   //
-  // Matching on items alone therefore matches NOTHING that delivered.sh wrote,
-  // which is how this was found — by writing a real entry and reading it back,
-  // not by a fixture that hand-wrote the JSONL the writer would never produce.
-  // Fixing the writer is a PRODUCT-layer change this command may not make, so
-  // the reader accepts both and the gap is reported upward.
+  // The item level is read anyway for two honest reasons: `read` returns
+  // whatever a line carries, and a human may hand-write one (the reference says
+  // humans author lines for `superseded`); and an internal design note specifies
+  // per-item ids, so if that ever becomes the schema this reader already agrees
+  // with it. Matching on items ALONE would match nothing any writer produces —
+  // which is how this was nearly shipped, from a fixture that hand-wrote JSONL
+  // the writer would never emit.
   const carriesNode = (e) =>
     e.node === node || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node));
 

@@ -194,15 +194,15 @@ For each path in STEP 1.3's diff:
 
 | Diff status | Becomes |
 |---|---|
-| Added **and** a graph node | An item, `node` filled with `<layer>/<kind>/<name>` |
-| Added and **not** a node (a top-level script, an `.opencode/` adapter, `CLAUDE.md`, `.gitignore`) | An item, `node` **omitted** — never synthesised |
+| Added **and** a graph node | An item — and the candidate for the entry's `node`, see below |
+| Added and **not** a node (a top-level script, an `.opencode/` adapter, `CLAUDE.md`, `.gitignore`) | An item like any other. The graph does not model it, and nothing is synthesised |
 | Deleted, matching an existing entry's item | Drives a supersession — see 3.3. **Never an item on this entry** |
 | Renamed (`R###`) | **Never a deletion.** A `changed` item on the existing entry, whose `at` the repair fixes. Nothing is superseded |
 | Modified | **Not an item on its own.** Name the behaviour it introduced, or it contributes nothing |
 
 **An internal item is a created artefact, or a named behaviour introduced into an existing one.** The third kind is what makes a modification-only plan representable, and it is not a loosening: a behaviour worth indexing has a **name in the source** — a key, a flag, a function, a marker — and that name is what other documents cite and what goes stale. A change with no nameable surface belongs in the changelog, not the index.
 
-**`node` is omitted, never faked.** Top-level `scripts/`, `CLAUDE.md`, `.gitignore` and `.opencode/` produce no graph nodes. A synthesised id would resolve to nothing and is worse than an honestly absent field.
+**`node` is omitted, never faked.** Top-level `scripts/`, `CLAUDE.md`, `.gitignore` and `.opencode/` produce no graph nodes. A synthesised id would resolve to nothing in `graph.js` and is worse than an honestly absent field.
 
 Entry fields specific to this layer:
 
@@ -212,9 +212,9 @@ Entry fields specific to this layer:
 - `origin`: `docs/plans/<id>.md`
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
-⛔ **`node` on the entry is what survives; `node` on an item does not.** `delivered.sh` rebuilds every item as exactly `{what, at, find}`, so an item-level `node` is accepted by `write` and then silently dropped, and `graph.js history` would never find the entry again. Set the entry-level field. Item-level `node` may also be authored — it is what the design specifies and `history` reads both — but **nothing may depend on it round-tripping** until the writer preserves it.
+⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.sh` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
 
-**One consequence, stated rather than discovered later:** a delivery that creates several artefacts is findable by its primary node only. Author `words` so the others are still reachable by text.
+**One consequence, stated rather than discovered later:** one `node` per entry means a delivery that creates several artefacts is findable by its primary one only. Choose the artefact a reader would look the delivery up by, and author `words` so the others stay reachable by text.
 
 ### 3.3 Supersession is proposed, never written silently
 
