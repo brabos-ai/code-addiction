@@ -1,6 +1,6 @@
 # Plan: Plain Language Rule — a managed CLAUDE.md block plus a Voice rule that bans invented figures of speech
 
-> **Status:** draft
+> **Status:** implemented
 > **Type:** skill + command
 > **Created:** 2026-09-08
 > **Author:** Maicon + Claude (ADD Strategy)
@@ -369,5 +369,6 @@ Specific gaps a reviewer must actively hunt:
 | Date | Change |
 |------|--------|
 | 2026-09-08 | Initial creation |
+| 2026-09-08 | Implemented on `feat/plain-language-rule`, F7 → F1 → F2 → F3 → F4 → F5 → F6, commits `df7064e..df60fd6`. Matrix 21/21 green, build.js clean, CLI suite 38 files / 855 tests passing. Three rulings in the build ledger, two of them corrections to this plan's own validation spec (L2.3 and L3.4). |
 | 2026-09-08 | Review v02 fixes: L1.8 no longer claims to be F3's "only" coverage (it contradicted L1.9's "second coverage" label); F3 and L1.8 now agree that the budget line states a single combined total, not two separate figures |
 | 2026-09-08 | Review v01 fixes: L1.8/L1.9 added so F3 has validation coverage (was the only uncovered F-block); F5 flagged as a plan-author scope *widening*, mirroring the two narrowing flags; F2 states why the 14-line cap is not the numeric advisory the Output Length Doctrine bans; the cap's feasibility recorded (13-line draft layout, elements 6+7 share a bullet, dropping an element is not a permitted trade-off); F3 also corrects the stale "~15 lines" figure to 17; F4 pluralises STEP 6's verbatim-copy bullet |
