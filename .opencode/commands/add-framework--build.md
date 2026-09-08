@@ -198,8 +198,9 @@ framwork/.codeadd/skills/                                      # Reference of ex
 Direct-build mode (no plan) has no F-blocks, so it has no ledger: skip to 4.4.
 
 **Tracked, not scratch.** It carries the rulings, and a reviewer who cannot see what was decided on their
-behalf cannot review it. `docs/` is versioned like any other directory, so the ledger is committed with the
-work it records — there is nothing to force-add.
+behalf cannot review it. `docs/plans/` is gitignored, so the ledger is LOCAL — it never reaches a
+reviewer on its own. That is what makes STEP 7.1 mandatory: every `Ruling:` line has to be carried out
+of the ledger and into the completion report, or the decision dies on this machine.
 
 **Append-only, one line per event, identity on the first line:**
 

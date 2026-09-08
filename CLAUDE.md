@@ -28,7 +28,7 @@ Development tools that build and maintain the framework itself. `.claude/` is ca
 | Commands | `.claude/commands/*.md` — namespace `add-framework--*`, sub-prefixes `self-` (internal infrastructure) and `shared-` (either context) |
 | Skills | `.claude/skills/` — also discovered natively by OpenCode |
 | Agents | `.claude/agents/` — OpenCode adapters use `mode: subagent` and `permission` frontmatter |
-| Plans | `docs/plans/` — versioned like any other directory |
+| Plans | `docs/plans/` — gitignored working artefacts, local only |
 
 ### Internal commands
 

@@ -319,7 +319,7 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 | The merged branch, local and remote | `docs/brainstorming/` | Read by the plan and brainstorm commands |
 | `docs/evidence/` files for this plan | `docs/changelog/` | The human narrative record; its retirement is out of scope |
 
-**`docs/evidence/` is the only class with no post-merge reader.** That is a thin harvest, and it should be. `docs/` is versioned like any other directory, so removing an evidence file is a deletion in git, not the disappearance of an ignored file — everything else under `docs/` stays.
+**`docs/evidence/` is the only class with no post-merge reader.** That is a thin harvest, and it should be. `docs/plans/`, `docs/brainstorming/` and `docs/evidence/` are gitignored working artefacts, so this removes local files and touches no commit; `docs/changelog/` and `docs/delivered.jsonl` are tracked and are never removed here.
 
 ---
 
