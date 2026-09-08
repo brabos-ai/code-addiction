@@ -98,11 +98,26 @@ Listen for:
 - Type hint (command / skill / script / workflow / product / architecture)
 - Scope signal (single artefact vs. multi-topic)
 
-### 1.2 Dispatch Framework Discovery Agent (SILENT)
+### 1.2 Ask the Delivery Index, Then Dispatch Framework Discovery (SILENT)
 
-Dispatch `@framework-discovery-agent` with:
+**Ask the index BEFORE dispatching the agent. This command is the one most likely to re-invent something that already shipped and was dropped.**
+
+For each artefact name the topic plausibly touches:
+
+```bash
+node scripts/graph.js history <artefact-name>
+```
+
+The index answers a question the graph cannot: **was this built before, and was it dropped?** The graph describes what exists **today**; it holds no time axis and is rebuilt from scratch on every build. A `gone` or `superseded` entry is the most valuable answer this step can return — it means the idea was tried, and it points at what replaced it.
+
+If the verb reports the index unavailable → say so and continue. An absent index means no close-out has run yet, which is information, not a failure.
+
+Then dispatch `@framework-discovery-agent` with:
 - `topic`: captured topic from STEP 1.1
 - `scope`: `both`
+- `prior_deliveries`: the resolved entries from the lookup above — id, status, name and what each item was — or `none`
+
+**The agent parses nothing.** Its `Glob, Read` allowlist is untouched and it gets no new file: resolved results travel in the dispatch payload, exactly as selected context already does. A third parser of the index, in an agent's head, is what this avoids.
 
 DO NOT show the agent's raw report verbatim to the user. Use the report internally as grounding context for the rest of the session.
 
