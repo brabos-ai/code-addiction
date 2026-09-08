@@ -33,9 +33,27 @@ IF {{addpath:wiki/index.md}} exists:
   Load skill {{skill:add-wiki-maintenance/SKILL.md}} and execute its full update
   discipline (evidence chain, computed candidates, impact plan, surgical edits,
   per-page stamp bumps, hub sync, .meta.json advance, report).
+  THEN run the managed-block tasks of STEP 6 — items 1, 4 and 5 of its prompt —
+  followed by all of STEP 7.
 ELSE:
   No wiki exists yet — fall back to full generation (STEP 1 onward).
 ```
+
+**Why update mode reaches CLAUDE.md at all.** `add-wiki-maintenance` never writes that file,
+by its own rule. Without these two lines the managed blocks land only on a first generation,
+so every project that has already run this command once — which is every project with a wiki —
+would never receive them, and never receive a refresh when their text changes.
+
+```
+IF invoked as `/add.wiki update`:
+  ⛔ DO NOT: Regenerate the Architecture Contract section
+  ⛔ DO NOT: Regenerate the Technical Spec section
+  ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
+  ⛔ DO NOT: Dispatch the STEP 6 agent for anything beyond items 1, 4 and 5
+  ✅ DO: Replace-or-append the two managed blocks, then copy the file per STEP 7
+```
+
+Update mode is surgical everywhere else, and it stays surgical here.
 
 ---
 

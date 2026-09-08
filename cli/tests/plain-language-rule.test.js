@@ -229,13 +229,23 @@ describe('L3 — add.wiki wiring', () => {
     }
   });
 
-  it('L3.4 — update mode reaches the managed blocks without regenerating the derived sections', () => {
+  /**
+   * The plan asked this level to assert that update mode never NAMES the derived
+   * sections. That proxy forbids the clearest instruction there is — an explicit
+   * prohibition — and the framework's own command-authoring rules require exactly
+   * that form. So the level asserts the prohibition instead of its absence.
+   */
+  it('L3.4 — update mode reaches the managed blocks and is forbidden the derived sections', () => {
     const modes = section(ADD_WIKI, '## Invocation Modes');
     expect(modes).not.toBeNull();
     expect(modes, 'update mode must run the managed-block part of STEP 6').toMatch(/STEP 6/);
     expect(modes, 'update mode must run STEP 7').toMatch(/STEP 7/);
-    expect(modes, 'update mode must not regenerate the Architecture Contract').not.toContain('Architecture Contract');
-    expect(modes, 'update mode must not regenerate the Technical Spec').not.toContain('Technical Spec');
+    expect(modes, 'regenerating the Architecture Contract must be forbidden outright').toMatch(
+      /⛔ DO NOT:[^\n]*Architecture Contract/,
+    );
+    expect(modes, 'regenerating the Technical Spec must be forbidden outright').toMatch(
+      /⛔ DO NOT:[^\n]*Technical Spec/,
+    );
   });
 
   it('L3.5 — REGRESSION GUARD: add-wiki-maintenance still refuses CLAUDE.md', () => {
