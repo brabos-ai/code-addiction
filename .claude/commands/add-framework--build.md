@@ -201,7 +201,9 @@ framwork/.codeadd/skills/                                      # Reference of ex
 Direct-build mode (no plan) has no F-blocks, so it has no ledger: skip to 4.4.
 
 **Tracked, not scratch.** It carries the rulings, and a reviewer who cannot see what was decided on their
-behalf cannot review it. `docs/plans/` is already where this repo force-adds the artefacts that must survive.
+behalf cannot review it. `docs/plans/` is gitignored, so the ledger is LOCAL — it never reaches a
+reviewer on its own. That is what makes STEP 7.1 mandatory: every `Ruling:` line has to be carried out
+of the ledger and into the completion report, or the decision dies on this machine.
 
 **Append-only, one line per event, identity on the first line:**
 
@@ -564,7 +566,6 @@ touched:
 | added or changed a feature flag | the Feature Injection System table |
 | added or changed a plugin, fragment or injection point | the Plugin System section |
 | added a schema, contract or sidecar | the section that documents that mechanism |
-| force-added something under `docs/` | the tracking-policy paragraph — **and say WHY**, which that paragraph explicitly requires |
 
 **Discipline: edit what this build changed, nothing else.**
 
