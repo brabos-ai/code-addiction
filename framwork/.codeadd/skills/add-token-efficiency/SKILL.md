@@ -20,6 +20,7 @@ For doc-specific concerns (schemas, depth floors, output-length doctrine, valida
 ## When NOT to use
 
 - Output-length decisions (word/char caps, depth floors) → use `{{skill:add-doc-schemas/SKILL.md}}`
+- Prose voice — tone, figurative language, what a sentence may say → use `{{skill:add-doc-schemas/SKILL.md}}`
 - CLAUDE.md style and content rules → use `{{skill:add-claude-md-style/SKILL.md}}`
 - ID format / branch naming → use `{{skill:add-id-convention/SKILL.md}}`
 

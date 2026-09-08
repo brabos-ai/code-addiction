@@ -45,7 +45,7 @@ Facts the AI needs in **every session**, not available elsewhere:
 
 ## Format Rules
 
-**Target:** 80-150 lines total (the managed Project Knowledge Base block is ~15 lines and is accounted for within this budget).
+**Target:** 80-150 lines total. The two managed blocks — Project Knowledge Base (17 lines) and Writing Style (13 lines) — are 31 lines together and are accounted for within this budget, leaving 49-119 lines for everything else.
 
 ### JSON = DATA. Markdown = INSTRUCTIONS.
 
@@ -181,6 +181,44 @@ Any updater agent regenerating this file MUST detect and DELETE a legacy
 "Implementation Patterns" section (or any section referencing `project-patterns` or
 `pattern-search.sh`) before writing the managed block.
 
+### Writing Style (managed block)
+
+Written and owned by `{{cmd:add.wiki}}` STEP 6, alongside the Project Knowledge Base
+block and under the same rules: `[//]: # (...)` markers rather than HTML comments,
+replace-or-append semantics, copied verbatim and never paraphrased.
+
+It is the compressed form of the figurative-language rule in
+`{{skill:add-doc-schemas/SKILL.md}}` → Universal Rules → Voice. That skill is the
+authority; this block exists because it is loaded on demand and `CLAUDE.md` is in
+context every session, which is what a rule binding chat, docs, commits and code
+comments needs.
+
+```markdown
+[//]: # (codeadd-style:start)
+
+## Writing Style
+
+Describe the action, the mechanism or the state directly. Never put a figure of speech in its place.
+
+- Applies to chat, docs, commit messages, PR descriptions, code comments and identifiers.
+- Applies to the writing, not to the language of this rule — it holds in every output language.
+- Established technical terms of figurative origin (branch, tree, cache, pipeline, parent, orphan) are the literal names of their concepts. Keep them.
+- Test each sentence: does it name the action, or name something the action resembles? Replace a resemblance with the action.
+- Not a list of banned words. One example of the device: "confirm the tests bite" → "run the tests and check they fail against the broken code".
+
+[//]: # (codeadd-style:end)
+```
+
+**Hard cap: 14 lines, both markers included.** This is a fixed verbatim block, not
+generated prose, so the cap is a budget line rather than the numeric advisory the
+output-length doctrine bans. The bullets run long on purpose: wrapping them at the
+usual width would double the line count against no reduction in tokens.
+
+**The block carries no framework artefact name, no `{{...}}` variable and no HTML
+comment.** A variable would resolve per provider and land a wrong path in the user's
+file; an artefact name would fail the build's prose relationship gate; an HTML comment
+would be stripped at build.
+
 ## Validation Checklist
 
 Before finalizing any generated CLAUDE.md:
@@ -191,6 +229,7 @@ Before finalizing any generated CLAUDE.md:
 - [ ] Technical Spec uses compact JSON, one object per line?
 - [ ] Validation Gates block present using minified JSON when gates detected; section omitted entirely when none (no empty `{}`); `format` only when non-mutating?
 - [ ] Project Knowledge Base managed block present (`[//]: # (codeadd-wiki:start)` … `[//]: # (codeadd-wiki:end)`), and no legacy unmarked "Implementation Patterns" section remains?
+- [ ] Writing Style managed block present (`[//]: # (codeadd-style:start)` … `[//]: # (codeadd-style:end)`), 14 lines or fewer, carrying no `{{...}}` variable and no framework artefact name?
 - [ ] No section explaining a single concept in >5 lines?
 - [ ] No anti-patterns: full frontend/backend/database patterns, API route lists, component/directory trees, inline code examples, feature/business-flow docs, security implementation details, domain type/struct docs, worker/job-queue details, version-specific dependency lists?
 
