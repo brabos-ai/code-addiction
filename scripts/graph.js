@@ -9,6 +9,7 @@
  *   node scripts/graph.js path         <from-id> <to-id> [--json]
  *   node scripts/graph.js orphans      [--json]
  *   node scripts/graph.js stats        [--json]
+ *   node scripts/graph.js history      <node-id> [--layer product|internal] [--limit N] [--json]
  *
  * A node id is `<layer>/<kind>/<name>`, e.g. product/skill/add-doc-schemas.
  * A bare name is resolved when it is unambiguous.
@@ -21,6 +22,8 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+// The file's first subprocess ever. See history() for why it is `bash <path>`.
+const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const DEFAULT_GRAPH = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
@@ -194,6 +197,144 @@ function stats(graph) {
 }
 
 // ---------------------------------------------------------------------------
+// History — the time axis, delegated
+// ---------------------------------------------------------------------------
+
+const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
+
+/** Flags `history` refuses outright. graph.js is query-only, by plan 0077. */
+const WRITING_FLAGS = new Set(['--repair', '--write', '--fix']);
+
+/**
+ * When this artefact was delivered, and what it replaced.
+ *
+ * THE READ IS DELEGATED, NEVER REIMPLEMENTED. `delivered.sh read` owns
+ * last-line-wins, corrupt-line tolerance and status ordering. Parsing the JSONL
+ * here in JavaScript would be a SECOND implementation of one format — plan
+ * 0075's whole subject, recreated inside the design that cites it as the
+ * lesson. Inlining the parse looks cleaner and is the likeliest future
+ * regression; this comment is the reason it must not happen.
+ *
+ * This verb owns the JOIN and nothing else:
+ *   index -> what existed, when it arrived, what it replaced   (time)
+ *   graph -> what depends on it today                          (structure)
+ *
+ * It NEVER writes. There is no `--repair` passthrough: `delivered.sh verify
+ * --repair` stays the single writing path.
+ *
+ * A missing `bash` or a missing script is REPORTED, never thrown. The same
+ * function runs inside the long-lived MCP server, where a throw kills every
+ * later query rather than the one that failed.
+ */
+function history(graph, ref, opts = {}) {
+  const node = resolve(graph, ref);
+
+  // `delivered.sh read` matches free text against id, name, words, items[].what
+  // and items[].find — NEVER against `node`. So the query is the bare name and
+  // the `node` filter below is what makes this an answer about the ARTEFACT
+  // rather than about the word.
+  const name = node.slice(node.lastIndexOf('/') + 1);
+
+  const unavailable = (reason, detail) => ({
+    node, name, entries: [], matched: 0, unavailable: { reason, detail },
+  });
+
+  // `script`, `cwd` and `bash` default to the real ones and are overridden only
+  // by the suite. Two of the four states this function must handle — the script
+  // absent, the interpreter absent — cannot be reached otherwise, because both
+  // exist in the repo that runs the tests.
+  const script = opts.script ?? DELIVERED_SH;
+  const cwd = opts.cwd ?? ROOT;
+  const bash = opts.bash ?? 'bash';
+
+  if (!fs.existsSync(script)) {
+    return unavailable('script-missing', `${script} does not exist`);
+  }
+
+  // `--layer` is passed STRAIGHT THROUGH to delivered.sh, never reimplemented
+  // as a filter here. It narrows which entries are read at all, which is what
+  // /add-framework--plan needs when it asks a product-layer question.
+  const args = [script, 'read', name, '--limit', String(opts.limit ?? 50)];
+  if (opts.layer) args.push('--layer', opts.layer);
+
+  // `bash <path>`, never direct execution. Windows is this repo's primary
+  // platform and a shebang file is not executable by process creation there.
+  const res = spawnSync(bash, args, { cwd, encoding: 'utf8', windowsHide: true });
+
+  if (res.error) {
+    // ENOENT here means the interpreter OR the working directory could not be
+    // found, and the two read identically in the error. Naming the cwd is what
+    // separates "this machine has no bash" from "that path does not exist".
+    const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
+    return unavailable(reason, `${res.error.message} (bash=${bash}, cwd=${cwd})`);
+  }
+
+  const stdout = res.stdout || '';
+  if (res.status !== 0) {
+    const key = (stdout + (res.stderr || '')).split('\n').find((l) => l.startsWith('ERROR=')) || '';
+    return unavailable('read-failed', key || `delivered.sh exited ${res.status}`);
+  }
+
+  // A line starting with `{` is an entry; anything else is a KEY=VALUE probe
+  // result. That split is delivered.sh's documented output contract.
+  const entries = [];
+  const keys = {};
+  for (const line of stdout.split('\n')) {
+    const l = line.trim();
+    if (!l) continue;
+    if (l.startsWith('{')) {
+      // One unparseable line is skipped, never fatal — the same tolerance the
+      // format reference requires of every reader.
+      try { entries.push(JSON.parse(l)); } catch { /* skipped */ }
+    } else {
+      const eq = l.indexOf('=');
+      if (eq > 0) keys[l.slice(0, eq)] = l.slice(eq + 1);
+    }
+  }
+
+  const dependentsOf = (id) => {
+    try { return impact(graph, id, { depth: 1 }).length; } catch { return null; }
+  };
+
+  // `node` IS READ AT BOTH LEVELS, and the entry level is the one that matters.
+  //
+  // THE SCHEMA PUTS `node` ON THE RECORD. add-doc-schemas/references/
+  // delivery-index.md lists it in "The record" table and defines an item as
+  // exactly {what, at, find}, and delivered.sh implements that: a `node` inside
+  // an item is normalised away on write. That is correct, not a defect — do not
+  // "fix" the writer to preserve it. delivered.bats pins both directions.
+  //
+  // The item level is read anyway for two honest reasons: `read` returns
+  // whatever a line carries, and a human may hand-write one (the reference says
+  // humans author lines for `superseded`); and an internal design note specifies
+  // per-item ids, so if that ever becomes the schema this reader already agrees
+  // with it. Matching on items ALONE would match nothing any writer produces —
+  // which is how this was nearly shipped, from a fixture that hand-wrote JSONL
+  // the writer would never emit.
+  const carriesNode = (e) =>
+    e.node === node || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node));
+
+  // Ordering is delivered.sh's contract (live -> changed -> superseded -> gone)
+  // and is preserved exactly. Re-sorting here would be a consumer re-ranking
+  // one shared structure, which is how two readers come to disagree.
+  const matched = entries.filter(carriesNode).map((e) => {
+    const out = {
+      ...e,
+      items: (Array.isArray(e.items) ? e.items : []).map((it) => (it && it.node
+        // Enriched only where the record already carries a node. An item
+        // without one is returned untouched — never with a fabricated id,
+        // which would resolve to nothing and be worse than an absent field.
+        ? { ...it, dependents: dependentsOf(it.node) }
+        : it)),
+    };
+    if (e.node) out.dependents = dependentsOf(e.node);
+    return out;
+  });
+
+  return { node, name, entries: matched, matched: matched.length, keys, unavailable: null };
+}
+
+// ---------------------------------------------------------------------------
 // Mermaid emission
 // ---------------------------------------------------------------------------
 
@@ -284,7 +425,7 @@ const DOCS_PROFILE = { kinds: ['command'], depth: 1 };
 const DOCS_DIAGRAM = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
 
 module.exports = {
-  loadGraph, resolve, impact, dependencies, neighbors, orphans, pathBetween, stats,
+  loadGraph, resolve, impact, dependencies, neighbors, orphans, pathBetween, stats, history,
   toMermaid, mermaidId,
   DEPENDENCY_TYPES, DEFAULT_GRAPH, DOCS_PROFILE, DOCS_DIAGRAM,
 };
@@ -301,7 +442,7 @@ function main(argv) {
   // args[1] and it was read as the root node, failing with `No node matches
   // "command"`. Any future valued flag must be added here or it breaks the same
   // way.
-  const VALUED = new Set(['--depth', '--kinds']);
+  const VALUED = new Set(['--depth', '--kinds', '--limit', '--layer']);
   const valueIndexes = new Set();
   argv.forEach((a, i) => { if (VALUED.has(a)) valueIndexes.add(i + 1); });
 
@@ -318,6 +459,8 @@ function main(argv) {
   }
   const depth = rawDepth === undefined ? undefined : Number(rawDepth);
   const kinds = valueOf('--kinds')?.split(',');
+  const rawLimit = valueOf('--limit');
+  const limit = rawLimit === undefined ? undefined : Number(rawLimit);
 
   const args = argv.filter((a, i) => !a.startsWith('--') && !valueIndexes.has(i));
 
@@ -374,8 +517,40 @@ function main(argv) {
         `layers ${JSON.stringify(s.byLayer)}\n` +
         'top hubs (most depended on):\n' +
         s.hubs.map((h) => `  ${String(h.dependents).padStart(3)}  ${h.id}`).join('\n'));
+    case 'history': {
+      // The verb has NO write path, so a writing flag is rejected rather than
+      // ignored. Silently dropping `--repair` would teach a caller that
+      // `graph.js` can repair the index, and the next caller would rely on it.
+      const writing = argv.filter((f) => WRITING_FLAGS.has(f));
+      if (writing.length) {
+        console.error(
+          `history never writes — ${writing.join(', ')} is not accepted.\n` +
+            'Run `bash framwork/.codeadd/scripts/delivered.sh verify --repair` instead.',
+        );
+        process.exitCode = 2;
+        return;
+      }
+      const h = history(graph, a, { limit, layer: valueOf('--layer') });
+      return emit(h, (r) => {
+        if (r.unavailable) {
+          return `history unavailable for ${r.node}: ${r.unavailable.reason} (${r.unavailable.detail})`;
+        }
+        if (!r.entries.length) return `no delivery recorded for ${r.node}`;
+        return `${r.matched} delivery entr(ies) for ${r.node}:\n` +
+          r.entries.map((e) => {
+            const items = e.items
+              .map((it) => `      ${it.what}  (${it.at})` +
+                (it.dependents === null || it.dependents === undefined ? '' : `  [${it.dependents} dependant(s)]`))
+              .join('\n');
+            return `  ${e.status.padEnd(10)} ${e.ts}  ${e.id}\n` +
+              `      ${e.name}` +
+              (e.superseded_by ? `\n      superseded by ${e.superseded_by}` : '') +
+              `\n${items}`;
+          }).join('\n');
+      });
+    }
     default:
-      console.error(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 18).join('\n')
+      console.error(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 19).join('\n')
         .replace(/^ \* ?/gm, ''));
       process.exitCode = 2;
   }

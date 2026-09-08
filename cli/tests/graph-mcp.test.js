@@ -82,7 +82,7 @@ describe('artefact-graph MCP server', () => {
     const tools = frames.find((f) => f.id === 2).result.tools;
 
     expect(tools.map((t) => t.name).sort())
-      .toEqual(['dependencies', 'impact', 'neighbors', 'orphans', 'path', 'stats']);
+      .toEqual(['dependencies', 'history', 'impact', 'neighbors', 'orphans', 'path', 'stats']);
     for (const t of tools) {
       expect(t.description, `${t.name} has no description`).toBeTruthy();
       expect(t.inputSchema.type).toBe('object');
@@ -134,5 +134,35 @@ describe('artefact-graph MCP server', () => {
   it('survives a malformed line without dying', async () => {
     const { frames } = await rpc([init, 'NOT JSON', { jsonrpc: '2.0', id: 7, method: 'tools/list' }]);
     expect(frames.find((f) => f.id === 7)?.result.tools).toBeTruthy();
+  });
+
+  it('exposes history, and answers it identically to the CLI module', async () => {
+    // CLAUDE.md's rule for this server, asserted rather than trusted: the CLI
+    // is the engine and MCP the wrapper, and both call the same module, so a
+    // divergence here means someone gave the wrapper its own logic.
+    const { frames } = await rpc([init, {
+      jsonrpc: '2.0', id: 8, method: 'tools/call',
+      params: { name: 'history', arguments: { node: 'add-doc-schemas' } },
+    }]);
+
+    const payload = JSON.parse(frames.find((f) => f.id === 8).result.content[0].text);
+    const { history, loadGraph } = await import(`file://${path.join(ROOT, 'scripts', 'graph.js')}`)
+      .then((m) => m.default ?? m);
+
+    expect(payload).toEqual(JSON.parse(JSON.stringify(history(loadGraph(), 'add-doc-schemas'))));
+    expect(payload.node).toBe('product/skill/add-doc-schemas');
+  });
+
+  it('keeps serving after a history call, whatever the index is doing', async () => {
+    // history is the only tool that spawns a subprocess. If it ever threw
+    // instead of reporting, this long-lived process would die and every later
+    // query with it — which is why the function reports and never throws.
+    const { frames } = await rpc([init, {
+      jsonrpc: '2.0', id: 9, method: 'tools/call',
+      params: { name: 'history', arguments: { node: 'add-doc-schemas' } },
+    }, { jsonrpc: '2.0', id: 10, method: 'tools/list' }]);
+
+    expect(frames.find((f) => f.id === 9).result.isError).toBeUndefined();
+    expect(frames.find((f) => f.id === 10).result.tools).toHaveLength(7);
   });
 });

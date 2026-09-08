@@ -848,7 +848,7 @@ describe('node inventory snapshot', () => {
     for (const n of nodes) byKind[n.kind] = (byKind[n.kind] || 0) + 1;
 
     expect(byKind).toEqual({
-      command: 24,
+      command: 25,
       skill: 44,
       agent: 28,
       // reference 68 -> 69, script 17 -> 18, fragment 23 -> 24: the delivery
@@ -861,7 +861,49 @@ describe('node inventory snapshot', () => {
     });
     // 204 -> 207: the three new nodes above. `declares` is unchanged — none of
     // the three carries a `<!-- uses: -->` block of its own.
-    expect(nodes).toHaveLength(207);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(96);
+    //
+    // 207 -> 208 and command 24 -> 25: /add-framework--done, the internal
+    // close-out (plan 2026-09-07T162415-SELF-PLAN--delivery-index-internal,
+    // S2). It DOES carry a `<!-- uses: -->` block, so `declares` moves with it.
+    expect(nodes).toHaveLength(208);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(97);
   });
+});
+
+/**
+ * The one row of the close-out's RED matrix a machine can check.
+ *
+ * The other fifteen describe runtime behaviour of an LLM-driven markdown
+ * command — it stops, it writes nothing, it asks before deleting — which no
+ * unit test can assert. This one is a string, and it guards the hazard the
+ * design named specifically: `test:package` exists ONLY in cli/package.json,
+ * so the bare form fails with "Missing script", which is a FALSE gate and
+ * worse than a failing one.
+ */
+describe('/add-framework--done — the CI gate it reproduces', () => {
+  const sources = [
+    path.join(ROOT, '.claude', 'commands', 'add-framework--done.md'),
+    path.join(ROOT, '.opencode', 'commands', 'add-framework--done.md'),
+  ];
+
+  for (const file of sources) {
+    const label = path.relative(ROOT, file).split(path.sep).join('/');
+
+    it(`${label} runs test:package through --prefix cli`, () => {
+      const src = fs.readFileSync(file, 'utf8');
+
+      expect(src).toContain('npm --prefix cli run test:package');
+      // A bare `npm run test:package` anywhere in the file would be the false
+      // gate, whatever else the file also says.
+      expect(src).not.toMatch(/(?<!--prefix cli )\bnpm run test:package\b/);
+    });
+
+    it(`${label} carries all four CI commands`, () => {
+      const src = fs.readFileSync(file, 'utf8');
+
+      for (const cmd of ['node scripts/build.js', 'npm test', 'npm run test:scripts']) {
+        expect(src, `${label} is missing the ${cmd} gate`).toContain(cmd);
+      }
+    });
+  }
 });

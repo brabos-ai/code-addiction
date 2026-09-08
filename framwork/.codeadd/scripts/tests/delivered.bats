@@ -668,3 +668,87 @@ node_free_path() {
   [[ "$output" == *"REPAIRED=0"* ]]
   [ ! -f "$INDEX" ]
 }
+
+# ─── `node` — the optional join field, at the level the schema defines ───────
+#
+# Added after a build read design doc -07 (which puts `node` on each ITEM) as
+# the authority and reported the script as dropping data. It is not: the format
+# reference OWNS the shape, it defines the item as exactly {what, at, find} and
+# lists `node` in "The record" table, and serialize() implements that exactly.
+#
+# The field had ZERO coverage at either level, which is why a correct
+# implementation could be read as a defect and would very likely have been
+# "fixed" into a spec violation. These levels pin the shape the reference
+# defines, so that change fails loudly instead of shipping.
+
+@test "node: an ENTRY-level node round-trips through write" {
+  valid_source
+  commit_all
+  valid_record | sed 's/"items":/"node":"product\/skill\/add-doc-schemas","items":/' \
+    > "$TEST_TEMP_DIR/record.json"
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 0 ]
+
+  run head -1 "$INDEX"
+  [[ "$output" == *'"node":"product/skill/add-doc-schemas"'* ]]
+}
+
+@test "node: an ITEM-level node is normalised away — the item is {what, at, find}" {
+  valid_source
+  commit_all
+  # The reference: "Each item is {what, at, find}". A caller may submit more;
+  # the written line carries the schema's three and nothing else.
+  valid_record | sed 's/"find":"authGoogleHandler"/"find":"authGoogleHandler","node":"product\/skill\/add-doc-schemas"/' \
+    > "$TEST_TEMP_DIR/record.json"
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 0 ]
+
+  run head -1 "$INDEX"
+  # The item object must not carry it. The entry did not declare one either, so
+  # the substring must be absent from the whole line.
+  [[ "$output" != *'"node"'* ]]
+}
+
+@test "node: an entry-level node SURVIVES --repair, so the join is not lost on a move" {
+  # The failure this guards: repair re-serialises the entry, so anything
+  # serialize() omits dies on the first anchor move. A dropped `node` would
+  # break `graph.js history` for that artefact silently and permanently.
+  src src/auth/google.ts 'export function authGoogleHandler() { return 1; }'
+  commit_all
+  valid_record | sed 's/"items":/"node":"product\/skill\/add-doc-schemas","items":/' \
+    > "$TEST_TEMP_DIR/record.json"
+  bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json" >/dev/null
+
+  mkdir -p src/auth2
+  git mv src/auth/google.ts src/auth2/google.ts >/dev/null 2>&1 || mv src/auth/google.ts src/auth2/google.ts
+  commit_all moved
+
+  run bash "$SCRIPTS_DIR/delivered.sh" verify --repair
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"REPAIRED=1"* ]]
+
+  run tail -1 "$INDEX"
+  [[ "$output" == *'"by":"verify"'* ]]
+  [[ "$output" == *'"at":"src/auth2/google.ts"'* ]]
+  [[ "$output" == *'"node":"product/skill/add-doc-schemas"'* ]]
+}
+
+@test "node: a superseded entry is never re-serialised, so superseded_by cannot be lost" {
+  # verifyEntry returns no repairs for `superseded`, so --repair must skip it
+  # entirely. If it ever re-serialised one, copy.status='changed' would erase
+  # both the status and its superseded_by pointer — the one record the index
+  # exists to keep.
+  src a.md 'marker_beta lives here'
+  commit_all
+  write_index "$(entry E2 superseded old old a.md marker_beta ',"superseded_by":"E9"')"
+
+  run bash "$SCRIPTS_DIR/delivered.sh" verify --repair
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"E2=superseded"* ]]
+  [[ "$output" == *"REPAIRED=0"* ]]
+
+  [ "$(index_lines)" = "1" ]
+  run head -1 "$INDEX"
+  [[ "$output" == *'"superseded_by":"E9"'* ]]
+  [[ "$output" == *'"status":"superseded"'* ]]
+}

@@ -139,6 +139,9 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 docs/*
+!docs/delivered.jsonl
+!docs/changelog/
+!docs/changelog/**
 .agents/*
 .opencode/*
 !.opencode/

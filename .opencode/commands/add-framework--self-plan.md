@@ -129,6 +129,16 @@ node scripts/graph.js dependencies <artefact-name>   # what it needs
 node scripts/graph.js path <from> <to>               # how two artefacts connect
 ```
 
+Then add the **time axis** beside the structure:
+
+```bash
+node scripts/graph.js history <artefact-name>        # when it arrived, what it replaced
+```
+
+**The graph says what depends on this today; the index says what the last delivery here replaced.** The graph is rebuilt on every build and holds no history, so a `superseded` entry is the only place a plan can learn that the thing it is about to extend already replaced something — and that the replaced thing may still be cited elsewhere.
+
+An unavailable index is reported and does not block the analysis.
+
 Still answer by hand: **does this change affect `CLAUDE.md`?** The graph does not
 model it.
 
