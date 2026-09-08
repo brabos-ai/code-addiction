@@ -48,15 +48,26 @@ function extractBlock(source, startMarker, endMarker) {
   return lines.slice(from, to + 1);
 }
 
-/** The H2/H3 section named, up to the next heading at the same or higher level. */
+/**
+ * The H2/H3 section named, up to the next heading at the same or higher level.
+ *
+ * FENCE-AWARE, and that is load-bearing rather than tidy. Both files embed fenced
+ * templates that carry their own H2s — `## Project Knowledge Base` inside the block
+ * template, `## ROLE` inside add.wiki's agent prompt. A naive `^## ` scan stops at the
+ * first of those and silently returns a fragment, so every assertion below it would
+ * pass by measuring nothing. This is the same trap the framework already documents for
+ * the `## Materializes` contract block.
+ */
 function section(source, heading) {
   const level = heading.match(/^#+/)[0].length;
   const lines = source.split('\n');
   const from = lines.findIndex((l) => l.trim() === heading);
   if (from === -1) return null;
   const stop = new RegExp(`^#{1,${level}} `);
+  let fenced = false;
   for (let i = from + 1; i < lines.length; i += 1) {
-    if (stop.test(lines[i])) return lines.slice(from, i).join('\n');
+    if (/^\s*```/.test(lines[i])) fenced = !fenced;
+    else if (!fenced && stop.test(lines[i])) return lines.slice(from, i).join('\n');
   }
   return lines.slice(from).join('\n');
 }

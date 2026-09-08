@@ -181,6 +181,44 @@ Any updater agent regenerating this file MUST detect and DELETE a legacy
 "Implementation Patterns" section (or any section referencing `project-patterns` or
 `pattern-search.sh`) before writing the managed block.
 
+### Writing Style (managed block)
+
+Written and owned by `{{cmd:add.wiki}}` STEP 6, alongside the Project Knowledge Base
+block and under the same rules: `[//]: # (...)` markers rather than HTML comments,
+replace-or-append semantics, copied verbatim and never paraphrased.
+
+It is the compressed form of the figurative-language rule in
+`{{skill:add-doc-schemas/SKILL.md}}` → Universal Rules → Voice. That skill is the
+authority; this block exists because it is loaded on demand and `CLAUDE.md` is in
+context every session, which is what a rule binding chat, docs, commits and code
+comments needs.
+
+```markdown
+[//]: # (codeadd-style:start)
+
+## Writing Style
+
+Describe the action, the mechanism or the state directly. Never put a figure of speech in its place.
+
+- Applies to chat, docs, commit messages, PR descriptions, code comments and identifiers.
+- Applies to the writing, not to the language of this rule — it holds in every output language.
+- Established technical terms of figurative origin (branch, tree, cache, pipeline, parent, orphan) are the literal names of their concepts. Keep them.
+- Test each sentence: does it name the action, or name something the action resembles? Replace a resemblance with the action.
+- Not a list of banned words. One example of the device: "confirm the tests bite" → "run the tests and check they fail against the broken code".
+
+[//]: # (codeadd-style:end)
+```
+
+**Hard cap: 14 lines, both markers included.** This is a fixed verbatim block, not
+generated prose, so the cap is a budget line rather than the numeric advisory the
+output-length doctrine bans. The bullets run long on purpose: wrapping them at the
+usual width would double the line count against no reduction in tokens.
+
+**The block carries no framework artefact name, no `{{...}}` variable and no HTML
+comment.** A variable would resolve per provider and land a wrong path in the user's
+file; an artefact name would fail the build's prose relationship gate; an HTML comment
+would be stripped at build.
+
 ## Validation Checklist
 
 Before finalizing any generated CLAUDE.md:
