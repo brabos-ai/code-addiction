@@ -367,6 +367,38 @@ describe('history — when this arrived, and what it replaced', () => {
       .toEqual(['E-live', 'E-gone']);
   });
 
+  it('matches an ENTRY-level node, which is the shape delivered.sh actually writes', () => {
+    // The regression this pins is a real one, found by writing an entry with
+    // the real script and reading it back. serialize() in delivered.sh rebuilds
+    // every item as exactly {what, at, find}, so an item-level `node` is
+    // accepted by `write` and silently dropped. A reader that matched on items
+    // alone would therefore match NOTHING any writer ever produced — and a
+    // fixture that hand-writes the JSONL, as the levels above do, hides that
+    // completely.
+    const repo2 = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-entry-'));
+    execFileSync('git', ['init', '-q'], { cwd: repo2 });
+    fs.writeFileSync(path.join(repo2, 'x.md'), 'contains skillX_marker here');
+    fs.mkdirSync(path.join(repo2, 'docs'), { recursive: true });
+    fs.writeFileSync(
+      path.join(repo2, 'docs', 'delivered.jsonl'),
+      line({
+        v: 1, ts: '2026-04-01T00:00:00Z', id: 'E-entry-node', layer: 'internal', by: 'done',
+        status: 'live', name: 'entry-level node', words: 'entry level',
+        commits: ['ddddddd'], origin: 'docs/plans/E-entry-node.md',
+        node: 'product/skill/skillX',
+        // Exactly what serialize() emits: no `node` anywhere in the items.
+        items: [{ what: 'skillX', at: 'x.md', find: 'skillX_marker' }],
+      }),
+    );
+
+    const r = run('product/skill/skillX', { cwd: repo2 });
+
+    expect(r.entries.map((e) => e.id)).toEqual(['E-entry-node']);
+    expect(r.entries[0].dependents).toBe(2);
+    // The item stays untouched — no node on it means no fabricated one.
+    expect(r.entries[0].items[0].dependents).toBeUndefined();
+  });
+
   it('never writes — the index is byte-identical after a read', () => {
     const index = path.join(repo, 'docs', 'delivered.jsonl');
     const before = fs.readFileSync(index);

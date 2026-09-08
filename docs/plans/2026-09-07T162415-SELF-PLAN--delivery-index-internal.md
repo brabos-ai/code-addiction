@@ -1,6 +1,6 @@
 # Plan: Delivery Index — Internal Layer
 
-> **Status:** draft
+> **Status:** implemented
 > **Scope:** cross-cutting
 > **Created:** 2026-09-07
 
@@ -162,6 +162,21 @@ The **record itself** is owned by `2026-09-07T123919-delivery-index-02-product-s
 
 ## Next Steps
 
-/add-framework--self-build delivery-index-internal
+**Implemented** on 2026-09-07 by `/add-framework--self-build delivery-index-internal`, on branch
+`feat/delivery-index-internal`. Execution Order step 0 was satisfied before the run: the product
+plan's F3 had already landed `delivered.sh`. Every ruling is in
+`docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal--ledger.md`.
 
-⛔ **Blocked until `/add-framework--build delivery-index` has landed `delivered.sh`** — see Execution Order step 0.
+What remains, and neither is part of this delivery:
+
+1. **`/add-framework--shared-review`** on this plan, producing the `--review-vNN.md` companion that
+   `/add-framework--done` STEP 2.3 requires. Without it the close-out cannot run at all.
+2. **The force-add retirement.** Its trigger is unchanged and has not fired:
+
+   ```bash
+   git show main:docs/delivered.jsonl | grep '"layer":"internal"' | grep '"by":"done"'
+   ```
+
+   Non-empty → the CLAUDE.md `docs/` policy edit is unblocked. Both greps are required on the same
+   line: the product layer's `/add.done` also writes `"by":"done"`, so a check without the `layer`
+   filter fires on a product entry and causes the premature retirement it exists to prevent.

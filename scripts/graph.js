@@ -262,8 +262,11 @@ function history(graph, ref, opts = {}) {
   const res = spawnSync(bash, args, { cwd, encoding: 'utf8', windowsHide: true });
 
   if (res.error) {
+    // ENOENT here means the interpreter OR the working directory could not be
+    // found, and the two read identically in the error. Naming the cwd is what
+    // separates "this machine has no bash" from "that path does not exist".
     const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
-    return unavailable(reason, res.error.message);
+    return unavailable(reason, `${res.error.message} (bash=${bash}, cwd=${cwd})`);
   }
 
   const stdout = res.stdout || '';
@@ -293,20 +296,40 @@ function history(graph, ref, opts = {}) {
     try { return impact(graph, id, { depth: 1 }).length; } catch { return null; }
   };
 
+  // `node` IS READ AT BOTH LEVELS, and that is not defensiveness — it is the
+  // only shape that works today.
+  //
+  // The two designs disagree. The product schema lists `node` in the RECORD
+  // field table; the internal entry-join design puts it on each ITEM, "present
+  // when, and only when, that item is a graph node". delivered.sh implemented
+  // the record reading: serialize() rebuilds every item as exactly
+  // {what, at, find}, so an item-level `node` submitted to `write` is silently
+  // dropped and only the entry-level one survives a round trip.
+  //
+  // Matching on items alone therefore matches NOTHING that delivered.sh wrote,
+  // which is how this was found — by writing a real entry and reading it back,
+  // not by a fixture that hand-wrote the JSONL the writer would never produce.
+  // Fixing the writer is a PRODUCT-layer change this command may not make, so
+  // the reader accepts both and the gap is reported upward.
+  const carriesNode = (e) =>
+    e.node === node || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node));
+
   // Ordering is delivered.sh's contract (live -> changed -> superseded -> gone)
   // and is preserved exactly. Re-sorting here would be a consumer re-ranking
   // one shared structure, which is how two readers come to disagree.
-  const matched = entries
-    .filter((e) => Array.isArray(e.items) && e.items.some((it) => it && it.node === node))
-    .map((e) => ({
+  const matched = entries.filter(carriesNode).map((e) => {
+    const out = {
       ...e,
-      items: e.items.map((it) => (it && it.node
+      items: (Array.isArray(e.items) ? e.items : []).map((it) => (it && it.node
         // Enriched only where the record already carries a node. An item
         // without one is returned untouched — never with a fabricated id,
         // which would resolve to nothing and be worse than an absent field.
         ? { ...it, dependents: dependentsOf(it.node) }
         : it)),
-    }));
+    };
+    if (e.node) out.dependents = dependentsOf(e.node);
+    return out;
+  });
 
   return { node, name, entries: matched, matched: matched.length, keys, unavailable: null };
 }

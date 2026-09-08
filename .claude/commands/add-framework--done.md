@@ -210,6 +210,11 @@ Entry fields specific to this layer:
 - `by`: `"done"`
 - `id`: the plan's basename without extension, **verbatim** — never a slug
 - `origin`: `docs/plans/<id>.md`
+- `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
+
+⛔ **`node` on the entry is what survives; `node` on an item does not.** `delivered.sh` rebuilds every item as exactly `{what, at, find}`, so an item-level `node` is accepted by `write` and then silently dropped, and `graph.js history` would never find the entry again. Set the entry-level field. Item-level `node` may also be authored — it is what the design specifies and `history` reads both — but **nothing may depend on it round-tripping** until the writer preserves it.
+
+**One consequence, stated rather than discovered later:** a delivery that creates several artefacts is findable by its primary node only. Author `words` so the others are still reachable by text.
 
 ### 3.3 Supersession is proposed, never written silently
 
