@@ -575,6 +575,25 @@ rationale. Entrypoint: `.codeadd/wiki/index.md`.
 
 [//]: # (codeadd-wiki:end)
 
+5. **Writing Style managed block** — find markers `[//]: # (codeadd-style:start)` /
+   `[//]: # (codeadd-style:end)`. If present, REPLACE the block between them. If absent, APPEND
+   the block below with a blank-line separator, after the Project Knowledge Base block. NEVER
+   use HTML-comment syntax for these markers — only the exact bracket form shown. Write EXACTLY:
+
+[//]: # (codeadd-style:start)
+
+## Writing Style
+
+Describe the action, the mechanism or the state directly. Never put a figure of speech in its place.
+
+- Applies to chat, docs, commit messages, PR descriptions, code comments and identifiers.
+- Applies to the writing, not to the language of this rule — it holds in every output language.
+- Established technical terms of figurative origin (branch, tree, cache, pipeline, parent, orphan) are the literal names of their concepts. Keep them.
+- Test each sentence: does it name the action, or name something the action resembles? Replace a resemblance with the action.
+- Not a list of banned words. One example of the device: "confirm the tests bite" → "run the tests and check they fail against the broken code".
+
+[//]: # (codeadd-style:end)
+
 ## CONSTRAINTS (from add-claude-md-style skill)
 Target: 80-150 lines total.
 
@@ -591,7 +610,7 @@ DO NOT include:
 ## OUTPUT FORMAT
 - JSON minified one-line per object
 - Max 10 words per description value
-- Managed block copied verbatim from this prompt — do not paraphrase it
+- Both managed blocks copied verbatim from this prompt — do not paraphrase them
 
 ## REPORT FORMAT
 Return summary:
@@ -599,6 +618,7 @@ Return summary:
 - LEGACY_SECTION_REMOVED: [YES/NO]
 - TOTAL_LINES: [count]
 - SECTIONS_UPDATED: [list]
+- WRITING_STYLE_BLOCK: [WRITTEN/REPLACED]
 ```
 
 - **Output:** Update `CLAUDE.md`
@@ -669,6 +689,13 @@ Verify all 3 files exist before proceeding:
 - [ ] CLAUDE.md exists
 - [ ] AGENTS.md exists (with shell policy section at the end)
 - [ ] GEMINI.md exists
+
+Then verify both managed blocks survived the copy. A block that reached CLAUDE.md and not
+AGENTS.md is the failure this check exists to catch, and it is invisible without it:
+
+- [ ] `[//]: # (codeadd-wiki:start)` and `[//]: # (codeadd-wiki:end)` present in CLAUDE.md, AGENTS.md and GEMINI.md
+- [ ] `[//]: # (codeadd-style:start)` and `[//]: # (codeadd-style:end)` present in CLAUDE.md, AGENTS.md and GEMINI.md
+- [ ] each pair appears exactly once per file
 
 ---
 
