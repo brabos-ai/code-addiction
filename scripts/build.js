@@ -1095,6 +1095,34 @@ function checkArtefactGraph(graph, { readSource } = {}) {
     const declared = declaredFrom.get(n.id) ?? new Map();
     const observed = new Set();
 
+    // --- WARN: a distributed artefact naming an internal command -------------
+    // The sniff below compares same-layer only, and deliberately: `add-commit`
+    // exists in both layers, so a product artefact naming it means the product
+    // one. That skip leaves exactly one direction unwatched, and it is the
+    // direction that ships — a `framwork/.codeadd/` artefact reaching a user's
+    // project while pointing them at a command only this repository has. It is
+    // not hypothetical: `add-plan-review` told five providers' users not to
+    // confuse its review with `add-framework--review`.
+    //
+    // The reverse stays open on purpose. `/add-framework--done` names
+    // `delivered.sh` because a cross-layer `uses:` target would resolve inside
+    // the declaring artefact's own layer and dangle, so the prose mention is
+    // the only way to write it and costs nothing.
+    if (n.layer === 'product') {
+      for (const t of sniffable) {
+        if (t.layer !== 'internal' || t.kind !== 'command') continue;
+        // The bare name, NOT `nodeMentionRe`'s `/name`. The line that motivated
+        // this gate wrote the command inside backticks with no slash, so the
+        // command pattern used below would have walked straight past it.
+        if (!mentionRe(t.name).test(prose)) continue;
+        warnings.push(
+          `${n.path}: names the internal command ${t.name} — that command ships to nobody, ` +
+            'so a distributed artefact naming it points users at something their project does ' +
+            'not have. Describe the distinction without the name.',
+        );
+      }
+    }
+
     for (const t of sniffable) {
       // Same layer only: `add-commit` exists in both, and a product command
       // mentioning it means the product one.
