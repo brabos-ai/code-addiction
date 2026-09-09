@@ -311,9 +311,11 @@ describe('L2 the real repository', () => {
 
   it('L2.3 CLAUDE.md no longer carries the hand-maintained count rows', () => {
     const md = fs.readFileSync(CLAUDE_MD, 'utf8');
-    expect(md).not.toMatch(/^\| Commands \|/m);
-    expect(md).not.toMatch(/^\| Skills \|/m);
-    expect(md).not.toMatch(/^\| Agents \|/m);
+    // Target the COUNT column, not the row label. The Internal Layer keeps a
+    // legitimate `| Type | Path |` table whose rows are also labelled Commands,
+    // Skills and Agents — matching on the label alone condemns the wrong table.
+    expect(md).not.toMatch(/\|\s*Count\s*\|/);
+    expect(md).not.toMatch(/^\|\s*(Commands|Skills|Agents)\s*\|[^|]*\|\s*\d+\s*\|/m);
   });
 
   it('L2.4 the block on disk is current', () => {
