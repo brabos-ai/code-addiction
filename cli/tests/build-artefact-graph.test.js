@@ -855,12 +855,18 @@ describe('node inventory snapshot', () => {
       // command 23 -> 24: add-framework--roadmap, the internal writer for
       // docs/roadmap/index.md. A node and no edge — it declares no uses: block
       // and names no other artefact.
-      command: 24,
+      // command 24 -> 23: add-framework--review deleted, its audit folded into
+      // add-framework--build as STEP 7.
+      command: 23,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
-      skill: 48,
-      agent: 28,
+      // skill 48 -> 49: add-review-discipline, the single owner of how many
+      // times each reader runs and what a caller owes the report.
+      skill: 49,
+      // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
+      // build before its first F-block.
+      agent: 29,
       // reference 69 -> 70: add-plan-authoring/references/plan-template.md.
       reference: 70,
       script: 18,
@@ -876,8 +882,12 @@ describe('node inventory snapshot', () => {
     // NOT "this file has one". add-framework--roadmap carries no block and adds
     // no edge, and it still moves this count.
     // (plan 2026-09-09T065116-PLAN--roadmap-command, F1.)
-    expect(nodes).toHaveLength(212);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(100);
+    // 212 -> 213: -1 command, +1 skill, +1 agent.
+    // declares 100 -> 101: the same net +1, since DECLARING_KINDS covers all
+    // three kinds that moved.
+    // (plan 2026-09-09T090201-PLAN--review-no-loops, F2, F3 and F7.)
+    expect(nodes).toHaveLength(213);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(101);
   });
 });
 
