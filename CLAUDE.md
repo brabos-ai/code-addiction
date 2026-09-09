@@ -10,14 +10,21 @@ Two layers with distinct purposes.
 
 ### Product Layer — `framwork/.codeadd/`
 
-Source of truth for distributed artefacts. Users consume these via CLI install.
+Source of truth for distributed artefacts. Users consume these via CLI install. Commands live at
+`commands/*.md`, skills at `skills/<name>/SKILL.md`, agents at `agents/*-agent.md`, scripts at
+`scripts/*.sh`.
 
-| Type | Path | Count |
-|------|------|-------|
-| Commands | `framwork/.codeadd/commands/*.md` | 16 |
-| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 41 |
-| Agents | `framwork/.codeadd/agents/*-agent.md` | 22 |
-| Scripts | `framwork/.codeadd/scripts/*` | variable |
+The inventory below is **generated** — `node scripts/inventory.js` writes it from disk and
+`/add-framework--done` keeps it current. Do not hand-edit it, and do not add a count anywhere: an
+array has a length.
+
+[//]: # (codeadd-inventory:start)
+{"commands":["add","add.audit","add.brainstorm","add.build","add.diagnose","add.done","add.hotfix","add.init","add.new","add.plan","add.plan-to-ready","add.pull-request","add.qa-setup","add.review","add.ux","add.wiki"]}
+{"skills":["add-architecture-discovery","add-backend-architecture","add-backend-development","add-claude-md-style","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-product-discovery","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
+{"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
+{"scripts":["build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","feature-pr.sh","get-branch-metadata.sh","get-main-branch.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
+{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template","related"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+[//]: # (codeadd-inventory:end)
 
 ### Internal Layer — `.claude/`
 
