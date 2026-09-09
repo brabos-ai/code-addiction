@@ -60,9 +60,35 @@ exists three times on disk — under `fragments/qa-pipeline/`, `fragments/tdd-pi
 
 ## Who keeps it current
 
+**The build writes it; the close-out is the net.**
+
+`/add-framework--build` STEP 6 runs the generator and commits `CLAUDE.md` as its last documented act,
+**unconditionally** — whether or not a PR follows. The block is derived from `framwork/.codeadd/`, so
+its correctness is a fact about the tree, not about anyone's publishing decision. Tying it to the
+publish answer would leave the branch carrying a `CLAUDE.md` that contradicts its own artefacts every
+time someone declines.
+
+This is the ordinary shape for a derived file that is checked in: generate where the input changes,
+verify later. `go generate` plus `git diff --exit-code`, `make verify`, `cargo fmt --check`,
+`terraform fmt -check` are all the same pattern.
+
+A new `## STEP 7: Publish [STOP]` then asks before pushing the branch and opening the PR, and skips
+the question when a PR already exists. It never merges. Completion renumbers to STEP 8 and reports
+both whether the block changed and whether a PR was opened.
+
+**The build asks rather than the rule bending for it.** `add-build-ledger`'s third hard stop already
+covers "a side effect outside this working tree… a push to a shared branch". The alternative was to
+loosen that rule for feature branches; obeying a rule that already existed is the smaller change.
+
+### The close-out still syncs
+
 `/add-framework--done` STEP 2.4, as item 1 of its inner list: run the generator, commit `CLAUDE.md`,
 push. Items 1–6 shift to 2–7; the step number does not move, so the four cross-references to STEP 2.4
 stay correct.
+
+`already current` is now its expected outcome, and that is not a sign the step is redundant. It is the
+net under three cases where the build cannot have synced: a build that hard-stopped before STEP 6, a
+hotfix that never ran a full build, and the recovery path at 2.5 where the merge came first.
 
 **Item 1 sits before the clean-tree check, and that order is the whole point.** A sync that writes
 without committing leaves the tree dirty, and the check on the very next line would hard-stop the
@@ -94,14 +120,19 @@ record the ruling", and a build could still have decided its way back in. The `[
 carries an explicit prohibition now. The `[internal]` block does not, because an internal F-block must
 still be able to write the file; that is how the markers got there.
 
-## No CI gate
+## No CI gate — but the shape now supports one
 
-The design argued for one and the build dropped it: the PR opens at the end of
-`/add-framework--build`, so a gate reading a PR check run does not fit the flow. `--check` ships as a
-mode of the script, wired to nothing.
+The design argued for a `--check` gate and the build dropped it. `--check` ships as a mode of the
+script, wired to nothing.
 
-The cost is stated rather than hidden: a delivery that never runs `/add-framework--done` leaves the
-block stale and nothing says so. Wiring a gate later is one step in `ci.yml`.
+What made a gate awkward was the ordering, and that is fixed. When only the close-out synced, a gate
+would have gone red across the whole review window and then blocked its own writer: CI red →
+`/add-framework--done` STEP 2.4 stops on a non-`success` check → the step that would have fixed the
+block never runs. With the build syncing before the PR exists, a gate reads a block that is already
+current. Adding it is one step in `ci.yml`.
+
+The cost until then is stated rather than hidden: a delivery that skips both the build's STEP 6 and
+`/add-framework--done` leaves the block stale and nothing says so.
 
 ## The graph gate did its job three times
 

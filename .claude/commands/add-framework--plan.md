@@ -309,19 +309,10 @@ Metadata: plan path, status `draft`, review verdict, fixes applied, and the two 
 
 ALWAYS:
 - Question before accepting any idea, and propose at least 2 alternatives with trade-offs
-- Read both layer maps in STEP 1, whichever layer the idea seems to touch
-- Pass `scope: both` to discovery when the layer is not obvious
-- Grade risk on `impact --depth 1`, never on the unbounded number
-- Pass `--layer` on every delivery-index query
-- Keep the Impact table a complete map of every file an F-block touches
-- Break scope into numbered F-blocks, each with a layer tag, its files and its proof
-- Specify a validation matrix written RED-first, before any F-block lands
 - Assert expected end states — counts, maps, combinations — never merely that a change happened
-- Point at the design doc for contracts and examples instead of restating them
 
 NEVER:
 - Split one topic into two plans by layer — F-block tags carry that
-- Paste the content a file will receive
 - Leave an F-block with no validation level covering it
 - Name a risk whose mitigation no F-block operationalizes
 - Present an unreviewed plan as delivered

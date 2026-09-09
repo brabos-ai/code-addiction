@@ -281,9 +281,14 @@ For each path in STEP 1.3's diff:
 
 Entry fields:
 
-- `layer`: **derived from the items, never hardcoded.** An item whose `at` sits under `framwork/` is
-  product; everything else is internal. The entry takes whichever side holds more items. A tie is a
-  user question, the same way a supersession is.
+- `layer`: **derived from the items, never hardcoded.** An item whose `at` sits under `framwork/`,
+  `framwork/provider-map.json` or `cli/` is product; everything else is internal. The entry takes
+  whichever side holds more items. A tie is a user question, the same way a supersession is.
+
+  ⛔ **`cli/` is product, and no other rule here may imply otherwise.** This is the same three-path
+  test `/add-framework--build` STEP 1.1 uses to derive a missing layer tag, and the same split
+  `CLAUDE.md` documents. A narrower "under `framwork/` or else internal" reading indexes a
+  `cli/`-heavy delivery as internal, and it then vanishes from `delivered.sh read --layer product`.
 
   ⛔ **Derive it from the item paths, NOT from the entry's `node`.** STEP 3.2 above records that
   top-level `scripts/`, `CLAUDE.md` and `.gitignore` produce no graph node, so `node` is legitimately

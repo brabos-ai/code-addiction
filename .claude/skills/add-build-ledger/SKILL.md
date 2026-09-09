@@ -5,12 +5,12 @@ description: "Use when executing a plan's F-blocks — the build ledger, the res
 
 # Build Ledger — Execution Discipline
 
-Layer-neutral. Governs HOW execution is recorded and when it may continue. WHAT a given layer
-validates belongs to that layer's own skill, which the executing command selects per F-block.
-
 <!-- uses:
 - skill: add-commit
 -->
+
+Layer-neutral. Governs HOW execution is recorded and when it may continue. WHAT a given layer
+validates belongs to that layer's own skill, which the executing command selects per F-block.
 
 ## When to Use
 

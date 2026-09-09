@@ -58,7 +58,12 @@ Re-invocation creates `--review-v02`, `--review-v03`, etc. Old reviews are never
 Given the argument:
 - If `docs/plans/<arg>.md` exists → that is the plan (full basename, either naming form).
 - If it matches `^\d{4}$` → glob `docs/plans/<arg>-*PLAN--*.md` (both PLAN and SELF-PLAN) — the legacy number form, still on disk.
-- Otherwise → match `<arg>` as a **substring** of the basenames of `docs/plans/*PLAN--*.md`, excluding `--review-v*` and `--evidence-v*` companions. A 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument.
+- Otherwise → match `<arg>` as a **substring** of the basenames of `docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*` and `--ledger` companions. A 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument.
+
+⛔ **`--ledger` belongs in that exclusion list, not as an afterthought.** A ledger is written on the
+first F-block, so every plan that has been built has one, and a resolver that does not exclude it
+returns two candidates for every such plan and has to STOP. `/add-framework--build` STEP 1.1 excludes
+all three; this resolver must match it.
 - **Exactly one match** → that is the plan.
 - **More than one match** → ⛔ STOP. Print every candidate basename and ask which one. **NEVER guess.**
 - **No match** → list available plans in `docs/plans/` and STOP.
@@ -161,8 +166,11 @@ falls into one of three buckets, and the third is a finding:
 Then ask what each touched artefact **superseded**:
 
 ```bash
-node scripts/graph.js history <artefact-name>
+node scripts/graph.js history <artefact-name> --layer <that artefact's layer>
 ```
+
+**Pass `--layer`.** One index serves both layers, and a plan now routinely touches both, so an
+unfiltered answer mixes in deliveries with no bearing on the artefact being asked about.
 
 **A plan that touches something a previous delivery superseded is the case the subagents cannot see.** They read the plan and the diff; neither records that an earlier delivery replaced this thing, or that the replaced thing is still cited elsewhere in the corpus. A `superseded` entry naming an id the plan never mentions is a **finding — severity `medium`**, on the same footing as an uncovered dependant.
 

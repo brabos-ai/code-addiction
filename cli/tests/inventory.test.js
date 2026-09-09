@@ -337,11 +337,15 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(list.slice(list.indexOf('\n2. '))).toMatch(/working tree must be clean/i);
   });
 
-  it('L3.2 add-framework-product-layer lost both CLAUDE.md sections, kept its Changelog', () => {
+  it('L3.2 add-framework-product-layer lost both CLAUDE.md sections and stopped there', () => {
     const skill = read('.claude', 'skills', 'add-framework-product-layer', 'SKILL.md');
     expect(skill).not.toContain('Project Anatomy');
     expect(skill).not.toContain('The rest of CLAUDE.md');
-    expect(skill).toContain('## Changelog');
+    // The boundary marker: the next section down must survive. It was `## Changelog`
+    // until PR #43 removed that section for its own reason, so the anchor moved to
+    // the one that now follows. The point is unchanged — prove the deletion stopped.
+    expect(skill).toContain('## Common Rationalizations');
+    expect(skill).toContain('## Rules');
   });
 
   it('L3.3 add-framework-internal-layer lost its CLAUDE.md table, kept the coherence check', () => {

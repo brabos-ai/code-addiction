@@ -3,7 +3,7 @@
 <!-- uses:
 - agent: framework-discovery-agent
 - agent: plan-review-agent
-- command: /add-framework--build
+- mention: /add-framework--build
 - command: /add-framework--plan
 -->
 
@@ -146,7 +146,7 @@ Ask questions one per message to refine understanding:
 **Two classifications run at this step, and they answer different questions. Neither replaces the other.**
 
 - **Sizing** (2.2.1) answers *which artefacts, and how many topics*. It feeds STEP 3's decomposition offer and
-  STEP 7.3's layer routing. It stays internal.
+  the layer note STEP 7.3 carries into the design document. It stays internal.
 - **Effort path** (2.2.2) answers *how much process this request needs*. It routes STEPS 3 through 7. It is
   announced.
 
@@ -160,8 +160,8 @@ Internally classify:
 - **Scope** — simple (one artefact) or complex (multi-topic, needs umbrella)
 - **Framework impact** — affects existing commands/skills or additive
 
-This sizing is **not announced**. It is an implementation detail of STEP 3's decomposition offer and STEP
-7.3's layer routing, not a decision the user needs to correct.
+This sizing is **not announced**. It is an implementation detail of STEP 3's decomposition offer and the
+layer note STEP 7.3 carries into the design document, not a decision the user needs to correct.
 
 #### 2.2.2 Effort Path (ANNOUNCED — OWN TURN)
 
@@ -320,7 +320,8 @@ If ANY checkbox fails → return to relevant section and continue exploring.
 
 Timestamp format: `YYYY-MM-DDTHHMMSS`, **local time**, `T` between the date and the time, **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort equals chronological sort, so two brainstorms written the same day no longer sort arbitrarily. Topic slug: kebab-case from idea.
 
-**Brainstorms carry NO kind marker** — unlike plans, which keep `PLAN` / `SELF-PLAN`. Internal brainstorms live in `docs/brainstorming/` of this repo, product ones in `docs/brainstorm/` of the user's repo: different directories in different repositories, so a marker would carry no information.
+**Brainstorms carry NO kind marker** — unlike plans, which keep `PLAN` (and the legacy `SELF-PLAN` on
+files already written). Internal brainstorms live in `docs/brainstorming/` of this repo, product ones in `docs/brainstorm/` of the user's repo: different directories in different repositories, so a marker would carry no information.
 
 **A brainstorm SET allocates its timestamp once, at the umbrella, and every subtopic reuses it verbatim:**
 
