@@ -91,3 +91,40 @@ generated `codeadd-inventory` markers.
 
 Three of the ten levels are regression guards that pass before F1 by construction. They are recorded
 as guards, not as evidence the work landed.
+
+## Recorded honestly: this close-out ran without a review
+
+`/add-framework--done` STEP 2.3 requires a `--review-vNN.md` companion and hard-stops without one. No
+review companion was ever produced for this plan. The stop was reported and the close-out ran at the
+repository owner's explicit instruction to skip it.
+
+The instruction is consistent rather than ad hoc: roadmap item 1.1 folds review into the build and
+deletes `/add-framework--review`, so this delivery ran under the model that change is heading toward
+rather than the one still on disk. That does not make the gate satisfied, only deliberately bypassed.
+
+Every other gate ran and passed. The ledger gate found `complete` lines for F1 and F2, which are the
+plan's only F-blocks. CI concluded `success` on all six checks, on commit `63a113c`, confirmed as the
+PR head before the verdict was read. The working tree was clean and the inventory block reported
+already current.
+
+What is missing is the independent audit, not the test evidence. This paragraph exists because an
+index that records a delivery as clean while its own review gate was skipped would be the first lie
+in a file built to stop them.
+
+## A gap this delivery found in its own plan
+
+The plan excluded `cli/` as a product-layer concern and built its validation matrix from `build.js`
+and `graph.js` alone. CI disagreed, three times: `cli/tests/build-artefact-graph.test.js` asserts
+graph node counts, and the artefact graph covers `.claude/` as well as `framwork/.codeadd/`, so an
+internal command moves the same snapshot numbers a product one does. The checked-in mermaid diagram
+at `web/public/artefact-graph.mmd` is asserted against the emitted graph and needed regenerating for
+the same reason.
+
+One of those three was fixed wrong on the first attempt. The commit claimed `declares` would stay at
+99 because the command carries no `<!-- uses: -->` block. It is `DECLARING_KINDS.has(kind)` — a flag
+on every command, skill and agent, meaning "the build scans this file for a uses: block", not "this
+file has one". It moved to 100 like any other command would.
+
+The lesson for the next internal plan: **a new artefact of any kind moves the `cli/` graph snapshot,
+whichever layer it lives in.** A validation matrix that omits the cli suite will find that out from
+CI rather than from itself.
