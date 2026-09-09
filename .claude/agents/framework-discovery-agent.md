@@ -35,8 +35,10 @@ Scan filenames and read first ~20 lines of each artefact:
 
 ### 2. Plan Scan (always, regardless of scope)
 
-- `Glob docs/plans/*.md` → list all plan files
+- `Glob docs/plans/*.md` → plans still in flight, gitignored and local
+- `Glob docs/deliveries/*/plan.md` → plans already closed out, tracked. **Take the slug from the DIRECTORY name, never from the filename** — every one of these files is called `plan.md` and carries no slug at all.
 - **Strip the leading token first**, then extract slug words. The leading token is the timestamp (`2026-09-07T005046`) on a new plan or the `NNNN` number on a legacy one — both forms are on disk. Drop the `PLAN` / `SELF-PLAN` marker too. ⛔ Never score `2026`, `09` or `07T005046` as a topic keyword.
+- **Score and rank both sources in one list.** A delivered plan is prior art of the strongest kind: it shipped. Suffix its row with ` [delivered]` so the caller can tell a closed decision from an open one without opening the file.
   - `2026-09-07T005046-SELF-PLAN--framework-discovery-agent-for-planning-commands` → words: framework, discovery, agent, planning, commands
   - `0031-SELF-PLAN--framework-discovery-agent-for-planning-commands` → the same words
 - Score each plan slug against topic keywords (0–3 overlap scale)
@@ -78,8 +80,8 @@ Emit the structured report below. Be honest: if nothing scores ≥2, say so expl
 
 | Rank | Plan | Score | Relationship Hypothesis |
 |------|------|-------|------------------------|
-| 1 | [filename] | 3 | [one sentence: decision or context this plan contains] |
-| 2 | [filename] | 2 | [one sentence] |
+| 1 | [plan basename] [delivered] | 3 | [one sentence: decision or context this plan contains] |
+| 2 | [plan basename] | 2 | [one sentence] |
 
 ### Key Prior Decisions (from deep-read plans)
 
