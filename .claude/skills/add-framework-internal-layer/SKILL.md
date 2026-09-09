@@ -1,6 +1,6 @@
 ---
 name: add-framework-internal-layer
-description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root. Coherence and dependency checks, the rename/remove sweep, the CLAUDE.md sections it owns, and why the graph gates still apply."
+description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
 ---
 
 # Internal Layer Mechanics
@@ -9,6 +9,7 @@ description: "Use when an F-block touches the internal layer — .claude/, scrip
 - skill: building-commands
 - skill: add-framework-development
 - mention: add-build-ledger
+- mention: /add-framework--done
 -->
 
 Loaded on the first `[internal]` F-block of a build. These artefacts are the development tooling that
@@ -80,23 +81,23 @@ An internal-only change writes nothing under `framwork/` except the gitignored
 git status --porcelain framwork/    # must be empty
 ```
 
-### CLAUDE.md, per changed artefact list
+### CLAUDE.md is not bookkeeping
 
-| If this F-block… | Update |
-|---|---|
-| added or removed an internal command, skill or agent | the Internal Layer tables |
-| changed what a command or skill is for | that command's row, and the "Where the details live" table |
-| changed the repo structure, `.gitignore` or the pipeline | the section documenting it |
+An `[internal]` F-block may write `CLAUDE.md`, but **only where the plan told it to**. There is no
+standing duty to bring it in step with whatever the build happened to change.
 
-Read `framwork/.codeadd/skills/add-claude-md-style/SKILL.md` before writing. **Edit only what this
-F-block invalidated** — a diff that rewords unrelated sections is a diff nobody can review.
+Its inventory block is generated — `node scripts/inventory.js` writes it and `/add-framework--done`
+keeps it current. Never hand-edit between the markers; the next close-out overwrites it.
+
+Everything else in the file changes because a plan decided it should. A build that reaches for
+`CLAUDE.md` on its own initiative is doing what grew it to 4212 words before commit 47321fd cut it
+back.
 
 ### Coherence, per modified artefact
 
 - [ ] Well-formed markdown, correct structure for its type
 - [ ] Command or skill: passes the `building-commands` checklist
 - [ ] `<!-- uses: -->` matches what the prose actually names
-- [ ] `CLAUDE.md` reflects the current artefact list, if that list changed
 
 ### Dependency, per removed or renamed artefact
 
