@@ -74,7 +74,12 @@ READ `docs/roadmap/index.md` in full. Its structure is the contract for every la
 
 - `## N. <theme>` — a numbered theme, in priority order.
 - `### N.M — <title>` — an item inside that theme, in priority order.
+- `**Scope:** internal | product | both` — the layer(s) the item touches, first line of the body.
+- `**TLDR:** <one line>` — what the item delivers, extractive, readable with no other context.
 - Body bullets under an item, ending in a `**Done when:**` line.
+
+An item written before this contract may carry neither line — that is not a defect to fix in
+passing. Add Scope/TLDR to an old item only when the request itself is about that item.
 
 IF the file does not exist → CREATE it with a title and a one-line statement that the number is the
 priority, then continue. Say in STEP 9 that the file was created.
@@ -122,10 +127,16 @@ READ, and nothing else:
 Use what that returns to write a concrete body: the real paths the work touches, and a
 `**Done when:**` line that names a check someone can actually run.
 
+**Resolve Scope from the same read** — never from assumption. Paths under `.claude/` (or the repo
+root, `docs/`) make it `internal`; paths under `framwork/.codeadd/` or `cli/` make it `product`;
+touching both makes it `both`. When the user states the scope outright ("tanto interno quanto do
+framework"), that statement wins over what the grep alone would imply.
+
 ```
 IF THE REQUEST NAMES NOTHING CHECKABLE:
   ⛔ DO NOT: Invent a path, a file or a target to make the entry look concrete
   ✅ DO: Record the item as the user stated it, and say in STEP 9 that it is ungrounded
+  ✅ DO: Still record a Scope from whatever the user's own words name, even ungrounded
 ```
 
 **This STEP is capped by design.** It informs one roadmap entry. A command that dispatches an agent,
@@ -143,6 +154,22 @@ work.
 | **add** | Insert the new item at the resolved position |
 | **update** | Rewrite only the target item's lines |
 | **remove** | Delete exactly the target item's lines |
+
+**An add's item always opens with Scope and TLDR, in this order:**
+
+```
+### N.M — <title>
+
+**Scope:** internal | product | both
+**TLDR:** <one line, plain language — what this delivers, not how>
+
+- <bullet>
+- <bullet>
+- **Done when:** <a check someone can run>
+```
+
+TLDR is one line, not a restatement of the bullets that follow — if it needs a second line, it is
+carrying detail that belongs in a bullet instead.
 
 ⛔ **On a remove, DO NOT renumber the surviving items.** Their numbers are how the user, the git
 history and every earlier conversation refer to them. A gap in the sequence costs nothing; a silent
@@ -201,6 +228,7 @@ reaches the remote in the same invocation that made it.
 State, in the user's language:
 
 - The operation and the item it hit, by number and title.
+- On an add, the Scope recorded.
 - The commit sha. **This is what makes the change reversible without a confirmation gate**, so it is
   never omitted.
 - Whether the entry is grounded in real paths, or was recorded as stated.
@@ -212,6 +240,8 @@ State, in the user's language:
 
 ALWAYS:
 - Address an item by the number and title the user will recognise
+- Open a new item with `**Scope:**` and `**TLDR:**`, in that order, before the bullets
+- Resolve Scope from what STEP 3 actually read, or from what the user stated outright
 - Keep surviving item numbers stable across a removal
 - Write back the line endings the file already uses
 - Stage `docs/roadmap/index.md` by path, never the whole tree
@@ -222,3 +252,4 @@ NEVER:
 - Rewrite the whole file to apply one change
 - Resolve a rebase conflict
 - Invent a path to make an entry look concrete
+- Backfill Scope/TLDR onto an old item the request did not target
