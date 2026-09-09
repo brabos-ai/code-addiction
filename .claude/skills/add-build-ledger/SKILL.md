@@ -7,6 +7,7 @@ description: "Use when executing a plan's F-blocks — the build ledger, the res
 
 <!-- uses:
 - skill: add-commit
+- mention: /add-framework--done
 -->
 
 Layer-neutral. Governs HOW execution is recorded and when it may continue. WHAT a given layer
@@ -36,9 +37,16 @@ Legacy plans on disk using `S<n>` keep their ids — read them, do not renumber 
 
 **Path:** `docs/plans/<plan-basename>--ledger.md` — the plan's basename with `--ledger.md` appended.
 
-**Why it is mandatory:** it carries the rulings. `docs/plans/` is gitignored, so the ledger never
-reaches a reviewer on its own. Every `Ruling:` line must be carried out of it and into the completion
-report, or the decision dies on this machine.
+**Why it is mandatory:** it carries the rulings, and a diff cannot show a decision.
+
+**During the build the ledger reaches nobody on its own.** `docs/plans/` is gitignored, so every
+`Ruling:` line must be carried out of it and into the completion report — that report is how a
+decision reaches a human while the work is still changeable, and nothing later replaces it.
+
+**After close-out the ledger itself survives.** `/add-framework--done` copies it to
+`docs/deliveries/<plan-basename>/ledger.md` and commits it with the delivery-index entry, so the raw
+rulings reach `main` before anything removes the worktree. The two are not redundant: the report is
+the decision read at the time it mattered, the archived ledger is the record read years later.
 
 **Append-only. Identity on the first line, written once, never rewritten.** A ledger whose identity
 changes mid-build cannot be trusted. It is a **log, not a set** — the same line twice appends twice.
