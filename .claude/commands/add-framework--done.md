@@ -191,12 +191,15 @@ test-scripts         npm run test:scripts   (bats)                              
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
-1. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
-2. **Push the branch** if `git rev-parse HEAD` and `git rev-parse origin/<branch>` disagree.
-3. **`gh pr view`** → if no PR exists, `gh pr create`.
-4. **Wait for the run**, e.g. `gh pr checks --watch --fail-fast`.
-5. **Compare the SHA before reading the verdict** — see below.
-6. Every required check concludes `success` → the gate passes. Anything else → report which check, with its URL, and STOP.
+1. **Sync the `CLAUDE.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add CLAUDE.md` (that path alone, never `-A`), commit it with a message per `.claude/skills/add-commit/SKILL.md`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `CLAUDE.md`, not permission to skip the sync.
+2. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
+3. **Push the branch** if `git rev-parse HEAD` and `git rev-parse origin/<branch>` disagree. Item 1 already pushed when the block changed, so this finds them in sync — that is the expected outcome, not a redundancy to remove.
+4. **`gh pr view`** → if no PR exists, `gh pr create`.
+5. **Wait for the run**, e.g. `gh pr checks --watch --fail-fast`.
+6. **Compare the SHA before reading the verdict** — see below.
+7. Every required check concludes `success` → the gate passes. Anything else → report which check, with its URL, and STOP.
+
+⛔ **Item 1 runs BEFORE item 2, and stages one path.** The order is what makes both work: a sync that writes and does not commit leaves the tree dirty, and item 2 hard-stops on it — the close-out would block on its own output. Staging `CLAUDE.md` alone is what keeps item 2 able to still catch every unrelated edit sitting beside it.
 
 ⛔ **A green check is evidence only for the commit it ran on.** Compare `gh pr view --json headRefOid` against `git rev-parse HEAD` and **refuse a verdict from any other SHA**. Without this the command reads yesterday's green run and calls today's untested code gated — the same class of lie as a gate that silently invokes a script that does not exist, and harder to see, because the output says `pass`.
 
@@ -219,6 +222,7 @@ left to do:
 | 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
 | 1.3 | `git diff --name-status main...HEAD` | `git show --name-status <merge-commit>` — the squash IS the delivery |
 | 2.2, 2.3 | Ledger and review gates | Unchanged. Both still hard-stop |
+| 2.4 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
 | 2.4 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
 | 7 | Merge the PR | **Skipped.** Already merged |
@@ -398,6 +402,7 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 Report:
 
 - The entry written, with its `id` and item count
+- **Whether the inventory block changed**, and the commit that carried it. Say "already current" when it did not — silence is indistinguishable from not having run it
 - Any supersessions declared, and which answer was given
 - The changelog path
 - The PR number and its merge state
