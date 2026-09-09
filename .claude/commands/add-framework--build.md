@@ -2,6 +2,8 @@
 
 <!-- uses:
 - skill: add-build-ledger
+- skill: add-review-discipline
+- agent: plan-readback-agent
 - skill: add-framework-product-layer
 - skill: add-framework-internal-layer
 - skill: building-commands
@@ -26,11 +28,13 @@ Executes a plan into working artefacts, in **both layers** — the distributed p
 STEP 1: Load plan / context   → READ FIRST
 STEP 2: Design                → [STOP] present and WAIT for approval
 STEP 3: Load skills           → building-commands + add-build-ledger + the layer skills in play
-STEP 4: Implement             → ONLY AFTER 1-3; ledger first, then one F-block at a time
-STEP 5: Validate              → per F-block; it is committed once its own checks pass
-STEP 6: Document              → changelog, plan status, inventory sync — after the last F-block
-STEP 7: Publish [STOP]        → ask before pushing the branch and opening the PR
-STEP 8: Completion            → summary + EVERY ruling made
+STEP 4: Readback              → cold reader on the plan, before the first F-block; never stops the flow
+STEP 5: Implement             → ONLY AFTER 1-4; ledger first, then one F-block at a time
+STEP 6: Validate              → per F-block; it is committed once its own checks pass
+STEP 7: Review                → ONE adversarial pass over the finished work, after the last F-block
+STEP 8: Document              → changelog, plan status, inventory sync
+STEP 9: Publish [STOP]        → ask before pushing the branch and opening the PR
+STEP 10: Completion           → summary + EVERY ruling made
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -49,10 +53,25 @@ IF building-commands NOT LOADED (STEP 3, when the F-block writes a .md artefact)
   ⛔ DO NOT USE: Write on any commands/ or skills/ path
   ✅ DO: Read .claude/skills/building-commands/SKILL.md
 
-IF THE LEDGER HAS NOT BEEN READ (planned mode, STEP 4.1 incomplete):
+IF THE READBACK REPORT HAS NOT COME BACK (planned mode, STEP 4 incomplete):
+  ⛔ DO NOT USE: Write or Edit on any artefact
+  ⛔ DO NOT: Start the first F-block
+  ✅ DO: Dispatch @plan-readback-agent and WAIT for its restatement
+
+IF THE READBACK DIVERGES FROM THE PLAN:
+  ⛔ DO NOT: Treat it as a gate and halt the build
+  ⛔ DO NOT: Edit the plan's scope to match what the reader expected
+  ✅ DO: Record the divergence as a ruling, say which reading you built, and continue
+
+IF THE LEDGER HAS NOT BEEN READ (planned mode, STEP 5.1 incomplete):
   ⛔ DO NOT USE: Write or Edit anywhere
   ⛔ DO NOT: Re-execute any F-block
   ✅ DO: Read the ledger and apply add-build-ledger's resume rule
+
+IF THE LAST F-BLOCK IS COMMITTED AND STEP 7 HAS NOT RUN:
+  ⛔ DO NOT USE: Write on docs/changelog/
+  ⛔ DO NOT USE: Bash to run git push
+  ✅ DO: Run the review pass first — it is what STEP 8 documents
 
 IF AN F-BLOCK'S VALIDATION HAS NOT PASSED:
   ⛔ DO NOT USE: Bash to run git commit for that block
@@ -212,14 +231,54 @@ never loads the other one.
 
 ---
 
-## STEP 4: Implement
+## STEP 4: Readback (BEFORE THE FIRST F-BLOCK)
 
-### 4.1 The Ledger, First
+**Planned mode only.** Direct mode has no plan, so there is nothing to read back — skip to STEP 5.
+
+**LOAD `add-review-discipline`.** It owns how many times each reader runs, why neither writes a file,
+and what you owe a report you receive.
+
+**DISPATCH AGENT:** `@plan-readback-agent`
+- **Capability:** read-only
+- **Input:** `path` — the plan file resolved at STEP 1.1
+
+**WAIT** for the restatement. ⛔ DO NOT start an F-block without it.
+
+### 4.1 Read the Restatement Against What the Plan Decided
+
+You hold the conversation that produced this plan. The reader does not — it saw the document and
+nothing else, which is exactly the position the next session will be in.
+
+Compare its restatement, its derived build order, and every gap it marked filled against what the plan
+actually decides. **Where the two diverge, the DOCUMENT is what failed.** The reader is the instrument.
+
+### 4.2 This Is Not a Gate
+
+```
+IF THE READBACK MARKED A GAP OR READ SOMETHING THE PLAN DID NOT INTEND:
+  ⛔ DO NOT: Halt the build and send the user back to /add-framework--plan
+  ⛔ DO NOT: Widen or narrow the plan's scope to match the reader's expectation
+  ✅ DO: Record a ruling naming the divergence and which reading you built
+  ✅ DO: Continue
+```
+
+**The stop that matters already happened at STEP 2.** A second one here would make every marked
+assumption cost a command round-trip, and a reader that answers its own questions out loud marks
+assumptions constantly — that is the format working, not a defect to escalate.
+
+Where a divergence is severe enough that no reading of the plan supports one option over the others,
+that is the fourth hard stop and `add-build-ledger` owns it. Nothing else here stops.
+
+---
+
+## STEP 5: Implement
+
+### 5.1 The Ledger, First
 
 Planned mode only. Path, format, identity line and the resume rule are owned by `add-build-ledger`.
 Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 
-### 4.2 One F-Block at a Time
+### 5.2 One F-Block at a Time
 
 The cycle — record `BASE`, implement, show, validate, commit, record `HEAD` — is owned by
 `add-build-ledger`. Two things this command adds per block:
@@ -230,12 +289,12 @@ The cycle — record `BASE`, implement, show, validate, commit, record `HEAD` �
 **There is no per-block approval stall.** Showing what changed informs the user; it does not wait on
 them. The STEP 2 `Design [STOP]` gate is the human's decision point and nothing here replaces it.
 
-### 4.3 Rulings and the Four Hard Stops
+### 5.3 Rulings and the Four Hard Stops
 
 Owned by `add-build-ledger`. Rule and continue; record `Ruling: <what> — <why> — <cost if wrong>`.
 A red build is not a ruling: it reports and STOPS.
 
-### 4.4 Lifecycle Actions
+### 5.4 Lifecycle Actions
 
 | Action | How |
 |--------|-----|
@@ -250,7 +309,7 @@ A red build is not a ruling: it reports and STOPS.
 
 ---
 
-## STEP 5: Validate
+## STEP 6: Validate
 
 **Per F-block, before its commit — never once at the end.** The checks belong to the block's layer
 skill. Both layers share one non-negotiable:
@@ -272,7 +331,7 @@ this block's to fix, and a count alone cannot tell the two apart.
 IF VALIDATION DID NOT PASS:
   ⛔ DO NOT USE: Bash to run git commit
   ⛔ DO NOT: Append a `complete` line
-  ✅ DO: Fix it (STEP 4) or STOP — a red build is not a finding
+  ✅ DO: Fix it (STEP 5) or STOP — a red build is not a finding
 ```
 
 Verify every RED-first assertion the plan specified was observed failing BEFORE its implementation
@@ -280,9 +339,70 @@ landed. An assertion that was never RED is an untested F-block regardless of its
 
 ---
 
-## STEP 6: Document
+## STEP 7: Review (ONCE, AFTER THE LAST F-BLOCK)
 
-After the last F-block:
+**GATE CHECK:** Is every F-block in the plan's Execution Order committed with a `complete` line? IF NO
+→ return to STEP 5. A review of half a delivery reports gaps that are simply unwritten work.
+
+**Planned mode only.** Direct mode has no plan to audit against — skip to STEP 8.
+
+**This runs EXACTLY ONCE.** `add-review-discipline` owns that rule and the reason behind it.
+
+### 7.1 Dispatch Four Read-Only Auditors, in Parallel
+
+Each receives the plan's content plus its own scope. **All four run in parallel; WAIT-ALL before 7.2.**
+
+1. **Plan conformance** — every decision and scope item in the plan against the tree. Implemented with
+   `file:line`, partial, or missing. Flag drift where the implementation contradicts a decision.
+2. **Diff completeness** — `git diff` over the branch, file by file. Every changed file accounted for
+   by a plan decision, and every plan-scope item carrying a diff.
+3. **Side effects** — cross-references now pointing at renamed or removed artefacts, callers of changed
+   behaviour, doc references to dead paths, integration points between the layers.
+4. **Quality** — the `.md` artefacts against `building-commands`, the rest against the conventions
+   visible in neighbouring files.
+
+**Capability for all four: read-only.** They read, they run `git log` and `git diff`, they report. They
+do not write, and the coordinator is the only writer in this command.
+
+### 7.2 Ask the Graph What the Subagents Cannot See
+
+The four read the plan and the diff. Neither shows what depends on a file nobody opened.
+
+```bash
+node scripts/graph.js impact <artefact-name> --depth 1
+node scripts/graph.js history <artefact-name> --layer product|internal
+```
+
+**Depth 1, not the unbounded run.** The command layer cross-references itself densely, so the
+transitive closure saturates and a hub becomes indistinguishable from a leaf.
+
+A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
+entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
+
+### 7.3 Judge Every Finding, Then Apply
+
+**Findings are applied in this run, and each one is decided before it is applied.**
+`add-review-discipline` owns that rule: the auditors read the document and the diff, not the
+constraints you are holding, and telling a real finding from a confident wrong one is yours alone.
+
+Each accepted finding is a normal edit under its own F-block layer tag, validated and committed like
+any other. Each rejected one gets a ruling saying why.
+
+```
+IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
+  ⛔ DO NOT: Invent the decision to clear it
+  ✅ DO: Present that finding alone and WAIT
+```
+
+⛔ **Nothing here writes a review file.** No companion document, no versioned artefact, no verdict for
+a later command to find. What survives goes in the ledger, as rulings.
+
+---
+
+## STEP 8: Document
+
+After STEP 7's review pass, and not before — a changelog written ahead of it describes a delivery
+that has not been audited yet, and any finding STEP 7 applies would land after its own record.
 
 - **Changelog** for new or major work: `docs/changelog/YYYY-MM-DD-<action>-<what>.md`, action being
   `add` | `update` | `refactor` | `remove`.
@@ -291,7 +411,7 @@ After the last F-block:
   Stage that path alone, never `-A`.
 
 **This runs ALWAYS, whether or not a PR follows.** The block is derived from `framwork/.codeadd/`, so
-its correctness is a fact about the tree, not about anyone's publishing decision. Tying it to STEP 7's
+its correctness is a fact about the tree, not about anyone's publishing decision. Tying it to STEP 9's
 answer would leave the branch carrying a `CLAUDE.md` that contradicts its own artefacts every time
 someone declines.
 
@@ -299,7 +419,7 @@ Nothing else in `CLAUDE.md` is written here. The rest of the file changes only w
 
 ---
 
-## STEP 7: Publish [STOP]
+## STEP 9: Publish [STOP]
 
 **⛔ GATE:** A push to a shared remote is one of the four hard stops. ASK.
 
@@ -329,7 +449,7 @@ Ask whether to push the branch and open the PR. Then:
 **Skip the question when a PR already exists for this branch** — `gh pr view` resolves one. Asking
 again on the second build of the same branch is noise. Push, and say the existing PR was updated.
 
-**STEP 6 ran first, and that order is not cosmetic.** The PR must carry the synced `CLAUDE.md`, or the
+**STEP 8 ran first, and that order is not cosmetic.** The PR must carry the synced `CLAUDE.md`, or the
 diff a human reviews is not the diff that merges.
 
 ⛔ **This step never merges.** It opens a PR and stops. The merge belongs to `/add-framework--done`,
@@ -337,7 +457,7 @@ behind its own gates.
 
 ---
 
-## STEP 8: Completion
+## STEP 10: Completion
 
 Report, always:
 
@@ -363,11 +483,11 @@ ALWAYS:
 - Prove an internal F-block stayed in its lane with an empty `git status --porcelain framwork/`
 - Fix every dependent of a removed or renamed artefact inside the same F-block
 - Derive a missing layer tag from the path and record a ruling saying you did
-- Sync the inventory block at STEP 6, whatever the answer at STEP 7 turns out to be
+- Sync the inventory block at STEP 8, whatever the answer at STEP 9 turns out to be
 
 NEVER:
 - Split a plan by layer into two builds — the tags carry it
 - Report an F-block complete on a mental test alone, in either layer
 - Skip the STEP 2 `Design [STOP]` gate — rulings replace the per-block stall, never that approval
 - Push or open a PR without asking, or push `main` at all
-- Merge — STEP 7 opens a PR and stops there
+- Merge — STEP 9 opens a PR and stops there
