@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-commit
+- skill: add-plan-authoring
 - mention: @framework-discovery-agent
 - command: /add-framework--build
 -->
@@ -30,7 +31,7 @@ STEP 2: Gates                     → ledger complete + CI green on THIS sha [HA
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
-STEP 6: Commit on the branch      → entry + changelog, one commit, then push
+STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
 STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
 STEP 8: Cleanup                   → worktree, branch, evidence — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
@@ -277,7 +278,7 @@ Entry fields:
   a third value.
 - `by`: `"done"`
 - `id`: the plan's basename without extension, **verbatim** — never a slug
-- `origin`: `docs/plans/<id>.md`
+- `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
 ⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.sh` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
@@ -329,9 +330,30 @@ Show the user, before committing: the entry as it will be written, any `LOOSE=` 
 
 ---
 
-## STEP 6: Commit on the Branch and Push
+## STEP 6: Archive the Working Documents, Commit and Push
 
-Commit the entry and the changelog as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
+### 6.1 Assemble `docs/deliveries/<id>/`
+
+**The working documents move BEFORE the commit, so the merge carries them to `main`.** The directory name, its members and which are load-bearing are owned by `add-plan-authoring` — read **The Delivered Home** rather than re-deriving them here.
+
+Copy, never move: the originals stay on disk until STEP 8 removes them, and STEP 8 runs only after the merge.
+
+```
+IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
+  ⛔ DO NOT USE: Bash to run git commit
+  ⛔ DO NOT: Assemble a directory holding only the half that was readable
+  ✅ DO: Report which document is missing and STOP — a delivery archived without its ledger loses every ruling it made
+```
+
+The design source is **the `docs/brainstorming/` file the plan's Context document table names**, and nothing else. `docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing no design doc gets no `design.md`, and that is not a defect.
+
+⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
+
+### 6.2 Commit and push
+
+Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
+
+⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit rides the squash merge to `main` under a message that does not describe it.
 
 The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
 
