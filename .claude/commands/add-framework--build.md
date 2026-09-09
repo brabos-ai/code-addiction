@@ -68,10 +68,10 @@ IF THE LEDGER HAS NOT BEEN READ (planned mode, STEP 5.1 incomplete):
   ⛔ DO NOT: Re-execute any F-block
   ✅ DO: Read the ledger and apply add-build-ledger's resume rule
 
-IF THE LAST F-BLOCK IS COMMITTED AND STEP 7 HAS NOT RUN:
+IF THE LAST F-BLOCK IS COMMITTED AND THE LEDGER CARRIES NO `REVIEW:` LINE (planned mode):
   ⛔ DO NOT USE: Write on docs/changelog/
   ⛔ DO NOT USE: Bash to run git push
-  ✅ DO: Run the review pass first — it is what STEP 8 documents
+  ✅ DO: Run STEP 7 first — it is what STEP 8 documents, and 7.4 is how a resume can tell
 
 IF AN F-BLOCK'S VALIDATION HAS NOT PASSED:
   ⛔ DO NOT USE: Bash to run git commit for that block
@@ -341,8 +341,16 @@ landed. An assertion that was never RED is an untested F-block regardless of its
 
 ## STEP 7: Review (ONCE, AFTER THE LAST F-BLOCK)
 
-**GATE CHECK:** Is every F-block in the plan's Execution Order committed with a `complete` line? IF NO
-→ return to STEP 5. A review of half a delivery reports gaps that are simply unwritten work.
+```
+IF ANY F-BLOCK IN THE EXECUTION ORDER LACKS A `complete` LINE:
+  ⛔ DO NOT: Dispatch the auditors
+  ⛔ DO NOT USE: Write on docs/changelog/
+  ✅ DO: Return to STEP 5 — a review of half a delivery reports gaps that are unwritten work
+
+IF THE LEDGER ALREADY CARRIES A `REVIEW:` LINE FOR THIS PLAN:
+  ⛔ DO NOT: Dispatch the auditors again
+  ✅ DO: Go to STEP 8 — the pass happened, and 7.4 recorded it
+```
 
 **Planned mode only.** Direct mode has no plan to audit against — skip to STEP 8.
 
@@ -350,7 +358,19 @@ landed. An assertion that was never RED is an untested F-block regardless of its
 
 ### 7.1 Dispatch Four Read-Only Auditors, in Parallel
 
-Each receives the plan's content plus its own scope. **All four run in parallel; WAIT-ALL before 7.2.**
+**DISPATCH 4 AGENTS IN PARALLEL:**
+- **Capability:** read-only for all four — Glob, Grep, Read, and Bash for `git log` / `git diff` /
+  `git show` only. No Edit, no Write. The coordinator is the only writer in this command.
+- **Complexity:** standard
+- **Input:** the plan's content, plus the one scope below
+
+Each finding carries a severity, on the three levels the rest of this repository uses:
+
+| Severity | Use when |
+|---|---|
+| **high** | A plan decision is unimplemented, a regression was detected, or the implementation contradicts a validated decision |
+| **medium** | Partial implementation, a missed edge case, a structural violation that will cost maintenance |
+| **low** | Cosmetic, doc nit, naming preference |
 
 1. **Plan conformance** — every decision and scope item in the plan against the tree. Implemented with
    `file:line`, partial, or missing. Flag drift where the implementation contradicts a decision.
@@ -361,8 +381,23 @@ Each receives the plan's content plus its own scope. **All four run in parallel;
 4. **Quality** — the `.md` artefacts against `building-commands`, the rest against the conventions
    visible in neighbouring files.
 
-**Capability for all four: read-only.** They read, they run `git log` and `git diff`, they report. They
-do not write, and the coordinator is the only writer in this command.
+```
+IF FEWER THAN FOUR REPORTS HAVE COME BACK:
+  ⛔ DO NOT: Proceed to 7.2
+  ⛔ DO NOT: Form a verdict on the reports you have
+  ✅ DO: WAIT-ALL — a verdict on three of them reviews three quarters of the delivery
+```
+
+### Agent Dispatch Rules
+
+1. Read the required **Capability** and honour it — read-only, in all four cases.
+2. Read the **Complexity** hint — `standard`, in all four cases.
+3. Choose the mechanism in your engine that satisfies the capability, and dispatch all four at once.
+4. Pass the plan's content as part of each prompt.
+5. Verify all four reports are received before acting on any of them.
+
+You are the coordinator. Map the intent — capability plus complexity — to the best mechanism your
+engine offers.
 
 ### 7.2 Ask the Graph What the Subagents Cannot See
 
@@ -397,12 +432,31 @@ IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
 ⛔ **Nothing here writes a review file.** No companion document, no versioned artefact, no verdict for
 a later command to find. What survives goes in the ledger, as rulings.
 
+**When two auditors disagree about the same item**, keep both and say so. A conformance auditor that
+checked execution evidence outranks a quality auditor's reading, and a regression the side-effect
+auditor flags stays high even where conformance considers it in scope.
+
+### 7.4 Record the Pass in the Ledger
+
+Append one line, and it is the only trace this STEP leaves anywhere:
+
+```
+REVIEW: complete (<n> findings, <m> applied, <k> rejected)
+```
+
+**This is what makes "exactly once" auditable.** STEP 5.1 resumes from the ledger's `complete` lines.
+Without this line a review that found nothing leaves no trace at all, so a fresh session sees the last
+F-block committed, no evidence the pass ran, and the prohibition at the top of this file tells it to
+run one — the second pass this command exists to prevent. Every rejected finding gets its own
+`Ruling:` line, per 7.3.
+
 ---
 
 ## STEP 8: Document
 
-After STEP 7's review pass, and not before — a changelog written ahead of it describes a delivery
-that has not been audited yet, and any finding STEP 7 applies would land after its own record.
+After STEP 7's review pass, and not before (planned mode — direct mode has no STEP 7 to wait on). A
+changelog written ahead of that pass describes a delivery nobody audited, and any finding STEP 7
+applies would land after its own record.
 
 - **Changelog** for new or major work: `docs/changelog/YYYY-MM-DD-<action>-<what>.md`, action being
   `add` | `update` | `refactor` | `remove`.

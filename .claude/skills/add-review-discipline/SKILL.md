@@ -77,6 +77,18 @@ gate on a stored verdict is what turns one reading into a queue: someone must pr
 must find it, and a stale one is indistinguishable from a fresh one. What is worth keeping from a
 report goes where decisions already go — the build ledger, as a ruling with its cost clause.
 
+```
+IF YOU WANT TO KEEP SOMETHING FROM A REPORT:
+  ⛔ DO NOT USE: Write on docs/plans/, other than the ledger
+  ⛔ DO NOT USE: Write on any path matching --review-v, --audit- or --verdict
+  ⛔ DO NOT: Ask either reader to save its own report
+  ✅ DO: Put what survives in the ledger, as a ruling
+```
+
+**This is the one invariant the readers cannot enforce for you.** `@plan-review-agent` holds no tool
+restrictions at all, and the coordinator can write anywhere. Nothing in the frontmatter of either agent
+stops a report reaching disk — the rule above is the only thing that does.
+
 ## What the Caller Owes the Report
 
 **A finding is judged before it is applied. Never applied blindly.** The reader is a leaf: it read the
