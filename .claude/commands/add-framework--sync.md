@@ -250,7 +250,8 @@ Each agent is independent. Dispatch ALL simultaneously.
 
 IF ANY MISSING:
   ⛔ DO NOT USE: Edit on any documentation file
-  ✅ DO: Wait or re-dispatch the missing agent
+  ✅ DO: Wait for it, or send the missing agent again — this is a retry on a result that never
+     arrived, not a second opinion on one that did
 
 ---
 
