@@ -30,7 +30,7 @@ STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrel
 
 **⛔ HARD GATE — ROLE BOUNDARY:**
 
-`shared-brainstorm` DISCUSSES, EXPLORES, DOCUMENTS. It NEVER implements code AND NEVER invokes another command.
+`brainstorm` DISCUSSES, EXPLORES, DOCUMENTS. It NEVER implements code AND NEVER invokes another command.
 
 ```
 IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
@@ -494,7 +494,7 @@ Idea is ready to formalize. Run: /add-framework--plan [idea]
 
 ### 7.4 Offer Refinement (If Umbrella)
 
-If umbrella spec: "You can now refine individual subtopics by running `/add-framework--shared-brainstorm vamos refinar [topic] -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`"
+If umbrella spec: "You can now refine individual subtopics by running `/add-framework--brainstorm vamos refinar [topic] -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`"
 
 ---
 
