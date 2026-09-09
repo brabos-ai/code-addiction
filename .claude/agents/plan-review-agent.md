@@ -2,10 +2,10 @@
 name: plan-review-agent
 description: Reviews a draft plan or brainstorm design for executability, hidden assumptions, contradictions, and missing decisions before delivery. Read-only. Use after a plan/design file is written and before presenting it as ready.
 model: sonnet
-tools: Glob, Read, Grep
-disallowedTools: Write, Edit, NotebookEdit, Bash
 memory: project
 # sonnet: plan-quality review needs adversarial reasoning, not a filename scan
+# no tools/disallowedTools: one shell call verifies every cited path and queries the
+# graph, where per-path tools spend a model turn each. READ-ONLY is the rule below.
 ---
 
 <!-- uses:
