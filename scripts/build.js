@@ -1044,7 +1044,7 @@ function proseOf(raw) {
  * @param {{readSource?: (node) => string}} opts
  * @returns {{failures: string[], warnings: string[]}}
  */
-function checkArtefactGraph(graph, { readSource } = {}) {
+function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null : ROOT } = {}) {
   const read = readSource || ((n) => {
     try { return readFile(path.join(ROOT, n.path)); } catch { return ''; }
   });
@@ -1120,18 +1120,55 @@ function checkArtefactGraph(graph, { readSource } = {}) {
   // `delivered.sh` because a cross-layer `uses:` target resolves inside the
   // declaring artefact's own layer and would dangle, leaving the prose mention
   // as the only way to write it.
+  // 4. It does not read `proseOf()`. That helper answers "what did the author
+  //    write about other artefacts", and for this gate it is wrong in BOTH
+  //    directions. It keeps HTML comments other than `uses:`, which the build
+  //    strips and which therefore never ship — so a source-only note explaining
+  //    a cross-layer name would FAIL the build for text no user can ever read.
+  //    And it removes fenced blocks, which DO ship — so a command name in an
+  //    example invocation, the likeliest place for one, passed clean. The
+  //    shipped text is what `stripHtmlComments` leaves, so that is what is read.
   const INTERNAL_COMMAND_NS = /(?<![\w.-])add-framework--[a-z0-9-]+/gi;
-  for (const n of graph.nodes) {
-    if (n.layer !== 'product') continue;
-    const named = new Set(proseOf(read(n)).match(INTERNAL_COMMAND_NS) ?? []);
-    for (const name of named) {
+  const flagCrossLayer = (path_, text) => {
+    for (const name of new Set(text.match(INTERNAL_COMMAND_NS) ?? [])) {
       failures.push(
         'artefact-graph: internal command named by a distributed artefact\n' +
-          `  ${n.path}\n` +
-          `  names ${name}, which is an internal command and ships to nobody\n` +
+          `  ${path_}\n` +
+          `  names ${name}, which is in the internal command namespace and ships to nobody\n` +
           '  a user installing this artefact has no such command. Describe the\n' +
-          '  distinction without the name, or name the product equivalent.',
+          '  distinction without the name, or name the product equivalent.\n' +
+          '  A source-only note is exempt: HTML comments are stripped at build.',
       );
+    }
+  };
+
+  for (const n of graph.nodes) {
+    if (n.layer !== 'product') continue;
+    flagCrossLayer(n.path, stripHtmlComments(read(n)));
+  }
+
+  // 5. Three shipped classes are not graph nodes at all, so a node walk alone
+  //    cannot see them: `templates/`, `transforms/` and a plugin's own
+  //    `skills/`. SHIPPED_SUBDIRS copies the first two verbatim and
+  //    `cli/src/plugins.js` copies the third into every provider's skills dir.
+  //    `productRoot` is absent when a caller passes a synthetic graph, and that
+  //    is the only case this sweep is skipped.
+  if (productRoot) {
+    const walk = (dir) => {
+      let entries;
+      try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of entries) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) { walk(full); continue; }
+        if (!/\.(md|sh|json)$/.test(e.name)) continue;
+        let text;
+        try { text = fs.readFileSync(full, 'utf8'); } catch { continue; }
+        flagCrossLayer(path.relative(productRoot, full).split(path.sep).join('/'),
+          stripHtmlComments(text));
+      }
+    };
+    for (const sub of ['templates', 'transforms', 'plugins']) {
+      walk(path.join(productRoot, 'framwork', '.codeadd', sub));
     }
   }
 

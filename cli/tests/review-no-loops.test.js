@@ -593,6 +593,27 @@ describe('L5 the cross-layer gate', () => {
     expect(failures.join('\n')).toContain(PRODUCT_SKILL.path);
   });
 
+  it('L5.7a a source-only HTML comment is exempt — it never ships', () => {
+    // The first version read `proseOf()`, which keeps every HTML comment other
+    // than `uses:`. Those are stripped at build, so a note explaining a
+    // cross-layer name would have failed the build over text no user can read.
+    const { failures, warnings } = check([PRODUCT_SKILL, INTERNAL_CMD], {
+      [PRODUCT_SKILL.id]: '<!-- internal analogue: add-framework--build -->\n\nBody.',
+    });
+    expect([...failures, ...warnings].join('\n')).not.toContain(PRODUCT_SKILL.path);
+  });
+
+  it('L5.7b a fenced code block is NOT exempt — it ships verbatim', () => {
+    // The mirror of 7a, and the reason the pair matters: `proseOf()` removed
+    // fenced spans, so an example invocation — the likeliest place to write a
+    // command name — passed clean while the comment above it failed. The gate
+    // was inverted against what actually reaches a user.
+    const { failures, warnings } = check([PRODUCT_SKILL, INTERNAL_CMD], {
+      [PRODUCT_SKILL.id]: 'Run it:\n\n```bash\nadd-framework--build my-plan\n```\n',
+    });
+    expect([...failures, ...warnings].join('\n')).toContain(PRODUCT_SKILL.path);
+  });
+
   it('L5.7 the real distributed plan-review skill does not trip the gate', () => {
     const { failures, warnings } = check([PRODUCT_SKILL, INTERNAL_CMD], {
       [PRODUCT_SKILL.id]: read(P.productPlanReview),
