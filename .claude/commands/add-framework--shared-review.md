@@ -3,7 +3,7 @@
 <!-- uses:
 - skill: building-commands
 - command: /add-framework--build
-- command: /add-framework--self-build
+- command: /add-framework--build
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -44,7 +44,7 @@ ALWAYS (this command is READ-ONLY for the codebase):
 ```
 /add-framework--shared-review [plan]                     → audit by unique slug substring
 /add-framework--shared-review <ts>-PLAN--slug            → audit by full basename
-/add-framework--shared-review <ts>-SELF-PLAN--slug       → audit a self-plan
+/add-framework--shared-review <ts>-SELF-PLAN--slug       → audit a legacy layer-split plan
 /add-framework--shared-review NNNN                       → audit a legacy plan by its number
 ```
 
@@ -268,7 +268,7 @@ After applying corrections: `/add-framework--shared-review <plan-id>`
 Show: review file path, verdict, top 3 findings (by severity, then by file).
 
 ⛔ DO NOT proceed to apply fixes. DO NOT edit code. DO NOT create branches.
-add-framework--shared-review ends here. Remediation is the user's decision and is executed via `/add-framework--build` or `/add-framework--self-build`.
+add-framework--shared-review ends here. Remediation is the user's decision and is executed via `/add-framework--build`.
 
 ---
 

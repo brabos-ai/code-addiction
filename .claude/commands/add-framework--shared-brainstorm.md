@@ -5,7 +5,6 @@
 - agent: plan-review-agent
 - command: /add-framework--build
 - command: /add-framework--plan
-- command: /add-framework--self-plan
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -37,9 +36,7 @@ STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrel
 IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
   ⛔ DO NOT USE: Skill tool (invoking any skill or command)
   ⛔ DO NOT invoke: /add-framework--plan
-  ⛔ DO NOT invoke: /add-framework--self-plan
   ⛔ DO NOT invoke: /add-framework--build
-  ⛔ DO NOT invoke: /add-framework--self-build
   ✅ DO: At STEP 7 handoff, print the suggested command as plain text, then STOP
 ```
 
@@ -234,7 +231,7 @@ Continue to STEP 3.
 | **architectural** | Everything written below and in STEP 4, unchanged — including the decomposition offer. | Run as written. | Runs in full, as written. |
 
 **STEP 7's `[HARD STOP]` handoff runs on all three paths.** A spike that found a real problem still routes to
-`/add-framework--plan` or `/add-framework--self-plan`; a bounded design still routes to one of them. What
+`/add-framework--plan`; a bounded design routes there too. What
 changes is whether a document precedes the suggestion — never whether the user approves.
 
 The `⛔ HARD GATE — ROLE BOUNDARY` applies unchanged on all three paths: no path may invoke another command,
@@ -343,7 +340,7 @@ docs/brainstorming/2026-09-07T005046-[topic]-[subtopic].md
 ```markdown
 # Brainstorm: [Topic]
 
-> **Status:** final (ready for /add-framework--plan or /add-framework--self-plan)
+> **Status:** final (ready for /add-framework--plan)
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
 
@@ -402,8 +399,7 @@ docs/brainstorming/2026-09-07T005046-[topic]-[subtopic].md
 
 ## Next Steps
 
-[product layer idea] Run: `/add-framework--plan [idea]`
-[internal layer idea] Run: `/add-framework--self-plan [idea]`
+Run: `/add-framework--plan [idea]`
 ```
 
 **For umbrella specs:**
@@ -484,17 +480,16 @@ Bullet list of 3-5 key validated decisions from the design.
 
 ### 7.3 Next Step Guidance [HARD STOP]
 
-Determine the target layer from STEP 2.2 "Framework impact" classification:
-- IF product layer (`framwork/.codeadd/`) → suggest `/add-framework--plan`
-- IF internal layer (`.claude/`, `scripts/`, `CLAUDE.md`) → suggest `/add-framework--self-plan`
-- IF layer is ambiguous → ask the user which layer, then print the correct command
+One command formalizes both layers, so there is no layer routing left to do here. Carry STEP 2.2's
+"Framework impact" classification into the design document as the layer each affected artefact sits
+in — the planning command reads it as the starting point for its own F-block tags. **An ambiguous
+layer is a note in the document, not a question to the user.**
 
-Print ONLY one of the following (matching the detected layer), then STOP:
+Print this, then STOP:
 
 ```
-[product layer]  Idea is ready to formalize. Run: /add-framework--plan [idea]
-[internal layer] Idea is ready to formalize. Run: /add-framework--self-plan [idea]
-(shared-brainstorm stops here — it does not run the next command for you.)
+Idea is ready to formalize. Run: /add-framework--plan [idea]
+(brainstorm stops here — it does not run the next command for you.)
 ```
 
 ### 7.4 Offer Refinement (If Umbrella)
@@ -542,7 +537,7 @@ ALWAYS:
 - Store outputs in `docs/brainstorming/` only
 - Confirm no open questions before printing the next-command suggestion
 - Dispatch `@plan-review-agent` before any design delivery, including Continue Mode
-- Route internal-layer ideas to `/add-framework--self-plan`, not `/add-framework--plan`
+- Record each affected artefact's layer in the design doc, for the planner's F-block tags
 - Use natural language invocation (no flags/modes in command itself)
 
 NEVER:

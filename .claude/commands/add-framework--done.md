@@ -3,7 +3,7 @@
 <!-- uses:
 - skill: add-commit
 - mention: @framework-discovery-agent
-- command: /add-framework--self-build
+- command: /add-framework--build
 - command: /add-framework--shared-review
 -->
 
@@ -107,7 +107,7 @@ Run `gh auth status`. If it fails → report it and STOP. Nothing below is writt
 
 Verify the current branch is **not** `main`. If it is → report and STOP: this command ends work someone else started on a branch, and it never creates one.
 
-**Resolve `[plan]` the way `/add-framework--self-build` does.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*`, `--evidence-v*` and `--ledger` companions).
+**Resolve `[plan]` the way `/add-framework--build` does.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*`, `--evidence-v*` and `--ledger` companions).
 
 - **Exactly one match** → that is the plan.
 - **More than one match** → print every candidate basename and ask which one. **NEVER guess.**
@@ -145,7 +145,7 @@ This is what makes a second run on the same branch safe: the gates below would a
 
 If any block is missing its `complete` line → report which ones and STOP.
 
-**This runs first for a reason: unwritten code breaks no test.** A `/add-framework--self-build` run that stopped halfway passes all four commands below and an existing favourable review, and would merge and index as fully delivered — the exact lie the index exists to prevent.
+**This runs first for a reason: unwritten code breaks no test.** A `/add-framework--build` run that stopped halfway passes all four commands below and an existing favourable review, and would merge and index as fully delivered — the exact lie the index exists to prevent.
 
 ### 2.3 The review gate
 
