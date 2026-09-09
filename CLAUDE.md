@@ -19,27 +19,25 @@ Source of truth for distributed artefacts. Users consume these via CLI install.
 | Agents | `framwork/.codeadd/agents/*-agent.md` | 22 |
 | Scripts | `framwork/.codeadd/scripts/*` | variable |
 
-### Internal Layer — `.claude/` and `.opencode/`
+### Internal Layer — `.claude/`
 
-Development tools that build and maintain the framework itself. `.claude/` is canonical; `.opencode/` holds OpenCode adapters of the same files. NOT distributed to users.
+Development tools that build and maintain the framework itself. One file per artefact, no provider mirror. NOT distributed to users, and absent from `provider-map.json`.
 
 | Type | Path |
 |------|------|
-| Commands | `.claude/commands/*.md` — namespace `add-framework--*`, sub-prefixes `self-` (internal infrastructure) and `shared-` (either context) |
-| Skills | `.claude/skills/` — also discovered natively by OpenCode |
-| Agents | `.claude/agents/` — OpenCode adapters use `mode: subagent` and `permission` frontmatter |
+| Commands | `.claude/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
+| Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
+| Agents | `.claude/agents/*.md` |
 | Plans | `docs/plans/` — gitignored working artefacts, local only |
 
 ### Internal commands
 
 | Command | Purpose | Operates on |
 |---------|---------|-------------|
-| `add-framework--plan` | Strategic consultant; generates framework plans | Product layer |
-| `add-framework--build` | Executes framework plans | Product layer |
-| `add-framework--self-plan` | Plans changes to the internal layer | Internal layer |
-| `add-framework--self-build` | Executes self-plans | `.claude/`, `scripts/`, `CLAUDE.md` |
-| `add-framework--shared-brainstorm` | Collaborative ideation; precedes either plan command | Either |
-| `add-framework--shared-review` | Audits a plan vs implementation via 4 parallel read-only subagents | Either |
+| `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
+| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules | Both layers |
+| `add-framework--brainstorm` | Collaborative ideation; precedes `add-framework--plan` | Both layers |
+| `add-framework--review` | Audits a plan vs implementation via 4 parallel read-only subagents | Both layers |
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
 | `add-framework--done` | Close-out — gates, `gh` merge, index entry, cleanup | Branches, PRs, `docs/delivered.jsonl` |
@@ -162,6 +160,10 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Topic | Owner |
 |---|---|
 | Authoring a command, skill or agent | `building-commands`, `add-framework-development` |
+| Writing or revising a plan document | `add-plan-authoring` |
+| Ledger, rulings, hard stops, one commit per F-block | `add-build-ledger` |
+| Product-layer build mechanics | `add-framework-product-layer` |
+| Internal-layer build mechanics | `add-framework-internal-layer` |
 | `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 8 |
 | `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
 | What belongs in a `CLAUDE.md` | `add-claude-md-style` |
