@@ -176,7 +176,15 @@ Use file changes to enrich terse commit messages. Provider dirs (`framwork/.clau
 
 ### Plan scan
 
-If `docs/plans/` exists → include non-draft plans created/updated since `LATEST_TAG`.
+Read the delivered plans, bounded by the tag:
+
+```bash
+git diff --name-status [LATEST_TAG]..main -- docs/deliveries/
+```
+
+Each `docs/deliveries/<plan-basename>/` added since the tag is one delivery. Read its `plan.md` for what shipped and its `ledger.md` for the decisions made along the way.
+
+⛔ **DO NOT source release notes from `docs/plans/`.** It is gitignored and local, so on a release machine it holds whatever that machine happened to work on — usually nothing. A scan of it renders an empty section and says nothing about why.
 
 ### Assemble release notes
 
