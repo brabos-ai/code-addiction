@@ -113,12 +113,17 @@ the help text of `cli/src/cli.js`.**
 ### Every product F-block
 
 ```bash
-node scripts/build.js
+ADD_GRAPH_WARNINGS=1 node scripts/build.js
 ```
 
-Exit 0, no new LINT warning. This also runs the three graph gates: a `uses:` target that does not
-exist fails, an artefact missing from `provider-map.json` fails, and a name in prose with no declared
-relationship fails.
+Exit 0, and no warning absent from the baseline measured before the first F-block. **Two different
+classes of warning come out of this one run**: LINT warnings from the raw-path linter, and graph
+warnings from the artefact graph. Both count, and **`build.js` summarises the graph ones as a count
+unless `ADD_GRAPH_WARNINGS=1` is set**, so the bare form cannot support a "no new warning" claim.
+
+The same run is where the three graph gates fire: a `uses:` target that does not exist fails, an
+artefact missing from `provider-map.json` fails, and a name in prose with no declared relationship
+fails.
 
 ### Markdown artefacts
 
@@ -142,8 +147,14 @@ IF type=cli AND THE SUITE HAS NOT BEEN RUN SERIALLY:
 ```
 
 **Serial is not a preference.** Parallel workers race on shared fixtures and report failures that
-vanish serially. Never diagnose a failure without re-running serially, and never accept a green
-parallel run as proof.
+vanish serially. Never accept a green parallel run as proof.
+
+```
+IF ANY TEST FAILS:
+  ⛔ DO NOT: Attribute it to flakiness without evidence
+  ⛔ DO NOT: Report the raw failure count as this block's result
+  ✅ DO: Re-run serially, baseline against a clean tree, report the delta
+```
 
 **If stdout carries `Debugger listening on ws://…`**, an editor injected `NODE_OPTIONS`. Clear it
 (`unset NODE_OPTIONS VSCODE_INSPECTOR_OPTIONS`) before trusting any assertion on stdout or stderr.
@@ -209,11 +220,6 @@ IF A CLAUDE.md SECTION IS UNRELATED TO WHAT YOU BUILT:
 ```
 
 A build that rewrites the plugin section because it added a skill produces a diff nobody can review.
-
-## Changelog
-
-New or major work writes `docs/changelog/YYYY-MM-DD-<action>-<what>.md`.
-Actions: `add` | `update` | `refactor` | `remove`.
 
 ## Common Rationalizations (BLOCKED)
 

@@ -7,7 +7,6 @@
 - skill: building-commands
 - skill: add-framework-development
 - command: /add-framework--plan
-- command: /add-framework--release
 - command: /add-framework--sync
 -->
 
@@ -73,10 +72,25 @@ IF THE CURRENT F-BLOCK IS TAGGED [product]:
   ⛔ DO NOT USE: Write or Edit on framwork/ provider directories — build.js generates them
   ✅ DO: Load add-framework-product-layer and apply its checks
 
+IF THE F-BLOCK'S LAYER TAG IS NEITHER [product] NOR [internal]:
+  ⛔ DO NOT USE: Write or Edit anywhere for that block
+  ⛔ DO NOT: Assume a default layer — [both] is a reviewer input, never an F-block tag
+  ✅ DO: Derive the tag from the block's own paths per STEP 1.1, and record a ruling
+
 IF A PATH IS NOT COVERED BY THE CURRENT F-BLOCK'S TAG:
-  ⛔ DO NOT: Widen the block to reach it
-  ✅ DO: Rule on it and record the ruling, or STOP if no reading of the plan supports it
+  ⛔ DO NOT: Write it under the current block's tag
+  ✅ DO: Open a NEW F-block carrying that path's own tag, and record a ruling naming both
+  ✅ DO: STOP instead if no reading of the plan supports reaching that path at all
+
+IF DIRECT MODE (STEP 1.2 — no plan, therefore no tag):
+  ⛔ DO NOT USE: Write or Edit outside the resolved target path and its own layer
+  ⛔ DO NOT: Touch the other layer for any reason — direct mode has no ledger to rule in
+  ✅ DO: Resolve the target path first, let it choose the layer, load that layer's skill
 ```
+
+**The last block exists because the three above it are conditional on a tag.** Direct mode has none,
+so without it a direct build would run with no layer confinement at all — weaker than the two
+single-layer commands this one replaced.
 
 **One exception, and only this one.** A `[product]` F-block MAY write the parts of `CLAUDE.md` that
 its own work made stale — the derived Project Anatomy counts and the rows describing what it just
@@ -239,8 +253,17 @@ A red build is not a ruling: it reports and STOPS.
 skill. Both layers share one non-negotiable:
 
 ```bash
-node scripts/build.js        # exit 0, no new warning — the three graph gates run here
+ADD_GRAPH_WARNINGS=1 node scripts/build.js   # exit 0, no new warning — the three graph gates run here
 ```
+
+⛔ **`ADD_GRAPH_WARNINGS=1` is not optional.** Without it `build.js` prints `N graph warning(s)` and
+nothing else, so a block that greps the output for a warning finds none and reports clean against
+warnings it never saw. That is not hypothetical: it shipped four warnings through thirteen blocks of
+one delivery.
+
+**Measure the baseline ONCE, before the first F-block**, by running the same command on the branch
+point. "No **new** warning" means no warning absent from that list — a pre-existing warning is not
+this block's to fix, and a count alone cannot tell the two apart.
 
 ```
 IF VALIDATION DID NOT PASS:
@@ -271,8 +294,7 @@ Report, always:
 
 - Artefacts created, modified, renamed and **removed**, with paths and their layer.
 - The ledger path and the `BASE..HEAD` range of every committed F-block.
-- **Rulings I made** — every `Ruling:` line from the ledger, exhaustive, each with its cost clause.
-  If none was made, say so; silence is indistinguishable from not having looked.
+- **Rulings I made** — per `add-build-ledger`, which owns the exhaustiveness rule and the cost clause.
 - Which validations ran per layer, and their result.
 - The Project Anatomy counts as computed, and whether any changed.
 - Every `CLAUDE.md` section touched and why. If none, say so.
@@ -282,18 +304,11 @@ Report, always:
 ## Rules
 
 ALWAYS:
-- Read the F-block's layer tag before touching anything for that block
-- Load a layer skill on that layer's first F-block, not before
-- Run `node scripts/build.js` on every F-block, in either layer
-- Prove an internal F-block stayed in its lane with an empty `git status --porcelain framwork/`
-- Fix every dependent of a removed or renamed artefact inside the same F-block
-- Derive a missing layer tag from the path and record a ruling saying you did
+- Treat each F-block's tag as independent — a block never inherits the previous block's layer
+- Compare a block's warnings against the baseline, never against zero — a pre-existing warning is not
+  this block's to fix, and a count alone cannot tell the two apart
 
 NEVER:
 - Split a plan by layer into two builds — the tags carry it
-- Create provider files manually
-- Register a `cli/` artefact in `provider-map.json`
-- Bump `cli/package.json` — that belongs to `/add-framework--release`
-- Report a `cli/` F-block complete on a mental test alone
-- Add a `## Spec` section to a command or skill
+- Report an F-block complete on a mental test alone, in either layer
 - Skip the STEP 2 `Design [STOP]` gate — rulings replace the per-block stall, never that approval

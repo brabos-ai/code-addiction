@@ -22,10 +22,9 @@ flowchart LR
     n_product_command_add_review(["add.review"])
     n_product_command_add_ux(["add.ux"])
     n_product_command_add_wiki(["add.wiki"])
-    n_internal_command_add_framework__brainstorm --> n_internal_command_add_framework__build
     n_internal_command_add_framework__brainstorm --> n_internal_command_add_framework__plan
+    n_internal_command_add_framework__brainstorm -.-> n_internal_command_add_framework__build
     n_internal_command_add_framework__build --> n_internal_command_add_framework__plan
-    n_internal_command_add_framework__build --> n_internal_command_add_framework__release
     n_internal_command_add_framework__build --> n_internal_command_add_framework__sync
     n_internal_command_add_framework__done --> n_internal_command_add_framework__build
     n_internal_command_add_framework__done --> n_internal_command_add_framework__review
