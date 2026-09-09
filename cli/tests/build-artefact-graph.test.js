@@ -852,7 +852,10 @@ describe('node inventory snapshot', () => {
       // were absorbed into add-framework--plan and add-framework--build, which
       // now carry a per-F-block layer tag instead of one layer each. The two
       // shared- commands were renamed, which moves no count.
-      command: 23,
+      // command 23 -> 24: add-framework--roadmap, the internal writer for
+      // docs/roadmap/index.md. A node and no edge — it declares no uses: block
+      // and names no other artefact.
+      command: 24,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
@@ -867,7 +870,10 @@ describe('node inventory snapshot', () => {
     // declares 97 -> 99: the four new skills all carry a `<!-- uses: -->` block,
     // the two deleted commands carried one each.
     // (plan 2026-09-08T210322-SELF-PLAN--unify-dev-commands, F2-F13.)
-    expect(nodes).toHaveLength(211);
+    // 211 -> 212: add-framework--roadmap. `declares` stays 99 — it carries no
+    // `<!-- uses: -->` block on purpose, which is what keeps it a leaf.
+    // (plan 2026-09-09T065116-PLAN--roadmap-command, F1.)
+    expect(nodes).toHaveLength(212);
     expect(nodes.filter((n) => n.declares)).toHaveLength(99);
   });
 });
