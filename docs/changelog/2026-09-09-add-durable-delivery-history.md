@@ -1,7 +1,7 @@
 # Development history that survives the worktree
 
 **Date:** 2026-09-09
-**Layer:** internal
+**Layer:** internal, plus one product-layer file — see Scope
 **Plan:** `2026-09-09T112557-PLAN--durable-delivery-history`
 
 ## Why
