@@ -1,7 +1,8 @@
 # 2026-09-08 — One planner, one executor, four skills: the development loop stops splitting by layer
 
 Implements `docs/plans/2026-09-08T210322-SELF-PLAN--unify-dev-commands.md` (internal layer,
-F1–F13, plus an F14 the plan did not have). Four commands become two, the `self-` and `shared-`
+F1–F13, plus three blocks the plan did not have: F14 for the `cli/` test fallout, F15 for an audit
+remediation, and F16 for the product-layer pointer this document once listed as a follow-up). Four commands become two, the `self-` and `shared-`
 sub-prefixes are retired, the root `.opencode/` adapter tree is deleted, and the instructions that
 were duplicated across the four move into four skills a command loads only when the work calls for
 them.
@@ -114,9 +115,16 @@ changed, so a correct build turned CI red:
 Each number carries its reason in a comment above it, per the standing rule that a test encoding a
 deliberately replaced fact is updated and explained, never deleted.
 
-## Scope left open
+## The one product-layer line, fixed here rather than deferred
 
-`framwork/.codeadd/skills/add-plan-review/SKILL.md` names `add-framework--shared-review` in one line
-and goes stale here. It is product-layer prose, cross-layer names are skipped by the prose gate, and
-nothing fails — but the pointer is wrong. Fixing it is the first thing the merged command is good
-for, which is a fair test of whether the merge earned itself.
+`framwork/.codeadd/skills/add-plan-review/SKILL.md` named `add-framework--shared-review` in one line
+and went stale on the rename. It is product-layer prose, cross-layer names are skipped by the prose
+gate, and nothing failed — but the pointer was wrong. The plan deferred it to a follow-up, as the
+first thing the merged command would be good for.
+
+F16 pulled it in instead. The merged command reaches both layers as of F8, this is one line of prose
+with no behaviour attached, and leaving a wrong pointer in a shipped skill to prove a process point is
+worse than fixing it. The `[product]` tag on that block is what the delivery-index layer derivation
+already handles, and F14 had established the precedent in the same delivery.
+
+**Nothing is left open.**
