@@ -1,14 +1,13 @@
-# ADD Shared-Review — Plan-vs-Implementation Auditor
+# ADD Review — Plan-vs-Implementation Auditor
 
 <!-- uses:
 - skill: building-commands
 - command: /add-framework--build
-- command: /add-framework--self-build
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Audits an existing plan in `docs/plans/` against actual repository state via 4 parallel read-only subagents. Produces a versioned review file alongside the plan. Used for both framework plans (`...-PLAN--slug`) and self plans (`...-SELF-PLAN--slug`), in either naming form — the timestamped `YYYY-MM-DDTHHMMSS-` prefix or the legacy `NNNN-` one.
+Audits an existing plan in `docs/plans/` against actual repository state via 4 parallel read-only subagents. Produces a versioned review file alongside the plan. Resolves all three plan naming forms: the timestamped `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy `NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer.
 
 ---
 
@@ -42,10 +41,10 @@ ALWAYS (this command is READ-ONLY for the codebase):
 ## Operation Mode
 
 ```
-/add-framework--shared-review [plan]                     → audit by unique slug substring
-/add-framework--shared-review <ts>-PLAN--slug            → audit by full basename
-/add-framework--shared-review <ts>-SELF-PLAN--slug       → audit a self-plan
-/add-framework--shared-review NNNN                       → audit a legacy plan by its number
+/add-framework--review [plan]                     → audit by unique slug substring
+/add-framework--review <ts>-PLAN--slug            → audit by full basename
+/add-framework--review <ts>-SELF-PLAN--slug       → audit a legacy layer-split plan
+/add-framework--review NNNN                       → audit a legacy plan by its number
 ```
 
 Re-invocation creates `--review-v02`, `--review-v03`, etc. Old reviews are never overwritten.
@@ -258,7 +257,7 @@ verdict: PASS | GAPS_FOUND | BLOCKED
 - [ ] <actionable item with file:line>
 
 ## Re-review
-After applying corrections: `/add-framework--shared-review <plan-id>`
+After applying corrections: `/add-framework--review <plan-id>`
 ```
 
 ---
@@ -268,7 +267,7 @@ After applying corrections: `/add-framework--shared-review <plan-id>`
 Show: review file path, verdict, top 3 findings (by severity, then by file).
 
 ⛔ DO NOT proceed to apply fixes. DO NOT edit code. DO NOT create branches.
-add-framework--shared-review ends here. Remediation is the user's decision and is executed via `/add-framework--build` or `/add-framework--self-build`.
+add-framework--review ends here. Remediation is the user's decision and is executed via `/add-framework--build`.
 
 ---
 

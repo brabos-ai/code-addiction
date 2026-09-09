@@ -848,25 +848,27 @@ describe('node inventory snapshot', () => {
     for (const n of nodes) byKind[n.kind] = (byKind[n.kind] || 0) + 1;
 
     expect(byKind).toEqual({
-      command: 25,
-      skill: 44,
+      // command 25 -> 23: add-framework--self-plan and add-framework--self-build
+      // were absorbed into add-framework--plan and add-framework--build, which
+      // now carry a per-F-block layer tag instead of one layer each. The two
+      // shared- commands were renamed, which moves no count.
+      command: 23,
+      // skill 44 -> 48: add-build-ledger, add-plan-authoring,
+      // add-framework-product-layer and add-framework-internal-layer, extracted
+      // from the four commands above so a build loads only the layer it is in.
+      skill: 48,
       agent: 28,
-      // reference 68 -> 69, script 17 -> 18, fragment 23 -> 24: the delivery
-      // index added add-doc-schemas/references/delivery-index.md,
-      // scripts/delivered.sh and fragments/docs-pruning/add.done.md
-      // (plan 2026-09-07T160328-PLAN--delivery-index, F1/F3/F13).
-      reference: 69,
+      // reference 69 -> 70: add-plan-authoring/references/plan-template.md.
+      reference: 70,
       script: 18,
       fragment: 24,
     });
-    // 204 -> 207: the three new nodes above. `declares` is unchanged — none of
-    // the three carries a `<!-- uses: -->` block of its own.
-    //
-    // 207 -> 208 and command 24 -> 25: /add-framework--done, the internal
-    // close-out (plan 2026-09-07T162415-SELF-PLAN--delivery-index-internal,
-    // S2). It DOES carry a `<!-- uses: -->` block, so `declares` moves with it.
-    expect(nodes).toHaveLength(208);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(97);
+    // 208 -> 211: +4 skills, +1 reference, -2 commands.
+    // declares 97 -> 99: the four new skills all carry a `<!-- uses: -->` block,
+    // the two deleted commands carried one each.
+    // (plan 2026-09-08T210322-SELF-PLAN--unify-dev-commands, F2-F13.)
+    expect(nodes).toHaveLength(211);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(99);
   });
 });
 
@@ -881,9 +883,11 @@ describe('node inventory snapshot', () => {
  * worse than a failing one.
  */
 describe('/add-framework--done — the CI gate it reproduces', () => {
+  // One source, not two: the root .opencode/ adapter tree was deleted with the
+  // command merge (plan 2026-09-08T210322-SELF-PLAN--unify-dev-commands, F1).
+  // The internal layer has no provider mirror, so .claude/ is the only copy.
   const sources = [
     path.join(ROOT, '.claude', 'commands', 'add-framework--done.md'),
-    path.join(ROOT, '.opencode', 'commands', 'add-framework--done.md'),
   ];
 
   for (const file of sources) {

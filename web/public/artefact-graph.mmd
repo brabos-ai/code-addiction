@@ -1,12 +1,10 @@
 flowchart LR
+    n_internal_command_add_framework__brainstorm(["add-framework--brainstorm"])
     n_internal_command_add_framework__build(["add-framework--build"])
     n_internal_command_add_framework__done(["add-framework--done"])
     n_internal_command_add_framework__plan(["add-framework--plan"])
     n_internal_command_add_framework__release(["add-framework--release"])
-    n_internal_command_add_framework__self_build(["add-framework--self-build"])
-    n_internal_command_add_framework__self_plan(["add-framework--self-plan"])
-    n_internal_command_add_framework__shared_brainstorm(["add-framework--shared-brainstorm"])
-    n_internal_command_add_framework__shared_review(["add-framework--shared-review"])
+    n_internal_command_add_framework__review(["add-framework--review"])
     n_internal_command_add_framework__sync(["add-framework--sync"])
     n_product_command_add(["add"])
     n_product_command_add_audit(["add.audit"])
@@ -24,22 +22,15 @@ flowchart LR
     n_product_command_add_review(["add.review"])
     n_product_command_add_ux(["add.ux"])
     n_product_command_add_wiki(["add.wiki"])
+    n_internal_command_add_framework__brainstorm --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__brainstorm --> n_internal_command_add_framework__plan
     n_internal_command_add_framework__build --> n_internal_command_add_framework__plan
     n_internal_command_add_framework__build --> n_internal_command_add_framework__release
-    n_internal_command_add_framework__build --> n_internal_command_add_framework__self_plan
-    n_internal_command_add_framework__done --> n_internal_command_add_framework__self_build
-    n_internal_command_add_framework__done --> n_internal_command_add_framework__shared_review
+    n_internal_command_add_framework__build --> n_internal_command_add_framework__sync
+    n_internal_command_add_framework__done --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__done --> n_internal_command_add_framework__review
     n_internal_command_add_framework__plan --> n_internal_command_add_framework__build
-    n_internal_command_add_framework__plan --> n_internal_command_add_framework__self_plan
-    n_internal_command_add_framework__self_build --> n_internal_command_add_framework__build
-    n_internal_command_add_framework__self_build --> n_internal_command_add_framework__self_plan
-    n_internal_command_add_framework__self_plan --> n_internal_command_add_framework__plan
-    n_internal_command_add_framework__self_plan --> n_internal_command_add_framework__self_build
-    n_internal_command_add_framework__shared_brainstorm --> n_internal_command_add_framework__build
-    n_internal_command_add_framework__shared_brainstorm --> n_internal_command_add_framework__plan
-    n_internal_command_add_framework__shared_brainstorm --> n_internal_command_add_framework__self_plan
-    n_internal_command_add_framework__shared_review --> n_internal_command_add_framework__build
-    n_internal_command_add_framework__shared_review --> n_internal_command_add_framework__self_build
+    n_internal_command_add_framework__review --> n_internal_command_add_framework__build
     n_internal_command_add_framework__sync --> n_internal_command_add_framework__release
     n_product_command_add --> n_product_command_add_brainstorm
     n_product_command_add --> n_product_command_add_build

@@ -1,0 +1,151 @@
+---
+name: add-framework-internal-layer
+description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root. Coherence and dependency checks, the rename/remove sweep, the CLAUDE.md sections it owns, and why the graph gates still apply."
+---
+
+# Internal Layer Mechanics
+
+<!-- uses:
+- skill: building-commands
+- skill: add-framework-development
+- mention: add-build-ledger
+-->
+
+Loaded on the first `[internal]` F-block of a build. These artefacts are the development tooling that
+builds and maintains the framework. **They are NOT distributed to users.** WHAT gets recorded about
+execution is `add-build-ledger`'s job; the product layer has its own skill.
+
+## When to Use
+
+- An F-block naming `.claude/`, `scripts/`, `CLAUDE.md`, `.gitignore`, or a repo-root file.
+
+## When NOT to Use
+
+- An F-block naming `framwork/.codeadd/`, `framwork/provider-map.json` or `cli/`.
+
+---
+
+## What the Internal Layer Is
+
+| Type | Path |
+|------|------|
+| Commands | `.claude/commands/*.md`, namespace `add-framework--*` |
+| Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
+| Agents | `.claude/agents/*.md` |
+| Support scripts | `scripts/*.js` |
+| Structural map | `CLAUDE.md` |
+
+```
+⛔ INTERNAL ARTEFACTS ARE NOT REGISTERED:
+  ⛔ DO NOT: Add an internal command, skill or agent to framwork/provider-map.json
+  ⛔ DO NOT: Copy an internal artefact into framwork/.codeadd/
+  ✅ DO: Create it directly at its .claude/ path — build.js never distributes it
+```
+
+**The internal layer has no provider mirror.** One file per artefact, no adapter to keep in step.
+
+`add-framework-development` carries the artefact anatomies, the agent frontmatter fields and the
+`<!-- uses: -->` syntax. Read it when creating a new internal artefact.
+
+**A remove or a rename is not done when the file is gone.** It is done when nothing names the old
+target. The lifecycle actions themselves are layer-neutral and live in the executing command; what
+follows is what proves an internal one landed.
+
+---
+
+## Validation
+
+### Every internal F-block
+
+```bash
+node scripts/build.js
+```
+
+Exit 0, no new warning. **This applies to the internal layer even though the internal layer is not
+built.** `build.js` is where the three artefact-graph gates run, and the graph covers `.claude/` as
+well as `framwork/.codeadd/`:
+
+| Condition | Result |
+|---|---|
+| A `uses:` declaration names an artefact that does not exist | **fails** |
+| A name appears in prose with no declared relationship to it | **fails** |
+| Declared but never named in prose | warns |
+
+An internal-only change writes nothing under `framwork/` except the gitignored
+`artefact-graph.json`. Prove it:
+
+```bash
+git status --porcelain framwork/    # must be empty
+```
+
+### CLAUDE.md, per changed artefact list
+
+| If this F-block… | Update |
+|---|---|
+| added or removed an internal command, skill or agent | the Internal Layer tables |
+| changed what a command or skill is for | that command's row, and the "Where the details live" table |
+| changed the repo structure, `.gitignore` or the pipeline | the section documenting it |
+
+Read `framwork/.codeadd/skills/add-claude-md-style/SKILL.md` before writing. **Edit only what this
+F-block invalidated** — a diff that rewords unrelated sections is a diff nobody can review.
+
+### Coherence, per modified artefact
+
+- [ ] Well-formed markdown, correct structure for its type
+- [ ] Command or skill: passes the `building-commands` checklist
+- [ ] `<!-- uses: -->` matches what the prose actually names
+- [ ] `CLAUDE.md` reflects the current artefact list, if that list changed
+
+### Dependency, per removed or renamed artefact
+
+- [ ] No command, skill or agent declares the old target in `uses:`
+- [ ] No prose names it
+- [ ] `node scripts/graph.js orphans` shows no artefact that lost its only consumer
+
+**A newly created artefact is an orphan until the F-block that wires it lands.** That is expected.
+What is not expected is an orphan still present at the end of the build.
+
+### The sweep — grep is not redundant with the gate
+
+```bash
+grep -rn "<old-name>" .claude/ CLAUDE.md
+```
+
+Run it after every remove and every rename. **The prose gate does not catch everything a human reads
+as a broken pointer**, and `CLAUDE.md` is not a graph node at all, so nothing in `build.js` inspects
+it. The grep is the real proof.
+
+---
+
+## Before a Removal or a Rename — Ask the Graph
+
+```bash
+node scripts/graph.js impact <name> --depth 1   # who declares this today
+node scripts/graph.js dependencies <name>       # what it declares
+```
+
+Every artefact `impact` lists must be edited in the SAME F-block as the removal or rename, or the
+block's `build.js` run fails on a dangling declaration.
+
+Risk grading at planning time is a different question and belongs to the planning command, not here.
+
+## Common Rationalizations (BLOCKED)
+
+| Excuse | Reality |
+|--------|---------|
+| "The internal layer isn't built, so build.js is irrelevant" | It is where the graph gates run |
+| "I deleted the file, the rename is done" | Sweep first. A dangling declaration fails the build |
+| "The gate passed, so no reference is stale" | `CLAUDE.md` is not a node. Grep it |
+| "This artefact belongs in provider-map too, for symmetry" | It ships to nobody. Registering it is wrong |
+| "The new skill shows as an orphan, something broke" | Expected until its consumer lands. Not at the end |
+
+## Rules
+
+ALWAYS:
+- Run `build.js` on an internal F-block and prove `framwork/` stayed clean
+- Sweep with grep after every remove and every rename
+- Grade impact on the depth-1 number
+
+NEVER:
+- Register an internal artefact in `provider-map.json`
+- Leave an artefact orphaned at the end of a build
