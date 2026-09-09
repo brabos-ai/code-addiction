@@ -373,7 +373,7 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 
 | Removed | Kept | Why |
 |---|---|---|
-| The worktree, if one exists | `docs/plans/` | Read by `@framework-discovery-agent` and by seven commands |
+| The worktree, if one exists | `docs/plans/` | Read by `@framework-discovery-agent` and by six commands |
 | The merged branch, local and remote | `docs/brainstorming/` | Read by the plan and brainstorm commands |
 | `docs/evidence/` files for this plan | `docs/changelog/` | The human narrative record; its retirement is out of scope |
 

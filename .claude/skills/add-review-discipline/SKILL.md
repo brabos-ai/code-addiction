@@ -54,6 +54,13 @@ has already graded, no confirmation pass over fixes it asked for itself. There i
 changed the text it read, so its first reading no longer describes the document on disk. There is no
 third.
 
+**Per SUBJECT, not per run, and the distinction is what makes the second reachable at all.** No
+command dispatches the cold reader twice in one invocation, and none should: a document is not
+rewritten in the middle of the step that reads it. The second reading happens when the plan goes back
+to `/add-framework--plan`, is revised, and `/add-framework--build` is invoked again — a different
+session, the same plan, its second and last cold read. A caller counts against the plan, not against
+its own lifetime.
+
 **The asymmetry is deliberate, not an oversight.** A rewrite changes what the cold reader reads, so a
 second reading answers a genuinely different question. Running the adversarial reviewer again over
 lightly edited work does not — it produces new opinions, and new opinions are indistinguishable from
