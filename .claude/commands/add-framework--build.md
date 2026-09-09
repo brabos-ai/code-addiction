@@ -73,10 +73,25 @@ IF THE CURRENT F-BLOCK IS TAGGED [product]:
   ⛔ DO NOT USE: Write or Edit on framwork/ provider directories — build.js generates them
   ✅ DO: Load add-framework-product-layer and apply its checks
 
+IF THE F-BLOCK'S LAYER TAG IS NEITHER [product] NOR [internal]:
+  ⛔ DO NOT USE: Write or Edit anywhere for that block
+  ⛔ DO NOT: Assume a default layer — [both] is a reviewer input, never an F-block tag
+  ✅ DO: Derive the tag from the block's own paths per STEP 1.1, and record a ruling
+
 IF A PATH IS NOT COVERED BY THE CURRENT F-BLOCK'S TAG:
-  ⛔ DO NOT: Widen the block to reach it
-  ✅ DO: Rule on it and record the ruling, or STOP if no reading of the plan supports it
+  ⛔ DO NOT: Write it under the current block's tag
+  ✅ DO: Open a NEW F-block carrying that path's own tag, and record a ruling naming both
+  ✅ DO: STOP instead if no reading of the plan supports reaching that path at all
+
+IF DIRECT MODE (STEP 1.2 — no plan, therefore no tag):
+  ⛔ DO NOT USE: Write or Edit outside the resolved target path and its own layer
+  ⛔ DO NOT: Touch the other layer for any reason — direct mode has no ledger to rule in
+  ✅ DO: Resolve the target path first, let it choose the layer, load that layer's skill
 ```
+
+**The last block exists because the three above it are conditional on a tag.** Direct mode has none,
+so without it a direct build would run with no layer confinement at all — weaker than the two
+single-layer commands this one replaced.
 
 **One exception, and only this one.** A `[product]` F-block MAY write the parts of `CLAUDE.md` that
 its own work made stale — the derived Project Anatomy counts and the rows describing what it just
