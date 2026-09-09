@@ -72,6 +72,7 @@ IF A FILE IS UNTRACKED:
 
 ALWAYS:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
+  ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
   ⛔ DO NOT: Delete anything under docs/plans/, docs/brainstorming/ or docs/changelog/
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
 
@@ -344,7 +345,7 @@ The push re-triggers CI on the new commit. STEP 7 waits for that run before merg
 
 The PR already exists — STEP 2.3 created it, because CI cannot run without one.
 
-**STEP 6 pushed a commit CI has not tested.** The gate at 2.3 ran on the code; the entry and the changelog landed after it. Wait for the run on the new SHA before merging, applying the same SHA comparison 2.4 applies:
+**STEP 6 pushed a commit CI has not tested.** The gate at 2.3 ran on the code; the entry and the changelog landed after it. Wait for the run on the new SHA before merging, applying the same SHA comparison 2.3 applies:
 
 ```bash
 gh pr checks --watch --fail-fast
@@ -404,6 +405,8 @@ ALWAYS:
 - Add a job here when CI gains one, so the gate and the merge cannot disagree
 
 NEVER:
+- Grade the delivery — the build audits it once at its STEP 7, and a close-out that repeats the audit
+  is a command judging work it is about to merge
 - Synthesise a `node` id for something the graph does not model
 - Record a rename as a deletion or a supersession
 - Loosen a `find` anchor to get past a `REFUSED=` result
