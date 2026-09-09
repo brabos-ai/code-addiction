@@ -103,34 +103,80 @@ Kind-specific extras:
 3. Zero blockers and zero attention → `ok`
 4. Only nits → `ok`
 
-Cap findings: max 8 blockers, 8 attention, 5 nits. Drop the weakest nits. Prefer fewer sharp findings over a long list.
+Cap findings: max 8 blockers, 8 attention, 3 nits. Drop the weakest nits. Prefer fewer sharp findings over a long list.
 
 ## Output Format
 
 ```
-## Plan Review Report
+Verdict: ok | fix-then-ok | blocked
+```
 
-**Path:** [path]
-**Kind:** [kind]
-**Verdict:** ok | fix-then-ok | blocked
+The verdict is the first line, always. `path` and `kind` are NOT echoed — the caller supplied both
+and reading them back costs output for nothing.
 
-### Blockers
-| ID | Section | Evidence | Why execution fails | Required fix |
-|----|---------|----------|---------------------|--------------|
-| B1 | [heading or quote ≤20 words] | [verbatim snippet] | [one sentence] | [exact edit, or a question for the user] |
+**Write only the shape your verdict calls for.** An empty section is not written, and `None.` is not
+written either. Four shapes follow.
 
-### Attention
-| ID | Section | Evidence | Why it matters | Required fix |
-|----|---------|----------|----------------|--------------|
+```
+IF A SECTION HAS NO CONTENT FOR THIS VERDICT:
+  ⛔ DO NOT: Write its heading
+  ⛔ DO NOT: Write `None.` under it
+  ✅ DO: Omit it
+```
 
-### Nits
-- [N1] [section] — [fix]
+### Verdict `ok` — nothing found
 
-### Do not change
+One line. Stop there.
+
+```
+Verdict: ok
+```
+
+### Verdict `ok` — nits present
+
+Verdict rule 4 makes a nits-only review an `ok`. Emit the line and the nits, nothing else.
+
+```
+Verdict: ok
+
+Nits:
+- [N1] [where] — [fix]
+```
+
+### Verdict `blocked`
+
+Blockers only. The caller presents these and halts, so anything else you write is discarded unread.
+
+```
+Verdict: blocked
+
+| ID | Where | Why execution fails | Required fix |
+| B1 | [heading, plus the verbatim snippet] | [one sentence] | [exact edit, or a question for the user] |
+```
+
+### Verdict `fix-then-ok`
+
+The full shape. `Do not change` is emitted on `fix-then-ok` only, because it is the one verdict where
+someone is about to edit the document.
+
+```
+Verdict: fix-then-ok
+
+Blockers:
+| ID | Where | Why execution fails | Required fix |
+
+Attention:
+| ID | Where | Why it matters | Required fix |
+
+Nits:
+- [N1] [where] — [fix]
+
+Do not change:
 - [thing that looks tempting to "improve" but is a validated decision or out of scope]
 ```
 
-If a table is empty, write `None.`
+**Writing rule for every table above:** no alignment padding, one space around each pipe. Padding a
+column to line up is whitespace, and whitespace is output like any other token.
 
 ## Rules
 
