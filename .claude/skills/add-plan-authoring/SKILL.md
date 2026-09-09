@@ -11,6 +11,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
 - mention: /add-framework--build
+- mention: /add-framework--done
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -57,6 +58,55 @@ docs/plans/2026-09-07T005046-PLAN--<slug>-001-<topic>.md
 Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
 `NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `CLAUDE.md` and several
 documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
+
+---
+
+## The Delivered Home
+
+**A plan in flight lives in `docs/plans/`, gitignored and local. A plan that has been closed out lives
+in `docs/deliveries/<plan-basename>/`, tracked.** `/add-framework--done` assembles that directory in
+its STEP 6 and commits it with the delivery-index entry, so the documents reach `main` before anything
+removes the worktree that held them.
+
+**The directory name is the plan's basename without `.md`, verbatim** — the same string
+`docs/delivered.jsonl` carries as the entry's `id`. Index line and documents join on one string, with
+no lookup table between them.
+
+| Member | Sourced from | Present when |
+|---|---|---|
+| `plan.md` | `docs/plans/<basename>.md` | always |
+| `ledger.md` | `docs/plans/<basename>--ledger.md` | always |
+| `design.md` | the `docs/brainstorming/` file the plan's **Context** document table names | the plan cites one |
+| `review.md` | the highest-numbered `docs/plans/<basename>--review-v*.md` | a legacy companion is on disk |
+| `evidences/` | `docs/evidence/` files for this plan, original names kept | such files are on disk |
+
+**The first two are load-bearing; their absence is a defect, not a variation.** The plan carries the
+reasoning and the ledger carries the rulings, and neither has a second copy anywhere.
+
+⛔ **Every member is a byte-for-byte copy of its source. The filename changes; the contents never do.**
+An archive is worth keeping only because it IS the document — a reader years from now cannot tell a
+faithful copy from a confident rewrite, and will trust either. Summarising, trimming, reformatting or
+reconstructing a document on the way in produces something that reads as the record and is not, which
+is worse than an empty directory. The command that assembles it copies the bytes and proves each copy
+matches before staging.
+
+**The last three are conditional, and a directory holding none of them is the normal case.** No
+command writes a `--review-v*` companion or anything under `docs/evidence/` any more, so both members
+exist to carry what is already on disk from before. `design.md` is absent whenever the plan carried
+its decisions inline, which most do.
+
+⛔ **`evidences/` sources from the `docs/evidence/` DIRECTORY, not from the `--evidence-v01.md`
+companion named under File Naming above.** The two names read alike and are different things.
+
+⛔ **`docs/evidence/` holds files from several plans at once, matched by an id prefix** — a file is
+this plan's when its name begins with the plan's id. **A file that cannot be attributed to a plan is
+left where it is and reported.** Never sweep the whole directory into one delivery: the wrong plan's
+evidence filed under this one is worse than evidence left behind, because it reads as this delivery's
+own record.
+
+**What does NOT move:** `docs/changelog/` and `docs/delivered.jsonl` are already tracked and stay
+where they are. A plan that was never closed out is never archived — it stays in `docs/plans/` and is
+removed by hand if abandoned.
 
 ---
 

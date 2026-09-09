@@ -2,7 +2,7 @@
 
 <!-- uses:
 - skill: add-commit
-- mention: @framework-discovery-agent
+- skill: add-plan-authoring
 - command: /add-framework--build
 -->
 
@@ -30,9 +30,9 @@ STEP 2: Gates                     → ledger complete + CI green on THIS sha [HA
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
-STEP 6: Commit on the branch      → entry + changelog, one commit, then push
+STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
 STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
-STEP 8: Cleanup                   → worktree, branch, evidence — in that order, non-fatal
+STEP 8: Cleanup                   → worktree, branch, this plan's archived originals — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -66,14 +66,19 @@ IF STEP 3 WROTE NO ENTRY:
   ⛔ DO NOT USE: Bash to run git worktree remove
   ✅ DO: Skip STEP 8 entirely
 
-IF A FILE IS UNTRACKED:
+IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   ⛔ DO NOT USE: Bash to run rm on it
-  ✅ DO: Report it and leave it — "it's all in git" is false for an untracked file
+  ✅ DO: Report it and leave it — "it's all in git" is false for a file nothing committed
+
+  This is what STEP 6 changes and why it runs before STEP 8. The plan, the ledger, the design doc and
+  this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
+  `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
 
 ALWAYS:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
-  ⛔ DO NOT: Delete anything under docs/plans/, docs/brainstorming/ or docs/changelog/
+  ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
+  ⛔ DO NOT: Delete another plan's files under docs/plans/, docs/brainstorming/ or docs/evidence/ — only the closed-out plan's own
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
 
 ---
@@ -277,7 +282,7 @@ Entry fields:
   a third value.
 - `by`: `"done"`
 - `id`: the plan's basename without extension, **verbatim** — never a slug
-- `origin`: `docs/plans/<id>.md`
+- `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The schema allows either a directory or a plan path; the internal layer narrows that to the directory, because only the directory survives STEP 8. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
 ⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.sh` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
@@ -329,9 +334,49 @@ Show the user, before committing: the entry as it will be written, any `LOOSE=` 
 
 ---
 
-## STEP 6: Commit on the Branch and Push
+## STEP 6: Archive the Working Documents, Commit and Push
 
-Commit the entry and the changelog as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
+### 6.1 Assemble `docs/deliveries/<id>/`
+
+**The working documents move BEFORE the commit, so the merge carries them to `main`.** The directory name, its members and which are load-bearing are owned by `add-plan-authoring` — read **The Delivered Home** rather than re-deriving them here.
+
+Copy, never move: the originals stay on disk until STEP 8 removes them, and STEP 8 runs only after the merge.
+
+**Every member is produced by a file copy. Nothing here is authored.**
+
+```
+IF PRODUCING ANY FILE UNDER docs/deliveries/<id>/:
+  ⛔ DO NOT USE: Write on it
+  ⛔ DO NOT USE: Edit on it
+  ⛔ DO NOT: Summarise, trim, reformat, re-order, translate or tidy a document on the way in
+  ⛔ DO NOT: Reconstruct a document from what you remember of it, from the plan's own text, or from this session
+  ✅ DO: Copy the bytes — `cp <source> docs/deliveries/<id>/<member>` — and copy nothing you were not asked to
+```
+
+**Prove each copy, before staging anything:**
+
+```bash
+cmp "<source>" "docs/deliveries/<id>/<member>"   # silent = identical; ANY output → STOP
+```
+
+⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename: `<basename>.md` becomes `plan.md`, `<basename>--ledger.md` becomes `ledger.md`. Contents never change.
+
+```
+IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
+  ⛔ DO NOT USE: Bash to run git commit
+  ⛔ DO NOT: Assemble a directory holding only the half that was readable
+  ✅ DO: Report which document is missing and STOP — a delivery archived without its ledger loses every ruling it made
+```
+
+The design source is **the `docs/brainstorming/` file the plan's Context document table names**, and nothing else. `docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing no design doc gets no `design.md`, and that is not a defect.
+
+⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
+
+### 6.2 Commit and push
+
+Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
+
+⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit rides the squash merge to `main` under a message that does not describe it.
 
 The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
 
@@ -365,19 +410,43 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
+```
+IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
+  ⛔ DO NOT USE: Bash to run rm on it
+  ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and STEP 7 merged that copy
+```
+
 **Order is forced**, because a branch checked out in a worktree cannot be deleted:
 
 1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.
 2. **The branch**, local and remote.
-3. **`docs/evidence/` files for this plan.**
+3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**
 
 | Removed | Kept | Why |
 |---|---|---|
-| The worktree, if one exists | `docs/plans/` | Read by `@framework-discovery-agent` and by six commands |
-| The merged branch, local and remote | `docs/brainstorming/` | Read by the plan and brainstorm commands |
-| `docs/evidence/` files for this plan | `docs/changelog/` | The human narrative record; its retirement is out of scope |
+| The worktree, if one exists | `docs/deliveries/<id>/` | The durable copy. It is on `main` and is never removed here |
+| The merged branch, local and remote | `docs/changelog/` | The human narrative record; its retirement is out of scope |
+| This plan's local originals in `docs/plans/`, `docs/brainstorming/` and `docs/evidence/` | `docs/plans/` files belonging to OTHER plans | Still in flight. Only the closed-out plan's own files go |
 
-**`docs/evidence/` is the only class with no post-merge reader.** That is a thin harvest, and it should be. `docs/plans/`, `docs/brainstorming/` and `docs/evidence/` are gitignored working artefacts, so this removes local files and touches no commit; `docs/changelog/` and `docs/delivered.jsonl` are tracked and are never removed here.
+**No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
+
+### 8.1 When this command is running inside the worktree it would remove
+
+`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and the first removal above has nothing it can do.
+
+⛔ **Attempting it anyway does damage, measured rather than assumed.** Run from inside, the command **unregisters the worktree and then fails to delete the directory** — `error: failed to delete '<path>': Permission denied`, exit 255. What is left is an orphan directory git no longer knows about, so a second `git worktree remove` answers `is not a working tree` and the operator now needs `git worktree prune` plus a manual delete. A skipped sub-step costs one clean command later; this costs a repair.
+
+```
+IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
+  ⛔ DO NOT USE: Bash to run git worktree remove on it
+  ⛔ DO NOT USE: Bash to run git branch -d or git push --delete for its branch
+  ⛔ DO NOT USE: Bash to run rm -rf on the worktree directory as a substitute
+  ✅ DO: Report both as skipped, name the worktree path, and continue to the third removal
+```
+
+**The branch is skipped with the worktree, not attempted after it.** `git branch -d` refuses a branch checked out in a live worktree — `error: cannot delete branch '<name>' used by worktree at '<path>'`, exit 1 — even when it is fully merged. Both are reported as skipped, with the two commands the operator runs from the primary checkout to finish by hand.
+
+**Nothing here is a failure of the delivery.** By STEP 8 the entry, the changelog and `docs/deliveries/<id>/` are already on `main`. A worktree left behind costs one manual `git worktree remove` from the primary checkout; it costs no document, which is the whole point of STEP 6 running before this.
 
 ---
 
@@ -390,7 +459,8 @@ Report:
 - Any supersessions declared, and which answer was given
 - The changelog path
 - The PR number and its merge state
-- What STEP 8 removed, and what it skipped and why
+- **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
+- What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
 - Whether the run took the recovery path, and why the entry landed after the merge
 

@@ -379,8 +379,20 @@ describe('L3 the review command is gone', () => {
     // excludes `--review-v*`, and companions from earlier deliveries are still
     // on disk. The string may appear where a path is ruled out, never where one
     // is read or required.
+    //
+    // Fourth narrowing, after L1.3, L2.9 and this test's own first pass. STEP 8
+    // now names the companion a THIRD legitimate way: as a local original it
+    // deletes after the archive, alongside the plan and the ledger. Deleting a
+    // path is neither reading it nor requiring it, so it satisfies the rule
+    // above — the assertion, not the rule, was the narrow part. A flat ban here
+    // would force STEP 8 to describe what it removes in wording vague enough to
+    // pass, which is the failure this whole file exists to prevent.
     const lines = text.split(/\r?\n/).filter((l) => l.includes('--review-v'));
-    for (const l of lines) expect(l).toMatch(/excluding/);
+    for (const l of lines) expect(l).toMatch(/excluding|archived/);
+
+    // The rule itself, stated as a ban rather than a whitelist: nothing here
+    // waits for a review companion, reads a verdict out of one, or gates on it.
+    expect(text).not.toMatch(/^.*--review-v.*\b(verdict|gate|must exist|wait)\b.*$/im);
   });
 
   it('L3.7 the close-out keeps its ledger gate intact', () => {
