@@ -107,6 +107,8 @@ Run `gh auth status`. If it fails → report it and STOP. Nothing below is writt
 
 Verify the current branch is **not** `main`. If it is → report and STOP: this command ends work someone else started on a branch, and it never creates one.
 
+**One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.5 runs on `main`, because the branch it would have run on is already merged and gone.
+
 **Resolve `[plan]` the way `/add-framework--build` does.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*`, `--evidence-v*` and `--ledger` companions).
 
 - **Exactly one match** → that is the plan.
@@ -121,7 +123,7 @@ Collect, and carry forward to STEP 3:
 
 - **The merge base and the diff** — `git diff --name-status main...HEAD` for the added, modified, deleted and renamed paths this branch introduced.
 - **The commits** — `git log --oneline main..HEAD`, short hashes.
-- **The ledger** — `docs/plans/<plan-basename>--ledger.md`, and every `S<n>:` line in it.
+- **The ledger** — `docs/plans/<plan-basename>--ledger.md`, and every `F<n>:` line in it. Legacy plans written before the layer split ended use `S<n>`; read either.
 - **The review companion** — the highest `docs/plans/<plan-basename>--review-v*.md`, if one exists.
 - **The graph** — `framwork/.codeadd/artefact-graph.json`, for classifying paths at STEP 3.
 
@@ -133,15 +135,27 @@ Collect, and carry forward to STEP 3:
 
 **Run them in the order below and stop at the first failure.** A gate that fails is reported with its output; it is never re-run with different arguments to make it pass.
 
-### 2.1 Already closed out?
+### 2.1 Already closed out, or merged without a close-out?
 
-Run `gh pr view --json state,mergedAt` for the current branch. If it reports the PR **already merged** → there is nothing to close out. Report it and STOP.
+Run `gh pr view --json state,mergedAt` for the current branch, then check whether `docs/delivered.jsonl` already carries an entry whose `id` is this plan's basename.
 
-This is what makes a second run on the same branch safe: the gates below would all still pass, and without this check the command would write a second entry for one delivery.
+**Two different states hide behind "already merged":**
+
+| PR | Entry for this plan | Action |
+|---|---|---|
+| Open | — | Normal path. Continue |
+| Merged | yes | Nothing to close out. Report and STOP |
+| Merged | **no** | **Recovery path — 2.5.** Continue |
+
+The middle row is what makes a second run on the same branch safe: the gates below would all still pass, and without it the command would write a second entry for one delivery.
+
+**The bottom row is the case the index exists for.** Work reached `main` and left no record. Stopping there would make the index quietly wrong about a delivery that shipped — the same lie as indexing work that never landed, in the other direction. It is recoverable, so recover it.
 
 ### 2.2 The ledger gate — BEFORE the four commands
 
-**Every `S<n>` F-block in the plan's Execution Order must have a `complete` line in the ledger.** A block with a `Ruling:` line but no `complete` line is not complete.
+**Every F-block in the plan's Execution Order must have a `complete` line in the ledger.** A block with a `Ruling:` line but no `complete` line is not complete.
+
+A build may add F-blocks the plan did not have — a ruling records why. Those are reported, never required: this gate asks whether the PLAN was delivered, not whether the build stayed inside it.
 
 If any block is missing its `complete` line → report which ones and STOP.
 
@@ -193,6 +207,37 @@ test-scripts         npm run test:scripts   (bats)                              
 `test:package` exists **only** in `cli/package.json`. In the fallback, invoked from the root without `--prefix cli`, it fails with "Missing script" — a *false* gate, which is worse than a failing one. CI avoids this by setting `working-directory: cli`; the fallback must attach the prefix by hand.
 
 **If CI gains a job, this list follows it.** The whole point is that the gate and the merge cannot disagree about what green means.
+
+### 2.5 The Recovery Path — merged, never indexed
+
+Reached only from 2.1's bottom row. **Every gate above still applies in full** — a delivery is not
+exempt from them because someone merged early. What changes is where the evidence lives and what is
+left to do:
+
+| Step | Normal | Recovery |
+|---|---|---|
+| 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
+| 1.3 | `git diff --name-status main...HEAD` | `git show --name-status <merge-commit>` — the squash IS the delivery |
+| 2.2, 2.3 | Ledger and review gates | Unchanged. Both still hard-stop |
+| 2.4 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
+| 6 | Commit on the branch, push | Commit on `main`, push |
+| 7 | Merge the PR | **Skipped.** Already merged |
+| 8 | Cleanup | Unchanged — the merged branch is still there to delete |
+
+```
+IF THE MERGE COMMIT CANNOT BE RESOLVED:
+  ⛔ DO NOT USE: Write on docs/delivered.jsonl
+  ⛔ DO NOT: Reconstruct the diff from the plan instead of from git
+  ✅ DO: Report it and STOP — an entry derived from a plan rather than a diff records intent, not delivery
+```
+
+⛔ **The ledger is local and gitignored.** A recovery run on a machine that did not execute the build
+has no ledger to read, so gate 2.2 cannot pass and this path is unavailable there. That is correct:
+without the ledger there is no evidence the plan was finished, only that something merged.
+
+**Report in STEP 9 that the run took the recovery path, and why the entry landed after the merge
+rather than before it.** An entry whose commit sits after the delivery it describes is fine; an entry
+that hides how it got there is not.
 
 ---
 
@@ -298,7 +343,7 @@ Show the user, before committing: the entry as it will be written, any `LOOSE=` 
 
 ## STEP 6: Commit on the Branch and Push
 
-Commit the entry and the changelog as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push.
+Commit the entry and the changelog as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
 
 The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
 
@@ -307,6 +352,8 @@ The push re-triggers CI on the new commit. STEP 7 waits for that run before merg
 ---
 
 ## STEP 7: Merge via `gh`
+
+**Recovery path: skip this STEP entirely.** The merge already happened; go to STEP 8.
 
 The PR already exists — STEP 2.4 created it, because CI cannot run without one.
 
@@ -356,6 +403,7 @@ Report:
 - The PR number and its merge state
 - What STEP 8 removed, and what it skipped and why
 - Every gate that ran, and its result
+- Whether the run took the recovery path, and why the entry landed after the merge
 
 ---
 
