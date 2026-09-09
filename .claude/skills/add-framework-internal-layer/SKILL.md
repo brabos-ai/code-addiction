@@ -112,21 +112,17 @@ it. The grep is the real proof.
 
 ---
 
-## Cross-Artefact Impact — Ask the Graph, Do Not Grep For It
+## Before a Removal or a Rename — Ask the Graph
 
 ```bash
-node scripts/graph.js impact <name> --depth 1   # grade risk on THIS number
-node scripts/graph.js impact <name>             # context, not a grade
-node scripts/graph.js dependencies <name>       # what it needs
-node scripts/graph.js path <a> <b>              # how two artefacts connect
-node scripts/graph.js history <name>            # when it arrived, what it replaced
+node scripts/graph.js impact <name> --depth 1   # who declares this today
+node scripts/graph.js dependencies <name>       # what it declares
 ```
 
-**Grade on depth 1.** The command layer cross-references itself densely, so the transitive closure
-saturates and a hub becomes indistinguishable from a leaf. `MENTIONS` edges are already excluded, and
-names are matched exactly — `add-qa` does not match inside `add-qa-migration`.
+Every artefact `impact` lists must be edited in the SAME F-block as the removal or rename, or the
+block's `build.js` run fails on a dangling declaration.
 
-If the graph is missing or stale, run `node scripts/build.js`; it is emitted on every build.
+Risk grading at planning time is a different question and belongs to the planning command, not here.
 
 ## Common Rationalizations (BLOCKED)
 
