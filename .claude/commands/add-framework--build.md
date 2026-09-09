@@ -29,8 +29,9 @@ STEP 2: Design                → [STOP] present and WAIT for approval
 STEP 3: Load skills           → building-commands + add-build-ledger + the layer skills in play
 STEP 4: Implement             → ONLY AFTER 1-3; ledger first, then one F-block at a time
 STEP 5: Validate              → per F-block; it is committed once its own checks pass
-STEP 6: Document              → changelog and plan status, after the last F-block
-STEP 7: Completion            → summary + EVERY ruling made
+STEP 6: Document              → changelog, plan status, inventory sync — after the last F-block
+STEP 7: Publish [STOP]        → ask before pushing the branch and opening the PR
+STEP 8: Completion            → summary + EVERY ruling made
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -263,12 +264,57 @@ After the last F-block:
 - **Changelog** for new or major work: `docs/changelog/YYYY-MM-DD-<action>-<what>.md`, action being
   `add` | `update` | `refactor` | `remove`.
 - **Plan status** `draft` → `implemented`, with a changelog row naming the commits it landed in.
-- **`CLAUDE.md`** is NOT documented here. Its inventory block is generated and `/add-framework--done`
-  keeps it current; every other part of it changes only where a plan said so.
+- **The inventory block** — run `node scripts/inventory.js` and commit `CLAUDE.md` if it changed.
+  Stage that path alone, never `-A`.
+
+**This runs ALWAYS, whether or not a PR follows.** The block is derived from `framwork/.codeadd/`, so
+its correctness is a fact about the tree, not about anyone's publishing decision. Tying it to STEP 7's
+answer would leave the branch carrying a `CLAUDE.md` that contradicts its own artefacts every time
+someone declines.
+
+Nothing else in `CLAUDE.md` is written here. The rest of the file changes only where a plan said so.
 
 ---
 
-## STEP 7: Completion
+## STEP 7: Publish [STOP]
+
+**⛔ GATE:** A push to a shared remote is one of the four hard stops. ASK.
+
+```
+IF THE CURRENT BRANCH IS main:
+  ⛔ DO NOT USE: Bash to run git push
+  ⛔ DO NOT: Offer the question at all
+  ✅ DO: Report that the work is committed on main and needs a branch before it can be published
+
+IF THE USER HAS NOT ANSWERED:
+  ⛔ DO NOT USE: Bash to run git push
+  ⛔ DO NOT USE: Bash to run gh pr create
+  ✅ DO: Ask, and WAIT
+```
+
+**The `main` case is not theoretical.** This command never creates a branch — STEP 1.3 only
+recommends one — so a direct build can be sitting on `main`, and offering to push there would put
+work past every gate `/add-framework--done` exists to enforce.
+
+Ask whether to push the branch and open the PR. Then:
+
+| Answer | Do |
+|---|---|
+| Yes | `git push -u origin <branch>`, then `gh pr create`. Report the PR URL |
+| No | Say the work is committed locally and that `/add-framework--done` pushes and opens the PR when it runs |
+
+**Skip the question when a PR already exists for this branch** — `gh pr view` resolves one. Asking
+again on the second build of the same branch is noise. Push, and say the existing PR was updated.
+
+**STEP 6 ran first, and that order is not cosmetic.** The PR must carry the synced `CLAUDE.md`, or the
+diff a human reviews is not the diff that merges.
+
+⛔ **This step never merges.** It opens a PR and stops. The merge belongs to `/add-framework--done`,
+behind its own gates.
+
+---
+
+## STEP 8: Completion
 
 Report, always:
 
@@ -277,6 +323,9 @@ Report, always:
 - **Rulings I made** — every `Ruling:` line from the ledger, exhaustive, each with its cost clause.
   If none was made, say so; silence is indistinguishable from not having looked.
 - Which validations ran per layer, and their result.
+- **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
+  it did not — silence is indistinguishable from not having run it.
+- **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
 
 ---
 
@@ -289,6 +338,7 @@ ALWAYS:
 - Prove an internal F-block stayed in its lane with an empty `git status --porcelain framwork/`
 - Fix every dependent of a removed or renamed artefact inside the same F-block
 - Derive a missing layer tag from the path and record a ruling saying you did
+- Sync the inventory block at STEP 6, whatever the answer at STEP 7 turns out to be
 
 NEVER:
 - Split a plan by layer into two builds — the tags carry it
@@ -298,3 +348,5 @@ NEVER:
 - Report a `cli/` F-block complete on a mental test alone
 - Add a `## Spec` section to a command or skill
 - Skip the STEP 2 `Design [STOP]` gate — rulings replace the per-block stall, never that approval
+- Push or open a PR without asking, or push `main` at all
+- Merge — STEP 7 opens a PR and stops there

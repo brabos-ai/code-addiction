@@ -192,6 +192,8 @@ test-scripts         npm run test:scripts   (bats)                              
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
 1. **Sync the `CLAUDE.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add CLAUDE.md` (that path alone, never `-A`), commit it with a message per `.claude/skills/add-commit/SKILL.md`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `CLAUDE.md`, not permission to skip the sync.
+
+   **`already current` is the expected outcome, not a sign this step is redundant.** `/add-framework--build` STEP 6 syncs before it offers to open the PR, so the block normally arrives here correct. This is the net under three cases where it cannot have: a build that hard-stopped before STEP 6, a hotfix that never ran a full build, and the recovery path at 2.5 where the merge came first.
 2. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
 3. **Push the branch** if `git rev-parse HEAD` and `git rev-parse origin/<branch>` disagree. Item 1 already pushed when the block changed, so this finds them in sync — that is the expected outcome, not a redundancy to remove.
 4. **`gh pr view`** → if no PR exists, `gh pr create`.
