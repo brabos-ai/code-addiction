@@ -4,11 +4,11 @@
 - skill: add-build-ledger
 - skill: add-framework-product-layer
 - skill: add-framework-internal-layer
-- skill: add-commit
 - skill: building-commands
 - skill: add-framework-development
 - command: /add-framework--plan
 - command: /add-framework--release
+- command: /add-framework--sync
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -97,7 +97,11 @@ empty — the only file it may have touched there is the gitignored `artefact-gr
 /add-framework--build [type] [name]    → Direct build, no plan, for simple artefacts
 ```
 
-**Valid types:** `command` | `skill` | `agent` | `script` | `workflow` | `cli`
+**Valid types:** `command` | `skill` | `agent` | `script` | `workflow` | `cli` | `map`
+
+`map` is `CLAUDE.md` itself. Its direct form takes the file and a description rather than a type and
+a name: `/add-framework--build CLAUDE.md "update the pipeline section"`. A bare artefact name works
+the same way for any existing artefact — the path resolves it, and the path decides the layer.
 
 To optimize an existing artefact, use the direct form — STEP 2 detects it already exists and presents
 the analysis against `building-commands` before any edit.
@@ -139,6 +143,9 @@ Direct mode has no F-blocks, so it has no ledger and no per-block cycle.
 
 A build touching multiple artefacts or rewriting existing commands is easier to discard than to roll
 back. RECOMMEND a branch and worktree before implementing.
+
+After a build that changed the product artefact set, RECOMMEND `/add-framework--sync` to regenerate
+the ecosystem map, the README and the web docs.
 
 ---
 
@@ -267,6 +274,7 @@ Report, always:
 - **Rulings I made** — every `Ruling:` line from the ledger, exhaustive, each with its cost clause.
   If none was made, say so; silence is indistinguishable from not having looked.
 - Which validations ran per layer, and their result.
+- The Project Anatomy counts as computed, and whether any changed.
 - Every `CLAUDE.md` section touched and why. If none, say so.
 
 ---

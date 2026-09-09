@@ -12,7 +12,7 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 
 > **Status:** draft | approved | implemented
 > **Layers:** product | internal | both
-> **Type:** command | skill | agent | script | map | cross-cutting
+> **Type:** command | skill | agent | script | workflow | product | architecture | cross-cutting
 > **Created:** YYYY-MM-DD
 
 ---
@@ -161,6 +161,9 @@ Gaps a reviewer must actively hunt, because they are the ones this plan is most 
 ## Next Steps
 
 /add-framework--build [slug]
+
+[One command executes every F-block, whichever layer each is tagged. Do NOT route part of the plan to
+a second command.]
 
 ## Plan Changelog
 

@@ -2,7 +2,6 @@
 
 <!-- uses:
 - skill: add-plan-authoring
-- skill: add-framework-development
 - agent: framework-discovery-agent
 - agent: plan-review-agent
 - command: /add-framework--build
@@ -160,6 +159,7 @@ DO NOT show the raw report. Use it to fill "What already exists" in STEP 4.
 | **WORKFLOW** | "process", "flow", "integration" |
 | **PRODUCT** | "feature", "functionality", "user" |
 | **ARCHITECTURE** | "refactor", "migrate", "restructure" |
+| **CROSS-CUTTING** | the work spans more than one of the above |
 
 ### 2.2 Layers Touched
 

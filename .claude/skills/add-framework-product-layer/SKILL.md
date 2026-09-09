@@ -9,6 +9,7 @@ description: "Use when an F-block touches the product layer — framwork/.codead
 - skill: building-commands
 - skill: add-framework-development
 - mention: add-build-ledger
+- mention: add-framework-internal-layer
 -->
 
 Loaded on the first `[product]` F-block of a build. Everything here is about artefacts that ship to
@@ -21,7 +22,11 @@ skill.
 
 ## When NOT to Use
 
-- An F-block naming `.claude/`, `scripts/`, `CLAUDE.md` or the repo root.
+- An F-block naming `.claude/`, `scripts/` or the repo root.
+
+**`CLAUDE.md` is the one shared file.** This skill owns the parts a product change makes stale — the
+derived Project Anatomy counts and the rows describing what shipped. Every other part of it belongs
+to `add-framework-internal-layer`.
 
 ---
 
@@ -35,6 +40,9 @@ framwork/.codeadd/skills/add-skill-creator/SKILL.md              # IF the artefa
 framwork/.codeadd/skills/add-documentation-style/SKILL.md        # IF generating docs
 framwork/.codeadd/skills/add-claude-md-style/SKILL.md            # BEFORE any CLAUDE.md write
 ```
+
+`add-framework-development` carries the artefact anatomies, the `<!-- uses: -->` syntax and the
+build-pipeline internals. Read it when creating a new artefact type or changing how the build works.
 
 ## Source of Truth
 

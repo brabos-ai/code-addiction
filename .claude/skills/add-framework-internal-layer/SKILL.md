@@ -1,6 +1,6 @@
 ---
 name: add-framework-internal-layer
-description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root. Lifecycle actions, coherence and dependency checks, and why the graph gates still apply."
+description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root. Coherence and dependency checks, the rename/remove sweep, the CLAUDE.md sections it owns, and why the graph gates still apply."
 ---
 
 # Internal Layer Mechanics
@@ -44,18 +44,12 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 
 **The internal layer has no provider mirror.** One file per artefact, no adapter to keep in step.
 
-## Lifecycle Actions
-
-| Action | How |
-|--------|-----|
-| **Create** | Write at the correct path, following the artefact's conventions |
-| **Modify** | Edit in place, preserving structure and business logic |
-| **Deprecate** | Deprecation notice at the top; update dependents to name the replacement |
-| **Remove** | Delete, then update **every** dependent that referenced it |
-| **Rename** | `git mv`, then the same full sweep as Remove — a rename is a remove plus a create |
+`add-framework-development` carries the artefact anatomies, the agent frontmatter fields and the
+`<!-- uses: -->` syntax. Read it when creating a new internal artefact.
 
 **A remove or a rename is not done when the file is gone.** It is done when nothing names the old
-target. See the sweep below.
+target. The lifecycle actions themselves are layer-neutral and live in the executing command; what
+follows is what proves an internal one landed.
 
 ---
 
@@ -83,6 +77,17 @@ An internal-only change writes nothing under `framwork/` except the gitignored
 ```bash
 git status --porcelain framwork/    # must be empty
 ```
+
+### CLAUDE.md, per changed artefact list
+
+| If this F-block… | Update |
+|---|---|
+| added or removed an internal command, skill or agent | the Internal Layer tables |
+| changed what a command or skill is for | that command's row, and the "Where the details live" table |
+| changed the repo structure, `.gitignore` or the pipeline | the section documenting it |
+
+Read `framwork/.codeadd/skills/add-claude-md-style/SKILL.md` before writing. **Edit only what this
+F-block invalidated** — a diff that rewords unrelated sections is a diff nobody can review.
 
 ### Coherence, per modified artefact
 
