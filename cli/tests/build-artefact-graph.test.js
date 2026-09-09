@@ -870,11 +870,14 @@ describe('node inventory snapshot', () => {
     // declares 97 -> 99: the four new skills all carry a `<!-- uses: -->` block,
     // the two deleted commands carried one each.
     // (plan 2026-09-08T210322-SELF-PLAN--unify-dev-commands, F2-F13.)
-    // 211 -> 212: add-framework--roadmap. `declares` stays 99 — it carries no
-    // `<!-- uses: -->` block on purpose, which is what keeps it a leaf.
+    // 211 -> 212, declares 99 -> 100: add-framework--roadmap.
+    // `declares` is DECLARING_KINDS.has(kind) — a flag on every command, skill
+    // and agent, meaning "the build scans this file for a `uses:` block". It is
+    // NOT "this file has one". add-framework--roadmap carries no block and adds
+    // no edge, and it still moves this count.
     // (plan 2026-09-09T065116-PLAN--roadmap-command, F1.)
     expect(nodes).toHaveLength(212);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(99);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(100);
   });
 });
 
