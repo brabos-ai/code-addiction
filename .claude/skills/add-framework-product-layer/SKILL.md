@@ -113,12 +113,17 @@ the help text of `cli/src/cli.js`.**
 ### Every product F-block
 
 ```bash
-node scripts/build.js
+ADD_GRAPH_WARNINGS=1 node scripts/build.js
 ```
 
-Exit 0, no new LINT warning. This also runs the three graph gates: a `uses:` target that does not
-exist fails, an artefact missing from `provider-map.json` fails, and a name in prose with no declared
-relationship fails.
+Exit 0, and no warning absent from the baseline measured before the first F-block. **Two different
+classes of warning come out of this one run**: LINT warnings from the raw-path linter, and graph
+warnings from the artefact graph. Both count, and **`build.js` summarises the graph ones as a count
+unless `ADD_GRAPH_WARNINGS=1` is set**, so the bare form cannot support a "no new warning" claim.
+
+The same run is where the three graph gates fire: a `uses:` target that does not exist fails, an
+artefact missing from `provider-map.json` fails, and a name in prose with no declared relationship
+fails.
 
 ### Markdown artefacts
 

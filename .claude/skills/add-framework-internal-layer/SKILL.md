@@ -58,11 +58,13 @@ follows is what proves an internal one landed.
 ### Every internal F-block
 
 ```bash
-node scripts/build.js
+ADD_GRAPH_WARNINGS=1 node scripts/build.js
 ```
 
-Exit 0, no new warning. **This applies to the internal layer even though the internal layer is not
-built.** `build.js` is where the three artefact-graph gates run, and the graph covers `.claude/` as
+Exit 0, and no warning absent from the baseline measured before the first F-block. **`build.js`
+summarises warnings as a count unless `ADD_GRAPH_WARNINGS=1` is set**, so the bare form cannot
+support a "no new warning" claim. **This applies to the internal layer even though the internal layer
+is not built.** `build.js` is where the three artefact-graph gates run, and the graph covers `.claude/` as
 well as `framwork/.codeadd/`:
 
 | Condition | Result |

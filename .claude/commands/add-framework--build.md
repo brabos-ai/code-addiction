@@ -239,8 +239,17 @@ A red build is not a ruling: it reports and STOPS.
 skill. Both layers share one non-negotiable:
 
 ```bash
-node scripts/build.js        # exit 0, no new warning — the three graph gates run here
+ADD_GRAPH_WARNINGS=1 node scripts/build.js   # exit 0, no new warning — the three graph gates run here
 ```
+
+⛔ **`ADD_GRAPH_WARNINGS=1` is not optional.** Without it `build.js` prints `N graph warning(s)` and
+nothing else, so a block that greps the output for a warning finds none and reports clean against
+warnings it never saw. That is not hypothetical: it shipped four warnings through thirteen blocks of
+one delivery.
+
+**Measure the baseline ONCE, before the first F-block**, by running the same command on the branch
+point. "No **new** warning" means no warning absent from that list — a pre-existing warning is not
+this block's to fix, and a count alone cannot tell the two apart.
 
 ```
 IF VALIDATION DID NOT PASS:
