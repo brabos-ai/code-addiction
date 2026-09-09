@@ -1,7 +1,8 @@
 # 2026-09-09 — Review, reshaped: one pass, no loops
 
 Implements `docs/plans/2026-09-09T090201-PLAN--review-no-loops.md` (roadmap item 1, sub-items 1.0
-through 1.5). Twenty commits, both layers, one command deleted and two artefacts created.
+through 1.5). Twenty-two commits plus this changelog, both layers, one command deleted and two
+artefacts created.
 
 ## Why
 
