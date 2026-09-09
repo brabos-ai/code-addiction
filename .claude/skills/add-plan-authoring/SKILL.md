@@ -83,6 +83,13 @@ no lookup table between them.
 **The first two are load-bearing; their absence is a defect, not a variation.** The plan carries the
 reasoning and the ledger carries the rulings, and neither has a second copy anywhere.
 
+⛔ **Every member is a byte-for-byte copy of its source. The filename changes; the contents never do.**
+An archive is worth keeping only because it IS the document — a reader years from now cannot tell a
+faithful copy from a confident rewrite, and will trust either. Summarising, trimming, reformatting or
+reconstructing a document on the way in produces something that reads as the record and is not, which
+is worse than an empty directory. The command that assembles it copies the bytes and proves each copy
+matches before staging.
+
 **The last three are conditional, and a directory holding none of them is the normal case.** No
 command writes a `--review-v*` companion or anything under `docs/evidence/` any more, so both members
 exist to carry what is already on disk from before. `design.md` is absent whenever the plan carried

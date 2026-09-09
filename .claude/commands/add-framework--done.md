@@ -342,6 +342,25 @@ Show the user, before committing: the entry as it will be written, any `LOOSE=` 
 
 Copy, never move: the originals stay on disk until STEP 8 removes them, and STEP 8 runs only after the merge.
 
+**Every member is produced by a file copy. Nothing here is authored.**
+
+```
+IF PRODUCING ANY FILE UNDER docs/deliveries/<id>/:
+  ⛔ DO NOT USE: Write on it
+  ⛔ DO NOT USE: Edit on it
+  ⛔ DO NOT: Summarise, trim, reformat, re-order, translate or tidy a document on the way in
+  ⛔ DO NOT: Reconstruct a document from what you remember of it, from the plan's own text, or from this session
+  ✅ DO: Copy the bytes — `cp <source> docs/deliveries/<id>/<member>` — and copy nothing you were not asked to
+```
+
+**Prove each copy, before staging anything:**
+
+```bash
+cmp "<source>" "docs/deliveries/<id>/<member>"   # silent = identical; ANY output → STOP
+```
+
+⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename: `<basename>.md` becomes `plan.md`, `<basename>--ledger.md` becomes `ledger.md`. Contents never change.
+
 ```
 IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
   ⛔ DO NOT USE: Bash to run git commit
