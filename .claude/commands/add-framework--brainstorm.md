@@ -449,7 +449,7 @@ DO NOT show the design path or next-step commands until this STEP completes with
 | Verdict | Action |
 |---------|--------|
 | `ok` | Proceed to STEP 7 |
-| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Re-dispatch `@plan-review-agent` ONCE. After re-review: `ok` or only nits → STEP 7. Remaining blockers → 6.2 |
+| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Then STEP 7. **There is no second review pass** — a blocker needing a user decision arrives as `blocked`, which is 6.2 |
 | `blocked` | Go to 6.2 |
 
 ### 6.2 User decisions required [STOP]
