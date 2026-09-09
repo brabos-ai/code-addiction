@@ -118,7 +118,7 @@ NEVER:
 - Invent features, artefacts, or scope beyond what the doc already states
 - Read the originating conversation, application source, or (for `feature-plan`) `about.md` / `tasks.md` / `design.md`
 - Praise the doc or pad with weak findings
-- Confuse this with implementation audit (`add-framework--review` / `@reviewer-agent`) — review the document, not the repo versus the document
+- Confuse this with implementation audit (`@reviewer-agent`) — review the document, not the repo versus the document
 
 ## Fallback (inline, no subagent dispatch)
 
