@@ -4,7 +4,6 @@ flowchart LR
     n_internal_command_add_framework__done(["add-framework--done"])
     n_internal_command_add_framework__plan(["add-framework--plan"])
     n_internal_command_add_framework__release(["add-framework--release"])
-    n_internal_command_add_framework__review(["add-framework--review"])
     n_internal_command_add_framework__roadmap(["add-framework--roadmap"])
     n_internal_command_add_framework__sync(["add-framework--sync"])
     n_product_command_add(["add"])
@@ -29,9 +28,7 @@ flowchart LR
     n_internal_command_add_framework__build --> n_internal_command_add_framework__sync
     n_internal_command_add_framework__build -.-> n_internal_command_add_framework__done
     n_internal_command_add_framework__done --> n_internal_command_add_framework__build
-    n_internal_command_add_framework__done --> n_internal_command_add_framework__review
     n_internal_command_add_framework__plan --> n_internal_command_add_framework__build
-    n_internal_command_add_framework__review --> n_internal_command_add_framework__build
     n_internal_command_add_framework__sync --> n_internal_command_add_framework__release
     n_product_command_add --> n_product_command_add_brainstorm
     n_product_command_add --> n_product_command_add_build

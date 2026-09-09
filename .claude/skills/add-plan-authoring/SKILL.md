@@ -7,6 +7,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 
 <!-- uses:
 - agent: plan-review-agent
+- skill: add-review-discipline
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
 - mention: /add-framework--build
@@ -154,19 +155,17 @@ the layer-boundary check on a single-layer plan.
 
 ### Acting on the Verdict
 
-| Verdict | Action |
-|---------|--------|
-| `ok` | Deliver |
-| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Add a changelog row. Deliver. **There is no second review pass** — this verdict is defined as fixes that invent no decision, and re-reading the whole document to confirm a concrete edit costs another full review |
-| `blocked` | Below |
+**`add-review-discipline` owns this.** How many times the reviewer runs, what a caller owes a report
+it receives, and the `blocked` path all live there, because three commands need the same answers and
+restating them here is what let them drift apart in the first place.
 
-**A blocker needing a user decision [STOP]:** present only those blockers. DO NOT present the plan as
-delivered. WAIT. Apply the answers, re-enter review.
+Two things this skill adds on top, both specific to a plan document:
+
+- A `fix-then-ok` whose fixes land in the plan gets a **changelog row** naming what changed.
+- The plan is not presented as delivered until the report has come back and been acted on.
 
 ⛔ DO NOT invent decisions to clear blockers.
 ⛔ DO NOT skip review in Continue Mode.
-
-**A blocker the reviewer itself marks mechanical is not a user decision.** Apply it and continue.
 
 ---
 
@@ -237,8 +236,9 @@ full basename always works.
 - **No match** → list `docs/plans/` and STOP.
 
 **Continue Mode** (argument resolves to a plan): load it, summarize what was already decided, ask what
-to adjust, update it with a changelog row, then re-enter review and completion. An update is not
-delivered before review.
+to adjust, update it with a changelog row, then review and complete it the same way a new plan is.
+An update is not delivered before review — and it gets the same single pass a new plan gets, not an
+extra one for having been revised.
 
 **List Mode** (no argument): list the plans with their status and ask which to work on.
 

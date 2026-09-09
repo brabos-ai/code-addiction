@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-plan-authoring
+- skill: add-review-discipline
 - agent: framework-discovery-agent
 - agent: plan-review-agent
 - command: /add-framework--build
@@ -107,8 +108,8 @@ IF THE IDEA IS BAD OR UNNECESSARY:
 ```
 
 Continue Mode and List Mode resolution are owned by `add-plan-authoring`. Load it, resolve the
-argument BEFORE reading anything else, then re-enter STEP 6 and STEP 7. An update is never delivered
-before review.
+argument BEFORE reading anything else, then run STEP 6 and STEP 7 on the updated document. An update
+is never delivered before review, and it gets the same single pass a new plan gets.
 
 ---
 
@@ -278,8 +279,9 @@ Write the draft. **DO NOT present the path or next steps** — go straight to ST
 
 **GATE CHECK:** Does the plan file exist? IF NO → return to STEP 5.
 
-Dispatch and verdict handling are owned by `add-plan-authoring`: `@plan-review-agent`, read-only,
-`kind: plan`, `layer` derived from the F-block tags. Apply its verdict table. One pass, never two.
+Dispatch is owned by `add-plan-authoring`: `@plan-review-agent`, read-only, `kind: plan`, `layer`
+derived from the F-block tags. **How the verdict is acted on, and how many times the reviewer runs,
+are owned by `add-review-discipline`.** Load it. One pass, never two.
 
 ⛔ DO NOT invent decisions to clear blockers.
 ⛔ DO NOT skip this STEP in Continue Mode.

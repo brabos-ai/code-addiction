@@ -50,7 +50,13 @@ There is no `build-ledger.sh`; append the line yourself.
 F1: complete (commits a1b2c3d..a1b2c3d, build.js clean)
 F2: Ruling: kept the existing key name — the plan names both — costs a rename in F4 if wrong
 F2: complete (commits d4e5f6a..b7c8d9e, cli suite 0 new failures)
+REVIEW: complete (6 findings, 4 applied, 2 rejected)
 ```
+
+**Three line shapes, and `REVIEW:` is the one that is not per-F-block.** It is written once, after the
+last block, by the review pass that audits the finished delivery. It carries no commit range because
+it commits nothing itself — an accepted finding lands as a normal edit under its own F-block tag, and
+a rejected one gets its own `Ruling:` line.
 
 ```
 IF THE LEDGER HAS NOT BEEN READ THIS SESSION:
@@ -64,6 +70,10 @@ IF THE LEDGER HAS NOT BEEN READ THIS SESSION:
 - An F-block with a `complete` line is **NEVER** re-executed. Not "probably done", not "let me
   re-check by re-running it". Done.
 - An F-block with no line at all is the next one to execute.
+- **A `REVIEW: complete` line means the review pass already ran, and it is never run again.** This is
+  the only record it leaves: the pass writes no file anywhere, by design, so a review that found
+  nothing is otherwise indistinguishable from one that never happened — and a resume that cannot tell
+  those apart runs a second pass over work already graded.
 - **After a compaction, trust the ledger and `git log` over your own recollection.** Recollection is
   the thing that was just erased. Where the two disagree: **git wins for what exists** — a commit in
   `git log` happened, whatever the ledger says — and **the ledger wins for what was decided**, because

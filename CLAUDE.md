@@ -42,9 +42,8 @@ Development tools that build and maintain the framework itself. One file per art
 | Command | Purpose | Operates on |
 |---------|---------|-------------|
 | `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
-| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules | Both layers |
+| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
 | `add-framework--brainstorm` | Collaborative ideation; precedes `add-framework--plan` | Both layers |
-| `add-framework--review` | Audits a plan vs implementation via 4 parallel read-only subagents | Both layers |
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
 | `add-framework--done` | Close-out — gates, `gh` merge, index entry, cleanup | Branches, PRs, `docs/delivered.jsonl` |

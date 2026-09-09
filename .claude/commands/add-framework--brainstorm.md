@@ -3,6 +3,7 @@
 <!-- uses:
 - agent: framework-discovery-agent
 - agent: plan-review-agent
+- skill: add-review-discipline
 - mention: /add-framework--build
 - command: /add-framework--plan
 -->
@@ -446,15 +447,19 @@ DO NOT show the design path or next-step commands until this STEP completes with
 
 ### 6.1 Act on Verdict
 
-| Verdict | Action |
-|---------|--------|
-| `ok` | Proceed to STEP 7 |
-| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Then STEP 7. **There is no second review pass** — a blocker needing a user decision arrives as `blocked`, which is 6.2 |
-| `blocked` | Go to 6.2 |
+**`add-review-discipline` owns this.** Load it. It carries the verdict table, how many times the
+reviewer runs, and what you owe a report you receive. `ok` and `fix-then-ok` both continue to STEP 7;
+`blocked` is 6.2.
 
 ### 6.2 User decisions required [STOP]
 
-Present only the blockers that need a user decision. DO NOT present the design as delivered. WAIT. After answers: apply, or return to STEP 4 if exploration is still open, then re-enter STEP 6.
+Present only the blockers that need a user decision. DO NOT present the design as delivered. WAIT.
+After answers: apply them and go to STEP 7.
+
+**Exploration is the one thing that reopens.** If the answers show the design space was never closed,
+return to STEP 4 and carry on exploring — what comes out is a different document, and STEP 6 reviews
+it once as it would any other. What does not happen is the same document going back for a second
+opinion.
 
 ⛔ DO NOT invent decisions to clear blockers.
 

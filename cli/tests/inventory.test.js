@@ -326,9 +326,35 @@ describe('L2 the real repository', () => {
 describe('L3 the command and skill texts that held the duty', () => {
   const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 
-  it('L3.1 add-framework--done STEP 2.4 runs, commits AND pushes, before the clean-tree check', () => {
+  /**
+   * The body of a `## STEP n: <title>` section, located by TITLE.
+   *
+   * These assertions used to slice on hard-coded step numbers, and every one of
+   * them broke when plan 2026-09-09T090201 inserted a readback step and a review
+   * step into add-framework--build and renumbered the five below them. Nothing
+   * they pin had changed — only the labels moved. Matching on the title keeps
+   * them pointed at the rule instead of at its position.
+   */
+  function step(text, title) {
+    // `\\d` and not `\d`: a template literal eats an unrecognised escape, so
+    // `\d` reaches the RegExp constructor as a bare `d`.
+    const start = text.search(new RegExp(`^## STEP \\d+: ${title}`, 'm'));
+    if (start < 0) throw new Error(`no STEP titled ${title}`);
+    const rest = text.slice(start + 1).search(/^## STEP \d+:/m);
+    return rest < 0 ? text.slice(start) : text.slice(start, start + 1 + rest);
+  }
+
+  /** The body of a `### n.m <title>` sub-section, located by title. */
+  function sub(text, title) {
+    const start = text.search(new RegExp(`^### \\d+\\.\\d+ ${title}`, 'm'));
+    if (start < 0) throw new Error(`no sub-section titled ${title}`);
+    const rest = text.slice(start + 1).search(/^### \d+\.\d+ /m);
+    return rest < 0 ? text.slice(start) : text.slice(start, start + 1 + rest);
+  }
+
+  it('L3.1 the close-out CI gate runs, commits AND pushes, before the clean-tree check', () => {
     const done = read('.claude', 'commands', 'add-framework--done.md');
-    const list = done.slice(done.indexOf('### 2.4'), done.indexOf('### 2.5'));
+    const list = sub(done, "CI's four commands");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
     expect(item1).toContain('scripts/inventory.js');
@@ -374,7 +400,7 @@ describe('L3 the command and skill texts that held the duty', () => {
 
   it('L3.7 add-framework--build syncs the block unconditionally, as its last documented act', () => {
     const build = read('.claude', 'commands', 'add-framework--build.md');
-    const step6 = build.slice(build.indexOf('## STEP 6:'), build.indexOf('## STEP 7:'));
+    const step6 = step(build, 'Document');
 
     expect(step6).toContain('scripts/inventory.js');
     // Unconditional: the block is derived from the tree, so its correctness must
@@ -384,9 +410,9 @@ describe('L3 the command and skill texts that held the duty', () => {
 
   it('L3.8 the push and the PR live behind a [STOP], after the sync', () => {
     const build = read('.claude', 'commands', 'add-framework--build.md');
-    const publish = build.slice(build.indexOf('## STEP 7:'), build.indexOf('## STEP 8:'));
+    const publish = step(build, 'Publish');
 
-    expect(build).toMatch(/^## STEP 7: Publish.*\[STOP\]/m);
+    expect(build).toMatch(/^## STEP \d+: Publish.*\[STOP\]/m);
     expect(publish).toContain('gh pr create');
     // Skipped when a PR already exists — asking twice on the same branch is noise.
     expect(publish).toMatch(/already exists|existing PR/i);
@@ -400,18 +426,18 @@ describe('L3 the command and skill texts that held the duty', () => {
     const build = read('.claude', 'commands', 'add-framework--build.md');
     const header = build.slice(build.indexOf('STEPS IN ORDER'), build.indexOf('**⛔ ABSOLUTE'));
 
-    expect(header).toMatch(/STEP 7: Publish/);
-    expect(header).toMatch(/STEP 8: Completion/);
-    expect(build).toMatch(/^## STEP 8: Completion/m);
+    expect(header).toMatch(/STEP \d+: Publish/);
+    expect(header).toMatch(/STEP \d+: Completion/);
+    expect(build).toMatch(/^## STEP \d+: Completion/m);
 
-    const step8 = build.slice(build.indexOf('## STEP 8: Completion'));
+    const step8 = step(build, 'Completion');
     expect(step8).toMatch(/inventory block/i);
     expect(step8).toMatch(/PR/);
   });
 
   it('L3.10 add-framework--done says its sync is the net, not the first writer', () => {
     const done = read('.claude', 'commands', 'add-framework--done.md');
-    const list = done.slice(done.indexOf('### 2.4'), done.indexOf('### 2.5'));
+    const list = sub(done, "CI's four commands");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
     // Still runs, still commits, still pushes — but the normal outcome is now

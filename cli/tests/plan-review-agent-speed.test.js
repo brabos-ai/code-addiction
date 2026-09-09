@@ -190,15 +190,30 @@ describe('L4 — the second review pass is gone (F5)', () => {
   });
 
   // Green pre-plan by design: F5 removes the second pass, not the contract.
+  //
+  // Amended by plan 2026-09-09T090201: the contract did not disappear, it moved.
+  // add-review-discipline is now its single owner, and these two callers defer
+  // to it instead of each carrying a copy — which is what let the second pass
+  // survive in one of them and die in the other. A caller therefore satisfies
+  // this by DECLARING the owner; the owner itself must still carry the fields.
   it.each(VERDICT_TABLE_CALLERS)(
-    'L4.2 %s keeps the blocked path and the report fields it reads',
+    'L4.2 %s still routes the blocked path, itself or through its owner',
     (_label, file) => {
       const text = read(file);
       expect(text).toContain('blocked');
-      expect(text).toContain('Required fix');
-      expect(text).toContain('Do not change');
+
+      const carriesFields = text.includes('Required fix') && text.includes('Do not change');
+      const defersToOwner = text.includes('add-review-discipline');
+      expect(carriesFields || defersToOwner).toBe(true);
     },
   );
+
+  it('L4.2b the owner carries the report fields the callers stopped copying', () => {
+    const discipline = read(path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'));
+    expect(discipline).toContain('blocked');
+    expect(discipline).toContain('Required fix');
+    expect(discipline).toContain('Do not change');
+  });
 
   // Green pre-plan by design: guards against collateral deletion.
   it('L4.3 the two prohibitions and the plan command\'s delegation survive', () => {
@@ -206,8 +221,10 @@ describe('L4 — the second review pass is gone (F5)', () => {
     expect(authoring).toContain('DO NOT invent decisions to clear blockers');
     expect(authoring).toContain('DO NOT skip review in Continue Mode');
 
+    // The plan command still delegates rather than restating; only the owner it
+    // names changed, from add-plan-authoring to add-review-discipline.
     const planCmd = read(PLAN_CMD);
-    expect(planCmd).toContain('Apply its verdict table');
+    expect(planCmd).toMatch(/owned by `add-(plan-authoring|review-discipline)`/);
     expect(planCmd).toContain('DO NOT invent decisions to clear blockers');
   });
 });

@@ -4,7 +4,6 @@
 - skill: add-commit
 - mention: @framework-discovery-agent
 - command: /add-framework--build
-- command: /add-framework--review
 -->
 
 <!--
@@ -27,7 +26,7 @@ Closes out a delivered plan in **either layer**: gates it against CI's own four 
 
 **STEPS IN ORDER:**
 STEP 1: Collect context           → branch, plan, ledger, diff, `gh auth status`
-STEP 2: Gates                     → ledger complete + review PASS + CI green on THIS sha [HARD STOP]
+STEP 2: Gates                     → ledger complete + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
@@ -59,12 +58,7 @@ IF CI HAS NOT CONCLUDED, OR CONCLUDED ON A DIFFERENT SHA:
   ✅ DO: Wait for the run on this SHA, or report why it cannot run and fall back to the local four
 
 NOTE: `gh pr create` is NOT prohibited here. CI triggers on `pull_request`, so the PR is what
-makes the gate runnable at all — STEP 2.4 creates it before the gate can conclude.
-
-IF THE BRANCH IMPLEMENTS A PLAN AND ITS REVIEW VERDICT IS NOT `PASS`:
-  ⛔ DO NOT USE: Bash to run gh pr merge
-  ⛔ DO NOT: Treat `GAPS_FOUND` as a soft pass
-  ✅ DO: Report the verdict and STOP — findings are resolved before close-out, never after
+makes the gate runnable at all — STEP 2.3 creates it before the gate can conclude.
 
 IF STEP 3 WROTE NO ENTRY:
   ⛔ DO NOT USE: Bash to run rm on anything
@@ -78,7 +72,7 @@ IF A FILE IS UNTRACKED:
 
 ALWAYS:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
-  ⛔ DO NOT: Produce a review verdict — this command reads one and never writes one
+  ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
   ⛔ DO NOT: Delete anything under docs/plans/, docs/brainstorming/ or docs/changelog/
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
 
@@ -107,7 +101,7 @@ Run `gh auth status`. If it fails → report it and STOP. Nothing below is writt
 
 Verify the current branch is **not** `main`. If it is → report and STOP: this command ends work someone else started on a branch, and it never creates one.
 
-**One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.5 runs on `main`, because the branch it would have run on is already merged and gone.
+**One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.4 runs on `main`, because the branch it would have run on is already merged and gone.
 
 **Resolve `[plan]` the way `/add-framework--build` does.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*`, `--evidence-v*` and `--ledger` companions).
 
@@ -124,7 +118,6 @@ Collect, and carry forward to STEP 3:
 - **The merge base and the diff** — `git diff --name-status main...HEAD` for the added, modified, deleted and renamed paths this branch introduced.
 - **The commits** — `git log --oneline main..HEAD`, short hashes.
 - **The ledger** — `docs/plans/<plan-basename>--ledger.md`, and every `F<n>:` line in it. Legacy plans written before the layer split ended use `S<n>`; read either.
-- **The review companion** — the highest `docs/plans/<plan-basename>--review-v*.md`, if one exists.
 - **The graph** — `framwork/.codeadd/artefact-graph.json`, for classifying paths at STEP 3.
 
 **Three dots for the diff, two for the log, and neither is a typo.** Three-dot diff is merge-base-relative, which is exactly "what did this branch introduce" — a two-dot diff would also report, reversed, everything `main` gained since the branch point. Two-dot log is "commits on this branch and not on main", which is the question there. A sibling ruling in the product layer replaced a three-dot *pre-check* with two dots; that check asks the opposite question ("does main already have all of this?") and does not transfer here.
@@ -145,7 +138,7 @@ Run `gh pr view --json state,mergedAt` for the current branch, then check whethe
 |---|---|---|
 | Open | — | Normal path. Continue |
 | Merged | yes | Nothing to close out. Report and STOP |
-| Merged | **no** | **Recovery path — 2.5.** Continue |
+| Merged | **no** | **Recovery path — 2.4.** Continue |
 
 The middle row is what makes a second run on the same branch safe: the gates below would all still pass, and without it the command would write a second entry for one delivery.
 
@@ -159,25 +152,9 @@ A build may add F-blocks the plan did not have — a ruling records why. Those a
 
 If any block is missing its `complete` line → report which ones and STOP.
 
-**This runs first for a reason: unwritten code breaks no test.** A `/add-framework--build` run that stopped halfway passes all four commands below and an existing favourable review, and would merge and index as fully delivered — the exact lie the index exists to prevent.
+**This runs first for a reason: unwritten code breaks no test.** A `/add-framework--build` run that stopped halfway passes all four commands below and would merge and index as fully delivered — the exact lie the index exists to prevent. **It is the only gate here that can catch that, which is why it is the one that stays.** The gate that used to sit beside it asked whether the delivery had been graded; this one asks whether it happened at all, and those are not the same question.
 
-### 2.3 The review gate
-
-If the branch implements a plan, a `--review-vNN.md` companion **must** exist. If it does not → STOP.
-
-Read its verdict:
-
-| Verdict | Action |
-|---|---|
-| `PASS` | Proceed |
-| `GAPS_FOUND` | **HARD STOP** — its definition is unresolved high-severity findings |
-| `BLOCKED` | **HARD STOP** |
-
-Favourable means `PASS` and nothing else. Merging over `GAPS_FOUND` indexes the findings as delivered.
-
-**Read the verdict; never produce one.** `/add-framework--review` owns the audit. A close-out that runs its own review is a command grading its own delivery.
-
-### 2.4 CI's four commands — read the run, do not re-run them locally
+### 2.3 CI's four commands — read the run, do not re-run them locally
 
 CI already runs the four commands this gate needs, on the four combinations this project supports:
 
@@ -193,7 +170,7 @@ test-scripts         npm run test:scripts   (bats)                              
 
 1. **Sync the `CLAUDE.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add CLAUDE.md` (that path alone, never `-A`), commit it with a message per `.claude/skills/add-commit/SKILL.md`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `CLAUDE.md`, not permission to skip the sync.
 
-   **`already current` is the expected outcome, not a sign this step is redundant.** `/add-framework--build` STEP 6 syncs before it offers to open the PR, so the block normally arrives here correct. This is the net under three cases where it cannot have: a build that hard-stopped before STEP 6, a hotfix that never ran a full build, and the recovery path at 2.5 where the merge came first.
+   **`already current` is the expected outcome, not a sign this step is redundant.** `/add-framework--build` STEP 8 syncs before it offers to open the PR, so the block normally arrives here correct. This is the net under three cases where it cannot have: a build that hard-stopped before STEP 8, a hotfix that never ran a full build, and the recovery path at 2.4 where the merge came first.
 2. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
 3. **Push the branch** if `git rev-parse HEAD` and `git rev-parse origin/<branch>` disagree. Item 1 already pushed when the block changed, so this finds them in sync — that is the expected outcome, not a redundancy to remove.
 4. **`gh pr view`** → if no PR exists, `gh pr create`.
@@ -213,7 +190,7 @@ test-scripts         npm run test:scripts   (bats)                              
 
 **If CI gains a job, this list follows it.** The whole point is that the gate and the merge cannot disagree about what green means.
 
-### 2.5 The Recovery Path — merged, never indexed
+### 2.4 The Recovery Path — merged, never indexed
 
 Reached only from 2.1's bottom row. **Every gate above still applies in full** — a delivery is not
 exempt from them because someone merged early. What changes is where the evidence lives and what is
@@ -223,9 +200,9 @@ left to do:
 |---|---|---|
 | 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
 | 1.3 | `git diff --name-status main...HEAD` | `git show --name-status <merge-commit>` — the squash IS the delivery |
-| 2.2, 2.3 | Ledger and review gates | Unchanged. Both still hard-stop |
-| 2.4 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
-| 2.4 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
+| 2.2 | The ledger gate | Unchanged. It still hard-stops |
+| 2.3 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
+| 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
 | 7 | Merge the PR | **Skipped.** Already merged |
 | 8 | Cleanup | Unchanged — the merged branch is still there to delete |
@@ -366,9 +343,9 @@ The push re-triggers CI on the new commit. STEP 7 waits for that run before merg
 
 **Recovery path: skip this STEP entirely.** The merge already happened; go to STEP 8.
 
-The PR already exists — STEP 2.4 created it, because CI cannot run without one.
+The PR already exists — STEP 2.3 created it, because CI cannot run without one.
 
-**STEP 6 pushed a commit CI has not tested.** The gate at 2.4 ran on the code; the entry and the changelog landed after it. Wait for the run on the new SHA before merging, applying the same SHA comparison 2.4 applies:
+**STEP 6 pushed a commit CI has not tested.** The gate at 2.3 ran on the code; the entry and the changelog landed after it. Wait for the run on the new SHA before merging, applying the same SHA comparison 2.3 applies:
 
 ```bash
 gh pr checks --watch --fail-fast
@@ -396,7 +373,7 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 
 | Removed | Kept | Why |
 |---|---|---|
-| The worktree, if one exists | `docs/plans/` | Read by `@framework-discovery-agent` and by seven commands |
+| The worktree, if one exists | `docs/plans/` | Read by `@framework-discovery-agent` and by six commands |
 | The merged branch, local and remote | `docs/brainstorming/` | Read by the plan and brainstorm commands |
 | `docs/evidence/` files for this plan | `docs/changelog/` | The human narrative record; its retirement is out of scope |
 
@@ -428,8 +405,9 @@ ALWAYS:
 - Add a job here when CI gains one, so the gate and the merge cannot disagree
 
 NEVER:
+- Grade the delivery — the build audits it once at its STEP 7, and a close-out that repeats the audit
+  is a command judging work it is about to merge
 - Synthesise a `node` id for something the graph does not model
 - Record a rename as a deletion or a supersession
 - Loosen a `find` anchor to get past a `REFUSED=` result
-- Produce a review verdict — a close-out that grades its own delivery proves nothing
 - Accept a check that is skipped, queued, neutral or cancelled as a pass — only `success` is one
