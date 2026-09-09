@@ -74,7 +74,10 @@ function write(file, body = 'x') {
  * three different fragment/plugin owners at once.
  */
 function fixtureCodeadd() {
-  const dir = path.join(tmpDir('inventory-fx-'), '.codeadd');
+  // `<root>/framwork/.codeadd`, mirroring the real repository — that is the layout
+  // `--root` resolves against, so a flatter fixture would only exercise the unit
+  // functions and let a broken CLI path through.
+  const dir = path.join(tmpDir('inventory-fx-'), 'framwork', '.codeadd');
   write(path.join(dir, 'commands', 'add.md'));
   write(path.join(dir, 'commands', 'add.init.md'));
   write(path.join(dir, 'commands', 'add.plan-to-ready.md'));
@@ -208,7 +211,7 @@ describe('L1.5 checkBlock and the --check exit codes', () => {
 
   it('exits 0 on a current block and 2 on a stale one', () => {
     const codeadd = fixtureCodeadd();
-    const root = path.dirname(codeadd);
+    const root = path.resolve(codeadd, '..', '..');
 
     const md = path.join(root, 'CLAUDE.md');
     fs.copyFileSync(fixtureClaudeMd(), md);
