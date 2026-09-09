@@ -415,6 +415,8 @@ IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
 
 `git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and sub-step 1 above has nothing it can do.
 
+⛔ **Attempting it anyway does damage, measured rather than assumed.** Run from inside, the command **unregisters the worktree and then fails to delete the directory** — `error: failed to delete '<path>': Permission denied`, exit 255. What is left is an orphan directory git no longer knows about, so a second `git worktree remove` answers `is not a working tree` and the operator now needs `git worktree prune` plus a manual delete. A skipped sub-step costs one clean command later; this costs a repair.
+
 ```
 IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
   ⛔ DO NOT USE: Bash to run git worktree remove on it
@@ -423,7 +425,7 @@ IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
   ✅ DO: Report both as skipped, name the worktree path, and continue to sub-step 3
 ```
 
-**The branch is skipped with the worktree, not attempted after it.** `git branch -d` fails while the branch is checked out in a live worktree, so trying it produces a second failure that says nothing the first did not. Both are reported as skipped, from the primary checkout, with the command to finish by hand.
+**The branch is skipped with the worktree, not attempted after it.** `git branch -d` refuses a branch checked out in a live worktree — `error: cannot delete branch '<name>' used by worktree at '<path>'`, exit 1 — even when it is fully merged. Both are reported as skipped, with the two commands the operator runs from the primary checkout to finish by hand.
 
 **Nothing here is a failure of the delivery.** By STEP 8 the entry, the changelog and `docs/deliveries/<id>/` are already on `main`. A worktree left behind costs one manual `git worktree remove` from the primary checkout; it costs no document, which is the whole point of STEP 6 running before this.
 
