@@ -139,7 +139,8 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # docs/ splits by durability, not by directory-wide rule.
-# Tracked: docs/changelog/ (the human narrative) and docs/delivered.jsonl (the index).
+# Tracked: docs/changelog/ (the human narrative), docs/delivered.jsonl (the index) and
+# docs/deliveries/ (the working documents of a closed-out plan, archived by /add-framework--done).
 # Local: the working artefacts below — a fresh clone is not meant to carry them.
 docs/plans/
 docs/brainstorming/

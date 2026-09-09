@@ -36,6 +36,7 @@ Development tools that build and maintain the framework itself. One file per art
 | Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `.claude/agents/*.md` |
 | Plans | `docs/plans/` — gitignored working artefacts, local only |
+| Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
 ### Internal commands
 
