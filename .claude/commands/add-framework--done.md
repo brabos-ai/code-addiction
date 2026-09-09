@@ -32,7 +32,7 @@ STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
 STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
-STEP 8: Cleanup                   → worktree, branch, evidence — in that order, non-fatal
+STEP 8: Cleanup                   → worktree, branch, this plan's archived originals — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -282,7 +282,7 @@ Entry fields:
   a third value.
 - `by`: `"done"`
 - `id`: the plan's basename without extension, **verbatim** — never a slug
-- `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
+- `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The schema allows either a directory or a plan path; the internal layer narrows that to the directory, because only the directory survives STEP 8. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
 ⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.sh` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
@@ -401,7 +401,7 @@ IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
 
 1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.
 2. **The branch**, local and remote.
-3. **The local originals this delivery archived** — the plan and its ledger in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`.
+3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**
 
 | Removed | Kept | Why |
 |---|---|---|
@@ -411,9 +411,9 @@ IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
 
 **No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
 
-### When this command is running inside the worktree it would remove
+### 8.1 When this command is running inside the worktree it would remove
 
-`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and sub-step 1 above has nothing it can do.
+`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and the first removal above has nothing it can do.
 
 ⛔ **Attempting it anyway does damage, measured rather than assumed.** Run from inside, the command **unregisters the worktree and then fails to delete the directory** — `error: failed to delete '<path>': Permission denied`, exit 255. What is left is an orphan directory git no longer knows about, so a second `git worktree remove` answers `is not a working tree` and the operator now needs `git worktree prune` plus a manual delete. A skipped sub-step costs one clean command later; this costs a repair.
 
@@ -422,7 +422,7 @@ IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
   ⛔ DO NOT USE: Bash to run git worktree remove on it
   ⛔ DO NOT USE: Bash to run git branch -d or git push --delete for its branch
   ⛔ DO NOT USE: Bash to run rm -rf on the worktree directory as a substitute
-  ✅ DO: Report both as skipped, name the worktree path, and continue to sub-step 3
+  ✅ DO: Report both as skipped, name the worktree path, and continue to the third removal
 ```
 
 **The branch is skipped with the worktree, not attempted after it.** `git branch -d` refuses a branch checked out in a live worktree — `error: cannot delete branch '<name>' used by worktree at '<path>'`, exit 1 — even when it is fully merged. Both are reported as skipped, with the two commands the operator runs from the primary checkout to finish by hand.
@@ -440,7 +440,8 @@ Report:
 - Any supersessions declared, and which answer was given
 - The changelog path
 - The PR number and its merge state
-- What STEP 8 removed, and what it skipped and why
+- **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
+- What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
 - Whether the run took the recovery path, and why the entry landed after the merge
 
