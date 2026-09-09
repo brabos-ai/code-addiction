@@ -76,3 +76,22 @@ downstream has to wait for.
 - Update the frontmatter, the STEP map, the prohibitions list, and the migration table so
   none of them still mention a review verdict.
 - **Done when:** `/add-framework--done` closes a branch with no review artefact on disk.
+
+### 1.5 — Remove the re-dispatch of the reviewer
+
+- The re-review pass goes away. A `fix-then-ok` verdict is applied and the work moves on.
+  Nothing dispatches a reviewer a second time to grade the fixes it just asked for.
+- This is 1.3's rule applied to the planning side. 1.3 covers the reviewer inside the
+  build; this covers every command that reviews a document before delivering it.
+- Targets, all in the internal layer:
+  - `.claude/skills/add-plan-authoring/SKILL.md` — the `fix-then-ok` row that says
+    "Re-dispatch ONCE", the "re-enter review" instruction in the blocker path, the same
+    instruction in the update path, and the rationalization row that argues a blocker
+    earns a re-dispatch
+  - `.claude/commands/add-framework--plan.md` — the "Re-dispatch ONCE" line in its review step
+  - `.claude/commands/add-framework--brainstorm.md` — the same row in its own verdict table
+  - `.claude/commands/add-framework--review.md` — removed entirely by 1.1, so nothing to do
+    here beyond confirming it went
+- **Out of scope:** `add-framework--sync` re-dispatches an agent that failed to report back.
+  That is a retry on a missing result, not a second opinion on the same work. It stays.
+- **Done when:** `grep -rn "re-dispatch\|re-enter review" .claude/` returns nothing.
