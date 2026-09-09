@@ -1088,40 +1088,59 @@ function checkArtefactGraph(graph, { readSource } = {}) {
 
   const sniffable = graph.nodes.filter((n) => SNIFFABLE_KINDS.has(n.kind));
 
+  // --- FAIL: a distributed artefact naming an internal command ---------------
+  //
+  // The same-layer sniff below is deliberately blind here: `add-commit` exists
+  // in both layers, so a product artefact naming it means the product one. That
+  // skip leaves exactly one direction unwatched, and it is the direction that
+  // SHIPS — a `framwork/.codeadd/` artefact reaching a user's project while
+  // pointing them at a command only this repository has. Not hypothetical:
+  // `add-plan-review` told five providers' users not to confuse its review with
+  // an internal command they do not have.
+  //
+  // Three things this check does NOT do, each learned from an audit of its own
+  // first version:
+  //
+  // 1. It does not iterate internal command NODES. The line that motivated the
+  //    gate named a command that the very same delivery deleted, so a node walk
+  //    was blind to the one case it existed for. It matches the namespace, so a
+  //    removed command is caught like a live one — which is the worse case, not
+  //    the exempt one.
+  // 2. It does not sit behind `if (!n.declares)`. Scripts and reference subdocs
+  //    carry no `uses:` block and ship verbatim, which makes them the artefacts
+  //    that reach a user's project most literally.
+  // 3. It does not warn. `assertArtefactGraph` prints warnings as a bare count
+  //    unless ADD_GRAPH_WARNINGS is set, and nothing in CI sets it. The hard
+  //    gate below is reserved for "the name is right there, so the fix is
+  //    mechanical" — which is this case exactly, and unlike the sibling warning
+  //    it has no legitimate waiver: no distributed artefact has a reason to name
+  //    an internal command.
+  //
+  // The reverse direction stays open on purpose. `/add-framework--done` names
+  // `delivered.sh` because a cross-layer `uses:` target resolves inside the
+  // declaring artefact's own layer and would dangle, leaving the prose mention
+  // as the only way to write it.
+  const INTERNAL_COMMAND_NS = /(?<![\w.-])add-framework--[a-z0-9-]+/gi;
+  for (const n of graph.nodes) {
+    if (n.layer !== 'product') continue;
+    const named = new Set(proseOf(read(n)).match(INTERNAL_COMMAND_NS) ?? []);
+    for (const name of named) {
+      failures.push(
+        'artefact-graph: internal command named by a distributed artefact\n' +
+          `  ${n.path}\n` +
+          `  names ${name}, which is an internal command and ships to nobody\n` +
+          '  a user installing this artefact has no such command. Describe the\n' +
+          '  distinction without the name, or name the product equivalent.',
+      );
+    }
+  }
+
   for (const n of graph.nodes) {
     if (!n.declares) continue;
 
     const prose = proseOf(read(n));
     const declared = declaredFrom.get(n.id) ?? new Map();
     const observed = new Set();
-
-    // --- WARN: a distributed artefact naming an internal command -------------
-    // The sniff below compares same-layer only, and deliberately: `add-commit`
-    // exists in both layers, so a product artefact naming it means the product
-    // one. That skip leaves exactly one direction unwatched, and it is the
-    // direction that ships — a `framwork/.codeadd/` artefact reaching a user's
-    // project while pointing them at a command only this repository has. It is
-    // not hypothetical: `add-plan-review` told five providers' users not to
-    // confuse its review with `add-framework--review`.
-    //
-    // The reverse stays open on purpose. `/add-framework--done` names
-    // `delivered.sh` because a cross-layer `uses:` target would resolve inside
-    // the declaring artefact's own layer and dangle, so the prose mention is
-    // the only way to write it and costs nothing.
-    if (n.layer === 'product') {
-      for (const t of sniffable) {
-        if (t.layer !== 'internal' || t.kind !== 'command') continue;
-        // The bare name, NOT `nodeMentionRe`'s `/name`. The line that motivated
-        // this gate wrote the command inside backticks with no slash, so the
-        // command pattern used below would have walked straight past it.
-        if (!mentionRe(t.name).test(prose)) continue;
-        warnings.push(
-          `${n.path}: names the internal command ${t.name} — that command ships to nobody, ` +
-            'so a distributed artefact naming it points users at something their project does ' +
-            'not have. Describe the distinction without the name.',
-        );
-      }
-    }
 
     for (const t of sniffable) {
       // Same layer only: `add-commit` exists in both, and a product command
