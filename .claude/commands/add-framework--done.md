@@ -4,7 +4,7 @@
 - skill: add-commit
 - mention: @framework-discovery-agent
 - command: /add-framework--build
-- command: /add-framework--shared-review
+- command: /add-framework--review
 -->
 
 <!--
@@ -161,7 +161,7 @@ Read its verdict:
 
 Favourable means `PASS` and nothing else. Merging over `GAPS_FOUND` indexes the findings as delivered.
 
-**Read the verdict; never produce one.** `/add-framework--shared-review` owns the audit. A close-out that runs its own review is a command grading its own delivery.
+**Read the verdict; never produce one.** `/add-framework--review` owns the audit. A close-out that runs its own review is a command grading its own delivery.
 
 ### 2.4 CI's four commands — read the run, do not re-run them locally
 

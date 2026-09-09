@@ -112,4 +112,4 @@ NEVER:
 - Invent features, artefacts, or scope
 - Praise the plan or pad with weak findings
 - Dump a rewritten plan — you review, the coordinator edits
-- Confuse this with implementation audit (`add-framework--shared-review`) — you review the document, not the repo versus the document
+- Confuse this with implementation audit (`add-framework--review`) — you review the document, not the repo versus the document
