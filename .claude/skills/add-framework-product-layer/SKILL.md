@@ -215,11 +215,6 @@ IF A CLAUDE.md SECTION IS UNRELATED TO WHAT YOU BUILT:
 
 A build that rewrites the plugin section because it added a skill produces a diff nobody can review.
 
-## Changelog
-
-New or major work writes `docs/changelog/YYYY-MM-DD-<action>-<what>.md`.
-Actions: `add` | `update` | `refactor` | `remove`.
-
 ## Common Rationalizations (BLOCKED)
 
 | Excuse | Reality |
