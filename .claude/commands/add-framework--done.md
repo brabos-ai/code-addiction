@@ -1,4 +1,4 @@
-# ADD Done — Internal Close-Out
+# ADD Done — Close-Out
 
 <!-- uses:
 - skill: add-commit
@@ -19,7 +19,7 @@ costs nothing.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
-Closes out internal work: gates it against CI's own four commands, writes the delivery-index entry and the changelog, merges the branch via `gh`, and cleans up.
+Closes out a delivered plan in **either layer**: gates it against CI's own four commands, writes the delivery-index entry and the changelog, merges the branch via `gh`, and cleans up.
 
 ---
 
@@ -219,18 +219,29 @@ For each path in STEP 1.3's diff:
 | Diff status | Becomes |
 |---|---|
 | Added **and** a graph node | An item — and the candidate for the entry's `node`, see below |
-| Added and **not** a node (a top-level script, an `.opencode/` adapter, `CLAUDE.md`, `.gitignore`) | An item like any other. The graph does not model it, and nothing is synthesised |
+| Added and **not** a node (a top-level script, `CLAUDE.md`, `.gitignore`) | An item like any other. The graph does not model it, and nothing is synthesised |
 | Deleted, matching an existing entry's item | Drives a supersession — see 3.3. **Never an item on this entry** |
 | Renamed (`R###`) | **Never a deletion.** A `changed` item on the existing entry, whose `at` the repair fixes. Nothing is superseded |
 | Modified | **Not an item on its own.** Name the behaviour it introduced, or it contributes nothing |
 
 **An internal item is a created artefact, or a named behaviour introduced into an existing one.** The third kind is what makes a modification-only plan representable, and it is not a loosening: a behaviour worth indexing has a **name in the source** — a key, a flag, a function, a marker — and that name is what other documents cite and what goes stale. A change with no nameable surface belongs in the changelog, not the index.
 
-**`node` is omitted, never faked.** Top-level `scripts/`, `CLAUDE.md`, `.gitignore` and `.opencode/` produce no graph nodes. A synthesised id would resolve to nothing in `graph.js` and is worse than an honestly absent field.
+**`node` is omitted, never faked.** Top-level `scripts/`, `CLAUDE.md` and `.gitignore` produce no graph nodes. A synthesised id would resolve to nothing in `graph.js` and is worse than an honestly absent field.
 
-Entry fields specific to this layer:
+Entry fields:
 
-- `layer`: `"internal"`
+- `layer`: **derived from the items, never hardcoded.** An item whose `at` sits under `framwork/` is
+  product; everything else is internal. The entry takes whichever side holds more items. A tie is a
+  user question, the same way a supersession is.
+
+  ⛔ **Derive it from the item paths, NOT from the entry's `node`.** STEP 3.2 above records that
+  top-level `scripts/`, `CLAUDE.md` and `.gitignore` produce no graph node, so `node` is legitimately
+  absent on some entries — a rule keyed to it would have no answer for exactly the cross-layer
+  deliveries one plan now produces. Item paths are always present.
+
+  `delivered.sh` validates `layer` against `product | internal` and refuses anything else. A
+  cross-layer delivery is therefore ONE entry carrying its dominant layer, never two entries and never
+  a third value.
 - `by`: `"done"`
 - `id`: the plan's basename without extension, **verbatim** — never a slug
 - `origin`: `docs/plans/<id>.md`
