@@ -368,11 +368,22 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(internal).not.toContain('CLAUDE.md');
   });
 
-  it('L3.6 the dead bootstrap script is gone and nothing outside docs/ names it', () => {
+  it('L3.6 the dead bootstrap script is gone, and the sweep finds no pointer left', () => {
     expect(fs.existsSync(path.join(ROOT, '.claude', 'bootstrap-framework-context.sh'))).toBe(false);
-    const hits = execFileSync('git', ['grep', '-l', 'bootstrap-framework-context'], {
-      cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
-    }).trim().split('\n').filter(Boolean);
-    expect(hits.filter((f) => !f.startsWith('docs/'))).toEqual([]);
+
+    // Scoped to `.claude/` and CLAUDE.md — the sweep add-framework-internal-layer
+    // prescribes. A repo-wide grep would match this very file and could never pass.
+    let hits = '';
+    try {
+      hits = execFileSync(
+        'git',
+        ['grep', '-l', 'bootstrap-framework-context', '--', '.claude/', 'CLAUDE.md'],
+        { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
+      );
+    } catch (e) {
+      // git grep exits 1 when nothing matches — that is the passing case.
+      expect(e.status).toBe(1);
+    }
+    expect(hits.trim()).toBe('');
   });
 });
