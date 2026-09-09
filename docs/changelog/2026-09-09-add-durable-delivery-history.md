@@ -76,12 +76,15 @@ repair behind. The step quotes both measured error messages rather than describi
 
 ## Scope
 
-Internal only. The product layer has no equivalent defect: `docs/features/` is tracked in a user's
-project and `build-setup.sh` already copies feature docs into the worktree it creates.
+Almost all internal. The product layer has no equivalent worktree defect: `docs/features/` is tracked
+in a user's project and `build-setup.sh` already copies feature docs into the worktree it creates.
+
+One product-layer file changed, and it was not in the original scope. The review pass found that
+`add-doc-schemas/references/delivery-index.md` still described `origin` as a directory or a plan path
+and claimed it survives pruning — the last place still describing the value the close-out now forbids.
+The plan had scoped itself internal and named the index schema as out of bounds, so the finding went
+to the operator rather than being cleared by assumption, and the decision was to fix it here. The
+field row now states the surviving-directory rule and names what each layer puts there.
 
 Entries already in `docs/delivered.jsonl` keep their original `origin`. The index never rewrites a
 line, so the asymmetry between old and new entries is visible and intended.
-
-One thing is deliberately left open. `add-doc-schemas/references/delivery-index.md` still describes
-`origin` as a directory or a plan path and claims it survives pruning, which is now false for the
-internal layer. Narrowing it there is a product-layer edit, and this delivery was scoped internal.
