@@ -9,6 +9,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - agent: plan-review-agent
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
+- mention: /add-framework--build
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -200,7 +201,7 @@ with the file it lands in.
 | **Deleted** | ... (write "none" when none — never omit the row) |
 
 **3. Where it plugs in** — name the **host and the exact step**. "Changes the review flow" is not an
-answer. "`add-framework--build` STEP 3, before the skill load" is.
+answer. "`/add-framework--build` STEP 3, before the skill load" is.
 
 **4. What is explicitly NOT included** — the scope boundaries the user must know.
 

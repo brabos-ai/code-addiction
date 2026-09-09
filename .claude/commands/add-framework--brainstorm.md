@@ -3,7 +3,7 @@
 <!-- uses:
 - agent: framework-discovery-agent
 - agent: plan-review-agent
-- command: /add-framework--build
+- mention: /add-framework--build
 - command: /add-framework--plan
 -->
 
