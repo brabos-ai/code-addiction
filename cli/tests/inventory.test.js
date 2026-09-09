@@ -368,6 +368,57 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(internal).not.toContain('CLAUDE.md');
   });
 
+  it('L3.7 add-framework--build syncs the block unconditionally, as its last documented act', () => {
+    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const step6 = build.slice(build.indexOf('## STEP 6:'), build.indexOf('## STEP 7:'));
+
+    expect(step6).toContain('scripts/inventory.js');
+    // Unconditional: the block is derived from the tree, so its correctness must
+    // not hang on whether anyone chose to open a PR afterwards.
+    expect(step6).toMatch(/always|unconditional|whether or not/i);
+  });
+
+  it('L3.8 the push and the PR live behind a [STOP], after the sync', () => {
+    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const publish = build.slice(build.indexOf('## STEP 7:'), build.indexOf('## STEP 8:'));
+
+    expect(build).toMatch(/^## STEP 7: Publish.*\[STOP\]/m);
+    expect(publish).toContain('gh pr create');
+    // Skipped when a PR already exists — asking twice on the same branch is noise.
+    expect(publish).toMatch(/already exists|existing PR/i);
+
+    // The sync must precede the push, or the PR carries a CLAUDE.md the reviewer
+    // was never shown and the merge diff differs from the reviewed one.
+    expect(build.indexOf('scripts/inventory.js')).toBeLessThan(build.indexOf('gh pr create'));
+  });
+
+  it('L3.9 the step header and the completion step follow the renumbering', () => {
+    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const header = build.slice(build.indexOf('STEPS IN ORDER'), build.indexOf('**⛔ ABSOLUTE'));
+
+    expect(header).toMatch(/STEP 7: Publish/);
+    expect(header).toMatch(/STEP 8: Completion/);
+    expect(build).toMatch(/^## STEP 8: Completion/m);
+
+    const step8 = build.slice(build.indexOf('## STEP 8: Completion'));
+    expect(step8).toMatch(/inventory block/i);
+    expect(step8).toMatch(/PR/);
+  });
+
+  it('L3.10 add-framework--done says its sync is the net, not the first writer', () => {
+    const done = read('.claude', 'commands', 'add-framework--done.md');
+    const list = done.slice(done.indexOf('### 2.4'), done.indexOf('### 2.5'));
+    const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
+
+    // Still runs, still commits, still pushes — but the normal outcome is now
+    // "already current", because the build synced before the PR went up.
+    expect(item1).toContain('scripts/inventory.js');
+    expect(item1).toMatch(/already current/i);
+    // It must NAME the build as the normal first writer. A loose /build/ here
+    // matches `node scripts/build.js` in the fallback prose and proves nothing.
+    expect(item1).toContain('/add-framework--build');
+  });
+
   it('L3.6 the dead bootstrap script is gone, and the sweep finds no pointer left', () => {
     expect(fs.existsSync(path.join(ROOT, '.claude', 'bootstrap-framework-context.sh'))).toBe(false);
 
