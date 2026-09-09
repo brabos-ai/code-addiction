@@ -164,6 +164,9 @@ language, no jargon, no filler ("improves consistency" says nothing; the concret
 
 ### 3.0 — Lift the executive-summary shape out and make it the standard for every command
 
+**Scope:** both
+**TLDR:** every command ends the same way — TL;DR, bullets of what shipped, a short how-it-works digest.
+
 - Generalize `.claude/skills/add-plan-authoring/SKILL.md`'s "Completion — The Executive Summary"
   section into a shared shape, instead of reinventing one: TL;DR first, then what was delivered as
   bullets, then a short "how it works" digest anyone can read without the surrounding context.
