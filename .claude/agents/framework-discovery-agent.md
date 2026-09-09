@@ -38,9 +38,18 @@ Scan filenames and read first ~20 lines of each artefact:
 - `Glob docs/plans/*.md` → plans still in flight, gitignored and local
 - `Glob docs/deliveries/*/plan.md` → plans already closed out, tracked. **Take the slug from the DIRECTORY name, never from the filename** — every one of these files is called `plan.md` and carries no slug at all.
 - **Strip the leading token first**, then extract slug words. The leading token is the timestamp (`2026-09-07T005046`) on a new plan or the `NNNN` number on a legacy one — both forms are on disk. Drop the `PLAN` / `SELF-PLAN` marker too. ⛔ Never score `2026`, `09` or `07T005046` as a topic keyword.
-- **Score and rank both sources in one list.** A delivered plan is prior art of the strongest kind: it shipped. Suffix its row with ` [delivered]` so the caller can tell a closed decision from an open one without opening the file.
   - `2026-09-07T005046-SELF-PLAN--framework-discovery-agent-for-planning-commands` → words: framework, discovery, agent, planning, commands
   - `0031-SELF-PLAN--framework-discovery-agent-for-planning-commands` → the same words
+- **Score and rank both sources in ONE list**, and mark each row by **which glob found it**. A plan from `docs/deliveries/` is suffixed ` [delivered]`; a plan from `docs/plans/` carries no suffix. A delivered plan is prior art of the strongest kind — it shipped — and the caller must be able to tell that from an open decision without opening the file.
+
+```
+IF DECIDING WHETHER A PLAN IS DELIVERED:
+  ⛔ DO NOT: Read its `Status:` line, its body, its ledger, or docs/delivered.jsonl
+  ⛔ DO NOT: Mark a plan found under docs/plans/ as delivered, whatever its text claims
+  ✅ DO: Use the directory it was found in, and nothing else
+```
+
+**A plan on disk in both places is one plan, listed once, marked `[delivered]`.** That is the window between STEP 6 archiving it and STEP 8 removing the local original, and the tracked copy is the one that outlives the session.
 - Score each plan slug against topic keywords (0–3 overlap scale)
 - Deep-read the top-5 scoring plans in full for prior decisions and context
 - Remaining plans: slug score only (no content read)
