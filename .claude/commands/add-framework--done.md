@@ -3,7 +3,6 @@
 <!-- uses:
 - skill: add-commit
 - skill: add-plan-authoring
-- mention: @framework-discovery-agent
 - command: /add-framework--build
 -->
 
@@ -67,14 +66,19 @@ IF STEP 3 WROTE NO ENTRY:
   ⛔ DO NOT USE: Bash to run git worktree remove
   ✅ DO: Skip STEP 8 entirely
 
-IF A FILE IS UNTRACKED:
+IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   ⛔ DO NOT USE: Bash to run rm on it
-  ✅ DO: Report it and leave it — "it's all in git" is false for an untracked file
+  ✅ DO: Report it and leave it — "it's all in git" is false for a file nothing committed
+
+  This is what STEP 6 changes and why it runs before STEP 8. The plan, the ledger, the design doc and
+  this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
+  `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
 
 ALWAYS:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
-  ⛔ DO NOT: Delete anything under docs/plans/, docs/brainstorming/ or docs/changelog/
+  ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
+  ⛔ DO NOT: Delete another plan's files under docs/plans/, docs/brainstorming/ or docs/evidence/ — only the closed-out plan's own
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
 
 ---
@@ -387,19 +391,41 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
+```
+IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
+  ⛔ DO NOT USE: Bash to run rm on it
+  ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and STEP 7 merged that copy
+```
+
 **Order is forced**, because a branch checked out in a worktree cannot be deleted:
 
 1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.
 2. **The branch**, local and remote.
-3. **`docs/evidence/` files for this plan.**
+3. **The local originals this delivery archived** — the plan and its ledger in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`.
 
 | Removed | Kept | Why |
 |---|---|---|
-| The worktree, if one exists | `docs/plans/` | Read by `@framework-discovery-agent` and by six commands |
-| The merged branch, local and remote | `docs/brainstorming/` | Read by the plan and brainstorm commands |
-| `docs/evidence/` files for this plan | `docs/changelog/` | The human narrative record; its retirement is out of scope |
+| The worktree, if one exists | `docs/deliveries/<id>/` | The durable copy. It is on `main` and is never removed here |
+| The merged branch, local and remote | `docs/changelog/` | The human narrative record; its retirement is out of scope |
+| This plan's local originals in `docs/plans/`, `docs/brainstorming/` and `docs/evidence/` | `docs/plans/` files belonging to OTHER plans | Still in flight. Only the closed-out plan's own files go |
 
-**`docs/evidence/` is the only class with no post-merge reader.** That is a thin harvest, and it should be. `docs/plans/`, `docs/brainstorming/` and `docs/evidence/` are gitignored working artefacts, so this removes local files and touches no commit; `docs/changelog/` and `docs/delivered.jsonl` are tracked and are never removed here.
+**No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
+
+### When this command is running inside the worktree it would remove
+
+`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and sub-step 1 above has nothing it can do.
+
+```
+IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
+  ⛔ DO NOT USE: Bash to run git worktree remove on it
+  ⛔ DO NOT USE: Bash to run git branch -d or git push --delete for its branch
+  ⛔ DO NOT USE: Bash to run rm -rf on the worktree directory as a substitute
+  ✅ DO: Report both as skipped, name the worktree path, and continue to sub-step 3
+```
+
+**The branch is skipped with the worktree, not attempted after it.** `git branch -d` fails while the branch is checked out in a live worktree, so trying it produces a second failure that says nothing the first did not. Both are reported as skipped, from the primary checkout, with the command to finish by hand.
+
+**Nothing here is a failure of the delivery.** By STEP 8 the entry, the changelog and `docs/deliveries/<id>/` are already on `main`. A worktree left behind costs one manual `git worktree remove` from the primary checkout; it costs no document, which is the whole point of STEP 6 running before this.
 
 ---
 
