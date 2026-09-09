@@ -329,10 +329,16 @@ describe('L3 the review command is gone', () => {
     }
   });
 
-  it('L3.6 the close-out has no review gate and no review companion', () => {
+  it('L3.6 the close-out has no review gate, and reads no review companion', () => {
     const text = read(P.done);
     expect(text).not.toMatch(/^#+ .*review gate/im);
-    expect(text).not.toMatch(/--review-v/);
+
+    // Same correction as L2.9, same reason: the close-out's plan resolver also
+    // excludes `--review-v*`, and companions from earlier deliveries are still
+    // on disk. The string may appear where a path is ruled out, never where one
+    // is read or required.
+    const lines = text.split(/\r?\n/).filter((l) => l.includes('--review-v'));
+    for (const l of lines) expect(l).toMatch(/excluding/);
   });
 
   it('L3.7 the close-out keeps its ledger gate intact', () => {
@@ -342,9 +348,19 @@ describe('L3 the review command is gone', () => {
     expect(text).toContain('unwritten code breaks no test');
   });
 
-  it('L3.8 the close-out no longer uses the word verdict anywhere', () => {
-    // Mechanical proof that the rule was rewritten, not merely the gate removed.
-    expect(read(P.done)).not.toMatch(/verdict/i);
+  it('L3.8 the close-out speaks of no review verdict, and keeps the CI one', () => {
+    // The plan asked for "no occurrence of the word verdict". That is too wide:
+    // the close-out uses the word in two unrelated senses, and the second one
+    // is load-bearing. A CI run has a verdict, and the rule that refuses to
+    // read it off a different SHA is the gate that stops yesterday's green run
+    // being accepted as today's. Only the REVIEW sense goes.
+    const text = read(P.done);
+    expect(text).not.toMatch(/review verdict/i);
+    expect(text).not.toMatch(/verdict[^.\n]{0,60}review/i);
+    expect(text).not.toMatch(/review[^.\n]{0,60}verdict/i);
+
+    // Passes today and must keep passing.
+    expect(text).toMatch(/refuse a verdict from any other SHA/);
   });
 
   it('L3.9 the distributed plan-review skill names no internal command', () => {
