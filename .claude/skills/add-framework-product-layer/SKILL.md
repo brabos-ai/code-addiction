@@ -147,8 +147,14 @@ IF type=cli AND THE SUITE HAS NOT BEEN RUN SERIALLY:
 ```
 
 **Serial is not a preference.** Parallel workers race on shared fixtures and report failures that
-vanish serially. Never diagnose a failure without re-running serially, and never accept a green
-parallel run as proof.
+vanish serially. Never accept a green parallel run as proof.
+
+```
+IF ANY TEST FAILS:
+  ⛔ DO NOT: Attribute it to flakiness without evidence
+  ⛔ DO NOT: Report the raw failure count as this block's result
+  ✅ DO: Re-run serially, baseline against a clean tree, report the delta
+```
 
 **If stdout carries `Debugger listening on ws://…`**, an editor injected `NODE_OPTIONS`. Clear it
 (`unset NODE_OPTIONS VSCODE_INSPECTOR_OPTIONS`) before trusting any assertion on stdout or stderr.

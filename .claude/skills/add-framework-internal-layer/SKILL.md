@@ -146,7 +146,8 @@ Risk grading at planning time is a different question and belongs to the plannin
 ALWAYS:
 - Run `build.js` on an internal F-block and prove `framwork/` stayed clean
 - Sweep with grep after every remove and every rename
-- Grade impact on the depth-1 number
+- Query `impact --depth 1` before a removal or a rename, and edit every artefact it lists in that
+  same F-block
 
 NEVER:
 - Register an internal artefact in `provider-map.json`
