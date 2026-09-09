@@ -157,7 +157,7 @@ the layer-boundary check on a single-layer plan.
 | Verdict | Action |
 |---------|--------|
 | `ok` | Deliver |
-| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Add a changelog row. Re-dispatch ONCE. Then `ok` or nits only → deliver; a remaining blocker that needs a user decision → below |
+| `fix-then-ok` | Apply every **Required fix** that does not invent a user decision. Respect **Do not change**. Add a changelog row. Deliver. **There is no second review pass** — this verdict is defined as fixes that invent no decision, and re-reading the whole document to confirm a concrete edit costs another full review |
 | `blocked` | Below |
 
 **A blocker needing a user decision [STOP]:** present only those blockers. DO NOT present the plan as
@@ -251,7 +251,6 @@ delivered before review.
 | "Global Constraints is empty, I'll drop it" | Write `None`. Absent is a question |
 | "This F-block obviously doesn't need a test" | No proof, no coverage, reviewer blind |
 | "Two matches, the newer one is obviously it" | STOP and ask. NEVER guess |
-| "The reviewer only had nits, skip the re-dispatch" | Nits need no re-dispatch; a blocker does |
 
 ## Rules
 

@@ -279,7 +279,7 @@ Write the draft. **DO NOT present the path or next steps** — go straight to ST
 **GATE CHECK:** Does the plan file exist? IF NO → return to STEP 5.
 
 Dispatch and verdict handling are owned by `add-plan-authoring`: `@plan-review-agent`, read-only,
-`kind: plan`, `layer` derived from the F-block tags. Apply its verdict table. Re-dispatch ONCE.
+`kind: plan`, `layer` derived from the F-block tags. Apply its verdict table. One pass, never two.
 
 ⛔ DO NOT invent decisions to clear blockers.
 ⛔ DO NOT skip this STEP in Continue Mode.
