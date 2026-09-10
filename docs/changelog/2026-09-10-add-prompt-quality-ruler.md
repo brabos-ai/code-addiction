@@ -140,11 +140,17 @@ quotes it as present, so whichever plan fixes the heading must fix the example i
 
 ## Left undone, on purpose
 
-**The named dispatch is unproven.** `@prompt-review-agent` answered "Agent type not found" for the
-whole of this build — the harness resolves its agent registry at session start, so a file created
-mid-build is not addressable. The eight ruler reviews ran as generic read-only subagents told to read
-the agent file and follow it, which is the fallback STEP 7.1 now carries a gate for. The definition is
-pinned by six assertions; the name is not. The first real exercise is the next planned build.
+**The named dispatch was unproven during the build, and was proven right after it.**
+`@prompt-review-agent` answered "Agent type not found" for the whole of this build — the harness
+resolves its agent registry at session start, so a file created mid-build is not addressable. The
+eight ruler reviews therefore ran as generic read-only subagents told to read the agent file and
+follow it, which is the fallback STEP 7.1 now carries a gate for.
+
+Once the file reached `.claude/agents/`, the name resolved. A `mode: confirm` dispatch over
+`building-commands` for ruler items 2 and 3 — the two the `.fnd/` path fix repaired — came back `ok`,
+ticking only those items plus 1 and 2 for collateral and saying so on its artefact line. So the name,
+the narrow second pass and the collateral check are all exercised; what remains untested is a
+`delivery`-mode dispatch inside a build that did not create the agent.
 
 **The product layer keeps its own quality flow.** `add-skill-creator` and the product-layer review
 artefacts are untouched. A port of the ruler is its own plan, after this mechanism has run for real.
