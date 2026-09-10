@@ -225,9 +225,8 @@ Two things this skill adds on top, both specific to a plan document:
 report is emitted before any metadata, and the self-check all live there. Load it at the planning
 command's last step.
 
-One thing is specific to a plan: it proposes rather than executes, so block 2 is titled
-`What will be done` and written in the future tense. The metadata that follows the report is the plan
-path, its status, the review verdict, the fixes applied, and the next-step commands.
+The metadata that follows the report is the plan path, its status, the review verdict, the fixes
+applied, and the next-step commands.
 
 ---
 

@@ -30,7 +30,7 @@ STEP 3: Critical analysis     → impact graph, delivery index, alternatives
 STEP 4: Questionnaire         → [STOP] present, wait for answers
 STEP 5: Generate plan         → load add-plan-authoring, write the draft
 STEP 6: Review                → @plan-review-agent BEFORE any delivery
-STEP 7: Completion            → [HARD STOP] executive summary, then metadata
+STEP 7: Completion            → [HARD STOP] the report in the shape, then metadata
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**

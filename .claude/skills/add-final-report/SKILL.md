@@ -30,11 +30,10 @@ the agent no longer has when it matters. This skill is small on purpose so a lat
 
 ## The Sibling in the Product Layer
 
-**A skill of the same name lives under `framwork/.codeadd/skills/`, and the duplication is
-deliberate.** The product layer is distributed to users' projects, where `.claude/` does not exist, so
-it cannot reference anything here. The two files carry the same seven blocks and different
-vocabulary: this one speaks F-block, ledger and layer; the product one speaks feature ID, task and
-requirement.
+**A skill of the same name lives in the product layer, and the duplication is deliberate.** That
+layer is distributed to users' projects, where this directory does not exist, so it cannot reference
+anything here. The two files carry the same seven blocks and different vocabulary: this one speaks
+F-block, ledger and layer; the product one speaks feature ID, task and requirement.
 
 ⛔ **Do not merge them, and do not add a check that keeps them byte-identical.** Divergence is the
 intended outcome, not the failure mode.
