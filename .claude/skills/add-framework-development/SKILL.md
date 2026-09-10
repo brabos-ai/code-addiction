@@ -207,7 +207,7 @@ add-qa/
 - **Anti-rationalization:** Tables with `Excuse | Reality` columns
 - **Enforcement:** `⚠️ REGRA OBRIGATÓRIA`, `NEVER/MUST`, `**OBRIGATÓRIO**`
 - **Cross-references:** `{{skill:add-[name]/[file]}}` for files, `/add.[name]` for commands
-- **Token efficiency:** JSON minified, max 10 words per description, no decorative formatting
+- **Token efficiency:** JSON minified, no decorative formatting
 - **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review`. `/add.plan-to-ready` does NOT inherit it: it is autonomous by contract, and with a read-only `add.review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
 
 ---
@@ -651,7 +651,6 @@ bash .codeadd/scripts/status.sh
 ### Token Efficiency (MANDATORY for all artefacts)
 
 - JSON minified for structured data: `{"key":"value"}` not formatted
-- Max 10 words per description in technical specs
 - No decorative formatting (ASCII art, excessive dashes, emoji headers)
 - Reference don't repeat — use `{{skill:}}` and `{{cmd:}}` variables
 - Compress examples: 1 excellent > 3 mediocre
