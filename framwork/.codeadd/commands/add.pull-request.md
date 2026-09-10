@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add-commit
 - skill: add-doc-schemas
+- skill: add-final-report
 - skill: add-id-convention
 - command: /add.done
 - script: feature-pr.sh
@@ -317,7 +318,14 @@ EOF
 
 ## STEP 8: Completion Summary
 
-Report:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the field table below comes after it, whole.
+
+This command opens or updates a PR; it writes no feature code. So `What was delivered` is the PR and
+the changelog, `How it works` is what a reviewer on GitHub will now see, and `⚠️ Needs your
+attention` carries the delivery index entry that is still owed.
+
+Then, after the seven blocks, report:
 
 | Field | Value |
 |-------|-------|

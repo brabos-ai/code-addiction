@@ -10,6 +10,7 @@ argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-
 - skill: add-cross-sf-consistency
 - skill: add-doc-schemas
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-final-report
 - agent: architecture-agent
 - agent: backend-agent
 - agent: consistency-agent
@@ -866,8 +867,19 @@ completes or halts — never once per subfeature; per-subfeature outcomes were
 already read from each subfeature's own STEP 8 internally and are not
 printed as separate reports.
 
-Report exactly ONE of three states. They are distinct outcomes and NEVER softened
-into one another:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the state line, the gate output and the iteration counts
+come after it, whole and unsoftened.
+
+`TL;DR` carries the state in plain words, not the state word alone. `How it works` says what the
+convergence loop actually did: how many rounds, what it fixed, what it could not. `⚠️ Needs your
+attention` is never empty on CAP_REACHED or BLOCKED.
+
+⛔ **The shape never softens the state.** A run that spent its budget with gates still red gets a
+TL;DR saying so.
+
+Then, after the seven blocks, report exactly ONE of three states. They are distinct outcomes and
+NEVER softened into one another:
 
 | State | Meaning | Next command |
 |-------|---------|--------------|

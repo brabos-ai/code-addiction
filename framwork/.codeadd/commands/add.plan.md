@@ -7,6 +7,7 @@
 - skill: add-doc-schemas
 - skill: add-ecosystem
 - skill: add-feature-discovery
+- skill: add-final-report
 - skill: add-frontend-development
 - skill: add-id-convention
 - skill: add-knowledge-discovery
@@ -716,7 +717,14 @@ IF THE READBACK DIVERGES:
 
 ## STEP 14: Completion
 
-Inform user with summary:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the feature ID, the paths and the next command come after it.
+
+A plan proposes rather than executes, so block 2 is titled `What will be done` and written in the
+future tense. Fill `How it works` with the mechanism the plan settles on — what the feature will do
+once built, for a reader who never opens `plan.md`.
+
+Then, after the seven blocks, state:
 - Feature ID and plan path
 - Areas planned (UX Design/Database/Backend/Frontend)
 - Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)

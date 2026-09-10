@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add-commit
 - skill: add-doc-schemas
+- skill: add-final-report
 - skill: add-investigation
 - skill: add-knowledge-discovery
 - skill: add-qa
@@ -1010,8 +1011,16 @@ single-file backup rule; the sequence is what lets a loop compare rounds.
 
 ### 11.4 Console Output
 
-Output the quality gate summary: reviewers dispatched (files reviewed per
-reviewer), findings by severity, spec compliance status, product validation
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the gate table and the routing come after it, whole.
+
+This command reviews and routes; it changes nothing. So `What was delivered` is the verdict and the
+findings, `How it works` is what the gates actually measured, `Files touched` reads "none" on every
+row, and `⚠️ Needs your attention` carries the blockers and the manual routes nobody else will pick
+up.
+
+Then, after the seven blocks, output the quality gate summary: reviewers dispatched (files reviewed
+per reviewer), findings by severity, spec compliance status, product validation
 (RF/RN/prerequisites), scores, the gate table, the QA per-scope roll-up, the
 path to this `review-NNN.md`, and next steps.
 
