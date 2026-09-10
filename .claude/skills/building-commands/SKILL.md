@@ -11,6 +11,7 @@ description: Use when designing command workflows or refactoring existing comman
 - skill: building-commands/references/agent-dispatch.md
 - mention: add-framework-development
 - mention: add-review-discipline
+- mention: @prompt-review-agent
 -->
 
 <!--
