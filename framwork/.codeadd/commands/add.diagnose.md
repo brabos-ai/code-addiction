@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add-doc-schemas
 - skill: add-ecosystem
+- skill: add-final-report
 - skill: add-investigation
 - skill: add-knowledge-discovery
 - skill: add-investigation/references/differential-diagnosis.md
@@ -44,6 +45,7 @@ STEP 6: Phase 4 synthesis     → diagnosis + route from ecosystem map
 STEP 7: Present report        → STOP for user decision
 STEP 8: Persist (conditional) → schema-driven write
 STEP 9: Validation Gate       → diagnose-report schema gate
+STEP 10: Completion           → report the diagnosis in the shared shape
 ```
 
 ---
@@ -301,6 +303,23 @@ Only run this gate when STEP 8 actually wrote a doc. If the doc was not persiste
 Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `diagnose-report`.
 
 ⛔ DO NOT skip. DO NOT mark the command complete until gate returns `PASS`.
+
+---
+
+## STEP 10: Completion
+
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the report path and the recommended command come after it.
+
+**This step runs on every route, including no-action and a declined persistence.** The gate above is
+conditional; the report is not. A run that wrote no document still owes the user its diagnosis.
+
+This command is advisory and changes no code, so `Files touched` reads "none" on every row unless
+STEP 8 persisted a document. Fill `What was delivered` with the diagnosis and the route, and
+`How it works` with the causal chain — what fails, where, and why the evidence points there rather
+than at the runner-up hypothesis.
+
+Then, after the seven blocks, state the recommended command and that this command never runs it.
 
 ---
 
