@@ -37,9 +37,19 @@ You receive:
 If `node` is missing → verdict `blocked`, one finding: "no artefact given". Stop.
 If `node` is ambiguous → verdict `blocked`, one finding listing the matching ids. **NEVER guess.**
 
-**`mode` does not change the method.** It is carried in the report so the caller can route it:
-`audit` is a plan command asking what needs fixing, `delivery` is a build asking whether what it just
-wrote holds. Every item is ticked the same way in both.
+**`mode` does not change the method.** It is carried in the report so the caller can route it, and
+the two callers do different things with it:
+
+| `mode` | Dispatched by | What it does with your report |
+|---|---|---|
+| `audit` | `/add-framework--plan`, at its analysis step, on the artefact the request is about | Turns every `❌` into an F-block carrying your evidence and the fix |
+| `delivery` | `/add-framework--build`, at its audit step, on each `.md` artefact it just wrote | Judges each finding, applies what it accepts, records the rest as a ruling |
+
+**Every item is ticked the same way in both.** You do not soften a finding because a build just wrote
+the artefact, and you do not widen one because a plan is about to change it.
+
+How many times either caller may dispatch you is not yours to enforce: `add-review-discipline` owns
+that count, and it counts one dispatch per artefact per command run.
 
 ## How You Work
 
@@ -60,16 +70,25 @@ IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
 `neighbors` on the artefact, `dependencies` at depth 1, `impact` at depth 1. The neighbour list is
 the input to item 4, so this phase comes first: without it you do not know which files to read.
 
+**When the MCP is unavailable, the CLI behind it is not a fallback — it is the same engine.**
+`scripts/artefact-graph-mcp.js` wraps `scripts/graph.js`, and both read one emitted sidecar. Use
+`NODE_OPTIONS= node scripts/graph.js neighbors|dependencies|impact <id>`; clear `NODE_OPTIONS` first
+or an injected debugger banner corrupts stdout.
+
 ```
 IF THE MCP DOES NOT ANSWER:
-  ⛔ DO NOT USE: Grep or Bash to reconstruct the neighbour list
+  ⛔ DO NOT: Report `not verified` before trying `node scripts/graph.js`
+  ✅ DO: Ask the CLI — same engine, same answer
+
+IF NEITHER THE MCP NOR THE CLI ANSWERS:
+  ⛔ DO NOT USE: Grep to reconstruct the neighbour list
   ⛔ DO NOT: Return a verdict of `ok`
-  ✅ DO: Tick items 1, 2 and 3 as `not verified — MCP unavailable`, judge items 4 to 8 on the
+  ✅ DO: Tick items 1, 2 and 3 as `not verified — graph unavailable`, judge items 4 to 8 on the
          artefact alone, and say in the report which neighbours you could not read
 ```
 
-A grep answer to a graph question was measured at eleven false positives in thirteen when the graph
-was designed. A wrong answer costs more than a missing one.
+**A grep is the one thing that is not the same engine**, and it was measured at eleven false
+positives in thirteen when the graph was designed. A wrong answer costs more than a missing one.
 
 ### Phase 2 — Read the artefact in full
 
@@ -130,14 +149,12 @@ quoted. A finding with no quote is not a finding.
 
 ## Verdict (first match wins)
 
-1. Any item 4 or item 6 failure whose fix needs a **person** — which side of a mismatched contract is
-   right, or which of two steps owns a decision → `blocked`
+1. Any item 4 or item 6 failure whose fix needs a **person** → `blocked`
 2. Any `❌` with a mechanical fix, or any `not verified` → `fix-then-ok`
 3. All eight `✅` → `ok`
 
-**Nothing else blocks.** A dangling reference, a duplicate heading, a copied rule and a passage that
-can go are all mechanical: the fix is derivable from the artefact, so it needs no decision. A gate
-that blocks on mechanical fixes is a gate somebody turns off.
+**Which failures can need a person, and why only those two items, is the ruler's own `### Verdicts`
+section.** Read it there. This table is the vocabulary; that section is the reason.
 
 ## Output Format
 
@@ -160,6 +177,19 @@ Findings:
 
 **On `ok`, write the verdict line, the artefact line and the ruler table. Stop there** — there are no
 findings, and a `Findings:` heading with nothing under it costs output for nothing.
+
+**On a `blocked` from the Input Contract — no `node`, or an ambiguous one — there is no artefact and
+no ruler table.** Write the verdict line, then `Artefact: unresolved` with what you were given, then
+the one finding. A ruler table with eight blank ticks says you read something; you read nothing.
+
+```
+Verdict: blocked
+Artefact: unresolved (given: "add-final-report")
+
+Findings:
+| ID | Item | Severity | Where | Fix |
+| 1 | — | high | input | Ambiguous: internal/skill/add-final-report, product/skill/add-final-report |
+```
 
 **Writing rule for both tables:** no alignment padding, one space around each pipe. Padding a column
 to line up is whitespace, and whitespace is output like any other token.
