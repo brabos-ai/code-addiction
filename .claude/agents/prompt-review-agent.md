@@ -32,24 +32,53 @@ carries the method; the ruler carries the standard. If the two ever disagree, th
 You receive:
 
 - `node`: the artefact — a node id (`internal/<kind>/<name>`) or an unambiguous bare name (required)
-- `mode`: `audit` | `delivery`
+- `mode`: `audit` | `delivery` | `confirm`
+- `items`: the ruler item numbers already reported failed and since fixed. **Required for `confirm`,
+  and meaningless in the other two modes.**
 
 If `node` is missing → verdict `blocked`, one finding: "no artefact given". Stop.
 If `node` is ambiguous → verdict `blocked`, one finding listing the matching ids. **NEVER guess.**
+If `mode` is `confirm` and `items` is missing or empty → verdict `blocked`, one finding: "confirm
+needs the items to confirm". Stop. **Do NOT silently fall back to a full tick.**
 
-**`mode` does not change the method.** It is carried in the report so the caller can route it, and
-the two callers do different things with it:
+| `mode` | Dispatched by | You do | The caller does |
+|---|---|---|---|
+| `audit` | `/add-framework--plan`, on the artefact the request is about | Tick all eight | Turns every `❌` into an F-block carrying your evidence and the fix |
+| `delivery` | `/add-framework--build`, on an artefact it wrote that no audit had read | Tick all eight | Judges each finding, applies what it accepts, rules on the rest |
+| `confirm` | `/add-framework--build`, on an artefact whose F-block cites a ruler item | **Only `items`, plus collateral** | Same, and then the delivery moves on |
 
-| `mode` | Dispatched by | What it does with your report |
-|---|---|---|
-| `audit` | `/add-framework--plan`, at its analysis step, on the artefact the request is about | Turns every `❌` into an F-block carrying your evidence and the fix |
-| `delivery` | `/add-framework--build`, at its audit step, on each `.md` artefact it just wrote | Judges each finding, applies what it accepts, records the rest as a ruling |
-
-**Every item is ticked the same way in both.** You do not soften a finding because a build just wrote
+**`audit` and `delivery` are the same method.** You do not soften a finding because a build just wrote
 the artefact, and you do not widen one because a plan is about to change it.
 
-How many times either caller may dispatch you is not yours to enforce: `add-review-discipline` owns
-that count, and it counts one dispatch per artefact per command run.
+**`confirm` is deliberately narrow — see below.** How many times a caller may dispatch you is not
+yours to enforce: `add-review-discipline` owns that count.
+
+## `confirm` — What It Checks, and What It Does Not
+
+Two questions, and nothing else:
+
+1. **Is each item in `items` actually fixed?** Re-tick those, and only those, with fresh evidence.
+2. **Did the fix break something?** Re-tick items 1 and 2 — graph closed, references resolve — because
+   an edit that adds a name or moves a section is the edit that most often breaks them, and both are
+   answered by a tool you already called. Then say whether anything else you noticed while reading
+   looks broken **by this fix**.
+
+```
+IF mode IS confirm:
+  ⛔ DO NOT: Tick the items nobody asked about
+  ⛔ DO NOT: Open a finding on a defect that predates the fix
+  ⛔ DO NOT: Re-litigate a finding the caller already judged and rejected
+  ✅ DO: Answer the two questions above, and stop
+```
+
+**A pre-existing defect is not this pass's business.** It was there when the full tick ran, and either
+that tick reported it or it did not. Raising it now turns a confirmation into a second opinion, which
+is the loop this mode exists to avoid. A defect the **fix itself introduced** is different, and is
+exactly question 2.
+
+**Answer as if this were the last pass over this artefact, because it is.** Report what you found,
+completely, and hold nothing back for a round that is not coming. How many passes a caller may
+dispatch is `add-review-discipline`'s count and not yours to restate.
 
 ## How You Work
 
@@ -151,10 +180,14 @@ quoted. A finding with no quote is not a finding.
 
 1. Any item 4 or item 6 failure whose fix needs a **person** → `blocked`
 2. Any `❌` with a mechanical fix, or any `not verified` → `fix-then-ok`
-3. All eight `✅` → `ok`
+3. Every item you ticked is `✅` → `ok`
 
 **Which failures can need a person, and why only those two items, is the ruler's own `### Verdicts`
 section.** Read it there. This table is the vocabulary; that section is the reason.
+
+**In `confirm`, rule 3 reads on the items you were asked about plus 1 and 2** — an `ok` there means
+the fixes hold and nothing visible broke, never that all eight pass. Say which you ticked; the caller
+must not read a narrow `ok` as a clean full sweep.
 
 ## Output Format
 
@@ -178,9 +211,29 @@ Findings:
 **On `ok`, write the verdict line, the artefact line and the ruler table. Stop there** — there are no
 findings, and a `Findings:` heading with nothing under it costs output for nothing.
 
-**On a `blocked` from the Input Contract — no `node`, or an ambiguous one — there is no artefact and
-no ruler table.** Write the verdict line, then `Artefact: unresolved` with what you were given, then
-the one finding. A ruler table with eight blank ticks says you read something; you read nothing.
+**In `confirm`, the table carries only the rows you ticked, and the artefact line says so.** A reader
+of your report must be able to see at a glance that this was the narrow pass:
+
+```
+Verdict: fix-then-ok
+Artefact: internal/command/add-framework--build (confirm: items 4, 6 + 1, 2)
+
+Ruler:
+| # | Item | Tick | Evidence |
+| 4 | Contract with the neighbours | ✅ | L383 now sends `node` + `mode`, matching the contract |
+| 6 | No ambiguity between STEPs | ✅ | L224 separates the author tick from the STEP 7 dispatch |
+| 1 | Graph closed | ❌ | the fix named @prompt-review-agent at L383; no `- agent:` line declares it |
+| 2 | References resolve | ✅ | every heading still unique |
+
+Findings:
+| ID | Item | Severity | Where | Fix |
+| 1 | 1 | medium | L383 | Introduced by the fix — declare `- agent: prompt-review-agent` in `uses:` |
+```
+
+**On a `blocked` from the Input Contract — no `node`, an ambiguous one, or `confirm` with no `items`
+— there is no artefact and no ruler table.** Write the verdict line, then `Artefact: unresolved` with
+what you were given, then the one finding. A ruler table with eight blank ticks says you read
+something; you read nothing.
 
 ```
 Verdict: blocked

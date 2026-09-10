@@ -43,7 +43,7 @@ them, which is exactly how it survived in some and died in others.
 |---|---|---|
 | `@plan-review-agent` | "Can this be executed? What breaks?" | A verdict and required fixes |
 | `@plan-readback-agent` | "Would someone with a clean context build the right thing?" | A restatement and every gap it filled in |
-| `@prompt-review-agent` | "Does this artefact say one thing, once, where it belongs, and does it match its neighbours?" | The eight ruler items ticked with evidence, and a verdict |
+| `@prompt-review-agent` | "Does this artefact say one thing, once, where it belongs, and does it match its neighbours?" | The eight ruler items ticked with evidence, and a verdict. In `confirm` mode, only the items it was asked about |
 
 **No two of them are opinions on one question.** A document can satisfy every rubric and still steer a
 reader into building something else, and only the readback can see that. An artefact can be
@@ -75,19 +75,41 @@ second reading answers a genuinely different question. Running the adversarial r
 lightly edited work does not — it produces new opinions, and new opinions are indistinguishable from
 progress while costing another full read.
 
-**The prompt reviewer runs once per revision of the artefact.** A revision is one dispatch per
-artefact per command run: the `audit` read a planning command makes and the `delivery` read a build
-makes are two revisions of one file, and both are allowed. **A second `delivery` read over the same
-build's own fixes is not a revision** — it is the confirmation pass the rule above forbids, wearing a
-different name.
+**The prompt reviewer ticks all eight items exactly once per artefact per delivery, and may then
+confirm the fixes exactly once.** Two dispatches, never three, and the second is not the first
+repeated:
+
+| Pass | Mode | Scope |
+|---|---|---|
+| First | `audit` at plan time, or `delivery` in the build when no audit read it | All eight items |
+| Second | `confirm` in the build, on an artefact whose F-block cites a ruler item | Only the cited items, plus items 1 and 2 for collateral |
+
+**The narrow scope is what makes the second pass legal.** A full re-tick would be a second opinion on
+work already graded, which is what the reviewer above is forbidden. Confirming a named fix is a
+different question with a bounded answer: did this change do what it was asked to do, and did it break
+anything on the way. A pre-existing defect is out of scope there — it was already either reported or
+missed by the full tick, and raising it in a confirmation turns it back into a loop.
+
+**There is no third pass.** Whatever `confirm` returns is judged, applied or ruled on, and the
+delivery moves on.
 
 ```
+IF A FULL TICK HAS ALREADY COME BACK FOR THIS ARTEFACT IN THIS DELIVERY:
+  ⛔ DO NOT: Dispatch @prompt-review-agent for another full tick
+  ✅ DO: Dispatch `mode: confirm` with the item numbers, if fixes landed — once
+
+IF A `confirm` HAS ALREADY COME BACK FOR THIS ARTEFACT:
+  ⛔ DO NOT: Dispatch it again, in any mode
+  ✅ DO: Apply what you accepted, rule on the rest, and move on
+
 IF A REPORT HAS ALREADY COME BACK FOR THIS SUBJECT:
   ⛔ DO NOT: Dispatch @plan-review-agent again
-  ⛔ DO NOT: Dispatch @prompt-review-agent again over the same artefact in the same run
-  ⛔ DO NOT: Send either one the corrected text "to confirm"
+  ⛔ DO NOT: Send it the corrected text "to confirm"
   ✅ DO: Apply what you accepted, and move on
 ```
+
+⛔ **`@plan-review-agent` has no confirmation pass and gets none.** It reads a document that has not
+been executed, so there is nothing to confirm — only opinions to re-form.
 
 ## Nothing Reaches Disk
 
@@ -183,6 +205,9 @@ does not tell a builder what to build.
 | "The reviewer said it, so it must be applied" | It read the document, not the constraints you hold. Judge each one |
 | "I dropped the weak findings, no need to say which" | The discard IS the evidence of judgement. Unrecorded, it looks like you never read them |
 | "The readback found a gap, so the readback failed" | The document failed. The reader is the instrument |
+| "The confirm pass may as well re-tick everything while it is in there" | Then it is a second opinion, not a confirmation. Only the cited items, plus 1 and 2 |
+| "The confirm pass spotted an old defect, I should report it" | It was there for the full tick. Raising it now reopens what the narrow scope closed |
+| "The confirm came back fix-then-ok, so it needs another confirm" | There is no third pass. Apply, rule, move on |
 
 ## Rules
 
@@ -191,8 +216,13 @@ ALWAYS:
 - Treat a divergent restatement as a defect in the document, never in the reader
 - Present a `blocked` verdict's blockers to the user and wait
 
+ALSO ALWAYS:
+- Pass the ruler item numbers when dispatching `mode: confirm` — without them it is a full re-tick
+
 NEVER:
 - Ask any reader to write a file
 - Gate a later command on a stored verdict
-- Give the adversarial reviewer a second look at work it already graded
+- Give the adversarial reviewer a second look at work it already graded, or a confirmation pass of any kind
 - Run the cold reader a third time
+- Tick all eight items twice over one artefact in one delivery
+- Dispatch a second `confirm` over the same artefact

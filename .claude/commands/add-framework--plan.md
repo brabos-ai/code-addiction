@@ -302,9 +302,13 @@ Sections:
 Produces/Consumes rule and the Global Constraints discipline. Follow it.
 
 **Every `❌` item from 3.4 becomes an F-block**, carrying the ruler item number, the evidence the
-reviewer quoted, and the fix. Name that item number in the F-block's own validation, so the build
-proves the same criterion that found the defect. An `ok` verdict produces no F-block and is reported
-at STEP 7 as what it is: the artefact already holds.
+reviewer quoted, and the fix. **Name that item number in the F-block's own validation.** It does two
+jobs: the build proves the same criterion that found the defect, and it is the signal the build reads
+to send `mode: confirm` with those numbers instead of re-ticking all eight. An F-block citing no item
+tells the build nothing has read that artefact yet.
+
+An `ok` verdict produces no F-block and is reported at STEP 7 as what it is: the artefact already
+holds.
 
 ```
 IF AN AUDIT ITEM CAME BACK ❌:

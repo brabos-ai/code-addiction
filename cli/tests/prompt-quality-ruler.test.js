@@ -214,6 +214,29 @@ describe('L3.5-3.6 the reviewer agent', () => {
   it('L3.6 its uses: block declares the skill carrying the ruler', () => {
     expect(uses(read(P.agent))).toMatch(/^- skill: building-commands$/m);
   });
+
+  it('L3.16 confirm is a third mode, needs items, and is narrow by rule', () => {
+    const b = body(read(P.agent));
+
+    // Three modes, and `items` is what makes the third one narrow.
+    expect(b).toMatch(/`audit`\s*\|\s*`delivery`\s*\|\s*`confirm`/);
+    expect(b).toMatch(/`items`/);
+
+    // A confirm with no items must refuse, never silently widen.
+    const contract = section(b, 'Input Contract');
+    expect(contract).toMatch(/confirm[\s\S]*?items[\s\S]*?blocked/i);
+    expect(contract).toMatch(/[Dd]o NOT silently fall back|never fall back/);
+
+    // The narrow scope, stated: the cited items plus 1 and 2 for collateral.
+    const scope = section(b, '`confirm` — What It Checks');
+    expect(scope, 'a section owning the narrow scope').not.toBeNull();
+    expect(scope).toMatch(/items 1 and 2|item 1 and 2/);
+    expect(scope).toMatch(/⛔ DO NOT: Tick the items nobody asked about/);
+    expect(scope).toMatch(/pre-existing/i);
+
+    // And it is the last pass. No third.
+    expect(b).toMatch(/no third|last pass/i);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -275,7 +298,7 @@ describe('L3.7-3.9 the dispatchers', () => {
 // ---------------------------------------------------------------------------
 
 describe('L3.10-3.11 the review discipline', () => {
-  it('L3.10 the reader table has three readers and the count is per revision', () => {
+  it('L3.10 the reader table has three readers and the third is counted', () => {
     const text = read(P.discipline);
 
     const rows = text.split(/\r?\n/).filter((l) => /^\|\s*`@/.test(l));
@@ -285,8 +308,51 @@ describe('L3.10-3.11 the review discipline', () => {
     // A heading that counts the readers is wrong the moment a third arrives.
     expect(text).not.toMatch(/^#+.*Two Readers/m);
 
-    expect(section(text, 'The Counts')).toMatch(/per revision/i);
+    // This assertion first pinned the phrase "per revision". That wording said
+    // how many times without saying over what, and the count it described let
+    // one artefact take two full ticks in a single delivery. L3.17 pins the
+    // rule that replaced it; this one only needs the third reader to be counted
+    // at all, which is the property that must never silently vanish.
+    expect(section(text, 'The Counts')).toMatch(/prompt reviewer/i);
     expect(uses(text)).toMatch(/^- agent: prompt-review-agent$/m);
+  });
+
+  it('L3.17 the counts cap the prompt reviewer at one full tick plus one confirm', () => {
+    const counts = section(read(P.discipline), 'The Counts');
+
+    // Two dispatches, never three, and the second is the narrow one.
+    expect(counts).toMatch(/exactly once per artefact per delivery/i);
+    expect(counts).toMatch(/`confirm`/);
+    expect(counts).toMatch(/no third pass/i);
+
+    // The reason the second pass is legal at all: it is not the first repeated.
+    expect(counts).toMatch(/narrow scope/i);
+
+    // A second confirm is refused, and the adversarial reviewer gets none.
+    expect(counts).toMatch(/IF A `confirm` HAS ALREADY COME BACK/);
+    expect(counts).toMatch(/no confirmation pass and gets none/);
+
+    const rules = section(read(P.discipline), 'Rules');
+    expect(rules).toMatch(/Tick all eight items twice over one artefact in one delivery/);
+    expect(rules).toMatch(/Dispatch a second `confirm`/);
+  });
+
+  it('L3.18 the build picks the mode from the F-block, and never loops', () => {
+    const s7 = stepBody(read(P.build), 'Review');
+
+    // The routing table: a cited ruler item means confirm, nothing means delivery.
+    expect(s7).toMatch(/`confirm`/);
+    expect(s7).toMatch(/`items`/);
+    expect(s7).toMatch(/cites a ruler item/);
+
+    // Both traps closed: no full re-tick, and no confirm without items.
+    expect(s7).toMatch(/⛔ DO NOT: Send `mode: delivery`/);
+    expect(s7).toMatch(/⛔ DO NOT: Send `confirm` without `items`/);
+    expect(s7).toMatch(/⛔ DO NOT: Dispatch a third pass/);
+
+    // And the plan side supplies what the routing reads.
+    const s5 = stepBody(read(P.planCmd), 'Generate Plan');
+    expect(s5).toMatch(/`mode: confirm`|mode: confirm/);
   });
 
   it('L3.11 guard: both existing counts survive', () => {
