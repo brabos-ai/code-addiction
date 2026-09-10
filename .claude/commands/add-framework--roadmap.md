@@ -1,5 +1,9 @@
 # ADD Roadmap — Durable Capture
 
+<!-- uses:
+- skill: add-final-report
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Records what the user wants to do next into `docs/roadmap/index.md`, then commits and pushes it to
@@ -225,7 +229,14 @@ reaches the remote in the same invocation that made it.
 
 ## STEP 9: Report
 
-State, in the user's language:
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the sha and the rest of the facts come after it.
+
+This command changes one file and pushes it, so most blocks are genuinely small. Fill `What was
+delivered` with the item as it now reads, `How it works` with what that item commits whoever picks it
+up to, and `⚠️ Needs your attention` with the push to `main`, because it already happened.
+
+Then, after the seven blocks, state:
 
 - The operation and the item it hit, by number and title.
 - On an add, the Scope recorded.

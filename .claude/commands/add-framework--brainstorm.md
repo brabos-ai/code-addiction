@@ -3,6 +3,7 @@
 <!-- uses:
 - agent: framework-discovery-agent
 - agent: plan-review-agent
+- skill: add-final-report
 - skill: add-review-discipline
 - mention: /add-framework--build
 - command: /add-framework--plan
@@ -476,13 +477,20 @@ When this command instructs you to DISPATCH AGENT:
 
 ## STEP 7: Completion & Next Steps [HARD STOP]
 
-### 7.1 Display Design Document Path
+### 7.1 Report in the Shape
 
-Show: "Design document created: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`" plus review verdict and fixes applied (one line each, if any).
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the document path, the verdict and the next command come after it.
 
-### 7.2 Summarize Key Decisions
+A design proposes rather than executes, so block 2 is titled `What will be done` and written in the
+future tense. Fill `How it works` with the mechanism the design settles on, for a reader who was not
+in the conversation.
 
-Bullet list of 3-5 key validated decisions from the design.
+### 7.2 Metadata, After the Report
+
+- The design document path: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
+- The review verdict and the fixes applied, one line each, if any
+- The 3-5 key validated decisions from the design
 
 ### 7.3 Next Step Guidance [HARD STOP]
 

@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-commit
+- skill: add-final-report
 - skill: add-plan-authoring
 - command: /add-framework--build
 -->
@@ -452,7 +453,19 @@ IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
 
 ## STEP 9: Completion
 
-Report:
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the paths, the PR number and the gate results come after it.
+
+Fill the blocks from this close-out:
+
+- **`What was delivered`** — the feature that merged, and the archive and index entry that now record
+  it.
+- **`How it works`** — what the merged work does, for a reader who never opened the plan.
+- **`Files touched`** — the archive members and the index line, split by verb. The Deleted row names
+  what STEP 8 removed, and reads "none" when it removed nothing.
+- **`⚠️ Needs your attention`** — anything STEP 8 skipped, and any gate that was not a clean pass.
+
+Then, after the seven blocks and before the metadata, report always:
 
 - The entry written, with its `id` and item count
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when it did not — silence is indistinguishable from not having run it
