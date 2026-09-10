@@ -1,6 +1,6 @@
 ---
 name: add-review-discipline
-description: "Use when a command dispatches a reviewer or a cold reader over a document or a delivery — how many times each runs, why neither writes a file, and the rule that a finding is judged before it is applied."
+description: "Use when a command dispatches a reviewer, a cold reader or the prompt reviewer over a document or a delivery — how many times each runs, why none of them writes a file, and the rule that a finding is judged before it is applied."
 ---
 
 # Review Discipline
@@ -8,6 +8,7 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 <!-- uses:
 - agent: plan-review-agent
 - agent: plan-readback-agent
+- agent: prompt-review-agent
 - mention: /add-framework--build
 - mention: /add-framework--plan
 - mention: /add-framework--brainstorm
@@ -25,7 +26,8 @@ them, which is exactly how it survived in some and died in others.
 
 ## When to Use
 
-- A command is about to dispatch `@plan-review-agent` or `@plan-readback-agent`.
+- A command is about to dispatch `@plan-review-agent`, `@plan-readback-agent` or
+  `@prompt-review-agent`.
 - A report has come back and the caller is deciding what to do with it.
 
 ## When NOT to Use
@@ -35,15 +37,22 @@ them, which is exactly how it survived in some and died in others.
 
 ---
 
-## Two Readers, Two Different Questions
+## The Readers, and the Question Each Answers
 
 | Reader | Asks | Returns |
 |---|---|---|
 | `@plan-review-agent` | "Can this be executed? What breaks?" | A verdict and required fixes |
 | `@plan-readback-agent` | "Would someone with a clean context build the right thing?" | A restatement and every gap it filled in |
+| `@prompt-review-agent` | "Does this artefact say one thing, once, where it belongs, and does it match its neighbours?" | The eight ruler items ticked with evidence, and a verdict |
 
-They are not two opinions on one question. A document can satisfy every rubric and still steer a
-reader into building something else, and only the second reader can see that.
+**No two of them are opinions on one question.** A document can satisfy every rubric and still steer a
+reader into building something else, and only the readback can see that. An artefact can be
+executable, read back correctly, and still contradict the agent it dispatches — and only the third
+reader looks at the neighbours.
+
+**The first two read a DOCUMENT about work. The third reads the work.** That is what puts it in the
+build's audit stage rather than beside the other two, and why a plan can dispatch it before any
+document exists.
 
 ## The Counts
 
@@ -66,16 +75,23 @@ second reading answers a genuinely different question. Running the adversarial r
 lightly edited work does not — it produces new opinions, and new opinions are indistinguishable from
 progress while costing another full read.
 
+**The prompt reviewer runs once per revision of the artefact.** A revision is one dispatch per
+artefact per command run: the `audit` read a planning command makes and the `delivery` read a build
+makes are two revisions of one file, and both are allowed. **A second `delivery` read over the same
+build's own fixes is not a revision** — it is the confirmation pass the rule above forbids, wearing a
+different name.
+
 ```
 IF A REPORT HAS ALREADY COME BACK FOR THIS SUBJECT:
   ⛔ DO NOT: Dispatch @plan-review-agent again
-  ⛔ DO NOT: Send it the corrected text "to confirm"
+  ⛔ DO NOT: Dispatch @prompt-review-agent again over the same artefact in the same run
+  ⛔ DO NOT: Send either one the corrected text "to confirm"
   ✅ DO: Apply what you accepted, and move on
 ```
 
 ## Nothing Reaches Disk
 
-**Neither dispatch writes a file, and neither may be asked to.** A report is returned to the caller,
+**No dispatch here writes a file, and none may be asked to.** A report is returned to the caller,
 read, acted on, and that is the whole lifecycle. It writes no file — not a companion document, not a
 versioned artefact, not a verdict for a later command to find.
 
@@ -88,13 +104,13 @@ report goes where decisions already go — the build ledger, as a ruling with it
 IF YOU WANT TO KEEP SOMETHING FROM A REPORT:
   ⛔ DO NOT USE: Write on docs/plans/, other than the ledger
   ⛔ DO NOT USE: Write on any path matching --review-v, --audit- or --verdict
-  ⛔ DO NOT: Ask either reader to save its own report
+  ⛔ DO NOT: Ask any reader to save its own report
   ✅ DO: Put what survives in the ledger, as a ruling
 ```
 
 **This is the one invariant the readers cannot enforce for you.** `@plan-review-agent` holds no tool
-restrictions at all, and the coordinator can write anywhere. Nothing in the frontmatter of either agent
-stops a report reaching disk — the rule above is the only thing that does.
+restrictions at all, `@prompt-review-agent` holds none either, and the coordinator can write anywhere.
+No frontmatter here stops a report reaching disk — the rule above is the only thing that does.
 
 ## What the Caller Owes the Report
 
@@ -137,6 +153,18 @@ IF THE USER HAS ANSWERED A BLOCKER:
   ✅ DO: Apply it and deliver
 ```
 
+**One exception, and it belongs to the prompt reviewer in `audit` mode.** A planning command
+dispatches it before there is a document, and its `blocked` items are questions about an artefact the
+plan is about to change. Those do not stop the analysis: they become plan scope like any other failed
+item, and the question reaches the user in the questionnaire that command already stops on. A second
+stop inside the analysis step would make one audit cost a command round-trip.
+
+```
+IF @prompt-review-agent RETURNS `blocked` IN `audit` MODE:
+  ⛔ DO NOT: Halt the analysis step and wait
+  ✅ DO: Carry the item into the plan, and surface its question where the command already stops
+```
+
 **A `blocked` verdict already named its blockers exactly.** The user answered those and nothing else,
 so a fresh reading differs from the first only by the answers — and it will find new opinions rather
 than confirm old ones. Where the answer introduced a real problem, the cold reader is the net: it runs
@@ -164,7 +192,7 @@ ALWAYS:
 - Present a `blocked` verdict's blockers to the user and wait
 
 NEVER:
-- Ask either reader to write a file
+- Ask any reader to write a file
 - Gate a later command on a stored verdict
 - Give the adversarial reviewer a second look at work it already graded
 - Run the cold reader a third time
