@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-final-report
 - skill: add-product-discovery
 - command: /add.new
 - script: status.sh
@@ -156,7 +157,13 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 
 ## STEP 9: Onboarding Complete
 
-Summarize what was created:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the file list and the next command come after it.
+
+This is the user's first contact with the framework, so `How it works` carries the most weight here:
+say what the two documents change about every later run, in plain words.
+
+Then, after the seven blocks, summarize what was created:
 - owner.md ✓ (always)
 - product.md ✓ (if approved in STEP 6)
 

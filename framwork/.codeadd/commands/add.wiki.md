@@ -5,6 +5,7 @@
 - skill: add-claude-md-style
 - skill: add-doc-schemas
 - skill: add-ecosystem
+- skill: add-final-report
 - skill: add-wiki-maintenance
 - script: status.sh
 -->
@@ -742,7 +743,14 @@ shared with the team. Do NOT silently continue as if unaffected.
 
 ## STEP 9: Report & Cleanup
 
-**Report to user:**
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the detail list and the navigation guidance come after it.
+
+Fill `How it works` with how the wiki is meant to be read: the hub is the only entrypoint, and the
+frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries and the gitignore
+warning, because both are the user's to act on.
+
+**Then report to user:**
 Include: context files updated, apps analyzed with types, code quality scores, wiki areas/pages
 generated, Backlog entries (if any), gitignore warning (if triggered), migration cleanup performed
 (if any — STEP 5.4).

@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-final-report
 - skill: add-knowledge-discovery
 - skill: add-plan-review
 - agent: plan-reviewer-agent
@@ -261,7 +262,14 @@ IF THE READBACK DIVERGES:
 
 ## STEP 6: Handoff — Suggest Next Command [HARD STOP]
 
-Map the conversation signal to the right command and **print it as text** for the user to run.
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST, then the handoff line below.
+
+A brainstorm explores rather than executes, so block 2 is titled `What will be done` and written in
+the future tense. Fill `How it works` with the direction the conversation settled on, for a reader
+who was not in it. Most other blocks are genuinely empty here — skip those, do not pad them.
+
+Then map the conversation signal to the right command and **print it as text** for the user to run.
 
 ```
 IF you are about to hand off:
@@ -277,7 +285,7 @@ IF you are about to hand off:
 | Clear bug discovered | `/add.hotfix` | Suggest urgent fix |
 | Needs more exploration | continue brainstorm | Not ready to commit |
 
-**Correct handoff shape (the ONLY allowed output at STEP 6):**
+**Correct handoff shape (the ONLY allowed form the handoff itself may take):**
 
 ```text
 Idea is ready to formalize. Run:  /add.new

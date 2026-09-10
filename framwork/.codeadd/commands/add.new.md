@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-final-report
 - skill: add-id-convention
 - skill: add-knowledge-discovery
 - skill: add-plan-review
@@ -332,7 +333,14 @@ IF THE READBACK DIVERGES:
 
 ## Completion
 
-Summarize created artifacts. Suggest next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the artefact paths and the next command come after it.
+
+This command documents a feature rather than building it, so block 2 is titled `What will be done`
+and written in the future tense. Fill `How it works` with what the documented feature will do for the
+user, not with what the document contains.
+
+Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
 
 ---
 
