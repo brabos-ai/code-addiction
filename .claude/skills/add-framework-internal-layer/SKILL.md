@@ -96,7 +96,7 @@ back.
 ### Coherence, per modified artefact
 
 - [ ] Well-formed markdown, correct structure for its type
-- [ ] Command or skill: passes the `building-commands` checklist
+- [ ] Command, skill or agent: passes `## The Ruler` of `building-commands`, all eight items
 - [ ] `<!-- uses: -->` matches what the prose actually names
 
 ### Dependency, per removed or renamed artefact

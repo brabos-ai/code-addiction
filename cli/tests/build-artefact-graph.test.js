@@ -869,7 +869,10 @@ describe('node inventory snapshot', () => {
       skill: 51,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
-      agent: 29,
+      // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
+      // eight ruler items over one artefact and its neighbours.
+      // (plan 2026-09-10T173216-PLAN--prompt-quality-ruler, F3.)
+      agent: 30,
       // reference 69 -> 70: add-plan-authoring/references/plan-template.md.
       reference: 70,
       script: 18,
@@ -891,8 +894,10 @@ describe('node inventory snapshot', () => {
     // (plan 2026-09-09T090201-PLAN--review-no-loops, F2, F3 and F7.)
     // 213 -> 215, declares 101 -> 103: add-final-report in both layers.
     // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
-    expect(nodes).toHaveLength(215);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(103);
+    // 215 -> 216, declares 103 -> 104: prompt-review-agent.
+    // (plan 2026-09-10T173216-PLAN--prompt-quality-ruler, F3.)
+    expect(nodes).toHaveLength(216);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(104);
   });
 });
 

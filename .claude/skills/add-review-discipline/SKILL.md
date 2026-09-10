@@ -1,6 +1,6 @@
 ---
 name: add-review-discipline
-description: "Use when a command dispatches a reviewer or a cold reader over a document or a delivery — how many times each runs, why neither writes a file, and the rule that a finding is judged before it is applied."
+description: "Use when a command dispatches a reviewer, a cold reader or the prompt reviewer over a document or a delivery — how many times each runs, why none of them writes a file, and the rule that a finding is judged before it is applied."
 ---
 
 # Review Discipline
@@ -8,6 +8,7 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 <!-- uses:
 - agent: plan-review-agent
 - agent: plan-readback-agent
+- agent: prompt-review-agent
 - mention: /add-framework--build
 - mention: /add-framework--plan
 - mention: /add-framework--brainstorm
@@ -25,7 +26,8 @@ them, which is exactly how it survived in some and died in others.
 
 ## When to Use
 
-- A command is about to dispatch `@plan-review-agent` or `@plan-readback-agent`.
+- A command is about to dispatch `@plan-review-agent`, `@plan-readback-agent` or
+  `@prompt-review-agent`.
 - A report has come back and the caller is deciding what to do with it.
 
 ## When NOT to Use
@@ -35,15 +37,22 @@ them, which is exactly how it survived in some and died in others.
 
 ---
 
-## Two Readers, Two Different Questions
+## The Readers, and the Question Each Answers
 
 | Reader | Asks | Returns |
 |---|---|---|
 | `@plan-review-agent` | "Can this be executed? What breaks?" | A verdict and required fixes |
 | `@plan-readback-agent` | "Would someone with a clean context build the right thing?" | A restatement and every gap it filled in |
+| `@prompt-review-agent` | "Does this artefact say one thing, once, where it belongs, and does it match its neighbours?" | The eight ruler items ticked with evidence, and a verdict. In `confirm` mode, only the items it was asked about |
 
-They are not two opinions on one question. A document can satisfy every rubric and still steer a
-reader into building something else, and only the second reader can see that.
+**No two of them are opinions on one question.** A document can satisfy every rubric and still steer a
+reader into building something else, and only the readback can see that. An artefact can be
+executable, read back correctly, and still contradict the agent it dispatches — and only the third
+reader looks at the neighbours.
+
+**The first two read a DOCUMENT about work. The third reads the work.** That is what puts it in the
+build's audit stage rather than beside the other two, and why a plan can dispatch it before any
+document exists.
 
 ## The Counts
 
@@ -66,16 +75,45 @@ second reading answers a genuinely different question. Running the adversarial r
 lightly edited work does not — it produces new opinions, and new opinions are indistinguishable from
 progress while costing another full read.
 
+**The prompt reviewer ticks all eight items exactly once per artefact per delivery, and may then
+confirm the fixes exactly once.** Two dispatches, never three, and the second is not the first
+repeated:
+
+| Pass | Mode | Scope |
+|---|---|---|
+| First | `audit` at plan time, or `delivery` in the build when no audit read it | All eight items |
+| Second | `confirm` in the build, on an artefact whose F-block cites a ruler item | Only the cited items, plus items 1 and 2 for collateral |
+
+**The narrow scope is what makes the second pass legal.** A full re-tick would be a second opinion on
+work already graded, which is what the reviewer above is forbidden. Confirming a named fix is a
+different question with a bounded answer: did this change do what it was asked to do, and did it break
+anything on the way. A pre-existing defect is out of scope there — it was already either reported or
+missed by the full tick, and raising it in a confirmation turns it back into a loop.
+
+**There is no third pass.** Whatever `confirm` returns is judged, applied or ruled on, and the
+delivery moves on.
+
 ```
+IF A FULL TICK HAS ALREADY COME BACK FOR THIS ARTEFACT IN THIS DELIVERY:
+  ⛔ DO NOT: Dispatch @prompt-review-agent for another full tick
+  ✅ DO: Dispatch `mode: confirm` with the item numbers, if fixes landed — once
+
+IF A `confirm` HAS ALREADY COME BACK FOR THIS ARTEFACT:
+  ⛔ DO NOT: Dispatch it again, in any mode
+  ✅ DO: Apply what you accepted, rule on the rest, and move on
+
 IF A REPORT HAS ALREADY COME BACK FOR THIS SUBJECT:
   ⛔ DO NOT: Dispatch @plan-review-agent again
   ⛔ DO NOT: Send it the corrected text "to confirm"
   ✅ DO: Apply what you accepted, and move on
 ```
 
+⛔ **`@plan-review-agent` has no confirmation pass and gets none.** It reads a document that has not
+been executed, so there is nothing to confirm — only opinions to re-form.
+
 ## Nothing Reaches Disk
 
-**Neither dispatch writes a file, and neither may be asked to.** A report is returned to the caller,
+**No dispatch here writes a file, and none may be asked to.** A report is returned to the caller,
 read, acted on, and that is the whole lifecycle. It writes no file — not a companion document, not a
 versioned artefact, not a verdict for a later command to find.
 
@@ -88,13 +126,13 @@ report goes where decisions already go — the build ledger, as a ruling with it
 IF YOU WANT TO KEEP SOMETHING FROM A REPORT:
   ⛔ DO NOT USE: Write on docs/plans/, other than the ledger
   ⛔ DO NOT USE: Write on any path matching --review-v, --audit- or --verdict
-  ⛔ DO NOT: Ask either reader to save its own report
+  ⛔ DO NOT: Ask any reader to save its own report
   ✅ DO: Put what survives in the ledger, as a ruling
 ```
 
 **This is the one invariant the readers cannot enforce for you.** `@plan-review-agent` holds no tool
-restrictions at all, and the coordinator can write anywhere. Nothing in the frontmatter of either agent
-stops a report reaching disk — the rule above is the only thing that does.
+restrictions at all, `@prompt-review-agent` holds none either, and the coordinator can write anywhere.
+No frontmatter here stops a report reaching disk — the rule above is the only thing that does.
 
 ## What the Caller Owes the Report
 
@@ -137,6 +175,18 @@ IF THE USER HAS ANSWERED A BLOCKER:
   ✅ DO: Apply it and deliver
 ```
 
+**One exception, and it belongs to the prompt reviewer in `audit` mode.** A planning command
+dispatches it before there is a document, and its `blocked` items are questions about an artefact the
+plan is about to change. Those do not stop the analysis: they become plan scope like any other failed
+item, and the question reaches the user in the questionnaire that command already stops on. A second
+stop inside the analysis step would make one audit cost a command round-trip.
+
+```
+IF @prompt-review-agent RETURNS `blocked` IN `audit` MODE:
+  ⛔ DO NOT: Halt the analysis step and wait
+  ✅ DO: Carry the item into the plan, and surface its question where the command already stops
+```
+
 **A `blocked` verdict already named its blockers exactly.** The user answered those and nothing else,
 so a fresh reading differs from the first only by the answers — and it will find new opinions rather
 than confirm old ones. Where the answer introduced a real problem, the cold reader is the net: it runs
@@ -155,6 +205,9 @@ does not tell a builder what to build.
 | "The reviewer said it, so it must be applied" | It read the document, not the constraints you hold. Judge each one |
 | "I dropped the weak findings, no need to say which" | The discard IS the evidence of judgement. Unrecorded, it looks like you never read them |
 | "The readback found a gap, so the readback failed" | The document failed. The reader is the instrument |
+| "The confirm pass may as well re-tick everything while it is in there" | Then it is a second opinion, not a confirmation. Only the cited items, plus 1 and 2 |
+| "The confirm pass spotted an old defect, I should report it" | It was there for the full tick. Raising it now reopens what the narrow scope closed |
+| "The confirm came back fix-then-ok, so it needs another confirm" | There is no third pass. Apply, rule, move on |
 
 ## Rules
 
@@ -163,8 +216,13 @@ ALWAYS:
 - Treat a divergent restatement as a defect in the document, never in the reader
 - Present a `blocked` verdict's blockers to the user and wait
 
+ALSO ALWAYS:
+- Pass the ruler item numbers when dispatching `mode: confirm` — without them it is a full re-tick
+
 NEVER:
-- Ask either reader to write a file
+- Ask any reader to write a file
 - Gate a later command on a stored verdict
-- Give the adversarial reviewer a second look at work it already graded
+- Give the adversarial reviewer a second look at work it already graded, or a confirmation pass of any kind
 - Run the cold reader a third time
+- Tick all eight items twice over one artefact in one delivery
+- Dispatch a second `confirm` over the same artefact

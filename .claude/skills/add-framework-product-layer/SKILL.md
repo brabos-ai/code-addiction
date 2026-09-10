@@ -37,7 +37,7 @@ framwork/.codeadd/skills/add-resource-path-convention/SKILL.md   # ALWAYS — pa
 framwork/.codeadd/skills/add-ecosystem/SKILL.md                  # ALWAYS — ecosystem overview
 framwork/.codeadd/skills/add-token-efficiency/SKILL.md           # ALWAYS
 framwork/.codeadd/skills/add-skill-creator/SKILL.md              # IF the artefact is a skill
-framwork/.codeadd/skills/add-documentation-style/SKILL.md        # IF generating docs
+framwork/.codeadd/skills/add-doc-schemas/SKILL.md                # IF generating docs
 ```
 
 `add-framework-development` carries the artefact anatomies, the `<!-- uses: -->` syntax and the
@@ -84,7 +84,7 @@ exposed to the end user.
 ⛔ cli/ IS NOT IN THE REGISTRY:
   ⛔ DO NOT: Register a cli/ module in provider-map.json
   ⛔ DO NOT: Expect build.js to emit cli/ output — it never touches cli/
-  ⛔ DO NOT: Apply the building-commands checklist to JavaScript — it governs .md only
+  ⛔ DO NOT: Apply the building-commands ruler to JavaScript — it governs .md only
   ⛔ DO NOT: Bump cli/package.json — that belongs to the release command
   ✅ DO: Edit cli/src/ and cli/tests/ directly; they ship as written
 ```

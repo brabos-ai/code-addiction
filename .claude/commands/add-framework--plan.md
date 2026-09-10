@@ -6,6 +6,7 @@
 - skill: add-review-discipline
 - agent: framework-discovery-agent
 - agent: plan-review-agent
+- agent: prompt-review-agent
 - command: /add-framework--build
 -->
 
@@ -26,7 +27,7 @@ clarity for external contributors, and real value for framework consumers.
 ```
 STEP 1: Load context          → strategy docs + CLAUDE.md + discovery agent
 STEP 2: Classify              → type AND layers touched
-STEP 3: Critical analysis     → impact graph, delivery index, alternatives
+STEP 3: Critical analysis     → impact graph, delivery index, audit the subject, alternatives
 STEP 4: Questionnaire         → [STOP] present, wait for answers
 STEP 5: Generate plan         → load add-plan-authoring, write the draft
 STEP 6: Review                → @plan-review-agent BEFORE any delivery
@@ -236,6 +237,33 @@ runs the query twice, once per layer.
 A `gone` or `superseded` entry is a direct answer to "has this been attempted?" and names what
 replaced it. An unavailable index is reported and does not block the analysis.
 
+### 3.4 Audit the Artefact the Request Is About
+
+**Only when an internal command, skill or agent is the SUBJECT of the request** — the thing being
+analysed, adjusted, refactored or reviewed. An artefact the change merely touches in passing is NOT
+audited here; STEP 7 of the build covers those once they are written.
+
+```
+IF THE REQUEST NAMES AN INTERNAL ARTEFACT ONLY IN PASSING:
+  ⛔ DO NOT: Dispatch the auditor for it
+  ⛔ DO NOT: Turn a finding about it into scope this request never asked for
+  ✅ DO: Audit the subject alone — a cross-cutting plan names many artefacts and is about one thing
+
+IF NO EXISTING ARTEFACT IS THE SUBJECT (a new artefact, or a product-layer request):
+  ⛔ DO NOT: Dispatch the auditor at all
+  ✅ DO: Go to STEP 4 — there is nothing on disk to tick
+```
+
+**DISPATCH AGENT:** `@prompt-review-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:** `node` (the subject's id) and `mode: audit`
+
+**WAIT** for the report. It returns the eight ruler items ticked with evidence and a verdict.
+
+**A `blocked` verdict does NOT halt this step.** `add-review-discipline` owns that exception and says
+why: the item becomes plan scope, and its question reaches the user at STEP 4, which already stops.
+
 ---
 
 ## STEP 4: Consultative Questionnaire [STOP]
@@ -255,7 +283,8 @@ Sections:
 
 1. **Understanding** — restate the want, the inferred problem, the type, the layers. Ask to correct.
 2. **What already exists** — table of related artefacts (extends / conflicts / complements) and which
-   layer each is in. Conclude: create new, extend existing, or rethink.
+   layer each is in. Conclude: create new, extend existing, or rethink. **Show the ticked ruler when
+   3.4 returned one**, and put any `blocked` item's question in section 3 as a question of its own.
 3. **Strategic analysis** — 2-4 questions with an options table (option, description, trade-offs).
    Mark the probable option when one is clearly better.
 4. **Recommendations** — opportunities to include, risks with mitigations, alternatives considered.
@@ -271,6 +300,22 @@ Sections:
 
 **LOAD `add-plan-authoring`.** It owns file naming, the document structure, the F-block layer tag, the
 Produces/Consumes rule and the Global Constraints discipline. Follow it.
+
+**Every `❌` item from 3.4 becomes an F-block**, carrying the ruler item number, the evidence the
+reviewer quoted, and the fix. **Name that item number in the F-block's own validation.** It does two
+jobs: the build proves the same criterion that found the defect, and it is the signal the build reads
+to send `mode: confirm` with those numbers instead of re-ticking all eight. An F-block citing no item
+tells the build nothing has read that artefact yet.
+
+An `ok` verdict produces no F-block and is reported at STEP 7 as what it is: the artefact already
+holds.
+
+```
+IF AN AUDIT ITEM CAME BACK ❌:
+  ⛔ DO NOT: Fold several failed items into one F-block "quality pass"
+  ⛔ DO NOT: Drop an item because its fix looks small
+  ✅ DO: One F-block per item, each naming the item number in its validation
+```
 
 Write the draft. **DO NOT present the path or next steps** — go straight to STEP 6.
 
