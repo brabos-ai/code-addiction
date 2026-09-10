@@ -361,7 +361,7 @@ NEVER: Run node scripts/build.js — pipeline's job
 Every command that modifies code MUST log iteration before user notification. Iteration tracking enables pattern discovery across runs — without it, the same mistakes repeat because there's no history to learn from.
 
 ```bash
-bash .fnd/scripts/log-iteration.sh "type" "slug" "what" "files"
+bash .codeadd/scripts/log-iteration.sh "type" "slug" "what" "files"
 ```
 
 **Types:** fix, enhance, refactor, add, remove, config

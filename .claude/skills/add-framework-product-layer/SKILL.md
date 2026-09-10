@@ -37,7 +37,7 @@ framwork/.codeadd/skills/add-resource-path-convention/SKILL.md   # ALWAYS — pa
 framwork/.codeadd/skills/add-ecosystem/SKILL.md                  # ALWAYS — ecosystem overview
 framwork/.codeadd/skills/add-token-efficiency/SKILL.md           # ALWAYS
 framwork/.codeadd/skills/add-skill-creator/SKILL.md              # IF the artefact is a skill
-framwork/.codeadd/skills/add-documentation-style/SKILL.md        # IF generating docs
+framwork/.codeadd/skills/add-doc-schemas/SKILL.md                # IF generating docs
 ```
 
 `add-framework-development` carries the artefact anatomies, the `<!-- uses: -->` syntax and the
