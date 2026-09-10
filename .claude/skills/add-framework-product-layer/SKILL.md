@@ -84,7 +84,7 @@ exposed to the end user.
 ⛔ cli/ IS NOT IN THE REGISTRY:
   ⛔ DO NOT: Register a cli/ module in provider-map.json
   ⛔ DO NOT: Expect build.js to emit cli/ output — it never touches cli/
-  ⛔ DO NOT: Apply the building-commands checklist to JavaScript — it governs .md only
+  ⛔ DO NOT: Apply the building-commands ruler to JavaScript — it governs .md only
   ⛔ DO NOT: Bump cli/package.json — that belongs to the release command
   ✅ DO: Edit cli/src/ and cli/tests/ directly; they ship as written
 ```
