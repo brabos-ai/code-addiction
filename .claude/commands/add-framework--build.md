@@ -5,6 +5,7 @@
 - skill: add-final-report
 - skill: add-review-discipline
 - agent: plan-readback-agent
+- agent: prompt-review-agent
 - skill: add-framework-product-layer
 - skill: add-framework-internal-layer
 - skill: building-commands
@@ -206,7 +207,7 @@ the user to see it before execution starts.
 | Load | When |
 |------|------|
 | `.claude/skills/add-build-ledger/SKILL.md` | Planned mode, ALWAYS, before the first F-block |
-| `.claude/skills/building-commands/SKILL.md` | ANY F-block writing a `.md` command or skill |
+| `.claude/skills/building-commands/SKILL.md` | ANY F-block writing a `.md` command, skill or agent |
 | `.claude/skills/add-framework-product-layer/SKILL.md` | The first `[product]` F-block |
 | `.claude/skills/add-framework-internal-layer/SKILL.md` | The first `[internal]` F-block |
 | `.claude/skills/add-framework-development/SKILL.md` | Artefact-type decisions, agent anatomy, `uses:` syntax |
@@ -214,21 +215,14 @@ the user to see it before execution starts.
 **Load a layer skill when the first F-block of that layer arrives, not before.** A single-layer plan
 never loads the other one.
 
-### building-commands Checklist (APPLY to every `.md` artefact)
+### The Ruler (APPLY to every `.md` artefact)
 
-```
-[ ] Top-of-file blocking section — prohibitions BEFORE instructions
-[ ] STEP (imperative), never Phase (documentary)
-[ ] Sequential INTEGER numbering — NEVER 2.5 or 6.5; renumber when inserting
-[ ] Imperative language: EXECUTE, DO NOT, CONFIRM
-[ ] Gates carry TOOL-SPECIFIC prohibitions, not "STOP"
-[ ] Condition blocks: IF [condition]: ⛔ DO NOT USE [tool]
-[ ] LANG header present
-[ ] No `## Spec` section (prohibited)
-[ ] Bash blocks only where non-obvious or learned from an error
-[ ] No fixed display or error message templates
-[ ] Rules as ALWAYS/NEVER markdown, nothing restating STEP order
-```
+**`building-commands` owns it.** Load the skill and tick `## The Ruler` — its eight items — against
+every `.md` command, skill or agent this block writes. The list is not copied here: a second copy
+drifts from the first, and the drift is invisible until they disagree.
+
+STEP 7 dispatches `@prompt-review-agent` to tick the same ruler independently, on the finished
+delivery. You tick it as the author; that dispatch is not your own pass repeated.
 
 ---
 
@@ -357,10 +351,17 @@ IF THE LEDGER ALREADY CARRIES A `REVIEW:` LINE FOR THIS PLAN:
 
 **This runs EXACTLY ONCE.** `add-review-discipline` owns that rule and the reason behind it.
 
-### 7.1 Dispatch Four Read-Only Auditors, in Parallel
+### 7.1 Dispatch the Auditors, in Parallel
 
-**DISPATCH 4 AGENTS IN PARALLEL:**
-- **Capability:** read-only for all four — Glob, Grep, Read, and Bash for `git log` / `git diff` /
+**The count is `3 + N`.** Three scopes read the delivery as a whole. The fourth is one dispatch per
+`.md` command, skill or agent in this build's diff, so `N` is that file count — and `N` is zero for a
+build that touched only scripts, tests or `CLAUDE.md`.
+
+**LIST EVERY DISPATCH BEFORE WAITING ON ANY.** The list is what the gate below reads. A hardcoded
+number would be wrong on almost every build.
+
+**DISPATCH ALL OF THEM AT ONCE:**
+- **Capability:** read-only throughout — Glob, Grep, Read, and Bash for `git log` / `git diff` /
   `git show` only. No Edit, no Write. The coordinator is the only writer in this command.
 - **Complexity:** standard
 - **Input:** the plan's content, plus the one scope below
@@ -379,30 +380,44 @@ Each finding carries a severity, on the three levels the rest of this repository
    by a plan decision, and every plan-scope item carrying a diff.
 3. **Side effects** — cross-references now pointing at renamed or removed artefacts, callers of changed
    behaviour, doc references to dead paths, integration points between the layers.
-4. **Quality** — the `.md` artefacts against `building-commands`, the rest against the conventions
-   visible in neighbouring files.
+4. **Quality** — **DISPATCH AGENT:** `@prompt-review-agent`, once per `.md` command, skill or agent
+   in the diff. **Input:** `node` (that artefact's id) and `mode: delivery`. It returns the eight
+   ruler items ticked with evidence and a verdict. Everything in the diff that is NOT a `.md`
+   artefact — a script, a test, a JSON registry — is read against the conventions visible in
+   neighbouring files, by the same generic mechanism as scopes 1 to 3.
 
 ```
-IF FEWER THAN FOUR REPORTS HAVE COME BACK:
+IF ANY DISPATCHED AUDITOR HAS NOT REPORTED:
   ⛔ DO NOT: Proceed to 7.2
   ⛔ DO NOT: Form a verdict on the reports you have
-  ✅ DO: WAIT-ALL — a verdict on three of them reviews three quarters of the delivery
+  ✅ DO: WAIT-ALL against the list you wrote before dispatching — a verdict on a subset reviews a
+         subset of the delivery
+
+IF `@prompt-review-agent` CANNOT BE ADDRESSED BY NAME:
+  ⛔ DO NOT: Skip scope 4
+  ⛔ DO NOT: Tick the ruler yourself and call it the audit — you wrote the artefact
+  ✅ DO: Dispatch a generic read-only subagent carrying that agent's body as its prompt, and record
+         a ruling naming which mechanism ran
 ```
+
+**The name may be unavailable in the very build that creates the agent.** An agent file is not
+addressable until the registry has it, which for a fresh file can be after the merge. That is a
+dispatch-mechanism problem, never a reason for the delivery to go unaudited.
 
 ### Agent Dispatch Rules
 
-1. Read the required **Capability** and honour it — read-only, in all four cases.
-2. Read the **Complexity** hint — `standard`, in all four cases.
-3. Choose the mechanism in your engine that satisfies the capability, and dispatch all four at once.
-4. Pass the plan's content as part of each prompt.
-5. Verify all four reports are received before acting on any of them.
+1. Read the required **Capability** and honour it — read-only, for every dispatch.
+2. Read the **Complexity** hint — `standard`, for every dispatch.
+3. Choose the mechanism in your engine that satisfies the capability, and dispatch them all at once.
+4. Pass the plan's content as part of each prompt. Scope 4 also takes its artefact's node id.
+5. Verify every report on your dispatch list is received before acting on any of them.
 
 You are the coordinator. Map the intent — capability plus complexity — to the best mechanism your
 engine offers.
 
 ### 7.2 Ask the Graph What the Subagents Cannot See
 
-The four read the plan and the diff. Neither shows what depends on a file nobody opened.
+The auditors read the plan and the diff. Neither shows what depends on a file nobody opened.
 
 ```bash
 node scripts/graph.js impact <artefact-name> --depth 1
