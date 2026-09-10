@@ -1044,8 +1044,11 @@ Fill the blocks from this build:
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
   and the one or two places the work is most likely to have gone wrong.
 
-Then, after the seven blocks, report: feature ID, files summary (per area count), build status, the
-ledger path with its commit brackets, and next suggested commands.
+Then, after the seven blocks and before any metadata, print 17.1 and 17.2 below — whole, in their
+own shape.
+
+**Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
+its commit brackets.
 
 ### 17.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 

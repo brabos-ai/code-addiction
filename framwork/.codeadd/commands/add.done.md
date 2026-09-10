@@ -496,11 +496,11 @@ bash .codeadd/scripts/done.sh --merge
 
 ⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
 
-**After merge, include in the final summary:**
+**After merge, carry this into STEP 9 — do NOT print it here:**
 - Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
 
-**After merge, MUST suggest next command from ecosystem map:**
-READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.
+**Resolve the next command here, state it at STEP 9:**
+READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP 9 owns it.
 
 <!-- plugin:gitnexus:graph-reindex -->
 <!-- /plugin:gitnexus:graph-reindex -->

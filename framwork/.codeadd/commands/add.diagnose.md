@@ -63,6 +63,7 @@ STEP 10: Completion           → report the diagnosis in the shared shape
 | **STEP 6-8** | route = no-action | Write | Conversational response only |
 | **STEP 8** | User declined persistence | Write | Respond in chat only |
 | **STEP 9** | Doc not written | Skip validation gate | Run gate before complete |
+| **STEP 10** | Always | Report before STEP 10, or skip it on a no-action route | Emit the report in the shape, on every route |
 
 ---
 
@@ -97,7 +98,7 @@ Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using th
 
 Restate the user input in ONE sentence using only the nouns/verbs they used. Do NOT inject technical interpretation yet.
 
-Store this reformulation internally — it feeds Phase 0 (STEP 3) and the final report (STEP 7). Do NOT present it to the user now. Do NOT ask questions. Proceed immediately to STEP 3.
+Store this reformulation internally — it feeds Phase 0 (STEP 3) and the diagnosis presented at STEP 7. Do NOT present it to the user now. Do NOT ask questions. Proceed immediately to STEP 3.
 
 ---
 
@@ -287,9 +288,12 @@ Ask the user:
 
 Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/<slug>.md` per schema (extractive only).
 
-### 8.4 Completion output
+### 8.4 Carry these into STEP 10
 
-Show the user:
+⛔ **DO NOT print them here.** The report comes first, and STEP 10 owns it. Emitting the path and
+the next command at 8.4 puts metadata in front of the report and then repeats it.
+
+STEP 10 states:
 - Report path (if persisted)
 - Recommended next command (from ecosystem map routing)
 - Reminder: `add.diagnose` is READ-ONLY; user executes the next command when ready
@@ -298,7 +302,7 @@ Show the user:
 
 ## STEP 9: Validation Gate
 
-Only run this gate when STEP 8 actually wrote a doc. If the doc was not persisted (route = no-action OR user declined), skip directly to the conversational completion.
+Only run this gate when STEP 8 actually wrote a doc. If the doc was not persisted (route = no-action OR user declined), skip directly to STEP 10 — which runs on every route.
 
 Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `diagnose-report`.
 

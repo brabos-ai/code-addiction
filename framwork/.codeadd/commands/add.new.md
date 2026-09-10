@@ -18,6 +18,8 @@
 
 > **REF:** `CLAUDE.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
+> **The closing report at `## Completion` is exempt** — it reports in the shape `add-final-report`
+> owns, and a 20-word stub is not that shape.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 

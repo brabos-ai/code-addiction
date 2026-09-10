@@ -14,6 +14,8 @@
 -->
 
 > **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
+> **The closing report at STEP 6 is exempt** — it reports in the shape `add-final-report` owns, and a
+> 20-word stub is not that shape.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
@@ -267,7 +269,10 @@ the self-check. Emit the report FIRST, then the handoff line below.
 
 A brainstorm explores rather than executes, so block 2 is titled `What will be done` and written in
 the future tense. Fill `How it works` with the direction the conversation settled on, for a reader
-who was not in it. Most other blocks are genuinely empty here — skip those, do not pad them.
+who was not in it. Judge each remaining block on this run — skip the ones that are genuinely empty,
+and never pad the rest.
+
+⛔ The prohibition below is about the NEXT command, never about loading this skill.
 
 Then map the conversation signal to the right command and **print it as text** for the user to run.
 

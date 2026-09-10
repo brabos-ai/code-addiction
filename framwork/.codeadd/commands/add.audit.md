@@ -224,8 +224,9 @@ Execute the validation gate from {{skill:add-doc-schemas/SKILL.md}} for schema `
 **LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the scorecard and the report path come after it, whole.
 
-This command audits and changes nothing, so `Files touched` reads "none" on every row and
-`What was delivered` is the finding set. Fill `How it works` with what the audit actually measured
+This command changes no application code, so `Files touched` names the audit documents STEP 7 wrote
+and nothing else — never "none", because those files are real. `What was delivered` is the finding
+set. Fill `How it works` with what the audit actually measured
 and how a score was reached. `⚠️ Needs your attention` carries the critical findings, because
 nothing in this run fixes them.
 

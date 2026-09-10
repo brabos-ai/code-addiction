@@ -20,6 +20,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-feature-discovery
 - mention: add-feature-readback
 - mention: add-feature-specification
+- mention: add-final-report
 - mention: add-frontend-architecture
 - mention: add-frontend-development
 - mention: add-health-check
@@ -136,6 +137,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-feature-readback | Cold-read comprehension readback of a closed doc set — says back what it understood would be built and marks every gap the reader filled in; no questions, no verdict. Runs after the pre-delivery review's fixes land |
 | add-feature-discovery | Feature discovery process, codebase analysis |
 | add-feature-specification | about.md structure with requirements, rules, acceptance criteria |
+| add-final-report | The closing shape every command that finishes work reports in — TL;DR, what was delivered, how it works, files touched, where it plugs in, what is out of scope, what needs attention. Loaded at the closing step, not at STEP 1 |
 | add-frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware |
 | add-frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic |
 | add-gitnexus | [plugin-bound] Code knowledge-graph navigation via GitNexus MCP — call graph, refs, blast-radius, trace flows, safe refactors. Enabled by `codeadd plugins enable gitnexus` |
@@ -219,6 +221,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-database-development | add.build, add.plan, add.review, add.plan-to-ready |
 | add-ux-design | add.ux, add.build, add.review, add.hotfix, add.plan, add.plan-to-ready; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.review, add.build |
+| add-final-report | add.audit, add.brainstorm, add.build, add.diagnose, add.done, add.hotfix, add.init, add.new, add.plan, add.plan-to-ready, add.pull-request, add.qa-setup, add.review, add.wiki — every command that finishes work. add.md and add.ux are exempt: a router and an instruction transformer finish none |
 | add-security-audit | add.audit, add.review; @security-agent and @reviewer-agent declare it as a skill |
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
