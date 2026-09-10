@@ -5,6 +5,7 @@
 - agent: svg-analyzer
 - agent: web-docs-analyzer
 - agent: web-index-analyzer
+- skill: add-final-report
 - command: /add-framework--release
 -->
 
@@ -297,7 +298,14 @@ For each edit (in bottom-up order):
 
 ## STEP 6: Final Report + Completion
 
-Show report (omit empty sections):
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the sync table below comes after it, whole, as this command's own artefact.
+
+Fill `What was delivered` with the documentation that now matches the code, `How it works` with what
+the regenerated map and diagrams now say, and `⚠️ Needs your attention` with the manual items and the
+inconsistencies, because nothing else in this run fixes them.
+
+Then print the sync report (omit empty sections):
 
 ```
 ## Sync Report — LAST_TAG..HEAD

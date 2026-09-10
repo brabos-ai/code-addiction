@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-build-ledger
+- skill: add-final-report
 - skill: add-review-discipline
 - agent: plan-readback-agent
 - skill: add-framework-product-layer
@@ -513,15 +514,32 @@ behind its own gates.
 
 ## STEP 10: Completion
 
-Report, always:
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the ledger path, the commit ranges and the rulings come after it, never in front
+of it and never instead of it.
 
-- Artefacts created, modified, renamed and **removed**, with paths and their layer.
-- The ledger path and the `BASE..HEAD` range of every committed F-block.
+Fill the blocks from this build:
+
+- **`What was delivered`** — artefacts created, modified, renamed and **removed**, with paths and the
+  layer each sits in.
+- **`Files touched`** — the same set as a table, split by verb. The Deleted row is written even when
+  it reads "none".
+- **`How it works`** — what the delivered artefacts do once they are in place, for a reader who did
+  not watch the build.
+- **`⚠️ Needs your attention`** — anything removed, any `CLAUDE.md` edit, and any change to how an
+  existing command behaves mid-flow.
+
+Then, after the seven blocks and before the metadata, report always:
+
 - **Rulings I made** — per `add-build-ledger`, which owns the exhaustiveness rule and the cost clause.
+  **`docs/plans/` is gitignored, so this report is the only way a ruling reaches a human while the
+  work is still changeable.** Zero rulings is stated, never omitted.
 - Which validations ran per layer, and their result.
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
+
+Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block.
 
 ---
 

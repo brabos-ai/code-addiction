@@ -10,6 +10,7 @@ description: Use when executing implementation plans via dispatched subagents wi
 - skill: add-code-review
 - skill: add-commit
 - skill: add-database-development
+- skill: add-final-report
 - skill: add-frontend-development
 - skill: add-tasks-checklist
 - skill: add-ux-design
@@ -512,7 +513,8 @@ Final Review
   Dispatch reviewer with full ledger + TASK_DOCUMENTS → ready to merge.
 
 Completion
-  "Rulings I made" — every Ruling: line from the ledger, in order, with its cost.
+  The seven-block report, then "Rulings I made" — every Ruling: line from the
+  ledger, in order, with its cost — then the metadata.
 ```
 
 ---
@@ -534,6 +536,7 @@ Coordinator must confirm before reporting completion:
 - [ ] Only one implementation subagent in flight at a time
 - [ ] Compliance Gate executed: each RF/RN cross-referenced + quick-read
 - [ ] Final Review dispatched with the COMPLETE ledger
+- [ ] The closing report follows `{{skill:add-final-report/SKILL.md}}`, emitted before any metadata
 - [ ] "Rulings I made" lists EVERY `Ruling:` line in the ledger
 - [ ] Build status `pass` on final task
 - [ ] TodoWrite reflects real state (no stale `in_progress`)

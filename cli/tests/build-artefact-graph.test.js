@@ -853,8 +853,8 @@ describe('node inventory snapshot', () => {
       // now carry a per-F-block layer tag instead of one layer each. The two
       // shared- commands were renamed, which moves no count.
       // command 23 -> 24: add-framework--roadmap, the internal writer for
-      // docs/roadmap/index.md. A node and no edge — it declares no uses: block
-      // and names no other artefact.
+      // docs/roadmap/index.md. It carried no uses: block when it was added; it
+      // declares one as of the final-report-shape plan.
       // command 24 -> 23: add-framework--review deleted, its audit folded into
       // add-framework--build as STEP 7.
       command: 23,
@@ -863,7 +863,10 @@ describe('node inventory snapshot', () => {
       // from the four commands above so a build loads only the layer it is in.
       // skill 48 -> 49: add-review-discipline, the single owner of how many
       // times each reader runs and what a caller owes the report.
-      skill: 49,
+      // skill 49 -> 51: add-final-report, one per layer. The internal and
+      // product copies are separate nodes and both are counted.
+      // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
+      skill: 51,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       agent: 29,
@@ -879,15 +882,17 @@ describe('node inventory snapshot', () => {
     // 211 -> 212, declares 99 -> 100: add-framework--roadmap.
     // `declares` is DECLARING_KINDS.has(kind) — a flag on every command, skill
     // and agent, meaning "the build scans this file for a `uses:` block". It is
-    // NOT "this file has one". add-framework--roadmap carries no block and adds
-    // no edge, and it still moves this count.
+    // NOT "this file has one". add-framework--roadmap carried no block and added
+    // no edge when it landed, and it still moved this count.
     // (plan 2026-09-09T065116-PLAN--roadmap-command, F1.)
     // 212 -> 213: -1 command, +1 skill, +1 agent.
     // declares 100 -> 101: the same net +1, since DECLARING_KINDS covers all
     // three kinds that moved.
     // (plan 2026-09-09T090201-PLAN--review-no-loops, F2, F3 and F7.)
-    expect(nodes).toHaveLength(213);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(101);
+    // 213 -> 215, declares 101 -> 103: add-final-report in both layers.
+    // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
+    expect(nodes).toHaveLength(215);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(103);
   });
 });
 

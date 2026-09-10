@@ -159,7 +159,8 @@ in the ledger is a decision made in secret.
 
 **If no ruling was made, say so.** Silence is indistinguishable from not having looked.
 
-Also report the ledger path and the `BASE..HEAD` range of every committed F-block.
+The ledger path and the `BASE..HEAD` range of every committed F-block are METADATA: they come
+after the report and after the rulings, never inside the report body.
 
 ## Common Rationalizations (BLOCKED)
 

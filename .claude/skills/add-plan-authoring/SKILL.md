@@ -1,6 +1,6 @@
 ---
 name: add-plan-authoring
-description: "Use when writing or revising a plan document — file naming, F-block layer tags, the Produces/Consumes rule, the review dispatch and its verdicts, the completion summary, and Continue/List mode resolution."
+description: "Use when writing or revising a plan document — file naming, F-block layer tags, the Produces/Consumes rule, the review dispatch and its verdicts, and Continue/List mode resolution."
 ---
 
 # Plan Authoring
@@ -8,9 +8,9 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 <!-- uses:
 - agent: plan-review-agent
 - skill: add-review-discipline
+- skill: add-final-report
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
-- mention: /add-framework--build
 - mention: /add-framework--done
 -->
 
@@ -219,58 +219,14 @@ Two things this skill adds on top, both specific to a plan document:
 
 ---
 
-## Completion — The Executive Summary
+## Completion — The Closing Report
 
-**The user did NOT read the plan.** They decide from this summary. A completion naming the file, the
-verdict and the next command says the plan exists, not what is about to happen. If the user has to ask
-"but what will actually be done?", this failed.
+**`add-final-report` owns the shape.** The seven blocks, the banned phrasings, the rule that the
+report is emitted before any metadata, and the self-check all live there. Load it at the planning
+command's last step.
 
-Emit FIRST, before any metadata. Plain language, user's language. Skip a block only when genuinely
-empty; never pad it.
-
-⛔ **BANNED:**
-
-| Banned | Use instead |
-|--------|-------------|
-| `F7`, `T3`, `L2.9` carrying the meaning | State the change; the id goes in parentheses at most |
-| "The plan adds a section on X" | "X is added to `path/file`" |
-| "Improves consistency", "more robust" | The concrete change and what it causes |
-| Restating the Problem section | What we are going to DO about it |
-| Skipping a deletion as "just cleanup" | Name every deleted file, always |
-| Naming a category ("the review commands") | Name each file and each step |
-
-**1. What will be done** — one line per unit of work, grouped by stage. Each pairs the concrete change
-with the file it lands in.
-
-**2. Files touched** — split by verb, because the risks differ:
-
-| Action | Files |
-|--------|-------|
-| Created / Modified / Renamed | ... |
-| **Deleted** | ... (write "none" when none — never omit the row) |
-
-**3. Where it plugs in** — name the **host and the exact step**. "Changes the review flow" is not an
-answer. "`/add-framework--build` STEP 3, before the skill load" is.
-
-**4. What is explicitly NOT included** — the scope boundaries the user must know.
-
-**5. ⚠️ Needs your attention** — only genuinely consequential: anything deleted, anything
-irreversible, any `CLAUDE.md` edit (it rewrites what every future session loads), anything changing
-how an existing command behaves mid-flow, and the one or two places the plan is most likely to be
-built wrong. Omit the block entirely when there is nothing real; never manufacture a warning.
-
-**Then, and only then:** plan path, status, verdict, fixes applied, next-step commands.
-
-### Self-check before sending
-
-```
-[ ] A reader who never opened the plan knows what will change
-[ ] Every deleted file is named; the Deleted row is present even when empty
-[ ] Every integration point names its host AND its step
-[ ] No F/T/L id is load-bearing — remove them all and the summary still reads
-[ ] It describes the WORK, never the document
-[ ] Every F-block appears somewhere in blocks 1-3
-```
+The metadata that follows the report is the plan path, its status, the review verdict, the fixes
+applied, and the next-step commands.
 
 ---
 

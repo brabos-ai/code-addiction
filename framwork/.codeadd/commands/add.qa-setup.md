@@ -8,6 +8,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 <!-- uses:
 - skill: add-dev-environment-setup
 - skill: add-doc-schemas
+- skill: add-final-report
 - skill: add-qa
 - skill: add-qa-migration
 - skill: add-setup-contract
@@ -424,7 +425,15 @@ Output at end:
 
 ## STEP 14: Hand-off
 
-Tell the user, in order:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the ordered hand-off list below comes after it, whole and in
+its own order.
+
+Fill `How it works` with what the QA pipeline now does on a run: what it captures, what judges it,
+and what the judgement gates. `⚠️ Needs your attention` carries every step the user still has to do
+by hand, because none of them happen on their own.
+
+Then, after the seven blocks, tell the user, in order:
 1. The `qa-pipeline` feature outcome (from STEP 2): enabled + verified, declined (remaining manual step: `codeadd features enable qa-pipeline`), or enable no-op detected (route: `codeadd update` / re-install).
 2. Any prerequisite they declined / must finish manually (from STEP 4).
 3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.

@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add-doc-schemas
 - skill: add-ecosystem
+- skill: add-final-report
 - skill: add-id-convention
 - skill: add-investigation
 - skill: add-knowledge-discovery
@@ -444,7 +445,15 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.json
 
 ⛔ **DO NOT commit** - branch ready for next phase.
 
-Inform user of completion including: hotfix ID, branch, problem, root cause, solution, modified files, build status.
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the hotfix ID, the branch and the next phase come after it.
+
+Fill `What was delivered` with the fix itself, and `How it works` with the root cause and why this
+fix removes it rather than hiding it. `⚠️ Needs your attention` names anything the fix touched
+outside the reported symptom, because a hotfix is where that hurts most.
+
+Then, after the seven blocks, state: hotfix ID, branch, problem, root cause, solution, modified
+files, build status.
 
 **Next Phase:** Hotfix ownership ends; merging is handled by ecosystem flow. Reference skill `add-ecosystem` Main Flows section for context-aware routing.
 

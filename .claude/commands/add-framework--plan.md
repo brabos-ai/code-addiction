@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-plan-authoring
+- skill: add-final-report
 - skill: add-review-discipline
 - agent: framework-discovery-agent
 - agent: plan-review-agent
@@ -29,7 +30,7 @@ STEP 3: Critical analysis     → impact graph, delivery index, alternatives
 STEP 4: Questionnaire         → [STOP] present, wait for answers
 STEP 5: Generate plan         → load add-plan-authoring, write the draft
 STEP 6: Review                → @plan-review-agent BEFORE any delivery
-STEP 7: Completion            → [HARD STOP] executive summary, then metadata
+STEP 7: Completion            → [HARD STOP] the report in the shape, then metadata
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -296,9 +297,13 @@ are owned by `add-review-discipline`.** Load it. One pass, never two.
 
 ## STEP 7: Completion [HARD STOP]
 
-**The user did NOT read the plan.** They decide from this summary. The blocks, the banned phrasings
-and the self-check are owned by `add-plan-authoring` — emit the executive summary FIRST, metadata
-after.
+**The user did NOT read the plan.** They decide from this summary.
+
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST, metadata after.
+
+A plan proposes rather than executes, so block 2 is titled `What will be done` and written in the
+future tense. `add-plan-authoring` carries that one adjustment and nothing else.
 
 Metadata: plan path, status `draft`, review verdict, fixes applied, and the two next commands —
 `/add-framework--build [slug]` to implement, `/add-framework--plan [slug]` to revise.

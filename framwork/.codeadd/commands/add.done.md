@@ -4,6 +4,7 @@
 - skill: add-doc-schemas
 - skill: add-doc-schemas/references/delivery-index.md
 - skill: add-ecosystem
+- skill: add-final-report
 - skill: add-id-convention
 - skill: add-wiki-maintenance
 - command: /add.build
@@ -36,6 +37,7 @@ STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snap
 STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
 STEP 8: Execute merge           -> AUTOMATIC after preview
+STEP 9: Completion              -> report the close-out in the shared shape
 ```
 
 **ABSOLUTE PROHIBITIONS (invariants — per-step gates live in their steps):**
@@ -494,14 +496,33 @@ bash .codeadd/scripts/done.sh --merge
 
 ⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
 
-**After merge, include in the final summary:**
+**After merge, carry this into STEP 9 — do NOT print it here:**
 - Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
 
-**After merge, MUST suggest next command from ecosystem map:**
-READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.
+**Resolve the next command here, state it at STEP 9:**
+READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP 9 owns it.
 
 <!-- plugin:gitnexus:graph-reindex -->
 <!-- /plugin:gitnexus:graph-reindex -->
+
+---
+
+## STEP 9: Completion
+
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the paths and the next command come after it.
+
+The merge already happened, so this is a past-tense report. Fill `What was delivered` with the
+feature that is now on the main branch, and `How it works` with what that feature does for the user,
+for a reader who never opened `about.md`. `Files touched` names what the merge carried, and the
+Deleted row is written even when it reads "none".
+
+Then, after the seven blocks, state:
+
+- The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
+- The delivery index entry that `delivered.sh` wrote, and the changelog path.
+- The next command, from the `add-ecosystem` Main Flows section, chosen for the current branch type
+  and epic status.
 
 ---
 

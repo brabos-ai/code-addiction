@@ -7,6 +7,7 @@
 - skill: add-database-development
 - skill: add-doc-schemas
 - skill: add-ecosystem
+- skill: add-final-report
 - skill: add-frontend-development
 - skill: add-id-convention
 - skill: add-subagent-driven-development
@@ -1030,8 +1031,24 @@ STEP 11.3 exist changes nothing here: they are not checkpoint commits.
 
 ## STEP 17: Completion (Inform user based on mode)
 
-Inform user of completion including: feature ID, files summary (per area count), build status, the ledger
-path with its commit brackets, and next suggested commands.
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
+come after it, never in front of it.
+
+Fill the blocks from this build:
+
+- **`What was delivered`** — one line per unit of work, grouped by area, each pairing the concrete
+  change with the file it lands in.
+- **`How it works`** — what the built feature does now, for a reader who did not watch the run.
+- **`Files touched`** — split by verb. The Deleted row is written even when it reads "none".
+- **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
+  and the one or two places the work is most likely to have gone wrong.
+
+Then, after the seven blocks and before any metadata, print 17.1 and 17.2 below — whole, in their
+own shape.
+
+**Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
+its commit brackets.
 
 ### 17.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 
