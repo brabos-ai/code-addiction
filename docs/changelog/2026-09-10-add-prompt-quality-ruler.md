@@ -1,6 +1,6 @@
 # 2026-09-10 — A ruler for prompts, and a reviewer that ticks it
 
-Implements `docs/plans/2026-09-10T173216-PLAN--prompt-quality-ruler.md`. Twelve commits plus this
+Implements `docs/plans/2026-09-10T173216-PLAN--prompt-quality-ruler.md`. Thirteen commits plus this
 changelog, both layers, one agent created and no artefact removed.
 
 ## Why
@@ -91,6 +91,32 @@ contradiction this work created rather than one it found. A second dead pointer 
 
 **The verdict rationale was written twice**, once in the ruler and once in the agent, by two F-blocks
 of the same plan. Item 5, in the delivery that defines item 5.
+
+## The second prompt pass confirms, it does not re-review
+
+The mechanism shipped with the prompt reviewer able to tick all eight items twice over one artefact in
+one delivery: once at plan time in `audit` mode, once at build time in `delivery` mode. The second read
+graded fixes the first read had asked for, which is precisely the confirmation pass
+`add-review-discipline` forbids the adversarial reviewer. One reader was held to the rule and the other
+was not.
+
+The second pass stays and becomes narrow. `confirm` takes the ruler item numbers and answers two
+questions: is each named item actually fixed, and did the fix break anything. It re-ticks those items
+plus 1 and 2, because an edit that adds a name or moves a section is the edit that most often breaks
+graph-closed and references-resolve, and both are answered by a tool it already called. A pre-existing
+defect is out of scope there — it was present for the full tick, and raising it in a confirmation turns
+it back into a second opinion.
+
+The build picks the mode from the F-block. One citing a ruler item gets `confirm` with those numbers;
+one citing none gets `delivery`. That signal already existed, because the plan names the item in every
+F-block an audit produced, and STEP 5 now says that is what it is for.
+
+Two passes, never three. The adversarial reviewer gets no confirmation pass of any kind, because it
+reads a document that was never executed and so has nothing to confirm.
+
+**A test from the previous delivery caught the first attempt.** `review-no-loops.test.js` L4.3 asserts
+that the cap formulation belongs to `add-review-discipline` alone, and the agent had restated it. It
+points at the owner now. Item 5, found by a guard rather than a reviewer.
 
 ## Four findings were rejected, and they have no owner yet
 
