@@ -6,8 +6,21 @@ description: Use when designing command workflows or refactoring existing comman
 # Building Commands
 
 <!-- uses:
+- skill: add-final-report
 - command: /add-framework--build
 - skill: building-commands/references/agent-dispatch.md
+-->
+
+<!--
+`add.md` and `add.ux` below are PRODUCT commands and are named in prose on
+purpose. They are deliberately NOT declared: `uses:` targets resolve inside the
+declaring artefact's own layer (scripts/build.js), so `- command: /add.md` from
+here would resolve to `internal/command/add.md`, which does not exist, and the
+dangling gate would fail the build. The prose sniff skips cross-layer names.
+
+The same applies to the product `add-final-report`. `- skill: add-final-report`
+above resolves to the INTERNAL one, which is correct — the product sibling
+carries the same name and cannot be addressed from here at all.
 -->
 
 ## Overview
@@ -274,6 +287,36 @@ Format changelog (omit empty sections):
 
 ---
 
+## The Closing Step Reports in One Shape
+
+**Every command that finishes work ends by loading `add-final-report` and reporting through it.** Not
+its own invented list of facts — that is what produced twenty-one different closings, none of which
+told the user how the delivered thing works.
+
+Load the one in the command's OWN layer. An internal command loads the internal skill; a product
+command loads the product one with `{{skill:add-final-report/SKILL.md}}`. **They carry the same seven
+blocks and different vocabulary, and neither can reference the other** — the internal layer's
+directory does not exist in a user's project.
+
+The shape WRAPS the command's facts, it does not replace them. Whatever the closing step already
+demanded still gets reported: a rulings table, a gate matrix, a per-area file count. Those print
+whole, after the seven blocks and before the metadata. Plain facts fold into the blocks.
+
+```
+IF WRITING OR REVISING A COMMAND'S CLOSING STEP:
+  ⛔ DO NOT: Invent a fact list for it
+  ⛔ DO NOT: Drop a fact the step already demanded to make room for the shape
+  ⛔ DO NOT: Load the skill at STEP 1 — it is needed at the end, and a shape carried
+             through fifteen steps is a shape the agent no longer has
+  ✅ DO: Load add-final-report at that step and fill its blocks
+```
+
+**Two commands are exempt, and only these two.** `add.md` routes to another command and `add.ux`
+rewrites an instruction. Neither finishes work, so a delivery report on either is noise. A command
+that writes a file, changes state, or opens a PR is not exempt.
+
+---
+
 ## Rules Section Format
 
 Commands end with a `## Rules` section using ALWAYS/NEVER markdown. This format uses ~30% fewer tokens than JSON for flat lists, has higher compliance with native imperative language, and aligns with condition blocks already used in commands.
@@ -387,6 +430,8 @@ Before deploying command:
 - [ ] No rules that merely restate STEP order or condition blocks
 
 ### Completion
+- [ ] Closing step loads `add-final-report` from the command's own layer, at that step
+- [ ] Every fact the closing step already demanded still reaches the user
 - [ ] Iteration logging in completion phase
 - [ ] No "recommendations" (use gates instead)
 
@@ -411,3 +456,5 @@ Before deploying command:
 | Rules that restate STEP order | Remove — STEP sequence already enforces this |
 | "DETECT LANGUAGE" blocks after LANG header | Remove — LANG header is sufficient |
 | `{"do":[...],"dont":[...]}` for rules | Use ALWAYS/NEVER markdown |
+| Closing step with its own invented fact list | Load `add-final-report` and fill its blocks |
+| Loading `add-final-report` at STEP 1 | Load it at the closing step, where it is used |
