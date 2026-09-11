@@ -6,3 +6,26 @@ the layer(s) it touches.
 
 ---
 
+## 1. Delivered-work relationships
+
+### 1.1 — Relationship index/graph in delivered documents
+
+**Scope:** both
+**TLDR:** Changelogs and deliveries carry a relationship index/graph so add.brainstorm, add.new, add.plan and add.hotfix can find related delivered work when opening a feature, investigating a hotfix or drafting a technical plan.
+
+- Builds on what already exists: `framwork/.codeadd/templates/related.md`, the `related:` frontmatter across the add-doc-schemas, the `related.md` add.hotfix writes (schema `hotfix-related`, with cross-update into the impacted features' own related.md), and the `CHG[NNNN]` changelog add.done closes with `related:` pointing at the closed `[NNNN]F`/`[NNNN]H`.
+- Adjust how documents are saved and related (changelog, deliveries archiving) so the index becomes the base for the next phase, not a one-off annotation.
+- Prepare the ground for vector search over delivered docs — the planned next step, which reaches documents the index alone does not surface.
+- **Done when:** an add.new or add.plan run reaches a previous delivery's related docs through the index (not only text search), and a new hotfix cross-updates the related.md of every feature it impacts.
+
+### 1.2 — Migration command: initial relationship graph for old installs
+
+**Scope:** product
+**TLDR:** An opt-in command that builds an initial relationship structure over features delivered before the new format existed, grouped by app/group/category as a tree or graph, so the agent can find correlated features and know what to search.
+
+- Depends on 1.1 — migrating existing projects into the format only makes sense once 1.1 defines it.
+- Scan past deliveries (docs/features, changelogs) and group them — by app, group or category, tree or graph: the shape is still open.
+- Ships as an enabled feature, not part of the default flow.
+- When the gitnexus plugin is enabled, the graph also points at what to search in gitnexus per group.
+- **Done when:** running the command on a project with pre-format deliveries produces the initial grouped structure with relationships filled, and add.new/add.plan/add.hotfix use it as the investigation entry point.
+
