@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 // Capture the fail-loud warning channel: any anchor miss/drift logs a warning.
@@ -12,6 +11,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin, disablePlugin } from '../src/plugins.js';
+import { treeFixture } from './helpers/tree-fixture.js';
 
 /**
  * End-to-end: round-trip the REAL build outputs (built Claude provider dir +
@@ -23,7 +23,6 @@ import { enablePlugin, disablePlugin } from '../src/plugins.js';
  * framwork/.codeadd/injection-points.json (CI builds before testing).
  */
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const BUILT_CLAUDE = path.join(ROOT, 'framwork', '.claude');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
 const SIDECAR = path.join(CODEADD, 'injection-points.json');
 
@@ -33,21 +32,32 @@ function snapshot(file) {
   return fs.readFileSync(file, 'utf8');
 }
 
+const fixture = treeFixture({
+  prefix: 'inj-rt-',
+  copy: [
+    { src: 'framwork/.claude', dest: '.claude' },
+    { src: 'framwork/.codeadd', dest: '.codeadd' },
+  ],
+  manifest: {
+    at: '.codeadd/manifest.json',
+    data: { version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} },
+  },
+});
+
+// Every test here opens the root, so the hook stays where it was. What changed
+// is that it copies a template built once for the file, instead of re-reading
+// the source tree on each of them.
 beforeEach(() => {
   warnSpy.mockClear();
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-rt-'));
-  fs.cpSync(BUILT_CLAUDE, path.join(tmp, '.claude'), { recursive: true });
-  fs.cpSync(CODEADD, path.join(tmp, '.codeadd'), { recursive: true });
-  fs.writeFileSync(
-    path.join(tmp, '.codeadd', 'manifest.json'),
-    JSON.stringify({ version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} }, null, 2),
-  );
+  tmp = fixture.root();
 });
 
 afterEach(() => {
   delete process.env.CODEADD_PLUGINS_CATALOG;
-  fs.rmSync(tmp, { recursive: true, force: true });
+  fixture.cleanup();
 });
+
+afterAll(() => fixture.dispose());
 
 const sidecarPoints = () => JSON.parse(fs.readFileSync(SIDECAR, 'utf8')).points;
 

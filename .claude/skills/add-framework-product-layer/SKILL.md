@@ -51,7 +51,7 @@ build-pipeline internals. Read it when creating a new artefact type or changing 
 | Skill | `framwork/.codeadd/skills/*/SKILL.md` | Yes — provider files generated |
 | Agent | `framwork/.codeadd/agents/*-agent.md` | Yes — only for providers declaring an `agents` pattern |
 | Script | `framwork/.codeadd/scripts/*` | No — shipped verbatim |
-| CLI source | `cli/src/*.js` + `cli/tests/*.test.js` | No — published as the npm package |
+| CLI source | `cli/src/*.js` + `cli/tests/` (suites and their `helpers/`) | No — published as the npm package |
 
 ```
 IF TEMPTED TO EDIT A framwork/ PROVIDER DIRECTORY:
@@ -145,8 +145,16 @@ IF type=cli AND THE SUITE HAS NOT BEEN RUN SERIALLY:
   ✅ DO: Run it and read the result
 ```
 
-**Serial is not a preference.** Parallel workers race on shared fixtures and report failures that
-vanish serially. Never accept a green parallel run as proof.
+**Serial is not a preference.** Under twelve workers the suite loses ten more tests than it saves
+seconds: 153s with 12 failures against 208s with 2, measured back to back. Every one of the twelve is
+a timeout in a file that spawns a subprocess, because a loaded machine cannot give a spawn its
+5000ms. Never accept a green parallel run as proof.
+
+**The reason used to be shared-fixture races, and is not any more.** `build.test.js` redirects its
+writes to a temp directory and the injection round-trips copy the tree before touching it, so the
+EBUSY collisions that first justified this rule no longer reproduce. `cli/vitest.config.js` carries
+the measurement and the full history; if the two ever disagree, that file is the one with the numbers
+in it.
 
 ```
 IF ANY TEST FAILS:
@@ -158,8 +166,10 @@ IF ANY TEST FAILS:
 **If stdout carries `Debugger listening on ws://…`**, an editor injected `NODE_OPTIONS`. Clear it
 (`unset NODE_OPTIONS VSCODE_INSPECTOR_OPTIONS`) before trusting any assertion on stdout or stderr.
 
-**Baseline before blaming the change.** This suite has pre-existing flakiness. Compare against a clean
-tree (`git stash`) and report the delta, never the raw count.
+**Baseline before blaming the change.** What flakiness this suite has left is load-dependent: the
+tests that drive a real subprocess stretch under a busy machine and cross their timeout. A quiet
+checkout runs the whole suite green. Compare against a clean tree (`git stash`) and report the delta,
+never the raw count.
 
 **TESTS ARE MANDATORY.** Every changed module needs coverage in `cli/tests/`. Where the plan specifies
 a RED-first matrix, write each assertion and CONFIRM IT FAILS before the implementation — a test

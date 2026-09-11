@@ -250,8 +250,23 @@ describe('the real emitted graph', () => {
  * rather than a stubbed reader. That is the point of the verb: it owns the join
  * and delegates the read, so a test that mocked the read would assert the one
  * thing the design forbids reimplementing here.
+ *
+ * Which is also why this block, alone in the file, sets its own timeout. One
+ * `delivered.sh read` shells out to git and walks every record, and each test
+ * makes one or two of them.
+ *
+ * Sized from the measurement, not from a failure. On an idle Windows checkout
+ * the slowest test in this block runs in 3.5s. On a loaded one the same class
+ * of work was seen taking 10.5s — roughly 3x — and crossing the 5000ms default,
+ * which reports as a failure on a tree with nothing wrong with it. 20s is ~6x
+ * the measured idle worst, so it absorbs well past the contention actually
+ * observed, and still catches a regression: a delivered.sh read that takes 20s
+ * is broken, not busy.
+ *
+ * Scoped here rather than raised globally, because 5000ms is the right answer
+ * everywhere else in this suite.
  */
-describe('history — when this arrived, and what it replaced', () => {
+describe('history — when this arrived, and what it replaced', { timeout: 20_000 }, () => {
   const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
   let repo;
 
@@ -296,7 +311,13 @@ describe('history — when this arrived, and what it replaced', () => {
         items: [{ what: 'skillY', at: 'y.md', find: 'skillY_marker', node: 'product/skill/skillY' }],
       }),
     );
-  });
+    // The describe's timeout option reaches this block's TESTS and not its
+    // HOOKS — vitest resolves a hook's budget from config.hookTimeout, which
+    // takes no suite override — so the `git init` above, the one subprocess in
+    // the setup, would otherwise still be capped at the 10s default. Same
+    // reasoning and same slack as the suite option; stated separately because
+    // nothing else makes the two agree.
+  }, 20_000);
 
   const run = (ref, opts = {}) => history(G, ref, { script: DELIVERED_SH, cwd: repo, ...opts });
 

@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 const warnSpy = vi.hoisted(() => vi.fn());
@@ -19,6 +18,7 @@ const require = createRequire(import.meta.url);
 const { readMap } = require('../../scripts/build.js');
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
+import { treeFixture } from './helpers/tree-fixture.js';
 
 /**
  * Plan 0073 — Hotfix Delivery Review.
@@ -173,21 +173,33 @@ describe('0073 L1 — build side', () => {
 describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
   let tmp;
 
-  beforeEach(() => {
-    warnSpy.mockClear();
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-0073-'));
-    fs.cpSync(BUILT_CLAUDE, path.join(tmp, '.claude'), { recursive: true });
-    fs.cpSync(CODEADD, path.join(tmp, '.codeadd'), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, '.codeadd', 'manifest.json'),
-      JSON.stringify({ version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} }, null, 2),
-    );
+  // Already scoped to this describe before the shared helper existed, and it
+  // stays scoped. What changed is that the copy comes from a template built
+  // once for the file rather than from the source tree on every test.
+  const fixture = treeFixture({
+    prefix: 'hf-0073-',
+    copy: [
+      { src: 'framwork/.claude', dest: '.claude' },
+      { src: 'framwork/.codeadd', dest: '.codeadd' },
+    ],
+    manifest: {
+      at: '.codeadd/manifest.json',
+      data: { version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} },
+    },
   });
 
-  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  beforeEach(() => {
+    warnSpy.mockClear();
+  });
+
+  afterEach(() => fixture.cleanup());
+  afterAll(() => fixture.dispose());
 
   const installed = () => path.join(tmp, '.claude', 'commands', 'add.hotfix.md');
 
+  // Two of the four tests below read the registry and the fragment tree and
+  // never open a project root. They used to get one anyway, which is what made
+  // this file the one that got SLOWER when it moved onto the shared helper.
   it('L2.1 the registry lists add.hotfix as a tdd-pipeline target', () => {
     expect(FEATURES['tdd-pipeline'].commands).toContain('add.hotfix');
   });
@@ -197,12 +209,14 @@ describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
   });
 
   it('L2.2 disabled: the installed command carries no RED block', () => {
+    tmp = fixture.root();
     const body = read(installed());
     expect(body).not.toMatch(/@test-agent/);
     expect(body).not.toMatch(/RED_TEST/);
   });
 
   it('L2.3 enabled: each fragment section lands exactly once, then disable restores bytes', () => {
+    tmp = fixture.root();
     const before = read(installed());
 
     const { modified } = enableFeature(tmp, 'tdd-pipeline');
