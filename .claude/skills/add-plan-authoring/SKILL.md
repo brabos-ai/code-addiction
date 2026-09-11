@@ -174,10 +174,10 @@ sidecar key, a frontmatter field, an injection anchor name — whatever one F-bl
 later one reads.
 
 ```
-- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds the fifth delivery gate.
-  - **Produces:** `converge-gates.sh` emits `GATE5=pass|fail|skip`
+- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds a sixth delivery gate.
+  - **Produces:** `converge-gates.sh` emits `GATE6=pass|fail|skip`
 - **F7** [product] — `framwork/.codeadd/commands/add.done.md`: STEP 4 reads the new gate.
-  - **Consumes:** `GATE5` (F3)
+  - **Consumes:** `GATE6` (F3)
 ```
 
 **Every `Consumes` MUST name an EARLIER F-block that `Produces` it, using the SAME string.** A

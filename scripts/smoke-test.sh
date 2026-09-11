@@ -169,7 +169,8 @@ GATE_REVIEW=ok
 GATE_QA_BASELINE=ok
 GATE_EPIC=ok
 GATE_COVERAGE=ok
-GATES_OK=4/4"
+GATE_LEDGER=ok
+GATES_OK=5/5"
 git init -q --bare "$WORK/s1-remote"
 git remote add origin "$WORK/s1-remote"
 git push -q -u origin main
@@ -229,7 +230,7 @@ printf '%s' "$OUT" | grep -q 'GATE_EPIC=ok' \
 
 # =============================================================================
 head_ "S5 — an epic-wide run aggregates coverage from the subfeature plans"
-# Guards: GATES_OK reading 2/4 on a perfectly healthy epic because the gate
+# Guards: GATES_OK reading 2/5 on a perfectly healthy epic because the gate
 # looked only at the feature root.
 # =============================================================================
 OUT=$(bash "$SCRIPTS/converge-gates.sh" "$FD" 2>&1)
