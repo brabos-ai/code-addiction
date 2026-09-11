@@ -167,3 +167,55 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
     expect(read(P.commit)).toContain('git log --grep=GATES_OK');
   });
 });
+
+describe('L3 — add.done reads the fifth gate (F3)', () => {
+  it('L3.1: the STEP 4 preflight parses GATE_LEDGER and its detail', () => {
+    const text = read(P.done);
+    expect(text).toContain('GATE_LEDGER');
+    expect(text).toContain('GATE_LEDGER_DETAIL');
+  });
+
+  it('L3.2: STEP 4 states five gates, and names 4.3 among the sub-steps it gates', () => {
+    const text = read(P.done);
+    expect(text).not.toContain('computes FOUR gates');
+    expect(text).toMatch(/computes FIVE gates/);
+    expect(text).toMatch(/4\.0, 4\.1, 4\.2 and 4\.3/);
+  });
+
+  it('L3.3: a 4.3 sub-step exists and blocks on anything but ok', () => {
+    const text = read(P.done);
+    expect(text).toMatch(/^### 4\.3:/m);
+    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
+    expect(s43).toContain('GATE_LEDGER');
+    // The three non-ok statuses each block, named rather than implied.
+    for (const status of ['missing', 'broken', 'not-probed']) {
+      expect(s43, `4.3 must name ${status}`).toContain(status);
+    }
+  });
+
+  it('L3.4: 4.3 never re-derives the verdict itself', () => {
+    const text = read(P.done);
+    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
+    // The gate is read from the preflight, not recomputed by opening the ledger
+    // or tasks.md — that would restate the gate converge-gates.sh owns.
+    expect(s43).toMatch(/DO NOT/);
+    expect(s43).toMatch(/build-ledger\.md/);
+  });
+
+  it('L3.6: the step summary and the re-derive prohibition both name the ledger', () => {
+    const text = read(P.done);
+    const summary = text.split('\n').find((l) => l.startsWith('STEP 4: Validate delivery'));
+    expect(summary, 'the STEP 4 summary line must exist').toBeTruthy();
+    expect(summary).toMatch(/ledger/i);
+    // The prohibition lists the files a coordinator must not parse for itself.
+    // A gate added without its file here reads as permission to re-derive it.
+    expect(text).toMatch(/DO NOT re-derive a verdict by reading[^\n]*build-ledger\.md/);
+  });
+
+  it('L3.5: the blocked branch forbids the same two writes its siblings forbid', () => {
+    const text = read(P.done);
+    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
+    expect(s43).toContain('changelog.md');
+    expect(s43).toContain('done.sh --merge');
+  });
+});

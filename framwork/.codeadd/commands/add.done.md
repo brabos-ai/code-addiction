@@ -32,7 +32,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 STEP 1: done.sh                 -> RUN FIRST (collect context)
 STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate delivery       -> Review + epic + requirements gates (feature only)
+STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger gates (feature only)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
 STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
@@ -132,7 +132,7 @@ All recognized types proceed to STEP 4. Quality gates apply to `feature` only �
 bash .codeadd/scripts/converge-gates.sh "${DIR}"
 ```
 
-**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `REVIEW_PATH`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, and `GATE_COVERAGE_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1 and 4.2 pass.** The script computes FOUR gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, or `plan.md` and counting/parsing them yourself — that restates the gate the script exists to own.
+**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1, 4.2 and 4.3 pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
 
 ### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
 
@@ -218,6 +218,56 @@ Options:
 - ✅ DO: Show uncovered requirements and STOP
 
 **IF `GATE_COVERAGE=ok`:** Proceed normally.
+
+---
+
+### 4.3: Validate the Build Ledger (FEATURE BRANCHES ONLY)
+
+**SKIP if `BRANCH_TYPE` ≠ `feature`.**
+
+**GATE CHECK (feature only): `GATE_LEDGER` must be `ok`.**
+
+This is the only gate that asks whether the build **happened**. 4.0 asks whether
+the delivery was graded, 4.2 reads a table written at plan time, and 4.1 returns
+`ok` unconditionally on a feature with no `epic.md`. **Unwritten code breaks no
+test**, so a `/add.build` run that stopped halfway passes every check above and
+merges as fully delivered.
+
+**IF `GATE_LEDGER` is `missing`, `broken`, or `not-probed`:**
+
+```
+Build Not Finished!
+
+${GATE_LEDGER_DETAIL}
+
+Run /add.build to finish the remaining task(s).
+```
+
+`GATE_LEDGER_DETAIL` already names the task ids with no `complete` line, capped
+at ten plus a `+N more` overflow — print it as it comes. `missing` means the
+scope declares Execution tasks and carries no `build-ledger.md` at all, and its
+detail names the path it looked for.
+
+**IF BLOCKED:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ✅ DO: Show the unfinished tasks and STOP
+
+```
+IF GATE_LEDGER IS NOT ok:
+  ⛔ DO NOT USE: Read on build-ledger.md to count the `complete` lines yourself
+  ⛔ DO NOT USE: Read on tasks.md to decide which tasks were owed
+  ✅ DO: Print GATE_LEDGER_DETAIL and STOP — re-deriving the verdict restates
+         the gate `converge-gates.sh` exists to own, and the two answers can
+         disagree
+```
+
+**A feature with no `tasks.md` in scope reports `ok`**, with its reason in the
+detail. That is not a hole: outside TASKS MODE the ledger's lines are keyed by
+area name rather than task id, so there is nothing to cross-reference. It is the
+same rule 4.2 applies to an absent coverage table.
+
+**IF `GATE_LEDGER=ok`:** Proceed normally.
 
 ---
 
