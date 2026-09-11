@@ -670,3 +670,32 @@ describe('L12 — the product review-discipline skill (F15)', () => {
     expect(t).toContain('add-subagent-driven-development');
   });
 });
+
+describe('L13 — the internal sibling note (F16)', () => {
+  it('L13.1: the internal skill names its product counterpart', () => {
+    const t = read(P.disciplineInternal);
+    expect(t).toMatch(/sibling/i);
+    expect(t).toMatch(/product layer/i);
+  });
+
+  it('L13.2: the note states the two places they disagree, and why', () => {
+    const t = read(P.disciplineInternal);
+    // Divergence is the intended outcome, so the note has to say WHERE — a bare
+    // "a sibling exists" invites someone to reconcile them.
+    expect(t).toMatch(/re-gate|re-dispatch/i);
+    expect(t).toMatch(/disk|review-NNN/i);
+  });
+
+  it('L13.3: neither uses: block reaches across the layer boundary', () => {
+    // A cross-layer target resolves inside its own layer and dangles, which
+    // fails the build. Both directions asserted, because only one is obvious.
+    expect(uses(read(P.disciplineInternal))).not.toContain('product');
+    expect(uses(read(P.discipline))).not.toContain('.claude');
+  });
+
+  it('L13.4: the internal counts are untouched by this block', () => {
+    const t = read(P.disciplineInternal);
+    expect(t).toMatch(/exactly once/i);
+    expect(t).toMatch(/at most twice/i);
+  });
+});
