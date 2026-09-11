@@ -18,12 +18,17 @@ set -euo pipefail
 
 # --- Args ---
 MODE="context"
+# The merge commit --cleanup proves against. --merge supplies its own; the PR
+# route passes the one gh reports, because a SQUASH merge leaves the branch tip
+# unreachable from main and no ancestry walk can recover it.
+CLEANUP_SHA=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --merge) MODE="merge"; shift ;;
         --commit-push) MODE="commit-push"; shift ;;
         --cleanup) MODE="cleanup"; shift ;;
-        *) shift ;;
+        -*) shift ;;
+        *) [ -z "$CLEANUP_SHA" ] && CLEANUP_SHA="$1"; shift ;;
     esac
 done
 
@@ -408,6 +413,42 @@ do_commit_push() {
 }
 
 do_cleanup() {
+    # --- The two post-merge checks -----------------------------------------
+    # Nothing below rolls anything back. By this point the work has landed, so a
+    # refused deletion is reported and skipped and the script still exits 0: what
+    # is left behind is a branch, which costs one manual command, against a
+    # deletion run because a stale ref happened to look right.
+    #
+    # The FETCH is check 1, not a preamble. origin/<main> is a LOCAL ref and a
+    # forge-side merge does not move it here, so a fetch that fails — offline,
+    # expired auth, a revoked token — leaves it at the branch point and check 2
+    # then passes against a main that has never seen the merge.
+    if ! git fetch origin "$MAIN_BRANCH" >/dev/null 2>&1; then
+        echo "CHECK=1 FAILED — could not fetch origin/$MAIN_BRANCH"
+        echo "CLEANUP=SKIPPED"
+        echo "HINT=Nothing was deleted. The merge stands; re-run --cleanup once the remote is reachable."
+        return 0
+    fi
+    echo "CHECK=1 ok (fetched origin/$MAIN_BRANCH)"
+
+    # A squash merge creates a NEW commit, so the branch tip is not an ancestor
+    # of main and ancestry cannot be derived from the branch. The sha comes from
+    # the caller: --merge passes the commit it just made, the PR route passes
+    # what gh reported. Absent, this refuses rather than guessing.
+    if [ -z "$CLEANUP_SHA" ]; then
+        echo "CHECK=2 FAILED — no merge commit to prove against"
+        echo "CLEANUP=SKIPPED"
+        echo "HINT=Pass it: done.sh --cleanup <merge-sha>. Nothing was deleted."
+        return 0
+    fi
+    if ! git merge-base --is-ancestor "$CLEANUP_SHA" "origin/$MAIN_BRANCH" 2>/dev/null; then
+        echo "CHECK=2 FAILED — origin/$MAIN_BRANCH does not contain $CLEANUP_SHA"
+        echo "CLEANUP=SKIPPED"
+        echo "HINT=Nothing was deleted. The merge has not reached the remote."
+        return 0
+    fi
+    echo "CHECK=2 ok (origin/$MAIN_BRANCH contains $CLEANUP_SHA)"
+
     # Standalone, this runs from the feature branch: gh merged server-side and
     # nothing moved the local HEAD. Inside --merge it runs already on main, where
     # the switch is a no-op. One implementation, both callers.
@@ -450,6 +491,29 @@ if [ "$MODE" = "merge" ]; then
 
     merge_guards
     do_commit_push
+
+    # Step 2.5: prove main is pushable BEFORE anything local is written. Without
+    # it a refusal arrives after the local merge commit exists, leaving main
+    # ahead of origin with nothing in the pipeline describing that state.
+    #
+    # WHAT THIS CATCHES: a stale local main (non-fast-forward), an unreachable
+    # or missing remote, and a transport-level auth failure.
+    #
+    # WHAT IT DOES NOT CATCH, measured rather than assumed: server-side branch
+    # protection. `git push --dry-run` is client-side and never reaches the
+    # remote's pre-receive hook, which is where GitHub enforces it — a protected
+    # main reports PUSHABLE here and fails the real push. done.bats pins that.
+    # It is not a gap to close: when main is protected the right answer is the
+    # PR route, and /add.done takes it whenever a PR exists.
+    echo "STEP=Checking $MAIN_BRANCH is pushable..."
+    if ! git push --dry-run origin "$MAIN_BRANCH" >/dev/null 2>&1; then
+        echo "PUSH_MAIN=REFUSED"
+        echo "STATUS=ERROR"
+        echo "ERROR=origin/$MAIN_BRANCH refuses a push. Branch protection, or no permission."
+        echo "HINT=Open a PR instead — /add.done takes the PR route when one exists."
+        exit 1
+    fi
+    echo "PUSH_MAIN=PUSHABLE"
 
     # Step 3: Switch to main and pull
     echo "STEP=Switching to $MAIN_BRANCH..."
@@ -559,6 +623,9 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     git push origin "$MAIN_BRANCH"
     echo "PUSH_MAIN=OK"
 
+    # The merge commit this run just created on main. do_cleanup proves
+    # against it rather than re-deriving it, which a squash makes impossible.
+    CLEANUP_SHA=$(git rev-parse HEAD)
     do_cleanup
 
     # Done
