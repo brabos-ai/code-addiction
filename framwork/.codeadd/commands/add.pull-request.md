@@ -143,9 +143,25 @@ If empty → no PR exists → flow `CREATE`. If state is `OPEN` → flow `UPDATE
 
 **⛔ Skip this STEP entirely if `BRANCH_TYPE` ≠ `feature`.**
 
-### 3.1 Idempotency guard
+### 3.1 Generate or complement
 
-Check if `${FEATURE_DIR}/changelog.md` already exists. If yes → skip generation, proceed to STEP 4.
+Check if `${FEATURE_DIR}/changelog.md` already exists.
+
+- **Absent** → generate it: 3.2, then 3.3.
+- **Present** → **complement it in place**, per the `changelog` schema's table,
+  and skip 3.2 only. The id it already carries IS the id.
+
+```
+IF THE CHANGELOG ALREADY EXISTS:
+  ⛔ DO NOT: Skip the narrative — a skip leaves the state the first writer produced
+  ⛔ DO NOT USE: Bash for status.sh next-id CHG
+  ⛔ DO NOT: Rewrite id:, created:, type: or related:
+  ✅ DO: Apply the schema's complement table and bump updated:
+```
+
+⛔ **This command is usually the FIRST writer**, because it runs while the build
+is still going. Everything delivered after the PR opens reaches the changelog
+through `{{cmd:add.done}}` 6.3, which complements the same file.
 
 ### 3.2 Allocate changelog ID
 
@@ -157,7 +173,7 @@ Captures `CHG[NNNN]`. Used in frontmatter `id:`. Frontmatter `related:` referenc
 
 ### 3.3 Execute schema
 
-EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`. Write to `${FEATURE_DIR}/changelog.md`.
+EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`. **The schema owns the path**, the one-per-delivery rule and the complement table — read its Location rule rather than repeating a path here.
 
 Source material:
 - `git log main..HEAD --oneline` — commits on this branch.
@@ -357,7 +373,7 @@ NEVER:
 - Rename branches
 - Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
 - Update `CHANGELOG.md` at the repo root (that is `/add.release`'s responsibility)
-- Generate the feature changelog twice — STEP 3.1 idempotency guard prevents this; `/add.done` mirrors the same guard
+- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — 3.1 complements it instead, and `{{cmd:add.done}}` 6.3 complements the same file later
 
 ---
 

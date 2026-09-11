@@ -516,3 +516,45 @@ describe('L9 — add.done complements the changelog (F12)', () => {
     expect(s63()).toMatch(/QA Evidence/);
   });
 });
+
+describe('L10 — add.pull-request complements too (F13)', () => {
+  const step3 = () => {
+    const t = read(P.pullRequest);
+    return t.slice(t.indexOf('## STEP 3'), t.indexOf('## STEP 4'));
+  };
+
+  it('L10.1: 3.1 complements rather than skipping', () => {
+    const b = step3();
+    expect(b).not.toMatch(/skip generation/i);
+    expect(b).toMatch(/complement/i);
+  });
+
+  it('L10.2: 3.3 cites the schema instead of declaring the path', () => {
+    const b = step3();
+    expect(b).toContain('add-doc-schemas');
+    expect(b).not.toContain('Write to `${FEATURE_DIR}/changelog.md`');
+  });
+
+  it('L10.3: the NEVER list no longer promises a guard that is gone', () => {
+    const t = read(P.pullRequest);
+    expect(t).not.toMatch(/idempotency guard prevents this/i);
+  });
+
+  // guards — three things this block must not lose.
+  it('L10.4 (guard): the secrets gate survives', () => {
+    const t = read(P.pullRequest);
+    for (const pat of ['.env', '*.key', 'secrets.', '*.pem', '*.p12']) {
+      expect(t, `the secrets gate must still name ${pat}`).toContain(pat);
+    }
+  });
+
+  it('L10.5 (guard): the append-only PR body update survives', () => {
+    const t = read(P.pullRequest);
+    expect(t).toMatch(/append/i);
+    expect(t).toMatch(/DO NOT: Overwrite existing PR body/);
+  });
+
+  it('L10.6 (guard): add-commit still generates the messages', () => {
+    expect(read(P.pullRequest)).toContain('add-commit');
+  });
+});
