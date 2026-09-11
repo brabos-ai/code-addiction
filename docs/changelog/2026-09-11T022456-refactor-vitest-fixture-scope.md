@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-11
 **Plan:** `2026-09-11T005514-PLAN--vitest-fixture-scope`
-**Layer:** product
+**Layer:** both
 
 The `cli/` suite took 164 seconds serially on the machine this framework is developed on. It now
 takes about 85. Nothing it asserts changed.
@@ -79,14 +79,24 @@ command turns red a test that LOST the fixture. Renaming a real injection anchor
 round-trips that read the warning spy. Eight mutations of the helper were each caught by the level
 that names it.
 
+**`.claude/skills/add-framework-product-layer/SKILL.md`** loses the same stale reason. It explained
+the serial rule as "parallel workers race on shared fixtures", which the rewritten config comment now
+contradicts. The rule is unchanged and still right; it now carries the cause that does reproduce, and
+points at `cli/vitest.config.js` for the numbers rather than duplicating them. Two smaller
+corrections rode along: the source-of-truth table now covers `cli/tests/helpers/`, and "pre-existing
+flakiness" now says what kind. Both strings `cli/tests/run-bats.test.js` pins byte-for-byte survive,
+so that assertion needed no edit.
+
+This was outside the plan, which lists that skill as untouched. The review found the contradiction and
+it was fixed on an explicit decision rather than deferred; the ledger records why.
+
 ## Known gaps
 
-`injection-exclusivity` was targeted at under 22 seconds and lands at 21979ms and 23140ms across two
-samples. The threshold sits inside the run-to-run spread, so it is not reliably met. The file
-improved by about 13%; the eight tests that still copy the template copy 948 files each, and every
-provider directory in that copy is walked by a skill assertion, so nothing in it is dead weight.
+`injection-exclusivity` was targeted at under 22 seconds and lands at 21880ms, 21979ms and 23140ms
+across three samples. The threshold sits inside the run-to-run spread, so it is not reliably met. The
+file improved by about 13%; the eight tests that still copy the template copy 948 files each, and
+every provider directory in that copy is walked by a skill assertion, so nothing in it is dead weight.
 
-`.claude/skills/add-framework-product-layer/SKILL.md` still explains the serial rule as "parallel
-workers race on shared fixtures", which the config comment now contradicts, and its CLI-source table
-does not cover the new `cli/tests/helpers/`. Both were left alone deliberately: the plan lists that
-skill as untouched, and a test pins its wording verbatim.
+`cli/tests/build.test.js` still narrates the old EBUSY hazard beside its `redirected()` helper. That
+comment explains why the helper exists, which is still true, so it was left as it stands and the
+config comment now says so explicitly rather than contradicting it in silence.
