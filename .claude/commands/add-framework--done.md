@@ -81,7 +81,7 @@ IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
   `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
 
-ALWAYS:
+ALWAYS — THIS COMMAND ENDS WORK IT DID NOT START:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
   ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
