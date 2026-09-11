@@ -169,7 +169,7 @@ This file deliberately stops at the overview. Load the owner when you need the m
 |---|---|
 | Authoring a command, skill or agent | `building-commands`, `add-framework-development` |
 | The prompt quality ruler — its eight items, and the reviewer that ticks them | `building-commands`, `@prompt-review-agent` |
-| Writing or revising a plan document | `add-plan-authoring` |
+| Writing or revising a plan document, and the changelog filename | `add-plan-authoring` |
 | Ledger, rulings, hard stops, one commit per F-block | `add-build-ledger` |
 | Product-layer build mechanics | `add-framework-product-layer` |
 | Internal-layer build mechanics | `add-framework-internal-layer` |
