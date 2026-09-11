@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 const warnSpy = vi.hoisted(() => vi.fn());
@@ -19,6 +18,7 @@ const require = createRequire(import.meta.url);
 const { readMap } = require('../../scripts/build.js');
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
+import { treeFixture } from './helpers/tree-fixture.js';
 
 /**
  * Plan 0073 — Hotfix Delivery Review.
@@ -173,18 +173,28 @@ describe('0073 L1 — build side', () => {
 describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
   let tmp;
 
-  beforeEach(() => {
-    warnSpy.mockClear();
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hf-0073-'));
-    fs.cpSync(BUILT_CLAUDE, path.join(tmp, '.claude'), { recursive: true });
-    fs.cpSync(CODEADD, path.join(tmp, '.codeadd'), { recursive: true });
-    fs.writeFileSync(
-      path.join(tmp, '.codeadd', 'manifest.json'),
-      JSON.stringify({ version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} }, null, 2),
-    );
+  // Already scoped to this describe before the shared helper existed, and it
+  // stays scoped. What changed is that the copy comes from a template built
+  // once for the file rather than from the source tree on every test.
+  const fixture = treeFixture({
+    prefix: 'hf-0073-',
+    copy: [
+      { src: 'framwork/.claude', dest: '.claude' },
+      { src: 'framwork/.codeadd', dest: '.codeadd' },
+    ],
+    manifest: {
+      at: '.codeadd/manifest.json',
+      data: { version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} },
+    },
   });
 
-  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  beforeEach(() => {
+    warnSpy.mockClear();
+    tmp = fixture.root();
+  });
+
+  afterEach(() => fixture.cleanup());
+  afterAll(() => fixture.dispose());
 
   const installed = () => path.join(tmp, '.claude', 'commands', 'add.hotfix.md');
 
