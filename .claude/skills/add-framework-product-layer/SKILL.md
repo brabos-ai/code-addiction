@@ -165,6 +165,42 @@ tree (`git stash`) and report the delta, never the raw count.
 a RED-first matrix, write each assertion and CONFIRM IT FAILS before the implementation — a test
 authored after the fix proves nothing.
 
+### Shell scripts — the bats suite runs before the block closes
+
+An F-block touching `framwork/.codeadd/scripts/*.sh` does not close until the suite has been run and
+read:
+
+```bash
+npm run test:scripts
+```
+
+```
+IF THE BLOCK CHANGED A .sh FILE AND THE SUITE HAS NOT BEEN RUN:
+  ⛔ DO NOT: Report the F-block complete
+  ⛔ DO NOT: Append its `complete` line to the ledger
+  ✅ DO: Run it and read the result
+```
+
+**This gate was unenforceable until recently, and that is why it did not exist.** The suite was far
+too slow to run on Windows and reported a `qa-preflight.bats` failure that appeared on no other
+machine. A gate nobody can afford to satisfy is a gate everybody rules their way past.
+
+**The gate binds only where a runner resolves, and `npm run test:scripts` owns that decision.** It
+runs the suite directly off Windows and inside a Linux container on it. On Windows with no Docker
+daemon it exits 2 — a refusal to run, never a test result.
+
+```
+IF `npm run test:scripts` EXITED 2 BECAUSE NO RUNNER RESOLVED:
+  ⛔ DO NOT: Report the gate passed
+  ⛔ DO NOT: Force the slow native path to manufacture a local verdict
+  ✅ DO: Record a ruling in `add-build-ledger`'s three-part form — the gate was not run, why no
+         runner resolved, and what it costs if the suite would have failed — then close the block
+```
+
+**The verdict then belongs to CI, which owns it regardless.** `/add-framework--done` reads the CI run
+rather than re-running the suites for exactly this reason, and a local suite that cannot run here
+changes nothing about that.
+
 ---
 
 

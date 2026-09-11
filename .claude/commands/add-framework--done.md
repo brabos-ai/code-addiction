@@ -197,7 +197,9 @@ test-cli (node 22)   the same, on the other supported major
 test-scripts         npm run test:scripts   (bats)                                  [working-directory: root]
 ```
 
-**Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a *second* gate that can disagree with the one that governs the merge — and the local copy is the weaker of the two: it runs on one machine, one Node version, and a developer's dirty environment. This repository has the receipts. `npm run test:scripts` takes **over an hour** on Windows and **63 seconds** on CI, and the local run reports a `qa-preflight.bats` failure that exists nowhere but here, because a `node_modules` above `TMPDIR` resolves a package the test asserts is absent.
+**Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a *second* gate that can disagree with the one that governs the merge — and the local copy is the weaker of the two: it runs on one machine, one Node version, and a developer's dirty environment. This repository has the receipts. **Forced down its native Windows path** — which `CODEADD_BATS_RUNNER=native` still reaches — `npm run test:scripts` is slow enough to be unusable and reports a `qa-preflight.bats` failure that exists on no other machine, because a `node_modules` above `TMPDIR` resolves a package the test asserts is absent. A local verdict that contradicts the merge gate is worse than no local verdict.
+
+**By default that suite no longer takes either cost, and neither fact promotes it.** `npm run test:scripts` routes itself into a Linux container on Windows, where the whole suite runs in well under a minute and `qa-preflight` passes. That makes it usable for iteration, which is why a `.sh` F-block is now gated on it. It does not make it the authority: one machine is still one machine.
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
@@ -218,6 +220,8 @@ test-scripts         npm run test:scripts   (bats)                              
 ⛔ **A skipped, queued, neutral or cancelled check is not a pass.** Only `success` is. A required check that never ran is the absence of evidence, which this gate treats exactly as it treats failure.
 
 **The fallback is local, explicit and reported.** When `gh` is unavailable, the network is down, or the repository has no CI configured, run the four commands here instead — `node scripts/build.js`, `npm test`, `npm --prefix cli run test:package`, `npm run test:scripts` — and **say in the STEP 9 report that the gate ran locally and why**. A gate that quietly changes which evidence it accepted is worse than a slow one.
+
+⛔ **In the fallback, `npm run test:scripts` exiting 2 is a REFUSAL to run, never a failing suite.** On Windows with no Docker daemon the runner declines rather than taking the slow native path, and prints why. Treat that exit as the bats gate being unavailable — say so in the STEP 9 report and resolve it from CI — never as a red suite. Reporting a refusal as a failure blocks a merge on evidence nobody produced.
 
 `test:package` exists **only** in `cli/package.json`. In the fallback, invoked from the root without `--prefix cli`, it fails with "Missing script" — a *false* gate, which is worse than a failing one. CI avoids this by setting `working-directory: cli`; the fallback must attach the prefix by hand.
 

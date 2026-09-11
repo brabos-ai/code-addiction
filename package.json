@@ -4,7 +4,7 @@
   "scripts": {
     "build": "node scripts/build.js",
     "test": "npm --prefix cli test",
-    "test:scripts": "npx bats framwork/.codeadd/scripts/tests/*.bats",
+    "test:scripts": "node scripts/run-bats.js",
     "release": "bash scripts/release.sh",
     "publish": "cd cli && npm publish",
     "login": "npm login"
