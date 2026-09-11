@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-build-ledger
+- skill: add-plan-authoring
 - skill: add-final-report
 - skill: add-review-discipline
 - agent: plan-readback-agent
@@ -497,8 +498,9 @@ After STEP 7's review pass, and not before (planned mode — direct mode has no 
 changelog written ahead of that pass describes a delivery nobody audited, and any finding STEP 7
 applies would land after its own record.
 
-- **Changelog** for new or major work: `docs/changelog/YYYY-MM-DD-<action>-<what>.md`, action being
-  `add` | `update` | `refactor` | `remove`.
+- **Changelog** for new or major work, written under `docs/changelog/`. **The filename is owned by
+  `add-plan-authoring`** — read **File Naming** rather than declaring a pattern here. It carried one
+  until this plan, and so did `/add-framework--done`; fixing either alone left the two divergent.
 - **Plan status** `draft` → `implemented`, with a changelog row naming the commits it landed in.
 - **The inventory block** — run `node scripts/inventory.js` and commit `CLAUDE.md` if it changed.
   Stage that path alone, never `-A`.
