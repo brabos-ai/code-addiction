@@ -11,8 +11,10 @@ import path from 'node:path';
  * temp dir, normalized line endings across every file in the copy, and deleted
  * the lot afterwards. The copy is correct. Its placement was not — in
  * qa-reachability.smoke.test.js only 5 of 43 tests ever opened the result, and
- * the other 38 paid ~2.4s each for a directory they never touched. That one
- * file was 55.7% of the whole suite's serial runtime.
+ * the other 38 paid for a directory they never touched. On the clean checkout
+ * this change was built against, that one file took 75.5s of a 164s serial
+ * run: 46% of the suite, ~1.8s per test, for a fixture 88% of its tests did
+ * not open.
  *
  * So the cost is inverted here rather than removed. The template is built once
  * per test file, lazily, on the first `root()` call; each call after that
@@ -64,22 +66,40 @@ function normalizeLineEndings(dir) {
 /**
  * @param {object} opts
  * @param {string} opts.prefix        mkdtemp prefix, so a leak is traceable to its file
- * @param {{src: string, dest: string}[]} opts.copy
+ * @param {{src: string, dest: string, optional?: boolean}[]} opts.copy
  *        `src` absolute, or relative to the repository root — the shape
- *        `PROVIDERS` already carries. A `src` that does not exist is skipped:
- *        a provider whose tree has not been built is a normal state.
+ *        `PROVIDERS` already carries.
+ *
+ *        A missing `src` THROWS unless the entry sets `optional: true`. Every
+ *        one of these trees is gitignored build output, so "missing" means
+ *        `node scripts/build.js` has not run — which three of the four callers
+ *        declare as a precondition in their own file header, and used to fail
+ *        loudly on because their hook copied unguarded. Only
+ *        injection-exclusivity wants the skip, for provider directories that
+ *        legitimately may not have been built.
  * @param {{at: string, data: object}} [opts.manifest]  written into every copy
  * @param {boolean} [opts.normalize=false]  CRLF → LF across .md and .json
  */
 export function treeFixture({ prefix, copy, manifest = null, normalize = false }) {
   let template = null;
   const handedOut = [];
+  // Every template directory this fixture has created, complete or not. A
+  // buildTemplate() that throws half way through still leaves one behind, and
+  // an untracked one leaks once per attempt.
+  const scratch = [];
 
   function buildTemplate() {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), `${prefix}template-`));
-    for (const { src, dest } of copy) {
+    scratch.push(dir);
+    for (const { src, dest, optional = false } of copy) {
       const from = path.isAbsolute(src) ? src : path.join(REPO_ROOT, src);
-      if (!fs.existsSync(from)) continue;
+      if (!fs.existsSync(from)) {
+        if (optional) continue;
+        throw new Error(
+          `tree-fixture: required source is missing: ${from}\n` +
+            'These trees are build output. Run `node scripts/build.js` first.',
+        );
+      }
       fs.cpSync(from, path.join(dir, dest), { recursive: true });
     }
     if (normalize) normalizeLineEndings(dir);
@@ -88,16 +108,20 @@ export function treeFixture({ prefix, copy, manifest = null, normalize = false }
       fs.mkdirSync(path.dirname(at), { recursive: true });
       fs.writeFileSync(at, JSON.stringify(manifest.data, null, 2));
     }
-    return dir;
+    // Assigned last, and only here: a half-built directory must never become
+    // the thing root() copies. A caller that retries after a failure builds a
+    // fresh one, and `scratch` still reclaims the abandoned attempt.
+    template = dir;
   }
 
-  return {
+  const fixture = {
     /** A private copy of the template. Build it on the first call, never before. */
     root() {
-      template ??= buildTemplate();
+      if (template === null) buildTemplate();
       const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-      fs.cpSync(template, dir, { recursive: true });
+      // Tracked before the copy, for the same reason `scratch` is.
       handedOut.push(dir);
+      fs.cpSync(template, dir, { recursive: true });
       return dir;
     },
 
@@ -108,13 +132,15 @@ export function treeFixture({ prefix, copy, manifest = null, normalize = false }
       }
     },
 
-    /** Per file. Reclaims the template too, so nothing outlives the run. */
+    /** Per file. Reclaims every template attempt too, so nothing outlives the run. */
     dispose() {
-      this.cleanup();
-      if (template) {
-        fs.rmSync(template, { recursive: true, force: true });
-        template = null;
+      fixture.cleanup();
+      while (scratch.length) {
+        fs.rmSync(scratch.pop(), { recursive: true, force: true });
       }
+      template = null;
     },
   };
+
+  return fixture;
 }

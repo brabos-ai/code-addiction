@@ -11,18 +11,22 @@ import { treeFixture } from './helpers/tree-fixture.js';
  *
  * The helper exists to invert WHEN the copy happens. The old shape copied two
  * full trees, normalized 332 files and deleted them in a top-level beforeEach,
- * so 38 of qa-reachability's 43 tests paid ~2.4s for a directory they never
- * opened. The helper builds the template once per test file and hands out a
- * private copy only to a test that asks.
+ * so 38 of qa-reachability's 43 tests paid for a directory they never opened —
+ * 75.5s of a 164s serial run, on the clean checkout this was built against.
+ * The helper builds the template once per test file and hands out a private
+ * copy only to a test that asks.
  *
- * Everything here runs against synthetic source trees rather than the real
- * built output. The four consumers prove the real tree still works; this file
- * proves the mechanism, and a mechanism test that depends on 332 real files
- * would reintroduce the cost it exists to remove.
+ * Almost everything here runs against synthetic source trees rather than the
+ * real built output. The four consumers prove the real tree still works; this
+ * file proves the mechanism, and a mechanism test that copied 332 real files
+ * per case would reintroduce the cost it exists to remove. The one deliberate
+ * exception is the repo-relative resolution level, which has to name a real
+ * path to prove anything at all.
  */
 
 const OPEN = [];
 const PREFIXES = [];
+const SOURCE_PREFIX = `tfsrc-${randomUUID().slice(0, 8)}-`;
 
 /**
  * A prefix no other run can collide with.
@@ -46,7 +50,7 @@ function fixture(opts) {
 
 afterEach(() => {
   while (OPEN.length) OPEN.pop().dispose();
-  const owned = [...PREFIXES, 'tfsrc-'];
+  const owned = [...PREFIXES, SOURCE_PREFIX];
   for (const e of fs.readdirSync(os.tmpdir())) {
     if (owned.some((p) => e.startsWith(p))) {
       fs.rmSync(path.join(os.tmpdir(), e), { recursive: true, force: true });
@@ -55,9 +59,15 @@ afterEach(() => {
   PREFIXES.length = 0;
 });
 
-/** A synthetic source tree. `files` maps a relative path to its exact bytes. */
+/**
+ * A synthetic source tree. `files` maps a relative path to its exact bytes.
+ *
+ * Its prefix is run-scoped for the same reason the fixture prefixes are: the
+ * afterEach sweep deletes by prefix, and a fixed one would reach into a
+ * concurrent vitest process's live source trees on a shared temp dir.
+ */
 function sourceTree(files) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tfsrc-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), SOURCE_PREFIX));
   for (const [rel, body] of Object.entries(files)) {
     const full = path.join(dir, rel);
     fs.mkdirSync(path.dirname(full), { recursive: true });
@@ -127,17 +137,52 @@ describe('L1.3 — the template is built once', () => {
   it('a second root() reflects the source as it was at the first, not as it is now', () => {
     const prefix = newPrefix();
     // The observable form of "built once". If the helper re-read the source on
-    // every call, the mutation below would reach the second copy — and so
-    // would a second line-ending normalization pass over every file.
-    const src = sourceTree({ 'a.md': 'original\n' });
-    const f = fixture({ prefix, copy: [{ src, dest: '.claude' }] });
+    // every call, the mutation below would reach the second copy.
+    //
+    // normalize is ON here on purpose: the level this stands for is worded as
+    // "a second root() does not re-run the line-ending normalization", and a
+    // fixture built without it would leave that half untested. The second
+    // copy carrying the FIRST copy's normalized bytes is what proves the walk
+    // did not run again.
+    const src = sourceTree({ 'a.md': 'original\r\n' });
+    const f = fixture({ prefix, copy: [{ src, dest: '.claude' }], normalize: true });
 
     const first = f.root();
-    fs.writeFileSync(path.join(src, 'a.md'), 'changed at the source\n');
+    fs.writeFileSync(path.join(src, 'a.md'), 'changed at the source\r\n');
     const second = f.root();
 
     expect(fs.readFileSync(path.join(first, '.claude', 'a.md'), 'utf8')).toBe('original\n');
     expect(fs.readFileSync(path.join(second, '.claude', 'a.md'), 'utf8')).toBe('original\n');
+  });
+});
+
+describe('L1.6 — a missing required source fails loudly', () => {
+  it('throws, naming the path and the command that produces it', () => {
+    // Three of the four consumers declare `node scripts/build.js` as a
+    // precondition in their own header, and their old hooks copied unguarded,
+    // so an unbuilt tree threw one ENOENT in beforeEach. Skipping silently
+    // would hand them an empty root and move the failure somewhere unhelpful.
+    const missing = path.join(os.tmpdir(), `${SOURCE_PREFIX}absent`);
+    const f = fixture({ prefix: newPrefix(), copy: [{ src: missing, dest: '.claude' }] });
+
+    expect(() => f.root()).toThrow(/required source is missing/);
+    expect(() => f.root()).toThrow(/scripts\/build\.js/);
+  });
+
+  it('optional: true is what buys the skip, and only for the entry that asks', () => {
+    // injection-exclusivity copies every provider directory, and one that has
+    // not been built is a normal state there and nowhere else.
+    const src = sourceTree({ 'x.md': 'x\n' });
+    const absent = path.join(os.tmpdir(), `${SOURCE_PREFIX}absent2`);
+    const f = fixture({
+      prefix: newPrefix(),
+      copy: [{ src, dest: '.claude' }, { src: absent, dest: '.cursor', optional: true }],
+    });
+
+    const root = f.root();
+
+    expect(fs.existsSync(path.join(root, '.claude', 'x.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.cursor'))).toBe(false);
   });
 });
 
@@ -246,20 +291,21 @@ describe('L1 — the call shapes the four consumers need', () => {
     }
   });
 
-  it('skips a source directory that does not exist instead of throwing', () => {
+  it('reclaims a template attempt that threw, so a retry leaks nothing', () => {
+    // buildTemplate() creates its directory before it can fail, and a failure
+    // here is reachable: a missing source now throws. The attempt must still
+    // be reclaimed, and the retry must not inherit a half-built template.
     const prefix = newPrefix();
-    // injection-exclusivity copies every provider dir, and a provider whose
-    // tree has not been built is a normal state, not a failure.
-    const src = sourceTree({ 'x.md': 'x\n' });
-    const f = fixture({
-      prefix,
-      copy: [{ src, dest: '.claude' }, { src: path.join(os.tmpdir(), 'tfsrc-does-not-exist'), dest: '.cursor' }],
-    });
+    const missing = path.join(os.tmpdir(), `${SOURCE_PREFIX}absent3`);
+    const f = treeFixture({ prefix, copy: [{ src: missing, dest: '.claude' }] });
 
-    const root = f.root();
+    expect(() => f.root()).toThrow();
+    expect(() => f.root()).toThrow();
+    expect(onDisk(prefix).length).toBeGreaterThan(0); // the attempts are on disk
 
-    expect(fs.existsSync(path.join(root, '.claude', 'x.md'))).toBe(true);
-    expect(fs.existsSync(path.join(root, '.cursor'))).toBe(false);
+    f.dispose();
+
+    expect(onDisk(prefix)).toEqual([]);
   });
 
   it('resolves a repo-relative source against the repository root', () => {

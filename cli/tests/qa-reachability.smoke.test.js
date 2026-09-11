@@ -42,7 +42,9 @@ function snapshot(file) {
  * Five of the 43 tests here open a writable project root. The other 38 read a
  * built command straight out of framwork/.claude and assert on its text. The
  * hook this replaces copied 332 files and normalized them for all 43, which
- * made this one file 55.7% of the suite's serial runtime.
+ * made this one file 75.5s of a 164s serial run on the clean checkout this was
+ * built against: 46% of the whole suite, ~1.8s per test, for a directory 88% of
+ * them never opened.
  *
  * `normalize: true` is what that hook did per test, and the helper now does
  * once on the template: a real installed project carries LF, because the

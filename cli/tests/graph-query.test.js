@@ -252,18 +252,21 @@ describe('the real emitted graph', () => {
  * thing the design forbids reimplementing here.
  *
  * Which is also why this block, alone in the file, sets its own timeout. One
- * `delivered.sh read` costs about 1.2s on an idle Windows machine, because the
- * script shells out to git and walks every record; a test here makes one or two
- * of those plus a `git init`. Under load that stretches badly — two of these
- * were measured at 10.5s and 5.0s on a busy checkout, crossing the 5000ms
- * default and reporting as failures on a tree with nothing wrong with it.
+ * `delivered.sh read` shells out to git and walks every record, and each test
+ * makes one or two of them.
  *
- * 30s is ~3x the worst run observed and ~25x the idle cost, so it still catches
- * a real regression: a delivered.sh that takes half a minute is broken. The
- * timeout is scoped here rather than raised globally, because everywhere else
- * in this suite 5000ms is the right answer.
+ * Sized from the measurement, not from a failure. On an idle Windows checkout
+ * the slowest test in this block runs in 3.5s. On a loaded one the same class
+ * of work was seen taking 10.5s — roughly 3x — and crossing the 5000ms default,
+ * which reports as a failure on a tree with nothing wrong with it. 20s is ~6x
+ * the measured idle worst, so it absorbs well past the contention actually
+ * observed, and still catches a regression: a delivered.sh read that takes 20s
+ * is broken, not busy.
+ *
+ * Scoped here rather than raised globally, because 5000ms is the right answer
+ * everywhere else in this suite.
  */
-describe('history — when this arrived, and what it replaced', { timeout: 30_000 }, () => {
+describe('history — when this arrived, and what it replaced', { timeout: 20_000 }, () => {
   const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
   let repo;
 
@@ -308,7 +311,13 @@ describe('history — when this arrived, and what it replaced', { timeout: 30_00
         items: [{ what: 'skillY', at: 'y.md', find: 'skillY_marker', node: 'product/skill/skillY' }],
       }),
     );
-  });
+    // The describe's timeout option reaches this block's TESTS and not its
+    // HOOKS — vitest resolves a hook's budget from config.hookTimeout, which
+    // takes no suite override — so the `git init` above, the one subprocess in
+    // the setup, would otherwise still be capped at the 10s default. Same
+    // reasoning and same slack as the suite option; stated separately because
+    // nothing else makes the two agree.
+  }, 20_000);
 
   const run = (ref, opts = {}) => history(G, ref, { script: DELIVERED_SH, cwd: repo, ...opts });
 

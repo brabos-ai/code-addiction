@@ -190,7 +190,6 @@ describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
 
   beforeEach(() => {
     warnSpy.mockClear();
-    tmp = fixture.root();
   });
 
   afterEach(() => fixture.cleanup());
@@ -198,6 +197,9 @@ describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
 
   const installed = () => path.join(tmp, '.claude', 'commands', 'add.hotfix.md');
 
+  // Two of the four tests below read the registry and the fragment tree and
+  // never open a project root. They used to get one anyway, which is what made
+  // this file the one that got SLOWER when it moved onto the shared helper.
   it('L2.1 the registry lists add.hotfix as a tdd-pipeline target', () => {
     expect(FEATURES['tdd-pipeline'].commands).toContain('add.hotfix');
   });
@@ -207,12 +209,14 @@ describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
   });
 
   it('L2.2 disabled: the installed command carries no RED block', () => {
+    tmp = fixture.root();
     const body = read(installed());
     expect(body).not.toMatch(/@test-agent/);
     expect(body).not.toMatch(/RED_TEST/);
   });
 
   it('L2.3 enabled: each fragment section lands exactly once, then disable restores bytes', () => {
+    tmp = fixture.root();
     const before = read(installed());
 
     const { modified } = enableFeature(tmp, 'tdd-pipeline');

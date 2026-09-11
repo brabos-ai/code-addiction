@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const warnSpy = vi.hoisted(() => vi.fn());
@@ -229,10 +230,20 @@ function snapshotTree(files) {
   return Object.fromEntries(files.map((f) => [f, snapshot(f)]));
 }
 
+/**
+ * Environment state, deliberately NOT fixture state.
+ *
+ * It used to write the catalog inside the per-test project root, which tied it
+ * to a directory that now only some tests have. It lives in its own temp dir
+ * instead, so every test in the file gets the same forced catalog whether or
+ * not it took a fixture, exactly as before.
+ */
+const CATALOG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-ex-catalog-'));
+
 function forceDetectableCatalog() {
   const catalog = {};
   for (const name of PLUGIN_NAMES) catalog[name] = { ...CATALOG[name], detect: 'node -e "process.exit(0)"' };
-  const p = path.join(tmp, 'catalog.json');
+  const p = path.join(CATALOG_DIR, 'catalog.json');
   fs.writeFileSync(p, JSON.stringify(catalog, null, 2));
   process.env.CODEADD_PLUGINS_CATALOG = p;
 }
@@ -257,7 +268,11 @@ function pointKey(p) {
 const fixture = treeFixture({
   prefix: 'inj-ex-',
   copy: [
-    ...Object.values(PROVIDERS).map((meta) => ({ src: meta.src, dest: meta.dest })),
+    // optional, and this is the only caller that wants it: a provider whose
+    // tree has not been built is a normal state here. The other three
+    // consumers let a missing source throw, which is what their headers
+    // promise.
+    ...Object.values(PROVIDERS).map((meta) => ({ src: meta.src, dest: meta.dest, optional: true })),
     { src: 'framwork/.codeadd', dest: '.codeadd' },
   ],
   manifest: {
@@ -276,12 +291,12 @@ const fixture = treeFixture({
 function useFixture() {
   beforeEach(() => {
     tmp = fixture.root();
-    forceDetectableCatalog();
   });
 }
 
 beforeEach(() => {
   warnSpy.mockClear();
+  forceDetectableCatalog();
 });
 
 afterEach(() => {
@@ -289,7 +304,10 @@ afterEach(() => {
   fixture.cleanup();
 });
 
-afterAll(() => fixture.dispose());
+afterAll(() => {
+  fixture.dispose();
+  fs.rmSync(CATALOG_DIR, { recursive: true, force: true });
+});
 
 describe('substitution completeness (catalog × fragments × sidecar × built anchors)', () => {
   // 39 -> 40: the docs-pruning feature adds ONE section on add.done (plan
