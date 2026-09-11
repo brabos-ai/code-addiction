@@ -752,3 +752,53 @@ node_free_path() {
   [[ "$output" == *'"superseded_by":"E9"'* ]]
   [[ "$output" == *'"status":"superseded"'* ]]
 }
+
+# ─── read by node — the join field is part of the haystack ───────────────────
+#
+# `graph.js history <artefact>` shells out to `read` with the artefact's bare
+# name. While `node` sat outside doRead's haystack the verb could only narrow
+# what a TEXT search had already found, so it answered correctly exactly while
+# an artefact had a single delivery — which is when "was this attempted before?"
+# carries the least information. Measured over the whole index: the two nodes
+# with more than one delivery each returned one of two.
+#
+# `items[].at` is deliberately NOT in the haystack. An `at` is a hint that
+# --repair rewrites, so matching it would let a query hit a stale pointer.
+
+@test "L4.1: read finds an entry by its node when nothing else in it spells that name" {
+  # The shape that made `durable-delivery-history` invisible: the node names the
+  # artefact and the id, name, words and item text never do.
+  src a.md 'marker_gamma lives here'
+  commit_all
+  write_index "$(entry E1 live 'a delivery' 'unrelated words only' a.md marker_gamma ',"node":"internal/command/add-framework--done"')"
+
+  run bash "$SCRIPTS_DIR/delivered.sh" read "add-framework--done"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MATCHED=1"* ]]
+  [[ "$output" == *'"id":"E1"'* ]]
+}
+
+@test "L4.2: a query in no entry's text and no entry's node still returns nothing" {
+  # Guards the haystack change against over-matching: adding a field must not
+  # turn every query into a hit.
+  src a.md 'marker_gamma lives here'
+  commit_all
+  write_index "$(entry E1 live 'a delivery' 'unrelated words only' a.md marker_gamma ',"node":"internal/command/add-framework--done"')"
+
+  run bash "$SCRIPTS_DIR/delivered.sh" read "add-framework--roadmap"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MATCHED=0"* ]]
+  [[ "$output" != *'"id":"E1"'* ]]
+}
+
+@test "L4.1: an entry with no node at all is still readable by its text" {
+  # The field is optional — top-level scripts, CLAUDE.md and .gitignore produce
+  # no graph node — so the haystack must tolerate its absence.
+  src a.md 'marker_gamma lives here'
+  commit_all
+  write_index "$(entry E1 live 'a delivery' 'unrelated words only' a.md marker_gamma)"
+
+  run bash "$SCRIPTS_DIR/delivered.sh" read "unrelated"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"id":"E1"'* ]]
+}
