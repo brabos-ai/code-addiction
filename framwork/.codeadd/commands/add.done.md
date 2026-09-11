@@ -164,6 +164,79 @@ IF PR_STATE IS no-gh:
   ✅ DO: Take the local route and name the reason in the final report
 ```
 
+### 2.3 The Resume Route — written, pushed, merge refused
+
+Reached from 2.1's second row. **Every gate below still applies in full** — a
+delivery is not exempt from grading because someone tried to merge it once. What
+changes is that four STEPs already ran and must not run again:
+
+| STEP | Normal | Resume |
+|---|---|---|
+| 4 | The gates | **Unchanged.** They all still run |
+| 5 | Validate and promote QA evidence | **Skipped.** The promotion already ran |
+| 6.3 | Generate the changelog | **Skipped.** Committed by STEP 6's commit |
+| 6.7 | Update the wiki | **Skipped.** Same commit |
+| 6.8 | Write the index entry | **Skipped.** The entry is on the branch |
+| 8 | Merge | The only work left |
+
+⛔ **STEP 5 is skipped rather than re-run, and that is not caution.** Promotion is
+idempotent, so a second run is safe — and therefore indistinguishable from a
+first. A reported skip is evidence that the step already happened; a silent safe
+re-run is not.
+
+**What is left to find out is why the merge was refused.** The branch state is
+correct and nothing here repairs it. Report the reason from
+`gh pr view --json mergeStateStatus,mergeable` in STEP 9, alongside which STEPs
+this run skipped.
+
+### 2.4 The Recovery Route — merged, never indexed
+
+Reached from 2.1's bottom row. Work reached `main` and left no record. Stopping
+there would make the index quietly wrong about a delivery that shipped — the same
+lie as indexing work that never landed, in the other direction.
+
+This route runs **on `main`**, so `done.sh` cannot be used at all: its context
+mode needs a `[NNNN][L]` in the branch name and its merge mode refuses to run on
+`main`.
+
+1. **Resolve the feature from the merge commit's own diff**, matching
+   `docs/features/[NNNN][L]-*/`. This is the resolution STEP 3 already applies to
+   `CHANGED_FILES`, pointed at a commit instead of a branch.
+2. **Take the delivery facts from the merge commit**, not from a branch diff:
+
+```bash
+git show --name-status <merge-commit>
+```
+
+   The squash IS the delivery.
+3. Write the entry and the changelog, commit them on `main`, and push.
+
+```
+IF THE DIFF NAMES MORE THAN ONE docs/features/[NNNN][L]-*/ DIRECTORY:
+  ⛔ DO NOT: Pick one and continue
+  ⛔ DO NOT: Write an entry for the first match
+  ✅ DO: Print every candidate and ask which delivery this is, then STOP
+```
+
+   An epic merge touches several subfeature directories at once. Every other
+   resolver in this repository stops on ambiguity rather than guessing, and this
+   one decides which feature a delivery is filed under.
+
+```
+IF THE MERGE COMMIT CANNOT BE RESOLVED:
+  ⛔ DO NOT USE: Bash for delivered.sh write
+  ⛔ DO NOT: Reconstruct the diff from plan.md instead of from git
+  ✅ DO: Report it and STOP — an entry derived from a plan records intent, not delivery
+```
+
+⛔ **Recovery NEVER merges.** It runs `done.sh --merge` on nothing and calls
+`gh pr merge` on nothing: the merge already happened, which is the condition that
+put this run here.
+
+**Report in STEP 9 that the run took the recovery route, and why the entry landed
+after the merge rather than before it.** An entry whose commit sits after the
+delivery it describes is fine; one that hides how it got there is not.
+
 ---
 
 ## STEP 3: Resolve Directory from CHANGED_FILES

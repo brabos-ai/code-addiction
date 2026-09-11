@@ -388,3 +388,46 @@ describe('L6 — the PR merge route (F9)', () => {
     expect(s9).toMatch(/evidence/i);
   });
 });
+
+describe('L7 — the resume and recovery routes (F10)', () => {
+  const routes = () => {
+    const t = read(P.done);
+    return t.slice(t.indexOf('### 2.3'), t.indexOf('## STEP 3'));
+  };
+
+  it('L7.1: Resume names all four skipped steps', () => {
+    const r = routes();
+    // Internal's resume path skips three; the fourth here is product-specific
+    // (STEP 5's QA promotion), so naming three would silently re-run it.
+    for (const skipped of ['STEP 5', '6.3', '6.7', '6.8']) {
+      expect(r, `Resume must name ${skipped} as skipped`).toContain(skipped);
+    }
+  });
+
+  it('L7.2: Resume still runs every gate', () => {
+    expect(routes()).toMatch(/every gate|all .* gates/i);
+  });
+
+  it('L7.3: Recovery resolves the feature from the merge commit, not from plan.md', () => {
+    const r = routes();
+    expect(r).toContain('git show --name-status');
+    expect(r).toMatch(/docs\/features\/\[NNNN\]\[L\]/);
+    expect(r).toMatch(/DO NOT/);
+    expect(r).toMatch(/plan\.md/);
+  });
+
+  it('L7.4: more than one feature directory in the merge commit STOPS', () => {
+    const r = routes();
+    // An epic merge can touch several. Every other resolver in this repo stops
+    // on ambiguity rather than guessing, and this one indexes a delivery.
+    expect(r).toMatch(/more than one/i);
+    expect(r).toMatch(/STOP|ask/i);
+  });
+
+  it('L7.5: Recovery never merges', () => {
+    const r = routes();
+    expect(r).toMatch(/done\.sh --merge/);
+    expect(r).toMatch(/gh pr merge/);
+    expect(r).toMatch(/[Nn]ever/);
+  });
+});
