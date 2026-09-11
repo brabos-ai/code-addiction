@@ -591,7 +591,74 @@ IF RENDERING THE ENTRY:
 
 ## STEP 8: Execute Merge (AUTOMATIC)
 
-**Execute immediately after STEP 7.**
+**Execute immediately after STEP 7, on the route 2.2 chose.**
+
+### 8.1 The PR Route
+
+Taken when `PR_STATE=open`. The forge owns the merge, so its rules — required
+reviews, required checks, protected branches — are the ones that apply.
+
+```bash
+bash .codeadd/scripts/done.sh --commit-push
+```
+
+STEP 6's documents land on the branch and CI is re-triggered on the new commit.
+**That commit has not been tested yet**, which is the whole reason the next two
+items exist.
+
+```bash
+gh pr checks --watch --fail-fast
+```
+
+Then, **before reading the verdict**, compare the SHA:
+
+```bash
+gh pr view --json headRefOid --jq .headRefOid    # must equal:
+git rev-parse HEAD
+```
+
+⛔ **REFUSE a verdict from any other SHA.** A green check is evidence only for
+the commit it ran on. Without this the command reads yesterday's green run and
+calls today's untested code gated — the same class of lie as a gate that invokes
+a script that does not exist, and harder to see, because the output says pass.
+
+⛔ **Only `success` is a pass.** A `skipped`, `queued`, `neutral` or `cancelled`
+required check is the absence of evidence, and this gate treats absence exactly
+as it treats failure.
+
+**No required check configured at all → merge, and say so in the report.** A
+project with no workflows is not a project with a failing gate, and inventing a
+block there would make the PR route unusable.
+
+```bash
+gh pr merge --squash
+```
+
+Where the repository has auto-merge enabled, `gh pr merge --squash --auto` is the
+same guarantee without holding the session open.
+
+```bash
+bash .codeadd/scripts/done.sh --cleanup "$(gh pr view --json mergeCommit --jq .mergeCommit.oid)"
+```
+
+The sha is passed because a squash creates a NEW commit: the branch tip is not
+an ancestor of `main`, so nothing can derive it locally.
+
+```
+IF THE MERGE IS REFUSED:
+  ⛔ DO NOT USE: Bash for done.sh --cleanup
+  ⛔ DO NOT: Retry the merge with a different flag to get past the refusal
+  ✅ DO: Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` and STOP
+```
+
+The entry and the changelog then stay on the branch, absent from `main`, which is
+the honest state — and 2.1 routes the next run to **Resume**, which skips the
+three STEPs that already ran rather than writing their output twice.
+
+### 8.2 The Local Route
+
+Taken when 2.2 chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
+`no-gh` record, or `gh` is unavailable.
 
 ```bash
 bash .codeadd/scripts/done.sh --merge
@@ -599,10 +666,15 @@ bash .codeadd/scripts/done.sh --merge
 
 `done.sh --merge` handles everything: commit, push, merge to main, checkpoint cleanup, branch cleanup. It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag. It does commit — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag ownership is what `/add.build` lacks, not commits.
 
-⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
+⛔ DO NOT USE Bash for git add/commit/push manually. **`done.sh` owns every
+LOCAL git write on both routes** — the PR route calls its `--commit-push` and
+`--cleanup` modes rather than doing that work itself. `gh pr merge` is not a
+local git write: it asks the forge to merge, and touches no ref here. That is
+why it is the one call this command makes directly.
 
 **After merge, carry this into STEP 9 — do NOT print it here:**
 - Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
+- **Which evidence the gate accepted, and why** — the PR's checks on a named SHA, or the local route with the reason no PR was available.
 
 **Resolve the next command here, state it at STEP 9:**
 READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP 9 owns it.
@@ -626,6 +698,13 @@ Then, after the seven blocks, state:
 
 - The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
 - The delivery index entry that `delivered.sh` wrote, and the changelog path.
+- **Which evidence the merge gate accepted, and why.** On the PR route: the
+  checks that concluded and the SHA they ran on, or that the repository had no
+  required check configured. On the local route: that no PR existed, and which
+  `PUBLISH_RECORD` value said so. A gate that quietly changes which evidence it
+  accepts is worse than a slow one.
+- **Which route 2.1 and 2.2 chose**, and on a Resume run, the STEPs it skipped
+  and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
 - The next command, from the `add-ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
 

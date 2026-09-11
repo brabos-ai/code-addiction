@@ -331,3 +331,60 @@ describe('L5 — the close-out routes (F8)', () => {
     expect(read(P.done)).not.toMatch(/^> \*\*MODEL:\*\*/m);
   });
 });
+
+describe('L6 — the PR merge route (F9)', () => {
+  const step8 = () => {
+    const t = read(P.done);
+    return t.slice(t.indexOf('## STEP 8'), t.indexOf('## STEP 9'));
+  };
+
+  it('L6.1: the PR route runs its seven calls in order', () => {
+    const s8 = step8();
+    const order = [
+      'done.sh --commit-push',
+      'gh pr checks',
+      'headRefOid',
+      'gh pr merge --squash',
+      'done.sh --cleanup',
+    ];
+    let at = -1;
+    for (const token of order) {
+      const next = s8.indexOf(token);
+      expect(next, `${token} must appear in the PR route`).toBeGreaterThan(-1);
+      expect(next, `${token} must come after the step before it`).toBeGreaterThan(at);
+      at = next;
+    }
+  });
+
+  it('L6.2: the SHA comparison sits BEFORE the verdict is read', () => {
+    const s8 = step8();
+    // A green check is evidence only for the commit it ran on. Reading the
+    // verdict first and comparing after is the same bug with extra steps.
+    expect(s8.indexOf('headRefOid')).toBeLessThan(s8.indexOf('gh pr merge'));
+    expect(s8).toMatch(/refuse|REFUSE/);
+  });
+
+  it('L6.3: only success passes — the four non-pass conclusions are named', () => {
+    const s8 = step8();
+    for (const status of ['skipped', 'queued', 'neutral', 'cancelled']) {
+      expect(s8, `${status} must be named as not a pass`).toContain(status);
+    }
+  });
+
+  it('L6.4: no required check configured merges, and says so', () => {
+    const s8 = step8();
+    expect(s8).toMatch(/no required check/i);
+  });
+
+  it('L6.5: a refused merge stops before cleanup and routes the next run to Resume', () => {
+    const s8 = step8();
+    expect(s8).toMatch(/Resume/);
+    expect(s8).toMatch(/DO NOT/);
+  });
+
+  it('L6.6: the report names which evidence the gate accepted', () => {
+    const t = read(P.done);
+    const s9 = t.slice(t.indexOf('## STEP 9'));
+    expect(s9).toMatch(/evidence/i);
+  });
+});
