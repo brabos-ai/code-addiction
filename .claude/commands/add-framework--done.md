@@ -4,6 +4,7 @@
 - skill: add-commit
 - skill: add-final-report
 - skill: add-plan-authoring
+- skill: add-build-ledger
 - command: /add-framework--build
 - mention: /add-framework--plan
 - mention: /add-framework--brainstorm
@@ -129,7 +130,7 @@ Collect, and carry forward to STEP 3:
 
 - **The merge base and the diff** — `git diff --name-status main...HEAD` for the added, modified, deleted and renamed paths this branch introduced.
 - **The commits** — `git log --oneline main..HEAD`, short hashes.
-- **The ledger** — `docs/plans/<plan-basename>--ledger.md`, and every `F<n>:` line in it. Legacy plans written before the layer split ended use `S<n>`; read either.
+- **The ledger** — where it lives, what its lines look like and the legacy series a plan written before the layer split uses are all owned by `add-build-ledger`. Read it, and carry its per-block lines forward to the gate at 2.2.
 - **The graph** — `framwork/.codeadd/artefact-graph.json`, for classifying paths at STEP 3.
 
 **Three dots for the diff, two for the log, and neither is a typo.** Three-dot diff is merge-base-relative, which is exactly "what did this branch introduce" — a two-dot diff would also report, reversed, everything `main` gained since the branch point. Two-dot log is "commits on this branch and not on main", which is the question there. A sibling ruling in the product layer replaced a three-dot *pre-check* with two dots; that check asks the opposite question ("does main already have all of this?") and does not transfer here.
@@ -175,7 +176,9 @@ pass, and without it the command would write a second entry for one delivery.
 
 ### 2.2 The ledger gate — BEFORE the four commands
 
-**Every F-block in the plan's Execution Order must have a `complete` line in the ledger.** A block with a `Ruling:` line but no `complete` line is not complete.
+**Every F-block in the plan's Execution Order must have a `complete` line in the ledger.** A block that recorded only a ruling is not complete.
+
+**`add-build-ledger` owns those line shapes. This gate reads them and does not define them** — a second copy of a format drifts from the first, and the drift is invisible until the two disagree about what counts as delivered.
 
 A build may add F-blocks the plan did not have — a ruling records why. Those are reported, never required: this gate asks whether the PLAN was delivered, not whether the build stayed inside it.
 
@@ -409,7 +412,7 @@ IF PRODUCING ANY FILE UNDER docs/deliveries/<id>/:
 cmp "<source>" "docs/deliveries/<id>/<member>"   # silent = identical; ANY output → STOP
 ```
 
-⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename: `<basename>.md` becomes `plan.md`, `<basename>--ledger.md` becomes `ledger.md`. Contents never change.
+⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename, which **The Delivered Home** maps member by member. Contents never change.
 
 ```
 IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
