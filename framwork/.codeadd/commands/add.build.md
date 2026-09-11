@@ -77,7 +77,8 @@ STEP 13: Compliance Gate             → Cross-reference RF/RN vs implementation
 STEP 14: Integration verification    → Build MUST pass
 STEP 15: Mutate docs + Validation Gate → Cache rule + schema gate on plan.md/about.md
 STEP 16: Log iteration               → BEFORE informing user
-STEP 17: Completion                  → Inform user based on mode
+STEP 17: Publish [STOP]              → ask before pushing the branch and opening the PR
+STEP 18: Completion                  → Inform user based on mode
 ```
 
 **ABSOLUTE INVARIANTS (enforce at all gates):**
@@ -415,7 +416,7 @@ Ruling: <what you decided> — <why> — <what it costs if wrong>
 
 All three parts are required. The cost clause is what makes a ruling reviewable: a human reading "the
 caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong" can.
-STEP 17 reprints every one of them.
+STEP 18 reprints every one of them.
 
 ---
 
@@ -531,7 +532,7 @@ STEP 12.2 after it returns. Append one ledger line per round:
 - **Open review findings → THE BREAKER: rule and continue. Do NOT stop the session.** Adjudicate each open
   finding yourself and write one `Ruling:` line per finding to the ledger in the 10.0.3 format. Then move
   to the next task. A session parked on a question costs a day; a wrong ruling costs rework the human can
-  see and undo, and STEP 17 puts every ruling in front of them.
+  see and undo, and STEP 18 puts every ruling in front of them.
 - **A red build → the BUILD GATE stands.** A failing build is not a finding to adjudicate. Report the
   unresolved rows and the last `BUILD_ERRORS`, append the failure to the ledger, and STOP. ⛔ DO NOT
   continue to the next STEP as if the build passed, and ⛔ DO NOT rule a compile error away.
@@ -1029,7 +1030,52 @@ STEP 11.3 exist changes nothing here: they are not checkpoint commits.
 
 ---
 
-## STEP 17: Completion (Inform user based on mode)
+## STEP 17: Publish [STOP]
+
+**⛔ GATE:** A push to a shared remote is a side effect outside this working tree. ASK.
+
+The answer is RECORDED, not only acted on. `{{cmd:add.done}}` reads it to tell a
+deliberate local merge apart from a build that never reached this step — two
+states that need different behaviour, and which `gh pr view` alone cannot
+separate.
+
+| Condition | Do | Ledger line |
+|---|---|---|
+| Current branch is `main` or `master` | Do NOT offer. Report that the work is committed and needs a branch | `Publish: on-main — nothing offered` |
+| `gh` absent or not authenticated | Ask only whether to push the branch. Never mention a PR | `Publish: no-gh — pushed` or `Publish: no-gh — local` |
+| A PR already exists for this branch | Do NOT ask. Push, and say the existing PR was updated | `Publish: pr-updated <url>` |
+| Otherwise, the user says yes | `git push -u origin <branch>`, then `gh pr create`. Report the URL | `Publish: pr-opened <url>` |
+| Otherwise, the user says no | Nothing is pushed | `Publish: declined — local merge` |
+
+Append it through the script, like every other ledger event:
+
+```bash
+bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" "Publish: declined — local merge"
+```
+
+```
+IF THE CURRENT BRANCH IS main OR master:
+  ⛔ DO NOT USE: Bash for git push
+  ⛔ DO NOT: Offer the question at all
+  ✅ DO: Report that the work needs a branch before it can be published
+
+IF THE USER HAS NOT ANSWERED:
+  ⛔ DO NOT USE: Bash for git push
+  ⛔ DO NOT USE: Bash for gh pr create
+  ✅ DO: Ask, and WAIT
+```
+
+⛔ **The line is appended on EVERY path, including the three where nothing was
+pushed.** A missing line is what `{{cmd:add.done}}` reads as *nobody asked*, and it
+answers that by asking. A silent decline would re-ask a question the operator
+already answered.
+
+⛔ **This step never merges.** It opens a PR and stops. The merge belongs to
+`{{cmd:add.done}}`, behind its own gates.
+
+---
+
+## STEP 18: Completion (Inform user based on mode)
 
 **LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
@@ -1044,13 +1090,13 @@ Fill the blocks from this build:
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
   and the one or two places the work is most likely to have gone wrong.
 
-Then, after the seven blocks and before any metadata, print 17.1 and 17.2 below — whole, in their
+Then, after the seven blocks and before any metadata, print 18.1 and 18.2 below — whole, in their
 own shape.
 
 **Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
 its commit brackets.
 
-### 17.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
+### 18.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 
 **Every ruling reaches the human.** Grep the ledger for every line containing `Ruling:` — pre-flight
 conflict rulings and cap rulings alike — and reprint **all of them**, in the order they were made:
@@ -1080,7 +1126,7 @@ grep -n 'Ruling:' "${LEDGER_FILE}"
 Also surface, from the same ledger: deferred minors (count + one line each), parked findings, and any
 subagent failure line. These are not rulings and go in their own short list.
 
-### 17.2 Next command
+### 18.2 Next command
 
 **Always include suggested next command from ecosystem map:** Read skill `add-ecosystem` Main Flows section.
 - After development → `/add.review`

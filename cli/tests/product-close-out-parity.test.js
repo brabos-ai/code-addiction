@@ -37,6 +37,7 @@ const P = {
   planToReady: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan-to-ready.md'),
   commit: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-commit', 'SKILL.md'),
   build: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.build.md'),
+  sdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
 };
 
 /** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
@@ -45,6 +46,7 @@ const GATE_SWEEP = ['convergeGates', 'convergeBats', 'planToReady', 'commit', 'e
 // are what STEP 4.3 reads, and a block that names a sub-step it does not create
 // leaves a pointer resolving to nothing.
 
+const NL = String.fromCharCode(10);
 const exists = (p) => fs.existsSync(p);
 const read = (p) => (exists(p) ? fs.readFileSync(p, 'utf8') : '');
 
@@ -217,5 +219,72 @@ describe('L3 — add.done reads the fifth gate (F3)', () => {
     const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
     expect(s43).toContain('changelog.md');
     expect(s43).toContain('done.sh --merge');
+  });
+});
+
+describe('L4 — the publish question (F7)', () => {
+  const stepHeads = (text) =>
+    text.split(NL).filter((l) => /^## STEP \d+/.test(l));
+
+  it('L4.1: STEP 17 is Publish, STEP 18 is Completion, and no number repeats', () => {
+    const heads = stepHeads(read(P.build));
+    const s17 = heads.find((l) => l.startsWith('## STEP 17'));
+    const s18 = heads.find((l) => l.startsWith('## STEP 18'));
+    expect(s17, 'a STEP 17 must exist').toBeTruthy();
+    expect(s17).toMatch(/Publish/i);
+    expect(s18, 'a STEP 18 must exist').toBeTruthy();
+    expect(s18).toMatch(/Completion/i);
+    const nums = heads.map((l) => l.match(/^## STEP (\d+)/)[1]);
+    expect(new Set(nums).size, 'every STEP number is unique').toBe(nums.length);
+  });
+
+  it('L4.2: the STEPS IN ORDER block lists both steps', () => {
+    const text = read(P.build);
+    const block = text.slice(text.indexOf('STEPS IN ORDER'), text.indexOf('**ABSOLUTE INVARIANTS'));
+    expect(block).toMatch(/STEP 17:.*Publish/i);
+    expect(block).toMatch(/STEP 18:.*Completion/i);
+  });
+
+  it('L4.3: the behaviour table names every Publish string it can write', () => {
+    const text = read(P.build);
+    const step = text.slice(text.indexOf('## STEP 17'), text.indexOf('## STEP 18'));
+    for (const record of [
+      'Publish: on-main',
+      'Publish: no-gh',
+      'Publish: pr-updated',
+      'Publish: pr-opened',
+      'Publish: declined',
+    ]) {
+      expect(step, `the table must name ${record}`).toContain(record);
+    }
+  });
+
+  it('L4.4: the step forbids offering on main, pushing unasked, and merging', () => {
+    const text = read(P.build);
+    const step = text.slice(text.indexOf('## STEP 17'), text.indexOf('## STEP 18'));
+    expect(step).toMatch(/main.*master|master.*main/is);
+    expect(step).toMatch(/DO NOT USE: Bash for git push/);
+    expect(step).toMatch(/never merges|DO NOT.*merge/i);
+  });
+
+  it('L4.5: the canonical ledger format carries a Publish row', () => {
+    expect(read(P.sdd)).toMatch(/^Publish: /m);
+  });
+
+  // guard — measured before the renumber: nothing outside add.build.md cites
+  // either step number. A renumber that broke a cross-reference would be
+  // invisible to every other level here.
+  it('L4.6 (guard): no other artefact cites add.build STEP 17 or STEP 18', () => {
+    const offenders = sourceFiles()
+      .filter((f) => f !== P.build)
+      .filter((f) => {
+        // Line-scoped rather than one regex: a cross-file citation is always
+        // on one line, and matching per line needs no newline escape.
+        return read(f)
+          .split(NL)
+          .some((l) => l.includes('add.build') && /STEP 1[78]/.test(l));
+      })
+      .map((f) => path.relative(ROOT, f));
+    expect(offenders).toEqual([]);
   });
 });

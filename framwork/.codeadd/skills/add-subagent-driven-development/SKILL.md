@@ -147,6 +147,7 @@ T02: complete (commits d4e5f6a..b7c8d9e, review clean)
 T03: minor (deferred): magic number in retry backoff
 T04: parked — reviewer wants a null guard — Ruling: the caller already guards; costs a crash if wrong
 T04: complete (commits c1d2e3f..f9a8b7c, 1 parked)
+Publish: pr-opened https://github.com/org/repo/pull/42
 ```
 
 **The identity first line is written once, on creation.** A ledger whose identity changes mid-build is a
