@@ -31,7 +31,7 @@ Closes out a delivered plan in **either layer**: gates it against CI's own four 
 STEP 1: Collect context           → branch, plan, ledger, diff, `gh auth status`
 STEP 2: Gates                     → ledger complete + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
-STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
+STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
 STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
@@ -368,7 +368,9 @@ It rejects a record that breaks a hard ban with `REFUSED=<name>` and exit 2 — 
 
 ## STEP 4: Generate the Changelog
 
-Write `docs/changelog/YYYY-MM-DD-<verb>-<slug>.md` — the human narrative record, in prose, matching the existing files in that directory. It carries **why**, which the index deliberately does not.
+Write the human narrative record into `docs/changelog/`, in prose, matching the existing files in that directory. It carries **why**, which the index deliberately does not.
+
+**The filename is owned by `add-plan-authoring`** — read **File Naming** rather than re-deriving it here. Two commands declaring one format is how they drift, and this command was one of the two.
 
 The index entry and the changelog are not redundant: one is a machine-readable claim about what exists, the other is the reasoning a future reader needs.
 
