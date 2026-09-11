@@ -11,6 +11,7 @@ argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-
 - skill: add-doc-schemas
 - skill: add-doc-schemas/references/new-feature.md
 - skill: add-final-report
+- skill: add-review-discipline
 - agent: architecture-agent
 - agent: backend-agent
 - agent: consistency-agent
@@ -524,20 +525,20 @@ never runs, so nothing else here re-validates `plan.md` after a fix is applied.
 
 1. **DISPATCH** `@plan-reviewer-agent` with `path` = the `plan.md` just
    confirmed on disk, `kind: feature-plan`.
-2. **Act on the verdict:**
-   - `ok` → advance to STEP 4.
-   - `fix-then-ok` → apply only the Required fixes that do not invent a user
-     decision — answer any clarification from the Decision Log, exactly as the
-     roster's own clarification questions are answered above; never stop for
-     the user. **Re-run the `feature-plan` validation gate**
-     (`{{skill:add-doc-schemas/SKILL.md}}`) against the fixed `plan.md` before
-     re-review — this re-run is the step `/add.plan` STEP 12 would otherwise
-     have owned. Re-dispatch `@plan-reviewer-agent` **once**. After that single
-     re-dispatch, advance to STEP 4 unless the verdict is still `blocked` or
-     blockers remain.
-   - `blocked`, or blockers still standing after the one re-dispatch →
-     **BLOCKED exit for this subfeature.** Report the blockers verbatim, and do
-     NOT advance to STEP 4.
+2. **Act on the verdict.** **LOAD
+   `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each
+   reader runs, what makes a second dispatch legal, how a divergence is handled
+   at this site, and what you owe a report you receive. Three things are
+   specific to this site and stay here:
+
+   - **Answer a clarification from the Decision Log**, exactly as the roster's
+     own clarification questions are answered above. Never stop for the user —
+     the loop is autonomous by contract.
+   - **The re-gate is the `feature-plan` validation gate**
+     (`{{skill:add-doc-schemas/SKILL.md}}`) against the fixed `plan.md`. That
+     re-run is the step `/add.plan` STEP 12 would otherwise have owned.
+   - **A standing blocker is a BLOCKED exit for this subfeature**, not a stop.
+     Report the blockers verbatim and do NOT advance to STEP 4.
 3. ⛔ Never stop to ask the user during this exchange — the loop is autonomous
    by contract, same as the clarification-questions rule above.
 

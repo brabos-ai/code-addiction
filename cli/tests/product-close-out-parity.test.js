@@ -42,7 +42,13 @@ const P = {
   discipline: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-review-discipline', 'SKILL.md'),
   disciplineInternal: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
   providerMap: path.join(ROOT, 'framwork', 'provider-map.json'),
+  newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.new.md'),
+  brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.brainstorm.md'),
+  plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan.md'),
 };
+
+/** The four commands that restated the discipline before F17. */
+const CALLERS = ['newCmd', 'brainstorm', 'plan', 'planToReady'];
 
 /** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
 const GATE_SWEEP = ['convergeGates', 'convergeBats', 'planToReady', 'commit', 'ecosystem'];
@@ -697,5 +703,42 @@ describe('L13 — the internal sibling note (F16)', () => {
     const t = read(P.disciplineInternal);
     expect(t).toMatch(/exactly once/i);
     expect(t).toMatch(/at most twice/i);
+  });
+});
+
+describe('L14 — the four callers cite the skill (F17)', () => {
+  it('L14.1: every caller loads add-review-discipline', () => {
+    for (const key of CALLERS) {
+      expect(read(P[key]), `${key} must cite the skill`).toContain('add-review-discipline');
+    }
+  });
+
+  it('L14.2: every caller declares it in its uses block', () => {
+    for (const key of CALLERS) {
+      expect(uses(read(P[key])), `${key} must declare it`).toContain('add-review-discipline');
+    }
+  });
+
+  it('L14.3: none of them restates the verdict table any more', () => {
+    for (const key of CALLERS) {
+      const t = read(P[key]);
+      // The three verdicts spelled out together IS the table. One name in a
+      // sentence is a reference; all three in a list is a second copy.
+      const restates = /`ok`[\s\S]{0,400}`fix-then-ok`[\s\S]{0,400}`blocked`/.test(t);
+      expect(restates, `${key} must not restate the verdict table`).toBe(false);
+    }
+  });
+
+  // guards — what each site must NOT lose.
+  it('L14.4 (guard): every dispatch keeps its own inputs', () => {
+    expect(read(P.newCmd)).toContain('feature-about');
+    expect(read(P.brainstorm)).toContain('brainstorm');
+    expect(read(P.plan)).toContain('feature-plan');
+  });
+
+  it('L14.5 (guard): add.plan-to-ready keeps its Decision Log comparator', () => {
+    const t = read(P.planToReady);
+    expect(t).toContain('Decision Log');
+    expect(t).toMatch(/does NOT stop|DO NOT: STOP/);
   });
 });
