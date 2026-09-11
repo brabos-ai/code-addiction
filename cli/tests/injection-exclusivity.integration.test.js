@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 const warnSpy = vi.hoisted(() => vi.fn());
@@ -13,6 +12,7 @@ import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin, disablePlugin } from '../src/plugins.js';
 import { parseFragmentSections } from '../src/injection-core.js';
 import { PROVIDERS } from '../src/providers.js';
+import { treeFixture } from './helpers/tree-fixture.js';
 
 /**
  * Exhaustive substitution matrix: every sidecar point, every fragment section,
@@ -245,25 +245,51 @@ function pointKey(p) {
   return `${p.namespace}:${p.name}:${p.section}:${p.resource.kind}:${p.resource.name}`;
 }
 
+/**
+ * Every provider directory plus .codeadd — the widest fixture in the suite,
+ * which is why it cost ~2.1s per test to build from source. The helper builds
+ * it once for the file and copies the template per test instead.
+ *
+ * The source list is `PROVIDERS` itself, so a provider added or removed there
+ * carries into the fixture with no edit here. A src that has not been built is
+ * skipped, exactly as the hook this replaces did.
+ */
+const fixture = treeFixture({
+  prefix: 'inj-ex-',
+  copy: [
+    ...Object.values(PROVIDERS).map((meta) => ({ src: meta.src, dest: meta.dest })),
+    { src: 'framwork/.codeadd', dest: '.codeadd' },
+  ],
+  manifest: {
+    at: '.codeadd/manifest.json',
+    data: { version: '0.0.0', providers: Object.keys(PROVIDERS), features: {}, plugins: {}, hashes: {} },
+  },
+});
+
+/**
+ * Called by the three describes whose every test writes to a project root.
+ *
+ * The fourth describe here — substitution completeness — reads the sidecar,
+ * the fragments and the REAL built files, and never opens a copy. It used to
+ * pay for one anyway.
+ */
+function useFixture() {
+  beforeEach(() => {
+    tmp = fixture.root();
+    forceDetectableCatalog();
+  });
+}
+
 beforeEach(() => {
   warnSpy.mockClear();
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-ex-'));
-  for (const [, meta] of Object.entries(PROVIDERS)) {
-    const src = path.join(ROOT, meta.src);
-    if (fs.existsSync(src)) fs.cpSync(src, path.join(tmp, meta.dest), { recursive: true });
-  }
-  fs.cpSync(CODEADD, path.join(tmp, '.codeadd'), { recursive: true });
-  fs.writeFileSync(
-    path.join(tmp, '.codeadd', 'manifest.json'),
-    JSON.stringify({ version: '0.0.0', providers: Object.keys(PROVIDERS), features: {}, plugins: {}, hashes: {} }, null, 2),
-  );
-  forceDetectableCatalog();
 });
 
 afterEach(() => {
   delete process.env.CODEADD_PLUGINS_CATALOG;
-  fs.rmSync(tmp, { recursive: true, force: true });
+  fixture.cleanup();
 });
+
+afterAll(() => fixture.dispose());
 
 describe('substitution completeness (catalog × fragments × sidecar × built anchors)', () => {
   // 39 -> 40: the docs-pruning feature adds ONE section on add.done (plan
@@ -327,6 +353,8 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
 });
 
 describe('feature substitution on real built files', () => {
+  useFixture();
+
   for (const feature of FEATURE_NAMES) {
     it(`${feature}: full block exactly-once, disable byte-identical, re-enable idempotent`, () => {
       const matrix = loadFeatureMatrix().filter((e) => e.name === feature);
@@ -353,6 +381,8 @@ describe('feature substitution on real built files', () => {
 });
 
 describe('plugin substitution on real built files', () => {
+  useFixture();
+
   for (const plugin of PLUGIN_NAMES) {
     it(`${plugin}: full block exactly-once, skills byte-identical, disable restores`, () => {
       const matrix = loadPluginMatrix().filter((e) => e.name === plugin);
@@ -376,6 +406,8 @@ describe('plugin substitution on real built files', () => {
 });
 
 describe('combined substitution and sibling isolation', () => {
+  useFixture();
+
   it('all 40 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
