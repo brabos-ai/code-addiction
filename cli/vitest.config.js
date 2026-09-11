@@ -1,27 +1,40 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Test files run one at a time, on purpose.
+ * Test files run one at a time, on purpose — but not for the reason this
+ * comment used to give.
  *
- * Several suites operate on the REAL built tree rather than a fixture:
- * build.test.js writes provider output, injection-roundtrip and
- * qa-reachability enable/disable injection into framwork/.claude/** and assert
- * byte-identical round-trips, and doctor/plugins/updater spawn node
- * subprocesses against it. Run in parallel workers they interleave on the same
- * files.
+ * It used to say that build.test.js wrote provider output into the real tree,
+ * that the injection round-trips enabled and disabled injection inside
+ * framwork/.claude/**, and that parallel workers therefore collided on the same
+ * files until Windows reported EBUSY. Both halves were fixed in the tests
+ * themselves and the comment was never updated. build.test.js redirects every
+ * write into a temp directory through its redirected() helper, and all four
+ * round-trip suites copy the tree before touching it. They only read the real
+ * tree now, and concurrent readers do not produce EBUSY.
  *
- * On Windows that surfaces as EBUSY — a reader holding an open handle blocks a
- * writer — and the failure lands on a DIFFERENT random test each run. Three
- * full runs on this branch failed 8, then 6, then 6 tests with almost no
- * overlap, and every one of them passed in isolation. A run of `main` with none
- * of these changes failed 5. It reads exactly like a flaky regression and is
- * impossible to bisect.
+ * What does reproduce is different, and was measured on 2026-09-11, both ways,
+ * on the same Windows machine in the same session:
  *
- * POSIX CI never sees it (replacing a file another process has open is legal
- * there), so this costs wall time on Linux to buy a suite that is trustworthy
- * on the machine the work actually happens on. The alternative — rewriting
- * every real-tree suite to build into a temp root — is a much larger change
- * that would touch the very injection round-trips it is meant to protect.
+ *   serial               208s, 2 failures
+ *   --file-parallelism   153s, 12 failures
+ *
+ * Every one of those twelve is a timeout, and every one is in a file that
+ * spawns a subprocess: bin-entrypoint, graph-mcp, graph-query, plugins,
+ * updater, inventory, features. Twelve workers on one machine cannot give a
+ * spawn its 5000ms. The heaviest suite got slower rather than faster —
+ * qa-reachability went from 105.8s to 149.3s — because the workers were
+ * fighting over one disk, which is also why the 26% saved is far less than
+ * twelve-way parallelism suggests.
+ *
+ * So it buys about a quarter of the wall time for ten new failures, and slows
+ * down the file that dominates the run. Meanwhile the fixture work in plan
+ * 2026-09-11T005514 took the serial run from 164s to under 80s on the same
+ * machine without touching this setting at all.
+ *
+ * Worth re-measuring if the subprocess-spawning suites ever stop spawning, or
+ * if their timeouts are sized for contention the way graph-query's history
+ * block now is. Until then, serial.
  */
 export default defineConfig({
   test: {
