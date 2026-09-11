@@ -288,3 +288,46 @@ describe('L4 — the publish question (F7)', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('L5 — the close-out routes (F8)', () => {
+  const step2 = () => {
+    const t = read(P.done);
+    return t.slice(t.indexOf('## STEP 2'), t.indexOf('## STEP 3'));
+  };
+
+  it('L5.1: the four states are crossed, each naming its route', () => {
+    const s2 = step2();
+    for (const route of ['Normal', 'Resume', 'Closed out', 'Recovery']) {
+      expect(s2, `the cross must name the ${route} route`).toContain(route);
+    }
+    expect(s2).toContain('INDEX_ENTRY');
+    expect(s2).toContain('MERGED_ON_MAIN');
+  });
+
+  it('L5.2: the PR_STATE x PUBLISH_RECORD table routes an unasked build to ASK', () => {
+    const s2 = step2();
+    expect(s2).toContain('PUBLISH_RECORD');
+    expect(s2).toContain('PR_STATE');
+    // The row the whole record exists for: no PR and no line means nobody was
+    // asked, so the close-out asks rather than assuming a local merge.
+    expect(s2).toMatch(/ASK/);
+  });
+
+  it('L5.3: no-gh never routes to the PR route', () => {
+    const s2 = step2();
+    expect(s2).toContain('no-gh');
+    expect(s2).toMatch(/no-gh[^|]*\|[^|]*[Ll]ocal/);
+  });
+
+  it('L5.4: STEP 2 reads the probe and computes neither fact itself', () => {
+    const s2 = step2();
+    // Both facts come from done.sh's ROUTE block. Recomputing them here is how
+    // two readers of one tree end up disagreeing.
+    expect(s2).toMatch(/DO NOT/);
+    expect(s2).toMatch(/gh pr view|delivered\.jsonl/);
+  });
+
+  it('L5.8: add.done carries no model pin', () => {
+    expect(read(P.done)).not.toMatch(/^> \*\*MODEL:\*\*/m);
+  });
+});

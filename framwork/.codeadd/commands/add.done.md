@@ -19,7 +19,6 @@
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **MODEL:** Use `haiku` model
 
 Coordinator for branch finalization. Generates the changelog from changeset analysis and auto-merges to main. Same flow for all branch types (feature, hotfix, refactor, chore, docs) — review gate applies to features only.
 
@@ -30,7 +29,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 **STEPS IN ORDER:**
 ```
 STEP 1: done.sh                 -> RUN FIRST (collect context)
-STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID
+STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
 STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger gates (feature only)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
@@ -108,6 +107,62 @@ bash .codeadd/scripts/done.sh
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
 All recognized types proceed to STEP 4. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
+
+
+### 2.1 Cross the Two Facts, Then Route
+
+`done.sh`'s `ROUTE` block already emitted both. **Read them; compute neither.**
+Two readers of one tree that derive the same fact separately are two readers that
+can disagree, which is the whole reason `converge-gates.sh` exists.
+
+```
+IF ROUTING THIS RUN:
+  ⛔ DO NOT USE: Bash for gh pr view — PR_STATE, PR_URL and PR_MERGE_COMMIT are already parsed
+  ⛔ DO NOT USE: Read on docs/delivered.jsonl to decide whether an entry exists — INDEX_ENTRY says
+  ✅ DO: Route on the probe's values
+```
+
+**`MERGED`** is `PR_STATE=merged` when a PR exists, and `MERGED_ON_MAIN=yes`
+otherwise. `MERGED_ON_MAIN=unknown` is NOT a merge: it means `origin/<main>`
+could not be read, and a route that deletes branches never runs on a guess.
+
+| MERGED | INDEX_ENTRY | Route | What runs |
+|---|---|---|---|
+| no | `absent` or `no-index` | **Normal** | Everything, as written below |
+| no | **`present`** | **Resume** | Every gate runs. STEP 5's promotion, 6.3, 6.7 and 6.8 are SKIPPED. The merge is the only work left |
+| yes | `present` | **Closed out** | Report it and STOP. There is nothing to do |
+| yes | **`absent`** | **Recovery** | Runs on `main`. Writes the entry and the changelog. Never merges |
+
+**The Resume row is what a refused merge leaves behind, and it is not rare.** A
+review thread left unresolved, an approval dismissed by a push, a required check
+that went red on the docs commit. Falling through to Normal writes a **second**
+entry for one delivery — the exact defect this cross exists to stop.
+
+**The Closed out row is what makes a second run on the same branch safe.** Every
+gate below would still pass, and without the row the command would write that
+second entry itself.
+
+### 2.2 Which Merge Route, and Why the Record Exists
+
+Truth on the forge outranks the record. The record's only job is telling
+*declined* apart from *never asked* — two states that both look like "no PR".
+
+| `PR_STATE` | `PUBLISH_RECORD` | Route |
+|---|---|---|
+| `open` | anything | **PR route.** A PR that exists IS the route, whatever the ledger says |
+| `none` | `declined` | **Local route.** The operator chose it |
+| `none` | `on-main` or `no-gh` | **Local route.** No PR was ever possible |
+| `none` | `none` | **ASK.** Nobody was asked, so ask now |
+| `none` | `pr-opened` or `pr-updated` | **ASK**, and report it — the PR was closed or deleted after the build recorded it |
+| `closed` | anything | **ASK**, and report that the PR was closed unmerged |
+| `no-gh` | anything | **Local route**, and say in the report that `gh` was unavailable |
+
+```
+IF PR_STATE IS no-gh:
+  ⛔ DO NOT: Take the PR route in any combination
+  ⛔ DO NOT: Report the absence of gh as a failure — it is a probe value
+  ✅ DO: Take the local route and name the reason in the final report
+```
 
 ---
 
