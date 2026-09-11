@@ -229,10 +229,12 @@ const WRITING_FLAGS = new Set(['--repair', '--write', '--fix']);
 function history(graph, ref, opts = {}) {
   const node = resolve(graph, ref);
 
-  // `delivered.sh read` matches free text against id, name, words, items[].what
-  // and items[].find — NEVER against `node`. So the query is the bare name and
-  // the `node` filter below is what makes this an answer about the ARTEFACT
-  // rather than about the word.
+  // `delivered.sh read` matches free text against id, name, words, `node` and
+  // items[].what / items[].find — never against items[].at, which --repair
+  // rewrites. So the query is the bare name, and it now reaches an entry whose
+  // only mention of this artefact is its `node`. The filter below still runs:
+  // the text search can match a word rather than the artefact, and the filter
+  // is what makes this an answer about the ARTEFACT.
   const name = node.slice(node.lastIndexOf('/') + 1);
 
   const unavailable = (reason, detail) => ({

@@ -28,6 +28,8 @@ flowchart LR
     n_internal_command_add_framework__build --> n_internal_command_add_framework__sync
     n_internal_command_add_framework__build -.-> n_internal_command_add_framework__done
     n_internal_command_add_framework__done --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__done -.-> n_internal_command_add_framework__brainstorm
+    n_internal_command_add_framework__done -.-> n_internal_command_add_framework__plan
     n_internal_command_add_framework__plan --> n_internal_command_add_framework__build
     n_internal_command_add_framework__sync --> n_internal_command_add_framework__release
     n_product_command_add --> n_product_command_add_brainstorm

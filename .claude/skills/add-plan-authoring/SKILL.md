@@ -12,6 +12,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
 - mention: /add-framework--done
+- mention: /add-framework--build
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -31,10 +32,38 @@ shaped, reviewed and delivered is here.
 
 ## File Naming
 
-**Path:** `docs/plans/YYYY-MM-DDTHHMMSS-PLAN--<slug>.md`
+Two documents are named here, and they share one timestamp rule:
+
+| Document | Path |
+|---|---|
+| The plan | `docs/plans/YYYY-MM-DDTHHMMSS-PLAN--<slug>.md` |
+| The changelog | `docs/changelog/YYYY-MM-DDTHHMMSS-<verb>-<slug>.md` |
 
 Timestamp in **local time**, `T` between date and time, **no separators inside `HHMMSS`** — Windows
 forbids `:` in a filename. Lexicographic sort therefore equals chronological sort.
+
+`<verb>` is `add` | `update` | `refactor` | `remove` | `fix`. **It survives the timestamp**: once the
+timestamp leads it no longer affects order, and it is information the files already carry. The date
+alone did not sort — a day with several deliveries alphabetised by verb, and the directory holds days
+that did.
+
+⛔ **Pre-existing changelogs keep the names they were written with**, exactly as pre-existing plans do
+below. Nothing reads a changelog by its filename, so a rename rewrites files for no reader.
+
+**Both writers point here and neither declares a pattern of its own** — `/add-framework--build` at
+its STEP 8, `/add-framework--done` at its STEP 4. Two commands declaring one format is how they drift.
+
+```
+⛔ ONE CHANGELOG PER DELIVERY:
+  ⛔ DO NOT: Allocate a timestamp for a delivery that already has a changelog
+  ⛔ DO NOT USE: Write on a new path when a file in docs/changelog/ already covers this delivery
+  ✅ DO: Find that file, EDIT it in place, and keep the filename it already has
+```
+
+**The timestamp is what makes that rule necessary.** Under the date-only name both writers computed
+one path, so the second landed on the first file and the directory ended up holding one changelog per
+delivery by accident. Two timestamps differ by the seconds between the two commands. Without the rule
+above, one delivery reaches `main` as two files that each tell half of its story.
 
 ```
 ⛔ THERE IS NOTHING TO LOOK UP:

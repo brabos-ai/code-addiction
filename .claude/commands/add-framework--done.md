@@ -4,7 +4,10 @@
 - skill: add-commit
 - skill: add-final-report
 - skill: add-plan-authoring
+- skill: add-build-ledger
 - command: /add-framework--build
+- mention: /add-framework--plan
+- mention: /add-framework--brainstorm
 -->
 
 <!--
@@ -29,7 +32,7 @@ Closes out a delivered plan in **either layer**: gates it against CI's own four 
 STEP 1: Collect context           → branch, plan, ledger, diff, `gh auth status`
 STEP 2: Gates                     → ledger complete + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
-STEP 4: Generate the changelog    → docs/changelog/YYYY-MM-DD-<verb>-<slug>.md
+STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
 STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
@@ -61,11 +64,15 @@ IF CI HAS NOT CONCLUDED, OR CONCLUDED ON A DIFFERENT SHA:
 NOTE: `gh pr create` is NOT prohibited here. CI triggers on `pull_request`, so the PR is what
 makes the gate runnable at all — STEP 2.3 creates it before the gate can conclude.
 
-IF STEP 3 WROTE NO ENTRY:
+IF THE INDEX CARRIES NO ENTRY FOR THIS PLAN:
   ⛔ DO NOT USE: Bash to run rm on anything
   ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
   ⛔ DO NOT USE: Bash to run git worktree remove
   ✅ DO: Skip STEP 8 entirely
+
+  **The condition is the entry's existence, never which STEP wrote it.** On the resume path at 2.5
+  STEP 3 is skipped, so a rule keyed to "STEP 3 wrote one" would skip the cleanup of a delivery whose
+  entry is committed, pushed and merged.
 
 IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   ⛔ DO NOT USE: Bash to run rm on it
@@ -75,7 +82,7 @@ IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
   `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
 
-ALWAYS:
+ALWAYS — THIS COMMAND ENDS WORK IT DID NOT START:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
   ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
@@ -123,7 +130,7 @@ Collect, and carry forward to STEP 3:
 
 - **The merge base and the diff** — `git diff --name-status main...HEAD` for the added, modified, deleted and renamed paths this branch introduced.
 - **The commits** — `git log --oneline main..HEAD`, short hashes.
-- **The ledger** — `docs/plans/<plan-basename>--ledger.md`, and every `F<n>:` line in it. Legacy plans written before the layer split ended use `S<n>`; read either.
+- **The ledger** — where it lives, what its lines look like and the legacy series a plan written before the layer split uses are all owned by `add-build-ledger`. Read it, and carry its per-block lines forward to the gate at 2.2.
 - **The graph** — `framwork/.codeadd/artefact-graph.json`, for classifying paths at STEP 3.
 
 **Three dots for the diff, two for the log, and neither is a typo.** Three-dot diff is merge-base-relative, which is exactly "what did this branch introduce" — a two-dot diff would also report, reversed, everything `main` gained since the branch point. Two-dot log is "commits on this branch and not on main", which is the question there. A sibling ruling in the product layer replaced a three-dot *pre-check* with two dots; that check asks the opposite question ("does main already have all of this?") and does not transfer here.
@@ -138,21 +145,41 @@ Collect, and carry forward to STEP 3:
 
 Run `gh pr view --json state,mergedAt` for the current branch, then check whether `docs/delivered.jsonl` already carries an entry whose `id` is this plan's basename.
 
-**Two different states hide behind "already merged":**
+**Cross the two facts. All four combinations are reachable, and each routes differently:**
 
 | PR | Entry for this plan | Action |
 |---|---|---|
-| Open | — | Normal path. Continue |
+| Open | no | Normal path. Continue |
+| Open | **yes** | **Resume path — 2.5.** STEP 3, STEP 4 and STEP 6 already ran. Continue, and skip them |
 | Merged | yes | Nothing to close out. Report and STOP |
 | Merged | **no** | **Recovery path — 2.4.** Continue |
 
-The middle row is what makes a second run on the same branch safe: the gates below would all still pass, and without it the command would write a second entry for one delivery.
+```
+IF AN ENTRY FOR THIS PLAN IS ALREADY IN THE INDEX AND THE PR IS STILL OPEN:
+  ⛔ DO NOT USE: Write on docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on docs/changelog/
+  ⛔ DO NOT USE: Bash to run cp into docs/deliveries/<id>/
+  ⛔ DO NOT: Re-run STEP 3, STEP 4 or STEP 6 to confirm what is already committed
+  ✅ DO: Confirm the committed entry's `id` is this plan's basename, then continue THROUGH 2.2 and
+         2.3 — 2.5 lists which STEPs are skipped, and the gates are not among them
+```
+
+**The second row is the state a refused merge leaves behind, and it is not rare.** STEP 6 commits the
+entry, the changelog and the archive in one commit, and STEP 7 can then be refused — a review thread
+still unresolved, an approval dismissed by the push, an unattributed change. The branch is left holding
+a complete and correct entry. Falling through to the normal path writes a **second** entry for one
+delivery, which is exactly what a three-row table did on PR #49.
+
+**The third row is what makes a second run on the same branch safe:** the gates below would all still
+pass, and without it the command would write a second entry for one delivery.
 
 **The bottom row is the case the index exists for.** Work reached `main` and left no record. Stopping there would make the index quietly wrong about a delivery that shipped — the same lie as indexing work that never landed, in the other direction. It is recoverable, so recover it.
 
 ### 2.2 The ledger gate — BEFORE the four commands
 
-**Every F-block in the plan's Execution Order must have a `complete` line in the ledger.** A block with a `Ruling:` line but no `complete` line is not complete.
+**Every F-block in the plan's Execution Order must have a `complete` line in the ledger.** A block that recorded only a ruling is not complete.
+
+**`add-build-ledger` owns those line shapes. This gate reads them and does not define them** — a second copy of a format drifts from the first, and the drift is invisible until the two disagree about what counts as delivered.
 
 A build may add F-blocks the plan did not have — a ruling records why. Those are reported, never required: this gate asks whether the PLAN was delivered, not whether the build stayed inside it.
 
@@ -211,7 +238,7 @@ left to do:
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
 | 7 | Merge the PR | **Skipped.** Already merged |
-| 8 | Cleanup | Unchanged — the merged branch is still there to delete |
+| 8 | Cleanup | The merged branch is still there to delete. Check 2 of the five reads the merge commit resolved at 1.3, not a PR |
 
 ```
 IF THE MERGE COMMIT CANNOT BE RESOLVED:
@@ -227,6 +254,30 @@ without the ledger there is no evidence the plan was finished, only that somethi
 **Report in STEP 9 that the run took the recovery path, and why the entry landed after the merge
 rather than before it.** An entry whose commit sits after the delivery it describes is fine; an entry
 that hides how it got there is not.
+
+### 2.5 The Resume Path — written, pushed, merge refused
+
+Reached only from 2.1's second row. **Every gate above still applies in full**, exactly as they do on
+the recovery path. What changes is that three STEPs already ran and must not run again:
+
+| Step | Normal | Resume |
+|---|---|---|
+| 2.3 | Sync, push, wait for CI | Unchanged. The run to read is the one on the docs commit STEP 6 already pushed |
+| 3 | Author the index entry | **Skipped.** The entry is committed on the branch |
+| 4 | Generate the changelog | **Skipped.** Committed by the same STEP 6 commit |
+| 5 | Preview | Shows what is already committed, so nothing is proposed |
+| 6 | Archive, commit and push | **Skipped.** `docs/deliveries/<id>/` is assembled and committed |
+| 7 | Merge the PR | The only work left |
+| 8 | Cleanup | Unchanged |
+
+⛔ **STEP 4 is skipped with the other two, and the reason is not symmetry.** The changelog filename
+carries a timestamp, so a second STEP 4 does not overwrite the first — it writes a **second file** for
+one delivery, and both then reach `main`. STEP 3's duplicate is at least visible as two lines sharing
+an `id`; this one reads as two separate deliveries.
+
+**What is left to do is find out why the merge was refused.** The branch state is correct and nothing
+here repairs it. Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` in STEP
+9, alongside which STEPs this run skipped.
 
 ---
 
@@ -321,7 +372,11 @@ It rejects a record that breaks a hard ban with `REFUSED=<name>` and exit 2 — 
 
 ## STEP 4: Generate the Changelog
 
-Write `docs/changelog/YYYY-MM-DD-<verb>-<slug>.md` — the human narrative record, in prose, matching the existing files in that directory. It carries **why**, which the index deliberately does not.
+Write the human narrative record into `docs/changelog/`, in prose, matching the existing files in that directory. It carries **why**, which the index deliberately does not.
+
+**The filename and the one-per-delivery rule are owned by `add-plan-authoring`** — read **File Naming** rather than re-deriving them here.
+
+⛔ **`/add-framework--build` STEP 8 normally wrote one already.** Look for this delivery's changelog before writing anything: when one exists, EDIT it and keep its filename. Allocating a second timestamp puts two files on `main` for one delivery, each telling part of its story.
 
 The index entry and the changelog are not redundant: one is a machine-readable claim about what exists, the other is the reasoning a future reader needs.
 
@@ -360,7 +415,7 @@ IF PRODUCING ANY FILE UNDER docs/deliveries/<id>/:
 cmp "<source>" "docs/deliveries/<id>/<member>"   # silent = identical; ANY output → STOP
 ```
 
-⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename: `<basename>.md` becomes `plan.md`, `<basename>--ledger.md` becomes `ledger.md`. Contents never change.
+⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename, which **The Delivered Home** maps member by member. Contents never change.
 
 ```
 IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
@@ -407,7 +462,7 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 ## STEP 8: Cleanup (NON-FATAL, IN ORDER)
 
-**Run only if STEP 3 wrote an entry and STEP 7's merge succeeded.**
+**Run only if the index carries this plan's entry and STEP 7's merge succeeded.**
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
@@ -416,6 +471,61 @@ IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
   ⛔ DO NOT USE: Bash to run rm on it
   ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and STEP 7 merged that copy
 ```
+
+### The five post-merge checks — BEFORE any deletion
+
+That prohibition is the whole safety condition for the three deletions below, and nothing here used to
+evaluate it. These five checks are how it is evaluated. **Run all five, then decide once.**
+
+```bash
+git fetch origin main                                               # 1. the ref every check reads
+gh pr view --json state,mergeCommit                                 # 2. MERGED, with a merge commit
+git show origin/main:docs/deliveries/<id>/<file-member>             # 3. every file member resolves
+git show origin/main:docs/delivered.jsonl | grep '"id":"<id>"'      # 4. the entry is there
+git show origin/main:docs/deliveries/<id>/<file-member> | cmp - <local-original>   # 5. byte-identical
+```
+
+⛔ **The fetch is check 1, not a preamble, and its failure refuses the deletions like any other.**
+`origin/main` is a local ref and `gh pr merge` moves the branch on the server without moving it here,
+so a fetch that fails — offline, expired auth, a revoked token — leaves the ref at the branch point
+and checks 3 to 5 then pass against an archive `main` has never seen. Numbering it is what puts it
+inside the gate below; a mandatory step outside the gate is the check nothing reports.
+
+⛔ **Checks 3 and 5 run on FILES.** `git show` on a directory prints a listing and `cmp` against one
+errors, so a delivery carrying an `evidences/` member would refuse its own cleanup. Expand that member
+to the files inside it and check each.
+
+⛔ **On the recovery path check 2 has no PR to read.** 2.4 runs on `main` and STEP 7 never ran there,
+so `gh pr view` resolves nothing. Prove the merge from the merge commit 2.4 already resolved instead,
+and say in STEP 9 which of the two proved it.
+
+⛔ **Check 5 is the one that catches a real case, and `cmp` is silent on success.** A ledger appended
+to after STEP 6's archive commit and never re-copied leaves the local original AHEAD of `main`: the
+member is present, the entry is present, and the copy about to be deleted is the newer of the two.
+Read the exit status. **Reporting a pass because nothing was printed is claiming a check that never
+ran**, and this is the check where that is easiest to do.
+
+```
+IF ANY OF THE FIVE CHECKS FAILED:
+  ⛔ DO NOT USE: Bash to run rm on anything
+  ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
+  ⛔ DO NOT USE: Bash to run git worktree remove
+  ⛔ DO NOT: Re-copy the file and delete the original in the same run — the archive on main is what
+             the index entry points at, and repairing it is a change main has to receive
+  ✅ DO: Name the failing check and the path it failed on, print the suggestion below, and go to
+         STEP 9 with every deletion skipped
+```
+
+**The fix suggestion is printed as text, for the operator to act on.** Emit the line:
+
+    /add-framework--plan <what failed, in a few words>
+
+⛔ **The close-out is not a planner.** It prints that line and stops there, the same text-only handoff
+`/add-framework--brainstorm` makes. A close-out that started a planning session of its own would turn
+a skipped cleanup into work nobody asked for, on a branch that is already merged.
+
+**A refused deletion is not a failed delivery.** The entry, the changelog and the archive are on
+`main`; what is left behind is a local file and possibly a branch, and STEP 9 says so.
 
 **Order is forced**, because a branch checked out in a worktree cannot be deleted:
 
@@ -473,8 +583,13 @@ Then, after the seven blocks and before the metadata, report always:
 - The changelog path
 - The PR number and its merge state
 - **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
+- **The five post-merge checks and their results, one line each**, whether they passed or refused the
+  deletions, and whether check 2 read the PR or the merge commit. When one failed, name it, name the path, and print the `/add-framework--plan` suggestion
+  STEP 8 composed — as text the operator runs, never as something this command ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
+- **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
+  `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
 
 ---
@@ -482,15 +597,7 @@ Then, after the seven blocks and before the metadata, report always:
 ## Rules
 
 ALWAYS:
-- Compare the CI run SHA against `git rev-parse HEAD` before reading its verdict
-- Attach `--prefix cli` to `test:package` in the local fallback — the bare form is a false gate, not a failing one
 - Say in the report which evidence the gate accepted, CI or local, and why
-- Add a job here when CI gains one, so the gate and the merge cannot disagree
 
 NEVER:
-- Grade the delivery — the build audits it once at its STEP 7, and a close-out that repeats the audit
-  is a command judging work it is about to merge
-- Synthesise a `node` id for something the graph does not model
 - Record a rename as a deletion or a supersession
-- Loosen a `find` anchor to get past a `REFUSED=` result
-- Accept a check that is skipped, queued, neutral or cancelled as a pass — only `success` is one
