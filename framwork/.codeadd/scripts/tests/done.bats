@@ -476,3 +476,166 @@ teardown() {
   [[ "$output" == *"CLEANUP=OK"* ]]
   [[ "$output" == *"STATUS=SUCCESS"* ]]
 }
+
+# ─── Context-mode probes (plan 2026-09-11T014333, F5) ────────────────
+# /add.done crosses four facts to pick its route. Computing them in prose is
+# how two commands end up disagreeing, so the script emits them and the command
+# only routes. gh being absent is a VALUE here, never an error: probing is not
+# a gate.
+
+# stub_gh <json-for-pr-view>  — a fake gh on PATH. Empty body = "no PR".
+stub_gh() {
+  local body="$1"
+  STUB_BIN="$TEST_TEMP_DIR/bin"
+  mkdir -p "$STUB_BIN"
+  {
+    echo '#!/bin/bash'
+    echo 'case "$1 $2" in'
+    echo '  "auth status") exit 0 ;;'
+    echo '  "pr view")'
+    if [ -z "$body" ]; then
+      echo '    exit 1 ;;'
+    else
+      echo "    echo '$body' ;;"
+    fi
+    echo '  *) exit 0 ;;'
+    echo 'esac'
+  } > "$STUB_BIN/gh"
+  chmod +x "$STUB_BIN/gh"
+  PATH="$STUB_BIN:$PATH"
+  export PATH
+}
+
+@test "probe: no gh on PATH → PR_STATE=no-gh, and the script still exits 0" {
+  git checkout -b feature/0001F-test -q
+  STUB_BIN="$TEST_TEMP_DIR/emptybin"; mkdir -p "$STUB_BIN"
+  run env PATH="$STUB_BIN:/usr/bin:/bin" "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR_STATE=no-gh"* ]]
+}
+
+@test "probe: an open PR → PR_STATE=open with its url and head sha" {
+  git checkout -b feature/0001F-test -q
+  stub_gh '{"state":"OPEN","url":"https://example.test/pr/7","headRefOid":"deadbeef","mergeCommit":null}'
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR_STATE=open"* ]]
+  [[ "$output" == *"PR_URL=https://example.test/pr/7"* ]]
+  [[ "$output" == *"PR_HEAD_SHA=deadbeef"* ]]
+}
+
+@test "probe: a merged PR → PR_STATE=merged with its merge commit" {
+  git checkout -b feature/0001F-test -q
+  stub_gh '{"state":"MERGED","url":"https://example.test/pr/7","headRefOid":"deadbeef","mergeCommit":{"oid":"cafebabe"}}'
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR_STATE=merged"* ]]
+  [[ "$output" == *"PR_MERGE_COMMIT=cafebabe"* ]]
+}
+
+@test "probe: gh present but no PR for this branch → PR_STATE=none" {
+  git checkout -b feature/0001F-test -q
+  stub_gh ''
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR_STATE=none"* ]]
+}
+
+@test "probe: no delivered.jsonl at all → INDEX_ENTRY=no-index" {
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"INDEX_ENTRY=no-index"* ]]
+}
+
+@test "probe: delivered.jsonl without this id → INDEX_ENTRY=absent" {
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs
+  echo '{"v":1,"id":"0099F","name":"other"}' > docs/delivered.jsonl
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"INDEX_ENTRY=absent"* ]]
+}
+
+@test "probe: an UNCOMMITTED entry for this id still reads present" {
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs
+  echo '{"v":1,"id":"0001F","name":"this one"}' > docs/delivered.jsonl
+  # Deliberately not committed. This is where the duplicate entry is born: 6.8
+  # leaves the line in the working tree and done.sh --merge commits it later, so
+  # a check reading only commits cannot see the state it exists to catch.
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"INDEX_ENTRY=present"* ]]
+}
+
+@test "probe: MERGED_ON_MAIN=no on a branch main has not taken" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  echo x > f.txt; git add f.txt; git commit -m "work" -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MERGED_ON_MAIN=no"* ]]
+}
+
+@test "probe: MERGED_ON_MAIN=unknown when origin/main does not resolve" {
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MERGED_ON_MAIN=unknown"* ]]
+}
+
+@test "probe: LEDGER_PATH points at the feature's build-ledger.md" {
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "# about" > docs/features/0001F-test/about.md
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"LEDGER_PATH=docs/features/0001F-test/build-ledger.md"* ]]
+}
+
+@test "probe: no ledger → PUBLISH_RECORD=none" {
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PUBLISH_RECORD=none"* ]]
+}
+
+@test "probe: the LAST Publish line wins — the ledger is a log, not a set" {
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  {
+    echo "# Build ledger"
+    echo "Publish: declined — local merge"
+    echo "T01: complete (commits a..b)"
+    echo "Publish: pr-opened https://example.test/pr/9"
+  } > docs/features/0001F-test/build-ledger.md
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PUBLISH_RECORD=pr-opened"* ]]
+  [[ "$output" == *"PUBLISH_RECORD_URL=https://example.test/pr/9"* ]]
+}
+
+@test "probe: a declined record carries no url" {
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  printf '%s\n' "# Build ledger" "Publish: declined — local merge" > docs/features/0001F-test/build-ledger.md
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PUBLISH_RECORD=declined"* ]]
+  [[ "$output" == *"PUBLISH_RECORD_URL="* ]]
+}
+
+# guard — the probes are additive. add-wiki-maintenance reads CHANGED_FILES
+# from this same output, so a field removed or renamed here breaks a consumer
+# no test in this file names.
+@test "probe: every pre-existing context field still reports" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh"
+  [ "$status" -eq 0 ]
+  for key in CURRENT_BRANCH MAIN_BRANCH BRANCH_TYPE FEATURE_NUMBER MODIFIED_COUNT \
+             STAGED_COUNT UNTRACKED_COUNT HAS_UNCOMMITTED CHANGED_COUNT CHANGED_FILES; do
+    [[ "$output" == *"$key="* ]] || [[ "$output" == *"$key=["* ]]
+  done
+}

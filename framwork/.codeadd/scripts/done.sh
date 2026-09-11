@@ -7,7 +7,9 @@
 # Usage:
 #   bash .codeadd/scripts/done.sh           # Context mode (default)
 #   bash .codeadd/scripts/done.sh --merge   # Merge mode
-# Dependencies: get-main-branch.sh
+# Dependencies: get-main-branch.sh, get-branch-metadata.sh, node >= 18 (the
+#               ROUTE probes' JSON parse only), gh (optional — its absence is
+#               the value PR_STATE=no-gh, never an error)
 # ============================================
 
 # [FIX-1] Added -u (undefined variables cause error) and -o pipefail
@@ -214,6 +216,105 @@ if [ "$MODE" = "context" ]; then
     echo "CHANGED_FILES=["
     printf '%s\n' "$CHANGED_FILES" | while read -r f; do if [ -n "$f" ]; then echo "  \"$f\""; fi; done || true
     echo "]"
+
+
+    # --- Route probes -------------------------------------------------------
+    # /add.done crosses four facts to choose between its Normal, Resume, Closed
+    # out and Recovery routes. Deriving them in prose is how two commands end up
+    # disagreeing about the same tree, which is the reason converge-gates.sh
+    # exists; these are the same idea for routing rather than gating.
+    #
+    # NOTHING here is a gate. gh missing, no PR, no index and no ledger are all
+    # ordinary values, and the probe still exits 0.
+    echo ""
+    echo "========================================"
+    echo "ROUTE"
+    echo "========================================"
+
+    PR_STATE="no-gh"
+    PR_URL=""
+    PR_HEAD_SHA=""
+    PR_MERGE_COMMIT=""
+
+    if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+        PR_JSON=$(gh pr view --json state,url,headRefOid,mergeCommit 2>/dev/null || true)
+        if [ -z "$PR_JSON" ]; then
+            PR_STATE="none"
+        else
+            # Parsed by node, not by a regex over JSON: gh nests mergeCommit,
+            # and a regex works until a field moves. node is already required by
+            # converge-gates.sh, which the same command runs.
+            PR_FIELDS=$(printf '%s' "$PR_JSON" | node -e "
+              let raw='';
+              process.stdin.on('data', d => raw += d);
+              process.stdin.on('end', () => {
+                try {
+                  const j = JSON.parse(raw);
+                  const mc = (j.mergeCommit && j.mergeCommit.oid) || '';
+                  console.log(String(j.state || 'none').toLowerCase());
+                  console.log(j.url || '');
+                  console.log(j.headRefOid || '');
+                  console.log(mc);
+                } catch (e) { console.log('none'); console.log(''); console.log(''); console.log(''); }
+              });
+            " 2>/dev/null || true)
+            PR_STATE=$(printf '%s' "$PR_FIELDS" | sed -n '1p')
+            PR_URL=$(printf '%s' "$PR_FIELDS" | sed -n '2p')
+            PR_HEAD_SHA=$(printf '%s' "$PR_FIELDS" | sed -n '3p')
+            PR_MERGE_COMMIT=$(printf '%s' "$PR_FIELDS" | sed -n '4p')
+            [ -n "$PR_STATE" ] || PR_STATE="none"
+        fi
+    fi
+
+    echo "PR_STATE=$PR_STATE"
+    echo "PR_URL=$PR_URL"
+    echo "PR_HEAD_SHA=$PR_HEAD_SHA"
+    echo "PR_MERGE_COMMIT=$PR_MERGE_COMMIT"
+
+    # The FILE, committed or not. The duplicate entry this probe exists to catch
+    # is born in the working tree: /add.done 6.8 writes the line and leaves it
+    # there for done.sh --merge to commit, so a check reading only commits is
+    # blind to exactly the state it is for.
+    INDEX_FILE="docs/delivered.jsonl"
+    if [ ! -f "$INDEX_FILE" ]; then
+        INDEX_ENTRY="no-index"
+    elif grep -q "\"id\":\"$FEATURE_NUMBER\"" "$INDEX_FILE" 2>/dev/null; then
+        INDEX_ENTRY="present"
+    else
+        INDEX_ENTRY="absent"
+    fi
+    echo "INDEX_ENTRY=$INDEX_ENTRY"
+
+    # `unknown` is a real answer, not a failure: an unfetched or absent
+    # origin/<main> cannot say whether this branch landed, and reporting `no`
+    # there would be a guess.
+    if ! git rev-parse --verify "origin/$MAIN_BRANCH" >/dev/null 2>&1; then
+        MERGED_ON_MAIN="unknown"
+    elif git merge-base --is-ancestor HEAD "origin/$MAIN_BRANCH" 2>/dev/null; then
+        MERGED_ON_MAIN="yes"
+    else
+        MERGED_ON_MAIN="no"
+    fi
+    echo "MERGED_ON_MAIN=$MERGED_ON_MAIN"
+
+    LEDGER_PATH=""
+    [ -n "${DOCS_DIR:-}" ] && LEDGER_PATH="$DOCS_DIR/build-ledger.md"
+    echo "LEDGER_PATH=$LEDGER_PATH"
+
+    # The LAST Publish line wins. The ledger is a log, not a set: a second build
+    # on the same branch appends rather than replacing, and the latest answer is
+    # the operator's current intent.
+    PUBLISH_RECORD="none"
+    PUBLISH_RECORD_URL=""
+    if [ -n "$LEDGER_PATH" ] && [ -f "$LEDGER_PATH" ]; then
+        PUBLISH_LINE=$(grep '^Publish:' "$LEDGER_PATH" 2>/dev/null | tail -1 || true)
+        if [ -n "$PUBLISH_LINE" ]; then
+            PUBLISH_RECORD=$(printf '%s' "$PUBLISH_LINE" | sed 's/^Publish:[[:space:]]*//' | awk '{print $1}')
+            PUBLISH_RECORD_URL=$(printf '%s' "$PUBLISH_LINE" | grep -oE 'https?://[^[:space:]]+' | head -1 || true)
+        fi
+    fi
+    echo "PUBLISH_RECORD=$PUBLISH_RECORD"
+    echo "PUBLISH_RECORD_URL=$PUBLISH_RECORD_URL"
 
     exit 0
 fi
