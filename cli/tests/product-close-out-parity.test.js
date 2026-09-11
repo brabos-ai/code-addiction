@@ -38,6 +38,7 @@ const P = {
   commit: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-commit', 'SKILL.md'),
   build: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.build.md'),
   sdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
+  history: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-doc-schemas', 'references', 'history.md'),
 };
 
 /** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
@@ -429,5 +430,52 @@ describe('L7 — the resume and recovery routes (F10)', () => {
     expect(r).toMatch(/done\.sh --merge/);
     expect(r).toMatch(/gh pr merge/);
     expect(r).toMatch(/[Nn]ever/);
+  });
+});
+
+describe('L8 — the changelog owner (F11)', () => {
+  const schema = () => {
+    const t = read(P.history);
+    const at = t.indexOf('### changelog');
+    const next = t.indexOf('### ', at + 5);
+    return next < 0 ? t.slice(at) : t.slice(at, next);
+  };
+
+  it('L8.1: the schema names the path its writers actually use', () => {
+    const sc = schema();
+    expect(sc).toContain('changelog.md');
+    // The stale value: docs/changelog/ is the INTERNAL layer's directory and
+    // does not exist in a user's project, so a reader who trusted the schema
+    // looked somewhere that was never there.
+    expect(sc).not.toContain('docs/changelog/CHG');
+  });
+
+  it('L8.2: one changelog per delivery is a rule, not a habit', () => {
+    const sc = schema();
+    expect(sc).toMatch(/ONE CHANGELOG PER DELIVERY|one per delivery/i);
+    expect(sc).toMatch(/DO NOT/);
+  });
+
+  it('L8.3: the complement table names every part and what happens to it', () => {
+    const sc = schema();
+    for (const part of ['Changes', 'TL;DR', 'Breaking', 'Migration', 'Quick Ref', 'QA Evidence']) {
+      expect(sc, `the complement table must name ${part}`).toContain(part);
+    }
+  });
+
+  it('L8.4: TL;DR is rewritten and Changes is appended to, with the reason', () => {
+    const sc = schema();
+    expect(sc).toMatch(/rewritten/i);
+    // A bullet is a fact about one change and stays true; a summary is a claim
+    // about the whole delivery and stops being true the moment it grows.
+    expect(sc).toMatch(/verbatim|byte-for-byte|preserved/i);
+  });
+
+  it('L8.5: the immutable fields are named', () => {
+    const sc = schema();
+    for (const field of ['id:', 'created:', 'type:', 'related:']) {
+      expect(sc, `${field} must be named immutable`).toContain(field);
+    }
+    expect(sc).toMatch(/CHG\[NNNN\]/);
   });
 });

@@ -31,7 +31,42 @@ Breaking changes are **never** omitted to make the release look smoother. If uns
 
 ### changelog
 
-For `/add.done` (creates `docs/changelog/CHG[NNNN].md` or appends).
+**Location:** `<feature-dir>/changelog.md` — one per delivery, in the feature's own
+directory, on an epic as well as on a simple feature. `docs/changelog/` is the
+framework repository's own directory and does not exist in a user's project.
+
+**Written first by `{{cmd:add.pull-request}}` STEP 3** when a PR is opened
+mid-build, **otherwise by `{{cmd:add.done}}` 6.3.** Two writers, one document.
+
+```
+⛔ ONE CHANGELOG PER DELIVERY:
+  ⛔ DO NOT: Allocate a second CHG[NNNN] for a delivery that already has one
+  ⛔ DO NOT: Skip the narrative because the file exists
+  ✅ DO: Find that file, COMPLEMENT it in place, and keep its id and its name
+```
+
+⛔ **A skip is not idempotency.** Idempotent means running twice leaves the same
+correct state. Skipping leaves the state the FIRST run produced, which is only
+correct when nothing changed in between — and something always did, or the second
+run would not be happening. A feature whose PR opened mid-build otherwise merges
+with a changelog describing the work that existed when the PR opened.
+
+**Complementing follows the cache rule this skill already owns** — read, preserve,
+complement, bump `updated:` — with `id:`, `created:`, `type:` and `related:`
+immutable. Per part:
+
+| Part | On a file that already exists |
+|---|---|
+| `## Changes` | Re-derive from the full change set and add only the bullets not already present, matching on the `type(scope): summary` prefix. Every existing bullet is kept **verbatim** |
+| `## TL;DR` | **Rewritten** to cover the delivery as it now stands |
+| `## Breaking` / `## Migration` | Complemented like Changes. A `none` that stopped being true is replaced |
+| `## Quick Ref` → `touched`, `keywords` | Re-derived. Both come from the tree and go stale |
+| `## Quick Ref` → `domain`, `patterns` | **Left alone.** Nothing in the tree can tell a human's correction from a stale value |
+| `## QA Evidence` | Unchanged behaviour: the section is replaced, never appended to |
+
+**Why `TL;DR` is rewritten while `Changes` is appended to.** They are different
+kinds of statement. A bullet is a fact about one change and stays true; a summary
+is a claim about the whole delivery and stops being true the moment it grows.
 
 - **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `related: [[NNNN]F | [NNNN]H]`
 - **Sections:** TL;DR · Changes · Breaking · Migration
