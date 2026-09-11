@@ -456,17 +456,34 @@ Do NOT stage, commit, push, move, or delete evidence here. `done.sh --merge` rem
 
 ---
 
-### 6.3: Generate Changelog (schema: changelog)
+### 6.3: Generate or Complement the Changelog (schema: changelog)
 
-**Path:** `${DIR}/changelog.md`
-
-**Idempotency guard (RUN FIRST).** If `${DIR}/changelog.md` already exists, **SKIP** schema execution, ID allocation, and Quick Ref generation, but DO NOT skip the QA trail below. Existing changelogs must receive the same permanent evidence references before STEP 6.4.
+**The path, the one-per-delivery rule and the per-part complement table are owned
+by the `changelog` schema in `{{skill:add-doc-schemas/SKILL.md}}`.** Read it rather
+than deciding here — it was declared in three places and they disagreed.
 
 ```bash
-[ -f "${DIR}/changelog.md" ] && echo "CHANGELOG_EXISTS — skipping generation"
+CHANGELOG="${DIR}/changelog.md"   # resolved per the schema's Location rule
+[ -f "$CHANGELOG" ] && echo "CHANGELOG_EXISTS — complementing in place"
 ```
 
-**If changelog does NOT exist:**
+**If it already exists, COMPLEMENT it.** `{{cmd:add.pull-request}}` STEP 3 writes
+it when a PR opens mid-build, and everything delivered after that moment is
+missing from it until this step adds it.
+
+```
+IF ${DIR}/changelog.md ALREADY EXISTS:
+  ⛔ DO NOT: Skip the narrative — a skip leaves the state the FIRST writer produced
+  ⛔ DO NOT USE: Bash for status.sh next-id CHG — the id it already carries is the id
+  ⛔ DO NOT: Rewrite id:, created:, type: or related:
+  ✅ DO: Apply the schema's complement table, part by part, and bump updated:
+```
+
+⛔ **Skipping is not idempotency.** It leaves whatever the first run produced,
+which is only correct if nothing changed since — and something did, or this run
+would not be here.
+
+**If it does NOT exist:**
 
 EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`.
 

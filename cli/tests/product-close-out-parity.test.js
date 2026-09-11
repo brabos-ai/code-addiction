@@ -479,3 +479,40 @@ describe('L8 — the changelog owner (F11)', () => {
     expect(sc).toMatch(/CHG\[NNNN\]/);
   });
 });
+
+describe('L9 — add.done complements the changelog (F12)', () => {
+  const s63 = () => {
+    const t = read(P.done);
+    return t.slice(t.indexOf('### 6.3'), t.indexOf('### 6.4'));
+  };
+
+  it('L9.1: 6.3 carries no skip instruction', () => {
+    const b = s63();
+    expect(b).not.toMatch(/SKIP.*schema execution/i);
+    expect(b).not.toContain('skipping generation');
+  });
+
+  it('L9.2: it complements in place and cites the schema for the rule', () => {
+    const b = s63();
+    expect(b).toMatch(/complement/i);
+    expect(b).toContain('add-doc-schemas');
+  });
+
+  it('L9.3: it does not declare the path literally any more', () => {
+    const b = s63();
+    // The schema owns it. A second declaration is how the two drifted apart.
+    expect(b).not.toMatch(/\*\*Path:\*\* `\$\{DIR\}\/changelog\.md`/);
+  });
+
+  it('L9.4: no second CHG id is allocated for an existing changelog', () => {
+    const b = s63();
+    expect(b).toMatch(/CHG/);
+    expect(b).toMatch(/DO NOT/);
+  });
+
+  // guard — the QA trail already upserts rather than appending, and this block
+  // must not disturb it.
+  it('L9.5 (guard): the QA Evidence section is still replaced, not appended', () => {
+    expect(s63()).toMatch(/QA Evidence/);
+  });
+});
