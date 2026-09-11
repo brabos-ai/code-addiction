@@ -250,8 +250,20 @@ describe('the real emitted graph', () => {
  * rather than a stubbed reader. That is the point of the verb: it owns the join
  * and delegates the read, so a test that mocked the read would assert the one
  * thing the design forbids reimplementing here.
+ *
+ * Which is also why this block, alone in the file, sets its own timeout. One
+ * `delivered.sh read` costs about 1.2s on an idle Windows machine, because the
+ * script shells out to git and walks every record; a test here makes one or two
+ * of those plus a `git init`. Under load that stretches badly — two of these
+ * were measured at 10.5s and 5.0s on a busy checkout, crossing the 5000ms
+ * default and reporting as failures on a tree with nothing wrong with it.
+ *
+ * 30s is ~3x the worst run observed and ~25x the idle cost, so it still catches
+ * a real regression: a delivered.sh that takes half a minute is broken. The
+ * timeout is scoped here rather than raised globally, because everywhere else
+ * in this suite 5000ms is the right answer.
  */
-describe('history — when this arrived, and what it replaced', () => {
+describe('history — when this arrived, and what it replaced', { timeout: 30_000 }, () => {
   const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
   let repo;
 
