@@ -5,6 +5,8 @@
 - skill: add-final-report
 - skill: add-plan-authoring
 - command: /add-framework--build
+- mention: /add-framework--plan
+- mention: /add-framework--brainstorm
 -->
 
 <!--
@@ -462,6 +464,53 @@ IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
   ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and STEP 7 merged that copy
 ```
 
+### The four post-merge checks — BEFORE any deletion
+
+That prohibition is the whole safety condition for the three deletions below, and the command used to
+state it without supplying anything that evaluates it. These four checks are how it is evaluated.
+**Run all four, then decide once.**
+
+```bash
+git fetch origin main                                          # first, always
+gh pr view --json state,mergeCommit                            # 1. MERGED, with a merge commit
+git show origin/main:docs/deliveries/<id>/<member>             # 2. every member resolves
+git show origin/main:docs/delivered.jsonl | grep '"id":"<id>"' # 3. the entry is there
+git show origin/main:docs/deliveries/<id>/<member> | cmp - <local-original>   # 4. byte-identical
+```
+
+⛔ **The fetch is not optional and runs first.** `origin/main` is a local ref, and `gh pr merge` moves
+the branch on the server without moving it here. Skipping the fetch reads the branch point, so all
+four checks report a clean pass against an archive `main` has never seen — a green answer about the
+wrong commit, which is the same class of lie as reading yesterday's CI run.
+
+⛔ **Check 4 is the one that catches a real case, and `cmp` is silent on success.** A ledger appended
+to after STEP 6's archive commit and never re-copied leaves the local original AHEAD of `main`: the
+member is present, the entry is present, and the copy about to be deleted is the newer of the two.
+Read the exit status. **Reporting a pass because nothing was printed is claiming a check that never
+ran**, and this is the check where that is easiest to do.
+
+```
+IF ANY OF THE FOUR CHECKS FAILED:
+  ⛔ DO NOT USE: Bash to run rm on anything
+  ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
+  ⛔ DO NOT USE: Bash to run git worktree remove
+  ⛔ DO NOT: Re-copy the file and delete the original in the same run — the archive on main is what
+             the index entry points at, and repairing it is a change main has to receive
+  ✅ DO: Name the failing check and the path it failed on, print the suggestion below, and go to
+         STEP 9 with every deletion skipped
+```
+
+**The fix suggestion is printed as text, for the operator to act on.** Emit the line:
+
+    /add-framework--plan <what failed, in a few words>
+
+⛔ **The close-out is not a planner.** It prints that line and stops there, the same text-only handoff
+`/add-framework--brainstorm` makes. A close-out that started a planning session of its own would turn
+a skipped cleanup into work nobody asked for, on a branch that is already merged.
+
+**A refused deletion is not a failed delivery.** The entry, the changelog and the archive are on
+`main`; what is left behind is a local file and possibly a branch, and STEP 9 says so.
+
 **Order is forced**, because a branch checked out in a worktree cannot be deleted:
 
 1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.
@@ -518,8 +567,13 @@ Then, after the seven blocks and before the metadata, report always:
 - The changelog path
 - The PR number and its merge state
 - **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
+- **The four post-merge checks and their results, one line each**, whether they passed or refused the
+  deletions. When one failed, name it, name the path, and print the `/add-framework--plan` suggestion
+  STEP 8 composed — as text the operator runs, never as something this command ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
+- **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
+  `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
 
 ---
