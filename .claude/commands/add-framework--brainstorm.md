@@ -7,6 +7,7 @@
 - skill: add-review-discipline
 - mention: /add-framework--build
 - command: /add-framework--plan
+- mention: add-plan-authoring
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -69,7 +70,7 @@ IF REVIEW VERDICT IS blocked:
 
 IF USER WANTS TO REFINE A TOPIC FROM UMBRELLA:
   ⛔ DO NOT PROCEED WITHOUT UMBRELLA SPEC REFERENCE
-  ✅ DO: Ask user to provide -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md path (a unique slug fragment also resolves)
+  ✅ DO: Ask user to provide the umbrella path in the SET form STEP 5.1 declares (a unique slug fragment also resolves)
 
 ```
 
@@ -83,7 +84,7 @@ Inspect the user's invocation string:
 
 - IF input matches pattern `vamos refinar [topic] -> ref: [path-to-umbrella.md]` (or English equivalent `refine [topic] -> ref: [path]`):
   - Extract `[topic]` and `[path]`
-  - IF `[path]` missing → STOP and ask user to provide `-> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`
+  - IF `[path]` missing → STOP and ask user to provide the umbrella path, in the SET form STEP 5.1 declares
   - **Resolve `[path]`:** the full basename always works; otherwise match it as a **substring** of the basenames in `docs/brainstorming/` (a 24-character timestamp prefix is not typeable). Both naming forms resolve — the timestamped one and the legacy `YYYY-MM-DD-[topic]` one. Exactly one match → use it. More than one → ⛔ STOP, print every candidate and ask which. **NEVER guess.** No match → list `docs/brainstorming/` and STOP.
   - Verify file exists at `docs/brainstorming/[resolved path]`
   - → JUMP to **STEP 8 (Continue Mode)**
@@ -318,19 +319,30 @@ If ANY checkbox fails → return to relevant section and continue exploring.
 ### 5.1 Determine Output Path
 
 - Simple idea → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
-- Umbrella spec → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic]-umbrella.md`
+- Umbrella spec → the SET form declared below, whose umbrella member ends `-000-umbrella.md`
 
 Timestamp format: `YYYY-MM-DDTHHMMSS`, **local time**, `T` between the date and the time, **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort equals chronological sort, so two brainstorms written the same day no longer sort arbitrarily. Topic slug: kebab-case from idea.
 
 **Brainstorms carry NO kind marker** — unlike plans, which keep `PLAN` (and the legacy `SELF-PLAN` on
 files already written). Internal brainstorms live in `docs/brainstorming/` of this repo, product ones in `docs/brainstorm/` of the user's repo: different directories in different repositories, so a marker would carry no information.
 
-**A brainstorm SET allocates its timestamp once, at the umbrella, and every subtopic reuses it verbatim:**
+**A brainstorm SET allocates its timestamp once, at the umbrella, and every subtopic reuses it
+verbatim — and every member carries an `NNN` ordinal. THIS IS THE ONE DECLARATION; every other site
+in this file points here rather than repeating the pattern.**
 
 ```
-docs/brainstorming/2026-09-07T005046-[topic]-umbrella.md
-docs/brainstorming/2026-09-07T005046-[topic]-[subtopic].md
+docs/brainstorming/2026-09-07T005046-[topic]-000-umbrella.md
+docs/brainstorming/2026-09-07T005046-[topic]-001-[subtopic].md
+docs/brainstorming/2026-09-07T005046-[topic]-002-[subtopic].md
 ```
+
+**The ordinal carries refinement order** — `000` is the umbrella, `001` onward are the subtopics in
+the order they will be planned. It is the same convention `add-plan-authoring` already documents for a
+plan set, and the files already on disk in `docs/brainstorming/` use it.
+
+⛔ **A STANDALONE brainstorm takes NO ordinal.** `YYYY-MM-DDTHHMMSS-[topic].md` is complete as it
+stands: there is no set, so there is nothing to order. Only a set member is numbered, and a blind
+replace that adds `-000-` to a standalone name is the failure this warning exists to prevent.
 
 **Pre-existing brainstorms keep their `YYYY-MM-DD-[topic].md` names.** Both forms coexist; only a NEW brainstorm uses the timestamp.
 
@@ -414,8 +426,8 @@ Same structure +
 
 | Subtopic | Design Path | Purpose |
 |----------|-------------|---------|
-| [Topic 1] | YYYY-MM-DDTHHMMSS-[topic1].md | [what it covers] |
-| [Topic 2] | YYYY-MM-DDTHHMMSS-[topic2].md | [what it covers] |
+| [Topic 1] | the SET form's `-001-[topic1].md` member | [what it covers] |
+| [Topic 2] | the SET form's `-002-[topic2].md` member | [what it covers] |
 
 [Every row reuses the umbrella's timestamp verbatim — that is what keeps the set grouped in the directory.]
 
@@ -508,7 +520,7 @@ Idea is ready to formalize. Run: /add-framework--plan [idea]
 
 ### 7.4 Offer Refinement (If Umbrella)
 
-If umbrella spec: "You can now refine individual subtopics by running `/add-framework--brainstorm vamos refinar [topic] -> ref: YYYY-MM-DDTHHMMSS-[name]-umbrella.md`"
+If umbrella spec: "You can now refine individual subtopics by running `/add-framework--brainstorm vamos refinar [topic] -> ref: [the umbrella's own filename]`"
 
 ---
 
@@ -534,7 +546,7 @@ Ask clarifying questions specific to the subtopic, grounded in the umbrella's co
 
 ### 8.4 Follow STEP 4-7 for Subtopic
 
-Generate subtopic design doc in `docs/brainstorming/YYYY-MM-DDTHHMMSS-[subtopic].md` — reusing the umbrella's timestamp verbatim. Review via STEP 6 before STEP 7 delivery.
+Generate the subtopic design doc as the SET form's next `-NNN-[subtopic].md` member — reusing the umbrella's timestamp verbatim, and taking the next ordinal in the Decomposition Map's order. Review via STEP 6 before STEP 7 delivery.
 
 ---
 

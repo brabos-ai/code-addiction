@@ -45,6 +45,8 @@ const P = {
   newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.new.md'),
   brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.brainstorm.md'),
   plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan.md'),
+  fwBrainstorm: path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md'),
+  planAuthoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
 };
 
 /** The four commands that restated the discipline before F17. */
@@ -740,5 +742,40 @@ describe('L14 — the four callers cite the skill (F17)', () => {
     const t = read(P.planToReady);
     expect(t).toContain('Decision Log');
     expect(t).toMatch(/does NOT stop|DO NOT: STOP/);
+  });
+});
+
+describe('L15 — the brainstorm set gets the plan set ordinal (F18)', () => {
+  it('L15.1: the SET naming carries the ordinal', () => {
+    const t = read(P.fwBrainstorm);
+    expect(t).toContain('-000-umbrella');
+    expect(t).toMatch(/-001-/);
+  });
+
+  it('L15.2: it is stated once, not at every site that needs it', () => {
+    const t = read(P.fwBrainstorm);
+    // Nine sites named a brainstorm filename before this block. The pattern
+    // now lives in one declaration and the others point at it.
+    const declarations = t.split(NL).filter((l) => l.includes('-000-umbrella'));
+    // At LEAST one, or the assertion passes on a file that never got the rule.
+    expect(declarations.length, 'the ordinal pattern must be declared').toBeGreaterThan(0);
+    expect(declarations.length, 'and declared once, not at every site').toBeLessThanOrEqual(2);
+  });
+
+  // guard — the two standalone sites must keep NO ordinal. A blind replace takes
+  // them, and nothing else here would notice.
+  it('L15.3 (guard): a standalone brainstorm still carries no ordinal', () => {
+    const t = read(P.fwBrainstorm);
+    expect(t).toContain('docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md');
+  });
+
+  it('L15.4: add-plan-authoring cross-references the brainstorm set', () => {
+    const t = read(P.planAuthoring);
+    expect(t).toMatch(/brainstorm/i);
+    expect(t).toContain('-000-umbrella');
+  });
+
+  it('L15.5: the cross-reference is declared, not just written', () => {
+    expect(uses(read(P.planAuthoring))).toContain('add-framework--brainstorm');
   });
 });
