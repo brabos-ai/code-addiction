@@ -31,7 +31,19 @@ const P = {
   featurePrScript: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'feature-pr.sh'),
   featurePrBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'feature-pr.bats'),
   ecosystem: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-ecosystem', 'SKILL.md'),
+  convergeGates: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'converge-gates.sh'),
+  convergeBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'converge-gates.bats'),
+  done: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.done.md'),
+  planToReady: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan-to-ready.md'),
+  commit: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-commit', 'SKILL.md'),
+  build: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.build.md'),
 };
+
+/** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
+const GATE_SWEEP = ['convergeGates', 'convergeBats', 'planToReady', 'commit', 'ecosystem'];
+// add.done is swept by F3, not F2: its parse list and its gate-count sentence
+// are what STEP 4.3 reads, and a block that names a sub-step it does not create
+// leaves a pointer resolving to nothing.
 
 const exists = (p) => fs.existsSync(p);
 const read = (p) => (exists(p) ? fs.readFileSync(p, 'utf8') : '');
@@ -102,5 +114,56 @@ describe('L1 — the deletion (F1)', () => {
   // is empty. This pins that the block did not invent one on the way past.
   it('L1.4 (guard): add-ecosystem names no feature-pr.sh row', () => {
     expect(read(P.ecosystem)).not.toContain('feature-pr.sh');
+  });
+});
+
+describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
+  // The behavioural half of L2 — what the gate RETURNS on each tree shape —
+  // lives in framwork/.codeadd/scripts/tests/converge-gates.bats. A script's
+  // behaviour is testable where the script runs; only its prose is testable
+  // here.
+
+  it('L2.6a: no swept artefact still states the old gate count', () => {
+    const offenders = [];
+    for (const key of GATE_SWEEP) {
+      const text = read(P[key]);
+      for (const phrase of ['GATES_OK=4/4', 'four gates', 'FOUR gates', 'five gate lines']) {
+        // The two false positives are excluded by file, not by phrase: the
+        // phrase is identical and only the file tells them apart.
+        if (text.includes(phrase)) offenders.push(`${key}: ${phrase}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('L2.6b: every gate-key list names six keys including GATE_LEDGER', () => {
+    for (const key of ['planToReady', 'commit']) {
+      const text = read(P[key]);
+      expect(text, `${key} must name the six gate lines`).toMatch(/six gate lines/);
+      expect(text, `${key} must list GATE_LEDGER`).toContain('GATE_LEDGER');
+    }
+  });
+
+  it('L2.6c: the summary line and the script header state five', () => {
+    const sh = read(P.convergeGates);
+    expect(sh).toContain('GATES_OK=$GATES_OK/5');
+    expect(sh).toMatch(/five .*convergence gates/i);
+  });
+
+  // guard — these three lines match the swept phrases and must NOT change. A
+  // tree-wide replace takes all three silently, and nothing else in this matrix
+  // would notice.
+  it('L2.7: the three false-positive matches are byte-unchanged', () => {
+    expect(read(P.build)).toContain(
+      'Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 all held:',
+    );
+    const bats = read(P.convergeBats);
+    expect(bats).toContain('| Spec Compliance | ✅ PASSED | 4/4 items compliant |');
+    expect(bats).toContain('| Product Validation | ✅ PASSED | RF: 4/4, RN: 2/2 |');
+  });
+
+  it('L2.8: both git log --grep=GATES_OK passages survive', () => {
+    expect(read(P.planToReady)).toContain('git log --grep=GATES_OK');
+    expect(read(P.commit)).toContain('git log --grep=GATES_OK');
   });
 });

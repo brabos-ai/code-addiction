@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # CONVERGE-GATES
-# Deterministic, read-only probe for the four /add.done convergence gates
+# Deterministic, read-only probe for the five /add.done convergence gates
 # ============================================
 # Usage: bash .codeadd/scripts/converge-gates.sh <FEATURE_DIR> [SFxx]
 # Dependencies: bash, node >= 18 (manifest read only; guaranteed by the CLI)
@@ -12,7 +12,7 @@
 # Exit: always 0 — this is a diagnosis, never a gate. Exit 2 only on CLI misuse.
 #
 # WHY THIS SCRIPT EXISTS: /add.plan-to-ready STEP 6 and /add.done STEP 4 used to
-# evaluate the same four gates as prose, each in its own words. A coordinator
+# evaluate the same five gates as prose, each in its own words. A coordinator
 # graded its own work, reported CONVERGED, and /add.done rejected the tree a
 # second later. One script now backs both verdicts so they cannot drift apart.
 #
@@ -367,10 +367,92 @@ else
   emit "QA_FEATURE_STATE=${FEATURE_STATE:-unset}"
 fi
 
+
+# ─── Gate 5: build ledger ────────────────────────────────────────────────────
+# Asks whether the build HAPPENED. No other gate here does. Gate 1 asks whether
+# the delivery was graded, gate 4 reads a coverage table written at plan time,
+# and gate 3 returns ok unconditionally on a feature with no epic.md — so on a
+# simple feature nothing asked whether /add.build reached its last task.
+# Unwritten code breaks no test: a build that stopped halfway passes every gate
+# above and merges as fully delivered.
+#
+# Scope follows the SFxx argument exactly as gate 3 does — never guessed.
+#
+# NO tasks.md is `ok`, NOT `missing`: outside TASKS MODE the ledger's lines are
+# keyed by area name rather than task id, so there is nothing to cross-reference.
+# This is gate 4's own precedent for an absent coverage table — making absence
+# blocking would mean a whole class of feature could never converge.
+
+LEDGER_SCOPE_DIR="$FEATURE_DIR"
+LEDGER_SCOPE_LABEL="$FEATURE_DIR_ARG"
+if [ -n "$SF_ARG" ]; then
+  for sfdir in "$FEATURE_DIR/subfeatures/${SF_ARG}"-*; do
+    [ -d "$sfdir" ] || continue
+    LEDGER_SCOPE_DIR="$sfdir"
+    LEDGER_SCOPE_LABEL="$FEATURE_DIR_ARG/subfeatures/$(basename "$sfdir")"
+  done
+fi
+
+LEDGER_TASKS="$LEDGER_SCOPE_DIR/tasks.md"
+LEDGER_FILE="$LEDGER_SCOPE_DIR/build-ledger.md"
+
+if [ ! -f "$LEDGER_TASKS" ]; then
+  emit "GATE_LEDGER=ok"
+  emit "GATE_LEDGER_DETAIL=No tasks.md under $LEDGER_SCOPE_LABEL; the build ran without task ids, so its ledger lines are keyed by area and there is nothing to cross-reference"
+  pass
+elif [ ! -f "$LEDGER_FILE" ]; then
+  emit "GATE_LEDGER=missing"
+  emit "GATE_LEDGER_DETAIL=No build-ledger.md at $LEDGER_SCOPE_LABEL/build-ledger.md, but $LEDGER_SCOPE_LABEL/tasks.md declares Execution tasks"
+else
+  # Execution task ids only. The heading is resolved by name and the scan stops
+  # at the next `## `, so a `T-TEST-01` in ## TDD is never counted: it fails the
+  # `T` followed by a digit test by its own shape.
+  LEDGER_EXEC_IDS=$(awk '
+    /^##[[:space:]]/ {
+      inexec = (tolower($0) ~ /^##[[:space:]]+execution[[:space:]]*$/) ? 1 : 0
+      next
+    }
+    inexec && /^[[:space:]]*[-*][[:space:]]*\[[ xX!]\][[:space:]]*T[0-9]+/ {
+      line = $0
+      sub(/^[[:space:]]*[-*][[:space:]]*\[[ xX!]\][[:space:]]*/, "", line)
+      sub(/[^0-9A-Za-z].*$/, "", line)
+      print line
+    }
+  ' "$LEDGER_TASKS")
+
+  LEDGER_MISSING=""
+  LEDGER_COUNT=0
+  for tid in $LEDGER_EXEC_IDS; do
+    LEDGER_COUNT=$((LEDGER_COUNT + 1))
+    grep -qE "^${tid}:[[:space:]]+complete" "$LEDGER_FILE" || LEDGER_MISSING="$LEDGER_MISSING $tid"
+  done
+
+  if [ -z "$LEDGER_MISSING" ]; then
+    emit "GATE_LEDGER=ok"
+    emit "GATE_LEDGER_DETAIL=$LEDGER_COUNT Execution task(s) checked, every one carries a complete line"
+    pass
+  else
+    # The ids, not just the status. A detail naming no id sends the operator to
+    # read the ledger by hand, which is the work this gate exists to do.
+    #
+    # The ids are space-separated, so the positional parameters count and slice
+    # them without a single newline escape. Both run in a subshell, so the
+    # script's own arguments are untouched.
+    LEDGER_TOTAL=$(set -- $LEDGER_MISSING; echo $#)
+    LEDGER_SHOWN=$(set -- $LEDGER_MISSING; echo ${1:-} ${2:-} ${3:-} ${4:-} ${5:-} ${6:-} ${7:-} ${8:-} ${9:-} ${10:-})
+    LEDGER_SHOWN=$(printf '%s' "$LEDGER_SHOWN" | sed 's/[[:space:]]*$//')
+    if [ "$LEDGER_TOTAL" -gt 10 ]; then
+      LEDGER_SHOWN="$LEDGER_SHOWN +$((LEDGER_TOTAL - 10)) more"
+    fi
+    emit "GATE_LEDGER=broken"
+    emit "GATE_LEDGER_DETAIL=Execution task(s) with no complete line in $LEDGER_SCOPE_LABEL/build-ledger.md: $LEDGER_SHOWN"
+  fi
+fi
+
 # ─── Summary ─────────────────────────────────────────────────────────────────
-# The single line a caller reads to decide convergence. Anything short of 4/4
+# The single line a caller reads to decide convergence. Anything short of 5/5
 # blocks; `not-probed` is legal in the vocabulary and never counts as a pass.
 
-emit "GATES_OK=$GATES_OK/4"
+emit "GATES_OK=$GATES_OK/5"
 
 exit 0

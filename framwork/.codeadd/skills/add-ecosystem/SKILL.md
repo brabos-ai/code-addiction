@@ -251,7 +251,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-tasks-checklist | add.plan, add.build, add.plan-to-ready (tasks.md schema and tick rules) |
 | add-tdd | add.plan, add.build, add.review, add.hotfix (tdd-pipeline RED gate) |
 | add-test-specification | add.plan (STEP 9) |
-| converge-gates.sh | add.plan-to-ready (STEP 6, convergence check), add.done (STEP 4, delivery-gate preflight) — read-only probe for the four gates (review, QA baseline, epic, coverage); one script backs both commands' verdicts so they can't drift apart |
+| converge-gates.sh | add.plan-to-ready (STEP 6, convergence check), add.done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
 | build-ledger.sh | add.build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add-subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
 | task-brief.sh | add.build (STEP 10 dispatch), add-subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
 | review-package.sh | add.build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add-subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |

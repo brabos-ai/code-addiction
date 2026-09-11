@@ -59,7 +59,7 @@ STEP 2: Initialize Decision Log → seeded from status.sh + about.md + decisions
 STEP 3: Plan leg             → dispatch the planning roster; mutator cache rule; checks plan.md (+ design.md) exist; @plan-reviewer-agent verdict gate
 STEP 4: Build leg            → implementation roster; from iteration 2 a correction leg; checks the resolution annex landed
 STEP 5: Review leg           → read-only; produces review-NNN.md + ## Fix Routing; checks outputs exist on disk
-STEP 6: Convergence check    → converge-gates.sh; all four gates ok, not-probed never counts as a pass
+STEP 6: Convergence check    → converge-gates.sh; all five gates ok, not-probed never counts as a pass
 STEP 7: No-progress check    → two consecutive identical finding sets
 STEP 8: Loop or exit         → back to STEP 4, or out with one of three states
 STEP 9: Report               → CONVERGED | CAP_REACHED | BLOCKED, never softened
@@ -439,8 +439,8 @@ subfeature in epic mode, and the `SFxx` argument itself on a scoped run.
    `LAST_CHECKPOINT` from `git tag -l "checkpoint/${FEATURE_ID}-*-done"` — so
    read `LAST_CHECKPOINT`, and read no tag as "did not converge".
    Follow `add-commit`'s type and message conventions for the body.
-   **Gate lines:** the commit carries **the five gate lines** — `GATE_REVIEW`,
-   `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATES_OK` — **copied
+   **Gate lines:** the commit carries **the six gate lines** — `GATE_REVIEW`,
+   `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `GATES_OK` — **copied
    verbatim from `converge-gates.sh`'s output** in STEP 6, as **body lines**
    beneath the Conventional Commits body, NOT as git trailers: `GATE_REVIEW=ok`
    carries no `Key: value` colon, so `git interpret-trailers` never sees it as a
@@ -765,10 +765,10 @@ it is documentation of the script's contract, not the evaluation itself:
 | 3 | Epic completeness | `GATE_EPIC` | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
 | 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 11's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 11 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
 
-**CONVERGED requires all four gates `ok`.** `missing`, `broken` and `not-probed`
+**CONVERGED requires all five gates `ok`.** `missing`, `broken` and `not-probed`
 are each non-convergence — `not-probed` NEVER counts as a pass, even on a gate
-that emits it in no case today. Read `GATES_OK=N/4` alongside the individual
-keys as the single pass/fail summary; anything short of `4/4` blocks.
+that emits it in no case today. Read `GATES_OK=N/5` alongside the individual
+keys as the single pass/fail summary; anything short of `5/5` blocks.
 
 **Subfeature-scoped invocation.** Gate 3 can never be satisfied by a run
 targeting one non-final subfeature, and would report non-convergence for a reason
@@ -883,7 +883,7 @@ NEVER softened into one another:
 
 | State | Meaning | Next command |
 |-------|---------|--------------|
-| **CONVERGED** | All four `converge-gates.sh` gates read `ok` (`GATES_OK=4/4`) — and, on an epic run, the epic-wide gate-3 pass at epic end also read `GATE_EPIC=ok` | `{{cmd:add.done}}` once every subfeature is done — or `/add.plan-to-ready` to continue an epic that halted, or for the next subfeature outside epic mode |
+| **CONVERGED** | All five `converge-gates.sh` gates read `ok` (`GATES_OK=5/5`) — and, on an epic run, the epic-wide gate-3 pass at epic end also read `GATE_EPIC=ok` | `{{cmd:add.done}}` once every subfeature is done — or `/add.plan-to-ready` to continue an epic that halted, or for the next subfeature outside epic mode |
 | **CAP_REACHED** | 3 iterations spent on the subfeature (or feature) that halted the run, gates still failing | `{{cmd:add.build}}` for the open `## Fix Routing` rows, or re-invoke after triage |
 | **BLOCKED** | No progress detected, a gate failed for a reason the loop cannot act on (missing `about.md`, `build-setup.sh` non-zero, stale QA setup, `@plan-reviewer-agent` or `@consistency-agent` verdict `blocked` or blockers standing after its one re-dispatch), or — epic mode only — the global backstop fired | The specific remedy, named |
 
