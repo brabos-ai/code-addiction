@@ -791,7 +791,7 @@ node_free_path() {
   [[ "$output" != *'"id":"E1"'* ]]
 }
 
-@test "L4.1: an entry with no node at all is still readable by its text" {
+@test "L4.3: an entry with no node at all is still readable by its text" {
   # The field is optional — top-level scripts, CLAUDE.md and .gitignore produce
   # no graph node — so the haystack must tolerate its absence.
   src a.md 'marker_gamma lives here'

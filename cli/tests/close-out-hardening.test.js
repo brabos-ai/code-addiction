@@ -16,12 +16,13 @@ import { fileURLToPath } from 'node:url';
  * naming `add-build-ledger`, `## Rules` repeats three rules its STEP bodies
  * already state, and `CLAUDE.md` does not say who owns the changelog filename.
  *
- * Four assertions PASS on the pre-plan tree and each is marked `guard`. They
- * pin what the six edits to one command must NOT lose: its nine STEPs, the
- * recovery path, the ledger gate's two phrases a sibling suite fixes by literal
- * text, the bare `ALWAYS:` inside `## Rules` that ruler item 3 mandates, the
- * text-only handoff, and the absence of any size budget. A matrix that is RED
- * everywhere has no guard against collateral damage.
+ * Several assertions PASS on the pre-plan tree and each carries a `guard`
+ * comment. They pin what the six edits to one command must NOT lose: its nine
+ * STEPs, the recovery path, the ledger gate's two phrases a sibling suite fixes
+ * by literal text, the bare `ALWAYS:` inside `## Rules` that ruler item 3
+ * mandates, the text-only handoff, the survival of every pruned rule, and the
+ * absence of any size budget. A matrix that is RED everywhere has no guard
+ * against collateral damage.
  *
  * L1 (build.js clean, the cli suite green, the bats file green) and L2 (the
  * graph queries) are run by the build per F-block and recorded in the ledger.
@@ -154,7 +155,15 @@ describe('L3.1-3.2 gate 2.1', () => {
     // either is what produces a second index entry for one delivery.
     expect(gate).toMatch(/STEP 3/);
     expect(gate).toMatch(/STEP 6/);
-    expect(gate).toMatch(/⛔ DO NOT/);
+
+    // The gate must be CONJUNCTIVE. Loosened to the entry alone it also
+    // catches the normal path, and every close-out would then skip its own
+    // STEP 3 — the failure the plan's Risks table names first.
+    const conjunctive = conditionBlocks(gate).filter((b) => {
+      const cond = b.split(/\r?\n/)[0];
+      return /entry/i.test(cond) && /\bopen\b/i.test(cond) && /\bAND\b/.test(cond);
+    });
+    expect(conjunctive).toHaveLength(1);
 
     // And it must say where the run resumes, not merely what it skips.
     expect(gate).toMatch(/STEP 7|merge/i);
@@ -226,6 +235,12 @@ describe('L3.5-3.6 the changelog filename', () => {
 
     // The precedent this skill already set for plans, stated for changelogs.
     expect(naming).toMatch(/keep the names|keep their names/i);
+
+    // The timestamp removed the collision that used to make two writers land
+    // on one file, so the owner has to state the rule the collision supplied.
+    expect(naming).toMatch(/ONE CHANGELOG PER DELIVERY/i);
+    expect(naming).toMatch(/EDIT it in place/i);
+    expect(read(P.done)).toMatch(/EDIT it and keep its filename/i);
   });
 });
 
@@ -278,7 +293,10 @@ describe('L3.7-3.9 the ruler items', () => {
     expect(rules).not.toMatch(/Grade the delivery/i);
     expect(rules).not.toMatch(/skipped, queued, neutral or cancelled/i);
 
-    // Each one survives where it is load-bearing — pruning is not deletion.
+    // guard: all three pass on the pre-plan tree. Each pruned rule survives
+    // where it is load-bearing — pruning is not deletion. "Audit the delivery"
+    // lives in the top-of-file prohibitions block rather than a STEP body,
+    // which is a stronger home, not a weaker one.
     const outside = text.replace(rules, '');
     expect(outside).toMatch(/rev-parse HEAD/);
     expect(outside).toMatch(/Audit the delivery here/);

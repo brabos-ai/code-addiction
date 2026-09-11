@@ -43,12 +43,12 @@ independently trustworthy.
 | `by` | yes | `done` \| `verify` \| `human` — who wrote this line. Makes "a machine repaired this" distinguishable from "a person declared this" |
 | `status` | yes | `live` \| `changed` \| `gone` \| `superseded` |
 | `name` | yes | Human label, in whatever language the project writes docs in |
-| `words` | yes | Free-text search surface — the words someone would actually type. `0042F` finds nothing; `login google oauth` finds it |
+| `words` | yes | Free-text search surface — the words someone would actually type. `0042F` finds nothing; `login google oauth` finds it. `read` also searches `id`, `node` and each item's `what` and `find`, never an item's `at` |
 | `commits` | yes, ≥1 | Short hashes. Where to go look, never an explanation |
 | `origin` | yes | **A directory that survives**, never a file that does not. Product: the feature directory, which pruning keeps. Internal: `docs/deliveries/<id>/`, the archived plan documents |
 | `items` | yes, 1–5 | What was delivered |
 | `superseded_by` | only when `status` is `superseded` | The `id` that replaced this one |
-| `node` | optional, internal only | The `artefact-graph.json` node id |
+| `node` | optional, internal only | The `artefact-graph.json` node id. **Part of the `read` search surface**, beside `words`, so a query for the bare artefact name finds the entry even when no other field spells it |
 
 ⛔ **`origin` may not name a path the project ignores.** The value is there so a reader can go back to why a
 delivery happened, and a gitignored path answers that on exactly one machine. The internal layer wrote
