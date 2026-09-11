@@ -61,11 +61,15 @@ IF CI HAS NOT CONCLUDED, OR CONCLUDED ON A DIFFERENT SHA:
 NOTE: `gh pr create` is NOT prohibited here. CI triggers on `pull_request`, so the PR is what
 makes the gate runnable at all — STEP 2.3 creates it before the gate can conclude.
 
-IF STEP 3 WROTE NO ENTRY:
+IF THE INDEX CARRIES NO ENTRY FOR THIS PLAN:
   ⛔ DO NOT USE: Bash to run rm on anything
   ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
   ⛔ DO NOT USE: Bash to run git worktree remove
   ✅ DO: Skip STEP 8 entirely
+
+  **The condition is the entry's existence, never which STEP wrote it.** On the resume path at 2.5
+  STEP 3 is skipped, so a rule keyed to "STEP 3 wrote one" would skip the cleanup of a delivery whose
+  entry is committed, pushed and merged.
 
 IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   ⛔ DO NOT USE: Bash to run rm on it
@@ -138,15 +142,32 @@ Collect, and carry forward to STEP 3:
 
 Run `gh pr view --json state,mergedAt` for the current branch, then check whether `docs/delivered.jsonl` already carries an entry whose `id` is this plan's basename.
 
-**Two different states hide behind "already merged":**
+**Cross the two facts. All four combinations are reachable, and each routes differently:**
 
 | PR | Entry for this plan | Action |
 |---|---|---|
-| Open | — | Normal path. Continue |
+| Open | no | Normal path. Continue |
+| Open | **yes** | **Resume path — 2.5.** STEP 3, STEP 4 and STEP 6 already ran. Continue, and skip them |
 | Merged | yes | Nothing to close out. Report and STOP |
 | Merged | **no** | **Recovery path — 2.4.** Continue |
 
-The middle row is what makes a second run on the same branch safe: the gates below would all still pass, and without it the command would write a second entry for one delivery.
+```
+IF AN ENTRY FOR THIS PLAN IS ALREADY IN THE INDEX AND THE PR IS STILL OPEN:
+  ⛔ DO NOT USE: Write on docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on docs/changelog/
+  ⛔ DO NOT USE: Bash to run cp into docs/deliveries/<id>/
+  ⛔ DO NOT: Re-run STEP 3, STEP 4 or STEP 6 to confirm what is already committed
+  ✅ DO: Confirm the committed entry's `id` is this plan's basename, then carry on to STEP 7
+```
+
+**The second row is the state a refused merge leaves behind, and it is not rare.** STEP 6 commits the
+entry, the changelog and the archive in one commit, and STEP 7 can then be refused — a review thread
+still unresolved, an approval dismissed by the push, an unattributed change. The branch is left holding
+a complete and correct entry. Falling through to the normal path writes a **second** entry for one
+delivery, which is exactly what a three-row table did on PR #49.
+
+**The third row is what makes a second run on the same branch safe:** the gates below would all still
+pass, and without it the command would write a second entry for one delivery.
 
 **The bottom row is the case the index exists for.** Work reached `main` and left no record. Stopping there would make the index quietly wrong about a delivery that shipped — the same lie as indexing work that never landed, in the other direction. It is recoverable, so recover it.
 
@@ -227,6 +248,30 @@ without the ledger there is no evidence the plan was finished, only that somethi
 **Report in STEP 9 that the run took the recovery path, and why the entry landed after the merge
 rather than before it.** An entry whose commit sits after the delivery it describes is fine; an entry
 that hides how it got there is not.
+
+### 2.5 The Resume Path — written, pushed, merge refused
+
+Reached only from 2.1's second row. **Every gate above still applies in full**, exactly as they do on
+the recovery path. What changes is that three STEPs already ran and must not run again:
+
+| Step | Normal | Resume |
+|---|---|---|
+| 2.3 | Sync, push, wait for CI | Unchanged. The run to read is the one on the docs commit STEP 6 already pushed |
+| 3 | Author the index entry | **Skipped.** The entry is committed on the branch |
+| 4 | Generate the changelog | **Skipped.** Committed by the same STEP 6 commit |
+| 5 | Preview | Shows what is already committed, so nothing is proposed |
+| 6 | Archive, commit and push | **Skipped.** `docs/deliveries/<id>/` is assembled and committed |
+| 7 | Merge the PR | The only work left |
+| 8 | Cleanup | Unchanged |
+
+⛔ **STEP 4 is skipped with the other two, and the reason is not symmetry.** The changelog filename
+carries a timestamp, so a second STEP 4 does not overwrite the first — it writes a **second file** for
+one delivery, and both then reach `main`. STEP 3's duplicate is at least visible as two lines sharing
+an `id`; this one reads as two separate deliveries.
+
+**What is left to do is find out why the merge was refused.** The branch state is correct and nothing
+here repairs it. Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` in STEP
+9, alongside which STEPs this run skipped.
 
 ---
 
@@ -407,7 +452,7 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 ## STEP 8: Cleanup (NON-FATAL, IN ORDER)
 
-**Run only if STEP 3 wrote an entry and STEP 7's merge succeeded.**
+**Run only if the index carries this plan's entry and STEP 7's merge succeeded.**
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
