@@ -384,3 +384,95 @@ teardown() {
   [ -f docs/delivered.jsonl ]
   [ ! -f docs/features/0003F-prune/discovery.md ]
 }
+
+# ─── Mode split (plan 2026-09-11T014333, F4) ─────────────────────────
+# --commit-push and --cleanup are EXTRACTED from --merge's body, never
+# re-implemented beside it. --merge composes them around its own checkout,
+# squash and push, so every case above still exercises the whole sequence
+# through its original entry point.
+
+@test "commit-push: commits and pushes the branch, and does NOT switch to main" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "own" > docs/features/0001F-test/about.md
+  git push -u origin feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh" --commit-push
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"COMMIT=OK"* ]]
+  [[ "$output" == *"PUSH_BRANCH=OK"* ]]
+  # The half that must NOT happen: no checkout, no merge, no push to main.
+  [[ "$output" != *"CHECKOUT_MAIN=OK"* ]]
+  [[ "$output" != *"PUSH_MAIN=OK"* ]]
+  [ "$(git branch --show-current)" = "feature/0001F-test" ]
+}
+
+@test "commit-push: a clean tree still pushes and reports COMMIT=SKIPPED" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  git push -u origin feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh" --commit-push
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"COMMIT=SKIPPED"* ]]
+  [[ "$output" == *"PUSH_BRANCH=OK"* ]]
+}
+
+@test "every mode refuses on main, for the reason that actually fires" {
+  setup_remote
+  # merge_guards' "Already on $MAIN_BRANCH" check is NOT what stops these. The
+  # branch-ID check above it fires first, because `main` carries no [NNNN][L].
+  # The existing "merge mode: fails when already on main (no ID)" case names
+  # that in its own title. Asserted here as it behaves, not as it reads.
+  for mode in --merge --commit-push --cleanup; do
+    run "$SCRIPTS_DIR/done.sh" "$mode"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"No feature/hotfix ID found"* ]]
+  done
+}
+
+@test "cleanup: run from the feature branch, it switches to main and deletes it" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  git push -u origin feature/0001F-test -q
+  # Simulate a merge that already happened elsewhere: main carries the branch.
+  git checkout "main" -q
+  git merge --no-edit feature/0001F-test -q
+  git push origin HEAD -q
+  git checkout feature/0001F-test -q
+
+  run "$SCRIPTS_DIR/done.sh" --cleanup
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLEANUP=OK"* ]]
+  [ "$(git branch --show-current)" = "main" ]
+  run git rev-parse --verify feature/0001F-test
+  [ "$status" -ne 0 ]
+}
+
+@test "an unknown flag is NOT a mode — it falls through to context" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  git push -u origin feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh" --not-a-mode
+  [ "$status" -eq 0 ]
+  # Context mode's own output, never the merge family's.
+  [[ "$output" == *"CHANGED_COUNT="* ]]
+  [[ "$output" != *"PUSH_BRANCH=OK"* ]]
+}
+
+@test "merge: still emits every key of the whole sequence" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "own" > docs/features/0001F-test/about.md
+  git push -u origin feature/0001F-test -q
+  run "$SCRIPTS_DIR/done.sh" --merge
+  [ "$status" -eq 0 ]
+  # The composition is proven by the keys, not by reading the source: every
+  # stage of the original sequence still reports.
+  [[ "$output" == *"COMMIT=OK"* ]]
+  [[ "$output" == *"PUSH_BRANCH=OK"* ]]
+  [[ "$output" == *"CHECKOUT_MAIN=OK"* ]]
+  [[ "$output" == *"PUSH_MAIN=OK"* ]]
+  [[ "$output" == *"CLEANUP=OK"* ]]
+  [[ "$output" == *"STATUS=SUCCESS"* ]]
+}

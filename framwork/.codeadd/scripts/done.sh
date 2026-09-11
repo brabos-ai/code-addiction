@@ -19,6 +19,8 @@ MODE="context"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --merge) MODE="merge"; shift ;;
+        --commit-push) MODE="commit-push"; shift ;;
+        --cleanup) MODE="cleanup"; shift ;;
         *) shift ;;
     esac
 done
@@ -220,7 +222,17 @@ fi
 # MERGE MODE (--merge)
 # ============================================
 
-if [ "$MODE" = "merge" ]; then
+# ============================================
+# MODE BODIES
+# ============================================
+# EXTRACTED from --merge, never re-implemented beside it. --merge composes
+# them around its own checkout, squash and push, so every test written against
+# --merge still exercises the whole sequence through its original entry point.
+#
+# The PR route calls --commit-push, lets gh merge server-side, then calls
+# --cleanup. The local route is --merge, unchanged.
+
+merge_guards() {
 
     echo "========================================"
     echo "MERGE"
@@ -248,6 +260,9 @@ if [ "$MODE" = "merge" ]; then
         exit 1
     fi
 
+}
+
+do_commit_push() {
     # Step 1: Commit pending changes if any
     MODIFIED=$(git diff --name-only)
     STAGED=$(git diff --cached --name-only)
@@ -273,9 +288,9 @@ if [ "$MODE" = "merge" ]; then
     if [ "$HAS_UNCOMMITTED" = true ]; then
         git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): finalize before merge
 
-Generated with ADD by https://brabos.ai
+    Generated with ADD by https://brabos.ai
 
-Co-Authored-By: ADD <noreply@brabos.ai>"
+    Co-Authored-By: ADD <noreply@brabos.ai>"
         echo "COMMIT=OK"
     else
         echo "COMMIT=SKIPPED"
@@ -288,6 +303,52 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     # visible to the operator.
     git push -u origin "$CURRENT_BRANCH"
     echo "PUSH_BRANCH=OK"
+
+}
+
+do_cleanup() {
+    # Standalone, this runs from the feature branch: gh merged server-side and
+    # nothing moved the local HEAD. Inside --merge it runs already on main, where
+    # the switch is a no-op. One implementation, both callers.
+    if [ "$(git branch --show-current)" != "$MAIN_BRANCH" ]; then
+        echo "STEP=Switching to $MAIN_BRANCH..."
+        git checkout "$MAIN_BRANCH"
+        git pull origin "$MAIN_BRANCH"
+        echo "CHECKOUT_MAIN=OK"
+    fi
+    # Step 7: Cleanup checkpoint tags for this feature
+    echo "STEP=Cleaning up checkpoint tags..."
+    CHECKPOINT_TAGS=$(git tag -l "checkpoint/${FEATURE_NUMBER}-*" 2>/dev/null || true)
+    if [ -n "$CHECKPOINT_TAGS" ]; then
+        echo "$CHECKPOINT_TAGS" | while read -r tag; do
+            git tag -d "$tag" 2>/dev/null || true
+            git push origin --delete "$tag" 2>/dev/null || true
+        done
+        CHECKPOINT_COUNT=$(echo "$CHECKPOINT_TAGS" | grep -c '[^[:space:]]' || true)
+        echo "CHECKPOINT_CLEANUP=${CHECKPOINT_COUNT} tags removed"
+    else
+        echo "CHECKPOINT_CLEANUP=SKIPPED (no checkpoint tags found)"
+    fi
+
+    # Step 8: Cleanup branches
+    echo "STEP=Cleaning up branches..."
+    # Remove the feature's worktree first: `git branch -d` fails while the branch
+    # is checked out in a linked worktree. No --force — fail loud if dirty.
+    if [ -n "$FEATURE_SLUG" ] && git worktree list --porcelain 2>/dev/null | grep -qE "^worktree .*/\.worktrees/${FEATURE_SLUG}$"; then
+        echo "STEP=Removing worktree .worktrees/${FEATURE_SLUG}..."
+        git worktree remove ".worktrees/${FEATURE_SLUG}"
+        echo "WORKTREE_CLEANUP=OK"
+    fi
+    git branch -d "$CURRENT_BRANCH" 2>/dev/null || echo "LOCAL_DELETE=SKIPPED"
+    git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || echo "REMOTE_DELETE=SKIPPED"
+    echo "CLEANUP=OK"
+
+}
+
+if [ "$MODE" = "merge" ]; then
+
+    merge_guards
+    do_commit_push
 
     # Step 3: Switch to main and pull
     echo "STEP=Switching to $MAIN_BRANCH..."
@@ -397,32 +458,7 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     git push origin "$MAIN_BRANCH"
     echo "PUSH_MAIN=OK"
 
-    # Step 7: Cleanup checkpoint tags for this feature
-    echo "STEP=Cleaning up checkpoint tags..."
-    CHECKPOINT_TAGS=$(git tag -l "checkpoint/${FEATURE_NUMBER}-*" 2>/dev/null || true)
-    if [ -n "$CHECKPOINT_TAGS" ]; then
-        echo "$CHECKPOINT_TAGS" | while read -r tag; do
-            git tag -d "$tag" 2>/dev/null || true
-            git push origin --delete "$tag" 2>/dev/null || true
-        done
-        CHECKPOINT_COUNT=$(echo "$CHECKPOINT_TAGS" | grep -c '[^[:space:]]' || true)
-        echo "CHECKPOINT_CLEANUP=${CHECKPOINT_COUNT} tags removed"
-    else
-        echo "CHECKPOINT_CLEANUP=SKIPPED (no checkpoint tags found)"
-    fi
-
-    # Step 8: Cleanup branches
-    echo "STEP=Cleaning up branches..."
-    # Remove the feature's worktree first: `git branch -d` fails while the branch
-    # is checked out in a linked worktree. No --force — fail loud if dirty.
-    if [ -n "$FEATURE_SLUG" ] && git worktree list --porcelain 2>/dev/null | grep -qE "^worktree .*/\.worktrees/${FEATURE_SLUG}$"; then
-        echo "STEP=Removing worktree .worktrees/${FEATURE_SLUG}..."
-        git worktree remove ".worktrees/${FEATURE_SLUG}"
-        echo "WORKTREE_CLEANUP=OK"
-    fi
-    git branch -d "$CURRENT_BRANCH" 2>/dev/null || echo "LOCAL_DELETE=SKIPPED"
-    git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || echo "REMOTE_DELETE=SKIPPED"
-    echo "CLEANUP=OK"
+    do_cleanup
 
     # Done
     echo ""
@@ -433,5 +469,31 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     echo "MERGED_TO=$MAIN_BRANCH"
     echo "CURRENT_BRANCH=$MAIN_BRANCH"
 
+    exit 0
+fi
+
+# ============================================
+# COMMIT-PUSH MODE (--commit-push)
+# ============================================
+
+if [ "$MODE" = "commit-push" ]; then
+    merge_guards
+    do_commit_push
+    echo ""
+    echo "STATUS=SUCCESS"
+    echo "BRANCH=$CURRENT_BRANCH"
+    exit 0
+fi
+
+# ============================================
+# CLEANUP MODE (--cleanup)
+# ============================================
+
+if [ "$MODE" = "cleanup" ]; then
+    merge_guards
+    do_cleanup
+    echo ""
+    echo "STATUS=SUCCESS"
+    echo "CURRENT_BRANCH=$MAIN_BRANCH"
     exit 0
 fi
