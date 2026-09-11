@@ -39,6 +39,9 @@ const P = {
   build: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.build.md'),
   sdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
   history: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-doc-schemas', 'references', 'history.md'),
+  discipline: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-review-discipline', 'SKILL.md'),
+  disciplineInternal: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
+  providerMap: path.join(ROOT, 'framwork', 'provider-map.json'),
 };
 
 /** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
@@ -614,5 +617,56 @@ describe('L11 — the build reads its plan cold (F14)', () => {
   it('L11.8: Completion reports the outcome', () => {
     const t = read(P.build);
     expect(t.slice(t.indexOf('## STEP 18'))).toMatch(/readback/i);
+  });
+});
+
+describe('L12 — the product review-discipline skill (F15)', () => {
+  it('L12.1: the skill exists and is registered for the default providers', () => {
+    expect(exists(P.discipline)).toBe(true);
+    const map = JSON.parse(read(P.providerMap));
+    expect(map.skills, 'provider-map must register it').toHaveProperty('add-review-discipline');
+  });
+
+  it('L12.2: it owns the three readers and the question each answers', () => {
+    const t = read(P.discipline);
+    for (const reader of ['@plan-reviewer-agent', '@readback-agent', '@reviewer-agent']) {
+      expect(t, `the skill must name ${reader}`).toContain(reader);
+    }
+  });
+
+  it('L12.3: the count rule names the re-gate as the condition', () => {
+    const t = read(P.discipline);
+    expect(t).toMatch(/one re-dispatch/i);
+    // The re-gate is WHY a second read is a different question, and it is what
+    // the internal layer lacks. Without it the rule reads as a preference.
+    expect(t).toMatch(/re-gate|re-run.*validation gate/i);
+  });
+
+  it('L12.4: the divergence table carries all three sites', () => {
+    const t = read(P.discipline);
+    expect(t).toContain('add.plan-to-ready');
+    expect(t).toContain('add.build');
+    expect(t).toMatch(/add\.brainstorm|add\.new/);
+  });
+
+  it('L12.5: the disk boundary permits the two files a script consumes, by name', () => {
+    const t = read(P.discipline);
+    expect(t).toContain('review-NNN.md');
+    expect(t).toContain('qa-validation-NNN.md');
+    expect(t).toMatch(/qa-evidence\.sh|converge-gates\.sh/);
+  });
+
+  it('L12.6: the product sibling carries the note and its uses: names no counterpart', () => {
+    const product = read(P.discipline);
+    expect(product).toMatch(/sibling/i);
+    // A cross-layer uses: target resolves inside its own layer and dangles,
+    // which fails the build. Assert the ABSENCE, not only the note.
+    expect(uses(product)).not.toContain('add-review-discipline');
+  });
+
+  it('L12.7: it delegates rather than restating what other skills own', () => {
+    const t = read(P.discipline);
+    expect(t).toContain('add-plan-review');
+    expect(t).toContain('add-subagent-driven-development');
   });
 });

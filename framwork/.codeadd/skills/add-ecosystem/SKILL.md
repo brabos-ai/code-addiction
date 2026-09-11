@@ -30,6 +30,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-optimizing-git-workflow
 - mention: add-plan-based-features
 - mention: add-plan-review
+- mention: add-review-discipline
 - mention: add-product-discovery
 - mention: add-project-scaffolding
 - mention: add-qa
@@ -147,6 +148,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-knowledge-discovery | Consult the project wiki (and code knowledge graph) at the context/discovery step for minimal token cost — loaded by add.plan, add.hotfix, add.new, add.diagnose, add.review |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases |
 | add-plan-based-features | Implement subscription plan-based features |
+| add-review-discipline | HOW review is dispatched: the counts, what makes a second dispatch legal (apply then re-gate), how a readback divergence is handled at each of its three sites, and the one boundary where a verdict may reach disk |
 | add-plan-review | Pre-delivery executability rubric for about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` |
 | add-cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` |
 | add-product-discovery | Product discovery (macro level) |
@@ -226,6 +228,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
+| add-review-discipline | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3), add.build (10.0.4) — the dispatch discipline all five share |
 | add-plan-review | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via plan-reviewer-agent |
 | add-feature-readback | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via readback-agent, each after the plan-review fixes land |
 | add-feature-discovery | add.new, add.plan |

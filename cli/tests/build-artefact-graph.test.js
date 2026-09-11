@@ -866,7 +866,11 @@ describe('node inventory snapshot', () => {
       // skill 49 -> 51: add-final-report, one per layer. The internal and
       // product copies are separate nodes and both are counted.
       // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
-      skill: 51,
+      // skill 51 -> 52: add-review-discipline in the product layer, the
+      // deliberate sibling of the internal skill of the same name. Both are
+      // counted: they are separate nodes in separate layers.
+      // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F15.)
+      skill: 52,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -904,8 +908,12 @@ describe('node inventory snapshot', () => {
     // are not in DECLARING_KINDS, so a deleted script changes the node total
     // and nothing else.
     // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
-    expect(nodes).toHaveLength(215);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(104);
+    // 215 -> 216, declares 104 -> 105: +1 skill, the product add-review-discipline.
+    // A skill IS in DECLARING_KINDS, so both counts move together — the
+    // asymmetry with the script above is the rule, not an oversight.
+    // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F15.)
+    expect(nodes).toHaveLength(216);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(105);
   });
 });
 
