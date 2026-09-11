@@ -147,6 +147,7 @@ T02: complete (commits d4e5f6a..b7c8d9e, review clean)
 T03: minor (deferred): magic number in retry backoff
 T04: parked — reviewer wants a null guard — Ruling: the caller already guards; costs a crash if wrong
 T04: complete (commits c1d2e3f..f9a8b7c, 1 parked)
+Readback: matches — the plan builds a per-scope QA snapshot promoted at close-out
 Publish: pr-opened https://github.com/org/repo/pull/42
 ```
 

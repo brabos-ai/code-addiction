@@ -19,10 +19,12 @@
 - agent: e2e-agent
 - agent: fix-agent
 - agent: frontend-agent
+- agent: readback-agent
 - agent: reviewer-agent
 - agent: test-agent
 - agent: ux-agent
 - command: /add.done
+- mention: /add.plan
 - command: /add.new
 - command: /add.plan-to-ready
 - command: /add.qa-setup
@@ -333,7 +335,7 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 ### 10.0 Pre-Flight Scan and the Handoff Contract (BEFORE the first dispatch)
 
-Both blocks below run **once, before the first subagent of this run is dispatched**. Neither is optional,
+The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and neither is satisfied by asserting it happened.
 
 #### 10.0.1 Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
@@ -417,6 +419,63 @@ Ruling: <what you decided> — <why> — <what it costs if wrong>
 All three parts are required. The cost clause is what makes a ruling reviewable: a human reading "the
 caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong" can.
 STEP 18 reprints every one of them.
+
+#### 10.0.4 Read the Plan Cold (NOT a gate)
+
+The ledger is read on entry because a compacted session looks exactly like a
+fresh start. **The same argument applies to the plan**: what a compaction erases
+is the coordinator's understanding of it, and nothing checks that what it
+recovers matches the document. `/add.plan` STEP 13's readback ran in the session
+that WROTE the plan, while it could still be asked; this one reads it the way a
+resumed session actually holds it — alone.
+
+**DISPATCH AGENT: `@readback-agent`** [read-only]
+
+| Field | Value |
+|---|---|
+| `target` | `docs/features/${FEATURE_ID}` |
+| `scope` | `subfeature`, naming `${EPIC_CURRENT_SF}`, when `HAS_EPIC=true`. `feature` otherwise |
+
+Compare its closing **"In one sentence"** line against the plan and tasks loaded
+in STEP 6.
+
+```
+IF THE READBACK MARKED A GAP OR READ SOMETHING THE PLAN DID NOT INTEND:
+  ⛔ DO NOT: Halt the build and send the user back to /add.plan
+  ⛔ DO NOT: Widen or narrow the plan's scope to match the reader's expectation
+  ⛔ DO NOT: Re-dispatch it — nothing changed, so there is no re-gate to earn a second read
+  ✅ DO: Record a ruling naming the divergence and which reading you built
+  ✅ DO: Continue
+```
+
+**The approval already happened.** This command has no `[STOP]` of its own: the
+user read `/add.plan`'s closing report and chose to run the build. A reader that
+answers its own questions out loud marks assumptions constantly — that is the
+format working, not a defect to escalate.
+
+Append ONE line, through the script like every other event. Three carry the
+`Readback:` prefix and the fourth carries `Ruling:`, because a divergence here
+becomes a decision rather than an edit:
+
+```
+Readback: matches — <the one-sentence line>
+Readback: diverges — <what it understood>
+Ruling: built the plan's reading of <X> — <why> — <what it costs if wrong>
+Readback: skipped — no subagent dispatch on this provider
+```
+
+**On resume:** a `Readback:` line already in the ledger means it ran. Do not
+dispatch it again and do not re-rule its divergence — the same rule `Preflight:`
+follows.
+
+```
+IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
+  ⛔ DO NOT: Apply the readback inline yourself
+  ✅ DO: Append the skipped line, and say so at STEP 18
+```
+
+There is no inline fallback because the mechanism IS the reader not holding this
+conversation. A readback you perform on a plan you just loaded measures nothing.
 
 ---
 
@@ -1123,8 +1182,9 @@ grep -n 'Ruling:' "${LEDGER_FILE}"
 - **Zero rulings is a valid outcome and is stated, not omitted:** "Rulings I made: none — no conflict and
   no finding reached the cap." Silence reads as "the section was skipped".
 
-Also surface, from the same ledger: deferred minors (count + one line each), parked findings, and any
-subagent failure line. These are not rulings and go in their own short list.
+Also surface, from the same ledger: deferred minors (count + one line each), parked findings, any
+subagent failure line, and **the readback outcome** — matched, diverged, or skipped and why. These are
+not rulings and go in their own short list.
 
 ### 18.2 Next command
 

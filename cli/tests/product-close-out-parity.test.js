@@ -558,3 +558,61 @@ describe('L10 — add.pull-request complements too (F13)', () => {
     expect(read(P.pullRequest)).toContain('add-commit');
   });
 });
+
+describe('L11 — the build reads its plan cold (F14)', () => {
+  const preflight = () => {
+    const t = read(P.build);
+    return t.slice(t.indexOf('### 10.0'), t.indexOf('### TASKS MODE') > -1
+      ? t.indexOf('### TASKS MODE')
+      : t.indexOf('## STEP 11'));
+  };
+
+  it('L11.1: a 10.0.4 sub-step dispatches the readback agent', () => {
+    const b = preflight();
+    expect(b).toContain('10.0.4');
+    expect(b).toContain('@readback-agent');
+  });
+
+  it("L11.2: 10.0's intro names three blocks, not two", () => {
+    const b = preflight();
+    expect(b).not.toContain('Both blocks below');
+    expect(b).toMatch(/three blocks/i);
+  });
+
+  it('L11.3: the dispatch picks its scope by feature shape', () => {
+    const b = preflight();
+    expect(b).toContain('subfeature');
+    expect(b).toContain('feature');
+    expect(b).toContain('EPIC_CURRENT_SF');
+  });
+
+  it('L11.4: three Readback lines plus one Ruling line for divergence', () => {
+    const b = preflight();
+    for (const line of ['Readback: matches', 'Readback: diverges', 'Readback: skipped']) {
+      expect(b, `the block must specify ${line}`).toContain(line);
+    }
+    // The fourth is prefixed Ruling:, not Readback:. A builder reading "four
+    // Readback lines" lands the divergence outcome without the ruling.
+    expect(b).toMatch(/Ruling: built the plan/);
+  });
+
+  it('L11.5: it is not a gate — no stop, no re-dispatch, no inline fallback', () => {
+    const b = preflight();
+    expect(b).toMatch(/DO NOT: Halt the build/);
+    expect(b).toMatch(/DO NOT: Re-dispatch/);
+    expect(b).toMatch(/DO NOT: Apply the readback inline/);
+  });
+
+  it('L11.6: a Readback line already in the ledger means it ran', () => {
+    expect(preflight()).toMatch(/resume/i);
+  });
+
+  it('L11.7: the canonical ledger format carries a Readback row', () => {
+    expect(read(P.sdd)).toMatch(/^Readback: /m);
+  });
+
+  it('L11.8: Completion reports the outcome', () => {
+    const t = read(P.build);
+    expect(t.slice(t.indexOf('## STEP 18'))).toMatch(/readback/i);
+  });
+});
