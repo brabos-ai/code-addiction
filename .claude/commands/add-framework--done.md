@@ -586,15 +586,8 @@ Then, after the seven blocks and before the metadata, report always:
 ## Rules
 
 ALWAYS:
-- Compare the CI run SHA against `git rev-parse HEAD` before reading its verdict
-- Attach `--prefix cli` to `test:package` in the local fallback — the bare form is a false gate, not a failing one
 - Say in the report which evidence the gate accepted, CI or local, and why
-- Add a job here when CI gains one, so the gate and the merge cannot disagree
+- Add a job to 2.3's list when CI gains one, so the gate and the merge cannot disagree
 
 NEVER:
-- Grade the delivery — the build audits it once at its STEP 7, and a close-out that repeats the audit
-  is a command judging work it is about to merge
-- Synthesise a `node` id for something the graph does not model
 - Record a rename as a deletion or a supersession
-- Loosen a `find` anchor to get past a `REFUSED=` result
-- Accept a check that is skipped, queued, neutral or cancelled as a pass — only `success` is one
