@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 // Capture the fail-loud warning channel — an anchor miss/drift must never be silent.
@@ -11,6 +10,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 });
 
 import { enableFeature, disableFeature } from '../src/features.js';
+import { treeFixture } from './helpers/tree-fixture.js';
 
 /**
  * Smoke evidence for plan 0056 (QA pipeline reachability) — pins the end-to-end
@@ -32,53 +32,57 @@ const REMEDY = 'codeadd features enable qa-pipeline';
 const builtCommand = (name) =>
   fs.readFileSync(path.join(BUILT_CLAUDE, 'commands', `${name}.md`), 'utf8');
 
-let tmp;
-
 function snapshot(file) {
   return fs.readFileSync(file, 'utf8');
 }
 
-// A real installed project carries LF files (the release ZIP is built on CI).
-// A Windows checkout with core.autocrlf=true materializes CRLF instead, which
-// the LF-based injection regexes don't match — normalize the fixture so the
-// suite reproduces the real installed state on any checkout config.
-function normalizeLineEndings(dir) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) normalizeLineEndings(p);
-    else if (/\.(md|json)$/.test(entry.name)) {
-      const raw = fs.readFileSync(p, 'utf8');
-      if (raw.includes('\r\n')) fs.writeFileSync(p, raw.replaceAll('\r\n', '\n'), 'utf8');
-    }
-  }
-}
+/**
+ * Taken on demand, not handed to every test.
+ *
+ * Five of the 43 tests here open a writable project root. The other 38 read a
+ * built command straight out of framwork/.claude and assert on its text. The
+ * hook this replaces copied 332 files and normalized them for all 43, which
+ * made this one file 55.7% of the suite's serial runtime.
+ *
+ * `normalize: true` is what that hook did per test, and the helper now does
+ * once on the template: a real installed project carries LF, because the
+ * release ZIP is built on CI, while a Windows checkout with core.autocrlf=true
+ * materializes CRLF that the LF-based injection regexes do not match.
+ */
+const fixture = treeFixture({
+  prefix: 'qa-reach-',
+  copy: [
+    { src: 'framwork/.claude', dest: '.claude' },
+    { src: 'framwork/.codeadd', dest: '.codeadd' },
+  ],
+  manifest: {
+    at: '.codeadd/manifest.json',
+    data: { version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} },
+  },
+  normalize: true,
+});
 
+// Stays global. The fixture belongs to five tests; a clean spy belongs to all
+// 43, because a warning raised by an earlier test would otherwise be read as
+// this one's.
 beforeEach(() => {
   warnSpy.mockClear();
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'qa-reach-'));
-  fs.cpSync(BUILT_CLAUDE, path.join(tmp, '.claude'), { recursive: true });
-  fs.cpSync(CODEADD, path.join(tmp, '.codeadd'), { recursive: true });
-  normalizeLineEndings(tmp);
-  fs.writeFileSync(
-    path.join(tmp, '.codeadd', 'manifest.json'),
-    JSON.stringify({ version: '0.0.0', providers: ['claude'], features: {}, plugins: {}, hashes: {} }, null, 2),
-  );
 });
 
-afterEach(() => {
-  fs.rmSync(tmp, { recursive: true, force: true });
-});
+afterEach(() => fixture.cleanup());
+afterAll(() => fixture.dispose());
 
 describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
   it('enable injects both gated commands, disable restores byte-identically', () => {
     // Plan 0070: add.test was absorbed, so e2e-dispatch and qa-fix now share
     // add.build as their host.
+    const cwd = fixture.root();
     const targets = ['add.plan', 'add.build'].map((n) =>
-      path.join(tmp, '.claude', 'commands', `${n}.md`),
+      path.join(cwd, '.claude', 'commands', `${n}.md`),
     );
     const before = Object.fromEntries(targets.map((f) => [f, snapshot(f)]));
 
-    const { modified } = enableFeature(tmp, 'qa-pipeline');
+    const { modified } = enableFeature(cwd, 'qa-pipeline');
     expect(warnSpy).not.toHaveBeenCalled();
     expect(modified).toBeGreaterThan(0);
 
@@ -87,22 +91,23 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
     expect(snapshot(targets[1])).toContain('QA-Routed Correction'); // qa-fix landed in add.build
     for (const f of targets) if (snapshot(f) !== before[f]) expect(snapshot(f)).not.toContain('<!--');
 
-    disableFeature(tmp, 'qa-pipeline');
+    disableFeature(cwd, 'qa-pipeline');
     for (const f of targets) expect(snapshot(f)).toBe(before[f]);
   });
 });
 
 describe('scenario 2 — pre-sidecar enable no-op (features.js:85)', () => {
   it('with injection-points.json absent, enable injects nothing yet marks the feature on', () => {
-    fs.rmSync(path.join(tmp, '.codeadd', 'injection-points.json'));
+    const cwd = fixture.root();
+    fs.rmSync(path.join(cwd, '.codeadd', 'injection-points.json'));
 
-    const { modified } = enableFeature(tmp, 'qa-pipeline');
+    const { modified } = enableFeature(cwd, 'qa-pipeline');
 
     // Pins the exact silent-success defect the add.qa-setup gate step must
     // detect (post-enable verification). If the CLI ever starts failing loud
     // here, the command guidance must be revisited — this test will flag it.
     expect(modified).toBe(0);
-    const manifest = JSON.parse(snapshot(path.join(tmp, '.codeadd', 'manifest.json')));
+    const manifest = JSON.parse(snapshot(path.join(cwd, '.codeadd', 'manifest.json')));
     expect(manifest.features['qa-pipeline']).toBe(true);
   });
 });
@@ -170,14 +175,15 @@ describe('scenario 5 — UX agent design ownership', () => {
   it('the qa-pipeline enable/disable round-trip is still byte-identical after the anchor rename', () => {
     // Re-asserts scenario 1's invariant explicitly under this topic: the STEP
     // 8.1 renumber (plan 0057) must not have broken the anchor-based injection.
+    const cwd = fixture.root();
     const targets = ['add.plan', 'add.build'].map((n) =>
-      path.join(tmp, '.claude', 'commands', `${n}.md`),
+      path.join(cwd, '.claude', 'commands', `${n}.md`),
     );
     const before = Object.fromEntries(targets.map((f) => [f, snapshot(f)]));
 
-    enableFeature(tmp, 'qa-pipeline');
+    enableFeature(cwd, 'qa-pipeline');
     expect(warnSpy).not.toHaveBeenCalled();
-    disableFeature(tmp, 'qa-pipeline');
+    disableFeature(cwd, 'qa-pipeline');
 
     for (const f of targets) expect(snapshot(f)).toBe(before[f]);
   });
@@ -236,11 +242,12 @@ describe('scenario 6 — layout notation & Design Contract', () => {
 
     // Confirm it actually lands in a real installed project via the same
     // enable path scenario 1 exercises (byte-for-byte injected content).
-    const { modified } = enableFeature(tmp, 'qa-pipeline');
+    const cwd = fixture.root();
+    const { modified } = enableFeature(cwd, 'qa-pipeline');
     expect(modified).toBeGreaterThan(0);
-    const injected = snapshot(path.join(tmp, '.claude', 'commands', 'add.build.md'));
+    const injected = snapshot(path.join(cwd, '.claude', 'commands', 'add.build.md'));
     expect(injected).toContain('computed-styles');
-    disableFeature(tmp, 'qa-pipeline');
+    disableFeature(cwd, 'qa-pipeline');
   });
 
   it('Design Contract dimensions table ships in add-ux-design/design-contract.md, indexed from SKILL.md', () => {
@@ -401,11 +408,12 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     expect(fragment).toMatch(/do NOT fall back to severity grouping/i);
     expect(fragment).not.toMatch(/Legacy fallback/i);
 
-    const { modified } = enableFeature(tmp, 'qa-pipeline');
+    const cwd = fixture.root();
+    const { modified } = enableFeature(cwd, 'qa-pipeline');
     expect(modified).toBeGreaterThan(0);
-    const injected = snapshot(path.join(tmp, '.claude', 'commands', 'add.build.md'));
+    const injected = snapshot(path.join(cwd, '.claude', 'commands', 'add.build.md'));
     expect(injected).toMatch(/DISPATCH by ROUTE/);
-    disableFeature(tmp, 'qa-pipeline');
+    disableFeature(cwd, 'qa-pipeline');
   });
 
   it('built add.build Agent Roster lists every dispatchable agent', () => {
