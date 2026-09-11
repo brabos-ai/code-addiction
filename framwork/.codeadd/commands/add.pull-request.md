@@ -6,7 +6,6 @@
 - skill: add-final-report
 - skill: add-id-convention
 - command: /add.done
-- script: feature-pr.sh
 -->
 
 > **MODEL:** Use `haiku` model
@@ -80,7 +79,7 @@ ALWAYS:
   ⛔ DO NOT: Force push
   ⛔ DO NOT: Rebase
   ⛔ DO NOT: Rename branches
-  ⛔ DO NOT USE: Bash for any non-existent script (no feature-pr.sh, no done.sh)
+  ⛔ DO NOT USE: Bash for done.sh — `/add.done` owns every git write it makes, and this command never calls it
 ```
 
 ---
@@ -357,7 +356,6 @@ NEVER:
 - Amend, force-push, or rebase
 - Rename branches
 - Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
-- Reference scripts that do not exist in this repo (no `feature-pr.sh`)
 - Update `CHANGELOG.md` at the repo root (that is `/add.release`'s responsibility)
 - Generate the feature changelog twice — STEP 3.1 idempotency guard prevents this; `/add.done` mirrors the same guard
 

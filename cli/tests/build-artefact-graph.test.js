@@ -875,7 +875,11 @@ describe('node inventory snapshot', () => {
       agent: 30,
       // reference 69 -> 70: add-plan-authoring/references/plan-template.md.
       reference: 70,
-      script: 18,
+      // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
+      // only declaring command, add.pull-request, forbade calling it; that
+      // `uses:` declaration was the one thing keeping it off the orphan list.
+      // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
+      script: 17,
       fragment: 24,
     });
     // 208 -> 211: +4 skills, +1 reference, -2 commands.
@@ -896,7 +900,11 @@ describe('node inventory snapshot', () => {
     // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
     // 215 -> 216, declares 103 -> 104: prompt-review-agent.
     // (plan 2026-09-10T173216-PLAN--prompt-quality-ruler, F3.)
-    expect(nodes).toHaveLength(216);
+    // 216 -> 215: -1 script, feature-pr.sh. `declares` does NOT move: scripts
+    // are not in DECLARING_KINDS, so a deleted script changes the node total
+    // and nothing else.
+    // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
+    expect(nodes).toHaveLength(215);
     expect(nodes.filter((n) => n.declares)).toHaveLength(104);
   });
 });
