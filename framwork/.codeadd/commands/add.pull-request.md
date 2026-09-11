@@ -346,7 +346,7 @@ Then, after the seven blocks, report:
 |-------|-------|
 | Branch | `$BRANCH` |
 | PR | URL (mark `(updated)` if STEP 7B was used) |
-| Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(skipped — already exists)` or `(skipped — not feature branch)` |
+| Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
 | Commits pushed | count from `git log @{push}..HEAD` before push, or 0 if clean |
 
 Post-merge guidance: "After PR is merged on GitHub, run `/add.done` for branch cleanup."
@@ -360,7 +360,7 @@ State that a delivery index entry is still owed and that `{{cmd:add.done}}` is w
 ALWAYS:
 - Verify gh CLI installed AND authenticated before any other action
 - Generate the feature changelog on feature branches before opening the PR
-- Apply idempotency: skip changelog if file already exists; update existing PR rather than failing
+- Apply the `changelog` schema's one-per-delivery rule: complement an existing changelog, never skip it and never mint a second `CHG[NNNN]`; update existing PR rather than failing
 - Use `{{skill:add-commit/SKILL.md}}` for any commit message this command writes
 - Append updates to existing PR bodies as dated sections — preserve prior content
 - Run `git status --short` before staging — abort if sensitive files appear

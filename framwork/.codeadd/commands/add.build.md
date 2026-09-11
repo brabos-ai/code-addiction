@@ -10,6 +10,7 @@
 - skill: add-final-report
 - skill: add-frontend-development
 - skill: add-id-convention
+- skill: add-review-discipline
 - skill: add-subagent-driven-development
 - skill: add-tasks-checklist
 - skill: add-ux-design
@@ -24,12 +25,12 @@
 - agent: test-agent
 - agent: ux-agent
 - command: /add.done
-- mention: /add.plan
 - command: /add.new
 - command: /add.plan-to-ready
 - command: /add.qa-setup
 - command: /add.review
 - command: /add.wiki
+- mention: /add.plan
 - script: build-ledger.sh
 - script: build-setup.sh
 - script: converge-gates.sh
@@ -336,7 +337,7 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 ### 10.0 Pre-Flight Scan and the Handoff Contract (BEFORE the first dispatch)
 
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
-and neither is satisfied by asserting it happened.
+and none is satisfied by asserting it happened.
 
 #### 10.0.1 Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
 
@@ -433,23 +434,27 @@ resumed session actually holds it — alone.
 
 | Field | Value |
 |---|---|
-| `target` | `docs/features/${FEATURE_ID}` |
-| `scope` | `subfeature`, naming `${EPIC_CURRENT_SF}`, when `HAS_EPIC=true`. `feature` otherwise |
+| `target` | `docs/features/${FEATURE_ID}` on a simple feature. On an epic, that folder **plus `${EPIC_CURRENT_SF}`** — the agent's contract puts the subfeature id in `target`, never in `scope` |
+| `scope` | `subfeature` when `HAS_EPIC=true`, `feature` otherwise |
 
 Compare its closing **"In one sentence"** line against the plan and tasks loaded
 in STEP 6.
+
+**LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its divergence-by-site table
+carries this site's row, and the counts and the re-gate condition are its alone.
+This step carries only the dispatch inputs and the ledger lines.
 
 ```
 IF THE READBACK MARKED A GAP OR READ SOMETHING THE PLAN DID NOT INTEND:
   ⛔ DO NOT: Halt the build and send the user back to /add.plan
   ⛔ DO NOT: Widen or narrow the plan's scope to match the reader's expectation
-  ⛔ DO NOT: Re-dispatch it — nothing changed, so there is no re-gate to earn a second read
-  ✅ DO: Record a ruling naming the divergence and which reading you built
-  ✅ DO: Continue
+  ✅ DO: Apply this site's row from add-review-discipline — a ruling naming the
+         divergence and which reading you built — and continue
 ```
 
-**The approval already happened.** This command has no `[STOP]` of its own: the
-user read `/add.plan`'s closing report and chose to run the build. A reader that
+**The approval already happened.** THIS CHECK has no `[STOP]` of its own — unlike
+STEP 17's Publish gate, which does stop and wait. The user read `/add.plan`'s
+closing report and chose to run the build. A reader that
 answers its own questions out loud marks assumptions constantly — that is the
 format working, not a defect to escalate.
 

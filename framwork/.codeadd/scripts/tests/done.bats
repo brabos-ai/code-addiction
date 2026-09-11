@@ -625,7 +625,9 @@ stub_gh() {
   run "$SCRIPTS_DIR/done.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"PUBLISH_RECORD=declined"* ]]
-  [[ "$output" == *"PUBLISH_RECORD_URL="* ]]
+  # EMPTY, not merely present: `PUBLISH_RECORD_URL=` matches a populated value
+  # too, so the prefix form could never fail.
+  [[ "$(printf '%s' "$output" | grep -c '^PUBLISH_RECORD_URL=$')" -eq 1 ]]
 }
 
 # guard — the probes are additive. add-wiki-maintenance reads CHANGED_FILES
@@ -769,4 +771,45 @@ stub_gh() {
   [[ "$output" == *"CLEANUP=SKIPPED"* ]]
   run git rev-parse --verify feature/0001F-test
   [ "$status" -eq 0 ]
+}
+
+# ─── The commit body (regression net) ────────────────────────────────
+# F4 moved this block into a function and the code indentation went INSIDE the
+# commit string, putting four spaces before `Co-Authored-By:`. An indented
+# trailer is not a trailer: git interpret-trailers does not read it and the
+# forge does not attribute the co-author. Nothing in this suite looked at a
+# commit body, so the whole delivery stayed green through it.
+
+@test "commit body: the co-author trailer sits at column 0, not indented" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "own" > docs/features/0001F-test/about.md
+  git push -u origin feature/0001F-test -q
+
+  run "$SCRIPTS_DIR/done.sh" --commit-push
+  [ "$status" -eq 0 ]
+
+  BODY=$(git log -1 --format=%B)
+  # The trailer line, exactly as git must see it.
+  echo "$BODY" | grep -qE '^Co-Authored-By: '
+  # And NOT the indented form the refactor produced.
+  ! echo "$BODY" | grep -qE '^[[:space:]]+Co-Authored-By: '
+}
+
+@test "commit body: git itself parses the trailer" {
+  setup_remote
+  git checkout -b feature/0001F-test -q
+  mkdir -p docs/features/0001F-test
+  echo "own" > docs/features/0001F-test/about.md
+  git push -u origin feature/0001F-test -q
+
+  run "$SCRIPTS_DIR/done.sh" --commit-push
+  [ "$status" -eq 0 ]
+
+  # The assertion that actually matters: not "the text is there" but "git reads
+  # it as a trailer". The indented form passes a grep for the words and fails
+  # this.
+  TRAILERS=$(git log -1 --format=%B | git interpret-trailers --parse)
+  [[ "$TRAILERS" == *"Co-Authored-By: ADD"* ]]
 }

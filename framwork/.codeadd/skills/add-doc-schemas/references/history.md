@@ -52,8 +52,9 @@ run would not be happening. A feature whose PR opened mid-build otherwise merges
 with a changelog describing the work that existed when the PR opened.
 
 **Complementing follows the cache rule this skill already owns** — read, preserve,
-complement, bump `updated:` — with `id:`, `created:`, `type:` and `related:`
-immutable. Per part:
+complement, bump `updated:` — with `id:`, `date:`, `type:` and `related:`
+immutable. **`date:` is the day the changelog was FIRST written and never moves;
+`updated:` is added by the first complement and moves on every one after.** Per part:
 
 | Part | On a file that already exists |
 |---|---|
@@ -68,7 +69,7 @@ immutable. Per part:
 kinds of statement. A bullet is a fact about one change and stays true; a summary
 is a claim about the whole delivery and stops being true the moment it grows.
 
-- **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `related: [[NNNN]F | [NNNN]H]`
+- **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `updated:` (added on the first complement, absent until then), `related: [[NNNN]F | [NNNN]H]`
 - **Sections:** TL;DR · Changes · Breaking · Migration
 - **Depth floor:**
   - **Changes** — every merged change as `type(scope): summary — {{doc:<ID>}}` when applicable. Granular enough that a reader can locate the relevant PR/commit.

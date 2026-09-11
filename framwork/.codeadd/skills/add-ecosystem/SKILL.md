@@ -148,7 +148,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-knowledge-discovery | Consult the project wiki (and code knowledge graph) at the context/discovery step for minimal token cost — loaded by add.plan, add.hotfix, add.new, add.diagnose, add.review |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases |
 | add-plan-based-features | Implement subscription plan-based features |
-| add-review-discipline | HOW review is dispatched: the counts, what makes a second dispatch legal (apply then re-gate), how a readback divergence is handled at each of its three sites, and the one boundary where a verdict may reach disk |
 | add-plan-review | Pre-delivery executability rubric for about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` |
 | add-cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` |
 | add-product-discovery | Product discovery (macro level) |
@@ -157,6 +156,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints; consumed by /add.qa-setup |
 | add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md, **and** author the `_tests/screens.json` screen catalog by read-merge-write — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
+| add-review-discipline | HOW review is dispatched: the counts, what makes a second dispatch legal (apply then re-gate), how a readback divergence is handled at each of its three sites, and the one boundary where a verdict may reach disk |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
 | add-setup-contract | Compare a project's receipt `setup-shape` to the shipped sidecar `shape` and route FIRST-RUN / CURRENT / STALE |
 | add-skill-creator | Create and test skills under real pressure |

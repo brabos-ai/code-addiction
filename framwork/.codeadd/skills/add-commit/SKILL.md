@@ -90,7 +90,7 @@ The commit carries **the six gate lines** — `GATE_REVIEW`, `GATE_QA_BASELINE`,
 `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `GATES_OK` — **copied verbatim** from
 `converge-gates.sh`'s output, as **body lines** below the Conventional Commits
 body. The script emits more keys than these (`REVIEW_PATH`, `BASELINE`,
-`EPIC_PENDING`, `COVERAGE_UNCOVERED`, `QA_FEATURE_STATE`); only the five above
+`EPIC_PENDING`, `COVERAGE_UNCOVERED`, `QA_FEATURE_STATE`); only the six above
 belong in the message.
 
 They are **body lines, not git trailers.** `GATE_REVIEW=ok` has no `Key: value`

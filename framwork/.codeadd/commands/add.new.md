@@ -284,7 +284,7 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ---
 
-## STEP 8: Plan Review + Comprehension Readback (fresh-reader, max one re-dispatch each)
+## STEP 8: Plan Review + Comprehension Readback (fresh-reader)
 
 Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
@@ -305,7 +305,7 @@ IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
 
 4. **Compare the readback against what was actually decided in this conversation.** Compare against the report's closing **"In one sentence"** line, which is short and hard to soften.
    - **Matches** → proceed to Completion, citing the readback in one line.
-   - **Diverges** → the document failed, not the agent. Apply the fix to `about.md`, **re-run STEP 7's validation gate**, then present the divergence to the user and STOP.
+   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 7's validation gate on `about.md`.
 
 ```
 IF THE READBACK DIVERGES:
@@ -366,5 +366,4 @@ Then, after the seven blocks, summarize the created artifacts and suggest the ne
 - Exclude layers that make feature unusable
 - Document incomplete questionnaire
 - Skip the STEP 8 plan review after the gate passes
-- Exceed one re-dispatch of `@plan-reviewer-agent` per invocation
 - Let the reviewer see this conversation (fresh context only)

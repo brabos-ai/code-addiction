@@ -62,7 +62,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
 | `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
-| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the one `fix-then-ok` re-dispatch | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
+| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the re-dispatch `add-review-discipline` allows | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
 
 ---
 
@@ -702,7 +702,7 @@ IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
 
 5. **Compare the readback against what was actually decided in this conversation**, using the report's closing **"In one sentence"** line.
    - **Matches** → proceed to STEP 14, citing the readback in one line.
-   - **Diverges** → the document failed, not the agent. Apply the fix to `plan.md`, **re-run STEP 12's validation gate**, then present the divergence to the user and STOP.
+   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 12's validation gate on `plan.md`.
 
 ```
 IF THE READBACK DIVERGES:

@@ -139,6 +139,7 @@ Append-only, one line per event, identity on the first line:
 ```markdown
 # Build ledger — feature: F0003 — plan: docs/features/F0003/plan.md
 
+Readback: matches — the plan builds a per-scope QA snapshot promoted at close-out
 Preflight: 4 pairs checked, 1 conflict — T05 consumes `UserDto.name`, T02 produces `UserDto.fullName`
 Preflight: Ruling: T02's name wins (plan.md Architecture Decisions names it) — costs a rename in T05 if wrong
 T01: complete (commits a1b2c3d..a1b2c3d, review clean)
@@ -147,7 +148,6 @@ T02: complete (commits d4e5f6a..b7c8d9e, review clean)
 T03: minor (deferred): magic number in retry backoff
 T04: parked — reviewer wants a null guard — Ruling: the caller already guards; costs a crash if wrong
 T04: complete (commits c1d2e3f..f9a8b7c, 1 parked)
-Readback: matches — the plan builds a per-scope QA snapshot promoted at close-out
 Publish: pr-opened https://github.com/org/repo/pull/42
 ```
 

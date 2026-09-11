@@ -322,7 +322,15 @@ describe('L5 — the close-out routes (F8)', () => {
     expect(s2).toContain('PR_STATE');
     // The row the whole record exists for: no PR and no line means nobody was
     // asked, so the close-out asks rather than assuming a local merge.
-    expect(s2).toMatch(/ASK/);
+    //
+    // Asserted as THAT ROW, not as the word ASK. Three rows contain "ASK", so a
+    // match on the word alone survives deleting this one — which is the mutation
+    // the matrix is supposed to catch.
+    const askRow = s2
+      .split(NL)
+      .find((l) => /^\|\s*`none`\s*\|\s*`none`\s*\|/.test(l));
+    expect(askRow, 'the none x none row must exist').toBeTruthy();
+    expect(askRow).toMatch(/ASK/);
   });
 
   it('L5.3: no-gh never routes to the PR route', () => {
@@ -369,7 +377,11 @@ describe('L6 — the PR merge route (F9)', () => {
   });
 
   it('L6.2: the SHA comparison sits BEFORE the verdict is read', () => {
-    const s8 = step8();
+    // Scoped to 8.1. STEP 8 now opens with 8.0's ASK branch, whose prohibition
+    // names `gh pr merge` before the PR route ever calls it — measuring across
+    // the whole step would compare against that prohibition instead.
+    const whole = read(P.done);
+    const s8 = whole.slice(whole.indexOf('### 8.1'), whole.indexOf('### 8.2'));
     // A green check is evidence only for the commit it ran on. Reading the
     // verdict first and comparing after is the same bug with extra steps.
     expect(s8.indexOf('headRefOid')).toBeLessThan(s8.indexOf('gh pr merge'));
@@ -484,9 +496,12 @@ describe('L8 — the changelog owner (F11)', () => {
 
   it('L8.5: the immutable fields are named', () => {
     const sc = schema();
-    for (const field of ['id:', 'created:', 'type:', 'related:']) {
+    // date:, not created: — the schema's own frontmatter declares date:, and the
+    // complement rule was corrected to name the fields that exist.
+    for (const field of ['id:', 'date:', 'type:', 'related:']) {
       expect(sc, `${field} must be named immutable`).toContain(field);
     }
+    expect(sc, 'updated: is added by the first complement').toContain('updated:');
     expect(sc).toMatch(/CHG\[NNNN\]/);
   });
 });
@@ -497,10 +512,21 @@ describe('L9 — add.done complements the changelog (F12)', () => {
     return t.slice(t.indexOf('### 6.3'), t.indexOf('### 6.4'));
   };
 
-  it('L9.1: 6.3 carries no skip instruction', () => {
+  it('L9.1: 6.3 complements, and says so positively', () => {
     const b = s63();
+    // Asserted as what MUST be there, not only as the absence of two old
+    // phrases. A mutation that rewrote the same defect in different words
+    // ("SKIP generation") passed the negative-only form.
+    expect(b).toMatch(/COMPLEMENT it/);
+    expect(b).toMatch(/DO NOT: Skip the narrative/);
+    // And the two old phrasings still must not come back.
     expect(b).not.toMatch(/SKIP.*schema execution/i);
     expect(b).not.toContain('skipping generation');
+    // No instruction anywhere in the block tells the executor to skip.
+    const skipOrders = b
+      .split(NL)
+      .filter((l) => /SKIP/.test(l) && !/DO NOT|never|Skip the narrative/i.test(l));
+    expect(skipOrders, 'no line orders a skip').toEqual([]);
   });
 
   it('L9.2: it complements in place and cites the schema for the rule', () => {
@@ -610,8 +636,10 @@ describe('L11 — the build reads its plan cold (F14)', () => {
   it('L11.5: it is not a gate — no stop, no re-dispatch, no inline fallback', () => {
     const b = preflight();
     expect(b).toMatch(/DO NOT: Halt the build/);
-    expect(b).toMatch(/DO NOT: Re-dispatch/);
     expect(b).toMatch(/DO NOT: Apply the readback inline/);
+    // The no-re-dispatch rule is add-review-discipline's, and this step loads it
+    // rather than restating it. Assert the delegation, not a second copy.
+    expect(b).toContain('add-review-discipline');
   });
 
   it('L11.6: a Readback line already in the ledger means it ran', () => {
@@ -697,6 +725,12 @@ describe('L13 — the internal sibling note (F16)', () => {
   it('L13.3: neither uses: block reaches across the layer boundary', () => {
     // A cross-layer target resolves inside its own layer and dangles, which
     // fails the build. Both directions asserted, because only one is obvious.
+    // Asserted as "declares no sibling of this name AT ALL", not as "contains no
+    // the-other-layer's-word". The obvious mutation — adding
+    // `- skill: add-review-discipline` to the internal block — carries neither
+    // "product" nor ".claude", so the narrower form could never fail.
+    expect(uses(read(P.disciplineInternal))).not.toMatch(/add-review-discipline/);
+    expect(uses(read(P.discipline))).not.toMatch(/add-review-discipline/);
     expect(uses(read(P.disciplineInternal))).not.toContain('product');
     expect(uses(read(P.discipline))).not.toContain('.claude');
   });
@@ -764,9 +798,18 @@ describe('L15 — the brainstorm set gets the plan set ordinal (F18)', () => {
 
   // guard — the two standalone sites must keep NO ordinal. A blind replace takes
   // them, and nothing else here would notice.
-  it('L15.3 (guard): a standalone brainstorm still carries no ordinal', () => {
+  it('L15.3 (guard): EVERY standalone site still carries no ordinal', () => {
     const t = read(P.fwBrainstorm);
-    expect(t).toContain('docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md');
+    // Counted, not merely present. The form occurs at two sites, so asserting
+    // "somewhere in the file" survives adding an ordinal to one of them — which
+    // is exactly the mutation this guard exists for.
+    const standalone = t
+      .split(NL)
+      .filter((l) => l.includes('YYYY-MM-DDTHHMMSS-[topic].md'));
+    expect(standalone.length, 'every standalone site must survive').toBe(3);
+    for (const line of standalone) {
+      expect(line, 'a standalone brainstorm takes no ordinal').not.toMatch(/-\d{3}-/);
+    }
   });
 
   it('L15.4: add-plan-authoring cross-references the brainstorm set', () => {

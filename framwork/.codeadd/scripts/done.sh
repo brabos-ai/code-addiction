@@ -5,8 +5,15 @@
 # Branch finalization: context collection + merge execution
 # ============================================
 # Usage:
-#   bash .codeadd/scripts/done.sh           # Context mode (default)
-#   bash .codeadd/scripts/done.sh --merge   # Merge mode
+#   bash .codeadd/scripts/done.sh                       # Context mode (default)
+#   bash .codeadd/scripts/done.sh --commit-push         # Commit the working-tree docs, push the branch
+#   bash .codeadd/scripts/done.sh --merge               # The whole local sequence: commit-push, squash, cleanup
+#   bash .codeadd/scripts/done.sh --cleanup <MERGE_SHA> # Post-merge checks, then tags, worktree and branch
+#
+# --cleanup REQUIRES the merge commit it proves against. A squash creates a new
+# commit, so the branch tip is never an ancestor of main and nothing can derive
+# it locally; --merge passes the commit it just made, the PR route passes what
+# gh reports. Without it, CHECK=2 refuses every deletion rather than guessing.
 # Dependencies: get-main-branch.sh, get-branch-metadata.sh, node >= 18 (the
 #               ROUTE probes' JSON parse only), gh (optional — its absence is
 #               the value PR_STATE=no-gh, never an error)
@@ -394,9 +401,9 @@ do_commit_push() {
     if [ "$HAS_UNCOMMITTED" = true ]; then
         git commit -m "$COMMIT_TYPE($FEATURE_NUMBER): finalize before merge
 
-    Generated with ADD by https://brabos.ai
+Generated with ADD by https://brabos.ai
 
-    Co-Authored-By: ADD <noreply@brabos.ai>"
+Co-Authored-By: ADD <noreply@brabos.ai>"
         echo "COMMIT=OK"
     else
         echo "COMMIT=SKIPPED"

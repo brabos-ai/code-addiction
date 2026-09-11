@@ -765,6 +765,7 @@ it is documentation of the script's contract, not the evaluation itself:
 | 2 | QA baseline | `GATE_QA_BASELINE` | Its `> **QA baseline:**` line is present and valid, checked against `qa-evidence.sh validate` |
 | 3 | Epic completeness | `GATE_EPIC` | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
 | 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 11's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 11 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
+| 5 | Build ledger | `GATE_LEDGER` | Every `## Execution` task in the scope's `tasks.md` carries a `complete` line in its `build-ledger.md`. **No `tasks.md` at all is `ok`** — outside TASKS MODE the ledger's lines are keyed by area rather than task id, so there is nothing to cross-reference, the same rule gate 4 applies to an absent coverage table |
 
 **CONVERGED requires all five gates `ok`.** `missing`, `broken` and `not-probed`
 are each non-convergence — `not-probed` NEVER counts as a pass, even on a gate
@@ -776,7 +777,7 @@ targeting one non-final subfeature, and would report non-convergence for a reaso
 unrelated to any finding. Pass the target `SFxx` as the script's second
 argument — it applies the scoped rule in gate 3's place: the targeted
 subfeature's own `tasks.md` acceptance checklist is complete. The scoped branch
-never opens `epic.md`. Gates 1, 2 and 4 are evaluated unchanged.
+never opens `epic.md`. Gates 1, 2, 4 and 5 are evaluated unchanged — gate 5 IS SF-scoped, resolving that subfeature's own ledger.
 
 CONVERGED then means "**this subfeature** is ready" — and STEP 9 MUST name the
 remaining subfeatures so it is never read as "the epic is ready".

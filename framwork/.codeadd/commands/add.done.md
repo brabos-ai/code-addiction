@@ -8,6 +8,7 @@
 - skill: add-id-convention
 - skill: add-wiki-maintenance
 - command: /add.build
+- command: /add.pull-request
 - command: /add.hotfix
 - command: /add.plan-to-ready
 - command: /add.review
@@ -55,10 +56,11 @@ IF BRANCH_TYPE = unknown:
 IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
   ⛔ DO NOT USE: Write to create changelog.md
   ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ✅ DO: Report the qa-evidence.sh validation/promotion failure and stop
 
 ALWAYS:
-  ⛔ DO NOT USE: Bash for git add/commit/push (done.sh --merge handles everything)
+  ⛔ DO NOT USE: Bash for git add/commit/push — `done.sh` owns every LOCAL git write, through `--merge`, `--commit-push` or `--cleanup`. The ONE exception is the Recovery route (2.4), which runs on `main` where `done.sh` cannot run at all
   ⛔ DO NOT USE: Bash for git branch -m (NEVER rename branches)
   ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT: Suggest renaming branches to fix unknown type errors -- the branch prefix is intentional
@@ -106,7 +108,7 @@ bash .codeadd/scripts/done.sh
 | `docs` | Branch: docs/[NNNN]D-* |
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
-All recognized types proceed to STEP 4. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
+All recognized types proceed to 2.1, which routes, and then to STEP 4 — except the `Closed out` route, which stops there. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
 
 
 ### 2.1 Cross the Two Facts, Then Route
@@ -131,7 +133,7 @@ could not be read, and a route that deletes branches never runs on a guess.
 | no | `absent` or `no-index` | **Normal** | Everything, as written below |
 | no | **`present`** | **Resume** | Every gate runs. STEP 5's promotion, 6.3, 6.7 and 6.8 are SKIPPED. The merge is the only work left |
 | yes | `present` | **Closed out** | Report it and STOP. There is nothing to do |
-| yes | **`absent`** | **Recovery** | Runs on `main`. Writes the entry and the changelog. Never merges |
+| yes | **`absent`** or `no-index` | **Recovery** | Runs on `main`. Writes the entry and the changelog. Never merges |
 
 **The Resume row is what a refused merge leaves behind, and it is not rare.** A
 review thread left unresolved, an approval dismissed by a push, a required check
@@ -284,6 +286,7 @@ bash .codeadd/scripts/converge-gates.sh "${DIR}"
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show blocked gates and instructions to re-run /add.review
 
 **NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict on the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
@@ -312,6 +315,7 @@ Run /add.build to implement the next subfeature.
 **IF INCOMPLETE:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show pending subfeatures and STOP
 
 **IF `GATE_EPIC=ok`:** Proceed normally.
@@ -343,6 +347,7 @@ Options:
 **IF UNCOVERED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show uncovered requirements and STOP
 
 **IF `GATE_COVERAGE=ok`:** Proceed normally.
@@ -379,6 +384,7 @@ detail names the path it looked for.
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show the unfinished tasks and STOP
 
 ```
@@ -418,7 +424,7 @@ Promotion copies each complete working run to `_tests/final/run-NNN/` through a 
 - ⛔ DO NOT USE: Bash for `done.sh --merge`
 - ✅ DO: Surface the exact script error. For baseline drift, require `/add.review`; for incomplete/conflicting evidence, require correction before retrying `/add.done`
 
-Do NOT stage, commit, push, move, or delete evidence here. `done.sh --merge` remains the sole git owner and promotion remains retry-safe.
+Do NOT stage, commit, push, move, or delete evidence here. **`done.sh` owns every LOCAL git write on both routes** — the PR route calls its `--commit-push` and `--cleanup` modes — and promotion remains retry-safe.
 
 ---
 
@@ -458,6 +464,13 @@ Do NOT stage, commit, push, move, or delete evidence here. `done.sh --merge` rem
 
 ### 6.3: Generate or Complement the Changelog (schema: changelog)
 
+```
+IF 2.1 ROUTED THIS RUN TO **Resume**:
+  ⛔ DO NOT: Run this sub-step — it already ran, and its output is committed on the branch
+  ✅ DO: Say it was skipped, and why, in STEP 9
+```
+
+
 **The path, the one-per-delivery rule and the per-part complement table are owned
 by the `changelog` schema in `{{skill:add-doc-schemas/SKILL.md}}`.** Read it rather
 than deciding here — it was declared in three places and they disagreed.
@@ -467,7 +480,7 @@ CHANGELOG="${DIR}/changelog.md"   # resolved per the schema's Location rule
 [ -f "$CHANGELOG" ] && echo "CHANGELOG_EXISTS — complementing in place"
 ```
 
-**If it already exists, COMPLEMENT it.** `{{cmd:add.pull-request}}` STEP 3 writes
+**If it already exists, COMPLEMENT it.** `/add.pull-request` STEP 3 writes
 it when a PR opens mid-build, and everything delivered after that moment is
 missing from it until this step adds it.
 
@@ -566,6 +579,13 @@ fi
 
 ### 6.7 Update Project Wiki (best-effort, non-blocking)
 
+```
+IF 2.1 ROUTED THIS RUN TO **Resume**:
+  ⛔ DO NOT: Run this sub-step — it already ran, and its output is committed on the branch
+  ✅ DO: Say it was skipped, and why, in STEP 9
+```
+
+
 **IF `.codeadd/wiki/index.md` exists:**
 
 Load skill `{{skill:add-wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP 1) + the feature context already loaded in this session (about.md from 6.1, the changelog just generated in 6.3).
@@ -581,6 +601,13 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 ---
 
 ### 6.8 Write the Delivery Index Entry
+
+```
+IF 2.1 ROUTED THIS RUN TO **Resume**:
+  ⛔ DO NOT: Run this sub-step — it already ran, and its output is committed on the branch
+  ✅ DO: Say it was skipped, and why, in STEP 9
+```
+
 
 Record what this branch delivered in `docs/delivered.jsonl`, the per-project delivery index. `delivered.sh` is its only writer; nothing here edits the file directly. The entry is authored HERE and **left in the working tree** — the same path the changelog and the wiki edits already take. `done.sh --merge` (STEP 8) commits it with everything else.
 
@@ -646,14 +673,16 @@ IF delivered.sh EXITS 2 WITH REFUSED=find-absent OR REFUSED=find-over-matched:
 
 IF delivered.sh EXITS 2 WITH ANY OTHER REFUSED= VALUE:
   ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ✅ DO: Show the REFUSED value and the record, and stop — the record breaks a hard ban
 
 IF delivered.sh EXITS 1:
   ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ✅ DO: Show the write error and stop — the filesystem refused the entry
 ```
 
-⛔ DO NOT USE: Bash for git add/commit/push in this substep. `done.sh --merge` remains the sole git owner, exactly as it is for the changelog and the wiki.
+⛔ DO NOT USE: Bash for git add/commit/push in this substep. **`done.sh` owns every LOCAL git write on both routes**, exactly as it does for the changelog and the wiki.
 
 <!-- feature:docs-pruning:prune -->
 <!-- /feature:docs-pruning:prune -->
@@ -668,6 +697,8 @@ Show a preview with: branch type, ID, summary, file count, top HIGH priority fil
 
 `INDEX_ENTRY=none` (a `docs` branch) prints one line saying no entry was owed. A refused write never reaches here — 6.8 stops.
 
+⛔ **On the Resume route 6.8 did not run, so there is nothing in hand to render.** Read the entry back from `docs/delivered.jsonl` on the branch — it is already committed there — and print THAT, labelled as the entry a previous run wrote. Never re-compose one: a second composition is how two lines for one delivery get written, which is the defect 2.1 exists to stop.
+
 ```
 IF RENDERING THE ENTRY:
   ⛔ DO NOT: Ask the user to approve, confirm or edit the item list
@@ -681,7 +712,39 @@ IF RENDERING THE ENTRY:
 
 ## STEP 8: Execute Merge (AUTOMATIC)
 
-**Execute immediately after STEP 7, on the route 2.2 chose.**
+**Execute immediately after STEP 7, on the route 2.2 chose.** All three of 2.2's
+outcomes land here, including the one that asks.
+
+### 8.0 The ASK Branch [STOP]
+
+Taken when 2.2's table said **ASK** — no PR exists and either no `Publish:` line
+was ever written, or one was written naming a PR that is now gone or closed
+unmerged. **These are not the same as a decline, and that distinction is the
+whole reason the record exists.**
+
+State which of the three it is, then ask:
+
+```
+No PR is open for this branch.
+  <no record>          — the build never reached its publish step, so nobody was asked.
+  <record, PR missing> — the build recorded <VALUE> but that PR is gone.
+  <PR closed unmerged> — <PR_URL> was closed without merging.
+
+Merge locally, or open a PR first?
+```
+
+```
+IF THE USER HAS NOT ANSWERED:
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge
+  ⛔ DO NOT: Pick the local route because it is the older default
+  ✅ DO: Ask, and WAIT
+```
+
+| Answer | Go to |
+|---|---|
+| Merge locally | 8.2 |
+| Open a PR first | Say so and STOP — `{{cmd:add.pull-request}}` opens it, then re-run this command, which will route to 8.1 |
 
 ### 8.1 The PR Route
 
@@ -754,7 +817,14 @@ Taken when 2.2 chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
 bash .codeadd/scripts/done.sh --merge
 ```
 
-`done.sh --merge` handles everything: commit, push, merge to main, checkpoint cleanup, branch cleanup. It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag. It does commit — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag ownership is what `/add.build` lacks, not commits.
+`done.sh --merge` runs the whole local sequence: commit-push, the push dry-run, the squash, the push to main, then `--cleanup`. Two of its outcomes are NOT success and each has an answer:
+
+| It reports | Meaning | Do |
+|---|---|---|
+| `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add.pull-request}}`, then re-run |
+| `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP 9 and report the branch left behind, naming the check. This is not a failed delivery |
+
+On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag. It does commit — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag ownership is what `/add.build` lacks, not commits.
 
 ⛔ DO NOT USE Bash for git add/commit/push manually. **`done.sh` owns every
 LOCAL git write on both routes** — the PR route calls its `--commit-push` and
