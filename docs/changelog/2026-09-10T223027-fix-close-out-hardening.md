@@ -86,7 +86,23 @@ the two that stayed are the ones no single STEP owns.
 
 ## Evidence
 
-Sixteen commits, `6ead1d1..8600140`. Build clean on every block. The cli suite green in serial: 43
+Seventeen commits, `6ead1d1..12fe383`. Build clean on every block. The cli suite green in serial: 43
 files, 984 tests. The scripts suite green on linux/amd64: 386 tests, in under two minutes — the same
 suite takes over an hour on a Windows host, and the `qa-preflight` failure that host reports does not
 occur in a container, because its `TMPDIR` has no `node_modules` above it.
+
+## The close-out that proved it
+
+This delivery was closed out by the command it repairs, which is the only way most of these fixes
+could be exercised at all.
+
+**What ran.** Gate 2.1 crossed an open PR with an absent entry and took the normal path — the first
+row of the four-row table this delivery added. CI's six checks passed on the exact SHA the gate
+compared against, `test-scripts` among them in 51 seconds. The index entry carries five items and the
+`internal/command/add-framework--done` node, and it is findable by that node, which is the read this
+delivery repaired. This file was found and edited rather than duplicated, which is the
+one-changelog-per-delivery rule running for the first time.
+
+**What did not run, and is still untested.** The fourth row of gate 2.1 fires only when a merge is
+refused, and this merge was not. That row and the resume path at 2.5 have never executed. Saying so is
+the point: an untested branch reported as tested is the defect this plan exists to remove.
