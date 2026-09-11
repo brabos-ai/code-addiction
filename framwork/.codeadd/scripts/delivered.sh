@@ -350,9 +350,20 @@ function doRead() {
   let list = Array.from(byId.values());
   if (LAYER) list = list.filter((e) => e.layer === LAYER);
 
+  // `node` is part of the haystack because `graph.js history <artefact>` asks
+  // this verb with the artefact's BARE NAME and nothing else. Without it the
+  // node filter downstream could only narrow what a text search had already
+  // found, so the verb answered correctly exactly while an artefact had a
+  // single delivery — which is when "was this attempted before?" carries the
+  // least information.
+  //
+  // `items[].at` is deliberately NOT here. An `at` is a HINT that --repair
+  // rewrites on every anchor move, so matching it would let a query hit a
+  // stale pointer and return an entry on the strength of a path that no longer
+  // describes it. `find` is the byte-exact anchor and it is already in.
   list = list.filter((e) => {
     const items = Array.isArray(e.items) ? e.items : [];
-    const hay = [e.id, e.name, e.words]
+    const hay = [e.id, e.name, e.words, e.node || '']
       .concat(items.map((it) => (it && it.what) || ''))
       .concat(items.map((it) => (it && it.find) || ''))
       .join(' ')
