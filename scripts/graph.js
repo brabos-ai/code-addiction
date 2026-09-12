@@ -16,8 +16,12 @@
  *
  * Why a CLI and not only an MCP server: the callers are this framework's own
  * commands, running on five providers. Every one of them can shell out; only
- * some have MCP configured. scripts/artefact-graph-mcp.js wraps this same
- * module, so both surfaces answer identically by construction.
+ * some have MCP configured.
+ *
+ * The MCP surface is mcp/server.mjs --corpus=artefacts, which serves this
+ * corpus and a user's docs corpus from one binary. It does NOT wrap this
+ * module: it reads the same emitted sidecar, and cli/tests/mcp-engine.test.js
+ * asserts the two answer identically verb for verb rather than by shared code.
  */
 
 const fs = require('node:fs');

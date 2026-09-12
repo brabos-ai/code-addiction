@@ -26,6 +26,24 @@ array has a length.
 {"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
 
+### Product Layer — `mcp/`
+
+**A product-layer directory at the repository ROOT, and the only one.** It holds the knowledge-graph
+MCP server: the corpus registry, the two parsers, the query engine and the stdio transport.
+
+```
+⛔ THE ROOT-MEANS-INTERNAL RULE DOES NOT REACH IT:
+  ⛔ DO NOT: Tag an F-block touching `mcp/` as [internal] because it sits at the root
+  ✅ DO: Tag it [product] — `scripts/build.js` copies it to `cli/src/mcp/` and it ships in the
+         npm package, which is what decides the layer
+```
+
+Nothing under `mcp/` is registered in `provider-map.json`: it is CLI source, like `cli/src/`, not an
+artefact the build distributes to providers. It takes **no dependency at all**, `yaml` included,
+because `--corpus=artefacts` runs from the repository root where the CLI's `node_modules` is off the
+resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
+and one source has to read the same way in both.
+
 ### Internal Layer — `.claude/`
 
 Development tools that build and maintain the framework itself. One file per artefact, no provider mirror. NOT distributed to users, and absent from `provider-map.json`.
@@ -76,7 +94,7 @@ Key files:
 | `framwork/provider-map.json` | Single registry of every command, skill, agent and its provider distribution |
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
 | `scripts/graph.js` | Queries the artefact graph — `impact`, `dependencies`, `path`, `orphans`, `history`, `mermaid` |
-| `scripts/artefact-graph-mcp.js` | Exposes seven graph verbs as MCP tools; the CLI is the engine, MCP the wrapper |
+| `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-bats.js` | Backs `npm run test:scripts` — runs the suite natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `framwork/.codeadd/scripts/*.sh` | Shipped verbatim. Each documents its own usage and exit codes in its header |

@@ -99,8 +99,9 @@ IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
 `neighbors` on the artefact, `dependencies` at depth 1, `impact` at depth 1. The neighbour list is
 the input to item 4, so this phase comes first: without it you do not know which files to read.
 
-**When the MCP is unavailable, the CLI behind it is not a fallback — it is the same engine.**
-`scripts/artefact-graph-mcp.js` wraps `scripts/graph.js`, and both read one emitted sidecar. Use
+**When the MCP is unavailable, the CLI behind it is not a fallback — it answers the same.**
+`mcp/server.mjs --corpus=artefacts` and `scripts/graph.js` read one emitted sidecar, and
+`cli/tests/mcp-engine.test.js` asserts the two return the same result verb for verb. Use
 `NODE_OPTIONS= node scripts/graph.js neighbors|dependencies|impact <id>`; clear `NODE_OPTIONS` first
 or an injected debugger banner corrupts stdout.
 
