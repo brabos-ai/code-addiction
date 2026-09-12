@@ -172,12 +172,13 @@ function appendRelations(content, lines) {
 function harvestRelations(ctx) {
   const docsRoot = path.join(ctx.cwd, 'docs');
   const changes = [];
+  const notes = [];
   const unresolved = [];
   const failed = [];
   const harvest = { docRefs: 0, related: 0, followUps: 0, impactedFiles: 0, superseded: 0 };
   let skipped = 0;
 
-  if (!fs.existsSync(docsRoot)) return { changes, unresolved, harvest, skipped, failed };
+  if (!fs.existsSync(docsRoot)) return { changes, notes, unresolved, harvest, skipped, failed };
 
   // --- pass 1: what exists, and what kind of thing each file is -------------
   const files = [];
@@ -297,7 +298,21 @@ function harvestRelations(ctx) {
     }
   }
 
-  return { changes, unresolved, harvest, skipped, failed };
+  // THE REPORT IS WHAT MAKES THE DIFF REVIEWABLE. Reviewing it is the judgement
+  // the CLI cannot make, and a user cannot review what they were not told.
+  const recovered = Object.entries(harvest)
+    .filter(([, count]) => count > 0)
+    .map(([source, count]) => `${source} ${count}`)
+    .join(', ');
+  if (recovered) notes.push(`harvested ${recovered}`);
+  if (skipped > 0) {
+    notes.push(`skipped ${skipped} file(s) carrying no type: key — those are yours, not codeadd's`);
+  }
+  for (const item of unresolved) {
+    notes.push(`unresolved: ${item.from} names ${item.id}, which resolves to no work item — no line written`);
+  }
+
+  return { changes, notes, unresolved, harvest, skipped, failed };
 }
 
 /**
@@ -354,12 +369,12 @@ export function pendingMigrations(applied, registry = MIGRATIONS) {
  * @param {{cwd: string, providers: {dest: string}[]}} ctx
  * @param {string[]} applied  the current ledger
  * @param {{dryRun?: boolean, registry?: object[]}} [options]
- * @returns {{pending: string[], applied: string[], failed: {id: string, error: string}[], changes: string[]}}
+ * @returns {{pending: string[], applied: string[], failed: {id: string, error: string}[], changes: string[], notes: string[]}}
  */
 export function runMigrations(ctx, applied, options = {}) {
   const { dryRun = false, registry = MIGRATIONS } = options;
   const pending = pendingMigrations(applied, registry);
-  const result = { pending: pending.map((m) => m.id), applied: [], failed: [], changes: [] };
+  const result = { pending: pending.map((m) => m.id), applied: [], failed: [], changes: [], notes: [] };
 
   if (dryRun) return result;
 
@@ -368,6 +383,12 @@ export function runMigrations(ctx, applied, options = {}) {
       const outcome = migration.run({ cwd: ctx.cwd, providers: ctx.providers }) || {};
       result.applied.push(migration.id);
       result.changes.push(...(outcome.changes ?? []));
+      // A MIGRATION'S REPORT IS NOT ITS CHANGE LIST, AND DROPPING IT IS A
+      // SILENT FAILURE. `changes` says what was written; `notes` says what the
+      // migration FOUND and could not act on — an id that resolves to no
+      // document, a file skipped because it carries no `type:`. The harvest
+      // computed all of that and it reached nobody until this line existed.
+      result.notes.push(...(outcome.notes ?? []));
     } catch (err) {
       result.failed.push({ id: migration.id, error: err.message });
     }
@@ -421,6 +442,7 @@ export async function migrate(cwd, args = [], scope = 'project') {
   }
 
   for (const change of result.changes) log.success(`Migration: ${change}`);
+  for (const note of result.notes ?? []) log.info(`Migration: ${note}`);
   for (const failure of result.failed) log.warn(`${failure.id} failed: ${failure.error}`);
 
   if (result.applied.length > 0) {

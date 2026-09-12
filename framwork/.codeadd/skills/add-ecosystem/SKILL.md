@@ -145,7 +145,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-health-check | Health check of environment and project dependencies |
 | add-id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, build-setup.sh, done.sh) |
 | add-investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting |
-| add-knowledge-discovery | Consult the project wiki (and code knowledge graph) at the context/discovery step for minimal token cost — loaded by add.plan, add.hotfix, add.new, add.diagnose, add.review |
+| add-knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add.plan, add.hotfix, add.new, add.diagnose, add.review, add.brainstorm |
 | add-optimizing-git-workflow | Git patterns, commits, branches, aliases |
 | add-plan-based-features | Implement subscription plan-based features |
 | add-plan-review | Pre-delivery executability rubric for about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` |
@@ -237,7 +237,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-architecture-discovery | add.audit, add.wiki |
 | add-ecosystem | add (loses full view), all commands that route to next steps |
 | add-wiki-maintenance | add.wiki (update mode), add.done (STEP 4.9) |
-| add-knowledge-discovery | add.plan, add.hotfix, add.new, add.diagnose, add.review |
+| add-knowledge-discovery | add.plan, add.hotfix, add.new, add.diagnose, add.review, add.brainstorm |
 | add-investigation | add.diagnose (primary, agent-dispatched mode), add.hotfix (STEP 6.1 escalation, agent-dispatched mode), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
 | feature-history-agent | add.diagnose (STEP 4 Fase A.1), add.hotfix (STEP 4) |
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |

@@ -20,6 +20,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - command: /add.hotfix
 - command: /add.new
 - command: /add.plan
+- command: /add.pull-request
 - script: build-setup.sh
 - skill: add-doc-schemas/references/delivery-index.md
 - skill: add-doc-schemas/references/fix.md
@@ -197,7 +198,7 @@ The grammar is fixed: `- <type> [[<id>]]`, optionally followed by ` — <why>`.
 |---|---|---|
 | `caused_by` | This work item exists because that one broke something | `/add.hotfix`, from the candidate set the user confirmed |
 | `depends_on` | This work item cannot ship until that one has | `/add.new`, from its own discovery result |
-| `part_of` | This work item is one piece of that larger one | `/add.new` for an epic member; `/add.done` for a changelog |
+| `part_of` | This work item is one piece of that larger one | `/add.new` for an epic member. For a changelog, **whichever of `/add.pull-request` and `/add.done` writes it first** — the `changelog` schema has two writers and either may be the first |
 | `links_to` | The two reference each other and the intent is unrecorded | the `codeadd update` migration only, never authored by hand |
 
 `links_to` is the honest label for an edge recovered mechanically. A migration reading a `{{doc:}}` reference in a sentence knows the two documents are connected and does not know why, and writing a guessed `depends_on` there would be worse than admitting the gap.
@@ -273,7 +274,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | `history` | `references/history.md` | changelog |
 | `product` | `references/product.md` | owner, product |
 | `strategy` | `references/strategy.md` | prd |
-| `marketing` | `references/marketing.md` | saas-copy, landing-page |
+| ~~`marketing`~~ | **retired** | `saas-copy` and `landing-page` were dropped with their category file; nothing writes either, and a command asking for one gets no schema |
 | `receipt` | `references/receipt.md` | setup-receipt |
 
 **Loading discipline.** A command that produces, say, a `feature-about` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
@@ -304,6 +305,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
    - `type: <SCHEMA>` exact match
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
+   - `tags:` is a YAML list (may be empty `[]`). A schema whose Frontmatter line does not name it is exempt — the Universal Document Requirements list is what makes it mandatory, and a schema may narrow that.
    - **`feature-about` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 

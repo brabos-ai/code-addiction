@@ -101,7 +101,7 @@ For `/add.new` (creates `docs/features/<slug>/about.md`).
 
 - **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
   - **`branch:`** (required for new docs) — the branch `/add.build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add.new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
-  - **`tags:`** — bare lowercase topic words, per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`. Written from the discovery result, never from a question put to the user.
+  - **`tags:`** — bare lowercase topic words, per Universal Document Requirements in `{{skill:add-doc-schemas/SKILL.md}}`, which is where that rule is stated. Written from the discovery result, never from a question put to the user.
 - **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References
 - **Depth floor:**
   - **Problem** — who is affected, what breaks or is missing, observable signal/evidence, current workaround if any.

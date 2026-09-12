@@ -174,6 +174,9 @@ export async function update(cwd, options = {}, scope = 'project') {
   // only migration on the books deletes files. An additive migration would then
   // report "removed" for every file it created.
   for (const change of migrationResult.changes) log.success(`Migration: ${change}`);
+  // What the migration FOUND, beside what it wrote. An unresolved id is the
+  // user's to fix and reaches them nowhere else.
+  for (const note of migrationResult.notes ?? []) log.info(`Migration: ${note}`);
   for (const failure of migrationResult.failed) {
     // Reported, not recorded, not fatal: the next update retries it.
     log.warn(`Migration ${failure.id} failed: ${failure.error}`);

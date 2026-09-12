@@ -33,7 +33,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 STEP 1: done.sh                 -> RUN FIRST (collect context)
 STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger gates (feature only)
+STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), then the knowledge record (feature AND hotfix)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
 STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
@@ -179,6 +179,7 @@ changes is that four STEPs already ran and must not run again:
 | 5 | Validate and promote QA evidence | **Skipped.** The promotion already ran |
 | 6.3 | Generate the changelog | **Skipped.** Committed by STEP 6's commit |
 | 6.7 | Update the wiki | **Skipped.** Same commit |
+| 6.7.1 | Rebuild the docs index | **Runs.** The index is a gitignored cache of the user's own markdown, not something a commit carries — a skipped rebuild leaves it describing the tree before this delivery |
 | 6.8 | Write the index entry | **Skipped.** The entry is on the branch |
 | 8 | Merge | The only work left |
 
@@ -648,10 +649,19 @@ the index so the next command's discovery step sees this delivery:
 npx codeadd mcp --corpus=docs --action=reindex
 ```
 
-It prints a JSON report carrying the node and edge counts, what it skipped and
-every unresolved id. Show the unresolved list when it is non-empty — those are
-relations pointing at documents that do not exist, and they are the user's to
-fix.
+It prints a JSON report carrying the node and edge counts, the skipped count and
+the **number** of unresolved ids.
+
+**When that number is not zero, ask for the list — `reindex` reports a count and
+only `stats` returns the ids:**
+
+```bash
+npx codeadd mcp --corpus=docs --action=stats
+```
+
+Its `unresolved` array is `{from, to}` pairs: a relation naming a document that
+does not exist. Carry the list to STEP 9 and show it there. They are the user's
+to fix, and this command never edits a relation to make one go away.
 
 ⛔ **NON-BLOCKING, like the wiki update above it.** A project whose `npx` cannot
 reach the package offline still merges; the index is a rebuildable cache of the
@@ -922,6 +932,9 @@ Then, after the seven blocks, state:
 
 - The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
 - The delivery index entry that `delivered.sh` wrote, and the changelog path.
+- **The docs index rebuild from 6.7.1** — its node and edge counts, and the
+  unresolved list when 6.7.1 found one. An unresolved relation points at a
+  document that does not exist; it reaches the user here or nowhere.
 - **Which evidence the merge gate accepted, and why.** On the PR route: the
   checks that concluded and the SHA they ran on, or that the repository had no
   required check configured. On the local route: that no PR existed, and which

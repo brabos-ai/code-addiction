@@ -319,3 +319,72 @@ describe('F19 — /add.done keeps the format from decaying', () => {
     expect(DONE).toContain('### 6.8 Write the Delivery Index Entry');
   });
 });
+
+describe('F18 — the report reaches the driver, not just the return value', () => {
+  it('runMigrations carries notes out of the migration', async () => {
+    const { makeBrownfield, removeTree } = await import('./helpers/brownfield-fixture.js');
+    const { runMigrations, MIGRATIONS } = await import('../src/migrations.js');
+    const tree = makeBrownfield();
+    try {
+      const result = runMigrations({ cwd: tree, providers: [] }, ['0001-prune-legacy-orphans'], {
+        registry: MIGRATIONS,
+      });
+      // The level this joins used to read `outcome.unresolved` straight off the
+      // migration, which passed while the driver dropped it on the floor.
+      expect(result.notes.some((n) => n.includes('0099F'))).toBe(true);
+      expect(result.notes.some((n) => n.startsWith('harvested'))).toBe(true);
+      expect(result.notes.some((n) => n.includes('skipped 2 file(s)'))).toBe(true);
+    } finally {
+      removeTree(tree);
+    }
+  });
+
+  it('both drivers print what the migration found, not only what it wrote', () => {
+    for (const rel of ['src/updater.js', 'src/migrations.js']) {
+      const src = fs.readFileSync(path.join(import.meta.dirname, '..', rel), 'utf8');
+      expect(src.includes('.notes ?? []'), rel).toBe(true);
+      expect(src.includes('log.info(`Migration: ${note}`)'), rel).toBe(true);
+    }
+  });
+});
+
+describe('F19 — 6.7.1 asks for what the action actually returns', () => {
+  const DONE = fs.readFileSync(
+    path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.done.md'),
+    'utf8',
+  );
+
+  it('reindex reports a COUNT, so the step calls stats for the list', async () => {
+    const { actions } = await import('../../mcp/engine.mjs');
+    const { makeDocsCorpus, removeTree } = await import('./helpers/docs-corpus-fixture.js');
+    const { loadCorpus } = await import('../../mcp/engine.mjs');
+    const tree = makeDocsCorpus();
+    try {
+      const data = loadCorpus('docs', tree);
+      // The contract the step has to be written against.
+      expect(typeof actions.reindex(data, {}, { root: tree }).unresolved).toBe('number');
+      expect(Array.isArray(actions.stats(data).unresolved)).toBe(true);
+    } finally {
+      removeTree(tree);
+    }
+    const step = DONE.slice(DONE.indexOf('### 6.7.1'), DONE.indexOf('### 6.8'));
+    expect(step).toContain('--action=stats');
+    expect(step).toMatch(/only `stats` returns the ids/);
+  });
+
+  it('the rebuild runs on the Resume route, where the changelog does not', () => {
+    const table = DONE.slice(DONE.indexOf('| STEP | Normal | Resume |'), DONE.indexOf('| 8 | Merge'));
+    expect(table).toContain('| 6.7.1 |');
+    expect(table).toMatch(/6\.7\.1 \| Rebuild the docs index \| \*\*Runs\.\*\*/);
+  });
+
+  it('STEP 9 carries the rebuild outcome to the user', () => {
+    const report = DONE.slice(DONE.indexOf('## STEP 9'));
+    expect(report).toContain('docs index rebuild from 6.7.1');
+  });
+
+  it('the top STEP list no longer scopes STEP 4 to feature branches alone', () => {
+    const line = DONE.split('\n').find((l) => l.startsWith('STEP 4: Validate delivery'));
+    expect(line).toMatch(/feature AND hotfix/);
+  });
+});

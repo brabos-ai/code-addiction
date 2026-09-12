@@ -383,3 +383,35 @@ describe('F20 — all six commands name a destination for the result', () => {
     expect(whenNot).toContain('GRAPH');
   });
 });
+
+describe('review fixes — the schema says one thing about tags: and part_of', () => {
+  it('a field declared mandatory is checked by the gate that enforces mandatory fields', () => {
+    const gate = DOC_SCHEMAS.slice(DOC_SCHEMAS.indexOf('## Validation Gate Block'));
+    const check1 = gate.slice(gate.indexOf('1. **Frontmatter presence.**'), gate.indexOf('2. **TL;DR'));
+    expect(check1).toContain('`tags:`');
+  });
+
+  it('part_of names both of the changelog writers, not one', () => {
+    const row = DOC_SCHEMAS.split('\n').find((l) => l.startsWith('| `part_of` |'));
+    expect(row).toContain('/add.pull-request');
+    expect(row).toContain('/add.done');
+  });
+
+  it('the Schema Index offers no category file that does not exist', () => {
+    const index = DOC_SCHEMAS.slice(
+      DOC_SCHEMAS.indexOf('| Category | File | Schemas |'),
+      DOC_SCHEMAS.indexOf('**Loading discipline.**'),
+    );
+    for (const row of index.split('\n')) {
+      const match = row.match(/`(references\/[a-z-]+\.md)`/);
+      if (!match) continue;
+      const target = path.join(SKILLS, 'add-doc-schemas', match[1]);
+      expect(fs.existsSync(target), `Schema Index row points at a missing ${match[1]}`).toBe(true);
+    }
+  });
+
+  it('the tags: pointer names the section that carries the rule', () => {
+    const line = NEW_FEATURE.split('\n').find((l) => l.includes('**`tags:`**'));
+    expect(line).toContain('Universal Document Requirements');
+  });
+});

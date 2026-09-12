@@ -36,7 +36,7 @@ Record the escape explicitly:
 RED_TEST: none — REASON: <why this bug has no unit-level assertion>
 ```
 
-It goes in `about.md`'s `## Review` section (STEP 11) and in the STEP 15 iteration entry. An unrecorded skip is indistinguishable from a forgotten step.
+It goes in `about.md`'s `## Review` section (STEP 11) and in the STEP 13 iteration entry. An unrecorded skip is indistinguishable from a forgotten step.
 
 ⛔ DO NOT invent a test to satisfy this gate. A fabricated test that never bites is worse than a recorded escape.
 
