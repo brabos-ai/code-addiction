@@ -31,10 +31,14 @@ export function isPackaged(dir = import.meta.dirname) {
 
 /**
  * @param {string[]} argv  everything after the `mcp` subcommand
+ * @param {string} [dir]   where to look for the packaged server; the default is
+ *                         this file's own directory, and the parameter exists
+ *                         so the not-packaged branch is reachable from a test
+ *                         after the build has generated the real copy.
  * @returns {Promise<number>} the exit code, never thrown
  */
-export async function mcp(argv = []) {
-  const target = serverPath();
+export async function mcp(argv = [], dir = import.meta.dirname) {
+  const target = serverPath(dir);
   if (!fs.existsSync(target)) {
     process.stderr.write(
       `codeadd mcp: the graph server is not packaged in this install (${PACKAGED} is missing).\n` +

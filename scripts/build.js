@@ -1810,6 +1810,78 @@ function pruneStaleOutputs(map) {
  */
 const SIDECARS = ['injection-points.json', 'contracts.json', 'artefact-graph.json'];
 
+/**
+ * The knowledge-graph MCP server: where its source lives, and where the build
+ * puts it so `npm publish` packs it.
+ *
+ * BOTH ENDS ARE NAMED HERE AND NOWHERE ELSE. The destination has three
+ * consumers that must agree — this copy, `cli/package.json`'s `files`
+ * whitelist, and the `.gitignore` entry that keeps the generated copy out of
+ * review — and `cli/tests/mcp-packaging.test.js` derives its levels from these
+ * two constants rather than repeating the strings.
+ *
+ * `mcp/` is PRODUCT source living at the repository root. It is not registered
+ * in provider-map.json and build.js does not transform it: the files are
+ * dependency-free `.mjs` and the source IS the bundle, so this is a copy and
+ * never a compile.
+ */
+const MCP_SOURCE = 'mcp';
+const MCP_PACKAGED = 'cli/src/mcp';
+
+/**
+ * Mirror `mcp/` into the CLI package.
+ *
+ * A MIRROR, NOT A MERGE. A copy that only adds leaves a deleted module in
+ * every published package forever, which is the same class of bug the sidecar
+ * prune above already guards against.
+ *
+ * @returns {{copied: number, pruned: number}}
+ */
+function copyMcpIntoCli() {
+  const from = path.join(ROOT, MCP_SOURCE);
+  const to = path.join(ROOT, MCP_PACKAGED);
+  if (!fs.existsSync(from)) return { copied: 0, pruned: 0 };
+
+  const wanted = new Set();
+  const walk = (dir, rel = '') => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const next = rel ? path.join(rel, entry.name) : entry.name;
+      if (entry.isDirectory()) walk(path.join(dir, entry.name), next);
+      else wanted.add(next);
+    }
+  };
+  walk(from);
+
+  let copied = 0;
+  for (const rel of wanted) {
+    const target = path.join(to, rel);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(path.join(from, rel), target);
+    copied += 1;
+  }
+
+  let pruned = 0;
+  if (fs.existsSync(to)) {
+    const sweep = (dir, rel = '') => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const next = rel ? path.join(rel, entry.name) : entry.name;
+        if (entry.isDirectory()) {
+          sweep(path.join(dir, entry.name), next);
+          if (fs.readdirSync(path.join(dir, entry.name)).length === 0) {
+            fs.rmdirSync(path.join(dir, entry.name));
+          }
+        } else if (!wanted.has(next)) {
+          fs.rmSync(path.join(dir, entry.name));
+          pruned += 1;
+        }
+      }
+    };
+    sweep(to);
+  }
+
+  return { copied, pruned };
+}
+
 function main() {
   console.log('Building provider files...\n');
 
@@ -1847,6 +1919,8 @@ function main() {
   assertArtefactGraph(artefactGraph);
   const graph = writeArtefactGraph(graphPath, artefactGraph);
 
+  const mcp = copyMcpIntoCli();
+
   const total = commandCount + skillCount + agentCount;
   console.log(`\nBuild complete:`);
   console.log(`  Commands : ${Object.keys(map.commands).length} × providers → ${commandCount} files`);
@@ -1856,6 +1930,7 @@ function main() {
   console.log(`  Injection points : ${pointCount} → ${path.relative(ROOT, sidecarPath)}`);
   console.log(`  Contracts        : ${contractCount} → ${path.relative(ROOT, contractsPath)}`);
   console.log(`  Artefact graph   : ${graph.nodes} nodes, ${graph.edges} edges → ${path.relative(ROOT, graphPath)}`);
+  console.log(`  MCP server       : ${mcp.copied} file(s) → ${MCP_PACKAGED}${mcp.pruned ? ` (${mcp.pruned} stale removed)` : ''}`);
   console.log(`  Total    : ${total} files generated`);
 }
 
@@ -1873,6 +1948,9 @@ module.exports = {
   writeArtefactGraph,
   checkArtefactGraph,
   assertArtefactGraph,
+  copyMcpIntoCli,
+  MCP_SOURCE,
+  MCP_PACKAGED,
   SIDECARS,
   fragmentNodeName,
   fencedSpans,

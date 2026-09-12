@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
+import os from 'node:os';
 import { makeDocsCorpus, makeEmptyTree, removeTree } from './helpers/docs-corpus-fixture.js';
 import { TOOLS, handle, parseArgv } from '../../mcp/server.mjs';
 import fs from 'node:fs';
@@ -406,13 +407,8 @@ describe('F8 — the codeadd mcp subcommand', () => {
   });
 
   it('reports a clear error when the server is not packaged yet', async () => {
-    const { mcp: bridge, isPackaged, serverPath } = await import('../src/mcp.js');
-    if (isPackaged()) {
-      // After `node scripts/build.js` has run, the packaged copy exists and the
-      // absent-path branch cannot be reached from here. Assert the path instead.
-      expect(serverPath()).toMatch(/mcp[\/]server\.mjs$/);
-      return;
-    }
+    const { mcp: bridge } = await import('../src/mcp.js');
+    const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-nomcp-'));
     const written = [];
     const original = process.stderr.write;
     process.stderr.write = (chunk) => {
@@ -420,10 +416,19 @@ describe('F8 — the codeadd mcp subcommand', () => {
       return true;
     };
     try {
-      expect(await bridge([])).toBe(2);
+      expect(await bridge([], bare)).toBe(2);
     } finally {
       process.stderr.write = original;
+      fs.rmSync(bare, { recursive: true, force: true });
     }
     expect(written.join('')).toContain('not packaged');
+    expect(written.join('')).toContain('node scripts/build.js');
+  });
+
+  it('finds the packaged server the build generated', async () => {
+    const { isPackaged, serverPath } = await import('../src/mcp.js');
+    expect(isPackaged()).toBe(true);
+    expect(fs.existsSync(serverPath())).toBe(true);
+    expect(path.basename(serverPath())).toBe('server.mjs');
   });
 });
