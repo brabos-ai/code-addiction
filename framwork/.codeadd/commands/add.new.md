@@ -104,8 +104,18 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
 2. **Agent: Codebase Discovery**
    - **Input:** past-features.md + skeleton about.md + feature request + selected wiki pages (if any, see Knowledge Base Check below)
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
-   - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}`. This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
-   - **`RELATED_WORK` destination:** the skill's GRAPH step returns it, and it has two. Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`. It is the same result serving both, never re-derived.
+   - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its **INDEX step, its GRAPH step and then its wiki steps**, in that order.
+     - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`.
+     - **Then the wiki.** This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
+
+```
+IF THE WIKI IS ABSENT:
+  ⛔ DO NOT: Skip the INDEX and GRAPH steps along with it
+  ✅ DO: Run both anyway — neither reads the wiki, and RELATED_WORK is what
+         STEP 6.1 writes its relations from
+```
+
+   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
 <!-- plugin:gitnexus:graph-map -->
@@ -273,7 +283,7 @@ Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided 
 
 ### 6.1 Write `## Relations` and `tags:` from what discovery already found
 
-The relationships are already in hand. `past-features.md` carries a **Related Features** table with ids, the delivery index results from the Knowledge Base Check carry more, and `discovery.md` names the prerequisites. **This step routes them into the document; it discovers nothing new and asks nothing.**
+The relationships are already in hand. `past-features.md` carries a **Related Features** table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, and `discovery.md` names the prerequisites. **Sub-step 6.1 routes them into the document; 6.1 itself discovers nothing new and asks nothing.** The Codebase Analysis dispatch later in this STEP still runs and still analyses — this sentence bounds 6.1, not the whole of STEP 6.
 
 Write per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`:
 
@@ -292,7 +302,7 @@ IF NO PREREQUISITE AND NO PARENT EPIC WAS FOUND:
   ✅ DO: Write `## Relations` carrying the single word `None`
 ```
 
-⛔ **Nobody is asked which work item this depends on.** A relationship born from human memory is one nobody can reproduce, and the user already answered every question this command needed in STEP 4. The command ran the queries itself in STEP 3 and writes what those queries returned.
+⛔ **`add-doc-schemas` owns the rule that nobody is asked**, in its Relations & Observations section. What is specific here is the provenance: the queries ran in STEP 3, the user answered every question this command needed in STEP 4, and 6.1 writes what those queries returned.
 
 Write `## Observations` from the same material: the measurements and constraints the discovery surfaced that no other section of `about.md` holds. Empty is valid.
 

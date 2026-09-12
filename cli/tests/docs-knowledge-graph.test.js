@@ -298,14 +298,76 @@ describe('F20 — all six commands name a destination for the result', () => {
     }
   });
 
-  it('each says where the result goes, not just that it exists', () => {
-    // "A named destination" is the plan's phrase, and a mention with no
-    // destination is what four of the six already did with the index result.
-    for (const name of SIX) {
+  it('the destination each one names is a REAL SLOT in that same file', () => {
+    // THE LEVEL THIS REPLACES TESTED THE SENTENCE, NOT THE WIRING.
+    // It asked whether a command's prose names a destination. Five of the six
+    // named one whose slot did not exist: add.review's dispatch payload,
+    // add.plan's bootstrap template, add.diagnose's payload list, add.hotfix's
+    // touched_by over files that had not changed yet, and add.new, which never
+    // ran the step that produces the value at all. A prose-only level cannot
+    // see any of that, so this one reads the destination instead.
+    // Plain substrings, deliberately: a regex literal built through a
+    // generator is one escaping mistake away from matching nothing at all.
+    const SLOTS = {
+      // The value must be PRODUCED before it can be routed, which is the one
+      // add.new was missing entirely.
+      'add.new': ['run its **INDEX step, its GRAPH step', '`RELATED_WORK` destination'],
+      // add.plan is checked separately below: its slot must sit INSIDE the
+      // bootstrap template, and a file-wide search finds the paragraph that
+      // merely explains the slot. That is the same prose-not-wiring mistake
+      // this whole level exists to stop making.
+      'add.plan': ['travels the same two routes'],
+      'add.hotfix': ['`RELATED_WORK` destination', "touched_by` over this branch's changed paths"],
+      'add.brainstorm': ['## Candidate Directions'],
+      'add.diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
+      'add.review': ['**`RELATED_WORK` from STEP 2.2**'],
+    };
+    for (const [name, slots] of Object.entries(SLOTS)) {
       const src = read(path.join(COMMANDS, `${name}.md`));
-      const line = src.split('\n').find((l) => l.includes('RELATED_WORK'));
-      expect(line, name).toMatch(/STEP|dispatch|questionnaire|section|blast radius|## Relations/);
+      for (const slot of slots) {
+        expect(src.includes(slot), `${name}: no slot carrying ${slot}`).toBe(true);
+      }
     }
+  });
+
+  it('add.plan carries the slot INSIDE the bootstrap template, not merely near it', () => {
+    // Checked against the fenced block a subagent actually receives. Asserting
+    // on the whole file passes on the paragraph that describes the slot, which
+    // is how the first draft of this level let the slot be deleted and stayed
+    // green.
+    const src = read(path.join(COMMANDS, 'add.plan.md'));
+    const section = src.slice(src.indexOf('### Subagent Bootstrap'));
+    const FENCE = String.fromCharCode(96, 96, 96);
+    const open = section.indexOf(FENCE);
+    const template = section.slice(open + FENCE.length, section.indexOf(FENCE, open + FENCE.length));
+    expect(template).toContain('${TASK_DOCUMENTS}');
+    expect(template).toContain('${WIKI_PAGES}');
+    expect(template).toContain('${RELATED_WORK}');
+  });
+
+  it('add.plan fills its two carry-forwards independently of each other', () => {
+    // The GRAPH step is standalone and reads no wiki page, so a WIKI:absent run
+    // must still carry RELATED_WORK. Gating one on the other loses it.
+    const src = read(path.join(COMMANDS, 'add.plan.md'));
+    expect(src).toContain('travels whether or not a wiki exists');
+    expect(src).toContain('Filled independently of `${WIKI_PAGES}`');
+  });
+
+  it('add.new runs INDEX and GRAPH even when the wiki is absent', () => {
+    const src = read(path.join(COMMANDS, 'add.new.md'));
+    const gate = src.slice(src.indexOf('IF THE WIKI IS ABSENT:'), src.indexOf('IF THE WIKI IS ABSENT:') + 400);
+    expect(gate).toContain('⛔ DO NOT: Skip the INDEX and GRAPH steps');
+  });
+
+  it('add.hotfix asks for touched_by only where a file list exists', () => {
+    const src = read(path.join(COMMANDS, 'add.hotfix.md'));
+    const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
+    const step9 = src.slice(src.indexOf('## STEP 9:'), src.indexOf('## STEP 10:'));
+    // STEP 4 runs before the investigation and before the fix.
+    expect(step4).toContain('`search` ONLY at this step');
+    expect(step4).not.toContain('touched_by` result over the changed files');
+    // STEP 9 has the diff in hand.
+    expect(step9).toContain('touched_by');
   });
 
   it('add.hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {
