@@ -13,6 +13,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - mention: add-build-ledger
 - mention: /add-framework--done
 - mention: /add-framework--build
+- mention: /add-framework--brainstorm
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -81,6 +82,11 @@ docs/plans/2026-09-07T005046-PLAN--<slug>-001-<topic>.md
 ```
 
 **Companions suffix the plan basename:** `--evidence-v01.md`, `--review-v01.md`, `--ledger.md`.
+
+**A brainstorm SET follows the same two rules** — one timestamp for the whole set, and an `NNN`
+ordinal on every member, `-000-umbrella` then `-001-` onward. `/add-framework--brainstorm` owns its
+directory and its slug; only the shape is shared. It is recorded here because a reader comparing the
+two set conventions would otherwise find the rule for one and not the other, which is how they drift.
 
 ### Legacy forms resolve for reading, never for writing
 
@@ -168,10 +174,10 @@ sidecar key, a frontmatter field, an injection anchor name — whatever one F-bl
 later one reads.
 
 ```
-- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds the fifth delivery gate.
-  - **Produces:** `converge-gates.sh` emits `GATE5=pass|fail|skip`
+- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds a sixth delivery gate.
+  - **Produces:** `converge-gates.sh` emits `GATE6=pass|fail|skip`
 - **F7** [product] — `framwork/.codeadd/commands/add.done.md`: STEP 4 reads the new gate.
-  - **Consumes:** `GATE5` (F3)
+  - **Consumes:** `GATE6` (F3)
 ```
 
 **Every `Consumes` MUST name an EARLIER F-block that `Produces` it, using the SAME string.** A

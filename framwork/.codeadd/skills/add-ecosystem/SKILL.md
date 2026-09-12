@@ -30,6 +30,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-optimizing-git-workflow
 - mention: add-plan-based-features
 - mention: add-plan-review
+- mention: add-review-discipline
 - mention: add-product-discovery
 - mention: add-project-scaffolding
 - mention: add-qa
@@ -155,6 +156,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints; consumed by /add.qa-setup |
 | add-qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md, **and** author the `_tests/screens.json` screen catalog by read-merge-write — loaded by add.plan's qa-pipeline QA-Spec step |
 | add-resource-path-convention | Path convention for referencing commands/skills/scripts across providers |
+| add-review-discipline | HOW review is dispatched: the counts, what makes a second dispatch legal (apply then re-gate), how a readback divergence is handled at each of its three sites, and the one boundary where a verdict may reach disk |
 | add-security-audit | OWASP checklist, RLS, secrets, multi-tenancy |
 | add-setup-contract | Compare a project's receipt `setup-shape` to the shipped sidecar `shape` and route FIRST-RUN / CURRENT / STALE |
 | add-skill-creator | Create and test skills under real pressure |
@@ -226,6 +228,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
+| add-review-discipline | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3), add.build (10.0.4) — the dispatch discipline all five share |
 | add-plan-review | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via plan-reviewer-agent |
 | add-feature-readback | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via readback-agent, each after the plan-review fixes land |
 | add-feature-discovery | add.new, add.plan |
@@ -251,7 +254,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-tasks-checklist | add.plan, add.build, add.plan-to-ready (tasks.md schema and tick rules) |
 | add-tdd | add.plan, add.build, add.review, add.hotfix (tdd-pipeline RED gate) |
 | add-test-specification | add.plan (STEP 9) |
-| converge-gates.sh | add.plan-to-ready (STEP 6, convergence check), add.done (STEP 4, delivery-gate preflight) — read-only probe for the four gates (review, QA baseline, epic, coverage); one script backs both commands' verdicts so they can't drift apart |
+| converge-gates.sh | add.plan-to-ready (STEP 6, convergence check), add.done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
 | build-ledger.sh | add.build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add-subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
 | task-brief.sh | add.build (STEP 10 dispatch), add-subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
 | review-package.sh | add.build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add-subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |

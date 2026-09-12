@@ -16,6 +16,32 @@ description: "Use when a command dispatches a reviewer, a cold reader or the pro
 - mention: add-build-ledger
 -->
 
+<!--
+A sibling skill of the same name now lives in the PRODUCT layer, at
+framwork/.codeadd/skills/add-review-discipline/. The duplication is DELIBERATE:
+that layer ships to users' projects, where this directory does not exist, so
+nothing there can reference anything here — and neither `uses:` block may name
+the other, because a cross-layer target resolves inside its own layer and
+dangles, which fails the build.
+
+The two files carry the same subject and REACH OPPOSITE CONCLUSIONS in two
+places, both on purpose:
+
+  1. The COUNT. This layer allows no second dispatch. The product layer allows
+     one, after `apply then re-gate` — it has a deterministic schema gate between
+     the two reads, which re-approves the changed document and makes the second
+     read a different question. Nothing here does that, so a second read here
+     would only produce new opinions.
+
+  2. DISK. Nothing here may write a report. The product layer permits exactly
+     two, review-NNN.md and qa-validation-NNN.md, because qa-evidence.sh and
+     converge-gates.sh consume them deterministically. Those are inputs to a
+     script, not stored opinions a human must find.
+
+DO NOT merge them, and DO NOT add a check that keeps them byte-identical.
+Divergence is the intended outcome, not the failure mode.
+-->
+
 Owns HOW review is dispatched in the internal layer: the counts, the fact that nothing reaches disk,
 and what the caller owes a report it receives. WHAT each reader looks for belongs to that reader's own
 definition.

@@ -5,9 +5,18 @@
 # Branch finalization: context collection + merge execution
 # ============================================
 # Usage:
-#   bash .codeadd/scripts/done.sh           # Context mode (default)
-#   bash .codeadd/scripts/done.sh --merge   # Merge mode
-# Dependencies: get-main-branch.sh
+#   bash .codeadd/scripts/done.sh                       # Context mode (default)
+#   bash .codeadd/scripts/done.sh --commit-push         # Commit the working-tree docs, push the branch
+#   bash .codeadd/scripts/done.sh --merge               # The whole local sequence: commit-push, squash, cleanup
+#   bash .codeadd/scripts/done.sh --cleanup <MERGE_SHA> # Post-merge checks, then tags, worktree and branch
+#
+# --cleanup REQUIRES the merge commit it proves against. A squash creates a new
+# commit, so the branch tip is never an ancestor of main and nothing can derive
+# it locally; --merge passes the commit it just made, the PR route passes what
+# gh reports. Without it, CHECK=2 refuses every deletion rather than guessing.
+# Dependencies: get-main-branch.sh, get-branch-metadata.sh, node >= 18 (the
+#               ROUTE probes' JSON parse only), gh (optional — its absence is
+#               the value PR_STATE=no-gh, never an error)
 # ============================================
 
 # [FIX-1] Added -u (undefined variables cause error) and -o pipefail
@@ -16,10 +25,17 @@ set -euo pipefail
 
 # --- Args ---
 MODE="context"
+# The merge commit --cleanup proves against. --merge supplies its own; the PR
+# route passes the one gh reports, because a SQUASH merge leaves the branch tip
+# unreachable from main and no ancestry walk can recover it.
+CLEANUP_SHA=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --merge) MODE="merge"; shift ;;
-        *) shift ;;
+        --commit-push) MODE="commit-push"; shift ;;
+        --cleanup) MODE="cleanup"; shift ;;
+        -*) shift ;;
+        *) [ -z "$CLEANUP_SHA" ] && CLEANUP_SHA="$1"; shift ;;
     esac
 done
 
@@ -213,6 +229,105 @@ if [ "$MODE" = "context" ]; then
     printf '%s\n' "$CHANGED_FILES" | while read -r f; do if [ -n "$f" ]; then echo "  \"$f\""; fi; done || true
     echo "]"
 
+
+    # --- Route probes -------------------------------------------------------
+    # /add.done crosses four facts to choose between its Normal, Resume, Closed
+    # out and Recovery routes. Deriving them in prose is how two commands end up
+    # disagreeing about the same tree, which is the reason converge-gates.sh
+    # exists; these are the same idea for routing rather than gating.
+    #
+    # NOTHING here is a gate. gh missing, no PR, no index and no ledger are all
+    # ordinary values, and the probe still exits 0.
+    echo ""
+    echo "========================================"
+    echo "ROUTE"
+    echo "========================================"
+
+    PR_STATE="no-gh"
+    PR_URL=""
+    PR_HEAD_SHA=""
+    PR_MERGE_COMMIT=""
+
+    if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+        PR_JSON=$(gh pr view --json state,url,headRefOid,mergeCommit 2>/dev/null || true)
+        if [ -z "$PR_JSON" ]; then
+            PR_STATE="none"
+        else
+            # Parsed by node, not by a regex over JSON: gh nests mergeCommit,
+            # and a regex works until a field moves. node is already required by
+            # converge-gates.sh, which the same command runs.
+            PR_FIELDS=$(printf '%s' "$PR_JSON" | node -e "
+              let raw='';
+              process.stdin.on('data', d => raw += d);
+              process.stdin.on('end', () => {
+                try {
+                  const j = JSON.parse(raw);
+                  const mc = (j.mergeCommit && j.mergeCommit.oid) || '';
+                  console.log(String(j.state || 'none').toLowerCase());
+                  console.log(j.url || '');
+                  console.log(j.headRefOid || '');
+                  console.log(mc);
+                } catch (e) { console.log('none'); console.log(''); console.log(''); console.log(''); }
+              });
+            " 2>/dev/null || true)
+            PR_STATE=$(printf '%s' "$PR_FIELDS" | sed -n '1p')
+            PR_URL=$(printf '%s' "$PR_FIELDS" | sed -n '2p')
+            PR_HEAD_SHA=$(printf '%s' "$PR_FIELDS" | sed -n '3p')
+            PR_MERGE_COMMIT=$(printf '%s' "$PR_FIELDS" | sed -n '4p')
+            [ -n "$PR_STATE" ] || PR_STATE="none"
+        fi
+    fi
+
+    echo "PR_STATE=$PR_STATE"
+    echo "PR_URL=$PR_URL"
+    echo "PR_HEAD_SHA=$PR_HEAD_SHA"
+    echo "PR_MERGE_COMMIT=$PR_MERGE_COMMIT"
+
+    # The FILE, committed or not. The duplicate entry this probe exists to catch
+    # is born in the working tree: /add.done 6.8 writes the line and leaves it
+    # there for done.sh --merge to commit, so a check reading only commits is
+    # blind to exactly the state it is for.
+    INDEX_FILE="docs/delivered.jsonl"
+    if [ ! -f "$INDEX_FILE" ]; then
+        INDEX_ENTRY="no-index"
+    elif grep -q "\"id\":\"$FEATURE_NUMBER\"" "$INDEX_FILE" 2>/dev/null; then
+        INDEX_ENTRY="present"
+    else
+        INDEX_ENTRY="absent"
+    fi
+    echo "INDEX_ENTRY=$INDEX_ENTRY"
+
+    # `unknown` is a real answer, not a failure: an unfetched or absent
+    # origin/<main> cannot say whether this branch landed, and reporting `no`
+    # there would be a guess.
+    if ! git rev-parse --verify "origin/$MAIN_BRANCH" >/dev/null 2>&1; then
+        MERGED_ON_MAIN="unknown"
+    elif git merge-base --is-ancestor HEAD "origin/$MAIN_BRANCH" 2>/dev/null; then
+        MERGED_ON_MAIN="yes"
+    else
+        MERGED_ON_MAIN="no"
+    fi
+    echo "MERGED_ON_MAIN=$MERGED_ON_MAIN"
+
+    LEDGER_PATH=""
+    [ -n "${DOCS_DIR:-}" ] && LEDGER_PATH="$DOCS_DIR/build-ledger.md"
+    echo "LEDGER_PATH=$LEDGER_PATH"
+
+    # The LAST Publish line wins. The ledger is a log, not a set: a second build
+    # on the same branch appends rather than replacing, and the latest answer is
+    # the operator's current intent.
+    PUBLISH_RECORD="none"
+    PUBLISH_RECORD_URL=""
+    if [ -n "$LEDGER_PATH" ] && [ -f "$LEDGER_PATH" ]; then
+        PUBLISH_LINE=$(grep '^Publish:' "$LEDGER_PATH" 2>/dev/null | tail -1 || true)
+        if [ -n "$PUBLISH_LINE" ]; then
+            PUBLISH_RECORD=$(printf '%s' "$PUBLISH_LINE" | sed 's/^Publish:[[:space:]]*//' | awk '{print $1}')
+            PUBLISH_RECORD_URL=$(printf '%s' "$PUBLISH_LINE" | grep -oE 'https?://[^[:space:]]+' | head -1 || true)
+        fi
+    fi
+    echo "PUBLISH_RECORD=$PUBLISH_RECORD"
+    echo "PUBLISH_RECORD_URL=$PUBLISH_RECORD_URL"
+
     exit 0
 fi
 
@@ -220,7 +335,17 @@ fi
 # MERGE MODE (--merge)
 # ============================================
 
-if [ "$MODE" = "merge" ]; then
+# ============================================
+# MODE BODIES
+# ============================================
+# EXTRACTED from --merge, never re-implemented beside it. --merge composes
+# them around its own checkout, squash and push, so every test written against
+# --merge still exercises the whole sequence through its original entry point.
+#
+# The PR route calls --commit-push, lets gh merge server-side, then calls
+# --cleanup. The local route is --merge, unchanged.
+
+merge_guards() {
 
     echo "========================================"
     echo "MERGE"
@@ -248,6 +373,9 @@ if [ "$MODE" = "merge" ]; then
         exit 1
     fi
 
+}
+
+do_commit_push() {
     # Step 1: Commit pending changes if any
     MODIFIED=$(git diff --name-only)
     STAGED=$(git diff --cached --name-only)
@@ -288,6 +416,111 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     # visible to the operator.
     git push -u origin "$CURRENT_BRANCH"
     echo "PUSH_BRANCH=OK"
+
+}
+
+do_cleanup() {
+    # --- The two post-merge checks -----------------------------------------
+    # Nothing below rolls anything back. By this point the work has landed, so a
+    # refused deletion is reported and skipped and the script still exits 0: what
+    # is left behind is a branch, which costs one manual command, against a
+    # deletion run because a stale ref happened to look right.
+    #
+    # The FETCH is check 1, not a preamble. origin/<main> is a LOCAL ref and a
+    # forge-side merge does not move it here, so a fetch that fails — offline,
+    # expired auth, a revoked token — leaves it at the branch point and check 2
+    # then passes against a main that has never seen the merge.
+    if ! git fetch origin "$MAIN_BRANCH" >/dev/null 2>&1; then
+        echo "CHECK=1 FAILED — could not fetch origin/$MAIN_BRANCH"
+        echo "CLEANUP=SKIPPED"
+        echo "HINT=Nothing was deleted. The merge stands; re-run --cleanup once the remote is reachable."
+        return 0
+    fi
+    echo "CHECK=1 ok (fetched origin/$MAIN_BRANCH)"
+
+    # A squash merge creates a NEW commit, so the branch tip is not an ancestor
+    # of main and ancestry cannot be derived from the branch. The sha comes from
+    # the caller: --merge passes the commit it just made, the PR route passes
+    # what gh reported. Absent, this refuses rather than guessing.
+    if [ -z "$CLEANUP_SHA" ]; then
+        echo "CHECK=2 FAILED — no merge commit to prove against"
+        echo "CLEANUP=SKIPPED"
+        echo "HINT=Pass it: done.sh --cleanup <merge-sha>. Nothing was deleted."
+        return 0
+    fi
+    if ! git merge-base --is-ancestor "$CLEANUP_SHA" "origin/$MAIN_BRANCH" 2>/dev/null; then
+        echo "CHECK=2 FAILED — origin/$MAIN_BRANCH does not contain $CLEANUP_SHA"
+        echo "CLEANUP=SKIPPED"
+        echo "HINT=Nothing was deleted. The merge has not reached the remote."
+        return 0
+    fi
+    echo "CHECK=2 ok (origin/$MAIN_BRANCH contains $CLEANUP_SHA)"
+
+    # Standalone, this runs from the feature branch: gh merged server-side and
+    # nothing moved the local HEAD. Inside --merge it runs already on main, where
+    # the switch is a no-op. One implementation, both callers.
+    if [ "$(git branch --show-current)" != "$MAIN_BRANCH" ]; then
+        echo "STEP=Switching to $MAIN_BRANCH..."
+        git checkout "$MAIN_BRANCH"
+        git pull origin "$MAIN_BRANCH"
+        echo "CHECKOUT_MAIN=OK"
+    fi
+    # Step 7: Cleanup checkpoint tags for this feature
+    echo "STEP=Cleaning up checkpoint tags..."
+    CHECKPOINT_TAGS=$(git tag -l "checkpoint/${FEATURE_NUMBER}-*" 2>/dev/null || true)
+    if [ -n "$CHECKPOINT_TAGS" ]; then
+        echo "$CHECKPOINT_TAGS" | while read -r tag; do
+            git tag -d "$tag" 2>/dev/null || true
+            git push origin --delete "$tag" 2>/dev/null || true
+        done
+        CHECKPOINT_COUNT=$(echo "$CHECKPOINT_TAGS" | grep -c '[^[:space:]]' || true)
+        echo "CHECKPOINT_CLEANUP=${CHECKPOINT_COUNT} tags removed"
+    else
+        echo "CHECKPOINT_CLEANUP=SKIPPED (no checkpoint tags found)"
+    fi
+
+    # Step 8: Cleanup branches
+    echo "STEP=Cleaning up branches..."
+    # Remove the feature's worktree first: `git branch -d` fails while the branch
+    # is checked out in a linked worktree. No --force — fail loud if dirty.
+    if [ -n "$FEATURE_SLUG" ] && git worktree list --porcelain 2>/dev/null | grep -qE "^worktree .*/\.worktrees/${FEATURE_SLUG}$"; then
+        echo "STEP=Removing worktree .worktrees/${FEATURE_SLUG}..."
+        git worktree remove ".worktrees/${FEATURE_SLUG}"
+        echo "WORKTREE_CLEANUP=OK"
+    fi
+    git branch -d "$CURRENT_BRANCH" 2>/dev/null || echo "LOCAL_DELETE=SKIPPED"
+    git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || echo "REMOTE_DELETE=SKIPPED"
+    echo "CLEANUP=OK"
+
+}
+
+if [ "$MODE" = "merge" ]; then
+
+    merge_guards
+    do_commit_push
+
+    # Step 2.5: prove main is pushable BEFORE anything local is written. Without
+    # it a refusal arrives after the local merge commit exists, leaving main
+    # ahead of origin with nothing in the pipeline describing that state.
+    #
+    # WHAT THIS CATCHES: a stale local main (non-fast-forward), an unreachable
+    # or missing remote, and a transport-level auth failure.
+    #
+    # WHAT IT DOES NOT CATCH, measured rather than assumed: server-side branch
+    # protection. `git push --dry-run` is client-side and never reaches the
+    # remote's pre-receive hook, which is where GitHub enforces it — a protected
+    # main reports PUSHABLE here and fails the real push. done.bats pins that.
+    # It is not a gap to close: when main is protected the right answer is the
+    # PR route, and /add.done takes it whenever a PR exists.
+    echo "STEP=Checking $MAIN_BRANCH is pushable..."
+    if ! git push --dry-run origin "$MAIN_BRANCH" >/dev/null 2>&1; then
+        echo "PUSH_MAIN=REFUSED"
+        echo "STATUS=ERROR"
+        echo "ERROR=origin/$MAIN_BRANCH refuses a push. Branch protection, or no permission."
+        echo "HINT=Open a PR instead — /add.done takes the PR route when one exists."
+        exit 1
+    fi
+    echo "PUSH_MAIN=PUSHABLE"
 
     # Step 3: Switch to main and pull
     echo "STEP=Switching to $MAIN_BRANCH..."
@@ -397,32 +630,10 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     git push origin "$MAIN_BRANCH"
     echo "PUSH_MAIN=OK"
 
-    # Step 7: Cleanup checkpoint tags for this feature
-    echo "STEP=Cleaning up checkpoint tags..."
-    CHECKPOINT_TAGS=$(git tag -l "checkpoint/${FEATURE_NUMBER}-*" 2>/dev/null || true)
-    if [ -n "$CHECKPOINT_TAGS" ]; then
-        echo "$CHECKPOINT_TAGS" | while read -r tag; do
-            git tag -d "$tag" 2>/dev/null || true
-            git push origin --delete "$tag" 2>/dev/null || true
-        done
-        CHECKPOINT_COUNT=$(echo "$CHECKPOINT_TAGS" | grep -c '[^[:space:]]' || true)
-        echo "CHECKPOINT_CLEANUP=${CHECKPOINT_COUNT} tags removed"
-    else
-        echo "CHECKPOINT_CLEANUP=SKIPPED (no checkpoint tags found)"
-    fi
-
-    # Step 8: Cleanup branches
-    echo "STEP=Cleaning up branches..."
-    # Remove the feature's worktree first: `git branch -d` fails while the branch
-    # is checked out in a linked worktree. No --force — fail loud if dirty.
-    if [ -n "$FEATURE_SLUG" ] && git worktree list --porcelain 2>/dev/null | grep -qE "^worktree .*/\.worktrees/${FEATURE_SLUG}$"; then
-        echo "STEP=Removing worktree .worktrees/${FEATURE_SLUG}..."
-        git worktree remove ".worktrees/${FEATURE_SLUG}"
-        echo "WORKTREE_CLEANUP=OK"
-    fi
-    git branch -d "$CURRENT_BRANCH" 2>/dev/null || echo "LOCAL_DELETE=SKIPPED"
-    git push origin --delete "$CURRENT_BRANCH" 2>/dev/null || echo "REMOTE_DELETE=SKIPPED"
-    echo "CLEANUP=OK"
+    # The merge commit this run just created on main. do_cleanup proves
+    # against it rather than re-deriving it, which a squash makes impossible.
+    CLEANUP_SHA=$(git rev-parse HEAD)
+    do_cleanup
 
     # Done
     echo ""
@@ -433,5 +644,31 @@ Co-Authored-By: ADD <noreply@brabos.ai>"
     echo "MERGED_TO=$MAIN_BRANCH"
     echo "CURRENT_BRANCH=$MAIN_BRANCH"
 
+    exit 0
+fi
+
+# ============================================
+# COMMIT-PUSH MODE (--commit-push)
+# ============================================
+
+if [ "$MODE" = "commit-push" ]; then
+    merge_guards
+    do_commit_push
+    echo ""
+    echo "STATUS=SUCCESS"
+    echo "BRANCH=$CURRENT_BRANCH"
+    exit 0
+fi
+
+# ============================================
+# CLEANUP MODE (--cleanup)
+# ============================================
+
+if [ "$MODE" = "cleanup" ]; then
+    merge_guards
+    do_cleanup
+    echo ""
+    echo "STATUS=SUCCESS"
+    echo "CURRENT_BRANCH=$MAIN_BRANCH"
     exit 0
 fi

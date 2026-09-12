@@ -5,6 +5,7 @@
 - skill: add-final-report
 - skill: add-knowledge-discovery
 - skill: add-plan-review
+- skill: add-review-discipline
 - agent: plan-reviewer-agent
 - agent: readback-agent
 - command: /add.diagnose
@@ -220,10 +221,9 @@ DO NOT skip. DO NOT mark complete until the gate returns `PASS`.
 
 After the gate passes, dispatch `@plan-reviewer-agent` as a subagent in fresh context (it MUST NOT see this conversation). Pass the doc path and `kind: brainstorm`.
 
-**Act on the verdict:**
-- `ok` → proceed to STEP 6.
-- `fix-then-ok` → apply only the Required fixes that do not invent a user decision (read → preserve → complement), re-run STEP 4's gate, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 6 unless the verdict is still `blocked` or blockers remain — leftover attention never blocks.
-- `blocked`, or blockers still standing after the one re-dispatch → do NOT run STEP 6. STOP, present the blockers to the user.
+**Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site's divergence behaviour is the
+first row of its table: apply, re-run STEP 4's gate, then present and STOP. Do NOT run STEP 6 while
+a blocker stands.
 
 If the provider does not support subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting the conversation.
 

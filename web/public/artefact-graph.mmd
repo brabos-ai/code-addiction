@@ -52,6 +52,7 @@ flowchart LR
     n_product_command_add_build --> n_product_command_add_qa_setup
     n_product_command_add_build --> n_product_command_add_review
     n_product_command_add_build --> n_product_command_add_wiki
+    n_product_command_add_build -.-> n_product_command_add_plan
     n_product_command_add_diagnose --> n_product_command_add_hotfix
     n_product_command_add_diagnose --> n_product_command_add_init
     n_product_command_add_diagnose --> n_product_command_add_new
@@ -60,6 +61,7 @@ flowchart LR
     n_product_command_add_done --> n_product_command_add_build
     n_product_command_add_done --> n_product_command_add_hotfix
     n_product_command_add_done --> n_product_command_add_plan_to_ready
+    n_product_command_add_done --> n_product_command_add_pull_request
     n_product_command_add_done --> n_product_command_add_review
     n_product_command_add_done --> n_product_command_add_wiki
     n_product_command_add_hotfix --> n_product_command_add_wiki

@@ -6,6 +6,7 @@
 - skill: add-id-convention
 - skill: add-knowledge-discovery
 - skill: add-plan-review
+- skill: add-review-discipline
 - skill: add-doc-schemas/references/new-feature.md
 - agent: plan-reviewer-agent
 - agent: readback-agent
@@ -283,15 +284,14 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ---
 
-## STEP 8: Plan Review + Comprehension Readback (fresh-reader, max one re-dispatch each)
+## STEP 8: Plan Review + Comprehension Readback (fresh-reader)
 
 Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
 1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md's path and `kind: feature-about`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict:**
-   - `ok` → proceed to Completion.
-   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision (read → preserve → complement), re-run STEP 7's validation gate, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to Completion unless the verdict is still `blocked` or blockers remain — leftover attention never blocks.
-   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Present the blockers to the user; do NOT mark `about.md` delivered.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site's divergence behaviour is the
+   first row of its table: apply, re-gate, then present and STOP. Do NOT mark `about.md` delivered
+   while a blocker stands.
 
 3. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: feature`. Run it ONLY after the verdict above resolved to proceed and every applied fix is on disk — a readback of text about to be edited reports a version that will never exist.
 
@@ -305,7 +305,7 @@ IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
 
 4. **Compare the readback against what was actually decided in this conversation.** Compare against the report's closing **"In one sentence"** line, which is short and hard to soften.
    - **Matches** → proceed to Completion, citing the readback in one line.
-   - **Diverges** → the document failed, not the agent. Apply the fix to `about.md`, **re-run STEP 7's validation gate**, then present the divergence to the user and STOP.
+   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 7's validation gate on `about.md`.
 
 ```
 IF THE READBACK DIVERGES:
@@ -366,5 +366,4 @@ Then, after the seven blocks, summarize the created artifacts and suggest the ne
 - Exclude layers that make feature unusable
 - Document incomplete questionnaire
 - Skip the STEP 8 plan review after the gate passes
-- Exceed one re-dispatch of `@plan-reviewer-agent` per invocation
 - Let the reviewer see this conversation (fresh context only)

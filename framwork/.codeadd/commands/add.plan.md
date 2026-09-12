@@ -12,6 +12,7 @@
 - skill: add-id-convention
 - skill: add-knowledge-discovery
 - skill: add-plan-review
+- skill: add-review-discipline
 - skill: add-tasks-checklist
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
@@ -61,7 +62,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
 | `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
-| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the one `fix-then-ok` re-dispatch | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
+| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the re-dispatch `add-review-discipline` allows | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
 
 ---
 
@@ -682,10 +683,9 @@ Then fix `tasks.md` so the two agree character for character and re-run this che
 Schema gate PASSED. Do not present `plan.md` or the next command as delivered yet.
 
 1. **DISPATCH** `@plan-reviewer-agent` with `path` = `plan.md`'s path and `kind: feature-plan`. **Soft-degrade:** if the engine has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict:**
-   - `ok` → proceed to STEP 14.
-   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision, **re-run STEP 12's validation gate on `plan.md`**, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 14 unless the verdict is still `blocked` or blockers remain.
-   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Ref: GATES table (`plan_reviewed`). Present the blockers to the user; do NOT proceed to STEP 14.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. The re-gate this site runs is STEP 12's
+   validation gate on `plan.md`. A standing blocker STOPS — ref: GATES table (`plan_reviewed`) — and
+   STEP 14 does not run.
 3. ⛔ Do NOT re-dispatch `@ux-flow-agent`, `@ux-layout-agent`, or `@ux-agent` to satisfy a plan-review finding — those subagents own `design.md`, not `plan.md`; a `design.md` finding is out of scope for this review.
 
 4. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
@@ -702,7 +702,7 @@ IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
 
 5. **Compare the readback against what was actually decided in this conversation**, using the report's closing **"In one sentence"** line.
    - **Matches** → proceed to STEP 14, citing the readback in one line.
-   - **Diverges** → the document failed, not the agent. Apply the fix to `plan.md`, **re-run STEP 12's validation gate**, then present the divergence to the user and STOP.
+   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 12's validation gate on `plan.md`.
 
 ```
 IF THE READBACK DIVERGES:
