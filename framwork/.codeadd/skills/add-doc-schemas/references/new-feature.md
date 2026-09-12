@@ -99,17 +99,20 @@ Brainstorm docs capture exploration, not decisions. Voice rules:
 
 For `/add.new` (creates `docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
   - **`branch:`** (required for new docs) — the branch `/add.build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add.new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
-- **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · References
+  - **`tags:`** — bare lowercase topic words, per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`. Written from the discovery result, never from a question put to the user.
+- **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References
 - **Depth floor:**
   - **Problem** — who is affected, what breaks or is missing, observable signal/evidence, current workaround if any.
   - **Users** — for each role: role name, goal with this feature, current pain.
   - **Scope** — explicit in/out lists per Scope Notation above. "Does NOT Include" must cover the three most likely scope-creep requests with reasoning (one line each).
   - **Success Metrics** — per metric: definition, target, measurement source. No vanity metrics.
+  - **Relations** — one `- <type> [[<id>]]` line per work item this one depends on or belongs to, per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`. Sourced from the discovery result the producing command already holds: `depends_on` for a work item this cannot ship without, `part_of` for the epic it belongs to. A feature genuinely connected to nothing writes the section with the single word `None` — an absent section is a question, `None` is an assertion.
+  - **Observations** — `- [<category>] <text>` lines carrying the facts the discovery surfaced that no other section holds: a measurement, a constraint, an observed effect. Empty is valid.
   - **References** — every external doc, issue, PRD, or prior feature that informed this spec.
-- **Compression:** Users = table `role | goal | pain`. Metrics = table `metric | target | source`. Problem = topic sentence + extractive bullets. Requirements (when present) use Requirement Notation above. References = `{{doc:}}` / URL list.
-- **Hard bans:** aspirational language, inline design/UI details, code snippets.
+- **Compression:** Users = table `role | goal | pain`. Metrics = table `metric | target | source`. Problem = topic sentence + extractive bullets. Requirements (when present) use Requirement Notation above. Relations and Observations = one line each, no prose. References = `{{doc:}}` / URL list.
+- **Hard bans:** aspirational language, inline design/UI details, code snippets, a relation type outside the closed vocabulary, a relation pointing at an attachment rather than a work item.
 - **Avoid unless load-bearing:** roadmap prose; long historical narrative (link to prior doc instead).
 
 ### feature-plan
