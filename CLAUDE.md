@@ -2,66 +2,71 @@
 
 Open-source framework that distributes AI-assisted development commands, skills, and agents to 5 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity, OpenCode).
 
+**This file is an overview.** It says what exists and where. The mechanics of each thing live in the command or skill that owns it — see **Where the details live** at the bottom.
+
 ## Project Anatomy
 
-Two layers with distinct purposes:
+Two layers with distinct purposes.
 
 ### Product Layer — `framwork/.codeadd/`
 
-Source of truth for distributed artefacts. Users consume these via CLI install.
+Source of truth for distributed artefacts. Users consume these via CLI install. Commands live at
+`commands/*.md`, skills at `skills/<name>/SKILL.md`, agents at `agents/*-agent.md`, scripts at
+`scripts/*.sh`.
 
-| Type | Path | Count |
-|------|------|-------|
-| Commands | `framwork/.codeadd/commands/*.md` | 16 |
-| Skills | `framwork/.codeadd/skills/*/SKILL.md` | 42 |
-| Agents | `framwork/.codeadd/agents/*-agent.md` | 22 |
-| Scripts | `framwork/.codeadd/scripts/*` | variable |
+The inventory below is **generated** — `node scripts/inventory.js` writes it from disk and
+`/add-framework--done` keeps it current. Do not hand-edit it, and do not add a count anywhere: an
+array has a length.
 
-### Internal Layer — `.claude/` and `.opencode/`
+[//]: # (codeadd-inventory:start)
+{"commands":["add","add.audit","add.brainstorm","add.build","add.diagnose","add.done","add.hotfix","add.init","add.new","add.plan","add.plan-to-ready","add.pull-request","add.qa-setup","add.review","add.ux","add.wiki"]}
+{"skills":["add-architecture-discovery","add-backend-architecture","add-backend-development","add-claude-md-style","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-final-report","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-product-discovery","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-review-discipline","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
+{"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
+{"scripts":["build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","get-branch-metadata.sh","get-main-branch.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
+{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+[//]: # (codeadd-inventory:end)
 
-Development tools that build and maintain the framework itself. `.claude/` is the canonical source and `.opencode/` contains OpenCode adapters. NOT distributed to users.
+### Product Layer — `mcp/`
+
+**A product-layer directory at the repository ROOT, and the only one.** It holds the knowledge-graph
+MCP server: the corpus registry, the two parsers, the query engine and the stdio transport.
+
+```
+⛔ THE ROOT-MEANS-INTERNAL RULE DOES NOT REACH IT:
+  ⛔ DO NOT: Tag an F-block touching `mcp/` as [internal] because it sits at the root
+  ✅ DO: Tag it [product] — `scripts/build.js` copies it to `cli/src/mcp/` and it ships in the
+         npm package, which is what decides the layer
+```
+
+Nothing under `mcp/` is registered in `provider-map.json`: it is CLI source, like `cli/src/`, not an
+artefact the build distributes to providers. It takes **no dependency at all**, `yaml` included,
+because `--corpus=artefacts` runs from the repository root where the CLI's `node_modules` is off the
+resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
+and one source has to read the same way in both.
+
+### Internal Layer — `.claude/`
+
+Development tools that build and maintain the framework itself. One file per artefact, no provider mirror. NOT distributed to users, and absent from `provider-map.json`.
 
 | Type | Path |
 |------|------|
-| Commands | `.claude/commands/*.md` (canonical) and `.opencode/commands/*.md` (OpenCode adapters) — namespace `add-framework--*`. Sub-prefixes: framework default (implicit), `self-` (internal infrastructure), `shared-` (usable in both contexts) |
-| Skills | `.claude/skills/` (canonical and natively discovered by OpenCode): `building-commands`, `add-framework-development`, `add-commit` |
-| Agents | `.claude/agents/` (canonical) and `.opencode/agents/` (OpenCode adapters): `readme-analyzer`, `svg-analyzer`, `web-docs-analyzer`, `web-index-analyzer`, `framework-discovery-agent`, `plan-review-agent`. OpenCode agents use `mode: subagent` and `permission` frontmatter. |
-| Plans | `docs/plans/NNNN-PLAN--slug.md` (framework) or `docs/plans/NNNN-SELF-PLAN--slug.md` (internal). Review files: `...--review-vNN.md` |
+| Commands | `.claude/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
+| Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
+| Agents | `.claude/agents/*.md` |
+| Plans | `docs/plans/` — gitignored working artefacts, local only |
+| Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
-**`docs/` tracking policy.** `.gitignore` ignores `docs/*`: plans, evidence, changelogs and brainstorms are working artefacts and stay local by default. The QA/UX umbrella set (topics 01–05, plans 0056–0060) is a **deliberate force-added exception** (`git add -f`, commits `b49352e` + the review-v02 fix wave) because those artefacts are the spec of record for a shipped schema change and had to survive the branch. The exception covers the umbrella's **plans, evidence files, reviews (`HANDOFF-*--review-vNN.md`) and changelogs** — a plan whose changelog or review is untracked reads as unimplemented from a fresh clone, which is the failure this policy exists to prevent. Plan set **0074** (umbrella + topics 001–004, their four evidence files) is force-added on the same grounds: it is the spec of record for a shipped convergence-gate change spanning a script, a schema, five commands and two new agents, and its evidence files carry the adversarial round that found the gate shipped four of the defects it existed to kill. Plan **0069** is tracked because the 0074 set **executed** it (T3/F20 shipped its agent and skill), so it is the spec of record for artefacts now in the product layer. Plan **0075** joins them on the same grounds: it carries the residue 0074 made visible — the consumers it migrated one side of, and the ownership questions it opened — and its Validated Decisions record two owner calls that a future reader would otherwise have to re-derive. Plans 0001–0055 remain untracked by design — a fresh clone showing no earlier plans is expected, not drift. Do NOT "fix" this by un-ignoring `docs/`; to make another artefact durable, force-add it and say why here.
+### Internal commands
 
-Internal commands (all under `add-framework--` namespace):
-
-| Command | Sub-prefix | Purpose |
-|---------|-----------|---------|
-| `add-framework--plan` | framework default | Strategic consultant; generates framework plans |
-| `add-framework--build` | framework default | Executes framework plans (operates on product layer) |
-| `add-framework--release` | framework default | Release manager (tags, GitHub releases, CLI) |
-| `add-framework--sync` | framework default | Regenerates ecosystem.md, README.md, web docs |
-| `add-framework--self-plan` | self | Plans changes to the internal layer itself |
-| `add-framework--self-build` | self | Executes self-plans (operates on `.claude/`, `scripts/`, `CLAUDE.md`) |
-| `add-framework--shared-brainstorm` | shared | Collaborative ideation; precedes either `--plan` or `--self-plan` |
-| `add-framework--shared-review` | shared | Audits a plan vs implementation via 4 parallel read-only subagents |
-
-### Internal ↔ Product Cross-Reference
-
-Internal skills loaded by internal commands (these skills live in `.claude/skills/` and are referenced from the `add-framework--*` workflow):
-
-| Internal Skill | Used by Internal Commands |
-|----------------|---------------------------|
-| `building-commands` | `add-framework--build` (STEP 3), `add-framework--self-build` (STEP 3) |
-| `add-framework-development` | `add-framework--plan` (STEP 0), `add-framework--build` (STEP 3) |
-
-Command scope by layer:
-
-| Command | Operates on |
-|---------|-------------|
-| `add-framework--plan`, `add-framework--build` | Product layer (`framwork/.codeadd/`) |
-| `add-framework--self-plan`, `add-framework--self-build` | Internal layer (`.claude/`, `scripts/`, `CLAUDE.md`) |
-| `add-framework--shared-brainstorm` | Either context (precedes plan or self-plan) |
-| `add-framework--shared-review` | Either context (audits a plan in `docs/plans/`) |
-| `add-framework--sync` | Documentation (`README.md`, `web/`, SVGs) |
-| `add-framework--release` | Git tags, GitHub releases, `cli/` |
+| Command | Purpose | Operates on |
+|---------|---------|-------------|
+| `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
+| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
+| `add-framework--brainstorm` | Collaborative ideation; precedes `add-framework--plan` | Both layers |
+| `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
+| `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
+| `add-framework--done` | Close-out — gates, `gh` merge, index entry, cleanup | Branches, PRs, `docs/delivered.jsonl` |
+| `add-framework--roadmap` | Records what to do next — add, update or remove an item, then commits and pushes straight to `main` | `docs/roadmap/index.md` |
 
 ## Pipeline
 
@@ -77,104 +82,82 @@ cli/src/installer.js  (downloads release ZIP, installs to user's project)
 user's project (.claude/, .gemini/, .cursor/, ...)
 ```
 
-- `framwork/provider-map.json` — single registry of all commands, skills, agents and their provider distribution
-- `scripts/build.js` — compiles `.codeadd/` source → provider-specific output dirs
-- `scripts/release.sh` — release automation helpers
-- `framwork/.codeadd/scripts/converge-gates.sh` — read-only probe for the four `/add.done` delivery gates (review verdict, QA baseline, epic completeness, requirements coverage). `KEY=STATUS` lines, always exit 0, exit 2 only on CLI misuse — the `qa-preflight.sh` contract. **One script backs both `/add.plan-to-ready` STEP 6 and `/add.done` STEP 4**, so the two cannot drift into disagreeing about what "ready" means. Gate 2 wraps `qa-evidence.sh validate` and translates its `set -e` exit rather than propagating it
-- `cli/` — npm CLI package (`npx code-addiction`) that installs the framework
+Two rules bind anyone editing an artefact:
 
-### Build Transform Details
+- **HTML comments (`<!-- -->`) are stripped at build.** Use them for source-only notes. Injection markers and `<!-- uses: -->` blocks rely on this.
+- **Never write a raw `.codeadd/` path.** Use `{{cmd:NAME}}` / `{{skill:NAME/FILE}}`; `lintResourcePaths()` warns otherwise. Scripts are the exception — always `.codeadd/scripts/`.
 
-Three strategies with different behaviors:
+Key files:
 
-| Strategy | Metadata | Transform | Post-write |
-|----------|----------|-----------|------------|
-| Commands | YAML frontmatter (description) | MD or TOML | — |
-| Skills | YAML frontmatter (name + description) | MD or TOML | Copies extra files (subdirs, siblings) |
-| Agents | Per-provider frontmatter dialect | MD or TOML (Codex) | — |
+| File | Role |
+|---|---|
+| `framwork/provider-map.json` | Single registry of every command, skill, agent and its provider distribution |
+| `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
+| `scripts/graph.js` | Queries the artefact graph — `impact`, `dependencies`, `path`, `orphans`, `history`, `mermaid` |
+| `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
+| `scripts/run-bats.js` | Backs `npm run test:scripts` — runs the suite natively, or in a Linux container on Windows |
+| `cli/` | npm package (`npx code-addiction`) that installs the framework |
+| `framwork/.codeadd/scripts/*.sh` | Shipped verbatim. Each documents its own usage and exit codes in its header |
 
-Key mechanics: HTML comments (`<!-- -->`) are stripped at build time uniformly (use for source-only dev notes), **including** `feature:`/`plugin:` injection markers. Those markers are not shipped — `extractInjectionPoints()` consumes each one into a build-emitted **content-anchored sidecar** (`framwork/.codeadd/injection-points.json`) keyed by adjacent prose text, and the built provider files ship **marker-free**. `lintResourcePaths()` warns if raw `.codeadd/` paths appear — use `{{cmd:}}` / `{{skill:}}` variables instead. Commands and skills are markdown on every provider. Agents carry a per-provider frontmatter dialect (`AGENT_DIALECTS` in `scripts/build.js`); Codex emits TOML with the body in `developer_instructions`.
+### Build-emitted sidecars
 
-The build emits a **second sidecar**: `framwork/.codeadd/contracts.json`. A command that materializes state into the user's project declares a `## Materializes` H2 that is the single source of every shape it writes; `extractContract()` derives `{ contract, shape, paths }` from it. Two gates fail the build loud: a resource-path variable inside the block (it would resolve per provider), and a declared `shape` that does not match the computed one (the forgotten-bump guard — the build prints the value to paste). Like `injection-points.json` it is gitignored and packaged explicitly by `release.yml`.
+All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in `scripts/build.js` is the single list every consumer is checked against.
 
-### Resource Path Variables (build-time)
+| Sidecar | Carries | Read by |
+|---|---|---|
+| `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
+| `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
+| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
-| Variable | Resolves to (per provider) |
-|----------|---------------------------|
-| `{{cmd:NAME}}` | Provider-specific command path |
-| `{{skill:NAME/FILE}}` | Provider-specific skill path |
-| Scripts | Always `.codeadd/scripts/` (no variable needed) |
+### Providers
 
-### Provider Capabilities
-
-The 5 supported providers (claude, codex, cursor, antigrav, opencode) are all MCP-capable and markdown-native. Minor differences remain: antigrav has no hooks; codex has no slashCommands. All support `agentDispatch` and `mcp`. Per-provider capability flags live in `provider-map.json` → `providers.{name}.capabilities`.
-
-Distribution rules: all commands/skills build to all 5 providers by default. Skills can restrict via `"providers": [...]` in `provider-map.json`. Agents build for providers with an `agents` pattern: claude, cursor and opencode as markdown, codex as TOML. A provider whose agents live outside its main root declares `agentsDir` (codex: skills under `.agents/`, agents under `.codex/agents/`). Antigravity is deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. Plugin agent-fragment injection is separately gated on `agentInjection` in `cli/src/providers.js` and remains Claude-only.
+The 5 supported providers (claude, codex, cursor, antigrav, opencode) are all MCP-capable and markdown-native. Commands and skills build to all 5 by default; agents only to providers declaring an `agents` pattern. Antigravity agents are deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. Per-provider capabilities and distribution overrides live in `provider-map.json` → `providers.{name}`.
 
 ## Feature Injection System
 
-Optional features inject content into commands post-install (not at build time), enabling dynamic toggling via `codeadd features enable|disable <name>`.
+Optional features inject content into commands **post-install**, so they can be toggled with `codeadd features enable|disable <name>`. Command source carries `<!-- feature:FEATURE:SECTION -->` markers; the build strips them into `injection-points.json` and installed files ship marker-free.
 
 | Component | Path |
 |-----------|------|
 | Fragment source | `framwork/.codeadd/fragments/{feature}/{command}.md` |
 | Feature registry | `cli/src/features.js` |
-| Injection sidecar | `framwork/.codeadd/injection-points.json` (build-emitted; installs to `.codeadd/`) |
-| Manifest state | `.codeadd/manifest.json` → `features` field |
-
-Fragments use `<!-- section:NAME -->` markers. Command **source** carries `<!-- feature:FEATURE:SECTION -->` injection markers, but those are **stripped at build** — the build records each one as a **content anchor** in `injection-points.json`. Post-install, `features.js` locates the anchor by adjacent prose text and inserts the fragment section there (no markers in installed files); disable re-derives the exact block from the fragment and removes it (byte-identical round-trip). A rewritten anchor line fails loud (no silent no-op).
-
-Each sidecar `anchor` is `{ text, ordinal, position, next }`: `text` + `ordinal` (occurrence index) pin the line; `position` is `after` (default) or `before`; `next` is an optional drift hint — the trimmed line that should still exist *below* the anchor (it must remain present somewhere below, not necessarily immediately, so a sibling feature/plugin injecting at the **same** anchor is not mistaken for prose drift). When two enabled features/plugins share one anchor on a file, each enables independently and both blocks land after the anchor; each disable removes only its own re-derived block.
-
-**Pre-sidecar installs:** a project installed before this mechanism still carries old `<!-- feature/plugin -->` marker-wrapped blocks. `loadInjectionPoints` returns `[]` when the sidecar is absent, so enable/disable become safe no-ops — but `disable` cannot strip those old blocks. Re-install (or `codeadd update`) to ship the marker-free files + sidecar.
-
-Current features:
+| Injection helpers | `cli/src/injection-core.js` |
+| Manifest state | `.codeadd/manifest.json` → `features` |
 
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
 | `tdd-pipeline` | enabled | add.plan, add.build, add.review, add.hotfix |
 | `qa-pipeline` | disabled | add.plan, add.build |
-
-## Setup Contracts
-
-Commands that materialize state into a user's project record what they wrote in a **receipt**, and the framework ships the **shape** that state was written under, so a later release can compute whether the project is current.
-
-| Component | Path |
-|---|---|
-| Contract declaration | `## Materializes` H2 in the command source |
-| Contract sidecar | `framwork/.codeadd/contracts.json` (build-emitted, gitignored, packaged at release) |
-| Receipt schema | `add-doc-schemas/references/receipt.md` (`setup-receipt`) |
-| Receipt (in user project) | `docs/qa/qa-setup.md` |
-| Comparison procedure | `add-setup-contract` skill |
-| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
-
-Identity is the `shape` hash of the `## Materializes` block. The receipt stores it as `setup-shape`. Equal to the sidecar → current. Anything else → stale → `/add.qa-setup` (hard gate in `/add.review`'s QA preflight). There is no version integer and no recipe chain. Hashes in the receipt are `owner`-scoped: only paths this command solely owns carry one, because a hash on a shared file (`screens.json`, content owned by `add.plan` STEP 10.0) would report drift on every healthy project.
-
-The `## Materializes` block boundary is **fence-aware**: it embeds a fenced template carrying its own H2s, and a naive `^## ` scan would truncate it — silently excusing everything below from both the shape hash and the variable ban. The contract variable ban targets *resolvable* references (`{{cmd:NAME}}`); the empty forms (`{{cmd:}}`) resolve to nothing, ship identically to every provider, and are how the block documents the ban itself.
-
-Current consumer: `add.qa-setup` only. `add.wiki` keeps its git-based `.meta.json` staleness — the two mechanisms coexist deliberately (contract-based for materialized state, git-based for corpus-derived docs).
+| `docs-pruning` | disabled | add.done |
 
 ## Plugin System
 
-A first-class `plugin` concept (distinct from `features`) integrates **external MCP tools**. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points the user at the tool's own installer. Plugins are **disabled by default**.
+A `plugin` integrates an **external MCP tool** — distinct from a feature. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points at the tool's own installer. Disabled by default.
 
 | Component | Path |
 |-----------|------|
 | Catalog (baked into CLI) | `cli/src/plugins.json` |
-| Command fragment source | `framwork/.codeadd/plugins/{plugin}/fragments/{command}.md` |
-| Agent fragment source | `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` |
-| Skill source | `framwork/.codeadd/plugins/{plugin}/skills/{skill}/SKILL.md` |
+| Command fragments | `framwork/.codeadd/plugins/{plugin}/fragments/{command}.md` |
+| Agent fragments | `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` |
+| Plugin skills | `framwork/.codeadd/plugins/{plugin}/skills/{skill}/SKILL.md` |
 | Plugin module | `cli/src/plugins.js` |
-| Shared injection helpers | `cli/src/injection-core.js` (imported by `features.js` + `plugins.js`) |
-| Manifest state | `.codeadd/manifest.json` → `plugins` field |
+| Manifest state | `.codeadd/manifest.json` → `plugins` |
 
-Fragments use `<!-- section:NAME -->` markers. Command **and agent** source carry `<!-- plugin:PLUGIN:SECTION -->` injection markers (parallel to the `feature:` namespace); like features, these are stripped at build into the content-anchored sidecar and injected post-install by text-anchor — installed files are marker-free. Catalog entry schema: `type` (`mcp`\|`script`\|`http`; only `mcp` in v1), `description`, `detect`, `homepage`, `installHint`, `postEnableHint`, `injects` (array), `skills` (array), `agents` (array of `{ agent, sections }`).
+Agent injection carries plugin capability across the command→subagent boundary, so a fragment travels with the agent into every command that dispatches it. An agent is excluded by carrying no marker — that is how the read-only allowlist agents stay MCP-free.
 
-**Agent injection** carries plugin capability across the command→subagent dispatch boundary: a per-agent fragment travels with the agent into *every* command that dispatches it (no per-command duplication). Agent injection only targets providers with an `agentsSubdir` (currently Claude). Exclusion is enforced by *not* placing a marker in an agent's source — MCP-blocked allowlist agents (e.g. `feature-history-agent`, `git-history-agent`) and non-code-graph agents (e.g. `doc-reviewer-agent`) carry no marker, so the build emits no sidecar entry for them and they are never injected. `injectAgentFragments` / `removeAgentFragments` in `injection-core.js` drive agent injection from the same sidecar + anchor mechanism as commands.
+## Setup Contracts
 
-Lifecycle (`codeadd plugins enable|disable|list <name>`): **validate** (hard-gate `detect` shell probe — exit-0 = present) → **inject** command fragments (anchor-based) → **inject** agent fragments (anchor-based) → **activate skills** (copy `plugins/{plugin}/skills/{name}/SKILL.md` into every installed provider's `skills/` dir) → print `postEnableHint`. Disable re-derives and removes injected command + agent blocks (marker-free) and copied skill dirs.
+A command that materializes state into a user's project declares a `## Materializes` H2. The build hashes it into `contracts.json` as a `shape`; the command writes a **receipt** carrying the same hash. Equal → current. Different → stale.
 
-The build-emitted sidecar is **anchor uniqueness/variable validated**: a marker whose nearest adjacent line carries a `{{cmd:}}`/`{{skill:}}`/`{{addpath:}}` variable is walked past (variables resolve per-provider so cannot anchor one shared map); if no variable-free adjacent line exists the build fails loud. Markers embedded in prose (shown as documentation) are ignored — only standalone-line markers are injection points.
+| Component | Path |
+|---|---|
+| Contract declaration | `## Materializes` H2 in the command source |
+| Receipt schema | `add-doc-schemas/references/receipt.md` |
+| Receipt in user project | `docs/qa/qa-setup.md` |
+| Comparison procedure | `add-setup-contract` skill |
+| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
+
+Current consumer: `add.qa-setup` only. `add.wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
 
 ## Web / Documentation
 
@@ -187,7 +170,7 @@ The build-emitted sidecar is **anchor uniqueness/variable validated**: a marker 
 | `web/public/flowchart.svg` | Architecture flowchart |
 | `README.md` | Repository documentation |
 
-Documentation is auto-updated by `add-framework--sync` before releases (dispatches 4 analyzer agents in parallel).
+Auto-updated by `add-framework--sync` before releases (4 analyzer agents in parallel).
 
 ## CI/CD
 
@@ -196,3 +179,24 @@ Documentation is auto-updated by `add-framework--sync` before releases (dispatch
 | `.github/workflows/ci.yml` | Push/PR | Tests and validation |
 | `.github/workflows/release.yml` | Tag push (`v*`) | Build + create GitHub release |
 | `.github/workflows/deploy-web.yml` | Push/PR | Deploy web documentation |
+
+## Where the details live
+
+This file deliberately stops at the overview. Load the owner when you need the mechanics.
+
+| Topic | Owner |
+|---|---|
+| Authoring a command, skill or agent | `building-commands`, `add-framework-development` |
+| The prompt quality ruler — its eight items, and the reviewer that ticks them | `building-commands`, `@prompt-review-agent` |
+| Writing or revising a plan document, and the changelog filename | `add-plan-authoring` |
+| Ledger, rulings, hard stops, one commit per F-block | `add-build-ledger` |
+| Product-layer build mechanics | `add-framework-product-layer` |
+| Internal-layer build mechanics | `add-framework-internal-layer` |
+| `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 8 |
+| `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
+| What belongs in a `CLAUDE.md` | `add-claude-md-style` |
+| Doc schemas, voice, output length | `add-doc-schemas` |
+| How a command closes its final report | `add-final-report` — one per layer, deliberately not shared |
+| Setup-contract comparison | `add-setup-contract` |
+| A script's contract and exit codes | that script's own header, plus its `.bats` suite |
+| Injection anchor internals | `cli/src/injection-core.js` |

@@ -1,5 +1,10 @@
 # UX Lightweight Command
 
+<!-- uses:
+- skill: add-ux-design
+- script: status.sh
+-->
+
 Lightweight UX loader. Loads ux-design skill, discovers project design patterns, then applies UX knowledge to the user's free-form instruction.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.

@@ -5,6 +5,13 @@ description: Use when starting a new project — discovers founder profile and p
 
 # Product Discovery
 
+<!-- uses:
+- skill: add-doc-schemas
+- mention: /add.hotfix
+- command: /add.brainstorm
+- command: /add.new
+-->
+
 Runs a quick founder + product discovery in 5–10 minutes, creating a communication profile and a development blueprint.
 
 **Principle:** Speed over completeness. Infer based on market patterns. Simplify for MVP. Don't overload.

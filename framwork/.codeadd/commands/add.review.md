@@ -1,5 +1,28 @@
 # Feature Review Specialist
 
+<!-- uses:
+- skill: add-commit
+- skill: add-doc-schemas
+- skill: add-final-report
+- skill: add-investigation
+- skill: add-knowledge-discovery
+- skill: add-qa
+- skill: add-tasks-checklist
+- skill: add-doc-schemas/references/new-feature.md
+- skill: add-qa/references/coordinator.md
+- agent: e2e-agent
+- agent: qa-agent
+- agent: reviewer-agent
+- agent: ux-agent
+- command: /add.build
+- command: /add.done
+- command: /add.plan
+- command: /add.qa-setup
+- command: /add.wiki
+- script: qa-evidence.sh
+- script: status.sh
+-->
+
 > **READ-ONLY RULE:** This command **never modifies code**. Every finding — code review, spec compliance, UX, functional, a11y, build failures, red validation gates — is emitted as a routed row in `## Fix Routing` on `review-NNN.md`, and `/add.build` applies it. A judge that moves the thing it judges cannot converge, and it invalidates the QA evidence it just captured.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
@@ -270,6 +293,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
 7. Consult knowledge base for validation:
    - IF `WIKI:present` (from script output): Load `{{skill:add-knowledge-discovery/SKILL.md}}`, read the hub (`{{addpath:wiki/index.md}}`), then SELECT + read the `{{addpath:wiki/domains/<area>.md}}` page(s) matching the changed code's areas, plus `{{addpath:wiki/conventions.md}}`. Freshness-check each selected page.
+   - Run the skill's GRAPH step with `touched_by` over the changed file list. **`RELATED_WORK` destination:** STEP 10.1's dispatch payload, which carries it to both judges as the deliveries that last changed these files.
    - IF `WIKI:present` is false: note "knowledge base unavailable — /add.wiki generates it" and continue with code-derived patterns only.
    - These pages contain implementation patterns and conventions to validate against
 
@@ -793,6 +817,7 @@ Each dispatch passes:
 - the resolved paths — `SCOPE_DIR/about.md` and `DESIGN_FILE`;
 - the `run-NNN` evidence dirs that judge owns per the table (`@ux-agent` → `screenshots/`; `@qa-agent` → `screenshots/` + `computed-styles/` + axe results + the assertion roll-up + console/network artifacts);
 - the 9.4 reconciliation table (identical copy to both);
+- **`RELATED_WORK` from STEP 2.2** — the deliveries that last changed these files, ids with one line each. Empty when the graph returned nothing or is absent. A judge that does not know a file was rewritten two deliveries ago judges it as though it were new;
 - `{{skill:add-qa/SKILL.md}}` — rubric, severity scale, finding schema.
 
 Mode (both judges):
@@ -988,8 +1013,16 @@ single-file backup rule; the sequence is what lets a loop compare rounds.
 
 ### 11.4 Console Output
 
-Output the quality gate summary: reviewers dispatched (files reviewed per
-reviewer), findings by severity, spec compliance status, product validation
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the gate table and the routing come after it, whole.
+
+This command reviews and routes; it changes no application code. So `What was delivered` is the
+verdict and the findings, `How it works` is what the gates actually measured, `Files touched` names
+the `review-NNN.md` that 11.3 wrote and nothing else, and `⚠️ Needs your attention` carries the
+blockers and the manual routes nobody else will pick up.
+
+Then, after the seven blocks, output the quality gate summary: reviewers dispatched (files reviewed
+per reviewer), findings by severity, spec compliance status, product validation
 (RF/RN/prerequisites), scores, the gate table, the QA per-scope roll-up, the
 path to this `review-NNN.md`, and next steps.
 

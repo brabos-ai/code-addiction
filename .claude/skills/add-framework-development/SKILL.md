@@ -5,6 +5,11 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 
 # Framework Development — Internal Reference
 
+<!-- uses:
+- skill: add-commit
+- skill: building-commands
+-->
+
 Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so `add-framework--plan` assesses viability and `add-framework--build` implements correctly.
 
 ## When to Use
@@ -180,7 +185,7 @@ category: [meta|technique|reference|discipline]  # optional
 | Tier | Lines | Structure | Example |
 |------|-------|-----------|---------|
 | 1 (simple) | <100 | Single SKILL.md, basic sections | add-commit |
-| 2 (medium) | 100-300 | JSON spec blocks, templates, checklists | add-planning |
+| 2 (medium) | 100-300 | JSON spec blocks, templates, checklists | add-tasks-checklist |
 | 3 (complex) | 300+ | SKILL.md dispatcher + reference subdocs | add-ux-design |
 
 **Subdoc pattern (canonical — `references/`, any tier):**
@@ -202,7 +207,7 @@ add-qa/
 - **Anti-rationalization:** Tables with `Excuse | Reality` columns
 - **Enforcement:** `⚠️ REGRA OBRIGATÓRIA`, `NEVER/MUST`, `**OBRIGATÓRIO**`
 - **Cross-references:** `{{skill:add-[name]/[file]}}` for files, `/add.[name]` for commands
-- **Token efficiency:** JSON minified, max 10 words per description, no decorative formatting
+- **Token efficiency:** JSON minified, no decorative formatting
 - **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review`. `/add.plan-to-ready` does NOT inherit it: it is autonomous by contract, and with a read-only `add.review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
 
 ---
@@ -646,7 +651,6 @@ bash .codeadd/scripts/status.sh
 ### Token Efficiency (MANDATORY for all artefacts)
 
 - JSON minified for structured data: `{"key":"value"}` not formatted
-- Max 10 words per description in technical specs
 - No decorative formatting (ASCII art, excessive dashes, emoji headers)
 - Reference don't repeat — use `{{skill:}}` and `{{cmd:}}` variables
 - Compress examples: 1 excellent > 3 mediocre
@@ -675,6 +679,71 @@ Always include fallback table for providers without agent support:
 |------|-------------|----------|
 | [area] | @[name]-agent | Generic subagent + skill add-[area]-development |
 ```
+
+## 8. Declaring Relationships — the `<!-- uses: -->` Block
+
+Every artefact declares what it uses, in a source-only HTML comment near the top. The build reads
+it with `extractUses()` **before** `stripHtmlComments()`, so it ships to nobody in the product
+layer and is build metadata only.
+
+**The shape.** An HTML comment whose first body line is `uses:` — the `<!--` opener, then one
+`- <kind>: <target>` per line, then the closing marker. Opener and closer each sit alone on their
+own line; the build ignores any occurrence embedded in a sentence, which is why this paragraph can
+name them without declaring anything.
+
+Body lines:
+
+```
+- skill: <skill-name>
+- agent: <agent-name>
+- command: /<command-name>
+- script: <script-name>.sh
+- mention: <name-the-prose-points-away-from>
+```
+
+Real names, not placeholders — the placeholders above are only so this example declares nothing.
+
+Five kinds. Four are real dependencies. **`mention:` is not** — it marks prose that names an
+artefact while pointing away from it ("use X instead"). It emits a `MENTIONS` edge, so the target
+is still validated, but `impact` and `dependencies` exclude it.
+
+**A catalogue is not a consumer.** `add-ecosystem` maps the ecosystem and consumes none of it, so
+every row in its block is `mention:`. Declaring them as dependencies is not cosmetic: eight
+commands load that skill, so everything it lists would inherit ~82 transitive dependants and
+`impact` would degrade into a constant.
+
+### Three gates fail the build, one warns
+
+| Condition | Result |
+|---|---|
+| A declaration names an artefact that does not exist | **fails** |
+| An artefact on disk is absent from `provider-map.json` — built for no provider | **fails** |
+| A name appears in prose with no declared relationship to it | **fails** |
+| Declared but never named in prose | warns — that direction is sometimes a real load that is not greppable |
+
+`ADD_GRAPH_WARNINGS=1` lists warnings instead of summarising them.
+
+**Cross-layer names are skipped by the prose gate.** A `uses:` target resolves inside the
+declaring artefact's own layer, so an internal file naming a product script must NOT declare it —
+the declaration would dangle and fail the build, while the prose mention costs nothing.
+
+### Node identity
+
+A node id is `<layer>/<kind>/<name>` — the layer prefix exists because `add-commit` lives in both.
+Identity is **what the build can transform, never directory position**: a skill is a directory
+*containing* `SKILL.md`.
+
+### Querying it
+
+| Question | Command |
+|---|---|
+| What breaks if I change this? | `node scripts/graph.js impact <name> --depth 1` |
+| What does this need? | `node scripts/graph.js dependencies <name>` |
+| How do these two connect? | `node scripts/graph.js path <a> <b>` |
+| What does nothing depend on? | `node scripts/graph.js orphans` |
+| Has this shipped before and been dropped? | `node scripts/graph.js history <name>` |
+
+Grade risk on `impact --depth 1`. The unbounded transitive number is context, not a score.
 
 ### Cross-Artefact Impact (MANDATORY for any change)
 

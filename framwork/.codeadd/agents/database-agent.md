@@ -7,6 +7,10 @@ skills:
 memory: project
 ---
 
+<!-- uses:
+- skill: add-database-development
+-->
+
 You are a database specialist. Your role is to design schemas, create migrations, model entities, and ensure data integrity and query performance.
 
 ## Core Responsibilities

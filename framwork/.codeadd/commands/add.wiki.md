@@ -1,5 +1,15 @@
 # Wiki Knowledge Base Generator
 
+<!-- uses:
+- skill: add-architecture-discovery
+- skill: add-claude-md-style
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-final-report
+- skill: add-wiki-maintenance
+- script: status.sh
+-->
+
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -24,9 +34,27 @@ IF {{addpath:wiki/index.md}} exists:
   Load skill {{skill:add-wiki-maintenance/SKILL.md}} and execute its full update
   discipline (evidence chain, computed candidates, impact plan, surgical edits,
   per-page stamp bumps, hub sync, .meta.json advance, report).
+  THEN run the managed-block tasks of STEP 6 — items 1, 4 and 5 of its prompt —
+  followed by all of STEP 7.
 ELSE:
   No wiki exists yet — fall back to full generation (STEP 1 onward).
 ```
+
+**Why update mode reaches CLAUDE.md at all.** `add-wiki-maintenance` never writes that file,
+by its own rule. Without these two lines the managed blocks land only on a first generation,
+so every project that has already run this command once — which is every project with a wiki —
+would never receive them, and never receive a refresh when their text changes.
+
+```
+IF invoked as `/add.wiki update`:
+  ⛔ DO NOT: Regenerate the Architecture Contract section
+  ⛔ DO NOT: Regenerate the Technical Spec section
+  ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
+  ⛔ DO NOT: Dispatch the STEP 6 agent for anything beyond items 1, 4 and 5
+  ✅ DO: Replace-or-append the two managed blocks, then copy the file per STEP 7
+```
+
+Update mode is surgical everywhere else, and it stays surgical here.
 
 ---
 
@@ -566,6 +594,25 @@ rationale. Entrypoint: `.codeadd/wiki/index.md`.
 
 [//]: # (codeadd-wiki:end)
 
+5. **Writing Style managed block** — find markers `[//]: # (codeadd-style:start)` /
+   `[//]: # (codeadd-style:end)`. If present, REPLACE the block between them. If absent, APPEND
+   the block below with a blank-line separator, after the Project Knowledge Base block. NEVER
+   use HTML-comment syntax for these markers — only the exact bracket form shown. Write EXACTLY:
+
+[//]: # (codeadd-style:start)
+
+## Writing Style
+
+Describe the action, the mechanism or the state directly. Never put a figure of speech in its place.
+
+- Applies to chat, docs, commit messages, PR descriptions, code comments and identifiers.
+- Applies to the writing, not to the language of this rule — it holds in every output language.
+- Established technical terms of figurative origin (branch, tree, cache, pipeline, parent, orphan) are the literal names of their concepts. Keep them.
+- Test each sentence: does it name the action, or name something the action resembles? Replace a resemblance with the action.
+- Not a list of banned words. One example of the device: "confirm the tests bite" → "run the tests and check they fail against the broken code".
+
+[//]: # (codeadd-style:end)
+
 ## CONSTRAINTS (from add-claude-md-style skill)
 Target: 80-150 lines total.
 
@@ -582,7 +629,7 @@ DO NOT include:
 ## OUTPUT FORMAT
 - JSON minified one-line per object
 - Max 10 words per description value
-- Managed block copied verbatim from this prompt — do not paraphrase it
+- Both managed blocks copied verbatim from this prompt — do not paraphrase them
 
 ## REPORT FORMAT
 Return summary:
@@ -590,6 +637,7 @@ Return summary:
 - LEGACY_SECTION_REMOVED: [YES/NO]
 - TOTAL_LINES: [count]
 - SECTIONS_UPDATED: [list]
+- WRITING_STYLE_BLOCK: [WRITTEN/REPLACED]
 ```
 
 - **Output:** Update `CLAUDE.md`
@@ -661,6 +709,13 @@ Verify all 3 files exist before proceeding:
 - [ ] AGENTS.md exists (with shell policy section at the end)
 - [ ] GEMINI.md exists
 
+Then verify both managed blocks survived the copy. A block that reached CLAUDE.md and not
+AGENTS.md is the failure this check exists to catch, and it is invisible without it:
+
+- [ ] `[//]: # (codeadd-wiki:start)` and `[//]: # (codeadd-wiki:end)` present in CLAUDE.md, AGENTS.md and GEMINI.md
+- [ ] `[//]: # (codeadd-style:start)` and `[//]: # (codeadd-style:end)` present in CLAUDE.md, AGENTS.md and GEMINI.md
+- [ ] each pair appears exactly once per file
+
 ---
 
 ## STEP 8: Write .meta.json
@@ -688,7 +743,14 @@ shared with the team. Do NOT silently continue as if unaffected.
 
 ## STEP 9: Report & Cleanup
 
-**Report to user:**
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the detail list and the navigation guidance come after it.
+
+Fill `How it works` with how the wiki is meant to be read: the hub is the only entrypoint, and the
+frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries and the gitignore
+warning, because both are the user's to act on.
+
+**Then report to user:**
 Include: context files updated, apps analyzed with types, code quality scores, wiki areas/pages
 generated, Backlog entries (if any), gitignore warning (if triggered), migration cleanup performed
 (if any — STEP 5.4).

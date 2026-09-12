@@ -59,6 +59,9 @@ npx codeadd features list
 # list available plugins (see docs for per-plugin setup)
 npx codeadd plugins list
 
+# serve the knowledge graph over MCP stdio (docs | artefacts)
+npx codeadd mcp --corpus=docs
+
 # show installation configuration
 npx codeadd config show
 ```
@@ -150,8 +153,11 @@ Commands and skills install to every provider you select. Subagents install to C
 ## Repository structure
 
 - `cli/`: installer CLI published as `codeadd`
+- `mcp/`: the knowledge-graph MCP server (two corpora, selected by `--corpus`), shipped in the npm package
 - `framework/`: framework payload copied into target projects by the installer
   - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
+- `docs/deliveries/`: durable delivery history — closed-out plan archives
+- `docs/delivered.jsonl`: the delivery index every close-out appends to
 
 ## Compatibility
 

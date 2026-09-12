@@ -5,13 +5,27 @@ description: 'Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Arch
 
 # Code Review
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-database-development
+- skill: add-frontend-development
+- skill: add-security-audit
+- skill: add-ux-design
+- mention: add-architecture-discovery
+- mention: add-feature-discovery
+- mention: add-feature-specification
+- mention: /add.plan
+- command: /add.build
+- script: status.sh
+-->
+
 Skill for validating implemented code against project standards.
 
 **Use for:** Validate code and identify violations; apply routed fixes when dispatched by `/add.build`
 **Do not use for:**
 
 - Implementing new features (use `add-backend-development` / `add-frontend-development`)
-- Planning or specifying work (use `add-planning` / `add-feature-specification`)
+- Planning or specifying work — planning belongs to `/add.plan`, which writes `plan.md` against the `feature-plan` schema; specifying belongs to `add-feature-specification`
 - Codebase discovery or architecture analysis (use `add-feature-discovery` / `add-architecture-discovery`)
 
 **Reference:** Always consult `CLAUDE.md` for general project standards.

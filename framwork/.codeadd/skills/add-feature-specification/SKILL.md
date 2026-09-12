@@ -5,6 +5,12 @@ description: Document feature requirements - creates/updates about.md with busin
 
 # Feature Specification
 
+<!-- uses:
+- mention: add-feature-discovery
+- mention: /add.plan
+- mention: add-product-discovery
+-->
+
 Skill for documenting feature specifications. Creates/updates `about.md` with requirements, business rules, scope and decisions.
 
 **Principle:** Document WHAT and WHY, not HOW.
@@ -19,7 +25,7 @@ Skill for documenting feature specifications. Creates/updates `about.md` with re
 ### When NOT to Use
 
 - For technical analysis (use `add-feature-discovery` instead)
-- For technical implementation planning (use `add-planning` instead)
+- For technical implementation planning (use `/add.plan` instead — it writes `plan.md` against the `feature-plan` schema)
 - For product blueprint / founder discovery (use `add-product-discovery` instead)
 - For code-level architecture decisions (belongs in discovery/plan, not about.md)
 

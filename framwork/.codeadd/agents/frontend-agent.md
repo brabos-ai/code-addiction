@@ -7,6 +7,10 @@ skills:
 memory: project
 ---
 
+<!-- uses:
+- skill: add-frontend-development
+-->
+
 You are a frontend implementation specialist. Your role is to implement client-side features following the project's component patterns and state management conventions.
 
 ## Core Responsibilities

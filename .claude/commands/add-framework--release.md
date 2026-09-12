@@ -1,5 +1,9 @@
 # Release Manager
 
+<!-- uses:
+- skill: add-final-report
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Coordinates release flow: version bump, `main → production` merge (stable only), changelog generation, and tag push — CI pipeline handles GitHub release creation.
@@ -18,6 +22,7 @@ STEP 4: Update CLI version     → npm version (package.json + lock) + commit + 
 STEP 5: Merge to production    → --no-ff + push (SKIP if beta)
 STEP 6: Changelog + preview    → generate, confirm [STOP]
 STEP 7: Push tag               → checkout tag source + run script → pipeline takes over
+STEP 8: Completion             → report the release in the shared shape
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -176,7 +181,15 @@ Use file changes to enrich terse commit messages. Provider dirs (`framwork/.clau
 
 ### Plan scan
 
-If `docs/plans/` exists → include non-draft plans created/updated since `LATEST_TAG`.
+Read the delivered plans, bounded by the tag:
+
+```bash
+git diff --name-status [LATEST_TAG]..main -- docs/deliveries/
+```
+
+Each `docs/deliveries/<plan-basename>/` added since the tag is one delivery. Read its `plan.md` for what shipped and its `ledger.md` for the decisions made along the way.
+
+⛔ **DO NOT source release notes from `docs/plans/`.** It is gitignored and local, so on a release machine it holds whatever that machine happened to work on — usually nothing. A scan of it renders an empty section and says nothing about why.
 
 ### Assemble release notes
 
@@ -247,6 +260,27 @@ The script is the ONLY way the tag gets created. It reads the version from `cli/
 DO NOT run `git tag` / `git push origin <tag>` by hand — the script handles stale-tag cleanup that a bare `git tag` does not. DO NOT create the GitHub Release — the pipeline reads the annotated tag's message and creates it.
 
 Monitor at: `https://github.com/brabos-ai/code-addiction/actions`
+
+---
+
+## STEP 8: Completion
+
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the version, the tag and the pipeline URL come after it.
+
+The release itself is the delivery, so fill `What was delivered` with what this version gives users
+that the last one did not, and `How it works` with what the pipeline now does on its own: it reads
+the annotated tag's message, creates the GitHub Release, and publishes to npm.
+
+`⚠️ Needs your attention` is never empty here. The tag is pushed and the pipeline is running, which is
+outside this working tree and cannot be undone by a local command.
+
+Then, after the seven blocks, state:
+
+- The release type, `stable` or `beta`, and the version.
+- The tag, and which branch it points at — `production` for stable, `main` for beta.
+- Whether STEP 5 merged to production, or was skipped because the release is beta.
+- The pipeline URL, and that nothing is released until it goes green.
 
 ---
 

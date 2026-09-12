@@ -5,6 +5,23 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 
 # QA Setup - Prerequisites, Config Bootstrap & End-to-End Verification
 
+<!-- uses:
+- skill: add-dev-environment-setup
+- skill: add-doc-schemas
+- skill: add-final-report
+- skill: add-qa
+- skill: add-qa-migration
+- skill: add-setup-contract
+- skill: add-subagent-driven-development
+- agent: e2e-agent
+- agent: qa-agent
+- command: /add.build
+- command: /add.review
+- script: qa-evidence.sh
+- script: qa-preflight.sh
+- script: status.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow on a project's first run (confirm-then-dogfood), and closes the loop with a universal `/add.review` smoke test plus a bounded auto-correction loop. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
@@ -408,7 +425,15 @@ Output at end:
 
 ## STEP 14: Hand-off
 
-Tell the user, in order:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the ordered hand-off list below comes after it, whole and in
+its own order.
+
+Fill `How it works` with what the QA pipeline now does on a run: what it captures, what judges it,
+and what the judgement gates. `⚠️ Needs your attention` carries every step the user still has to do
+by hand, because none of them happen on their own.
+
+Then, after the seven blocks, tell the user, in order:
 1. The `qa-pipeline` feature outcome (from STEP 2): enabled + verified, declined (remaining manual step: `codeadd features enable qa-pipeline`), or enable no-op detected (route: `codeadd update` / re-install).
 2. Any prerequisite they declined / must finish manually (from STEP 4).
 3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add.build step), the Decision Log location, and that it awaits their review before merge.

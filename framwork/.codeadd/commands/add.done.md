@@ -1,7 +1,26 @@
 # Branch Completion & Merge
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-doc-schemas/references/delivery-index.md
+- skill: add-ecosystem
+- skill: add-final-report
+- skill: add-id-convention
+- skill: add-wiki-maintenance
+- command: /add.build
+- mention: /add.new
+- command: /add.pull-request
+- command: /add.hotfix
+- command: /add.plan-to-ready
+- command: /add.review
+- command: /add.wiki
+- script: converge-gates.sh
+- script: delivered.sh
+- script: done.sh
+- script: qa-evidence.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **MODEL:** Use `haiku` model
 
 Coordinator for branch finalization. Generates the changelog from changeset analysis and auto-merges to main. Same flow for all branch types (feature, hotfix, refactor, chore, docs) — review gate applies to features only.
 
@@ -12,13 +31,14 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 **STEPS IN ORDER:**
 ```
 STEP 1: done.sh                 -> RUN FIRST (collect context)
-STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID
+STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate delivery       -> Review + epic + requirements gates (feature only)
+STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), then the knowledge record (feature AND hotfix)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
-STEP 6: Generate documentation -> Changelog + decisions + wiki
+STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
 STEP 8: Execute merge           -> AUTOMATIC after preview
+STEP 9: Completion              -> report the close-out in the shared shape
 ```
 
 **ABSOLUTE PROHIBITIONS (invariants — per-step gates live in their steps):**
@@ -37,10 +57,11 @@ IF BRANCH_TYPE = unknown:
 IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
   ⛔ DO NOT USE: Write to create changelog.md
   ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ✅ DO: Report the qa-evidence.sh validation/promotion failure and stop
 
 ALWAYS:
-  ⛔ DO NOT USE: Bash for git add/commit/push (done.sh --merge handles everything)
+  ⛔ DO NOT USE: Bash for git add/commit/push — `done.sh` owns every LOCAL git write, through `--merge`, `--commit-push` or `--cleanup`. The ONE exception is the Recovery route (2.4), which runs on `main` where `done.sh` cannot run at all
   ⛔ DO NOT USE: Bash for git branch -m (NEVER rename branches)
   ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT: Suggest renaming branches to fix unknown type errors -- the branch prefix is intentional
@@ -88,7 +109,137 @@ bash .codeadd/scripts/done.sh
 | `docs` | Branch: docs/[NNNN]D-* |
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
-All recognized types proceed to STEP 4. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
+All recognized types proceed to 2.1, which routes, and then to STEP 4 — except the `Closed out` route, which stops there. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
+
+
+### 2.1 Cross the Two Facts, Then Route
+
+`done.sh`'s `ROUTE` block already emitted both. **Read them; compute neither.**
+Two readers of one tree that derive the same fact separately are two readers that
+can disagree, which is the whole reason `converge-gates.sh` exists.
+
+```
+IF ROUTING THIS RUN:
+  ⛔ DO NOT USE: Bash for gh pr view — PR_STATE, PR_URL and PR_MERGE_COMMIT are already parsed
+  ⛔ DO NOT USE: Read on docs/delivered.jsonl to decide whether an entry exists — INDEX_ENTRY says
+  ✅ DO: Route on the probe's values
+```
+
+**`MERGED`** is `PR_STATE=merged` when a PR exists, and `MERGED_ON_MAIN=yes`
+otherwise. `MERGED_ON_MAIN=unknown` is NOT a merge: it means `origin/<main>`
+could not be read, and a route that deletes branches never runs on a guess.
+
+| MERGED | INDEX_ENTRY | Route | What runs |
+|---|---|---|---|
+| no | `absent` or `no-index` | **Normal** | Everything, as written below |
+| no | **`present`** | **Resume** | Every gate runs. STEP 5's promotion, 6.3, 6.7 and 6.8 are SKIPPED. The merge is the only work left |
+| yes | `present` | **Closed out** | Report it and STOP. There is nothing to do |
+| yes | **`absent`** or `no-index` | **Recovery** | Runs on `main`. Writes the entry and the changelog. Never merges |
+
+**The Resume row is what a refused merge leaves behind, and it is not rare.** A
+review thread left unresolved, an approval dismissed by a push, a required check
+that went red on the docs commit. Falling through to Normal writes a **second**
+entry for one delivery — the exact defect this cross exists to stop.
+
+**The Closed out row is what makes a second run on the same branch safe.** Every
+gate below would still pass, and without the row the command would write that
+second entry itself.
+
+### 2.2 Which Merge Route, and Why the Record Exists
+
+Truth on the forge outranks the record. The record's only job is telling
+*declined* apart from *never asked* — two states that both look like "no PR".
+
+| `PR_STATE` | `PUBLISH_RECORD` | Route |
+|---|---|---|
+| `open` | anything | **PR route.** A PR that exists IS the route, whatever the ledger says |
+| `none` | `declined` | **Local route.** The operator chose it |
+| `none` | `on-main` or `no-gh` | **Local route.** No PR was ever possible |
+| `none` | `none` | **ASK.** Nobody was asked, so ask now |
+| `none` | `pr-opened` or `pr-updated` | **ASK**, and report it — the PR was closed or deleted after the build recorded it |
+| `closed` | anything | **ASK**, and report that the PR was closed unmerged |
+| `no-gh` | anything | **Local route**, and say in the report that `gh` was unavailable |
+
+```
+IF PR_STATE IS no-gh:
+  ⛔ DO NOT: Take the PR route in any combination
+  ⛔ DO NOT: Report the absence of gh as a failure — it is a probe value
+  ✅ DO: Take the local route and name the reason in the final report
+```
+
+### 2.3 The Resume Route — written, pushed, merge refused
+
+Reached from 2.1's second row. **Every gate below still applies in full** — a
+delivery is not exempt from grading because someone tried to merge it once. What
+changes is that four STEPs already ran and must not run again:
+
+| STEP | Normal | Resume |
+|---|---|---|
+| 4 | The gates | **Unchanged.** They all still run |
+| 5 | Validate and promote QA evidence | **Skipped.** The promotion already ran |
+| 6.3 | Generate the changelog | **Skipped.** Committed by STEP 6's commit |
+| 6.7 | Update the wiki | **Skipped.** Same commit |
+| 6.7.1 | Rebuild the docs index | **Runs.** The index is a gitignored cache of the user's own markdown, not something a commit carries — a skipped rebuild leaves it describing the tree before this delivery |
+| 6.8 | Write the index entry | **Skipped.** The entry is on the branch |
+| 8 | Merge | The only work left |
+
+⛔ **STEP 5 is skipped rather than re-run, and that is not caution.** Promotion is
+idempotent, so a second run is safe — and therefore indistinguishable from a
+first. A reported skip is evidence that the step already happened; a silent safe
+re-run is not.
+
+**What is left to find out is why the merge was refused.** The branch state is
+correct and nothing here repairs it. Report the reason from
+`gh pr view --json mergeStateStatus,mergeable` in STEP 9, alongside which STEPs
+this run skipped.
+
+### 2.4 The Recovery Route — merged, never indexed
+
+Reached from 2.1's bottom row. Work reached `main` and left no record. Stopping
+there would make the index quietly wrong about a delivery that shipped — the same
+lie as indexing work that never landed, in the other direction.
+
+This route runs **on `main`**, so `done.sh` cannot be used at all: its context
+mode needs a `[NNNN][L]` in the branch name and its merge mode refuses to run on
+`main`.
+
+1. **Resolve the feature from the merge commit's own diff**, matching
+   `docs/features/[NNNN][L]-*/`. This is the resolution STEP 3 already applies to
+   `CHANGED_FILES`, pointed at a commit instead of a branch.
+2. **Take the delivery facts from the merge commit**, not from a branch diff:
+
+```bash
+git show --name-status <merge-commit>
+```
+
+   The squash IS the delivery.
+3. Write the entry and the changelog, commit them on `main`, and push.
+
+```
+IF THE DIFF NAMES MORE THAN ONE docs/features/[NNNN][L]-*/ DIRECTORY:
+  ⛔ DO NOT: Pick one and continue
+  ⛔ DO NOT: Write an entry for the first match
+  ✅ DO: Print every candidate and ask which delivery this is, then STOP
+```
+
+   An epic merge touches several subfeature directories at once. Every other
+   resolver in this repository stops on ambiguity rather than guessing, and this
+   one decides which feature a delivery is filed under.
+
+```
+IF THE MERGE COMMIT CANNOT BE RESOLVED:
+  ⛔ DO NOT USE: Bash for delivered.sh write
+  ⛔ DO NOT: Reconstruct the diff from plan.md instead of from git
+  ✅ DO: Report it and STOP — an entry derived from a plan records intent, not delivery
+```
+
+⛔ **Recovery NEVER merges.** It runs `done.sh --merge` on nothing and calls
+`gh pr merge` on nothing: the merge already happened, which is the condition that
+put this run here.
+
+**Report in STEP 9 that the run took the recovery route, and why the entry landed
+after the merge rather than before it.** An entry whose commit sits after the
+delivery it describes is fine; one that hides how it got there is not.
 
 ---
 
@@ -113,7 +264,7 @@ All recognized types proceed to STEP 4. Quality gates apply to `feature` only �
 bash .codeadd/scripts/converge-gates.sh "${DIR}"
 ```
 
-**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `REVIEW_PATH`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, and `GATE_COVERAGE_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1 and 4.2 pass.** The script computes FOUR gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, or `plan.md` and counting/parsing them yourself — that restates the gate the script exists to own.
+**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1, 4.2 and 4.3 pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
 
 ### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
 
@@ -137,6 +288,7 @@ bash .codeadd/scripts/converge-gates.sh "${DIR}"
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show blocked gates and instructions to re-run /add.review
 
 **NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict on the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
@@ -165,6 +317,7 @@ Run /add.build to implement the next subfeature.
 **IF INCOMPLETE:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show pending subfeatures and STOP
 
 **IF `GATE_EPIC=ok`:** Proceed normally.
@@ -196,9 +349,99 @@ Options:
 **IF UNCOVERED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show uncovered requirements and STOP
 
 **IF `GATE_COVERAGE=ok`:** Proceed normally.
+
+---
+
+### 4.3: Validate the Build Ledger (FEATURE BRANCHES ONLY)
+
+**SKIP if `BRANCH_TYPE` ≠ `feature`.**
+
+**GATE CHECK (feature only): `GATE_LEDGER` must be `ok`.**
+
+This is the only gate that asks whether the build **happened**. 4.0 asks whether
+the delivery was graded, 4.2 reads a table written at plan time, and 4.1 returns
+`ok` unconditionally on a feature with no `epic.md`. **Unwritten code breaks no
+test**, so a `/add.build` run that stopped halfway passes every check above and
+merges as fully delivered.
+
+**IF `GATE_LEDGER` is `missing`, `broken`, or `not-probed`:**
+
+```
+Build Not Finished!
+
+${GATE_LEDGER_DETAIL}
+
+Run /add.build to finish the remaining task(s).
+```
+
+`GATE_LEDGER_DETAIL` already names the task ids with no `complete` line, capped
+at ten plus a `+N more` overflow — print it as it comes. `missing` means the
+scope declares Execution tasks and carries no `build-ledger.md` at all, and its
+detail names the path it looked for.
+
+**IF BLOCKED:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+- ✅ DO: Show the unfinished tasks and STOP
+
+```
+IF GATE_LEDGER IS NOT ok:
+  ⛔ DO NOT USE: Read on build-ledger.md to count the `complete` lines yourself
+  ⛔ DO NOT USE: Read on tasks.md to decide which tasks were owed
+  ✅ DO: Print GATE_LEDGER_DETAIL and STOP — re-deriving the verdict restates
+         the gate `converge-gates.sh` exists to own, and the two answers can
+         disagree
+```
+
+**A feature with no `tasks.md` in scope reports `ok`**, with its reason in the
+detail. That is not a hole: outside TASKS MODE the ledger's lines are keyed by
+area name rather than task id, so there is nothing to cross-reference. It is the
+same rule 4.2 applies to an absent coverage table.
+
+**IF `GATE_LEDGER=ok`:** Proceed normally.
+
+---
+
+### 4.4: Validate the Knowledge Record (FEATURE AND HOTFIX BRANCHES)
+
+**GATE CHECK: the delivery's `about.md` carries a non-empty `## TL;DR` AND at least one `## Relations` line.**
+
+Read `${DIR}/about.md` and check both halves:
+
+| Half | Passes when | Fails when |
+|---|---|---|
+| TL;DR | `## TL;DR` exists and the text under it is not empty | the heading is absent, or present with nothing under it |
+| Relations | `## Relations` carries at least one `- <type> [[<id>]]` line, or the single word `None` | the section is absent, or present with nothing under it |
+
+```
+IF EITHER HALF FAILS:
+  ⛔ DO NOT USE: Write to create changelog.md
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+  ⛔ DO NOT: Write the TL;DR or the relation yourself to clear the gate
+  ✅ DO: Name which half failed, show the document path, and report BLOCKED
+```
+
+⛔ **AN EMPTY `## TL;DR` HEADING SATISFIES NOTHING.** The TL;DR is what a graph
+search returns so an agent can discard this work item without opening it, and a
+heading with nothing under it rejects nothing. A `## Relations` section that
+exists and is empty fails the same way — `None` is an assertion that the work
+connects to nothing, an empty section is a question.
+
+**Why this gate and not a reminder.** The framework's own graph does not rot
+because the build refuses to pass. This is that, for a user's documents: without
+it the format decays into an optional section nobody fills, which is exactly
+what happened to the relationship template this format replaced.
+
+**The user writes the missing half, not this command.** `/add.new` and
+`/add.hotfix` write `## Relations` from their own discovery results; a delivery
+that reached close-out without one went around them, and inventing the content
+here would record a relationship nobody can reproduce.
 
 ---
 
@@ -221,7 +464,7 @@ Promotion copies each complete working run to `_tests/final/run-NNN/` through a 
 - ⛔ DO NOT USE: Bash for `done.sh --merge`
 - ✅ DO: Surface the exact script error. For baseline drift, require `/add.review`; for incomplete/conflicting evidence, require correction before retrying `/add.done`
 
-Do NOT stage, commit, push, move, or delete evidence here. `done.sh --merge` remains the sole git owner and promotion remains retry-safe.
+Do NOT stage, commit, push, move, or delete evidence here. **`done.sh` owns every LOCAL git write on both routes** — the PR route calls its `--commit-push` and `--cleanup` modes — and promotion remains retry-safe.
 
 ---
 
@@ -259,17 +502,41 @@ Do NOT stage, commit, push, move, or delete evidence here. `done.sh --merge` rem
 
 ---
 
-### 6.3: Generate Changelog (schema: changelog)
+### 6.3: Generate or Complement the Changelog (schema: changelog)
 
-**Path:** `${DIR}/changelog.md`
-
-**Idempotency guard (RUN FIRST).** If `${DIR}/changelog.md` already exists, **SKIP** schema execution, ID allocation, and Quick Ref generation, but DO NOT skip the QA trail below. Existing changelogs must receive the same permanent evidence references before STEP 6.4.
-
-```bash
-[ -f "${DIR}/changelog.md" ] && echo "CHANGELOG_EXISTS — skipping generation"
+```
+IF 2.1 ROUTED THIS RUN TO **Resume**:
+  ⛔ DO NOT: Run this sub-step — it already ran, and its output is committed on the branch
+  ✅ DO: Say it was skipped, and why, in STEP 9
 ```
 
-**If changelog does NOT exist:**
+
+**The path, the one-per-delivery rule and the per-part complement table are owned
+by the `changelog` schema in `{{skill:add-doc-schemas/SKILL.md}}`.** Read it rather
+than deciding here — it was declared in three places and they disagreed.
+
+```bash
+CHANGELOG="${DIR}/changelog.md"   # resolved per the schema's Location rule
+[ -f "$CHANGELOG" ] && echo "CHANGELOG_EXISTS — complementing in place"
+```
+
+**If it already exists, COMPLEMENT it.** `/add.pull-request` STEP 3 writes
+it when a PR opens mid-build, and everything delivered after that moment is
+missing from it until this step adds it.
+
+```
+IF ${DIR}/changelog.md ALREADY EXISTS:
+  ⛔ DO NOT: Skip the narrative — a skip leaves the state the FIRST writer produced
+  ⛔ DO NOT USE: Bash for status.sh next-id CHG — the id it already carries is the id
+  ⛔ DO NOT: Rewrite id:, created:, type: or related:
+  ✅ DO: Apply the schema's complement table, part by part, and bump updated:
+```
+
+⛔ **Skipping is not idempotency.** It leaves whatever the first run produced,
+which is only correct if nothing changed since — and something did, or this run
+would not be here.
+
+**If it does NOT exist:**
 
 EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
@@ -352,6 +619,13 @@ fi
 
 ### 6.7 Update Project Wiki (best-effort, non-blocking)
 
+```
+IF 2.1 ROUTED THIS RUN TO **Resume**:
+  ⛔ DO NOT: Run this sub-step — it already ran, and its output is committed on the branch
+  ✅ DO: Say it was skipped, and why, in STEP 9
+```
+
+
 **IF `.codeadd/wiki/index.md` exists:**
 
 Load skill `{{skill:add-wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP 1) + the feature context already loaded in this session (about.md from 6.1, the changelog just generated in 6.3).
@@ -366,9 +640,145 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 
 ---
 
+### 6.7.1 Rebuild the Docs Knowledge Index (best-effort, non-blocking)
+
+The changelog, the `about.md` edits and the wiki pages have all landed. Rebuild
+the index so the next command's discovery step sees this delivery:
+
+```bash
+npx codeadd mcp --corpus=docs --action=reindex
+```
+
+It prints a JSON report carrying the node and edge counts, the skipped count and
+the **number** of unresolved ids.
+
+**When that number is not zero, ask for the list — `reindex` reports a count and
+only `stats` returns the ids:**
+
+```bash
+npx codeadd mcp --corpus=docs --action=stats
+```
+
+Its `unresolved` array is `{from, to}` pairs: a relation naming a document that
+does not exist. Carry the list to STEP 9 and show it there. They are the user's
+to fix, and this command never edits a relation to make one go away.
+
+⛔ **NON-BLOCKING, like the wiki update above it.** A project whose `npx` cannot
+reach the package offline still merges; the index is a rebuildable cache of the
+user's own markdown and the next run regenerates it. Never block a merge on a
+cache.
+
+**One-shot, not the MCP server.** The verbs answer from the CLI with no MCP
+configured, which is what this step needs: one answer, no client, no JSON-RPC to
+a subprocess spawned for a single call.
+
+---
+
+### 6.8 Write the Delivery Index Entry
+
+```
+IF 2.1 ROUTED THIS RUN TO **Resume**:
+  ⛔ DO NOT: Run this sub-step — it already ran, and its output is committed on the branch
+  ✅ DO: Say it was skipped, and why, in STEP 9
+```
+
+
+Record what this branch delivered in `docs/delivered.jsonl`, the per-project delivery index. `delivered.sh` is its only writer; nothing here edits the file directly. The entry is authored HERE and **left in the working tree** — the same path the changelog and the wiki edits already take. `done.sh --merge` (STEP 8) commits it with everything else.
+
+Load `{{skill:add-doc-schemas/references/delivery-index.md}}` for the record shape, the `{what, at, find}` anchor and the hard bans. Do not restate them here; the reference is the contract.
+
+```
+IF BRANCH_TYPE = docs:
+  ⛔ DO NOT USE: Bash for delivered.sh write
+  ✅ DO: Skip 6.8 entirely, set INDEX_ENTRY=none, continue to STEP 7
+
+IF THE ENTRY HAS NOT BEEN WRITTEN OR EXPLICITLY SKIPPED:
+  ⛔ DO NOT: Proceed to STEP 7
+  ✅ DO: Complete 6.8, or record why it wrote nothing
+```
+
+**6.8.1 — Resolve which entry this branch belongs to.**
+
+| BRANCH_TYPE | Entry |
+|---|---|
+| `feature` | A new entry under this branch's `FEATURE_ID` |
+| `hotfix` / `refactor` / `chore` | Resolved by the match below — never by asking |
+| `docs` | None. No source surface changed |
+
+For hotfix, refactor and chore, run the report-only verify FIRST, then match:
+
+```bash
+bash .codeadd/scripts/delivered.sh verify
+```
+
+Verify first because an item that has already moved carries a stale `at`; a branch touching its *current* location would intersect nothing and silently get no line. Then, for every existing entry, match an item when **the branch's diff touches a hunk containing that item's `find` string** — not merely when it touches the same file — **or** when the branch renames the item's `at` file by path. Both clauses exist, for opposite failure modes: hunk-matching alone misses a pure rename (`R100`, zero hunks), and path-matching alone attributes every change in a shared routes or schema file to every entry with an item in it.
+
+Every entry with at least one matched item gets a new line carrying this branch's commit. **No match anywhere** means the branch created new surface rather than changing existing surface, so it gets its own entry under its own `[NNNN][L]` id.
+
+**6.8.2 — Select the items. This is a shape filter, not a judgement.** Two runs over one diff must produce one list. Derive from the HIGH-priority files already described in 6.2, plus `tasks.md` when it exists — its absence is routine on hotfix, refactor and chore branches, and items then come from the diff plus `about.md` and the commit messages.
+
+| Include | Exclude |
+|---|---|
+| A route or endpoint path | A file that only gained an import or an export line |
+| A table, collection or migration name | A config key, env var or dependency bump |
+| A screen, route or exported component | An internal helper, type or private function |
+| A CLI command, flag or feature name | A test file |
+| A public function others call across a module boundary | Anything whose name does not appear outside its own file |
+
+The last exclusion is the general rule the others are instances of: **if nothing outside the defining file names it, no document will cite it**, and it does not belong in an index built to stop miscitation.
+
+**More than five survive the filter:** keep the five whose `find` strings are most specific and record how many were dropped, for STEP 7 to show. Never truncate silently — the overflow is exactly the signal that the feature was too big.
+
+**6.8.3 — Take each `find` from the item's own identifier**, never from a description: `oauth_tokens`, `/auth/google`, `LoginGoogle`. One contiguous token, byte-exact. `POST /auth/google` is a `what`, not a `find`.
+
+**6.8.4 — Write it.** Compose the record and pass it on stdin. The script generates `v` and `ts`; supply everything else. `commits` comes from a read-only `git log --format=%h` over the branch's own commits.
+
+```bash
+bash .codeadd/scripts/delivered.sh write < "$RECORD_FILE"
+```
+
+Parse `ENTRY`, `CREATED`, `LINES` and every `LOOSE` line for STEP 7. Set `INDEX_ENTRY` to the composed record so STEP 7 can render it in full.
+
+```
+IF delivered.sh EXITS 2 WITH REFUSED=find-absent OR REFUSED=find-over-matched:
+  ⛔ DO NOT: Retry with the same find string
+  ⛔ DO NOT: Drop the item to make the write pass
+  ✅ DO: Pick a more specific identifier for that item and write again
+
+IF delivered.sh EXITS 2 WITH ANY OTHER REFUSED= VALUE:
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+  ✅ DO: Show the REFUSED value and the record, and stop — the record breaks a hard ban
+
+IF delivered.sh EXITS 1:
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+  ✅ DO: Show the write error and stop — the filesystem refused the entry
+```
+
+⛔ DO NOT USE: Bash for git add/commit/push in this substep. **`done.sh` owns every LOCAL git write on both routes**, exactly as it does for the changelog and the wiki.
+
+<!-- feature:docs-pruning:prune -->
+<!-- /feature:docs-pruning:prune -->
+
+---
+
 ## STEP 7: Preview (INFORMATIVE ONLY)
 
 Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and each permanent final snapshot emitted by STEP 5 with its scope, path, and severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: the QA judgement is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
+
+**Render the delivery index entry from 6.8 (`INDEX_ENTRY`) IN FULL** — its `name`, its `words`, and **every** item with its `what`, its `at` and its `find` string. Not a count, not a summary: the user is seeing this list for the only time before it is committed, and a `find` they can read is a `find` they can notice is wrong. Add, when 6.8 emitted them: every `LOOSE` string, labelled as loosely anchored, and how many items the five-item cap dropped.
+
+`INDEX_ENTRY=none` (a `docs` branch) prints one line saying no entry was owed. A refused write never reaches here — 6.8 stops.
+
+⛔ **On the Resume route 6.8 did not run, so there is nothing in hand to render.** Read the entry back from `docs/delivered.jsonl` on the branch — it is already committed there — and print THAT, labelled as the entry a previous run wrote. Never re-compose one: a second composition is how two lines for one delivery get written, which is the defect 2.1 exists to stop.
+
+```
+IF RENDERING THE ENTRY:
+  ⛔ DO NOT: Ask the user to approve, confirm or edit the item list
+  ⛔ DO NOT: Re-select items or rewrite a find string here
+  ✅ DO: Print it and continue — a wrong entry is corrected by appending a new line, which is what the format is for
+```
 
 **DO NOT ask for confirmation. Proceed directly to STEP 8.**
 
@@ -376,24 +786,164 @@ Show a preview with: branch type, ID, summary, file count, top HIGH priority fil
 
 ## STEP 8: Execute Merge (AUTOMATIC)
 
-**Execute immediately after STEP 7.**
+**Execute immediately after STEP 7, on the route 2.2 chose.** All three of 2.2's
+outcomes land here, including the one that asks.
+
+### 8.0 The ASK Branch [STOP]
+
+Taken when 2.2's table said **ASK** — no PR exists and either no `Publish:` line
+was ever written, or one was written naming a PR that is now gone or closed
+unmerged. **These are not the same as a decline, and that distinction is the
+whole reason the record exists.**
+
+State which of the three it is, then ask:
+
+```
+No PR is open for this branch.
+  <no record>          — the build never reached its publish step, so nobody was asked.
+  <record, PR missing> — the build recorded <VALUE> but that PR is gone.
+  <PR closed unmerged> — <PR_URL> was closed without merging.
+
+Merge locally, or open a PR first?
+```
+
+```
+IF THE USER HAS NOT ANSWERED:
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge
+  ⛔ DO NOT: Pick the local route because it is the older default
+  ✅ DO: Ask, and WAIT
+```
+
+| Answer | Go to |
+|---|---|
+| Merge locally | 8.2 |
+| Open a PR first | Say so and STOP — `{{cmd:add.pull-request}}` opens it, then re-run this command, which will route to 8.1 |
+
+### 8.1 The PR Route
+
+Taken when `PR_STATE=open`. The forge owns the merge, so its rules — required
+reviews, required checks, protected branches — are the ones that apply.
+
+```bash
+bash .codeadd/scripts/done.sh --commit-push
+```
+
+STEP 6's documents land on the branch and CI is re-triggered on the new commit.
+**That commit has not been tested yet**, which is the whole reason the next two
+items exist.
+
+```bash
+gh pr checks --watch --fail-fast
+```
+
+Then, **before reading the verdict**, compare the SHA:
+
+```bash
+gh pr view --json headRefOid --jq .headRefOid    # must equal:
+git rev-parse HEAD
+```
+
+⛔ **REFUSE a verdict from any other SHA.** A green check is evidence only for
+the commit it ran on. Without this the command reads yesterday's green run and
+calls today's untested code gated — the same class of lie as a gate that invokes
+a script that does not exist, and harder to see, because the output says pass.
+
+⛔ **Only `success` is a pass.** A `skipped`, `queued`, `neutral` or `cancelled`
+required check is the absence of evidence, and this gate treats absence exactly
+as it treats failure.
+
+**No required check configured at all → merge, and say so in the report.** A
+project with no workflows is not a project with a failing gate, and inventing a
+block there would make the PR route unusable.
+
+```bash
+gh pr merge --squash
+```
+
+Where the repository has auto-merge enabled, `gh pr merge --squash --auto` is the
+same guarantee without holding the session open.
+
+```bash
+bash .codeadd/scripts/done.sh --cleanup "$(gh pr view --json mergeCommit --jq .mergeCommit.oid)"
+```
+
+The sha is passed because a squash creates a NEW commit: the branch tip is not
+an ancestor of `main`, so nothing can derive it locally.
+
+```
+IF THE MERGE IS REFUSED:
+  ⛔ DO NOT USE: Bash for done.sh --cleanup
+  ⛔ DO NOT: Retry the merge with a different flag to get past the refusal
+  ✅ DO: Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` and STOP
+```
+
+The entry and the changelog then stay on the branch, absent from `main`, which is
+the honest state — and 2.1 routes the next run to **Resume**, which skips the
+three STEPs that already ran rather than writing their output twice.
+
+### 8.2 The Local Route
+
+Taken when 2.2 chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
+`no-gh` record, or `gh` is unavailable.
 
 ```bash
 bash .codeadd/scripts/done.sh --merge
 ```
 
-`done.sh --merge` handles everything: commit, push, merge to main, checkpoint cleanup, branch cleanup. It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag.
+`done.sh --merge` runs the whole local sequence: commit-push, the push dry-run, the squash, the push to main, then `--cleanup`. Two of its outcomes are NOT success and each has an answer:
 
-⛔ DO NOT USE Bash for git add/commit/push manually — the script owns the full sequence.
+| It reports | Meaning | Do |
+|---|---|---|
+| `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add.pull-request}}`, then re-run |
+| `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP 9 and report the branch left behind, naming the check. This is not a failed delivery |
 
-**After merge, include in the final summary:**
+On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag. It does commit — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag ownership is what `/add.build` lacks, not commits.
+
+⛔ DO NOT USE Bash for git add/commit/push manually. **`done.sh` owns every
+LOCAL git write on both routes** — the PR route calls its `--commit-push` and
+`--cleanup` modes rather than doing that work itself. `gh pr merge` is not a
+local git write: it asks the forge to merge, and touches no ref here. That is
+why it is the one call this command makes directly.
+
+**After merge, carry this into STEP 9 — do NOT print it here:**
 - Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
+- **Which evidence the gate accepted, and why** — the PR's checks on a named SHA, or the local route with the reason no PR was available.
 
-**After merge, MUST suggest next command from ecosystem map:**
-READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify and suggest the appropriate next step.
+**Resolve the next command here, state it at STEP 9:**
+READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP 9 owns it.
 
 <!-- plugin:gitnexus:graph-reindex -->
 <!-- /plugin:gitnexus:graph-reindex -->
+
+---
+
+## STEP 9: Completion
+
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the paths and the next command come after it.
+
+The merge already happened, so this is a past-tense report. Fill `What was delivered` with the
+feature that is now on the main branch, and `How it works` with what that feature does for the user,
+for a reader who never opened `about.md`. `Files touched` names what the merge carried, and the
+Deleted row is written even when it reads "none".
+
+Then, after the seven blocks, state:
+
+- The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
+- The delivery index entry that `delivered.sh` wrote, and the changelog path.
+- **The docs index rebuild from 6.7.1** — its node and edge counts, and the
+  unresolved list when 6.7.1 found one. An unresolved relation points at a
+  document that does not exist; it reaches the user here or nowhere.
+- **Which evidence the merge gate accepted, and why.** On the PR route: the
+  checks that concluded and the SHA they ran on, or that the repository had no
+  required check configured. On the local route: that no PR existed, and which
+  `PUBLISH_RECORD` value said so. A gate that quietly changes which evidence it
+  accepts is worse than a slow one.
+- **Which route 2.1 and 2.2 chose**, and on a Resume run, the STEPs it skipped
+  and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
+- The next command, from the `add-ecosystem` Main Flows section, chosen for the current branch type
+  and epic status.
 
 ---
 

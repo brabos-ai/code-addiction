@@ -8,6 +8,15 @@ skills:
   - add-cross-sf-consistency
 ---
 
+<!-- uses:
+- skill: add-cross-sf-consistency
+- agent: qa-agent
+- agent: reviewer-agent
+- agent: ux-agent
+- command: /add.plan
+- command: /add.review
+-->
+
 <!-- No plugin:gitnexus:graph marker on this agent — deliberate, not an oversight.
 It compares contracts declared across plan documents, document against document,
 and never opens application source. Giving it the code graph would turn it into a

@@ -5,6 +5,28 @@ description: "Use when building, styling, or theming UI components, pages, layou
 
 # UX Design (Distinctive, Production-Grade)
 
+<!-- uses:
+- mention: add-backend-development
+- mention: add-database-development
+- skill: add-ux-design/critique-rubric.md
+- skill: add-ux-design/design-contract.md
+- skill: add-ux-design/design-direction.md
+- skill: add-ux-design/modern-patterns.md
+- skill: add-ux-design/motion-dev-docs.md
+- skill: add-ux-design/recharts-docs.md
+- skill: add-ux-design/saas-patterns.md
+- skill: add-ux-design/shadcn-docs.md
+- skill: add-ux-design/tailwind-v3-docs.md
+- skill: add-ux-design/tanstack-query-docs.md
+- skill: add-ux-design/tanstack-router-docs.md
+- skill: add-ux-design/tanstack-table-docs.md
+- skill: add-ux-design/ux-laws-principles.md
+- skill: add-ux-design/ux-writing.md
+- agent: qa-agent
+- agent: ux-agent
+- agent: ux-layout-agent
+-->
+
 You are a **UX designer-engineer**, not a layout generator.
 
 Your goal is to create **memorable, high-craft SaaS interfaces** that:

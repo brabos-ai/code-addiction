@@ -5,6 +5,14 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 # tasks.md Checklist Schema
 
+<!-- uses:
+- skill: add-architecture-discovery
+- mention: add-feature-specification
+- mention: /add.plan
+- command: /add.plan-to-ready
+- command: /add.wiki
+-->
+
 ## Overview
 
 `tasks.md` is the **single source of progress truth** for a feature (or subfeature, in epics). `plan.md` is the frozen spec; `tasks.md` is the developer's activity breakdown that absorbs all tick state — area work, contract validation, TDD evidence, and quality gates.
@@ -19,7 +27,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 ## When NOT to Use
 
-- Generating `plan.md` (use `add-planning`) — `plan.md` carries prose contracts, not ticks
+- Generating `plan.md` (use `/add.plan`, which writes it against the `feature-plan` schema) — `plan.md` carries prose contracts, not ticks
 - Generating `about.md` (use `add-feature-specification`)
 - Tick state for hotfixes (hotfixes do not use `tasks.md`)
 
@@ -55,11 +63,15 @@ description: Schema and tick rules for tasks.md across plan/build/review.
   - Service: database
   - Files: `path/file.ts`
   - Deps: -
+  - Consumes: -
+  - Produces: `UserRepository.insert(row: NewUser): Promise<User>`
   - Verify: `npm run migrate`
 - [ ] T02 [max 10 words description]
   - Service: backend
   - Files: `path/a.ts`, `path/b.ts`
   - Deps: T01
+  - Consumes: `UserRepository.insert(row: NewUser): Promise<User>` (T01)
+  - Produces: `UsersService.create(dto: CreateUserDto): Promise<UserDto>`
   - Verify: tests pass
 
 ## Acceptance Checklist
@@ -95,10 +107,15 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 ### `## Execution`
 
-- Task line format: `- [ ] TNN <description, ≤10 words>` followed by 4 metadata sub-bullets (Service, Files, Deps, Verify).
+- Task line format: `- [ ] TNN <description, ≤10 words>` followed by 6 metadata sub-bullets in this exact order (Service, Files, Deps, Consumes, Produces, Verify).
 - Allowed services: `database`, `backend`, `frontend`, `test`, `infra`. Exactly one service per task. Maximum 3 files per task; if more, split.
 - `Deps`: comma-separated task IDs (e.g., `T01, T03`) or `-` if none.
+- `Consumes`: the **exact signature** this task calls, plus the producing task ID in parentheses — e.g. `` `UserRepository.insert(row: NewUser): Promise<User>` (T01) ``. `-` when the task calls nothing an earlier task built. Multiple entries are comma-separated, each with its own task ID.
+- `Produces`: the **exact signature** of everything a later task will call — e.g. `` `UsersService.create(dto: CreateUserDto): Promise<UserDto>` ``. `-` when nothing downstream calls into this task.
 - `Verify`: MANDATORY single line — a runnable command, curl, or browser check.
+- **Match rule:** every `Consumes` signature MUST match, **character for character**, a `Produces` signature on an **earlier** task. This is checkable by machine, not by opinion — `/add.plan`'s STEP 12 validation gate compares the strings and fails on a mismatch, printing both. A `Consumes` written as prose ("the repo insert method") fails that comparison, which is the point: a signature a machine cannot match is a signature a dispatched subagent cannot implement against.
+- **Why these two lines exist:** a subagent implementing T02 never sees T01's code. `Deps: T01` states order; only `Consumes` / `Produces` state the contract, so both tasks build against the same name instead of each inventing one.
+- **No tick rule.** `Consumes` and `Produces` are **not** progress — an interface is a contract. Validators NEVER tick these lines and never mark them `[!]`. The tick rule below applies to the task's own `- [ ]` checkbox and to nothing inside it.
 - **Tick rule:** validator ticks `[x]` when **all** files listed in `Files` appear in the diff with **non-trivial changes**. If only some files appear, or all changes are trivial, set `[!]` with reason.
 
 ### `## Acceptance Checklist`
@@ -288,7 +305,8 @@ When invoked by `add.review`, ignore any pre-existing `[x]` ticks on `## Validat
 ```
 [ ] All 6 section headings present and exact text (§6 omitted if no validation_gates block)
 [ ] Every RF/RN in §1 is referenced by ≥1 §4 item
-[ ] ## Execution tasks have all 4 metadata sub-bullets, ≤3 files each
+[ ] ## Execution tasks have all 6 metadata sub-bullets, ≤3 files each
+[ ] Every ## Execution Consumes matches a Produces on an earlier task, character for character
 [ ] All checkboxes initialized as [ ]
 [ ] No tick lives in plan.md (plan.md is frozen)
 ```

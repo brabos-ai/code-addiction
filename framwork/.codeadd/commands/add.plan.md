@@ -1,5 +1,42 @@
 # Technical Planning Orchestrator
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-cross-sf-consistency
+- skill: add-database-development
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-feature-discovery
+- skill: add-final-report
+- skill: add-frontend-development
+- skill: add-id-convention
+- skill: add-knowledge-discovery
+- skill: add-plan-review
+- skill: add-review-discipline
+- skill: add-tasks-checklist
+- skill: add-ux-design
+- skill: add-doc-schemas/references/new-feature.md
+- skill: add-ux-design/critique-rubric.md
+- agent: architecture-agent
+- agent: backend-agent
+- agent: consistency-agent
+- agent: database-agent
+- agent: discovery-agent
+- agent: frontend-agent
+- agent: plan-reviewer-agent
+- agent: qa-agent
+- agent: readback-agent
+- agent: ux-agent
+- agent: ux-flow-agent
+- agent: ux-layout-agent
+- command: /add.build
+- command: /add.done
+- command: /add.plan-to-ready
+- command: /add.review
+- command: /add.wiki
+- script: status.sh
+-->
+
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
@@ -25,7 +62,7 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 | `design_gate` | STEP 8.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 8.1, continue at 8.2 |
 | `design_validated` | STEP 8.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 8.1 temps, NEVER proceed to 8.2 — fix `design.md` and re-run the gate |
 | `coverage_validated` | STEP 11 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
-| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the one `fix-then-ok` re-dispatch | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
+| `plan_reviewed` | STEP 13 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the re-dispatch `add-review-discipline` allows | STOP, present the blockers to the user; NEVER proceed to STEP 14 Completion |
 
 ---
 
@@ -115,7 +152,7 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **Goal:** Use knowledge from recent deliveries to inform planning, avoiding reinventing the wheel.
 
-**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block.
+**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block. **`RELATED_WORK`, from the skill's GRAPH step, travels the same two routes**: each hit's `path` and typed relations go into STEP 5's matrix as documents to read, and the whole set goes into STEP 8's bootstrap block as `${RELATED_WORK}`. **It travels whether or not a wiki exists** — the GRAPH step is standalone and reads no wiki page, so a `WIKI:absent` run still carries it. A plan that proposes work already delivered nearby is the failure this closes.
 
 ---
 
@@ -304,7 +341,13 @@ Delete only AFTER `design.md` is written and the 8.1.5 gate returned `PASS`.
 
 ### Subagent Bootstrap (shared across 8.2-8.4)
 
-Every area subagent receives this bootstrap block before its specific task. `${WIKI_PAGES}` = the page paths selected in STEP 3's Consult Knowledge Base sub-step, one line each: path + one-line reason + freshness verdict. Empty if no wiki was consulted — subagents read the listed pages themselves (JIT), never inlined content:
+Every area subagent receives this bootstrap block before its specific task.
+
+`${WIKI_PAGES}` = the page paths selected in STEP 3's Consult Knowledge Base sub-step, one line each: path + one-line reason + freshness verdict. Empty if no wiki was consulted.
+
+`${RELATED_WORK}` = the GRAPH step's hits from the same sub-step, one line each: id + path + one-line reason. Empty if the graph returned nothing or is absent. **Filled independently of `${WIKI_PAGES}`** — the two come from different steps and either can be empty while the other is not.
+
+Subagents read the listed documents themselves (JIT), never inlined content:
 
 ```
 ## TASK_DOCUMENTS (read ALL before starting -- source of truth)
@@ -314,6 +357,9 @@ ${CROSS_SF_CONTEXT}
 
 ## Knowledge Base (JIT -- read only the pages relevant to your area)
 ${WIKI_PAGES}
+
+## Related delivered work (JIT -- open only what your area touches)
+${RELATED_WORK}
 
 ## MANDATORY: Load Context (FIRST STEP)
 1. Run: bash .codeadd/scripts/status.sh
@@ -519,6 +565,19 @@ Create plan.md header: `# Plan: ${FEATURE_ID}`. Append subagent outputs in order
 
 Separate each section with `---`. **NEVER rewrite or summarize subagent content. Append directly.**
 
+**Write `## Global Constraints`** immediately after `## Context`, per the `feature-plan` schema. One line per requirement that binds the WHOLE plan rather than one task — RNFs from `about.md`, stack pins and validation gates from `CLAUDE.md`, tokens from `design-system.md`. Copy each value **verbatim from its source** and cite that source in parentheses:
+
+```markdown
+## Global Constraints
+
+- List renders in under 200ms for up to 100 items (about.md RNF01)
+- Node 20.x; no `^` or `~` in package.json (CLAUDE.md stack)
+- `npm run lint` and `npm run typecheck` exit 0 (CLAUDE.md validation_gates)
+- Spacing only through `--space-*` tokens (design-system.md)
+```
+
+⛔ **Verbatim is load-bearing** — this block is handed to a downstream reviewer as its attention lens. "fast enough" cannot be reviewed; "under 200ms" can. Never paraphrase, never write a vague range, never state a constraint without its source. **With no project-wide constraints the section reads the single word `None`** — never omit the section, because an absent section is a question and `None` is an assertion.
+
 ### 10.2 Validate Completeness
 
 Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 8.1: SF-level first, feature-level fallback). Verify:
@@ -550,6 +609,7 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 
 **Rules:**
 - tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (validators parse by text)
+- Every `## Execution` task carries **6** metadata sub-bullets in order: `Service`, `Files`, `Deps`, `Consumes`, `Produces`, `Verify` — never 4. `Produces` is the **exact signature** a later task will call (`-` when nothing); `Consumes` is the **exact signature** plus the producing task ID in parentheses (`-` when nothing). Every `Consumes` MUST match a `Produces` on an **earlier** task **character for character** — STEP 12 checks this mechanically, and a `Consumes` written as prose fails there
 - plan.md FROZEN after this step (no spec checklist section)
 - Every RF/RN in Requirements Coverage MUST link to ≥1 Acceptance Checklist item
 - All checkboxes start as `[ ]` (no pre-ticking)
@@ -608,24 +668,72 @@ Delete only after plan.md complete AND coverage validated.
 
 Execute validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `feature-plan`. ⛔ DO NOT skip. Require `PASS` before proceeding.
 
+### 12.1 Interface Pair Check (`tasks.md`) — MECHANICAL
+
+⛔ This is a **string comparison, not a judgement**. Do NOT decide whether two signatures "mean the same thing" — compare the characters.
+
+1. Read `${PLAN_DIR}/tasks.md`. From `## Execution`, extract for each task `TNN`: every `Produces` value and every `Consumes` value. Strip only the surrounding backticks and the trailing `(TNN)` producer reference on a `Consumes`. A value of `-` is skipped.
+2. For each `Consumes` value on task `TNN`, find a task `TMM` with **`MM` < `NN`** whose `Produces` contains that **exact same string, character for character**.
+3. **PASS** when every `Consumes` has such a match, and the producer ID cited in the `Consumes` parentheses is that same `TMM`.
+4. **FAIL** on any miss. ⛔ STOP and print **both strings verbatim**, so the difference is visible:
+
+```
+INTERFACE MISMATCH — T04 Consumes has no matching Produces on an earlier task
+  Consumes (T04): <the exact consumed string>
+  Nearest Produces (T02): <the exact produced string, or "none">
+```
+
+Then fix `tasks.md` so the two agree character for character and re-run this check. A `Consumes` written as prose rather than a signature fails here by design: a string no machine can match is a contract no dispatched subagent can implement against. **Do NOT weaken the comparison to make a prose `Consumes` pass.**
+
 ---
 
-## STEP 13: Plan Review (GATE: plan_reviewed)
+## STEP 13: Plan Review + Comprehension Readback (GATE: plan_reviewed)
 
 Schema gate PASSED. Do not present `plan.md` or the next command as delivered yet.
 
 1. **DISPATCH** `@plan-reviewer-agent` with `path` = `plan.md`'s path and `kind: feature-plan`. **Soft-degrade:** if the engine has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict:**
-   - `ok` → proceed to STEP 14.
-   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision, **re-run STEP 12's validation gate on `plan.md`**, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to STEP 14 unless the verdict is still `blocked` or blockers remain.
-   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Ref: GATES table (`plan_reviewed`). Present the blockers to the user; do NOT proceed to STEP 14.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. The re-gate this site runs is STEP 12's
+   validation gate on `plan.md`. A standing blocker STOPS — ref: GATES table (`plan_reviewed`) — and
+   STEP 14 does not run.
 3. ⛔ Do NOT re-dispatch `@ux-flow-agent`, `@ux-layout-agent`, or `@ux-agent` to satisfy a plan-review finding — those subagents own `design.md`, not `plan.md`; a `design.md` finding is out of scope for this review.
+
+4. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
+
+   Run it ONLY after step 2's verdict resolved to proceed and every applied fix is on disk.
+
+```
+IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
+  ⛔ DO NOT: Apply the readback inline yourself
+  ✅ DO: Skip it, and say in STEP 14 that it was skipped and why
+```
+
+   There is no inline fallback because the mechanism IS the reader not holding this conversation. A readback you perform on a plan you just wrote measures nothing.
+
+5. **Compare the readback against what was actually decided in this conversation**, using the report's closing **"In one sentence"** line.
+   - **Matches** → proceed to STEP 14, citing the readback in one line.
+   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 12's validation gate on `plan.md`.
+
+```
+IF THE READBACK DIVERGES:
+  ⛔ DO NOT: Summarize the divergence away as "close enough"
+  ⛔ DO NOT: Treat it as the subagent having misread the plan
+  ✅ DO: Show what it understood beside what was decided, then STOP
+```
+
+   ⛔ The readback is NOT a gate and does NOT feed `plan_reviewed`. It returns no verdict and cannot block.
 
 ---
 
 ## STEP 14: Completion
 
-Inform user with summary:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the feature ID, the paths and the next command come after it.
+
+A plan proposes rather than executes, so block 2 is titled `What will be done` and written in the
+future tense. Fill `How it works` with the mechanism the plan settles on — what the feature will do
+once built, for a reader who never opens `plan.md`.
+
+Then, after the seven blocks, state:
 - Feature ID and plan path
 - Areas planned (UX Design/Database/Backend/Frontend)
 - Design contract: the `design.md` path 8.1 wrote — or the reason 8.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)

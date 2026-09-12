@@ -9,6 +9,7 @@ import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
 import { resolveSelected, agentDest } from './providers.js';
+import { writeMcpRegistration } from './mcp-registration.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { readManifest } from './injection-core.js';
 import { allMigrationIds } from './migrations.js';
@@ -358,6 +359,12 @@ export async function install(cwd, options = {}) {
     log.info('Toggle with: codeadd features enable|disable <name>');
   }
 
+  // MCP registration, AFTER the manifest so a failed install leaves no config
+  // entry pointing at a package that was never recorded as installed.
+  reportMcpRegistration(
+    writeMcpRegistration(targetDir, resolveSelected(selectedKeys, scope), installSource.manifestVersion.replace(/^v/, '')),
+  );
+
   const providerList = selectedKeys.length > 0 ? selectedKeys.join(', ') : 'none (core only)';
   log.success(`Providers installed: ${providerList}`);
 
@@ -368,4 +375,31 @@ export async function install(cwd, options = {}) {
       `  2. Follow the onboarding to configure your project\n\n` +
       `Docs: https://github.com/brabos-ai/code-addiction`
   );
+}
+
+/**
+ * Report what the registration writer did, in the CLI's own voice.
+ *
+ * Shared with `update` so one install and one update say the same thing about
+ * the same outcome. A provider whose config this does not write gets the exact
+ * line printed — the `postEnableHint` floor both plugins already use, and the
+ * degraded path rather than the default.
+ *
+ * @param {{results: object[], written: number, printed: number}} outcome
+ */
+export function reportMcpRegistration(outcome) {
+  if (outcome.written > 0) {
+    log.success(`Knowledge-graph MCP registered for ${outcome.written} provider(s).`);
+  }
+  for (const result of outcome.results) {
+    if (result.status === 'print') {
+      log.info(
+        `${result.provider}: add this to ${result.file ?? 'your MCP configuration'} by hand —\n  ${result.line}`,
+      );
+    } else if (result.status === 'unreadable') {
+      log.warn(
+        `${result.provider}: ${result.file} could not be read and was left untouched. Add by hand —\n  ${result.line}`,
+      );
+    }
+  }
 }

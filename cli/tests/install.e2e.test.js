@@ -131,8 +131,15 @@ describe('install command e2e', () => {
     const manifest = JSON.parse(
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
     );
-    // tdd defaults true; qa-pipeline defaults false (opt-in, registered in features.js).
-    expect(manifest.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false });
+    // tdd defaults true; qa-pipeline and docs-pruning default false (opt-in,
+    // registered in features.js). docs-pruning is off by default deliberately —
+    // it deletes the user's documentation, which is their call
+    // (plan 2026-09-07T160328-PLAN--delivery-index, F12).
+    expect(manifest.features).toEqual({
+      'tdd-pipeline': true,
+      'qa-pipeline': false,
+      'docs-pruning': false,
+    });
     // Removing the feature prompt must not disturb the plugin path:
     // plugins stay disabled (empty) by default on a fresh install.
     expect(manifest.plugins).toEqual({});

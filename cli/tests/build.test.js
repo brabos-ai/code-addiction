@@ -259,7 +259,7 @@ describe('provider-map.json agents section', () => {
     'architecture-agent',
     'system-design-agent',
     'database-agent',
-    'doc-reviewer-agent',
+    'readback-agent',
     'feature-history-agent',
     'git-history-agent',
     'qa-agent',
@@ -310,7 +310,7 @@ describe('agent source files', () => {
     'architecture-agent',
     'system-design-agent',
     'database-agent',
-    'doc-reviewer-agent',
+    'readback-agent',
     'feature-history-agent',
     'git-history-agent',
     'qa-agent',
@@ -468,16 +468,46 @@ describe('buildAgents', () => {
   const map = readMap();
   const builtDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'agents');
 
+  /**
+   * A map whose providers emit into a throwaway directory.
+   *
+   * buildResources() resolves output as `ROOT/<provider.dir>/...`, so rewriting
+   * `dir` (and `agentsDir`) is enough to redirect every write — no change to
+   * build.js needed.
+   *
+   * This matters beyond tidiness. Calling buildAgents(map) unredirected writes
+   * 88 files into the REAL framwork/.claude, .cursor, .opencode and .codex trees
+   * while thirteen other test files are reading them in parallel workers. On
+   * Windows a reader holding an open handle blocks the writer, and the suite
+   * fails with EBUSY on a different random test each run — which reads exactly
+   * like a flaky regression and is impossible to bisect. POSIX CI never sees it.
+   */
+  function redirected() {
+    const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'build-agents-')), 'out');
+    const providers = {};
+    for (const [key, p] of Object.entries(map.providers)) {
+      providers[key] = {
+        ...p,
+        dir: path.relative(path.resolve(import.meta.dirname, '..', '..'), path.join(out, key)),
+        ...(p.agentsDir
+          ? { agentsDir: path.relative(path.resolve(import.meta.dirname, '..', '..'), path.join(out, `${key}-agents`)) }
+          : {}),
+      };
+    }
+    return { ...map, providers };
+  }
+
   it('builds agent files for every agent-capable provider', () => {
     // 22 agents × 4 providers (claude, cursor, opencode, codex).
-    const count = buildAgents(map);
+    const count = buildAgents(redirected());
     expect(count).toBe(88);
   });
 
   it('fails loud when a registered agent has no source file', () => {
     // A silently missing agent degrades every named dispatch to a generic
     // subagent with no signal that it happened.
-    const bogus = { ...map, agents: { ...map.agents, 'ghost-agent': { description: 'nope' } } };
+    const base = redirected();
+    const bogus = { ...base, agents: { ...base.agents, 'ghost-agent': { description: 'nope' } } };
     expect(() => buildAgents(bogus)).toThrow(/ghost-agent/);
   });
 
@@ -499,7 +529,7 @@ describe('buildAgents', () => {
   });
 
   it('handles missing agents section gracefully', () => {
-    const mapWithoutAgents = { ...map };
+    const mapWithoutAgents = redirected();
     delete mapWithoutAgents.agents;
     const count = buildAgents(mapWithoutAgents);
     expect(count).toBe(0);

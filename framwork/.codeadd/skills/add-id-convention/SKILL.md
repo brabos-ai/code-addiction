@@ -5,6 +5,20 @@ description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creat
 
 # ID & Branch Naming Convention
 
+<!-- uses:
+- skill: add-doc-schemas
+- command: /add.build
+- command: /add.new
+- command: /add.plan
+- command: /add.review
+- script: build-setup.sh
+- script: done.sh
+- script: get-branch-metadata.sh
+- script: next-id.sh
+- script: qa-evidence.sh
+- script: status.sh
+-->
+
 ## Overview
 
 Scripts enforce this format; commands that diverge (e.g., letter-first `H0001` instead of `0001H`) produce branches that `done.sh` cannot parse.

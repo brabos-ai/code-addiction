@@ -702,7 +702,7 @@ write_epic_blindspot() {
     echo
     echo "| SF | Name | Objective | Status |"
     echo "|----|------|-----------|--------|"
-    # exactly what add.build block 14.3 has always written: a 4-column header
+    # exactly what add.build block 16.4 has always written: a 4-column header
     # with a 5-cell done row, the extra trailing cell being the checkpoint tag
     echo "| SF01 | Alpha | build alpha | done | 0038F-SF01-done |"
     echo "| SF02 | Beta | build beta | done | 0038F-SF02-done |"
@@ -741,7 +741,9 @@ write_epic_blindspot() {
 # encoded the C3 defect: /add.done STEP 4.2's rule was always conditional
 # ("IF plan.md has ## Cobertura de Requisitos"), so an absent section was a
 # pass-through. Making it `missing` — which blocks — meant NO schema-conforming
-# feature could ever reach GATES_OK=4/4. The test was wrong, not the code.
+# feature could ever reach a full GATES_OK pass. The test was wrong, not the code.
+# (The denominator is deliberately not named: this note describes a past defect
+# and would go stale again every time a gate is added.)
 @test "gate 4: plan.md with no coverage table at all is ok, not missing (the rule is conditional)" {
   DIR="docs/features/0026F-nosection"
   ABS="$TEST_REPO/$DIR"
@@ -763,7 +765,7 @@ write_epic_blindspot() {
 
 # ─── Well-formed tree + gate isolation (every key traces to a real command) ─
 
-@test "L1: a well-formed tree passes all four gates, GATES_OK=4/4" {
+@test "L1: a well-formed tree passes all five gates, GATES_OK=5/5" {
   DIR=$(build_ok_tree "0050F-wellformed")
   run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
   [ "$status" -eq 0 ]
@@ -771,7 +773,9 @@ write_epic_blindspot() {
   [[ "$output" == *"GATE_QA_BASELINE=ok"* ]]
   [[ "$output" == *"GATE_EPIC=ok"* ]]
   [[ "$output" == *"GATE_COVERAGE=ok"* ]]
-  [[ "$output" == *"GATES_OK=4/4"* ]]
+  # build_ok_tree writes no tasks.md, so gate 5 passes on its absent-tasks rule.
+  [[ "$output" == *"GATE_LEDGER=ok"* ]]
+  [[ "$output" == *"GATES_OK=5/5"* ]]
 }
 
 @test "isolation: damaging only the review gate flips GATE_REVIEW and nothing else" {
@@ -834,7 +838,8 @@ write_epic_blindspot() {
 
   run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"GATES_OK=2/4"* ]]
+  # review broken + epic broken; QA, coverage and the ledger still pass.
+  [[ "$output" == *"GATES_OK=3/5"* ]]
 }
 
 # ─── not-probed vocabulary + total failure ───────────────────────────────────
@@ -856,7 +861,10 @@ write_epic_blindspot() {
   mkdir -p "$TEST_REPO/$DIR"
   run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"GATES_OK="*"/4"* ]]
+  # The denominator, not the numerator: this test is about the exit code, and an
+  # empty dir is no longer a TOTAL failure because gate 5 passes on an absent
+  # tasks.md by design.
+  [[ "$output" == *"GATES_OK="*"/5"* ]]
 }
 
 # ─── QA_FEATURE_STATE — raw manifest passthrough only ────────────────────────
@@ -921,4 +929,129 @@ write_epic_blindspot() {
   [[ "$output" != *"ACTION=promoted"* ]]
   [[ "$output" != *"ACTION=noop"* ]]
   [ ! -d "$ABS/_tests/final" ]
+}
+
+# ─── Gate 5 — build ledger (plan 2026-09-11T014333, F2) ──────────────────────
+# The gate asks whether the build HAPPENED, which no other gate asks. Gate 1
+# asks whether the delivery was graded; gate 4 reads a table written at plan
+# time; gate 3 returns ok unconditionally on a feature with no epic.md. On a
+# simple feature nothing asked whether /add.build reached its last task.
+
+# write_exec_tasks <abs_dir> <task_id...> — a tasks.md whose ## Execution holds
+# one task line per id, in the six-sub-bullet shape add-tasks-checklist defines.
+write_exec_tasks() {
+  local dir=$1; shift
+  mkdir -p "$dir"
+  {
+    echo "# Tasks"
+    echo
+    echo "## Metadata"
+    echo
+    echo "## Requirements Coverage"
+    echo "- [x] RF01 — thing"
+    echo
+    echo "## TDD"
+    echo "- [ ] T-TEST-01 a test id that is NOT an Execution task"
+    echo
+    echo "## Execution"
+    for id in "$@"; do
+      echo "- [ ] $id does a thing"
+      echo "  - Service: backend"
+      echo "  - Files: \`src/a.ts\`"
+      echo "  - Deps: -"
+      echo "  - Consumes: -"
+      echo "  - Produces: -"
+      echo "  - Verify: tests pass"
+    done
+    echo
+    echo "## Acceptance Checklist"
+    echo "- [x] Route works (RF01)"
+    echo
+    echo "## Quality Gates"
+  } > "$dir/tasks.md"
+}
+
+# write_ledger <abs_dir> <task_id...> — a build-ledger.md carrying one
+# `complete` line per id, in the shape add-subagent-driven-development defines.
+write_ledger() {
+  local dir=$1; shift
+  mkdir -p "$dir"
+  {
+    echo "# Build ledger — feature: $(basename "$dir") — plan: plan.md"
+    echo
+    for id in "$@"; do
+      echo "$id: complete (commits a1b2c3d..b4c5d6e, review clean)"
+    done
+  } > "$dir/build-ledger.md"
+}
+
+@test "gate 5: no tasks.md in scope → GATE_LEDGER=ok, with the reason stated" {
+  DIR=$(build_ok_tree "0060F-noledgertasks")
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_LEDGER=ok"* ]]
+  # Stated, not silent: a pass whose reason is invisible reads as a gate that
+  # did not run. DEVELOPMENT-mode ledger lines are keyed by area, not task id,
+  # so there is nothing to cross-reference.
+  [[ "$output" == *"GATE_LEDGER_DETAIL="*"tasks.md"* ]]
+}
+
+@test "gate 5: tasks.md present, no ledger → GATE_LEDGER=missing, naming the path" {
+  DIR=$(build_ok_tree "0061F-noledger")
+  write_exec_tasks "$TEST_REPO/$DIR" T01 T02
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_LEDGER=missing"* ]]
+  [[ "$output" == *"build-ledger.md"* ]]
+}
+
+@test "gate 5: every Execution task carries a complete line → GATE_LEDGER=ok" {
+  DIR=$(build_ok_tree "0062F-ledgerok")
+  write_exec_tasks "$TEST_REPO/$DIR" T01 T02
+  write_ledger "$TEST_REPO/$DIR" T01 T02
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_LEDGER=ok"* ]]
+}
+
+@test "gate 5: a task with no complete line → GATE_LEDGER=broken, naming that id" {
+  DIR=$(build_ok_tree "0063F-ledgerbroken")
+  write_exec_tasks "$TEST_REPO/$DIR" T01 T02 T03
+  write_ledger "$TEST_REPO/$DIR" T01 T03
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_LEDGER=broken"* ]]
+  # The id, not just the status. A detail naming no id sends the operator to
+  # read the ledger by hand, which is the work the gate exists to do.
+  [[ "$output" == *"T02"* ]]
+}
+
+@test "gate 5: a TDD id is never mistaken for an Execution task" {
+  DIR=$(build_ok_tree "0064F-tddid")
+  write_exec_tasks "$TEST_REPO/$DIR" T01
+  write_ledger "$TEST_REPO/$DIR" T01
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  # T-TEST-01 sits in ## TDD and is not an Execution task, so its absence from
+  # the ledger must not break the gate.
+  [[ "$output" == *"GATE_LEDGER=ok"* ]]
+}
+
+@test "gate 5 scoped: SFxx given → the SF-level ledger is the one read" {
+  DIR=$(build_ok_tree "0065F-sfledger")
+  SFDIR="$TEST_REPO/$DIR/subfeatures/SF01-thing"
+  write_exec_tasks "$SFDIR" T01
+  # The feature-level ledger is complete; the SF-level one is absent. A gate
+  # reading the wrong path would pass here.
+  write_ledger "$TEST_REPO/$DIR" T01
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR" SF01
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_LEDGER=missing"* ]]
+}
+
+@test "gate 5: the summary counts five gates" {
+  DIR=$(build_ok_tree "0066F-five")
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATES_OK=5/5"* ]]
 }

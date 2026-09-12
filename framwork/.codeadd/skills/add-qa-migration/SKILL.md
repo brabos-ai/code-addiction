@@ -8,6 +8,15 @@ metadata:
 
 # QA Migration
 
+<!-- uses:
+- skill: add-subagent-driven-development
+- command: /add.build
+- command: /add.new
+- command: /add.plan
+- command: /add.qa-setup
+- command: /add.review
+-->
+
 Domain layer that turns an existing QA/test setup into the code-addiction QA pipeline by **dogfooding the framework's own feature chain** autonomously.
 
 **Core principle:** The migration is a real feature. Capture it via `add.new`, then run it through `add.plan → add.build → add.review` — no bespoke migration mechanism.

@@ -1,5 +1,21 @@
 # ADD - Intelligent Ecosystem Gateway
 
+<!-- uses:
+- skill: add-dev-environment-setup
+- skill: add-ecosystem
+- command: /add.brainstorm
+- command: /add.build
+- command: /add.diagnose
+- command: /add.done
+- command: /add.hotfix
+- command: /add.init
+- command: /add.new
+- command: /add.plan
+- command: /add.plan-to-ready
+- command: /add.review
+- script: status.sh
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
 

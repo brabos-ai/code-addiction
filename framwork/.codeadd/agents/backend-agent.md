@@ -8,6 +8,11 @@ skills:
 memory: project
 ---
 
+<!-- uses:
+- skill: add-backend-development
+- skill: add-database-development
+-->
+
 You are a backend implementation specialist. Your role is to implement server-side features following the project's architecture patterns.
 
 ## Core Responsibilities

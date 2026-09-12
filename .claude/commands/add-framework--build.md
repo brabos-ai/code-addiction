@@ -1,9 +1,26 @@
-# ADD Build - Command, Skill & Script Executor
+# ADD Build — Layer-Aware Plan Executor
+
+<!-- uses:
+- skill: add-build-ledger
+- skill: add-plan-authoring
+- skill: add-final-report
+- skill: add-review-discipline
+- agent: plan-readback-agent
+- agent: prompt-review-agent
+- skill: add-framework-product-layer
+- skill: add-framework-internal-layer
+- skill: building-commands
+- skill: add-framework-development
+- command: /add-framework--plan
+- command: /add-framework--sync
+- mention: /add-framework--done
+-->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **SKILL:** Apply `building-commands` to ALL outputs
 
-Executor that transforms plans into functional artefacts (commands, skills, scripts) within the code-addiction framework (`framwork/`).
+Executes a plan into working artefacts, in **both layers** — the distributed product layer
+(`framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`, `mcp/`) and the internal development layer
+(`.claude/`, `scripts/`, `CLAUDE.md`). Each F-block's layer tag selects which rules apply to it.
 
 ---
 
@@ -11,503 +28,583 @@ Executor that transforms plans into functional artefacts (commands, skills, scri
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Load plan/context         → READ FIRST
-STEP 2: Design approved?         → IF NO: STOP AND PRESENT
-STEP 3: Load skills              → building-commands + ecosystem-map
-STEP 4: Implement                → ONLY AFTER 1-3 (in framwork/)
-STEP 5: Test                     → ONLY AFTER implementing
-STEP 6: Document                 → ONLY AFTER tests pass
-STEP 7: Completion               → Final summary
+STEP 1: Load plan / context   → READ FIRST
+STEP 2: Design                → [STOP] present and WAIT for approval
+STEP 3: Load skills           → building-commands + add-build-ledger + the layer skills in play
+STEP 4: Readback              → cold reader on the plan, before the first F-block; never stops the flow
+STEP 5: Implement             → ONLY AFTER 1-4; ledger first, then one F-block at a time
+STEP 6: Validate              → per F-block; it is committed once its own checks pass
+STEP 7: Review                → ONE adversarial pass over the finished work, after the last F-block
+STEP 8: Document              → changelog, plan status, inventory sync
+STEP 9: Publish [STOP]        → ask before pushing the branch and opening the PR
+STEP 10: Completion           → summary + EVERY ruling made
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
 ```
-IF PLAN/CONTEXT NOT LOADED:
-  ⛔ DO NOT USE: Write in framwork/
+IF PLAN / CONTEXT NOT LOADED (STEP 1 incomplete):
+  ⛔ DO NOT USE: Write or Edit anywhere
   ⛔ DO NOT: Implement any artefact
-  ✅ DO: Load plan or ask for description
+  ✅ DO: Load the plan, or collect the direct-build spec
 
-IF DESIGN NOT APPROVED:
-  ⛔ DO NOT USE: Write to create artefacts in framwork/
-  ⛔ DO NOT USE: Edit on existing artefacts in framwork/
-  ⛔ DO NOT: Implement
-  ✅ DO: Present design and wait for approval
+IF DESIGN NOT APPROVED (STEP 2 incomplete):
+  ⛔ DO NOT USE: Write or Edit to create or change any artefact
+  ✅ DO: Present the design and WAIT
 
-IF building-commands SKILL NOT LOADED:
-  ⛔ DO NOT USE: Write on commands
-  ⛔ DO NOT: Create command structure
+IF building-commands NOT LOADED (STEP 3, when the F-block writes a .md artefact):
+  ⛔ DO NOT USE: Write on any commands/ or skills/ path
   ✅ DO: Read .claude/skills/building-commands/SKILL.md
+
+IF THE READBACK REPORT HAS NOT COME BACK (planned mode, STEP 4 incomplete):
+  ⛔ DO NOT USE: Write or Edit on any artefact
+  ⛔ DO NOT: Start the first F-block
+  ✅ DO: Dispatch @plan-readback-agent and WAIT for its restatement
+
+IF THE READBACK DIVERGES FROM THE PLAN:
+  ⛔ DO NOT: Treat it as a gate and halt the build
+  ⛔ DO NOT: Edit the plan's scope to match what the reader expected
+  ✅ DO: Record the divergence as a ruling, say which reading you built, and continue
+
+IF THE LEDGER HAS NOT BEEN READ (planned mode, STEP 5.1 incomplete):
+  ⛔ DO NOT USE: Write or Edit anywhere
+  ⛔ DO NOT: Re-execute any F-block
+  ✅ DO: Read the ledger and apply add-build-ledger's resume rule
+
+IF THE LAST F-BLOCK IS COMMITTED AND THE LEDGER CARRIES NO `REVIEW:` LINE (planned mode):
+  ⛔ DO NOT USE: Write on docs/changelog/
+  ⛔ DO NOT USE: Bash to run git push
+  ✅ DO: Run STEP 7 first — it is what STEP 8 documents, and 7.4 is how a resume can tell
+
+IF AN F-BLOCK'S VALIDATION HAS NOT PASSED:
+  ⛔ DO NOT USE: Bash to run git commit for that block
+  ⛔ DO NOT: Append its `complete` line, or start the next F-block
+  ✅ DO: Fix it, rule on it, or STOP
 ```
+
+### The Layer Boundary Is Per F-Block, Not Per Command
+
+```
+IF THE CURRENT F-BLOCK IS TAGGED [internal]:
+  ⛔ DO NOT USE: Write or Edit on framwork/.codeadd/
+  ⛔ DO NOT USE: Write or Edit on framwork/ provider directories
+  ⛔ DO NOT USE: Edit on framwork/provider-map.json
+  ✅ DO: Load add-framework-internal-layer and apply its checks
+
+IF THE CURRENT F-BLOCK IS TAGGED [product]:
+  ⛔ DO NOT USE: Write or Edit on .claude/
+  ⛔ DO NOT USE: Write or Edit on CLAUDE.md
+  ⛔ DO NOT USE: Write or Edit on framwork/ provider directories — build.js generates them
+  ✅ DO: Load add-framework-product-layer and apply its checks
+
+IF THE F-BLOCK'S LAYER TAG IS NEITHER [product] NOR [internal]:
+  ⛔ DO NOT USE: Write or Edit anywhere for that block
+  ⛔ DO NOT: Assume a default layer — [both] is a reviewer input, never an F-block tag
+  ✅ DO: Derive the tag from the block's own paths per STEP 1.1, and record a ruling
+
+IF A PATH IS NOT COVERED BY THE CURRENT F-BLOCK'S TAG:
+  ⛔ DO NOT: Write it under the current block's tag
+  ✅ DO: Open a NEW F-block carrying that path's own tag, and record a ruling naming both
+  ✅ DO: STOP instead if no reading of the plan supports reaching that path at all
+
+IF DIRECT MODE (STEP 1.2 — no plan, therefore no tag):
+  ⛔ DO NOT USE: Write or Edit outside the resolved target path and its own layer
+  ⛔ DO NOT: Touch the other layer for any reason — direct mode has no ledger to rule in
+  ✅ DO: Resolve the target path first, let it choose the layer, load that layer's skill
+```
+
+**The last block exists because the three above it are conditional on a tag.** Direct mode has none,
+so without it a direct build would run with no layer confinement at all — weaker than the two
+single-layer commands this one replaced.
+
+**`CLAUDE.md` is a root file, so no path rule above reaches it — the prohibition is explicit for that
+reason.** It belongs to an `[internal]` F-block and only where the plan says so. Its inventory block
+is generated by `node scripts/inventory.js`, so there is nothing left for a build to keep in step by
+hand; a `[product]` block that edits it is doing another layer's job on its own initiative.
+
+**`node scripts/build.js` runs on every F-block, in both layers.** It is where the three
+artefact-graph gates live, and the graph covers `.claude/` as well as `framwork/.codeadd/`. An
+internal-only F-block proves it stayed in its lane with `git status --porcelain framwork/` returning
+empty — the only file it may have touched there is the gitignored `artefact-graph.json`.
 
 ---
 
 ## Operation Mode
 
 ```
-/add-framework--build [NNNN]-PLAN--[slug]                 → Execute specific plan
-/add-framework--build [type] [name]             → Direct build (no plan, for simple artefacts)
+/add-framework--build [plan]           → Execute a plan (full basename or unique slug substring)
+/add-framework--build [type] [name]    → Direct build, no plan, for simple artefacts
 ```
 
-**Examples:**
-```
-/add-framework--build 0042-PLAN--hotfix-optimization
-/add-framework--build command add-diagnose
-/add-framework--build skill skill-creator
-/add-framework--build cli migrations
-```
+**Valid types:** `command` | `skill` | `agent` | `script` | `workflow` | `cli` | `map`
 
-**Valid types:** `command` | `skill` | `script` | `workflow` | `cli`
+`map` is `CLAUDE.md` itself. Its direct form takes the file and a description rather than a type and
+a name: `/add-framework--build CLAUDE.md "update the pipeline section"`. A bare artefact name works
+the same way for any existing artefact — the path resolves it, and the path decides the layer.
 
-> To optimize an existing artefact: use `/add-framework--build [type] [name]` → the design phase detects the artefact already exists and presents analysis vs building-commands before editing.
-
-**Source of truth paths:**
-
-| Type | Path | Built by `build.js`? |
-|------|------|----------------------|
-| Command | `framwork/.codeadd/commands/*.md` | Yes — provider files generated |
-| Skill | `framwork/.codeadd/skills/*/SKILL.md` | Yes — provider files generated |
-| Script | `framwork/.codeadd/scripts/*` | No — shipped verbatim |
-| CLI source | `cli/src/*.js` + `cli/tests/*.test.js` | No — published as the npm package |
-| Claude Command | `.claude/commands/*.md` | No — internal layer |
+To optimize an existing artefact, use the direct form — STEP 2 detects it already exists and presents
+the analysis against `building-commands` before any edit.
 
 ---
 
 ## STEP 1: Load Context (MANDATORY)
 
-### 1.0 Verify Framework Structure
+### 1.1 If a plan is specified
 
-Verify `framwork/` exists and list its provider directories.
+**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match it as a
+**substring** of the basenames of `docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*`
+and `--ledger` companions.
 
-### 1.1 If plan specified
+**All three naming forms resolve:** the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy `NNNN-PLAN--`,
+and `-SELF-PLAN--` from when planning was split by layer. There is no longer a reason to exclude the
+last one — a topic is no longer split into a paired product plan and internal plan sharing a slug.
 
-Read `docs/plans/[NNNN]-PLAN--[slug].md`.
+- **Exactly one match** → that is the plan. Read it.
+- **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
+- **No match** → list `docs/plans/` and STOP.
 
-**Extract from plan:**
-- Artefact type (command/skill/script/workflow)
-- Scope (includes/excludes)
-- Validated decisions
-- Accepted trade-offs
+**Extract:** the F-blocks with their layer tags, the execution order, the Global Constraints, the
+validated decisions, and the per-F-block validation the plan specifies.
 
-### 1.2 If direct build (no plan)
+**A plan whose F-blocks carry no layer tag is legacy.** Derive the tag from each path — `framwork/`,
+`provider-map.json`, `cli/` or `mcp/` is `[product]`, everything else `[internal]` — and record one
+ruling saying you did.
 
-**Only for SIMPLE builds.** Collect:
+⛔ **`mcp/` is at the repository root and is still `[product]`.** It ships inside the npm package,
+and shipping is what decides the layer. A path test that stops at the first three sends every
+`mcp/` block to the wrong layer skill.
 
-```markdown
-**Type:** [command|skill|script|workflow]
-**Name:** [kebab-case]
-**Purpose:** [1 line]
-**Scope:** [what it does / what it does NOT]
-**Providers:** all (default) or specific list from provider-map.json
-```
+### 1.2 If a direct build (no plan)
 
-**If complex:** Recommend `/add-framework--plan` first.
+**Only for SIMPLE work.** Collect: type, kebab-case name, one-line purpose, scope in and out,
+providers (product only), and the target path — which determines the layer. Complex work →
+recommend `/add-framework--plan` first.
+
+Direct mode has no F-blocks, so it has no ledger and no per-block cycle.
 
 ### 1.3 Worktree for Risky Builds
 
-```
-IF build involves multiple artefacts OR modifies existing commands/skills:
-  → RECOMMEND user create branch + worktree before implementing
-  → Reason: clean isolation, easy discard if something goes wrong
-  → On problems: discard worktree (no manual rollback)
-  → After implementing: /add-framework--sync to validate ecosystem consistency
-```
+A build touching multiple artefacts or rewriting existing commands is easier to discard than to roll
+back. RECOMMEND a branch and worktree before implementing.
+
+After a build that changed the product artefact set, RECOMMEND `/add-framework--sync` to regenerate
+the ecosystem map, the README and the web docs.
 
 ---
 
 ## STEP 2: Design [STOP]
 
-**⛔ GATE:** Do not implement without design approval.
+**⛔ GATE:** Do not implement without approval.
 
-### 2.1 Present Design
+**Planned mode:** summarize the plan, the execution order and each F-block's layer. Name every file
+that will be created, modified, renamed or **removed**. Name any Global Constraint that overrides this
+command's own defaults, and say so explicitly — a plan that requires an exception to a gate here needs
+the user to see it before execution starts.
 
-Present a design document showing: artefact type, path, proposed structure, planned gates (if command), and building-commands checklist.
+**Direct mode:** what changes, why, its layer, and the impact on dependents.
 
-### 2.2 Wait for Approval
-
-**STOP AND WAIT.** Only proceed after explicit approval or requested adjustments.
+**STOP AND WAIT.** Proceed only on explicit approval or requested adjustments.
 
 ---
 
 ## STEP 3: Load Skills (MANDATORY)
 
-**BEFORE implementing, READ:**
+| Load | When |
+|------|------|
+| `.claude/skills/add-build-ledger/SKILL.md` | Planned mode, ALWAYS, before the first F-block |
+| `.claude/skills/building-commands/SKILL.md` | ANY F-block writing a `.md` command, skill or agent |
+| `.claude/skills/add-framework-product-layer/SKILL.md` | The first `[product]` F-block |
+| `.claude/skills/add-framework-internal-layer/SKILL.md` | The first `[internal]` F-block |
+| `.claude/skills/add-framework-development/SKILL.md` | Artefact-type decisions, agent anatomy, `uses:` syntax |
 
-```
-.claude/skills/building-commands/SKILL.md                     # ALWAYS
-.claude/skills/add-resource-path-convention/SKILL.md          # ALWAYS (path references)
-framwork/.codeadd/skills/add-ecosystem/SKILL.md               # ALWAYS (ecosystem overview)
-framwork/.codeadd/skills/add-token-efficiency/SKILL.md        # ALWAYS
-framwork/.codeadd/skills/add-documentation-style/SKILL.md     # If generating docs
-framwork/.codeadd/skills/add-skill-creator/SKILL.md           # IF type=skill
-framwork/.codeadd/skills/                                      # Reference of existing skills
-```
+**Load a layer skill when the first F-block of that layer arrives, not before.** A single-layer plan
+never loads the other one.
 
-### building-commands Checklist (APPLY)
+### The Ruler (APPLY to every `.md` artefact)
 
-```
-[ ] Top-of-file blocking section (prohibitions BEFORE instructions)
-[ ] Uses STEP (imperative) instead of Phase (documentary)
-[ ] Sequential INTEGER numbering (1, 2, 3... NEVER 2.5, 6.5)
-[ ] Imperative language (EXECUTE, DO NOT, CONFIRM)
-[ ] Gates use TOOL-SPECIFIC prohibitions
-[ ] Condition blocks: IF [condition]: ⛔ DO NOT USE [tool]
-[ ] Mandatory explicit order
-[ ] Checklists with checkboxes (not timelines)
-[ ] No `## Spec` section (prohibited — see building-commands "No `## Spec` Section")
-[ ] Bash blocks only where non-obvious or learned from errors
-[ ] No fixed display/error message templates
-[ ] Rules: ALWAYS/NEVER markdown, no duplication of STEP order
-```
+**`building-commands` owns it.** Load the skill and tick `## The Ruler` — its eight items — against
+every `.md` command, skill or agent this block writes. The list is not copied here: a second copy
+drifts from the first, and the drift is invisible until they disagree.
 
-**⛔ FRACTIONAL NUMBERING PROHIBITED:**
-```
-❌ WRONG: STEP 6, STEP 6.5, STEP 7
-✅ RIGHT: STEP 6, STEP 7, STEP 8  (renumber the sequence)
-```
+STEP 7 dispatches `@prompt-review-agent` to tick the same ruler independently, on the finished
+delivery. You tick it as the author; that dispatch is not your own pass repeated.
 
 ---
 
-## STEP 4: Implement
+## STEP 4: Readback (BEFORE THE FIRST F-BLOCK)
 
-### 4.1 By Artefact Type
+**Planned mode only.** Direct mode has no plan, so there is nothing to read back — skip to STEP 5.
 
-#### Command (framwork/.claude/commands/*.md + framwork/.codeadd/commands/*.md)
+**LOAD `add-review-discipline`.** It owns how many times each reader runs, why neither writes a file,
+and what you owe a report you receive.
 
-**Register in `framwork/provider-map.json` (MANDATORY for new commands):**
+**DISPATCH AGENT:** `@plan-readback-agent`
+- **Capability:** read-only
+- **Input:** `path` — the plan file resolved at STEP 1.1
 
-```json
-"commands": {
-  "[name]": { "description": "[description from command frontmatter]" }
-}
+**WAIT** for the restatement. ⛔ DO NOT start an F-block without it.
+
+### 4.1 Read the Restatement Against What the Plan Decided
+
+You hold the conversation that produced this plan. The reader does not — it saw the document and
+nothing else, which is exactly the position the next session will be in.
+
+Compare its restatement, its derived build order, and every gap it marked filled against what the plan
+actually decides. **Where the two diverge, the DOCUMENT is what failed.** The reader is the instrument.
+
+### 4.2 This Is Not a Gate
+
+```
+IF THE READBACK MARKED A GAP OR READ SOMETHING THE PLAN DID NOT INTEND:
+  ⛔ DO NOT: Halt the build and send the user back to /add-framework--plan
+  ⛔ DO NOT: Widen or narrow the plan's scope to match the reader's expectation
+  ✅ DO: Record a ruling naming the divergence and which reading you built
+  ✅ DO: Continue
 ```
 
-Default providers = all (claude, codex, antigrav, cursor, opencode). Omit `providers` field to use all.
+**The stop that matters already happened at STEP 2.** A second one here would make every marked
+assumption cost a command round-trip, and a reader that answers its own questions out loud marks
+assumptions constantly — that is the format working, not a defect to escalate.
 
-**Mandatory command structure:**
-
-```markdown
-# [Command Name]
-
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-
-[1-line description]
+Where a divergence is severe enough that no reading of the plan supports one option over the others,
+that is the fourth hard stop and `add-build-ledger` owns it. Nothing else here stops.
 
 ---
 
-## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
+## STEP 5: Implement
 
-**STEPS IN ORDER:**
-[numbered list]
+### 5.1 The Ledger, First
 
-**⛔ ABSOLUTE PROHIBITIONS:**
-[condition blocks with tools]
+Planned mode only. Path, format, identity line and the resume rule are owned by `add-build-ledger`.
+Read the ledger BEFORE deciding anything, every entry, not only after a crash.
+
+### 5.2 One F-Block at a Time
+
+The cycle — record `BASE`, implement, show, validate, commit, record `HEAD` — is owned by
+`add-build-ledger`. Two things this command adds per block:
+
+1. **Read the block's layer tag first.** It selects the prohibitions above and the layer skill.
+2. **Apply the plan's own per-F-block validation** on top of the layer default, when the plan names one.
+
+**There is no per-block approval stall.** Showing what changed informs the user; it does not wait on
+them. The STEP 2 `Design [STOP]` gate is the human's decision point and nothing here replaces it.
+
+### 5.3 Rulings and the Four Hard Stops
+
+Owned by `add-build-ledger`. Rule and continue; record `Ruling: <what> — <why> — <cost if wrong>`.
+A red build is not a ruling: it reports and STOPS.
+
+### 5.4 Lifecycle Actions
+
+| Action | How |
+|--------|-----|
+| **Create** | Write at the correct source path for the layer |
+| **Modify** | Edit in place, preserving structure and business logic |
+| **Deprecate** | Notice at the top; update dependents to name the replacement |
+| **Remove** | Delete, then update every dependent **in the same F-block** |
+| **Rename** | `git mv`, then the same sweep — a rename is a remove plus a create |
+
+⛔ **A removal or rename that leaves a `uses:` declaration pointing at the old target fails
+`build.js`.** Fix every dependent inside the block that removes or renames, never in a later one.
 
 ---
 
-## STEP 1: ...
-## STEP 2: ...
+## STEP 6: Validate
 
----
-
-## Rules
-
-ALWAYS:
-- [verb] ...
-
-NEVER:
-- [verb] ...
-```
-
-**NOTE:** Create ONLY in source of truth (`framwork/.codeadd/commands/`). Provider files are generated by `build.js` via `provider-map.json`.
-
-#### Skill (framwork/.codeadd/skills/*/SKILL.md)
-
-**Register in `framwork/provider-map.json` (MANDATORY for new skills):**
-
-```json
-"skills": {
-  "[name]": { "providers": ["claude", "antigrav", "cursor", "opencode"] }
-}
-```
-
-Use `["antigrav"]` for internal skills (not exposed to end user).
-
-**Mandatory structure:**
-
-```markdown
----
-name: [kebab-case]
-description: [when to use - max 20 words]
----
-
-# [Name]
-
-## Overview
-[2-3 lines]
-
-## When to Use
-[list]
-
-## When NOT to Use
-[list]
-
-## Core [specific sections]
-
-## Validation Checklist
-[checkboxes]
-```
-
-#### Script (framwork/.codeadd/scripts/*)
-
-**Mandatory structure:**
+**Per F-block, before its commit — never once at the end.** The checks belong to the block's layer
+skill. Both layers share one non-negotiable:
 
 ```bash
-#!/bin/bash
-# ============================================
-# [SCRIPT NAME]
-# [1-line description]
-# ============================================
-# Usage: bash framwork/.codeadd/scripts/[name].sh [args]
-# Dependencies: [list]
-# ============================================
-
-# --- Detection ---
-[detect context]
-
-# --- Execution ---
-[main logic]
-
-# --- Output ---
-[structured output]
+ADD_GRAPH_WARNINGS=1 node scripts/build.js   # exit 0, no new warning — the three graph gates run here
 ```
 
-#### CLI Source (cli/src/*.js + cli/tests/*.test.js)
+⛔ **`ADD_GRAPH_WARNINGS=1` is not optional.** Without it `build.js` prints `N graph warning(s)` and
+nothing else, so a block that greps the output for a warning finds none and reports clean against
+warnings it never saw. That is not hypothetical: it shipped four warnings through thirteen blocks of
+one delivery.
 
-The npm package that installs the framework into a user's project. It is NOT an artefact of the product layer.
-
-```
-⛔ DO NOT: Register anything in framwork/provider-map.json — cli/ is not in the registry
-⛔ DO NOT: Run node scripts/build.js expecting it to emit cli/ output — it never touches cli/
-⛔ DO NOT: Apply the building-commands checklist to JavaScript — it governs .md artefacts only
-⛔ DO NOT: Bump the version in cli/package.json — that is /add-framework--release's job
-✅ DO: Edit cli/src/ and cli/tests/ directly; they ship as written
-```
-
-**Module convention:** one concern per module, owning its registry, its state helpers and its `export async function <name>(cwd, args, scope)` command entry. Follow `cli/src/features.js` and `cli/src/plugins.js`.
-
-**A new subcommand is not reachable until it is registered.** Add it to the dispatch AND the help text in `cli/src/cli.js`.
-
-**TESTS ARE MANDATORY, NOT OPTIONAL.** Every changed module needs coverage in `cli/tests/`. When the plan specifies a RED-first matrix, write each assertion and CONFIRM IT FAILS before writing the implementation — a test authored after the fix proves nothing.
-
-Run tests serially. Parallel workers race on shared fixtures and produce failures unrelated to the change:
-
-```bash
-cd cli && npx vitest run --no-file-parallelism
-```
-
-CRITICAL: a parallel `npx vitest run` reports failures that vanish serially. Never diagnose a failure without re-running serially first, and never accept a green parallel run as proof.
-
-If node output is polluted by `Debugger listening on ws://...`, an editor injected `NODE_OPTIONS`. Clear it (`unset NODE_OPTIONS VSCODE_INSPECTOR_OPTIONS`) before trusting any assertion on stdout/stderr.
-
-**Before claiming done:** compare failures against a baseline on a clean tree (`git stash`), because this suite has pre-existing flakiness. Report the delta, never the raw count.
-
-### 4.2 Validate During Implementation
-
-At each section written, verify:
+**Measure the baseline ONCE, before the first F-block**, by running the same command on the branch
+point. "No **new** warning" means no warning absent from that list — a pre-existing warning is not
+this block's to fix, and a count alone cannot tell the two apart.
 
 ```
-[ ] Imperative language? (not informative)
-[ ] Gates have tool-specific prohibitions?
-[ ] Order is mandatory? (not suggested)
-[ ] Checkboxes? (not timelines)
+IF VALIDATION DID NOT PASS:
+  ⛔ DO NOT USE: Bash to run git commit
+  ⛔ DO NOT: Append a `complete` line
+  ✅ DO: Fix it (STEP 5) or STOP — a red build is not a finding
 ```
+
+Verify every RED-first assertion the plan specified was observed failing BEFORE its implementation
+landed. An assertion that was never RED is an untested F-block regardless of its current colour.
 
 ---
 
-## STEP 5: Test
-
-### 5.1 Mental Test (MANDATORY for command | skill | script | workflow)
-
-Simulate artefact execution with 3 scenarios: happy path, gate violation, edge case.
-
-### 5.2 Validate vs building-commands (command | skill | script | workflow)
+## STEP 7: Review (ONCE, AFTER THE LAST F-BLOCK)
 
 ```
-[ ] Can the agent skip gates? (must be impossible)
-[ ] Are prohibitions specific? (tools, not generic)
-[ ] Is the order bypassable? (must not be)
+IF ANY F-BLOCK IN THE EXECUTION ORDER LACKS A `complete` LINE:
+  ⛔ DO NOT: Dispatch the auditors
+  ⛔ DO NOT USE: Write on docs/changelog/
+  ✅ DO: Return to STEP 5 — a review of half a delivery reports gaps that are unwritten work
+
+IF THE LEDGER ALREADY CARRIES A `REVIEW:` LINE FOR THIS PLAN:
+  ⛔ DO NOT: Dispatch the auditors again
+  ✅ DO: Go to STEP 8 — the pass happened, and 7.4 recorded it
 ```
 
-### 5.3 Execute the Test Suite (MANDATORY if type=cli)
+**Planned mode only.** Direct mode has no plan to audit against — skip to STEP 8.
 
-A mental test is NOT evidence for JavaScript. Run it.
+**This runs EXACTLY ONCE.** `add-review-discipline` owns that rule and the reason behind it.
 
-```
-IF type=cli AND the suite has not been run serially:
-  ⛔ DO NOT: Report the build as complete
-  ⛔ DO NOT: Update the plan status in STEP 6
-  ⛔ DO NOT: Claim a validation level passed
-  ✅ DO: Run `cd cli && npx vitest run --no-file-parallelism` and read the result
+### 7.1 Dispatch the Auditors, in Parallel
 
-IF any test fails:
-  ⛔ DO NOT: Attribute it to flakiness without evidence
-  ✅ DO: Re-run serially, then baseline against a clean tree, then report the delta
-```
+**The count is `3 + N`.** Three scopes read the delivery as a whole. The fourth is one dispatch per
+`.md` command, skill or agent in this build's diff, so `N` is that file count — and `N` is zero for a
+build that touched only scripts, tests or `CLAUDE.md`.
 
-Verify every RED-first assertion the plan specified was observed failing BEFORE its implementation landed. An assertion that was never RED is an untested F-block regardless of its current colour.
+**LIST EVERY DISPATCH BEFORE WAITING ON ANY.** The list is what the gate below reads. A hardcoded
+number would be wrong on almost every build.
 
-**If fails:** Go back to STEP 4 and fix.
+**DISPATCH ALL OF THEM AT ONCE:**
+- **Capability:** read-only throughout — Glob, Grep, Read, and Bash for `git log` / `git diff` /
+  `git show` only. No Edit, no Write. The coordinator is the only writer in this command.
+- **Complexity:** standard
+- **Input:** the plan's content, plus the one scope below
 
----
+Each finding carries a severity, on the three levels the rest of this repository uses:
 
-## STEP 6: Document
-
-### 6.1 Changelog (MANDATORY if new/major)
-
-```
-docs/changelog/YYYY-MM-DD-[action]-[what].md
-```
-
-**Actions:** `add` | `update` | `refactor` | `remove`
-
-### 6.2 Update plan (if exists)
-
-Set plan status: `draft` → `implemented`, and append a changelog row naming the commit it landed in.
-
-### 6.3 Sync the Project Anatomy counts in CLAUDE.md (MANDATORY)
-
-`CLAUDE.md` is loaded into every session. A stale count there misinforms every
-future session, not just the one that forgot to update it. The counts are
-**derived facts** — compute them, never carry a number over by hand:
-
-```bash
-ls framwork/.codeadd/commands/*.md | wc -l          # Commands
-ls framwork/.codeadd/skills/*/SKILL.md | wc -l      # Skills
-ls framwork/.codeadd/agents/*-agent.md | wc -l      # Agents
-```
-
-Those are the same globs the Project Anatomy table itself documents. Write the
-results into it. If a number already matches, leave the line untouched.
-
-**Cross-check against the registry, and report a mismatch as a defect.** Every
-count above MUST equal its entry count in `framwork/provider-map.json`. An
-artefact on disk but unregistered does not ship to any provider, and an entry
-registered without a file breaks the build — either way the disagreement is a
-real bug in what you just built, not a documentation nit. Report it; never
-paper over it by writing whichever number is larger.
-
-**The CLI test suite is a THIRD copy of these counts, and it fails the build if
-you skip it.** `cli/tests/build.test.js` hardcodes the expected agent list and
-asserts `agents x providers` as a literal number; other suites assert prose in
-the command files themselves. So a registry change has three consumers, not
-two, and only one of them is in this repo's documentation.
-
-```bash
-cd cli && npx vitest run --no-file-parallelism
-```
-
-Run it whenever this build added, removed or renamed a command, skill or
-agent, or edited a command whose text another test asserts. A test that
-encodes an OLD rule the build deliberately replaced is updated, not deleted —
-and the reason goes in a comment above it, so the next reader does not
-"restore" the bug the assertion was guarding.
-
-```
-IF THE FILESYSTEM COUNT AND provider-map.json DISAGREE:
-  ⛔ DO NOT: Write either number into CLAUDE.md
-  ⛔ DO NOT: Report the build as complete
-  ✅ DO: Name the artefacts in the difference and fix the registration
-```
-
-### 6.4 Update the rest of CLAUDE.md for what THIS build changed (MANDATORY)
-
-Counts are not the only thing that goes stale. A build that adds a feature
-flag, a plugin, a command, or changes the pipeline leaves `CLAUDE.md`
-describing a framework that no longer exists. Update it here — this command
-finishes the job, it does not hand a chore to another one.
-
-Walk the sections `CLAUDE.md` actually has and update every one this build
-touched:
-
-| If this build… | Update |
+| Severity | Use when |
 |---|---|
-| added or removed a command | the internal/product command table, and its row's purpose |
-| added or removed a skill or agent | the cross-reference table, and any "used by" column naming it |
-| changed the build pipeline or a transform | the Pipeline section and its transform table |
-| added or changed a feature flag | the Feature Injection System table |
-| added or changed a plugin, fragment or injection point | the Plugin System section |
-| added a schema, contract or sidecar | the section that documents that mechanism |
-| force-added something under `docs/` | the tracking-policy paragraph — **and say WHY**, which that paragraph explicitly requires |
+| **high** | A plan decision is unimplemented, a regression was detected, or the implementation contradicts a validated decision |
+| **medium** | Partial implementation, a missed edge case, a structural violation that will cost maintenance |
+| **low** | Cosmetic, doc nit, naming preference |
 
-**Discipline: edit what this build changed, nothing else.**
+1. **Plan conformance** — every decision and scope item in the plan against the tree. Implemented with
+   `file:line`, partial, or missing. Flag drift where the implementation contradicts a decision.
+2. **Diff completeness** — `git diff` over the branch, file by file. Every changed file accounted for
+   by a plan decision, and every plan-scope item carrying a diff.
+3. **Side effects** — cross-references now pointing at renamed or removed artefacts, callers of changed
+   behaviour, doc references to dead paths, integration points between the layers.
+4. **Quality** — **DISPATCH AGENT:** `@prompt-review-agent`, once per `.md` command, skill or agent
+   in the diff. **Input:** `node` (that artefact's id), and the mode the F-block decides:
+
+   | The artefact's F-block | Mode | Also send |
+   |---|---|---|
+   | cites a ruler item, so a plan-time audit already ticked all eight | `confirm` | `items` — the item numbers that F-block cites |
+   | cites none, so nothing has read it | `delivery` | nothing |
+
+   **The plan's F-block is what tells the two apart**, because `/add-framework--plan` names the ruler
+   item in the validation of every F-block an audit produced. No item named means no audit ran.
+
+   Everything in the diff that is NOT a `.md` artefact — a script, a test, a JSON registry — is read
+   against the conventions visible in neighbouring files, by the same generic mechanism as scopes 1
+   to 3.
 
 ```
-IF A CLAUDE.md SECTION IS UNRELATED TO WHAT YOU BUILT:
-  ⛔ DO NOT USE: Edit to reword, reorganise or "improve" it
-  ✅ DO: Leave it byte-identical
+IF AN F-BLOCK CITES A RULER ITEM:
+  ⛔ DO NOT: Send `mode: delivery` — that re-ticks all eight over work already graded
+  ⛔ DO NOT: Send `confirm` without `items` — the agent refuses it, and should
+  ✅ DO: Send `mode: confirm` with that F-block's item numbers
+
+IF A `confirm` REPORT COMES BACK fix-then-ok:
+  ⛔ DO NOT: Dispatch a third pass to check the second round of fixes
+  ✅ DO: Judge it at 7.3, apply what you accept, rule on the rest, and go to STEP 8
 ```
 
-A build that rewrites the plugin section because it added a skill produces a
-diff nobody can review. Touch the rows your own work invalidated.
+**A narrow `ok` is not a clean sweep.** `confirm` ticks the cited items plus 1 and 2, and says so on
+its artefact line. Reading it as "all eight pass" is reading a claim it did not make.
 
-Read `framwork/.codeadd/skills/add-claude-md-style/SKILL.md` before writing — it owns what belongs in
-`CLAUDE.md` versus what belongs in a skill, the format rules, and the line
-budget. A build that grows `CLAUDE.md` past its budget has traded one problem
-for another.
+```
+IF ANY DISPATCHED AUDITOR HAS NOT REPORTED:
+  ⛔ DO NOT: Proceed to 7.2
+  ⛔ DO NOT: Form a verdict on the reports you have
+  ✅ DO: WAIT-ALL against the list you wrote before dispatching — a verdict on a subset reviews a
+         subset of the delivery
 
-**Why 6.3 and 6.4 are here at all:** neither a derived number nor a table row
-describing what you just shipped ever needed its own plan-and-build cycle.
-`/add-framework--self-plan` is for *designing* the internal layer — changing
-how these commands work — not for bookkeeping the product layer's own facts.
+IF `@prompt-review-agent` CANNOT BE ADDRESSED BY NAME:
+  ⛔ DO NOT: Skip scope 4
+  ⛔ DO NOT: Tick the ruler yourself and call it the audit — you wrote the artefact
+  ✅ DO: Dispatch a generic read-only subagent carrying that agent's body as its prompt, and record
+         a ruling naming which mechanism ran
+```
+
+**The name may be unavailable in the very build that creates the agent.** An agent file is not
+addressable until the registry has it, which for a fresh file can be after the merge. That is a
+dispatch-mechanism problem, never a reason for the delivery to go unaudited.
+
+### Agent Dispatch Rules
+
+1. Read the required **Capability** and honour it — read-only, for every dispatch.
+2. Read the **Complexity** hint — `standard`, for every dispatch.
+3. Choose the mechanism in your engine that satisfies the capability, and dispatch them all at once.
+4. Pass the plan's content as part of each prompt. Scope 4 also takes its artefact's node id.
+5. Verify every report on your dispatch list is received before acting on any of them.
+
+You are the coordinator. Map the intent — capability plus complexity — to the best mechanism your
+engine offers.
+
+### 7.2 Ask the Graph What the Subagents Cannot See
+
+The auditors read the plan and the diff. Neither shows what depends on a file nobody opened.
+
+```bash
+node scripts/graph.js impact <artefact-name> --depth 1
+node scripts/graph.js history <artefact-name> --layer product|internal
+```
+
+**Depth 1, not the unbounded run.** The command layer cross-references itself densely, so the
+transitive closure saturates and a hub becomes indistinguishable from a leaf.
+
+A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
+entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
+
+### 7.3 Judge Every Finding, Then Apply
+
+**Findings are applied in this run, and each one is decided before it is applied.**
+`add-review-discipline` owns that rule: the auditors read the document and the diff, not the
+constraints you are holding, and telling a real finding from a confident wrong one is yours alone.
+
+Each accepted finding is a normal edit under its own F-block layer tag, validated and committed like
+any other. Each rejected one gets a ruling saying why.
+
+```
+IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
+  ⛔ DO NOT: Invent the decision to clear it
+  ✅ DO: Present that finding alone and WAIT
+```
+
+⛔ **Nothing here writes a review file.** No companion document, no versioned artefact, no verdict for
+a later command to find. What survives goes in the ledger, as rulings.
+
+**When two auditors disagree about the same item**, keep both and say so. A conformance auditor that
+checked execution evidence outranks a quality auditor's reading, and a regression the side-effect
+auditor flags stays high even where conformance considers it in scope.
+
+### 7.4 Record the Pass in the Ledger
+
+Append one line, and it is the only trace this STEP leaves anywhere:
+
+```
+REVIEW: complete (<n> findings, <m> applied, <k> rejected)
+```
+
+**This is what makes "exactly once" auditable.** STEP 5.1 resumes from the ledger's `complete` lines.
+Without this line a review that found nothing leaves no trace at all, so a fresh session sees the last
+F-block committed, no evidence the pass ran, and the prohibition at the top of this file tells it to
+run one — the second pass this command exists to prevent. Every rejected finding gets its own
+`Ruling:` line, per 7.3.
 
 ---
 
-## STEP 7: Completion
+## STEP 8: Document
 
-Show summary: artefact path, type, plan link, files created/updated, validations passed, usage instructions.
+After STEP 7's review pass, and not before (planned mode — direct mode has no STEP 7 to wait on). A
+changelog written ahead of that pass describes a delivery nobody audited, and any finding STEP 7
+applies would land after its own record.
 
-**Also report, always:**
+- **Changelog** for new or major work, written under `docs/changelog/`. **The filename and the
+  one-per-delivery rule are owned by `add-plan-authoring`** — read **File Naming** rather than
+  declaring a pattern here. This command normally creates the file; `/add-framework--done` STEP 4
+  finds it and edits it rather than allocating a second timestamp.
+- **Plan status** `draft` → `implemented`, with a changelog row naming the commits it landed in.
+- **The inventory block** — run `node scripts/inventory.js` and commit `CLAUDE.md` if it changed.
+  Stage that path alone, never `-A`.
 
-- the Project Anatomy counts as 6.3 computed them, and whether any changed;
-- every `CLAUDE.md` section 6.4 updated, and why. If nothing beyond the counts needed changing, say so — silence is indistinguishable from not having looked.
+**This runs ALWAYS, whether or not a PR follows.** The block is derived from `framwork/.codeadd/`, so
+its correctness is a fact about the tree, not about anyone's publishing decision. Tying it to STEP 9's
+answer would leave the branch carrying a `CLAUDE.md` that contradicts its own artefacts every time
+someone declines.
 
-Do NOT name `/add-framework--self-plan` for anything 6.3 or 6.4 already did. Name it only when this build revealed that the internal layer's own **design** needs to change — a command whose steps are now wrong, a skill that needs rewriting.
+Nothing else in `CLAUDE.md` is written here. The rest of the file changes only where a plan said so.
+
+---
+
+## STEP 9: Publish [STOP]
+
+**⛔ GATE:** A push to a shared remote is one of the four hard stops. ASK.
+
+```
+IF THE CURRENT BRANCH IS main:
+  ⛔ DO NOT USE: Bash to run git push
+  ⛔ DO NOT: Offer the question at all
+  ✅ DO: Report that the work is committed on main and needs a branch before it can be published
+
+IF THE USER HAS NOT ANSWERED:
+  ⛔ DO NOT USE: Bash to run git push
+  ⛔ DO NOT USE: Bash to run gh pr create
+  ✅ DO: Ask, and WAIT
+```
+
+**The `main` case is not theoretical.** This command never creates a branch — STEP 1.3 only
+recommends one — so a direct build can be sitting on `main`, and offering to push there would put
+work past every gate `/add-framework--done` exists to enforce.
+
+Ask whether to push the branch and open the PR. Then:
+
+| Answer | Do |
+|---|---|
+| Yes | `git push -u origin <branch>`, then `gh pr create`. Report the PR URL |
+| No | Say the work is committed locally and that `/add-framework--done` pushes and opens the PR when it runs |
+
+**Skip the question when a PR already exists for this branch** — `gh pr view` resolves one. Asking
+again on the second build of the same branch is noise. Push, and say the existing PR was updated.
+
+**STEP 8 ran first, and that order is not cosmetic.** The PR must carry the synced `CLAUDE.md`, or the
+diff a human reviews is not the diff that merges.
+
+⛔ **This step never merges.** It opens a PR and stops. The merge belongs to `/add-framework--done`,
+behind its own gates.
+
+---
+
+## STEP 10: Completion
+
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the ledger path, the commit ranges and the rulings come after it, never in front
+of it and never instead of it.
+
+Fill the blocks from this build:
+
+- **`What was delivered`** — artefacts created, modified, renamed and **removed**, with paths and the
+  layer each sits in.
+- **`Files touched`** — the same set as a table, split by verb. The Deleted row is written even when
+  it reads "none".
+- **`How it works`** — what the delivered artefacts do once they are in place, for a reader who did
+  not watch the build.
+- **`⚠️ Needs your attention`** — anything removed, any `CLAUDE.md` edit, and any change to how an
+  existing command behaves mid-flow.
+
+Then, after the seven blocks and before the metadata, report always:
+
+- **Rulings I made** — per `add-build-ledger`, which owns the exhaustiveness rule and the cost clause.
+  **`docs/plans/` is gitignored, so this report is the only way a ruling reaches a human while the
+  work is still changeable.** Zero rulings is stated, never omitted.
+- Which validations ran per layer, and their result.
+- **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
+  it did not — silence is indistinguishable from not having run it.
+- **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
+
+Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block.
 
 ---
 
 ## Rules
 
 ALWAYS:
-- Load building-commands skill before creating any command
-- Apply ALL patterns from the skill
-- Test mentally before finalizing
-- Document changes and update ecosystem map
-- Use sequential INTEGER numbering (1,2,3)
-- Renumber steps when inserting new ones
-- Register new command/skill in framwork/provider-map.json
-- Compute the CLAUDE.md Project Anatomy counts from the filesystem and cross-check them against provider-map.json
-- Run the cli/ suite after any registry change — it is the third copy of those counts
-- Update every CLAUDE.md section this build invalidated, and load add-claude-md-style before writing it
-- Create source file in framwork/.codeadd/ (source of truth)
-- Run the cli/ suite serially before reporting any result from it
-- Baseline a failing cli/ test against a clean tree before blaming the change
+- Read the F-block's layer tag before touching anything for that block
+- Treat each F-block's tag as independent — a block never inherits the previous block's layer
+- Load a layer skill on that layer's first F-block, not before
+- Run `node scripts/build.js` on every F-block, in either layer
+- Compare a block's warnings against the baseline, never against zero — a pre-existing warning is not
+  this block's to fix, and a count alone cannot tell the two apart
+- Prove an internal F-block stayed in its lane with an empty `git status --porcelain framwork/`
+- Fix every dependent of a removed or renamed artefact inside the same F-block
+- Derive a missing layer tag from the path and record a ruling saying you did
+- Sync the inventory block at STEP 8, whatever the answer at STEP 9 turns out to be
 
 NEVER:
-- Register cli/ artefacts in provider-map.json — cli/ is outside the build registry
-- Bump cli/package.json version — that belongs to /add-framework--release
-- Report a cli/ build complete on a mental test alone
-- Implement without plan/context loaded
-- Skip design approval
-- Use informative language in commands ("it's recommended")
-- Create generic gates (without tool-specific prohibitions)
-- Use Phase instead of STEP
-- Use fractional numbering (2.5, 6.5)
-- Insert steps without renumbering
-- Carry a CLAUDE.md count over by hand instead of computing it
-- Change a registry and skip the cli/ suite, which asserts the same numbers
-- Delete a test that asserts a rule this build replaced — update it and say why
-- Reword a CLAUDE.md section this build did not invalidate
-- Defer CLAUDE.md to a separate command — this build finishes it
-- Create provider files manually (use framwork/.codeadd/ + provider-map.json)
-- Add a `## Spec` section to commands or skills (prohibited)
+- Split a plan by layer into two builds — the tags carry it
+- Report an F-block complete on a mental test alone, in either layer
+- Skip the STEP 2 `Design [STOP]` gate — rulings replace the per-block stall, never that approval
+- Push or open a PR without asking, or push `main` at all
+- Merge — STEP 9 opens a PR and stops there

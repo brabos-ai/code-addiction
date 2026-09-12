@@ -1,5 +1,13 @@
 # Pull Request — Create or Update
 
+<!-- uses:
+- skill: add-commit
+- skill: add-doc-schemas
+- skill: add-final-report
+- skill: add-id-convention
+- command: /add.done
+-->
+
 > **MODEL:** Use `haiku` model
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
@@ -71,7 +79,7 @@ ALWAYS:
   ⛔ DO NOT: Force push
   ⛔ DO NOT: Rebase
   ⛔ DO NOT: Rename branches
-  ⛔ DO NOT USE: Bash for any non-existent script (no feature-pr.sh, no done.sh)
+  ⛔ DO NOT USE: Bash for done.sh — `/add.done` owns every git write it makes, and this command never calls it
 ```
 
 ---
@@ -135,9 +143,25 @@ If empty → no PR exists → flow `CREATE`. If state is `OPEN` → flow `UPDATE
 
 **⛔ Skip this STEP entirely if `BRANCH_TYPE` ≠ `feature`.**
 
-### 3.1 Idempotency guard
+### 3.1 Generate or complement
 
-Check if `${FEATURE_DIR}/changelog.md` already exists. If yes → skip generation, proceed to STEP 4.
+Check if `${FEATURE_DIR}/changelog.md` already exists.
+
+- **Absent** → generate it: 3.2, then 3.3.
+- **Present** → **complement it in place**, per the `changelog` schema's table,
+  and skip 3.2 only. The id it already carries IS the id.
+
+```
+IF THE CHANGELOG ALREADY EXISTS:
+  ⛔ DO NOT: Skip the narrative — a skip leaves the state the first writer produced
+  ⛔ DO NOT USE: Bash for status.sh next-id CHG
+  ⛔ DO NOT: Rewrite id:, created:, type: or related:
+  ✅ DO: Apply the schema's complement table and bump updated:
+```
+
+⛔ **This command is usually the FIRST writer**, because it runs while the build
+is still going. Everything delivered after the PR opens reaches the changelog
+through `{{cmd:add.done}}` 6.3, which complements the same file.
 
 ### 3.2 Allocate changelog ID
 
@@ -149,7 +173,7 @@ Captures `CHG[NNNN]`. Used in frontmatter `id:`. Frontmatter `related:` referenc
 
 ### 3.3 Execute schema
 
-EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`. Write to `${FEATURE_DIR}/changelog.md`.
+EXECUTE schema `changelog` from `{{skill:add-doc-schemas/SKILL.md}}`. **The schema owns the path**, the one-per-delivery rule and the complement table — read its Location rule rather than repeating a path here.
 
 Source material:
 - `git log main..HEAD --oneline` — commits on this branch.
@@ -309,16 +333,25 @@ EOF
 
 ## STEP 8: Completion Summary
 
-Report:
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the field table below comes after it, whole.
+
+This command opens or updates a PR; it writes no feature code. So `What was delivered` is the PR and
+the changelog, `How it works` is what a reviewer on GitHub will now see, and `⚠️ Needs your
+attention` carries the delivery index entry that is still owed.
+
+Then, after the seven blocks, report:
 
 | Field | Value |
 |-------|-------|
 | Branch | `$BRANCH` |
 | PR | URL (mark `(updated)` if STEP 7B was used) |
-| Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(skipped — already exists)` or `(skipped — not feature branch)` |
+| Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
 | Commits pushed | count from `git log @{push}..HEAD` before push, or 0 if clean |
 
 Post-merge guidance: "After PR is merged on GitHub, run `/add.done` for branch cleanup."
+
+State that a delivery index entry is still owed and that `{{cmd:add.done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
 
 ---
 
@@ -327,7 +360,7 @@ Post-merge guidance: "After PR is merged on GitHub, run `/add.done` for branch c
 ALWAYS:
 - Verify gh CLI installed AND authenticated before any other action
 - Generate the feature changelog on feature branches before opening the PR
-- Apply idempotency: skip changelog if file already exists; update existing PR rather than failing
+- Apply the `changelog` schema's one-per-delivery rule: complement an existing changelog, never skip it and never mint a second `CHG[NNNN]`; update existing PR rather than failing
 - Use `{{skill:add-commit/SKILL.md}}` for any commit message this command writes
 - Append updates to existing PR bodies as dated sections — preserve prior content
 - Run `git status --short` before staging — abort if sensitive files appear
@@ -339,9 +372,8 @@ NEVER:
 - Amend, force-push, or rebase
 - Rename branches
 - Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
-- Reference scripts that do not exist in this repo (no `feature-pr.sh`)
 - Update `CHANGELOG.md` at the repo root (that is `/add.release`'s responsibility)
-- Generate the feature changelog twice — STEP 3.1 idempotency guard prevents this; `/add.done` mirrors the same guard
+- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — 3.1 complements it instead, and `{{cmd:add.done}}` 6.3 complements the same file later
 
 ---
 

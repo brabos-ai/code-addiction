@@ -5,6 +5,10 @@ description: Use when bash/git/jq/gh CLI are missing or VS Code terminal is not 
 
 # Dev Environment Setup
 
+<!-- uses:
+- script: status.sh
+-->
+
 ## Overview
 
 Detect OS → diagnose silently → confirm → install → configure VS Code.

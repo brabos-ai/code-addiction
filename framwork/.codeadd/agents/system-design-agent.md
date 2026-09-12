@@ -7,6 +7,10 @@ skills:
 memory: project
 ---
 
+<!-- uses:
+- skill: add-architecture-discovery
+-->
+
 You are a system design specialist. Your role is to propose scalable solutions, design data flows, and make infrastructure-level technical decisions.
 
 ## Core Responsibilities

@@ -11,6 +11,7 @@ import { config } from './config.js';
 import { features } from './features.js';
 import { plugins } from './plugins.js';
 import { migrate } from './migrations.js';
+import { mcp } from './mcp.js';
 import { promptUninstallScope } from './prompt.js';
 
 export function getArgValue(argv, flag) {
@@ -97,6 +98,9 @@ Commands:
   plugins list                 List external-tool plugins and their state
   plugins enable <name>        Enable a plugin (validate tool, inject + activate skills)
   plugins disable <name>       Disable a plugin (remove injections + skills)
+  mcp --corpus=<name>          Serve the knowledge graph over MCP stdio (docs | artefacts)
+  mcp --corpus=<name> --action=<verb>
+                               Answer one verb and exit, for a provider with no MCP configured
   migrate                      Apply pending one-off repairs to this install
   migrate --list               List applied and pending migrations
   migrate --dry-run            Show what migrate would do, write nothing
@@ -122,6 +126,8 @@ Examples:
   npx codeadd validate --repair
   npx codeadd config show
   npx codeadd config show --verbose
+  npx codeadd mcp --corpus=docs
+  npx codeadd mcp --corpus=docs --action=search --args='{"terms":"auth"}'
 `;
 
 /**
@@ -131,6 +137,17 @@ Examples:
 export async function runCli(argv) {
   const subcommand = argv[0];
   const args = argv.slice(1);
+
+  // ⛔ ROUTED BEFORE EVERYTHING ELSE, AND OUTSIDE THE try/catch BELOW.
+  // The graph server speaks JSON-RPC on stdout and nothing else may appear
+  // there. `resolveTarget`, `@clack/prompts` and the catch block's `outro()`
+  // all write to stdout, so one shared code path would corrupt every session.
+  if (subcommand === 'mcp') {
+    const code = await mcp(args);
+    if (code) process.exit(code);
+    return;
+  }
+
   const cwd = process.cwd();
   const { targetDir, scope, global } = resolveTarget(cwd, args);
 

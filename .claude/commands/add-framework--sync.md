@@ -1,5 +1,14 @@
 # ADD Sync - Ecosystem Documentation Updater
 
+<!-- uses:
+- agent: readme-analyzer
+- agent: svg-analyzer
+- agent: web-docs-analyzer
+- agent: web-index-analyzer
+- skill: add-final-report
+- command: /add-framework--release
+-->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Computes diff since last release, regenerates the ecosystem map, dispatches 4 analyzer agents in parallel, and applies all documentation updates as a single writer. Leaves changes uncommitted for human review.
@@ -131,6 +140,35 @@ If ALL dimensions are empty (no changes since last release) → inform user, STO
 
 ## STEP 2: Regenerate Ecosystem Map
 
+**The relationship columns come from the graph, not from a re-scan.**
+
+```bash
+node scripts/build.js                 # ensure the graph is current
+node scripts/graph.js stats --json    # counts by kind, edge type, and the hubs
+node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / "used by"
+```
+
+`neighbors` returns inbound and outbound edges with their types, which is exactly
+the "skills loaded" and "used by" columns below. It is derived from each
+artefact's own declaration and validated by the build, so a row written from it
+cannot claim a relationship that does not exist.
+
+Three rules when transcribing:
+
+- **A `MENTIONS` edge is not a dependency.** It records a doc naming another
+  while pointing away from it. It belongs in neither column.
+- **Do not re-derive a count by hand** to cross-check the graph. If they
+  disagree, the graph is right and the scan is what drifted — that is the whole
+  reason it exists.
+- **When you rewrite this skill, every row in its own `uses:` block stays
+  `mention:`.** This file CATALOGUES the ecosystem; it consumes none of it.
+  Declaring its rows as dependencies is not a cosmetic error: eight commands
+  load this skill, so every artefact listed here inherits ~82 transitive
+  dependants and `graph.js impact` degrades into a constant — `add-stripe`,
+  which nothing uses, reported 84 before this was fixed. If a regeneration
+  turns those rows back into `skill:`/`agent:`/`command:`/`script:`, it has
+  silently destroyed the query the graph exists for.
+
 Regenerate `framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md` from STEP 1.3 scan data.
 
 Use the EXACT same format as the existing map:
@@ -213,7 +251,8 @@ Each agent is independent. Dispatch ALL simultaneously.
 
 IF ANY MISSING:
   ⛔ DO NOT USE: Edit on any documentation file
-  ✅ DO: Wait or re-dispatch the missing agent
+  ✅ DO: Wait for it, or send the missing agent again — this is a retry on a result that never
+     arrived, not a second opinion on one that did
 
 ---
 
@@ -259,7 +298,14 @@ For each edit (in bottom-up order):
 
 ## STEP 6: Final Report + Completion
 
-Show report (omit empty sections):
+**LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
+the report FIRST — the sync table below comes after it, whole, as this command's own artefact.
+
+Fill `What was delivered` with the documentation that now matches the code, `How it works` with what
+the regenerated map and diagrams now say, and `⚠️ Needs your attention` with the manual items and the
+inconsistencies, because nothing else in this run fixes them.
+
+Then print the sync report (omit empty sections):
 
 ```
 ## Sync Report — LAST_TAG..HEAD

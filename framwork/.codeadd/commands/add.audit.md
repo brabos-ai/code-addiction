@@ -1,5 +1,15 @@
 # Tech Audit - Complete Technical Project Audit
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-ecosystem
+- skill: add-final-report
+- skill: add-health-check
+- skill: add-investigation
+- command: /add.new
+- script: status.sh
+-->
+
 > **DOCUMENTATION STYLE:** Follow standards defined in skill `add-doc-schemas`
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
@@ -211,7 +221,16 @@ Execute the validation gate from {{skill:add-doc-schemas/SKILL.md}} for schema `
 
 ## STEP 9: Completion - Inform User
 
-Present overall scorecard, issue counts by severity, top 3 priorities, audit-report path, and suggested next steps (review report, create features for critical issues via `/add.new`, re-run audit after fixes).
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the scorecard and the report path come after it, whole.
+
+This command changes no application code, so `Files touched` names the audit documents STEP 7 wrote
+and nothing else — never "none", because those files are real. `What was delivered` is the finding
+set. Fill `How it works` with what the audit actually measured
+and how a score was reached. `⚠️ Needs your attention` carries the critical findings, because
+nothing in this run fixes them.
+
+Then, after the seven blocks, present the overall scorecard, issue counts by severity, top 3 priorities, audit-report path, and suggested next steps (review report, create features for critical issues via `/add.new`, re-run audit after fixes).
 
 **Next Steps:** Reference skill `add-ecosystem` Main Flows for context-aware next command suggestion.
 

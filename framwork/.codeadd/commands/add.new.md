@@ -1,7 +1,26 @@
 # Feature Discovery & Documentation
 
+<!-- uses:
+- skill: add-doc-schemas
+- skill: add-final-report
+- skill: add-id-convention
+- skill: add-knowledge-discovery
+- skill: add-plan-review
+- skill: add-review-discipline
+- skill: add-doc-schemas/references/new-feature.md
+- agent: plan-reviewer-agent
+- agent: readback-agent
+- command: /add.build
+- command: /add.plan
+- command: /add.wiki
+- script: init.sh
+- script: status.sh
+-->
+
 > **REF:** `CLAUDE.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
+> **The closing report at `## Completion` is exempt** — it reports in the shape `add-final-report`
+> owns, and a 20-word stub is not that shape.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
@@ -85,7 +104,18 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
 2. **Agent: Codebase Discovery**
    - **Input:** past-features.md + skeleton about.md + feature request + selected wiki pages (if any, see Knowledge Base Check below)
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
-   - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}`. This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
+   - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its **INDEX step, its GRAPH step and then its wiki steps**, in that order.
+     - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`.
+     - **Then the wiki.** This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
+
+```
+IF THE WIKI IS ABSENT:
+  ⛔ DO NOT: Skip the INDEX and GRAPH steps along with it
+  ✅ DO: Run both anyway — neither reads the wiki, and RELATED_WORK is what
+         STEP 6.1 writes its relations from
+```
+
+   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
 <!-- plugin:gitnexus:graph-map -->
@@ -251,6 +281,31 @@ Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided 
 - **Technique:** Read skeleton → Preserve frontmatter → Complement with validated decisions → Bump `updated:` timestamp
 - Write extractive only (requirements, not implementation)
 
+### 6.1 Write `## Relations` and `tags:` from what discovery already found
+
+The relationships are already in hand. `past-features.md` carries a **Related Features** table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, and `discovery.md` names the prerequisites. **Sub-step 6.1 routes them into the document; 6.1 itself discovers nothing new and asks nothing.** The Codebase Analysis dispatch later in this STEP still runs and still analyses — this sentence bounds 6.1, not the whole of STEP 6.
+
+Write per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`:
+
+| Source already in hand | Becomes |
+|---|---|
+| A prerequisite feature `discovery.md` names — this feature cannot ship until it has | `- depends_on [[<id>]] — <the one-line reason discovery gave>` |
+| The parent epic, when this `about.md` is a subfeature written in STEP 5 | `- part_of [[<parent id>]]` |
+| A related feature from `past-features.md` or the delivery index that is neither of the above | leave it out. `related:` already carries it, and an untyped edge is the migration's job, not this command's |
+
+Write `tags:` from the domains the questionnaire settled — bare lowercase words, the same vocabulary `/add.wiki` uses for a reference page's `area`.
+
+```
+IF NO PREREQUISITE AND NO PARENT EPIC WAS FOUND:
+  ⛔ DO NOT USE: AskUserQuestion to ask which feature this one depends on
+  ⛔ DO NOT: Invent a `depends_on` from the questionnaire conversation
+  ✅ DO: Write `## Relations` carrying the single word `None`
+```
+
+⛔ **`add-doc-schemas` owns the rule that nobody is asked**, in its Relations & Observations section. What is specific here is the provenance: the queries ran in STEP 3, the user answered every question this command needed in STEP 4, and 6.1 writes what those queries returned.
+
+Write `## Observations` from the same material: the measurements and constraints the discovery surfaced that no other section of `about.md` holds. Empty is valid.
+
 **Dispatch Agent: Codebase Analysis**
 - **Input:** Feature name, about.md path
 - **Output:** Write `docs/features/${FEATURE_ID}/discovery.md` (prerequisites, related files, existing patterns)
@@ -265,15 +320,37 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 ---
 
-## STEP 8: Plan Review (fresh-reader, max one re-dispatch)
+## STEP 8: Plan Review + Comprehension Readback (fresh-reader)
 
 Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
 1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md's path and `kind: feature-about`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict:**
-   - `ok` → proceed to Completion.
-   - `fix-then-ok` → apply only the Required fixes that do not invent a user decision (read → preserve → complement), re-run STEP 7's validation gate, then re-dispatch `@plan-reviewer-agent` **once**. After that single re-dispatch, proceed to Completion unless the verdict is still `blocked` or blockers remain — leftover attention never blocks.
-   - `blocked`, or blockers still standing after the one re-dispatch → STOP. Present the blockers to the user; do NOT mark `about.md` delivered.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site's divergence behaviour is the
+   first row of its table: apply, re-gate, then present and STOP. Do NOT mark `about.md` delivered
+   while a blocker stands.
+
+3. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: feature`. Run it ONLY after the verdict above resolved to proceed and every applied fix is on disk — a readback of text about to be edited reports a version that will never exist.
+
+```
+IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
+  ⛔ DO NOT: Apply the readback inline yourself
+  ✅ DO: Skip it, and say in Completion that it was skipped and why
+```
+
+   The reason there is no inline fallback here — unlike the plan review above — is that the mechanism IS the reader not holding this conversation. A readback you perform on docs you just wrote measures nothing.
+
+4. **Compare the readback against what was actually decided in this conversation.** Compare against the report's closing **"In one sentence"** line, which is short and hard to soften.
+   - **Matches** → proceed to Completion, citing the readback in one line.
+   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 7's validation gate on `about.md`.
+
+```
+IF THE READBACK DIVERGES:
+  ⛔ DO NOT: Summarize the divergence away as "close enough"
+  ⛔ DO NOT: Treat it as the subagent having misread the doc
+  ✅ DO: Show what it understood beside what was decided, then STOP
+```
+
+   ⛔ The readback is NOT a gate. It returns no verdict and cannot block. The STOP is to hand the user a decision, never a mechanical failure.
 
 ---
 
@@ -294,7 +371,14 @@ Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as de
 
 ## Completion
 
-Summarize created artifacts. Suggest next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
+**LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the artefact paths and the next command come after it.
+
+This command documents a feature rather than building it, so block 2 is titled `What will be done`
+and written in the future tense. Fill `How it works` with what the documented feature will do for the
+user, not with what the document contains.
+
+Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
 
 ---
 
@@ -318,5 +402,4 @@ Summarize created artifacts. Suggest next command based on discovery: `/add.plan
 - Exclude layers that make feature unusable
 - Document incomplete questionnaire
 - Skip the STEP 8 plan review after the gate passes
-- Exceed one re-dispatch of `@plan-reviewer-agent` per invocation
 - Let the reviewer see this conversation (fresh context only)
