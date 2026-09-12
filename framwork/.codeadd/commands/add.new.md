@@ -270,6 +270,31 @@ Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided 
 - **Technique:** Read skeleton → Preserve frontmatter → Complement with validated decisions → Bump `updated:` timestamp
 - Write extractive only (requirements, not implementation)
 
+### 6.1 Write `## Relations` and `tags:` from what discovery already found
+
+The relationships are already in hand. `past-features.md` carries a **Related Features** table with ids, the delivery index results from the Knowledge Base Check carry more, and `discovery.md` names the prerequisites. **This step routes them into the document; it discovers nothing new and asks nothing.**
+
+Write per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`:
+
+| Source already in hand | Becomes |
+|---|---|
+| A prerequisite feature `discovery.md` names — this feature cannot ship until it has | `- depends_on [[<id>]] — <the one-line reason discovery gave>` |
+| The parent epic, when this `about.md` is a subfeature written in STEP 5 | `- part_of [[<parent id>]]` |
+| A related feature from `past-features.md` or the delivery index that is neither of the above | leave it out. `related:` already carries it, and an untyped edge is the migration's job, not this command's |
+
+Write `tags:` from the domains the questionnaire settled — bare lowercase words, the same vocabulary `/add.wiki` uses for a reference page's `area`.
+
+```
+IF NO PREREQUISITE AND NO PARENT EPIC WAS FOUND:
+  ⛔ DO NOT USE: AskUserQuestion to ask which feature this one depends on
+  ⛔ DO NOT: Invent a `depends_on` from the questionnaire conversation
+  ✅ DO: Write `## Relations` carrying the single word `None`
+```
+
+⛔ **Nobody is asked which work item this depends on.** A relationship born from human memory is one nobody can reproduce, and the user already answered every question this command needed in STEP 4. The command ran the queries itself in STEP 3 and writes what those queries returned.
+
+Write `## Observations` from the same material: the measurements and constraints the discovery surfaced that no other section of `about.md` holds. Empty is valid.
+
 **Dispatch Agent: Codebase Analysis**
 - **Input:** Feature name, about.md path
 - **Output:** Write `docs/features/${FEATURE_ID}/discovery.md` (prerequisites, related files, existing patterns)

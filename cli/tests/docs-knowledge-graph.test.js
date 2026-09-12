@@ -26,6 +26,9 @@ const NEW_FEATURE = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'new
 const HISTORY = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'history.md'));
 const FIX = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
 
+const COMMANDS = path.join(CODEADD, 'commands');
+const ADD_NEW = read(path.join(COMMANDS, 'add.new.md'));
+
 /**
  * The closed vocabulary, per design decision 10. `links_to` is the honest label
  * for an edge the migration recovered without knowing its intent; the other
@@ -130,5 +133,26 @@ describe('F2 — the hotfix-related schema retires into the about.md', () => {
     expect(about).toContain('Observations');
     expect(about).toMatch(/tags:/);
     expect(about).toContain('caused_by');
+  });
+});
+
+describe('F3 — /add.new writes its relations from its own discovery result', () => {
+  it('L4.8 names the section, the source and the vocabulary it may use', () => {
+    const step = ADD_NEW.slice(ADD_NEW.indexOf('**Write about.md:**'), ADD_NEW.indexOf('## STEP 7'));
+    expect(step).toContain('## Relations');
+    expect(step).toContain('tags:');
+    expect(step).toContain('depends_on');
+    expect(step).toContain('part_of');
+    // The source is the discovery output the command already holds.
+    expect(step).toMatch(/past-features\.md|delivery index/);
+  });
+
+  it('L4.8 forbids putting the question to the user', () => {
+    const step = ADD_NEW.slice(ADD_NEW.indexOf('**Write about.md:**'), ADD_NEW.indexOf('## STEP 7'));
+    expect(step).toMatch(/⛔ DO NOT[\s\S]{0,200}?ask/i);
+  });
+
+  it('an epic subfeature about.md is part_of its parent', () => {
+    expect(ADD_NEW).toMatch(/part_of \[\[/);
   });
 });
