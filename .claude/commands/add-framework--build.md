@@ -19,7 +19,7 @@
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 
 Executes a plan into working artefacts, in **both layers** — the distributed product layer
-(`framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`) and the internal development layer
+(`framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`, `mcp/`) and the internal development layer
 (`.claude/`, `scripts/`, `CLAUDE.md`). Each F-block's layer tag selects which rules apply to it.
 
 ---
@@ -167,8 +167,12 @@ last one — a topic is no longer split into a paired product plan and internal 
 validated decisions, and the per-F-block validation the plan specifies.
 
 **A plan whose F-blocks carry no layer tag is legacy.** Derive the tag from each path — `framwork/`,
-`provider-map.json` or `cli/` is `[product]`, everything else `[internal]` — and record one ruling
-saying you did.
+`provider-map.json`, `cli/` or `mcp/` is `[product]`, everything else `[internal]` — and record one
+ruling saying you did.
+
+⛔ **`mcp/` is at the repository root and is still `[product]`.** It ships inside the npm package,
+and shipping is what decides the layer. A path test that stops at the first three sends every
+`mcp/` block to the wrong layer skill.
 
 ### 1.2 If a direct build (no plan)
 
