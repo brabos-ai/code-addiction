@@ -8,6 +8,7 @@
 - skill: add-id-convention
 - skill: add-wiki-maintenance
 - command: /add.build
+- mention: /add.new
 - command: /add.pull-request
 - command: /add.hotfix
 - command: /add.plan-to-ready
@@ -32,7 +33,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 STEP 1: done.sh                 -> RUN FIRST (collect context)
 STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger gates (feature only)
+STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), then the knowledge record (feature AND hotfix)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
 STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
@@ -178,6 +179,7 @@ changes is that four STEPs already ran and must not run again:
 | 5 | Validate and promote QA evidence | **Skipped.** The promotion already ran |
 | 6.3 | Generate the changelog | **Skipped.** Committed by STEP 6's commit |
 | 6.7 | Update the wiki | **Skipped.** Same commit |
+| 6.7.1 | Rebuild the docs index | **Runs.** The index is a gitignored cache of the user's own markdown, not something a commit carries — a skipped rebuild leaves it describing the tree before this delivery |
 | 6.8 | Write the index entry | **Skipped.** The entry is on the branch |
 | 8 | Merge | The only work left |
 
@@ -405,6 +407,44 @@ same rule 4.2 applies to an absent coverage table.
 
 ---
 
+### 4.4: Validate the Knowledge Record (FEATURE AND HOTFIX BRANCHES)
+
+**GATE CHECK: the delivery's `about.md` carries a non-empty `## TL;DR` AND at least one `## Relations` line.**
+
+Read `${DIR}/about.md` and check both halves:
+
+| Half | Passes when | Fails when |
+|---|---|---|
+| TL;DR | `## TL;DR` exists and the text under it is not empty | the heading is absent, or present with nothing under it |
+| Relations | `## Relations` carries at least one `- <type> [[<id>]]` line, or the single word `None` | the section is absent, or present with nothing under it |
+
+```
+IF EITHER HALF FAILS:
+  ⛔ DO NOT USE: Write to create changelog.md
+  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+  ⛔ DO NOT: Write the TL;DR or the relation yourself to clear the gate
+  ✅ DO: Name which half failed, show the document path, and report BLOCKED
+```
+
+⛔ **AN EMPTY `## TL;DR` HEADING SATISFIES NOTHING.** The TL;DR is what a graph
+search returns so an agent can discard this work item without opening it, and a
+heading with nothing under it rejects nothing. A `## Relations` section that
+exists and is empty fails the same way — `None` is an assertion that the work
+connects to nothing, an empty section is a question.
+
+**Why this gate and not a reminder.** The framework's own graph does not rot
+because the build refuses to pass. This is that, for a user's documents: without
+it the format decays into an optional section nobody fills, which is exactly
+what happened to the relationship template this format replaced.
+
+**The user writes the missing half, not this command.** `/add.new` and
+`/add.hotfix` write `## Relations` from their own discovery results; a delivery
+that reached close-out without one went around them, and inventing the content
+here would record a relationship nobody can reproduce.
+
+---
+
 ## STEP 5: Validate and Promote Reviewed QA Evidence
 
 **SKIP this STEP entirely if `BRANCH_TYPE` is not `feature`.** Set `QA_PROMOTION_STATUS=skipped` and continue to STEP 6.
@@ -597,6 +637,40 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 **NEVER block the close flow on wiki failures.** If the update fails or is inconclusive, note it in the final summary and continue to STEP 7.
 
 ⛔ DO NOT USE: Bash for git operations in this substep — wiki edits are plain file edits; `done.sh --merge` owns the commit.
+
+---
+
+### 6.7.1 Rebuild the Docs Knowledge Index (best-effort, non-blocking)
+
+The changelog, the `about.md` edits and the wiki pages have all landed. Rebuild
+the index so the next command's discovery step sees this delivery:
+
+```bash
+npx codeadd mcp --corpus=docs --action=reindex
+```
+
+It prints a JSON report carrying the node and edge counts, the skipped count and
+the **number** of unresolved ids.
+
+**When that number is not zero, ask for the list — `reindex` reports a count and
+only `stats` returns the ids:**
+
+```bash
+npx codeadd mcp --corpus=docs --action=stats
+```
+
+Its `unresolved` array is `{from, to}` pairs: a relation naming a document that
+does not exist. Carry the list to STEP 9 and show it there. They are the user's
+to fix, and this command never edits a relation to make one go away.
+
+⛔ **NON-BLOCKING, like the wiki update above it.** A project whose `npx` cannot
+reach the package offline still merges; the index is a rebuildable cache of the
+user's own markdown and the next run regenerates it. Never block a merge on a
+cache.
+
+**One-shot, not the MCP server.** The verbs answer from the CLI with no MCP
+configured, which is what this step needs: one answer, no client, no JSON-RPC to
+a subprocess spawned for a single call.
 
 ---
 
@@ -858,6 +932,9 @@ Then, after the seven blocks, state:
 
 - The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
 - The delivery index entry that `delivered.sh` wrote, and the changelog path.
+- **The docs index rebuild from 6.7.1** — its node and edge counts, and the
+  unresolved list when 6.7.1 found one. An unresolved relation points at a
+  document that does not exist; it reaches the user here or nowhere.
 - **Which evidence the merge gate accepted, and why.** On the PR route: the
   checks that concluded and the SHA they ran on, or that the repository had no
   required check configured. On the local route: that no PR existed, and which

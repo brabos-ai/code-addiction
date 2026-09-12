@@ -81,6 +81,7 @@ Parse output: OWNER (name + level), BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGE
 Then load:
 - **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `docs/features/{FEAT_ID}/changelog.md` for context
 - **PRIOR WORK — ranked, not swept:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its INDEX step against the brainstorm topic. It returns entries ordered `live` → `changed` → `superseded` → `gone`. Then **deep-read `about.md` for the matched entries only** — the index says *whether* something shipped and never *how* it works, so the business rules and integration points still have to be read. Ranked-then-deep-read, on a handful of features instead of the whole directory.
+- **RELATED WORK — what those entries connect to:** run the skill's GRAPH step over the same topic. **`RELATED_WORK` destination:** the `## Candidate Directions` section, where a direction that repeats delivered work is named as such, and the `## Open Threads` section for a `caused_by` edge nobody has resolved.
 - **ARCHITECTURE:** Read CLAUDE.md and product.md (if exists)
 - **Mental inventory:** Owner profile, prior work from the index, architecture, business context, current work
 

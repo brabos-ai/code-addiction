@@ -2,7 +2,7 @@
   "mcpServers": {
     "artefact-graph": {
       "command": "node",
-      "args": ["scripts/artefact-graph-mcp.js"]
+      "args": ["mcp/server.mjs", "--corpus=artefacts"]
     }
   }
 }

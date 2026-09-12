@@ -20,6 +20,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - command: /add.hotfix
 - command: /add.new
 - command: /add.plan
+- command: /add.pull-request
 - script: build-setup.sh
 - skill: add-doc-schemas/references/delivery-index.md
 - skill: add-doc-schemas/references/fix.md
@@ -163,6 +164,73 @@ related: [F0042, PRD0009, H0013]
 - Never change `branch:` once set — `/add.new` decides it; `build-setup.sh` executes it.
 - Never edit `related:` to hide a broken link.
 
+## Relations & Observations
+
+Two body sections carry a work item's place in the graph. **The document body is the source of truth for a relationship** — not an index, not a frontmatter array. The body is what every wikilink parser already reads, it exists from the document's first minute, and it survives any change to the index format.
+
+Both sections are plain markdown. No library parses them and none is needed.
+
+### Relation Lines
+
+One line per relationship, in a `## Relations` H2:
+
+```markdown
+## Relations
+- caused_by [[0051F]]
+- part_of [[0042F]] — the refresh flow this hotfix broke
+```
+
+The grammar is fixed: `- <type> [[<id>]]`, optionally followed by ` — <why>`.
+
+| Part | Rule |
+|---|---|
+| `<type>` | One value from the closed vocabulary below. An unrecognised type is a FAIL |
+| `[[<id>]]` | The **target's own `id:` value**, exactly as that document carries it. Double square brackets, no path, no title |
+| `— <why>` | Optional one-line reason. It is the rejection surface for the edge: an agent discards a candidate from the `why` without opening the target |
+
+⛔ **A relation points at a work item, never at a file.** One work item is one node, anchored on its `*-about` document; `plan.md`, `changelog.md` and the rest are its attachments. Pointing an edge at an attachment gives it no single target.
+
+### Relation Types
+
+**The vocabulary is closed. Four values, and no fifth is added without a schema change.**
+
+| Type | Means | Written by |
+|---|---|---|
+| `caused_by` | This work item exists because that one broke something | `/add.hotfix`, from the candidate set the user confirmed |
+| `depends_on` | This work item cannot ship until that one has | `/add.new`, from its own discovery result |
+| `part_of` | This work item is one piece of that larger one | `/add.new` for an epic member. For a changelog, **whichever of `/add.pull-request` and `/add.done` writes it first** — the `changelog` schema has two writers and either may be the first |
+| `links_to` | The two reference each other and the intent is unrecorded | the `codeadd update` migration only, never authored by hand |
+
+`links_to` is the honest label for an edge recovered mechanically. A migration reading a `{{doc:}}` reference in a sentence knows the two documents are connected and does not know why, and writing a guessed `depends_on` there would be worse than admitting the gap.
+
+⛔ **Nobody is asked which work item a change depends on.** The command runs the query itself and writes what it found. A relationship born from human memory is a relationship nobody can reproduce.
+
+### Observation Lines
+
+One line per fact worth finding later, in an `## Observations` H2:
+
+```markdown
+## Observations
+- [cause] refresh shipped with no expiry test #auth
+- [impact] every session past 1h dropped #auth
+```
+
+The grammar is `- [<category>] <text>` with optional `#tag` words at the end. The category is free text and names what kind of fact the line is — `cause`, `impact`, `constraint`, `measurement`. Tags match the `tags:` frontmatter key.
+
+**Observations are extractive like every other section.** A line that restates the TL;DR is filler; a line carrying a measurement, a constraint or an observed effect is what the section exists for.
+
+### What `related:` Does Now
+
+**`related:` is unchanged and stays exactly as the Reference Syntax section above defines it.** It is not deprecated and it is not rewritten.
+
+It has one added role: it is **migration input**. The `codeadd update` migration reads the existing `related:` ids of a brownfield project and harvests them into `## Relations` as `links_to` edges. A document keeps both — the frontmatter list it always had, and the typed section derived from it.
+
+### The TL;DR Is the Node's Rejection Surface
+
+`## TL;DR` is already required by Universal Document Requirements below, and nothing about its content changes. What changes is that something now reads it: a graph search returns its **first sentence** with every hit, so an agent discards an irrelevant work item without opening the document. The full section comes on a follow-up call.
+
+That is why an empty `## TL;DR` heading satisfies nothing. `/add.done` refuses to close a delivery whose document carries an empty one, and the graph's `orphans` action reports every node still missing one.
+
 ## Universal Document Requirements
 
 Every schema inherits these rules. Do NOT override unless the schema explicitly relaxes them.
@@ -176,14 +244,19 @@ type: <schema-type>       # one of the schemas in references/<category>.md
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 related: []               # list of doc IDs this doc depends on or references
+tags: []                  # list of bare topic words; the grouping a graph search filters on
 ---
 ```
 
 Optional: `by:` (last editor — human or agent identifier), `status:`, `slug:`.
 
+**`tags:` is a list of bare lowercase words** — `[auth, token]`, never a sentence and never a path. It is the one frontmatter key this format adds, and it groups work items the way `area:` already groups a wiki reference page. An empty list is valid; the key is written either way.
+
 **Body requirements:**
 
 - **TL;DR** — H2 `## TL;DR` immediately after frontmatter. Conveys: what the doc is, why it exists, headline outcome/decision. Extractive. Stops when those three are covered. No length number applies.
+- **Relations** — H2 `## Relations` per the Relations & Observations section above, on every schema whose section list names it. A work item with no relation is reported by the graph's `orphans` action and refused by `/add.done`.
+- **Observations** — H2 `## Observations` per the same section, on every schema whose section list names it. An empty section is valid where the work surfaced no fact worth indexing.
 - **TOC** — required when the doc has >3 H2 sections. Flat bullet list linking anchors. Placed right after TL;DR.
 - **Section chunks** — each H2/H3 body opens with a topic sentence (the grep target). Each chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when one chunk grows past a natural boundary. No length number applies.
 - **Refs** — doc→doc links MUST use `{{doc:<ID>}}` syntax. Command/skill refs use `{{cmd:}}` / `{{skill:}}` per `{{skill:add-resource-path-convention/SKILL.md}}`.
@@ -196,12 +269,12 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | Category | File | Schemas |
 |----------|------|---------|
 | `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm, epic |
-| `fix` | `references/fix.md` | hotfix-about, hotfix-related |
+| `fix` | `references/fix.md` | hotfix-about |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
 | `product` | `references/product.md` | owner, product |
 | `strategy` | `references/strategy.md` | prd |
-| `marketing` | `references/marketing.md` | saas-copy, landing-page |
+| ~~`marketing`~~ | **retired** | `saas-copy` and `landing-page` were dropped with their category file; nothing writes either, and a command asking for one gets no schema |
 | `receipt` | `references/receipt.md` | setup-receipt |
 
 **Loading discipline.** A command that produces, say, a `feature-about` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
@@ -232,6 +305,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
    - `type: <SCHEMA>` exact match
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
+   - `tags:` is a YAML list (may be empty `[]`). A schema whose Frontmatter line does not name it is exempt — the Universal Document Requirements list is what makes it mandatory, and a schema may narrow that.
    - **`feature-about` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 
@@ -245,9 +319,13 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
 
 6. **Doc refs resolve.** For every `{{doc:<ID>}}` in the doc, run reverse grep: `grep -rE "^id: <ID>$" docs/`. Each ref MUST return ≥1 hit. Unresolved refs = WARNING (not error); print them in the command output for the user to fix.
 
-7. **Hard bans absent.** Confirm none of the schema's "Hard bans" items are present (emojis in headers, ASCII art where forbidden, aspirational language, abstractive paraphrase, forbidden content types).
+7. **`## Relations` lines are well-formed, and every target resolves.** For each line under `## Relations`, confirm it matches `- <type> [[<id>]]` with an optional ` — <why>` tail, that `<type>` is one of `caused_by`, `depends_on`, `part_of`, `links_to`, and that `<id>` resolves with the same reverse grep as check 6. Any of the three failing = **FAIL**, not a warning: STOP, fix the line, re-run this gate.
 
-8. **Metadata footer.** Confirm `updated:` in frontmatter matches today's date. If editing an existing doc, confirm original `created:` was preserved.
+   **This is deliberately stricter than check 6, and the difference is what the two are for.** A `{{doc:}}` reference is prose that names another document, so a stale one costs a reader one dead link. A `## Relations` line is an edge in a graph other commands query, so a stale one returns a hit nobody can open and is indistinguishable from a real one at the point it is read. A relation whose target genuinely no longer exists is deleted, never left dangling.
+
+8. **Hard bans absent.** Confirm none of the schema's "Hard bans" items are present (emojis in headers, ASCII art where forbidden, aspirational language, abstractive paraphrase, forbidden content types).
+
+9. **Metadata footer.** Confirm `updated:` in frontmatter matches today's date. If editing an existing doc, confirm original `created:` was preserved.
 
 DO NOT use abstractive summarization to trim a section — summarization loses information the depth floor requires. DO NOT delete required content to make the gate pass — split into linked docs instead, or mark items `unknown — <why>`. DO NOT silently drop unresolved refs — surface them as warnings. DO NOT introduce numeric length caps (e.g. `<200 words`, `~100-150 words`) anywhere in the doc body.
 

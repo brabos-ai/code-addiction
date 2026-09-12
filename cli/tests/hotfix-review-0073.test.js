@@ -328,9 +328,11 @@ describe('0073 L4 — behavioural acceptance', () => {
     expect(nums.length).toBeGreaterThan(0);
     expect(nums).toEqual([...nums].sort((a, b) => a - b));
     expect(nums[0]).toBe(1);
-    expect(nums[nums.length - 1]).toBe(16);
-    // contiguous: every integer from 1..16 appears exactly once
-    expect(nums).toEqual(Array.from({ length: 16 }, (_, i) => i + 1));
+    // 14 since plan 2026-09-12T104012 retired STEP 12 (related.md) and folded
+    // the two validation gates into one — the command writes a single doc now.
+    expect(nums[nums.length - 1]).toBe(14);
+    // contiguous: every integer from 1..14 appears exactly once
+    expect(nums).toEqual(Array.from({ length: 14 }, (_, i) => i + 1));
     // and no fractional STEP heading survives anywhere
     expect(HOTFIX_SRC()).not.toMatch(/^## STEP \d+\.\d+:/m);
   });
@@ -346,7 +348,7 @@ describe('0073 L4 — behavioural acceptance', () => {
 
   it('L4.10 hotfix-about declares a Review section', () => {
     const fix = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
-    const about = fix.slice(fix.indexOf('### hotfix-about'), fix.indexOf('### hotfix-related'));
+    const about = fix.slice(fix.indexOf('### hotfix-about'), fix.indexOf('### hotfix-related (retired)'));
     expect(about).toMatch(/\bReview\b/);
     expect(about).toMatch(/disposition/i);
     // The evidence discipline is referenced, not restated.

@@ -23,8 +23,26 @@ array has a length.
 {"skills":["add-architecture-discovery","add-backend-architecture","add-backend-development","add-claude-md-style","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-final-report","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-product-discovery","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-review-discipline","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","get-branch-metadata.sh","get-main-branch.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
-{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template","related"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
+
+### Product Layer — `mcp/`
+
+**A product-layer directory at the repository ROOT, and the only one.** It holds the knowledge-graph
+MCP server: the corpus registry, the two parsers, the query engine and the stdio transport.
+
+```
+⛔ THE ROOT-MEANS-INTERNAL RULE DOES NOT REACH IT:
+  ⛔ DO NOT: Tag an F-block touching `mcp/` as [internal] because it sits at the root
+  ✅ DO: Tag it [product] — `scripts/build.js` copies it to `cli/src/mcp/` and it ships in the
+         npm package, which is what decides the layer
+```
+
+Nothing under `mcp/` is registered in `provider-map.json`: it is CLI source, like `cli/src/`, not an
+artefact the build distributes to providers. It takes **no dependency at all**, `yaml` included,
+because `--corpus=artefacts` runs from the repository root where the CLI's `node_modules` is off the
+resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
+and one source has to read the same way in both.
 
 ### Internal Layer — `.claude/`
 
@@ -76,7 +94,7 @@ Key files:
 | `framwork/provider-map.json` | Single registry of every command, skill, agent and its provider distribution |
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
 | `scripts/graph.js` | Queries the artefact graph — `impact`, `dependencies`, `path`, `orphans`, `history`, `mermaid` |
-| `scripts/artefact-graph-mcp.js` | Exposes seven graph verbs as MCP tools; the CLI is the engine, MCP the wrapper |
+| `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-bats.js` | Backs `npm run test:scripts` — runs the suite natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `framwork/.codeadd/scripts/*.sh` | Shipped verbatim. Each documents its own usage and exit codes in its header |
@@ -89,7 +107,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
 | `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
-| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` only |
+| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
 

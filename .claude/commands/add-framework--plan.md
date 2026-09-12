@@ -169,7 +169,10 @@ DO NOT show the raw report. Use it to fill "What already exists" in STEP 4.
 | Layer | Paths |
 |-------|-------|
 | `product` | `framwork/.codeadd/`, `framwork/provider-map.json`, `cli/` |
-| `internal` | `.claude/`, `scripts/`, `CLAUDE.md`, repo root |
+| `internal` | `.claude/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
+
+⛔ **`mcp/` is at the root and is PRODUCT** — it ships inside the npm package. Tagging an
+F-block that touches it `internal` loads the wrong layer skill.
 
 **A plan may declare one or both.** Both is normal — one command executes it either way, and the
 F-block layer tags carry the distinction. **DO NOT split a topic into two plans.**

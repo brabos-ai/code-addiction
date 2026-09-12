@@ -293,6 +293,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
 7. Consult knowledge base for validation:
    - IF `WIKI:present` (from script output): Load `{{skill:add-knowledge-discovery/SKILL.md}}`, read the hub (`{{addpath:wiki/index.md}}`), then SELECT + read the `{{addpath:wiki/domains/<area>.md}}` page(s) matching the changed code's areas, plus `{{addpath:wiki/conventions.md}}`. Freshness-check each selected page.
+   - Run the skill's GRAPH step with `touched_by` over the changed file list. **`RELATED_WORK` destination:** STEP 10.1's dispatch payload, which carries it to both judges as the deliveries that last changed these files.
    - IF `WIKI:present` is false: note "knowledge base unavailable — /add.wiki generates it" and continue with code-derived patterns only.
    - These pages contain implementation patterns and conventions to validate against
 
@@ -816,6 +817,7 @@ Each dispatch passes:
 - the resolved paths — `SCOPE_DIR/about.md` and `DESIGN_FILE`;
 - the `run-NNN` evidence dirs that judge owns per the table (`@ux-agent` → `screenshots/`; `@qa-agent` → `screenshots/` + `computed-styles/` + axe results + the assertion roll-up + console/network artifacts);
 - the 9.4 reconciliation table (identical copy to both);
+- **`RELATED_WORK` from STEP 2.2** — the deliveries that last changed these files, ids with one line each. Empty when the graph returned nothing or is absent. A judge that does not know a file was rewritten two deliveries ago judges it as though it were new;
 - `{{skill:add-qa/SKILL.md}}` — rubric, severity scale, finding schema.
 
 Mode (both judges):

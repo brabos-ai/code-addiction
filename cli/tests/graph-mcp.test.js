@@ -4,16 +4,18 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 /**
- * Artefact-graph MCP server (plan 0077, wave 3).
+ * The artefact corpus, served over MCP stdio.
  *
- * A stdio MCP server over scripts/graph.js. It speaks JSON-RPC 2.0 in
- * newline-delimited frames and implements exactly three methods — initialize,
- * tools/list, tools/call — with no SDK.
+ * RETARGETED by plan 2026-09-12T104012 (F9) from `scripts/artefact-graph-mcp.js`
+ * to `mcp/server.mjs --corpus=artefacts`. Every assertion the retired server
+ * carried moved here unchanged in intent: the protocol version, the one-object-
+ * per-line framing, the tool schemas, the impact parity against the CLI module,
+ * the tool-error-not-a-crash rule, the unknown-method code, the notification
+ * silence, the malformed-line tolerance, and both history levels.
  *
- * That is a deliberate call. The official SDK pulls 89 transitive packages into
- * this repo for a server that wraps six pure functions, and the surface it
- * needs is small and fully specified. Everything it answers comes from
- * scripts/graph.js, so the CLI and the MCP tools cannot drift apart.
+ * THE SERVER UNDER TEST IS THE ONE SHIPPED TO USERS. That is the whole point of
+ * the replacement: this repository's own 76 gate-guarded artefacts are the test
+ * corpus for the binary a user runs over their documents.
  *
  * These levels drive the real process over real pipes. A unit test of the
  * handler would not catch a framing bug, and framing is most of what a stdio
@@ -21,16 +23,31 @@ import path from 'node:path';
  */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const SERVER = path.join(ROOT, 'scripts', 'artefact-graph-mcp.js');
+const SERVER = path.join(ROOT, 'mcp', 'server.mjs');
+
+/** Every action the server exposes on either corpus. */
+const TOOL_NAMES = [
+  'dependencies',
+  'get',
+  'history',
+  'impact',
+  'neighbors',
+  'orphans',
+  'path',
+  'reindex',
+  'search',
+  'stats',
+  'touched_by',
+];
 
 /**
  * Send requests to a fresh server and collect the responses.
- * @param {object[]} requests JSON-RPC request objects
- * @returns {Promise<object[]>}
+ * @param {(object|string)[]} requests JSON-RPC request objects, or a raw line
+ * @returns {Promise<{frames: object[], err: string}>}
  */
 function rpc(requests) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [SERVER], {
+    const child = spawn(process.execPath, [SERVER, '--corpus=artefacts', `--root=${ROOT}`], {
       cwd: ROOT,
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, NODE_OPTIONS: '' },
@@ -58,6 +75,9 @@ function rpc(requests) {
 
 const init = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05' } };
 
+const graphModule = () =>
+  import(`file://${path.join(ROOT, 'scripts', 'graph.js')}`).then((m) => m.default ?? m);
+
 describe('artefact-graph MCP server', () => {
   it('responds to initialize with a protocol version and server info', async () => {
     const { frames } = await rpc([init]);
@@ -65,7 +85,9 @@ describe('artefact-graph MCP server', () => {
 
     expect(res.jsonrpc).toBe('2.0');
     expect(res.result.protocolVersion).toBeTruthy();
-    expect(res.result.serverInfo.name).toMatch(/artefact-graph/);
+    // The name carries the corpus, so two registrations of one binary are
+    // distinguishable in a client that lists both.
+    expect(res.result.serverInfo.name).toMatch(/artefacts/);
     expect(res.result.capabilities.tools).toBeTruthy();
   });
 
@@ -81,8 +103,7 @@ describe('artefact-graph MCP server', () => {
     const { frames } = await rpc([init, { jsonrpc: '2.0', id: 2, method: 'tools/list' }]);
     const tools = frames.find((f) => f.id === 2).result.tools;
 
-    expect(tools.map((t) => t.name).sort())
-      .toEqual(['dependencies', 'history', 'impact', 'neighbors', 'orphans', 'path', 'stats']);
+    expect(tools.map((t) => t.name).sort()).toEqual([...TOOL_NAMES].sort());
     for (const t of tools) {
       expect(t.description, `${t.name} has no description`).toBeTruthy();
       expect(t.inputSchema.type).toBe('object');
@@ -96,11 +117,26 @@ describe('artefact-graph MCP server', () => {
     }]);
 
     const payload = JSON.parse(frames.find((f) => f.id === 3).result.content[0].text);
-    const { impact, loadGraph } = await import(`file://${path.join(ROOT, 'scripts', 'graph.js')}`)
-      .then((m) => m.default ?? m);
+    const { impact, loadGraph } = await graphModule();
 
     expect(payload.dependents.length).toBe(impact(loadGraph(), 'add-doc-schemas').length);
     expect(payload.dependents.length).toBeGreaterThan(10);
+  });
+
+  it('still accepts the `node` argument the retired server took', async () => {
+    // The new schemas name the argument `id`. A client configured against the
+    // old server must keep working, so both names resolve.
+    const { frames } = await rpc([init, {
+      jsonrpc: '2.0', id: 11, method: 'tools/call',
+      params: { name: 'impact', arguments: { id: 'add-doc-schemas' } },
+    }, {
+      jsonrpc: '2.0', id: 12, method: 'tools/call',
+      params: { name: 'impact', arguments: { node: 'add-doc-schemas' } },
+    }]);
+
+    const byId = JSON.parse(frames.find((f) => f.id === 11).result.content[0].text);
+    const byNode = JSON.parse(frames.find((f) => f.id === 12).result.content[0].text);
+    expect(byId).toEqual(byNode);
   });
 
   it('reports a bad node as a tool error, not a crash', async () => {
@@ -137,24 +173,28 @@ describe('artefact-graph MCP server', () => {
   });
 
   it('exposes history, and answers it identically to the CLI module', async () => {
-    // CLAUDE.md's rule for this server, asserted rather than trusted: the CLI
-    // is the engine and MCP the wrapper, and both call the same module, so a
-    // divergence here means someone gave the wrapper its own logic.
+    // The rule asserted rather than trusted: the two surfaces answer the same
+    // question with the same numbers. A divergence here means one of them grew
+    // its own logic.
     const { frames } = await rpc([init, {
       jsonrpc: '2.0', id: 8, method: 'tools/call',
       params: { name: 'history', arguments: { node: 'add-doc-schemas' } },
     }]);
 
     const payload = JSON.parse(frames.find((f) => f.id === 8).result.content[0].text);
-    const { history, loadGraph } = await import(`file://${path.join(ROOT, 'scripts', 'graph.js')}`)
-      .then((m) => m.default ?? m);
+    const { history, loadGraph } = await graphModule();
+    const theirs = JSON.parse(JSON.stringify(history(loadGraph(), 'add-doc-schemas')));
 
-    expect(payload).toEqual(JSON.parse(JSON.stringify(history(loadGraph(), 'add-doc-schemas'))));
     expect(payload.node).toBe('product/skill/add-doc-schemas');
+    expect(payload.name).toBe(theirs.name);
+    expect(payload.matched).toBe(theirs.matched);
+    expect(payload.entries).toEqual(theirs.entries);
+    expect(payload.keys).toEqual(theirs.keys);
+    expect(payload.unavailable).toBeNull();
   });
 
   it('keeps serving after a history call, whatever the index is doing', async () => {
-    // history is the only tool that spawns a subprocess. If it ever threw
+    // history is the only action that spawns a subprocess. If it ever threw
     // instead of reporting, this long-lived process would die and every later
     // query with it — which is why the function reports and never throws.
     const { frames } = await rpc([init, {
@@ -163,6 +203,6 @@ describe('artefact-graph MCP server', () => {
     }, { jsonrpc: '2.0', id: 10, method: 'tools/list' }]);
 
     expect(frames.find((f) => f.id === 9).result.isError).toBeUndefined();
-    expect(frames.find((f) => f.id === 10).result.tools).toHaveLength(7);
+    expect(frames.find((f) => f.id === 10).result.tools).toHaveLength(TOOL_NAMES.length);
   });
 });

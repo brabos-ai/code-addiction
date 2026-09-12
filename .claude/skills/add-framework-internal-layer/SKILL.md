@@ -1,6 +1,6 @@
 ---
 name: add-framework-internal-layer
-description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
+description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root, mcp/ excepted. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
 ---
 
 # Internal Layer Mechanics
@@ -22,7 +22,9 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 
 ## When NOT to Use
 
-- An F-block naming `framwork/.codeadd/`, `framwork/provider-map.json` or `cli/`.
+- An F-block naming `framwork/.codeadd/`, `framwork/provider-map.json`, `cli/` or **`mcp/`** —
+  the last sits at the repository root and is product anyway, because `scripts/build.js` copies
+  it into the npm package. Shipping decides the layer, not depth in the tree.
 
 ---
 

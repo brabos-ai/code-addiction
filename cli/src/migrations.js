@@ -3,6 +3,7 @@ import path from 'node:path';
 import { intro, outro, log } from '@clack/prompts';
 import { readManifest, saveManifest } from './injection-core.js';
 import { resolveSelected } from './providers.js';
+import { parse as parseYaml } from 'yaml';
 
 /**
  * Files that releases up to v0.7.1 shipped and v0.7.2+ does not.
@@ -35,11 +36,311 @@ function pruneLegacyOrphans(ctx) {
       const full = path.join(ctx.cwd, root, rel);
       if (!fs.existsSync(full)) continue;
       fs.unlinkSync(full);
-      changes.push(`${root}/${rel}`);
+      // The verb travels with the change. The reporter is neutral by F16, so a
+      // change that does not say what happened to it reads as a bare path.
+      changes.push(`removed ${root}/${rel}`);
     }
   }
 
   return { changes };
+}
+
+
+// ---------------------------------------------------------------------------
+// 0002 — harvest the relationships a brownfield project already wrote
+// ---------------------------------------------------------------------------
+
+/**
+ * The closed vocabulary, per the document format. `links_to` is the only type
+ * this migration authors from a body reference or a `related:` id: those two
+ * mean "connected" and neither knows why, and writing a guessed `depends_on`
+ * would be worse than admitting the gap.
+ */
+const HARVEST_TYPES = { docRef: 'links_to', related: 'links_to', followUp: 'links_to' };
+
+/**
+ * Frontmatter, read with a REAL YAML parser.
+ *
+ * `cli/src` had none before this migration, and a hand-rolled reader over
+ * user-authored YAML is the shortcut that mangles somebody's multi-line value.
+ * This runs unattended inside `codeadd update`, so it gets the parser.
+ *
+ * A file this cannot parse is SKIPPED, never guessed at and never rewritten.
+ */
+function readFrontmatter(content) {
+  if (!content.startsWith('---')) return null;
+  const end = content.indexOf('\n---', 3);
+  if (end === -1) return null;
+  try {
+    const parsed = parseYaml(content.slice(content.indexOf('\n') + 1, end + 1));
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The body of one H2 section, or '' when absent. */
+function sectionBody(content, heading) {
+  const re = new RegExp(`^## ${heading}\\s*$`, 'm');
+  const match = re.exec(content);
+  if (!match) return '';
+  const rest = content.slice(match.index + match[0].length);
+  const next = rest.search(/^## /m);
+  return (next === -1 ? rest : rest.slice(0, next)).trim();
+}
+
+/** Every `{{doc:ID}}` in the body, with the sentence around it as its reason. */
+function docRefsWithReason(content) {
+  const body = content.replace(/^---[\s\S]*?\n---\n/, '');
+  const out = [];
+  for (const match of body.matchAll(/\{\{doc:([^}]+)\}\}/g)) {
+    const before = body.slice(0, match.index);
+    // THE BOUNDARY IS A TERMINATOR FOLLOWED BY ANY WHITESPACE, newline
+    // included. Matching '. ' alone swallows every earlier sentence of a
+    // paragraph that wraps — which an extractive document always does — and the
+    // reason then carries three sentences and names the wrong document.
+    const boundary = [...before.matchAll(/[.!?]\s/g)].pop();
+    const start = Math.max(
+      boundary ? boundary.index + boundary[0].length : 0,
+      before.lastIndexOf('\n\n') + 2,
+      0,
+    );
+    const after = body.slice(match.index);
+    const stop = after.search(/[.!?](\s|$)/);
+    const sentence = (before.slice(start) + (stop === -1 ? after : after.slice(0, stop + 1)))
+      .replace(/\s+/g, ' ')
+      .replace(/^[-*\s]+/, '')
+      .trim();
+    out.push({ id: match[1].trim(), why: sentence || null });
+  }
+  return out;
+}
+
+/** The ids a `## Relations` section points at, whatever the type. */
+function parseRelationsOf(content) {
+  const body = sectionBody(content, 'Relations');
+  return { relations: [...body.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1].trim()) };
+}
+
+/** Ids already declared in a `## Relations` section, so a re-run adds nothing. */
+function declaredTargets(content) {
+  const body = sectionBody(content, 'Relations');
+  return new Set([...body.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1].trim()));
+}
+
+/** One relation line, with its reason when the source carried one. */
+function relationLine(type, id, why) {
+  // The em dash is the format's separator. A `why` carrying a newline would
+  // break the one-line grammar, so it is flattened rather than dropped.
+  const reason = why ? ` — ${why.replace(/\s+/g, ' ').trim()}` : '';
+  return `- ${type} [[${id}]]${reason}`;
+}
+
+/**
+ * Append lines to `## Relations`, creating the section when it is absent.
+ *
+ * ⛔ ADDITIVE ONLY. It never deletes and never rewrites a line the user wrote.
+ * That single rule is what makes a partial failure harmless, makes idempotency
+ * trivial, and makes it safe to run unattended. The section is appended at the
+ * END of the document when absent, because inserting it between two existing
+ * sections would move lines somebody else wrote.
+ */
+function appendRelations(content, lines) {
+  if (lines.length === 0) return content;
+  const heading = /^## Relations\s*$/m.exec(content);
+  if (!heading) {
+    const tail = content.endsWith('\n') ? '' : '\n';
+    return `${content}${tail}\n## Relations\n${lines.join('\n')}\n`;
+  }
+  const rest = content.slice(heading.index + heading[0].length);
+  const next = rest.search(/^## /m);
+  const sectionEnd = heading.index + heading[0].length + (next === -1 ? rest.length : next);
+  const head = content.slice(0, sectionEnd).replace(/\s+$/, '');
+  return `${head}\n${lines.join('\n')}\n${next === -1 ? '' : '\n'}${content.slice(sectionEnd)}`;
+}
+
+/**
+ * Harvest the relationships a project already wrote, into the format that reads
+ * them.
+ *
+ * WHAT IT SCANS, AND HOW IT TELLS ONE DOCUMENT FROM ANOTHER: it walks `docs/`
+ * and reads the FRONTMATTER of each `.md` to decide what the file is. A
+ * recognised `type:` key means codeadd wrote it; no `type:` key means the file
+ * belongs to the user and is skipped and reported. That is the rule that
+ * survives a `docs/` tree holding the user's own material beside codeadd's,
+ * which is what every real installation looks like. A path glob would need an
+ * exclusion list somebody maintains forever.
+ *
+ * Once a file is eligible, its BODY is read too — three of the five sources
+ * live there. "Reads only frontmatter" governs the eligibility check, not the
+ * harvest.
+ *
+ * THIS IS THE REGISTRY'S FIRST MIGRATION TO TOUCH USER-AUTHORED FILES, which is
+ * why the glob, the type detection and the additive-only rule are stated here
+ * rather than left to whoever reads this next.
+ *
+ * IT DOES NOT COMMIT. It leaves the working tree dirty and reports the file
+ * count. Reviewing that diff is the judgement the CLI cannot make.
+ *
+ * @param {{cwd: string}} ctx
+ */
+function harvestRelations(ctx) {
+  const docsRoot = path.join(ctx.cwd, 'docs');
+  const changes = [];
+  const notes = [];
+  const unresolved = [];
+  const failed = [];
+  const harvest = { docRefs: 0, related: 0, followUps: 0, impactedFiles: 0, superseded: 0 };
+  let skipped = 0;
+
+  if (!fs.existsSync(docsRoot)) return { changes, notes, unresolved, harvest, skipped, failed };
+
+  // --- pass 1: what exists, and what kind of thing each file is -------------
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.md')) files.push(full);
+    }
+  };
+  walk(docsRoot);
+
+  const byId = new Map();
+  const eligible = [];
+  for (const full of files.sort()) {
+    let content;
+    try {
+      content = fs.readFileSync(full, 'utf8');
+    } catch (err) {
+      failed.push({ path: path.relative(ctx.cwd, full), error: err.message });
+      continue;
+    }
+    const frontmatter = readFrontmatter(content);
+    if (!frontmatter || !frontmatter.type) {
+      skipped += 1;
+      continue;
+    }
+    const record = { full, rel: path.relative(ctx.cwd, full), content, frontmatter };
+    eligible.push(record);
+    // An id resolves against the documents ON DISK rather than through a
+    // reordering rule: the legacy lists mix `F0042` with `PRD0009` and only
+    // work-type letters have a suffix form. The filesystem answers it, so there
+    // is no rule to get wrong.
+    if (frontmatter.id && !byId.has(String(frontmatter.id))) byId.set(String(frontmatter.id), record);
+  }
+
+  const isWorkItem = (r) => String(r.frontmatter.type).endsWith('-about');
+  const workItems = eligible.filter(isWorkItem);
+  const nodeIds = new Set(workItems.map((r) => String(r.frontmatter.id)));
+
+  // --- pass 2: harvest, per work item --------------------------------------
+  for (const item of workItems) {
+    const id = String(item.frontmatter.id);
+    const already = declaredTargets(item.content);
+    // ONE LINE PER TARGET, AND THE BEST SOURCE WINS RATHER THAN THE FIRST.
+    // Several sources can name the same document and only some carry a reason:
+    // a `related:` id knows nothing, while a Follow-up sentence is the `why`
+    // the format wants. Emitting on first sight would let the poorest source
+    // beat the richest purely on the order they happen to be read in.
+    const candidates = new Map();
+
+    const add = (type, targetId, why, counter) => {
+      const target = String(targetId).trim();
+      if (!target || target === id) return;
+      if (!nodeIds.has(target)) {
+        // An id resolving to no work item produces NO line and is reported.
+        if (!unresolved.some((u) => u.from === id && u.id === target)) {
+          unresolved.push({ from: id, id: target });
+        }
+        return;
+      }
+      harvest[counter] += 1;
+      if (already.has(target)) return;
+      // `superseded_by` is COUNTED AND NOT WRITTEN. It is already the status
+      // edge it needs to be, in frontmatter, and the indexer reads it straight
+      // from there — duplicating it into `## Relations` would put a type
+      // outside the closed vocabulary into a section the schema gate rejects.
+      if (type === null) return;
+      const current = candidates.get(target);
+      // A reason outranks no reason; otherwise the first one stands.
+      const better = !current || (!current.why && why);
+      if (better) candidates.set(target, { type, why });
+    };
+
+    // Sources that live in the work item's own document.
+    for (const ref of docRefsWithReason(item.content)) {
+      add(HARVEST_TYPES.docRef, ref.id, ref.why, 'docRefs');
+    }
+    const related = item.frontmatter.related;
+    if (Array.isArray(related)) {
+      for (const target of related) add(HARVEST_TYPES.related, target, null, 'related');
+    }
+    if (item.frontmatter.superseded_by) {
+      add(null, item.frontmatter.superseded_by, null, 'superseded');
+    }
+
+    // Sources that live in an attachment, attributed to this work item.
+    //
+    // BOTH LAYOUTS, per design decision 30. A sibling in the same directory
+    // belongs to this item; so does an attachment anywhere that names this item
+    // in its own `## Relations` or `related:` — which is how a
+    // `docs/changelog/CHG[NNNN].md` reaches the work item it delivered, having
+    // no *-about sibling of its own.
+    const dir = path.dirname(item.full);
+    const belongsToItem = (sibling) => {
+      if (path.dirname(sibling.full) === dir) return true;
+      const { relations } = parseRelationsOf(sibling.content);
+      if (relations.some((r) => r === id)) return true;
+      const related = sibling.frontmatter.related;
+      return Array.isArray(related) && related.some((r) => String(r).trim() === id);
+    };
+    for (const sibling of eligible) {
+      if (sibling === item || isWorkItem(sibling) || !belongsToItem(sibling)) continue;
+
+      const followUps = sectionBody(sibling.content, 'Follow-ups');
+      if (followUps) {
+        for (const line of followUps.split('\n')) {
+          for (const ref of docRefsWithReason(line)) {
+            add(HARVEST_TYPES.followUp, ref.id, ref.why, 'followUps');
+          }
+        }
+      }
+      // The file list is read by the INDEX, straight from this attachment, so
+      // nothing is written for it here. It is counted because the migration
+      // report is what tells a user the list was found.
+      if (sectionBody(sibling.content, 'Impacted Files')) harvest.impactedFiles += 1;
+    }
+
+    const lines = [...candidates.entries()].map(([target, pick]) =>
+      relationLine(pick.type, target, pick.why),
+    );
+    if (lines.length === 0) continue;
+    const next = appendRelations(item.content, lines);
+    if (next === item.content) continue;
+    try {
+      fs.writeFileSync(item.full, next, 'utf8');
+      changes.push(`updated ${item.rel.replace(/\\/g, '/')} (+${lines.length} relation)`);
+    } catch (err) {
+      failed.push({ path: item.rel, error: err.message });
+    }
+  }
+
+  // THE REPORT IS WHAT MAKES THE DIFF REVIEWABLE. Reviewing it is the judgement
+  // the CLI cannot make, and a user cannot review what they were not told.
+  const recovered = Object.entries(harvest)
+    .filter(([, count]) => count > 0)
+    .map(([source, count]) => `${source} ${count}`)
+    .join(', ');
+  if (recovered) notes.push(`harvested ${recovered}`);
+  if (skipped > 0) {
+    notes.push(`skipped ${skipped} file(s) carrying no type: key — those are yours, not codeadd's`);
+  }
+  for (const item of unresolved) {
+    notes.push(`unresolved: ${item.from} names ${item.id}, which resolves to no work item — no line written`);
+  }
+
+  return { changes, notes, unresolved, harvest, skipped, failed };
 }
 
 /**
@@ -54,6 +355,11 @@ export const MIGRATIONS = [
     id: '0001-prune-legacy-orphans',
     description: 'Remove files shipped up to v0.7.1 that no later release ships',
     run: pruneLegacyOrphans,
+  },
+  {
+    id: '0002-harvest-relations',
+    description: 'Harvest the relationships docs/ already carries into ## Relations — additive only, no commit',
+    run: harvestRelations,
   },
 ];
 
@@ -91,12 +397,12 @@ export function pendingMigrations(applied, registry = MIGRATIONS) {
  * @param {{cwd: string, providers: {dest: string}[]}} ctx
  * @param {string[]} applied  the current ledger
  * @param {{dryRun?: boolean, registry?: object[]}} [options]
- * @returns {{pending: string[], applied: string[], failed: {id: string, error: string}[], changes: string[]}}
+ * @returns {{pending: string[], applied: string[], failed: {id: string, error: string}[], changes: string[], notes: string[]}}
  */
 export function runMigrations(ctx, applied, options = {}) {
   const { dryRun = false, registry = MIGRATIONS } = options;
   const pending = pendingMigrations(applied, registry);
-  const result = { pending: pending.map((m) => m.id), applied: [], failed: [], changes: [] };
+  const result = { pending: pending.map((m) => m.id), applied: [], failed: [], changes: [], notes: [] };
 
   if (dryRun) return result;
 
@@ -105,6 +411,12 @@ export function runMigrations(ctx, applied, options = {}) {
       const outcome = migration.run({ cwd: ctx.cwd, providers: ctx.providers }) || {};
       result.applied.push(migration.id);
       result.changes.push(...(outcome.changes ?? []));
+      // A MIGRATION'S REPORT IS NOT ITS CHANGE LIST, AND DROPPING IT IS A
+      // SILENT FAILURE. `changes` says what was written; `notes` says what the
+      // migration FOUND and could not act on — an id that resolves to no
+      // document, a file skipped because it carries no `type:`. The harvest
+      // computed all of that and it reached nobody until this line existed.
+      result.notes.push(...(outcome.notes ?? []));
     } catch (err) {
       result.failed.push({ id: migration.id, error: err.message });
     }
@@ -157,7 +469,8 @@ export async function migrate(cwd, args = [], scope = 'project') {
     return;
   }
 
-  for (const change of result.changes) log.success(`removed ${change}`);
+  for (const change of result.changes) log.success(`Migration: ${change}`);
+  for (const note of result.notes ?? []) log.info(`Migration: ${note}`);
   for (const failure of result.failed) log.warn(`${failure.id} failed: ${failure.error}`);
 
   if (result.applied.length > 0) {

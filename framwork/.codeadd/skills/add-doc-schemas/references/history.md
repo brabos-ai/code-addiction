@@ -70,10 +70,13 @@ kinds of statement. A bullet is a fact about one change and stays true; a summar
 is a claim about the whole delivery and stops being true the moment it grows.
 
 - **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `updated:` (added on the first complement, absent until then), `related: [[NNNN]F | [NNNN]H]`
-- **Sections:** TL;DR · Changes · Breaking · Migration
+- **Sections:** TL;DR · Changes · Breaking · Migration · Relations
 - **Depth floor:**
   - **Changes** — every merged change as `type(scope): summary — {{doc:<ID>}}` when applicable. Granular enough that a reader can locate the relevant PR/commit.
   - **Breaking** — every breaking change with: what breaks, for whom, from which version. `none` is valid if true.
   - **Migration** — step-by-step migration instructions when breaking is non-empty. Include rollback notes.
-- **Compression:** Changes = Conventional-Commit-style bullets per Changelog Voice above. Breaking = bullets or `none`. Migration = numbered steps.
-- **Hard bans:** release marketing copy, subjective adjectives, omitting breaking changes to make the release look smoother.
+  - **Relations** — one line, `- part_of [[<NNNN>F | <NNNN>H]]`, naming the work item this changelog delivered. Per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`.
+- **Compression:** Changes = Conventional-Commit-style bullets per Changelog Voice above. Breaking = bullets or `none`. Migration = numbered steps. Relations = one line.
+- **Hard bans:** release marketing copy, subjective adjectives, omitting breaking changes to make the release look smoother, a `## Relations` section naming a work item this changelog did not deliver.
+
+**A changelog is an attachment, not a node.** Its `part_of` line is what joins it to the work item that IS the node, so a graph search returning that feature knows this changelog travels with it. The relation runs changelog → work item and never the other way: a work item does not list its own attachments, the index derives them from the directory.

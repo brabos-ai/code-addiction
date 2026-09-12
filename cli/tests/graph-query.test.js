@@ -14,9 +14,14 @@ import path from 'node:path';
  *
  * It is a plain module with a CLI front end rather than an MCP server, because
  * the callers are the framework's own commands running on five different
- * providers. Every one of them can shell out; only some have MCP wired. The MCP
- * server in scripts/artefact-graph-mcp.js is a thin wrapper over this same
- * module, so both surfaces answer identically by construction.
+ * providers. Every one of them can shell out; only some have MCP wired.
+ *
+ * The MCP surface moved to `mcp/` (plan 2026-09-12T104012), which serves this
+ * corpus and the user-facing docs corpus from one binary. It is no longer a
+ * wrapper over this module: it reads the same emitted sidecar instead, and
+ * `cli/tests/mcp-engine.test.js` asserts the two answer identically verb for
+ * verb. THIS SUITE STILL OWNS scripts/graph.js, which survives as the shell-out
+ * surface every provider can reach.
  */
 
 const require = createRequire(import.meta.url);
