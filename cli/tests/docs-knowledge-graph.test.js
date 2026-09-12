@@ -24,6 +24,7 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 const DOC_SCHEMAS = read(path.join(SKILLS, 'add-doc-schemas', 'SKILL.md'));
 const NEW_FEATURE = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'new-feature.md'));
 const HISTORY = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'history.md'));
+const FIX = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
 
 /**
  * The closed vocabulary, per design decision 10. `links_to` is the honest label
@@ -91,5 +92,43 @@ describe('F1 — the document format lands in add-doc-schemas', () => {
     const schema = HISTORY.slice(HISTORY.indexOf('### changelog'));
     expect(schema).toContain('## Relations');
     expect(schema).toContain('part_of');
+  });
+});
+
+describe('F2 — the hotfix-related schema retires into the about.md', () => {
+  it('is no longer an active schema in the category', () => {
+    const header = FIX.slice(0, FIX.indexOf('## Shared Notation'));
+    expect(header).toMatch(/\*\*Schemas in this category:\*\* `hotfix-about`\.$/m);
+  });
+
+  it('the Schema Index no longer offers it to a command', () => {
+    const row = DOC_SCHEMAS.split('\n').find((l) => l.startsWith('| `fix` |'));
+    expect(row).toBeTruthy();
+    expect(row).toContain('hotfix-about');
+    expect(row).not.toContain('hotfix-related');
+  });
+
+  it('records the harvest rather than deleting the schema outright', () => {
+    const retired = FIX.slice(FIX.indexOf('### hotfix-related'));
+    expect(retired).toMatch(/retired/i);
+    // Both filled sections must name their new home — 15 of 19 real documents
+    // carry an explained relationship and 18 of 19 a real file list.
+    expect(retired).toMatch(/Follow-ups[\s\S]{0,300}?## Relations/);
+    expect(retired).toMatch(/Impacted Files[\s\S]{0,300}?file set/);
+  });
+
+  it('stops any command writing a new related.md', () => {
+    const retired = FIX.slice(FIX.indexOf('### hotfix-related'));
+    expect(retired).toMatch(/DO NOT[\s\S]{0,200}?related\.md/);
+    // An existing related.md is a user file and is never deleted.
+    expect(retired).toMatch(/never deleted|left on disk|not deleted/i);
+  });
+
+  it('hotfix-about carries Relations, Observations and tags:', () => {
+    const about = FIX.slice(FIX.indexOf('### hotfix-about'), FIX.indexOf('### hotfix-related'));
+    expect(about).toContain('Relations');
+    expect(about).toContain('Observations');
+    expect(about).toMatch(/tags:/);
+    expect(about).toContain('caused_by');
   });
 });
