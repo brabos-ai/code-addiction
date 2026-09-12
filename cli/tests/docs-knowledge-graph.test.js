@@ -28,6 +28,7 @@ const FIX = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
 
 const COMMANDS = path.join(CODEADD, 'commands');
 const ADD_NEW = read(path.join(COMMANDS, 'add.new.md'));
+const ADD_HOTFIX = read(path.join(COMMANDS, 'add.hotfix.md'));
 
 /**
  * The closed vocabulary, per design decision 10. `links_to` is the honest label
@@ -154,5 +155,54 @@ describe('F3 — /add.new writes its relations from its own discovery result', (
 
   it('an epic subfeature about.md is part_of its parent', () => {
     expect(ADD_NEW).toMatch(/part_of \[\[/);
+  });
+});
+
+describe('F4 — /add.hotfix routes its confirmed set into the about.md', () => {
+  it('L4.2 the confirmed set reaches BOTH destinations, and neither loses it', () => {
+    const synth = ADD_HOTFIX.slice(
+      ADD_HOTFIX.indexOf('### 5.2 Present to user'),
+      ADD_HOTFIX.indexOf('### 5.3'),
+    );
+    // Destination one: the about.md's Relations, typed caused_by.
+    expect(synth).toContain('## Relations');
+    expect(synth).toContain('caused_by');
+    // Destination two: the blast radius STEP 9's failure judge reads. Unchanged.
+    expect(synth).toMatch(/blast radius/);
+    expect(synth).toMatch(/STEP 9/);
+  });
+
+  it('the about.md step writes the section from that set', () => {
+    const step = ADD_HOTFIX.slice(
+      ADD_HOTFIX.indexOf('## STEP 11: Write Hotfix about.md'),
+      ADD_HOTFIX.indexOf('## STEP 12:'),
+    );
+    expect(step).toContain('## Relations');
+    expect(step).toContain('caused_by');
+    expect(step).toContain('tags:');
+  });
+
+  it('nothing writes related.md any more, anywhere in the command', () => {
+    // The only surviving mention may be the prohibition itself.
+    const writes = ADD_HOTFIX.split('\n').filter(
+      (l) => /related\.md/.test(l) && !/DO NOT|never|no longer|retired/i.test(l),
+    );
+    expect(writes).toEqual([]);
+    expect(ADD_HOTFIX).not.toContain('hotfix-related');
+  });
+
+  it('the step list and the bodies agree after the removal', () => {
+    const listBlock = ADD_HOTFIX.slice(
+      ADD_HOTFIX.indexOf('**STEPS IN ORDER:**'),
+      ADD_HOTFIX.indexOf('**⛔ ABSOLUTE PROHIBITIONS'),
+    );
+    const listed = [...listBlock.matchAll(/^STEP ([0-9]+)(?:-([0-9]+))?:/gm)].flatMap((m) =>
+      m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1])],
+    );
+    const bodies = [...ADD_HOTFIX.matchAll(/^## STEP ([0-9]+)(?:-([0-9]+))?:/gm)].flatMap((m) =>
+      m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1])],
+    );
+    expect(listed).toEqual(bodies);
+    expect(bodies).toEqual(Array.from({ length: 14 }, (_, i) => i + 1));
   });
 });

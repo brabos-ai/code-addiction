@@ -23,7 +23,7 @@
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **ID FORMAT:** Global sequential with type suffix (e.g., `0001H`, `0002H`)
-> **STRUCTURE:** Docs in `docs/features/[NNNN]H-[slug]/` with `related.md` for relationships
+> **STRUCTURE:** Docs in `docs/features/[NNNN]H-[slug]/`; relationships live in the `about.md` `## Relations` section
 
 ---
 
@@ -47,12 +47,10 @@ STEP 7:  Confirm root cause        → BEFORE implementing; pin it RED when tdd-
 STEP 8:  Implement fix             → drive the pinned test GREEN + verify build
 STEP 9:  Delivery review (parallel judges) → @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent
 STEP 10: Triage + corrective pass  → verify citations, ONE pass, re-verify build
-STEP 11: Write hotfix about.md     → schema hotfix-about, extractive
-STEP 12: Write related.md          → schema hotfix-related
-STEP 13: Validation gate — about   → run gate block
-STEP 14: Validation gate — related → run gate block
-STEP 15: Log iteration             → MANDATORY BEFORE informing user
-STEP 16: Completion                → Inform user, awaiting /add.done
+STEP 11: Write hotfix about.md     → schema hotfix-about, extractive, incl. ## Relations
+STEP 12: Validation gate           → run gate block on about.md
+STEP 13: Log iteration             → MANDATORY BEFORE informing user
+STEP 14: Completion                → Inform user, awaiting /add.done
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -67,7 +65,7 @@ IF BRANCH = main:
 
 IF SCHEMA NOT LOADED:
   ⛔ DO NOT USE: Write to create hotfix docs
-  ✅ DO: Load `hotfix-about` and `hotfix-related` sections from {{skill:add-doc-schemas/SKILL.md}} FIRST
+  ✅ DO: Load the `hotfix-about` schema from {{skill:add-doc-schemas/SKILL.md}} FIRST
 
 IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
@@ -84,7 +82,7 @@ IF ROOT CAUSE NOT CONFIRMED:
   ✅ DO: Present root cause to user and WAIT for confirmation
 
 IF FIX IMPLEMENTED AND JUDGES NOT DISPATCHED:
-  ⛔ DO NOT USE: Write to create about.md or related.md
+  ⛔ DO NOT USE: Write to create about.md
   ⛔ DO NOT: Report the hotfix complete
   ✅ DO: Dispatch STEP 9's three judges and wait for all three
 
@@ -97,7 +95,15 @@ IF A FINDING IS pre-existing:
   ⛔ DO NOT: Treat it as a blocker
   ⛔ DO NOT USE: Edit to widen the fix and resolve it
   ✅ DO: Record it as an observation in the `## Review` section
+
+IF ABOUT TO RECORD A RELATIONSHIP:
+  ⛔ DO NOT USE: Write on any related.md path — the schema is retired
+  ⛔ DO NOT: Allocate a `[NNNN]H-related` id
+  ✅ DO: Write it as a `## Relations` line in the about.md, typed `caused_by`
 ```
+
+⛔ **An existing `related.md` in a brownfield project is a user file and is never deleted.** This
+command stops writing new ones; `codeadd update` harvests the old ones and leaves them on disk.
 
 ---
 
@@ -140,7 +146,7 @@ bash .codeadd/scripts/status.sh
 bash .codeadd/scripts/status.sh next-id H
 ```
 
-Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for frontmatter writes in STEP 11 and STEP 12.
+Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for the frontmatter write in STEP 11.
 
 > **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
@@ -157,11 +163,10 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 ```
 docs/features/[NNNN]H-<slug>/
 ├── about.md    (schema: hotfix-about — written in STEP 11)
-├── related.md  (schema: hotfix-related — written in STEP 12)
 └── iterations.jsonl
 ```
 
-DO NOT write doc contents yet — schemas are loaded and applied in STEP 11/12.
+DO NOT write doc contents yet — the schema is loaded and applied in STEP 11.
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
 
@@ -227,9 +232,14 @@ Present the top related features (with FEAT_IDs) + the top suspicious commits an
 - Confirm related features (yes / no / different one)
 - Acknowledge suspicious commits (any context the user can add?)
 
-**Store the confirmed feature relationships for STEP 12 (related.md) AND for STEP 9.**
+**Store the confirmed feature relationships. ONE set, TWO destinations, and neither may lose it:**
 
-The confirmed related features plus the suspicious commits are the **blast radius** `@failure-analysis-agent` judges against in STEP 9. Retain them as identifiers with a one-line reason each — this set is confirmed context, and re-deriving it later loses the user's acknowledgement.
+| Destination | What it does with the set | Step |
+|---|---|---|
+| The `about.md` `## Relations` section | Each confirmed feature becomes `- caused_by [[<id>]] — <the one-line reason>` | STEP 11 |
+| The **blast radius** `@failure-analysis-agent` judges against | Confirmed features plus the suspicious commits, unchanged from how STEP 9 has always read them | STEP 9 |
+
+Retain them as identifiers with a one-line reason each — this set is confirmed context, and re-deriving it later loses the user's acknowledgement. **STEP 9's use is unchanged by the routing added here**: the set it reads is the same set, carrying the same fields.
 
 ### 5.3 Escalate to add-investigation (if needed)
 
@@ -370,7 +380,7 @@ For each finding a judge marked blocking, READ the cited lines yourself.
 | `unverifiable` | The verification method did not run — WITH the reason | No |
 | `accepted` | Real, and the user decides to ship anyway | No |
 
-⛔ DO NOT widen the fix to resolve a `pre-existing` finding. It belongs in the `## Review` section as an observation, and in `related.md` Follow-ups (STEP 12) when it deserves one.
+⛔ DO NOT widen the fix to resolve a `pre-existing` finding. It belongs in the `## Review` section as an observation, and in the `about.md` `## Observations` section (STEP 11) when it deserves to be findable later.
 
 ### 10.3 Corrective pass (AT MOST ONE)
 
@@ -402,31 +412,32 @@ EXECUTE schema `hotfix-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 The `## Review` section carries STEP 10's triaged outcome — one row per finding with its axis, severity, `path:line`, cited rule and disposition. A judged hotfix whose `about.md` omits it reads as unreviewed from a fresh clone. When a judge could not run, record that there too.
 
----
+### 11.1 Write `## Relations`, `## Observations` and `tags:`
 
-## STEP 12: Write related.md (schema: hotfix-related)
+The set was confirmed with the user in STEP 5.2 and has been in hand ever since. **This routes it; it confirms nothing again.**
 
-EXECUTE schema `hotfix-related` from `{{skill:add-doc-schemas/SKILL.md}}`.
+| Source already in hand | Becomes |
+|---|---|
+| Each feature the user confirmed as related in STEP 5.2 | `- caused_by [[<id>]] — <the one-line reason that set carries>` |
+| The trigger, the measured impact and the safeguard that missed it, from STEP 7's root cause | `- [<category>] <text>` lines under `## Observations` |
+| The domains the fix touched | `tags:` — bare lowercase words |
 
-**Path:** `docs/features/[NNNN]H-<slug>/related.md`
+⛔ **A `caused_by` the user never confirmed does not get written.** STEP 5.2 is where a person acknowledged the connection; inventing one here is a relationship nobody can reproduce. A hotfix whose cause resolves to no recorded work item writes `## Relations` carrying the single word `None`.
 
-**ID:** `[NNNN]H-related`. Write per `hotfix-related` schema. Lists only, no prose. Use `{{doc:<ID>}}` for impacted docs. Include features identified in STEP 4.
-
-**Cross-update:** For each related feature doc, if its `related.md` exists, append the hotfix `{{doc:[NNNN]H}}` reference; otherwise create a minimal related.md referencing this hotfix.
-
----
-
-## STEP 13-14: Validation Gate
-
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for each doc written:
-1. `hotfix-about` — `docs/features/[NNNN]H-<slug>/about.md`
-2. `hotfix-related` — `docs/features/[NNNN]H-<slug>/related.md`
-
-⛔ DO NOT skip. DO NOT mark the command complete until both gates return `PASS`.
+**The same set still reaches STEP 9 unchanged.** Routing it here neither consumes it nor reshapes it.
 
 ---
 
-## STEP 15: Log Iteration (MANDATORY — PRD0031)
+## STEP 12: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` on the one doc written:
+`hotfix-about` — `docs/features/[NNNN]H-<slug>/about.md`
+
+⛔ DO NOT skip. DO NOT mark the command complete until the gate returns `PASS`. Gate check 7 covers the `## Relations` lines 11.1 wrote: an unresolved target is a FAIL, not a warning.
+
+---
+
+## STEP 13: Log Iteration (MANDATORY — PRD0031)
 
 **BEFORE informing user, append entry to iterations.jsonl:**
 
@@ -441,7 +452,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.json
 
 ---
 
-## STEP 16: Hotfix Complete
+## STEP 14: Hotfix Complete
 
 ⛔ **DO NOT commit** - branch ready for next phase.
 
@@ -464,13 +475,13 @@ files, build status.
 **ALWAYS:**
 - Use `status.sh next-id H` to allocate hotfix ID
 - Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
-- Load `hotfix-about` and `hotfix-related` schemas from add-doc-schemas before writing
+- Load the `hotfix-about` schema from add-doc-schemas before writing
 - Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code
 - Wait for both history reports before any Grep/Read on code
 - Confirm root cause with user before implementing
 - Fix root cause, not symptoms
 - Keep changes minimal and focused
-- Run the validation gate for BOTH docs before completing
+- Run the validation gate on about.md before completing
 - Log iteration entry before informing user
 - Verify build passes after implementing fix
 - Dispatch all three judges, however small the fix
@@ -484,7 +495,8 @@ files, build status.
 - Refactor unrelated code during hotfix
 - Add new features inside a hotfix
 - Commit changes before user review
-- Skip either validation gate
+- Skip the validation gate
+- Write a `caused_by` relation the user did not confirm in STEP 5.2
 - Soften a judge's severity to avoid a corrective pass
 
 ---
@@ -509,9 +521,8 @@ files, build status.
 #     failure: 1 introduced — null path reaches F0036's caller
 # STEP 10: Verify citations → 1 introduced blocker → correct → re-run build + RED test (GREEN)
 # STEP 11: Write about.md via hotfix-about schema, incl. ## Review
-# STEP 12: Write related.md via hotfix-related schema
-# STEP 13: Validation gate — hotfix-about
-# STEP 14: Validation gate — hotfix-related
-# STEP 15: Log iteration
-# STEP 16: Hotfix complete → ownership transfers to ecosystem
+#   11.1 ## Relations: caused_by [[0036F]] — the validation path this fix corrects
+# STEP 12: Validation gate — hotfix-about
+# STEP 13: Log iteration
+# STEP 14: Hotfix complete → ownership transfers to ecosystem
 ```
