@@ -206,3 +206,38 @@ describe('F4 — /add.hotfix routes its confirmed set into the about.md', () => 
     expect(bodies).toEqual(Array.from({ length: 14 }, (_, i) => i + 1));
   });
 });
+
+describe('F5 — templates/related.md is gone', () => {
+  it('L1.3 absent from the source tree', () => {
+    expect(fs.existsSync(path.join(CODEADD, 'templates', 'related.md'))).toBe(false);
+  });
+
+  it('L1.3 absent from every provider output directory', () => {
+    const framwork = path.join(ROOT, 'framwork');
+    const strays = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name === 'related.md') strays.push(path.relative(ROOT, full));
+      }
+    };
+    walk(framwork);
+    expect(strays).toEqual([]);
+  });
+
+  it('nothing in the shipped tree references the template', () => {
+    const hits = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith('.md') || entry.name.endsWith('.sh')) {
+          if (read(full).includes('templates/related.md')) hits.push(path.relative(ROOT, full));
+        }
+      }
+    };
+    walk(CODEADD);
+    expect(hits).toEqual([]);
+  });
+});
