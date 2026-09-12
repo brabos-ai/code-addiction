@@ -107,7 +107,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
 | `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
-| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` only |
+| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
 
