@@ -12,7 +12,7 @@
  *
  * ZERO DEPENDENCIES, deliberately, and that includes `yaml`. Two reasons, and
  * the second is the load-bearing one:
- *   1. `artefact-graph-mcp.js` already made and justified this call for an SDK.
+ *   1. The server this replaces made and justified the same call for an SDK.
  *   2. `--corpus=artefacts` runs from the repository root, where the CLI's
  *      node_modules is not on the resolution path. A dependency here would work
  *      in a user's project and fail in the repository that ships it.

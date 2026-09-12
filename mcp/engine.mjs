@@ -5,19 +5,18 @@
  * server over two parsers worth doing. `search`, `touched_by` and `reindex` are
  * new to the docs corpus and answer trivially on the artefact one.
  *
- * `history` is the eleventh and is here because the server it replaces exposed
- * it. The design's verb table lists ten and omits it; deleting
- * `scripts/artefact-graph-mcp.js` without it would take a working capability
- * away, which F9's own contract forbids.
+ * `history` is the eleventh and is here because the server this replaces exposed
+ * it. The design's verb table lists ten and omits it; retiring that server
+ * without it would have taken a working capability away.
  *
  * `impact`, `dependencies` and `neighbors` are one walk behind two parameters.
- * They stay three actions because `scripts/artefact-graph-mcp.js` exposes them
- * that way and the parity level asserts both surfaces answer identically.
+ * They stay three actions because the server this replaces exposed them that
+ * way and the parity level asserts both surfaces answer identically.
  * Collapsing them here would diverge the two surfaces for no gain.
  *
  * THE MARKDOWN IS THE TRUTH AND THE INDEX IS A CACHE. A docs query re-scans
- * before answering, for the same reason `artefact-graph-mcp.js` re-reads its
- * sidecar per call: a server started before a write would otherwise answer from
+ * before answering, for the same reason the retired server re-read its sidecar
+ * per call: a server started before a write would otherwise answer from
  * a stale graph for the rest of the session, which is the failure this whole
  * change exists to prevent. The cache is written as a by-product so other
  * consumers have a file to read; nothing here reads it back.

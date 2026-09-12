@@ -12,8 +12,8 @@
  * methods a tools-only server needs: initialize, tools/list, tools/call, ping.
  *
  * No SDK, deliberately. The official one pulls 89 transitive packages to wrap a
- * small, fully specified surface — the same call `scripts/artefact-graph-mcp.js`
- * made and justified before this replaced it.
+ * small, fully specified surface — the same call the server this replaces made
+ * and justified first.
  *
  * NOTHING may write to stdout except a response frame. A stray console.log
  * corrupts the stream and the client sees garbage rather than an error.
