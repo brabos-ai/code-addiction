@@ -145,7 +145,8 @@ one that asserted it would fire.
 
 ## Evidence
 
-Twenty-four commits, `c430da5..86f8008`. Build clean on every block, zero graph warnings
+Twenty-four commits, `c430da5..246da6f`, plus the close-out's own archive and
+index commit on top of them. Build clean on every block, zero graph warnings
 against a zero baseline. The cli suite 1100 passing, 0 failing, up from 1017 — the 83
 new assertions are this delivery's matrix. The scripts suite 410 passing, up from 386
 with 11 removed by the deleted file and 35 added. Every block's gates measured against
