@@ -17,28 +17,30 @@ graph LR
   BADE{{add-backend-development}}
   CORE{{add-code-review}}
   CO{{add-commit}}
+  CSC{{add-cross-sf-consistency}}
   DADE{{add-database-development}}
-  DEVA{{add-delivery-validation}}
-  DORE{{add-doc-reviewer}}
   DOSC{{add-doc-schemas}}
   EC{{add-ecosystem}}
   FEDI{{add-feature-discovery}}
+  FINR{{add-final-report}}
   FRDE{{add-frontend-development}}
   IDCO{{add-id-convention}}
   IN{{add-investigation}}
   KNDI{{add-knowledge-discovery}}
+  PRV{{add-plan-review}}
   QA{{add-qa}}
-  SEAU{{add-security-audit}}
+  RVDI{{add-review-discipline}}
+  SDDA{{add-subagent-driven-development}}
   TACH{{add-tasks-checklist}}
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
-  NEW --> DORE & DOSC & IDCO & KNDI
-  PLAN --> BADE & DADE & DOSC & EC & FEDI & FRDE & IDCO & KNDI & TACH & UXDE
-  BUILD --> BADE & CORE & DADE & DOSC & EC & FRDE & IDCO & TACH & UXDE
-  REVIEW --> BADE & CORE & CO & DADE & DEVA & DOSC & FRDE & IN & KNDI & QA & SEAU & TACH & UXDE
-  DONE --> DOSC & EC & IDCO & WIMA
-  PLANTOREADY --> DOSC
+  NEW --> DOSC & FINR & IDCO & KNDI & PRV & RVDI
+  PLAN --> BADE & CSC & DADE & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & TACH & UXDE
+  BUILD --> BADE & CORE & CO & DADE & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
+  REVIEW --> CO & DOSC & FINR & IN & KNDI & QA & TACH
+  DONE --> DOSC & EC & FINR & IDCO & WIMA
+  PLANTOREADY --> CO & CSC & DOSC & FINR & RVDI
 ```
 
 ## Graph 2 - Support Commands
@@ -60,40 +62,44 @@ graph LR
   CLMDST{{add-claude-md-style}}
   CO{{add-commit}}
   DEENSE{{add-dev-environment-setup}}
-  DORE{{add-doc-reviewer}}
   DOSC{{add-doc-schemas}}
   EC{{add-ecosystem}}
+  FINR{{add-final-report}}
   HECH{{add-health-check}}
   IDCO{{add-id-convention}}
   IN{{add-investigation}}
   KNDI{{add-knowledge-discovery}}
   PRDI{{add-product-discovery}}
+  PRV{{add-plan-review}}
   QA{{add-qa}}
   QAMI{{add-qa-migration}}
+  RVDI{{add-review-discipline}}
   SECO{{add-setup-contract}}
-  SUDRDE{{add-subagent-driven-development}}
+  SDDA{{add-subagent-driven-development}}
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
   ADD --> DEENSE & EC
-  INIT --> DOSC & PRDI
-  DIAGNOSE --> DOSC & EC & IN & KNDI
-  HOTFIX --> DOSC & EC & IDCO & IN & KNDI & UXDE
-  AUDIT --> DOSC & EC & HECH & IN
-  WIKI --> ARDI & CLMDST & DOSC & EC & WIMA
-  BRAINSTORM --> DORE & DOSC
+  INIT --> DOSC & FINR & PRDI
+  DIAGNOSE --> DOSC & EC & FINR & IN & KNDI
+  HOTFIX --> DOSC & EC & FINR & IDCO & IN & KNDI & UXDE
+  AUDIT --> DOSC & EC & FINR & HECH & IN
+  WIKI --> ARDI & CLMDST & DOSC & EC & FINR & WIMA
+  BRAINSTORM --> DOSC & FINR & KNDI & PRV & RVDI
   UX --> UXDE
-  QASETUP --> DEENSE & DOSC & QA & QAMI & SECO & SUDRDE
-  PULLREQUEST --> CO & DOSC & IDCO
+  QASETUP --> DEENSE & DOSC & FINR & QA & QAMI & SECO & SDDA
+  PULLREQUEST --> CO & DOSC & FINR & IDCO
 ```
 
 ## Graph 3 - Agent Dispatch
 
 ```mermaid
 graph LR
+  BRAINSTORM(add.brainstorm)
   BUILD(add.build)
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
+  NEW(add.new)
   PLAN(add.plan)
   PLANTOREADY(add.plan-to-ready)
   QASETUP(add.qa-setup)
@@ -101,15 +107,21 @@ graph LR
 
   ARA>architecture-agent]
   BAA>backend-agent]
+  COA>conformance-agent]
+  CSA>consistency-agent]
   DAA>database-agent]
   DIA>discovery-agent]
   E2A>e2e-agent]
+  FAA>failure-analysis-agent]
   FEHIA>feature-history-agent]
   FIA>fix-agent]
   FRA>frontend-agent]
   GIHIA>git-history-agent]
+  PRA>plan-reviewer-agent]
   QAA>qa-agent]
   REA>reviewer-agent]
+  RBA>readback-agent]
+  SEA>security-agent]
   TEA>test-agent]
   UXA>ux-agent]
   UXFLA>ux-flow-agent]
@@ -119,28 +131,47 @@ graph LR
   BAAR{{add-backend-architecture}}
   BADE{{add-backend-development}}
   CORE{{add-code-review}}
+  CSC{{add-cross-sf-consistency}}
   DADE{{add-database-development}}
+  DOSC{{add-doc-schemas}}
   FEDI{{add-feature-discovery}}
+  FERB{{add-feature-readback}}
   FESP{{add-feature-specification}}
   FRAR{{add-frontend-architecture}}
   FRDE{{add-frontend-development}}
+  IN{{add-investigation}}
+  KNDI{{add-knowledge-discovery}}
+  PRV{{add-plan-review}}
+  QA{{add-qa}}
   SEAU{{add-security-audit}}
   UXDE{{add-ux-design}}
 
-  BUILD --> BAA & DAA & E2A & FIA & FRA & REA & TEA & UXA
+  BRAINSTORM --> PRA & RBA
+  BUILD --> BAA & DAA & E2A & FIA & FRA & RBA & REA & TEA & UXA
   DIAGNOSE --> ARA & FEHIA & GIHIA
-  HOTFIX --> ARA & FEHIA & GIHIA
-  PLAN --> ARA & BAA & DAA & DIA & FRA & QAA & UXA & UXFLA & UXLAA
-  PLANTOREADY --> ARA & BAA & DAA & DIA & E2A & FIA & FRA & QAA & REA & TEA & UXA & UXFLA & UXLAA
-  QASETUP --> E2A
+  HOTFIX --> ARA & COA & FAA & FEHIA & GIHIA & SEA
+  NEW --> PRA & RBA
+  PLAN --> ARA & BAA & CSA & DAA & DIA & FRA & PRA & QAA & RBA & UXA & UXFLA & UXLAA
+  PLANTOREADY --> ARA & BAA & CSA & DAA & DIA & E2A & FIA & FRA & PRA & QAA & RBA & REA & TEA & UXA & UXFLA & UXLAA
+  QASETUP --> E2A & QAA
   REVIEW --> E2A & QAA & REA & UXA
 
   ARA --> ARDI & BAAR & FRAR
   BAA --> BADE & DADE
+  COA --> CORE & KNDI
+  CSA --> CSC
   DAA --> DADE
   DIA --> FEDI & FESP
+  FAA --> CORE & IN
+  FEHIA --> IN
+  FIA --> UXDE
   FRA --> FRDE
+  GIHIA --> IN
+  PRA --> DOSC & PRV
+  QAA --> QA
   REA --> CORE & SEAU
+  RBA --> FERB
+  SEA --> CORE & SEAU
   UXA --> UXDE
   UXFLA --> UXDE
   UXLAA --> UXDE
