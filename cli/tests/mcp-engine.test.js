@@ -162,7 +162,7 @@ describe('L2.4 — both corpora answer identically to scripts/graph.js', () => {
 describe('scenario — "what was already built near this"', () => {
   it('L2.2 search returns one hit per *-about, and none for a user file', () => {
     const all = actions.search(docs, { terms: '', limit: 50 });
-    expect(all.hits.map((h) => h.id).sort()).toEqual(['0009F', '0042F', '0051H', 'wiki/backend']);
+    expect(all.hits.map((h) => h.id).sort()).toEqual(['0009F', '0012F', '0042F', '0051H', 'wiki/backend']);
     expect(actions.search(docs, { terms: 'transcript' }).hits).toEqual([]);
     expect(actions.search(docs, { terms: 'critical findings' }).hits).toEqual([]);
   });
@@ -227,7 +227,7 @@ A draft that has not shipped. It touches auth, which is why it must be visible.
   it('search honours limit while reporting the true total', () => {
     const capped = actions.search(docs, { terms: '', limit: 2 });
     expect(capped.hits).toHaveLength(2);
-    expect(capped.total).toBe(4);
+    expect(capped.total).toBe(5);
   });
 });
 
@@ -348,8 +348,8 @@ describe('scenario — "what is the migration still missing"', () => {
   it('stats reports health, the hubs and every unresolved id', () => {
     const s = actions.stats(docs);
     expect(s.corpus).toBe('docs');
-    expect(s.nodes).toBe(4);
-    expect(s.byKind).toEqual({ 'work item': 3, 'reference page': 1 });
+    expect(s.nodes).toBe(5);
+    expect(s.byKind).toEqual({ 'work item': 4, 'reference page': 1 });
     expect(s.skipped).toBe(3);
     expect(s.unresolved).toContainEqual({ from: '0051H', to: '0099F' });
     // A changelog's part_of points at the work item it sits with, so it is a
@@ -365,7 +365,7 @@ describe('scenario — the index is a cache and the markdown is the truth', () =
     expect(fs.existsSync(indexPath)).toBe(true);
     const written = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
     expect(written.corpus).toBe('docs');
-    expect(written.nodes).toHaveLength(4);
+    expect(written.nodes).toHaveLength(5);
   });
 
   it('a write between two queries is visible to the second, with no reindex call', () => {
@@ -391,7 +391,7 @@ describe('scenario — the index is a cache and the markdown is the truth', () =
     try {
       const result = run('reindex', {}, { corpus: 'docs', root: tree });
       expect(result.rebuilt).toBe(true);
-      expect(result.nodes).toBe(4);
+      expect(result.nodes).toBe(5);
       expect(result.unresolved).toBeGreaterThan(0);
       expect(fs.existsSync(path.join(tree, CORPORA.docs.index))).toBe(true);
     } finally {

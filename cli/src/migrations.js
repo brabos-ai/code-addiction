@@ -95,7 +95,16 @@ function docRefsWithReason(content) {
   const out = [];
   for (const match of body.matchAll(/\{\{doc:([^}]+)\}\}/g)) {
     const before = body.slice(0, match.index);
-    const start = Math.max(before.lastIndexOf('. ') + 1, before.lastIndexOf('\n\n') + 1, 0);
+    // THE BOUNDARY IS A TERMINATOR FOLLOWED BY ANY WHITESPACE, newline
+    // included. Matching '. ' alone swallows every earlier sentence of a
+    // paragraph that wraps — which an extractive document always does — and the
+    // reason then carries three sentences and names the wrong document.
+    const boundary = [...before.matchAll(/[.!?]\s/g)].pop();
+    const start = Math.max(
+      boundary ? boundary.index + boundary[0].length : 0,
+      before.lastIndexOf('\n\n') + 2,
+      0,
+    );
     const after = body.slice(match.index);
     const stop = after.search(/[.!?](\s|$)/);
     const sentence = (before.slice(start) + (stop === -1 ? after : after.slice(0, stop + 1)))
@@ -105,6 +114,12 @@ function docRefsWithReason(content) {
     out.push({ id: match[1].trim(), why: sentence || null });
   }
   return out;
+}
+
+/** The ids a `## Relations` section points at, whatever the type. */
+function parseRelationsOf(content) {
+  const body = sectionBody(content, 'Relations');
+  return { relations: [...body.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1].trim()) };
 }
 
 /** Ids already declared in a `## Relations` section, so a re-run adds nothing. */
@@ -265,10 +280,23 @@ function harvestRelations(ctx) {
       add(null, item.frontmatter.superseded_by, null, 'superseded');
     }
 
-    // Sources that live in a sibling attachment, attributed to this work item.
+    // Sources that live in an attachment, attributed to this work item.
+    //
+    // BOTH LAYOUTS, per design decision 30. A sibling in the same directory
+    // belongs to this item; so does an attachment anywhere that names this item
+    // in its own `## Relations` or `related:` — which is how a
+    // `docs/changelog/CHG[NNNN].md` reaches the work item it delivered, having
+    // no *-about sibling of its own.
     const dir = path.dirname(item.full);
+    const belongsToItem = (sibling) => {
+      if (path.dirname(sibling.full) === dir) return true;
+      const { relations } = parseRelationsOf(sibling.content);
+      if (relations.some((r) => r === id)) return true;
+      const related = sibling.frontmatter.related;
+      return Array.isArray(related) && related.some((r) => String(r).trim() === id);
+    };
     for (const sibling of eligible) {
-      if (sibling === item || path.dirname(sibling.full) !== dir) continue;
+      if (sibling === item || isWorkItem(sibling) || !belongsToItem(sibling)) continue;
 
       const followUps = sectionBody(sibling.content, 'Follow-ups');
       if (followUps) {

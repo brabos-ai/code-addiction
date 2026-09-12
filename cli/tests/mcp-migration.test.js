@@ -120,23 +120,55 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     expect(snapshot(cwd)).toEqual(afterFirst);
   });
 
+  /** Every wikilink target in a document's `## Relations` section. */
+  const targetsIn = (rel) => {
+    const doc = fs.readFileSync(path.join(cwd, rel), 'utf8');
+    const section = doc.slice(doc.indexOf('## Relations'));
+    return [...section.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1]);
+  };
+
   it('L3.3 recovers a relation for EVERY {{doc:ID}} body reference that resolves', () => {
-    const about = fs.readFileSync(path.join(cwd, 'docs/features/0042F-itemised-purchase/about.md'), 'utf8');
-    expect(about).toMatch(/- links_to \[\[0009F\]\]/);
-    expect(outcome.harvest.docRefs).toBeGreaterThan(0);
+    // PER EDGE, NOT PER TOTAL. The plan's Reviewer Handoff names the totals
+    // shortcut as the likeliest way this level leaks, and the first draft took
+    // it: one literal expected line plus `docRefs > 0`. The fixture's 0042F
+    // body now names three resolving documents, and all three must appear.
+    const targets = targetsIn('docs/features/0042F-itemised-purchase/about.md');
+    for (const id of ['0009F', '0003F', '0012F']) {
+      expect(targets, `no relation recovered for {{doc:${id}}}`).toContain(id);
+    }
+  });
+
+  it('L3.3 each recovered reference carries ITS OWN sentence as the why', () => {
+    // A boundary matching only '. ' swallows every earlier sentence of a
+    // wrapped paragraph, so the second and third reference end up carrying a
+    // reason that names the first document. Found by thickening the fixture,
+    // not by reading the code.
+    const doc = fs.readFileSync(path.join(cwd, 'docs/features/0042F-itemised-purchase/about.md'), 'utf8');
+    const byTarget = Object.fromEntries(
+      doc.split('\n')
+        .filter((l) => l.startsWith('- links_to'))
+        .map((l) => [l.match(/\[\[([^\]]+)\]\]/)[1], l]),
+    );
+    expect(byTarget['0009F']).toContain('owns the row shape');
+    expect(byTarget['0009F']).not.toContain('It also replaces');
+    expect(byTarget['0003F']).toContain('It also replaces the import path');
+    expect(byTarget['0003F']).not.toContain('owns the row shape');
   });
 
   it('L3.3 recovers a relation for EVERY related: id that resolves', () => {
-    const hotfix = fs.readFileSync(path.join(cwd, 'docs/features/0051H-token-refresh/about.md'), 'utf8');
-    expect(hotfix).toMatch(/- links_to \[\[0042F\]\]/);
+    // 0051H carries `related: [0042F, 0012F]`. Both, not the first.
+    const targets = targetsIn('docs/features/0051H-token-refresh/about.md');
+    expect(targets).toContain('0042F');
+    expect(targets).toContain('0012F');
   });
 
   it("L3.3 recovers every related.md Follow-up carrying a {{doc:}}", () => {
+    // The fixture's related.md carries TWO Follow-ups, and each one's sentence
+    // is the `why` — recovered with no model.
     const hotfix = fs.readFileSync(path.join(cwd, 'docs/features/0051H-token-refresh/about.md'), 'utf8');
-    const line = hotfix.split('\n').find((l) => l.includes('[[0042F]]'));
-    expect(line).toBeTruthy();
-    // The Follow-up sentence is the `why` — recovered with no model.
-    expect(hotfix).toMatch(/introduced the second refresh call/);
+    expect(hotfix).toContain('introduced the second refresh call');
+    expect(hotfix).toContain('still logs the gap as a silent write failure');
+    expect(outcome.harvest.followUps).toBe(2);
   });
 
   it('L3.3 counts superseded_by and writes NO line for it', () => {

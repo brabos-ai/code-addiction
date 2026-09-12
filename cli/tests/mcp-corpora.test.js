@@ -260,3 +260,36 @@ describe('F6 — the artefact parser adapts the build sidecar', () => {
     expect(shared).toEqual([]);
   });
 });
+
+describe('F6 — decision 30: BOTH changelog layouts contribute edges', () => {
+  let corpus;
+
+  beforeAll(() => {
+    corpus = CORPORA.docs.load(docsTree);
+  });
+
+  it('an in-feature changelog contributes its body references to its work item', () => {
+    // CHG0001 sits beside 0042F's about.md and names {{doc:0042F}} — a self
+    // reference, correctly dropped. What matters is that it was READ at all.
+    const feature = corpus.nodes.find((n) => n.id === '0042F');
+    expect(feature.attachments.map((a) => a.type)).toContain('changelog');
+  });
+
+  it('a docs/changelog/ changelog contributes its body references too', () => {
+    // THE GAP THIS CLOSES: the edge pass used to attribute attachment content
+    // by DIRECTORY only. CHG0002 has no *-about sibling — it resolves to 0051H
+    // through its own part_of line — so its Changes bullet reached nothing.
+    // 0012F is named by NOTHING else in the fixture, so an edge reaching it can
+    // only have come from CHG0002's body. Asserting on a target the work item
+    // also references would pass without the fix, which is how the first draft
+    // of this level did.
+    const edge = corpus.edges.find((e) => e.from === '0051H' && e.to === '0012F');
+    expect(edge, 'the out-of-directory changelog contributed no edge').toBeTruthy();
+    expect(edge.type).toBe('links_to');
+    expect(edge.why).toContain('session store');
+  });
+
+  it('neither layout can make a work item point at itself', () => {
+    expect(corpus.edges.filter((e) => e.from === e.to)).toEqual([]);
+  });
+});

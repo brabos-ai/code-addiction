@@ -224,9 +224,14 @@ export function parseDocRefs(content) {
   for (const match of body.matchAll(/\{\{doc:([^}]+)\}\}/g)) {
     const id = match[1].trim();
     const before = body.slice(0, match.index);
+    // THE BOUNDARY IS A TERMINATOR FOLLOWED BY ANY WHITESPACE, newline
+    // included. Matching '. ' alone swallows every earlier sentence of a
+    // paragraph that wraps — which an extractive document always does — and the
+    // reason then carries three sentences and names the wrong document.
+    const boundary = [...before.matchAll(/[.!?]\s/g)].pop();
     const start = Math.max(
-      before.lastIndexOf('. ') + 1,
-      before.lastIndexOf('\n\n') + 1,
+      boundary ? boundary.index + boundary[0].length : 0,
+      before.lastIndexOf('\n\n') + 2,
       0,
     );
     const after = body.slice(match.index);
@@ -376,6 +381,11 @@ function loadDocsCorpus(root) {
       continue;
     }
     owner.attachments.push({ path: attachment.path, type: attachment.type });
+    // Remember which work item this attachment belongs to. The edge pass below
+    // needs the SAME answer, and deriving it there from the directory alone is
+    // what left a `docs/changelog/CHG[NNNN].md` contributing no edges: that
+    // layout has no *-about sibling, so only the part_of line resolves it.
+    attachment.ownerId = owner.id;
     if (attachment.type === 'hotfix-related') {
       for (const file of parseImpactedFiles(attachment.content)) {
         if (!owner.files.includes(file)) owner.files.push(file);
@@ -383,7 +393,7 @@ function loadDocsCorpus(root) {
     }
   }
 
-  const { edges, unresolved, malformed } = buildDocsEdges(nodes, attachments, byId, byDir);
+  const { edges, unresolved, malformed } = buildDocsEdges(nodes, attachments, byId);
 
   for (const node of nodes) {
     delete node._content;
@@ -401,7 +411,7 @@ function loadDocsCorpus(root) {
  * knows why, so overwriting a typed edge with `links_to` would lose intent
  * somebody wrote down.
  */
-function buildDocsEdges(nodes, attachments, byId, byDir) {
+function buildDocsEdges(nodes, attachments, byId) {
   const edges = new Map();
   const unresolved = [];
   const malformed = [];
@@ -432,8 +442,11 @@ function buildDocsEdges(nodes, attachments, byId, byDir) {
   // Each attachment's references are attributed to the work item it belongs to.
   const sourcesFor = new Map(nodes.map((n) => [n.id, [{ content: n._content, fm: n._frontmatter }]]));
   for (const attachment of attachments) {
-    const dirOwner = byDir.get(path.posix.dirname(attachment.path));
-    const owner = dirOwner ?? null;
+    // BOTH CHANGELOG LAYOUTS ARE READ, per design decision 30. The in-feature
+    // one resolves by directory and the `docs/changelog/` one resolves through
+    // its own `part_of` line — the attachment pass settled that already, and
+    // this reads its answer rather than re-deriving a narrower one.
+    const owner = attachment.ownerId ? byId.get(attachment.ownerId) : null;
     if (!owner) continue;
     sourcesFor.get(owner.id).push({ content: attachment.content, fm: attachment.frontmatter });
   }

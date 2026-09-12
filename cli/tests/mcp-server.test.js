@@ -258,7 +258,7 @@ describe('F8 — every action answers over the wire', () => {
       call(3, 'reindex'),
     ]);
     expect(Array.isArray(payload(frames[0]).orphans)).toBe(true);
-    expect(payload(frames[1]).nodes).toBe(4);
+    expect(payload(frames[1]).nodes).toBe(5);
     expect(payload(frames[2]).rebuilt).toBe(true);
   });
 
@@ -299,8 +299,8 @@ describe('F8 — every action answers over the wire', () => {
       await new Promise((r) => child.on('close', r));
 
       const frames = out.split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
-      expect(payload(frames[0]).nodes).toBe(4);
-      expect(payload(frames[1]).nodes).toBe(5);
+      expect(payload(frames[0]).nodes).toBe(5);
+      expect(payload(frames[1]).nodes).toBe(6);
     } finally {
       removeTree(tree);
     }
@@ -318,7 +318,7 @@ describe('F8 — the one-shot CLI form', () => {
   it('prints one action result as JSON and exits', () => {
     const run = once(['--corpus=docs', `--root=${docsTree}`, '--action=stats']);
     expect(run.status).toBe(0);
-    expect(JSON.parse(run.stdout).nodes).toBe(4);
+    expect(JSON.parse(run.stdout).nodes).toBe(5);
   });
 
   it('takes arguments as JSON', () => {
@@ -335,7 +335,7 @@ describe('F8 — the one-shot CLI form', () => {
   it('accepts the space-separated flag form too', () => {
     const run = once(['--corpus', 'docs', '--root', docsTree, '--action', 'stats']);
     expect(run.status).toBe(0);
-    expect(JSON.parse(run.stdout).nodes).toBe(4);
+    expect(JSON.parse(run.stdout).nodes).toBe(5);
   });
 
   it('rebuilds the index for a close-out, which is why the form exists', () => {

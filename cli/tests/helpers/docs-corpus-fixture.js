@@ -157,6 +157,27 @@ Assets this hotfix touched.
 - {{doc:0042F}} introduced the second refresh call and deserves a regression test
 `,
 
+  // Named by NOTHING except docs/changelog/CHG0002.md's Changes bullet. It is
+  // how the out-of-directory layout's contribution can be asserted in
+  // isolation: any edge reaching it came from that file and from nowhere else.
+  'docs/features/0012F-session-store/about.md': `---
+id: 0012F
+type: feature-about
+slug: session-store
+status: live
+created: 2026-06-15
+updated: 2026-06-15
+related: []
+tags: [auth]
+---
+
+## TL;DR
+Sessions live in their own store.
+
+## Relations
+None
+`,
+
   // ---- the changelog directory layout, which also exists in the wild -------
   'docs/changelog/CHG0002.md': `---
 id: CHG0002
@@ -167,6 +188,9 @@ related: [0051H]
 
 ## TL;DR
 Shipped the token refresh fix.
+
+## Changes
+- fix(auth): stop the double refresh — the session store in {{doc:0012F}} held the stale token
 
 ## Relations
 - part_of [[0051H]]
@@ -243,6 +267,7 @@ export function removeTree(root) {
  */
 export const EXPECTED_NODES = {
   '0009F': 'work item',
+  '0012F': 'work item',
   '0042F': 'work item',
   '0051H': 'work item',
   'wiki/backend': 'reference page',

@@ -45,6 +45,8 @@ A purchase can be split into itemised lines.
 ## Problem
 Totals alone cannot answer what was bought. The split writes through
 {{doc:0009F}}, which owns the row shape, and keeps the original total intact.
+It also replaces the import path {{doc:0003F}} opened, and reuses the session
+scope {{doc:0012F}} defines.
 
 ## References
 - {{doc:0099F}} was the earlier attempt and does not exist any more.
@@ -69,7 +71,7 @@ severity: high
 status: live
 created: 2026-09-01
 updated: 2026-09-01
-related: [0042F]
+related: [0042F, 0012F]
 ---
 
 ## TL;DR
@@ -99,6 +101,21 @@ Assets this hotfix touched.
 
 ## Follow-ups
 - {{doc:0042F}} introduced the second refresh call and deserves a regression test
+- {{doc:0009F}} still logs the gap as a silent write failure and should raise instead
+`,
+
+  'docs/features/0012F-session-store/about.md': `---
+id: 0012F
+type: feature-about
+slug: session-store
+status: live
+created: 2026-06-15
+updated: 2026-06-15
+related: []
+---
+
+## TL;DR
+Sessions live in their own store.
 `,
 
   // A document superseded by another, the fifth source.
