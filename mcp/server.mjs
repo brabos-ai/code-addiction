@@ -39,7 +39,7 @@ const NODE_ARG = {
 };
 
 /**
- * The ten tools, identical on both corpora.
+ * The tools, identical on both corpora.
  *
  * Decision 5 rests on the two corpora answering the same verbs, so a tool that
  * existed on one only would make the retirement of the old server a narrowing
@@ -139,6 +139,23 @@ export const TOOLS = [
     name: 'stats',
     description: 'Index health: counts per kind and edge type, the hubs, what was skipped, and every unresolved id.',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'history',
+    description:
+      'When this node was delivered, and what it replaced. Reads the delivery index through ' +
+      'delivered.sh — never its own parser — and joins each entry to the graph, so an item that ' +
+      'carries a node id also carries its current dependant count. Query-only: it never writes, ' +
+      'and an unavailable index is reported rather than thrown.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: NODE_ARG,
+        limit: { type: 'number', description: 'Maximum entries to read. Defaults to 50.' },
+        layer: { type: 'string', description: 'Passed straight through to delivered.sh.' },
+      },
+      required: ['id'],
+    },
   },
   {
     name: 'reindex',

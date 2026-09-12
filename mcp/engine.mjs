@@ -1,9 +1,14 @@
 /**
- * engine.mjs — the index builder and the ten actions, over the corpus registry.
+ * engine.mjs — the index builder and the query actions, over the corpus registry.
  *
- * Seven of the ten carry the same meaning on both corpora, which is what makes
- * one server over two parsers worth doing. `search`, `touched_by` and `reindex`
- * are new to the docs corpus and answer trivially on the artefact one.
+ * Most of them carry the same meaning on both corpora, which is what makes one
+ * server over two parsers worth doing. `search`, `touched_by` and `reindex` are
+ * new to the docs corpus and answer trivially on the artefact one.
+ *
+ * `history` is the eleventh and is here because the server it replaces exposed
+ * it. The design's verb table lists ten and omits it; deleting
+ * `scripts/artefact-graph-mcp.js` without it would take a working capability
+ * away, which F9's own contract forbids.
  *
  * `impact`, `dependencies` and `neighbors` are one walk behind two parameters.
  * They stay three actions because `scripts/artefact-graph-mcp.js` exposes them
@@ -22,6 +27,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+// The file's only subprocess. See `history` for why it is `bash <path>`.
+import { spawnSync } from 'node:child_process';
 import { CORPORA, resolveCorpus, probe } from './corpora.mjs';
 
 /**
@@ -55,6 +62,7 @@ const ACTIONS = [
   'orphans',
   'stats',
   'reindex',
+  'history',
 ];
 
 export { ACTIONS, DEPENDENCY_TYPES };
@@ -199,7 +207,7 @@ export function globToRegExp(glob) {
 const normalise = (p) => String(p).replace(/\\/g, '/').replace(/^\.\//, '');
 
 // ---------------------------------------------------------------------------
-// The ten actions
+// The actions
 // ---------------------------------------------------------------------------
 
 function scoreNode(node, terms) {
@@ -450,6 +458,111 @@ export const actions = {
       skipped: data.skipped.length,
       unresolved: data.unresolved,
     };
+  },
+
+  /**
+   * When this arrived, and what it replaced — the time axis.
+   *
+   * THE READ IS DELEGATED, NEVER REIMPLEMENTED. `delivered.sh read` owns
+   * last-line-wins, corrupt-line tolerance and status ordering. Parsing the
+   * JSONL here would be a SECOND implementation of one format, which is the
+   * failure `scripts/graph.js` records at this exact function.
+   *
+   * This verb owns the JOIN and nothing else:
+   *   index -> what existed, when it arrived, what it replaced   (time)
+   *   graph -> what depends on it today                          (structure)
+   *
+   * It NEVER writes, and an unavailable index is REPORTED rather than thrown:
+   * the same function runs inside the long-lived server, where a throw kills
+   * every later query rather than the one that failed.
+   */
+  history(data, { id, node: nodeRef, limit = 50, layer = null } = {}, context = {}) {
+    const node = resolve(data, id ?? nodeRef);
+    const name = node.slice(node.lastIndexOf('/') + 1);
+    const corpus = CORPORA[data.corpus];
+    const root = context.root ?? process.cwd();
+
+    const unavailable = (reason, detail) => ({
+      node, name, entries: [], matched: 0, unavailable: { reason, detail },
+    });
+
+    const script = context.script ?? path.join(root, corpus.deliveredScript);
+    const bash = context.bash ?? 'bash';
+    if (!fs.existsSync(script)) {
+      return unavailable('script-missing', `${script} does not exist`);
+    }
+
+    // `--layer` is passed STRAIGHT THROUGH, never reimplemented as a filter
+    // here: it narrows which entries are read at all.
+    const args = [script, 'read', name, '--limit', String(limit)];
+    if (layer) args.push('--layer', layer);
+
+    // `bash <path>`, never direct execution. Windows is this repository's
+    // primary platform and a shebang file is not executable by process
+    // creation there.
+    const res = spawnSync(bash, args, { cwd: root, encoding: 'utf8', windowsHide: true });
+
+    if (res.error) {
+      // ENOENT means the interpreter OR the working directory was not found,
+      // and the two read identically. Naming the cwd separates them.
+      const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
+      return unavailable(reason, `${res.error.message} (bash=${bash}, cwd=${root})`);
+    }
+
+    const stdout = res.stdout || '';
+    if (res.status !== 0) {
+      const key = (stdout + (res.stderr || '')).split('\n').find((l) => l.startsWith('ERROR=')) || '';
+      return unavailable('read-failed', key || `delivered.sh exited ${res.status}`);
+    }
+
+    // A line starting with `{` is an entry; anything else is a KEY=VALUE probe
+    // result. That split is delivered.sh's documented output contract.
+    const entries = [];
+    const keys = {};
+    for (const line of stdout.split('\n')) {
+      const l = line.trim();
+      if (!l) continue;
+      if (l.startsWith('{')) {
+        // One unparseable line is skipped, never fatal.
+        try { entries.push(JSON.parse(l)); } catch { /* skipped */ }
+      } else {
+        const eq = l.indexOf('=');
+        if (eq > 0) keys[l.slice(0, eq)] = l.slice(eq + 1);
+      }
+    }
+
+    const dependentsOf = (nodeId) => {
+      try { return walk(data, nodeId, { reverse: true, depth: 1 }).length; } catch { return null; }
+    };
+
+    // `node` is read at BOTH levels and the entry level is the one that
+    // matters: the schema puts `node` on the record, and delivered.sh
+    // normalises an item-level one away on write. The item level is read
+    // anyway because `read` returns whatever a line carries and a human may
+    // hand-write one.
+    const carriesNode = (e) =>
+      e.node === node || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node));
+
+    // Ordering is delivered.sh's contract (live -> changed -> superseded ->
+    // gone) and is preserved exactly. Re-sorting here would be a consumer
+    // re-ranking one shared structure.
+    const matched = entries.filter(carriesNode).map((e) => {
+      const out = {
+        ...e,
+        items: (Array.isArray(e.items) ? e.items : []).map((it) => (it && it.node
+          // Enriched only where the record already carries a node. An item
+          // without one is returned untouched, never with a fabricated id.
+          ? { ...it, dependents: dependentsOf(it.node) }
+          : it)),
+      };
+      if (e.node) out.dependents = dependentsOf(e.node);
+      return out;
+    });
+
+    // The return shape is `scripts/graph.js`'s, field for field. Two surfaces
+    // answering one question must be swappable by a caller, and a renamed key
+    // is a divergence a type checker would not catch here.
+    return { node, name, entries: matched, matched: matched.length, keys, unavailable: null };
   },
 
   /**

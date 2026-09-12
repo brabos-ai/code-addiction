@@ -94,6 +94,11 @@ describe('F8 — the tool surface', () => {
     expect(TOOLS.map((t) => t.name).sort()).toEqual([...ACTIONS].sort());
   });
 
+  it('carries history, which the server this replaces exposed', () => {
+    // F9's contract: no assertion the retired server carried may be dropped.
+    expect(TOOLS.map((t) => t.name)).toContain('history');
+  });
+
   it('every tool carries a description and an input schema', () => {
     for (const tool of TOOLS) {
       expect(tool.description.length, tool.name).toBeGreaterThan(40);

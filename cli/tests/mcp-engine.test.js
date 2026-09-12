@@ -43,11 +43,12 @@ afterAll(() => {
 // ---------------------------------------------------------------------------
 
 describe('F7 — the action surface', () => {
-  it('exposes exactly the ten actions the design names', () => {
+  it('exposes the ten actions the design names, plus the history the old server carried', () => {
     expect([...ACTIONS].sort()).toEqual(
       [
         'dependencies',
         'get',
+        'history',
         'impact',
         'neighbors',
         'orphans',

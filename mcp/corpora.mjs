@@ -527,6 +527,10 @@ export const CORPORA = {
     nodeRule: '<layer>/<kind>/<name>',
     edgeSources: ['the <!-- uses: --> block, five kinds'],
     index: 'framwork/.codeadd/artefact-graph.json',
+    // The delivery index reader, for the `history` verb. The path differs per
+    // corpus because this repository keeps the shipped scripts under
+    // `framwork/.codeadd/` while a user's project has them at `.codeadd/`.
+    deliveredScript: 'framwork/.codeadd/scripts/delivered.sh',
     // Written by `node scripts/build.js`, never by `reindex`.
     generated: true,
     load: loadArtefactCorpus,
@@ -539,6 +543,7 @@ export const CORPORA = {
     nodeRule: 'the `id:` value, or `wiki/<page>` for a reference page',
     edgeSources: ['## Relations', '{{doc:ID}}', 'related:', 'superseded_by', 'sources globs'],
     index: '.codeadd/docs-index.json',
+    deliveredScript: '.codeadd/scripts/delivered.sh',
     generated: false,
     load: loadDocsCorpus,
   },
