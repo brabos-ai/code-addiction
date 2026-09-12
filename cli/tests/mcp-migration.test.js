@@ -262,3 +262,60 @@ describe('F18 — L4.1 what the graph says after the harvest', () => {
     expect(actions.search(corpus, { terms: 'Findings' }).hits).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// F19 — the close-out gate, and the index rebuild
+// ---------------------------------------------------------------------------
+
+describe('F19 — /add.done keeps the format from decaying', () => {
+  const DONE = fs.readFileSync(
+    path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.done.md'),
+    'utf8',
+  );
+
+  const gate = () => DONE.slice(DONE.indexOf('### 4.4'), DONE.indexOf('## STEP 5'));
+
+  it('L4.3 gate 4.4 exists and blocks on either half', () => {
+    expect(DONE).toMatch(/^### 4\.4/m);
+    const body = gate();
+    expect(body).toContain('TL;DR');
+    expect(body).toContain('## Relations');
+    expect(body).toMatch(/BLOCKED/);
+  });
+
+  it('L4.3 an empty TL;DR heading satisfies nothing', () => {
+    // Decision 21: the whole point of the gate is that the TL;DR is the
+    // rejection surface, and a heading with nothing under it rejects nothing.
+    expect(gate()).toMatch(/empty/i);
+  });
+
+  it('L4.3 the gate names the tool it forbids, per building-commands', () => {
+    expect(gate()).toMatch(/⛔ DO NOT USE:/);
+  });
+
+  it('the gate runs before the merge, not after it', () => {
+    expect(DONE.indexOf('### 4.4')).toBeLessThan(DONE.indexOf('## STEP 8'));
+  });
+
+  it('rebuilds the docs index, through the shipped one-shot form', () => {
+    // `/add.done` runs in a user's project, where the server lives in the npm
+    // package and nothing is installed locally. It asks the CLI for one answer
+    // rather than speaking JSON-RPC to a subprocess it spawned for one call.
+    expect(DONE).toMatch(/codeadd mcp --corpus=docs --action=reindex/);
+  });
+
+  it('the rebuild runs AFTER the changelog, so the new document is in it', () => {
+    expect(DONE.indexOf('--action=reindex')).toBeGreaterThan(DONE.indexOf('### 6.3'));
+  });
+
+  it('the rebuild is best-effort and never blocks a merge', () => {
+    const rebuild = DONE.slice(DONE.indexOf('--action=reindex') - 1200, DONE.indexOf('--action=reindex') + 900);
+    expect(rebuild).toMatch(/non-blocking|best-effort|never block/i);
+  });
+
+  it('leaves the delivery-index routing alone', () => {
+    // The four-state routing product-close-out-parity established stands
+    // unchanged: this plan extends the close-out, it does not revisit it.
+    expect(DONE).toContain('### 6.8 Write the Delivery Index Entry');
+  });
+});
