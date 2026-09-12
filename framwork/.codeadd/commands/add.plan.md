@@ -152,7 +152,7 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **Goal:** Use knowledge from recent deliveries to inform planning, avoiding reinventing the wheel.
 
-**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block.
+**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block. **`RELATED_WORK`, from the skill's GRAPH step, travels the same two routes**: its work-item ids and their typed relations go into STEP 5's matrix as documents to read, and into STEP 8's bootstrap block as ids with their one-line reasons. A plan that proposes work already delivered nearby is the failure this closes.
 
 ---
 

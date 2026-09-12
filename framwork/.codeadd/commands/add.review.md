@@ -293,6 +293,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
 7. Consult knowledge base for validation:
    - IF `WIKI:present` (from script output): Load `{{skill:add-knowledge-discovery/SKILL.md}}`, read the hub (`{{addpath:wiki/index.md}}`), then SELECT + read the `{{addpath:wiki/domains/<area>.md}}` page(s) matching the changed code's areas, plus `{{addpath:wiki/conventions.md}}`. Freshness-check each selected page.
+   - Run the skill's GRAPH step with `touched_by` over the changed file list. **`RELATED_WORK` destination:** the judge dispatch prompts, as the deliveries that last changed these files with their one-line reasons. A reviewer that does not know a file was rewritten two deliveries ago reviews it as though it were new.
    - IF `WIKI:present` is false: note "knowledge base unavailable — /add.wiki generates it" and continue with code-derived patterns only.
    - These pages contain implementation patterns and conventions to validate against
 

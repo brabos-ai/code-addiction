@@ -241,3 +241,83 @@ describe('F5 — templates/related.md is gone', () => {
     expect(hits).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// F20 — the discovery step gains a graph step, with a destination in all six
+// ---------------------------------------------------------------------------
+
+describe('F20 — add-knowledge-discovery gains the GRAPH step', () => {
+  const SKILL = read(path.join(SKILLS, 'add-knowledge-discovery', 'SKILL.md'));
+
+  it('the procedure carries a GRAPH step, right after INDEX', () => {
+    expect(SKILL).toMatch(/^### 2\. GRAPH$/m);
+    expect(SKILL.indexOf('### 1. INDEX')).toBeLessThan(SKILL.indexOf('### 2. GRAPH'));
+    expect(SKILL.indexOf('### 2. GRAPH')).toBeLessThan(SKILL.indexOf('### 3. PRESENCE'));
+  });
+
+  it('its step numbering stays contiguous after the insertion', () => {
+    const nums = [...SKILL.matchAll(/^### (\d+)\. /gm)].map((m) => Number(m[1]));
+    expect(nums).toEqual(Array.from({ length: nums.length }, (_, i) => i + 1));
+    expect(SKILL).toMatch(/The 9-Step Procedure/);
+  });
+
+  it('every internal step reference points at the renumbered step', () => {
+    // FRESHNESS moved from 5 to 6 when GRAPH went in at 2. A pointer left at
+    // the old number resolves to the wrong step and nothing would catch it.
+    const freshness = [...SKILL.matchAll(/^### (\d+)\. FRESHNESS$/gm)][0][1];
+    expect(SKILL).toContain(`STEP ${freshness} (FRESHNESS)`);
+    expect(SKILL).not.toContain('STEP 5 (FRESHNESS)');
+  });
+
+  it('names the command it runs, and says what comes back', () => {
+    const step = SKILL.slice(SKILL.indexOf('### 2. GRAPH'), SKILL.indexOf('### 3. PRESENCE'));
+    expect(step).toContain('codeadd mcp --corpus=docs');
+    expect(step).toContain('RELATED_WORK');
+    expect(step).toMatch(/touched_by/);
+    expect(step).toMatch(/search/);
+  });
+
+  it('no-ops when the graph is unavailable, like INDEX and PRESENCE do', () => {
+    const step = SKILL.slice(SKILL.indexOf('### 2. GRAPH'), SKILL.indexOf('### 3. PRESENCE'));
+    expect(step).toMatch(/no-op|absent|unavailable/i);
+  });
+
+  it('the uses block declares what the step now names', () => {
+    expect(SKILL).toMatch(/- mention: \/add\.done/);
+  });
+});
+
+describe('F20 — all six commands name a destination for the result', () => {
+  const SIX = ['add.new', 'add.plan', 'add.hotfix', 'add.brainstorm', 'add.diagnose', 'add.review'];
+
+  it('each loads the skill and names RELATED_WORK', () => {
+    for (const name of SIX) {
+      const src = read(path.join(COMMANDS, `${name}.md`));
+      expect(src, name).toContain('add-knowledge-discovery/SKILL.md');
+      expect(src, name).toContain('RELATED_WORK');
+    }
+  });
+
+  it('each says where the result goes, not just that it exists', () => {
+    // "A named destination" is the plan's phrase, and a mention with no
+    // destination is what four of the six already did with the index result.
+    for (const name of SIX) {
+      const src = read(path.join(COMMANDS, `${name}.md`));
+      const line = src.split('\n').find((l) => l.includes('RELATED_WORK'));
+      expect(line, name).toMatch(/STEP|dispatch|questionnaire|section|blast radius|## Relations/);
+    }
+  });
+
+  it('add.hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {
+    const src = read(path.join(COMMANDS, 'add.hotfix.md'));
+    const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
+    expect(step4).toContain('RELATED_WORK');
+    expect(step4).toMatch(/INDEX/);
+  });
+
+  it('the skill records why the hotfix exemption covers GRAPH too', () => {
+    const skill = read(path.join(SKILLS, 'add-knowledge-discovery', 'SKILL.md'));
+    const whenNot = skill.slice(skill.indexOf('## When NOT to Use'), skill.indexOf('## The 9-Step'));
+    expect(whenNot).toContain('GRAPH');
+  });
+});

@@ -88,7 +88,7 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 ### 1.4 Consult Knowledge Base
 
-Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation.
+Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **`RELATED_WORK` destination:** the same STEP 4 dispatch prompts, as ids with their one-line reasons — a `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion.
 
 ---
 
