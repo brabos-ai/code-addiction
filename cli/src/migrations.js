@@ -35,7 +35,9 @@ function pruneLegacyOrphans(ctx) {
       const full = path.join(ctx.cwd, root, rel);
       if (!fs.existsSync(full)) continue;
       fs.unlinkSync(full);
-      changes.push(`${root}/${rel}`);
+      // The verb travels with the change. The reporter is neutral by F16, so a
+      // change that does not say what happened to it reads as a bare path.
+      changes.push(`removed ${root}/${rel}`);
     }
   }
 
@@ -157,7 +159,7 @@ export async function migrate(cwd, args = [], scope = 'project') {
     return;
   }
 
-  for (const change of result.changes) log.success(`removed ${change}`);
+  for (const change of result.changes) log.success(`Migration: ${change}`);
   for (const failure of result.failed) log.warn(`${failure.id} failed: ${failure.error}`);
 
   if (result.applied.length > 0) {

@@ -192,3 +192,78 @@ describe('F14 — L4.4 exactly one entry, and the pin matches the version', () =
     }
   });
 });
+
+describe('F15 — update registers too, and the already-current path still does', () => {
+  const updaterSource = () =>
+    fs.readFileSync(path.join(import.meta.dirname, '..', 'src', 'updater.js'), 'utf8');
+
+  it('the updater calls the same writer the installer does', () => {
+    const src = updaterSource();
+    expect(src).toContain("from './mcp-registration.js'");
+    expect(src).toMatch(/writeMcpRegistration\(/);
+  });
+
+  it('registration runs BEFORE the already-up-to-date early return', () => {
+    // Registration only after the download leaves a project that is already on
+    // the latest version with the migration applied and no server configured —
+    // the exact failure F15 exists to close, reopened one branch earlier.
+    const src = updaterSource();
+    const register = src.indexOf('writeMcpRegistration(');
+    const earlyReturn = src.indexOf('Already up to date');
+    expect(register).toBeGreaterThan(-1);
+    expect(register).toBeLessThan(earlyReturn);
+  });
+
+  it('the pin written is the version being installed, not the one on disk', () => {
+    const src = updaterSource();
+    const open = src.indexOf('writeMcpRegistration(');
+    const call = [null, src.slice(open, src.indexOf(');', open))];
+    expect(call, 'writeMcpRegistration call not found').toBeTruthy();
+    expect(call[1]).toContain('newVersion');
+    expect(call[1]).not.toContain('currentVersion');
+  });
+
+  it('reports through the installer’s reporter, so both say the same thing', () => {
+    expect(updaterSource()).toContain('reportMcpRegistration');
+  });
+});
+
+describe('F16 — the migration report reads correctly for an additive migration', () => {
+  const read = (rel) => fs.readFileSync(path.join(import.meta.dirname, '..', rel), 'utf8');
+
+  /**
+   * The file with every comment stripped.
+   *
+   * Both files EXPLAIN the wording they replaced, quoting it. Matching raw text
+   * would fail on the explanation rather than on the code, which is the defect
+   * the first draft of this level had.
+   */
+  const NEWLINE = String.fromCharCode(10);
+  const code = (rel) =>
+    read(rel)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split(NEWLINE)
+      .filter((l) => !l.trim().startsWith('//'))
+      .join(NEWLINE);
+
+  it('L4.7 neither driver hardcodes "removed"', () => {
+    // The only migration on the books deletes files, so the verb was baked into
+    // the reporter. An additive migration reports "removed" for files it created.
+    for (const rel of ['src/updater.js', 'src/migrations.js']) {
+      expect(code(rel), rel).not.toMatch(/Migration removed \$\{change\}/);
+      expect(code(rel), rel).not.toMatch(/log\.success\(`removed \$\{change\}`\)/);
+    }
+  });
+
+  it('L4.7 the verb comes from the migration that did the work', () => {
+    const migrations = read('src/migrations.js');
+    // pruneLegacyOrphans says what it did, rather than leaving the reporter to guess.
+    expect(migrations).toMatch(/changes\.push\(`removed /);
+  });
+
+  it('L4.7 both drivers print the change verbatim under a neutral label', () => {
+    for (const rel of ['src/updater.js', 'src/migrations.js']) {
+      expect(code(rel), rel).toMatch(/Migration: \$\{change\}/);
+    }
+  });
+});

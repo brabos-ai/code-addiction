@@ -4,7 +4,8 @@ import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected, agentDest } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
-import { fixLineEndings, writeManifest, resolveInstallSource, shouldPreserve } from './installer.js';
+import { fixLineEndings, writeManifest, resolveInstallSource, shouldPreserve, reportMcpRegistration } from './installer.js';
+import { writeMcpRegistration } from './mcp-registration.js';
 import { applyEnabledFeatures } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
 import { runMigrations } from './migrations.js';
@@ -91,6 +92,18 @@ export async function update(cwd, options = {}, scope = 'project') {
   }
 
   const newVersion = installSource.manifestVersion.replace(/^v/, '');
+
+  // MCP REGISTRATION RUNS BEFORE THE EARLY RETURN, AND THAT IS THE POINT.
+  // Registration only in `install` leaves every existing project with the
+  // migration applied and no server configured. Doing it after the download
+  // reopens the same hole one branch earlier: a project already on the latest
+  // version never downloads, so it would never register either. The writer is
+  // idempotent and rewrites the pin, so running it on a current project is
+  // either a no-op or the repair that project was missing.
+  reportMcpRegistration(
+    writeMcpRegistration(cwd, resolveSelected(providerKeys, installScope), newVersion),
+  );
+
   if (currentVersion === newVersion) {
     outro(`Already up to date (v${currentVersion}).`);
     return;
@@ -156,7 +169,11 @@ export async function update(cwd, options = {}, scope = 'project') {
   // that already preserves features and plugins — one write, no field dropped.
   const previousMigrations = Array.isArray(manifest.migrations) ? manifest.migrations : [];
   const migrationResult = runMigrations({ cwd, providers }, previousMigrations);
-  for (const change of migrationResult.changes) log.success(`Migration removed ${change}`);
+  // NEUTRAL, AND THE VERB BELONGS TO THE MIGRATION THAT DID THE WORK.
+  // This line used to read `Migration removed ${change}`, hardcoded because the
+  // only migration on the books deletes files. An additive migration would then
+  // report "removed" for every file it created.
+  for (const change of migrationResult.changes) log.success(`Migration: ${change}`);
   for (const failure of migrationResult.failed) {
     // Reported, not recorded, not fatal: the next update retries it.
     log.warn(`Migration ${failure.id} failed: ${failure.error}`);
