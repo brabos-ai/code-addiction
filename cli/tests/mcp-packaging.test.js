@@ -94,3 +94,45 @@ describe('F12 — L1.5 the packed tarball really contains it', () => {
     expect(inMcp).toContain('src/mcp/corpora.mjs');
   }, 120000);
 });
+
+describe('F13 — the publish gate covers mcp/', () => {
+  const workflow = () => fs.readFileSync(RELEASE_WORKFLOW, 'utf8');
+
+  it('L1.6 the CLI-change gate diffs mcp/ as well as cli/', () => {
+    // The ZIP step is unconditional while the publish is gated on this diff, so
+    // an mcp/-only release would ship a ZIP and skip npm publish — the exact
+    // version skew the npx distribution route exists to make impossible.
+    const match = workflow().match(/git diff --name-only "\$PREV_TAG"\.\.HEAD -- ([^|]+)\|/);
+    expect(match, 'CLI-change diff not found in release.yml').toBeTruthy();
+    const paths = match[1].trim().split(/\s+/);
+    expect(paths).toContain('cli/');
+    expect(paths).toContain('mcp/');
+  });
+
+  it('L1.6 the skip message names both paths, so a skipped publish is legible', () => {
+    const yml = workflow();
+    const skip = yml.split('\n').find((l) => l.includes('skipping publish'));
+    expect(skip).toBeTruthy();
+    expect(skip).toContain('cli/');
+    expect(skip).toContain('mcp/');
+  });
+
+  it('L1.6 the gate fires on a diff touching only mcp/', () => {
+    // Run the real predicate against a synthetic diff list: an mcp/-only change
+    // must report changed, which is what the whole level is about.
+    const match = workflow().match(/git diff --name-only "\$PREV_TAG"\.\.HEAD -- ([^|]+)\|/);
+    const paths = match[1].trim().split(/\s+/);
+    const changed = ['mcp/server.mjs'].some((f) => paths.some((p) => f.startsWith(p)));
+    expect(changed).toBe(true);
+  });
+
+  it('the build step still runs unconditionally, so the copy exists before pack', () => {
+    // cli/src/mcp is gitignored and generated. If "Build framework" ever grew
+    // an `if:` guard, the tarball would ship without the server and L1.5 would
+    // only catch it locally, where the build has always just run.
+    const yml = workflow();
+    const step = yml.slice(yml.indexOf('- name: Build framework'), yml.indexOf('- name: Run tests'));
+    expect(step).toContain('node scripts/build.js');
+    expect(step).not.toContain('if:');
+  });
+});

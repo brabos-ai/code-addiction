@@ -51,17 +51,24 @@ jobs:
           fi
         working-directory: .
 
+      # THE PUBLISH GATE, AND IT MUST COVER EVERY PATH THAT SHIPS IN THE PACKAGE.
+      # `mcp/` is one of them: `scripts/build.js` copies it to `cli/src/mcp/`
+      # and `npm publish` packs it. The framework ZIP step below is
+      # unconditional, so a release touching only `mcp/` would otherwise ship a
+      # new ZIP and skip the publish, leaving the `npx codeadd@<version>`
+      # registration pinned to a package that never got the new server — the
+      # exact version skew the npx distribution route exists to make impossible.
       - name: Check for CLI changes
         id: cli_changes
         run: |
           PREV_TAG=$(git tag --sort=-v:refname | sed -n '2p')
           if [ -z "$PREV_TAG" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$PREV_TAG"..HEAD -- cli/ | grep -q .; then
+          elif git diff --name-only "$PREV_TAG"..HEAD -- cli/ mcp/ | grep -q .; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No changes in cli/ since $PREV_TAG — skipping publish"
+            echo "No changes in cli/ or mcp/ since $PREV_TAG — skipping publish"
           fi
         working-directory: .
 
