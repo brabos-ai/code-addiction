@@ -317,7 +317,13 @@ describe('L2 collectNodes', () => {
     // .codeadd/templates) and were one of the three classes a node walk could
     // not see. They are neither declaring nor sniffable — nothing names them —
     // so they surface in `orphans`, which is the finding rather than a defect.
-    const KINDS = new Set(['command', 'skill', 'agent', 'reference', 'script', 'fragment', 'template']);
+    // `feature` and `plugin` are container kinds derived from the directory
+    // layout — fragments/{name}/ and plugins/{name}/. They exist so
+    // `dependencies` can answer "what does enabling this touch", which nothing
+    // could ask before.
+    const KINDS = new Set([
+      'command', 'skill', 'agent', 'reference', 'script', 'fragment', 'template', 'feature', 'plugin',
+    ]);
 
     expect(nodes.length).toBeGreaterThan(0);
     for (const n of nodes) {
@@ -905,6 +911,11 @@ describe('node inventory snapshot', () => {
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
       template: 4,
+      // feature 0 -> 3, plugin 0 -> 2: container nodes, one per directory under
+      // .codeadd/fragments/ and .codeadd/plugins/. Entry points, so they are
+      // never reported as orphans; they own their members through CONTAINS.
+      feature: 3,
+      plugin: 2,
     });
     // 208 -> 211: +4 skills, +1 reference, -2 commands.
     // declares 97 -> 99: the four new skills all carry a `<!-- uses: -->` block,
@@ -942,7 +953,10 @@ describe('node inventory snapshot', () => {
     // Templates add nothing here: they are deliberately non-declaring.
     // (plan 2026-09-12T221117-PLAN--agent-git-safety-and-dynamic-artefact-indexing,
     // F4, F6 and F7.)
-    expect(nodes).toHaveLength(221);
+    // 221 -> 226: +3 feature and +2 plugin container nodes.
+    // `declares` does not move: a directory has no uses: block, so both kinds
+    // are deliberately outside DECLARING_KINDS.
+    expect(nodes).toHaveLength(226);
     expect(nodes.filter((n) => n.declares)).toHaveLength(130);
   });
 });

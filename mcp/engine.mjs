@@ -40,8 +40,31 @@ import { CORPORA, resolveCorpus, probe } from './corpora.mjs';
  * mechanically, carrying no claim that anything depends on anything.
  */
 const DEPENDENCY_TYPES = {
-  artefacts: new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT', 'INJECTS_INTO']),
+  artefacts: new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT', 'INJECTS_INTO', 'CONTAINS']),
   docs: new Set(['caused_by', 'depends_on', 'part_of']),
+};
+
+/**
+ * The same map with `CONTAINS` removed, and `orphans()` reads THIS one.
+ *
+ * ⛔ DO NOT collapse the two. A feature or a plugin contains every file in its
+ * directory, so counting CONTAINS as a dependency here would give each of those
+ * files a permanent inbound edge — and NOTHING under `fragments/` or
+ * `plugins/` could ever be reported as an orphan again. Dead weight would
+ * become invisible by directory placement alone, which is the one failure
+ * `orphans` exists to prevent.
+ *
+ * `CONTAINS` stays in DEPENDENCY_TYPES above because `dependencies` on a
+ * feature node SHOULD list its members. The two sets differ because the two
+ * questions differ.
+ *
+ * ⛔ SECOND COPY of ORPHAN_DEPENDENCY_TYPES in `scripts/graph.js`. Neither can
+ * import the other — `mcp/` takes no dependency at all — so only
+ * `cli/tests/mcp-engine.test.js` holds them equal.
+ */
+const ORPHAN_DEPENDENCY_TYPES = {
+  artefacts: new Set([...DEPENDENCY_TYPES.artefacts].filter((t) => t !== 'CONTAINS')),
+  docs: new Set(DEPENDENCY_TYPES.docs),
 };
 
 /**
@@ -79,7 +102,7 @@ const ACTIONS = [
   'history',
 ];
 
-export { ACTIONS, DEPENDENCY_TYPES };
+export { ACTIONS, DEPENDENCY_TYPES, ORPHAN_DEPENDENCY_TYPES, ENTRY_POINT_KINDS };
 
 // ---------------------------------------------------------------------------
 // Loading
@@ -420,7 +443,7 @@ export const actions = {
     const nodes = kind ? data.nodes.filter((n) => n.kind === kind) : data.nodes;
 
     if (data.corpus === 'artefacts') {
-      const deps = DEPENDENCY_TYPES.artefacts;
+      const deps = ORPHAN_DEPENDENCY_TYPES.artefacts;
       const depended = new Set(data.edges.filter((e) => deps.has(e.type)).map((e) => e.to));
       return {
         orphans: nodes.filter(
