@@ -155,8 +155,13 @@ describe('agent capability — the emitted Claude header', () => {
     // These three deny Bash, Grep or Glob on top of the default. A dialect that
     // replaced a source declaration rather than filling one in would widen their
     // capability, and nothing else in the suite would notice.
+    //
+    // All three are named, not a sample: the Glob shape occurs exactly once, so
+    // asserting only the two Bash ones covers a single shape twice and the other
+    // not at all.
     const wider = {
       'feature-history-agent': 'disallowedTools: Write, Edit, NotebookEdit, Bash, Grep',
+      'git-history-agent': 'disallowedTools: Write, Edit, NotebookEdit, Glob, Grep',
       'readback-agent': 'disallowedTools: Write, Edit, NotebookEdit, Bash, Grep',
     };
     for (const [name, expected] of Object.entries(wider)) {
@@ -201,11 +206,13 @@ describe('agent capability — no read-only agent is dispatched to write', () =>
         '- **Output:** `${PLAN_DIR}/tasks.md` (subfeature dir if epic)',
       ].join('\n'),
     });
+    const offending = '- **Output:** `${PLAN_DIR}/tasks.md` (subfeature dir if epic)';
     const hits = writeDispatches(graph, read);
     expect(hits).toHaveLength(1);
-    expect(hits[0]).toMatchObject({ path: 'bad.md', line: 2, agent: '@ro-agent' });
-    expect(report(hits)).toContain('bad.md:2 dispatches @ro-agent (read-only)');
-    expect(report(hits)).toContain('tasks.md');
+    // Verbatim, not a substring: a report that paraphrases the line sends the
+    // reader hunting for text that is not in the file.
+    expect(hits[0]).toEqual({ path: 'bad.md', line: 2, agent: '@ro-agent', text: offending });
+    expect(report(hits)).toBe(`bad.md:2 dispatches @ro-agent (read-only)\n  ${offending}`);
   });
 
   it('ignores an Output: that summarises to stdout but mentions a .md name', () => {
