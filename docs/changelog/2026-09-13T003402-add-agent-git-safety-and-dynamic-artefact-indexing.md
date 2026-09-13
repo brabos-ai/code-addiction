@@ -81,3 +81,36 @@ naming a partial verb list of its own.
 The harness permissions artefact; tool restrictions on the other read-write agents (on Claude Code,
 13 of 22 have none — `readonly:` is not emitted by that dialect); `transforms/` as a node kind, since
 `release.yml` does not package it; and deleting the four templates nothing references.
+
+## What the review pass changed
+
+Fourteen auditors read the finished delivery — three scopes plus the eight-item ruler on every `.md`
+command, skill and agent in the diff. 34 findings: 18 applied, 16 rejected with a recorded ruling.
+
+Two were worth the pass on their own:
+
+- **A node snapshot had been red for five commits.** `cli/tests/build-artefact-graph.test.js` pins the
+  kind counts, and the suite was last run before the new internal skill landed. The gap is
+  structural, not an oversight: an internal F-block's validation is `node scripts/build.js` alone,
+  and the suite covering build.js's own output lives in `cli/tests/`.
+- **Seven graph warnings, against a zero baseline.** Six were declarations in the new skill its prose
+  never names. The seventh had a better cause: `add-framework-development` nests a ```bash fence
+  inside a ```markdown one, `fencedSpans` pairs fences sequentially, and the file's count
+  desynchronised — so everything from line 716 to EOF was invisible to the prose sniffer, including
+  the pointer this delivery had just added at 752. Widening the outer fence fixed the file and the
+  warning together. It was a pre-existing bug that had been silently disabling the gate over the tail
+  of a 750-line skill.
+
+Two factual errors in the new skill were corrected: it claimed both interfaces answer identically,
+which is false for `search`, `get`, `touched_by` and `reindex` — `scripts/graph.js` has no case for
+them and exits 2. And its fragment-edge caveat gave a retrieval that does not work: `INJECTS_INTO`
+runs fragment → command, so the answer takes two queries, not one.
+
+Five validation levels the build had verified by hand were committed as tests — `L1.4`, `L2.1`,
+`L2.2`, `L2.3`, `L2.5`. `L2.1` is the edge this delivery exists for.
+
+## Also
+
+`.claude/agent-memory/` is now gitignored. Subagents dispatched during a review write notes about the
+checkout as they work; they accumulate per machine rather than per delivery, so tracking them would
+put one agent's learning into another's review diff.
