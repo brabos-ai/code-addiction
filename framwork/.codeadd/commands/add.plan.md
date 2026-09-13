@@ -136,9 +136,20 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **Agent Dispatch (if needed):**
 - **Agent:** @discovery-agent
+- **Capability:** read-only
 - **Skill:** `add-feature-discovery` Phase 1.5
 - **Input:** about.md + RECENT_CHANGELOGS (from status.sh)
-- **Output:** `docs/features/${FEATURE_ID}/past-features.md`
+- **Returns:** the complete `past-features.md` content, in its report
+
+⛔ **The agent is read-only and writes nothing. THIS STEP writes the file** to
+`docs/features/${FEATURE_ID}/past-features.md`, verbatim from the report.
+
+```
+IF THE REPORT CARRIES NO DOCUMENT:
+  ⛔ DO NOT USE: Write on past-features.md
+  ⛔ DO NOT: Continue to Extract and Apply against a file you just created empty
+  ✅ DO: Report that the dispatch returned no content, and use the keyword fallback below
+```
 
 **Extract and Apply:** From past-features.md (cached or generated), identify:
 - Files available for reuse
