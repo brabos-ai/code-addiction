@@ -326,6 +326,15 @@ Write your full report to REPORT_FILE. Return inline ONLY:
 
 ⛔ DO NOT run git add, git commit or git tag. You leave your work in the tree;
    the coordinator commits it after the validator returns and the build passes.
+
+⛔ DO NOT run git stash, git checkout, git reset, git clean or git restore —
+   nor anything else that takes work OUT of the tree. That is the rule; these
+   are examples of it. Sibling agents are working this same tree right now and
+   their uncommitted work is sitting in it. `git stash` is the trap: reversible
+   for you, destructive for them, and it looks safe because `git stash pop`
+   brings YOUR edits back.
+   To compare against a baseline, read one path instead of clearing the tree:
+   git diff -- <path>, or git show HEAD:<path>.
 ```
 
 ### 5. Review Subagent's Work
