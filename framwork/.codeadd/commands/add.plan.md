@@ -639,14 +639,17 @@ IF THE REPORT CARRIES NO DOCUMENT:
 
 ### 10.5 Cross-SF Integration Review (EPIC ONLY)
 
-**IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent for integration review.
+**IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent [read-only] for integration review.
 **IF normal feature:** Skip to 10.6.
+
+⛔ **The agent reviews and reports. THIS STEP applies every edit to `plan.md`.** The agent declares
+`readonly: true` and writes nothing — a finding it returns is a `plan.md` edit you make here.
 
 **Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. 10.5 is the **in-place fixer**.
 
 **What 10.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add-cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by `/add.plan-to-ready`. Two checks 10.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 10.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
 
-**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. The agent judges and never edits; 10.5 edits.
+**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. `@consistency-agent` judges and never edits; 10.5 edits.
 
 **Checks to fix in-place — these three, and only these three:**
 1. Shared Resource Centralization (enums/config added ONCE in earliest SF)
