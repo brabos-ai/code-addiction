@@ -7,6 +7,7 @@ description: Use when designing command workflows or refactoring existing comman
 
 <!-- uses:
 - skill: add-final-report
+- skill: add-artefact-graph
 - command: /add-framework--build
 - skill: building-commands/references/agent-dispatch.md
 - mention: add-framework-development
@@ -424,16 +425,20 @@ tree cannot supply one and a minimal fragment stands in.
 
 ### Family A — answered by a tool
 
-The MCP server over the artefact graph answers these three. **`node scripts/build.js` is where two of
-them already fail a build**, so family A is mostly a confirmation that the gates ran — its value is
-the third item and the neighbour list it produces for family B.
+The artefact graph answers these three. **`node scripts/build.js` is where two of them already fail a
+build**, so family A is mostly a confirmation that the gates ran — its value is the third item and the
+neighbour list it produces for family B.
 
 ```
 IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
   ⛔ DO NOT USE: Grep to reconstruct it from prose
-  ✅ DO: Ask the artefact-graph MCP — `neighbors`, `dependencies`, `impact`
-  ✅ DO: Report family A as NOT VERIFIED when the MCP does not answer
+  ✅ DO: Ask the graph
+  ✅ DO: Report family A as NOT VERIFIED when the graph does not answer
 ```
+
+**`add-artefact-graph` owns the verbs and the interfaces.** Load it rather than picking from a list
+here — the three named above were a subset of eleven, and the CLI answers identically to the MCP, so
+an agent whose allowlist blocks MCP is not degraded and must not report NOT VERIFIED for that reason.
 
 ### 1. Graph closed
 
