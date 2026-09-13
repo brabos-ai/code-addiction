@@ -615,8 +615,20 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 **MANDATORY:** Load `{{skill:add-tasks-checklist/SKILL.md}}` BEFORE dispatching.
 
 **Dispatch:** @architecture-agent
-- **Output:** `${PLAN_DIR}/tasks.md` (feature dir or subfeature dir if epic)
+- **Capability:** read-only
+- **Returns:** the complete tasks document, in its report
 - **Prompt template:** From `add-tasks-checklist` ("Architect Subagent Prompt Template" section), substituting `${FEATURE_ID}`, `${EPIC_CURRENT_SF}`, `${PLAN_DIR}`
+
+⛔ **The agent is read-only and writes nothing. THIS STEP writes the file** to
+`${PLAN_DIR}/tasks.md` (feature dir, or subfeature dir if epic), verbatim from the report.
+
+```
+IF THE REPORT CARRIES NO DOCUMENT:
+  ⛔ DO NOT USE: Write on tasks.md
+  ⛔ DO NOT: Proceed to 10.5 or STEP 11 against a file you just created empty
+  ✅ DO: Report that the dispatch returned no content and STOP — STEP 11 coverage and
+         STEP 12.1's interface check both read this file
+```
 
 **Rules:**
 - tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (validators parse by text)
