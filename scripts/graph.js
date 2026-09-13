@@ -39,7 +39,28 @@ const DEFAULT_GRAPH = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.js
  * pointing AWAY from it ("use X instead"); counting it would inflate every
  * blast radius with relationships that cannot break anything.
  */
-const DEPENDENCY_TYPES = new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT', 'INJECTS_INTO']);
+const DEPENDENCY_TYPES = new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT', 'INJECTS_INTO', 'CONTAINS']);
+
+/**
+ * The same set MINUS `CONTAINS`, and `orphans()` reads THIS one.
+ *
+ * ⛔ DO NOT collapse the two back together. A feature or a plugin contains
+ * every file in its directory, so counting CONTAINS as a dependency would give
+ * each of those files a permanent inbound edge — and NOTHING under
+ * `fragments/` or `plugins/` could ever be reported as an orphan again. Dead
+ * weight would become invisible by directory placement alone, which is the one
+ * failure `orphans` exists to prevent.
+ *
+ * `CONTAINS` belongs in DEPENDENCY_TYPES above because `dependencies` on a
+ * feature node SHOULD list its members — that is the question containers were
+ * added to answer. The two sets differ because the two questions differ.
+ *
+ * ⛔ DUPLICATED in `mcp/engine.mjs`. `mcp/` takes no dependency at all and
+ * cannot import from here; only a test holds them equal.
+ */
+const ORPHAN_DEPENDENCY_TYPES = new Set(
+  [...DEPENDENCY_TYPES].filter((t) => t !== 'CONTAINS'),
+);
 
 /**
  * Kinds nothing is expected to depend on, so absence of dependants is normal.
@@ -156,7 +177,7 @@ function neighbors(graph, ref) {
  */
 function orphans(graph) {
   const depended = new Set(
-    graph.edges.filter((e) => DEPENDENCY_TYPES.has(e.type)).map((e) => e.to),
+    graph.edges.filter((e) => ORPHAN_DEPENDENCY_TYPES.has(e.type)).map((e) => e.to),
   );
   return graph.nodes.filter((n) => !ENTRY_POINT_KINDS.has(n.kind) && !depended.has(n.id));
 }
