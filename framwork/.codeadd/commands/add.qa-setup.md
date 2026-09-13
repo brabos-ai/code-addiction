@@ -214,7 +214,9 @@ Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a`
 
 ## STEP 2: Feature Gate — qa-pipeline opt-in
 
-Running this command is unambiguous QA intent, and everything it installs is inert while the `qa-pipeline` feature is off: `add.plan` authors no QA spec and `add.build` dispatches no `@e2e-agent`. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin").
+Running this command is unambiguous QA intent, and everything it installs is inert while the `qa-pipeline` feature is off: `add.plan` authors no QA spec, `add.build` dispatches no `@e2e-agent`, and `add.review` carries no QA steps at all — its preflight, evidence capture and judge pair arrive with the feature, so with the feature off there is no judgement either. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin").
+
+⛔ **The receipt this command writes does not restore judgement on its own.** The feature decides whether `add.review` has QA steps; the receipt decides whether those steps may run. A project with the receipt and the feature off gets a code review and nothing else.
 
 ### 2.1 Probe the feature state
 ```bash
