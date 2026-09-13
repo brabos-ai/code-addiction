@@ -791,15 +791,16 @@ function relId(from, full) {
  * @param {object} map  provider-map.json
  * @param {string} codeaddDir  product-layer root
  * @param {string} internalDir  repo root holding `.claude/`
- * @returns {Array<{id,kind,layer,name,path,registered,providers,declares}>}
+ * @returns {Array<{id,kind,layer,name,path,registered,providers,declares}>}, plus `readonly` on
+ *          every `agent` node
  */
 function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   const nodes = [];
   const agentProviders = Object.keys(map.providers || {}).filter((k) => map.providers[k].agents);
   const allProviders = Object.keys(map.providers || {});
 
-  const push = (kind, layer, name, full, registered, providers) =>
-    nodes.push({
+  const push = (kind, layer, name, full, registered, providers) => {
+    const node = {
       // Layer is part of identity, not decoration: `add-commit` is a product
       // skill AND an internal skill. `<kind>/<name>` alone collides on it.
       id: `${layer}/${kind}/${name}`,
@@ -810,7 +811,18 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
       registered,
       providers,
       declares: DECLARING_KINDS.has(kind),
-    });
+    };
+    // Capability is part of an agent's identity, because a caller can get it
+    // wrong: a read-only agent handed a file to write refuses, and on Claude the
+    // refusal is prose rather than an error, so the run continues with the file
+    // missing. On the node it is queryable — a DISPATCHES edge into a readonly
+    // agent can be checked against what the dispatch block asks for.
+    // Same predicate the agent dialects read, so the two cannot disagree.
+    if (kind === 'agent') {
+      node.readonly = splitFrontmatter(fs.readFileSync(full, 'utf8')).fields.readonly === 'true';
+    }
+    nodes.push(node);
+  };
 
   // --- Product layer ------------------------------------------------------
   const commandsDir = path.join(codeaddDir, 'commands');
