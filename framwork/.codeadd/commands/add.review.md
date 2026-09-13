@@ -13,6 +13,7 @@
 - command: /add.build
 - command: /add.done
 - command: /add.plan
+- command: /add.qa-setup
 - command: /add.wiki
 - script: qa-evidence.sh
 - script: status.sh
@@ -33,7 +34,7 @@ re-creates exactly the undeclared references removing them was meant to clear.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
-Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backend) in parallel, judges the rendered result through the absorbed QA sections, consolidates every finding into one routed correction contract, and writes a versioned `review-NNN.md`.
+Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backend) in parallel, consolidates every finding into one routed correction contract, and writes a versioned `review-NNN.md`. With the `qa-pipeline` feature enabled it additionally judges the rendered result through the absorbed QA sections; without it, this command is the code review and the spec-compliance audit.
 
 ---
 
@@ -665,7 +666,7 @@ Collect results from all previous steps:
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
 | Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if CLAUDE.md has no validation_gates) |
-| QA Judgement | ✅ PASSED / ⚠️ DEGRADED / ❌ BLOCKED / ⊘ NOT SET UP | Per-scope roll-up from STEP 10; ⊘ when the receipt gate (rows 9–10) is unmet |
+| QA Judgement | ✅ PASSED / ⚠️ DEGRADED / ❌ BLOCKED / ⊘ NOT SET UP / ⊘ FEATURE OFF | Per-scope roll-up from STEP 10. **⊘ FEATURE OFF** when `qa-pipeline` is disabled — this command carries no QA steps at all in that state; remedy: `codeadd features enable qa-pipeline`, then `/add.qa-setup`. **⊘ NOT SET UP** when the feature is on but the receipt gate is unmet |
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 
 > Reviewed at: ${TIMESTAMP}
@@ -674,6 +675,12 @@ Collect results from all previous steps:
 
 **Overall = PASSED** only if ALL gates are PASSED or SKIPPED.
 **Overall = BLOCKED** if ANY gate is BLOCKED.
+
+**The two ⊘ states on the QA Judgement row are different diagnoses, and neither blocks.**
+`⊘ FEATURE OFF` means `qa-pipeline` is disabled, so this command carried no QA steps to run at
+all — remedy: `codeadd features enable qa-pipeline`, then `/add.qa-setup`. `⊘ NOT SET UP` means
+the steps ran and stopped at the receipt gate — remedy: `/add.qa-setup` alone. Reporting the first
+as the second sends the user to a command that will not fix it.
 
 ### 11.2 Build the unified `## Fix Routing` table
 
