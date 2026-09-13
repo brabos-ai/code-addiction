@@ -44,9 +44,24 @@ const DEPENDENCY_TYPES = {
   docs: new Set(['caused_by', 'depends_on', 'part_of']),
 };
 
-/** Kinds nothing is expected to depend on, so absence of dependants is normal. */
+/**
+ * Kinds nothing is expected to depend on, so absence of dependants is normal.
+ *
+ * ⛔ THE `artefacts` SET IS THE SECOND COPY of ENTRY_POINT_KINDS in
+ * `scripts/graph.js`. It is duplicated rather than imported because `mcp/`
+ * takes NO dependency at all — it runs from the repository root, where the
+ * CLI's `node_modules` is off the resolution path — so neither copy can read
+ * the other. `cli/tests/mcp-engine.test.js` is the only thing holding them
+ * equal. Change one and change the other in the same delivery, or the two
+ * surfaces answer `orphans` differently and nothing says so out loud.
+ *
+ * A user enables a feature or a plugin and nothing declares one, so they are
+ * entry points the same way commands and fragments are. `template` is
+ * deliberately absent: nothing names the four shipped templates, and their
+ * showing up as orphans IS the finding.
+ */
 const ENTRY_POINT_KINDS = {
-  artefacts: new Set(['command', 'fragment']),
+  artefacts: new Set(['command', 'fragment', 'feature', 'plugin']),
   docs: new Set(),
 };
 

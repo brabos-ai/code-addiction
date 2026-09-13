@@ -313,7 +313,11 @@ describe('L2 collectNodes', () => {
 
   it('L2.1 every node has a legal kind, a non-empty path and a legal layer', () => {
     const nodes = collectNodes(map, CODEADD);
-    const KINDS = new Set(['command', 'skill', 'agent', 'reference', 'script', 'fragment']);
+    // `template` joined the set: templates ship (release.yml packages
+    // .codeadd/templates) and were one of the three classes a node walk could
+    // not see. They are neither declaring nor sniffable — nothing names them —
+    // so they surface in `orphans`, which is the finding rather than a defect.
+    const KINDS = new Set(['command', 'skill', 'agent', 'reference', 'script', 'fragment', 'template']);
 
     expect(nodes.length).toBeGreaterThan(0);
     for (const n of nodes) {
@@ -329,10 +333,18 @@ describe('L2 collectNodes', () => {
     expect(new Set(nodes.map((n) => n.id)).size).toBe(nodes.length);
   });
 
-  it('L2.1 only command, skill and agent are declaring kinds', () => {
+  it('L2.1 only command, skill, agent and fragment are declaring kinds', () => {
+    // `fragment` joined DECLARING_KINDS. A fragment is injected into a command
+    // and carries DISPATCH AGENT headings of its own, so it names agents the way
+    // a command does — but with declares:false the undeclared-reference gate
+    // skipped it before reading its text, and @test-agent's dispatch from two
+    // tdd-pipeline fragments was invisible to the graph.
+    // SNIFFABLE_KINDS deliberately did NOT gain it: nothing loads a fragment by
+    // name, the injection marker does that.
     const nodes = collectNodes(map, CODEADD);
     const declaring = nodes.filter((n) => n.declares);
-    expect(new Set(declaring.map((n) => n.kind))).toEqual(new Set(['command', 'skill', 'agent']));
+    expect(new Set(declaring.map((n) => n.kind)))
+      .toEqual(new Set(['command', 'skill', 'agent', 'fragment']));
   });
 
   it('L2.2 a directory under skills/ with no SKILL.md produces no node and no failure', () => {
@@ -870,7 +882,11 @@ describe('node inventory snapshot', () => {
       // deliberate sibling of the internal skill of the same name. Both are
       // counted: they are separate nodes in separate layers.
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F15.)
-      skill: 52,
+      // skill 52 -> 53: add-gitnexus, a plugin's own bundled skill. It ships
+      // and installs like any other — cli/src/plugins.js copies it into every
+      // provider's skills dir — but collectNodes never walked
+      // plugins/*/skills/, so no gate, search or orphan check had ever seen it.
+      skill: 53,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -885,6 +901,10 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
       script: 17,
       fragment: 24,
+      // template 0 -> 4: the four files under .codeadd/templates. They ship in
+      // the release ZIP and nothing in .codeadd/ names any of them, so all four
+      // land in `orphans` — that is the first true thing indexing them says.
+      template: 4,
     });
     // 208 -> 211: +4 skills, +1 reference, -2 commands.
     // declares 97 -> 99: the four new skills all carry a `<!-- uses: -->` block,
@@ -912,8 +932,18 @@ describe('node inventory snapshot', () => {
     // A skill IS in DECLARING_KINDS, so both counts move together — the
     // asymmetry with the script above is the rule, not an oversight.
     // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F15.)
-    expect(nodes).toHaveLength(216);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(105);
+    // 216 -> 221: +1 skill (add-gitnexus, a plugin's own bundled skill, now
+    // walked) and +4 templates (a new kind over .codeadd/templates). Both were
+    // shipped classes that produced no node at all.
+    // declares 105 -> 130: +1 for add-gitnexus, and +24 for every fragment.
+    // `fragment` joined DECLARING_KINDS, and `declares` is
+    // DECLARING_KINDS.has(kind) — a flag meaning "the build scans this file for
+    // a uses: block", not "this file has one". All 24 moved; 8 gained a block.
+    // Templates add nothing here: they are deliberately non-declaring.
+    // (plan 2026-09-12T221117-PLAN--agent-git-safety-and-dynamic-artefact-indexing,
+    // F4, F6 and F7.)
+    expect(nodes).toHaveLength(221);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(130);
   });
 });
 
