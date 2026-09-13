@@ -1,3 +1,13 @@
+<!-- uses:
+- agent: database-agent
+- agent: backend-agent
+- agent: frontend-agent
+- agent: e2e-agent
+- agent: fix-agent
+- skill: add-ux-design
+- mention: @ux-agent
+-->
+
 <!-- section:qa-fix -->
 
 #### QA-Routed Correction (qa-pipeline)

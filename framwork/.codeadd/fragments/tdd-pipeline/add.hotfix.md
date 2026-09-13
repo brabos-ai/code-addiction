@@ -1,3 +1,8 @@
+<!-- uses:
+- agent: test-agent
+- skill: add-tdd
+-->
+
 <!-- section:red-gate -->
 
 ### RED — Pin the Bug with a Failing Test (tdd-pipeline)

@@ -1,3 +1,7 @@
+<!-- uses:
+- skill: add-qa-spec
+-->
+
 <!-- section:step-list -->
 STEP 10.0: QA-Spec subagent       -> BEFORE assembly, generates plan-qa-spec.md — one row per screen 8.1's design.md declares, with capture states — and merges _tests/screens.json (qa-pipeline)
 <!-- /section:step-list -->

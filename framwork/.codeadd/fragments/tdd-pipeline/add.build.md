@@ -1,3 +1,9 @@
+<!-- uses:
+- agent: test-agent
+- skill: add-tdd
+- mention: /add.plan
+-->
+
 <!-- section:tasks-flow -->
 
 **Flow (TDD-aware — PRD0001):**

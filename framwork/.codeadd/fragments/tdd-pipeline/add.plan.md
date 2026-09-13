@@ -1,3 +1,7 @@
+<!-- uses:
+- skill: add-test-specification
+-->
+
 <!-- section:step-list -->
 STEP 9:  Test-Spec subagent       → AFTER area subagents, generates contract test cases
 <!-- /section:step-list -->

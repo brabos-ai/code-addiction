@@ -1,3 +1,11 @@
+<!-- uses:
+- mention: @feature-history-agent
+- mention: /add.diagnose
+- mention: /add.hotfix
+- mention: /add.new
+- mention: done.sh
+-->
+
 <!-- section:prune -->
 
 ### 6.9 Prune Post-Merge Scaffolding (docs-pruning)

@@ -567,8 +567,22 @@ const USES_EDGE_TYPES = {
 /** `- <kind>: <target>` with an optional trailing `(<modifier>)`. */
 const USES_ENTRY_RE = /^-\s+([A-Za-z]+)\s*:\s*(.+?)\s*(?:\(([^)]*)\))?\s*$/;
 
-/** Kinds whose artefacts may carry a declaration block. */
-const DECLARING_KINDS = new Set(['command', 'skill', 'agent']);
+/**
+ * Kinds whose artefacts may carry a declaration block.
+ *
+ * `fragment` is here, and its absence was a real blind spot rather than an
+ * oversight of taste. A fragment is injected INTO a command and carries
+ * `DISPATCH AGENT:` headings of its own, so it names agents the way a command
+ * does — but with `declares: false` the undeclared-reference gate skipped it
+ * before ever reading its text. `@test-agent` is dispatched from two
+ * tdd-pipeline fragments and from no command directly, so asking the graph who
+ * dispatched it returned an answer that was confidently incomplete.
+ *
+ * `SNIFFABLE_KINDS` deliberately does NOT gain `fragment`. That set governs
+ * being NAMED BY others, and nothing loads a fragment by name — the injection
+ * marker does that. The two sets answer different questions.
+ */
+const DECLARING_KINDS = new Set(['command', 'skill', 'agent', 'fragment']);
 
 /**
  * Filenames under commands/ and agents/ that the build never transforms.
