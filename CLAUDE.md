@@ -107,7 +107,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
 | `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
-| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
+| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/`, the composable layer included — fragments declare what they dispatch, and a plugin's bundled skills, the shipped templates and a node per feature and per plugin are all in it | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
 
@@ -193,6 +193,7 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Product-layer build mechanics | `add-framework-product-layer` |
 | Internal-layer build mechanics | `add-framework-internal-layer` |
 | `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 8 |
+| Querying the graph — the eleven verbs, both interfaces, and what it cannot see | `add-artefact-graph` |
 | `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
 | What belongs in a `CLAUDE.md` | `add-claude-md-style` |
 | Doc schemas, voice, output length | `add-doc-schemas` |
