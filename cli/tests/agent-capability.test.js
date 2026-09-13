@@ -22,9 +22,17 @@ import path from 'node:path';
  *      agents deny Bash, Grep or Glob on top of the default three, and a build
  *      that overwrote them would silently WIDEN their capability.
  *
- *   2. No dispatch block anywhere hands a read-only agent a file to write. This
- *      is the regression gate: the three sites are fixed, and this is what stops
- *      a fourth from being written.
+ *   2. No dispatch block declares a file `Output:` for a read-only agent. This is
+ *      the regression gate for the shape the three fixed sites had.
+ *
+ * ⛔ Gate 2 is a text scan, not a semantic one, and its blind spots are known:
+ * it needs a literal `@<name>` on a line, a declared DISPATCHES edge, and an
+ * `Output:` bullet within DISPATCH_WINDOW lines. A prompt that orders a write in
+ * a sentence — "the validator WRITES tasks.md directly" — passes it. So does a
+ * dispatch written by role name with no `@`, and an instruction inside a skill
+ * the agent loads, which arrives over USES_SKILL rather than DISPATCHES. Read it
+ * as "this shape cannot come back", never as "no read-only agent is asked to
+ * write anywhere".
  */
 
 const require = createRequire(import.meta.url);
