@@ -9,6 +9,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 });
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
+import { enablePlugin } from '../src/plugins.js';
 import { parseFragmentSections } from '../src/injection-core.js';
 import { PROVIDERS } from '../src/providers.js';
 import { treeFixture } from './helpers/tree-fixture.js';
@@ -40,6 +41,9 @@ import { treeFixture } from './helpers/tree-fixture.js';
  */
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
+
+const sidecarPoints = () =>
+  JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8')).points;
 
 const read = (rel) => fs.readFileSync(path.join(CODEADD, rel), 'utf8').replace(/\r\n/g, '\n');
 const lf = (s) => s.replace(/\r\n/g, '\n');
@@ -142,9 +146,51 @@ describe('L2 — integration', () => {
       expect(occurrences, `section ${section} landed ${occurrences}× (expected exactly 1)`).toBe(1);
     }
 
-    expect(installed, 'the playwright anchor did not survive the injection')
-      .toContain('<!-- plugin:playwright:drive -->');
+    // The MARKER never survives — build.js strips every HTML comment. What has
+    // to survive is the ANCHOR the plugin injects at, which the sidecar records.
+    const drive = sidecarPoints().find(
+      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.resource.name === 'add.review',
+    );
+    expect(drive, 'the playwright drive point left the sidecar').toBeTruthy();
+    expect(installed, `the playwright anchor "${drive.anchor.text}" did not survive the injection`)
+      .toContain(drive.anchor.text);
   });
+
+  // The four qa sections and the playwright block share one anchor, so they are
+  // two separate inserts at the same line and their relative order follows the
+  // enable order. applyInjectionToContent groups by anchor WITHIN one namespace
+  // only, which is why the four qa sections stay ordered and the plugin block
+  // does not join them.
+  //
+  // This pins the two placements that are actually reachable. It is a record of
+  // measured behaviour, not an endorsement: a cross-namespace shared anchor
+  // already exists on add.plan (qa-pipeline + tdd-pipeline), and this is the
+  // second one.
+  it('L2.2 the playwright block lands adjacent to the qa region, on the side the enable order picks', () => {
+    const step8 = (s) => s.split('\n').findIndex((l) => l.startsWith('## STEP 8:'));
+    const step11 = (s) => s.split('\n').findIndex((l) => l.startsWith('## STEP 11:'));
+    const driveLine = (s) => s.split('\n').findIndex((l) => l.includes('Driving is via Playwright MCP'));
+
+    const qaFirst = fixture.root();
+    enableFeature(qaFirst, 'qa-pipeline');
+    enablePlugin(qaFirst, 'playwright');
+    const a = lf(fs.readFileSync(claudeCommand(qaFirst, 'add.review'), 'utf8'));
+
+    const pwFirst = fixture.root();
+    enablePlugin(pwFirst, 'playwright');
+    enableFeature(pwFirst, 'qa-pipeline');
+    const b = lf(fs.readFileSync(claudeCommand(pwFirst, 'add.review'), 'utf8'));
+
+    // Present exactly once in both, and inside the region either way.
+    for (const [label, s] of [['qa-then-playwright', a], ['playwright-then-qa', b]]) {
+      expect(driveLine(s), `${label}: the drive block is missing`).toBeGreaterThan(-1);
+      expect(s.split('Driving is via Playwright MCP').length - 1, `${label}: not exactly once`).toBe(1);
+      expect(driveLine(s), `${label}: the drive block escaped below STEP 11`).toBeLessThan(step11(s));
+    }
+    // qa first → the plugin block lands above STEP 8; plugin first → below it.
+    expect(driveLine(a), 'qa-then-playwright: expected the drive block above STEP 8').toBeLessThan(step8(a));
+    expect(driveLine(b), 'playwright-then-qa: expected the drive block below STEP 8').toBeGreaterThan(step8(b));
+  }, 30000); // two full fixture roots plus four enable passes
 
   // GUARD, not RED→GREEN. STEP 11 is ungated and must stay ungated: F17 edits
   // one of its rows, and the failure mode is moving the whole step by accident.
