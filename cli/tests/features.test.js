@@ -112,10 +112,15 @@ describe('FEATURES registry', () => {
     expect(FEATURES.tdd).toBeUndefined();
   });
 
+  // add.review joined the list in
+  // 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary (F14),
+  // which moved the QA judgement steps out of add.review's ungated base body
+  // and under this feature. The shape now matches tdd-pipeline's four-command
+  // one in kind as well as in form.
   it('defines qa-pipeline feature with the tdd-pipeline shape', () => {
     expect(FEATURES['qa-pipeline']).toBeDefined();
     expect(FEATURES['qa-pipeline'].default).toBe(false);
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build']);
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build', 'add.review']);
     expect(FEATURES['qa-pipeline']).not.toHaveProperty('providers');
   });
 
