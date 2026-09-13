@@ -183,7 +183,7 @@ In `/add.plan-to-ready`, **only the coordinator writes** to `tasks.md`. Area val
 
 ## Validator Report Shape
 
-Per-area validators MUST return a JSON-shaped report. **Every dispatching command owns the `tasks.md` write** — `add.build` and `/add.plan-to-ready` alike — because the validator is read-only in both:
+Per-area validators MUST return a JSON-shaped report. **The dispatching command owns the `tasks.md` write** — `add.build` and `/add.plan-to-ready` alike:
 
 ```json
 {
@@ -236,8 +236,7 @@ return. Return the document alone, with no commentary wrapped around it.
 ```
 
 ⛔ **The architect is `@architecture-agent`, which declares `readonly: true`.** A template telling it
-to write is a template it can only refuse, and on Claude that refusal is prose rather than an error —
-the dispatching step carries on and the file is simply absent. `add.plan` STEP 10.4 is the writer.
+to write is a template it can only refuse. `add.plan` STEP 10.4 is the writer.
 
 ## Resume vs Rerun Procedure
 
@@ -260,7 +259,7 @@ Used at the start of `add.build` TASKS MODE (and any consumer that re-enters a f
 
 Used by the per-area validator subagent under both `add.build` and `/add.plan-to-ready`. **The
 validator is read-only in both: it emits a tick report and the dispatching command writes `tasks.md`
-once.** One contract, so the behaviour does not depend on which command dispatched. Follow exactly:
+once.** Follow exactly:
 
 1. **Inspect diff:** run `git diff` against the feature branch base. This is the source of truth for what changed — NOT any FILES_CREATED/FILES_MODIFIED list, which can lie.
 2. **Filter** `tasks.md` items for the CURRENT AREA:

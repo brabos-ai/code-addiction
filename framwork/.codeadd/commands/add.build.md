@@ -797,7 +797,6 @@ and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exis
 ⛔ **The validator writes nothing — not `tasks.md`, not code.** `@reviewer-agent` declares
 `readonly: true`, so `Write` and `Edit` are denied to it. It returns ticks as a report and routes
 every violation; **11.2 merges and writes `tasks.md`, and `@fix-agent` applies every correction.**
-This is the same contract `/add.plan-to-ready` runs — one behaviour, whichever command dispatches.
 
 ```
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
@@ -860,7 +859,7 @@ IF A VALIDATOR REPORT HAS NOT RETURNED FOR EVERY DISPATCHED AREA:
 
 ⛔ **Do NOT let a validator write `tasks.md`.** `@reviewer-agent` is read-only and is denied `Write`;
 a run that expects it to tick leaves every item untouched, `SPEC_STATUS` permanently `INCOMPLETE`, and
-11.3 gate 2 blocking the commit forever. The merge here is what makes that impossible.
+11.3 gate 2 blocking the commit forever.
 
 `SPEC_STATUS` for gate 2 below is the merged result: `INCOMPLETE` when ANY area reported it.
 
