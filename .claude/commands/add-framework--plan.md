@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-plan-authoring
+- skill: add-artefact-graph
 - skill: add-final-report
 - skill: add-review-discipline
 - agent: framework-discovery-agent
@@ -204,6 +205,10 @@ node scripts/graph.js impact <name>             # context, not a grade
 node scripts/graph.js dependencies <name>       # what it needs
 node scripts/graph.js path <a> <b>              # how two artefacts connect
 ```
+
+**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see.** The calls
+above are the ones this step needs, not the whole surface — load the skill when the question is not
+one of them, or when an answer has to be qualified.
 
 **Grade on the depth-1 number.** The command layer cross-references itself densely, so the transitive
 closure saturates: almost anything a command can reach reports ~82 dependants, and a hub becomes

@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-build-ledger
+- skill: add-artefact-graph
 - skill: add-plan-authoring
 - skill: add-final-report
 - skill: add-review-discipline
@@ -451,6 +452,10 @@ The auditors read the plan and the diff. Neither shows what depends on a file no
 node scripts/graph.js impact <artefact-name> --depth 1
 node scripts/graph.js history <artefact-name> --layer product|internal
 ```
+
+**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see.** The calls
+above are the ones this step needs, not the whole surface — load the skill when the question is not
+one of them, or when an answer has to be qualified.
 
 **Depth 1, not the unbounded run.** The command layer cross-references itself densely, so the
 transitive closure saturates and a hub becomes indistinguishable from a leaf.
