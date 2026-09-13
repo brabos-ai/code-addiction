@@ -1221,10 +1221,23 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
     flagCrossLayer(n.path, stripHtmlComments(read(n)));
   }
 
-  // 5. Three shipped classes are not graph nodes at all, so a node walk alone
-  //    cannot see them: `templates/`, `transforms/` and a plugin's own
-  //    `skills/`. SHIPPED_SUBDIRS copies the first two verbatim and
-  //    `cli/src/plugins.js` copies the third into every provider's skills dir.
+  // 5. This sweep used to be the ONLY thing that could see three classes,
+  //    because none of them was a graph node: `templates/`, `transforms/` and a
+  //    plugin's own `skills/`. Two of the three now are — `collectNodes` walks
+  //    plugin skills as `skill` nodes and templates as a `template` kind — so
+  //    for those two this walk is a second look at files the node walk above
+  //    already covered. Harmless and kept: a cross-layer name is cheap to check
+  //    twice, and narrowing the list is a behaviour change, not a comment fix.
+  //
+  //    `transforms/` is the one genuinely still invisible, and it is invisible
+  //    ON PURPOSE. It does NOT ship: `release.yml` packages `.codeadd/scripts`,
+  //    `fragments`, `templates` and `plugins` — not `transforms`. It is
+  //    build-time input, like `provider-map.json`, so it is no more a
+  //    distributed artefact than the registry is. (The previous wording called
+  //    all three "shipped classes" and credited SHIPPED_SUBDIRS with copying
+  //    them; that constant feeds the raw-path linter, and does not list
+  //    `transforms` either.)
+  //
   //    `productRoot` is absent when a caller passes a synthetic graph, and that
   //    is the only case this sweep is skipped.
   if (productRoot) {
