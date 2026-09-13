@@ -141,7 +141,7 @@ This command takes over the coordinator role of `/add.plan`, `/add.build` and
 | Leg | Roster |
 |-----|--------|
 | Plan | `@discovery-agent`, `@ux-flow-agent`, `@ux-layout-agent`, `@ux-agent` (critique), `@database-agent`, `@backend-agent`, `@frontend-agent`, `@architecture-agent`, `@plan-reviewer-agent` (verdict gate, after consolidation) |
-| Build | `@database-agent`, `@backend-agent`, `@frontend-agent`, `@test-agent` (with `tdd-pipeline`), `@e2e-agent` (with `qa-pipeline`), `@reviewer-agent` (area validation), `@fix-agent` (correction) |
+| Build | `@database-agent`, `@backend-agent`, `@frontend-agent` (one at a time), `@test-agent` (with `tdd-pipeline`, after each area's implementer), `@e2e-agent` (with `qa-pipeline`), `@reviewer-agent` (area validation), `@fix-agent` (correction — one dispatch for the whole wave) |
 | Review | `@reviewer-agent` (frontend ∥ backend, read-only), `@ux-agent` (review mode) ∥ `@qa-agent` (with the QA receipt present) |
 
 ⛔ Dispatching one agent told to "read `{{cmd:add.plan}}` and execute it" is the
@@ -648,14 +648,33 @@ epic subfeature still leaves a record; today none does.
 
 ## STEP 4: Build Leg
 
-**Iteration 1 — implementation.** Dispatch the build roster per area, following
-the dependency order (contract tests → database → backend → parallel workers +
+**Iteration 1 — implementation.** Dispatch the build roster **one agent at a time**,
+following the dependency order (contract tests → database → backend → workers →
 frontend). Dispatch the area validator immediately after each area agent returns.
+
+```
+IF MORE THAN ONE AREA IS IN SCOPE:
+  ⛔ DO NOT: Send two implementation agents in one message
+  ✅ DO: Dispatch one, WAIT for its report and its validator, then the next
+```
+
+⛔ **They share one working tree.** Two writers in it at once means neither can
+tell its own build failure from its sibling's — `/add.build` STEP 10.1 owns this
+rule and this leg runs under it.
+
+**With `tdd-pipeline` on**, `@test-agent` for an area is dispatched AFTER that
+area's implementer, interleaved — `DB → test:DB → Backend → test:Backend →
+Frontend → test:Frontend`. Pass `ATTEMPT`, `MAX_ATTEMPTS = 3` and
+`KNOWN_FAILURES` (empty, rendered as `none observed`, when nothing has been
+observed yet), and an explicit `MODEL` one tier up on the final attempt only.
+A `BLOCKED` entry it returns is routed as a row, never re-dispatched to it.
+At the wave's `WAIT-ALL`, run `TEST_COMMAND` yourself rather than reading
+`TESTS_PASSING` off the reports.
 
 **Iteration 2 and later — correction leg.** The build leg consumes the previous
 round's `## Fix Routing` table from `review-NNN.md`:
 
-1. Dispatch `@fix-agent` per affected area, in the table's order, respecting `Blocked by`. Pass `AREA`, that area's `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS = 3`, and `BUILD_ERRORS` where relevant.
+1. Dispatch **ONE** `@fix-agent` for the whole wave. Pass `AREAS` (every area the rows touch), the wave's `ROUTED_ROWS` **in the table's own order**, `ATTEMPT`, `MAX_ATTEMPTS = 3`, and `BUILD_ERRORS` where relevant. The agent works the rows in that order and honours `Blocked by` itself, which is why it receives them whole. ⛔ DO NOT slice the table by area — the ordering is severity-first, and a `Blocked by` pointing across areas cannot be resolved from inside one slice.
 2. Rows returned `NOT_MINE` (`data-seed`, `env-boot`, capability-invalid, `@ux-agent` design-spec without a citation) are collected for the report as user decisions — never silently re-dispatched.
 3. **Write the resolution annex yourself.** Append one row per routed ID into the **previous round's** `review-NNN.md` `## Resolution Annex`, append-only, then set that document's `status: finalized` exactly once.
 
