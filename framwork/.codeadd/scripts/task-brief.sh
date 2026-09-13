@@ -4,9 +4,22 @@
 # Extract ONE `## Execution` task's full block from a tasks.md into its own
 # file, so a dispatched agent is handed a PATH instead of pasted content.
 # ============================================
-# Usage: bash .codeadd/scripts/task-brief.sh <TASKS_FILE> <TASK_ID> <OUT_DIR>
+# Usage: bash .codeadd/scripts/task-brief.sh <TASKS_FILE> <TASK_ID> <OUT_DIR> [KNOWN_FAILURES]
 # Dependencies: bash, awk, grep (POSIX).
 # Output: KEY=VALUE lines — BRIEF=<path>, TASK=<id>, SUBBULLETS=<n>.
+#
+# KNOWN_FAILURES is OPTIONAL and its ABSENCE is not the same as its emptiness.
+# The brief always carries a `## KNOWN_FAILURES` section, reading one of three
+# things, and a dispatched agent acts differently on each:
+#   3 args         -> `not supplied`  — the caller does not pass the field
+#   4th arg empty  -> `none observed` — the caller looked and saw no failure
+#   4th arg filled -> the failures, one per line, `<test>: <owner/area>`
+# It exists so a test agent can tell a failure it caused from one that was
+# already red WITHOUT reaching for git to clear the tree. The tree is shared:
+# sibling agents are running against it, and a `git stash` there takes their
+# uncommitted work with it. The field is what makes that unnecessary.
+# NOTHING here runs a baseline test suite to populate it — the caller passes
+# only failures it has ALREADY observed.
 # Exit:   0 on success. 2 ONLY on CLI misuse, which includes a TASK_ID that is
 #         not an Execution task: an empty brief is how an agent gets dispatched
 #         against nothing and reports success. 1 only on a refused write.
@@ -38,10 +51,13 @@ set -u
 
 usage() {
   {
-    echo "Usage: task-brief.sh <TASKS_FILE> <TASK_ID> <OUT_DIR>"
+    echo "Usage: task-brief.sh <TASKS_FILE> <TASK_ID> <OUT_DIR> [KNOWN_FAILURES]"
     echo "  TASKS_FILE  the feature's or subfeature's tasks.md"
     echo "  TASK_ID     an ## Execution task id, TNN (T-TEST-nn is not one)"
     echo "  OUT_DIR     scratch dir, typically <FEATURE_DIR>/_build — created, and self-ignored"
+    echo "  KNOWN_FAILURES  optional; tests already red, one per line, <test>: <owner/area>."
+    echo "                  Omit it and the brief reads 'not supplied'; pass an empty"
+    echo "                  string and it reads 'none observed'. They are not the same."
   } >&2
   exit 2
 }
@@ -51,11 +67,24 @@ fail() {
   exit 1
 }
 
-[ "$#" -eq 3 ] || usage
+[ "$#" -eq 3 ] || [ "$#" -eq 4 ] || usage
 
 TASKS_FILE="$1"
 TASK_ID="$2"
 OUT_DIR="$3"
+
+# KNOWN_FAILURES is the OPTIONAL 4th argument, and the argument COUNT is what
+# separates two states that `set -u` would otherwise collapse into one empty
+# string. A dispatched agent must be able to tell them apart: "the coordinator
+# looked and saw nothing" is a usable baseline, "the coordinator never passed
+# the field" is not, and an agent that reads the second as the first stops
+# investigating when it should not.
+if [ "$#" -eq 4 ]; then
+  KNOWN_FAILURES="${4}"
+  [ -n "$KNOWN_FAILURES" ] || KNOWN_FAILURES="none observed"
+else
+  KNOWN_FAILURES="not supplied"
+fi
 
 [ -n "$TASKS_FILE" ] && [ -n "$TASK_ID" ] && [ -n "$OUT_DIR" ] || usage
 [ -f "$TASKS_FILE" ] || usage
@@ -126,6 +155,8 @@ BRIEF="$OUT_DIR/$TASK_ID-brief.md"
   printf '# Task brief — %s\n\n' "$TASK_ID"
   printf '> Source: %s\n\n' "$TASKS_FILE"
   printf '%s\n' "$BLOCK"
+  printf '\n## KNOWN_FAILURES\n\n'
+  printf '%s\n' "$KNOWN_FAILURES"
 } > "$BRIEF" 2>/dev/null || fail "Cannot write $BRIEF"
 
 echo "BRIEF=$BRIEF"

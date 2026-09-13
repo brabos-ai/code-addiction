@@ -382,13 +382,27 @@ resident in context and are re-read on every turn for the rest of the session.
 
 1. **Record `BASE`** — `BASE=$(git rev-parse HEAD)`, taken *before* the dispatch. This is half of the
    bracket every ledger line and every review package needs.
-2. **Write the brief:**
+2. **Write the brief**, passing the failures you have already seen as the optional 4th argument:
    ```bash
-   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build"
+   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
    ```
    It prints `BRIEF=`, `TASK=` and `SUBBULLETS=`, and **exits 2** when the id is not an `## Execution`
    task — an empty brief is how an agent gets dispatched against nothing and reports success. On exit 2,
    STOP and show stderr verbatim; never hand-write a substitute brief.
+
+   **`KNOWN_FAILURES` is failures you have ALREADY observed in this build, one per line as
+   `<test>: <area>`** — from an earlier area's report, or a previous fix iteration. Agents here share
+   one working tree, and one that cannot tell its own failure from a pre-existing one goes hunting for
+   a clean baseline; the way it finds one is by clearing the tree its siblings are working in.
+
+   ```
+   IF YOU HAVE OBSERVED NO FAILURES YET:
+     ⛔ DO NOT: Run the test suite just to fill this in — a baseline sweep per dispatch
+                buys nothing on the first one, which is empty either way
+     ⛔ DO NOT: Drop the argument. Three arguments render `not supplied`, which tells the
+                agent nothing and sends it looking
+     ✅ DO: Pass an empty string. The brief renders `none observed` — the tree was checked
+   ```
 3. **Choose `REPORT_FILE`** — `${FEATURE_DIR}/_build/<task-id>-report.md`. `_build/` is scratch: the
    scripts create it with a `.gitignore` containing `*`, so briefs, reports and diff packages never reach
    a commit. The **ledger is not scratch** and never lives there.

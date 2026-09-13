@@ -208,12 +208,19 @@ resident in context and are re-read on every turn for the rest of the session.
 **Before the dispatch:**
 
 ```bash
-bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build"
+bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
 ```
 
 It writes one task's full block — description plus all six sub-bullets — into its own file and prints
 `BRIEF=`, `TASK=` and `SUBBULLETS=`. It **exits 2** when the task id is not an `## Execution` task: an
 empty brief is how an agent gets dispatched against nothing and reports success.
+
+**The 4th argument is optional and its absence is not its emptiness.** `KNOWN_FAILURES` carries the
+tests already red before this dispatch, one per line as `<test>: <area>`, and only ones the
+coordinator has ALREADY observed — never a baseline suite run taken to fill it. Omit the argument and
+the brief reads `not supplied`; pass an empty string and it reads `none observed`. Agents here share
+one working tree, and the difference decides whether one that hits a red test it did not cause goes
+looking for a clean baseline by clearing that tree.
 
 **What the dispatch carries:**
 
