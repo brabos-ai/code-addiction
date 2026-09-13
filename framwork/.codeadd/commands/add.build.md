@@ -568,7 +568,7 @@ agents directly, at depth 1.
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
-| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `RED_TEST` (CORRECTION) |
+| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `KNOWN_FAILURES` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `CONCERNS`, `RED_TEST` (CORRECTION) |
 | `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
 | `@ux-agent` | read-write (`design.md` only) | routed design-spec finding + contract-line citation | amendment appended to `## Design Review` |

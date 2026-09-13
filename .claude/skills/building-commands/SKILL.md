@@ -436,9 +436,10 @@ IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
   ✅ DO: Report family A as NOT VERIFIED when the graph does not answer
 ```
 
-**`add-artefact-graph` owns the verbs and the interfaces.** Load it rather than picking from a list
-here — the three named above were a subset of eleven, and the CLI answers identically to the MCP, so
-an agent whose allowlist blocks MCP is not degraded and must not report NOT VERIFIED for that reason.
+**`add-artefact-graph` owns the verbs and the interfaces.** Load it rather than naming a subset here —
+the three this gate used to enumerate were three of eleven. It also carries which verbs each interface
+implements, so an agent whose allowlist blocks MCP knows when shelling out gets the same answer and
+when it does not.
 
 ### 1. Graph closed
 

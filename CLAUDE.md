@@ -93,7 +93,7 @@ Key files:
 |---|---|
 | `framwork/provider-map.json` | Single registry of every command, skill, agent and its provider distribution |
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
-| `scripts/graph.js` | Queries the artefact graph — `impact`, `dependencies`, `path`, `orphans`, `history`, `mermaid` |
+| `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-bats.js` | Backs `npm run test:scripts` — runs the suite natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |

@@ -5,7 +5,7 @@
 - agent: e2e-agent
 - agent: fix-agent
 - skill: add-ux-design
-- mention: @ux-agent
+- agent: ux-agent
 -->
 
 <!-- section:qa-fix -->

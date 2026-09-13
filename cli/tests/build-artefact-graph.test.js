@@ -892,7 +892,9 @@ describe('node inventory snapshot', () => {
       // and installs like any other — cli/src/plugins.js copies it into every
       // provider's skills dir — but collectNodes never walked
       // plugins/*/skills/, so no gate, search or orphan check had ever seen it.
-      skill: 53,
+      // skill 53 -> 54: add-artefact-graph, the internal skill that became the
+      // single owner of graph querying (F14 of the same plan).
+      skill: 54,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -949,15 +951,16 @@ describe('node inventory snapshot', () => {
     // declares 105 -> 130: +1 for add-gitnexus, and +24 for every fragment.
     // `fragment` joined DECLARING_KINDS, and `declares` is
     // DECLARING_KINDS.has(kind) — a flag meaning "the build scans this file for
-    // a uses: block", not "this file has one". All 24 moved; 8 gained a block.
+    // a uses: block", not "this file has one". All 24 moved; 23 gained a block.
     // Templates add nothing here: they are deliberately non-declaring.
     // (plan 2026-09-12T221117-PLAN--agent-git-safety-and-dynamic-artefact-indexing,
     // F4, F6 and F7.)
-    // 221 -> 226: +3 feature and +2 plugin container nodes.
-    // `declares` does not move: a directory has no uses: block, so both kinds
-    // are deliberately outside DECLARING_KINDS.
-    expect(nodes).toHaveLength(226);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(130);
+    // 221 -> 227: +3 feature and +2 plugin container nodes, then +1 for the new
+    // internal skill add-artefact-graph (F14).
+    // declares 130 -> 131: containers add nothing (a directory has no uses: block,
+    // so both kinds are deliberately outside DECLARING_KINDS); the new skill does.
+    expect(nodes).toHaveLength(227);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(131);
   });
 });
 

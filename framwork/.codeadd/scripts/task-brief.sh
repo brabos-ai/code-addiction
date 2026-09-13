@@ -13,7 +13,11 @@
 # things, and a dispatched agent acts differently on each:
 #   3 args         -> `not supplied`  — the caller does not pass the field
 #   4th arg empty  -> `none observed` — the caller looked and saw no failure
-#   4th arg filled -> the failures, one per line, `<test>: <owner/area>`
+#   4th arg filled -> the failures, one per line, `<test>: <area>`
+# The shipped callers always pass the argument, so in practice they render the
+# last two. `not supplied` exists for a caller that has not been updated — it is
+# what keeps an old 3-arg invocation honest instead of silently claiming a clean
+# baseline it never checked.
 # It exists so a test agent can tell a failure it caused from one that was
 # already red WITHOUT reaching for git to clear the tree. The tree is shared:
 # sibling agents are running against it, and a `git stash` there takes their
@@ -55,7 +59,7 @@ usage() {
     echo "  TASKS_FILE  the feature's or subfeature's tasks.md"
     echo "  TASK_ID     an ## Execution task id, TNN (T-TEST-nn is not one)"
     echo "  OUT_DIR     scratch dir, typically <FEATURE_DIR>/_build — created, and self-ignored"
-    echo "  KNOWN_FAILURES  optional; tests already red, one per line, <test>: <owner/area>."
+    echo "  KNOWN_FAILURES  optional; tests already red, one per line, <test>: <area>."
     echo "                  Omit it and the brief reads 'not supplied'; pass an empty"
     echo "                  string and it reads 'none observed'. They are not the same."
   } >&2

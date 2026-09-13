@@ -5,16 +5,6 @@ description: "Use when a command, skill or agent needs to ask what an artefact r
 
 # Artefact Graph — Querying It
 
-<!-- uses:
-- skill: building-commands
-- mention: /add-framework--plan
-- mention: /add-framework--build
-- mention: /add-framework--sync
-- mention: add-framework-development
-- mention: add-framework-internal-layer
-- mention: @prompt-review-agent
--->
-
 Owns HOW the artefact graph is queried: the verbs, the two interfaces, and what the answer does not
 cover. WHAT a given command does with the answer belongs to that command.
 
@@ -50,18 +40,26 @@ relationships, because prose that names an artefact and prose that depends on on
 
 ## Two Interfaces, One Answer
 
-| Interface | Reach |
-|---|---|
-| `node scripts/graph.js <verb>` | Every provider. All five can shell out |
-| The artefact-graph MCP (`mcp/server.mjs --corpus=artefacts`) | Only where MCP is configured |
+| Interface | Reach | Verbs |
+|---|---|---|
+| `node scripts/graph.js <verb>` | Every provider. All five can shell out | `impact`, `dependencies`, `neighbors`, `path`, `orphans`, `stats`, `history` — plus `mermaid`, which is CLI-only |
+| The artefact-graph MCP (`mcp/server.mjs --corpus=artefacts`) | Only where MCP is configured | all eleven |
 
-**They answer identically, by design and by assertion.** Both read the same emitted sidecar, and
-`cli/tests/mcp-engine.test.js` asserts verb-for-verb equality rather than sharing code.
-`prompt-review-agent` states the consequence: *"When the MCP is unavailable, the CLI behind it is not
-a fallback — it answers the same."*
+**Where both implement a verb, they answer identically — by design and by assertion.** Both read the
+same emitted sidecar, and `cli/tests/mcp-engine.test.js` asserts equality rather than sharing code.
+**The CLI is therefore not a fallback for the MCP on those seven: it is the same answer.** An agent
+whose tool allowlist blocks MCP is not degraded for any of them.
 
-Use whichever is available. **An agent whose tool allowlist blocks MCP is not degraded** — it shells
-out and gets the same answer.
+⛔ **Four verbs are MCP-only: `search`, `get`, `touched_by` and `reindex`.** `scripts/graph.js` has no
+case for them and exits 2 with its usage header.
+
+```
+IF YOU HAVE NO MCP AND THE QUESTION NEEDS search, get, touched_by OR reindex:
+  ⛔ DO NOT: Shell out to scripts/graph.js for it — you get exit 2, not an answer
+  ✅ DO: Reach it with a verb the CLI does implement where one fits — `impact`,
+         `dependencies` and `neighbors` cover most of what `get` is asked for
+  ✅ DO: Report it as NOT VERIFIED when none does
+```
 
 ## The Eleven Verbs
 
@@ -94,11 +92,11 @@ instrument.** Every entry below was once invisible enough that someone trusted a
 
 | Not visible | Why, and what to do instead |
 |---|---|
-| **A fragment's edge, from the command's side** | A fragment's `DISPATCHES` originates at the **fragment** node, not at the command the fragment is injected into. A 1-hop `neighbors` on a command does NOT show it. Ask `impact` or `dependencies`, which traverse `INJECTS_INTO`, or list the fragments injected into that command |
+| **A fragment's edge, from the command's side** | A fragment's `DISPATCHES` originates at the **fragment** node, not at the command it is injected into, and `INJECTS_INTO` runs fragment → command. So `dependencies <command>` walks the wrong way and never traverses it, and `impact <command>` reaches the fragment but keeps going in reverse, never showing what the fragment dispatches. **It takes TWO queries:** `impact <command> --depth 1` to find the fragments, then `dependencies <fragment>` on each |
 | **`transforms/`** | Not a node, deliberately: it does not ship. `release.yml` packages `.codeadd/scripts`, `fragments`, `templates` and `plugins` — not `transforms`, which is build-time input like the provider registry |
 | **`CLAUDE.md`** | Not a node at all. Nothing in `build.js` inspects it, so a stale pointer there survives every gate. After a rename or a removal, grep it by hand |
 | **Top-level `scripts/`** | `scripts/build.js`, `graph.js` and `inventory.js` produce no nodes, so nothing reports what depends on them |
-| **Anything two files must keep equal** | `ENTRY_POINT_KINDS` and `DEPENDENCY_TYPES` exist in both `scripts/graph.js` and `mcp/engine.mjs`, which cannot import each other. No edge records that. Only a test holds them together |
+| **Anything two files must keep equal** | `ENTRY_POINT_KINDS`, `DEPENDENCY_TYPES` and `ORPHAN_DEPENDENCY_TYPES` each exist in both `scripts/graph.js` and `mcp/engine.mjs`, which cannot import each other. No edge records that. Only `cli/tests/mcp-engine.test.js` holds them together, and the third is the one whose divergence silently breaks `orphans` |
 
 ```
 IF THE GRAPH RETURNED AN ANSWER THAT LOOKS COMPLETE:
@@ -123,6 +121,7 @@ IF THE GRAPH RETURNED AN ANSWER THAT LOOKS COMPLETE:
 ALWAYS:
 - Grade risk on `impact --depth 1`, never on the unbounded run
 - Say what an answer does not cover when the question touches a row of the table above
+- Check which interface implements a verb before telling an agent to shell out for it
 - Check the fragments injected into a command before concluding what that command dispatches
 
 NEVER:

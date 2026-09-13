@@ -593,11 +593,12 @@ The LLM interprets this and calls the Agent tool with `subagent_type: "backend-a
 
 Commands invoke scripts via `Bash` tool:
 
-```markdown
+````markdown
 ## STEP 1: Run Context Mapper
 ```bash
 bash .codeadd/scripts/status.sh
 ```
+````
 
 `status.sh` is the most common — returns project context (feature ID, branch, owner profile, etc.) as key-value pairs that commands parse to set variables like `${FEATURE_ID}`, `${OWNER_LEVEL}`.
 

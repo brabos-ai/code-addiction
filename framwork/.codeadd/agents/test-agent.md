@@ -23,6 +23,7 @@ You do not author E2E specs. Those belong to `@e2e-agent` under the `qa-pipeline
 - `AREA_FILES` — target source files for this area, full paths.
 - Feature docs — `about.md` / `plan.md` content when the coordinator is in a feature-scoped mode.
 - `CONTRACT_TESTS` — contract tests already authored by `/add.plan`. **DO NOT regenerate these.**
+- `KNOWN_FAILURES` — tests already red before you were dispatched, one per line as `<test>: <area>`. `none observed` means the coordinator looked and saw none; `not supplied` means it never looked. Read it BEFORE investigating a failure.
 - `COVERED_REQUIREMENTS` — requirements already covered, so you target gaps instead.
 - For `CORRECTION` mode: the bug description, its repro and the area slice of `## Fix Routing` that names it.
 
@@ -63,9 +64,11 @@ tree while they are mid-run. A path-scoped read answers the same question and to
 
 ### A Failing Test That Is Not Yours
 
-`KNOWN_FAILURES` in your brief lists the tests already red before you were dispatched, and whose they
-are. **Read it first.** Most of the time it answers the question with no git at all. `none observed`
-means the coordinator had seen no failure yet — not that the tree is clean.
+`KNOWN_FAILURES` lists the tests already red before you were dispatched, and whose they are. It
+reaches you as a dispatch input — or in the brief, when the coordinator handed you one. **Read it
+first.** Most of the time it answers the question with no git at all. `none observed` means the
+coordinator looked and saw nothing; `not supplied` means it never looked, and the tree may well be
+dirty.
 
 Where it does not answer, and a path-scoped diff shows the failure comes from a file you did not
 write:

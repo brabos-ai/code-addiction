@@ -100,9 +100,9 @@ IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
 `neighbors` on the artefact, `dependencies` at depth 1, `impact` at depth 1. The neighbour list is
 the input to item 4, so this phase comes first: without it you do not know which files to read.
 
-**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see** — including
-that the CLI is not a fallback for the MCP but the same answer, and that a fragment's edge does not
-show on a 1-hop `neighbors` of the command it is injected into. Use
+**`add-artefact-graph` owns it** — the verbs, which interface implements each, and what the graph
+cannot see. Load it when a question needs a verb this file does not name, or an answer has to be
+qualified. Use
 `NODE_OPTIONS= node scripts/graph.js neighbors|dependencies|impact <id>`; clear `NODE_OPTIONS` first
 or an injected debugger banner corrupts stdout.
 
