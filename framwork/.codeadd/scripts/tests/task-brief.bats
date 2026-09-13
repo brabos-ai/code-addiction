@@ -254,3 +254,65 @@ EOF
   run bash "$SCRIPTS_DIR/task-brief.sh" "$TASKS" T01 "$OUT"
   [ "$status" -eq 2 ]
 }
+
+# ---------------------------------------------------------------------------
+# KNOWN_FAILURES — the optional 4th argument (plan
+# 2026-09-12T221117-PLAN--agent-git-safety-and-dynamic-artefact-indexing, F3).
+# RED-FIRST: task-brief.sh takes three arguments today, so every test below
+# fails until F3 lands. That failure IS the point.
+#
+# THREE STATES MUST STAY DISTINGUISHABLE. A dispatched agent that cannot tell
+# "the coordinator saw no failures" from "the coordinator never passed the
+# field" investigates anyway — which is the whole reason the field exists.
+#   3 args            → `not supplied`   (an older caller, or one that opted out)
+#   4th arg empty     → `none observed`  (the coordinator looked and saw none)
+#   4th arg with text → the failures themselves
+# The section is ALWAYS written. An absent heading is a fourth state nobody
+# asked for.
+# ---------------------------------------------------------------------------
+
+@test "known-failures: three arguments still work and report 'not supplied'" {
+  write_tasks "$TASKS"
+  run bash "$SCRIPTS_DIR/task-brief.sh" "$TASKS" T01 "$OUT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BRIEF="* ]]
+  grep -q '^## KNOWN_FAILURES' "$OUT/T01-brief.md"
+  grep -q 'not supplied' "$OUT/T01-brief.md"
+}
+
+@test "known-failures: an empty 4th argument reports 'none observed'" {
+  write_tasks "$TASKS"
+  run bash "$SCRIPTS_DIR/task-brief.sh" "$TASKS" T01 "$OUT" ""
+  [ "$status" -eq 0 ]
+  grep -q '^## KNOWN_FAILURES' "$OUT/T01-brief.md"
+  grep -q 'none observed' "$OUT/T01-brief.md"
+  ! grep -q 'not supplied' "$OUT/T01-brief.md"
+}
+
+@test "known-failures: a populated 4th argument lands verbatim in the brief" {
+  write_tasks "$TASKS"
+  run bash "$SCRIPTS_DIR/task-brief.sh" "$TASKS" T01 "$OUT" \
+    'receipt-extraction.spec.ts: backend
+assistant-actions.spec.ts: frontend'
+  [ "$status" -eq 0 ]
+  grep -q '^## KNOWN_FAILURES' "$OUT/T01-brief.md"
+  grep -q 'receipt-extraction.spec.ts: backend' "$OUT/T01-brief.md"
+  grep -q 'assistant-actions.spec.ts: frontend' "$OUT/T01-brief.md"
+  ! grep -q 'none observed' "$OUT/T01-brief.md"
+  ! grep -q 'not supplied' "$OUT/T01-brief.md"
+}
+
+@test "known-failures: the task block still travels whole alongside the section" {
+  write_tasks "$TASKS"
+  run bash "$SCRIPTS_DIR/task-brief.sh" "$TASKS" T01 "$OUT" "some-spec.ts: backend"
+  [ "$status" -eq 0 ]
+  grep -q 'Consumes' "$OUT/T01-brief.md"
+  grep -q 'Produces' "$OUT/T01-brief.md"
+  [[ "$output" == *"SUBBULLETS="* ]]
+}
+
+@test "known-failures: a 5th argument is still CLI misuse → exit 2" {
+  write_tasks "$TASKS"
+  run bash "$SCRIPTS_DIR/task-brief.sh" "$TASKS" T01 "$OUT" "x" "y"
+  [ "$status" -eq 2 ]
+}

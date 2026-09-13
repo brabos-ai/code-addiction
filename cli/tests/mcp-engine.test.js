@@ -159,6 +159,60 @@ describe('L2.4 — both corpora answer identically to scripts/graph.js', () => {
 // Usage scenarios — what an agent actually asks the server
 // ---------------------------------------------------------------------------
 
+/**
+ * L3.2 / L3.3 — the two hardcoded copies, held equal by this and nothing else.
+ *
+ * ENTRY_POINT_KINDS, DEPENDENCY_TYPES and ORPHAN_DEPENDENCY_TYPES exist twice:
+ * in scripts/graph.js (internal) and in mcp/engine.mjs (product, at the repo
+ * root because it ships in the npm package). Neither can import the other —
+ * mcp/ takes NO dependency at all, since it runs from the repository root where
+ * the CLI's node_modules is off the resolution path.
+ *
+ * So the sets are compared as SOURCE TEXT. A structural read is the point: an
+ * assertion that imported both would prove only that this test can import, and
+ * the import is the exact thing that cannot exist.
+ *
+ * Without this, the two surfaces answer `orphans` differently and nothing says
+ * so out loud.
+ */
+describe('L3.2/L3.3 — graph.js and mcp/engine.mjs agree on the kind and edge sets', () => {
+  const read = (f) => fs.readFileSync(path.join(REPO, f), 'utf8');
+  const items = (txt, re) =>
+    txt.match(re)[1].split(',').map((x) => x.trim().replace(/['"]/g, '')).filter(Boolean).sort();
+
+  const G = read('scripts/graph.js');
+  const M = read('mcp/engine.mjs');
+  const after = (txt, marker) => txt.slice(txt.indexOf(marker));
+
+  it('ENTRY_POINT_KINDS is the same set on both surfaces', () => {
+    expect(items(G, /const ENTRY_POINT_KINDS = new Set\(\[([^\]]*)\]\)/))
+      .toEqual(items(after(M, 'const ENTRY_POINT_KINDS'), /artefacts: new Set\(\[([^\]]*)\]\)/));
+  });
+
+  it('DEPENDENCY_TYPES is the same set on both surfaces', () => {
+    expect(items(G, /const DEPENDENCY_TYPES = new Set\(\[([^\]]*)\]\)/))
+      .toEqual(items(after(M, 'const DEPENDENCY_TYPES'), /artefacts: new Set\(\[([^\]]*)\]\)/));
+  });
+
+  it('both derive ORPHAN_DEPENDENCY_TYPES by excluding CONTAINS, and neither inlines it', () => {
+    // ⛔ The one that matters. If either file ever hands orphans() the full
+    // DEPENDENCY_TYPES, a container exempts every file in its directory and
+    // nothing under fragments/ or plugins/ can be reported as dead weight again.
+    for (const [name, txt] of [['scripts/graph.js', G], ['mcp/engine.mjs', M]]) {
+      expect(txt, `${name} derives ORPHAN_DEPENDENCY_TYPES from DEPENDENCY_TYPES`)
+        .toMatch(/ORPHAN_DEPENDENCY_TYPES[\s\S]{0,400}?filter\(\(t\) => t !== 'CONTAINS'\)/);
+      expect(txt, `${name} orphans() reads the ORPHAN_ set`)
+        .toMatch(/orphans[\s\S]{0,600}?ORPHAN_DEPENDENCY_TYPES/);
+    }
+  });
+
+  it('CONTAINS is a dependency edge for dependencies, on both surfaces', () => {
+    expect(items(G, /const DEPENDENCY_TYPES = new Set\(\[([^\]]*)\]\)/)).toContain('CONTAINS');
+    expect(items(after(M, 'const DEPENDENCY_TYPES'), /artefacts: new Set\(\[([^\]]*)\]\)/))
+      .toContain('CONTAINS');
+  });
+});
+
 describe('scenario — "what was already built near this"', () => {
   it('L2.2 search returns one hit per *-about, and none for a user file', () => {
     const all = actions.search(docs, { terms: '', limit: 50 });

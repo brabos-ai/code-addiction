@@ -169,8 +169,25 @@ IF ANY TEST FAILS:
 
 **Baseline before blaming the change.** What flakiness this suite has left is load-dependent: the
 tests that drive a real subprocess stretch under a busy machine and cross their timeout. A quiet
-checkout runs the whole suite green. Compare against a clean tree (`git stash`) and report the delta,
-never the raw count.
+checkout runs the whole suite green. Compare against a clean tree and report the delta, never the raw
+count.
+
+⛔ **Get that clean tree with a throwaway worktree, NEVER with `git stash`.**
+
+```
+IF YOU NEED A CLEAN-TREE BASELINE FOR THE SUITE:
+  ⛔ DO NOT USE: Bash for git stash, git checkout, git reset, git clean or git restore
+  ✅ DO: git worktree add <tmp> HEAD --detach, run the suite in <tmp>, then git worktree remove <tmp>
+```
+
+`git stash` empties the tree you are standing in. Your own edits come back with `git stash pop`, but
+any sibling agent running against that same tree loses its uncommitted work for as long as the stash
+is held — and a build dispatches several at once. A worktree gives you the clean checkout without
+touching the tree anyone is working in.
+
+**A path-scoped read is not the substitute here.** `git diff -- <path>` answers "what changed in this
+file", which is the right tool when you are attributing one failure to one file. It cannot answer
+"does the whole suite pass on a clean checkout", and that is the question this paragraph is about.
 
 **TESTS ARE MANDATORY.** Every changed module needs coverage in `cli/tests/`. Where the plan specifies
 a RED-first matrix, write each assertion and CONFIRM IT FAILS before the implementation — a test

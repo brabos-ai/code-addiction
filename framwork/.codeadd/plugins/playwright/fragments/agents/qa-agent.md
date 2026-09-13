@@ -1,3 +1,7 @@
+<!-- uses:
+- mention: @ux-agent
+-->
+
 <!-- section:drive -->
 
 **Playwright MCP tool playbook.** Drive the live app at `baseUrl` with these exact MCP tools:

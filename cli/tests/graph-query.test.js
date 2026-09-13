@@ -155,6 +155,51 @@ describe('orphans', () => {
     expect(orphans(G).map((n) => n.id)).toContain('product/skill/skillZ');
   });
 
+  it('does not count a CONTAINS edge as a dependant — the latent leak', () => {
+    // ⛔ THE ONLY THING STANDING BETWEEN `orphans` AND BECOMING USELESS.
+    //
+    // A feature or plugin CONTAINS every file in its directory. If CONTAINS
+    // counted as a dependency, every one of those files would carry a permanent
+    // inbound edge and NOTHING under fragments/ or plugins/ could ever be
+    // reported as dead weight again — invisible by directory placement alone.
+    //
+    // This needs a synthetic member because the real tree cannot show it: every
+    // container member today is either a fragment (an entry point, excluded
+    // anyway) or add-gitnexus, which carries 15 real USES_SKILL edges. The leak
+    // is LATENT, so the orphan count does not move either way on the real graph
+    // — which is exactly why only a fixture can catch a future collapse of
+    // ORPHAN_DEPENDENCY_TYPES back into DEPENDENCY_TYPES.
+    const C = {
+      nodes: [
+        { id: 'product/plugin/plug', kind: 'plugin', layer: 'product', name: 'plug', path: 'plugins/plug', registered: true, providers: [], declares: false },
+        { id: 'product/skill/deadInside', kind: 'skill', layer: 'product', name: 'deadInside', path: 'plugins/plug/skills/deadInside/SKILL.md', registered: true, providers: [], declares: true },
+      ],
+      edges: [
+        { from: 'product/plugin/plug', to: 'product/skill/deadInside', type: 'CONTAINS', origin: 'layout', modifier: null },
+      ],
+    };
+    expect(orphans(C).map((n) => n.id)).toContain('product/skill/deadInside');
+    // And the container itself is an entry point, never reported.
+    expect(orphans(C).map((n) => n.id)).not.toContain('product/plugin/plug');
+  });
+
+  it('still lists container members under dependencies — the other half', () => {
+    // CONTAINS IS a dependency edge for `dependencies`: "what does enabling
+    // this feature touch" is the question containers were added to answer. The
+    // two sets differ because the two questions differ, not by accident.
+    const C = {
+      nodes: [
+        { id: 'product/feature/feat', kind: 'feature', layer: 'product', name: 'feat', path: 'fragments/feat', registered: true, providers: [], declares: false },
+        { id: 'product/fragment/fragments/feat/a.md', kind: 'fragment', layer: 'product', name: 'fragments/feat/a.md', path: 'fragments/feat/a.md', registered: true, providers: [], declares: true },
+      ],
+      edges: [
+        { from: 'product/feature/feat', to: 'product/fragment/fragments/feat/a.md', type: 'CONTAINS', origin: 'layout', modifier: null },
+      ],
+    };
+    expect(dependencies(C, 'product/feature/feat').map((r) => r.id))
+      .toEqual(['product/fragment/fragments/feat/a.md']);
+  });
+
   it('does not report entry points as orphans', () => {
     // Commands are invoked by people, not by other artefacts. Reporting all 24
     // as orphans would drown the finding that matters.
@@ -245,6 +290,58 @@ describe('the real emitted graph', () => {
     expect(s.nodes).toBe(real.nodes.length);
     expect(s.edges).toBe(real.edges.length);
     expect(Object.values(s.byKind).reduce((a, b) => a + b, 0)).toBe(real.nodes.length);
+  });
+
+  // ---------------------------------------------------------------------------
+  // The plan's L1.4 / L2.1 / L2.2 / L2.3 / L2.5, against the REAL graph.
+  // These were verified by hand during the build and not committed, which the
+  // review caught: a level checked once in a terminal catches no regression.
+  // ---------------------------------------------------------------------------
+
+  it('L2.1 a fragment dispatch is visible — the edge this whole change exists for', () => {
+    // @test-agent is dispatched from two tdd-pipeline fragments and from no
+    // command directly. Before `fragment` became a declaring kind, asking who
+    // dispatched it returned add.build and add.plan-to-ready and silently
+    // omitted add.hotfix. THIS is the assertion the plan's risk table names as
+    // the guard against the 23-fragment migration writing a wrong edge.
+    const inbound = neighbors(real, 'product/agent/test-agent').in
+      .filter((e) => e.type === 'DISPATCHES')
+      .map((e) => e.from);
+    expect(inbound).toContain('product/fragment/fragments/tdd-pipeline/add.hotfix.md');
+    expect(inbound).toContain('product/fragment/fragments/tdd-pipeline/add.build.md');
+  });
+
+  it('L1.4/L2.3 the plugin-bundled skill is a node, under its plugin path', () => {
+    const n = real.nodes.find((x) => x.id === 'product/skill/add-gitnexus');
+    expect(n, 'add-gitnexus ships and installs; it must be indexed').toBeTruthy();
+    expect(n.path).toMatch(/plugins\/gitnexus\/skills\/add-gitnexus\/SKILL\.md$/);
+    expect(n.kind).toBe('skill');
+  });
+
+  it('L2.2 orphans filtered to kind:template is exactly the four shipped templates', () => {
+    // Not the whole orphan list — two dozen pre-existing entries stand and are
+    // not this delivery's to fix. Nothing in .codeadd/ names any template, so
+    // all four report, and that IS the finding rather than a defect to suppress.
+    const t = orphans(real).filter((n) => n.kind === 'template').map((n) => n.name).sort();
+    expect(t).toEqual([
+      'feature-about-template', 'feature-discovery-template', 'hotfix', 'hotfix-template',
+    ]);
+  });
+
+  it('L2.5 a feature node answers what enabling it touches', () => {
+    const ids = dependencies(real, 'product/feature/tdd-pipeline').map((r) => r.id);
+    expect(ids).toContain('product/fragment/fragments/tdd-pipeline/add.build.md');
+    expect(ids).toContain('product/fragment/fragments/tdd-pipeline/add.hotfix.md');
+  });
+
+  it('L2.6-real a container member with real edges is still reachable as a dependant', () => {
+    // The plugin skill is contained by its plugin AND used by 15 fragments.
+    // CONTAINS must not be what keeps it off the orphan list.
+    expect(orphans(real).map((n) => n.id)).not.toContain('product/skill/add-gitnexus');
+    const viaUses = real.edges.filter(
+      (e) => e.to === 'product/skill/add-gitnexus' && e.type === 'USES_SKILL',
+    );
+    expect(viaUses.length).toBeGreaterThan(0);
   });
 });
 

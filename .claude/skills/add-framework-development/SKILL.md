@@ -8,6 +8,7 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 <!-- uses:
 - skill: add-commit
 - skill: building-commands
+- skill: add-artefact-graph
 -->
 
 Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so `add-framework--plan` assesses viability and `add-framework--build` implements correctly.
@@ -73,6 +74,19 @@ Does it need LLM reasoning?
 | Script | `framwork/.codeadd/scripts/{name}.sh` | Bash | variable |
 
 Internal-only artefacts (NOT distributed): `.claude/skills/`, `.claude/commands/`
+
+**The graph holds five kinds these four do not cover**, and every one of them ships:
+
+| Graph kind | Source | Authored? |
+|---|---|---|
+| `reference` | a skill's own `references/` subdocs | yes |
+| `fragment` | `fragments/{feature}/` and `plugins/{plugin}/fragments/` | yes — and declaring, so it carries a `uses:` block |
+| `template` | `.codeadd/templates/` | yes, but neither declaring nor sniffable |
+| `feature` | one per `fragments/{name}/` directory | no — derived from the layout |
+| `plugin` | one per `plugins/{name}/` directory | no — derived from the layout |
+
+A plugin's own `skills/` are `skill` nodes like any other, and are NOT registered in
+`provider-map.json`: a plugin skill reaches a user through the plugin catalog.
 
 ---
 
@@ -579,11 +593,12 @@ The LLM interprets this and calls the Agent tool with `subagent_type: "backend-a
 
 Commands invoke scripts via `Bash` tool:
 
-```markdown
+````markdown
 ## STEP 1: Run Context Mapper
 ```bash
 bash .codeadd/scripts/status.sh
 ```
+````
 
 `status.sh` is the most common — returns project context (feature ID, branch, owner profile, etc.) as key-value pairs that commands parse to set variables like `${FEATURE_ID}`, `${OWNER_LEVEL}`.
 
@@ -735,15 +750,12 @@ Identity is **what the build can transform, never directory position**: a skill 
 
 ### Querying it
 
-| Question | Command |
-|---|---|
-| What breaks if I change this? | `node scripts/graph.js impact <name> --depth 1` |
-| What does this need? | `node scripts/graph.js dependencies <name>` |
-| How do these two connect? | `node scripts/graph.js path <a> <b>` |
-| What does nothing depend on? | `node scripts/graph.js orphans` |
-| Has this shipped before and been dropped? | `node scripts/graph.js history <name>` |
+**`add-artefact-graph` owns this.** Load it. It carries all eleven verbs, the two interfaces that
+answer them identically, and — the part a five-row table could never hold — the standing list of what
+the graph cannot see.
 
-Grade risk on `impact --depth 1`. The unbounded transitive number is context, not a score.
+The table that used to sit here named five verbs and omitted `neighbors`, which is the one that
+answers "what does this relate to". A partial list in a second place is how the two drifted.
 
 ### Cross-Artefact Impact (MANDATORY for any change)
 

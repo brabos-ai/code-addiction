@@ -567,8 +567,22 @@ const USES_EDGE_TYPES = {
 /** `- <kind>: <target>` with an optional trailing `(<modifier>)`. */
 const USES_ENTRY_RE = /^-\s+([A-Za-z]+)\s*:\s*(.+?)\s*(?:\(([^)]*)\))?\s*$/;
 
-/** Kinds whose artefacts may carry a declaration block. */
-const DECLARING_KINDS = new Set(['command', 'skill', 'agent']);
+/**
+ * Kinds whose artefacts may carry a declaration block.
+ *
+ * `fragment` is here, and its absence was a real blind spot rather than an
+ * oversight of taste. A fragment is injected INTO a command and carries
+ * `DISPATCH AGENT:` headings of its own, so it names agents the way a command
+ * does — but with `declares: false` the undeclared-reference gate skipped it
+ * before ever reading its text. `@test-agent` is dispatched from two
+ * tdd-pipeline fragments and from no command directly, so asking the graph who
+ * dispatched it returned an answer that was confidently incomplete.
+ *
+ * `SNIFFABLE_KINDS` deliberately does NOT gain `fragment`. That set governs
+ * being NAMED BY others, and nothing loads a fragment by name — the injection
+ * marker does that. The two sets answer different questions.
+ */
+const DECLARING_KINDS = new Set(['command', 'skill', 'agent', 'fragment']);
 
 /**
  * Filenames under commands/ and agents/ that the build never transforms.
@@ -828,6 +842,42 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
     }
   }
 
+  // A plugin bundles its OWN skills, and they are skills in every sense that
+  // matters here: `cli/src/plugins.js` copies them into every provider's skills
+  // directory, so they install, load and run exactly like the ones above. They
+  // were simply never walked, which left `add-gitnexus` — a shipped skill —
+  // absent from the index entirely: no gate, no `search`, no `orphans` had ever
+  // seen it.
+  //
+  // `registered: true`, like scripts and fragments. A plugin skill reaches a
+  // user through the plugin mechanism and its catalog at `cli/src/plugins.json`,
+  // never through `provider-map.json` — registering it there would be wrong for
+  // the same reason a `cli/` module is not registered, and marking it
+  // unregistered would fail the build on a correct file.
+  //
+  // The bare name shares one namespace with the skills above, deliberately.
+  // A plugin skill installs into the SAME directory as a product skill, so two
+  // with one name already collide in the user's project, long before the graph
+  // is asked about either.
+  const pluginSkillRoot = path.join(codeaddDir, 'plugins');
+  if (fs.existsSync(pluginSkillRoot)) {
+    for (const p of fs.readdirSync(pluginSkillRoot, { withFileTypes: true })
+      .filter((e) => e.isDirectory()).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const pSkills = path.join(pluginSkillRoot, p.name, 'skills');
+      if (!fs.existsSync(pSkills)) continue;
+      for (const d of fs.readdirSync(pSkills, { withFileTypes: true })
+        .filter((e) => e.isDirectory()).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+        const skillFile = path.join(pSkills, d.name, 'SKILL.md');
+        if (!fs.existsSync(skillFile)) continue;
+        push('skill', 'product', d.name, skillFile, true, allProviders);
+        for (const ref of walkFiles(path.join(pSkills, d.name), '.md').sort()) {
+          if (path.basename(ref) === 'SKILL.md') continue;
+          push('reference', 'product', relId(pSkills, ref), ref, true, []);
+        }
+      }
+    }
+  }
+
   const agentsDir = path.join(codeaddDir, 'agents');
   if (fs.existsSync(agentsDir)) {
     for (const f of fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md') && !NON_ARTEFACT_FILE.test(f)).sort()) {
@@ -843,6 +893,56 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
     for (const e of fs.readdirSync(scriptsDir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
       if (!e.isFile()) continue;
       push('script', 'product', e.name, path.join(scriptsDir, e.name), true, []);
+    }
+  }
+
+  // Templates ship — `release.yml` packages `.codeadd/templates` alongside
+  // scripts, fragments and plugins — and they were the second of the three
+  // classes the comment in `assertArtefactGraph` calls out as invisible to a
+  // node walk. Indexing them is what lets anything ask about them at all.
+  //
+  // NEITHER declaring NOR sniffable, and both omissions are deliberate:
+  //   - not declaring: a template ships verbatim and carries no `uses:` block,
+  //     exactly like a script.
+  //   - not sniffable: nothing in `.codeadd/` names any of the four. Adding a
+  //     `uses:` kind and an edge type for a caller that does not exist is
+  //     machinery built on speculation.
+  //
+  // They will therefore show up in `orphans`, and THAT IS THE CORRECT RESULT,
+  // not a regression to paper over. It is the first true thing the index says
+  // about them: four files ship to every user and nothing references them.
+  // Whether they are dead is a separate decision for a human; surfacing the
+  // question is this walk's whole contribution.
+  const templatesDir = path.join(codeaddDir, 'templates');
+  if (fs.existsSync(templatesDir)) {
+    for (const f of walkFiles(templatesDir, '.md').sort()) {
+      push('template', 'product', relId(templatesDir, f).replace(/\.md$/, ''), f, true, []);
+    }
+  }
+
+  // A feature and a plugin are composable UNITS, and until now neither existed
+  // as a thing the graph could be asked about — only their individual members
+  // did. "What does `codeadd features enable tdd-pipeline` touch?" is the
+  // question a user asks BEFORE enabling one, and it had no answer in either
+  // interface.
+  //
+  // ⛔ DERIVED FROM THE DIRECTORY LAYOUT, never from `cli/src/features.js` or
+  // `cli/src/plugins.json`. The path already carries the name, and reading CLI
+  // source from the graph builder would couple them for information that is
+  // right there in `fragments/{name}/` and `plugins/{name}/`.
+  //
+  // Neither declaring nor sniffable: a directory has no `uses:` block, and
+  // nothing loads a feature by name — the CLI enables it. They ARE entry points
+  // (a person enables them, nothing declares them), which is why
+  // ENTRY_POINT_KINDS gains both in `scripts/graph.js` and `mcp/engine.mjs`.
+  for (const [dir, kind] of [
+    [path.join(codeaddDir, 'fragments'), 'feature'],
+    [path.join(codeaddDir, 'plugins'), 'plugin'],
+  ]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const d of fs.readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isDirectory()).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      push(kind, 'product', d.name, path.join(dir, d.name), true, []);
     }
   }
 
@@ -936,6 +1036,25 @@ function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, p
   for (const n of nodes) {
     if (!n.declares) continue;
     edges.push(...extractUses(readFile(path.join(ROOT, n.path)), n.name, n.kind, n.layer));
+  }
+
+  // Container ownership, derived from the path prefix — a feature or a plugin
+  // CONTAINS every node that lives inside its directory. Derived here rather
+  // than declared, exactly like INJECTS_INTO below: nothing writes a `uses:`
+  // block for a directory, and the layout is the fact.
+  //
+  // ⛔ `CONTAINS` MUST NOT reach the orphans calculation. `orphans()` builds its
+  // "depended" set from DEPENDENCY_TYPES membership, so a container owning every
+  // file beneath it would give each one a permanent inbound dependency — and
+  // NOTHING under `fragments/` or `plugins/` could ever be reported as dead
+  // weight again. `scripts/graph.js` and `mcp/engine.mjs` each keep a separate
+  // ORPHAN_DEPENDENCY_TYPES that excludes it.
+  for (const c of nodes.filter((n) => n.kind === 'feature' || n.kind === 'plugin')) {
+    const prefix = `${c.path}/`;
+    for (const m of nodes) {
+      if (m.id === c.id || !m.path.startsWith(prefix)) continue;
+      edges.push({ from: c.id, to: m.id, type: 'CONTAINS', origin: 'layout', modifier: null });
+    }
   }
 
   // One edge per point, not per (fragment, target) pair: a fragment with three
@@ -1147,10 +1266,23 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
     flagCrossLayer(n.path, stripHtmlComments(read(n)));
   }
 
-  // 5. Three shipped classes are not graph nodes at all, so a node walk alone
-  //    cannot see them: `templates/`, `transforms/` and a plugin's own
-  //    `skills/`. SHIPPED_SUBDIRS copies the first two verbatim and
-  //    `cli/src/plugins.js` copies the third into every provider's skills dir.
+  // 5. This sweep used to be the ONLY thing that could see three classes,
+  //    because none of them was a graph node: `templates/`, `transforms/` and a
+  //    plugin's own `skills/`. Two of the three now are — `collectNodes` walks
+  //    plugin skills as `skill` nodes and templates as a `template` kind — so
+  //    for those two this walk is a second look at files the node walk above
+  //    already covered. Harmless and kept: a cross-layer name is cheap to check
+  //    twice, and narrowing the list is a behaviour change, not a comment fix.
+  //
+  //    `transforms/` is the one genuinely still invisible, and it is invisible
+  //    ON PURPOSE. It does NOT ship: `release.yml` packages `.codeadd/scripts`,
+  //    `fragments`, `templates` and `plugins` — not `transforms`. It is
+  //    build-time input, like `provider-map.json`, so it is no more a
+  //    distributed artefact than the registry is. (The previous wording called
+  //    all three "shipped classes" and credited SHIPPED_SUBDIRS with copying
+  //    them; that constant feeds the raw-path linter, and does not list
+  //    `transforms` either.)
+  //
   //    `productRoot` is absent when a caller passes a synthetic graph, and that
   //    is the only case this sweep is skipped.
   if (productRoot) {

@@ -382,13 +382,27 @@ resident in context and are re-read on every turn for the rest of the session.
 
 1. **Record `BASE`** — `BASE=$(git rev-parse HEAD)`, taken *before* the dispatch. This is half of the
    bracket every ledger line and every review package needs.
-2. **Write the brief:**
+2. **Write the brief**, passing the failures you have already seen as the optional 4th argument:
    ```bash
-   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build"
+   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
    ```
    It prints `BRIEF=`, `TASK=` and `SUBBULLETS=`, and **exits 2** when the id is not an `## Execution`
    task — an empty brief is how an agent gets dispatched against nothing and reports success. On exit 2,
    STOP and show stderr verbatim; never hand-write a substitute brief.
+
+   **`KNOWN_FAILURES` is failures you have ALREADY observed in this build, one per line as
+   `<test>: <area>`** — from an earlier area's report, or a previous fix iteration. Agents here share
+   one working tree, and one that cannot tell its own failure from a pre-existing one goes hunting for
+   a clean baseline; the way it finds one is by clearing the tree its siblings are working in.
+
+   ```
+   IF YOU HAVE OBSERVED NO FAILURES YET:
+     ⛔ DO NOT: Run the test suite just to fill this in — a baseline sweep per dispatch
+                buys nothing on the first one, which is empty either way
+     ⛔ DO NOT: Drop the argument. Three arguments render `not supplied`, which tells the
+                agent nothing and sends it looking
+     ✅ DO: Pass an empty string. The brief renders `none observed` — the tree was checked
+   ```
 3. **Choose `REPORT_FILE`** — `${FEATURE_DIR}/_build/<task-id>-report.md`. `_build/` is scratch: the
    scripts create it with a `.gitignore` containing `*`, so briefs, reports and diff packages never reach
    a commit. The **ledger is not scratch** and never lives there.
@@ -554,7 +568,7 @@ agents directly, at depth 1.
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
-| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `RED_TEST` (CORRECTION) |
+| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `KNOWN_FAILURES` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `CONCERNS`, `RED_TEST` (CORRECTION) |
 | `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
 | `@ux-agent` | read-write (`design.md` only) | routed design-spec finding + contract-line citation | amendment appended to `## Design Review` |

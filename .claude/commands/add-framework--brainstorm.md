@@ -1,6 +1,7 @@
 # ADD Brainstorm - Collaborative Ideation & Design Explorer
 
 <!-- uses:
+- skill: add-artefact-graph
 - agent: framework-discovery-agent
 - agent: plan-review-agent
 - skill: add-final-report
@@ -114,6 +115,11 @@ node scripts/graph.js history <artefact-name>
 The index answers a question the graph cannot: **was this built before, and was it dropped?** The graph describes what exists **today**; it holds no time axis and is rebuilt from scratch on every build. A `gone` or `superseded` entry is the most valuable answer this step can return — it means the idea was tried, and it points at what replaced it.
 
 If the verb reports the index unavailable → say so and continue. An absent index means no close-out has run yet, which is information, not a failure.
+
+**A RELATIONSHIP question is a different question, and `add-artefact-graph` owns it.** `history` above
+answers "was this built before and dropped"; it says nothing about what an artefact relates to today.
+Load the skill before reaching for grep — a topic that touches an existing artefact almost always
+raises one, and this command named no route to it until now.
 
 Then dispatch `@framework-discovery-agent` with:
 - `topic`: captured topic from STEP 1.1

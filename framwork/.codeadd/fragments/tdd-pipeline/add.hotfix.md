@@ -1,3 +1,8 @@
+<!-- uses:
+- agent: test-agent
+- skill: add-tdd
+-->
+
 <!-- section:red-gate -->
 
 ### RED — Pin the Bug with a Failing Test (tdd-pipeline)
@@ -8,9 +13,15 @@ Load `{{skill:add-tdd/SKILL.md}}` — its **Bug-fix mode** is the discipline thi
 
 **DISPATCH AGENT: `@test-agent`** [full-access on test files only, standard]
 
-- **Inputs:** `MODE = CORRECTION`, the confirmed root cause and its repro from STEP 7, the files named there, `TEST_FRAMEWORK` and `TEST_COMMAND`.
+- **Inputs:** `MODE = CORRECTION`, the confirmed root cause and its repro from STEP 7, the files named there, `TEST_FRAMEWORK`, `TEST_COMMAND` and `KNOWN_FAILURES`.
 - **Substitution (MANDATORY):** `@test-agent`'s documented `CORRECTION` inputs name a `## Fix Routing` slice. **No such table exists here** — this flow has no review document yet. Pass the confirmed root cause plus the repro in its place, and say so in the dispatch.
-- **Report:** `RED_TEST` (path + test name), `TESTS_PASSING`, `ERRORS`.
+- **Report:** `RED_TEST` (path + test name), `TESTS_PASSING`, `ERRORS`, `CONCERNS`.
+
+**`KNOWN_FAILURES` here is whatever was already red before this hotfix started**, one per line as
+`<test>: <area>` — typically nothing, since a hotfix branches from a green main. **Pass it EMPTY
+rather than omitting it**: the brief then reads `none observed`, which tells the agent the tree was
+checked, where `not supplied` tells it nothing and leaves it to find out on its own. The one thing it
+must not do to find out is clear a tree other agents are working in.
 
 ⛔ ONE new failing test that pins this bug. DO NOT regenerate the area's suite, and DO NOT rewrite passing tests. Touch an existing test only when the fix genuinely changes the contract it asserts.
 

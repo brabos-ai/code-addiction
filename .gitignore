@@ -157,3 +157,10 @@ tmpclaude*
 # copies of one source under review; the release workflow builds before it
 # publishes, so CI always has it.
 cli/src/mcp/
+
+# Per-agent memory, written by a dispatched subagent while it works. It is
+# learning about THIS checkout — what a reviewer confirmed, what it should stop
+# flagging — and it accumulates per machine rather than per delivery. Tracking
+# it would put one agent's notes into another's review diff, under a commit
+# message that does not describe them.
+.claude/agent-memory/

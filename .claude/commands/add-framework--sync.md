@@ -1,6 +1,7 @@
 # ADD Sync - Ecosystem Documentation Updater
 
 <!-- uses:
+- skill: add-artefact-graph
 - agent: readme-analyzer
 - agent: svg-analyzer
 - agent: web-docs-analyzer
@@ -147,6 +148,10 @@ node scripts/build.js                 # ensure the graph is current
 node scripts/graph.js stats --json    # counts by kind, edge type, and the hubs
 node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / "used by"
 ```
+
+**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see.** The calls
+above are the ones this step needs, not the whole surface — load the skill when the question is not
+one of them, or when an answer has to be qualified.
 
 `neighbors` returns inbound and outbound edges with their types, which is exactly
 the "skills loaded" and "used by" columns below. It is derived from each

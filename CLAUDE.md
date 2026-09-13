@@ -93,7 +93,7 @@ Key files:
 |---|---|
 | `framwork/provider-map.json` | Single registry of every command, skill, agent and its provider distribution |
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
-| `scripts/graph.js` | Queries the artefact graph — `impact`, `dependencies`, `path`, `orphans`, `history`, `mermaid` |
+| `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-bats.js` | Backs `npm run test:scripts` — runs the suite natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
@@ -107,7 +107,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
 | `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
-| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/` | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
+| `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/`, the composable layer included — fragments declare what they dispatch, and a plugin's bundled skills, the shipped templates and a node per feature and per plugin are all in it | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
 
@@ -193,6 +193,7 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Product-layer build mechanics | `add-framework-product-layer` |
 | Internal-layer build mechanics | `add-framework-internal-layer` |
 | `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 8 |
+| Querying the graph — the eleven verbs, both interfaces, and what it cannot see | `add-artefact-graph` |
 | `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
 | What belongs in a `CLAUDE.md` | `add-claude-md-style` |
 | Doc schemas, voice, output length | `add-doc-schemas` |

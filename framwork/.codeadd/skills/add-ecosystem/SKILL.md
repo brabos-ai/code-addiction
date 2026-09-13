@@ -23,6 +23,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-final-report
 - mention: add-frontend-architecture
 - mention: add-frontend-development
+- mention: add-gitnexus
 - mention: add-health-check
 - mention: add-id-convention
 - mention: add-investigation

@@ -40,13 +40,51 @@ import { CORPORA, resolveCorpus, probe } from './corpora.mjs';
  * mechanically, carrying no claim that anything depends on anything.
  */
 const DEPENDENCY_TYPES = {
-  artefacts: new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT', 'INJECTS_INTO']),
+  artefacts: new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'RUNS_SCRIPT', 'INJECTS_INTO', 'CONTAINS']),
   docs: new Set(['caused_by', 'depends_on', 'part_of']),
 };
 
-/** Kinds nothing is expected to depend on, so absence of dependants is normal. */
+/**
+ * The same map with `CONTAINS` removed, and `orphans()` reads THIS one.
+ *
+ * ⛔ DO NOT collapse the two. A feature or a plugin contains every file in its
+ * directory, so counting CONTAINS as a dependency here would give each of those
+ * files a permanent inbound edge — and NOTHING under `fragments/` or
+ * `plugins/` could ever be reported as an orphan again. Dead weight would
+ * become invisible by directory placement alone, which is the one failure
+ * `orphans` exists to prevent.
+ *
+ * `CONTAINS` stays in DEPENDENCY_TYPES above because `dependencies` on a
+ * feature node SHOULD list its members. The two sets differ because the two
+ * questions differ.
+ *
+ * ⛔ SECOND COPY of ORPHAN_DEPENDENCY_TYPES in `scripts/graph.js`. Neither can
+ * import the other — `mcp/` takes no dependency at all — so only
+ * `cli/tests/mcp-engine.test.js` holds them equal.
+ */
+const ORPHAN_DEPENDENCY_TYPES = {
+  artefacts: new Set([...DEPENDENCY_TYPES.artefacts].filter((t) => t !== 'CONTAINS')),
+  docs: new Set(DEPENDENCY_TYPES.docs),
+};
+
+/**
+ * Kinds nothing is expected to depend on, so absence of dependants is normal.
+ *
+ * ⛔ THE `artefacts` SET IS THE SECOND COPY of ENTRY_POINT_KINDS in
+ * `scripts/graph.js`. It is duplicated rather than imported because `mcp/`
+ * takes NO dependency at all — it runs from the repository root, where the
+ * CLI's `node_modules` is off the resolution path — so neither copy can read
+ * the other. `cli/tests/mcp-engine.test.js` is the only thing holding them
+ * equal. Change one and change the other in the same delivery, or the two
+ * surfaces answer `orphans` differently and nothing says so out loud.
+ *
+ * A user enables a feature or a plugin and nothing declares one, so they are
+ * entry points the same way commands and fragments are. `template` is
+ * deliberately absent: nothing names the four shipped templates, and their
+ * showing up as orphans IS the finding.
+ */
 const ENTRY_POINT_KINDS = {
-  artefacts: new Set(['command', 'fragment']),
+  artefacts: new Set(['command', 'fragment', 'feature', 'plugin']),
   docs: new Set(),
 };
 
@@ -64,7 +102,7 @@ const ACTIONS = [
   'history',
 ];
 
-export { ACTIONS, DEPENDENCY_TYPES };
+export { ACTIONS, DEPENDENCY_TYPES, ORPHAN_DEPENDENCY_TYPES, ENTRY_POINT_KINDS };
 
 // ---------------------------------------------------------------------------
 // Loading
@@ -405,7 +443,7 @@ export const actions = {
     const nodes = kind ? data.nodes.filter((n) => n.kind === kind) : data.nodes;
 
     if (data.corpus === 'artefacts') {
-      const deps = DEPENDENCY_TYPES.artefacts;
+      const deps = ORPHAN_DEPENDENCY_TYPES.artefacts;
       const depended = new Set(data.edges.filter((e) => deps.has(e.type)).map((e) => e.to));
       return {
         orphans: nodes.filter(

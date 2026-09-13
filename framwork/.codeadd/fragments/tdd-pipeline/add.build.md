@@ -1,3 +1,9 @@
+<!-- uses:
+- agent: test-agent
+- skill: add-tdd
+- mention: /add.plan
+-->
+
 <!-- section:tasks-flow -->
 
 **Flow (TDD-aware — PRD0001):**
@@ -95,14 +101,41 @@ implementation. This fires in **all four modes** — the mode only changes what
 the agent is asked to produce.
 
 **DISPATCH AGENT: `@test-agent`** [full-access, standard] — one per area, parallel.
-- **Inputs:** `AREA`, `MODE` (this build's detected mode), `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, feature docs, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`.
-- **Report:** `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `ERRORS`, plus `RED_TEST` in CORRECTION mode.
+- **Inputs:** `AREA`, `MODE` (this build's detected mode), `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, feature docs, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`, `KNOWN_FAILURES`.
+- **Report:** `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `ERRORS`, `CONCERNS`, plus `RED_TEST` in CORRECTION mode.
+
+**`KNOWN_FAILURES` carries only what you have ALREADY observed in this build.** Several agents share
+one working tree here, so an agent that cannot tell its own failure from a pre-existing one goes
+looking for a clean baseline — and the way it reaches for one is by clearing the tree its siblings are
+working in. This field is what makes that unnecessary.
+
+```
+IF DISPATCHING @test-agent:
+  ⛔ DO NOT: Run TEST_COMMAND first just to populate this field — a baseline sweep
+             on every build buys nothing on a first dispatch, which is empty anyway
+  ⛔ DO NOT: Omit the field — an absent field and an empty one mean different things
+  ✅ DO: Pass the failures already in hand — the ones named in the fix-iteration
+         branch below, or CORRECTION mode's RED_TEST — one per line, `<test>: <area>`
+  ✅ DO: Pass an EMPTY value when nothing has been observed yet. The brief renders it
+         as `none observed`, which is a usable answer; omitting it renders `not supplied`,
+         which is not
+```
+
+**`CONCERNS` is where a failure that is not the agent's own comes back.** It is not `ERRORS`, which is
+the agent reporting on its own work. A red test surfaced under `CONCERNS` belongs to whoever owns the
+file it comes from — route it, do not dispatch a fix for it back to the agent that reported it.
 
 **WAIT-ALL** before the coverage step. Collect `ALL_TEST_FILES`,
 `ALL_TESTS_PASSING`, `TOTAL_TEST_COUNT`.
 
 IF any area reports `TESTS_PASSING = false` → name the area and its errors, and
 allow ONE fix iteration through `@test-agent`. Do not loop further.
+
+**This branch is where `KNOWN_FAILURES` gets its content.** At the WAIT-ALL you
+hold every area's failures and know which area each came from — that is the
+whole field, already in hand. Pass it on the re-dispatch: an agent re-entering a
+tree where three sibling areas are still red, told nothing about them, has no way
+to attribute a failure except by clearing the tree.
 
 **CORRECTION mode is red-green, not regeneration.**
 

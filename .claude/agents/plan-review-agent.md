@@ -9,6 +9,7 @@ memory: project
 ---
 
 <!-- uses:
+- skill: add-artefact-graph
 - mention: /add-framework--build
 -->
 
@@ -37,8 +38,13 @@ IF TWO CHECKS DO NOT DEPEND ON EACH OTHER:
 
 IF THE QUESTION IS "WHAT DEPENDS ON THIS" OR "WHAT DOES THIS NEED":
   ⛔ DO NOT USE: Grep to reconstruct it from prose
-  ✅ DO: Ask `node scripts/graph.js` — it answers from the artefact graph, already structured
+  ✅ DO: Ask the graph — `node scripts/graph.js <verb> <id>`, or the MCP where it is wired
 ```
+
+**`add-artefact-graph` owns it** — which verbs exist, which interface implements each, and what the
+graph cannot see. Load it when a question needs a verb this file does not name, or an answer has to
+be qualified. The command stays here on purpose: this agent must be able to act without loading
+anything, and `cli/tests/plan-review-agent-speed.test.js` L2.3 asserts it.
 
 ### Phase 1 — Read the document and work from the text alone
 
