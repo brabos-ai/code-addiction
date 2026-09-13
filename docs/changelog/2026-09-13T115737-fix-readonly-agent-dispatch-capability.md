@@ -40,6 +40,13 @@ the three agents denying `Bash`, `Grep` or `Glob` on top keep their wider list.
 agent, and walks every `DISPATCHES` edge into one looking for a file `Output:`. Its header states
 what it cannot see, because a gate that overstates its reach stops the next reader looking.
 
+**The prose this delivery wrote.** Four passages informed without instructing — telling `add.build`
+how `/add.plan-to-ready` behaves when nothing in `add.build` branches on it, restating a rule stated
+a few lines above, and explaining twice that a refusal is prose rather than an error. That last one
+is why the build change exists; it is not something an agent reading the skill acts on, and a prompt
+is read on every run. Every scope statement stayed: which commands a section covers, and that Phase 2
+is a separate read-write dispatch, both change what the reader does.
+
 ## Also fixed
 
 `/add.plan` required `## Quality Gates` in `tasks.md`; the canonical schema names it
