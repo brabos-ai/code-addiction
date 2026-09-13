@@ -46,11 +46,23 @@ const DEPENDENCY_TYPES = new Set(['USES_SKILL', 'DISPATCHES', 'HANDS_OFF_TO', 'R
  *
  * Commands are invoked by people. Fragments are the SOURCE of every
  * INJECTS_INTO edge and never its target, so they are orphans by construction —
- * reporting all 23 buries the findings that matter. Everything else earns its
- * place in the graph by being depended on, and a reference file or script that
- * nothing reaches is genuinely dead weight worth surfacing.
+ * reporting all 23 buries the findings that matter. Features and plugins are
+ * the same case one level up: a user enables them, nothing declares them.
+ * Everything else earns its place in the graph by being depended on, and a
+ * reference file or script that nothing reaches is genuinely dead weight worth
+ * surfacing.
+ *
+ * ⛔ `template` is deliberately ABSENT. Nothing in `.codeadd/` names any of the
+ * four shipped templates, so they report as orphans — and that is the finding,
+ * not a nuisance to suppress. Adding the kind here would hide the one thing
+ * indexing them was for.
+ *
+ * ⛔ THIS SET IS DUPLICATED in `mcp/engine.mjs` as ENTRY_POINT_KINDS.artefacts,
+ * which is PRODUCT code and cannot import from here — `mcp/` takes no
+ * dependency at all. Neither copy reads the other; a test is the only thing
+ * holding them equal. Change one and change the other in the same delivery.
  */
-const ENTRY_POINT_KINDS = new Set(['command', 'fragment']);
+const ENTRY_POINT_KINDS = new Set(['command', 'fragment', 'feature', 'plugin']);
 
 function loadGraph(file = DEFAULT_GRAPH) {
   if (!fs.existsSync(file)) {
