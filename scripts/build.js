@@ -1790,6 +1790,15 @@ const AGENT_DIALECTS = {
     for (const key of ['model', 'tools', 'disallowedTools', 'skills', 'memory']) {
       if (blocks[key]) out.push(blocks[key]);
     }
+    // `readonly: true` reaches Claude as nothing unless it is spelled as a tool
+    // denial: this dialect has no capability field of its own, so the constraint
+    // ships as prose in the body and the agent merely DECLINES a write. A
+    // decline is not an error — the caller carries on and the file is missing.
+    // A source declaring `disallowedTools` keeps its own value, which is how the
+    // agents that deny more than these three (Bash, Grep, Glob) stay wider.
+    if (meta.readonly && !blocks.disallowedTools) {
+      out.push('disallowedTools: Write, Edit, NotebookEdit');
+    }
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
