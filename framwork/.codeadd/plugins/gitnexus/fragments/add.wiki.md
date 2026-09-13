@@ -1,3 +1,7 @@
+<!-- uses:
+- skill: add-gitnexus
+-->
+
 <!-- section:graph-classify -->
 
 **Before classifying apps, read the real topology from the graph:** load skill `add-gitnexus` and use community detection for functional areas, `route_map`/`tool_map` for entry points, and module/dependency edges for app boundaries — classify against actual structure, not only folder names and `package.json` deps. In a monorepo, `group_*` exposes cross-app dependencies the file tree hides. If the graph is empty or unindexed, say so explicitly and fall back to deps/folder signals — do not block.

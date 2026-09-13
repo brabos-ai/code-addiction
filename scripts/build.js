@@ -842,6 +842,42 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
     }
   }
 
+  // A plugin bundles its OWN skills, and they are skills in every sense that
+  // matters here: `cli/src/plugins.js` copies them into every provider's skills
+  // directory, so they install, load and run exactly like the ones above. They
+  // were simply never walked, which left `add-gitnexus` — a shipped skill —
+  // absent from the index entirely: no gate, no `search`, no `orphans` had ever
+  // seen it.
+  //
+  // `registered: true`, like scripts and fragments. A plugin skill reaches a
+  // user through the plugin mechanism and its catalog at `cli/src/plugins.json`,
+  // never through `provider-map.json` — registering it there would be wrong for
+  // the same reason a `cli/` module is not registered, and marking it
+  // unregistered would fail the build on a correct file.
+  //
+  // The bare name shares one namespace with the skills above, deliberately.
+  // A plugin skill installs into the SAME directory as a product skill, so two
+  // with one name already collide in the user's project, long before the graph
+  // is asked about either.
+  const pluginSkillRoot = path.join(codeaddDir, 'plugins');
+  if (fs.existsSync(pluginSkillRoot)) {
+    for (const p of fs.readdirSync(pluginSkillRoot, { withFileTypes: true })
+      .filter((e) => e.isDirectory()).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const pSkills = path.join(pluginSkillRoot, p.name, 'skills');
+      if (!fs.existsSync(pSkills)) continue;
+      for (const d of fs.readdirSync(pSkills, { withFileTypes: true })
+        .filter((e) => e.isDirectory()).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+        const skillFile = path.join(pSkills, d.name, 'SKILL.md');
+        if (!fs.existsSync(skillFile)) continue;
+        push('skill', 'product', d.name, skillFile, true, allProviders);
+        for (const ref of walkFiles(path.join(pSkills, d.name), '.md').sort()) {
+          if (path.basename(ref) === 'SKILL.md') continue;
+          push('reference', 'product', relId(pSkills, ref), ref, true, []);
+        }
+      }
+    }
+  }
+
   const agentsDir = path.join(codeaddDir, 'agents');
   if (fs.existsSync(agentsDir)) {
     for (const f of fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md') && !NON_ARTEFACT_FILE.test(f)).sort()) {
