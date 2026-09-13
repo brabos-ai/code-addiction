@@ -896,6 +896,30 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
     }
   }
 
+  // Templates ship — `release.yml` packages `.codeadd/templates` alongside
+  // scripts, fragments and plugins — and they were the second of the three
+  // classes the comment in `assertArtefactGraph` calls out as invisible to a
+  // node walk. Indexing them is what lets anything ask about them at all.
+  //
+  // NEITHER declaring NOR sniffable, and both omissions are deliberate:
+  //   - not declaring: a template ships verbatim and carries no `uses:` block,
+  //     exactly like a script.
+  //   - not sniffable: nothing in `.codeadd/` names any of the four. Adding a
+  //     `uses:` kind and an edge type for a caller that does not exist is
+  //     machinery built on speculation.
+  //
+  // They will therefore show up in `orphans`, and THAT IS THE CORRECT RESULT,
+  // not a regression to paper over. It is the first true thing the index says
+  // about them: four files ship to every user and nothing references them.
+  // Whether they are dead is a separate decision for a human; surfacing the
+  // question is this walk's whole contribution.
+  const templatesDir = path.join(codeaddDir, 'templates');
+  if (fs.existsSync(templatesDir)) {
+    for (const f of walkFiles(templatesDir, '.md').sort()) {
+      push('template', 'product', relId(templatesDir, f).replace(/\.md$/, ''), f, true, []);
+    }
+  }
+
   const fragmentRoots = [path.join(codeaddDir, 'fragments')];
   const pluginsDir = path.join(codeaddDir, 'plugins');
   if (fs.existsSync(pluginsDir)) {
