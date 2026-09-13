@@ -568,8 +568,8 @@ agents directly, at depth 1.
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND` (routed rows), `FILES_INSPECTED`, `BUILD_STATUS`, `TICK_REPORT`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
-| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `KNOWN_FAILURES` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `CONCERNS`, `RED_TEST` (CORRECTION) |
-| `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
+| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `KNOWN_FAILURES`, `ATTEMPT`, `MAX_ATTEMPTS`, and on the final attempt only an explicit `MODEL` one tier above its declared model | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `BLOCKED`, `CONCERNS`, `RED_TEST` (CORRECTION) |
+| `@fix-agent` | full-access | `AREAS`, the whole wave's `ROUTED_ROWS` in table order, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model. One dispatch per wave | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
 | `@ux-agent` | read-write (`design.md` only) | routed design-spec finding + contract-line citation | amendment appended to `## Design Review` |
 
@@ -586,9 +586,20 @@ directive in this command is self-sufficient inline for exactly that reason.
 Every correction in this command goes through `@fix-agent`. There is no
 anonymous fix subagent.
 
-**DISPATCH AGENT: `@fix-agent`** [full-access, standard] — one per affected area, parallel across areas.
-- **Inputs:** `AREA`, this area's `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS = 3`, `BUILD_ERRORS` verbatim.
-- **`ATTEMPT` is supplied by this command, never by the agent.** A leaf agent cannot see its own history, so the cap lives here where the loop can see it.
+**DISPATCH AGENT: `@fix-agent`** [full-access, standard] — **ONE dispatch for the whole wave**, never one per area.
+- **Inputs:** `AREAS` (every area the wave's rows touch), the wave's `ROUTED_ROWS` **in the table's own order**, `ATTEMPT`, `MAX_ATTEMPTS = 3`, `BUILD_ERRORS` verbatim.
+- **`ATTEMPT` is supplied by this command, never by the agent, and it counts WAVES.** A leaf agent cannot see its own history, so the cap lives here where the loop can see it.
+
+```
+IF THE WAVE'S ROUTED ROWS SPAN MORE THAN ONE AREA:
+  ⛔ DO NOT: Slice ROUTED_ROWS by area and dispatch one agent per slice
+  ⛔ DO NOT: Give each slice its own ATTEMPT counter
+  ✅ DO: Pass every row, in the table's order, to ONE dispatch with one ATTEMPT
+```
+
+⛔ **Slicing the table by area discards the two things it encodes.** It is sorted by severity first
+and area second, and it carries `Blocked by` — so a per-area agent works a minor row before another
+area's blocker, and cannot resolve a `Blocked by` that points outside its own slice at all.
 
 **`MAX_ATTEMPTS` is 3, and the model escalates at round 3 — not at round 2:**
 
@@ -602,8 +613,9 @@ Two rounds on the declared model is a fair trial. A loop that survives two round
 cannot see its own problem, and a third round on the same model buys nothing.
 
 **Every fix round is re-reviewed** — record `FIX_BASE` before the dispatch and run the scoped re-review in
-STEP 12.2 after it returns. Append one ledger line per round:
-`T02: fix round 1/3 (2 addressed, 0 open; commits d4e5f6a..b7c8d9e)`.
+STEP 12.2 after it returns. Append **one ledger line per round**, not one per area, naming the areas
+the wave spanned:
+`T02: fix round 1/3 (backend, frontend — 2 addressed, 0 open, 1 deferred; commits d4e5f6a..b7c8d9e)`.
 
 ⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`, stop dispatching — then split on what is still open:
 
@@ -636,15 +648,31 @@ decisions — never silently re-dispatched.
 
 ### DEVELOPMENT MODE
 
-#### 10.1 Dependency Order & Parallelization
+#### 10.1 Dependency Order — ONE IMPLEMENTATION AGENT AT A TIME
 
 ```
-Contract Tests (if exist) -> Database -> Backend API -> [parallel: Workers, Frontend]
+Contract Tests (if exist) -> Database -> Backend API -> Workers -> Frontend
 ```
 
-- DB + Backend + Frontend: Sequential DB → Parallel Backend + Frontend
-- Backend + Frontend only: Parallel
-- Single area: Direct (no subagents)
+**Dispatch implementation agents SEQUENTIALLY, in that order, restricted to the in-scope areas.**
+Wait for each one to return before dispatching the next.
+
+```
+IF MORE THAN ONE AREA IS IN SCOPE:
+  ⛔ DO NOT: Send two implementation agents in one message
+  ⛔ DO NOT: Dispatch Workers and Frontend together because neither depends on the other
+  ✅ DO: Dispatch one, WAIT for its report, then dispatch the next
+```
+
+⛔ **Independence of two areas is not a licence to overlap them.** Workers and Frontend do not depend
+on each other's code, but they share one working tree: two writers in it at once means neither can
+tell its own build failure from its sibling's, and an agent that cannot tell reaches for a clean
+baseline — which is how `git stash` takes another agent's uncommitted work.
+
+Single area in scope: dispatch it directly, no subagents.
+
+⛔ **This holds whether or not the `tdd-pipeline` feature is on.** The multi-writer tree is a property
+of this command's base body, not of the feature that adds test generation to it.
 
 #### 10.2 Universal Subagent Prompt Template
 
@@ -729,28 +757,34 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 #### 10.4 Subagent Dispatch
 
-**CRITICAL:** When dispatching multiple independent subagents, send ALL Task tool calls in a SINGLE message.
+⛔ **One implementation dispatch per message, and the next one only after the previous returned.**
+Per 10.1: they share one working tree, so overlapping them is what makes a build failure
+unattributable.
 
 **DISPATCH AGENT: @${AREA}-agent** (see the Agent Roster in STEP 10)
 - **Prompt:** Use the Universal Subagent Prompt Template (10.2), filled from the paths 10.0.2 resolved
 
 #### 10.5 Coordination Flow
 
-**One commit per area dispatch in this mode** — there are no task ids to commit against.
+**One commit per area dispatch in this mode**, plus one for the fix wave — there are no task ids to
+commit against.
 
 ```
-Record BASE -> Dispatch DB agent -> Wait -> Validator (STEP 11) -> Verify build
-    | (if fails, dispatch @fix-agent with ATTEMPT)
-  -> COMMIT the area batch (STEP 11.3) -> ledger line with BASE..HEAD
-Record BASE -> Dispatch Backend + Frontend (parallel) -> Wait -> Validators -> Verify build
-    | (if fails, dispatch @fix-agent with ATTEMPT)
-  -> COMMIT each area batch (STEP 11.3) -> ledger line per area
+FOR EACH in-scope area, in the 10.1 order, ONE AT A TIME:
+  Record BASE -> Dispatch the area agent -> Wait -> Validator (STEP 11) -> Verify build
+    -> COMMIT the area batch (STEP 11.3) -> ledger line with BASE..HEAD
+  (next area only after the line is written)
+THEN, once every area has landed:
+  Collect the wave's routed rows -> Record FIX_BASE
+    -> Dispatch ONE @fix-agent for the whole wave (Correction Dispatch)
+    -> COMMIT one cross-area batch (STEP 11.3) -> one ledger line
 Documentation -> DONE
 ```
 
-On a failing build, dispatch `@fix-agent` per the **Correction Dispatch** contract
-above: one per affected area, `ROUTED_ROWS` derived from the build errors, and the
-`ATTEMPT` counter tracked here. The cap is `MAX_ATTEMPTS = 3` per area.
+On a failing build, collect the rows and dispatch `@fix-agent` per the **Correction
+Dispatch** contract above: **one dispatch for the whole wave**, `AREAS` and
+`ROUTED_ROWS` derived from the build errors and validator output, and the `ATTEMPT`
+counter tracked here. The cap is `MAX_ATTEMPTS = 3` per wave.
 
 ---
 
@@ -846,6 +880,38 @@ TICK_REPORT (the JSON shape), SPEC_STATUS.
 
 Dispatch validator for each area immediately after its implementation agent returns. After ALL validators complete, run build verification. If the build fails, dispatch `@fix-agent` per the **Correction Dispatch** contract, passing the validator outputs and build errors as `ROUTED_ROWS` + `BUILD_ERRORS`, and the tracked `ATTEMPT`.
 
+#### A `BLOCKED` report becomes a routed row, in this run
+
+`@test-agent` returns `BLOCKED` when its own correct test is red because the SOURCE is wrong. That is
+a real defect found by a real test, and it is routed here — by the same synthesis this step already
+performs over validator output and build errors.
+
+For each `BLOCKED` entry, synthesise one row into `ROUTED_ROWS`:
+
+| Column | From the entry |
+|---|---|
+| `Severity` | `major` — a source defect an assertion already proves, but the suite is green because the red is declared |
+| `Area` | The area that owns `symbol`'s source file, not the area of the test |
+| `Route` | The implementation agent for that area |
+| `File` | The source file `symbol` sits in |
+| `Symptom` | `<symbol>: <assertion>` — both come from the entry, verbatim |
+
+```
+IF @test-agent RETURNED A BLOCKED ENTRY:
+  ⛔ DO NOT: Write a review document, or wait for /add.review to route it
+  ⛔ DO NOT: Route it back to @test-agent — it already established the test is right
+  ⛔ DO NOT: Route it by the TEST's area when the symbol lives in another one
+  ✅ DO: Synthesise the row here and let this wave's @fix-agent work it
+```
+
+⛔ **No review document is involved and none is created.** The row is synthesised in flight, exactly
+as a build error is. `/add.review` writes `## Fix Routing` for findings it produced; this one was
+produced here.
+
+**Verify the claim before you route it.** The `WAIT-ALL` test run this command performs itself is what
+distinguishes a real source defect from an agent avoiding work — a `BLOCKED` whose named assertion is
+not red in that run is not routed, and the discrepancy goes in the ledger as a ruling.
+
 **THIS COMMAND IS THE SOLE `tasks.md` WRITER.** Validators emit tick reports; this step merges them and
 writes. Run the **Coordinator Merge Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}` over every
 area report, recompute §1 Requirements Coverage from the merged set, and write `tasks.md` once.
@@ -899,10 +965,15 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
 - **Trailers are mandatory:** `Task-Id:` (the `tasks.md` id, or the area name in DEVELOPMENT / CORRECTION
   MODE, where there are no task ids) and `Feature-Id:`. They are what joins the ledger, the commit and
   `tasks.md` later.
-- **One commit per batch** — one `tasks.md` task in TASKS MODE, one area dispatch otherwise.
+- **One commit per batch** — one `tasks.md` task in TASKS MODE, one area dispatch otherwise, and
+  **one cross-area commit for a whole fix wave**. `@fix-agent` is a single dispatch spanning every
+  area its rows touch (Correction Dispatch), so its output is one batch: stage the union of its
+  `FILES_MODIFIED` and commit once. ⛔ DO NOT split a wave's diff into per-area commits — the areas
+  were fixed together against one ordering, and `review-package.sh` packages `FIX_BASE..HEAD` for
+  12.2 as one range.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
-  way, and only when more than one batch exists — the normal case, since STEP 9 dispatches Backend and
-  Frontend in parallel. `git add -A` on the first area sweeps the second area's files into that commit,
+  way, and only when more than one batch exists — the normal case, since 10.1 dispatches each in-scope
+  area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
   leaving the second commit empty and its `${BATCH_BASE}..${HEAD}` range empty too — and
   `review-package.sh` exits 2 on an empty range, so the fix loop would have nothing to review.
 - ⛔ **`${AREA_FILES}` comes from the validator's report, never from a glob.** A glob cannot tell this
@@ -940,9 +1011,10 @@ feature-gated either.
 ### 12.1 Consume
 
 Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
-Work rows in the table's given order, respecting `Blocked by`. **Record
+The rows are worked in the table's given order, respecting `Blocked by` — **by the agent, which is why
+it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 `FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — 12.3 cannot run without it. Dispatch
-`@fix-agent` per area per the **Correction Dispatch** contract, with the tracked
+**ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
 ### 12.2 Scoped Re-Review (after EVERY fix round) [HARD GATE]
@@ -1278,5 +1350,5 @@ Dispatching subagents..."
 | `@fix-agent` exhausted `MAX_ATTEMPTS`, build still red | Report unresolved rows and last errors; STOP. The BUILD GATE is not a finding to rule on. Never advance as if the build passed |
 | `review-package.sh` exits 2 (empty range) | The fix produced no commit — that is the finding. Do NOT dispatch the re-reviewer against nothing; re-open the round |
 | Ledger and `git log` disagree | git wins for what EXISTS, the ledger wins for what was DECIDED. Record the reconciliation as a ledger line |
-| >4 areas detected | Split into maximum parallel groups |
+| >4 areas detected | Dispatch them one at a time in the 10.1 dependency order. There is no parallel group to split into |
 | No plan.md or about.md | Inform user to run /feature or /plan first |
