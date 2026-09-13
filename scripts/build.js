@@ -920,6 +920,32 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
     }
   }
 
+  // A feature and a plugin are composable UNITS, and until now neither existed
+  // as a thing the graph could be asked about — only their individual members
+  // did. "What does `codeadd features enable tdd-pipeline` touch?" is the
+  // question a user asks BEFORE enabling one, and it had no answer in either
+  // interface.
+  //
+  // ⛔ DERIVED FROM THE DIRECTORY LAYOUT, never from `cli/src/features.js` or
+  // `cli/src/plugins.json`. The path already carries the name, and reading CLI
+  // source from the graph builder would couple them for information that is
+  // right there in `fragments/{name}/` and `plugins/{name}/`.
+  //
+  // Neither declaring nor sniffable: a directory has no `uses:` block, and
+  // nothing loads a feature by name — the CLI enables it. They ARE entry points
+  // (a person enables them, nothing declares them), which is why
+  // ENTRY_POINT_KINDS gains both in `scripts/graph.js` and `mcp/engine.mjs`.
+  for (const [dir, kind] of [
+    [path.join(codeaddDir, 'fragments'), 'feature'],
+    [path.join(codeaddDir, 'plugins'), 'plugin'],
+  ]) {
+    if (!fs.existsSync(dir)) continue;
+    for (const d of fs.readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isDirectory()).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      push(kind, 'product', d.name, path.join(dir, d.name), true, []);
+    }
+  }
+
   const fragmentRoots = [path.join(codeaddDir, 'fragments')];
   const pluginsDir = path.join(codeaddDir, 'plugins');
   if (fs.existsSync(pluginsDir)) {
@@ -1010,6 +1036,25 @@ function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, p
   for (const n of nodes) {
     if (!n.declares) continue;
     edges.push(...extractUses(readFile(path.join(ROOT, n.path)), n.name, n.kind, n.layer));
+  }
+
+  // Container ownership, derived from the path prefix — a feature or a plugin
+  // CONTAINS every node that lives inside its directory. Derived here rather
+  // than declared, exactly like INJECTS_INTO below: nothing writes a `uses:`
+  // block for a directory, and the layout is the fact.
+  //
+  // ⛔ `CONTAINS` MUST NOT reach the orphans calculation. `orphans()` builds its
+  // "depended" set from DEPENDENCY_TYPES membership, so a container owning every
+  // file beneath it would give each one a permanent inbound dependency — and
+  // NOTHING under `fragments/` or `plugins/` could ever be reported as dead
+  // weight again. `scripts/graph.js` and `mcp/engine.mjs` each keep a separate
+  // ORPHAN_DEPENDENCY_TYPES that excludes it.
+  for (const c of nodes.filter((n) => n.kind === 'feature' || n.kind === 'plugin')) {
+    const prefix = `${c.path}/`;
+    for (const m of nodes) {
+      if (m.id === c.id || !m.path.startsWith(prefix)) continue;
+      edges.push({ from: c.id, to: m.id, type: 'CONTAINS', origin: 'layout', modifier: null });
+    }
   }
 
   // One edge per point, not per (fragment, target) pair: a fragment with three
