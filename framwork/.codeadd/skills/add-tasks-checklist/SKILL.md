@@ -7,6 +7,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 <!-- uses:
 - skill: add-architecture-discovery
+- mention: @architecture-agent
 - mention: add-feature-specification
 - mention: /add.plan
 - command: /add.plan-to-ready
@@ -229,8 +230,14 @@ SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
 Service order (TDD ordering): test → database → backend → frontend.
 
 ## OUTPUT
-Write `${PLAN_DIR}/tasks.md` only. Do not modify any other file.
+Return the complete tasks document in your report. Write NO file — you are
+read-only, and the dispatching step writes `${PLAN_DIR}/tasks.md` from what you
+return. Return the document alone, with no commentary wrapped around it.
 ```
+
+⛔ **The architect is `@architecture-agent`, which declares `readonly: true`.** A template telling it
+to write is a template it can only refuse, and on Claude that refusal is prose rather than an error —
+the dispatching step carries on and the file is simply absent. `add.plan` STEP 10.4 is the writer.
 
 ## Resume vs Rerun Procedure
 
