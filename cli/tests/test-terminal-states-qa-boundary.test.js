@@ -304,7 +304,11 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     expect(body, 'the declared-red mechanism is missing').toMatch(/xfail\(strict=True\)/);
     expect(body, 'the declared-red mechanism is missing').toMatch(/test\.failing\(\)/);
     expect(body, 'the declared-red mechanism is missing').toMatch(/test\.fails\(\)/);
-    expect(body, 'skip is not ruled out as the way to record a known-real red').toMatch(/never\s+`?skip`?/i);
+    // Ruled out by a tool-specific prohibition, per building-commands — not by
+    // the word "never". The gate form is the stronger one; assert the ban, not
+    // one phrasing of it.
+    expect(body, 'skip is not ruled out as the way to record a known-real red')
+      .toMatch(/⛔ DO NOT USE:[^\n]*\bskip\b/);
     // The prohibitions the terminal state exists to keep satisfiable.
     expect(body).toMatch(/never application source|never modify source/i);
     expect(body).toMatch(/never soften an assertion/i);
