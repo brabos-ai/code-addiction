@@ -214,7 +214,7 @@ Read these files in order:
 4. ${PLAN_DIR}/plan-test-spec.md — Test specifications (if exists)
 
 ## TASK
-Generate `${PLAN_DIR}/tasks.md` following the canonical schema defined in
+Compose the tasks document following the canonical schema defined in
 the `add-tasks-checklist` skill. Use the EXACT section headings:
   ## Metadata
   ## Requirements Coverage
