@@ -14,6 +14,7 @@ memory: project
 
 <!-- uses:
 - skill: building-commands
+- skill: add-artefact-graph
 - mention: /add-framework--build
 - mention: /add-framework--plan
 - mention: add-review-discipline
@@ -91,7 +92,7 @@ IF TWO CHECKS DO NOT DEPEND ON EACH OTHER:
 
 IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
   ⛔ DO NOT USE: Grep to reconstruct it from prose
-  ✅ DO: Ask the artefact-graph MCP — `neighbors`, `dependencies`, `impact`
+  ✅ DO: Ask the graph — either interface. They answer identically
 ```
 
 ### Phase 1 — Ask the graph, in ONE message
@@ -99,9 +100,9 @@ IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
 `neighbors` on the artefact, `dependencies` at depth 1, `impact` at depth 1. The neighbour list is
 the input to item 4, so this phase comes first: without it you do not know which files to read.
 
-**When the MCP is unavailable, the CLI behind it is not a fallback — it answers the same.**
-`mcp/server.mjs --corpus=artefacts` and `scripts/graph.js` read one emitted sidecar, and
-`cli/tests/mcp-engine.test.js` asserts the two return the same result verb for verb. Use
+**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see** — including
+that the CLI is not a fallback for the MCP but the same answer, and that a fragment's edge does not
+show on a 1-hop `neighbors` of the command it is injected into. Use
 `NODE_OPTIONS= node scripts/graph.js neighbors|dependencies|impact <id>`; clear `NODE_OPTIONS` first
 or an injected debugger banner corrupts stdout.
 

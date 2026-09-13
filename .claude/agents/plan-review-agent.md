@@ -9,6 +9,7 @@ memory: project
 ---
 
 <!-- uses:
+- skill: add-artefact-graph
 - mention: /add-framework--build
 -->
 
@@ -37,8 +38,12 @@ IF TWO CHECKS DO NOT DEPEND ON EACH OTHER:
 
 IF THE QUESTION IS "WHAT DEPENDS ON THIS" OR "WHAT DOES THIS NEED":
   ⛔ DO NOT USE: Grep to reconstruct it from prose
-  ✅ DO: Ask `node scripts/graph.js` — it answers from the artefact graph, already structured
+  ✅ DO: Ask the graph — `node scripts/graph.js` or the artefact-graph MCP, whichever
+         is reachable. They answer identically
 ```
+
+**`add-artefact-graph` owns the verbs and what the graph cannot see.** Read it when an answer needs
+to be qualified — a fragment's edge, for one, is invisible from the command's side.
 
 ### Phase 1 — Read the document and work from the text alone
 
