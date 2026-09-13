@@ -1,6 +1,7 @@
 <!-- uses:
 - agent: test-agent
 - skill: add-tdd
+- mention: @fix-agent
 -->
 
 <!-- section:red-gate -->
@@ -13,9 +14,11 @@ Load `{{skill:add-tdd/SKILL.md}}` — its **Bug-fix mode** is the discipline thi
 
 **DISPATCH AGENT: `@test-agent`** [full-access on test files only, standard]
 
-- **Inputs:** `MODE = CORRECTION`, the confirmed root cause and its repro from STEP 7, the files named there, `TEST_FRAMEWORK`, `TEST_COMMAND` and `KNOWN_FAILURES`.
+- **Inputs:** `MODE = CORRECTION`, the confirmed root cause and its repro from STEP 7, the files named there, `TEST_FRAMEWORK`, `TEST_COMMAND`, `KNOWN_FAILURES`, `ATTEMPT` and `MAX_ATTEMPTS = 3`.
+- **`ATTEMPT` is supplied here, never by the agent**, and it is the same route and the same value `@fix-agent` already receives — one field with one meaning must not have two routes.
+- **On the FINAL attempt only**, pass an explicit `MODEL` one tier above the agent's declared model. Pass no `MODEL` on any earlier attempt.
 - **Substitution (MANDATORY):** `@test-agent`'s documented `CORRECTION` inputs name a `## Fix Routing` slice. **No such table exists here** — this flow has no review document yet. Pass the confirmed root cause plus the repro in its place, and say so in the dispatch.
-- **Report:** `RED_TEST` (path + test name), `TESTS_PASSING`, `ERRORS`, `CONCERNS`.
+- **Report:** `RED_TEST` (path + test name), `TESTS_PASSING`, `BLOCKED`, `ERRORS`, `CONCERNS`.
 
 **`KNOWN_FAILURES` here is whatever was already red before this hotfix started**, one per line as
 `<test>: <area>` — typically nothing, since a hotfix branches from a green main. **Pass it EMPTY

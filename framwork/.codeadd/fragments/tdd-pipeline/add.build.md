@@ -2,6 +2,7 @@
 - agent: test-agent
 - skill: add-tdd
 - mention: /add.plan
+- mention: @fix-agent
 -->
 
 <!-- section:tasks-flow -->
@@ -96,13 +97,41 @@ scenarios.
 
 ### Test Generation Dispatch (tdd-pipeline)
 
-For each in-scope area, dispatch `@test-agent` alongside that area's
-implementation. This fires in **all four modes** — the mode only changes what
-the agent is asked to produce.
+Dispatch `@test-agent` for an area **AFTER that area's implementation agent has
+returned**, interleaved into the sequential order STEP 10.1 already runs:
 
-**DISPATCH AGENT: `@test-agent`** [full-access, standard] — one per area, parallel.
-- **Inputs:** `AREA`, `MODE` (this build's detected mode), `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, feature docs, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`, `KNOWN_FAILURES`.
-- **Report:** `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `ERRORS`, `CONCERNS`, plus `RED_TEST` in CORRECTION mode.
+```
+DB → test:DB → Backend → test:Backend → Frontend → test:Frontend
+```
+
+This fires in **all four modes** — the mode only changes what the agent is asked
+to produce.
+
+```
+IF DISPATCHING @test-agent FOR AN AREA:
+  ⛔ DO NOT: Send it alongside that area's implementation agent
+  ⛔ DO NOT: Send one per area in parallel once the implementers are done
+  ✅ DO: Dispatch it after that area's implementer returns, and WAIT for it
+         before dispatching the next area's implementer
+```
+
+⛔ **Generating tests against a file the implementer is still writing is what this
+order fixes.** The agent is told to read the source completely and identify every
+testable export; run alongside the implementer, it reads a moving target and
+writes coverage for a shape that no longer exists by the time the area lands.
+
+**One agent in flight at a time**, implementer or test agent — STEP 10.1 owns that
+rule and this ordering sits inside it.
+
+**DISPATCH AGENT: `@test-agent`** [full-access, standard] — one per area, sequential, after that area's implementer.
+- **Inputs:** `AREA`, `MODE` (this build's detected mode), `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, feature docs, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`, `KNOWN_FAILURES`, `ATTEMPT`, `MAX_ATTEMPTS = 3`.
+- **`ATTEMPT` is supplied here, never by the agent.** A leaf agent cannot see its own history, so the cap lives where the loop can see it — the same route and the same value `@fix-agent` already uses.
+- **On the FINAL attempt only**, pass an explicit `MODEL` one tier above the agent's declared model, matching `@fix-agent`'s round-3 escalation. Pass no `MODEL` on any earlier attempt.
+- **Report:** `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `BLOCKED`, `ERRORS`, `CONCERNS`, plus `RED_TEST` in CORRECTION mode.
+
+**`BLOCKED` is a successful completion, and it does NOT consume an attempt.** It
+means the agent's own correct test caught a source bug. Route each entry as a
+row per STEP 11.2's `BLOCKED` synthesis — never re-dispatch the agent for it.
 
 **`KNOWN_FAILURES` carries only what you have ALREADY observed in this build.** Several agents share
 one working tree here, so an agent that cannot tell its own failure from a pre-existing one goes
@@ -125,11 +154,35 @@ IF DISPATCHING @test-agent:
 the agent reporting on its own work. A red test surfaced under `CONCERNS` belongs to whoever owns the
 file it comes from — route it, do not dispatch a fix for it back to the agent that reported it.
 
-**WAIT-ALL** before the coverage step. Collect `ALL_TEST_FILES`,
-`ALL_TESTS_PASSING`, `TOTAL_TEST_COUNT`.
+**WAIT-ALL** before the coverage step. Collect `ALL_TEST_FILES`, `TOTAL_TEST_COUNT`
+and every area's `BLOCKED` entries.
 
-IF any area reports `TESTS_PASSING = false` → name the area and its errors, and
-allow ONE fix iteration through `@test-agent`. Do not loop further.
+#### Run `TEST_COMMAND` yourself at the WAIT-ALL
+
+⛔ **The coordinator runs `TEST_COMMAND` here, and its exit status — not any
+agent's `TESTS_PASSING` — is what `ALL_TESTS_PASSING` means.**
+
+```
+IF EVERY AREA HAS REPORTED:
+  ⛔ DO NOT: Set ALL_TESTS_PASSING by AND-ing the agents' TESTS_PASSING fields
+  ⛔ DO NOT: Skip the run because every area reported true
+  ✅ DO: Run TEST_COMMAND in this session, read its exit status, and use that
+```
+
+**Two things make this load-bearing, not a double-check.**
+
+Interleaving means an area's tests are written and green before the next area's
+implementer runs — so a later area can break an earlier area's passing test, and
+no agent is left running to notice. This run is the only thing that catches that
+class, which is the price the interleaved order pays and this step is what pays it.
+
+It is also what makes a `BLOCKED` claim checkable: the named assertion is either
+red in this run or the claim is wrong. A `BLOCKED` entry whose assertion is green
+here is not routed — record the discrepancy as a ruling.
+
+IF `TEST_COMMAND` exits non-zero → name the failing tests and their areas, and
+allow ONE fix iteration through `@test-agent` for the areas that own them. Do not
+loop further.
 
 **This branch is where `KNOWN_FAILURES` gets its content.** At the WAIT-ALL you
 hold every area's failures and know which area each came from — that is the
