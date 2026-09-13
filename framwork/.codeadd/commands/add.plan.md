@@ -136,9 +136,20 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **Agent Dispatch (if needed):**
 - **Agent:** @discovery-agent
+- **Capability:** read-only
 - **Skill:** `add-feature-discovery` Phase 1.5
 - **Input:** about.md + RECENT_CHANGELOGS (from status.sh)
-- **Output:** `docs/features/${FEATURE_ID}/past-features.md`
+- **Returns:** the complete `past-features.md` content, in its report
+
+⛔ **The agent is read-only and writes nothing. THIS STEP writes the file** to
+`docs/features/${FEATURE_ID}/past-features.md`, verbatim from the report.
+
+```
+IF THE REPORT CARRIES NO DOCUMENT:
+  ⛔ DO NOT USE: Write on past-features.md
+  ⛔ DO NOT: Continue to Extract and Apply against a file you just created empty
+  ✅ DO: Report that the dispatch returned no content, and use the keyword fallback below
+```
 
 **Extract and Apply:** From past-features.md (cached or generated), identify:
 - Files available for reuse
@@ -604,11 +615,23 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 **MANDATORY:** Load `{{skill:add-tasks-checklist/SKILL.md}}` BEFORE dispatching.
 
 **Dispatch:** @architecture-agent
-- **Output:** `${PLAN_DIR}/tasks.md` (feature dir or subfeature dir if epic)
+- **Capability:** read-only
+- **Returns:** the complete tasks document, in its report
 - **Prompt template:** From `add-tasks-checklist` ("Architect Subagent Prompt Template" section), substituting `${FEATURE_ID}`, `${EPIC_CURRENT_SF}`, `${PLAN_DIR}`
 
+⛔ **The agent is read-only and writes nothing. THIS STEP writes the file** to
+`${PLAN_DIR}/tasks.md` (feature dir, or subfeature dir if epic), verbatim from the report.
+
+```
+IF THE REPORT CARRIES NO DOCUMENT:
+  ⛔ DO NOT USE: Write on tasks.md
+  ⛔ DO NOT: Proceed to 10.5 or STEP 11 against a file you just created empty
+  ✅ DO: Report that the dispatch returned no content and STOP — STEP 11 coverage and
+         STEP 12.1's interface check both read this file
+```
+
 **Rules:**
-- tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Quality Gates` (validators parse by text)
+- tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Validation Gates` (validators parse by text). **The sixth is conditional** — write it only when `CLAUDE.md` exposes a `validation_gates` block, and omit the section entirely otherwise
 - Every `## Execution` task carries **6** metadata sub-bullets in order: `Service`, `Files`, `Deps`, `Consumes`, `Produces`, `Verify` — never 4. `Produces` is the **exact signature** a later task will call (`-` when nothing); `Consumes` is the **exact signature** plus the producing task ID in parentheses (`-` when nothing). Every `Consumes` MUST match a `Produces` on an **earlier** task **character for character** — STEP 12 checks this mechanically, and a `Consumes` written as prose fails there
 - plan.md FROZEN after this step (no spec checklist section)
 - Every RF/RN in Requirements Coverage MUST link to ≥1 Acceptance Checklist item
@@ -616,14 +639,17 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 
 ### 10.5 Cross-SF Integration Review (EPIC ONLY)
 
-**IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent for integration review.
+**IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent [read-only] for integration review.
 **IF normal feature:** Skip to 10.6.
+
+⛔ **The agent reviews and reports. THIS STEP applies every edit to `plan.md`.** The agent declares
+`readonly: true` and writes nothing — a finding it returns is a `plan.md` edit you make here.
 
 **Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. 10.5 is the **in-place fixer**.
 
 **What 10.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add-cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by `/add.plan-to-ready`. Two checks 10.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 10.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
 
-**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. The agent judges and never edits; 10.5 edits.
+**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. `@consistency-agent` judges and never edits; 10.5 edits.
 
 **Checks to fix in-place — these three, and only these three:**
 1. Shared Resource Centralization (enums/config added ONCE in earliest SF)

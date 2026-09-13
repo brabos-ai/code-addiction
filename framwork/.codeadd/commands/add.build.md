@@ -567,7 +567,7 @@ agents directly, at depth 1.
 | `@database-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
-| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
+| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND` (routed rows), `FILES_INSPECTED`, `BUILD_STATUS`, `TICK_REPORT`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
 | `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `KNOWN_FAILURES` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `CONCERNS`, `RED_TEST` (CORRECTION) |
 | `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
@@ -792,12 +792,17 @@ and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exis
 
 ### 11.1 Validator Subagent Prompt Template
 
-**DISPATCH AGENT: @reviewer-agent**
+**DISPATCH AGENT: @reviewer-agent** [read-only]
+
+⛔ **The validator writes nothing — not `tasks.md`, not code.** `@reviewer-agent` declares
+`readonly: true`, so `Write` and `Edit` are denied to it. It returns ticks as a report and routes
+every violation; **11.2 merges and writes `tasks.md`, and `@fix-agent` applies every correction.**
 
 ```
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
 Validate implemented code against skill checklist, audit spec compliance against plan.md prose,
-and tick tasks.md (§2 TDD, §3 Execution, §4 Acceptance Checklist) for items covered by your area.
+and DETERMINE the tasks.md ticks (§2 TDD, §3 Execution, §4 Acceptance Checklist) for items covered
+by your area. You are read-only: you report those ticks, you do not apply them.
 
 ## MODE: task
 
@@ -818,28 +823,45 @@ ${FILES_MODIFIED}
 ## TASK A — Skill Checklist Validation
 1. Extract "## Validation Checklist" from skill file
 2. Read EVERY implemented file
-3. Validate each checklist item → if violated, prepare fix
-4. Apply ALL fixes (do NOT defer to review)
-5. Run build command (from CLAUDE.md) → must pass
+3. Validate each checklist item
+4. Report EVERY violation as a routed row — file, item, what is wrong, what it must become.
+   Do NOT edit any file: the coordinator routes these rows to @fix-agent, which is full-access.
+5. Run the build command (from CLAUDE.md) and report its exit status as BUILD_STATUS
 
-RULES: No questions. Checklist violations = MUST FIX. Build MUST pass.
+RULES: No questions. Every checklist violation is reported, never deferred and never silently
+accepted. You do not fix and you do not tick — reporting IS your output.
 
 ## TASK B — Spec Compliance + tasks.md Tick (CURRENT AREA ONLY)
 
-Follow the **Tick Application Procedure** defined in the `add-tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules"). In `add.build`, the validator WRITES `tasks.md` directly — do NOT emit a JSON report (that path is for a coordinator that owns the write, e.g. `/add.plan-to-ready`).
-
-After applying ticks, RECOMPUTE §1 Requirements Coverage per the skill's derived-state rule.
+Follow the **Tick Application Procedure** defined in the `add-tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules") to DETERMINE the ticks, then emit the JSON validator report from that skill's "Validator Report Shape". Do NOT write `tasks.md` — 11.2 merges every area report and writes it once, and §1 Requirements Coverage is recomputed there, from the merged set.
 
 IF any §3 or §4 item for this area is `[!]` or `[ ]`: SET SPEC_STATUS = INCOMPLETE.
 
 ## REPORT
-CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS,
-TICKS_APPLIED (count of [x] set), TICKS_FAILED (count of [!] set with reasons), SPEC_STATUS.
+CHECKLIST_RESULTS, VIOLATIONS_FOUND (as routed rows), FILES_INSPECTED, BUILD_STATUS,
+TICK_REPORT (the JSON shape), SPEC_STATUS.
 ```
 
-### 11.2 Validation Dispatch Flow
+### 11.2 Validation Dispatch Flow — and the `tasks.md` Write
 
 Dispatch validator for each area immediately after its implementation agent returns. After ALL validators complete, run build verification. If the build fails, dispatch `@fix-agent` per the **Correction Dispatch** contract, passing the validator outputs and build errors as `ROUTED_ROWS` + `BUILD_ERRORS`, and the tracked `ATTEMPT`.
+
+**THIS COMMAND IS THE SOLE `tasks.md` WRITER.** Validators emit tick reports; this step merges them and
+writes. Run the **Coordinator Merge Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}` over every
+area report, recompute §1 Requirements Coverage from the merged set, and write `tasks.md` once.
+
+```
+IF A VALIDATOR REPORT HAS NOT RETURNED FOR EVERY DISPATCHED AREA:
+  ⛔ DO NOT USE: Write on tasks.md
+  ⛔ DO NOT: Merge a subset — §1 is derived state, and half the ticks recompute it wrong
+  ✅ DO: WAIT-ALL, then merge
+```
+
+⛔ **Do NOT let a validator write `tasks.md`.** `@reviewer-agent` is read-only and is denied `Write`;
+a run that expects it to tick leaves every item untouched, `SPEC_STATUS` permanently `INCOMPLETE`, and
+11.3 gate 2 blocking the commit forever.
+
+`SPEC_STATUS` for gate 2 below is the merged result: `INCOMPLETE` when ANY area reported it.
 
 ### 11.3 Commit the Batch [THE ONLY PLACE THIS COMMAND COMMITS]
 
@@ -861,7 +883,8 @@ Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 
 # BATCH_BASE is this batch's own anchor, taken immediately before ITS staging.
 # With one batch it equals the 10.0.2 pre-dispatch BASE; with several it does not.
 BATCH_BASE=$(git rev-parse HEAD)
-# Stage THIS batch's files BY PATH — from the validator's FILES_CREATED + FILES_MODIFIED.
+# Stage THIS batch's files BY PATH — from the IMPLEMENTATION subagent's FILES_CREATED +
+# FILES_MODIFIED. Not the validator's: it is read-only and modifies nothing.
 for f in ${AREA_FILES}; do [ -e "$f" ] || continue; git add -- "$f" || exit 1; done
 [ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
 # _build/ ignores itself, so briefs, reports and diff packages never enter the index.

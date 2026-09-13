@@ -7,6 +7,7 @@ description: Use when analyzing codebase for a specific feature - creates/update
 
 <!-- uses:
 - skill: add-knowledge-discovery
+- mention: @discovery-agent
 - mention: add-architecture-discovery
 - mention: add-code-review
 - mention: add-investigation
@@ -75,7 +76,7 @@ cat docs/features/[FEATURE_ID]/discovery.md
    a. Read the full iterations.jsonl of the feature
    b. Read the about.md of the feature (scope, requirements)
    c. Classify the relation: extends | depends | conflicts | shares-pattern | shares-domain
-4. Generate past-features.md
+4. Return the past-features.md content in your report — you write no file
 ```
 
 **Match criteria (in order of relevance):**
@@ -87,7 +88,12 @@ cat docs/features/[FEATURE_ID]/discovery.md
 | Patterns in common (Quick Ref `patterns`) | Medium |
 | Same module/package | Low |
 
-**Output:** `docs/features/${FEATURE_ID}/past-features.md`
+**Returns:** the complete `past-features.md` content, in the subagent's report.
+
+⛔ **This phase runs read-only and writes NO file.** The subagent dispatched here is
+`@discovery-agent`, which declares `readonly: true`. **The dispatching step writes**
+`docs/features/${FEATURE_ID}/past-features.md` from what comes back. Phase 2 below is a separate
+`[read-write]` dispatch and is not subject to this.
 
 **past-features.md format:**
 ```markdown
