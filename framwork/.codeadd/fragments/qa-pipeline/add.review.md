@@ -15,13 +15,31 @@
 -->
 
 <!--
-FIVE sections, not three, and the split is deliberate. STEP 10 contains the
-`plugin:playwright:drive` marker pair. A feature pair may not enclose it —
+FIVE sections. STEP 10 arrives as judge-head + judge-tail rather than one
+block, and that split is now VESTIGIAL — read this before assuming it guards
+something.
+
+It was created because the `plugin:playwright:drive` pair sat inside STEP 10, at
+the `**WAIT-ALL before 10.2.**` line, and a feature pair may not enclose it:
 assertEmptyMarkerPairs refuses a pair with content between its comments, and a
-nested pair would put the plugin's own markers inside this feature's block.
-So STEP 10 arrives as judge-head (everything before the plugin anchor) and
-judge-tail (everything after it), and the anchor stays where it is, in the base
-command, unwrapped.
+nested pair would put the plugin's markers inside this feature's block. Splitting
+STEP 10 around the plugin pair avoided both.
+
+It did not work. The anchor line the plugin resolved against moved into THIS
+file with the rest of STEP 10, so the plugin re-anchored to the `contract.` seam
+that all four qa sections already shared — and applyInjectionToContent groups by
+anchor within one namespace only, so the two namespaces inserted separately at
+the same point and the live-driving block's position followed the enable order.
+Above STEP 8 one way, below STEP 10 the other.
+
+The fix was a seam line of its own in the base command, immediately before the
+plugin pair, which now sits AFTER judge-tail. Placement is deterministic and
+byte-identical in both enable orders, pinned by L2.2 and L2.10.
+
+So nothing sits between judge-head and judge-tail any more. They are kept apart
+only because merging them moves the injection total and the three suites that
+pin it, for no behavioural gain. Merge them in a delivery that is already
+touching those pins — not as a drive-by.
 -->
 
 <!-- section:step-list -->

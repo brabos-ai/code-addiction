@@ -644,10 +644,13 @@ contract.
 <!-- /feature:qa-pipeline:evidence -->
 <!-- feature:qa-pipeline:judge-head -->
 <!-- /feature:qa-pipeline:judge-head -->
-<!-- plugin:playwright:drive -->
-<!-- /plugin:playwright:drive -->
 <!-- feature:qa-pipeline:judge-tail -->
 <!-- /feature:qa-pipeline:judge-tail -->
+
+**Live driving is a `playwright` plugin enhancement of the QA judgement above, never a replacement for it.** With `qa-pipeline` disabled there is no judgement here for the plugin to enhance, and with the plugin absent the judges work from persisted evidence. Enabling one does not enable the other.
+
+<!-- plugin:playwright:drive -->
+<!-- /plugin:playwright:drive -->
 
 ---
 

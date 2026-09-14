@@ -156,20 +156,24 @@ describe('L2 — integration', () => {
       .toContain(drive.anchor.text);
   });
 
-  // The four qa sections and the playwright block share one anchor, so they are
-  // two separate inserts at the same line and their relative order follows the
-  // enable order. applyInjectionToContent groups by anchor WITHIN one namespace
-  // only, which is why the four qa sections stay ordered and the plugin block
-  // does not join them.
+  // THE PLUGIN HAS ITS OWN ANCHOR, so its placement no longer follows the
+  // enable order.
   //
-  // This pins the two placements that are actually reachable. It is a record of
-  // measured behaviour, not an endorsement: a cross-namespace shared anchor
-  // already exists on add.plan (qa-pipeline + tdd-pipeline), and this is the
-  // second one.
-  it('L2.2 the playwright block lands adjacent to the qa region, on the side the enable order picks', () => {
-    const step8 = (s) => s.split('\n').findIndex((l) => l.startsWith('## STEP 8:'));
-    const step11 = (s) => s.split('\n').findIndex((l) => l.startsWith('## STEP 11:'));
-    const driveLine = (s) => s.split('\n').findIndex((l) => l.includes('Driving is via Playwright MCP'));
+  // It used to share the `contract.` seam with all four qa sections, and
+  // applyInjectionToContent groups by anchor WITHIN one namespace only — so the
+  // two namespaces inserted separately at the same line and whichever was
+  // enabled first went first. The live-driving playbook landed above STEP 8 in
+  // one order and below STEP 10 in the other, and never where it belonged.
+  //
+  // A seam line in the ungated body now anchors the plugin alone. The four qa
+  // sections still share `contract.`, which is harmless: one namespace, grouped,
+  // in source order. This asserts the single placement that is now reachable,
+  // both ways round.
+  it('L2.2 the playwright block lands after the QA judgement, whatever the enable order', () => {
+    const lineOf = (s, pred) => lf(s).split(String.fromCharCode(10)).findIndex(pred);
+    const step8 = (s) => lineOf(s, (l) => l.startsWith('## STEP 8:'));
+    const step11 = (s) => lineOf(s, (l) => l.startsWith('## STEP 11:'));
+    const drive = (s) => lineOf(s, (l) => l.includes('Driving is via Playwright MCP'));
 
     const qaFirst = fixture.root();
     enableFeature(qaFirst, 'qa-pipeline');
@@ -181,16 +185,37 @@ describe('L2 — integration', () => {
     enableFeature(pwFirst, 'qa-pipeline');
     const b = lf(fs.readFileSync(claudeCommand(pwFirst, 'add.review'), 'utf8'));
 
-    // Present exactly once in both, and inside the region either way.
     for (const [label, s] of [['qa-then-playwright', a], ['playwright-then-qa', b]]) {
-      expect(driveLine(s), `${label}: the drive block is missing`).toBeGreaterThan(-1);
+      expect(drive(s), `${label}: the drive block is missing`).toBeGreaterThan(-1);
       expect(s.split('Driving is via Playwright MCP').length - 1, `${label}: not exactly once`).toBe(1);
-      expect(driveLine(s), `${label}: the drive block escaped below STEP 11`).toBeLessThan(step11(s));
+      expect(drive(s), `${label}: the drive block is not below STEP 8`).toBeGreaterThan(step8(s));
+      expect(drive(s), `${label}: the drive block escaped below STEP 11`).toBeLessThan(step11(s));
     }
-    // qa first → the plugin block lands above STEP 8; plugin first → below it.
-    expect(driveLine(a), 'qa-then-playwright: expected the drive block above STEP 8').toBeLessThan(step8(a));
-    expect(driveLine(b), 'playwright-then-qa: expected the drive block below STEP 8').toBeGreaterThan(step8(b));
+
+    // The point of the seam: one placement, not two. Byte-identical either way.
+    expect(b, 'the enable order still changes the installed bytes').toBe(a);
   }, 30000); // two full fixture roots plus four enable passes
+
+  // The seam only works while it is the last thing before the plugin pair. A
+  // feature pair inserted between them would take the anchor back.
+  it('L2.10 the plugin pair is anchored by the seam line, not by a shared one', () => {
+    const src = read('commands/add.review.md');
+    const seam = src.indexOf('**Live driving is a `playwright` plugin enhancement');
+    const pair = src.indexOf('<!-- plugin:playwright:drive -->');
+    expect(seam, 'the seam line is gone').toBeGreaterThan(-1);
+    expect(pair, 'the plugin pair is gone').toBeGreaterThan(pair - 1);
+    expect(seam, 'the seam no longer precedes the plugin pair').toBeLessThan(pair);
+
+    const between = src.slice(seam, pair);
+    expect(between, 'a feature pair moved between the seam and the plugin pair')
+      .not.toContain('<!-- feature:');
+
+    const drivePoint = sidecarPoints().find(
+      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.resource.name === 'add.review',
+    );
+    expect(drivePoint.anchor.text, 'the plugin anchor is not the seam line')
+      .toContain('Live driving is a `playwright` plugin enhancement');
+  });
 
   // GUARD, not RED→GREEN. STEP 11 is ungated and must stay ungated: F17 edits
   // one of its rows, and the failure mode is moving the whole step by accident.

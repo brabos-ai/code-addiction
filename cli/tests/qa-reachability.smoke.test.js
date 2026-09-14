@@ -368,13 +368,14 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
     expect(qaAgentPt.anchor.text).toBe(
       'By default you judge from the persisted evidence (read-PNG mode). If the Playwright plugin is enabled, the live-driving playbook below is injected and you may additionally drive the app.',
     );
-    // The drive point moved onto the `contract.` seam when STEPs 8-10 left the
-    // base command: its old anchor line went with them. That seam is now shared
-    // with the qa-pipeline sections, which makes the drive block's PLACEMENT
-    // follow the enable order — pinned, with both reachable orders, in
-    // test-terminal-states-qa-boundary.test.js. What is pinned here is the
-    // anchor text itself, which is what the injection resolves against.
-    expect(addQaPt.anchor.text).toBe('contract.');
+    // The drive point lost its old anchor when STEPs 8-10 left the base command
+    // — that line went with them. It briefly shared the `contract.` seam with
+    // the qa-pipeline sections, which made its placement follow the enable
+    // order; it now has a seam of its own, immediately before the plugin pair,
+    // so the placement is deterministic. What is pinned here is the anchor text
+    // the injection resolves against; the placement itself is pinned in
+    // test-terminal-states-qa-boundary.test.js (L2.2 and L2.10).
+    expect(addQaPt.anchor.text).toContain('Live driving is a `playwright` plugin enhancement');
   });
 });
 
