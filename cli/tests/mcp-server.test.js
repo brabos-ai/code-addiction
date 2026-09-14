@@ -227,7 +227,12 @@ describe('F8 — every action answers over the wire', () => {
     expect(full.tldr).toContain('every session past one hour dropped');
     expect(full.observations[0]).toMatchObject({ category: 'cause', tags: ['auth'] });
     expect(full.relations.find((r) => r.type === 'caused_by').to).toBe('0042F');
-    expect(full.files).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
+    // `files` is empty on a docs node since plan 2026-09-14T145149: the only
+    // thing that ever filled it was a `hotfix-related` attachment, and that
+    // reader is deleted. The field stays on the shape because the artefacts
+    // corpus fills it from the node's own path — a work item has no file set of
+    // its own, the DELIVERY does, and `touched_by` asks the index for that.
+    expect(full.files).toEqual([]);
     expect(full.attachments.map((a) => a.type).sort()).toEqual(['changelog', 'hotfix-related']);
   });
 
@@ -244,11 +249,15 @@ describe('F8 — every action answers over the wire', () => {
     expect(payload(frames[3]).path).toEqual(['0051H', '0042F', '0009F']);
   });
 
-  it('touched_by joins a file to its work item and its reference page', async () => {
+  it('touched_by answers the page half over the wire and degrades on the other', async () => {
+    // The work-item half moved to `delivered.sh` and this fixture is a bare tree
+    // with no script and no history, so it reports why rather than throwing —
+    // and still hands back the page half, which never needed either.
     const { frames } = await talk([call(1, 'touched_by', { files: ['src/auth/refresh.ts'] })]);
     const result = payload(frames[0]);
-    expect(result.workItems.map((w) => w.id)).toEqual(['0051H']);
     expect(result.pages.map((p) => p.id)).toEqual(['wiki/backend']);
+    expect(result.workItems).toEqual([]);
+    expect(result.unavailable.reason).toBe('script-missing');
   });
 
   it('orphans, stats and reindex answer over the wire', async () => {

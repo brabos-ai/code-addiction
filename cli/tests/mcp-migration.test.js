@@ -189,8 +189,20 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     expect(edge.type).toBe('superseded_by');
   });
 
-  it('L3.3 reports every non-empty Impacted Files list', () => {
-    expect(outcome.harvest.impactedFiles).toBe(1);
+  it('L3.3 reports every non-empty Impacted Files list as NOT carried', () => {
+    // It used to be counted into `harvest`, whose non-zero keys are joined into
+    // one "harvested X n" note — so the report claimed the list had been
+    // harvested when nothing was written for it. The list was left in the
+    // legacy document for the indexer to read, which is the coupling that kept
+    // a retired schema answering `touched_by`.
+    //
+    // Plan 2026-09-14T145149 deleted that reader. The list is still reported,
+    // because a user must be told what was found, but it is reported as what it
+    // is: found, not carried.
+    expect(outcome.harvest.impactedFiles).toBeUndefined();
+    const notes = (outcome.notes ?? []).join('\n');
+    expect(notes).toMatch(/1 legacy `## Impacted Files` list/);
+    expect(notes).toMatch(/do not enter the new format/);
   });
 
   it('L3.4 an id resolving to nothing produces NO line and is reported', () => {
@@ -278,12 +290,20 @@ describe('F18 — L4.1 what the graph says after the harvest', () => {
     expect(found['0003F']).toBeUndefined();
   });
 
-  it("L3.3 touched_by answers from the related.md list on day one", async () => {
+  it("L3.3 touched_by no longer answers from the related.md list", async () => {
     const { actions } = await import('../../mcp/engine.mjs');
-    // Decision 36: the file set comes from Impacted Files, not from git, so
-    // this answers before the project's first new delivery.
+    // Decision 36 took the file set from `## Impacted Files`, so a brownfield
+    // project got an answer on the day it upgraded. What it never got was a
+    // source for a project on the CURRENT format — nothing writes that schema,
+    // so the set stayed empty forever and the capability existed only for
+    // legacy documents.
+    //
+    // The question is now answered from the delivery index, which every project
+    // has. This fixture is a bare tree with no `.codeadd/scripts/delivered.sh`,
+    // so the delegation degrades and says why rather than throwing.
     const result = actions.touched_by(corpus, { files: ['src/auth/refresh.ts'] });
-    expect(result.workItems.map((w) => w.id)).toEqual(['0051H']);
+    expect(result.workItems).toEqual([]);
+    expect(result.unavailable?.reason).toBe('script-missing');
   });
 
   it('L4.5 a user file is absent from every action result', async () => {
