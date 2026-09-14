@@ -316,7 +316,7 @@ For each path in STEP 1.3's diff:
 
 **An internal item is a created artefact, or a named behaviour introduced into an existing one.** The third kind is what makes a modification-only plan representable, and it is not a loosening: a behaviour worth indexing has a **name in the source** — a key, a flag, a function, a marker — and that name is what other documents cite and what goes stale. A change with no nameable surface belongs in the changelog, not the index.
 
-**`node` is omitted, never faked.** A synthesised id resolves to nothing when the index is later queried, and is worse than an honestly absent field. **Whether a given path is a node at all is not decided here — `add-artefact-graph` carries the standing list of what the graph does not model, and that list is the answer.** A copy of it in this file would drift from the original, and the drift would be invisible until the two disagreed about one path.
+**`node` is omitted, never faked.** A synthesised id resolves to nothing when the index is later queried, and is worse than an honestly absent field. **Whether a given path is a node at all is not decided here — `add-artefact-graph` answers it, in the row of its standing list that covers every file that is not an artefact.** A copy of it in this file would drift from the original, and the drift would be invisible until the two disagreed about one path.
 
 Entry fields:
 

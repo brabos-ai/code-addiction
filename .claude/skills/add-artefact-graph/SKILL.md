@@ -54,6 +54,20 @@ same emitted sidecar, and `cli/tests/mcp-engine.test.js` asserts equality rather
 **The CLI is therefore not a fallback for the MCP on those seven: it is the same answer.** An agent
 whose tool allowlist blocks MCP is not degraded for any of them.
 
+⛔ **Clear `NODE_OPTIONS` before shelling out, or read a corrupted answer.** An editor that injected
+a debugger prints `Debugger listening on ws://…` onto stdout, ahead of the verb's output. Run
+`NODE_OPTIONS= node scripts/graph.js <verb>`.
+
+```
+IF YOU PARSE scripts/graph.js OUTPUT AND IT LOOKS MALFORMED:
+  ⛔ DO NOT: Treat it as a failed query and fall back to guessing
+  ✅ DO: Clear NODE_OPTIONS and run it again — the answer was fine, the stream was not
+```
+
+**This matters most to a caller that falls back on error.** A banner on stdout reads as a broken
+query, so a fallback rule silently downgrades to whatever it does when the graph is unreachable —
+and the graph was reachable the whole time.
+
 ⛔ **That reassurance assumes the agent can shell out. An agent whose allowlist carries neither the
 MCP tools nor `Bash` has no route to the graph at all**, and no verb on either interface is reachable
 from it. It is not "degraded on four verbs" — it is blind to all eleven.
@@ -150,6 +164,7 @@ instrument.** Every entry below was once invisible enough that someone trusted a
 | **`transforms/`** | Not a node, deliberately: it does not ship. `release.yml` packages `.codeadd/scripts`, `fragments`, `templates` and `plugins` — not `transforms`, which is build-time input like the provider registry |
 | **`CLAUDE.md`** | Not a node at all. Nothing in `build.js` inspects it, so a stale pointer there survives every gate. After a rename or a removal, grep it by hand |
 | **Top-level `scripts/`** | `scripts/build.js`, `graph.js` and `inventory.js` produce no nodes, so nothing reports what depends on them |
+| **Any file that is not an artefact** | `.gitignore`, `package.json`, a workflow under `.github/`, a test under `cli/tests/` — none is a node. **This row is the answer to "is this path a node", and the list above it is not exhaustive for that question**: the rows above name blind spots worth calling out, not every non-artefact path. If it is not a command, skill, agent, script, fragment, plugin, template or feature, it has no node |
 | **Anything two files must keep equal** | `ENTRY_POINT_KINDS`, `DEPENDENCY_TYPES` and `ORPHAN_DEPENDENCY_TYPES` each exist in both `scripts/graph.js` and `mcp/engine.mjs`, which cannot import each other. No edge records that. Only `cli/tests/mcp-engine.test.js` holds them together, and the third is the one whose divergence silently breaks `orphans` |
 
 ```
@@ -178,8 +193,8 @@ ALWAYS:
 - Check which interface implements a verb before telling an agent to shell out for it
 - Check the fragments injected into a command before concluding what that command dispatches
 
-ALSO ALWAYS:
 - Resolve a stated question to its verb here, rather than running whichever verb a caller named
+- Clear `NODE_OPTIONS` before shelling out to `scripts/graph.js`
 
 NEVER:
 - Reconstruct a relationship from prose with grep

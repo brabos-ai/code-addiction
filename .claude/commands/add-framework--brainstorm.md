@@ -129,7 +129,7 @@ Then dispatch `@framework-discovery-agent` with:
 - `scope`: `both`
 - `prior_deliveries`: the resolved entries from the lookup above — id, status, name and what each item was — or `none`
 
-**The agent parses nothing.** Its `Glob, Read` allowlist is untouched and it gets no new file: resolved results travel in the dispatch payload, exactly as selected context already does. A third parser of the index, in an agent's head, is what this avoids.
+**The agent does not parse the index.** Resolved entries travel in the dispatch payload, exactly as selected context already does — a third parser of the delivery index, in an agent's head, is what `prior_deliveries` avoids. It says nothing about the agent's other capabilities: it queries the artefact graph itself, over MCP or the CLI, and that is how it answers a relationship question.
 
 DO NOT show the agent's raw report verbatim to the user. Use the report internally as grounding context for the rest of the session.
 
@@ -322,7 +322,7 @@ For each section:
 
 Weave the discovery agent report (from STEP 1.2) into the conversation naturally:
 - When discussing scope: reference ranked artefacts that already exist
-- When discussing impact: show which existing commands/skills relate
+- When discussing impact: show which existing commands/skills relate. **The report's relationships come from the graph**, so they are the same answer `### 4.5` asks for — carry them there rather than re-querying, and treat anything the report marked NOT VERIFIED as still unanswered
 - When discussing decisions: surface relevant prior decisions from ranked plans
 - Prevent duplicative thinking by grounding ideas in the discovered landscape
 
@@ -468,8 +468,9 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 |-----------|-----------|--------|--------|
 | [command/skill] | [every direct caller the graph returned, or NOT VERIFIED] | [how it's affected] | [required change or "none"] |
 
-[The `Called by` column is filled from `### 4.5`'s answer and from nothing else. An empty cell claims
-nothing calls the artefact; write NOT VERIFIED where the question could not be asked.]
+[The `Called by` column is filled from a graph answer and from nothing else — `### 4.5`'s own query,
+or the discovery report's, which is the same graph. An empty cell claims nothing calls the artefact;
+write NOT VERIFIED where the question could not be asked.]
 
 ## Trade-offs & Risks
 
@@ -629,9 +630,22 @@ Dispatch `@framework-discovery-agent` with:
 
 Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
-### 8.3 Start STEP 2 (Understand the Idea)
+### 8.3 Start STEP 2 (Understand the Idea) — Clarifying Questions Only
 
-Ask clarifying questions specific to the subtopic, grounded in the umbrella's context.
+Ask clarifying questions specific to the subtopic, grounded in the umbrella's context. This is
+`2.1` only.
+
+```
+IF IN CONTINUE MODE:
+  ⛔ DO NOT: Re-run 2.2's effort-path classification for a subtopic
+  ⛔ DO NOT: Consult STEP 3's routing table to decide whether this subtopic writes a document
+  ✅ DO: Treat every subtopic as `architectural`, and run 8.4 as written
+```
+
+**A subtopic inherits the umbrella's path, and the path is always `architectural`.** Decomposition
+exists on no other path — STEP 3's table skips STEP 3 entirely for `spike` and `bounded`, and `7.4`
+says umbrella specs are architectural-only. Re-classifying here could return `bounded`, and 8.4 would
+then be writing a document that path forbids.
 
 ### 8.4 Follow STEP 4-7 for Subtopic
 

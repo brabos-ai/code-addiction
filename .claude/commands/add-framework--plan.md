@@ -234,10 +234,10 @@ IF YOU HAVE NO ROUTE TO THE GRAPH:
 **The plan cannot be written with a row unanswered.** That gate is the whole reason this step states a
 question instead of a call: guidance with no output is guidance that gets skipped.
 
-**Grade on the depth-1 answer.** The command layer cross-references itself densely, so the transitive
-closure saturates: almost anything a command can reach reports ~82 dependants, and a hub becomes
-indistinguishable from a leaf. Depth 1 discriminates. The unbounded run tells you whether the change
-is confined to a corner of the ecosystem or reaches all of it — that is context, not a risk score.
+**Grade on the depth-1 answer.** `add-artefact-graph` owns why — the command layer cross-references
+itself densely enough that the unbounded closure saturates and stops telling a hub from a leaf. What
+belongs to this command is the rest: the unbounded run still says whether the change sits in a corner
+of the ecosystem or reaches all of it, which is context, and the thresholds below, which are a score.
 
 Two things the output already accounts for, so do not re-reason about them:
 

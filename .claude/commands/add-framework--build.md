@@ -463,21 +463,30 @@ indistinguishable from a leaf.
 A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
 entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
 
+**Write the answer into the ledger before STEP 8**, as its own line under the plan's entry:
+
 ```
-IF THIS STEP'S ANSWER IS NOT IN THE AUDIT REPORT AT 7.3:
+GRAPH: <artefact> — <direct dependants, or "none">; <shipped-before answer, or "no entry">
+```
+
+One line per artefact this delivery touched, or a single `GRAPH: NOT VERIFIED — <why>` where no
+route existed.
+
+```
+IF THE LEDGER CARRIES NO `GRAPH:` LINE FOR THIS DELIVERY:
   ⛔ DO NOT: Proceed to STEP 8
-  ✅ DO: Name what the graph returned for every artefact this delivery touched, or name it
-         NOT VERIFIED
+  ✅ DO: Ask the graph and write the lines
 
 IF YOU HAVE NO ROUTE TO THE GRAPH:
   ⛔ DO NOT: Report the question as answered, and DO NOT reconstruct the answer with grep
-  ✅ DO: Report NOT VERIFIED, and say the route was missing
+  ✅ DO: Write `GRAPH: NOT VERIFIED` with the reason, and continue
 ```
 
-⛔ **This step writes no document, so the report line is the only thing it can be held to.** Every
-other gated question in this ecosystem blocks on a file it must fill; this one blocks on naming its
-answer where the audit is judged. That is a weaker guarantee, and it is stated rather than glossed —
-a silent 7.2 is indistinguishable from one that found nothing.
+⛔ **The ledger is the anchor because 7.3 writes nothing.** This step used to block on "the audit
+report", but 7.3 states plainly that nothing here reaches disk and 7.4's line is the only trace the
+whole STEP leaves — so a gate on that report pointed at something that never existed. The ledger is
+where what survives a review already goes, and `/add-framework--done` archives it, so a `GRAPH:` line
+outlives the session the way a ruling does.
 
 ### 7.3 Judge Every Finding, Then Apply
 
@@ -503,11 +512,14 @@ auditor flags stays high even where conformance considers it in scope.
 
 ### 7.4 Record the Pass in the Ledger
 
-Append one line, and it is the only trace this STEP leaves anywhere:
+Append one line:
 
 ```
 REVIEW: complete (<n> findings, <m> applied, <k> rejected)
 ```
+
+Together with 7.2's `GRAPH:` lines and the `Ruling:` lines from 7.3, this is the whole trace STEP 7
+leaves anywhere. Nothing else reaches disk.
 
 **This is what makes "exactly once" auditable.** STEP 5.1 resumes from the ledger's `complete` lines.
 Without this line a review that found nothing leaves no trace at all, so a fresh session sees the last

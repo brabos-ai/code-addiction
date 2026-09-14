@@ -7,6 +7,7 @@ description: "Use at a command's closing step, in the internal layer — the sev
 
 <!-- uses:
 - mention: /add-framework--build
+- mention: add-build-ledger
 -->
 
 Owns the LAST thing a command says. Not what it wrote to disk — that belongs to whichever skill owns
@@ -127,12 +128,19 @@ fine. One sentence with four subordinate clauses is not.
 
 ### What the Report Never Covers
 
-⛔ **The report never narrates your own mistakes, nor how a reviewer corrected them.** Not a ruling
-you reversed, not an F-block you re-did, not a finding the audit stage raised against your own work.
+⛔ **The report never narrates your own mistakes, nor how a reviewer corrected them.** Not the story
+of a ruling you reversed, not an account of an F-block you re-did, not a retelling of a finding the
+audit stage raised against your own work.
 
 The plan changelog already carries that record, and the ledger carries the rulings — both survive
 this session, and both are where an auditor looks. A second telling here buys nothing and costs the
 reader the lines an open item needed.
+
+✅ **This binds the seven blocks, and nothing after them.** `add-build-ledger` requires every
+`Ruling:` line to reach the report, exhaustively, with its cost clause — and those come after the
+blocks, as the command's own mandatory facts. A ruling stated as a decision and its cost is a fact.
+The same ruling retold as what you got wrong and how you found out is the narration this bans. State
+the decision; drop the story.
 
 **The closing message answers three things: what was decided, what is still open, and what needs
 watching.** A sentence grading your own performance answers none of the three. A reader scanning for
@@ -142,7 +150,7 @@ the last two has to read past it first.
 
 | Banned | Use instead |
 |--------|-------------|
-| Narrating your own error, a reversed ruling, or a fix the audit asked for | Nothing. The ledger and the plan changelog hold it — see What the Report Never Covers |
+| Narrating your own error, or retelling how the audit corrected you | Nothing in the blocks. The rulings list still prints after them, exhaustively — see What the Report Never Covers |
 | `F7`, `T3`, `L2.9` carrying the meaning | State the change; the id goes in parentheses at most |
 | Describing the artefact instead of the change ("the skill gains a section on X") | "X is added to `path/file`" |
 | "Improves consistency", "more robust" | The concrete change and what it causes |

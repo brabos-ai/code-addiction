@@ -99,7 +99,7 @@ Commands are workflow orchestrators. They load skills, dispatch agents, enforce 
 ```markdown
 # [Command Title]
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 [One-line description]
 
@@ -258,6 +258,7 @@ memory: project
 | model | no | `inherit` (full reasoning), `sonnet` (balanced), `haiku` (fast/cheap) |
 | tools | no | Allowlist: `Read, Glob, Grep, Bash, Write, Edit` |
 | disallowedTools | no | Denylist: `Write, Edit, NotebookEdit` for read-only agents |
+| readonly | no | `true` for a read-only agent. **Not redundant with the two above** — provider dialects read different keys, so an agent that must be read-only everywhere declares `readonly` AND the denylist. ⛔ Neither key stops a shell write: an agent granted `Bash` keeps its read-only promise in prose, and must state it as a prohibition |
 | skills | no | Array of skill names to preload into context |
 | memory | no | `project` (`.claude/agent-memory/`), `user`, `local` |
 | maxTurns | no | Limit agentic turns |
