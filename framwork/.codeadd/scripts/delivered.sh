@@ -11,6 +11,11 @@
 #               CLI, the same declaration qa-preflight.sh makes)
 # Output: KEY=VALUE lines, plus JSONL entries on `read`. A line starting with
 #         `{` is an entry; anything else is a key.
+#
+# READ MATCHES PER TERM. The query is split on whitespace and each term is
+# tested as a substring of the entry's text; an entry matches when it hits at
+# least one, and is scored by how many DISTINCT terms it hit. Results sort by
+# status rank, then score, then recency, then id.
 # Exit:   0 for probe results — `read` and `verify` always exit 0, including on
 #         an absent index. 1 ONLY when the filesystem refuses a write. 2 for
 #         caller error: a bad mode, bad arguments, a record breaking a hard ban
@@ -361,6 +366,25 @@ function doRead() {
   // rewrites on every anchor move, so matching it would let a query hit a
   // stale pointer and return an entry on the strength of a path that no longer
   // describes it. `find` is the byte-exact anchor and it is already in.
+  // PER-TERM, not one contiguous substring. The skill asks its callers for
+  // "the terms from the task" — plural — while this tested the whole query in
+  // one piece, so any two terms that did not appear adjacent AND in that order
+  // answered nothing. Measured before the change: `read "knowledge graph"`
+  // matched, `read "graph knowledge"` did not, and neither did any query whose
+  // terms came from two different fields.
+  //
+  // A term matches as a SUBSTRING, never on a word boundary. The haystack
+  // carries `id` (0042F), `find` (byte-exact identifiers like
+  // authGoogleHandler) and `words` (a keyword blob); a word-boundary rule would
+  // stop `auth` from reaching `authGoogleHandler`, which is the hit this index
+  // exists to return.
+  const TERMS = q.split(/\s+/).filter(Boolean);
+
+  // Score is the count of DISTINCT terms an entry hit, held beside the entry
+  // rather than on it: these objects are serialised straight to stdout, and a
+  // `_score` property would ship into the caller's JSON.
+  const SCORE = new Map();
+
   list = list.filter((e) => {
     const items = Array.isArray(e.items) ? e.items : [];
     const hay = [e.id, e.name, e.words, e.node || '']
@@ -368,7 +392,14 @@ function doRead() {
       .concat(items.map((it) => (it && it.find) || ''))
       .join(' ')
       .toLowerCase();
-    return hay.indexOf(q) !== -1;
+    // An all-whitespace query keeps its old meaning — everything matches — so
+    // the degenerate case behaves as the docs corpus `search` action does
+    // rather than silently returning nothing.
+    if (TERMS.length === 0) { SCORE.set(e, 0); return true; }
+    let hits = 0;
+    for (const t of TERMS) if (hay.indexOf(t) !== -1) hits += 1;
+    SCORE.set(e, hits);
+    return hits > 0;
   });
 
   const matched = list.length;
@@ -390,6 +421,11 @@ function doRead() {
     const ra = RANK[a.status] === undefined ? 9 : RANK[a.status];
     const rb = RANK[b.status] === undefined ? 9 : RANK[b.status];
     if (ra !== rb) return ra - rb;
+    // Score outranks recency: an entry that answered more of the query is a
+    // better answer than a newer one that answered less of it.
+    const sa = SCORE.get(a) || 0;
+    const sb = SCORE.get(b) || 0;
+    if (sa !== sb) return sb - sa;
     if (a.ts !== b.ts) return a.ts < b.ts ? 1 : -1;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
