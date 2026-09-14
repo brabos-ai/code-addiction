@@ -348,7 +348,7 @@ describe('0073 L4 — behavioural acceptance', () => {
 
   it('L4.10 hotfix-about declares a Review section', () => {
     const fix = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
-    const about = fix.slice(fix.indexOf('### hotfix-about'), fix.indexOf('### hotfix-related (retired)'));
+    const about = fix.slice(fix.indexOf('### hotfix-about'));
     expect(about).toMatch(/\bReview\b/);
     expect(about).toMatch(/disposition/i);
     // The evidence discipline is referenced, not restated.

@@ -1,7 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { run } from '../../mcp/engine.mjs';
 
 /**
  * Plan 2026-09-14T145149 — the impact question: which deliveries touched this
@@ -145,12 +147,21 @@ describe('L3.3 — the skill describes the two-layer answer', () => {
     expect(s).toMatch(/curated/i);
   });
 
-  it('names gitnexus as enrichment, never as part of the answer', () => {
+  it('frames the structural question as enrichment, and names no plugin', () => {
     const s = skill();
-    expect(s).toMatch(/gitnexus/i);
-    // The word that matters: it ADDS. An answer conditional on a plugin the
-    // user may not have installed is what umbrella decision 24 forbids.
-    expect(s).toMatch(/enrich|additive|on top/i);
+    // TOOL-NEUTRAL, and this assertion was inverted after the ruler caught the
+    // contradiction: STEP 7 of this same file states "no hard reference to any
+    // specific graph plugin — mastery of a specific tool arrives via its own
+    // plugin injection". Naming one in STEP 2 while forbidding it in STEP 7 is
+    // the file disagreeing with itself, so the name came out and this checks it
+    // stays out.
+    expect(s).not.toMatch(/gitnexus/i);
+    // What must survive is the FRAMING: the structural question adds to an
+    // answer this step already produced in full, and never gates it. An answer
+    // conditional on a plugin the user may not have installed is what umbrella
+    // decision 24 forbids.
+    expect(s).toMatch(/enrich|additive|adds? to/i);
+    expect(s).toMatch(/works with no such plugin|plugin absent|default/i);
   });
 
   it('keeps the eleven-row table and the NOT VERIFIED label', () => {
@@ -161,29 +172,138 @@ describe('L3.3 — the skill describes the two-layer answer', () => {
   });
 });
 
-describe('L3.6 — neither close-out was touched', () => {
-  // GUARD, and the sharpest one here. The first draft of this plan stored the
-  // delivery's sha and needed both close-outs to write it; the review blocked
-  // that on two verified consequences. A build that edits either file has
-  // reached for the design this plan rejected, and the blockers come back with
-  // it. `done.sh` owns every local git write and keeps that monopoly.
+describe('L3.6 — the rejected design did not come back', () => {
+  // The first draft of this plan stored the delivery's sha and needed both
+  // close-outs to write it after the merge. The review blocked that on two
+  // verified consequences: the second index line has no route to `main`, and
+  // `doWrite`'s re-validation can refuse it. A build that reaches for that
+  // design brings both blockers with it.
   //
-  // Asserted byte-for-byte against the branch point, not by looking for words:
-  // a word check hit `PR_MERGE_COMMIT`, a variable add.done already parses.
-  const unchanged = (rel) => {
-    const onMain = execFileSync('git', ['show', `main:${rel}`], {
-      cwd: REPO, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024,
-    });
-    const here = fs.readFileSync(path.join(REPO, rel), 'utf8');
-    return { onMain, here };
-  };
+  // NARROWED DELIBERATELY, TWICE. A byte-identity check against `git show
+  // main:<path>` throws in CI — actions/checkout defaults to fetch-depth 1 on a
+  // detached merge ref, so `main` resolves to nothing — and it also went red on
+  // any future legitimate edit to those files, which is a trap and not a guard.
+  // A shape-matching regex then false-positived on `PR_MERGE_COMMIT`, a variable
+  // add.done already parses, and again across lines.
+  //
+  // What is left is the one signal that cannot mean anything else: a flag or a
+  // record field that carries a merge sha into the index. A guard that cries
+  // wolf gets loosened until it means nothing, so this one asserts less and
+  // means it.
+  const REJECTED = /--record-merge|--merge-sha|"merge"\s*:/;
 
   it.each([
     'framwork/.codeadd/commands/add.done.md',
-    '.claude/commands/add-framework--done.md',
     'framwork/.codeadd/scripts/done.sh',
-  ])('%s is byte-identical to the branch point', (rel) => {
-    const { onMain, here } = unchanged(rel);
-    expect(here, `${rel} was edited — see L3.6's comment`).toBe(onMain);
+    '.claude/commands/add-framework--done.md',
+    'framwork/.codeadd/skills/add-doc-schemas/references/delivery-index.md',
+  ])('%s carries no stored merge sha', (rel) => {
+    const body = fs.readFileSync(path.join(REPO, rel), 'utf8');
+    expect(REJECTED.test(body), `${rel} looks like it stores the delivery's commit — see this block's comment`).toBe(false);
+  });
+});
+
+// ─── L2.3 / L2.4 — the delegation, exercised rather than degraded ────────────
+
+describe('L2.3 — touched_by answers from a real project in the current format', () => {
+  // THE HEADLINE LEVEL, and it was missing. Every other docs-corpus assertion
+  // in this repository exercises the DEGRADED path — a bare fixture with no
+  // script and no history — which left the engine's whole parsing block (the
+  // JSONL/KEY=VALUE split, the answer/commit/matched mapping, curatedOnly) run
+  // by no test at all. Two independent auditors called the delivery "green by
+  // degradation" and they were right.
+  //
+  // This builds a project in the CURRENT format: a work item with typed
+  // frontmatter, no `hotfix-related` document anywhere, the shipped script at
+  // the path a real install uses, and one squash commit carrying both the code
+  // and the index line.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'touched-by-e2e-'));
+
+  beforeAll(() => {
+    const run = (args) => execFileSync('git', args, { cwd: tmp, stdio: 'ignore' });
+    run(['init', '-q']);
+    run(['config', 'user.email', 'test@example.com']);
+    run(['config', 'user.name', 'test']);
+
+    fs.mkdirSync(path.join(tmp, '.codeadd', 'scripts'), { recursive: true });
+    fs.copyFileSync(
+      path.join(REPO, 'framwork', '.codeadd', 'scripts', 'delivered.sh'),
+      path.join(tmp, '.codeadd', 'scripts', 'delivered.sh'),
+    );
+
+    fs.mkdirSync(path.join(tmp, 'src', 'auth'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'src', 'auth', 'token.ts'), 'export function refreshToken() { return 1; }\n');
+    fs.writeFileSync(path.join(tmp, 'src', 'auth', 'login.ts'), 'export function loginHandler() { return 1; }\n');
+
+    fs.mkdirSync(path.join(tmp, 'docs', 'features', '0051F-refresh'), { recursive: true });
+    fs.writeFileSync(
+      path.join(tmp, 'docs', 'features', '0051F-refresh', 'about.md'),
+      '---\nid: 0051F\ntype: feature-about\n---\n# Refresh\n## TL;DR\nRenews the token before it expires.\n## Relations\nNone\n',
+    );
+
+    const entry = {
+      v: 1, ts: '2026-09-01T00:00:00Z', id: '0051F', layer: 'product', by: 'done',
+      status: 'live', name: 'token refresh', words: 'token refresh expiry',
+      commits: ['aaaaaaa'], origin: 'docs/features/0051F-refresh/',
+      items: [{ what: 'the refresh', at: 'src/auth/token.ts', find: 'refreshToken' }],
+    };
+    fs.mkdirSync(path.join(tmp, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'docs', 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
+
+    // ONE commit: code and index line together, which is what a squashed branch
+    // looks like on the default branch and what the derivation depends on.
+    run(['add', '-A']);
+    run(['commit', '-q', '-m', 'squash: token refresh']);
+  });
+
+  afterAll(() => {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* windows file locks */ }
+  });
+
+  it('returns the delivery, in the complete layer, with its commit', () => {
+    const result = run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: 'docs' });
+    expect(result.unavailable).toBeUndefined();
+    expect(result.workItems).toHaveLength(1);
+    const hit = result.workItems[0];
+    expect(hit.id).toBe('0051F');
+    expect(hit.answer).toBe('complete');
+    expect(hit.commit).toMatch(/^[0-9a-f]{7,}$/);
+    expect(hit.matched).toEqual(['src/auth/token.ts']);
+  });
+
+  it('answers for a file the delivery changed but never anchored', () => {
+    // `login.ts` is in the commit and in no `items[].at`. The complete layer is
+    // the whole diff, so it answers — which is the difference between the two
+    // layers stated as a test rather than as a sentence.
+    const result = run('touched_by', { files: ['src/auth/login.ts'] }, { root: tmp, corpus: 'docs' });
+    expect(result.workItems.map((w) => w.answer)).toEqual(['complete']);
+    expect(result.workItems[0].matched).toEqual(['src/auth/login.ts']);
+  });
+
+  it('a path no delivery touched comes back empty, and is not an error', () => {
+    const result = run('touched_by', { files: ['src/nowhere.ts'] }, { root: tmp, corpus: 'docs' });
+    expect(result.workItems).toEqual([]);
+    expect(result.unavailable).toBeUndefined();
+  });
+
+  it('L2.4 the answer carries the curated-only count', () => {
+    // The plan named this level the mitigation for its one High-probability
+    // risk — the two layers read as one. Nothing asserted it at engine level.
+    const result = run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: 'docs' });
+    expect(result).toHaveProperty('curatedOnly');
+    expect(Number.isNaN(result.curatedOnly)).toBe(false);
+    expect(result.curatedOnly).toBe(0);
+  });
+
+  it('L2.5 records what one query costs, rather than asserting a guessed threshold', () => {
+    const started = Date.now();
+    run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: 'docs' });
+    const ms = Date.now() - started;
+    // Printed, not asserted. The plan asked for the number in the output so it
+    // is visible when it starts to matter; an earlier design cost 10.3s per
+    // query on this repository's own index and nothing would have said so.
+    // eslint-disable-next-line no-console
+    console.log(`    [L2.5] touched_by over a 1-entry index: ${ms}ms`);
+    expect(ms).toBeLessThan(60_000);
   });
 });

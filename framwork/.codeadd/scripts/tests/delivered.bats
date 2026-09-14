@@ -29,6 +29,9 @@
 #     else ALL items gone → gone; else ANY item gone or changed → changed;
 #     else live. "ANY gone → entry gone" is explicitly WRONG — an entry with
 #     four live items is not absent from the source.
+#   - `touched <path>...` answers which deliveries changed those paths, in two
+#     labelled layers: `complete` from the delivery's own commit, `curated`
+#     from its `items[].at` anchors.
 #   - Never rewrites or deletes a line. Corrections are new lines, and the
 #     LAST line for an id wins.
 
@@ -917,7 +920,7 @@ seed_delivery() {
   run bash "$SCRIPTS_DIR/delivered.sh" touched src/one.ts
   [ "$status" -eq 0 ]
   [[ "$output" == *'"id":"D1"'* ]]
-  [[ "$output" == *'"layer":"complete"'* ]]
+  [[ "$output" == *'"answer":"complete"'* ]]
 }
 
 @test "L1.2: an entry whose at names the path but whose commit does not comes back curated" {
@@ -935,7 +938,7 @@ seed_delivery() {
   run bash "$SCRIPTS_DIR/delivered.sh" touched src/other.ts
   [ "$status" -eq 0 ]
   [[ "$output" == *'"id":"D3"'* ]]
-  [[ "$output" == *'"layer":"curated"'* ]]
+  [[ "$output" == *'"answer":"curated"'* ]]
 }
 
 @test "L1.3: the derivation finds the line's FIRST commit, not a later correction" {
@@ -963,7 +966,7 @@ seed_delivery() {
 
   run bash "$SCRIPTS_DIR/delivered.sh" touched src/five.ts
   [ "$status" -eq 0 ]
-  [[ "$output" == *'"layer":"curated"'* ]]
+  [[ "$output" == *'"answer":"curated"'* ]]
   [ "$(key CURATED_ONLY)" = "1" ]
 }
 
@@ -991,15 +994,37 @@ seed_delivery() {
   [ "$(key TOUCHED_COMPLETE)" = "0" ]
   [ "$(key TOUCHED_CURATED)" = "0" ]
   [ "$(json_lines | wc -l | tr -d ' ')" = "0" ]
+  # DISTINGUISHABLE from an absent index, and from the OUTPUT rather than from
+  # the filesystem: a caller reading three zeros cannot otherwise tell "nothing
+  # matched" from "there is nothing to match against".
+  [ "$(key INDEX_PRESENT)" = "1" ]
 }
 
-@test "L1.7: an absent index makes touched a no-op with a note, exit 0" {
+@test "L1.7: an absent index makes touched a no-op, and says so in the output" {
   commit_all "no index at all"
   run bash "$SCRIPTS_DIR/delivered.sh" touched src/anything.ts
   [ "$status" -eq 0 ]
   [ "$(key TOUCHED_COMPLETE)" = "0" ]
   [ "$(key TOUCHED_CURATED)" = "0" ]
+  [ "$(key INDEX_PRESENT)" = "0" ]
   [ ! -f "$INDEX" ]
+}
+
+@test "L1.7b: a history git cannot walk degrades to curated, never to an error" {
+  # The shallow-clone case the plan names. Simulated by an index whose entry
+  # predates any commit that carries it: no commit introduced that id, so the
+  # derivation finds no owning sha and the anchors are all that can answer.
+  src src/nine.ts 'const markerNine = 1;'
+  commit_all "source only, the index line never committed"
+  mkdir -p docs
+  entry D9 live 'delivery D9' 'words D9' src/nine.ts markerNine >> "$INDEX"
+  printf '\n' >> "$INDEX"
+
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/nine.ts
+  [ "$status" -eq 0 ]
+  [ "$(key TOUCHED_CURATED)" = "1" ]
+  [ "$(key CURATED_ONLY)" = "1" ]
+  [[ "$output" == *'"answer":"curated"'* ]]
 }
 
 @test "L1.8: touched with no path exits 2" {

@@ -392,18 +392,11 @@ export const actions = {
   },
 
   /**
-   * The only action spanning both node kinds.
-   *
-   * For one file list it returns the work items that changed those files and
-   * the reference pages whose `sources` globs cover them. It is what joins
-   * "what was already built here" to "what this module is".
+   * Which deliveries and which reference pages cover these paths.
    *
    * Deliberately NOT called `impact`: in `scripts/graph.js` that name means
    * transitive dependants, and reusing it for file overlap is how two consumers
    * come to disagree about one answer.
-   */
-  /**
-   * Which deliveries and which reference pages cover these paths.
    *
    * TWO CORPORA ASK DIFFERENT QUESTIONS HERE, and only one of them delegates.
    *
@@ -492,7 +485,7 @@ export const actions = {
           workItems.push({
             id: e.id,
             kind: 'delivery',
-            layer: e.layer,
+            answer: e.answer,
             status: e.status,
             commit: e.commit ?? null,
             summary: e.name,

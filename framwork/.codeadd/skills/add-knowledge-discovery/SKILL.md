@@ -128,10 +128,15 @@ npx codeadd mcp --corpus=docs --action=<action> --args='<json>'
 ```
 IF YOU READ A `curated` HIT AS THE DELIVERY'S WHOLE FILE SET:
   ⛔ DO NOT: Conclude those are the only files it touched
-  ✅ DO: Read `layer` on every hit before acting on it — five anchors are a sample
+  ✅ DO: Read `answer` on every hit before acting on it — five anchors are a sample
+  ✅ DO: Read `matched` accordingly — it is a path list on `complete`, an anchor list on `curated`
+
+IF THE RESULT CARRIES AN `unavailable` KEY:
+  ⛔ DO NOT: Write `none` into `RELATED_WORK` — that claims no delivery touched the path
+  ✅ DO: Write `NOT VERIFIED` plus the reason, exactly as for an unreachable graph
 ```
 
-**The graph says WHICH DELIVERIES touched a path. It does not say what is around that path now.** Where the gitnexus plugin is enabled, that is the question it answers, and it answers it over the code as it stands today rather than over history. It is **additive**: it enriches an answer this step already produced in full, and every leg here works with the plugin absent, which is the normal case since it ships disabled.
+**This step says WHICH DELIVERIES touched a path. It does not say what is around that path now.** That is a structural question, and STEP 7 owns it: a code knowledge graph answers it where one is available, over the code as it stands rather than over history. It is **additive** — it enriches an answer this step already produced in full, and every leg here works with no such plugin installed, which is the default. Tool-neutral here for the same reason STEP 7 is: which plugin, if any, arrives through its own injection.
 
 ```
 IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
@@ -148,9 +153,10 @@ IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
 | A hit whose first sentence rules it out | Discard it. That sentence is the rejection surface — do not open the document to decide |
 | A hit that survives | Read its `path`. The TL;DR's first sentence is a filter, never the answer |
 | `relations` on a hit | Follow `caused_by` and `depends_on` before proposing anything that touches the same area |
-| `touched_by` work items, `layer: complete` | These deliveries changed the files in hand, from the delivery's own commit. Exact and whole |
-| `touched_by` work items, `layer: curated` | The path is one of that delivery's anchors — at most five per delivery, carrying each anchor's verified status. A sample of what mattered, not a diff |
-| `touched_by` `curatedOnly` above zero | That many deliveries could not answer completely, because their index line was recorded outside the normal flow. Narrower coverage, not an error |
+| `touched_by` work items, `answer: complete` | These deliveries changed the files in hand, from the delivery's own commit. Exact and whole |
+| `touched_by` work items, `answer: curated` | The path is one of that delivery's anchors — at most five per delivery, carrying each anchor's verified status. A sample of what mattered, not a diff |
+| `touched_by` `curatedOnly` above zero | That many of THESE HITS answered from anchors alone, because their delivery's commit could not be derived. Narrower coverage, not an error |
+| `touched_by` with an `unavailable` key | ⛔ **NOT an empty answer.** The delivery half could not run at all — no script, no shell, no repository. `workItems: []` beside it means the question went unasked, never that no delivery touched the path |
 | `touched_by` pages | These wiki pages document those files. They are the SELECT result, already narrowed |
 
 **Status is returned, never filtered here.** Two work items in flight that touch one area are exactly the pair that most needs to see each other. Filter on the field if the command wants to; do not ask this step to hide anything.

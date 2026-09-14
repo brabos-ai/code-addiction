@@ -169,3 +169,10 @@ cli/src/mcp/
 # configured anywhere — it is the runner's default — and it is per machine, so
 # it belongs to nobody's diff.
 cli/.vitest/
+
+# The docs-corpus cache the MCP writes when it runs at the repository root.
+# It is build output, and `delivered.sh`'s corpus is "every file git does not
+# ignore" — so leaving it untracked put a dump of every node's id, path and
+# TL;DR into the anchor-verification haystack, which is the exact failure that
+# rule's own header says it exists to prevent.
+.codeadd/
