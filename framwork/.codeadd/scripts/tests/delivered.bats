@@ -889,3 +889,122 @@ node_free_path() {
   [ "$status" -eq 0 ]
   [[ "$output" == *'"id":"E1"'* ]]
 }
+
+# ─── L1 — `touched`, the path query ──────────────────────────────────────────
+#
+# The delivery's commit is DERIVED, never stored: the close-out commits the
+# index line on the branch and the merge squashes that branch, so the commit
+# that introduced an entry's line is the commit that delivered it. These
+# fixtures build that shape with real commits rather than asserting it.
+
+# seed_delivery <id> <file> <find> — commit a source file, then commit an index
+# line for it in a SECOND commit. The second commit is the one the derivation
+# must find, and it is deliberately not the one that created the source.
+seed_delivery() {
+  local id=$1 file=$2 find=$3
+  src "$file" "const ${find} = 1;"
+  commit_all "source for $id"
+  mkdir -p docs
+  entry "$id" live "delivery $id" "words $id" "$file" "$find" >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  git add -A >/dev/null 2>&1
+  git commit -q -m "index line for $id" >/dev/null 2>&1 || true
+}
+
+@test "L1.1: touched returns the delivery whose derived commit changed the path" {
+  seed_delivery D1 src/one.ts markerOne
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/one.ts
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"id":"D1"'* ]]
+  [[ "$output" == *'"layer":"complete"'* ]]
+}
+
+@test "L1.2: an entry whose at names the path but whose commit does not comes back curated" {
+  # The source file is committed in the SAME commit as the index line, so the
+  # derived commit does touch it — to get a curated-only hit the anchor has to
+  # point at a file that commit never changed.
+  seed_delivery D2 src/two.ts markerTwo
+  src src/other.ts 'const markerOther = 1;'
+  commit_all "a later file the D2 commit never saw"
+  mkdir -p docs
+  entry D3 live 'delivery D3' 'words D3' src/other.ts markerOther >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  git add -A >/dev/null 2>&1; git commit -q -m "index line for D3, source already committed" >/dev/null 2>&1 || true
+
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/other.ts
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"id":"D3"'* ]]
+  [[ "$output" == *'"layer":"curated"'* ]]
+}
+
+@test "L1.3: the derivation finds the line's FIRST commit, not a later correction" {
+  seed_delivery D4 src/four.ts markerFour
+  local first
+  first=$(git log --format=%h -1)
+  # A correction line for the same id, in a later commit.
+  entry D4 live 'delivery D4 corrected' 'words D4' src/four.ts markerFour >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  git add -A >/dev/null 2>&1; git commit -q -m "correction line for D4" >/dev/null 2>&1 || true
+
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/four.ts
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"$first"* ]]
+}
+
+@test "L1.4: an entry whose derived commit touches only docs/ answers curated" {
+  src src/five.ts 'const markerFive = 1;'
+  commit_all "source, committed alone"
+  mkdir -p docs
+  entry D5 live 'delivery D5' 'words D5' src/five.ts markerFive >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  git add docs >/dev/null 2>&1
+  git commit -q -m "chore(delivery-index): record D5 after the fact" >/dev/null 2>&1 || true
+
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/five.ts
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"layer":"curated"'* ]]
+  [ "$(key CURATED_ONLY)" = "1" ]
+}
+
+@test "L1.5: CURATED_ONLY counts every entry that could not answer from its commit" {
+  src src/six.ts 'const markerSix = 1;'
+  src src/seven.ts 'const markerSeven = 1;'
+  commit_all "both sources"
+  mkdir -p docs
+  entry D6 live 'delivery D6' 'words D6' src/six.ts markerSix >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  entry D7 live 'delivery D7' 'words D7' src/seven.ts markerSeven >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  git add docs >/dev/null 2>&1
+  git commit -q -m "chore(delivery-index): record both after the fact" >/dev/null 2>&1 || true
+
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/six.ts src/seven.ts
+  [ "$status" -eq 0 ]
+  [ "$(key CURATED_ONLY)" = "2" ]
+}
+
+@test "L1.6: a path no delivery touched returns both blocks empty, exit 0" {
+  seed_delivery D8 src/eight.ts markerEight
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/nowhere.ts
+  [ "$status" -eq 0 ]
+  [ "$(key TOUCHED_COMPLETE)" = "0" ]
+  [ "$(key TOUCHED_CURATED)" = "0" ]
+  [ "$(json_lines | wc -l | tr -d ' ')" = "0" ]
+}
+
+@test "L1.7: an absent index makes touched a no-op with a note, exit 0" {
+  commit_all "no index at all"
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/anything.ts
+  [ "$status" -eq 0 ]
+  [ "$(key TOUCHED_COMPLETE)" = "0" ]
+  [ "$(key TOUCHED_CURATED)" = "0" ]
+  [ ! -f "$INDEX" ]
+}
+
+@test "L1.8: touched with no path exits 2" {
+  # GUARD, and green before the mode existed: an unknown mode already falls
+  # through to usage. It stays so the mode cannot be added with a path list that
+  # silently defaults to everything.
+  run bash "$SCRIPTS_DIR/delivered.sh" touched
+  [ "$status" -eq 2 ]
+}
