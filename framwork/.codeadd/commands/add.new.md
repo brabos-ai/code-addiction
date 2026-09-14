@@ -115,14 +115,15 @@ IF THE WIKI IS ABSENT:
          STEP 6.1 writes its relations from
 ```
 
-   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived.
+   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
+
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
   ⛔ DO NOT: Carry on as though the step ran
   ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
          or with `NOT VERIFIED` plus the reason when the graph could not be reached
 ```
- Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
+
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
 <!-- plugin:gitnexus:graph-map -->

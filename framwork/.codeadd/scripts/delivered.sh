@@ -384,7 +384,12 @@ function doRead() {
   // authGoogleHandler) and `words` (a keyword blob); a word-boundary rule would
   // stop `auth` from reaching `authGoogleHandler`, which is the hit this index
   // exists to return.
-  const TERMS = q.split(/\s+/).filter(Boolean);
+  // DEDUPED, because the score is defined as the count of DISTINCT terms hit.
+  // Without this, `read "graph graph knowledge"` scores an entry matching only
+  // `graph` at 2 and one matching only `knowledge` at 1 — and the skill tells
+  // callers a full sentence is a fine query, which makes a repeated word normal
+  // input rather than a pathological one.
+  const TERMS = [...new Set(q.split(/\s+/).filter(Boolean))];
 
   // Score is the count of DISTINCT terms an entry hit, held beside the entry
   // rather than on it: these objects are serialised straight to stdout, and a
@@ -408,8 +413,14 @@ function doRead() {
     return hits > 0;
   });
 
-  // Verification is bounded to what is being RETURNED, never to the file. That
-  // is what makes stale confidence structurally impossible without a scheduler.
+  // Verification is bounded to what MATCHED, never to the file. That is what
+  // makes stale confidence structurally impossible without a scheduler.
+  //
+  // It cannot be bounded to what is RETURNED: the sort below ranks on `status`,
+  // so every matched entry must be verified before the cut can choose between
+  // them. Per-term matching widened the matched set, so a verifying read now
+  // greps source for more entries than it used to — which is what `--no-verify`
+  // is for on a triage path that only needs the ranking.
   // --no-verify returns the stored status and opens no source file: /add.hotfix
   // STEP 4 forbids grepping code before its history agents are dispatched, and
   // a verifying read greps source.

@@ -575,6 +575,16 @@ function main(argv) {
           return `history unavailable for ${r.node}: ${r.unavailable.reason} (${r.unavailable.detail})`;
         }
         if (!r.entries.length) return `no delivery recorded for ${r.node}`;
+        // THE DEAD CAP MUST BE ANNOUNCED. This verb passes --limit 50, which
+        // governs delivered.sh's LIVE bucket only; dead entries are capped at 2
+        // and no argument raises it. `history` exists to answer "was this
+        // attempted before?", so a cut `gone` or `superseded` entry is the
+        // answer it most needs to give — silence here would hide exactly what
+        // the caller came for.
+        const cut = Number(r.keys?.MATCHED_DEAD || 0) - Number(r.keys?.RETURNED_DEAD || 0);
+        const note = cut > 0
+          ? `\n  (dead cap: ${cut} more dead entr(ies) matched and were not shown)`
+          : '';
         return `${r.matched} delivery entr(ies) for ${r.node}:\n` +
           r.entries.map((e) => {
             const items = e.items
@@ -585,7 +595,7 @@ function main(argv) {
               `      ${e.name}` +
               (e.superseded_by ? `\n      superseded by ${e.superseded_by}` : '') +
               `\n${items}`;
-          }).join('\n');
+          }).join('\n') + note;
       });
     }
     default:

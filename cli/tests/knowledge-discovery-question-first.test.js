@@ -11,9 +11,15 @@ import { ACTIONS } from '../../mcp/engine.mjs';
  * `framwork/.codeadd/scripts/tests/delivered.bats`, because the contract it
  * proves is bash.
  *
- * RED FIRST. Every assertion below was authored and confirmed FAILING against
- * the tree before F1 landed, except the ones labelled GUARD, which pass today
- * and must keep passing. A test written after the fix proves nothing.
+ * RED FIRST for the assertions that carry the change. Every one of those was
+ * authored and confirmed FAILING against the tree before F1 landed.
+ *
+ * NOT every assertion here was red, and the header used to claim otherwise.
+ * Some are GUARDs, labelled at the assertion: they passed before the change and
+ * must keep passing, which is a different and equally load-bearing job. Where a
+ * block carries no label, read its body — a presence check over text the change
+ * did not author (L2.4, L3.3's count, L3.4's "keeps the intent table") is a
+ * guard whether or not it says so.
  *
  * Why L3 is here and not only in a reviewer's eye: F9 takes L1 and this is the
  * only test-writing F-block left, and the matrix's opening rule requires every
@@ -146,6 +152,22 @@ describe('L2.4 — the gitnexus agent fragments keep what makes each one distinc
 });
 
 describe('L2.5 — the injection surface is untouched', () => {
+  it('the gitnexus anchors in injection-points.json are unchanged', () => {
+    // The plan owes "same anchors, same section names, same target resources,
+    // same count" — the file set alone would pass a moved or renamed
+    // `<!-- section:graph -->` marker, which is the one thing F8 could break.
+    const sidecar = path.join(CODEADD, 'injection-points.json');
+    if (!fs.existsSync(sidecar)) return; // build-emitted and gitignored
+    const points = JSON.parse(fs.readFileSync(sidecar, 'utf8'));
+    const gitnexus = JSON.stringify(points).match(/gitnexus/g) ?? [];
+    expect(gitnexus.length, 'the gitnexus plugin vanished from the injection map').toBeGreaterThan(0);
+    const sections = new Set(
+      JSON.stringify(points).match(/"section":"[^"]+"/g)?.map((x) => x) ?? [],
+    );
+    // graph and graph-<command> are the only section names gitnexus declares.
+    expect([...sections].filter((x) => /graph/.test(x)).length).toBeGreaterThan(0);
+  });
+
   it('the fragment file set is exactly the nine agents and the six commands', () => {
     // GUARD. F8 edits bodies inside existing markers; it adds, removes and
     // renames nothing, so the injection map must come out byte-identical.
@@ -179,6 +201,16 @@ describe('L3.1 — each command states its question and gates on a filled answer
     const m = body.match(/\*\*GRAPH question:\*\*\s*(.+)/);
     expect(m, `${file} has no **GRAPH question:** line`).not.toBeNull();
     expect(m[1].trim(), `${file}'s question is not phrased as one`).toMatch(/\?/);
+  });
+
+  it.each(GRAPH_COMMANDS)('%s gates on a filled RELATED_WORK', (file) => {
+    // The plan's Risk table names this gate as the mitigation for "replacing a
+    // fixed call with a question makes the agent call nothing". Asserting only
+    // the question would leave that mitigation unbuilt and unnoticed.
+    const body = read('commands', file);
+    expect(body, `${file} has no blank-RELATED_WORK gate`).toMatch(
+      /IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:/,
+    );
   });
 
   it.each(GRAPH_COMMANDS)('%s names no MCP action of its own', (file) => {
@@ -232,9 +264,20 @@ describe('L3.2 — an empty answer and a missing route are two outcomes, not one
 
 describe('L3.3 — the GRAPH step resolves every action the engine implements', () => {
   it('names all eleven, read from mcp/engine.mjs rather than from a copy', () => {
+    // Scoped to the TABLE, and to the action column's backticked cell. A bare
+    // includes() over the whole file would pass on almost any prose: `get`,
+    // `path`, `history`, `stats` and `search` are ordinary English words, so it
+    // would not notice a row being dropped.
     const s = read(...SKILL);
-    const missing = [...ACTIONS].filter((a) => !s.includes(a));
-    expect(missing, `actions absent from the GRAPH step: ${missing.join(', ')}`).toEqual([]);
+    const table = s.slice(
+      s.indexOf('### Which Action Answers Which Question'),
+      s.indexOf('**Two rows are the ones a discovery step usually wants**'),
+    );
+    expect(table.length, 'the action table was not found').toBeGreaterThan(200);
+    const cells = new Set([...table.matchAll(/\|\s*`(\w+)`\s*\|/g)].map((m) => m[1]));
+    const missing = [...ACTIONS].filter((a) => !cells.has(a));
+    expect(missing, `actions with no row in the table: ${missing.join(', ')}`).toEqual([]);
+    expect(cells.size, 'the table has rows for actions the engine does not implement').toBe(11);
   });
 
   it('the engine still implements exactly eleven, so the assertion above is not vacuous', () => {

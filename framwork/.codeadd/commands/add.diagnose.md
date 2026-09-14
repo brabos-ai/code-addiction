@@ -145,7 +145,7 @@ Assemble from prior STEPs:
 - Affected area keywords (nouns/verbs from reformulation)
 - Optional window (default: 30 days for git)
 - Knowledge base page paths + one-line reasons + freshness verdicts (STEP 1.4), if any were selected
-- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. Empty when the graph returned nothing or is absent. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
+- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
 
 This payload is passed to BOTH Fase A agents.
 

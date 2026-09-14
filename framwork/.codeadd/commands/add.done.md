@@ -9,12 +9,12 @@
 - skill: add-wiki-maintenance
 - command: /add.build
 - mention: /add.new
+- mention: add-knowledge-discovery
 - command: /add.pull-request
 - command: /add.hotfix
 - command: /add.plan-to-ready
 - command: /add.review
 - command: /add.wiki
-- mention: add-knowledge-discovery
 - script: converge-gates.sh
 - script: delivered.sh
 - script: done.sh

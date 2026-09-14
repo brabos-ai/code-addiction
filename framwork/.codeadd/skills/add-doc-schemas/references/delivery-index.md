@@ -193,10 +193,12 @@ which is a new line like any other correction.
    results are the answer to *"did we try this before?"* — a single cut over a list that sorts dead last
    removed them from every query matching more than the cap, which is the original failure with the sign
    flipped. They are **not** unfiltered: a matching dead set larger than 2 IS cut. What makes that honest
-   is that the count is reported per bucket — `MATCHED_LIVE`, `MATCHED_DEAD`, `RETURNED_LIVE`,
-   `RETURNED_DEAD` — because `MATCHED 40 RETURNED 7` never said whether a dead entry was dropped, and an
+   is that the count is reported per bucket. The read emits SIX keys — `MATCHED_LIVE`, `MATCHED_DEAD`,
+   `RETURNED_LIVE`, `RETURNED_DEAD`, and `LIVE_CAP` / `DEAD_CAP` for the caps in force — and they
+   replace the single `MATCHED` / `RETURNED` / `LIMIT` trio, which no longer exists. Per bucket,
+   because `MATCHED 40 RETURNED 7` never said whether a dead entry was dropped, and an
    agent told only the seven concludes there are seven.
-6. **Returned order is `live` → `changed` → `superseded` → `gone`, then score, then recency, then id**, and
+6. **Returned order is `live` → `changed` → `superseded` → `gone`, then score DESCENDING, then recency NEWEST FIRST, then id ASCENDING**, and
    the reader applies it — consumers render what they receive and never re-rank.
 
 ## Hard bans

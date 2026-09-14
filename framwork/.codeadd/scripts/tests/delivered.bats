@@ -271,7 +271,7 @@ node_free_path() {
   [ "$(returned_ids | tr '\n' ' ')" = "0001F 0002F 0003F 0004F " ]
 }
 
-@test "L1.2: dead entries are RETURNED, never filtered" {
+@test "L1.2: dead entries get their own reserved slots, not the leftovers of one cut" {
   src src/live.ts 'const liveThing = 1;'
   commit_all
   write_index \
@@ -293,13 +293,11 @@ node_free_path() {
   local i
   for i in $(seq 1 12); do
     entry "L${i}" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
-    printf '
-' >> "$INDEX"
+    printf '\n' >> "$INDEX"
   done
   for i in $(seq 1 3); do
     entry "D${i}" gone "q dead $i" "q dead" src/gone.ts goneThing >> "$INDEX"
-    printf '
-' >> "$INDEX"
+    printf '\n' >> "$INDEX"
   done
   run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify
   [ "$status" -eq 0 ]
@@ -317,13 +315,11 @@ node_free_path() {
   local i
   for i in $(seq 1 12); do
     entry "L${i}" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
-    printf '
-' >> "$INDEX"
+    printf '\n' >> "$INDEX"
   done
   for i in $(seq 1 3); do
     entry "D${i}" gone "q dead $i" "q dead" src/gone.ts goneThing >> "$INDEX"
-    printf '
-' >> "$INDEX"
+    printf '\n' >> "$INDEX"
   done
   run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify --limit 1
   [ "$status" -eq 0 ]
@@ -339,8 +335,7 @@ node_free_path() {
   local i
   for i in $(seq 1 12); do
     entry "L${i}" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
-    printf '
-' >> "$INDEX"
+    printf '\n' >> "$INDEX"
   done
   run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify
   [ "$status" -eq 0 ]

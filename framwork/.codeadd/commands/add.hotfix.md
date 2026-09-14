@@ -197,7 +197,9 @@ Query `delivered.sh` with the bug's keywords and **`--no-verify`**:
 bash .codeadd/scripts/delivered.sh read "<bug keywords>" --no-verify
 ```
 
-**Read `MATCHED_LIVE`, `MATCHED_DEAD`, `RETURNED_LIVE` and `RETURNED_DEAD`, not just the entries.** The read cuts in two buckets and the counts are what say whether it cut anything. `MATCHED_DEAD` above `RETURNED_DEAD` means a `gone` entry was dropped — and a `gone` entry in a bug's area is the answer that this was tried and abandoned, which is the most useful thing triage can learn here.
+**Read `MATCHED_LIVE`, `MATCHED_DEAD`, `RETURNED_LIVE` and `RETURNED_DEAD`, not just the entries.** The read cuts in two buckets and the counts are what say whether it cut anything: `MATCHED_LIVE` above `RETURNED_LIVE` means candidates were left out, and a narrower query is the answer.
+
+⛔ **Under `--no-verify` the dead bucket is nearly always empty, and that is not evidence of anything.** `gone` is COMPUTED at verification, never stored, so a read that skips verification can only ever see a `superseded` somebody declared by hand. Do not read `MATCHED_DEAD=0` here as "nothing was ever dropped in this area" — it means this call did not look.
 
 ```
 IF THE INDEX READ OMITS --no-verify:
@@ -349,7 +351,7 @@ All three judges receive the SAME input set:
 - the change under review — this branch's diff against its base, and the paths it touches
 - the confirmed root cause from STEP 7
 - the **blast radius** retained in STEP 5.2 — related feature IDs and suspicious commits, as identifiers plus a one-line reason each. Pass identifiers, NEVER inlined document content
-- **the file-overlap half of the graph.** The fix exists now, so a file list exists now. **GRAPH question:** which delivered work items touch the files this fix changed? It is phrased over PATHS, which is what STEP 4.1 could not do. Run `add-knowledge-discovery`'s GRAPH step over this branch's changed paths and resolve the question in its action table and add the work items it returns to the blast radius above, as identifiers with one line each. STEP 4.1 could not do this: it runs before the investigation and before the fix, so nothing had changed yet
+- **the file-overlap half of the graph.** The fix exists now, so a file list exists now. **GRAPH question:** which delivered work items touch the files this fix changed? It is phrased over PATHS. Run `add-knowledge-discovery`'s GRAPH step over this branch's changed paths, resolve the question in its action table, and add the work items it returns to the blast radius above, as identifiers with one line each. STEP 4.1 could not ask this: it runs before the investigation and before the fix, so nothing had changed yet
 - the `WIKI:` fields from STEP 1
 
 ### 9.2 Dispatch

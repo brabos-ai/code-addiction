@@ -93,6 +93,14 @@ The index answered *whether* it shipped. **The graph answers what it connects to
 
 ### Which Action Answers Which Question
 
+**Two routes reach these actions, and they answer identically.** Where the `codeadd-docs` MCP server is registered — `codeadd` writes that registration for the providers whose config supports it — call the action as an MCP tool. Where it is not, the one-shot CLI form below runs the same engine in a fresh process. Neither is a degraded version of the other.
+
+```
+IF YOU HAVE NEITHER THE codeadd-docs MCP TOOLS NOR A SHELL:
+  ⛔ DO NOT: Reconstruct the answer by grepping `docs/` and present it as the graph's
+  ✅ DO: Write `NOT VERIFIED` into `RELATED_WORK`, and say the route was missing
+```
+
 Every row is reached with the same call, changing only `--action` and `--args`:
 
 ```bash

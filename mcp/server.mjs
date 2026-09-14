@@ -151,7 +151,7 @@ export const TOOLS = [
       type: 'object',
       properties: {
         id: NODE_ARG,
-        limit: { type: 'number', description: 'Maximum entries to read. Defaults to 50.' },
+        limit: { type: 'number', description: 'Maximum LIVE entries to read; defaults to 50. Dead entries (superseded, gone) have their own fixed cap of 2 and no argument raises it — MATCHED_DEAD in the result says whether any were cut.' },
         layer: { type: 'string', description: 'Passed straight through to delivered.sh.' },
       },
       required: ['id'],

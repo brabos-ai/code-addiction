@@ -363,7 +363,7 @@ Every area subagent receives this bootstrap block before its specific task.
 
 `${WIKI_PAGES}` = the page paths selected in STEP 3's Consult Knowledge Base sub-step, one line each: path + one-line reason + freshness verdict. Empty if no wiki was consulted.
 
-`${RELATED_WORK}` = the GRAPH step's hits from the same sub-step, one line each: id + path + one-line reason. Empty if the graph returned nothing or is absent. **Filled independently of `${WIKI_PAGES}`** — the two come from different steps and either can be empty while the other is not.
+`${RELATED_WORK}` = the GRAPH step's hits from the same sub-step, one line each: id + path + one-line reason. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. **Filled independently of `${WIKI_PAGES}`** — the two come from different steps and either can be empty while the other is not.
 
 Subagents read the listed documents themselves (JIT), never inlined content:
 
