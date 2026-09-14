@@ -64,6 +64,32 @@ const fixture = treeFixture({
   normalize: true,
 });
 
+/**
+ * add.review WITH qa-pipeline ON, read where the QA steps actually exist.
+ *
+ * STEPs 8-10 left the base command for fragments/qa-pipeline/add.review.md when
+ * the feature boundary moved, so `builtCommand('add.review')` — which reads the
+ * marker-free but UN-INJECTED output under framwork/.claude — no longer carries
+ * them. Reading it for QA content asserts the old boundary, not the reachability
+ * this file is named for.
+ *
+ * Materialised once and cached. The fixture copies 332 files and `afterEach`
+ * tears it down, so the bytes are taken while it is alive and the six
+ * assertions below share them instead of paying for six installs.
+ */
+let qaReviewCache = null;
+const qaEnabledReview = () => {
+  if (qaReviewCache === null) {
+    const cwd = fixture.root();
+    enableFeature(cwd, 'qa-pipeline');
+    qaReviewCache = fs.readFileSync(
+      path.join(cwd, '.claude', 'commands', 'add.review.md'),
+      'utf8',
+    );
+  }
+  return qaReviewCache;
+};
+
 // Stays global. The fixture belongs to five tests; a clean spy belongs to all
 // 43, because a warning raised by an earlier test would otherwise be read as
 // this one's.
@@ -143,7 +169,7 @@ describe('scenario 4 — QA preflight contract + shared probe script', () => {
   // Plan 0070: the preflight contract was absorbed into add.review's base body,
   // self-gating on the add.qa-setup receipt rather than on a feature flag.
   it('built add.review invokes the shared probe script and declares block/degrade phases', () => {
-    const review = builtCommand('add.review');
+    const review = qaEnabledReview();
     expect(review).toContain('.codeadd/scripts/qa-preflight.sh');
     expect(review).toContain('Phase A');
     expect(review).toContain('Phase B');
@@ -287,7 +313,7 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
 
   it('built add.review dispatches @ux-agent ∥ @qa-agent and resolves run-NNN before capture', () => {
     // Plan 0070: absorbed into add.review as STEP 9 (evidence) + STEP 10 (judgement).
-    const review = builtCommand('add.review');
+    const review = qaEnabledReview();
     expect(review).toContain('@ux-agent');
     expect(review).toContain('@qa-agent');
     expect(review).toMatch(/PARALLEL, WAIT-ALL/);
@@ -342,7 +368,13 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
     expect(qaAgentPt.anchor.text).toBe(
       'By default you judge from the persisted evidence (read-PNG mode). If the Playwright plugin is enabled, the live-driving playbook below is injected and you may additionally drive the app.',
     );
-    expect(addQaPt.anchor.text).toBe('**WAIT-ALL before 10.2.**');
+    // The drive point moved onto the `contract.` seam when STEPs 8-10 left the
+    // base command: its old anchor line went with them. That seam is now shared
+    // with the qa-pipeline sections, which makes the drive block's PLACEMENT
+    // follow the enable order — pinned, with both reachable orders, in
+    // test-terminal-states-qa-boundary.test.js. What is pinned here is the
+    // anchor text itself, which is what the injection resolves against.
+    expect(addQaPt.anchor.text).toBe('contract.');
   });
 });
 
@@ -380,7 +412,7 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
   });
 
   it('add.review cites the canonical axis table and merge rules instead of restating them', () => {
-    const review = builtCommand('add.review');
+    const review = qaEnabledReview();
     // Structural, not formatting-pinned: no axis-ownership row may be restated here,
     // whatever the cell spacing. (L5 — the old guard matched one exact rendering.)
     expect(review).not.toMatch(/^\|\s*(Failure forensics|UX quality|Functional delivery|Accessibility|Responsiveness)\s*\|/mi);
@@ -389,7 +421,7 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
   });
 
   it('built add.review derives routes and unions them into one Fix Routing table', () => {
-    const review = builtCommand('add.review');
+    const review = qaEnabledReview();
     expect(review).toMatch(/Derive routes/i);
     expect(review).toContain('judged-contract');
     expect(review).toContain('judged-tree');
@@ -444,7 +476,7 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
   });
 
   it('the absorbed QA allocates and resolves predecessors through qa-evidence.sh', () => {
-    const review = builtCommand('add.review');
+    const review = qaEnabledReview();
     expect(review).toContain('.codeadd/scripts/qa-evidence.sh next');
     expect(review).toContain('.codeadd/scripts/qa-evidence.sh previous');
     expect(review).toMatch(/working plus final evidence/i);
@@ -471,7 +503,7 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
   });
 
   it('review captures the working baseline and done promotes it before changelog and merge', () => {
-    const review = builtCommand('add.review');
+    const review = qaEnabledReview();
     const done = builtCommand('add.done');
     expect(review).toContain('.codeadd/scripts/qa-evidence.sh working-baseline');
     const promote = done.indexOf('## STEP 5: Validate and Promote Reviewed QA Evidence');
