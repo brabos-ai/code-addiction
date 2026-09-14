@@ -33,6 +33,26 @@ You receive:
 
 - `topic`: free-form description of the idea or change (1-2 sentences, or keywords)
 - `scope`: `product` | `internal` | `both`
+- `prior_deliveries`: **optional.** Delivery-index entries the caller has already resolved, each
+  carrying at least a plan slug and its delivered state. Absent means the caller resolved none.
+
+```
+IF prior_deliveries ARRIVES FILLED:
+  ⛔ DO NOT: Re-scan docs/deliveries/ for the plans it already names
+  ⛔ DO NOT: Re-derive their delivered state — the caller resolved it, and a second
+             derivation that disagrees is worse than no second derivation
+  ✅ DO: Take those entries as given, mark them `[delivered]`, and scan only for what
+         the field does not cover
+  ✅ DO: Score them against the topic like any other plan — the caller resolved WHICH
+         plans shipped, never which ones are relevant
+
+IF prior_deliveries IS ABSENT OR EMPTY:
+  ✅ DO: Run the full plan scan below, both globs, exactly as written
+```
+
+**This field exists so the index has one parser, not three.** The caller already reads the delivery
+index; without this field the agent reads it again by another route and the two can disagree about
+the same plan.
 
 ## How You Work
 
@@ -88,6 +108,10 @@ Scan filenames and read first ~20 lines of each artefact:
 
 ### 2. Plan Scan (always, regardless of scope)
 
+**Read `prior_deliveries` first.** When the caller filled it, those plans are already resolved: take
+their delivered state as given and skip the `docs/deliveries/` glob for them. Scan for everything the
+field does not name, exactly as below. When the field is absent or empty, run both globs whole.
+
 - `Glob docs/plans/*.md` → plans still in flight, gitignored and local
 - `Glob docs/deliveries/*/plan.md` → plans already closed out, tracked. **Take the slug from the DIRECTORY name, never from the filename** — every one of these files is called `plan.md` and carries no slug at all.
 - **Strip the leading token first**, then extract slug words. The leading token is the timestamp (`2026-09-07T005046`) on a new plan or the `NNNN` number on a legacy one — both forms are on disk. Drop the `PLAN` / `SELF-PLAN` marker too. ⛔ Never score `2026`, `09` or `07T005046` as a topic keyword.
@@ -96,11 +120,18 @@ Scan filenames and read first ~20 lines of each artefact:
 - **Score and rank both sources in ONE list**, and mark each row by **which glob found it**. A plan from `docs/deliveries/` is suffixed ` [delivered]`; a plan from `docs/plans/` carries no suffix. A delivered plan is prior art of the strongest kind — it shipped — and the caller must be able to tell that from an open decision without opening the file.
 
 ```
-IF DECIDING WHETHER A PLAN IS DELIVERED:
+IF THE PLAN IS NAMED IN prior_deliveries:
+  ⛔ DO NOT: Re-derive its state from the directory — the caller already resolved it
+  ✅ DO: Use the state the field gave, and mark it `[delivered]`
+
+IF IT IS NOT (OR THE FIELD IS ABSENT):
   ⛔ DO NOT: Read its `Status:` line, its body, its ledger, or docs/delivered.jsonl
   ⛔ DO NOT: Mark a plan found under docs/plans/ as delivered, whatever its text claims
   ✅ DO: Use the directory it was found in, and nothing else
 ```
+
+**Two sources, never both for one plan.** The field wins where it speaks, the directory everywhere
+else. Consulting both for the same plan is what produces two answers about one fact.
 
 **A plan on disk in both places is one plan, listed once, marked `[delivered]`.** That is the window between STEP 6 archiving it and STEP 8 removing the local original, and the tracked copy is the one that outlives the session.
 - Score each plan slug against topic keywords (0–3 overlap scale)
