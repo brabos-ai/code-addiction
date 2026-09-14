@@ -106,20 +106,23 @@ Listen for:
 
 **Ask the index BEFORE dispatching the agent. This command is the one most likely to re-invent something that already shipped and was dropped.**
 
-For each artefact name the topic plausibly touches:
+**The question, for each artefact name the topic plausibly touches:** was this built before, and was
+it dropped?
 
-```bash
-node scripts/graph.js history <artefact-name>
-```
+**LOAD `add-artefact-graph` and resolve that question to a verb there.** ⛔ DO NOT name a verb from
+memory — the skill owns which one answers which question, and a verb named here is a verb an agent
+runs once and stops at.
 
-The index answers a question the graph cannot: **was this built before, and was it dropped?** The graph describes what exists **today**; it holds no time axis and is rebuilt from scratch on every build. A `gone` or `superseded` entry is the most valuable answer this step can return — it means the idea was tried, and it points at what replaced it.
+The index answers what the graph cannot. The graph describes what exists **today**; it holds no time
+axis and is rebuilt from scratch on every build. A `gone` or `superseded` entry is the most valuable
+answer this step can return — it means the idea was tried, and it points at what replaced it.
 
-If the verb reports the index unavailable → say so and continue. An absent index means no close-out has run yet, which is information, not a failure.
+If the index reports itself unavailable → say so and continue. An absent index means no close-out has
+run yet, which is information, not a failure.
 
-**A RELATIONSHIP question is a different question, and `add-artefact-graph` owns it.** `history` above
-answers "was this built before and dropped"; it says nothing about what an artefact relates to today.
-Load the skill before reaching for grep — a topic that touches an existing artefact almost always
-raises one, and this command named no route to it until now.
+**"What does this relate to TODAY" is a second question, and the same skill owns it too.** A topic
+touching an existing artefact almost always raises it, and `### 4.5` is where this command answers it
+against the design. Load the skill before reaching for grep.
 
 Then dispatch `@framework-discovery-agent` with:
 - `topic`: captured topic from STEP 1.1
@@ -314,9 +317,42 @@ Before STEP 5:
 - [ ] No contradictions between sections
 - [ ] User has approved the summary
 - [ ] Scope is explicit (includes + excludes both stated)
-- [ ] Ecosystem impact is identified
+- [ ] Ecosystem impact is identified — `### 4.5` then asks who calls each artefact in it
 
 If ANY checkbox fails → return to relevant section and continue exploring.
+
+### 4.5 Ask Who Calls Every Artefact This Design Changes [GATE]
+
+**The question this step answers, in full:** for every artefact the design changes — who calls it
+today, and is that answer complete?
+
+**Both halves are the question.** "Who calls it" is one query. "Is that answer complete" is a second
+one for any artefact a fragment injects into, and a check against what the graph cannot see for every
+artefact. A design that answered only the first half is the failure this step exists to prevent: a
+coordinator ran one verb, got a list, and shipped a table missing a direct caller.
+
+**LOAD `add-artefact-graph`.** It resolves the question to its verb, says when one query is not
+enough, and carries the standing list of what no query reaches. ⛔ DO NOT pick a verb from memory.
+
+```
+IF AN ARTEFACT IN THE DESIGN HAS NO ANSWER TO BOTH HALVES:
+  ⛔ DO NOT USE: Write on docs/brainstorming/
+  ⛔ DO NOT: Present the design in chat as ready for approval
+  ⛔ DO NOT: Fill the caller column from filenames, grep or recollection
+  ✅ DO: Ask the graph, and fill it from the answer
+
+IF YOU HAVE NO ROUTE TO THE GRAPH:
+  ⛔ DO NOT: Leave the column blank, which reads as "nothing calls it"
+  ✅ DO: Write NOT VERIFIED in it, and say the route was missing
+```
+
+**A blank and a NOT VERIFIED are different claims.** Blank says nothing depends on this artefact,
+which is a finding. NOT VERIFIED says nobody asked. A reader who cannot tell them apart grades the
+risk of the change on an answer that was never given.
+
+**On the `bounded` path this binds the short design in chat**, which names which artefacts change and
+is approved by the user like any document. On `spike` there is no design to gate — a spike reports a
+recommendation, and STEP 3's table already says it writes nothing.
 
 ---
 
@@ -404,9 +440,12 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 
 ## Ecosystem Impact
 
-| Component | Impact | Action |
-|-----------|--------|--------|
-| [command/skill] | [how it's affected] | [required change or "none"] |
+| Component | Called by | Impact | Action |
+|-----------|-----------|--------|--------|
+| [command/skill] | [every direct caller the graph returned, or NOT VERIFIED] | [how it's affected] | [required change or "none"] |
+
+[The `Called by` column is filled from `### 4.5`'s answer and from nothing else. An empty cell claims
+nothing calls the artefact; write NOT VERIFIED where the question could not be asked.]
 
 ## Trade-offs & Risks
 
