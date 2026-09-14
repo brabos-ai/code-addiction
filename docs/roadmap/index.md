@@ -58,3 +58,18 @@ the layer(s) it touches.
 - Decide whether anything mechanical can back the rule. Nothing in `cli/tests/` or `scripts/` enforces item 7 today, and a text heuristic for "informs without instructing" may not exist — if it does not, say so in the plan rather than shipping a gate that misses.
 - **Done when:** ruler item 7 names the shapes with examples, a run of `@prompt-review-agent` over a deliberately padded artefact flags them by shape rather than by feel, and the sweep's diff shows every artefact it touched with the removed passages listed per file.
 
+
+## 4. MCP utilisation in the product layer
+
+### 4.1 — Product commands ask the MCP by question, not by named verb
+
+**Scope:** product
+**TLDR:** The shipped knowledge-graph MCP and the gitnexus plugin stop being reached through a fixed verb or a fixed skill per command; a command states what it must answer and a skill resolves that to the right call, the way the internal layer now does.
+
+- The internal layer fixed this on 2026-09-13: commands stated a question and `add-artefact-graph` resolved it to a verb. The product layer still carries the shape the fix removed, one level up — it pins a call or a skill per command instead of naming a verb.
+- `framwork/.codeadd/skills/add-knowledge-discovery/SKILL.md:69` and `:75` name two literal actions, `--action=search` and `--action=touched_by`. The docs corpus answers more than those two, and an agent runs what is written and stops.
+- `framwork/.codeadd/plugins/gitnexus/skills/add-gitnexus/SKILL.md` already resolves intent to a native skill, which is the right shape — but its "Command-intent resolution" section then pins each command to exactly one: `add.plan` → `gitnexus-impact-analysis`, `add.new` → `gitnexus-exploring`, and so on. A planning run that needs to trace an error has the mapping pointing the other way.
+- The 6 command fragments and 9 agent fragments under `framwork/.codeadd/plugins/gitnexus/fragments/` carry the same fixed mapping into every command and agent the plugin reaches, so a change to the mapping alone does not reach them.
+- The product layer has no owner for question-to-call resolution. `add-knowledge-discovery` covers when to consult, not which call answers which question — the role `add-artefact-graph` plays internally has no product counterpart, and deciding whether that is a new skill or a section inside an existing one is part of this item.
+- Carry over the two things the internal delivery learned: an empty answer is a finding and a missing route is not, so they must not be merged; and a command that only states a question gets skipped, so each one needs a gate on a filled answer.
+- **Done when:** no product command or fragment names an MCP action or a gitnexus native skill as the whole instruction, `grep -rn "action=\|Command-intent resolution" framwork/.codeadd/` returns only the resolution table itself, and a product command asked a question outside its pinned mapping reaches the right call.
