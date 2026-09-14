@@ -238,9 +238,17 @@ Continue to STEP 3.
 
 | Path | STEPS 3 and 4 | STEPS 5 and 6 | STEP 7 |
 |------|---------------|---------------|--------|
-| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs. Enter at **7.3** — there is no document, so 7.1, 7.2 and 7.4 have nothing to show. |
-| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs. Enter at **7.3** — there is no document, so 7.1, 7.2 and 7.4 have nothing to show. |
+| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs in full. 7.1 reports the recommendation, 7.2 omits the document path, 7.4 does not apply. |
+| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs in full. 7.1 reports the design, 7.2 omits the document path, 7.4 does not apply. |
 | **architectural** | Everything written below and in STEP 4, unchanged — including the decomposition offer. | Run as written. | Runs in full, as written. |
+
+⛔ **`7.1` runs on all three paths.** `add-final-report` reports the WORK, not a file — a spike's
+recommendation and a bounded design in chat are the work, and they are exactly what its blocks 2 and
+3 carry. A path that skipped the report would leave its only deliverable as loose conversation the
+user has to scroll back through.
+
+**What varies is one metadata line, not the report.** `7.2` prints a document path only where 5.3
+wrote one; every other line it carries is about the work and prints on every path.
 
 **STEP 7's `[HARD STOP]` handoff runs on all three paths.** A spike that found a real problem still routes to
 `/add-framework--plan`; a bounded design routes there too. What
@@ -559,11 +567,19 @@ A design proposes rather than executes, so block 2 is titled `What will be done`
 future tense. Fill `How it works` with the mechanism the design settles on, for a reader who was not
 in the conversation.
 
+```
+IF THIS RUN TOOK THE spike OR bounded PATH:
+  ⛔ DO NOT: Skip this step because no file was written
+  ✅ DO: Emit the same seven blocks over the recommendation or the chat design — that is the work
+```
+
 ### 7.2 Metadata, After the Report
 
-- The design document path: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
+- The design document path: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` — **omitted on `spike`
+  and `bounded`**, which write no file. Omit the line; never print a path that resolves to nothing.
 - The review verdict and the fixes applied, one line each, if any
-- The 3-5 key validated decisions from the design
+- The 3-5 key validated decisions — from the design document, or from the conversation that settled
+  them where no document exists
 
 ### 7.3 Next Step Guidance [HARD STOP]
 
@@ -589,6 +605,9 @@ On `spike` and `bounded` there is no file, so the `Design:` line is omitted rath
 path that does not exist. Say the design was settled in conversation instead.
 
 ### 7.4 Offer Refinement (If Umbrella)
+
+Umbrella specs exist only on the `architectural` path, so this sub-step does not apply on the other
+two. That is a condition it already carried, not a path carve-out.
 
 If umbrella spec: "You can now refine individual subtopics by running `/add-framework--brainstorm vamos refinar [topic] -> ref: [the umbrella's own filename]`"
 
