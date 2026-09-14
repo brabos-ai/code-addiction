@@ -4,6 +4,11 @@ Items are listed in execution order — the number **is** the priority. An item 
 every item above it is done. Scope lives with each item, not with this document — an item names
 the layer(s) it touches.
 
+⛔ **A delivered item is removed, never renumbered, and the gap it leaves stays.** `git log` on this
+file carries what it was, and every changelog, commit message and index entry that shipped alongside
+it names it by its number — renumbering makes those references point at a different item. Missing
+numbers here mean delivered, not lost.
+
 ---
 
 ## 1. Delivered-work relationships
@@ -19,57 +24,25 @@ the layer(s) it touches.
 - Scan past deliveries (`docs/features`, changelogs) and group them — by app, group or category, tree or graph: the shape is still open, and choosing it is the first half of this item.
 - Ships as an enabled feature, not part of the default flow.
 - When the gitnexus plugin is enabled, the grouping also points at what to search in gitnexus per group.
-- **Deliberately deferred past item 4 and past 1.3.** Item 4.1 repairs the `add-knowledge-discovery` step this command would consult on its first run, and 1.3 decides where a work item's file set lives — which is half of what this migration would have to write. Building the migration before either one would hang it on a lookup that answers wrong and on a destination nobody has chosen. The usual "finish everything above before starting" rule is suspended for those two reasons, and recorded here rather than left as an unexplained skip.
+- **Deliberately deferred past 1.4.** The `add-knowledge-discovery` step this command consults on its first run was repaired on 2026-09-14, and the impact question — where a work item's file set lives, which is half of what this migration would have to write — shipped on 2026-09-14 (`git log docs/roadmap/index.md` carries the item it was). What is still missing is 1.4: this migration cannot know what it is walking until something reports which of a project's documents the MCP can already read. The usual "finish everything above before starting" rule is suspended for that reason, and recorded here rather than left as an unexplained skip.
 - **Done when:** running the command on a project whose deliveries declare no relationship produces the initial grouped structure with relationships filled, and add.new/add.plan/add.hotfix use it as the investigation entry point.
-
-### 1.3 — The impact question: which deliveries touched this file
-
-**Scope:** product
-**TLDR:** "Who has already changed this file?" has no working answer in the current document format. The only thing that ever filled a work item's file set is a schema that was retired, and a deliberate coupling in the brownfield migration keeps that dead schema being read instead of converting it. Build the capability properly and delete the legacy path — no compatibility branch.
-
-- **Do this BEFORE 1.2.** Two commands that already shipped ask this question and get half an answer, while 1.2 is a migration for projects that have not adopted the format yet. The usual top-down order is suspended for the same kind of reason 1.2's own deferral is recorded.
-
-- **What is broken, verified 2026-09-14.** `mcp/engine.mjs:405` answers `touched_by` by matching the query's paths against `node.files`. In the **docs** corpus, `mcp/corpora.mjs:389` is the ONLY thing that ever populates `node.files`, and it fires for exactly one document type:
-  ```js
-  if (attachment.type === 'hotfix-related') {
-    for (const file of parseImpactedFiles(attachment.content)) { ... }
-  }
-  ```
-  `hotfix-related` is marked `### hotfix-related (retired)` at `add-doc-schemas/references/fix.md:52`. No command and no template writes it. **So in any project on the current format, `touched_by` returns `workItems: []`.** Its `pages` half still works, because a wiki page's `sources` globs are unrelated to this. The **artefacts** corpus is unaffected: there `files` comes from the node's own path (`corpora.mjs:512`).
-
-- **⛔ No backward compatibility, and no second path. This is the requirement, not a preference.** `cli/src/migrations.js:309-311` states the coupling in its own words: *"The file list is read by the INDEX, straight from this attachment, so nothing is written for it here. It is counted because the migration report is what tells a user the list was found."* That is a live reader kept alive for a retired schema, and it is why the current format was never given a file set of its own — the legacy path answered just well enough that nobody noticed the new one was missing. The work is: build the capability for the current format, and **delete** `corpora.mjs:389`, `parseImpactedFiles` and the migration's count-and-point.
-
-  **Converting the legacy list was dropped during the build, deliberately.** This item first asked the migration to convert an `Impacted Files` section into the new home. Two findings killed it. The delivered answer derives the delivery's own commit, so the complete file set is the commit's diff — a hand-written list is a worse copy of something git already holds exactly. And nobody hand-wrote those lists: `/add.hotfix` STEP 12 did, so there is no author's work to preserve and no author to inform. A counter that only reported them was kept for one round and then deleted for the same reason — reading a dead schema's section name is still reading it.
-
-- **The shape is open, and the honest question is where a work item's file set lives.** Three candidates, none chosen:
-  - **`docs/delivered.jsonl` `items[].at`** already holds it — up to five paths per delivery, each with a line saying what changed there. It answers delivery → files today. The objection to reading it backwards is recorded in `delivered.sh` itself: `--repair` rewrites `at` on every anchor move, so matching on it can return an entry on the strength of a stale pointer. That objection was written about TEXT SEARCH; a typed file lookup is a different operation and needs its own answer, not an inherited one.
-  - **The `about.md` records its own file set**, written at close-out, where the diff is already in hand.
-  - **Git is the floor.** `git log --follow <path>` answers "who touched this" with no index and no plugin, always. Whatever is built must degrade to it rather than to nothing.
-
-- **Two shipped commands are waiting on this.** `add.review` STEP 2.2 hands its judges "the deliveries that last changed these files" and currently hands them wiki pages only; `add.hotfix` STEP 9.1 asks the same question of the fix's own diff. Both were made explicit by `2026-09-14T102848-PLAN--product-knowledge-discovery-answers-the-question`, which is how the gap surfaced — neither command caused it.
-
-- **This is the umbrella's subtopic 003**, `docs/brainstorming/2026-09-12T075635-delivered-work-relationships-000-umbrella.md`, which called it defect 2 — *"The impact question has no verb"* — and reserved a design that was never written. Item 1.1 closed without it.
-
-- **Done when:** `touched_by --corpus=docs` returns the work items for a file in a project written entirely in the current format, with no `hotfix-related` document anywhere; `grep -rn "hotfix-related|Impacted Files|parseImpactedFiles" mcp/ cli/src/` returns nothing; and `add.review` STEP 2.2 and `add.hotfix` STEP 9.1 each receive work items, not only pages.
-
-- **Two clauses left this item and are recorded rather than dropped.** Converting the legacy list was rejected, for the reasons above. **The git fallback for a project with no index at all moved to 1.4**, where it belongs: a project with no index is the extreme case of a project whose documents the MCP cannot read, and 1.4 is the item about that.
 
 ### 1.4 — A doctor for document schemas, and an opt-in pass that makes a project's documents fit
 
 **Scope:** product
 **TLDR:** Every docs-corpus answer is only as good as the frontmatter and the sections of the documents underneath it. Nothing tells a user which of their files the MCP can read and which it skips, and nothing offers to fix the ones it cannot. Two pieces: a **doctor** that reports fitness per file, and an **opt-in skill** that reads a project's features and rewrites their headers to the current schema.
 
-- **Do this BEFORE 1.2.** 1.2 migrates relationships into a project that declared none; it cannot know what it is walking until something reports which documents are already readable. The doctor is that report. The same suspension 1.3 records applies here for the same kind of reason.
+- **Do this BEFORE 1.2.** 1.2 migrates relationships into a project that declared none; it cannot know what it is walking until something reports which documents are already readable. The doctor is that report, and 1.2 records the same suspension from its own side.
 
-- **What made this urgent.** 1.3 deleted the last reader that tolerated an old document shape. From now on a document is either in the current format or it is **invisible to the MCP, silently** — it parses, it lands in the corpus, and it answers nothing. Silence is the defect: an empty answer and an unreadable file look identical from the caller's side, which is the exact confusion `add-knowledge-discovery` already had to be taught to separate.
+- **What made this urgent.** The impact-question delivery of 2026-09-14 deleted the last reader that tolerated an old document shape. From now on a document is either in the current format or it is **invisible to the MCP, silently** — it parses, it lands in the corpus, and it answers nothing. Silence is the defect: an empty answer and an unreadable file look identical from the caller's side, which is the exact confusion `add-knowledge-discovery` already had to be taught to separate.
 
 - **The doctor reports, and writes nothing.** For every document in the docs corpus: fit, off-standard, or unreadable, naming the field or section that is missing rather than a score. `add-doc-schemas` owns the schemas, so the doctor reads them from there — a doctor that restates a schema drifts from it, and the drift is invisible until the two disagree about what "fit" means.
 
 - **The fix pass is a skill, not a codemod.** It reads each feature's document and adjusts the header — frontmatter `type` and `id`, the `## Relations` block — to the current schema. It has to be an agent reading the content, because deciding a document's type and its relations is a judgement, not a text substitution. Opt-in, and it edits headers only: never a body, never a deletion.
 
-- ⛔ **The user writes nothing by hand.** Every one of those documents was written by a command, so a migration that hands the user a list of files to edit is addressing the wrong actor. The skill's output is the edit; the user's part is approving it. This is the rule 1.3's build established, and it is what killed the legacy converter there.
+- ⛔ **The user writes nothing by hand.** Every one of those documents was written by a command, so a migration that hands the user a list of files to edit is addressing the wrong actor. The skill's output is the edit; the user's part is approving it. This is the rule the impact-question build established, and it is what killed the legacy converter there.
 
-- **Carried over from 1.3: the behaviour with no index at all.** `touched_by` answers empty in a project that has never run a close-out. `git log --follow <path>` answers it with no index and no plugin, always. Whatever ships must degrade to that rather than to nothing — and the doctor is where a user finds out which of the two they are getting.
+- **Carried over from the impact-question delivery: the behaviour with no index at all.** `touched_by` answers empty in a project that has never run a close-out. `git log --follow <path>` answers it with no index and no plugin, always. Whatever ships must degrade to that rather than to nothing — and the doctor is where a user finds out which of the two they are getting.
 
 - **The open question, and it is why this is recorded and not planned.** Where does the doctor live?
   - **An MCP action**, beside `search` and `history` — the agent asks it mid-flow, in the same session it is about to query, and gets the caveat before the answer. Costs an action on a surface that already has eleven.
@@ -107,34 +80,25 @@ the layer(s) it touches.
 - **Done when:** ruler item 7 names the shapes with examples, a run of `@prompt-review-agent` over a deliberately padded artefact flags them by shape rather than by feel, and the sweep's diff shows every artefact it touched with the removed passages listed per file.
 
 
-## 4. MCP utilisation in the product layer
-
-### 4.1 — Product commands ask the MCP by question, not by named verb
-
-**Scope:** product
-**TLDR:** The shipped knowledge-graph MCP and the gitnexus plugin stop being reached through a fixed verb or a fixed skill per command; a command states what it must answer and a skill resolves that to the right call, the way the internal layer now does.
-
-- The internal layer fixed this on 2026-09-13: commands stated a question and `add-artefact-graph` resolved it to a verb. The product layer still carries the shape the fix removed, one level up — it pins a call or a skill per command instead of naming a verb.
-- ~~`add-knowledge-discovery`'s GRAPH step named two literal actions, `--action=search` and `--action=touched_by`, while the docs corpus answers eleven.~~ **Done** — the step now states a question and resolves it in a table covering all eleven.
-- ~~`add-gitnexus`'s "Command-intent resolution" section pinned each command to exactly one native skill, so a planning run that needed to trace an error had the mapping pointing the other way.~~ **Done** — that section is now `## Resolving an intent` and resolution runs off the intent in hand.
-- **The 9 agent fragments** under `framwork/.codeadd/plugins/gitnexus/fragments/agents/` each pin a native skill inline — `reviewer-agent.md` reads "load skill `add-gitnexus` (→ `gitnexus-pr-review` and `gitnexus-impact-analysis`)" — so a change to the mapping alone does not reach them. **The 6 command fragments carry no pin.** Verified 2026-09-14: none contains a `gitnexus-` name. They state the intent and stop, which is already the target shape, and editing them would remove correct text.
-- The product layer has no owner for question-to-call resolution. `add-knowledge-discovery` covers when to consult, not which call answers which question — the role `add-artefact-graph` plays internally has no product counterpart, and deciding whether that is a new skill or a section inside an existing one is part of this item.
-- Carry over the two things the internal delivery learned: an empty answer is a finding and a missing route is not, so they must not be merged; and a command that only states a question gets skipped, so each one needs a gate on a filled answer.
-- **Done when:** `add-knowledge-discovery`'s GRAPH step resolves all eleven actions in `mcp/engine.mjs` instead of naming two; no gitnexus agent fragment names a `gitnexus-*` native skill; `add-gitnexus/SKILL.md` carries no section mapping a command name to a native skill; and a product command asked a question outside its former pinned mapping reaches the right call.
-- ⛔ **Do not use `grep -rn "action=" framwork/.codeadd/` as the check.** It also matches `qa-evidence.sh:329` and `:340`, and JSX in `add-stripe/` and `add-ux-design/`. And `add.done.md`'s `--action=reindex` and `--action=stats` are operations, not questions: an operation with exactly one call correctly names it, and this item does not touch them.
-
-
 ## 5. Gates that assume the main checkout
 
-### 5.1 — The close-out's post-merge checks give a false verdict inside a worktree
+### 5.1 — The close-out's post-merge checks are five where one would do
 
 **Scope:** both
-**TLDR:** Two of `/add-framework--done`'s gates fail for reasons that have nothing to do with the delivery when the command runs from a worktree, and one of them refuses the cleanup of a delivery that archived correctly.
+**TLDR:** `/add-framework--done` STEP 8 runs five checks before it deletes anything, and four of them re-prove what the command's own step order already guarantees. They cost time and tokens on every close-out, one of them breaks outright on Windows, and the product close-out never had them. Cut them to the one that carries the question: did the merge happen?
 
-- **Check 3 reads a path, and the path is too long inside a worktree.** `.claude/commands/add-framework--done.md:490` and `:492` verify the archive with `git show origin/main:docs/deliveries/<id>/<file-member>`. Run from a worktree that is 97 characters deep, against a member path of 152, git tries to stat the whole string including the `origin/main:` prefix and answers `fatal: failed to stat ... Filename too long`, exit 128. Measured on 2026-09-14 closing `2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary`: one of four members reported missing while `git ls-tree` proved all four were on `main`. From the primary checkout the same path is 63 characters shorter and resolves.
-- **The consequence is worse than a wrong line of output.** Check 3 sits inside the gate at `:504` that refuses every deletion in STEP 8, so a delivery whose archive reached `main` intact has its worktree, its branch and its local originals left behind, and the operator is handed a `/add-framework--plan` suggestion for a problem that does not exist.
-- **The fix is to stop stating a path.** `git ls-tree "origin/main:docs/deliveries/<id>/"` yields each member's object id, and `git cat-file blob <oid>` streams it without touching the filesystem — so checks 3 and 5 work at any depth and the `cmp` in check 5 keeps its meaning. This was done by hand on the run above; nothing in the command records it.
-- **Check 5 also needs the Windows note it does not have.** `core.longpaths` is unset in this repository, which is git's default, so the limit applies as described rather than being a local misconfiguration someone can be told to fix.
-- **The second failure is the bats gate, for a different reason.** A fresh worktree has no root `node_modules`, so `npm run test:scripts` exits **127** with `./node_modules/.bin/bats: No such file or directory`. `:225` already teaches the command that exit **2** is a refusal rather than a red suite; 127 is a third outcome it does not name, and it reads like neither. Running `npm install` at the worktree root fixed it and the full 415-test suite passed.
-- **Decide whether the product layer needs the same guard.** `framwork/.codeadd/scripts/build-setup.sh` ships `--worktree` and puts users' own builds in exactly this position, and `framwork/.codeadd/commands/add.done.md` names `worktree` nowhere. It carries no equivalent of the five post-merge checks today, so this may be internal-only — but that is a question to answer from the product close-out's own text, not to assume from the absence of a grep hit.
-- **Done when:** `/add-framework--done`'s checks 3 and 5 resolve members by object id rather than by path, a close-out run from a worktree at least 90 characters deep completes STEP 8 without refusing a deletion, `:225` names exit 127 alongside exit 2 with the `npm install` remedy, and the product close-out carries either the same guard or a recorded reason it does not need one.
+- **Operator decision, 2026-09-14:** *"esses done — add-framework--done e add.done — não têm que fazer check de arquivo byte a byte. É só verificar se foi feito merge e fim. Gasta tempo e token à toa."*
+
+- **The step order already proves what checks 3, 4 and 5 re-prove.** STEP 6 commits `docs/deliveries/<id>/`, the index entry and the changelog in ONE commit on the branch. STEP 7 then merges that branch. So "the PR is merged" entails "the archive and the entry are on `main`" — there is no ordering in which the merge lands and the archive does not. Checks 3 (every member resolves), 4 (the entry is there) and 5 (byte-identical) each spend git calls confirming a consequence of a step this same command performed two steps earlier.
+
+- **One check caught something the order does not cover, and it is fixable in the order.** Check 5 exists for a ledger appended to AFTER STEP 6's archive commit and never re-copied: the local original is then ahead of `main`, and deleting it loses the newer rulings. The cheap fix is in STEP 6 — assemble the archive as the last thing before the commit, and stop writing to the ledger after it — not a byte comparison run after the merge.
+
+- **Check 3 does active damage on Windows, measured 2026-09-14.** `git show origin/main:docs/deliveries/<id>/<member>` stats the whole string including the `origin/main:` prefix. From a worktree 97 characters deep against a 152-character member path it answers `fatal: failed to stat ... Filename too long`, exit 128 — while `git ls-tree` proves the member is on `main`. That check sits inside the gate that refuses every deletion in STEP 8, so a delivery that archived correctly had its worktree, branch and local originals all left behind, and the operator got a `/add-framework--plan` suggestion for a problem that did not exist. Closing `2026-09-14T145149-PLAN--the-impact-question-...` needed the operator to leave the worktree by hand to dodge it.
+
+- **The product close-out carries none of this.** `framwork/.codeadd/commands/add.done.md` has no equivalent of the five checks, and the decision above says it should not grow them. Record that as a deliberate parity gap rather than leaving it to read as an omission someone later "fixes".
+
+- **What stays.** The merge check, and the prohibition it serves: nothing local-only is deleted until the merge that carries its durable copy has landed. The fetch stays too — `origin/main` is a local ref and `gh pr merge` moves the branch on the server without moving it here, so a stale ref would make even the merge check read the wrong state.
+
+- **The second failure in the same STEP, unrelated to the checks.** A fresh worktree has no root `node_modules`, so `npm run test:scripts` exits **127** with `./node_modules/.bin/bats: No such file or directory`. `add-framework--done.md:225` teaches the command that exit **2** is a refusal rather than a red suite; 127 is a third outcome it does not name, and it reads like neither. `npm install` at the worktree root fixes it.
+
+- **Done when:** STEP 8's gate reads the merge and the fetch alone; checks 3, 4 and 5 are gone from `.claude/commands/add-framework--done.md` with the step-order argument recorded in their place; STEP 6 assembles the archive last so the ledger cannot end up ahead of `main`; a close-out run from a worktree at any depth completes STEP 8 without refusing a deletion; `:225` names exit 127 alongside exit 2 with the `npm install` remedy; and `add.done.md` carries a recorded reason it has no post-merge checks rather than silence.
