@@ -217,6 +217,47 @@ describe('L2 — integration', () => {
       .toContain('Live driving is a `playwright` plugin enhancement');
   });
 
+  // F17's OWN two edits, neither of which had a level. L2.3 below guards that
+  // STEP 11 does not move; it says nothing about the row inside it that F17
+  // rewrote, nor about the command description. Both are what a reader meets
+  // first on the feature-off branch.
+  it('L2.11 the ungated text that describes the boundary names both states', () => {
+    const src = read('commands/add.review.md');
+
+    // The one-line description: it used to promise the judgement outright.
+    const desc = src.slice(src.indexOf('Coordinator for feature review.'), src.indexOf('Coordinator for feature review.') + 420);
+    expect(desc, 'the description does not name the feature').toContain('`qa-pipeline`');
+    expect(desc, 'the description does not say what the command is without it')
+      .toContain('this command is the code review and the spec-compliance audit');
+
+    // STEP 11's gate row: five values, and the two ⊘ diagnoses distinguished.
+    expect(src, 'the Quality Gate Report row lost ⊘ FEATURE OFF').toContain('⊘ FEATURE OFF');
+    expect(src, 'the two ⊘ states are no longer told apart')
+      .toContain('different diagnoses, and neither blocks');
+  });
+
+  // F13 had no assertion anywhere: deleting every MODEL line broke no test.
+  it('L2.12 the final attempt escalates the model, at both surviving dispatch sites', () => {
+    const agent = read('agents/test-agent.md');
+    const fragment = read('fragments/tdd-pipeline/add.build.md');
+
+    expect(agent, 'test-agent no longer declares MODEL as an input')
+      .toMatch(/`MODEL` — present on the FINAL attempt only/);
+    expect(fragment, 'the build fragment no longer passes MODEL on the final attempt')
+      .toMatch(/On the FINAL attempt only/);
+    for (const [label, body] of [['test-agent', agent], ['tdd-pipeline/add.build', fragment]]) {
+      expect(body, `${label}: the escalation no longer names a tier`).toContain('one tier above');
+    }
+
+    // The hotfix dispatch is the third site the plan named and it is deliberately
+    // NOT here: that flow dispatches once, so it has no earlier attempt to
+    // escalate from. F38 removed the line and its cap is 1.
+    const hotfix = read('fragments/tdd-pipeline/add.hotfix.md');
+    expect(hotfix, 'the hotfix dispatch grew a MODEL escalation it cannot reach')
+      .not.toContain('one tier above');
+    expect(hotfix, 'the hotfix cap is not 1').toContain('MAX_ATTEMPTS = 1');
+  });
+
   // GUARD, not RED→GREEN. STEP 11 is ungated and must stay ungated: F17 edits
   // one of its rows, and the failure mode is moving the whole step by accident.
   it('L2.3 (guard) add.review keeps STEP 11 in both feature states', () => {
@@ -537,7 +578,24 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     const build = read('commands/add.build.md');
     expect(build, 'the fix dispatch is still one per area').not.toMatch(/one per affected area, parallel across areas/);
     expect(build, 'the fix dispatch does not pass AREAS').toMatch(/`AREAS`/);
-    expect(build, 'a BLOCKED report is not routed').toMatch(/BLOCKED/);
+    // NOT `toMatch(/BLOCKED/)`. add.build says BLOCKED six times, one of them in
+    // the Agent Roster row, so the bare match stayed green with the whole
+    // in-flight routing section deleted. What F11 delivers is the synthesis
+    // path: a BLOCKED report becomes a routed row in the SAME run, through the
+    // path STEP 11.2 already uses, with no review document involved.
+    expect(build, 'the in-flight BLOCKED routing section is gone')
+      .toContain('#### A `BLOCKED` report becomes a routed row, in this run');
+    expect(build, 'the routing no longer says it needs no review document')
+      .toMatch(/No review document is involved/i);
+
+    // F8's own subject: implementers run one at a time, in add.build's UNGATED
+    // body. The plan called serialising them its highest-probability risk and no
+    // level reached it — L4.4's add.build half checked AREAS and the word
+    // BLOCKED, both of which are F7 and F11.
+    expect(build, 'STEP 10.1 no longer says one implementation agent at a time')
+      .toMatch(/ONE IMPLEMENTATION AGENT AT A TIME/);
+    expect(build, 'the >4 areas row still promises parallel groups')
+      .not.toMatch(/Split into maximum parallel groups/);
 
     const ready = read('commands/add.plan-to-ready.md');
     expect(ready, 'the correction leg does not pass AREAS').toMatch(/`AREAS`/);
