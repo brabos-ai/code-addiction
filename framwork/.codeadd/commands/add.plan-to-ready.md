@@ -142,7 +142,7 @@ This command takes over the coordinator role of `/add.plan`, `/add.build` and
 |-----|--------|
 | Plan | `@discovery-agent`, `@ux-flow-agent`, `@ux-layout-agent`, `@ux-agent` (critique), `@database-agent`, `@backend-agent`, `@frontend-agent`, `@architecture-agent`, `@plan-reviewer-agent` (verdict gate, after consolidation) |
 | Build | `@database-agent`, `@backend-agent`, `@frontend-agent` (one at a time), `@test-agent` (with `tdd-pipeline`, after each area's implementer), `@e2e-agent` (with `qa-pipeline`), `@reviewer-agent` (area validation), `@fix-agent` (correction — one dispatch for the whole wave) |
-| Review | `@reviewer-agent` (frontend ∥ backend, read-only), `@ux-agent` (review mode) ∥ `@qa-agent` (with the QA receipt present) |
+| Review | `@reviewer-agent` (frontend ∥ backend, read-only), `@ux-agent` (review mode) ∥ `@qa-agent` (with `qa-pipeline` enabled AND the QA receipt present — two gates, see STEP 7) |
 
 ⛔ Dispatching one agent told to "read `{{cmd:add.plan}}` and execute it" is the
 depth-2 defect this command exists to avoid. Dispatch the roster.
@@ -714,7 +714,7 @@ findings, never fixes.
 
 It emits, for the scope:
 - `docs/features/${FEATURE_ID}/review-NNN.md`, including the unified `## Fix Routing` table;
-- one `_tests/run-NNN/qa-validation-NNN.md` per in-scope `SCOPE_DIR`, when the `/add.qa-setup` receipt is present.
+- one `_tests/run-NNN/qa-validation-NNN.md` per in-scope `SCOPE_DIR`, when `qa-pipeline` is enabled AND the `/add.qa-setup` receipt is present. ⛔ The receipt alone is not enough: the feature decides whether the review has QA steps at all, the receipt decides whether they may run.
 
 ⛔ If the review leg reports that it modified any file under `git diff --name-only`,
 treat it as a contract violation: STOP the loop and report BLOCKED naming the
@@ -733,8 +733,11 @@ from a hardcoded default.
 (`true | false | unset | no-manifest`); the defaults registry lives in
 `cli/src/features.js` and a shell script duplicating it is how the two drift.
 Resolve `unset` / `no-manifest` by the feature's own default: **`qa-pipeline`
-defaults to disabled** — the same rule `{{cmd:add.review}}` and
-`{{cmd:add.qa-setup}}` already apply to the same value.
+defaults to disabled** — the same rule `{{cmd:add.qa-setup}}` applies to the same
+value. `{{cmd:add.review}}` no longer reads this state at all: its QA steps
+arrive with the feature or do not arrive, so there is nothing left there to
+resolve. This command still resolves it because it dispatches the judges itself,
+at depth 1, rather than through that command.
 
 The two rules are compatible, not in tension: read the STATE from the script
 rather than assuming one, then apply the registry's DEFAULT to the two values
