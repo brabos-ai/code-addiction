@@ -476,6 +476,38 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     expect(body, 'MAX_ATTEMPTS is not carried').toContain('MAX_ATTEMPTS');
   });
 
+  // THE COLLISION THE REVIEW FOUND, AND THE REASON IT IS NOT COSMETIC.
+  //
+  // BLOCKED's trigger is "my correct test is red because the source is wrong".
+  // In CORRECTION mode that is not a problem to report — it is the order the
+  // agent was given. But the trigger matches, so the procedure fires and
+  // declares the red an expected failure. TEST_COMMAND then PASSES, and the
+  // hotfix coordinator runs that command itself to confirm RED: it reads the
+  // pass as "the bug is not where the root cause says it is" and sends the flow
+  // back to re-investigate a root cause that was correct. An agent obeying both
+  // documents breaks the flow.
+  it('L4.5 BLOCKED is excluded in CORRECTION mode, where the red test is the deliverable', () => {
+    const agent = read('agents/test-agent.md');
+    const blockedAt = agent.indexOf('### `BLOCKED`');
+    expect(blockedAt, 'the BLOCKED section is gone or was renamed').toBeGreaterThan(-1);
+
+    // The exclusion has to OPEN the section. A reader in CORRECTION mode must
+    // meet it before the procedure it disables, not after.
+    const opening = agent.slice(blockedAt, blockedAt + 900);
+    expect(opening, 'the BLOCKED section does not exclude CORRECTION mode')
+      .toContain('IF `MODE` IS `CORRECTION`');
+    expect(opening, 'the exclusion does not forbid declaring the red an expected failure')
+      .toContain('no xfail, no test.fails(), no test.failing()');
+
+    const hotfix = read('fragments/tdd-pipeline/add.hotfix.md');
+    const reportAt = hotfix.indexOf('- **Report:**');
+    expect(reportAt, 'the hotfix dispatch has no Report line').toBeGreaterThan(-1);
+    expect(
+      hotfix.slice(reportAt, reportAt + 120),
+      'the hotfix dispatch still expects a BLOCKED its own agent cannot return',
+    ).not.toContain('`BLOCKED`,');
+  });
+
   it('L4.2/L4.4 add.build and add.plan-to-ready dispatch against the new contracts', () => {
     const build = read('commands/add.build.md');
     expect(build, 'the fix dispatch is still one per area').not.toMatch(/one per affected area, parallel across areas/);

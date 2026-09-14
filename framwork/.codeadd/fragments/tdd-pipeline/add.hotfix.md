@@ -14,11 +14,10 @@ Load `{{skill:add-tdd/SKILL.md}}` — its **Bug-fix mode** is the discipline thi
 
 **DISPATCH AGENT: `@test-agent`** [full-access on test files only, standard]
 
-- **Inputs:** `MODE = CORRECTION`, the confirmed root cause and its repro from STEP 7, the files named there, `TEST_FRAMEWORK`, `TEST_COMMAND`, `KNOWN_FAILURES`, `ATTEMPT` and `MAX_ATTEMPTS = 3`.
-- **`ATTEMPT` is supplied here, never by the agent**, and it is the same route and the same value `@fix-agent` already receives — one field with one meaning must not have two routes.
-- **On the FINAL attempt only**, pass an explicit `MODEL` one tier above the agent's declared model. Pass no `MODEL` on any earlier attempt.
+- **Inputs:** `MODE = CORRECTION`, the confirmed root cause and its repro from STEP 7, the files named there, `TEST_FRAMEWORK`, `TEST_COMMAND`, `KNOWN_FAILURES`, `ATTEMPT = 1` and `MAX_ATTEMPTS = 1`.
+- **`ATTEMPT` is supplied here, never by the agent**, and it travels the same route `@fix-agent`'s already does — one field with one meaning must not have two routes. ⛔ The VALUE is 1, not 3: this flow dispatches once and, on a test that is not RED for the right reason, returns to STEP 7 rather than re-dispatching. Passing 3 would name two attempts that do not exist and tell the agent to keep trying where the coordinator has already left.
 - **Substitution (MANDATORY):** `@test-agent`'s documented `CORRECTION` inputs name a `## Fix Routing` slice. **No such table exists here** — this flow has no review document yet. Pass the confirmed root cause plus the repro in its place, and say so in the dispatch.
-- **Report:** `RED_TEST` (path + test name), `TESTS_PASSING`, `BLOCKED`, `ERRORS`, `CONCERNS`.
+- **Report:** `RED_TEST` (path + test name), `TESTS_PASSING`, `ERRORS`, `CONCERNS`. ⛔ No `BLOCKED`: the agent's contract excludes that state in `CORRECTION` mode, because there the red test is what was ordered.
 
 **`KNOWN_FAILURES` here is whatever was already red before this hotfix started**, one per line as
 `<test>: <area>` — typically nothing, since a hotfix branches from a green main. **Pass it EMPTY

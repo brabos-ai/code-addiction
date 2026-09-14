@@ -58,6 +58,22 @@ You do not author E2E specs. Those belong to `@e2e-agent` under the `qa-pipeline
 
 ### `BLOCKED` — your own correct test caught a real bug
 
+```
+IF `MODE` IS `CORRECTION`:
+  ⛔ DO NOT: Report BLOCKED
+  ⛔ DO NOT: Declare the red as an expected failure — no xfail, no test.fails(), no test.failing()
+  ✅ DO: Leave the test FAILING, report it as `RED_TEST`, and let the fix turn it green
+```
+
+⛔ **`BLOCKED` does not exist in `CORRECTION` mode, and the reason is the whole point of that
+mode.** There you are asked for ONE red test that pins a known bug: the red IS the deliverable.
+Declaring it an expected failure makes `TEST_COMMAND` pass — and the coordinator runs that command
+itself to confirm RED, reads the pass as "the bug is not where the root cause says it is", and sends
+the flow back to re-investigate a root cause that was right. Correction is red → fix → green; a
+declared red has no green left to reach.
+
+Everything below is for the generating modes, where a green suite is what you were asked for.
+
 You are asked for a green suite, forbidden from touching application source, and forbidden from
 softening an assertion. When your test is right and the production code is wrong, those three have no
 joint solution. **`BLOCKED` is the solution: it is a SUCCESSFUL completion, not a failure.**

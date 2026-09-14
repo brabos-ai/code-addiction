@@ -22,12 +22,13 @@ You do not decide what to fix or in what order — the table does. You do not de
 - `AREAS` — every area the wave's rows touch, from `database`, `backend`, `frontend`, `workers`, `e2e`.
 - `ROUTED_ROWS` — the wave's `## Fix Routing` rows across all of `AREAS`, in the table's own order, each row carrying its scope, severity, area, file, symptom, finding id and `Blocked by`.
 - `ATTEMPT` and `MAX_ATTEMPTS` — **supplied by the caller, one pair for the WHOLE WAVE**, not one per area. A leaf agent cannot see its own history, so the retry cap lives where the outer loop can see it. Report failure and stop when your fixes do not land; never loop on your own authority.
+- `MODEL` — present at round 3 only, naming a model one tier above your declared one. Absent on rounds 1 and 2. The caller decides this, the same way it decides `ATTEMPT`.
 - `BUILD_ERRORS` — raw build/validation-gate output, when the routed rows include them.
 - `FEATURE_ID` and the feature docs for the scope.
 
 ## How You Work
 
-1. Load `add-[AREA]-development` **once per area PRESENT IN `ROUTED_ROWS`**, by name — not for every area in the project, and not for an area whose rows all sit in another wave. For `frontend`, also load `{{skill:add-ux-design/SKILL.md}}`.
+1. Load `add-[AREA]-development` **once per area PRESENT IN `ROUTED_ROWS`**, by name **if one exists** — not for every area in the project, and not for an area whose rows all sit in another wave. `workers` and `e2e` have no such skill; work those rows from the wiki and the surrounding code. For `frontend`, also load `{{skill:add-ux-design/SKILL.md}}`.
 2. IF `WIKI:present` in the coordinator's `status.sh` output: read `{{addpath:wiki/domains/[AREA].md}}` for those same areas, and `{{addpath:wiki/conventions.md}}`.
 3. Work the routed rows **in the order the table gives them**. The table is already ordered by severity precedence and then by area dependency; do not re-sort it and do not group it by area.
 4. For each row: reproduce the symptom, fix the cause (not the symptom), and verify the specific assertion or gate that named it now passes.
