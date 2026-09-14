@@ -81,7 +81,7 @@ STEP 14: Hand-off                → enable plugin (optional) + run /add.review 
 | **STEP 11** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
 | **STEP 11** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
 | **STEP 1.5** | Receipt absent but materialized state present | Treating the project as FIRST-RUN | Classify STALE and re-materialize under the merge rules |
-| **STEP 2.1 Phase A rows 9–10** | `QA_RECEIPT` or `QA_CONTRACT_MATCH` is not `ok` | Stopping the setup run | Treat as work-to-do — this command is the remedy |
+| **STEP 2.1 Phase A rows 8–9** | `QA_RECEIPT` or `QA_CONTRACT_MATCH` is not `ok` | Stopping the setup run | Treat as work-to-do — this command is the remedy |
 | **STEP 12** | Always | Editing or deleting an existing Decision Log row | Append only |
 
 ---
@@ -206,7 +206,7 @@ Outcome sets `SETUP_STATE` for the rest of the run:
 - `CURRENT` — recorded `setup-shape` equals the shipped sidecar `shape`. Drift check only (unless `--upgrade`).
 - `STALE` — anything else: no receipt but state present, unreadable `setup-shape`, or hash mismatch. Re-materialize under the merge rules (per-key `config.json`, regenerate `qa-project`, create-if-absent empty `screens.json`).
 
-Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a` are **work-to-do in this command**, never a stop. `{{cmd:add.review}}` interprets the same rows as `block`.
+Phase A rows 8–9 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a` are **work-to-do in this command**, never a stop. The QA preflight `qa-pipeline` injects into `{{cmd:add.review}}` interprets the same rows as `block`.
 
 ⛔ `FIRST_RUN` (the old `docs/qa/config.json`-presence proxy) is RETIRED. Do not reintroduce it. Do not backfill a missing receipt. Do not walk a versioned delta list.
 
@@ -216,7 +216,7 @@ Phase A rows 9–10 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a`
 
 Running this command is unambiguous QA intent, and everything it installs is inert while the `qa-pipeline` feature is off: `add.plan` authors no QA spec, `add.build` dispatches no `@e2e-agent`, and `add.review` carries no QA steps at all — its preflight, evidence capture and judge pair arrive with the feature, so with the feature off there is no judgement either. The feature/plugin split is canonical in `{{skill:add-qa/SKILL.md}}` ("Feature vs plugin").
 
-⛔ **The receipt this command writes does not restore judgement on its own.** The feature decides whether `add.review` has QA steps; the receipt decides whether those steps may run. A project with the receipt and the feature off gets a code review and nothing else.
+⛔ **The receipt this command writes does not restore judgement on its own.** Two gates, and the canonical statement in `{{skill:add-qa/SKILL.md}}` says which one decides what. The consequence here: a project with the receipt and the feature off gets a code review and nothing else.
 
 ### 2.1 Probe the feature state
 ```bash
@@ -366,7 +366,21 @@ Dispatch each command in the chain as a subagent via the Agent tool — autonomo
 Otherwise, close the loop on every run:
 
 ### 11.1 Smoke test
-Autonomously dispatch `/add.review <feature-id>` (Agent tool) against the scaffolded feature — its STEP 8–10 QA sections are what this setup enables. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
+
+```
+IF `qa-pipeline` IS DISABLED — STEP 2.2 WAS DECLINED, OR IT WAS TURNED OFF SINCE:
+  ⛔ DO NOT: Dispatch the smoke test
+  ⛔ DO NOT: Enter 11.2's correction loop
+  ✅ DO: Record the deferral naming the decline, and continue to STEP 12
+```
+
+⛔ **11.2's guard is not this guard.** It catches a `/add.build` dispatch that
+reports the feature disabled — one wasted review and one wasted build later, and
+it names routed QA correction as the problem when the real one is that the
+review carried no QA steps to smoke-test. STEP 2.2 explicitly allows a decline
+and continues setup, so this branch is reachable on any run.
+
+Autonomously dispatch `/add.review <feature-id>` (Agent tool) against the scaffolded feature — the QA sections `qa-pipeline` injects into it are what this setup enables. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
 
 ### 11.2 Correction loop (max 3 attempts)
 On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add.build` to work the routed rows, then re-run 11.1.
@@ -455,6 +469,6 @@ ALWAYS:
 - Point `baseUrl` at a local/throwaway environment (functional QA mutates state)
 
 NEVER:
-- Edit the source of a dispatched command (`add.new`/`add.plan`/`add.build`/`add.review`/`add.qa`) — autonomy is layered via the dispatch prompt, never by rewriting them
+- Edit the source of a dispatched command (`add.new`/`add.plan`/`add.build`/`add.review`) — autonomy is layered via the dispatch prompt, never by rewriting them
 - Modify application source, app config, or migrations
 - Enable the `playwright` plugin on the user's behalf (instruct them to)
