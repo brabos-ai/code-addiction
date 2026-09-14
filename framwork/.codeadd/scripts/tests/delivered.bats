@@ -897,18 +897,19 @@ node_free_path() {
 # that introduced an entry's line is the commit that delivered it. These
 # fixtures build that shape with real commits rather than asserting it.
 
-# seed_delivery <id> <file> <find> — commit a source file, then commit an index
-# line for it in a SECOND commit. The second commit is the one the derivation
-# must find, and it is deliberately not the one that created the source.
+# seed_delivery <id> <file> <find> — the SQUASH shape, which is the one the
+# derivation depends on. The close-out commits the index line on the branch and
+# the merge squashes the whole branch, so on the default branch ONE commit
+# carries both the delivery's code and its index line. A fixture that commits
+# them separately builds the docs/-only case instead, which L1.4 covers on
+# purpose.
 seed_delivery() {
   local id=$1 file=$2 find=$3
   src "$file" "const ${find} = 1;"
-  commit_all "source for $id"
   mkdir -p docs
   entry "$id" live "delivery $id" "words $id" "$file" "$find" >> "$INDEX"
   printf '\n' >> "$INDEX"
-  git add -A >/dev/null 2>&1
-  git commit -q -m "index line for $id" >/dev/null 2>&1 || true
+  commit_all "squash for $id: code and index line together"
 }
 
 @test "L1.1: touched returns the delivery whose derived commit changed the path" {

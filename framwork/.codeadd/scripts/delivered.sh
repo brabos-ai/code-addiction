@@ -7,6 +7,7 @@
 # Usage: bash .codeadd/scripts/delivered.sh write < record.json
 #        bash .codeadd/scripts/delivered.sh read <query> [--layer product|internal] [--limit N] [--no-verify]
 #        bash .codeadd/scripts/delivered.sh verify [<id>] [--repair]
+#        bash .codeadd/scripts/delivered.sh touched <path> [<path>...]
 # Dependencies: bash 3.2+, git, node >= 18 (JSON parse/emit; guaranteed by the
 #               CLI, the same declaration qa-preflight.sh makes)
 # Output: KEY=VALUE lines, plus JSONL entries on `read`. A line starting with
@@ -16,6 +17,20 @@
 # tested as a substring of the entry's text; an entry matches when it hits at
 # least one, and is scored by how many DISTINCT terms it hit. Results sort by
 # status rank, then score, then recency, then id.
+#
+# TOUCHED ANSWERS "WHICH DELIVERIES CHANGED THESE PATHS", IN TWO LAYERS.
+# The delivery's commit is DERIVED, never stored: the close-out commits the
+# entry on the branch and the merge squashes that branch, so the commit that
+# introduced an entry's line IS the commit that delivered it. Each returned
+# entry carries `layer`:
+#   complete - the path is in that derived commit's own diff. Exact and whole.
+#   curated  - the path is one of the entry's `items[].at` anchors, capped at 5
+#              and self-healing through `verify --repair`. A sample, carrying
+#              each item's verified status.
+# An entry whose derived commit touches only `docs/` was recorded outside the
+# normal flow and answers from the curated layer alone; CURATED_ONLY counts
+# those. Keys: TOUCHED_COMPLETE, TOUCHED_CURATED, CURATED_ONLY.
+# Exit 0 always, like every other probe. Exit 2 with no path argument.
 #
 # READ CUTS IN TWO BUCKETS: 5 live (live, changed) and 2 dead (superseded,
 # gone), independently, with NO backfill of unused dead slots into live ones.
@@ -56,6 +71,7 @@ usage() {
     echo "Usage: delivered.sh write < record.json"
     echo "       delivered.sh read <query> [--layer product|internal] [--limit N] [--no-verify]"
     echo "       delivered.sh verify [<id>] [--repair]"
+    echo "       delivered.sh touched <path> [<path>...]"
   } >&2
   exit 2
 }
@@ -75,6 +91,7 @@ LIMIT="5"   # the LIVE cap; --limit overrides it. The dead cap is fixed, in node
 NO_VERIFY=""
 ENTRY_ID=""
 REPAIR=""
+PATHS=""
 
 case "$MODE" in
   write)
@@ -95,6 +112,13 @@ case "$MODE" in
     case "$LAYER" in ""|product|internal) ;; *) usage ;; esac
     case "$LIMIT" in ''|*[!0-9]*) usage ;; esac
     [ "$LIMIT" -gt 0 ] || usage
+    ;;
+  touched)
+    [ "$#" -gt 0 ] || usage
+    # One newline-separated blob: the node program takes a fixed argv, so a
+    # variable-length path list needs one slot, not one slot per path.
+    PATHS=$(printf '%s
+' "$@")
     ;;
   verify)
     while [ "$#" -gt 0 ]; do
@@ -135,7 +159,7 @@ NODE_PROG=$(cat <<'NODE'
 const fs = require('fs');
 const path = require('path');
 
-const [MODE, INDEX, CORPUS_FILE, ROOT, QUERY, LAYER, LIMIT, NO_VERIFY, ENTRY_ID, REPAIR] =
+const [MODE, INDEX, CORPUS_FILE, ROOT, QUERY, LAYER, LIMIT, NO_VERIFY, ENTRY_ID, REPAIR, PATHS] =
   process.argv.slice(1);
 
 const STATUSES = ['live', 'changed', 'gone', 'superseded'];
@@ -520,15 +544,117 @@ function doVerify() {
   out('SKIPPED_LINES', skipped.join(','));
 }
 
+
+// ─── touched ─────────────────────────────────────────────────────────────────
+
+/**
+ * One git call, answered or `null`. Never throws and never exits.
+ *
+ * `touched` is the only mode that asks git anything directly — every other mode
+ * is handed its corpus by the shell above. A repository git cannot answer for —
+ * a shallow clone, a truncated history — is not an error here: the caller falls
+ * back to the curated layer and reports it, the same treatment an entry
+ * recorded outside the normal flow gets.
+ */
+function git(args) {
+  try {
+    const res = require('child_process').spawnSync('git', args, {
+      cwd: ROOT, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024,
+    });
+    if (res.error || res.status !== 0) return null;
+    return res.stdout || '';
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * The delivery commit of an entry, DERIVED and never stored.
+ *
+ * The close-out commits the index line on the branch and the merge squashes
+ * that branch, so the commit that introduced the line IS the commit that
+ * delivered it. `commits` on the record holds the BRANCH shas, which a squash
+ * makes unreachable from the default branch — measured on this repository, they
+ * intersect `git log` on main at zero.
+ *
+ * The pickaxe reports every commit where the id's occurrence count changed, so
+ * a corrected entry yields two. The OLDEST introduced it; a later one is the
+ * correction's own commit and describes nothing about the delivery.
+ */
+function deliveryCommit(id) {
+  const needle = '"id":' + JSON.stringify(id);
+  const res = git(['log', '--format=%h', '-S', needle, '--', 'docs/delivered.jsonl']);
+  if (res === null) return null;
+  const shas = res.split('\n').map((x) => x.trim()).filter(Boolean);
+  return shas.length ? shas[shas.length - 1] : null;
+}
+
+/** The files a commit changed. `null` when git cannot answer. */
+function commitFiles(sha) {
+  const res = git(['show', '--name-only', '--format=', sha]);
+  if (res === null) return null;
+  return res.split('\n').map((x) => x.trim()).filter(Boolean).map(norm);
+}
+
+function doTouched() {
+  const wanted = String(PATHS || '').split('\n').map((x) => norm(x.trim())).filter(Boolean);
+  const { byId, skipped } = loadIndex();
+
+  const complete = [];
+  const curated = [];
+  let curatedOnly = 0;
+
+  for (const e of Array.from(byId.values())) {
+    const sha = deliveryCommit(e.id);
+    const files = sha ? commitFiles(sha) : null;
+
+    // A commit that changed nothing outside `docs/` is an index line recorded
+    // outside the normal flow — `chore(delivery-index): record …` — so it
+    // describes the recording, not the delivery. Same treatment as no commit at
+    // all: the curated layer answers, and the entry is counted.
+    const usable = files !== null && files.some((f) => !f.startsWith('docs/'));
+    if (!usable) curatedOnly++;
+
+    const hitComplete = usable ? wanted.filter((w) => files.indexOf(w) !== -1) : [];
+    if (hitComplete.length) {
+      complete.push(Object.assign({}, e, { layer: 'complete', commit: sha, matched: hitComplete }));
+      continue;
+    }
+
+    // `at` is a HINT that --repair rewrites, so the item's verified status
+    // travels with it. A caller that sees `gone` knows the anchor is stale
+    // without opening anything.
+    const items = Array.isArray(e.items) ? e.items : [];
+    const hitCurated = [];
+    for (const it of items) {
+      if (!it || !it.at) continue;
+      if (wanted.indexOf(norm(it.at)) !== -1) hitCurated.push({ at: norm(it.at), what: it.what, find: it.find });
+    }
+    if (hitCurated.length) {
+      const status = NO_VERIFY ? e.status : verifyEntry(e).status;
+      curated.push(Object.assign({}, e, { status: status, layer: 'curated', commit: sha, matched: hitCurated }));
+    }
+  }
+
+  out('TOUCHED_COMPLETE', String(complete.length));
+  out('TOUCHED_CURATED', String(curated.length));
+  out('CURATED_ONLY', String(curatedOnly));
+  out('SKIPPED_LINES', skipped.join(','));
+  for (const e of complete) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of curated) process.stdout.write(JSON.stringify(e) + '\n');
+}
+
+
 if (MODE === 'write') doWrite();
 else if (MODE === 'read') doRead();
 else if (MODE === 'verify') doVerify();
+else if (MODE === 'touched') doTouched();
 else process.exit(2);
 NODE
 )
 
 node -e "$NODE_PROG" \
   "$MODE" "$INDEX" "$CORPUS_FILE" "$ROOT" \
-  "$QUERY" "$LAYER" "$LIMIT" "$NO_VERIFY" "$ENTRY_ID" "$REPAIR"
+  "$QUERY" "$LAYER" "$LIMIT" "$NO_VERIFY" "$ENTRY_ID" "$REPAIR" "$PATHS"
 
 exit $?
