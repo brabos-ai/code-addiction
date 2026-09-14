@@ -8,28 +8,19 @@ the layer(s) it touches.
 
 ## 1. Delivered-work relationships
 
-### 1.1 — Relationship index/graph in delivered documents
-
-**Scope:** both
-**TLDR:** Changelogs and deliveries carry a relationship index/graph so add.brainstorm, add.new, add.plan and add.hotfix can find related delivered work when opening a feature, investigating a hotfix or drafting a technical plan.
-
-- Builds on what already exists: the `related:` frontmatter across the add-doc-schemas, the `## Relations` section every work item now carries, and the `CHG[NNNN]` changelog add.done closes with `related:` pointing at the closed `[NNNN]F`/`[NNNN]H`. **`templates/related.md` is gone and the `hotfix-related` schema is retired** — the document format that replaced them is what this item now builds on.
-- Adjust how documents are saved and related (changelog, deliveries archiving) so the index becomes the base for the next phase, not a one-off annotation.
-- Prepare the ground for vector search over delivered docs — the planned next step, which reaches documents the index alone does not surface.
-- **Done when:** an add.new or add.plan run reaches a previous delivery's related docs through the index (not only text search), and a new hotfix records its cause as a typed `caused_by` relation in its own about.md.
-
-  > **Revised on delivery, 2026-09-12.** The original criterion said the hotfix must cross-update the `related.md` of every feature it impacts. Under a graph that is writing one fact twice: a `caused_by` declared on the hotfix already yields the inbound edge on the feature, and `related.md` is no longer written by anything. The outcome the criterion wanted — a hotfix's connections being findable from the feature — is delivered by the edge, not by the second write.
-
 ### 1.2 — Migration command: initial relationship graph for old installs
 
 **Scope:** product
-**TLDR:** An opt-in command that builds an initial relationship structure over features delivered before the new format existed, grouped by app/group/category as a tree or graph, so the agent can find correlated features and know what to search.
+**TLDR:** An opt-in command that builds an initial relationship structure over features delivered before the typed-relation format existed, grouped by app/group/category as a tree or graph, so the agent can find correlated features and know what to search.
 
-- Depends on 1.1 — migrating existing projects into the format only makes sense once 1.1 defines it.
-- Scan past deliveries (docs/features, changelogs) and group them — by app, group or category, tree or graph: the shape is still open.
+- **1.1 is delivered, so this item no longer depends on it.** `2026-09-12T104012-PLAN--docs-knowledge-graph-mcp` shipped the typed `## Relations` section, the closed vocabulary (`caused_by`, `depends_on`, `part_of`, `links_to`) and the docs-corpus MCP that reads them. `templates/related.md` is gone and the `hotfix-related` schema is retired.
+- **Half of the migration also shipped.** `cli/src/migrations.js` migration 0002 (`harvestRelations`) walks a brownfield project's `docs/`, harvests the relationships it already wrote — body references, `related:` ids, Follow-up sentences — and writes them as `links_to` lines. Additive-only: it never deletes, never commits, and reports every id that resolves to no work item.
+- **What is left is the project that declared nothing.** 0002 finds nothing in a project whose documents never named each other, and that is the common case for deliveries predating the format. Such a project needs a structure derived from what its deliveries have in common — path overlap, directory, domain — rather than from a declaration nobody made.
+- Scan past deliveries (`docs/features`, changelogs) and group them — by app, group or category, tree or graph: the shape is still open, and choosing it is the first half of this item.
 - Ships as an enabled feature, not part of the default flow.
-- When the gitnexus plugin is enabled, the graph also points at what to search in gitnexus per group.
-- **Done when:** running the command on a project with pre-format deliveries produces the initial grouped structure with relationships filled, and add.new/add.plan/add.hotfix use it as the investigation entry point.
+- When the gitnexus plugin is enabled, the grouping also points at what to search in gitnexus per group.
+- **Deliberately deferred past item 4.** Item 4.1 repairs the `add-knowledge-discovery` step this command would consult on its first run, so building the migration first would hang it on a lookup that answers wrong. The usual "finish everything above before starting" rule is suspended for that reason, once, and recorded here rather than left as an unexplained skip.
+- **Done when:** running the command on a project whose deliveries declare no relationship produces the initial grouped structure with relationships filled, and add.new/add.plan/add.hotfix use it as the investigation entry point.
 
 ## 2. Obsolescence and backward compatibility
 
@@ -69,10 +60,11 @@ the layer(s) it touches.
 - The internal layer fixed this on 2026-09-13: commands stated a question and `add-artefact-graph` resolved it to a verb. The product layer still carries the shape the fix removed, one level up — it pins a call or a skill per command instead of naming a verb.
 - `framwork/.codeadd/skills/add-knowledge-discovery/SKILL.md:69` and `:75` name two literal actions, `--action=search` and `--action=touched_by`. The docs corpus answers more than those two, and an agent runs what is written and stops.
 - `framwork/.codeadd/plugins/gitnexus/skills/add-gitnexus/SKILL.md` already resolves intent to a native skill, which is the right shape — but its "Command-intent resolution" section then pins each command to exactly one: `add.plan` → `gitnexus-impact-analysis`, `add.new` → `gitnexus-exploring`, and so on. A planning run that needs to trace an error has the mapping pointing the other way.
-- The 6 command fragments and 9 agent fragments under `framwork/.codeadd/plugins/gitnexus/fragments/` carry the same fixed mapping into every command and agent the plugin reaches, so a change to the mapping alone does not reach them.
+- **The 9 agent fragments** under `framwork/.codeadd/plugins/gitnexus/fragments/agents/` each pin a native skill inline — `reviewer-agent.md` reads "load skill `add-gitnexus` (→ `gitnexus-pr-review` and `gitnexus-impact-analysis`)" — so a change to the mapping alone does not reach them. **The 6 command fragments carry no pin.** Verified 2026-09-14: none contains a `gitnexus-` name. They state the intent and stop, which is already the target shape, and editing them would remove correct text.
 - The product layer has no owner for question-to-call resolution. `add-knowledge-discovery` covers when to consult, not which call answers which question — the role `add-artefact-graph` plays internally has no product counterpart, and deciding whether that is a new skill or a section inside an existing one is part of this item.
 - Carry over the two things the internal delivery learned: an empty answer is a finding and a missing route is not, so they must not be merged; and a command that only states a question gets skipped, so each one needs a gate on a filled answer.
-- **Done when:** no product command or fragment names an MCP action or a gitnexus native skill as the whole instruction, `grep -rn "action=\|Command-intent resolution" framwork/.codeadd/` returns only the resolution table itself, and a product command asked a question outside its pinned mapping reaches the right call.
+- **Done when:** `add-knowledge-discovery`'s GRAPH step resolves all eleven actions in `mcp/engine.mjs` instead of naming two; no gitnexus agent fragment names a `gitnexus-*` native skill; `add-gitnexus/SKILL.md` carries no section mapping a command name to a native skill; and a product command asked a question outside its former pinned mapping reaches the right call.
+- ⛔ **Do not use `grep -rn "action=" framwork/.codeadd/` as the check.** It also matches `qa-evidence.sh:329` and `:340`, and JSX in `add-stripe/` and `add-ux-design/`. And `add.done.md`'s `--action=reindex` and `--action=stats` are operations, not questions: an operation with exactly one call correctly names it, and this item does not touch them.
 
 
 ## 5. Gates that assume the main checkout
