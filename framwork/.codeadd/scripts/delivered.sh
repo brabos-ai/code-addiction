@@ -16,6 +16,12 @@
 # tested as a substring of the entry's text; an entry matches when it hits at
 # least one, and is scored by how many DISTINCT terms it hit. Results sort by
 # status rank, then score, then recency, then id.
+#
+# READ CUTS IN TWO BUCKETS: 5 live (live, changed) and 2 dead (superseded,
+# gone), independently, with NO backfill of unused dead slots into live ones.
+# `--limit N` sets the live cap only; the dead cap is fixed. Both numbers are a
+# declared tunable and changing one needs evidence. MATCHED_LIVE/MATCHED_DEAD
+# report what matched; RETURNED_LIVE/RETURNED_DEAD what survived the cut.
 # Exit:   0 for probe results — `read` and `verify` always exit 0, including on
 #         an absent index. 1 ONLY when the filesystem refuses a write. 2 for
 #         caller error: a bad mode, bad arguments, a record breaking a hard ban
@@ -65,7 +71,7 @@ shift
 
 QUERY=""
 LAYER=""
-LIMIT="10"
+LIMIT="5"   # the LIVE cap; --limit overrides it. The dead cap is fixed, in node.
 NO_VERIFY=""
 ENTRY_ID=""
 REPAIR=""
@@ -402,8 +408,6 @@ function doRead() {
     return hits > 0;
   });
 
-  const matched = list.length;
-
   // Verification is bounded to what is being RETURNED, never to the file. That
   // is what makes stale confidence structurally impossible without a scheduler.
   // --no-verify returns the stored status and opens no source file: /add.hotfix
@@ -415,8 +419,10 @@ function doRead() {
 
   // Ordering belongs to the read contract, not to callers: several consumers
   // each sorting one shared structure is how two of them come to disagree.
-  // Dead entries rank last and are NEVER dropped — a `gone` result is often the
-  // most valuable answer, because it says this was tried and abandoned.
+  // Dead entries rank last and get RESERVED SLOTS of their own, because a `gone`
+  // result is often the most valuable answer: it says this was tried and
+  // abandoned. They are NOT "never dropped" — the dead cap below is 2, and a
+  // larger matching dead set IS cut, which MATCHED_DEAD reports.
   list.sort((a, b) => {
     const ra = RANK[a.status] === undefined ? 9 : RANK[a.status];
     const rb = RANK[b.status] === undefined ? 9 : RANK[b.status];
@@ -430,14 +436,43 @@ function doRead() {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 
-  const limit = parseInt(LIMIT, 10);
-  const returned = list.slice(0, limit);
+  // TWO INDEPENDENT CAPS, because one cap silently ate the dead entries. The
+  // list is sorted live -> changed -> superseded -> gone, so a single
+  // `slice(0, limit)` always cut from the `gone` end: every query matching more
+  // than the cap returned no dead entry at all, while three separate documents
+  // promised dead entries were never filtered.
+  //
+  // NO BACKFILL. Unused dead slots do not go to live entries. Backfilling would
+  // make the live cut depend on unrelated data, so one query would return
+  // different live sets depending on whether a dead entry happened to match.
+  //
+  // THE NUMBERS ARE A DECLARED TUNABLE, not a discovery. Changing either needs
+  // evidence and an updated line in
+  // add-doc-schemas/references/delivery-index.md.
+  const LIVE_CAP = parseInt(LIMIT, 10);
+  const DEAD_CAP = 2;
 
-  out('MATCHED', String(matched));
-  out('RETURNED', String(returned.length));
-  out('LIMIT', String(limit));
+  const DEAD = new Set(['superseded', 'gone']);
+  // An unknown status goes in the LIVE bucket. The four statuses are closed and
+  // `write` refuses any other, so this only reaches a hand-edited line - and
+  // dropping such an entry is the exact failure these caps exist to fix.
+  const liveList = list.filter((e) => !DEAD.has(e.status));
+  const deadList = list.filter((e) => DEAD.has(e.status));
+
+  const returnedLive = liveList.slice(0, LIVE_CAP);
+  const returnedDead = deadList.slice(0, DEAD_CAP);
+
+  // PER BUCKET, because `MATCHED 40 RETURNED 7` never said whether a dead entry
+  // was cut, and an agent told only the seven concludes there are seven.
+  out('MATCHED_LIVE', String(liveList.length));
+  out('MATCHED_DEAD', String(deadList.length));
+  out('RETURNED_LIVE', String(returnedLive.length));
+  out('RETURNED_DEAD', String(returnedDead.length));
+  out('LIVE_CAP', String(LIVE_CAP));
+  out('DEAD_CAP', String(DEAD_CAP));
   out('SKIPPED_LINES', skipped.join(','));
-  for (const e of returned) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of returnedLive) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of returnedDead) process.stdout.write(JSON.stringify(e) + '\n');
 }
 
 // ─── verify ──────────────────────────────────────────────────────────────────

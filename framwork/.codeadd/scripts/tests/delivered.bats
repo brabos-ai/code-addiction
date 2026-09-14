@@ -748,7 +748,8 @@ node_free_path() {
   commit_all
   run bash "$SCRIPTS_DIR/delivered.sh" read "anything"
   [ "$status" -eq 0 ]
-  [ "$(key MATCHED)" = "0" ]
+  [ "$(key MATCHED_LIVE)" = "0" ]
+  [ "$(key MATCHED_DEAD)" = "0" ]
   [ ! -f "$INDEX" ]
 }
 
@@ -865,7 +866,7 @@ node_free_path() {
 
   run bash "$SCRIPTS_DIR/delivered.sh" read "add-framework--done"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"MATCHED=1"* ]]
+  [[ "$output" == *"MATCHED_LIVE=1"* ]]
   [[ "$output" == *'"id":"E1"'* ]]
 }
 
@@ -878,7 +879,7 @@ node_free_path() {
 
   run bash "$SCRIPTS_DIR/delivered.sh" read "add-framework--roadmap"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"MATCHED=0"* ]]
+  [[ "$output" == *"MATCHED_LIVE=0"* ]]
   [[ "$output" != *'"id":"E1"'* ]]
 }
 
