@@ -392,28 +392,34 @@ export const actions = {
   },
 
   /**
-   * The only action spanning both node kinds.
-   *
-   * For one file list it returns the work items that changed those files and
-   * the reference pages whose `sources` globs cover them. It is what joins
-   * "what was already built here" to "what this module is".
+   * Which deliveries and which reference pages cover these paths.
    *
    * Deliberately NOT called `impact`: in `scripts/graph.js` that name means
    * transitive dependants, and reusing it for file overlap is how two consumers
    * come to disagree about one answer.
+   *
+   * TWO CORPORA ASK DIFFERENT QUESTIONS HERE, and only one of them delegates.
+   *
+   * On `artefacts`, a node's `files` is its own path — "which artefact owns this
+   * file" is answered by the sidecar and needs nothing else. That half stays
+   * local and is untouched.
+   *
+   * On `docs`, the question is "which DELIVERY changed this file", which lives
+   * in the index and not in any document. It is DELEGATED, NEVER REIMPLEMENTED
+   * — the same rule the `history` action states below, for the same reason:
+   * `delivered.sh` owns the index, and a second reader of one index is what the
+   * read contract's no-re-ranking rule exists to prevent. It derives each
+   * delivery's commit and answers in two labelled layers, passed through here
+   * untouched.
+   *
+   * The PAGE half is local in both. A reference page declares `sources` globs in
+   * its own frontmatter, so the corpus already holds that answer.
    */
-  touched_by(data, { files = [] } = {}) {
+  touched_by(data, { files = [] } = {}, context = {}) {
     const wanted = (Array.isArray(files) ? files : [files]).map(normalise);
-    const workItems = [];
     const pages = [];
 
     for (const node of data.nodes) {
-      const owned = (node.files ?? []).map(normalise);
-      const hits = wanted.filter((f) => owned.some((o) => o === f || f.endsWith(`/${o}`) || o.endsWith(`/${f}`)));
-      if (hits.length) {
-        workItems.push({ id: node.id, kind: node.kind, summary: node.summary, matched: hits });
-        continue;
-      }
       const globs = (node.sources ?? []).map((g) => [g, globToRegExp(normalise(g))]);
       const covered = wanted.filter((f) => globs.some(([, re]) => re.test(f)));
       if (covered.length) {
@@ -427,7 +433,77 @@ export const actions = {
       }
     }
 
-    return { files: wanted, workItems, pages };
+    // The artefacts corpus answers locally: `files` is the node's own path.
+    if ((data.corpus ?? 'docs') !== 'docs') {
+      const workItems = [];
+      for (const node of data.nodes) {
+        const owned = (node.files ?? []).map(normalise);
+        const hits = wanted.filter((f) => owned.some((o) => o === f || f.endsWith(`/${o}`) || o.endsWith(`/${f}`)));
+        if (hits.length) workItems.push({ id: node.id, kind: node.kind, summary: node.summary, matched: hits });
+      }
+      return { files: wanted, workItems, pages };
+    }
+
+    const root = context.root ?? process.cwd();
+    const corpus = resolveCorpus(data.corpus ?? 'docs');
+    const script = context.script ?? path.join(root, corpus.deliveredScript);
+    const bash = context.bash ?? 'bash';
+
+    // An unavailable script is reported, never thrown: the page half already
+    // has an answer and withholding it because the other half could not run
+    // would be the less useful of the two failures.
+    const degraded = (reason, detail) => ({
+      files: wanted, workItems: [], pages, unavailable: { reason, detail },
+    });
+
+    if (!wanted.length) return { files: wanted, workItems: [], pages, curatedOnly: 0 };
+    if (!fs.existsSync(script)) return degraded('script-missing', `${script} does not exist`);
+
+    const res = spawnSync(bash, [script, 'touched', ...wanted], {
+      cwd: root, encoding: 'utf8', windowsHide: true,
+    });
+    if (res.error) {
+      const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
+      return degraded(reason, `${res.error.message} (bash=${bash}, cwd=${root})`);
+    }
+    const stdout = res.stdout || '';
+    if (res.status !== 0) {
+      const key = (stdout + (res.stderr || '')).split('\n').find((l) => l.startsWith('ERROR=')) || '';
+      return degraded('read-failed', key || `delivered.sh exited ${res.status}`);
+    }
+
+    // The same split delivered.sh documents: a line starting with `{` is an
+    // entry, anything else is a KEY=VALUE probe result.
+    const workItems = [];
+    const keys = {};
+    for (const line of stdout.split('\n')) {
+      const l = line.trim();
+      if (!l) continue;
+      if (l.startsWith('{')) {
+        try {
+          const e = JSON.parse(l);
+          workItems.push({
+            id: e.id,
+            kind: 'delivery',
+            answer: e.answer,
+            status: e.status,
+            commit: e.commit ?? null,
+            summary: e.name,
+            matched: e.matched,
+          });
+        } catch (err) { /* a corrupt line is delivered.sh's to report, not ours */ }
+        continue;
+      }
+      const eq = l.indexOf('=');
+      if (eq > 0) keys[l.slice(0, eq)] = l.slice(eq + 1);
+    }
+
+    return {
+      files: wanted,
+      workItems,
+      pages,
+      curatedOnly: Number(keys.CURATED_ONLY || 0),
+    };
   },
 
   /**

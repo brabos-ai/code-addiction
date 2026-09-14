@@ -201,6 +201,60 @@ which is a new line like any other correction.
 6. **Returned order is `live` → `changed` → `superseded` → `gone`, then score DESCENDING, then recency NEWEST FIRST, then id ASCENDING**, and
    the reader applies it — consumers render what they receive and never re-rank.
 
+## The impact question — which deliveries touched a path
+
+`delivered.sh touched <path>...` answers it, in two layers that are labelled on every returned entry and
+never merged into one list.
+
+⛔ **The label is `answer`, never `layer`.** `layer` is already this record's own `product | internal`
+field; writing the answer layer there would overwrite it, and a caller would lose the one thing
+`--layer` filters on.
+
+**The delivery's commit is DERIVED, never stored.** The close-out commits the entry on the branch and
+the merge squashes that branch, so **the commit that introduced an entry's line IS the commit that
+delivered it** — by construction, on both layers, with no field to add and nothing to keep in step:
+
+```bash
+git log --format=%h -S'"id":"<id>"' -- docs/delivered.jsonl | tail -1
+```
+
+⛔ **`commits` cannot answer this and is not asked to.** It holds the BRANCH shas, and a squash makes
+every one of them unreachable from the default branch. Measured on the framework's own repository: the
+shas an entry stores intersect `git log` on `main` at **zero**, for every delivery already merged.
+
+⛔ **The pickaxe reports every commit where the id's occurrence count changed, so take the OLDEST.** A
+corrected entry has two lines — corrections are new lines, per hard ban 6 — and the newer match is the
+correction's own commit, which describes nothing about the delivery.
+
+| `answer` | Where the path came from | What it is worth |
+|---|---|---|
+| `complete` | The derived commit's own diff | Exact and whole. Every file that delivery changed |
+| `curated` | The entry's `items[].at` anchors, each carrying its verified status | A sample — `at` is capped at 5 — but the only file pointer that self-heals, because `verify --repair` reappoints it against the current tree |
+
+⛔ **`matched` has a different shape per layer, and a caller must read `answer` before parsing it.**
+On a `complete` hit it is a list of paths; on a `curated` hit it is a list of `{at, what, find}` anchors.
+One field, two shapes, because the two layers know different things about a hit.
+
+**`CURATED_ONLY` counts the HITS, never the index.** An entry that could not derive its commit and did
+not match anything is not a narrower answer, it is not an answer at all.
+
+**The two are not redundant and must not be flattened into one list.** The complete layer says what
+changed; the curated layer says which change was load-bearing enough to anchor, and whether it is
+still there. A reader that cannot tell them apart will read a five-item sample as a full diff.
+
+**Three cases answer from the curated layer, and they are one fact to a caller: the commit cannot
+answer, the anchors can.** An index line recorded outside
+the normal flow — the close-out's recovery route writes one on `main` after the merge, with a message
+like `chore(delivery-index): record …` — resolves to a commit that touches only `docs/`. That commit
+describes the recording, not the delivery. Such an entry answers from the curated layer alone, and
+`CURATED_ONLY` counts them so a reader knows how much of the index could not answer completely. A
+history git cannot walk, such as a shallow clone, is treated identically: degraded, counted, never an
+error. So is a delivery that genuinely only changed documentation — its commit is honestly `docs/`-only
+and there is no non-docs file for a path query to match, so nothing is lost by routing it the same way.
+
+⛔ **Nothing is repaired to fix this.** Hard ban 6 forbids rewriting a line, and an entry that answers
+from the curated layer is answering honestly rather than failing.
+
 ## Hard bans
 
 1. **No line without all required fields.** Absence is never inferred as a default.

@@ -336,10 +336,26 @@ describe('scenario — "what breaks if I change this"', () => {
 });
 
 describe('scenario — "what do these files belong to"', () => {
-  it('L2.3 touched_by returns the work items AND the pages covering the same file', () => {
+  it('L2.3 touched_by still answers the PAGE half locally, from sources globs', () => {
+    // The work-item half moved to `delivered.sh` (plan 2026-09-14T145149): the
+    // question "which DELIVERY changed this file" lives in the index, not in
+    // any document, and the only thing that ever filled a work item's file set
+    // was a `hotfix-related` attachment — a retired schema this fixture still
+    // carries and nothing writes. The page half never depended on it: a
+    // reference page declares its own `sources` globs.
     const result = actions.touched_by(docs, { files: ['src/auth/refresh.ts'] });
-    expect(result.workItems.map((w) => w.id)).toEqual(['0051H']);
     expect(result.pages.map((p) => p.id)).toEqual(['wiki/backend']);
+  });
+
+  it('L2.3 the work-item half degrades rather than throwing when the script is absent', () => {
+    // This fixture is a bare tree with no `.codeadd/scripts/delivered.sh` and no
+    // git history, which is exactly the shape the delegation must survive. It
+    // reports why and still hands back the page half — withholding a good answer
+    // because the other half could not run is the worse of the two failures.
+    const result = actions.touched_by(docs, { files: ['src/auth/refresh.ts'] });
+    expect(result.workItems).toEqual([]);
+    expect(result.unavailable?.reason).toBe('script-missing');
+    expect(result.pages.length).toBeGreaterThan(0);
   });
 
   it('L2.3 a glob with ** crosses directories and a * does not', () => {
@@ -355,10 +371,12 @@ describe('scenario — "what do these files belong to"', () => {
   });
 
   it('answers for several files at once and says which matched', () => {
+    // Asserted on the PAGE half, for the same reason as above: it is the half
+    // this corpus can answer without an index and a git history.
     const result = actions.touched_by(docs, {
       files: ['src/auth/refresh.ts', 'src/auth/session.ts', 'README.md'],
     });
-    expect(result.workItems[0].matched.sort()).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
+    expect(result.pages[0].matched.sort()).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
   });
 });
 

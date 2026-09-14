@@ -190,7 +190,7 @@ function harvestRelations(ctx) {
   const notes = [];
   const unresolved = [];
   const failed = [];
-  const harvest = { docRefs: 0, related: 0, followUps: 0, impactedFiles: 0, superseded: 0 };
+  const harvest = { docRefs: 0, related: 0, followUps: 0, superseded: 0 };
   let skipped = 0;
 
   if (!fs.existsSync(docsRoot)) return { changes, notes, unresolved, harvest, skipped, failed };
@@ -306,10 +306,7 @@ function harvestRelations(ctx) {
           }
         }
       }
-      // The file list is read by the INDEX, straight from this attachment, so
-      // nothing is written for it here. It is counted because the migration
-      // report is what tells a user the list was found.
-      if (sectionBody(sibling.content, 'Impacted Files')) harvest.impactedFiles += 1;
+
     }
 
     const lines = [...candidates.entries()].map(([target, pick]) =>
