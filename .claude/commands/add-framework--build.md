@@ -17,7 +17,7 @@
 - mention: /add-framework--done
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Executes a plan into working artefacts, in **both layers** — the distributed product layer
 (`framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`, `mcp/`) and the internal development layer
