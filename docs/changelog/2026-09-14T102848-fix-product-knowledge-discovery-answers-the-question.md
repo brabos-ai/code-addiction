@@ -72,6 +72,21 @@ already correct and are untouched.
 - **`graph.js history` and the MCP `history` action** inherit the dead cap. They
   now print how many dead entries were cut rather than showing two in silence.
 
+## A gap this surfaced
+
+Making the path-shaped question explicit is what exposed that it has no answer.
+`touched_by` matches against a work item's file set, and in the docs corpus that
+set is filled by exactly one thing — a `hotfix-related` attachment, a schema
+retired months ago and written by nothing. So `touched_by` returns no work items
+in any project on the current format; only its wiki-page half answers.
+
+`add.review` STEP 2.2 and `add.hotfix` STEP 9.1 both ask it and both receive
+pages only. Neither command caused this and neither is a regression — the same
+query landed in the same half-empty place before, without saying so.
+
+Registered as roadmap item 1.3, which requires the legacy branch deleted rather
+than kept: the coupling that hid this is a live reader propping up a dead schema.
+
 ## Not included
 
 Roadmap item 1.2, the migration command for old installs. `cli/src/migrations.js`
