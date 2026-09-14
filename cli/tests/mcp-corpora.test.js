@@ -169,11 +169,19 @@ describe('F6 — the docs parser decides membership by type:, never by path', ()
     expect(page.sources).toEqual(['src/api/app.ts', 'src/api/features/**', 'src/auth/*.ts']);
   });
 
-  it("takes a brownfield node's file set from related.md Impacted Files", () => {
-    // Decision 36: 18 of 19 measured documents already carry the list, so
-    // `touched_by` answers on day one rather than from the first new delivery.
+  it("does NOT take a file set from related.md — the legacy reader is gone", () => {
+    // Decision 36 filled a work item's file set from a `hotfix-related`
+    // attachment, so `touched_by` answered on the day a brownfield project
+    // upgraded. What it never got was a source for a project on the CURRENT
+    // format: nothing writes that schema, so the set stayed empty forever and
+    // the capability only ever existed for legacy documents.
+    //
+    // Plan 2026-09-14T145149 answers the question from the delivery index
+    // instead, which every project has, and deletes the reader rather than
+    // keeping a branch alive for a retired schema. A `related.md` on disk is a
+    // user's file and stays there; it just feeds nothing.
     const hotfix = corpus.nodes.find((n) => n.id === '0051H');
-    expect(hotfix.files).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
+    expect(hotfix.files).toEqual([]);
   });
 });
 

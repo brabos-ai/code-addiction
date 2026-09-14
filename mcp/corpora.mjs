@@ -193,25 +193,6 @@ export function parseObservations(content) {
 }
 
 /**
- * The file list a brownfield node carries, from `related.md`'s Impacted Files.
- *
- * Decision 36: 18 of 19 measured documents already carry it, so `touched_by`
- * answers on the day a project upgrades rather than from its first new delivery.
- */
-export function parseImpactedFiles(content) {
-  const body = section(content, 'Impacted Files');
-  if (!body) return [];
-  const out = [];
-  for (const line of body.split('\n')) {
-    const match = line.trim().match(/^-\s+`?([^\s`:]+)/);
-    if (!match) continue;
-    const file = match[1].replace(/[.,;]$/, '');
-    if (file && !out.includes(file)) out.push(file);
-  }
-  return out;
-}
-
-/**
  * `{{doc:ID}}` body references with the sentence around each.
  *
  * The richest source in a brownfield corpus and the only one that arrives with
@@ -386,11 +367,6 @@ function loadDocsCorpus(root) {
     // what left a `docs/changelog/CHG[NNNN].md` contributing no edges: that
     // layout has no *-about sibling, so only the part_of line resolves it.
     attachment.ownerId = owner.id;
-    if (attachment.type === 'hotfix-related') {
-      for (const file of parseImpactedFiles(attachment.content)) {
-        if (!owner.files.includes(file)) owner.files.push(file);
-      }
-    }
   }
 
   const { edges, unresolved, malformed } = buildDocsEdges(nodes, attachments, byId);
