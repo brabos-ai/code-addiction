@@ -97,6 +97,25 @@ path a node" in a row of its own.
 every internal F-block — a higher-traffic surface than three of the four commands the plan named. It
 states its two questions now.
 
+## What CI caught after the review
+
+Two checked-in artefacts encoded the shape this delivery removed, and the PR run found both.
+
+`cli/tests/review-no-loops.test.js` asserted two literal `graph.js` calls inside `--build` STEP 7.2 —
+the exact pair F5 deleted on purpose. The intent behind that assertion still holds, so it now pins the
+new mechanism instead: the step states the blast-radius question, names `add-artefact-graph` as the
+resolver, offers `NOT VERIFIED`, and must not go back to naming a verb. A comment records why the old
+form went, so the next reader does not restore it.
+
+`web/public/artefact-graph.mmd` was one line stale — the `mention:` edge F8 added between `--plan` and
+`--brainstorm`. Regenerated with `node scripts/graph.js mermaid --write`.
+
+Neither was reachable from the build's own validation. Every F-block in this plan was internal, and an
+internal block validates on `build.js` plus a clean `framwork/`; the cli suite is required only of a
+`cli` block. Two cli tests pin the content of internal artefacts, so the gap is structural rather than
+an oversight in this run — worth knowing before the next internal-only delivery edits an artefact a
+test reads.
+
 ## Why it matters
 
 A named verb is a decision made at authoring time, for a question nobody has asked yet. It reads as
