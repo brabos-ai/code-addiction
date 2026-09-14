@@ -123,6 +123,16 @@ npx codeadd mcp --corpus=docs --action=<action> --args='<json>'
 
 **Two rows are the ones a discovery step usually wants**, and neither replaces the other: `search` starts from words, `touched_by` starts from paths. A command holding a diff has paths and should not reduce them to keywords first.
 
+**`touched_by` answers in TWO LAYERS, and they are not the same claim.** `complete` comes from the delivery's own commit — every file it changed. `curated` comes from the delivery's anchors, which are capped at five and carry a verified status, so they say which change was load-bearing and whether it is still there.
+
+```
+IF YOU READ A `curated` HIT AS THE DELIVERY'S WHOLE FILE SET:
+  ⛔ DO NOT: Conclude those are the only files it touched
+  ✅ DO: Read `layer` on every hit before acting on it — five anchors are a sample
+```
+
+**The graph says WHICH DELIVERIES touched a path. It does not say what is around that path now.** Where the gitnexus plugin is enabled, that is the question it answers, and it answers it over the code as it stands today rather than over history. It is **additive**: it enriches an answer this step already produced in full, and every leg here works with the plugin absent, which is the normal case since it ships disabled.
+
 ```
 IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
   ⛔ DO NOT: Report it answered
@@ -138,7 +148,9 @@ IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
 | A hit whose first sentence rules it out | Discard it. That sentence is the rejection surface — do not open the document to decide |
 | A hit that survives | Read its `path`. The TL;DR's first sentence is a filter, never the answer |
 | `relations` on a hit | Follow `caused_by` and `depends_on` before proposing anything that touches the same area |
-| `touched_by` work items | These deliveries changed the files in hand. Their `about.md` says why |
+| `touched_by` work items, `layer: complete` | These deliveries changed the files in hand, from the delivery's own commit. Exact and whole |
+| `touched_by` work items, `layer: curated` | The path is one of that delivery's anchors — at most five per delivery, carrying each anchor's verified status. A sample of what mattered, not a diff |
+| `touched_by` `curatedOnly` above zero | That many deliveries could not answer completely, because their index line was recorded outside the normal flow. Narrower coverage, not an error |
 | `touched_by` pages | These wiki pages document those files. They are the SELECT result, already narrowed |
 
 **Status is returned, never filtered here.** Two work items in flight that touch one area are exactly the pair that most needs to see each other. Filter on the field if the command wants to; do not ask this step to hide anything.
