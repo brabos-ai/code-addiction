@@ -188,6 +188,28 @@ describe('L3.1 — each command states its question and gates on a filled answer
     // instead of removing it.
     expect(read('commands', file)).not.toMatch(/--action=/);
   });
+
+  it.each(GRAPH_COMMANDS)('%s pins no action in prose either', (file) => {
+    // `--action=` is not the only way to pin one. Three commands wrote the
+    // action's NAME into a sentence — "run the GRAPH step with `touched_by`",
+    // "`search` ONLY at this step" — which holds a run to one call exactly as
+    // firmly as the flag does, and the flag-only check sailed past all three.
+    //
+    // This matches the SHAPE of a pin, not the action's name. Every action name
+    // collides with an ordinary use somewhere in these files — `path` is a field
+    // on a hit and an argument to an agent, `dependencies` is a column in the
+    // epic schema, `search` and `history` are English words — so a name-based
+    // check flags correct text and teaches the next author to work around it.
+    // What is actually wrong is an instruction that hands the step a call:
+    // "run the GRAPH step with X", or "X ONLY at this step".
+    const body = read('commands', file);
+    const PINS = [
+      /GRAPH step (?:with|using) `\w+`/g,
+      /`\w+` ONLY at this step/g,
+    ];
+    const offenders = PINS.flatMap((re) => [...body.matchAll(re)].map((m) => m[0]));
+    expect(offenders, `${file} hands the GRAPH step a call:\n${offenders.join('\n')}`).toEqual([]);
+  });
 });
 
 describe('L3.2 — an empty answer and a missing route are two outcomes, not one', () => {

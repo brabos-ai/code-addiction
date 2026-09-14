@@ -180,15 +180,24 @@ DO NOT write doc contents yet — the schema is loaded and applied in STEP 11.
 
 Load the **INDEX and GRAPH steps of `{{skill:add-knowledge-discovery/SKILL.md}}` ALONE** — steps 1 and 2 of its procedure, nothing below them. That skill's own *When NOT to Use* records this exemption: the wiki stays out of STEPs 4-6, the two document-record steps do not.
 
-**`RELATED_WORK` destination:** the ranked candidate list handed to the two history agents in 4.3. A `caused_by` edge already recorded on a past hotfix is the cheapest answer to "has this broken before" this command can get.
+**GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** the ranked candidate list handed to the two history agents in 4.3. A `caused_by` edge already recorded on a past hotfix is the cheapest answer to "has this broken before" this command can get.
 
-⛔ **`search` ONLY at this step. `touched_by` takes a file list and there is not one yet.** STEP 4 runs before the investigation and before the fix, so no file has changed. The file-overlap half of the graph belongs at STEP 9.1, where the fix exists.
+⛔ **The question here is phrased over WORDS, never over paths.** STEP 4 runs before the investigation and before the fix, so no file has changed and a question about paths has no input to take. The path-shaped question belongs at STEP 9.1, where the fix exists.
+
+```
+IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
+  ⛔ DO NOT: Carry on as though the step ran
+  ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
+         or with `NOT VERIFIED` plus the reason when the graph could not be reached
+```
 
 Query `delivered.sh` with the bug's keywords and **`--no-verify`**:
 
 ```bash
 bash .codeadd/scripts/delivered.sh read "<bug keywords>" --no-verify
 ```
+
+**Read `MATCHED_LIVE`, `MATCHED_DEAD`, `RETURNED_LIVE` and `RETURNED_DEAD`, not just the entries.** The read cuts in two buckets and the counts are what say whether it cut anything. `MATCHED_DEAD` above `RETURNED_DEAD` means a `gone` entry was dropped — and a `gone` entry in a bug's area is the answer that this was tried and abandoned, which is the most useful thing triage can learn here.
 
 ```
 IF THE INDEX READ OMITS --no-verify:
@@ -340,7 +349,7 @@ All three judges receive the SAME input set:
 - the change under review — this branch's diff against its base, and the paths it touches
 - the confirmed root cause from STEP 7
 - the **blast radius** retained in STEP 5.2 — related feature IDs and suspicious commits, as identifiers plus a one-line reason each. Pass identifiers, NEVER inlined document content
-- **the file-overlap half of the graph.** The fix exists now, so a file list exists now. Run `add-knowledge-discovery`'s GRAPH step with `touched_by` over this branch's changed paths and add the work items it returns to the blast radius above, as identifiers with one line each. STEP 4.1 could not do this: it runs before the investigation and before the fix, so nothing had changed yet
+- **the file-overlap half of the graph.** The fix exists now, so a file list exists now. **GRAPH question:** which delivered work items touch the files this fix changed? It is phrased over PATHS, which is what STEP 4.1 could not do. Run `add-knowledge-discovery`'s GRAPH step over this branch's changed paths and resolve the question in its action table and add the work items it returns to the blast radius above, as identifiers with one line each. STEP 4.1 could not do this: it runs before the investigation and before the fix, so nothing had changed yet
 - the `WIKI:` fields from STEP 1
 
 ### 9.2 Dispatch

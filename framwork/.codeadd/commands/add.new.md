@@ -105,7 +105,7 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
    - **Input:** past-features.md + skeleton about.md + feature request + selected wiki pages (if any, see Knowledge Base Check below)
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
    - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its **INDEX step, its GRAPH step and then its wiki steps**, in that order.
-     - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`.
+     - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`. **GRAPH question:** does this request already exist as delivered work, and what would it depend on? Resolve it in the skill's action table; do not name an action here.
      - **Then the wiki.** This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
 
 ```
@@ -115,7 +115,14 @@ IF THE WIKI IS ABSENT:
          STEP 6.1 writes its relations from
 ```
 
-   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
+   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived.
+```
+IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
+  ⛔ DO NOT: Carry on as though the step ran
+  ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
+         or with `NOT VERIFIED` plus the reason when the graph could not be reached
+```
+ Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
 
 <!-- plugin:gitnexus:graph-map -->
