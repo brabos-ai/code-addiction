@@ -19,8 +19,36 @@ the layer(s) it touches.
 - Scan past deliveries (`docs/features`, changelogs) and group them — by app, group or category, tree or graph: the shape is still open, and choosing it is the first half of this item.
 - Ships as an enabled feature, not part of the default flow.
 - When the gitnexus plugin is enabled, the grouping also points at what to search in gitnexus per group.
-- **Deliberately deferred past item 4.** Item 4.1 repairs the `add-knowledge-discovery` step this command would consult on its first run, so building the migration first would hang it on a lookup that answers wrong. The usual "finish everything above before starting" rule is suspended for that reason, once, and recorded here rather than left as an unexplained skip.
+- **Deliberately deferred past item 4 and past 1.3.** Item 4.1 repairs the `add-knowledge-discovery` step this command would consult on its first run, and 1.3 decides where a work item's file set lives — which is half of what this migration would have to write. Building the migration before either one would hang it on a lookup that answers wrong and on a destination nobody has chosen. The usual "finish everything above before starting" rule is suspended for those two reasons, and recorded here rather than left as an unexplained skip.
 - **Done when:** running the command on a project whose deliveries declare no relationship produces the initial grouped structure with relationships filled, and add.new/add.plan/add.hotfix use it as the investigation entry point.
+
+### 1.3 — The impact question: which deliveries touched this file
+
+**Scope:** product
+**TLDR:** "Who has already changed this file?" has no working answer in the current document format. The only thing that ever filled a work item's file set is a schema that was retired, and a deliberate coupling in the brownfield migration keeps that dead schema being read instead of converting it. Build the capability properly and delete the legacy path — no compatibility branch.
+
+- **Do this BEFORE 1.2.** Two commands that already shipped ask this question and get half an answer, while 1.2 is a migration for projects that have not adopted the format yet. The usual top-down order is suspended for the same kind of reason 1.2's own deferral is recorded.
+
+- **What is broken, verified 2026-09-14.** `mcp/engine.mjs:405` answers `touched_by` by matching the query's paths against `node.files`. In the **docs** corpus, `mcp/corpora.mjs:389` is the ONLY thing that ever populates `node.files`, and it fires for exactly one document type:
+  ```js
+  if (attachment.type === 'hotfix-related') {
+    for (const file of parseImpactedFiles(attachment.content)) { ... }
+  }
+  ```
+  `hotfix-related` is marked `### hotfix-related (retired)` at `add-doc-schemas/references/fix.md:52`. No command and no template writes it. **So in any project on the current format, `touched_by` returns `workItems: []`.** Its `pages` half still works, because a wiki page's `sources` globs are unrelated to this. The **artefacts** corpus is unaffected: there `files` comes from the node's own path (`corpora.mjs:512`).
+
+- **⛔ No backward compatibility, and no second path. This is the requirement, not a preference.** `cli/src/migrations.js:309-311` states the coupling in its own words: *"The file list is read by the INDEX, straight from this attachment, so nothing is written for it here. It is counted because the migration report is what tells a user the list was found."* That is a live reader kept alive for a retired schema, and it is why the current format was never given a file set of its own — the legacy path answered just well enough that nobody noticed the new one was missing. The work is: build the capability for the current format, **convert** a legacy `Impacted Files` section once in the migration, and **delete** `corpora.mjs:389`, `parseImpactedFiles` and the migration's count-and-point. A legacy document is migrated, never read forever.
+
+- **The shape is open, and the honest question is where a work item's file set lives.** Three candidates, none chosen:
+  - **`docs/delivered.jsonl` `items[].at`** already holds it — up to five paths per delivery, each with a line saying what changed there. It answers delivery → files today. The objection to reading it backwards is recorded in `delivered.sh` itself: `--repair` rewrites `at` on every anchor move, so matching on it can return an entry on the strength of a stale pointer. That objection was written about TEXT SEARCH; a typed file lookup is a different operation and needs its own answer, not an inherited one.
+  - **The `about.md` records its own file set**, written at close-out, where the diff is already in hand.
+  - **Git is the floor.** `git log --follow <path>` answers "who touched this" with no index and no plugin, always. Whatever is built must degrade to it rather than to nothing.
+
+- **Two shipped commands are waiting on this.** `add.review` STEP 2.2 hands its judges "the deliveries that last changed these files" and currently hands them wiki pages only; `add.hotfix` STEP 9.1 asks the same question of the fix's own diff. Both were made explicit by `2026-09-14T102848-PLAN--product-knowledge-discovery-answers-the-question`, which is how the gap surfaced — neither command caused it.
+
+- **This is the umbrella's subtopic 003**, `docs/brainstorming/2026-09-12T075635-delivered-work-relationships-000-umbrella.md`, which called it defect 2 — *"The impact question has no verb"* — and reserved a design that was never written. Item 1.1 closed without it.
+
+- **Done when:** `touched_by --corpus=docs` returns the work items for a file in a project written entirely in the current format, with no `hotfix-related` document anywhere; `grep -rn "hotfix-related" mcp/ cli/src/` returns nothing; the migration converts a legacy `Impacted Files` section into the new home and says so in its report instead of counting it; `add.review` STEP 2.2 and `add.hotfix` STEP 9.1 each receive work items, not only pages; and the behaviour with no index at all is a documented git fallback rather than an empty answer.
 
 ## 2. Obsolescence and backward compatibility
 
