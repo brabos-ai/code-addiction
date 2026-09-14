@@ -119,10 +119,16 @@ four clauses does not.
 ### What the Report Never Covers
 
 ⛔ **The report never narrates your own mistakes, and never how a reviewer corrected them.** Not a
-retry, not a wrong turn taken and backed out of, not a fix a review verdict asked for.
+retry, not a wrong turn taken and backed out of, not the story of a fix a review verdict asked for.
 
 That record already exists — the plan changelog carries it, and it is where someone auditing the run
 goes looking. Repeating it here costs the reader the space an open item would have used.
+
+✅ **This binds the seven blocks. It does not touch the metadata a command demands after them.** A
+command that requires a review verdict and a one-line list of applied fixes still prints exactly
+that, in its metadata, where it is a fact rather than a story. The self-check below already rules on
+which wins: the command's own mandatory facts are all present, none traded for the shape. The ban is
+about narrating in the report, never about suppressing a line a command mandates.
 
 **The closing message answers three things: what was decided, what is still open, and what needs
 watching.** A line grading your own performance answers none of them, and a reader scanning for the
@@ -132,7 +138,7 @@ second and third has to skip past it to get there.
 
 | Banned | Use instead |
 |--------|-------------|
-| Narrating your own error, a retry, or a fix a reviewer asked for | Nothing. The plan changelog holds it — see What the Report Never Covers |
+| Narrating your own error, a retry, or the story of a fix a reviewer asked for | Nothing in the blocks. A verdict and a one-line fixes list a command mandates still print, in the metadata — see What the Report Never Covers |
 | `T03`, `RF01`, `RN02` carrying the meaning | State the change; the id goes in parentheses at most |
 | Describing the artefact instead of the change ("the plan gains a section on X") | "X is added to `path/file`" |
 | "Improves consistency", "more robust" | The concrete change and what it causes |
