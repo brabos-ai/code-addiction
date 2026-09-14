@@ -446,22 +446,38 @@ engine offers.
 
 ### 7.2 Ask the Graph What the Subagents Cannot See
 
-The auditors read the plan and the diff. Neither shows what depends on a file nobody opened.
+The auditors read the plan and the diff. Neither shows what depends on a file nobody in this delivery
+opened.
 
-```bash
-node scripts/graph.js impact <artefact-name> --depth 1
-node scripts/graph.js history <artefact-name> --layer product|internal
-```
+**The question, for every artefact this delivery touched:** what depends on it that this delivery
+neither changed nor named — and has it shipped before and been dropped?
 
-**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see.** The calls
-above are the ones this step needs, not the whole surface — load the skill when the question is not
-one of them, or when an answer has to be qualified.
+**LOAD `add-artefact-graph` and resolve both halves to their verbs there.** ⛔ DO NOT name a verb from
+memory. The skill owns which verb answers which question, when one query is not enough, and the
+standing list of what no query reaches.
 
-**Depth 1, not the unbounded run.** The command layer cross-references itself densely, so the
-transitive closure saturates and a hub becomes indistinguishable from a leaf.
+**Grade on direct dependants at depth 1, not on the unbounded run.** The command layer
+cross-references itself densely, so the transitive closure saturates and a hub becomes
+indistinguishable from a leaf.
 
 A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
 entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
+
+```
+IF THIS STEP'S ANSWER IS NOT IN THE AUDIT REPORT AT 7.3:
+  ⛔ DO NOT: Proceed to STEP 8
+  ✅ DO: Name what the graph returned for every artefact this delivery touched, or name it
+         NOT VERIFIED
+
+IF YOU HAVE NO ROUTE TO THE GRAPH:
+  ⛔ DO NOT: Report the question as answered, and DO NOT reconstruct the answer with grep
+  ✅ DO: Report NOT VERIFIED, and say the route was missing
+```
+
+⛔ **This step writes no document, so the report line is the only thing it can be held to.** Every
+other gated question in this ecosystem blocks on a file it must fill; this one blocks on naming its
+answer where the audit is judged. That is a weaker guarantee, and it is stated rather than glossed —
+a silent 7.2 is indistinguishable from one that found nothing.
 
 ### 7.3 Judge Every Finding, Then Apply
 
