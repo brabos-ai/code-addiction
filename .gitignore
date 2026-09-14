@@ -164,3 +164,8 @@ cli/src/mcp/
 # it would put one agent's notes into another's review diff, under a commit
 # message that does not describe them.
 .claude/agent-memory/
+
+# Vitest's own cache, created under cli/ by any `npx vitest run`. Not
+# configured anywhere — it is the runner's default — and it is per machine, so
+# it belongs to nobody's diff.
+cli/.vitest/
