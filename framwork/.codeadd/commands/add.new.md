@@ -21,7 +21,7 @@
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 > **The closing report at `## Completion` is exempt** — it reports in the shape `add-final-report`
 > owns, and a 20-word stub is not that shape.
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Full feature discovery command BEFORE implementation.
