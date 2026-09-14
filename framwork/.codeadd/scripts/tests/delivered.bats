@@ -202,6 +202,60 @@ node_free_path() {
   [[ "$output" == *"REFUSED=find-absent"* ]]
 }
 
+@test "L1.2: two terms in the opposite order still match" {
+  # The haystack joins id, name, words, node, what[] and find[] with spaces, so
+  # the fixture keeps the two terms apart in the JOINED string, not merely in
+  # different fields — adjacent fields would make them contiguous by accident.
+  src src/live.ts 'const liveThing = 1;'
+  commit_all
+  write_index "$(entry 0001F live 'alpha beta omega' 'zzz' src/live.ts liveThing)"
+  run bash "$SCRIPTS_DIR/delivered.sh" read "omega alpha" --no-verify
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"id":"0001F"'* ]]
+}
+
+@test "L1.2: two terms drawn from different fields match" {
+  src src/live.ts 'const liveThing = 1;'
+  commit_all
+  write_index "$(entry 0001F live 'alpha' 'zzz omega' src/live.ts liveThing)"
+  run bash "$SCRIPTS_DIR/delivered.sh" read "alpha omega" --no-verify
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"id":"0001F"'* ]]
+}
+
+@test "L1.2: an entry hitting every term outranks one hitting a single term" {
+  # Same status and same ts, so without a score the tie breaks on id and 0001F
+  # would lead. With one, the three-hit entry leads despite its id sorting last.
+  src src/live.ts 'const liveThing = 1;'
+  commit_all
+  write_index     "$(entry 0001F live 'alpha' 'zzz' src/live.ts liveThing)"     "$(entry 0009F live 'alpha' 'zzz beta yyy gamma' src/live.ts liveThing)"
+  run bash "$SCRIPTS_DIR/delivered.sh" read "alpha beta gamma" --no-verify
+  [ "$status" -eq 0 ]
+  [ "$(returned_ids | head -1)" = "0009F" ]
+}
+
+@test "L1.2: an entry matching no term at all is absent from both buckets" {
+  src src/live.ts 'const liveThing = 1;'
+  commit_all
+  write_index "$(entry 0001F live 'alpha' 'zzz' src/live.ts liveThing)"
+  run bash "$SCRIPTS_DIR/delivered.sh" read "qqqq wwww" --no-verify
+  [ "$status" -eq 0 ]
+  [ "$(key MATCHED_LIVE)" = "0" ]
+  [ "$(key MATCHED_DEAD)" = "0" ]
+  [ "$(json_lines | wc -l | tr -d ' ')" = "0" ]
+}
+
+@test "L1.2: items[].at stays out of the haystack even under per-term matching" {
+  # --repair rewrites `at` on every anchor move, so a query must never hit it.
+  src src/live.ts 'const liveThing = 1;'
+  commit_all
+  write_index "$(entry 0001F live 'alpha' 'zzz' src/uniquepathmarker.ts liveThing)"
+  run bash "$SCRIPTS_DIR/delivered.sh" read "uniquepathmarker" --no-verify
+  [ "$status" -eq 0 ]
+  [ "$(key MATCHED_LIVE)" = "0" ]
+  [ "$(key MATCHED_DEAD)" = "0" ]
+}
+
 @test "L1.2: results are pre-sorted live then changed then superseded then gone" {
   src src/live.ts 'const liveThing = 1;'
   src src/chg.ts 'const changedThing = 1;'
@@ -227,35 +281,72 @@ node_free_path() {
   [ "$status" -eq 0 ]
   [[ "$output" == *'"id":"0004F"'* ]]
   [ "$(json_lines | wc -l | tr -d ' ')" = "2" ]
+  [ "$(key MATCHED_LIVE)" = "1" ]
+  [ "$(key MATCHED_DEAD)" = "1" ]
+  [ "$(key RETURNED_DEAD)" = "1" ]
 }
 
-@test "L1.2: read caps at ten by default and the cap is visible in the output" {
+@test "L1.2: the read returns five live and two dead, and counts each bucket" {
   src src/live.ts 'const liveThing = 1;'
   commit_all
   mkdir -p docs; : > "$INDEX"
   local i
   for i in $(seq 1 12); do
-    entry "00${i}F" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
-    printf '\n' >> "$INDEX"
+    entry "L${i}" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
+    printf '
+' >> "$INDEX"
+  done
+  for i in $(seq 1 3); do
+    entry "D${i}" gone "q dead $i" "q dead" src/gone.ts goneThing >> "$INDEX"
+    printf '
+' >> "$INDEX"
   done
   run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify
   [ "$status" -eq 0 ]
-  [ "$(json_lines | wc -l | tr -d ' ')" = "10" ]
-  [ "$(key MATCHED)" = "12" ]
-  [ "$(key RETURNED)" = "10" ]
-  [ "$(key LIMIT)" = "10" ]
+  [ "$(key MATCHED_LIVE)" = "12" ]
+  [ "$(key MATCHED_DEAD)" = "3" ]
+  [ "$(key RETURNED_LIVE)" = "5" ]
+  [ "$(key RETURNED_DEAD)" = "2" ]
+  [ "$(json_lines | wc -l | tr -d ' ')" = "7" ]
 }
 
-@test "L1.2: --limit overrides the default cap" {
+@test "L1.2: --limit sets the live cap and leaves the dead cap alone" {
   src src/live.ts 'const liveThing = 1;'
   commit_all
   mkdir -p docs; : > "$INDEX"
   local i
-  for i in $(seq 1 5); do entry "00${i}F" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"; printf '\n' >> "$INDEX"; done
-  run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify --limit 2
+  for i in $(seq 1 12); do
+    entry "L${i}" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
+    printf '
+' >> "$INDEX"
+  done
+  for i in $(seq 1 3); do
+    entry "D${i}" gone "q dead $i" "q dead" src/gone.ts goneThing >> "$INDEX"
+    printf '
+' >> "$INDEX"
+  done
+  run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify --limit 1
   [ "$status" -eq 0 ]
-  [ "$(json_lines | wc -l | tr -d ' ')" = "2" ]
-  [ "$(key LIMIT)" = "2" ]
+  [ "$(key RETURNED_LIVE)" = "1" ]
+  [ "$(key RETURNED_DEAD)" = "2" ]
+  [ "$(json_lines | wc -l | tr -d ' ')" = "3" ]
+}
+
+@test "L1.2: unused dead slots are never backfilled with live entries" {
+  src src/live.ts 'const liveThing = 1;'
+  commit_all
+  mkdir -p docs; : > "$INDEX"
+  local i
+  for i in $(seq 1 12); do
+    entry "L${i}" live "q entry $i" "q entry" src/live.ts liveThing >> "$INDEX"
+    printf '
+' >> "$INDEX"
+  done
+  run bash "$SCRIPTS_DIR/delivered.sh" read "q" --no-verify
+  [ "$status" -eq 0 ]
+  [ "$(key RETURNED_LIVE)" = "5" ]
+  [ "$(key RETURNED_DEAD)" = "0" ]
+  [ "$(json_lines | wc -l | tr -d ' ')" = "5" ]
 }
 
 @test "L1.2: --layer filters" {
