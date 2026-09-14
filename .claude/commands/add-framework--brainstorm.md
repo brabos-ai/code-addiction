@@ -279,7 +279,15 @@ Before proceeding to exploration, confirm:
 
 ### 4.1 Conversational Exploration (Adapted from superpowers:brainstorming)
 
-Guide user through these sections (DO NOT skip any):
+**Which sections run is decided by STEP 3's routing table, not here.** That table is the newer,
+deliberate design and it governs STEPS 3 through 7; the list below is the `architectural` path's
+full set.
+
+| Path | Sections below |
+|---|---|
+| **architectural** | All eight. ⛔ DO NOT skip any |
+| **bounded** | `Scope`, `Ecosystem Impact` and `Key Decisions` — the three the short design in chat has to state. The rest are asked only where the conversation raises them |
+| **spike** | None as a checklist. A spike states a question and a probe, and reports a recommendation |
 
 ```
 [ ] Context & Motivation — why this idea matters
@@ -312,14 +320,22 @@ Weave the discovery agent report (from STEP 1.2) into the conversation naturally
 
 ### 4.4 Validation Checkpoint
 
-Before STEP 5:
-- [ ] Every section has a clear answer (no "maybe", no "TBD")
-- [ ] No contradictions between sections
-- [ ] User has approved the summary
-- [ ] Scope is explicit (includes + excludes both stated)
-- [ ] Ecosystem impact is identified — `### 4.5` then asks who calls each artefact in it
+**A checkbox binds only where its section ran.** STEP 3's table decides that, so a path that never
+opened a section is not blocked by the box that checks it — the box is unmet, not failed.
 
-If ANY checkbox fails → return to relevant section and continue exploring.
+Before STEP 5:
+- [ ] Every section that ran has a clear answer (no "maybe", no "TBD")
+- [ ] No contradictions between the sections that ran
+- [ ] User has approved the summary — **all three paths**, and no path skips it
+- [ ] Scope is explicit (includes + excludes both stated) — **architectural and bounded**
+- [ ] Ecosystem impact is identified — **architectural and bounded**; `### 4.5` then asks who calls
+      each artefact in it
+
+If a checkbox that binds this path fails → return to the relevant section and continue exploring.
+
+⛔ **The approval box binds every path.** A spike reports a recommendation and a bounded design is
+presented in chat; both are approved by the user before STEP 7, and neither is a document the user
+can read later instead.
 
 ### 4.5 Ask Who Calls Every Artefact This Design Changes [GATE]
 
