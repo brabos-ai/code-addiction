@@ -93,13 +93,15 @@ command interprets them as `block` — the asymmetry is deliberate and unchanged
 Collect ALL rows. Do NOT stop here even on a `block` failure; the user gets
 every problem and its remedy at once, after Phase B.
 
-### 8.3 Resolve QA scope
+### 8.3 Reconcile QA scope
 
-The absorbed QA loops over the **in-scope `SCOPE_DIR`s**, reconciling this
-command's feature/branch scope with `qa-evidence.sh`'s per-scope shape:
+The absorbed QA loops over the **in-scope `SCOPE_DIR`s** already resolved by
+**STEP 2.2 item 4d**, which runs whether or not this feature is enabled.
 
-- Epic with subfeatures → one `SCOPE_DIR` per in-scope `SFxx` under `FEATURE_DIR/subfeatures/`.
-- Simple feature → `SCOPE_DIR = FEATURE_DIR`.
+⛔ **DO NOT re-derive them here.** STEP 11.3 writes `${REVIEW_SCOPE}` into a
+mandatory frontmatter field from the ungated body, so the scope cannot belong
+to a step that ships conditionally. What this step adds is the reconciliation
+with `qa-evidence.sh`'s per-scope shape, nothing more.
 
 SET `DESIGN_FILE` per `SCOPE_DIR` using the `feature-design` **Location** rule in
 `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first,

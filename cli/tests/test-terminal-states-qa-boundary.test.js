@@ -297,6 +297,43 @@ describe('L2 — integration', () => {
     expect(featureHalf, 'the feature half still names only authoring and correction')
       .toMatch(/judge(d|ment)/i);
   });
+
+  // THE LEVEL THAT WAS MISSING, AND THE ONE THE REVIEW NEEDED.
+  //
+  // L2.1 asserts the three STEP 8/9/10 HEADINGS leave the base command. It says
+  // nothing about the body that stays behind, and twelve lines there went on
+  // pointing at those steps by number — one of them, `${REVIEW_SCOPE}`, a
+  // MANDATORY frontmatter field of every review document, defined only inside a
+  // step that ships conditionally. With qa-pipeline off the ungated body sent the
+  // reader to steps the file does not contain.
+  //
+  // The rule is attribution, not absence: a base-command line MAY name one of
+  // those steps as long as the same line names the feature that supplies it, so a
+  // reader on the feature-off branch is told the step is not there. That is the
+  // shape F26 wrote by hand and this level now enforces for every line.
+  it('L2.8 every STEP 8/9/10 pointer left in the base command names the feature that supplies it', () => {
+    const src = read('commands/add.review.md');
+    const offenders = [];
+    for (const [line] of src.matchAll(/^.*STEP (?:8|9|10).*$/gm)) {
+      if (/qa-pipeline/.test(line)) continue;
+      offenders.push(line.trim().slice(0, 90));
+    }
+    expect(offenders, 'ungated lines point at steps the feature may not supply').toEqual([]);
+  });
+
+  // REVIEW_SCOPE is the one that breaks a document rather than confusing a reader,
+  // so it gets its own assertion rather than riding on L2.8's line scan.
+  it('L2.9 the review scope is resolved in the ungated body, not in a QA step', () => {
+    const src = read('commands/add.review.md');
+    const frag = read('fragments/qa-pipeline/add.review.md');
+
+    expect(src, 'REVIEW_SCOPE is still written into the review frontmatter')
+      .toContain('scope: ${REVIEW_SCOPE}');
+    expect(src, 'the ungated body does not resolve REVIEW_SCOPE')
+      .toMatch(/Review scope \(`SCOPE_DIR`, `REVIEW_SCOPE`\)/);
+    expect(frag, 'the fragment took ownership of the scope back')
+      .not.toMatch(/### 8\.3 Resolve QA scope/);
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -20,10 +20,12 @@
 -->
 
 <!--
-Five entries left this block with the QA steps themselves — the QA skill and
-its coordinator reference, the two judges, and the setup command. STEPs 8, 9
-and 10 now arrive from fragments/qa-pipeline/, which declares them, and the
-phantom-edge gate is what caught them still being declared here.
+Four entries left this block with the QA steps themselves — the QA skill, its
+coordinator reference, and the two judges. The setup command STAYS declared:
+the base body still names it in STEP 11.1's remedy for both gate states, so
+removing it would dangle. STEPs 8, 9 and 10 now arrive from
+fragments/qa-pipeline/, which declares them, and the phantom-edge gate is what
+caught them still being declared here.
 
 ⛔ DO NOT name them in this comment. proseOf() strips only the `uses:` block,
 so every other HTML comment is read as prose — spelling them out here
@@ -182,7 +184,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 
 | Step | Action | Condition |
 |------|--------|-----------|
-| Collect data | Build: STEP 6. Spec: STEP 3. Scores: STEP 5. Gates: STEP 7. QA: STEP 10. |
+| Collect data | Build: STEP 6. Spec: STEP 3. Scores: STEP 5. Gates: STEP 7. QA: the `qa-pipeline` judgement step, when that feature is enabled. |
 | Build table | Quality Gate Report (see STEP 11.1) |
 | Resolve NNN | Highest existing `docs/features/${FEATURE_ID}/review-NNN.md` + 1; `001` when none. **One sequence per feature**, flat at the feature-directory root |
 | Write report | `docs/features/${FEATURE_ID}/review-NNN.md` per the `review` schema, with all consolidated findings and the `## Fix Routing` union |
@@ -216,7 +218,7 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT stage files silently | Pre-Review Setup (STEP 1) | Ask user permission first via AskUserQuestion |
 | Do NOT USE Edit or Write on application code | Any point in workflow | Emit a `## Fix Routing` row; `/add.build` applies it |
 | Do NOT instruct a dispatched agent to fix anything | Reviewer or judge dispatch | Dispatch read-only; collect findings |
-| Do NOT dispatch the QA judges | STEP 8 preflight has a failed `block` row | Report the consolidated diagnosis and its remedy |
+| Do NOT dispatch the QA judges | the `qa-pipeline` preflight has a failed `block` row (that row exists only when the feature is enabled) | Report the consolidated diagnosis and its remedy |
 | Do NOT run `qa-evidence.sh promote` | Any point in workflow | Promotion belongs to `/add.done` alone |
 
 ---
@@ -290,8 +292,9 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
 4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add-doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
-4b. **QA baseline (`QA_BASELINE`) — resolve now, emit in 8.2.** Run `bash .codeadd/scripts/qa-evidence.sh working-baseline "${FEATURE_DIR}"` and parse `BASELINE`. The script returns the highest WORKING run independently per scope (`feature`, `SFxx`), or `none`; final snapshots never enter a new review baseline. Preserve the returned scope/run pairs as the promotion manifest `/add.done` consumes. Resolve it from the filesystem at review time — never copy it from a previous review document, author it by hand, reformat it, or convert it to a filesystem path. `QA_BASELINE` IS the script's stdout, verbatim, and nothing else. ⛔ DO NOT write a path like `_tests/run-001` in place of the script's `feature:run-001` — that exact substitution once passed review and `/add.done` rejected the whole epic at merge time.
+4b. **QA baseline (`QA_BASELINE`) — resolve now; the `qa-pipeline` evidence step emits it when the feature is enabled.** Run `bash .codeadd/scripts/qa-evidence.sh working-baseline "${FEATURE_DIR}"` and parse `BASELINE`. The script returns the highest WORKING run independently per scope (`feature`, `SFxx`), or `none`; final snapshots never enter a new review baseline. Preserve the returned scope/run pairs as the promotion manifest `/add.done` consumes. Resolve it from the filesystem at review time — never copy it from a previous review document, author it by hand, reformat it, or convert it to a filesystem path. `QA_BASELINE` IS the script's stdout, verbatim, and nothing else. ⛔ DO NOT write a path like `_tests/run-001` in place of the script's `feature:run-001` — that exact substitution once passed review and `/add.done` rejected the whole epic at merge time.
 4c. **Reviewed-tree fingerprint (`REVIEW_TREE_BEFORE`).** Compute a deterministic digest over every tracked or nonignored untracked file in the working tree, including each relative path and current content. Represent deleted tracked files explicitly. Exclude only this review's bookkeeping paths: `${FEATURE_DIR}/review-*.md`, `${FEATURE_DIR}/tasks.md`, and `${FEATURE_DIR}/iterations.jsonl`. Store the digest before dispatching reviewers.
+4d. **Review scope (`SCOPE_DIR`, `REVIEW_SCOPE`) — resolve now, unconditionally.** An epic with subfeatures gives one `SCOPE_DIR` per in-scope `SFxx` under `FEATURE_DIR/subfeatures/`; a simple feature gives `SCOPE_DIR = FEATURE_DIR`. `REVIEW_SCOPE` is the YAML list of those scopes — `[SF01, SF02]`, or `[feature]` for a simple feature. ⛔ **This runs whether or not `qa-pipeline` is enabled.** STEP 11.2's `Scope` column and STEP 11.3's mandatory `scope:` frontmatter field both read it, and both are ungated; the QA steps consume the same value when the feature supplies them, and own none of it.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
@@ -625,7 +628,7 @@ Recompute `REVIEW_TREE_AFTER` with the exact STEP 2.2 fingerprint procedure and
 exclusions.
 
 ⛔ IF `REVIEW_TREE_AFTER != REVIEW_TREE_BEFORE`:
-  ⛔ DO NOT continue to STEP 8
+  ⛔ DO NOT continue past this self-check
   ⛔ DO NOT write `review-NNN.md`
   ✅ DO report that this run modified the tree it was judging — a contract
      violation, not a recoverable state. Name the changed paths and STOP.
@@ -666,7 +669,7 @@ Collect results from all previous steps:
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
 | Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if CLAUDE.md has no validation_gates) |
-| QA Judgement | ✅ PASSED / ⚠️ DEGRADED / ❌ BLOCKED / ⊘ NOT SET UP / ⊘ FEATURE OFF | Per-scope roll-up from STEP 10. **⊘ FEATURE OFF** when `qa-pipeline` is disabled — this command carries no QA steps at all in that state; remedy: `codeadd features enable qa-pipeline`, then `/add.qa-setup`. **⊘ NOT SET UP** when the feature is on but the receipt gate is unmet |
+| QA Judgement | ✅ PASSED / ⚠️ DEGRADED / ❌ BLOCKED / ⊘ NOT SET UP / ⊘ FEATURE OFF | Per-scope roll-up from the `qa-pipeline` judgement step, when that feature supplied one. The two ⊘ values are distinguished below |
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 
 > Reviewed at: ${TIMESTAMP}
@@ -689,7 +692,7 @@ correction contract `/add.build` consumes — there is no second path.
 
 It is the **union** of:
 
-1. every in-scope `SCOPE_DIR`'s `qa-validation-NNN.md` `## Fix Routing` rows (that per-scope schema section is unchanged and stays where it is);
+1. every in-scope `SCOPE_DIR`'s `qa-validation-NNN.md` `## Fix Routing` rows, where `qa-pipeline` produced one — none exist with the feature off, and the union is then items 2 to 4 (that per-scope schema section is unchanged and stays where it is);
 2. code-review findings from STEP 5;
 3. build failures from STEP 6 (Gate 5);
 4. red validation gates on touched files from STEP 7 (Gate 6).
@@ -714,7 +717,8 @@ correction flow already uses — database → backend → frontend → e2e.
 
 Rows carried up from a per-scope report keep their route and their citation
 state: a `@ux-agent` design-spec row missing its contract-line citation stays
-flagged **presented, never dispatched**.
+flagged **presented, never dispatched**. No such row exists with `qa-pipeline`
+off, because no judge ran to author one.
 
 ### 11.3 Write `review-NNN.md` (Gate 7)
 
@@ -753,7 +757,7 @@ status: open
 [RF/RN status from the backend reviewer]
 
 ## QA Judgement
-[per-scope roll-up from STEP 10 + links to each qa-validation-NNN.md]
+[per-scope roll-up from the qa-pipeline judgement + links to each qa-validation-NNN.md; with the feature off, the gate value from STEP 11.1 and nothing else]
 
 ## Fix Routing
 [the union table from 11.2]
@@ -770,10 +774,11 @@ reorder them. `NNN` in `id` is the number resolved at the top of this substep.
 `status` is written `open` here and ONLY `{{cmd:add.build}}` ever sets it to
 `finalized`, exactly once, when it appends the Resolution Annex.
 
-`${REVIEW_SCOPE}` is the YAML list of in-scope `SFxx` resolved in 8.3 — every
-`SCOPE_DIR` this round covers, e.g. `[SF01, SF02]` — or `[feature]` when
-`SCOPE_DIR = FEATURE_DIR` on a simple feature. This mirrors `qa-validation`'s
-`scope` field.
+`${REVIEW_SCOPE}` is resolved in **STEP 2.2 item 4d** and is always available —
+the YAML list of every `SCOPE_DIR` this round covers, e.g. `[SF01, SF02]`, or
+`[feature]` on a simple feature. This mirrors `qa-validation`'s `scope` field.
+⛔ DO NOT look for it in a QA step: this field is mandatory in every review
+document, and a review written with `qa-pipeline` off must still carry it.
 
 ⛔ NEVER overwrite an existing `review-NNN.md`. Numbering replaces the old
 single-file backup rule; the sequence is what lets a loop compare rounds.
@@ -815,7 +820,7 @@ for a new round.
 - Track the STAGED_CHANGES flag throughout execution
 - Resolve `QA_BASELINE` through `qa-evidence.sh working-baseline` — per scope, working `run-NNN`, resolved from the filesystem this run, never copied from a previous review
 - Emit every finding class into the one `## Fix Routing` table, scope-qualified
-- Write `judged-tree` on every `qa-validation-NNN.md` — the next run's skip predicate reads it
+- Write `judged-tree` on every `qa-validation-NNN.md` the `qa-pipeline` judgement produced — the next run's skip predicate reads it
 - Load `add-investigation` and apply differential diagnosis before classifying a finding whose root cause is unclear
 
 **NEVER:**
@@ -827,4 +832,4 @@ for a new round.
 - Skip a reviewer if files exist in that area
 - Re-dispatch reviewers after a build failure — the review is one pass over one tree
 - Write QA evidence under `_tests/final/`, or run `qa-evidence.sh promote`
-- Recompute `run-NNN` after STEP 9 resolved it
+- Recompute `run-NNN` once the `qa-pipeline` evidence step has resolved it
