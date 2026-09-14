@@ -112,24 +112,35 @@ describe('F2 — the hotfix-related schema retires into the about.md', () => {
     expect(row).not.toContain('hotfix-related');
   });
 
-  it('records the harvest rather than deleting the schema outright', () => {
-    const retired = FIX.slice(FIX.indexOf('### hotfix-related'));
-    expect(retired).toMatch(/retired/i);
-    // Both filled sections must name their new home — 15 of 19 real documents
-    // carry an explained relationship and 18 of 19 a real file list.
-    expect(retired).toMatch(/Follow-ups[\s\S]{0,300}?## Relations/);
-    expect(retired).toMatch(/Impacted Files[\s\S]{0,300}?file set/);
+  it('the retired schema section is gone from fix.md', () => {
+    // It was kept to say where each filled section went. Plan
+    // 2026-09-14T145149 deleted it: its claim that `## Impacted Files` "lives
+    // now" in the graph index was only ever true while a legacy `related.md`
+    // stayed on disk, and that reader is now deleted too. A section describing
+    // a mechanism that no longer exists is worse than no section.
+    //
+    // The measured baseline it carried — 15 of 19 hotfixes with an explained
+    // relationship, 18 of 19 with a real file list — moved to that delivery's
+    // changelog, so the evidence outlived the section.
+    expect(FIX).not.toMatch(/hotfix-related/);
   });
 
   it('stops any command writing a new related.md', () => {
-    const retired = FIX.slice(FIX.indexOf('### hotfix-related'));
-    expect(retired).toMatch(/DO NOT[\s\S]{0,200}?related\.md/);
-    // An existing related.md is a user file and is never deleted.
-    expect(retired).toMatch(/never deleted|left on disk|not deleted/i);
+    // The prohibition moved WITH the section's deletion, and it had to: the
+    // retired section carried one, and removing it silently would leave nothing
+    // stopping a command from writing `related.md` again.
+    //
+    // It is asserted where it is load-bearing — in the command that would
+    // otherwise write the file — rather than in a schema reference nothing
+    // reads at write time. Verified before the section was deleted: add.hotfix
+    // already carried both halves.
+    const hotfix = fs.readFileSync(path.join(COMMANDS, 'add.hotfix.md'), 'utf8');
+    expect(hotfix).toMatch(/DO NOT[\s\S]{0,200}?related\.md/);
+    expect(hotfix).toMatch(/never deleted|left on disk|not deleted/i);
   });
 
   it('hotfix-about carries Relations, Observations and tags:', () => {
-    const about = FIX.slice(FIX.indexOf('### hotfix-about'), FIX.indexOf('### hotfix-related'));
+    const about = FIX.slice(FIX.indexOf('### hotfix-about'));
     expect(about).toContain('Relations');
     expect(about).toContain('Observations');
     expect(about).toMatch(/tags:/);
