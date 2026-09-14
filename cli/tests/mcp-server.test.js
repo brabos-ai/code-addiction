@@ -267,7 +267,11 @@ describe('F8 — every action answers over the wire', () => {
       corpus: 'artefacts',
       root: REPO,
     });
-    expect(payload(frames[0]).dependents.length).toBe(22);
+    // Ledger: 22 -> 23 (2026-09-13T153219 test-terminal-states-and-qa-feature-
+    // boundary). fragments/qa-pipeline/add.review.md is a new node and declares
+    // `skill: add-doc-schemas`, so it is a new direct dependant. Same fact as
+    // the node totals that moved in build-artefact-graph.test.js.
+    expect(payload(frames[0]).dependents.length).toBe(23);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {

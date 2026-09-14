@@ -77,10 +77,12 @@ describe('QA umbrella — add-qa reclassification (plugin → default)', () => {
 // qa-pipeline feature registry (0051 B3)
 // ---------------------------------------------------------------------------
 describe('QA umbrella — qa-pipeline feature registry', () => {
-  it('is registered, default off, gating plan/build with no provider restriction', () => {
+  // add.review joined when the QA judgement steps moved under this feature
+  // (plan 2026-09-13T153219, F14/F20b).
+  it('is registered, default off, gating plan/build/review with no provider restriction', () => {
     expect(FEATURES['qa-pipeline']).toBeDefined();
     expect(FEATURES['qa-pipeline'].default).toBe(false);
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build']);
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build', 'add.review']);
     expect(FEATURES['qa-pipeline']).not.toHaveProperty('providers');
   });
 });

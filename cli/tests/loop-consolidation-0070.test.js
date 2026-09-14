@@ -85,16 +85,22 @@ const EXPECTED_MAP = [
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.hotfix', count: 1 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add.plan', count: 2 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add.build', count: 2 },
+  // Five sections — step-list, preflight, evidence, judge-head, judge-tail.
+  // The head/tail split keeps the playwright pair below from being enclosed by
+  // a feature pair (plan 2026-09-13T153219, F15/F16/F20).
+  { namespace: 'feature', name: 'qa-pipeline', resource: 'add.review', count: 5 },
   { namespace: 'plugin', name: 'playwright', resource: 'add.review', count: 1 },
   { namespace: 'plugin', name: 'playwright', resource: 'qa-agent', count: 1 },
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 40 points', () => {
+  it('L1.0 injection map totals exactly 45 points', () => {
     // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073);
     // +1 for feature:docs-pruning:prune on add.done
-    // (plan 2026-09-07T160328-PLAN--delivery-index, F14).
-    expect(sidecarPoints()).toHaveLength(40);
+    // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
+    // +5 for feature:qa-pipeline on add.review — step-list, preflight,
+    // evidence, judge-head, judge-tail (plan 2026-09-13T153219, F15/F16/F20).
+    expect(sidecarPoints()).toHaveLength(45);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {
@@ -286,8 +292,12 @@ describe('0070 L2 — rename migration red-green', () => {
     expect(FEATURES['tdd-pipeline'].default).toBe(true);
   });
 
-  it('L2.0 qa-pipeline gates plan and build only — add.test is gone', () => {
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build']);
+  // "plan and build only" was the OLD boundary and it moved with the QA
+  // judgement steps (plan 2026-09-13T153219, F14/F20). add.review's preflight,
+  // evidence capture and judge pair now arrive from a fragment under this
+  // feature, so the feature gates the whole QA flow instead of authoring alone.
+  it('L2.0 qa-pipeline gates plan, build and review — add.test is gone', () => {
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build', 'add.review']);
   });
 
   it('L2.6 every FEATURES key has a matching fragment directory', () => {

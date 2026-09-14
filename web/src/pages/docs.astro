@@ -604,15 +604,15 @@ import "../styles/global.css";
               <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
             </div>
             <p class="text-muted-light text-sm mb-1">TDD pipeline (test-first ordering + unit/integration generation)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code>, <code class="font-mono">add.hotfix</code></p>
           </div>
           <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
             <div class="flex items-center gap-3 mb-2">
               <code class="text-accent font-mono text-sm">qa-pipeline</code>
               <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">QA pipeline (E2E authoring + agent QA validation)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code></p>
+            <p class="text-muted-light text-sm mb-1">QA pipeline (E2E spec authoring + routed QA correction + the agent QA judgement in add.review)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code>, <code class="font-mono">add.review</code></p>
           </div>
         </div>
       </section>

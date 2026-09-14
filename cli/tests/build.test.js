@@ -292,6 +292,34 @@ describe('provider-map.json agents section', () => {
       expect(entry.description.length, `agent ${name} description is empty`).toBeGreaterThan(0);
     }
   });
+
+  // THE SHIPPED DESCRIPTION IS THIS REGISTRY'S, NOT THE AGENT FILE'S FRONTMATTER.
+  // agentStrategy.meta reads `entry.description` and every dialect renders it, so the
+  // source frontmatter reaches no provider. That is how test-agent went on advertising
+  // "runs them until green" and fix-agent "ONE area" through a whole delivery that
+  // replaced both contracts: the F-blocks edited a field the build discards.
+  //
+  // NARROW ON PURPOSE. 20 of the 22 agents carry a registry description that differs
+  // from their source today — older, shorter wording, harmless while the contract
+  // behind it has not moved. Reconciling all 22 is its own sweep. What must never
+  // drift again is an agent whose CONTRACT was rewritten, so those are pinned here and
+  // a name joins the list when its contract changes.
+  const CONTRACT_PINNED = ['test-agent', 'fix-agent'];
+
+  it('an agent whose contract was rewritten ships that contract, not the old one', () => {
+    for (const name of CONTRACT_PINNED) {
+      const src = fs.readFileSync(
+        path.resolve(import.meta.dirname, '..', '..', 'framwork', '.codeadd', 'agents', `${name}.md`),
+        'utf8',
+      );
+      const line = /^description:.*$/m.exec(src)[0];
+      const frontmatter = line.slice('description:'.length).trim().replace(/^"|"$/g, '');
+      expect(
+        map.agents[name].description,
+        `${name}: provider-map.json is stale against its own source frontmatter`,
+      ).toBe(frontmatter);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

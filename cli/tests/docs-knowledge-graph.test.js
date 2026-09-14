@@ -322,8 +322,19 @@ describe('F20 — all six commands name a destination for the result', () => {
       'add.diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
       'add.review': ['**`RELATED_WORK` from STEP 2.2**'],
     };
+    // add.review's wiring SPANS TWO FILES since the QA judgement moved under
+    // the qa-pipeline feature. STEP 2.2 produces RELATED_WORK in the base
+    // command; STEP 10.1, the slot that consumes it, is in the fragment. The
+    // destination is real and reachable with the feature on, which is what the
+    // base command's STEP 2.2 now states. Reading the command alone would
+    // report this wiring broken — the opposite of what this level is for.
+    const EXTRA_SOURCES = {
+      'add.review': [path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.review.md')],
+    };
     for (const [name, slots] of Object.entries(SLOTS)) {
-      const src = read(path.join(COMMANDS, `${name}.md`));
+      const src = [path.join(COMMANDS, `${name}.md`), ...(EXTRA_SOURCES[name] || [])]
+        .map((f) => read(f))
+        .join('\n');
       for (const slot of slots) {
         expect(src.includes(slot), `${name}: no slot carrying ${slot}`).toBe(true);
       }

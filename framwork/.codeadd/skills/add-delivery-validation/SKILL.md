@@ -28,7 +28,7 @@ Skill for PRODUCT validation — checks whether requirements were 100% implement
 | Build compiles? | Functionality works end-to-end? |
 | Technical patterns | Implicit dependencies created? |
 
-**Runtime arm — the QA judgement in `/add.review`:** this skill validates delivery **statically** (reads the code/docs, checks the RF/RN checklist). `/add.review`'s QA sections are the **runtime** arm of the same goal (the `playwright` plugin adds live driving) — it drives the running app to prove functional delivery against `about.md` acceptance criteria (and UX fidelity vs `design.md`), producing a `_tests/run-NNN/qa-validation-NNN.md` audit. Use them together when the feature has UI: this skill confirms the requirements exist in code; the QA judgement confirms they actually work in the browser.
+**Runtime arm — the QA judgement `qa-pipeline` adds to `/add.review`:** this skill validates delivery **statically** (reads the code/docs, checks the RF/RN checklist). `/add.review`'s QA sections are the **runtime** arm of the same goal (the `playwright` plugin adds live driving) — it drives the running app to prove functional delivery against `about.md` acceptance criteria (and UX fidelity vs `design.md`), producing a `_tests/run-NNN/qa-validation-NNN.md` audit. With `qa-pipeline` disabled the runtime arm does not exist and this skill is the only arm there is. Use them together when the feature has UI: this skill confirms the requirements exist in code; the QA judgement confirms they actually work in the browser.
 
 ### When NOT to Use
 

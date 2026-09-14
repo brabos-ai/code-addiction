@@ -41,7 +41,7 @@ Write temp `design-review.md`: the critique items (or the empty-critique justifi
 - READ-ONLY: report findings, never edit `design-flow.md`, `design-layout.md`, or `design.md`.
 - Empty critique must always carry the rubric-by-rubric justification.
 
-## Review Mode (dispatched by the dual-judge step of `/add.review`, paired with `@qa-agent`)
+## Review Mode (dispatched by the dual-judge step `qa-pipeline` adds to `/add.review`, paired with `@qa-agent`)
 
 Post-delivery judgement of shipped screens against the feature's `## Design Contract` and `## Design Review` (both in `design.md`), dispatched alongside `@qa-agent` — one judge pair per subfeature, parallel. Distinct from Critique Mode above: critique reviews a flow/layout pair before `design.md` exists; review mode judges rendered evidence against an already-approved contract.
 

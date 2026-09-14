@@ -127,7 +127,7 @@ Optional features inject content into commands **post-install**, so they can be 
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
 | `tdd-pipeline` | enabled | add.plan, add.build, add.review, add.hotfix |
-| `qa-pipeline` | disabled | add.plan, add.build |
+| `qa-pipeline` | disabled | add.plan, add.build, add.review |
 | `docs-pruning` | disabled | add.done |
 
 ## Plugin System

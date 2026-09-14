@@ -908,7 +908,10 @@ describe('node inventory snapshot', () => {
       // `uses:` declaration was the one thing keeping it off the orphan list.
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
       script: 17,
-      fragment: 24,
+      // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
+      // add.review's QA judgement steps under the feature
+      // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
+      fragment: 25,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -959,8 +962,13 @@ describe('node inventory snapshot', () => {
     // internal skill add-artefact-graph (F14).
     // declares 130 -> 131: containers add nothing (a directory has no uses: block,
     // so both kinds are deliberately outside DECLARING_KINDS); the new skill does.
-    expect(nodes).toHaveLength(227);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(131);
+    // 227 -> 228, declares 131 -> 132: +1 for fragments/qa-pipeline/add.review.md,
+    // the fragment that carries add.review's QA judgement steps under the
+    // feature. A fragment is a declaring kind, so it counts in both totals.
+    // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary,
+    // F15 and F21.)
+    expect(nodes).toHaveLength(228);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(132);
   });
 });
 
