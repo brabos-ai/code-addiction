@@ -187,7 +187,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | conformance-agent | Documented-rules judge — judges the diff against the wiki when present, CLAUDE.md plus surrounding code when absent. Freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift for /add.wiki update (read-only) | add.hotfix |
 | failure-analysis-agent | Failure-mode judge — unhandled error paths, null propagation, missing rollback or idempotency, resource leaks, retry and ordering assumptions, reasoned against the blast radius of related features and suspicious commits confirmed earlier in the flow (read-only) | add.hotfix |
 | test-agent | Unit + integration test generator for ONE area — reads the area's target files and feature docs, generates tests at the project's conventional location, and ends in one of three declared states — green, BLOCKED naming the assertion and the source symbol when its own correct test caught a real bug, or out of attempts. The cap comes from the caller. Dispatched AFTER its area's implementer, one agent at a time. CORRECTION mode writes one RED test pinning the bug instead of regenerating. Read-write on test files only | add.build (tdd-pipeline feature), add.plan-to-ready |
-| fix-agent | Correction specialist for ONE area — consumes one area-scoped slice of the review's `## Fix Routing` table (code-review findings, build errors, red validation gates, QA findings) and applies the fix. The attempt counter is supplied by the caller, never decided by the agent | add.build, add.plan-to-ready |
+| fix-agent | Correction specialist for ONE WHOLE WAVE — consumes the review's `## Fix Routing` rows across every area the wave touches (code-review findings, build errors, red validation gates, QA findings), in the table's own order, and applies the fixes. Honours `Blocked by` by deferring a blocked row, continuing, and returning to it once its predecessor lands. One dispatch and one attempt counter per wave, both supplied by the caller, never decided by the agent | add.build, add.plan-to-ready |
 | discovery-agent | Feature discovery and specification (read-only) | add.plan, add.plan-to-ready |
 | architecture-agent | Architecture consultant, layer/module advice (read-only) | add.plan, add.diagnose (Fase B), add.hotfix, add.plan-to-ready |
 | system-design-agent | System design, data flows, infrastructure | no base command — direct use; carries the gitnexus graph section when that plugin is enabled |
@@ -310,7 +310,7 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.plan | default | `/add.build` | Most common path |
 | add.plan | user wants zero interaction | `/add.plan-to-ready` | Bounded build ⇄ review loop against the /add.done gates |
 | add.build | routed rows resolved + annex written | `/add.review` | Re-run the review — it writes the next `review-NNN.md` for side-by-side comparison |
-| add.build | implementation complete | `/add.review` | Code review + QA judgement in one pass; it routes findings, never applies them |
+| add.build | implementation complete | `/add.review` | Code review in one pass, plus the QA judgement when `qa-pipeline` is enabled; it routes findings, never applies them |
 | add.build | mode=DEVELOPMENT, skip tests | `/add.review` | Code review before merge |
 | add.build | mode=CORRECTION | `/add.review` | Re-validate after fixes |
 | add.build | epic, more subfeatures pending | `/add.build feature N` | Next subfeature in epic |
