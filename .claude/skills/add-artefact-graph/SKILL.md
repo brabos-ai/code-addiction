@@ -1,12 +1,16 @@
 ---
 name: add-artefact-graph
-description: "Use when a command, skill or agent needs to ask what an artefact relates to — the eleven query verbs, the two interfaces that answer them identically, and the standing list of what the graph still cannot see."
+description: "Use when a command, skill or agent needs to ask what an artefact relates to — resolving a stated question to the verb that answers it, the eleven verbs, the two interfaces that answer them identically, the case of an agent with no route at all, and the standing list of what the graph still cannot see."
 ---
 
 # Artefact Graph — Querying It
 
-Owns HOW the artefact graph is queried: the verbs, the two interfaces, and what the answer does not
-cover. WHAT a given command does with the answer belongs to that command.
+Owns HOW the artefact graph is queried: which verb answers which question, the two interfaces, the
+case of an agent that can reach neither, and what the answer does not cover. WHAT a given command
+does with the answer belongs to that command.
+
+**A command states its question and points here.** It does not name a verb, because a named verb is
+what holds an agent to one query when the question needed two.
 
 **The graph is emitted by `node scripts/build.js` into `framwork/.codeadd/artefact-graph.json`, and it
 covers `.claude/` as well as `framwork/.codeadd/`.** It is rebuilt from scratch on every build and is
@@ -50,6 +54,23 @@ same emitted sidecar, and `cli/tests/mcp-engine.test.js` asserts equality rather
 **The CLI is therefore not a fallback for the MCP on those seven: it is the same answer.** An agent
 whose tool allowlist blocks MCP is not degraded for any of them.
 
+⛔ **That reassurance assumes the agent can shell out. An agent whose allowlist carries neither the
+MCP tools nor `Bash` has no route to the graph at all**, and no verb on either interface is reachable
+from it. It is not "degraded on four verbs" — it is blind to all eleven.
+
+```
+IF YOUR ALLOWLIST CARRIES NEITHER THE artefact-graph MCP TOOLS NOR Bash:
+  ⛔ DO NOT: Reconstruct the relationship from filenames, prose or keyword scoring and present it
+             as the answer
+  ⛔ DO NOT: Report the question as answered
+  ✅ DO: Say the answer is NOT VERIFIED, and say it is the allowlist that blocked it
+  ✅ DO: Report whatever you did find, labelled as what it is — a guess from names, not an edge
+```
+
+**The label is the whole point.** A caller that receives a filename-derived list with no marking
+cannot tell it from a graph answer, and will act on it as though an edge existed. NOT VERIFIED costs
+the caller one more query; an unmarked guess costs it the wrong decision.
+
 ⛔ **Four verbs are MCP-only: `search`, `get`, `touched_by` and `reindex`.** `scripts/graph.js` has no
 case for them and exits 2 with its usage header.
 
@@ -84,6 +105,39 @@ is context, never a score.
 **`history` does not read the graph.** It reads the delivery index, which is the only thing here with
 a time axis — the graph is rebuilt from nothing on every build. A `gone` or `superseded` entry is the
 most useful answer it gives, because it names what replaced something.
+
+## Which Verb Answers Which Question
+
+**This is the table above, read from the other end.** A command states the question it must answer and
+points here; this resolves it to a verb. The two orientations are not redundant — the table above is
+read by someone holding a verb and wondering what it gives, this one by someone holding a question and
+needing the verb. The second is the direction every command actually arrives from.
+
+| The question, as a command asks it | Verb | A complete answer |
+|---|---|---|
+| Who calls this artefact today? | `impact <name> --depth 1` | Every direct dependant named. **Plus the fragment rule below** — a command's fragments take a second query |
+| What breaks if I change or remove this? | `impact --depth 1` grades it; the unbounded run is context | The grade comes from depth 1. An unbounded count is not a score |
+| What does this artefact need to work? | `dependencies <name>` | Every declared target, each resolving to something that exists |
+| What touches this node at all, either direction? | `neighbors <name>` | Both directions, weak edges included — the widest single view of one node |
+| How do these two artefacts connect? | `path <a> <b>` | A route, or the fact that there is none. "No path" is an answer |
+| Does anything still consume this? | `orphans` | A list to judge, not a verdict — see Reading an Answer |
+| Has this shipped before and been dropped? | `history <name>` | A `gone` or `superseded` entry naming what replaced it, or nothing |
+| Which artefacts are about this topic? | `search` — **MCP only** | Ranked matches. With no MCP, no verb substitutes: report NOT VERIFIED |
+| What is this one node, in full? | `get` — **MCP only** | With no MCP, `neighbors` plus `dependencies` covers most of it |
+| Which nodes does this file belong to? | `touched_by` — **MCP only** | With no MCP, no verb substitutes: report NOT VERIFIED |
+| What is the overall shape, and what are the hubs? | `stats` | Counts by kind and edge type, and the hub list |
+
+```
+IF A COMMAND STATED A QUESTION AND YOU RAN ONE VERB:
+  ⛔ DO NOT: Report the answer complete before checking What the Graph Cannot See below
+  ⛔ DO NOT: Stop at one query when the subject is a command that fragments inject into
+  ✅ DO: Run the second query the fragment rule requires, then say what the answer does not cover
+```
+
+**A question is not answered by a verb alone.** Three of the rows above are wrong on their own for a
+command with fragments, and every row is incomplete until the table below has been read against it.
+That is why a command points here instead of naming a verb: the verb is the first step of the answer,
+never the whole of it.
 
 ## What the Graph Cannot See
 
@@ -124,7 +178,11 @@ ALWAYS:
 - Check which interface implements a verb before telling an agent to shell out for it
 - Check the fragments injected into a command before concluding what that command dispatches
 
+ALSO ALWAYS:
+- Resolve a stated question to its verb here, rather than running whichever verb a caller named
+
 NEVER:
 - Reconstruct a relationship from prose with grep
 - Call the CLI a fallback for the MCP — they answer the same
 - Report a graph answer as complete without reading what the graph cannot see
+- Present a filename-derived list as a graph answer when the allowlist left no route
