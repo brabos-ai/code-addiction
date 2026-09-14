@@ -7,6 +7,7 @@ description: "Use at a command's closing step — the seven blocks every finishi
 
 <!-- uses:
 - mention: /add.build
+- mention: add-doc-schemas
 -->
 
 <!--
@@ -93,10 +94,51 @@ Plain facts are different: they belong inside block 2 or block 4, wherever they 
 
 Metadata is last: feature ID, document paths, verdicts, next-step commands.
 
+## How It Reads
+
+The seven blocks decide what the report says. This decides how it reads — and a report nobody can
+scan at speed fails whatever it contains.
+
+**Write it plainly. Three rules:**
+
+1. **One idea per sentence.** Two ideas are two sentences. The failure this catches is a sentence
+   that is correct, factual and still needs a second pass — a chain of clauses hung off one verb.
+2. **Use the everyday word** whenever it is as exact as the rare one. "Ask", not "interrogate".
+   "Check", not "ascertain". Where only the precise word is right, keep the precise word: this
+   trades ornament for clarity, never accuracy for simplicity.
+3. **Explain a technical term in one line the first time it appears**, then use it freely. The user
+   reading this may not have followed the run. Keep the term; add the line.
+
+⛔ **This is not a list of words to avoid**, and MUST NOT be turned into one. The reason is the one
+`add-doc-schemas` gives for the same prohibition: a word list holds in one language only, and this
+report is written in the user's. Test the sentence — can it be read once and understood?
+
+**It is not a length limit either.** A long report of short plain sentences passes. One sentence with
+four clauses does not.
+
+### What the Report Never Covers
+
+⛔ **The report never narrates your own mistakes, and never how a reviewer corrected them.** Not a
+retry, not a wrong turn taken and backed out of, not the story of a fix a review verdict asked for.
+
+That record already exists — the plan changelog carries it, and it is where someone auditing the run
+goes looking. Repeating it here costs the reader the space an open item would have used.
+
+✅ **This binds the seven blocks. It does not touch the metadata a command demands after them.** A
+command that requires a review verdict and a one-line list of applied fixes still prints exactly
+that, in its metadata, where it is a fact rather than a story. The self-check below already rules on
+which wins: the command's own mandatory facts are all present, none traded for the shape. The ban is
+about narrating in the report, never about suppressing a line a command mandates.
+
+**The closing message answers three things: what was decided, what is still open, and what needs
+watching.** A line grading your own performance answers none of them, and a reader scanning for the
+second and third has to skip past it to get there.
+
 ## Banned
 
 | Banned | Use instead |
 |--------|-------------|
+| Narrating your own error, a retry, or the story of a fix a reviewer asked for | Nothing in the blocks. A verdict and a one-line fixes list a command mandates still print, in the metadata — see What the Report Never Covers |
 | `T03`, `RF01`, `RN02` carrying the meaning | State the change; the id goes in parentheses at most |
 | Describing the artefact instead of the change ("the plan gains a section on X") | "X is added to `path/file`" |
 | "Improves consistency", "more robust" | The concrete change and what it causes |
@@ -116,6 +158,8 @@ Metadata is last: feature ID, document paths, verdicts, next-step commands.
 [ ] It describes the WORK, never the document
 [ ] Every unit of work appears somewhere in blocks 2-5
 [ ] The command's own mandatory facts are all present, none traded for the shape
+[ ] Every sentence carries one idea, and reads correctly the first time
+[ ] No sentence narrates a mistake of yours or a correction a reviewer asked for
 ```
 
 ## Common Rationalizations (BLOCKED)

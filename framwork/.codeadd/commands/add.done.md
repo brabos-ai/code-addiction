@@ -20,7 +20,7 @@
 - script: qa-evidence.sh
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Coordinator for branch finalization. Generates the changelog from changeset analysis and auto-merges to main. Same flow for all branch types (feature, hotfix, refactor, chore, docs) — review gate applies to features only.
 

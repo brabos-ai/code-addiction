@@ -19,7 +19,7 @@
 - script: status.sh
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 > **ID FORMAT:** Global sequential with type suffix (e.g., `0001H`, `0002H`)
