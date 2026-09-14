@@ -556,12 +556,21 @@ One command formalizes both layers, so there is no layer routing left to do here
 in — the planning command reads it as the starting point for its own F-block tags. **An ambiguous
 layer is a note in the document, not a question to the user.**
 
+**Name the design file path in the handoff**, verbatim, when this path wrote one. The planning command
+reads `docs/brainstorming/` and needs to know which file — a handoff that names only the idea leaves
+it to match the topic against a directory of timestamped basenames, and in Continue Mode that
+directory holds a whole set sharing one timestamp.
+
 Print this, then STOP:
 
 ```
 Idea is ready to formalize. Run: /add-framework--plan [idea]
+Design: docs/brainstorming/<the file written at 5.3>
 (brainstorm stops here — it does not run the next command for you.)
 ```
+
+On `spike` and `bounded` there is no file, so the `Design:` line is omitted rather than filled with a
+path that does not exist. Say the design was settled in conversation instead.
 
 ### 7.4 Offer Refinement (If Umbrella)
 

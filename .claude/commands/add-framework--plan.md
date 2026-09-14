@@ -9,6 +9,7 @@
 - agent: plan-review-agent
 - agent: prompt-review-agent
 - command: /add-framework--build
+- mention: /add-framework--brainstorm
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -136,6 +137,17 @@ Missing strategy docs → say so and proceed with limited context. `CLAUDE.md` i
 
 Whatever the idea points at: `framwork/.codeadd/commands|skills|agents|scripts/`, `cli/src/`,
 `.claude/commands|skills|agents/`, `scripts/`.
+
+**Read `docs/brainstorming/` too, whenever the idea came from a design.** That directory holds the
+design documents `/add-framework--brainstorm` writes, and a plan is expected to reference the design
+it formalizes. A design the planner never opened is a set of decisions re-made from scratch, and the
+two can disagree.
+
+```
+IF THE INVOCATION NAMES A DESIGN FILE, OR THE IDEA RESTATES ONE:
+  ⛔ DO NOT: Start the analysis without opening it
+  ✅ DO: Read it, and carry its validated decisions forward rather than re-deriving them
+```
 
 ### 1.3 Dispatch Discovery (SILENT)
 
