@@ -226,8 +226,26 @@ describe('L2 — integration', () => {
         }
         // @fix-agent taking a singular AREA. `AREAS` must not match, so the
         // boundary is explicit.
-        if (/`AREA`(?!S)/.test(body) && /fix-agent/.test(body)) {
-          offenders.singularArea.push(rel);
+        //
+        // A singular `AREA` is LEGITIMATE as @test-agent's input — the plan kept
+        // that agent per-area on purpose ("Merge @test-agent the same way? No"),
+        // so the scan has to ask WHO a line is talking about. Testing the file
+        // as a whole cannot: add.build.md and the tdd-pipeline fragment each
+        // name both agents, so `AREA` anywhere plus `fix-agent` anywhere reports
+        // @test-agent's own input contract as a fix-agent regression.
+        //
+        // Attribution is the nearest agent named at or above the line, which is
+        // how these files are written: a dispatch block opens by naming its
+        // agent and its `Inputs` bullet follows. Where no mention precedes the
+        // line, the agent the file itself declares in frontmatter owns it.
+        let owner = (/^name:\s*(test-agent|fix-agent)\s*$/m.exec(body) || [])[1] || null;
+        for (const line of body.split('\n')) {
+          const named = [...line.matchAll(/@?\b(test-agent|fix-agent)\b/g)].pop();
+          if (named) owner = named[1];
+          if (owner === 'fix-agent' && /`AREA`(?!S)/.test(line)) {
+            offenders.singularArea.push(rel);
+            break;
+          }
         }
       }
     };
