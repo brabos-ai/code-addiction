@@ -17,7 +17,7 @@
 - mention: /add-framework--done
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Executes a plan into working artefacts, in **both layers** — the distributed product layer
 (`framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`, `mcp/`) and the internal development layer
@@ -446,22 +446,47 @@ engine offers.
 
 ### 7.2 Ask the Graph What the Subagents Cannot See
 
-The auditors read the plan and the diff. Neither shows what depends on a file nobody opened.
+The auditors read the plan and the diff. Neither shows what depends on a file nobody in this delivery
+opened.
 
-```bash
-node scripts/graph.js impact <artefact-name> --depth 1
-node scripts/graph.js history <artefact-name> --layer product|internal
-```
+**The question, for every artefact this delivery touched:** what depends on it that this delivery
+neither changed nor named — and has it shipped before and been dropped?
 
-**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see.** The calls
-above are the ones this step needs, not the whole surface — load the skill when the question is not
-one of them, or when an answer has to be qualified.
+**LOAD `add-artefact-graph` and resolve both halves to their verbs there.** ⛔ DO NOT name a verb from
+memory. The skill owns which verb answers which question, when one query is not enough, and the
+standing list of what no query reaches.
 
-**Depth 1, not the unbounded run.** The command layer cross-references itself densely, so the
-transitive closure saturates and a hub becomes indistinguishable from a leaf.
+**Grade on direct dependants at depth 1, not on the unbounded run.** The command layer
+cross-references itself densely, so the transitive closure saturates and a hub becomes
+indistinguishable from a leaf.
 
 A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
 entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
+
+**Write the answer into the ledger before STEP 8**, as its own line under the plan's entry:
+
+```
+GRAPH: <artefact> — <direct dependants, or "none">; <shipped-before answer, or "no entry">
+```
+
+One line per artefact this delivery touched, or a single `GRAPH: NOT VERIFIED — <why>` where no
+route existed.
+
+```
+IF THE LEDGER CARRIES NO `GRAPH:` LINE FOR THIS DELIVERY:
+  ⛔ DO NOT: Proceed to STEP 8
+  ✅ DO: Ask the graph and write the lines
+
+IF YOU HAVE NO ROUTE TO THE GRAPH:
+  ⛔ DO NOT: Report the question as answered, and DO NOT reconstruct the answer with grep
+  ✅ DO: Write `GRAPH: NOT VERIFIED` with the reason, and continue
+```
+
+⛔ **The ledger is the anchor because 7.3 writes nothing.** This step used to block on "the audit
+report", but 7.3 states plainly that nothing here reaches disk and 7.4's line is the only trace the
+whole STEP leaves — so a gate on that report pointed at something that never existed. The ledger is
+where what survives a review already goes, and `/add-framework--done` archives it, so a `GRAPH:` line
+outlives the session the way a ruling does.
 
 ### 7.3 Judge Every Finding, Then Apply
 
@@ -487,11 +512,14 @@ auditor flags stays high even where conformance considers it in scope.
 
 ### 7.4 Record the Pass in the Ledger
 
-Append one line, and it is the only trace this STEP leaves anywhere:
+Append one line:
 
 ```
 REVIEW: complete (<n> findings, <m> applied, <k> rejected)
 ```
+
+Together with 7.2's `GRAPH:` lines and the `Ruling:` lines from 7.3, this is the whole trace STEP 7
+leaves anywhere. Nothing else reaches disk.
 
 **This is what makes "exactly once" auditable.** STEP 5.1 resumes from the ledger's `complete` lines.
 Without this line a review that found nothing leaves no trace at all, so a fresh session sees the last

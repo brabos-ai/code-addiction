@@ -17,7 +17,7 @@
 > **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
 > **The closing report at STEP 6 is exempt** — it reports in the shape `add-final-report` owns, and a
 > 20-word stub is not that shape.
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
 

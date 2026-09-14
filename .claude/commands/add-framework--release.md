@@ -4,7 +4,7 @@
 - skill: add-final-report
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Coordinates release flow: version bump, `main → production` merge (stable only), changelog generation, and tag push — CI pipeline handles GitHub release creation.
 

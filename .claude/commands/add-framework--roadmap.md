@@ -4,7 +4,7 @@
 - skill: add-final-report
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Records what the user wants to do next into `docs/roadmap/index.md`, then commits and pushes it to
 `main`. Adds an item, updates one, or removes one. Grounds every entry in a bounded read of the

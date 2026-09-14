@@ -78,6 +78,18 @@ Schema-agnostic rules that apply to every generated doc, even when the schema is
 
   Test each sentence before writing it: does it name the action, or name something the action resembles? Replace a resemblance with the action — "confirm the tests bite" becomes "run the tests and check they fail against the broken code". That pair illustrates the device. It is **not a list of banned words**, and MUST NOT be turned into one: a word list holds in one language only, which is the failure this rule exists to prevent.
 
+- **Plain register.** Write to be read once, at speed, by someone who has other work waiting. Three rules, and they bind the same surface the rule above binds — chat replies, generated docs, commit messages, PR descriptions, code comments and identifiers:
+
+  1. **Short sentences, one idea each.** A sentence carrying a second idea is two sentences. A stack of subordinate clauses is the failure this catches — it is grammatical, factual, free of figures, and still costs the reader a second pass.
+  2. **The common word over the rare one**, wherever both are exact. "Ask" over "interrogate", "check" over "ascertain", "goes away" over "is elided". Where the rare word is the precise one and the common word is not, the rare word wins — precision is never traded for plainness.
+  3. **A technical term is explained in one line the first time it appears** in a document. Then it is used freely. The term itself stays; this adds a line, it never substitutes a vaguer word for an exact one.
+
+  **This catches what the rules above let through.** A passage can carry no filler, no figure, no marketing and no aspiration, and still be hard to read — because none of those rules says anything about register. That gap is what this closes.
+
+  ⛔ **It is not a list of banned words either, and MUST NOT become one.** The reason is the one stated directly above: a word list holds in one language only, and this rule binds output in whatever language the `### Language` table selects. Test the sentence, not its vocabulary — can it be read once and understood?
+
+  **Register is not length.** A long passage of short, plain sentences passes. A single sentence with four clauses fails. Do not turn this into a budget: the rule against numeric length caps in this skill still holds, and it holds here for the same reason.
+
 ### Language
 
 | Context | Language |

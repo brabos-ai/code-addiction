@@ -8,6 +8,7 @@ description: "Use when an F-block touches the internal layer — .claude/, scrip
 <!-- uses:
 - skill: building-commands
 - skill: add-framework-development
+- skill: add-artefact-graph
 - mention: add-build-ledger
 - mention: /add-framework--done
 -->
@@ -105,7 +106,7 @@ back.
 
 - [ ] No command, skill or agent declares the old target in `uses:`
 - [ ] No prose names it
-- [ ] `node scripts/graph.js orphans` shows no artefact that lost its only consumer
+- [ ] Nothing lost its only consumer — the graph answers this; `add-artefact-graph` names the verb
 
 **A newly created artefact is an orphan until the F-block that wires it lands.** That is expected.
 What is not expected is an orphan still present at the end of the build.
@@ -124,12 +125,16 @@ it. The grep is the real proof.
 
 ## Before a Removal or a Rename — Ask the Graph
 
-```bash
-node scripts/graph.js impact <name> --depth 1   # who declares this today
-node scripts/graph.js dependencies <name>       # what it declares
-```
+**Two questions, and `add-artefact-graph` resolves each to its verb:**
 
-Every artefact `impact` lists must be edited in the SAME F-block as the removal or rename, or the
+1. Who declares this artefact today, and is that answer complete?
+2. What does it declare?
+
+⛔ **DO NOT name a verb from memory.** Load the skill. It owns which verb answers which question,
+when one query is not enough, and the standing list of what no query reaches — and a verb named here
+is a verb that gets run once while a second caller goes unseen.
+
+Every artefact question 1 returns must be edited in the SAME F-block as the removal or rename, or the
 block's `build.js` run fails on a dangling declaration.
 
 Risk grading at planning time is a different question and belongs to the planning command, not here.
@@ -149,8 +154,8 @@ Risk grading at planning time is a different question and belongs to the plannin
 ALWAYS:
 - Run `build.js` on an internal F-block and prove `framwork/` stayed clean
 - Sweep with grep after every remove and every rename
-- Query `impact --depth 1` before a removal or a rename, and edit every artefact it lists in that
-  same F-block
+- Ask the graph who declares an artefact before removing or renaming it, and edit every caller it
+  returns in that same F-block
 
 NEVER:
 - Register an internal artefact in `provider-map.json`

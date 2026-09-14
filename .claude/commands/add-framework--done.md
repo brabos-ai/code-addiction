@@ -5,6 +5,7 @@
 - skill: add-final-report
 - skill: add-plan-authoring
 - skill: add-build-ledger
+- skill: add-artefact-graph
 - command: /add-framework--build
 - mention: /add-framework--plan
 - mention: /add-framework--brainstorm
@@ -20,7 +21,7 @@ would fail the build. The prose sniff skips cross-layer names, so naming them
 costs nothing.
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Closes out a delivered plan in **either layer**: gates it against CI's own four commands, writes the delivery-index entry and the changelog, merges the branch via `gh`, and cleans up.
 
@@ -308,14 +309,14 @@ For each path in STEP 1.3's diff:
 | Diff status | Becomes |
 |---|---|
 | Added **and** a graph node | An item — and the candidate for the entry's `node`, see below |
-| Added and **not** a node (a top-level script, `CLAUDE.md`, `.gitignore`) | An item like any other. The graph does not model it, and nothing is synthesised |
+| Added and **not** a node | An item like any other. The graph does not model it, and nothing is synthesised. **Which paths those are is `add-artefact-graph`'s to say** — read its standing list rather than deciding from memory |
 | Deleted, matching an existing entry's item | Drives a supersession — see 3.3. **Never an item on this entry** |
 | Renamed (`R###`) | **Never a deletion.** A `changed` item on the existing entry, whose `at` the repair fixes. Nothing is superseded |
 | Modified | **Not an item on its own.** Name the behaviour it introduced, or it contributes nothing |
 
 **An internal item is a created artefact, or a named behaviour introduced into an existing one.** The third kind is what makes a modification-only plan representable, and it is not a loosening: a behaviour worth indexing has a **name in the source** — a key, a flag, a function, a marker — and that name is what other documents cite and what goes stale. A change with no nameable surface belongs in the changelog, not the index.
 
-**`node` is omitted, never faked.** Top-level `scripts/`, `CLAUDE.md` and `.gitignore` produce no graph nodes. A synthesised id would resolve to nothing in `graph.js` and is worse than an honestly absent field.
+**`node` is omitted, never faked.** A synthesised id resolves to nothing when the index is later queried, and is worse than an honestly absent field. **Whether a given path is a node at all is not decided here — `add-artefact-graph` answers it, in the row of its standing list that covers every file that is not an artefact.** A copy of it in this file would drift from the original, and the drift would be invisible until the two disagreed about one path.
 
 Entry fields:
 

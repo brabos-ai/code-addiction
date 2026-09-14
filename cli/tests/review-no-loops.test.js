@@ -266,10 +266,21 @@ describe('L2 the build dispatches both', () => {
     expect(text).not.toMatch(/double-check/i);
   });
 
-  it('L2.5 the audit step carries the blast-radius queries', () => {
+  it('L2.5 the audit step states the blast-radius question and defers the verb', () => {
+    // This asserted two literal `graph.js` calls until the 2026-09-13 delivery
+    // removed them on purpose. A named verb is what held a coordinator to one
+    // query while a depth-1 caller went unseen, so STEP 7.2 now states the
+    // question and `add-artefact-graph` resolves it. The intent the old
+    // assertion protected — that the audit step asks about blast radius — is
+    // what is pinned here; only the mechanism changed.
     const text = read(P.build);
-    expect(text).toMatch(/graph\.js impact[^\n]*--depth 1/);
-    expect(text).toMatch(/graph\.js history[^\n]*--layer/);
+    const step = text.slice(text.indexOf('### 7.2'), text.indexOf('### 7.3'));
+    expect(step).toMatch(/add-artefact-graph/);
+    expect(step).toMatch(/depends on/i);
+    expect(step).toMatch(/shipped before/i);
+    expect(step).toMatch(/NOT VERIFIED/);
+    // and it must NOT go back to naming a verb as the whole instruction
+    expect(step).not.toMatch(/graph\.js\s+(impact|history|dependencies|neighbors)/);
   });
 
   it('L2.6 its uses: block declares the new skill and the new agent', () => {
