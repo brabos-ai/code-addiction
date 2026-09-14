@@ -14,6 +14,7 @@
 - command: /add.plan-to-ready
 - command: /add.review
 - command: /add.wiki
+- mention: add-knowledge-discovery
 - script: converge-gates.sh
 - script: delivered.sh
 - script: done.sh
@@ -644,6 +645,14 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 
 The changelog, the `about.md` edits and the wiki pages have all landed. Rebuild
 the index so the next command's discovery step sees this delivery:
+
+⛔ **The two calls below name their action on purpose, and stay that way.** Every
+other MCP call in the product layer states a question and lets
+`{{skill:add-knowledge-discovery/SKILL.md}}` resolve it, because a question can
+have several right answers and a pinned call holds the run to one. These two are
+**operations, not questions**: there is exactly one way to rebuild an index and
+exactly one call that returns the unresolved list, so naming it removes no
+choice. Do not rewrite them into questions.
 
 ```bash
 npx codeadd mcp --corpus=docs --action=reindex

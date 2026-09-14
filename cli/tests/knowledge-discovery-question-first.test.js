@@ -290,6 +290,10 @@ describe('L3.6 — an operation still names its call, and says why', () => {
   });
 
   it('records why they are not questions', () => {
-    expect(done()).toMatch(/operation[^.]*not a question|not a question[^.]*operation/i);
+    // Singular or plural, either order. The assertion is about the reason being
+    // written down, not about how the sentence happens to be phrased.
+    expect(done()).toMatch(
+      /operations?[^.]{0,60}not\s+(?:an?\s+)?questions?|not\s+(?:an?\s+)?questions?[^.]{0,60}operations?/i,
+    );
   });
 });
