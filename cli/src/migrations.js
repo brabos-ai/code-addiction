@@ -191,8 +191,6 @@ function harvestRelations(ctx) {
   const unresolved = [];
   const failed = [];
   const harvest = { docRefs: 0, related: 0, followUps: 0, superseded: 0 };
-  // Counted separately, because it is NOT harvested. See the note below.
-  let legacyFileLists = 0;
   let skipped = 0;
 
   if (!fs.existsSync(docsRoot)) return { changes, notes, unresolved, harvest, skipped, failed };
@@ -308,16 +306,7 @@ function harvestRelations(ctx) {
           }
         }
       }
-      // A legacy `## Impacted Files` list is COUNTED AND NOT CARRIED, and the
-      // report says so rather than filing it under "harvested".
-      //
-      // It used to be left here for the indexer to read straight out of the
-      // attachment, which kept a retired schema answering `touched_by` and left
-      // the current format with no file set of its own. The question is now
-      // answered from the delivery index, which every project has, so a
-      // hand-written list has no destination that would beat the commit's own
-      // diff. The file stays on disk untouched, like every other user file.
-      if (sectionBody(sibling.content, 'Impacted Files')) legacyFileLists += 1;
+
     }
 
     const lines = [...candidates.entries()].map(([target, pick]) =>
@@ -341,13 +330,6 @@ function harvestRelations(ctx) {
     .map(([source, count]) => `${source} ${count}`)
     .join(', ');
   if (recovered) notes.push(`harvested ${recovered}`);
-  if (legacyFileLists > 0) {
-    notes.push(
-      `found ${legacyFileLists} legacy \`## Impacted Files\` list(s) — these do not enter the new `
-      + 'format and nothing was written for them; the files are left on disk as history, and '
-      + '"which deliveries touched this path" is answered from the delivery index instead',
-    );
-  }
   if (skipped > 0) {
     notes.push(`skipped ${skipped} file(s) carrying no type: key — those are yours, not codeadd's`);
   }

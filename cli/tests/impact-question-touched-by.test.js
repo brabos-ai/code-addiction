@@ -70,14 +70,20 @@ describe('L2.2 — the read contract documents the derivation', () => {
 // ─── L3 — behavioural acceptance ─────────────────────────────────────────────
 
 describe('L3.1 — the legacy reader is gone, with no branch left standing', () => {
-  it('no `hotfix-related` reference survives in mcp/ or cli/src/', () => {
+  it('no trace of the retired schema survives in mcp/ or cli/src/', () => {
+    // WIDENED after the narrow version let one through. It grepped only
+    // `hotfix-related` and passed while `migrations.js` still read
+    // `## Impacted Files` — the section name is knowledge of the dead schema
+    // just as much as the type name is, and a guard that checks one and not the
+    // other reports clean on a path that is still there.
     const hits = [];
     const walk = (dir) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         if (e.name === 'node_modules') continue;
         const full = path.join(dir, e.name);
         if (e.isDirectory()) walk(full);
-        else if (/\.(mjs|js|json)$/.test(e.name) && /hotfix-related/.test(fs.readFileSync(full, 'utf8'))) {
+        else if (/\.(mjs|js|json)$/.test(e.name)
+          && /hotfix-related|Impacted Files|parseImpactedFiles/.test(fs.readFileSync(full, 'utf8'))) {
           hits.push(path.relative(REPO, full).replace(/\\/g, '/'));
         }
       }
@@ -97,34 +103,42 @@ describe('L3.1 — the legacy reader is gone, with no branch left standing', () 
   });
 });
 
-describe('L3.2 — the migration reports the loss instead of counting a harvest', () => {
+describe('L3.2 — the migration knows nothing of the retired schema', () => {
   const migrations = () => readRepo('cli', 'src', 'migrations.js');
 
-  it('no longer counts Impacted Files into the harvest map', () => {
-    expect(migrations()).not.toMatch(/harvest\.impactedFiles/);
+  it('knows nothing about the retired schema at all', () => {
+    // NOT "reports it differently" — knows nothing. The migration used to count
+    // `## Impacted Files` into the harvest map, which claimed a harvest that
+    // never happened. A first fix replaced the count with a note saying the
+    // lists were found and not carried, which was still a live read of a dead
+    // schema's section name.
+    //
+    // It is gone because those files were never hand-written: `/add.hotfix`
+    // STEP 12 wrote them, so there is no author to inform and no content to
+    // preserve. "Nothing of the dead format survives" is one grep; "everything
+    // except a report line" is an exception the next author widens.
+    const m = migrations();
+    expect(m).not.toMatch(/impactedFiles/i);
+    expect(m).not.toMatch(/Impacted Files/);
+    expect(m).not.toMatch(/hotfix-related/);
   });
 
-  it('says the legacy lists do not enter the new format', () => {
-    expect(migrations()).toMatch(/do not enter|not carried|left on disk/i);
-  });
-
-  it('a real brownfield run says the legacy list was found and not carried', async () => {
-    // BEHAVIOUR, not text. The two assertions above read the source, which
-    // proves the code was edited and not that the note ever reaches a user.
-    // This runs migration 0002 over the brownfield fixture — which carries a
-    // `hotfix-related` document with a filled `## Impacted Files` — and reads
-    // what it reports.
+  it('a real brownfield run reports no legacy file list at all', async () => {
+    // BEHAVIOUR, not text. Runs migration 0002 over the brownfield fixture —
+    // which still carries a `hotfix-related` document with a filled
+    // `## Impacted Files` — and proves the migration neither counts it, nor
+    // mentions it, nor touches it.
     const { makeBrownfield, removeTree } = await import('./helpers/brownfield-fixture.js');
     const { MIGRATIONS } = await import('../src/migrations.js');
     const cwd = makeBrownfield();
     try {
       const outcome = MIGRATIONS.find((m) => m.id === '0002-harvest-relations').run({ cwd, providers: [] });
       const notes = (outcome.notes ?? []).join('\n');
-      expect(notes).toMatch(/legacy `## Impacted Files` list/);
-      expect(notes).toMatch(/do not enter the new format/);
-      // And it is NOT filed under "harvested", which is the claim that hid the
-      // gap for as long as it did.
-      expect(notes).not.toMatch(/harvested[^\n]*impactedFiles/);
+      expect(notes).not.toMatch(/Impacted Files/i);
+      expect(outcome.harvest).not.toHaveProperty('impactedFiles');
+      // The legacy file itself is a user's and is never touched — the additive
+      // rule this migration has always had.
+      expect(fs.existsSync(path.join(cwd, 'docs/features/0051H-token-refresh/related.md'))).toBe(true);
     } finally {
       removeTree(cwd);
     }

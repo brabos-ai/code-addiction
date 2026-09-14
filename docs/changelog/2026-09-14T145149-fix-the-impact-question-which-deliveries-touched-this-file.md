@@ -58,10 +58,18 @@ NEVER REIMPLEMENTED."* The artefacts corpus does not delegate; there a node's
 ## The legacy reader is deleted, with nothing kept for it
 
 `mcp/corpora.mjs`'s `hotfix-related` branch and `parseImpactedFiles` are gone.
-No flag, no conditional, no `files ?? []` left as a courtesy. Migration 0002
-stops counting the legacy lists as harvested and reports them for what they are:
-found, not carried, left on disk as history. The `### hotfix-related (retired)`
-section is deleted from `fix.md` in full.
+No flag, no conditional, no `files ?? []` left as a courtesy. The
+`### hotfix-related (retired)` section is deleted from `fix.md` in full.
+
+**Migration 0002 knows nothing about the legacy lists either.** A first pass kept
+a counter and a report line saying they were found and not carried — which was
+still a live read of a dead schema's section name, kept on the reasoning that a
+user who hand-wrote those lists deserved to be told. That reasoning was wrong:
+nobody hand-writes them. `/add.hotfix` STEP 12 wrote them, so there is no author
+to inform and no content to preserve. "Nothing of the dead format survives" is
+one grep; "everything except a report line" is an exception the next author
+widens. The files stay on disk, untouched, like every other file the migration
+does not own.
 
 **The prohibition that section carried did not go with it.** It held a gate
 against writing a new `related.md`, and deleting it silently would have left

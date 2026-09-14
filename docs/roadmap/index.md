@@ -37,7 +37,9 @@ the layer(s) it touches.
   ```
   `hotfix-related` is marked `### hotfix-related (retired)` at `add-doc-schemas/references/fix.md:52`. No command and no template writes it. **So in any project on the current format, `touched_by` returns `workItems: []`.** Its `pages` half still works, because a wiki page's `sources` globs are unrelated to this. The **artefacts** corpus is unaffected: there `files` comes from the node's own path (`corpora.mjs:512`).
 
-- **⛔ No backward compatibility, and no second path. This is the requirement, not a preference.** `cli/src/migrations.js:309-311` states the coupling in its own words: *"The file list is read by the INDEX, straight from this attachment, so nothing is written for it here. It is counted because the migration report is what tells a user the list was found."* That is a live reader kept alive for a retired schema, and it is why the current format was never given a file set of its own — the legacy path answered just well enough that nobody noticed the new one was missing. The work is: build the capability for the current format, **convert** a legacy `Impacted Files` section once in the migration, and **delete** `corpora.mjs:389`, `parseImpactedFiles` and the migration's count-and-point. A legacy document is migrated, never read forever.
+- **⛔ No backward compatibility, and no second path. This is the requirement, not a preference.** `cli/src/migrations.js:309-311` states the coupling in its own words: *"The file list is read by the INDEX, straight from this attachment, so nothing is written for it here. It is counted because the migration report is what tells a user the list was found."* That is a live reader kept alive for a retired schema, and it is why the current format was never given a file set of its own — the legacy path answered just well enough that nobody noticed the new one was missing. The work is: build the capability for the current format, and **delete** `corpora.mjs:389`, `parseImpactedFiles` and the migration's count-and-point.
+
+  **Converting the legacy list was dropped during the build, deliberately.** This item first asked the migration to convert an `Impacted Files` section into the new home. Two findings killed it. The delivered answer derives the delivery's own commit, so the complete file set is the commit's diff — a hand-written list is a worse copy of something git already holds exactly. And nobody hand-wrote those lists: `/add.hotfix` STEP 12 did, so there is no author's work to preserve and no author to inform. A counter that only reported them was kept for one round and then deleted for the same reason — reading a dead schema's section name is still reading it.
 
 - **The shape is open, and the honest question is where a work item's file set lives.** Three candidates, none chosen:
   - **`docs/delivered.jsonl` `items[].at`** already holds it — up to five paths per delivery, each with a line saying what changed there. It answers delivery → files today. The objection to reading it backwards is recorded in `delivered.sh` itself: `--repair` rewrites `at` on every anchor move, so matching on it can return an entry on the strength of a stale pointer. That objection was written about TEXT SEARCH; a typed file lookup is a different operation and needs its own answer, not an inherited one.
@@ -48,7 +50,34 @@ the layer(s) it touches.
 
 - **This is the umbrella's subtopic 003**, `docs/brainstorming/2026-09-12T075635-delivered-work-relationships-000-umbrella.md`, which called it defect 2 — *"The impact question has no verb"* — and reserved a design that was never written. Item 1.1 closed without it.
 
-- **Done when:** `touched_by --corpus=docs` returns the work items for a file in a project written entirely in the current format, with no `hotfix-related` document anywhere; `grep -rn "hotfix-related" mcp/ cli/src/` returns nothing; the migration converts a legacy `Impacted Files` section into the new home and says so in its report instead of counting it; `add.review` STEP 2.2 and `add.hotfix` STEP 9.1 each receive work items, not only pages; and the behaviour with no index at all is a documented git fallback rather than an empty answer.
+- **Done when:** `touched_by --corpus=docs` returns the work items for a file in a project written entirely in the current format, with no `hotfix-related` document anywhere; `grep -rn "hotfix-related|Impacted Files|parseImpactedFiles" mcp/ cli/src/` returns nothing; and `add.review` STEP 2.2 and `add.hotfix` STEP 9.1 each receive work items, not only pages.
+
+- **Two clauses left this item and are recorded rather than dropped.** Converting the legacy list was rejected, for the reasons above. **The git fallback for a project with no index at all moved to 1.4**, where it belongs: a project with no index is the extreme case of a project whose documents the MCP cannot read, and 1.4 is the item about that.
+
+### 1.4 — A doctor for document schemas, and an opt-in pass that makes a project's documents fit
+
+**Scope:** product
+**TLDR:** Every docs-corpus answer is only as good as the frontmatter and the sections of the documents underneath it. Nothing tells a user which of their files the MCP can read and which it skips, and nothing offers to fix the ones it cannot. Two pieces: a **doctor** that reports fitness per file, and an **opt-in skill** that reads a project's features and rewrites their headers to the current schema.
+
+- **Do this BEFORE 1.2.** 1.2 migrates relationships into a project that declared none; it cannot know what it is walking until something reports which documents are already readable. The doctor is that report. The same suspension 1.3 records applies here for the same kind of reason.
+
+- **What made this urgent.** 1.3 deleted the last reader that tolerated an old document shape. From now on a document is either in the current format or it is **invisible to the MCP, silently** — it parses, it lands in the corpus, and it answers nothing. Silence is the defect: an empty answer and an unreadable file look identical from the caller's side, which is the exact confusion `add-knowledge-discovery` already had to be taught to separate.
+
+- **The doctor reports, and writes nothing.** For every document in the docs corpus: fit, off-standard, or unreadable, naming the field or section that is missing rather than a score. `add-doc-schemas` owns the schemas, so the doctor reads them from there — a doctor that restates a schema drifts from it, and the drift is invisible until the two disagree about what "fit" means.
+
+- **The fix pass is a skill, not a codemod.** It reads each feature's document and adjusts the header — frontmatter `type` and `id`, the `## Relations` block — to the current schema. It has to be an agent reading the content, because deciding a document's type and its relations is a judgement, not a text substitution. Opt-in, and it edits headers only: never a body, never a deletion.
+
+- ⛔ **The user writes nothing by hand.** Every one of those documents was written by a command, so a migration that hands the user a list of files to edit is addressing the wrong actor. The skill's output is the edit; the user's part is approving it. This is the rule 1.3's build established, and it is what killed the legacy converter there.
+
+- **Carried over from 1.3: the behaviour with no index at all.** `touched_by` answers empty in a project that has never run a close-out. `git log --follow <path>` answers it with no index and no plugin, always. Whatever ships must degrade to that rather than to nothing — and the doctor is where a user finds out which of the two they are getting.
+
+- **The open question, and it is why this is recorded and not planned.** Where does the doctor live?
+  - **An MCP action**, beside `search` and `history` — the agent asks it mid-flow, in the same session it is about to query, and gets the caveat before the answer. Costs an action on a surface that already has eleven.
+  - **A CLI verb**, `codeadd doctor` — a user runs it once after install, reads a report, and decides. Costs the agent a route it cannot take on its own.
+  - **Both, over one implementation.** That is already the shape `scripts/graph.js` and `mcp/` hold over one sidecar, asserted identical by test rather than shared by code. It is the likeliest answer and it is still a decision, not a default.
+
+- **Done when:** a project holding a mix of current-format and off-standard documents gets a per-file verdict naming the missing field; the opt-in skill converts an off-standard feature header and the same file then answers a docs-corpus query it did not answer before; no body text is modified and no document is deleted by either piece; and `touched_by` on a project with no index at all returns the documented git answer instead of an empty list.
+
 
 ## 2. Obsolescence and backward compatibility
 

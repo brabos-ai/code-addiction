@@ -189,20 +189,20 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     expect(edge.type).toBe('superseded_by');
   });
 
-  it('L3.3 reports every non-empty Impacted Files list as NOT carried', () => {
-    // It used to be counted into `harvest`, whose non-zero keys are joined into
-    // one "harvested X n" note — so the report claimed the list had been
-    // harvested when nothing was written for it. The list was left in the
-    // legacy document for the indexer to read, which is the coupling that kept
-    // a retired schema answering `touched_by`.
+  it('L3.3 does not read `## Impacted Files` at all', () => {
+    // It was counted into `harvest`, whose non-zero keys become one "harvested
+    // X n" note — so the report claimed a harvest that never happened, while
+    // the list was left for the indexer to read out of the legacy document.
     //
-    // Plan 2026-09-14T145149 deleted that reader. The list is still reported,
-    // because a user must be told what was found, but it is reported as what it
-    // is: found, not carried.
-    expect(outcome.harvest.impactedFiles).toBeUndefined();
-    const notes = (outcome.notes ?? []).join('\n');
-    expect(notes).toMatch(/1 legacy `## Impacted Files` list/);
-    expect(notes).toMatch(/do not enter the new format/);
+    // A first fix swapped the count for a note saying the lists were found and
+    // not carried. That was still a live read of a dead schema's section name,
+    // and the premise behind it was wrong: nobody hand-writes those files —
+    // `/add.hotfix` STEP 12 wrote them — so there is no author to inform.
+    //
+    // The migration now knows nothing about them. The files stay on disk,
+    // untouched, like every other file it does not own.
+    expect(outcome.harvest).not.toHaveProperty('impactedFiles');
+    expect((outcome.notes ?? []).join('\n')).not.toMatch(/Impacted Files/i);
   });
 
   it('L3.4 an id resolving to nothing produces NO line and is reported', () => {
