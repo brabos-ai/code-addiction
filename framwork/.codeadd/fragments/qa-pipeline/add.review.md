@@ -262,7 +262,7 @@ Each dispatch passes:
 - the resolved paths — `SCOPE_DIR/about.md` and `DESIGN_FILE`;
 - the `run-NNN` evidence dirs that judge owns per the table (`@ux-agent` → `screenshots/`; `@qa-agent` → `screenshots/` + `computed-styles/` + axe results + the assertion roll-up + console/network artifacts);
 - the 9.4 reconciliation table (identical copy to both);
-- **`RELATED_WORK` from STEP 2.2** — the deliveries that last changed these files, ids with one line each. Empty when the graph returned nothing or is absent. A judge that does not know a file was rewritten two deliveries ago judges it as though it were new;
+- **`RELATED_WORK` from STEP 2.2** — the deliveries that last changed these files, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A judge that does not know a file was rewritten two deliveries ago judges it as though it were new;
 - `{{skill:add-qa/SKILL.md}}` — rubric, severity scale, finding schema.
 
 Mode (both judges):

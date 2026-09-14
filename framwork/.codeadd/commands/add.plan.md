@@ -163,7 +163,14 @@ IF THE REPORT CARRIES NO DOCUMENT:
 
 **Goal:** Use knowledge from recent deliveries to inform planning, avoiding reinventing the wheel.
 
-**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block. **`RELATED_WORK`, from the skill's GRAPH step, travels the same two routes**: each hit's `path` and typed relations go into STEP 5's matrix as documents to read, and the whole set goes into STEP 8's bootstrap block as `${RELATED_WORK}`. **It travels whether or not a wiki exists** — the GRAPH step is standalone and reads no wiki page, so a `WIKI:absent` run still carries it. A plan that proposes work already delivered nearby is the failure this closes.
+**Consult Knowledge Base:** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP 2 status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP 5's file-loading matrix and STEP 8's subagent bootstrap block. **GRAPH question:** what has already been delivered in the area this plan touches, and what do those deliveries connect to? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK`, from the skill's GRAPH step, travels the same two routes**: each hit's `path` and typed relations go into STEP 5's matrix as documents to read, and the whole set goes into STEP 8's bootstrap block as `${RELATED_WORK}`. **It travels whether or not a wiki exists** — the GRAPH step is standalone and reads no wiki page, so a `WIKI:absent` run still carries it. A plan that proposes work already delivered nearby is the failure this closes.
+
+```
+IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
+  ⛔ DO NOT: Carry on as though the step ran
+  ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
+         or with `NOT VERIFIED` plus the reason when the graph could not be reached
+```
 
 ---
 
@@ -356,7 +363,7 @@ Every area subagent receives this bootstrap block before its specific task.
 
 `${WIKI_PAGES}` = the page paths selected in STEP 3's Consult Knowledge Base sub-step, one line each: path + one-line reason + freshness verdict. Empty if no wiki was consulted.
 
-`${RELATED_WORK}` = the GRAPH step's hits from the same sub-step, one line each: id + path + one-line reason. Empty if the graph returned nothing or is absent. **Filled independently of `${WIKI_PAGES}`** — the two come from different steps and either can be empty while the other is not.
+`${RELATED_WORK}` = the GRAPH step's hits from the same sub-step, one line each: id + path + one-line reason. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. **Filled independently of `${WIKI_PAGES}`** — the two come from different steps and either can be empty while the other is not.
 
 Subagents read the listed documents themselves (JIT), never inlined content:
 

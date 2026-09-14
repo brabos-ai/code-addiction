@@ -88,7 +88,14 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 ### 1.4 Consult Knowledge Base
 
-Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **`RELATED_WORK` destination:** STEP 4.1's dispatch payload, which carries it to both Fase A agents.
+Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP 4.1's dispatch payload, which carries it to both Fase A agents.
+
+```
+IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
+  ⛔ DO NOT: Carry on as though the step ran
+  ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
+         or with `NOT VERIFIED` plus the reason when the graph could not be reached
+```
 
 ---
 
@@ -138,7 +145,7 @@ Assemble from prior STEPs:
 - Affected area keywords (nouns/verbs from reformulation)
 - Optional window (default: 30 days for git)
 - Knowledge base page paths + one-line reasons + freshness verdicts (STEP 1.4), if any were selected
-- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. Empty when the graph returned nothing or is absent. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
+- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
 
 This payload is passed to BOTH Fase A agents.
 

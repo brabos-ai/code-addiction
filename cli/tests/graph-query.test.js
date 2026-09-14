@@ -433,6 +433,34 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     expect(r.entries[1].status).toBe('gone');
   });
 
+  it('reports the dead cap rather than hiding what it cut', () => {
+    // `history` exists to answer "was this attempted before?", so a cut `gone`
+    // or `superseded` entry is the answer it most needs to give. This verb
+    // passes --limit 50, which after the two-bucket change governs the LIVE
+    // bucket only; the dead cap is 2 and no argument raises it. The keys are
+    // what make the cut visible, and scripts/graph.js renders a note from them.
+    const dead = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-deadcap-'));
+    execFileSync('git', ['init', '-q'], { cwd: dead });
+    fs.writeFileSync(path.join(dead, 'x.md'), 'contains skillX_marker here\n');
+    fs.mkdirSync(path.join(dead, 'docs'), { recursive: true });
+    fs.writeFileSync(
+      path.join(dead, 'docs', 'delivered.jsonl'),
+      [1, 2, 3].map((n) => line({
+        v: 1, ts: `2026-0${n}-01T00:00:00Z`, id: `D${n}`, layer: 'internal', by: 'done',
+        status: 'superseded', superseded_by: 'D9', name: `dead ${n}`, words: 'skillx dead',
+        commits: ['ddddddd'], origin: `docs/plans/D${n}.md`,
+        items: [{ what: 'skillX', at: 'x.md', find: 'skillX_marker', node: 'product/skill/skillX' }],
+      })).join(''),
+    );
+
+    const r = run('product/skill/skillX', { cwd: dead });
+    expect(r.keys.MATCHED_DEAD).toBe('3');
+    expect(r.keys.RETURNED_DEAD).toBe('2');
+    // The third is gone from `entries` — which is exactly why the count has to
+    // reach the caller, and why graph.js prints a dead-cap note when they differ.
+    expect(r.entries).toHaveLength(2);
+  });
+
   it('filters on the item node, not on the word', () => {
     // E-prose carries "skillX" in `words`, so delivered.sh returns it for the
     // free-text query. It has no item whose node is skillX, so the verb drops

@@ -135,7 +135,7 @@ needing the verb. The second is the direction every command actually arrives fro
 | What touches this node at all, either direction? | `neighbors <name>` | Both directions, weak edges included — the widest single view of one node |
 | How do these two artefacts connect? | `path <a> <b>` | A route, or the fact that there is none. "No path" is an answer |
 | Does anything still consume this? | `orphans` | A list to judge, not a verdict — see Reading an Answer |
-| Has this shipped before and been dropped? | `history <name>` | A `gone` or `superseded` entry naming what replaced it, or nothing |
+| Has this shipped before and been dropped? | `history <name>` | A `gone` or `superseded` entry naming what replaced it, or nothing — but **at most 2 of them**: the underlying read caps dead entries, and its `MATCHED_DEAD` key is what says whether more matched |
 | Which artefacts are about this topic? | `search` — **MCP only** | Ranked matches. With no MCP, no verb substitutes: report NOT VERIFIED |
 | What is this one node, in full? | `get` — **MCP only** | With no MCP, `neighbors` plus `dependencies` covers most of it |
 | Which nodes does this file belong to? | `touched_by` — **MCP only** | With no MCP, no verb substitutes: report NOT VERIFIED |

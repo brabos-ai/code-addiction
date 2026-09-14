@@ -317,7 +317,10 @@ describe('F20 — all six commands name a destination for the result', () => {
       // merely explains the slot. That is the same prose-not-wiring mistake
       // this whole level exists to stop making.
       'add.plan': ['travels the same two routes'],
-      'add.hotfix': ['`RELATED_WORK` destination', "touched_by` over this branch's changed paths"],
+      // The 9.1 anchor named `touched_by`. Plan 2026-09-14T102848 removed every
+      // action name from a command, so the anchor now quotes the SLOT — the
+      // paths the step runs over — which is what this level is checking anyway.
+      'add.hotfix': ['`RELATED_WORK` destination', "over this branch's changed paths"],
       'add.brainstorm': ['## Candidate Directions'],
       'add.diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
       'add.review': ['**`RELATED_WORK` from STEP 2.2**'],
@@ -370,15 +373,21 @@ describe('F20 — all six commands name a destination for the result', () => {
     expect(gate).toContain('⛔ DO NOT: Skip the INDEX and GRAPH steps');
   });
 
-  it('add.hotfix asks for touched_by only where a file list exists', () => {
+  it('add.hotfix asks the path-shaped question only where a file list exists', () => {
     const src = read(path.join(COMMANDS, 'add.hotfix.md'));
     const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
     const step9 = src.slice(src.indexOf('## STEP 9:'), src.indexOf('## STEP 10:'));
-    // STEP 4 runs before the investigation and before the fix.
-    expect(step4).toContain('`search` ONLY at this step');
-    expect(step4).not.toContain('touched_by` result over the changed files');
-    // STEP 9 has the diff in hand.
-    expect(step9).toContain('touched_by');
+    // THE CONSTRAINT IS REAL; THE ACTION NAME WAS NEVER THE POINT.
+    // This asserted "`search` ONLY at this step" and "STEP 9 contains
+    // touched_by", which pinned two calls to prove a fact about TIMING. Plan
+    // 2026-09-14T102848 removed the pins: a command states its question and
+    // add-knowledge-discovery resolves it. The fact under test is unchanged and
+    // is now asserted where it lives — in how each step PHRASES its question.
+    // STEP 4 runs before the investigation and before the fix, so there is no
+    // file list for a path-shaped question to take.
+    expect(step4).toMatch(/over WORDS, never over paths/);
+    // STEP 9 has the diff in hand, so its question is the path-shaped one.
+    expect(step9).toMatch(/phrased over PATHS/);
   });
 
   it('add.hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {

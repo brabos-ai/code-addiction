@@ -53,7 +53,23 @@ Add `--no-verify` when the calling command forbids reading source at that point.
 | `superseded` entries | It was replaced. Follow `superseded_by` |
 | `gone` entries | It was built and is now absent. **The most valuable answer available** — it says this was tried and dropped |
 
-**Dead entries rank last; they are never hidden, and you never re-rank them.** A `gone` result is what stops a plan from rebuilding something the project already abandoned. Hiding it repeats the original failure with the sign flipped. The ordering is the read contract's, not yours — several consumers each sorting one shared result is how two of them come to disagree.
+**The read cuts in two buckets — 5 live and 2 dead — and tells you what it cut.** `live` and `changed` fill the live bucket, `superseded` and `gone` the dead one, and the dead slots are never backfilled with live entries. Six keys come back:
+
+| Key | Says |
+|---|---|
+| `MATCHED_LIVE` / `MATCHED_DEAD` | How many entries matched, per bucket |
+| `RETURNED_LIVE` / `RETURNED_DEAD` | How many survived the cut, per bucket |
+| `LIVE_CAP` / `DEAD_CAP` | The caps in force. `--limit N` sets the live one only |
+
+```
+IF MATCHED_DEAD IS GREATER THAN RETURNED_DEAD:
+  ⛔ DO NOT: Conclude the returned dead entries are all there were
+  ✅ DO: Narrow the query, or read again with the terms that name the area more exactly
+```
+
+**A `gone` result is what stops a plan from rebuilding something the project already abandoned**, which is why it gets reserved slots instead of competing with live entries for one cut. It is not unfiltered: a matching dead set larger than `DEAD_CAP` IS cut, and `MATCHED_DEAD` is how you find out. **You never re-rank what comes back** — the ordering is the read contract's, not yours, and several consumers each sorting one shared result is how two of them come to disagree.
+
+**Pass the terms, not a sentence.** The query is split on whitespace and each term is matched on its own, so an entry hitting more of them ranks higher. A full sentence works; its filler words simply score nothing.
 
 **The index answers *whether*, never *how*.** An entry carries anchored items and, by its format's own rule, no explanation of what the code does. Do NOT stop here and call the area understood: a match tells you where to look next, and the wiki and the code are still what explain it.
 
@@ -65,15 +81,55 @@ Add `--no-verify` when the calling command forbids reading source at that point.
 
 The index answered *whether* it shipped. **The graph answers what it connects to** — which other work items caused it, depend on it or belong with it, and which reference pages document the files it touched.
 
-```bash
-npx codeadd mcp --corpus=docs --action=search --args='{"terms":"<terms from the task>"}'
+**STATE YOUR QUESTION FIRST, then resolve it below.** Do not reach for an action you remember: a remembered action is what holds a run to one call when the question needed a different one, and the docs corpus answers eleven questions, not two.
+
+```
+⛔ BEFORE RUNNING ANYTHING HERE:
+  ⛔ DO NOT: Run an action because another command ran it, or because it is the one you know
+  ⛔ DO NOT: Stop at the first answer when your question had two halves
+  ✅ DO: Write down what you must find out, in one sentence ending in a question mark
+  ✅ DO: Resolve that sentence to an action in the table below, and run that one
 ```
 
-Add `touched_by` when the command already holds a file list — a hotfix's changed files, a review's diff:
+### Which Action Answers Which Question
+
+**Two routes reach these actions, and they answer identically.** Where the `codeadd-docs` MCP server is registered — `codeadd` writes that registration for the providers whose config supports it — call the action as an MCP tool. Where it is not, the one-shot CLI form below runs the same engine in a fresh process. Neither is a degraded version of the other.
+
+```
+IF YOU HAVE NEITHER THE codeadd-docs MCP TOOLS NOR A SHELL:
+  ⛔ DO NOT: Reconstruct the answer by grepping `docs/` and present it as the graph's
+  ✅ DO: Write `NOT VERIFIED` into `RELATED_WORK`, and say the route was missing
+```
+
+Every row is reached with the same call, changing only `--action` and `--args`:
 
 ```bash
-npx codeadd mcp --corpus=docs --action=touched_by --args='{"files":["<path>","<path>"]}'
+npx codeadd mcp --corpus=docs --action=<action> --args='<json>'
 ```
+
+| The question, as a command asks it | Action | `--args` |
+|---|---|---|
+| What work already exists about this topic? | `search` | `{"terms":"<terms from the task>"}` |
+| Which deliveries and pages cover the files I am holding? | `touched_by` | `{"files":["<path>","<path>"]}` |
+| What is this one work item, in full? | `get` | `{"id":"<id>"}` |
+| What breaks if I change this work item's area? | `impact` | `{"id":"<id>"}` |
+| What does this work item need to make sense? | `dependencies` | `{"id":"<id>"}` |
+| What touches this item at all, either direction? | `neighbors` | `{"id":"<id>"}` |
+| How do these two work items connect? | `path` | `{"from":"<id>","to":"<id>"}` |
+| Which documents have no incoming link left? | `orphans` | `{}` |
+| What is the overall shape of this project's docs? | `stats` | `{}` |
+| When was this delivered, and what replaced it? | `history` | `{"id":"<id>"}` |
+| The graph is stale after documents changed | `reindex` | `{}` |
+
+**Two rows are the ones a discovery step usually wants**, and neither replaces the other: `search` starts from words, `touched_by` starts from paths. A command holding a diff has paths and should not reduce them to keywords first.
+
+```
+IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
+  ⛔ DO NOT: Report it answered
+  ✅ DO: Run the second action the question needs, then report both
+```
+
+**`reindex` is the one row that is not a question.** It is an operation with exactly one call, and `{{cmd:add.done}}` already runs it after a delivery. Run it here only when a read came back describing documents you know have changed.
 
 **Produces `RELATED_WORK`:** the hits, each carrying its `id`, `kind`, `status`, `tags`, `path`, the first sentence of its TL;DR and its typed relations. Every command that loads this skill names where `RELATED_WORK` goes; none of them may leave it unused.
 
@@ -87,7 +143,28 @@ npx codeadd mcp --corpus=docs --action=touched_by --args='{"files":["<path>","<p
 
 **Status is returned, never filtered here.** Two work items in flight that touch one area are exactly the pair that most needs to see each other. Filter on the field if the command wants to; do not ask this step to hide anything.
 
-**Graph absent → no-op.** A project with no index, or one whose `npx` cannot reach the package offline, notes ONCE: "knowledge graph unavailable — `codeadd update` builds it", then continues to PRESENCE. No project is broken by not having one, exactly as with the index and the wiki.
+### An Empty Answer and a Missing Route Are Different
+
+⛔ **These two are not the same outcome and must never be reported as one.**
+
+| Outcome | What it means | What `RELATED_WORK` carries |
+|---|---|---|
+| **Empty answer** — the graph ran and returned nothing | A FINDING. Nothing in this project's delivered documents relates to the question. That is real information: it says the area is new | `none — the graph answered and had no match` |
+| **No route** — the graph could not be reached | NOT a finding. The question is unanswered, and nothing about the project has been learned | `NOT VERIFIED — <why the route was missing>` |
+
+```
+IF THE GRAPH IS UNREACHABLE:
+  ⛔ DO NOT: Report the question as answered
+  ⛔ DO NOT: Reconstruct the answer by grepping docs/ and present it as the graph's
+  ✅ DO: Write NOT VERIFIED into RELATED_WORK, and say what blocked the route
+  ✅ DO: Report whatever you did find, labelled as what it is — a guess from filenames
+```
+
+**The label is the whole point.** A caller that receives a filename-derived list with no marking cannot tell it from a graph answer and will act as though an edge existed. `NOT VERIFIED` costs the caller one more look; an unmarked guess costs it the wrong decision.
+
+**`RELATED_WORK` is never left blank.** Blank reads as "the step did not run". One of the three — hits, `none`, or `NOT VERIFIED` — always fills it, and that is what the commands gate on.
+
+**Graph absent → no-op, and it is the NOT VERIFIED case.** A project with no index, or one whose `npx` cannot reach the package offline, notes ONCE: "knowledge graph unavailable — `codeadd update` builds it", writes `NOT VERIFIED` into `RELATED_WORK`, then continues to PRESENCE. No project is broken by not having one, exactly as with the index and the wiki.
 
 **This step is STANDALONE, like INDEX.** It reads what delivered documents record about each other. It does not read the wiki and it does not read code.
 

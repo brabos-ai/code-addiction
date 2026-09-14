@@ -11,6 +11,17 @@
 #               CLI, the same declaration qa-preflight.sh makes)
 # Output: KEY=VALUE lines, plus JSONL entries on `read`. A line starting with
 #         `{` is an entry; anything else is a key.
+#
+# READ MATCHES PER TERM. The query is split on whitespace and each term is
+# tested as a substring of the entry's text; an entry matches when it hits at
+# least one, and is scored by how many DISTINCT terms it hit. Results sort by
+# status rank, then score, then recency, then id.
+#
+# READ CUTS IN TWO BUCKETS: 5 live (live, changed) and 2 dead (superseded,
+# gone), independently, with NO backfill of unused dead slots into live ones.
+# `--limit N` sets the live cap only; the dead cap is fixed. Both numbers are a
+# declared tunable and changing one needs evidence. MATCHED_LIVE/MATCHED_DEAD
+# report what matched; RETURNED_LIVE/RETURNED_DEAD what survived the cut.
 # Exit:   0 for probe results — `read` and `verify` always exit 0, including on
 #         an absent index. 1 ONLY when the filesystem refuses a write. 2 for
 #         caller error: a bad mode, bad arguments, a record breaking a hard ban
@@ -60,7 +71,7 @@ shift
 
 QUERY=""
 LAYER=""
-LIMIT="10"
+LIMIT="5"   # the LIVE cap; --limit overrides it. The dead cap is fixed, in node.
 NO_VERIFY=""
 ENTRY_ID=""
 REPAIR=""
@@ -361,6 +372,30 @@ function doRead() {
   // rewrites on every anchor move, so matching it would let a query hit a
   // stale pointer and return an entry on the strength of a path that no longer
   // describes it. `find` is the byte-exact anchor and it is already in.
+  // PER-TERM, not one contiguous substring. The skill asks its callers for
+  // "the terms from the task" — plural — while this tested the whole query in
+  // one piece, so any two terms that did not appear adjacent AND in that order
+  // answered nothing. Measured before the change: `read "knowledge graph"`
+  // matched, `read "graph knowledge"` did not, and neither did any query whose
+  // terms came from two different fields.
+  //
+  // A term matches as a SUBSTRING, never on a word boundary. The haystack
+  // carries `id` (0042F), `find` (byte-exact identifiers like
+  // authGoogleHandler) and `words` (a keyword blob); a word-boundary rule would
+  // stop `auth` from reaching `authGoogleHandler`, which is the hit this index
+  // exists to return.
+  // DEDUPED, because the score is defined as the count of DISTINCT terms hit.
+  // Without this, `read "graph graph knowledge"` scores an entry matching only
+  // `graph` at 2 and one matching only `knowledge` at 1 — and the skill tells
+  // callers a full sentence is a fine query, which makes a repeated word normal
+  // input rather than a pathological one.
+  const TERMS = [...new Set(q.split(/\s+/).filter(Boolean))];
+
+  // Score is the count of DISTINCT terms an entry hit, held beside the entry
+  // rather than on it: these objects are serialised straight to stdout, and a
+  // `_score` property would ship into the caller's JSON.
+  const SCORE = new Map();
+
   list = list.filter((e) => {
     const items = Array.isArray(e.items) ? e.items : [];
     const hay = [e.id, e.name, e.words, e.node || '']
@@ -368,13 +403,24 @@ function doRead() {
       .concat(items.map((it) => (it && it.find) || ''))
       .join(' ')
       .toLowerCase();
-    return hay.indexOf(q) !== -1;
+    // An all-whitespace query keeps its old meaning — everything matches — so
+    // the degenerate case behaves as the docs corpus `search` action does
+    // rather than silently returning nothing.
+    if (TERMS.length === 0) { SCORE.set(e, 0); return true; }
+    let hits = 0;
+    for (const t of TERMS) if (hay.indexOf(t) !== -1) hits += 1;
+    SCORE.set(e, hits);
+    return hits > 0;
   });
 
-  const matched = list.length;
-
-  // Verification is bounded to what is being RETURNED, never to the file. That
-  // is what makes stale confidence structurally impossible without a scheduler.
+  // Verification is bounded to what MATCHED, never to the file. That is what
+  // makes stale confidence structurally impossible without a scheduler.
+  //
+  // It cannot be bounded to what is RETURNED: the sort below ranks on `status`,
+  // so every matched entry must be verified before the cut can choose between
+  // them. Per-term matching widened the matched set, so a verifying read now
+  // greps source for more entries than it used to — which is what `--no-verify`
+  // is for on a triage path that only needs the ranking.
   // --no-verify returns the stored status and opens no source file: /add.hotfix
   // STEP 4 forbids grepping code before its history agents are dispatched, and
   // a verifying read greps source.
@@ -384,24 +430,60 @@ function doRead() {
 
   // Ordering belongs to the read contract, not to callers: several consumers
   // each sorting one shared structure is how two of them come to disagree.
-  // Dead entries rank last and are NEVER dropped — a `gone` result is often the
-  // most valuable answer, because it says this was tried and abandoned.
+  // Dead entries rank last and get RESERVED SLOTS of their own, because a `gone`
+  // result is often the most valuable answer: it says this was tried and
+  // abandoned. They are NOT "never dropped" — the dead cap below is 2, and a
+  // larger matching dead set IS cut, which MATCHED_DEAD reports.
   list.sort((a, b) => {
     const ra = RANK[a.status] === undefined ? 9 : RANK[a.status];
     const rb = RANK[b.status] === undefined ? 9 : RANK[b.status];
     if (ra !== rb) return ra - rb;
+    // Score outranks recency: an entry that answered more of the query is a
+    // better answer than a newer one that answered less of it.
+    const sa = SCORE.get(a) || 0;
+    const sb = SCORE.get(b) || 0;
+    if (sa !== sb) return sb - sa;
     if (a.ts !== b.ts) return a.ts < b.ts ? 1 : -1;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 
-  const limit = parseInt(LIMIT, 10);
-  const returned = list.slice(0, limit);
+  // TWO INDEPENDENT CAPS, because one cap silently ate the dead entries. The
+  // list is sorted live -> changed -> superseded -> gone, so a single
+  // `slice(0, limit)` always cut from the `gone` end: every query matching more
+  // than the cap returned no dead entry at all, while three separate documents
+  // promised dead entries were never filtered.
+  //
+  // NO BACKFILL. Unused dead slots do not go to live entries. Backfilling would
+  // make the live cut depend on unrelated data, so one query would return
+  // different live sets depending on whether a dead entry happened to match.
+  //
+  // THE NUMBERS ARE A DECLARED TUNABLE, not a discovery. Changing either needs
+  // evidence and an updated line in
+  // add-doc-schemas/references/delivery-index.md.
+  const LIVE_CAP = parseInt(LIMIT, 10);
+  const DEAD_CAP = 2;
 
-  out('MATCHED', String(matched));
-  out('RETURNED', String(returned.length));
-  out('LIMIT', String(limit));
+  const DEAD = new Set(['superseded', 'gone']);
+  // An unknown status goes in the LIVE bucket. The four statuses are closed and
+  // `write` refuses any other, so this only reaches a hand-edited line - and
+  // dropping such an entry is the exact failure these caps exist to fix.
+  const liveList = list.filter((e) => !DEAD.has(e.status));
+  const deadList = list.filter((e) => DEAD.has(e.status));
+
+  const returnedLive = liveList.slice(0, LIVE_CAP);
+  const returnedDead = deadList.slice(0, DEAD_CAP);
+
+  // PER BUCKET, because `MATCHED 40 RETURNED 7` never said whether a dead entry
+  // was cut, and an agent told only the seven concludes there are seven.
+  out('MATCHED_LIVE', String(liveList.length));
+  out('MATCHED_DEAD', String(deadList.length));
+  out('RETURNED_LIVE', String(returnedLive.length));
+  out('RETURNED_DEAD', String(returnedDead.length));
+  out('LIVE_CAP', String(LIVE_CAP));
+  out('DEAD_CAP', String(DEAD_CAP));
   out('SKIPPED_LINES', skipped.join(','));
-  for (const e of returned) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of returnedLive) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of returnedDead) process.stdout.write(JSON.stringify(e) + '\n');
 }
 
 // ─── verify ──────────────────────────────────────────────────────────────────

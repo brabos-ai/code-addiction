@@ -175,9 +175,30 @@ which is a new line like any other correction.
    index that refuses to answer because one line is corrupt is worse than one that answers about the rest
    and says so.
 2. **Group by `id`. The last line wins.**
-3. **Dead entries are returned, never filtered.** `gone` and `superseded` results are the answer to *"did we
-   try this before?"* — hiding them would repeat the original failure with the sign flipped. A consumer may
-   rank them lower; it may not drop them. Returned order is `live` → `changed` → `superseded` → `gone`, and
+3. **Match PER TERM, and score by how many terms hit.** The query is split on whitespace and each term is
+   tested as a substring of the entry's text; an entry matches when it hits at least one, and carries a
+   score equal to the number of DISTINCT terms it hit. A term matches as a substring and never on a word
+   boundary, because the haystack holds `id`, `find` (byte-exact identifiers) and `words` (a keyword blob),
+   and a word-boundary rule would stop `auth` from reaching `authGoogleHandler`. An all-whitespace query
+   matches everything. **A whole-query substring test was the previous rule and it was wrong**: any two
+   terms that were not adjacent and in that order answered nothing, while the skill asks its callers for
+   "the terms from the task", plural.
+4. **Cut in TWO INDEPENDENT BUCKETS: 5 live and 2 dead.** `live` and `changed` fill the live bucket;
+   `superseded` and `gone` fill the dead one. **Unused dead slots are NEVER backfilled with live entries** —
+   backfilling would make the live cut depend on unrelated data, so one query would return different live
+   sets depending on whether a dead entry happened to match. `--limit N` sets the live cap only; the dead
+   cap is fixed. **Both numbers are a declared tunable**: changing either needs evidence and an updated line
+   here, the same treatment the over-match thresholds get.
+5. **Dead entries get RESERVED SLOTS, and the reader is told what was cut.** `gone` and `superseded`
+   results are the answer to *"did we try this before?"* — a single cut over a list that sorts dead last
+   removed them from every query matching more than the cap, which is the original failure with the sign
+   flipped. They are **not** unfiltered: a matching dead set larger than 2 IS cut. What makes that honest
+   is that the count is reported per bucket. The read emits SIX keys — `MATCHED_LIVE`, `MATCHED_DEAD`,
+   `RETURNED_LIVE`, `RETURNED_DEAD`, and `LIVE_CAP` / `DEAD_CAP` for the caps in force — and they
+   replace the single `MATCHED` / `RETURNED` / `LIMIT` trio, which no longer exists. Per bucket,
+   because `MATCHED 40 RETURNED 7` never said whether a dead entry was dropped, and an
+   agent told only the seven concludes there are seven.
+6. **Returned order is `live` → `changed` → `superseded` → `gone`, then score DESCENDING, then recency NEWEST FIRST, then id ASCENDING**, and
    the reader applies it — consumers render what they receive and never re-rank.
 
 ## Hard bans
