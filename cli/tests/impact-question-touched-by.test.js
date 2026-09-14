@@ -106,6 +106,28 @@ describe('L3.2 — the migration reports the loss instead of counting a harvest'
     expect(migrations()).toMatch(/do not enter|not carried|left on disk/i);
   });
 
+  it('a real brownfield run says the legacy list was found and not carried', async () => {
+    // BEHAVIOUR, not text. The two assertions above read the source, which
+    // proves the code was edited and not that the note ever reaches a user.
+    // This runs migration 0002 over the brownfield fixture — which carries a
+    // `hotfix-related` document with a filled `## Impacted Files` — and reads
+    // what it reports.
+    const { makeBrownfield, removeTree } = await import('./helpers/brownfield-fixture.js');
+    const { MIGRATIONS } = await import('../src/migrations.js');
+    const cwd = makeBrownfield();
+    try {
+      const outcome = MIGRATIONS.find((m) => m.id === '0002-harvest-relations').run({ cwd, providers: [] });
+      const notes = (outcome.notes ?? []).join('\n');
+      expect(notes).toMatch(/legacy `## Impacted Files` list/);
+      expect(notes).toMatch(/do not enter the new format/);
+      // And it is NOT filed under "harvested", which is the claim that hid the
+      // gap for as long as it did.
+      expect(notes).not.toMatch(/harvested[^\n]*impactedFiles/);
+    } finally {
+      removeTree(cwd);
+    }
+  });
+
   it('still never deletes and never commits', () => {
     // GUARD. The additive-only rule is what makes the migration safe to run
     // unattended inside `codeadd update`, and this F-block must not weaken it.
