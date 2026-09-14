@@ -8,6 +8,7 @@
 - agent: web-index-analyzer
 - skill: add-final-report
 - command: /add-framework--release
+- mention: building-commands
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
@@ -149,9 +150,16 @@ node scripts/graph.js stats --json    # counts by kind, edge type, and the hubs
 node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / "used by"
 ```
 
-**`add-artefact-graph` owns the verbs, both interfaces and what the graph cannot see.** The calls
-above are the ones this step needs, not the whole surface — load the skill when the question is not
-one of them, or when an answer has to be qualified.
+⛔ **The calls above are literal on purpose, and this is the one step in this ecosystem where that is
+still correct.** It is deterministic transcription with no agent deciding anything: one `neighbors`
+run per row, `--json` because the output is parsed rather than read, and `stats` once for the counts.
+The flags are the point, and `building-commands` keeps explicit bash exactly here — where the flags
+matter and are not obvious.
+
+**They are not the graph's whole surface, and no question outside this loop is answered from them.**
+`add-artefact-graph` owns which verb answers which question, both interfaces, and the standing list of
+what no query reaches. Load it the moment the question stops being "fill this row" — including any
+answer that has to be qualified before it is written down.
 
 `neighbors` returns inbound and outbound edges with their types, which is exactly
 the "skills loaded" and "used by" columns below. It is derived from each
