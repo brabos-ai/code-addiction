@@ -299,7 +299,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
 7. Consult knowledge base for validation:
    - IF `WIKI:present` (from script output): Load `{{skill:add-knowledge-discovery/SKILL.md}}`, read the hub (`{{addpath:wiki/index.md}}`), then SELECT + read the `{{addpath:wiki/domains/<area>.md}}` page(s) matching the changed code's areas, plus `{{addpath:wiki/conventions.md}}`. Freshness-check each selected page.
-   - Run the skill's GRAPH step with `touched_by` over the changed file list. **`RELATED_WORK` destination:** STEP 10.1's dispatch payload, which carries it to both judges as the deliveries that last changed these files.
+   - Run the skill's GRAPH step with `touched_by` over the changed file list. **`RELATED_WORK` destination:** STEP 10.1's dispatch payload, which carries it to both judges as the deliveries that last changed these files. **STEP 10 arrives with `qa-pipeline`** — with the feature disabled there are no judges to carry it to, and `RELATED_WORK` stays coordinator context for STEPs 3 and 5. ⛔ DO NOT skip the GRAPH step on that branch: the history it returns is what tells STEP 3 a file was rewritten two deliveries ago and is not the new work it looks like.
    - IF `WIKI:present` is false: note "knowledge base unavailable — /add.wiki generates it" and continue with code-derived patterns only.
    - These pages contain implementation patterns and conventions to validate against
 
