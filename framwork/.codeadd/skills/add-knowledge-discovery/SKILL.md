@@ -192,19 +192,31 @@ for "the review of the login feature", gets an empty result and reports no revie
 exists has asked a question the model cannot answer, and has read the answer as
 evidence.
 
-### When the Index Cannot Answer, There Is a Ladder
-
-⛔ **index → git → nothing**, in that order, and each rung is reported as what it is.
+### Where an Answer Can Come From — index → git → nothing
 
 | Rung | When | What it gives |
 |---|---|---|
 | **index** | a project that has run a close-out | The delivered work, its relations and its anchors |
-| **git** | no index, or an index that answers empty | `git log --follow <path>` answers "who touched this" with no index and no plugin, always |
-| **nothing** | no repository either | `NOT VERIFIED`, with the reason |
+| **git** | the question is about PATHS and the index could not answer | `git log --follow <path>` names the commits that touched a file, with no index and no plugin |
+| **nothing** | no repository either | Nothing. `NOT VERIFIED`, with the reason |
 
-The rungs are not interchangeable and the answer says which one produced it. A git
-answer names commits, not deliveries, and reading it as the index's answer claims a
-relationship nobody recorded.
+⛔ **THIS LADDER DOES NOT CHANGE WHAT THIS STEP DOES WHEN THE INDEX IS ABSENT.**
+The no-op rules above govern the FLOW — an absent index or an unreachable graph
+notes once, writes `NOT VERIFIED` into `RELATED_WORK` and continues to PRESENCE,
+and nothing here blocks or retries. This ladder governs SOURCING: where an answer
+you do produce came from, and how it must be labelled.
+
+```
+IF THE INDEX ANSWERED NOTHING AND YOU FALL BACK TO git log:
+  ⛔ DO NOT: Write the result into `RELATED_WORK` as though the index returned it
+  ⛔ DO NOT: Treat reaching the git rung as permission to stop and ask
+  ✅ DO: Label it as a git answer — commits, not deliveries — and continue to PRESENCE
+```
+
+**The git rung is available, never automatic.** No command runs it for you; an
+agent holding paths may reach for it when the index is silent and the question is
+worth the extra step. A git answer names commits, and reading it as the index's
+claims a relationship nobody recorded.
 
 ### An Empty Answer and a Missing Route Are Different
 
