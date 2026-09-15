@@ -348,6 +348,11 @@ describe('L4b — the consumption rules reach the caller', () => {
 describe('L5 — the four measured defects are gone', () => {
   it('L5.1 a how-to page written exactly as add.wiki instructs is returned by search', async () => {
     const root = makeTree({
+      // `docs/` is here because the corpus PROBE requires it, even though the
+      // page lives under the wiki root. A wiki-only project is refused by a
+      // corpus whose roots include the wiki — real, pre-existing, and outside
+      // this plan; the ledger records it.
+      'docs/features/0001F-x/about.md': fm({ id: '0001F', type: 'feature', slug: 'x', status: 'done' }),
       '.codeadd/wiki/backend/deploy.md': fm({
         id: 'wiki/backend/deploy',
         type: 'how-to',

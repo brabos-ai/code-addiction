@@ -28,6 +28,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { KINDS, lookup } from './types.mjs';
 
 /**
  * The closed relation vocabulary, per design decision 10.
@@ -257,22 +258,50 @@ function walkMarkdown(root, rel = '', out = []) {
 // ---------------------------------------------------------------------------
 
 /**
- * Membership is decided by the `type:` frontmatter key, never by a path glob.
+ * Membership is decided by the type REGISTRY, never by a path glob and never by
+ * the shape of the type's name.
  *
  * A real `docs/` holds the user's own material beside codeadd's — `chat-gpt/`,
  * `images/`, `critical-findings.md` — and a glob would need an exclusion list
- * somebody maintains forever. Every document codeadd writes carries `type:`;
- * a file without one is the user's and is skipped and reported.
+ * somebody maintains forever. A file carrying no `type:` is the user's, and is
+ * skipped and reported.
+ *
+ * ⛔ WHAT THIS REPLACED: `String(type).endsWith('-about')`. A naming convention
+ *    was doing a type system's job, and it silently demoted every document whose
+ *    name did not fit — measured, that was two of every three wiki pages and
+ *    four whole document kinds.
+ *
+ * ⛔ AN UNKNOWN TYPE IS REPORTED, NEVER DEMOTED. A document may declare `kind:`
+ *    itself and it then counts, whatever its type — OKF's rule, that a consumer
+ *    "MUST NOT reject a bundle because of ... unknown `type` values", because a
+ *    project names its own document types. A type in neither place is named in
+ *    the skip record so a reader can see WHICH type went unrecognised.
  */
 function classify(relPath, frontmatter) {
   if (!frontmatter) return { kind: null, reason: 'no frontmatter block' };
   const type = frontmatter.type;
   if (!type) return { kind: null, reason: 'frontmatter carries no type: key' };
-  if (String(type).endsWith('-about')) return { kind: 'work item', type };
-  if (type === 'reference' && relPath.includes('.codeadd/wiki/')) {
-    return { kind: 'reference page', type };
+
+  const declared = lookup(String(type));
+  if (declared) {
+    if (declared.root && !relPath.includes(`${declared.root}/`)) {
+      return {
+        kind: null,
+        reason: `type \`${type}\` must live under ${declared.root}/, and this does not`,
+      };
+    }
+    return { kind: declared.kind, type, entry: declared };
   }
-  return { kind: 'attachment', type };
+
+  const own = frontmatter.kind ? String(frontmatter.kind) : null;
+  if (own && KINDS.includes(own)) return { kind: own, type, entry: null };
+  if (own) {
+    return { kind: null, reason: `type \`${type}\` declares kind \`${own}\`, which is not one of ${KINDS.join(', ')}` };
+  }
+  return {
+    kind: null,
+    reason: `type \`${type}\` is not in the registry and the document declares no kind: of its own`,
+  };
 }
 
 function wikiNodeId(relPath) {
@@ -308,7 +337,7 @@ function loadDocsCorpus(root) {
     }
 
     const tldr = section(content, 'TL;DR');
-    const isPage = verdict.kind === 'reference page';
+    const isPage = verdict.kind === 'page';
     const id = isPage ? wikiNodeId(relPath) : String(frontmatter.id ?? '').trim();
     if (!id) {
       skipped.push({ path: relPath, reason: 'work item carries no id: value' });
@@ -340,7 +369,7 @@ function loadDocsCorpus(root) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const byDir = new Map();
   for (const node of nodes) {
-    if (node.kind === 'work item') byDir.set(path.posix.dirname(node.path), node);
+    if (node.kind === 'work-item') byDir.set(path.posix.dirname(node.path), node);
   }
 
   // Attach each attachment to its work item: the directory answers for the
@@ -528,8 +557,8 @@ export const CORPORA = {
     name: 'docs',
     roots: ['docs', '.codeadd/wiki'],
     probe: 'docs',
-    membership: 'frontmatter carries a `type:` key',
-    nodeRule: 'the `id:` value, or `wiki/<page>` for a reference page',
+    membership: 'the `type:` key resolves in the type registry (mcp/types.mjs), or the document declares its own `kind:`',
+    nodeRule: 'the `id:` value, declared in frontmatter on every kind including a page',
     edgeSources: ['## Relations', '{{doc:ID}}', 'related:', 'superseded_by', 'sources globs'],
     index: '.codeadd/docs-index.json',
     deliveredScript: '.codeadd/scripts/delivered.sh',
