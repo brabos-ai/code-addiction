@@ -184,7 +184,7 @@ Both `/add.build` (E2E green-confirm) and `/add.review` (QA run) invoke this pro
 ```bash
 bash .codeadd/scripts/status.sh
 ```
-Parse: OWNER (name + level), PROJECT_DOCS, package manager hints, features under `docs/features/`.
+Parse: PROJECT_DOCS, package manager hints, features under `docs/features/`.
 
 ### 1.2 Load install methodology
 Read {{skill:add-dev-environment-setup/SKILL.md}} — reuse its OS-detection + confirm-before-install discipline. This command installs (confirm-then-execute), it does NOT merely instruct.

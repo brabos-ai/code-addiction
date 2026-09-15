@@ -40,7 +40,6 @@ argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Runs the delivery loop that is otherwise prose the user executes by hand: plan,
 then `build ⇄ review` until the feature satisfies the same gates `/add.done`

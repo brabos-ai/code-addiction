@@ -32,7 +32,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-plan-based-features
 - mention: add-plan-review
 - mention: add-review-discipline
-- mention: add-product-discovery
 - mention: add-project-scaffolding
 - mention: add-qa
 - mention: add-qa-migration
@@ -114,7 +113,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Recommends route (hotfix/feature/extend/no-action). READ-ONLY | add-doc-schemas, add-ecosystem, add-final-report, add-investigation, add-knowledge-discovery |
 | add.done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Final evidence preserves open findings; it is not a pass certificate | add-doc-schemas, add-ecosystem, add-final-report, add-id-convention, add-wiki-maintenance |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. With tdd-pipeline, pins the confirmed root cause with a coordinator-verified RED test before any edit. After the fix, dispatches @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent (read-only) and triages their findings in one bounded corrective pass, recording the outcome in about.md `## Review`. Creates isolated doc in docs/features/[NNNN]H-*, recording the user-confirmed cause as typed `caused_by` relations in its about.md | add-doc-schemas, add-ecosystem, add-final-report, add-id-convention, add-investigation, add-knowledge-discovery, add-tdd, add-ux-design |
-| add.init | Project onboarding - 3 questions (name, level, language), flat owner.md, optional product.md | add-doc-schemas, add-final-report, add-product-discovery |
 | add.new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add.build) | add-doc-schemas, add-final-report, add-id-convention, add-knowledge-discovery, add-plan-review, add-review-discipline |
 | add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled. STEP 13 dispatches `@plan-reviewer-agent` before completion. **STEP 10.5 (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add-backend-development, add-cross-sf-consistency, add-database-development, add-doc-schemas, add-ecosystem, add-feature-discovery, add-final-report, add-frontend-development, add-id-convention, add-knowledge-discovery, add-plan-review, add-qa-spec (qa-pipeline), add-review-discipline, add-tasks-checklist, add-ux-design |
 | add.plan-to-ready | Bounded convergence loop, feature / subfeature / **whole epic**. Loops build ⇄ review at most 3 iterations **per subfeature**, reset at each subfeature boundary, against the `/add.done` gates evaluated in dry-run by `converge-gates.sh`. On an epic target it iterates every pending subfeature in dependency order, commits + tags + pushes a gated checkpoint per converged subfeature (gate results in the commit trailer) and halts on the first non-CONVERGED one. Dispatches named leaf agents at depth 1, never commands. Plan leg dispatches `@plan-reviewer-agent` (`kind: feature-plan`) after consolidating `plan.md`. Reports CONVERGED / CAP_REACHED / BLOCKED and returns control; the merge stays human | add-commit, add-cross-sf-consistency, add-doc-schemas, add-final-report, add-review-discipline |
@@ -154,7 +152,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-plan-based-features | Implement subscription plan-based features |
 | add-plan-review | Pre-delivery executability rubric for about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` |
 | add-cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` |
-| add-product-discovery | Product discovery (macro level) |
 | add-project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration |
 | add-qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, config.json/screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded at the QA merge step `qa-pipeline` adds to /add.review, never by a judge |
 | add-qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add.new → add.plan → add.build → add.review) and its checkpoints; consumed by /add.qa-setup |
@@ -227,7 +224,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-database-development | add.build, add.plan, add.plan-to-ready |
 | add-ux-design | add.ux, add.build, add.review, add.hotfix, add.plan, add.plan-to-ready; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add-code-review | add.build, add.hotfix, add.plan-to-ready, add.review; @reviewer-agent, @security-agent, @conformance-agent and @failure-analysis-agent declare it as a skill |
-| add-final-report | add.audit, add.brainstorm, add.build, add.diagnose, add.done, add.hotfix, add.init, add.new, add.plan, add.plan-to-ready, add.pull-request, add.qa-setup, add.review, add.wiki — every command that finishes work. add.md and add.ux are exempt: a router and an instruction transformer finish none |
+| add-final-report | add.audit, add.brainstorm, add.build, add.diagnose, add.done, add.hotfix, add.new, add.plan, add.plan-to-ready, add.pull-request, add.qa-setup, add.review, add.wiki — every command that finishes work. add.md and add.ux are exempt: a router and an instruction transformer finish none |
 | add-security-audit | add.build, add.hotfix, add.plan-to-ready, add.review; @security-agent and @reviewer-agent declare it as a skill |
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
@@ -237,7 +234,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-feature-readback | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg), add.build (cold readback before the first F-block) — all via readback-agent, each after the plan-review fixes land |
 | add-feature-discovery | add.plan (direct), add.plan-to-ready (via discovery-agent) |
 | add-feature-specification | add.plan, add.plan-to-ready — via discovery-agent |
-| add-doc-schemas | add.new, add.brainstorm, add.audit, add.plan, add.build, add.plan-to-ready, add.hotfix, add.done, add.pull-request, add.init, add.wiki, add.diagnose, add.qa-setup, add.review |
+| add-doc-schemas | add.new, add.brainstorm, add.audit, add.plan, add.build, add.plan-to-ready, add.hotfix, add.done, add.pull-request, add.wiki, add.diagnose, add.qa-setup, add.review |
 | add-architecture-discovery | add.wiki (direct); add.diagnose, add.hotfix, add.plan, add.plan-to-ready (via architecture-agent) |
 | add-ecosystem | add (loses full view), add.audit, add.build, add.diagnose, add.done, add.hotfix, add.plan, add.wiki — the commands that route to next steps |
 | add-wiki-maintenance | add.wiki (update mode), add.done (STEP 4.9) |
@@ -262,7 +259,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-feature-specification (about.md) | add.review (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.review (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add.review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
-| status.sh | add, add.audit, add.brainstorm, add.build, add.diagnose, add.hotfix, add.init, add.new, add.plan, add.plan-to-ready, add.qa-setup, add.review, add.ux, add.wiki — owner profile + ecosystem signals for every command |
+| status.sh | add, add.audit, add.brainstorm, add.build, add.diagnose, add.hotfix, add.new, add.plan, add.plan-to-ready, add.qa-setup, add.review, add.ux, add.wiki |
 | build-setup.sh | add.build (STEP 2 branch creation), add.plan-to-ready — enforces the `F[NNNN]` branch format |
 | done.sh | add.build, add.done |
 | delivered.sh | add.done, add.hotfix — delivery-index queries for the iteration log |
@@ -295,7 +292,6 @@ Conditions evaluated top-to-bottom — use FIRST match.
 
 | After | Condition | Suggest | Why |
 |-------|-----------|---------|-----|
-| add.init | always | `/add.new` | Onboarding done, start first feature |
 | add.brainstorm | idea ready to formalize | `/add.new` | Capture as feature |
 | add.brainstorm | needs more exploration | continue brainstorm | Not ready to commit |
 | add.brainstorm | bug suspected, needs investigation | `/add.diagnose` | Structured triage needed |

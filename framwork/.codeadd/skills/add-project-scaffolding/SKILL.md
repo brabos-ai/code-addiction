@@ -78,7 +78,6 @@ project/
 │   ├── unit/
 │   └── integration/
 ├── docs/
-│   └── owner.md
 ├── package.json
 ├── tsconfig.json
 ├── .eslintrc.js

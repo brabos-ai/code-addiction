@@ -104,27 +104,6 @@ PHASE="none"
 echo "BRANCH:$CURRENT_BRANCH TYPE:$BRANCH_TYPE MAIN:$MAIN_BRANCH"
 
 # =============================================================================
-# OUTPUT: OWNER (technical level for communication)
-# =============================================================================
-
-OWNER_FILE="docs/owner.md"
-if [ -f "$OWNER_FILE" ]; then
-    OWNER_NAME=$(grep -i "^Nome:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nome:[[:space:]]*//' | head -1 || echo "unknown")
-    OWNER_NIVEL=$(grep -i "^Nivel:" "$OWNER_FILE" 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || echo "intermediate")
-    OWNER_IDIOMA=$(grep -i "^Idioma:" "$OWNER_FILE" 2>/dev/null | sed 's/^Idioma:[[:space:]]*//' | head -1 || echo "en-us")
-    [ -z "$OWNER_NAME" ] && OWNER_NAME="unknown"
-    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediate"
-    # Normalize PT-BR skill level identifiers to English (backwards compatibility)
-    case "$OWNER_NIVEL" in
-      iniciante) OWNER_NIVEL="beginner" ;;
-      intermediario) OWNER_NIVEL="intermediate" ;;
-      avancado) OWNER_NIVEL="advanced" ;;
-    esac
-    [ -z "$OWNER_IDIOMA" ] && OWNER_IDIOMA="en-us"
-    echo "OWNER:${OWNER_NAME}|${OWNER_NIVEL}|${OWNER_IDIOMA}"
-fi
-
-# =============================================================================
 # OUTPUT: FEATURE (only if on feature branch)
 # =============================================================================
 

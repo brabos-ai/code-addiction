@@ -17,28 +17,6 @@ if ! command -v git &>/dev/null; then
 fi
 
 # =============================================================================
-# OWNER
-# =============================================================================
-
-if [ -f "docs/owner.md" ]; then
-    OWNER_NAME=$(grep -i "^Nome:" docs/owner.md 2>/dev/null | sed 's/^Nome:[[:space:]]*//' | head -1 || true)
-    OWNER_NIVEL=$(grep -i "^Nivel:" docs/owner.md 2>/dev/null | sed 's/^Nivel:[[:space:]]*//' | head -1 || true)
-    OWNER_IDIOMA=$(grep -i "^Idioma:" docs/owner.md 2>/dev/null | sed 's/^Idioma:[[:space:]]*//' | head -1 || true)
-    [ -z "$OWNER_NAME" ] && OWNER_NAME="unknown"
-    [ -z "$OWNER_NIVEL" ] && OWNER_NIVEL="intermediate"
-    [ -z "$OWNER_IDIOMA" ] && OWNER_IDIOMA="en-us"
-    # Normalize PT-BR skill level identifiers to English (backwards compatibility)
-    case "$OWNER_NIVEL" in
-      iniciante) OWNER_NIVEL="beginner" ;;
-      intermediario) OWNER_NIVEL="intermediate" ;;
-      avancado) OWNER_NIVEL="advanced" ;;
-    esac
-    echo "OWNER:$OWNER_NAME|$OWNER_NIVEL|$OWNER_IDIOMA"
-else
-    echo "OWNER:unknown|intermediate|en-us (default)"
-fi
-
-# =============================================================================
 # GIT (detection delegated to get-branch-metadata.sh)
 # =============================================================================
 

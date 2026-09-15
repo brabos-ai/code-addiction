@@ -12,7 +12,6 @@
 - agent: feature-history-agent
 - agent: git-history-agent
 - command: /add.hotfix
-- command: /add.init
 - command: /add.new
 - command: /add.plan
 - command: /add.wiki
@@ -20,7 +19,6 @@
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Investigative triage for ambiguous user reports. Receives a vague symptom or uncertain request, applies the `add-investigation` 5-phase methodology, and delivers a diagnosis + route recommendation (hotfix / feature / extend / no-action). READ-ONLY — does NOT implement fixes or open features.
 
@@ -75,7 +73,7 @@ STEP 10: Completion           → report the diagnosis in the shared shape
 bash .codeadd/scripts/status.sh
 ```
 
-Parse: OWNER (name + level), BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
+Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
 
 ### 1.2 Load ecosystem map
 
@@ -83,7 +81,6 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 ### 1.3 Conditional reads
 
-- If OWNER not found → inform user to run `/add.init`, continue with `intermediate` defaults
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
 
 ### 1.4 Consult Knowledge Base

@@ -34,7 +34,6 @@ re-creates exactly the undeclared references removing them was meant to clear.
 
 > **READ-ONLY RULE:** This command **never modifies code**. Every finding — code review, spec compliance, UX, functional, a11y, build failures, red validation gates — is emitted as a routed row in `## Fix Routing` on `review-NNN.md`, and `/add.build` applies it. A judge that moves the thing it judges cannot converge, and it invalidates the QA evidence it just captured.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backend) in parallel, consolidates every finding into one routed correction contract, and writes a versioned `review-NNN.md`. With the `qa-pipeline` feature enabled it additionally judges the rendered result through the absorbed QA sections; without it, this command is the code review and the spec-compliance audit.
 
