@@ -165,6 +165,10 @@ describe('L2 — the corpus indexes what the registry declares', () => {
     // `about.md` DOCUMENT it templates, not the retired `type:` value.
     const RETIRED = /feature-about(?!-template)|hotfix-about/;
     const ROOTS = ['framwork/.codeadd', 'mcp', 'cli/src', 'cli/tests', '.claude'];
+    // `cli/src/migrations.js` is the ONE declared home of a retired name, as
+    // MIGRATION INPUT: 0003's RETIRED_TYPE_NAMES map is what rewrites a project
+    // written before the registry. `mcp/reference.md` § 8 says so.
+    const ALLOWED = ['cli/src/migrations.js'];
     const hits = [];
     const walk = (dir) => {
       let entries;
@@ -187,9 +191,9 @@ describe('L2 — the corpus indexes what the registry declares', () => {
         //    convention that `feature-discovery-template` also follows.
         if (!/\.(md|mjs|js|json)$/.test(e.name)) continue;
         if (full.includes(`${path.sep}mcp-document-model.test.js`)) continue;
-        if (RETIRED.test(fs.readFileSync(full, 'utf8'))) {
-          hits.push(path.relative(REPO, full).replace(/\\/g, '/'));
-        }
+        const relPath = path.relative(REPO, full).replace(/\\/g, '/');
+        if (ALLOWED.includes(relPath)) continue;
+        if (RETIRED.test(fs.readFileSync(full, 'utf8'))) hits.push(relPath);
       }
     };
     for (const r of ROOTS) walk(path.join(REPO, r));
@@ -313,12 +317,28 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
   });
 
   it('L3.6 0002 still harvests after the rename — the second suffix test is gone', async () => {
-    const source = fs.readFileSync(path.join(REPO, 'cli', 'src', 'migrations.js'), 'utf8');
-    expect(source, 'migrations.js:233 was a second endsWith(-about), invisible to the graph').not.toMatch(
-      /endsWith\(['"]-about['"]\)/,
+    // BEHAVIOURAL, not a grep. A first draft asserted the source no longer
+    // matched the suffix test and failed on the COMMENT explaining its removal
+    // — a level that cannot tell code from a note about code. What matters is
+    // that 0002 harvests from documents carrying the NEW names, which is the
+    // lost-ledger case migrations.js handles explicitly.
+    const cwd = makeTree({
+      'docs/features/0009F-ledger/about.md': fm(
+        { id: '0009F', type: 'feature', slug: 'ledger', status: 'live' },
+        '\n## TL;DR\nThe ledger.\n\n## Relations\nNone\n',
+      ),
+      'docs/features/0042F-purchase/about.md': fm(
+        { id: '0042F', type: 'feature', slug: 'purchase', status: 'live' },
+        '\n## TL;DR\nPurchases write through {{doc:0009F}}.\n\n## Relations\nNone\n',
+      ),
+    });
+    const { MIGRATIONS } = await import('../src/migrations.js');
+    MIGRATIONS.find((m) => m.id === '0002-harvest-relations').run({ cwd, providers: [] });
+    const after = fs.readFileSync(path.join(cwd, 'docs/features/0042F-purchase/about.md'), 'utf8');
+    expect(after, 'a suffix test would match neither document and harvest nothing').toMatch(
+      /\[\[0009F\]\]/,
     );
-  });
-});
+  });});
 
 describe('L4 — the reference is generated, not hand-copied', () => {
   it('L4.1 the table in mcp/reference.md is byte-equal to the generator output', async () => {
