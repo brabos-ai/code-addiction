@@ -226,6 +226,35 @@ describe('L2 — the corpus indexes what the registry declares', () => {
     expect(offenders, 'an artefact that offers page types must offer all four').toEqual([]);
   });
 
+  it('L2.4c no analyzer subdoc restates the wiki frontmatter contract', () => {
+    // The contract's owner — add-architecture-discovery/SKILL.md — states that
+    // "Analyzer-specific sections below reference this one, they never restate
+    // it". That claim was false for FOUR of its subdocs, and every restatement
+    // had drifted: each was missing `id:`, so a cold dispatch of any of them
+    // produced a page the indexer skips. Three hand-written passes in this
+    // delivery each found a different subset. This level is the enumerator.
+    const dir = path.join(REPO, 'framwork', '.codeadd', 'skills', 'add-architecture-discovery');
+    const offenders = [];
+    for (const name of fs.readdirSync(dir)) {
+      if (!name.endsWith('-analyzer.md')) continue;
+      // A restatement is a fenced frontmatter block whose first two keys are
+      // `type:` and `area:` — the fields only the contract's owner enumerates.
+      // Line-wise rather than one multiline regex: this level exists because
+      // hand-written enumeration kept coming back incomplete, and a regex that
+      // silently stops matching is the same failure in another costume.
+      const lines = fs.readFileSync(path.join(dir, name), 'utf8').split('\n');
+      const restates = lines.some(
+        (l, i) =>
+          l.trim() === '```markdown' &&
+          (lines[i + 1] || '').trim() === '---' &&
+          (lines[i + 2] || '').startsWith('type:') &&
+          (lines[i + 3] || '').startsWith('area:'),
+      );
+      if (restates) offenders.push(name);
+    }
+    expect(offenders, 'an analyzer points at the contract, it never restates it').toEqual([]);
+  });
+
   it('L2.5 an attachment whose declared owner mode fails names the mode', async () => {
     const root = makeTree({
       'docs/changelog/CHG0001.md': fm({ id: 'CHG0001', type: 'changelog', related: '[]' }),

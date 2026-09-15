@@ -126,16 +126,12 @@ find . -type f \( -name "vite.config*" -o -name "next.config*" -o -name "webpack
 
 Write to `{{addpath:wiki/domains/frontend.md}}` using this structure:
 
+⛔ **Frontmatter per the Wiki Page Contract in `{{skill:add-architecture-discovery/SKILL.md}}`,
+which owns it and says so.** This page sets `type: reference` and `area: frontend`; every other
+field, `id:` included, comes from that one declaration. It is restated nowhere here — it was
+restated here before, and the copy had already drifted, missing `id:` entirely.
+
 ```markdown
----
-type: reference
-area: frontend
-description: [1-2 sentences, keyword-rich — framework, key patterns, when to read this page]
-sources: [apps/web/**, libs/frontend/**]   # ≤8 globs covering every path cited below
-commit: [short-sha at generation]
-generated: YYYY-MM-DD
-tags: [detected framework, key patterns — ≤6]
----
 
 ## TL;DR
 
