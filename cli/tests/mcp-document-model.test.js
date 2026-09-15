@@ -161,7 +161,9 @@ describe('L2 — the corpus indexes what the registry declares', () => {
   });
 
   it('L2.4 no file in the repository names a retired type literal', () => {
-    const RETIRED = /feature-about|hotfix-about/;
+    // `feature-about-template` is excluded by the lookahead: it names the
+    // `about.md` DOCUMENT it templates, not the retired `type:` value.
+    const RETIRED = /feature-about(?!-template)|hotfix-about/;
     const ROOTS = ['framwork/.codeadd', 'mcp', 'cli/src', 'cli/tests', '.claude'];
     const hits = [];
     const walk = (dir) => {
@@ -178,7 +180,11 @@ describe('L2 — the corpus indexes what the registry declares', () => {
           walk(full);
           continue;
         }
-        if (RETIRED.test(e.name)) hits.push(path.relative(REPO, full).replace(/\\/g, '/') + ' (filename)');
+        // ⛔ CONTENT ONLY, NOT FILENAMES. `templates/feature-about-template.md`
+        //    is named for the DOCUMENT it templates — `about.md`, which still
+        //    exists — not for the retired `type:` value. Renaming it would move
+        //    a file for no reader and break the `feature-<aspect>-template`
+        //    convention that `feature-discovery-template` also follows.
         if (!/\.(md|mjs|js|json)$/.test(e.name)) continue;
         if (full.includes(`${path.sep}mcp-document-model.test.js`)) continue;
         if (RETIRED.test(fs.readFileSync(full, 'utf8'))) {

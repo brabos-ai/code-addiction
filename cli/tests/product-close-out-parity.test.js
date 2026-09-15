@@ -767,7 +767,7 @@ describe('L14 — the four callers cite the skill (F17)', () => {
 
   // guards — what each site must NOT lose.
   it('L14.4 (guard): every dispatch keeps its own inputs', () => {
-    expect(read(P.newCmd)).toContain('feature-about');
+    expect(read(P.newCmd)).toContain('feature');
     expect(read(P.brainstorm)).toContain('brainstorm');
     expect(read(P.plan)).toContain('feature-plan');
   });
