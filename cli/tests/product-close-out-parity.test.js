@@ -767,9 +767,13 @@ describe('L14 — the four callers cite the skill (F17)', () => {
 
   // guards — what each site must NOT lose.
   it('L14.4 (guard): every dispatch keeps its own inputs', () => {
-    expect(read(P.newCmd)).toContain('feature');
-    expect(read(P.brainstorm)).toContain('brainstorm');
-    expect(read(P.plan)).toContain('feature-plan');
+    // The `kind:` PREFIX is what makes these guards bite. A blind rename once
+    // reduced the first one to the bare word `feature`, which appears
+    // throughout add.new.md regardless of the dispatch site — a guard that
+    // passes whatever the command does.
+    expect(read(P.newCmd)).toContain('kind: feature');
+    expect(read(P.brainstorm)).toContain('kind: brainstorm');
+    expect(read(P.plan)).toContain('kind: feature-plan');
   });
 
   it('L14.5 (guard): add.plan-to-ready keeps its Decision Log comparator', () => {

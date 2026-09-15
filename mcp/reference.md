@@ -153,7 +153,30 @@ is a finding: nothing in this project relates to the question. A missing route i
 not: the question went unasked. A result carrying `unavailable` is the second,
 never the first.
 
-## 8. Migrating a project written before this model
+## 8. The corpus rules
+
+A corpus is one declarative row in `mcp/corpora.mjs`. The **docs** corpus, the one this
+model describes, declares:
+
+| Rule | Value | What it decides |
+|---|---|---|
+| `roots` | `docs`, `.codeadd/wiki` | Which directories are walked for `.md` files |
+| `probe` | `docs` | Whether the corpus is PRESENT at all |
+| `membership` | the type registry, or a declared `kind:` | Which of those files are in the graph |
+| `nodeRule` | the `id:` value, on every kind | What a node is called |
+| `edgeSources` | `## Relations`, `{{doc:ID}}`, `related:`, `superseded_by`, `sources` globs | Where an edge can come from |
+| `index` | `.codeadd/docs-index.json` | Where the built index is cached |
+
+⛔ **An absent corpus is an ERROR naming its reason, never a silent empty result.** An
+empty graph and a missing one look identical to a caller and mean opposite things.
+
+⛔ **`probe` and `roots` are not the same list, and the gap is real.** The probe is
+`docs` alone, so a project that ran `/add.wiki` and never `/add.new` has pages under a
+declared root and the corpus still refuses to open: `corpus "docs" is not present here`.
+Measured 2026-09-15. That is the behaviour today, recorded here rather than left for the
+next reader to rediscover — widening the probe is a behaviour change nobody has decided.
+
+## 9. Migrating a project written before this model
 
 `cli/src/migrations.js` migration `0003-retire-about-suffix` rewrites the retired
 type names and writes each wiki page the id it already answered by. It is a

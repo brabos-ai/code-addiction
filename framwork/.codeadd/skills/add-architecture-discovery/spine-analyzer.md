@@ -78,17 +78,13 @@ git log --all --grep="refactor\|migrate\|architecture" --oneline | head -10
 
 Write all three pages using this structure (repeat per page, `type`/`area` differ):
 
-```markdown
----
-type: tutorial | how-to | reference | explanation
-area: architecture | conventions | workflows
-description: [1-2 sentences, keyword-rich — what this page covers and when to read it]
-sources: [package.json, turbo.json, apps/*/package.json]   # ≤8 globs covering every path cited below
-commit: [short-sha at generation]
-generated: YYYY-MM-DD
-tags: [monorepo, layer-rules, validation-gates — ≤6]
----
+⛔ **Frontmatter per the Wiki Page Contract in `{{skill:add-architecture-discovery/SKILL.md}}`,
+which owns it and says so.** This page sets `area: architecture | conventions | workflows`; every
+other field, `id:` included, comes from that one declaration. It is restated nowhere here, and it was
+restated here before — the copy had already drifted, missing `id:` entirely, which is what a second
+copy of a contract does.
 
+```markdown
 ## TL;DR
 
 [2-4 lines: what this page is, why it exists, headline facts. Extractive only.]
