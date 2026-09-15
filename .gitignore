@@ -175,4 +175,12 @@ cli/.vitest/
 # ignore" — so leaving it untracked put a dump of every node's id, path and
 # TL;DR into the anchor-verification haystack, which is the exact failure that
 # rule's own header says it exists to prevent.
-.codeadd/
+#
+# ⛔ THE LEADING SLASH IS LOAD-BEARING. Written bare as `.codeadd/`, this matched
+#    a directory of that name at ANY depth — including `framwork/.codeadd/`, the
+#    product layer's entire source of truth. The 216 files already tracked there
+#    kept working, because .gitignore does not reach a tracked file, so nothing
+#    broke and CI stayed green; what broke was every file added AFTERWARDS. A
+#    new command, skill or reference was invisible to `git add` and to
+#    `git status`, with no error anywhere. Anchor it to the root.
+/.codeadd/

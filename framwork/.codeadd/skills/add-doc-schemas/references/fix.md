@@ -2,7 +2,7 @@
 
 Category file for hotfix docs. Universal rules live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns hotfix-specific schemas and notation.
 
-**Schemas in this category:** `hotfix-about`.
+**Schemas in this category:** `hotfix`.
 
 ## Shared Notation
 
@@ -17,7 +17,7 @@ The shape used by both schemas in this category (and shared with `diagnose-repor
 
 ### Finding Evidence (delegated)
 
-The `## Review` section of `hotfix-about` records judged findings. Those findings obey the **Finding & Evidence Discipline** defined in `{{skill:add-doc-schemas/references/review.md}}` — evidence reference forms, and the rule that a severity without supporting evidence is an opinion in disguise. One definition governs both categories; it is referenced here, never restated.
+The `## Review` section of `hotfix` records judged findings. Those findings obey the **Finding & Evidence Discipline** defined in `{{skill:add-doc-schemas/references/review.md}}` — evidence reference forms, and the rule that a severity without supporting evidence is an opinion in disguise. One definition governs both categories; it is referenced here, never restated.
 
 ### Root Cause Notation
 
@@ -31,11 +31,11 @@ Skipping the third point is the most common failure mode of a hotfix postmortem.
 
 ## Schemas
 
-### hotfix-about
+### hotfix
 
 For `/add.hotfix` (creates `docs/features/[NNNN]H-<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]H`, `type: hotfix-about`, `severity:`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]H`, `type: hotfix`, `severity:`, `related: []`, `tags: []`
 - **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification · Review · Relations · Observations
 - **Depth floor:**
   - **Symptom** — when it occurs, where (component/endpoint/file), observable impact, affected users or scope, detection signal. Use Symptom Notation above.

@@ -83,7 +83,7 @@ describe('F6 — the frontmatter reader', () => {
   it('reads scalars, flow sequences and block sequences', () => {
     const fm = parseFrontmatter(`---
 id: 0042F
-type: feature-about
+type: feature
 related: [0009F, 0011F]
 tags:
   - purchases
@@ -95,7 +95,7 @@ description: How the API worker is built — routing, persistence and tenancy.
 body
 `);
     expect(fm.id).toBe('0042F');
-    expect(fm.type).toBe('feature-about');
+    expect(fm.type).toBe('feature');
     expect(fm.related).toEqual(['0009F', '0011F']);
     expect(fm.tags).toEqual(['purchases', 'ledger']);
     expect(fm.description).toContain('routing, persistence and tenancy');
@@ -137,10 +137,13 @@ describe('F6 — the docs parser decides membership by type:, never by path', ()
     for (const entry of corpus.skipped) expect(entry.reason).toBeTypeOf('string');
   });
 
-  it('a recognised type that is not *-about becomes an attachment of its work item', () => {
+  it('a type the registry declares an attachment becomes an attachment of its work item', () => {
     const feature = corpus.nodes.find((n) => n.id === '0042F');
     const names = feature.attachments.map((a) => path.basename(a.path)).sort();
-    expect(names).toEqual(['changelog.md', 'discovery.md', 'plan.md']);
+    // `discovery.md` carries `type: feature-discovery`, which no command writes
+    // and no schema declares. It is a legacy type, so the registry reports it by
+    // name instead of demoting it into this list.
+    expect(names).toEqual(['changelog.md', 'plan.md']);
     expect(feature.attachments.every((a) => a.type)).toBe(true);
   });
 
@@ -149,7 +152,8 @@ describe('F6 — the docs parser decides membership by type:, never by path', ()
     // has no *-about sibling, so the directory rule cannot resolve it.
     const hotfix = corpus.nodes.find((n) => n.id === '0051H');
     const names = hotfix.attachments.map((a) => path.basename(a.path)).sort();
-    expect(names).toEqual(['CHG0002.md', 'related.md']);
+    // `related.md` carries the retired `hotfix-related` type — reported, not attached.
+    expect(names).toEqual(['CHG0002.md']);
   });
 
   it('carries status, tags and the first sentence of the TL;DR on every work item', () => {
@@ -163,7 +167,7 @@ describe('F6 — the docs parser decides membership by type:, never by path', ()
   });
 
   it("a reference page's description is its summary, with area and sources", () => {
-    const page = corpus.nodes.find((n) => n.kind === 'reference page');
+    const page = corpus.nodes.find((n) => n.kind === 'page');
     expect(page.area).toBe('backend');
     expect(page.summary).toContain('How the API worker is built');
     expect(page.sources).toEqual(['src/api/app.ts', 'src/api/features/**', 'src/auth/*.ts']);

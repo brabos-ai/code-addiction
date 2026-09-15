@@ -33,7 +33,7 @@ Full feature discovery command BEFORE implementation.
 ## STEP 1: Load Skills + Validate Context
 
 **Load schemas and conventions (ONE-TIME):**
-- `{{skill:add-doc-schemas/SKILL.md}}` (feature-about schema, validation gate)
+- `{{skill:add-doc-schemas/SKILL.md}}` (feature schema, validation gate)
 - `{{skill:add-id-convention/SKILL.md}}` (ID/branch format)
 - `{{skill:add-plan-review/SKILL.md}}` (fresh-reader review)
 
@@ -285,7 +285,7 @@ Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided 
 
 **Write about.md:**
 - **Path:** `docs/features/[NNNN]F-[name]/about.md`
-- **Schema:** Use `feature-about` (loaded in STEP 1)
+- **Schema:** Use `feature` (loaded in STEP 1)
 - **Technique:** Read skeleton → Preserve frontmatter → Complement with validated decisions → Bump `updated:` timestamp
 - Write extractive only (requirements, not implementation)
 
@@ -322,7 +322,7 @@ Write `## Observations` from the same material: the measurements and constraints
 
 ## STEP 7: Validation Gate
 
-Execute validation gate for `feature-about` schema (from STEP 1 skills).
+Execute validation gate for `feature` schema (from STEP 1 skills).
 
 **MANDATORY.** DO NOT skip. DO NOT mark complete until gate returns `PASS`.
 
@@ -332,7 +332,7 @@ Execute validation gate for `feature-about` schema (from STEP 1 skills).
 
 Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
-1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md's path and `kind: feature-about`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
+1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md's path and `kind: feature`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
 2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site's divergence behaviour is the
    first row of its table: apply, re-gate, then present and STOP. Do NOT mark `about.md` delivered
    while a blocker stands.
