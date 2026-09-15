@@ -161,6 +161,51 @@ IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
 
 **Status is returned, never filtered here.** Two work items in flight that touch one area are exactly the pair that most needs to see each other. Filter on the field if the command wants to; do not ask this step to hide anything.
 
+### What a Hit's `kind` Tells You
+
+Every hit carries a `kind`, and it decides what the hit can answer.
+
+| `kind` | The question it answers | Asking it the other question gets |
+|---|---|---|
+| `work-item` | **What was done** — a feature, a hotfix, a PRD, a report | Nothing. A delivery record does not describe how an area works today |
+| `page` | **How this area works now** — a wiki page, one of the four Diátaxis types | Nothing. A reference page carries no history |
+
+```
+IF A RESULT IS EMPTY AND YOU ASKED FOR THE WRONG KIND:
+  ⛔ DO NOT: Report "nothing exists about this"
+  ✅ DO: Ask the other kind before concluding anything — a legitimate empty from
+         the wrong question reads exactly like an area nobody has touched
+```
+
+⛔ **AN ATTACHMENT NEVER COMES BACK ON ITS OWN.** A plan, a design, a changelog, a
+review, a QA validation and an epic are attachments: they are listed **on the work
+item that owns them**, and they are not search hits.
+
+```
+IF LOOKING FOR AN ATTACHMENT — a plan, a changelog, a review:
+  ⛔ DO NOT: Search for it directly and conclude it does not exist when nothing comes back
+  ✅ DO: Find its WORK ITEM, then read that hit's attachment list
+```
+
+**That conclusion is the failure this rule exists to stop.** An agent that searches
+for "the review of the login feature", gets an empty result and reports no review
+exists has asked a question the model cannot answer, and has read the answer as
+evidence.
+
+### When the Index Cannot Answer, There Is a Ladder
+
+⛔ **index → git → nothing**, in that order, and each rung is reported as what it is.
+
+| Rung | When | What it gives |
+|---|---|---|
+| **index** | a project that has run a close-out | The delivered work, its relations and its anchors |
+| **git** | no index, or an index that answers empty | `git log --follow <path>` answers "who touched this" with no index and no plugin, always |
+| **nothing** | no repository either | `NOT VERIFIED`, with the reason |
+
+The rungs are not interchangeable and the answer says which one produced it. A git
+answer names commits, not deliveries, and reading it as the index's answer claims a
+relationship nobody recorded.
+
 ### An Empty Answer and a Missing Route Are Different
 
 ⛔ **These two are not the same outcome and must never be reported as one.**
