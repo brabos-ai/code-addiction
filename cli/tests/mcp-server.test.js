@@ -280,7 +280,10 @@ describe('F8 — every action answers over the wire', () => {
     // boundary). fragments/qa-pipeline/add.review.md is a new node and declares
     // `skill: add-doc-schemas`, so it is a new direct dependant. Same fact as
     // the node totals that moved in build-artefact-graph.test.js.
-    expect(payload(frames[0]).dependents.length).toBe(23);
+    // 23 -> 21 (2026-09-14T215223 remove-owner-product-onboarding): add.init and
+    // add-product-discovery both declared `skill: add-doc-schemas` and both were
+    // deleted with the owner/product onboarding.
+    expect(payload(frames[0]).dependents.length).toBe(21);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {
