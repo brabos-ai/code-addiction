@@ -269,7 +269,7 @@ Present the full diagnosis in chat using this structure:
 
 Ask the user:
 1. Do you agree with this diagnosis?
-2. Do you want to persist this as a report (`docs/diagnose/[NNNN]-[slug].md`) that the next command can consume?
+2. Do you want to persist this as a report (`docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`) that the next command can consume?
 3. Ready to proceed with the suggested route?
 
 ⛔ HARD STOP. Wait for answers.
@@ -294,7 +294,7 @@ Ask the user:
 
 ### 8.3 Write (if conditions met)
 
-Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/<slug>.md` per schema (extractive only).
+Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
 ### 8.4 Carry these into STEP 10
 
