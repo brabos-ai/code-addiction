@@ -435,7 +435,7 @@ The design source is **the `docs/brainstorming/` file the plan's Context documen
 
 ⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
 
-⛔ **Nothing writes to `docs/plans/<id>--ledger.md` after this point in the same run.** 6.1 assembles the archive last, immediately before 6.2's commit — a ruling recorded after this step would exist on disk but never reach `main`, which is the exact gap the check this replaced used to catch after the fact instead of before it.
+⛔ **Nothing writes to the ledger after this point in the same run.** 6.1 assembles the archive last, immediately before 6.2's commit — a ruling recorded after this step would exist on disk but never reach `main`, which is the exact gap the check this replaced used to catch after the fact instead of before it.
 
 ### 6.2 Commit and push
 
