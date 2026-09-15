@@ -332,7 +332,7 @@ function loadDocsCorpus(root) {
     }
 
     if (verdict.kind === 'attachment') {
-      attachments.push({ path: relPath, type: verdict.type, content, frontmatter });
+      attachments.push({ path: relPath, type: verdict.type, entry: verdict.entry, content, frontmatter });
       continue;
     }
 
@@ -372,22 +372,50 @@ function loadDocsCorpus(root) {
     if (node.kind === 'work-item') byDir.set(path.posix.dirname(node.path), node);
   }
 
-  // Attach each attachment to its work item: the directory answers for the
-  // in-feature layout, and a `part_of` or `related:` id answers for
-  // `docs/changelog/CHG[NNNN].md`, which has no *-about sibling.
-  for (const attachment of attachments) {
-    const dirOwner = byDir.get(path.posix.dirname(attachment.path));
-    let owner = dirOwner;
-    if (!owner) {
-      const { relations } = parseRelations(attachment.content);
+  // Attach each attachment to the work item the REGISTRY says owns it.
+  //
+  // ⛔ ONE DECLARED MODE, NEVER THREE TRIED IN SEQUENCE. The loader used to try
+  //    the directory, then a `part_of` line, then `related:`, in an order
+  //    written nowhere, and answered `attachment resolves to no work item` for
+  //    all three failures. A reader of that message could not tell "this type
+  //    has no owner rule" from "this document's owner is missing", which is the
+  //    same class of silence the type suffix produced.
+  const OWNER_RESOLVERS = {
+    dir: (a) => byDir.get(path.posix.dirname(a.path)) ?? null,
+    related: (a) => {
+      const { relations } = parseRelations(a.content);
       const declared = relations.find((r) => byId.has(r.to));
-      const related = Array.isArray(attachment.frontmatter.related)
-        ? attachment.frontmatter.related.find((id) => byId.has(id))
+      if (declared) return byId.get(declared.to);
+      const related = Array.isArray(a.frontmatter.related)
+        ? a.frontmatter.related.find((id) => byId.has(id))
         : null;
-      owner = declared ? byId.get(declared.to) : related ? byId.get(related) : null;
+      return related ? byId.get(related) : null;
+    },
+  };
+
+  for (const attachment of attachments) {
+    const mode = attachment.entry?.owner ?? null;
+    if (!mode) {
+      skipped.push({
+        path: attachment.path,
+        reason: `type \`${attachment.type}\` is an attachment but declares no owner mode in the registry`,
+      });
+      continue;
     }
+    const resolve = OWNER_RESOLVERS[mode];
+    if (!resolve) {
+      skipped.push({
+        path: attachment.path,
+        reason: `type \`${attachment.type}\` declares owner mode \`${mode}\`, which this loader does not implement`,
+      });
+      continue;
+    }
+    const owner = resolve(attachment);
     if (!owner) {
-      skipped.push({ path: attachment.path, reason: 'attachment resolves to no work item' });
+      skipped.push({
+        path: attachment.path,
+        reason: `owner mode \`${mode}\` found no work item for this attachment`,
+      });
       continue;
     }
     owner.attachments.push({ path: attachment.path, type: attachment.type });
