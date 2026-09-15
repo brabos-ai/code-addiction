@@ -595,6 +595,3 @@ Then, after the seven blocks and before the metadata, report always:
 
 ALWAYS:
 - Say in the report which evidence the gate accepted, CI or local, and why
-
-NEVER:
-- Record a rename as a deletion or a supersession
