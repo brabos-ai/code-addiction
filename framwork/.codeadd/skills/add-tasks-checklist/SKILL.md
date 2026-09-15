@@ -114,7 +114,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - `Consumes`: the **exact signature** this task calls, plus the producing task ID in parentheses — e.g. `` `UserRepository.insert(row: NewUser): Promise<User>` (T01) ``. `-` when the task calls nothing an earlier task built. Multiple entries are comma-separated, each with its own task ID.
 - `Produces`: the **exact signature** of everything a later task will call — e.g. `` `UsersService.create(dto: CreateUserDto): Promise<UserDto>` ``. `-` when nothing downstream calls into this task.
 - `Verify`: MANDATORY single line — a runnable command, curl, or browser check.
-- **Match rule:** every `Consumes` signature MUST match, **character for character**, a `Produces` signature on an **earlier** task. This is checkable by machine, not by opinion — `/add.plan`'s STEP 12 validation gate compares the strings and fails on a mismatch, printing both. A `Consumes` written as prose ("the repo insert method") fails that comparison, which is the point: a signature a machine cannot match is a signature a dispatched subagent cannot implement against.
+- **Match rule:** every `Consumes` signature MUST match, **character for character**, a `Produces` signature on an **earlier** task. This is checkable by machine, not by opinion — `/add.plan`'s STEP 11 validation gate compares the strings and fails on a mismatch, printing both. A `Consumes` written as prose ("the repo insert method") fails that comparison, which is the point: a signature a machine cannot match is a signature a dispatched subagent cannot implement against.
 - **Why these two lines exist:** a subagent implementing T02 never sees T01's code. `Deps: T01` states order; only `Consumes` / `Produces` state the contract, so both tasks build against the same name instead of each inventing one.
 - **No tick rule.** `Consumes` and `Produces` are **not** progress — an interface is a contract. Validators NEVER tick these lines and never mark them `[!]`. The tick rule below applies to the task's own `- [ ]` checkbox and to nothing inside it.
 - **Tick rule:** validator ticks `[x]` when **all** files listed in `Files` appear in the diff with **non-trivial changes**. If only some files appear, or all changes are trivial, set `[!]` with reason.
@@ -201,7 +201,7 @@ The coordinator merges all area reports, recomputes derived `## Requirements Cov
 
 ## Architect Subagent Prompt Template
 
-When `add.plan` STEP 10.4 dispatches the architect subagent, use this prompt template:
+When `add.plan` STEP 9.4 dispatches the architect subagent, use this prompt template:
 
 ```
 You are the ARCHITECT for feature ${FEATURE_ID} (subfeature ${EPIC_CURRENT_SF} if epic).
@@ -236,7 +236,7 @@ return. Return the document alone, with no commentary wrapped around it.
 ```
 
 ⛔ **The architect is `@architecture-agent`, which declares `readonly: true`.** A template telling it
-to write is a template it can only refuse. `add.plan` STEP 10.4 is the writer.
+to write is a template it can only refuse. `add.plan` STEP 9.4 is the writer.
 
 ## Resume vs Rerun Procedure
 

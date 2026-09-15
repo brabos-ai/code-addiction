@@ -385,7 +385,7 @@ This command documents a feature rather than building it, so block 2 is titled `
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
 
-Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
+Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 7.1 when the feature touches UI), `/add.build` for implementation.
 
 ---
 

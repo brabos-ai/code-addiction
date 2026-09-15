@@ -519,7 +519,7 @@ and do not advance to STEP 4.
 
 **Plan review (MANDATORY, after the output check passes).** This is new
 behaviour beyond "applying `/add.plan`'s own consolidation rules" above — the
-`feature-plan` schema gate is `/add.plan` STEP 12, a separate step this loop
+`feature-plan` schema gate is `/add.plan` STEP 11, a separate step this loop
 never runs, so nothing else here re-validates `plan.md` after a fix is applied.
 
 1. **DISPATCH** `@plan-reviewer-agent` with `path` = the `plan.md` just
@@ -535,7 +535,7 @@ never runs, so nothing else here re-validates `plan.md` after a fix is applied.
      the loop is autonomous by contract.
    - **The re-gate is the `feature-plan` validation gate**
      (`{{skill:add-doc-schemas/SKILL.md}}`) against the fixed `plan.md`. That
-     re-run is the step `/add.plan` STEP 12 would otherwise have owned.
+     re-run is the step `/add.plan` STEP 11 would otherwise have owned.
    - **A standing blocker is a BLOCKED exit for this subfeature**, not a stop.
      Report the blockers verbatim and do NOT advance to STEP 4.
 3. ⛔ Never stop to ask the user during this exchange — the loop is autonomous
@@ -785,7 +785,7 @@ it is documentation of the script's contract, not the evaluation itself:
 | 1 | Review verdict | `GATE_REVIEW` | The highest `review-NNN.md` exists and its `\| **Overall** \|` row reads PASSED |
 | 2 | QA baseline | `GATE_QA_BASELINE` | Its `> **QA baseline:**` line is present and valid, checked against `qa-evidence.sh validate` |
 | 3 | Epic completeness | `GATE_EPIC` | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
-| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 11's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 11 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
+| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 10's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 10 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
 | 5 | Build ledger | `GATE_LEDGER` | Every `## Execution` task in the scope's `tasks.md` carries a `complete` line in its `build-ledger.md`. **No `tasks.md` at all is `ok`** — outside TASKS MODE the ledger's lines are keyed by area rather than task id, so there is nothing to cross-reference, the same rule gate 4 applies to an absent coverage table |
 
 **CONVERGED requires all five gates `ok`.** `missing`, `broken` and `not-probed`

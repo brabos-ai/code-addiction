@@ -230,7 +230,7 @@ On decline → record it for the STEP 14 hand-off and continue setup.
 Record the outcome for STEP 12 as `qa-pipeline-feature`: `enabled` | `already-enabled` | `declined` | `enable-noop`.
 
 ### 2.3 Verify the enable actually landed
-After a confirmed enable, probe the installed plan command ({{cmd:add.plan}}) for the injected `STEP 10.0` QA-Spec section. On a pre-sidecar install (`injection-points.json` absent) the CLI reports success while injecting nothing.
+After a confirmed enable, probe the installed plan command ({{cmd:add.plan}}) for the injected `STEP 9.0` QA-Spec section. On a pre-sidecar install (`injection-points.json` absent) the CLI reports success while injecting nothing.
 IF the section is absent → the enable was a silent no-op: route the user to `codeadd update` / re-install, record QA as NOT active for the hand-off, and continue.
 
 ---
@@ -319,7 +319,7 @@ Write the shape declared in `## Materializes` → `docs/qa/config.json`. Values 
 
 Target: `FEATURE_DIR/_tests/screens.json`.
 
-> **Ownership:** `{{cmd:add.plan}}` STEP 10.0 is the sole writer of catalog **content**. THIS step creates the file only when it is absent.
+> **Ownership:** `{{cmd:add.plan}}` STEP 9.0 is the sole writer of catalog **content**. THIS step creates the file only when it is absent.
 
 IF `FEATURE_DIR/_tests/screens.json` exists → leave it. Do not merge, do not derive, do not rewrite.
 
@@ -331,7 +331,7 @@ IF it is absent → write the empty scaffold:
 
 `{{cmd:add.plan}}` fills entries. Each entry carries a `design:` path as the only contract pointer — there is no `expect` key. Visual values live in `design.md` `## Design Contract` only.
 
-A missing or pre-schema `design.md` is a planning gap. Remedy: re-run `{{cmd:add.plan}}` (STEP 8.1 regenerates the contract). Do not invent screens here.
+A missing or pre-schema `design.md` is a planning gap. Remedy: re-run `{{cmd:add.plan}}` (STEP 7.1 regenerates the contract). Do not invent screens here.
 
 ---
 

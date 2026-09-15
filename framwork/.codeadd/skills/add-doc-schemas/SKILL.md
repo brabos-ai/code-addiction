@@ -97,7 +97,7 @@ Schema-agnostic rules that apply to every generated doc, even when the schema is
 | Code, git, CLI flags, technical terms | English |
 | Frontmatter keys and schema type names | English (machine-parsed) |
 
-Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English regardless of the owner's language setting. Do not translate them.
+Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English whatever language the rest of the document is written in. Do not translate them.
 
 ### Markdown Formatting
 
@@ -140,7 +140,7 @@ Every ADD doc type that participates in the reference graph has a prefix. IDs ar
 
 > **Convention:** Feature/hotfix IDs use `[NNNN][L]` (number first, letter suffix) per `{{skill:add-id-convention/SKILL.md}}`. `PRD` and `CHG` are separate namespaces with no letter suffix.
 
-Other doc types (`OWNER`, `PRODUCT`, `AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`, `RCPT-<command>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
+Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`, `RCPT-<command>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
 
 ### ID Allocation
 

@@ -25,14 +25,14 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 ## When to Use
 
 - `plan-reviewer-agent` loads this skill as its rubric source
-- `/add.new` (STEP 8), `/add.brainstorm` (STEP 5), `/add.plan` (STEP 13) dispatch the agent, or apply this skill inline as a fallback when the provider does not support subagent dispatch
+- `/add.new` (STEP 8), `/add.brainstorm` (STEP 5), `/add.plan` (STEP 12) dispatch the agent, or apply this skill inline as a fallback when the provider does not support subagent dispatch
 - `/add.plan-to-ready`'s plan leg dispatches the agent directly with `kind: feature-plan` after consolidating a subfeature's `plan.md`
 
 ## When NOT to Use
 
 - Code review — use `add-code-review` / `@reviewer-agent`. No code exists at this phase.
 - Schema-compliance enumeration (frontmatter shape, required sections, depth floors) — that is the validation gate inside `add-doc-schemas`. This review runs strictly after that gate passes.
-- A replacement for `@ux-agent` critique mode — `design.md` already has its own adversarial reviewer inside `/add.plan` STEP 8.1.
+- A replacement for `@ux-agent` critique mode — `design.md` already has its own adversarial reviewer inside `/add.plan` STEP 7.1.
 - Questioning without a proposed fix. A finding that names a gap but not its remedy does not belong in this rubric — every Required fix must be actionable as written.
 - Saying back what the document made you understand — that is `add-feature-readback`, which issues no verdict and runs after this review's fixes are applied.
 

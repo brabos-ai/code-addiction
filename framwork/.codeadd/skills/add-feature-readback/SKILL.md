@@ -36,7 +36,7 @@ Your blindness is the whole mechanism. Reading the source code, the referenced f
 | Command | Step | `scope` |
 |---|---|---|
 | `add.new` | STEP 8, after the plan-reviewer verdict, before Completion | `feature` |
-| `add.plan` | STEP 13, after the verdict, before STEP 14 | `subfeature` |
+| `add.plan` | STEP 12, after the verdict, before STEP 13 | `subfeature` |
 | `add.brainstorm` | STEP 5, after the verdict, before STEP 6 | `document` |
 | `add.plan-to-ready` | STEP 3 plan leg, after the verdict **and** after the consistency pass | `subfeature` |
 

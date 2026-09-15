@@ -46,7 +46,7 @@
 # only stops at the next task line. Both are real defects this scan avoids by
 # tracking the section, not just the bullet.
 #
-# SUBBULLETS is reported, never enforced. /add.plan STEP 12 is the gate that
+# SUBBULLETS is reported, never enforced. /add.plan STEP 11 is the gate that
 # refuses a task with a missing `Consumes`; this script's job is to say what it
 # found so the caller can see a thin task rather than be handed a padded one.
 # ============================================

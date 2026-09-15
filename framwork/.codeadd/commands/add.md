@@ -70,7 +70,7 @@ This file contains all add-pro commands with purpose/skills, available skills, m
 
 Execute when question involves a specific feature, current status, "where am I?", next step, or project/architecture.
 
-### 3.1 Execute status.sh
+### 2.1 Execute status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -78,7 +78,7 @@ bash .codeadd/scripts/status.sh
 
 **Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
 
-### 3.2 Read additional context (if exists)
+### 2.2 Read additional context (if exists)
 
 Read `CLAUDE.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
 

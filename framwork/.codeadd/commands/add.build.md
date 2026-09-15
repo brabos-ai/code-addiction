@@ -439,7 +439,7 @@ STEP 18 reprints every one of them.
 The ledger is read on entry because a compacted session looks exactly like a
 fresh start. **The same argument applies to the plan**: what a compaction erases
 is the coordinator's understanding of it, and nothing checks that what it
-recovers matches the document. `/add.plan` STEP 13's readback ran in the session
+recovers matches the document. `/add.plan` STEP 12's readback ran in the session
 that WROTE the plan, while it could still be asked; this one reads it the way a
 resumed session actually holds it — alone.
 

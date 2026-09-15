@@ -114,7 +114,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Final evidence preserves open findings; it is not a pass certificate | add-doc-schemas, add-ecosystem, add-final-report, add-id-convention, add-wiki-maintenance |
 | add.hotfix | Urgent fix with global ID ([NNNN]H). Discovery via parallel @feature-history-agent ∥ @git-history-agent before code investigation. With tdd-pipeline, pins the confirmed root cause with a coordinator-verified RED test before any edit. After the fix, dispatches @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent (read-only) and triages their findings in one bounded corrective pass, recording the outcome in about.md `## Review`. Creates isolated doc in docs/features/[NNNN]H-*, recording the user-confirmed cause as typed `caused_by` relations in its about.md | add-doc-schemas, add-ecosystem, add-final-report, add-id-convention, add-investigation, add-knowledge-discovery, add-tdd, add-ux-design |
 | add.new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add.build) | add-doc-schemas, add-final-report, add-id-convention, add-knowledge-discovery, add-plan-review, add-review-discipline |
-| add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 8.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 10.0) when qa-pipeline feature enabled. STEP 13 dispatches `@plan-reviewer-agent` before completion. **STEP 10.5 (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add-backend-development, add-cross-sf-consistency, add-database-development, add-doc-schemas, add-ecosystem, add-feature-discovery, add-final-report, add-frontend-development, add-id-convention, add-knowledge-discovery, add-plan-review, add-qa-spec (qa-pipeline), add-review-discipline, add-tasks-checklist, add-ux-design |
+| add.plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP 7.1 UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP 9.0) when qa-pipeline feature enabled. STEP 12 dispatches `@plan-reviewer-agent` before completion. **STEP 9.5 (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add-backend-development, add-cross-sf-consistency, add-database-development, add-doc-schemas, add-ecosystem, add-feature-discovery, add-final-report, add-frontend-development, add-id-convention, add-knowledge-discovery, add-plan-review, add-qa-spec (qa-pipeline), add-review-discipline, add-tasks-checklist, add-ux-design |
 | add.plan-to-ready | Bounded convergence loop, feature / subfeature / **whole epic**. Loops build ⇄ review at most 3 iterations **per subfeature**, reset at each subfeature boundary, against the `/add.done` gates evaluated in dry-run by `converge-gates.sh`. On an epic target it iterates every pending subfeature in dependency order, commits + tags + pushes a gated checkpoint per converged subfeature (gate results in the commit trailer) and halts on the first non-CONVERGED one. Dispatches named leaf agents at depth 1, never commands. Plan leg dispatches `@plan-reviewer-agent` (`kind: feature-plan`) after consolidating `plan.md`. Reports CONVERGED / CAP_REACHED / BLOCKED and returns control; the merge stays human | add-commit, add-cross-sf-consistency, add-doc-schemas, add-final-report, add-review-discipline |
 | add.pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add-commit, add-doc-schemas, add-final-report, add-id-convention |
 | add.qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add-dev-environment-setup, add-doc-schemas, add-final-report, add-qa, add-qa-migration, add-setup-contract, add-subagent-driven-development |
@@ -189,9 +189,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | architecture-agent | Architecture consultant, layer/module advice (read-only) | add.plan, add.diagnose (Fase B), add.hotfix, add.plan-to-ready |
 | system-design-agent | System design, data flows, infrastructure | no base command — direct use; carries the gitnexus graph section when that plugin is enabled |
 | database-agent | Schema design, migrations, queries | add.build, add.plan, add.plan-to-ready |
-| plan-reviewer-agent | Fresh-context, fix-oriented pre-delivery review of about.md / brainstorm / plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes (read-only) | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) |
-| readback-agent | Cold-read comprehension reporter — takes a doc set plus a `scope` (`feature` / `subfeature` / `document`) and restates what it understood would be built, marking every gap it filled in itself. Issues no verdict and asks no questions; the divergence between its restatement and what was actually decided is the signal. Dispatched AFTER `plan-reviewer-agent`'s fixes are applied, never beside it (read-only) | add.new (STEP 8), add.plan (STEP 13), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg — compares against the Decision Log, never stops, never blocks), add.build (cold readback before the first F-block) |
-| consistency-agent | Cross-subfeature consistency judge for an epic — compares contracts declared across subfeature `plan.md` / `about.md` / `design.md`, document against document and never code, on exactly five dimensions (API contracts, data schema, requirements, design tokens when `HAS_DESIGN`, auth/permission model). Anything outside the five is informational and never blocks. FULL pass after each subfeature's plan; DELTA pass at epic end. Read-only — **detects divergence between plans and never edits**. Counterpart to `/add.plan` **STEP 10.5**, which owns single-plan **completeness** (shared-resource centralization, fallback/degradation, worker/DI registration) and fixes it in place: those three are never findings here, at any severity, and 10.5 consumes this agent's dimension 1/2 findings rather than re-deriving them | add.plan, add.plan-to-ready (F31 — plan-time full pass and end-of-epic delta) |
+| plan-reviewer-agent | Fresh-context, fix-oriented pre-delivery review of about.md / brainstorm / plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes (read-only) | add.plan (STEP 12), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) |
+| readback-agent | Cold-read comprehension reporter — takes a doc set plus a `scope` (`feature` / `subfeature` / `document`) and restates what it understood would be built, marking every gap it filled in itself. Issues no verdict and asks no questions; the divergence between its restatement and what was actually decided is the signal. Dispatched AFTER `plan-reviewer-agent`'s fixes are applied, never beside it (read-only) | add.new (STEP 8), add.plan (STEP 12), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg — compares against the Decision Log, never stops, never blocks), add.build (cold readback before the first F-block) |
+| consistency-agent | Cross-subfeature consistency judge for an epic — compares contracts declared across subfeature `plan.md` / `about.md` / `design.md`, document against document and never code, on exactly five dimensions (API contracts, data schema, requirements, design tokens when `HAS_DESIGN`, auth/permission model). Anything outside the five is informational and never blocks. FULL pass after each subfeature's plan; DELTA pass at epic end. Read-only — **detects divergence between plans and never edits**. Counterpart to `/add.plan` **STEP 9.5**, which owns single-plan **completeness** (shared-resource centralization, fallback/degradation, worker/DI registration) and fixes it in place: those three are never findings here, at any severity, and 9.5 consumes this agent's dimension 1/2 findings rather than re-deriving them | add.plan, add.plan-to-ready (F31 — plan-time full pass and end-of-epic delta) |
 | feature-history-agent | Scans docs/features/ for symptom-relevant features (read-only, docs only) | add.diagnose (Fase A.1), add.hotfix |
 | git-history-agent | Correlates recent git history with a symptom (read-only git) | add.diagnose (Fase A.2), add.hotfix |
 | qa-agent | Deterministic + forensic QA judge (the qa-agent half of the dual panel) — functional delivery vs about.md, deterministic Design Contract conformance from measured computed styles, ALL a11y (axe-core), and root-caused failure forensics; judges from persisted run evidence (read-PNG), live-drives with the playwright plugin. No memory | add.review (qa-pipeline feature — per SF, parallel, ∥ ux-agent review), add.plan, add.plan-to-ready, add.qa-setup |
@@ -229,9 +229,9 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.build, add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch) |
-| add-review-discipline | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3), add.build (10.0.4) — the dispatch discipline all five share |
-| add-plan-review | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via plan-reviewer-agent |
-| add-feature-readback | add.plan (STEP 13), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg), add.build (cold readback before the first F-block) — all via readback-agent, each after the plan-review fixes land |
+| add-review-discipline | add.plan (STEP 12), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3), add.build (10.0.4) — the dispatch discipline all five share |
+| add-plan-review | add.plan (STEP 12), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg) — all via plan-reviewer-agent |
+| add-feature-readback | add.plan (STEP 12), add.new (STEP 8), add.brainstorm (STEP 5), add.plan-to-ready (STEP 3, plan leg), add.build (cold readback before the first F-block) — all via readback-agent, each after the plan-review fixes land |
 | add-feature-discovery | add.plan (direct), add.plan-to-ready (via discovery-agent) |
 | add-feature-specification | add.plan, add.plan-to-ready — via discovery-agent |
 | add-doc-schemas | add.new, add.brainstorm, add.audit, add.plan, add.build, add.plan-to-ready, add.hotfix, add.done, add.pull-request, add.wiki, add.diagnose, add.qa-setup, add.review |
@@ -241,25 +241,25 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-knowledge-discovery | add.plan, add.hotfix, add.new, add.diagnose, add.review, add.brainstorm |
 | add-investigation | add.diagnose (primary, agent-dispatched mode), add.hotfix (STEP 6.1 escalation, agent-dispatched mode), add.review (STEP 5.1 ambiguous findings), add.audit (STEP 7.1 ambiguous findings) |
 | add-commit | add.build, add.plan-to-ready, add.pull-request, add.review — every command that commits mid-workflow |
-| add-cross-sf-consistency | add.plan (STEP 10.5 consumes its findings), add.plan-to-ready (F31, via consistency-agent) |
+| add-cross-sf-consistency | add.plan (STEP 9.5 consumes its findings), add.plan-to-ready (F31, via consistency-agent) |
 | add-dev-environment-setup | add (environment triage), add.qa-setup (runner install) |
 | add-qa | add.qa-setup, add.review (QA judgement), add.plan, add.plan-to-ready; @qa-agent declares it as a skill |
 | add-id-convention | add.plan, add.build, add.hotfix, add.done, add.new, add.pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add-doc-schemas' `references/new-feature.md`; add.build's build-setup.sh enforces the format at branch creation) |
 | add-tasks-checklist | add.plan, add.build, add.review (tasks.md schema and tick rules) |
 | add-tdd | add.plan, add.build, add.review, add.hotfix (tdd-pipeline RED gate) |
-| add-test-specification | add.plan (STEP 9) |
+| add-test-specification | add.plan (STEP 8) |
 | feature-history-agent | add.diagnose (STEP 4 Fase A.1), add.hotfix (STEP 4) |
 | git-history-agent | add.diagnose (STEP 4 Fase A.2), add.hotfix (STEP 4) |
 | qa-agent | add.review (dispatched per SF, parallel with ux-agent review), add.plan, add.plan-to-ready, add.qa-setup |
 | e2e-agent | add.build (dispatched when qa-pipeline feature enabled; also routed test-file fixes), add.plan-to-ready, add.qa-setup, add.review |
-| ux-flow-agent | add.plan (STEP 8.1.1), add.plan-to-ready — and everything downstream of `design.md`: add.plan 8.4 frontend, add.review UX axis, add-qa-spec |
-| ux-layout-agent | add.plan (STEP 8.1.2), add.plan-to-ready — depends on ux-flow-agent's design-flow.md |
-| ux-agent | add.plan (STEP 8.1.3 critique), add.review (STEP 10.1 review mode, ∥ qa-agent), add.build (fix mode — routed design-spec amendments), add.plan-to-ready, free-form direct use |
-| add-qa-spec | add.plan (STEP 10.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
+| ux-flow-agent | add.plan (STEP 7.1.1), add.plan-to-ready — and everything downstream of `design.md`: add.plan 7.4 frontend, add.review UX axis, add-qa-spec |
+| ux-layout-agent | add.plan (STEP 7.1.2), add.plan-to-ready — depends on ux-flow-agent's design-flow.md |
+| ux-agent | add.plan (STEP 7.1.3 critique), add.review (STEP 10.1 review mode, ∥ qa-agent), add.build (fix mode — routed design-spec amendments), add.plan-to-ready, free-form direct use |
+| add-qa-spec | add.plan (STEP 9.0, qa-pipeline feature) — owns `plan-qa-spec.md` AND `_tests/screens.json` authoring |
 | add-feature-specification (about.md) | add.review (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add-ux-design (design.md) | add.review (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add.review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
-| status.sh | add, add.audit, add.brainstorm, add.build, add.diagnose, add.hotfix, add.new, add.plan, add.plan-to-ready, add.qa-setup, add.review, add.ux, add.wiki |
+| status.sh | add, add.brainstorm, add.build, add.diagnose, add.hotfix, add.new, add.plan, add.plan-to-ready, add.qa-setup, add.review, add.ux |
 | build-setup.sh | add.build (STEP 2 branch creation), add.plan-to-ready — enforces the `F[NNNN]` branch format |
 | done.sh | add.build, add.done |
 | delivered.sh | add.done, add.hotfix — delivery-index queries for the iteration log |
@@ -273,7 +273,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 
 | Flow | Sequence | When to use |
 |------|----------|-------------|
-| Complete | brainstorm → new → plan → build → review → done | Complex features with UI (design is produced inside plan STEP 8.1) |
+| Complete | brainstorm → new → plan → build → review → done | Complex features with UI (design is produced inside plan STEP 7.1) |
 | QA-validated | new → plan → build → **review ⇄ build** → done | UI features that ran `/add.qa-setup`. The review judges the rendered result and routes every finding; the build applies them and closes the round in the same `review-NNN.md`. Working runs stay local; done snapshots them before merge |
 | Standard | new → plan → build → review → done | Features without complex UI |
 | Lean | new → build → done | Small changes, quick tasks |
@@ -281,7 +281,6 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | Emergency | hotfix → done | Critical production bug |
 | Exploration | brainstorm → new → ... | Don't know where to start |
 | Triage | diagnose → (hotfix OR new OR no-action) | Vague symptom, unsure if bug/feature |
-| New Project | init → build → done | Create new project/feature |
 | Analysis | wiki / audit | Check project health |
 
 > **Branch creation:** the documental steps (brainstorm → new → plan) make no git writes — `/add.new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** (or **plan-to-ready**) step via `build-setup.sh`.
@@ -300,7 +299,7 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add.diagnose | route=feature | `/add.new` | Confirmed functional gap |
 | add.diagnose | route=extend | `/add.new` or `/add.plan` | Extend existing feature — load prior context |
 | add.diagnose | route=no-action | done | No real problem — stop here |
-| add.new | feature needs technical planning | `/add.plan` | Architect before building. STEP 8.1 produces the UX contract when the feature touches UI |
+| add.new | feature needs technical planning | `/add.plan` | Architect before building. STEP 7.1 produces the UX contract when the feature touches UI |
 | add.new | feature is simple (1-2 files) | `/add.build` | Skip planning, build directly |
 | add.new | user wants zero interaction | `/add.plan-to-ready` | Bounded plan → build ⇄ review loop; stops at convergence, merge stays human |
 | add.plan | default | `/add.build` | Most common path |
