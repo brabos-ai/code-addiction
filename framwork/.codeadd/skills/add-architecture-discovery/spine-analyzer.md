@@ -80,7 +80,7 @@ Write all three pages using this structure (repeat per page, `type`/`area` diffe
 
 ```markdown
 ---
-type: explanation | reference | how-to
+type: tutorial | how-to | reference | explanation
 area: architecture | conventions | workflows
 description: [1-2 sentences, keyword-rich — what this page covers and when to read it]
 sources: [package.json, turbo.json, apps/*/package.json]   # ≤8 globs covering every path cited below

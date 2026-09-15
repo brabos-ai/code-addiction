@@ -254,7 +254,8 @@ Each agent is independent. Dispatch ALL simultaneously — app specialists, the 
 **Mandatory Wiki Page Frontmatter (every wiki-writing analyzer):**
 ```yaml
 ---
-type: reference | how-to | explanation
+id: wiki/<path under .codeadd/wiki/, without .md>
+type: tutorial | how-to | reference | explanation
 area: backend | frontend | database | architecture | conventions | workflows | <domain>
 description: <1-2 sentences, keyword-rich — what this page covers and when to read it>
 sources: [<code paths this page derives from>]   # max 8 globs
@@ -263,6 +264,23 @@ generated: <YYYY-MM-DD>
 tags: [<grep targets: di, repository-pattern, error-handling>]   # max 6
 ---
 ```
+
+```
+IF WRITING A PAGE WITHOUT AN `id:`:
+  ⛔ DO NOT: Rely on the indexer deriving one from the file path
+  ✅ DO: Write `id: wiki/<path>` — the page is skipped and reported without it
+```
+
+**`id:` is declared, never derived.** The indexer used to name a page after where
+its file sat, so moving the file renamed the node and every relation pointing at
+it broke with nothing to show for it. The value is the same string the path would
+have produced, which is what makes writing it cost nothing.
+
+**The four `type:` values are Diátaxis**, the documentation framework this page
+set already followed in three of its four types. `tutorial` is available even
+though no analyzer writes one today: the model reads the four from
+`mcp/types.mjs`, and a page carrying a type that registry does not declare is
+reported rather than indexed.
 
 **Mandatory Wiki Page Body Format:**
 ```markdown

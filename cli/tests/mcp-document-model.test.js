@@ -196,6 +196,32 @@ describe('L2 — the corpus indexes what the registry declares', () => {
     expect(hits, 'this sweep is the edit boundary — the plan Impact table is not').toEqual([]);
   });
 
+  it('L2.4b every artefact offering a page type offers all four, and asks for an id', async () => {
+    // L2.4 greps for a RETIRED name and cannot see this: an artefact that offers
+    // three of the four Diátaxis types names nothing retired, it is just
+    // incomplete. `add-architecture-discovery` carried the three-value enum and
+    // neither the plan, its review, nor the rename sweep surfaced it.
+    const { typesOfKind } = await import('../../mcp/types.mjs');
+    const pages = typesOfKind('page');
+    const walk = (dir, out = []) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) walk(full, out);
+        else if (e.name.endsWith('.md')) out.push(full);
+      }
+      return out;
+    };
+    const offenders = [];
+    for (const file of walk(path.join(REPO, 'framwork', '.codeadd'))) {
+      const body = fs.readFileSync(file, 'utf8');
+      const m = body.match(/^type: ((?:tutorial|how-to|reference|explanation)(?: \| (?:tutorial|how-to|reference|explanation))+)$/m);
+      if (!m) continue;
+      const offered = m[1].split(' | ').sort();
+      if (offered.length !== pages.length) offenders.push(`${path.relative(REPO, file)}: ${m[1]}`);
+    }
+    expect(offenders, 'an artefact that offers page types must offer all four').toEqual([]);
+  });
+
   it('L2.5 an attachment whose declared owner mode fails names the mode', async () => {
     const root = makeTree({
       'docs/changelog/CHG0001.md': fm({ id: 'CHG0001', type: 'changelog', related: '[]' }),
