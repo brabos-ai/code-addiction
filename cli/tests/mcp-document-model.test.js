@@ -239,7 +239,7 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
     const cwd = brownfield();
     await run(cwd);
     const after = fs.readFileSync(path.join(cwd, '.codeadd/wiki/backend/api.md'), 'utf8');
-    expect(after, 'the transform is wikiNodeId()’s, cited in the ledger').toMatch(
+    expect(after, 'wiki/ plus the path under the wiki root, .md stripped — the id every page already answered by').toMatch(
       /^id: wiki\/backend\/api$/m,
     );
   });

@@ -304,11 +304,6 @@ function classify(relPath, frontmatter) {
   };
 }
 
-function wikiNodeId(relPath) {
-  const after = relPath.slice(relPath.indexOf('.codeadd/wiki/') + '.codeadd/wiki/'.length);
-  return `wiki/${after.replace(/\.md$/, '')}`;
-}
-
 function loadDocsCorpus(root) {
   const files = [];
   for (const corpusRoot of CORPORA.docs.roots) {
@@ -338,9 +333,20 @@ function loadDocsCorpus(root) {
 
     const tldr = section(content, 'TL;DR');
     const isPage = verdict.kind === 'page';
-    const id = isPage ? wikiNodeId(relPath) : String(frontmatter.id ?? '').trim();
+
+    // ⛔ IDENTITY IS DECLARED, NEVER DERIVED FROM THE PATH.
+    //    A page used to be identified by `wiki/<path>`, which is OKF's rule and
+    //    is wrong here for the reason the delivery index already states about an
+    //    item's `at`: a path is a hint, an id is identity. Move the file and a
+    //    derived id changes, so every relation pointing at it breaks silently.
+    //    Migration 0003 writes the id each page already answered by, so nothing
+    //    a caller asks changes on the day it lands.
+    const id = String(frontmatter.id ?? '').trim();
     if (!id) {
-      skipped.push({ path: relPath, reason: 'work item carries no id: value' });
+      skipped.push({
+        path: relPath,
+        reason: `${verdict.kind} carries no id: value`,
+      });
       continue;
     }
 
