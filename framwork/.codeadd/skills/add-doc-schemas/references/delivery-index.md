@@ -46,9 +46,15 @@ independently trustworthy.
 | `words` | yes | Free-text search surface — the words someone would actually type. `0042F` finds nothing; `login google oauth` finds it. `read` also searches `id`, `node` and each item's `what` and `find`, never an item's `at` |
 | `commits` | yes, ≥1 | Short hashes. Where to go look, never an explanation |
 | `origin` | yes | **A directory that survives**, never a file that does not. Product: the feature directory, which pruning keeps. Internal: `docs/deliveries/<id>/`, the archived plan documents |
-| `items` | yes, 1–5 | What was delivered |
+| `items` | yes, ≥1 | What was delivered. **No upper bound** — a delivery that touched twenty artefacts records twenty, and one that touched two records two |
 | `superseded_by` | only when `status` is `superseded` | The `id` that replaced this one |
 | `node` | optional, internal only | The `artefact-graph.json` node id. **Part of the `read` search surface**, beside `words`, so a query for the bare artefact name finds the entry even when no other field spells it |
+
+⛔ **`items` has no ceiling, and removing the old one was deliberate.** It was capped at five with no
+stated reason, and a cap with no reason is a cap that gets hit: a delivery touching twenty artefacts had
+to drop fifteen real items to be writable at all, and the dropped ones are exactly what a later reader
+searches for. The cost of a long `items` list is a longer line in a log nobody reads top to bottom; the
+cost of a short one is a delivered artefact the index cannot find. Those are not comparable.
 
 ⛔ **`origin` may not name a path the project ignores.** The value is there so a reader can go back to why a
 delivery happened, and a gitignored path answers that on exactly one machine. The internal layer wrote
@@ -291,7 +297,6 @@ name covers a threshold the bans imply but do not number.
 | `find-absent` | 3 | the `find` string appears in **0** corpus files |
 | `find-whitespace` | 4 | `find` contains a space, tab or line break |
 | `no-items` | 5 | `items` is empty |
-| `too-many-items` | 5 | `items` holds more than 5 |
 | `bad-status` | 7 | `status` is outside `live` \| `changed` \| `gone` \| `superseded` |
 | `superseded-without-by` | 7 | `status` is `superseded` with no `superseded_by` |
 | `item-in-docs` | 9 | an item's `at` is under `docs/` |

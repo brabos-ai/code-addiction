@@ -476,12 +476,12 @@ node_free_path() {
   [[ "$output" == *"REFUSED=find-whitespace"* ]]
 }
 
-@test "L1.8: six items are refused" {
+@test "L1.8: six items are accepted — there is no ceiling" {
   src src/x.ts 'a1 a2 a3 a4 a5 a6'
   commit_all
   run bash -c 'items=""; for i in 1 2 3 4 5 6; do items="$items,{\"what\":\"w\",\"at\":\"src/x.ts\",\"find\":\"a$i\"}"; done; printf "%s" "{\"id\":\"0042F\",\"layer\":\"product\",\"by\":\"done\",\"status\":\"live\",\"name\":\"n\",\"words\":\"w\",\"commits\":[\"a1b2c3d\"],\"origin\":\"o\",\"items\":[${items#,}]}" | bash "$0" write' "$SCRIPTS_DIR/delivered.sh"
-  [ "$status" -eq 2 ]
-  [[ "$output" == *"REFUSED=too-many-items"* ]]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ENTRY=0042F"* ]]
 }
 
 @test "L1.8: zero items are refused" {
