@@ -8,6 +8,7 @@
 - command: /add.diagnose
 - command: /add.hotfix
 - command: /add.new
+- mention: /add.plan
 - script: status.sh
 -->
 
@@ -273,6 +274,11 @@ and stands alone. Same `BRN-<slug>` id either way.
 classified at STEP 1.5, every decision the conversation closed with its rationale, whatever it could
 not close, the prior art STEP 1 found, and the directions that were rejected.
 
+**Then run the validation gate** from `{{skill:add-doc-schemas/SKILL.md}}` for schema
+`brainstorm-intent`. ⛔ DO NOT skip it and DO NOT hand off until it returns `PASS` — a schema with a
+gate nobody executes is a shape nothing enforces, and the next command extracts decisions from this
+file without asking.
+
 ```
 IF ABOUT TO WRITE `## Open`:
   ⛔ DO NOT: Park a question there that one more turn of conversation would settle
@@ -309,9 +315,15 @@ IF you are about to hand off:
 | Clear bug discovered | `/add.hotfix` | No |
 | Needs more exploration | continue brainstorm | No — nothing to hand off yet |
 
-**The handoff takes one of two forms, and only these two.** Both name the intent file, because the
-next command reads it and a handoff that names only the idea leaves it matching a topic against a
-directory of timestamped basenames.
+**The `Intent:` line appears only where the file exists AND the next command reads it.** Today that is
+`/add.new` alone — it resolves the intent file at its STEP 1.1. `/add.diagnose` and `/add.hotfix` have
+no such step, so naming the file to them would promise a handoff neither receives.
+
+| Path | Handoff |
+|---|---|
+| `bounded` / `architectural` → `/add.new` | Names the intent file, and makes the offer |
+| `bounded` / `architectural` → diagnose or hotfix | Names the command only. The intent file exists and is worth mentioning to the USER, but not as a contract |
+| `spike` → anything | Names the command only. **No intent file was written**, so an `Intent:` line would point at nothing |
 
 ```text
 Idea is ready to formalize. Run:  /add.new
@@ -322,7 +334,6 @@ Want me to write the feature documentation now instead? (yes / no)
 
 ```text
 Suspected bug. Run:  /add.diagnose
-Intent: docs/brainstorm/<the file written at 5.1>
 (brainstorm stops here — it does not run the next command for you.)
 ```
 
