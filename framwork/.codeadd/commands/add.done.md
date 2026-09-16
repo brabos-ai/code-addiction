@@ -798,6 +798,15 @@ IF RENDERING THE ENTRY:
 **Execute immediately after STEP 7, on the route 2.2 chose.** All three of 2.2's
 outcomes land here, including the one that asks.
 
+⛔ **This command runs no per-file post-merge check, and that is deliberate.** `done.sh`'s
+`do_cleanup` — called by both routes below, directly at 8.1 and through `--merge` at 8.2 — proves the
+merge two ways: a fetch, then `git merge-base --is-ancestor` against the merge commit. Nothing here
+re-opens the merged files to prove they match what was pushed. This project's own internal development
+tooling runs a close-out with exactly the same two checks and no more, for the same reason: a
+successful merge cannot exist without the delivered files existing, so a third, per-file check would
+only spend a git call re-proving what the merge already guarantees. This is a recorded parity gap, not
+an omission to close.
+
 ### 8.0 The ASK Branch [STOP]
 
 Taken when 2.2's table said **ASK** — no PR exists and either no `Publish:` line
