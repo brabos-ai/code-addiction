@@ -61,6 +61,7 @@ guessing it on the way in.
 |---|---|---|---|---|
 | `audit-report` | `work-item` | — | — | `id` |
 | `brainstorm` | `work-item` | — | — | `id` |
+| `brainstorm-intent` | `work-item` | — | — | `id` |
 | `diagnose-report` | `work-item` | — | — | `id` |
 | `feature` | `work-item` | — | — | `id`, `slug`, `status` |
 | `hotfix` | `work-item` | — | — | `id`, `severity` |

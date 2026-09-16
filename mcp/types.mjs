@@ -68,6 +68,10 @@ export const TYPES = {
   hotfix: { kind: 'work-item', requires: ['id', 'severity'] },
   prd: { kind: 'work-item', requires: ['id'] },
   brainstorm: { kind: 'work-item', requires: ['id'] },
+  // Not an attachment: it is written on a path where no owner document exists in
+  // the directory, so `owner: 'dir'` would resolve to nothing and `owner: 'related'`
+  // to a field this schema deliberately drops.
+  'brainstorm-intent': { kind: 'work-item', requires: ['id'] },
   'audit-report': { kind: 'work-item', requires: ['id'] },
   'diagnose-report': { kind: 'work-item', requires: ['id'] },
   'setup-receipt': { kind: 'work-item', requires: ['id'] },
