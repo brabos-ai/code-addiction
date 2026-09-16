@@ -438,7 +438,10 @@ describe('L7 — the resume and recovery routes (F10)', () => {
 
   it('L7.3: Recovery resolves the feature from the merge commit, not from plan.md', () => {
     const r = routes();
-    expect(r).toContain('git show --name-status');
+    // First-parent diff, not `git show`: on a merge commit `git show` prints a
+    // combined diff that can be smaller than the delivery, or empty.
+    expect(r).toContain('git diff --name-status <merge-commit>^1 <merge-commit>');
+    expect(r).not.toMatch(/```bash\s*\ngit show --name-status/);
     expect(r).toMatch(/docs\/features\/\[NNNN\]\[L\]/);
     expect(r).toMatch(/DO NOT/);
     expect(r).toMatch(/plan\.md/);

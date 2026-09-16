@@ -210,10 +210,14 @@ mode needs a `[NNNN][L]` in the branch name and its merge mode refuses to run on
 2. **Take the delivery facts from the merge commit**, not from a branch diff:
 
 ```bash
-git show --name-status <merge-commit>
+git diff --name-status <merge-commit>^1 <merge-commit>
 ```
 
-   The squash IS the delivery.
+   The first-parent diff is the whole delivery, whether the PR was merged or
+   squashed. ⛔ **Never `git show` on a merge commit:** it has two parents, so
+   `git show` prints a combined diff — often smaller than the delivery, sometimes
+   empty — and the entry and the changelog would record a wrong file list in
+   silence.
 3. Write the entry and the changelog, commit them on `main`, and push.
 
 ```
