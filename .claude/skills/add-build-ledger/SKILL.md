@@ -8,6 +8,7 @@ description: "Use when executing a plan's F-blocks — the build ledger, the res
 <!-- uses:
 - skill: add-commit
 - mention: add-framework--done
+- mention: add-artefact-graph
 -->
 
 Layer-neutral. Governs HOW execution is recorded and when it may continue. WHAT a given layer
@@ -58,13 +59,24 @@ There is no `build-ledger.sh`; append the line yourself.
 F1: complete (commits a1b2c3d..a1b2c3d, build.js clean)
 F2: Ruling: kept the existing key name — the plan names both — costs a rename in F4 if wrong
 F2: complete (commits d4e5f6a..b7c8d9e, cli suite 0 new failures)
+GRAPH: add-foo — add-bar, add-baz; no entry
 REVIEW: complete (6 findings, 4 applied, 2 rejected)
 ```
 
-**Three line shapes, and `REVIEW:` is the one that is not per-F-block.** It is written once, after the
-last block, by the review pass that audits the finished delivery. It carries no commit range because
-it commits nothing itself — an accepted finding lands as a normal edit under its own F-block tag, and
-a rejected one gets its own `Ruling:` line.
+**Four line shapes. Two are per F-block and two are not.**
+
+| Line | Written | Carries |
+|---|---|---|
+| `F<n>: complete (commits <BASE>..<HEAD>, <what validated it>)` | Once per F-block, after its commit | The commit range and the validation that passed |
+| `F<n>: Ruling: <what> — <why> — <cost if wrong>` | Whenever a judgement is made | A decision a diff cannot show |
+| `GRAPH: <artefact> — <direct dependants, or "none">; <shipped-before answer, or "no entry">` | Once per touched artefact, by the review pass, before `REVIEW:` | What depends on the artefact that the delivery neither changed nor named. `GRAPH: NOT VERIFIED — <why>` when no route to the graph existed |
+| `REVIEW: complete (<n> findings, <m> applied, <k> rejected)` | Once, after the last block | That the review pass ran |
+
+**`GRAPH:` and `REVIEW:` belong to the delivery, not to a block.** The review pass that audits the
+finished delivery writes both. `REVIEW:` carries no commit range because the pass commits nothing
+itself — an accepted finding lands as a normal edit under its own F-block tag, and a rejected one gets
+its own `Ruling:` line. **What the `GRAPH:` question asks, and which verb answers it, is the build's
+and `add-artefact-graph`'s** — this skill owns only the line's shape.
 
 ```
 IF THE LEDGER HAS NOT BEEN READ THIS SESSION:
