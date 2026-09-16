@@ -613,3 +613,7 @@ Then, after the seven blocks and before the metadata, report always:
 
 ALWAYS:
 - Say in the report which evidence the gate accepted, CI or local, and why
+
+NEVER:
+- Switch the merge method to get a refused merge through — `--merge` is deliberate, and a refusal is reported
+- Start without the operator invoking it — no stage loads the close-out on its own, on either delivery mode
