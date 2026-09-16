@@ -145,13 +145,42 @@ IF the agent returned "no strong matches" → say: "This looks like novel territ
 
 ### 2.1 Clarifying Questions (One at a Time)
 
-Ask questions one per message to refine understanding:
+#### 2.1.1 Draft the objective FIRST, and have the user correct it
+
+**Write a draft objective from what the user has already said, and ask them to correct it.** One or
+two sentences, in their own words, answering one question: **what will be true when this is done that
+is not true today?**
+
+```
+IF STARTING STEP 2:
+  ⛔ DO NOT: Ask "what is your objective?" and wait — someone who could state it cold would have
+  ⛔ DO NOT: Hand back the request as the objective — "you want X" names the thing, not what it achieves
+  ⛔ DO NOT: Continue to 2.1.2 or 2.2 with the objective still unstated
+  ✅ DO: Propose the draft, then let them correct it
+```
+
+**Drafting it is the work, not a courtesy.** A user brings a problem, a symptom or a half-formed idea;
+turning that into a statement of what they are trying to achieve is the first thing this command is
+for. It is the same move `### 4.2` already makes for options — name the one you would take, then let
+them override.
+
+**Everything downstream reads this.** `### 4.2`'s questions are drawn from it, `### 5.2` writes it as
+the design's first section, `### 8.1` hands it to every subtopic, and the plan carries it to the
+build. An objective corrected here costs one line; one corrected after the plan is written costs the
+plan.
+
+#### 2.1.2 Then refine it
+
+Ask questions one per message. Each one sharpens the objective or the shape of the work:
 
 - Purpose: "What problem does this solve?"
 - Users: "Who benefits from this?"
 - Success criteria: "How do you know if it works?"
 - Constraints: "Are there limitations we must respect?"
 - Dependencies: "Does it build on anything in the landscape?"
+
+**Where an answer contradicts the drafted objective, the objective is what changes.** It was a draft;
+these five questions are how it stops being one.
 
 ### 2.2 Classification
 
