@@ -65,6 +65,7 @@ const DIMENSIONS = [
   'Testability',
   'Risks',
   'Gold-plating',
+  'Objective fit',
 ];
 
 describe('L1 — tool access (F2)', () => {
@@ -113,9 +114,9 @@ describe('L2 — work phases (F3)', () => {
     expect(text).not.toMatch(/budget[^.\n]*\d/i);
   });
 
-  // Green pre-plan on both halves by design: guards the eight dimensions and
+  // Green pre-plan on both halves by design: guards the nine dimensions and
   // guards against reintroducing the classification the user rejected.
-  it('L2.5 all eight dimensions survive and carry no tool-requirement column', () => {
+  it('L2.5 all nine dimensions survive and carry no tool-requirement column', () => {
     const text = read(AGENT);
     const section = text.split('## Dimensions')[1]?.split('\n## ')[0] ?? '';
     for (const d of DIMENSIONS) expect(section).toContain(d);

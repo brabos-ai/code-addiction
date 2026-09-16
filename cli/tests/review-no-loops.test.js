@@ -16,7 +16,7 @@ import { createRequire } from 'node:module';
  * distributed artefact naming an internal command.
  *
  * A number of assertions PASS on the pre-plan tree by design, and each is
- * marked. They guard properties the plan must PRESERVE — the eight reviewer
+ * marked. They guard properties the plan must PRESERVE — the nine reviewer
  * dimensions, the ledger gate in the close-out, the two prohibitions in
  * add-plan-authoring, the sync command's own gate, and the cross-layer
  * direction that is deliberately left open. A matrix that is RED everywhere has
@@ -192,12 +192,12 @@ describe('L1 the two new artefacts', () => {
     expect(text).toMatch(/no question|asks? no question/i);
   });
 
-  it('L1.9 the reviewer keeps its eight dimensions and four verdict rules', () => {
+  it('L1.9 the reviewer keeps its nine dimensions and four verdict rules', () => {
     // Passes today. Guards F5 against editing more than the two references.
     const text = read(P.reviewer);
     for (const dim of [
       'Scope', 'Hidden assumptions', 'Contradictions', 'Dependencies',
-      'Executability', 'Testability', 'Risks', 'Gold-plating',
+      'Executability', 'Testability', 'Risks', 'Gold-plating', 'Objective fit',
     ]) {
       expect(text).toContain(dim);
     }
