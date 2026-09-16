@@ -237,13 +237,19 @@ left to do:
 | Step | Normal | Recovery |
 |---|---|---|
 | 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
-| 1.3 | `git diff --name-status main...HEAD` | `git show --name-status <merge-commit>` — the squash IS the delivery |
+| 1.3 | `git diff --name-status main...HEAD` | `git diff --name-status <merge-commit>^1 <merge-commit>` — the first-parent diff, which is the whole delivery |
 | 2.2 | The ledger gate | Unchanged. It still hard-stops |
 | 2.3 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
 | 7 | Merge the PR | **Skipped.** Already merged |
 | 8 | Cleanup | The merged branch is still there to delete. Check 2 reads the merge commit resolved at 1.3, not a PR |
+
+⛔ **Never `git show` on the merge commit.** A merge commit has two parents, so `git show` prints a
+combined diff — only the paths that differ from BOTH parents. That is frequently smaller than the
+delivery and sometimes empty, and nothing reports it: the index and the changelog would record a
+wrong file list in silence. The first-parent diff above is the change the merge brought to `main`,
+and it gives the same answer on a squash commit, whose only parent is `^1`.
 
 ```
 IF THE MERGE COMMIT CANNOT BE RESOLVED:
@@ -443,7 +449,7 @@ The design source is **the `docs/brainstorming/` file the plan's Context documen
 
 Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
 
-⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit rides the squash merge to `main` under a message that does not describe it.
+⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit reaches `main` with the merge, inside a commit whose message does not describe it.
 
 The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
 
@@ -465,7 +471,7 @@ gh pr checks --watch --fail-fast
 
 Then `gh pr merge --merge`.
 
-⛔ **The method is deliberate, and it is never simply dropped.** `--merge` keeps every F-block commit the build made readable on `main`, each carrying what was validated and what was ruled; `--squash` flattened them into one line. Run non-interactively, `gh pr merge` with no method flag errors — `--merge, --rebase, or --squash required when not running interactively`.
+⛔ **The method is deliberate, and it is never simply dropped.** `--merge` keeps every F-block commit the build made readable on `main`, each carrying what was validated and what was ruled; a squash flattened them into one line. Run non-interactively, `gh pr merge` with no method flag errors and asks for one.
 
 Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open. The method flag is the same deliberate one.
 
