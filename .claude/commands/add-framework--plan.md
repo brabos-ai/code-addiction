@@ -28,8 +28,7 @@ clarity for external contributors, and real value for framework consumers.
 **STEPS IN ORDER:**
 ```
 STEP 1: Load context          → strategy docs + CLAUDE.md + discovery agent
-STEP 2: Classify              → type AND layers touched
-STEP 2.5: Size the work       → read `path:` from the intent file; bounded shrinks the document
+STEP 2: Classify              → type, layers touched, AND size from the intent file’s `path:`
 STEP 3: Critical analysis     → impact graph, delivery index, audit the subject, alternatives
 STEP 4: Questionnaire         → [STOP] conditional on `## Open`; confirmation when nothing is open
 STEP 5: Generate plan         → load add-plan-authoring, write the draft
@@ -213,7 +212,7 @@ Internal classification only. DO NOT produce artefacts yet.
 
 ---
 
-## STEP 2.5: Size the Work — Read `path:`, Do Not Guess
+### 2.3 Size the Work — Read `path:`, Do Not Guess
 
 Read `path:` from the intent file resolved at STEP 1.2.
 
@@ -231,8 +230,6 @@ exactly as easily as a large one. What shrinks is the plan document, never the a
 and stops, because a spike’s follow-up is a new request with its own classification. An invocation
 carrying `path: spike` means the user came here deliberately — treat it as no intent file at all and
 run everything.
-
----
 
 ## STEP 3: Critical Analysis (MANDATORY)
 
@@ -343,13 +340,18 @@ why: the item becomes plan scope, and its question reaches the user at STEP 4, w
 
 | `## Open` in the intent file | This STEP |
 |---|---|
-| Reads `None` | **Sections 1, 2 and 5 only, as a confirmation screen.** No questions. Section 3 is empty because nothing is open, and section 4 prints only where the analysis raised something the design never saw |
-| Lists items | Those items become section 3’s questions, and only those |
+| Reads `None` | **Sections 1, 2 and 5 as a confirmation screen**, plus any `blocked` item 3.4 returned as a question of its own in section 3. Section 4 prints only where the analysis raised something the design never saw |
+| Lists items | Those items become section 3’s questions — plus any `blocked` item 3.4 returned |
 | Absent, empty, or no intent file | Everything below, unconditionally |
 
-⛔ **An `## Open` section present but EMPTY is read as ABSENT.** A missing signal means "not closed",
-never "closed". Falling the other way produces a plan built from decisions nobody made — which is
-worse than the ceremony this branch exists to avoid.
+⛔ **A `blocked` audit item is never silenced by this branch.** 3.4 returns items needing a person, and
+`add-review-discipline` says that question reaches the user at STEP 4. An intent file closing every
+design question says nothing about an audit finding on an artefact — different question, different
+source.
+
+⛔ **An `## Open` section present but EMPTY is read as ABSENT.** `add-plan-authoring` owns that rule
+with its reasoning, under The Intent File. What it means here: the fall is toward the full
+questionnaire, never away from it.
 
 ⛔ **The `[STOP]` binds on every row.** What scales is the questionnaire; the approval never does. On
 the confirmation row the user corrects an extraction error or waves it through, and the command waits

@@ -21,13 +21,18 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 
 [Why this need arose. Connect it to the pain point.]
 
-[IF design docs exist:]
-**Every decision here was taken and reviewed in the design set below. This plan does not re-derive
+[IF a design document OR an intent file exists — a `bounded` design writes only the second:]
+**Every decision here was taken and reviewed in the documents below. This plan does not re-derive
 them — it points at them.**
 
 | Document | Carries |
 |---|---|
 | `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` | [which decisions/contracts live there] |
+| `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic]-intent.md` | [the classified path, the closed decisions, what stayed open] |
+
+[This table is what `/add-framework--done` resolves both archival members from. A plan that cites
+neither gets neither, and that is not a defect — but a `bounded` plan that cites nothing has left its
+only record of the reasoning in a gitignored directory.]
 
 ## Global Constraints
 

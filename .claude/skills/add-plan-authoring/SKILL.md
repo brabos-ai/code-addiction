@@ -34,7 +34,7 @@ shaped, reviewed and delivered is here.
 
 ## File Naming
 
-Two documents are named here, and they share one timestamp rule:
+Three documents are named here — the plan, the changelog and the intent file. The first two share one timestamp rule:
 
 | Document | Path |
 |---|---|
@@ -128,7 +128,15 @@ the shape above is a contract between two commands rather than something a gate 
 `architectural` path only. `bounded` writes no design document, so on the one path a size branch
 serves there was nothing to read and nothing survived the session.
 
-### The Short-Plan Shape
+### Legacy forms resolve for reading, never for writing
+
+Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
+`NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `CLAUDE.md` and several
+documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
+
+---
+
+## The Short-Plan Shape
 
 **A `bounded` design produces a plan carrying the template’s mandatory sections only.** The five the
 template already marks *(optional)* — Current State, Accepted Trade-offs, Risks and Mitigations, the
@@ -138,12 +146,6 @@ Combination matrix, and References — are omitted.
 F-block still carries its layer tag and its validation, and the Produces/Consumes rule binds exactly
 as it does on a full plan. **A short plan is a plan with fewer sections, never a plan with weaker
 ones** — the sections that prove correctness are not the optional ones.
-
-### Legacy forms resolve for reading, never for writing
-
-Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
-`NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `CLAUDE.md` and several
-documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
 
 ---
 
