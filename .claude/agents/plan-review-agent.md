@@ -83,6 +83,12 @@ You are a leaf. Do NOT dispatch other agents.
 | Testability | No way to know the change is done (acceptance, check, or observable outcome) |
 | Risks | Known-failure modes unstated when the change is cross-cutting |
 | Gold-plating | Scope or artefact not backed by a validated decision |
+| Objective fit | A scope item, F-block or artefact cannot be traced to the stated objective — or the plan states no objective at all |
+
+⛔ **`Objective fit` is not `Gold-plating` under another name.** Gold-plating asks whether a decision
+was made; this asks what the decision was FOR. Work can be scoped cleanly, validated throughout, free
+of contradiction — and still not be the work that was asked for. That combination passed the other
+eight dimensions on a delivery in this repository, which is why the ninth exists.
 
 Kind-specific extras:
 
