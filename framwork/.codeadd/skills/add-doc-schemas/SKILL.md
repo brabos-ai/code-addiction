@@ -279,15 +279,15 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | Category | File | Schemas |
 |----------|------|---------|
-| `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm, epic |
-| `fix` | `references/fix.md` | hotfix-about |
+| `new-feature` | `references/new-feature.md` | feature, feature-plan, feature-design, brainstorm, epic |
+| `fix` | `references/fix.md` | hotfix |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
 | `strategy` | `references/strategy.md` | prd |
 | ~~`marketing`~~ | **retired** | `saas-copy` and `landing-page` were dropped with their category file; nothing writes either, and a command asking for one gets no schema |
 | `receipt` | `references/receipt.md` | setup-receipt |
 
-**Loading discipline.** A command that produces, say, a `feature-about` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
+**Loading discipline.** A command that produces, say, a `feature` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
 
 **Schema name → category lookup.** Use the table above. Adding a new schema = (1) place it in the right category file, (2) update this table, (3) if a new ID prefix is needed, add it to the ID Prefixes table.
 
@@ -316,7 +316,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
    - `tags:` is a YAML list (may be empty `[]`). A schema whose Frontmatter line does not name it is exempt — the Universal Document Requirements list is what makes it mandatory, and a schema may narrow that.
-   - **`feature-about` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
+   - **`feature` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 
 2. **TL;DR present and complete.** Grep `^## TL;DR$`. The body MUST convey: what the doc is, why it exists, and the headline outcome/decision. If any is missing: rewrite extractively — do NOT summarize abstractively, do NOT shrink by dropping the headline.

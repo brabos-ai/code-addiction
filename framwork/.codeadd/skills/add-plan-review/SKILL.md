@@ -39,7 +39,7 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 ## Input Contract
 
 - `path` — file to review (required)
-- `kind` — `feature-about` | `brainstorm` | `feature-plan`
+- `kind` — `feature` | `brainstorm` | `feature-plan`
 
 ## Dimensions (mandatory — skip none)
 
@@ -56,7 +56,7 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 
 ## Kind-Specific Extras
 
-- **`feature-about`:** the next command (`add.plan` / `add.build`) can proceed without guessing Problem, Users, Scope, or Success Metrics. Check RF/RN coverage only when those sections appear in the doc.
+- **`feature`:** the next command (`add.plan` / `add.build`) can proceed without guessing Problem, Users, Scope, or Success Metrics. Check RF/RN coverage only when those sections appear in the doc.
 - **`brainstorm`:** the next command (`add.new` vs. diagnose/hotfix) is unambiguous from the doc. An *implicit* open question — something obviously unresolved that the doc does not surface — is a blocker. An *explicit* item listed under Open Threads is not.
 - **`feature-plan`:** a builder can implement without inventing paths, contracts, or tasks. Architecture Decisions, Tasks, and Validation must not contradict each other. Paths and acceptance signals must be findable in `plan.md` (in Tasks bullets and/or JSON) — do NOT require a dedicated path/dependency JSON object as a precondition. Do NOT read `about.md`, `tasks.md`, or `design.md`.
 

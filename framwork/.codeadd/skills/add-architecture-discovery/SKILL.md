@@ -172,7 +172,8 @@ Every analyzer in this registry (spine + area specialists) writes pages that sat
 
 ```yaml
 ---
-type: reference | how-to | explanation
+id: wiki/<path under .codeadd/wiki/, without .md>
+type: tutorial | how-to | reference | explanation
 area: backend | frontend | database | architecture | conventions | workflows | <domain>
 description: <1-2 sentences, keyword-rich — what this page covers and when to read it>
 sources: [src/server/**, libs/database/src/repos/**]   # ≤8 globs, must cover every path cited in the page

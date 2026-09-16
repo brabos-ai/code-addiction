@@ -46,7 +46,7 @@ STEP 7:  Confirm root cause        → BEFORE implementing; pin it RED when tdd-
 STEP 8:  Implement fix             → drive the pinned test GREEN + verify build
 STEP 9:  Delivery review (parallel judges) → @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent
 STEP 10: Triage + corrective pass  → verify citations, ONE pass, re-verify build
-STEP 11: Write hotfix about.md     → schema hotfix-about, extractive, incl. ## Relations
+STEP 11: Write hotfix about.md     → schema hotfix, extractive, incl. ## Relations
 STEP 12: Validation gate           → run gate block on about.md
 STEP 13: Log iteration             → MANDATORY BEFORE informing user
 STEP 14: Completion                → Inform user, awaiting /add.done
@@ -64,7 +64,7 @@ IF BRANCH = main:
 
 IF SCHEMA NOT LOADED:
   ⛔ DO NOT USE: Write to create hotfix docs
-  ✅ DO: Load the `hotfix-about` schema from {{skill:add-doc-schemas/SKILL.md}} FIRST
+  ✅ DO: Load the `hotfix` schema from {{skill:add-doc-schemas/SKILL.md}} FIRST
 
 IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
@@ -161,7 +161,7 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 
 ```
 docs/features/[NNNN]H-<slug>/
-├── about.md    (schema: hotfix-about — written in STEP 11)
+├── about.md    (schema: hotfix — written in STEP 11)
 └── iterations.jsonl
 ```
 
@@ -417,13 +417,13 @@ A correction that breaks the build or reopens the pinned bug is the failure a si
 
 ---
 
-## STEP 11: Write Hotfix about.md (schema: hotfix-about)
+## STEP 11: Write Hotfix about.md (schema: hotfix)
 
-EXECUTE schema `hotfix-about` from `{{skill:add-doc-schemas/SKILL.md}}`.
+EXECUTE schema `hotfix` from `{{skill:add-doc-schemas/SKILL.md}}`.
 
 **Path:** `docs/features/[NNNN]H-<slug>/about.md`
 
-**ID:** `[NNNN]H` from STEP 3. Write per `hotfix-about` schema. Extractive only.
+**ID:** `[NNNN]H` from STEP 3. Write per `hotfix` schema. Extractive only.
 
 The `## Review` section carries STEP 10's triaged outcome — one row per finding with its axis, severity, `path:line`, cited rule and disposition. A judged hotfix whose `about.md` omits it reads as unreviewed from a fresh clone. When a judge could not run, record that there too.
 
@@ -446,7 +446,7 @@ The set was confirmed with the user in STEP 5.2 and has been in hand ever since.
 ## STEP 12: Validation Gate
 
 Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` on the one doc written:
-`hotfix-about` — `docs/features/[NNNN]H-<slug>/about.md`
+`hotfix` — `docs/features/[NNNN]H-<slug>/about.md`
 
 ⛔ DO NOT skip. DO NOT mark the command complete until the gate returns `PASS`. Gate check 7 covers the `## Relations` lines 11.1 wrote: an unresolved target is a FAIL, not a warning.
 
@@ -490,7 +490,7 @@ files, build status.
 **ALWAYS:**
 - Use `status.sh next-id H` to allocate hotfix ID
 - Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
-- Load the `hotfix-about` schema from add-doc-schemas before writing
+- Load the `hotfix` schema from add-doc-schemas before writing
 - Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code
 - Wait for both history reports before any Grep/Read on code
 - Confirm root cause with user before implementing
@@ -535,9 +535,9 @@ files, build status.
 #   → security: none; conformance: 1 pre-existing (observation);
 #     failure: 1 introduced — null path reaches F0036's caller
 # STEP 10: Verify citations → 1 introduced blocker → correct → re-run build + RED test (GREEN)
-# STEP 11: Write about.md via hotfix-about schema, incl. ## Review
+# STEP 11: Write about.md via hotfix schema, incl. ## Review
 #   11.1 ## Relations: caused_by [[0036F]] — the validation path this fix corrects
-# STEP 12: Validation gate — hotfix-about
+# STEP 12: Validation gate — hotfix
 # STEP 13: Log iteration
 # STEP 14: Hotfix complete → ownership transfers to ecosystem
 ```

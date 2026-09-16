@@ -175,15 +175,19 @@ describe('L3.1-3.2 gate 2.1', () => {
 // ---------------------------------------------------------------------------
 
 describe('L3.3-3.4 the post-merge validation', () => {
-  it('L3.3 the deletions are refused unless main actually holds the archive', () => {
+  it('L3.3 the deletions are refused unless the merge actually landed', () => {
     const step8 = stepBody(read(P.done), 'Cleanup');
 
-    // The `cmp` pattern STEP 6.1 already uses before the merge, applied again
-    // after it — this is the check the "no durable copy" rule always needed.
-    expect(step8).toContain('git show origin/main:');
-    expect(step8).toMatch(/\bcmp\b/);
+    // Only the fetch and the merge check survive — STEP 6 commits the archive
+    // and STEP 7 merges that same commit, so a successful merge already
+    // guarantees the archive exists. Checks 3, 4 and 5 (the per-file `git show`
+    // / `cmp` proofs) are gone.
+    expect(step8).toContain('git fetch origin main');
+    expect(step8).toContain('gh pr view');
+    expect(step8).not.toContain('git show origin/main:');
+    expect(step8).not.toMatch(/\bcmp\b/);
 
-    // A failing check must block the rm, not merely be reported beside it.
+    // A failing check must still block the rm, not merely be reported beside it.
     const refusals = conditionBlocks(step8).filter(
       (b) => /fail/i.test(b) && /DO NOT USE: Bash to run rm/.test(b),
     );

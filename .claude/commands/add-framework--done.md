@@ -222,7 +222,7 @@ test-scripts         npm run test:scripts   (bats)                              
 
 **The fallback is local, explicit and reported.** When `gh` is unavailable, the network is down, or the repository has no CI configured, run the four commands here instead — `node scripts/build.js`, `npm test`, `npm --prefix cli run test:package`, `npm run test:scripts` — and **say in the STEP 9 report that the gate ran locally and why**. A gate that quietly changes which evidence it accepted is worse than a slow one.
 
-⛔ **In the fallback, `npm run test:scripts` exiting 2 is a REFUSAL to run, never a failing suite.** On Windows with no Docker daemon the runner declines rather than taking the slow native path, and prints why. Treat that exit as the bats gate being unavailable — say so in the STEP 9 report and resolve it from CI — never as a red suite. Reporting a refusal as a failure blocks a merge on evidence nobody produced.
+⛔ **In the fallback, `npm run test:scripts` exiting 2 or 127 is a REFUSAL to run, never a failing suite.** On Windows with no Docker daemon the runner declines rather than taking the slow native path (exit 2), and a fresh worktree with no root `node_modules` fails the same way (exit 127, `./node_modules/.bin/bats: No such file or directory`) — `npm install` at the worktree root fixes it. Treat either exit as the bats gate being unavailable — say so in the STEP 9 report and resolve it from CI — never as a red suite. Reporting a refusal as a failure blocks a merge on evidence nobody produced.
 
 `test:package` exists **only** in `cli/package.json`. In the fallback, invoked from the root without `--prefix cli`, it fails with "Missing script" — a *false* gate, which is worse than a failing one. CI avoids this by setting `working-directory: cli`; the fallback must attach the prefix by hand.
 
@@ -243,7 +243,7 @@ left to do:
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
 | 7 | Merge the PR | **Skipped.** Already merged |
-| 8 | Cleanup | The merged branch is still there to delete. Check 2 of the five reads the merge commit resolved at 1.3, not a PR |
+| 8 | Cleanup | The merged branch is still there to delete. Check 2 reads the merge commit resolved at 1.3, not a PR |
 
 ```
 IF THE MERGE COMMIT CANNOT BE RESOLVED:
@@ -435,6 +435,8 @@ The design source is **the `docs/brainstorming/` file the plan's Context documen
 
 ⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
 
+⛔ **Nothing writes to the ledger after this point in the same run.** 6.1 assembles the archive last, immediately before 6.2's commit — a ruling recorded after this step would exist on disk but never reach `main`, which is the exact gap the check this replaced used to catch after the fact instead of before it.
+
 ### 6.2 Commit and push
 
 Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
@@ -479,41 +481,29 @@ IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
   ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and STEP 7 merged that copy
 ```
 
-### The five post-merge checks — BEFORE any deletion
+### The post-merge checks — BEFORE any deletion
 
-That prohibition is the whole safety condition for the three deletions below, and nothing here used to
-evaluate it. These five checks are how it is evaluated. **Run all five, then decide once.**
+That prohibition is the whole safety condition for the three deletions below. STEP 6 commits the
+archive under `docs/deliveries/<id>/`, the index entry and the changelog together, in one commit, and
+STEP 7 merges that same commit — a successful merge cannot exist without the archive existing, so the
+gate confirms the merge happened and asks nothing more. **Run both, then decide once.**
 
 ```bash
-git fetch origin main                                               # 1. the ref every check reads
+git fetch origin main                                               # 1. the ref check 2 reads
 gh pr view --json state,mergeCommit                                 # 2. MERGED, with a merge commit
-git show origin/main:docs/deliveries/<id>/<file-member>             # 3. every file member resolves
-git show origin/main:docs/delivered.jsonl | grep '"id":"<id>"'      # 4. the entry is there
-git show origin/main:docs/deliveries/<id>/<file-member> | cmp - <local-original>   # 5. byte-identical
 ```
 
 ⛔ **The fetch is check 1, not a preamble, and its failure refuses the deletions like any other.**
-`origin/main` is a local ref and `gh pr merge` moves the branch on the server without moving it here,
-so a fetch that fails — offline, expired auth, a revoked token — leaves the ref at the branch point
-and checks 3 to 5 then pass against an archive `main` has never seen. Numbering it is what puts it
-inside the gate below; a mandatory step outside the gate is the check nothing reports.
-
-⛔ **Checks 3 and 5 run on FILES.** `git show` on a directory prints a listing and `cmp` against one
-errors, so a delivery carrying an `evidences/` member would refuse its own cleanup. Expand that member
-to the files inside it and check each.
+`origin/main` is a local ref and `gh pr merge` moves the branch on the server without moving it here —
+without the fetch, check 2 reads a stale state. Numbering it is what puts it inside the gate below; a
+mandatory step outside the gate is the check nothing reports.
 
 ⛔ **On the recovery path check 2 has no PR to read.** 2.4 runs on `main` and STEP 7 never ran there,
 so `gh pr view` resolves nothing. Prove the merge from the merge commit 2.4 already resolved instead,
 and say in STEP 9 which of the two proved it.
 
-⛔ **Check 5 is the one that catches a real case, and `cmp` is silent on success.** A ledger appended
-to after STEP 6's archive commit and never re-copied leaves the local original AHEAD of `main`: the
-member is present, the entry is present, and the copy about to be deleted is the newer of the two.
-Read the exit status. **Reporting a pass because nothing was printed is claiming a check that never
-ran**, and this is the check where that is easiest to do.
-
 ```
-IF ANY OF THE FIVE CHECKS FAILED:
+IF EITHER CHECK FAILED:
   ⛔ DO NOT USE: Bash to run rm on anything
   ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
   ⛔ DO NOT USE: Bash to run git worktree remove
@@ -590,7 +580,7 @@ Then, after the seven blocks and before the metadata, report always:
 - The changelog path
 - The PR number and its merge state
 - **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
-- **The five post-merge checks and their results, one line each**, whether they passed or refused the
+- **The post-merge checks and their results, one line each**, whether they passed or refused the
   deletions, and whether check 2 read the PR or the merge commit. When one failed, name it, name the path, and print the `/add-framework--plan` suggestion
   STEP 8 composed — as text the operator runs, never as something this command ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
@@ -605,6 +595,3 @@ Then, after the seven blocks and before the metadata, report always:
 
 ALWAYS:
 - Say in the report which evidence the gate accepted, CI or local, and why
-
-NEVER:
-- Record a rename as a deletion or a supersession

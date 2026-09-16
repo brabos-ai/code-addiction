@@ -233,7 +233,8 @@ describe('F8 — every action answers over the wire', () => {
     // corpus fills it from the node's own path — a work item has no file set of
     // its own, the DELIVERY does, and `touched_by` asks the index for that.
     expect(full.files).toEqual([]);
-    expect(full.attachments.map((a) => a.type).sort()).toEqual(['changelog', 'hotfix-related']);
+    // `hotfix-related` is a retired type: reported by name, never attached.
+    expect(full.attachments.map((a) => a.type).sort()).toEqual(['changelog']);
   });
 
   it('impact, dependencies, neighbors and path all answer over the wire', async () => {
@@ -306,7 +307,7 @@ describe('F8 — every action answers over the wire', () => {
       fs.mkdirSync(path.dirname(added), { recursive: true });
       fs.writeFileSync(
         added,
-        '---\nid: 0091F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nWritten after the server started.\n\n## Relations\n- part_of [[0042F]]\n',
+        '---\nid: 0091F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nWritten after the server started.\n\n## Relations\n- part_of [[0042F]]\n',
         'utf8',
       );
 
