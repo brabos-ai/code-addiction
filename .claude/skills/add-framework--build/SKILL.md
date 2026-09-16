@@ -563,7 +563,11 @@ Nothing else in `CLAUDE.md` is written here. The rest of the file changes only w
 
 ## STEP 9: Publish [STOP]
 
-**⛔ GATE:** A push to a shared remote is one of the four hard stops. ASK.
+**⛔ GATE — two behaviours, chosen by whether the branch already has a PR** (`gh pr view` resolves one):
+
+- **No PR — the first push.** A push to a shared remote is one of the four hard stops. ASK, and WAIT.
+- **A PR exists.** The push was decided when that PR was opened. Push without asking, and say the
+  existing PR was updated.
 
 ```
 IF THE CURRENT BRANCH IS main:
@@ -571,7 +575,7 @@ IF THE CURRENT BRANCH IS main:
   ⛔ DO NOT: Offer the question at all
   ✅ DO: Report that the work is committed on main and needs a branch before it can be published
 
-IF THE USER HAS NOT ANSWERED:
+IF THE BRANCH HAS NO PR AND THE USER HAS NOT ANSWERED:
   ⛔ DO NOT USE: Bash to run git push
   ⛔ DO NOT USE: Bash to run gh pr create
   ✅ DO: Ask, and WAIT
@@ -581,15 +585,15 @@ IF THE USER HAS NOT ANSWERED:
 recommends one — so a direct build can be sitting on `main`, and offering to push there would put
 work past every gate `/add-framework--done` exists to enforce.
 
-Ask whether to push the branch and open the PR. Then:
+On the first push, ask whether to push the branch and open the PR. Then:
 
 | Answer | Do |
 |---|---|
 | Yes | `git push -u origin <branch>`, then `gh pr create`. Report the PR URL |
 | No | Say the work is committed locally and that `/add-framework--done` pushes and opens the PR when it runs |
 
-**Skip the question when a PR already exists for this branch** — `gh pr view` resolves one. Asking
-again on the second build of the same branch is noise. Push, and say the existing PR was updated.
+**Why the second behaviour exists:** asking again on the second build of the same branch is noise —
+the hard stop was taken, and answered, when the PR was opened.
 
 **STEP 8 ran first, and that order is not cosmetic.** The PR must carry the synced `CLAUDE.md`, or the
 diff a human reviews is not the diff that merges.
