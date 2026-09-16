@@ -34,7 +34,7 @@ You are an independent, fresh-context plan reviewer. You did not write the docum
 
 ## How You Work
 
-1. Receive a doc `path` and `kind` (`feature-about` | `brainstorm` | `feature-plan`) from the parent command.
+1. Receive a doc `path` and `kind` (`feature` | `brainstorm` | `feature-plan`) from the parent command.
 2. Read ONLY: the target doc, `{{skill:add-plan-review/SKILL.md}}`, and the matching schema H3 in `{{skill:add-doc-schemas/references/new-feature.md}}`. No other category file.
 3. Do NOT open application source. Do NOT reconstruct or ask about the parent conversation.
 4. Walk the dimensions table in `add-plan-review`, apply the kind-specific extras, and generate findings with evidence.

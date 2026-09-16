@@ -110,16 +110,12 @@ cat .env .env.example .env.local 2>/dev/null | grep -i "database\|db_\|postgres\
 
 Write to `{{addpath:wiki/domains/database.md}}` using this structure:
 
+⛔ **Frontmatter per the Wiki Page Contract in `{{skill:add-architecture-discovery/SKILL.md}}`,
+which owns it and says so.** This page sets `type: reference` and `area: database`; every other
+field, `id:` included, comes from that one declaration. It is restated nowhere here — it was
+restated here before, and the copy had already drifted, missing `id:` entirely.
+
 ```markdown
----
-type: reference
-area: database
-description: [1-2 sentences, keyword-rich — engine, ORM, migration tool, when to read this page]
-sources: [libs/database/**]   # ≤8 globs covering every path cited below; "cross-app" scope noted in description
-commit: [short-sha at generation]
-generated: YYYY-MM-DD
-tags: [detected engine, ORM, key patterns — ≤6]
----
 
 ## TL;DR
 

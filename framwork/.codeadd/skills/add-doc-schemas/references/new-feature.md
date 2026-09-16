@@ -2,7 +2,7 @@
 
 Category file for the new-feature lifecycle: discovery, specification, planning, design, exploratory ideation. Universal rules (output-length doctrine, language, formatting, ID convention, validation gate) live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns only what is specific to new-feature docs — section-shape conventions, requirement notation, decision notation, scope notation, and voice rules shared across the five schemas below.
 
-**Schemas in this category:** `feature-about`, `feature-plan`, `feature-design`, `brainstorm`, `epic`.
+**Schemas in this category:** `feature`, `feature-plan`, `feature-design`, `brainstorm`, `epic`.
 
 ## Shared Notation
 
@@ -95,11 +95,11 @@ Brainstorm docs capture exploration, not decisions. Voice rules:
 
 ## Schemas
 
-### feature-about
+### feature
 
 For `/add.new` (creates `docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
   - **`branch:`** (required for new docs) — the branch `/add.build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add.new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
   - **`tags:`** — bare lowercase topic words, per Universal Document Requirements in `{{skill:add-doc-schemas/SKILL.md}}`, which is where that rule is stated. Written from the discovery result, never from a question put to the user.
 - **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References

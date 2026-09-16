@@ -82,9 +82,9 @@ describe('F1 — the document format lands in add-doc-schemas', () => {
     expect(gate).toMatch(/Relations[\s\S]{0,400}?FAIL/);
   });
 
-  it('feature-about carries Relations and Observations in its section list', () => {
+  it('feature carries Relations and Observations in its section list', () => {
     const schema = NEW_FEATURE.slice(
-      NEW_FEATURE.indexOf('### feature-about'),
+      NEW_FEATURE.indexOf('### feature'),
       NEW_FEATURE.indexOf('### feature-plan'),
     );
     expect(schema).toContain('Relations');
@@ -102,13 +102,13 @@ describe('F1 — the document format lands in add-doc-schemas', () => {
 describe('F2 — the hotfix-related schema retires into the about.md', () => {
   it('is no longer an active schema in the category', () => {
     const header = FIX.slice(0, FIX.indexOf('## Shared Notation'));
-    expect(header).toMatch(/\*\*Schemas in this category:\*\* `hotfix-about`\.$/m);
+    expect(header).toMatch(/\*\*Schemas in this category:\*\* `hotfix`\.$/m);
   });
 
   it('the Schema Index no longer offers it to a command', () => {
     const row = DOC_SCHEMAS.split('\n').find((l) => l.startsWith('| `fix` |'));
     expect(row).toBeTruthy();
-    expect(row).toContain('hotfix-about');
+    expect(row).toContain('hotfix');
     expect(row).not.toContain('hotfix-related');
   });
 
@@ -139,8 +139,8 @@ describe('F2 — the hotfix-related schema retires into the about.md', () => {
     expect(hotfix).toMatch(/never deleted|left on disk|not deleted/i);
   });
 
-  it('hotfix-about carries Relations, Observations and tags:', () => {
-    const about = FIX.slice(FIX.indexOf('### hotfix-about'));
+  it('hotfix carries Relations, Observations and tags:', () => {
+    const about = FIX.slice(FIX.indexOf('### hotfix'));
     expect(about).toContain('Relations');
     expect(about).toContain('Observations');
     expect(about).toMatch(/tags:/);

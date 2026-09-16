@@ -41,7 +41,7 @@ For `/add.audit` (creates `docs/audit/<date>.md`).
 
 ### diagnose-report
 
-For `/add.diagnose` (creates `docs/diagnose/<slug>.md`).
+For `/add.diagnose` (creates `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
 
 - **Frontmatter:** `id: DIAG-<slug>`, `type: diagnose-report`, `related: []`
 - **Sections:** TL;DR · Symptom · Hypotheses · Evidence · Recommended Route

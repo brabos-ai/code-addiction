@@ -221,13 +221,7 @@ Build the structured output from skill Phase 4:
 
 ### 6.2 Consult ecosystem routing map
 
-Use the Command Next-Steps Routing table from {{skill:add-ecosystem/SKILL.md}} to map diagnosis → route. The mapping is NOT hardcoded here — it lives in the ecosystem map so it stays consistent across the framework.
-
-Routes:
-- **hotfix** → suggest `/add.hotfix`
-- **feature** → suggest `/add.new`
-- **extend existing** → suggest `/add.new` referencing the existing feature, or `/add.plan` if already in scope
-- **no-action** → explain why no action is needed
+Use the Command Next-Steps Routing table from {{skill:add-ecosystem/SKILL.md}} to map diagnosis → route — `/add.hotfix`, `/add.new`, `/add.plan`, or no further command. The mapping itself is NOT hardcoded here — it lives in the ecosystem map so it stays consistent across the framework.
 
 ⛔ DO NOT invent a route. Consult the ecosystem map.
 
@@ -269,7 +263,7 @@ Present the full diagnosis in chat using this structure:
 
 Ask the user:
 1. Do you agree with this diagnosis?
-2. Do you want to persist this as a report (`docs/diagnose/[NNNN]-[slug].md`) that the next command can consume?
+2. Do you want to persist this as a report (`docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`) that the next command can consume?
 3. Ready to proceed with the suggested route?
 
 ⛔ HARD STOP. Wait for answers.
@@ -294,7 +288,7 @@ Ask the user:
 
 ### 8.3 Write (if conditions met)
 
-Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/<slug>.md` per schema (extractive only).
+Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
 ### 8.4 Carry these into STEP 10
 
@@ -337,19 +331,20 @@ Then, after the seven blocks, state the recommended command and that this comman
 
 ## Rules
 
-| Requirement | Checkpoint | Rationale |
-|---|---|---|
-| **✅ Confirm reformulation before investigating** | STEP 2 | Wrong framing wastes downstream investigation |
-| **✅ Apply Phase 0 before code read** | STEP 3 | Symptom classification guides triage depth |
-| **✅ Dispatch A.1 ∥ A.2 in a single message** | STEP 4.2 | Parallel execution; sequential dispatch wastes latency |
-| **✅ Wait for both A reports before Fase B** | STEP 4.4 | Architecture-agent needs combined direction |
-| **✅ Enumerate 3+ hypotheses** | STEP 5 | Prevents single-cause bias |
-| **✅ Consult ecosystem map** | STEP 6 | Route must be framework-consistent |
-| **✅ Persist only when route ≠ no-action + user confirmed** | STEP 8 | Avoids noise in diagnose/ |
-| **✅ Credit add-investigation skill** | STEP 7 | Methodology transparency |
-| **⛔ No route without differential diagnosis** | STEP 5→6 | Route validity depends on evidence |
-| **⛔ Never execute recommended command** | STEP 7 | add.diagnose is advisory only |
-| **⛔ No code modification** | All | READ-ONLY boundary |
-| **⛔ Reject "something is weird"** | STEP 2 | Push for observable predicate (WHEN/THEN/BUT) |
-| **⛔ No persistence on no-action** | STEP 8 | Keeps diagnose/ focused |
-| **⛔ Enforce 3-failure stop rule** | STEP 5 | Return to framing instead of guessing more |
+ALWAYS:
+- Confirm the reformulation with the user before investigating (STEP 2) — wrong framing wastes downstream investigation
+- Apply Phase 0 before reading code (STEP 3) — symptom classification guides triage depth
+- Dispatch A.1 and A.2 in a single message (STEP 4.2) — parallel execution; sequential dispatch wastes latency
+- Wait for both A reports before Fase B (STEP 4.4) — architecture-agent needs combined direction
+- Enumerate 3+ hypotheses (STEP 5) — prevents single-cause bias
+- Consult the ecosystem map for the route (STEP 6) — the route must stay framework-consistent
+- Persist only when the route is not no-action and the user confirmed (STEP 8) — avoids noise in diagnose/
+- Credit the add-investigation skill (STEP 7) — methodology transparency
+
+NEVER:
+- Recommend a route without a differential diagnosis (STEP 5→6) — route validity depends on evidence
+- Execute the recommended command (STEP 7) — add.diagnose is advisory only
+- Modify code — READ-ONLY boundary, applies throughout
+- Accept "something is weird" as a symptom (STEP 2) — push for an observable predicate (WHEN/THEN/BUT)
+- Persist a report when the route is no-action (STEP 8) — keeps diagnose/ focused
+- Guess past the 3-failure stop rule (STEP 5) — return to framing instead

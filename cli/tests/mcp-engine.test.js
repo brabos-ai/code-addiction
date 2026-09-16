@@ -234,7 +234,7 @@ describe('scenario — "what was already built near this"', () => {
 
   it('every hit carries the fields needed to reject it without opening the file', () => {
     const hit = actions.search(docs, { terms: 'refresh' }).hits[0];
-    expect(hit).toMatchObject({ id: '0051H', kind: 'work item', status: 'live' });
+    expect(hit).toMatchObject({ id: '0051H', kind: 'work-item', status: 'live' });
     expect(hit.tags).toEqual(['auth']);
     expect(hit.path).toContain('0051H-token-refresh/about.md');
     expect(hit.relations.some((r) => r.type === 'caused_by' && r.to === '0042F')).toBe(true);
@@ -245,7 +245,7 @@ describe('scenario — "what was already built near this"', () => {
     const inFlight = makeDocsCorpus({
       'docs/features/0077F-draft/about.md': `---
 id: 0077F
-type: feature-about
+type: feature
 status: in_progress
 related: []
 tags: [auth]
@@ -269,7 +269,7 @@ A draft that has not shipped. It touches auth, which is why it must be visible.
   });
 
   it('search filters by kind and by tag', () => {
-    expect(actions.search(docs, { terms: '', kind: 'reference page' }).hits.map((h) => h.id)).toEqual([
+    expect(actions.search(docs, { terms: '', kind: 'page' }).hits.map((h) => h.id)).toEqual([
       'wiki/backend',
     ]);
     expect(actions.search(docs, { terms: '', tag: 'ledger' }).hits.map((h) => h.id).sort()).toEqual([
@@ -318,9 +318,9 @@ describe('scenario — "what breaks if I change this"', () => {
   it('a relation cycle terminates instead of hanging', () => {
     const cyclic = makeDocsCorpus({
       'docs/features/0001F-a/about.md':
-        '---\nid: 0001F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nA.\n\n## Relations\n- depends_on [[0002F]]\n',
+        '---\nid: 0001F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nA.\n\n## Relations\n- depends_on [[0002F]]\n',
       'docs/features/0002F-b/about.md':
-        '---\nid: 0002F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nB.\n\n## Relations\n- depends_on [[0001F]]\n',
+        '---\nid: 0002F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nB.\n\n## Relations\n- depends_on [[0001F]]\n',
     });
     try {
       const data = loadCorpus('docs', cyclic);
@@ -384,9 +384,9 @@ describe('scenario — "what is the migration still missing"', () => {
   it('orphans reports a node with no relation and one with no TL;DR, with the reason', () => {
     const gappy = makeDocsCorpus({
       'docs/features/0080F-lonely/about.md':
-        '---\nid: 0080F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nStands alone.\n',
+        '---\nid: 0080F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nStands alone.\n',
       'docs/features/0081F-empty/about.md':
-        '---\nid: 0081F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- links_to [[0009F]]\n',
+        '---\nid: 0081F\ntype: feature\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- links_to [[0009F]]\n',
     });
     try {
       const data = loadCorpus('docs', gappy);
@@ -406,7 +406,7 @@ describe('scenario — "what is the migration still missing"', () => {
     // surface, and a heading with nothing under it rejects nothing.
     const blank = makeDocsCorpus({
       'docs/features/0082F-blank/about.md':
-        '---\nid: 0082F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- part_of [[0042F]]\n',
+        '---\nid: 0082F\ntype: feature\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- part_of [[0042F]]\n',
     });
     try {
       const data = loadCorpus('docs', blank);
@@ -421,8 +421,11 @@ describe('scenario — "what is the migration still missing"', () => {
     const s = actions.stats(docs);
     expect(s.corpus).toBe('docs');
     expect(s.nodes).toBe(5);
-    expect(s.byKind).toEqual({ 'work item': 4, 'reference page': 1 });
-    expect(s.skipped).toBe(3);
+    expect(s.byKind).toEqual({ 'work-item': 4, page: 1 });
+    // 5, not 3: the two retired types in the fixture — `hotfix-related` and
+    // `feature-discovery` — are now REPORTED by name rather than demoted into
+    // an attachment list where nothing would ever have noticed them.
+    expect(s.skipped).toBe(5);
     expect(s.unresolved).toContainEqual({ from: '0051H', to: '0099F' });
     // A changelog's part_of points at the work item it sits with, so it is a
     // self-edge and never inflates a hub count.
@@ -448,7 +451,7 @@ describe('scenario — the index is a cache and the markdown is the truth', () =
       fs.mkdirSync(path.dirname(added), { recursive: true });
       fs.writeFileSync(
         added,
-        '---\nid: 0090F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nA brand new feature.\n\n## Relations\n- part_of [[0042F]]\n',
+        '---\nid: 0090F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nA brand new feature.\n\n## Relations\n- part_of [[0042F]]\n',
         'utf8',
       );
       const after = run('search', { terms: 'brand new' }, { corpus: 'docs', root: live });
