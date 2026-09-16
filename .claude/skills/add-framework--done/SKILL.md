@@ -486,7 +486,10 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 ## STEP 8: Cleanup (NON-FATAL, IN ORDER)
 
-**Run only if the index carries this plan's entry and STEP 7's merge succeeded.**
+**Run only if the index carries this plan's entry and the delivery is on `main`.** On the normal and
+resume paths STEP 7's merge put it there; on the recovery path at 2.4 it was merged before this run and
+STEP 7 was skipped. **The condition is the delivery being on `main`, never which STEP merged it** — the
+same carve-out the entry's existence already has at the top of this file.
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
