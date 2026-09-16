@@ -310,12 +310,10 @@ describe('L2 the build dispatches both', () => {
     // such plan and refuses to run. It now lives in add-plan-authoring's
     // Argument Resolution, which the build delegates to (plan
     // 2026-09-16T170340, F15, ruler item 5), so it is pinned there.
-    const owner = read(P.authoring).split(/?
-/).filter((l) => l.includes('--review-v') && /excluding/.test(l));
+    const owner = read(P.authoring).split(/\r?\n/).filter((l) => l.includes('--review-v') && /excluding/.test(l));
     expect(owner.length).toBeGreaterThan(0);
     // The build names the string nowhere except, at most, as an exclusion.
-    for (const l of read(P.build).split(/?
-/).filter((x) => x.includes('--review-v'))) {
+    for (const l of read(P.build).split(/\r?\n/).filter((x) => x.includes('--review-v'))) {
       expect(l).toMatch(/excluding/);
     }
     expect(read(P.build)).toMatch(/add-plan-authoring`'s Argument Resolution/);
