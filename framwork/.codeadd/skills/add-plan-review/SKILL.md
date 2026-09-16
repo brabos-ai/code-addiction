@@ -1,6 +1,6 @@
 ---
 name: add-plan-review
-description: Pre-delivery executability review for freshly generated about.md, brainstorm docs, and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions. Load before dispatching plan-reviewer-agent, or when applying its rubric inline as a fallback.
+description: Pre-delivery executability review for freshly generated about.md and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions. Load before dispatching plan-reviewer-agent, or when applying its rubric inline as a fallback.
 ---
 
 # Plan Review
@@ -12,7 +12,6 @@ description: Pre-delivery executability review for freshly generated about.md, b
 - mention: @ux-agent
 - agent: plan-reviewer-agent
 - agent: reviewer-agent
-- command: /add.brainstorm
 - command: /add.new
 - command: /add.plan
 - command: /add.plan-to-ready
@@ -20,26 +19,26 @@ description: Pre-delivery executability review for freshly generated about.md, b
 
 ## Overview
 
-Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.new`, `add.brainstorm`, and `add.plan` run after their validation gate passes and before the doc is presented as delivered. The reviewer tries to break the document — find what would fail in execution — and returns a verdict with concrete, evidence-backed fixes. This is a **fix-oriented** review: it proposes the fix, not just the question. A review that only asks hands the work back; this one hands back a verdict and the concrete edit that clears it.
+Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.new` and `add.plan` run after their validation gate passes and before the doc is presented as delivered. The reviewer tries to break the document — find what would fail in execution — and returns a verdict with concrete, evidence-backed fixes. This is a **fix-oriented** review: it proposes the fix, not just the question. A review that only asks hands the work back; this one hands back a verdict and the concrete edit that clears it.
 
 ## When to Use
 
 - `plan-reviewer-agent` loads this skill as its rubric source
-- `/add.new` (STEP 8), `/add.brainstorm` (STEP 5), `/add.plan` (STEP 13) dispatch the agent, or apply this skill inline as a fallback when the provider does not support subagent dispatch
+- `/add.new` (STEP 8, full path only) and `/add.plan` (STEP 12) dispatch the agent, or apply this skill inline as a fallback when the provider does not support subagent dispatch
 - `/add.plan-to-ready`'s plan leg dispatches the agent directly with `kind: feature-plan` after consolidating a subfeature's `plan.md`
 
 ## When NOT to Use
 
 - Code review — use `add-code-review` / `@reviewer-agent`. No code exists at this phase.
 - Schema-compliance enumeration (frontmatter shape, required sections, depth floors) — that is the validation gate inside `add-doc-schemas`. This review runs strictly after that gate passes.
-- A replacement for `@ux-agent` critique mode — `design.md` already has its own adversarial reviewer inside `/add.plan` STEP 8.1.
+- A replacement for `@ux-agent` critique mode — `design.md` already has its own adversarial reviewer inside `/add.plan` STEP 7.1.
 - Questioning without a proposed fix. A finding that names a gap but not its remedy does not belong in this rubric — every Required fix must be actionable as written.
 - Saying back what the document made you understand — that is `add-feature-readback`, which issues no verdict and runs after this review's fixes are applied.
 
 ## Input Contract
 
 - `path` — file to review (required)
-- `kind` — `feature-about` | `brainstorm` | `feature-plan`
+- `kind` — `feature` | `feature-plan`
 
 ## Dimensions (mandatory — skip none)
 
@@ -56,8 +55,7 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 
 ## Kind-Specific Extras
 
-- **`feature-about`:** the next command (`add.plan` / `add.build`) can proceed without guessing Problem, Users, Scope, or Success Metrics. Check RF/RN coverage only when those sections appear in the doc.
-- **`brainstorm`:** the next command (`add.new` vs. diagnose/hotfix) is unambiguous from the doc. An *implicit* open question — something obviously unresolved that the doc does not surface — is a blocker. An *explicit* item listed under Open Threads is not.
+- **`feature`:** the next command (`add.plan` / `add.build`) can proceed without guessing Problem, Users, Scope, or Success Metrics. Check RF/RN coverage only when those sections appear in the doc.
 - **`feature-plan`:** a builder can implement without inventing paths, contracts, or tasks. Architecture Decisions, Tasks, and Validation must not contradict each other. Paths and acceptance signals must be findable in `plan.md` (in Tasks bullets and/or JSON) — do NOT require a dedicated path/dependency JSON object as a precondition. Do NOT read `about.md`, `tasks.md`, or `design.md`.
 
 ## Severity
@@ -66,18 +64,20 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 |----------|----------|
 | **blocker** | A builder or next command cannot execute, a user decision is missing, or a contradiction makes the doc unsafe to act on |
 | **attention** | Actionable but likely to drift, miss an artefact, or fail a later gate |
-| **nit** | Cosmetic, wording, optional clarity. Never blocks delivery |
 
 ## Verdict (first match wins)
 
 1. Any blocker that requires a **user decision** (scope, trade-off, artefact choice) → `blocked`
 2. Any blocker or attention with a **concrete fix that does not invent a decision** → `fix-then-ok`
 3. Zero blockers and zero attention → `ok`
-4. Only nits → `ok`
 
 ## Caps
 
-Max 8 blockers, 8 attention, 5 nits. Drop the weakest nits first. Prefer fewer sharp findings over a long list.
+Max 8 blockers, 8 attention. Prefer fewer sharp findings over a long list.
+
+⛔ **There is no nit tier.** By this skill’s own verdict table a nit could never change the outcome, so
+every one of them cost tokens to write and to read and moved nothing. A cosmetic observation that
+matters is an `attention`; one that does not is not a finding.
 
 ## Output Format
 
@@ -96,9 +96,6 @@ Max 8 blockers, 8 attention, 5 nits. Drop the weakest nits first. Prefer fewer s
 ### Attention
 | ID | Section | Evidence | Why it matters | Required fix |
 |----|---------|----------|----------------|--------------|
-
-### Nits
-- [N1] [section] — [fix]
 
 ### Do not change
 - [thing that looks tempting to "improve" but is a validated decision or out of scope]
@@ -131,4 +128,3 @@ When the provider has no subagent dispatch, the coordinator applies this skill d
 | Asking a question without proposing the fix | Every Blocker/Attention row carries a Required fix |
 | Re-deriving schema compliance (missing frontmatter field, missing section) | That is the validation gate's job — assume it already passed |
 | Reading `about.md` while reviewing `plan.md` | `feature-plan` kind reads `plan.md` only |
-| Treating a nit as blocking delivery | Nits never change the verdict |

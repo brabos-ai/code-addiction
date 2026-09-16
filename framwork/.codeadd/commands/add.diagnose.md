@@ -12,15 +12,13 @@
 - agent: feature-history-agent
 - agent: git-history-agent
 - command: /add.hotfix
-- command: /add.init
 - command: /add.new
 - command: /add.plan
 - command: /add.wiki
 - script: status.sh
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Investigative triage for ambiguous user reports. Receives a vague symptom or uncertain request, applies the `add-investigation` 5-phase methodology, and delivers a diagnosis + route recommendation (hotfix / feature / extend / no-action). READ-ONLY — does NOT implement fixes or open features.
 
@@ -75,7 +73,7 @@ STEP 10: Completion           → report the diagnosis in the shared shape
 bash .codeadd/scripts/status.sh
 ```
 
-Parse: OWNER (name + level), BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
+Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
 
 ### 1.2 Load ecosystem map
 
@@ -83,12 +81,18 @@ Read {{skill:add-ecosystem/SKILL.md}} — needed for Command Next-Steps Routing 
 
 ### 1.3 Conditional reads
 
-- If OWNER not found → inform user to run `/add.init`, continue with `intermediate` defaults
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
 
 ### 1.4 Consult Knowledge Base
 
-Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **`RELATED_WORK` destination:** STEP 4.1's dispatch payload, which carries it to both Fase A agents.
+Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add.wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP 4.1's dispatch payload, which carries it to both Fase A agents.
+
+```
+IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
+  ⛔ DO NOT: Carry on as though the step ran
+  ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
+         or with `NOT VERIFIED` plus the reason when the graph could not be reached
+```
 
 ---
 
@@ -138,7 +142,7 @@ Assemble from prior STEPs:
 - Affected area keywords (nouns/verbs from reformulation)
 - Optional window (default: 30 days for git)
 - Knowledge base page paths + one-line reasons + freshness verdicts (STEP 1.4), if any were selected
-- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. Empty when the graph returned nothing or is absent. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
+- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
 
 This payload is passed to BOTH Fase A agents.
 
@@ -214,13 +218,7 @@ Build the structured output from skill Phase 4:
 
 ### 6.2 Consult ecosystem routing map
 
-Use the Command Next-Steps Routing table from {{skill:add-ecosystem/SKILL.md}} to map diagnosis → route. The mapping is NOT hardcoded here — it lives in the ecosystem map so it stays consistent across the framework.
-
-Routes:
-- **hotfix** → suggest `/add.hotfix`
-- **feature** → suggest `/add.new`
-- **extend existing** → suggest `/add.new` referencing the existing feature, or `/add.plan` if already in scope
-- **no-action** → explain why no action is needed
+Use the Command Next-Steps Routing table from {{skill:add-ecosystem/SKILL.md}} to map diagnosis → route — `/add.hotfix`, `/add.new`, `/add.plan`, or no further command. The mapping itself is NOT hardcoded here — it lives in the ecosystem map so it stays consistent across the framework.
 
 ⛔ DO NOT invent a route. Consult the ecosystem map.
 
@@ -262,7 +260,7 @@ Present the full diagnosis in chat using this structure:
 
 Ask the user:
 1. Do you agree with this diagnosis?
-2. Do you want to persist this as a report (`docs/diagnose/[NNNN]-[slug].md`) that the next command can consume?
+2. Do you want to persist this as a report (`docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`) that the next command can consume?
 3. Ready to proceed with the suggested route?
 
 ⛔ HARD STOP. Wait for answers.
@@ -287,7 +285,7 @@ Ask the user:
 
 ### 8.3 Write (if conditions met)
 
-Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/<slug>.md` per schema (extractive only).
+Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
 ### 8.4 Carry these into STEP 10
 
@@ -330,19 +328,20 @@ Then, after the seven blocks, state the recommended command and that this comman
 
 ## Rules
 
-| Requirement | Checkpoint | Rationale |
-|---|---|---|
-| **✅ Confirm reformulation before investigating** | STEP 2 | Wrong framing wastes downstream investigation |
-| **✅ Apply Phase 0 before code read** | STEP 3 | Symptom classification guides triage depth |
-| **✅ Dispatch A.1 ∥ A.2 in a single message** | STEP 4.2 | Parallel execution; sequential dispatch wastes latency |
-| **✅ Wait for both A reports before Fase B** | STEP 4.4 | Architecture-agent needs combined direction |
-| **✅ Enumerate 3+ hypotheses** | STEP 5 | Prevents single-cause bias |
-| **✅ Consult ecosystem map** | STEP 6 | Route must be framework-consistent |
-| **✅ Persist only when route ≠ no-action + user confirmed** | STEP 8 | Avoids noise in diagnose/ |
-| **✅ Credit add-investigation skill** | STEP 7 | Methodology transparency |
-| **⛔ No route without differential diagnosis** | STEP 5→6 | Route validity depends on evidence |
-| **⛔ Never execute recommended command** | STEP 7 | add.diagnose is advisory only |
-| **⛔ No code modification** | All | READ-ONLY boundary |
-| **⛔ Reject "something is weird"** | STEP 2 | Push for observable predicate (WHEN/THEN/BUT) |
-| **⛔ No persistence on no-action** | STEP 8 | Keeps diagnose/ focused |
-| **⛔ Enforce 3-failure stop rule** | STEP 5 | Return to framing instead of guessing more |
+ALWAYS:
+- Confirm the reformulation with the user before investigating (STEP 2) — wrong framing wastes downstream investigation
+- Apply Phase 0 before reading code (STEP 3) — symptom classification guides triage depth
+- Dispatch A.1 and A.2 in a single message (STEP 4.2) — parallel execution; sequential dispatch wastes latency
+- Wait for both A reports before Fase B (STEP 4.4) — architecture-agent needs combined direction
+- Enumerate 3+ hypotheses (STEP 5) — prevents single-cause bias
+- Consult the ecosystem map for the route (STEP 6) — the route must stay framework-consistent
+- Persist only when the route is not no-action and the user confirmed (STEP 8) — avoids noise in diagnose/
+- Credit the add-investigation skill (STEP 7) — methodology transparency
+
+NEVER:
+- Recommend a route without a differential diagnosis (STEP 5→6) — route validity depends on evidence
+- Execute the recommended command (STEP 7) — add.diagnose is advisory only
+- Modify code — READ-ONLY boundary, applies throughout
+- Accept "something is weird" as a symptom (STEP 2) — push for an observable predicate (WHEN/THEN/BUT)
+- Persist a report when the route is no-action (STEP 8) — keeps diagnose/ focused
+- Guess past the 3-failure stop rule (STEP 5) — return to framing instead

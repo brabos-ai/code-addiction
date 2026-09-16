@@ -28,6 +28,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { KINDS, lookup } from './types.mjs';
 
 /**
  * The closed relation vocabulary, per design decision 10.
@@ -193,25 +194,6 @@ export function parseObservations(content) {
 }
 
 /**
- * The file list a brownfield node carries, from `related.md`'s Impacted Files.
- *
- * Decision 36: 18 of 19 measured documents already carry it, so `touched_by`
- * answers on the day a project upgrades rather than from its first new delivery.
- */
-export function parseImpactedFiles(content) {
-  const body = section(content, 'Impacted Files');
-  if (!body) return [];
-  const out = [];
-  for (const line of body.split('\n')) {
-    const match = line.trim().match(/^-\s+`?([^\s`:]+)/);
-    if (!match) continue;
-    const file = match[1].replace(/[.,;]$/, '');
-    if (file && !out.includes(file)) out.push(file);
-  }
-  return out;
-}
-
-/**
  * `{{doc:ID}}` body references with the sentence around each.
  *
  * The richest source in a brownfield corpus and the only one that arrives with
@@ -276,27 +258,50 @@ function walkMarkdown(root, rel = '', out = []) {
 // ---------------------------------------------------------------------------
 
 /**
- * Membership is decided by the `type:` frontmatter key, never by a path glob.
+ * Membership is decided by the type REGISTRY, never by a path glob and never by
+ * the shape of the type's name.
  *
  * A real `docs/` holds the user's own material beside codeadd's — `chat-gpt/`,
  * `images/`, `critical-findings.md` — and a glob would need an exclusion list
- * somebody maintains forever. Every document codeadd writes carries `type:`;
- * a file without one is the user's and is skipped and reported.
+ * somebody maintains forever. A file carrying no `type:` is the user's, and is
+ * skipped and reported.
+ *
+ * ⛔ WHAT THIS REPLACED: `String(type).endsWith('-about')`. A naming convention
+ *    was doing a type system's job, and it silently demoted every document whose
+ *    name did not fit — measured, that was two of every three wiki pages and
+ *    four whole document kinds.
+ *
+ * ⛔ AN UNKNOWN TYPE IS REPORTED, NEVER DEMOTED. A document may declare `kind:`
+ *    itself and it then counts, whatever its type — OKF's rule, that a consumer
+ *    "MUST NOT reject a bundle because of ... unknown `type` values", because a
+ *    project names its own document types. A type in neither place is named in
+ *    the skip record so a reader can see WHICH type went unrecognised.
  */
 function classify(relPath, frontmatter) {
   if (!frontmatter) return { kind: null, reason: 'no frontmatter block' };
   const type = frontmatter.type;
   if (!type) return { kind: null, reason: 'frontmatter carries no type: key' };
-  if (String(type).endsWith('-about')) return { kind: 'work item', type };
-  if (type === 'reference' && relPath.includes('.codeadd/wiki/')) {
-    return { kind: 'reference page', type };
-  }
-  return { kind: 'attachment', type };
-}
 
-function wikiNodeId(relPath) {
-  const after = relPath.slice(relPath.indexOf('.codeadd/wiki/') + '.codeadd/wiki/'.length);
-  return `wiki/${after.replace(/\.md$/, '')}`;
+  const declared = lookup(String(type));
+  if (declared) {
+    if (declared.root && !relPath.includes(`${declared.root}/`)) {
+      return {
+        kind: null,
+        reason: `type \`${type}\` must live under ${declared.root}/, and this does not`,
+      };
+    }
+    return { kind: declared.kind, type, entry: declared };
+  }
+
+  const own = frontmatter.kind ? String(frontmatter.kind) : null;
+  if (own && KINDS.includes(own)) return { kind: own, type, entry: null };
+  if (own) {
+    return { kind: null, reason: `type \`${type}\` declares kind \`${own}\`, which is not one of ${KINDS.join(', ')}` };
+  }
+  return {
+    kind: null,
+    reason: `type \`${type}\` is not in the registry and the document declares no kind: of its own`,
+  };
 }
 
 function loadDocsCorpus(root) {
@@ -322,15 +327,26 @@ function loadDocsCorpus(root) {
     }
 
     if (verdict.kind === 'attachment') {
-      attachments.push({ path: relPath, type: verdict.type, content, frontmatter });
+      attachments.push({ path: relPath, type: verdict.type, entry: verdict.entry, content, frontmatter });
       continue;
     }
 
     const tldr = section(content, 'TL;DR');
-    const isPage = verdict.kind === 'reference page';
-    const id = isPage ? wikiNodeId(relPath) : String(frontmatter.id ?? '').trim();
+    const isPage = verdict.kind === 'page';
+
+    // ⛔ IDENTITY IS DECLARED, NEVER DERIVED FROM THE PATH.
+    //    A page used to be identified by `wiki/<path>`, which is OKF's rule and
+    //    is wrong here for the reason the delivery index already states about an
+    //    item's `at`: a path is a hint, an id is identity. Move the file and a
+    //    derived id changes, so every relation pointing at it breaks silently.
+    //    Migration 0003 writes the id each page already answered by, so nothing
+    //    a caller asks changes on the day it lands.
+    const id = String(frontmatter.id ?? '').trim();
     if (!id) {
-      skipped.push({ path: relPath, reason: 'work item carries no id: value' });
+      skipped.push({
+        path: relPath,
+        reason: `${verdict.kind} carries no id: value`,
+      });
       continue;
     }
 
@@ -359,25 +375,53 @@ function loadDocsCorpus(root) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const byDir = new Map();
   for (const node of nodes) {
-    if (node.kind === 'work item') byDir.set(path.posix.dirname(node.path), node);
+    if (node.kind === 'work-item') byDir.set(path.posix.dirname(node.path), node);
   }
 
-  // Attach each attachment to its work item: the directory answers for the
-  // in-feature layout, and a `part_of` or `related:` id answers for
-  // `docs/changelog/CHG[NNNN].md`, which has no *-about sibling.
-  for (const attachment of attachments) {
-    const dirOwner = byDir.get(path.posix.dirname(attachment.path));
-    let owner = dirOwner;
-    if (!owner) {
-      const { relations } = parseRelations(attachment.content);
+  // Attach each attachment to the work item the REGISTRY says owns it.
+  //
+  // ⛔ ONE DECLARED MODE, NEVER THREE TRIED IN SEQUENCE. The loader used to try
+  //    the directory, then a `part_of` line, then `related:`, in an order
+  //    written nowhere, and answered `attachment resolves to no work item` for
+  //    all three failures. A reader of that message could not tell "this type
+  //    has no owner rule" from "this document's owner is missing", which is the
+  //    same class of silence the type suffix produced.
+  const OWNER_RESOLVERS = {
+    dir: (a) => byDir.get(path.posix.dirname(a.path)) ?? null,
+    related: (a) => {
+      const { relations } = parseRelations(a.content);
       const declared = relations.find((r) => byId.has(r.to));
-      const related = Array.isArray(attachment.frontmatter.related)
-        ? attachment.frontmatter.related.find((id) => byId.has(id))
+      if (declared) return byId.get(declared.to);
+      const related = Array.isArray(a.frontmatter.related)
+        ? a.frontmatter.related.find((id) => byId.has(id))
         : null;
-      owner = declared ? byId.get(declared.to) : related ? byId.get(related) : null;
+      return related ? byId.get(related) : null;
+    },
+  };
+
+  for (const attachment of attachments) {
+    const mode = attachment.entry?.owner ?? null;
+    if (!mode) {
+      skipped.push({
+        path: attachment.path,
+        reason: `type \`${attachment.type}\` is an attachment but declares no owner mode in the registry`,
+      });
+      continue;
     }
+    const resolve = OWNER_RESOLVERS[mode];
+    if (!resolve) {
+      skipped.push({
+        path: attachment.path,
+        reason: `type \`${attachment.type}\` declares owner mode \`${mode}\`, which this loader does not implement`,
+      });
+      continue;
+    }
+    const owner = resolve(attachment);
     if (!owner) {
-      skipped.push({ path: attachment.path, reason: 'attachment resolves to no work item' });
+      skipped.push({
+        path: attachment.path,
+        reason: `owner mode \`${mode}\` found no work item for this attachment`,
+      });
       continue;
     }
     owner.attachments.push({ path: attachment.path, type: attachment.type });
@@ -386,11 +430,6 @@ function loadDocsCorpus(root) {
     // what left a `docs/changelog/CHG[NNNN].md` contributing no edges: that
     // layout has no *-about sibling, so only the part_of line resolves it.
     attachment.ownerId = owner.id;
-    if (attachment.type === 'hotfix-related') {
-      for (const file of parseImpactedFiles(attachment.content)) {
-        if (!owner.files.includes(file)) owner.files.push(file);
-      }
-    }
   }
 
   const { edges, unresolved, malformed } = buildDocsEdges(nodes, attachments, byId);
@@ -552,8 +591,8 @@ export const CORPORA = {
     name: 'docs',
     roots: ['docs', '.codeadd/wiki'],
     probe: 'docs',
-    membership: 'frontmatter carries a `type:` key',
-    nodeRule: 'the `id:` value, or `wiki/<page>` for a reference page',
+    membership: 'the `type:` key resolves in the type registry (mcp/types.mjs), or the document declares its own `kind:`',
+    nodeRule: 'the `id:` value, declared in frontmatter on every kind including a page',
     edgeSources: ['## Relations', '{{doc:ID}}', 'related:', 'superseded_by', 'sources globs'],
     index: '.codeadd/docs-index.json',
     deliveredScript: '.codeadd/scripts/delivered.sh',

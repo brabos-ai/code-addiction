@@ -54,8 +54,7 @@ Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 1 as well.
 
 ---
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARGS:** `/add.build [F[NNNN]] [--worktree]` — explicit feature target + opt-in worktree; composable with `feature N` (legacy epic).
 
 ---
@@ -382,13 +381,27 @@ resident in context and are re-read on every turn for the rest of the session.
 
 1. **Record `BASE`** — `BASE=$(git rev-parse HEAD)`, taken *before* the dispatch. This is half of the
    bracket every ledger line and every review package needs.
-2. **Write the brief:**
+2. **Write the brief**, passing the failures you have already seen as the optional 4th argument:
    ```bash
-   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build"
+   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
    ```
    It prints `BRIEF=`, `TASK=` and `SUBBULLETS=`, and **exits 2** when the id is not an `## Execution`
    task — an empty brief is how an agent gets dispatched against nothing and reports success. On exit 2,
    STOP and show stderr verbatim; never hand-write a substitute brief.
+
+   **`KNOWN_FAILURES` is failures you have ALREADY observed in this build, one per line as
+   `<test>: <area>`** — from an earlier area's report, or a previous fix iteration. Agents here share
+   one working tree, and one that cannot tell its own failure from a pre-existing one goes hunting for
+   a clean baseline; the way it finds one is by clearing the tree its siblings are working in.
+
+   ```
+   IF YOU HAVE OBSERVED NO FAILURES YET:
+     ⛔ DO NOT: Run the test suite just to fill this in — a baseline sweep per dispatch
+                buys nothing on the first one, which is empty either way
+     ⛔ DO NOT: Drop the argument. Three arguments render `not supplied`, which tells the
+                agent nothing and sends it looking
+     ✅ DO: Pass an empty string. The brief renders `none observed` — the tree was checked
+   ```
 3. **Choose `REPORT_FILE`** — `${FEATURE_DIR}/_build/<task-id>-report.md`. `_build/` is scratch: the
    scripts create it with a `.gitignore` containing `*`, so briefs, reports and diff packages never reach
    a commit. The **ledger is not scratch** and never lives there.
@@ -426,7 +439,7 @@ STEP 18 reprints every one of them.
 The ledger is read on entry because a compacted session looks exactly like a
 fresh start. **The same argument applies to the plan**: what a compaction erases
 is the coordinator's understanding of it, and nothing checks that what it
-recovers matches the document. `/add.plan` STEP 13's readback ran in the session
+recovers matches the document. `/add.plan` STEP 12's readback ran in the session
 that WROTE the plan, while it could still be asked; this one reads it the way a
 resumed session actually holds it — alone.
 
@@ -553,9 +566,9 @@ agents directly, at depth 1.
 | `@database-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
-| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
-| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS` | `FILES_CREATED`, `TESTS_PASSING`, `TEST_COUNT`, `RED_TEST` (CORRECTION) |
-| `@fix-agent` | full-access | `AREA`, `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `BUILD_STATUS` |
+| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND` (routed rows), `FILES_INSPECTED`, `BUILD_STATUS`, `TICK_REPORT`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
+| `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`, `KNOWN_FAILURES`, `ATTEMPT`, `MAX_ATTEMPTS`, and on the final attempt only an explicit `MODEL` one tier above its declared model | `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `BLOCKED`, `ERRORS`, `CONCERNS`, `RED_TEST` (CORRECTION) |
+| `@fix-agent` | full-access | `AREAS`, the whole wave's `ROUTED_ROWS` in table order, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model. One dispatch per wave | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `FILES_MODIFIED`, `BUILD_STATUS`, `NEW_FINDINGS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
 | `@ux-agent` | read-write (`design.md` only) | routed design-spec finding + contract-line citation | amendment appended to `## Design Review` |
 
@@ -572,9 +585,20 @@ directive in this command is self-sufficient inline for exactly that reason.
 Every correction in this command goes through `@fix-agent`. There is no
 anonymous fix subagent.
 
-**DISPATCH AGENT: `@fix-agent`** [full-access, standard] — one per affected area, parallel across areas.
-- **Inputs:** `AREA`, this area's `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS = 3`, `BUILD_ERRORS` verbatim.
-- **`ATTEMPT` is supplied by this command, never by the agent.** A leaf agent cannot see its own history, so the cap lives here where the loop can see it.
+**DISPATCH AGENT: `@fix-agent`** [full-access, standard] — **ONE dispatch for the whole wave**, never one per area.
+- **Inputs:** `AREAS` (every area the wave's rows touch), the wave's `ROUTED_ROWS` **in the table's own order**, `ATTEMPT`, `MAX_ATTEMPTS = 3`, `BUILD_ERRORS` verbatim.
+- **`ATTEMPT` is supplied by this command, never by the agent, and it counts WAVES.** A leaf agent cannot see its own history, so the cap lives here where the loop can see it.
+
+```
+IF THE WAVE'S ROUTED ROWS SPAN MORE THAN ONE AREA:
+  ⛔ DO NOT: Slice ROUTED_ROWS by area and dispatch one agent per slice
+  ⛔ DO NOT: Give each slice its own ATTEMPT counter
+  ✅ DO: Pass every row, in the table's order, to ONE dispatch with one ATTEMPT
+```
+
+⛔ **Slicing the table by area discards the two things it encodes.** It is sorted by severity first
+and area second, and it carries `Blocked by` — so a per-area agent works a minor row before another
+area's blocker, and cannot resolve a `Blocked by` that points outside its own slice at all.
 
 **`MAX_ATTEMPTS` is 3, and the model escalates at round 3 — not at round 2:**
 
@@ -588,8 +612,9 @@ Two rounds on the declared model is a fair trial. A loop that survives two round
 cannot see its own problem, and a third round on the same model buys nothing.
 
 **Every fix round is re-reviewed** — record `FIX_BASE` before the dispatch and run the scoped re-review in
-STEP 12.2 after it returns. Append one ledger line per round:
-`T02: fix round 1/3 (2 addressed, 0 open; commits d4e5f6a..b7c8d9e)`.
+STEP 12.2 after it returns. Append **one ledger line per round**, not one per area, naming the areas
+the wave spanned:
+`T02: fix round 1/3 (backend, frontend — 2 addressed, 0 open, 1 deferred; commits d4e5f6a..b7c8d9e)`.
 
 ⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`, stop dispatching — then split on what is still open:
 
@@ -622,15 +647,31 @@ decisions — never silently re-dispatched.
 
 ### DEVELOPMENT MODE
 
-#### 10.1 Dependency Order & Parallelization
+#### 10.1 Dependency Order — ONE IMPLEMENTATION AGENT AT A TIME
 
 ```
-Contract Tests (if exist) -> Database -> Backend API -> [parallel: Workers, Frontend]
+Contract Tests (if exist) -> Database -> Backend API -> Workers -> Frontend
 ```
 
-- DB + Backend + Frontend: Sequential DB → Parallel Backend + Frontend
-- Backend + Frontend only: Parallel
-- Single area: Direct (no subagents)
+**Dispatch implementation agents SEQUENTIALLY, in that order, restricted to the in-scope areas.**
+Wait for each one to return before dispatching the next.
+
+```
+IF MORE THAN ONE AREA IS IN SCOPE:
+  ⛔ DO NOT: Send two implementation agents in one message
+  ⛔ DO NOT: Dispatch Workers and Frontend together because neither depends on the other
+  ✅ DO: Dispatch one, WAIT for its report, then dispatch the next
+```
+
+⛔ **Independence of two areas is not a licence to overlap them.** Workers and Frontend do not depend
+on each other's code, but they share one working tree: two writers in it at once means neither can
+tell its own build failure from its sibling's, and an agent that cannot tell reaches for a clean
+baseline — which is how `git stash` takes another agent's uncommitted work.
+
+Single area in scope: dispatch it directly, no subagents.
+
+⛔ **This holds whether or not the `tdd-pipeline` feature is on.** The multi-writer tree is a property
+of this command's base body, not of the feature that adds test generation to it.
 
 #### 10.2 Universal Subagent Prompt Template
 
@@ -715,28 +756,34 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 #### 10.4 Subagent Dispatch
 
-**CRITICAL:** When dispatching multiple independent subagents, send ALL Task tool calls in a SINGLE message.
+⛔ **One implementation dispatch per message, and the next one only after the previous returned.**
+Per 10.1: they share one working tree, so overlapping them is what makes a build failure
+unattributable.
 
 **DISPATCH AGENT: @${AREA}-agent** (see the Agent Roster in STEP 10)
 - **Prompt:** Use the Universal Subagent Prompt Template (10.2), filled from the paths 10.0.2 resolved
 
 #### 10.5 Coordination Flow
 
-**One commit per area dispatch in this mode** — there are no task ids to commit against.
+**One commit per area dispatch in this mode**, plus one for the fix wave — there are no task ids to
+commit against.
 
 ```
-Record BASE -> Dispatch DB agent -> Wait -> Validator (STEP 11) -> Verify build
-    | (if fails, dispatch @fix-agent with ATTEMPT)
-  -> COMMIT the area batch (STEP 11.3) -> ledger line with BASE..HEAD
-Record BASE -> Dispatch Backend + Frontend (parallel) -> Wait -> Validators -> Verify build
-    | (if fails, dispatch @fix-agent with ATTEMPT)
-  -> COMMIT each area batch (STEP 11.3) -> ledger line per area
+FOR EACH in-scope area, in the 10.1 order, ONE AT A TIME:
+  Record BASE -> Dispatch the area agent -> Wait -> Validator (STEP 11) -> Verify build
+    -> COMMIT the area batch (STEP 11.3) -> ledger line with BASE..HEAD
+  (next area only after the line is written)
+THEN, once every area has landed:
+  Collect the wave's routed rows -> Record FIX_BASE
+    -> Dispatch ONE @fix-agent for the whole wave (Correction Dispatch)
+    -> COMMIT one cross-area batch (STEP 11.3) -> one ledger line
 Documentation -> DONE
 ```
 
-On a failing build, dispatch `@fix-agent` per the **Correction Dispatch** contract
-above: one per affected area, `ROUTED_ROWS` derived from the build errors, and the
-`ATTEMPT` counter tracked here. The cap is `MAX_ATTEMPTS = 3` per area.
+On a failing build, collect the rows and dispatch `@fix-agent` per the **Correction
+Dispatch** contract above: **one dispatch for the whole wave**, `AREAS` and
+`ROUTED_ROWS` derived from the build errors and validator output, and the `ATTEMPT`
+counter tracked here. The cap is `MAX_ATTEMPTS = 3` per wave.
 
 ---
 
@@ -778,12 +825,17 @@ and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exis
 
 ### 11.1 Validator Subagent Prompt Template
 
-**DISPATCH AGENT: @reviewer-agent**
+**DISPATCH AGENT: @reviewer-agent** [read-only]
+
+⛔ **The validator writes nothing — not `tasks.md`, not code.** `@reviewer-agent` declares
+`readonly: true`, so `Write` and `Edit` are denied to it. It returns ticks as a report and routes
+every violation; **11.2 merges and writes `tasks.md`, and `@fix-agent` applies every correction.**
 
 ```
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
 Validate implemented code against skill checklist, audit spec compliance against plan.md prose,
-and tick tasks.md (§2 TDD, §3 Execution, §4 Acceptance Checklist) for items covered by your area.
+and DETERMINE the tasks.md ticks (§2 TDD, §3 Execution, §4 Acceptance Checklist) for items covered
+by your area. You are read-only: you report those ticks, you do not apply them.
 
 ## MODE: task
 
@@ -804,28 +856,77 @@ ${FILES_MODIFIED}
 ## TASK A — Skill Checklist Validation
 1. Extract "## Validation Checklist" from skill file
 2. Read EVERY implemented file
-3. Validate each checklist item → if violated, prepare fix
-4. Apply ALL fixes (do NOT defer to review)
-5. Run build command (from CLAUDE.md) → must pass
+3. Validate each checklist item
+4. Report EVERY violation as a routed row — file, item, what is wrong, what it must become.
+   Do NOT edit any file: the coordinator routes these rows to @fix-agent, which is full-access.
+5. Run the build command (from CLAUDE.md) and report its exit status as BUILD_STATUS
 
-RULES: No questions. Checklist violations = MUST FIX. Build MUST pass.
+RULES: No questions. Every checklist violation is reported, never deferred and never silently
+accepted. You do not fix and you do not tick — reporting IS your output.
 
 ## TASK B — Spec Compliance + tasks.md Tick (CURRENT AREA ONLY)
 
-Follow the **Tick Application Procedure** defined in the `add-tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules"). In `add.build`, the validator WRITES `tasks.md` directly — do NOT emit a JSON report (that path is for a coordinator that owns the write, e.g. `/add.plan-to-ready`).
-
-After applying ticks, RECOMPUTE §1 Requirements Coverage per the skill's derived-state rule.
+Follow the **Tick Application Procedure** defined in the `add-tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules") to DETERMINE the ticks, then emit the JSON validator report from that skill's "Validator Report Shape". Do NOT write `tasks.md` — 11.2 merges every area report and writes it once, and §1 Requirements Coverage is recomputed there, from the merged set.
 
 IF any §3 or §4 item for this area is `[!]` or `[ ]`: SET SPEC_STATUS = INCOMPLETE.
 
 ## REPORT
-CHECKLIST_RESULTS, VIOLATIONS_FOUND, VIOLATIONS_FIXED, FILES_MODIFIED, BUILD_STATUS,
-TICKS_APPLIED (count of [x] set), TICKS_FAILED (count of [!] set with reasons), SPEC_STATUS.
+CHECKLIST_RESULTS, VIOLATIONS_FOUND (as routed rows), FILES_INSPECTED, BUILD_STATUS,
+TICK_REPORT (the JSON shape), SPEC_STATUS.
 ```
 
-### 11.2 Validation Dispatch Flow
+### 11.2 Validation Dispatch Flow — and the `tasks.md` Write
 
 Dispatch validator for each area immediately after its implementation agent returns. After ALL validators complete, run build verification. If the build fails, dispatch `@fix-agent` per the **Correction Dispatch** contract, passing the validator outputs and build errors as `ROUTED_ROWS` + `BUILD_ERRORS`, and the tracked `ATTEMPT`.
+
+#### A `BLOCKED` report becomes a routed row, in this run
+
+`@test-agent` returns `BLOCKED` when its own correct test is red because the SOURCE is wrong. That is
+a real defect found by a real test, and it is routed here — by the same synthesis this step already
+performs over validator output and build errors.
+
+For each `BLOCKED` entry, synthesise one row into `ROUTED_ROWS`:
+
+| Column | From the entry |
+|---|---|
+| `Severity` | `major` — a source defect an assertion already proves, but the suite is green because the red is declared |
+| `Area` | The area that owns `symbol`'s source file, not the area of the test |
+| `Route` | The implementation agent for that area |
+| `File` | The source file `symbol` sits in |
+| `Symptom` | `<symbol>: <assertion>` — both come from the entry, verbatim |
+
+```
+IF @test-agent RETURNED A BLOCKED ENTRY:
+  ⛔ DO NOT: Write a review document, or wait for /add.review to route it
+  ⛔ DO NOT: Route it back to @test-agent — it already established the test is right
+  ⛔ DO NOT: Route it by the TEST's area when the symbol lives in another one
+  ✅ DO: Synthesise the row here and let this wave's @fix-agent work it
+```
+
+⛔ **No review document is involved and none is created.** The row is synthesised in flight, exactly
+as a build error is. `/add.review` writes `## Fix Routing` for findings it produced; this one was
+produced here.
+
+**Verify the claim before you route it.** The `WAIT-ALL` test run this command performs itself is what
+distinguishes a real source defect from an agent avoiding work — a `BLOCKED` whose named assertion is
+not red in that run is not routed, and the discrepancy goes in the ledger as a ruling.
+
+**THIS COMMAND IS THE SOLE `tasks.md` WRITER.** Validators emit tick reports; this step merges them and
+writes. Run the **Coordinator Merge Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}` over every
+area report, recompute §1 Requirements Coverage from the merged set, and write `tasks.md` once.
+
+```
+IF A VALIDATOR REPORT HAS NOT RETURNED FOR EVERY DISPATCHED AREA:
+  ⛔ DO NOT USE: Write on tasks.md
+  ⛔ DO NOT: Merge a subset — §1 is derived state, and half the ticks recompute it wrong
+  ✅ DO: WAIT-ALL, then merge
+```
+
+⛔ **Do NOT let a validator write `tasks.md`.** `@reviewer-agent` is read-only and is denied `Write`;
+a run that expects it to tick leaves every item untouched, `SPEC_STATUS` permanently `INCOMPLETE`, and
+11.3 gate 2 blocking the commit forever.
+
+`SPEC_STATUS` for gate 2 below is the merged result: `INCOMPLETE` when ANY area reported it.
 
 ### 11.3 Commit the Batch [THE ONLY PLACE THIS COMMAND COMMITS]
 
@@ -847,7 +948,8 @@ Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 
 # BATCH_BASE is this batch's own anchor, taken immediately before ITS staging.
 # With one batch it equals the 10.0.2 pre-dispatch BASE; with several it does not.
 BATCH_BASE=$(git rev-parse HEAD)
-# Stage THIS batch's files BY PATH — from the validator's FILES_CREATED + FILES_MODIFIED.
+# Stage THIS batch's files BY PATH — from the IMPLEMENTATION subagent's FILES_CREATED +
+# FILES_MODIFIED. Not the validator's: it is read-only and modifies nothing.
 for f in ${AREA_FILES}; do [ -e "$f" ] || continue; git add -- "$f" || exit 1; done
 [ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
 # _build/ ignores itself, so briefs, reports and diff packages never enter the index.
@@ -862,10 +964,15 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
 - **Trailers are mandatory:** `Task-Id:` (the `tasks.md` id, or the area name in DEVELOPMENT / CORRECTION
   MODE, where there are no task ids) and `Feature-Id:`. They are what joins the ledger, the commit and
   `tasks.md` later.
-- **One commit per batch** — one `tasks.md` task in TASKS MODE, one area dispatch otherwise.
+- **One commit per batch** — one `tasks.md` task in TASKS MODE, one area dispatch otherwise, and
+  **one cross-area commit for a whole fix wave**. `@fix-agent` is a single dispatch spanning every
+  area its rows touch (Correction Dispatch), so its output is one batch: stage the union of its
+  `FILES_MODIFIED` and commit once. ⛔ DO NOT split a wave's diff into per-area commits — the areas
+  were fixed together against one ordering, and `review-package.sh` packages `FIX_BASE..HEAD` for
+  12.2 as one range.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
-  way, and only when more than one batch exists — the normal case, since STEP 9 dispatches Backend and
-  Frontend in parallel. `git add -A` on the first area sweeps the second area's files into that commit,
+  way, and only when more than one batch exists — the normal case, since 10.1 dispatches each in-scope
+  area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
   leaving the second commit empty and its `${BATCH_BASE}..${HEAD}` range empty too — and
   `review-package.sh` exits 2 on an empty range, so the fix loop would have nothing to review.
 - ⛔ **`${AREA_FILES}` comes from the validator's report, never from a glob.** A glob cannot tell this
@@ -903,9 +1010,10 @@ feature-gated either.
 ### 12.1 Consume
 
 Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
-Work rows in the table's given order, respecting `Blocked by`. **Record
+The rows are worked in the table's given order, respecting `Blocked by` — **by the agent, which is why
+it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 `FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — 12.3 cannot run without it. Dispatch
-`@fix-agent` per area per the **Correction Dispatch** contract, with the tracked
+**ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
 ### 12.2 Scoped Re-Review (after EVERY fix round) [HARD GATE]
@@ -1016,7 +1124,7 @@ DO NOT report completion without executing this step.
 4. Bump `updated:` to today
 5. Apply schema validation gate from `{{skill:add-doc-schemas/SKILL.md}}`
 
-For EACH mutated doc, execute the validation gate (schema: `feature-plan` or `feature-about`). Verify immutables preserved. DO NOT advance to STEP 16 until gates return PASS.
+For EACH mutated doc, execute the validation gate (schema: `feature-plan` or `feature`). Verify immutables preserved. DO NOT advance to STEP 16 until gates return PASS.
 
 Reference: **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`
 
@@ -1241,5 +1349,5 @@ Dispatching subagents..."
 | `@fix-agent` exhausted `MAX_ATTEMPTS`, build still red | Report unresolved rows and last errors; STOP. The BUILD GATE is not a finding to rule on. Never advance as if the build passed |
 | `review-package.sh` exits 2 (empty range) | The fix produced no commit — that is the finding. Do NOT dispatch the re-reviewer against nothing; re-open the round |
 | Ledger and `git log` disagree | git wins for what EXISTS, the ledger wins for what was DECIDED. Record the reconciliation as a ledger line |
-| >4 areas detected | Split into maximum parallel groups |
+| >4 areas detected | Dispatch them one at a time in the 10.1 dependency order. There is no parallel group to split into |
 | No plan.md or about.md | Inform user to run /feature or /plan first |

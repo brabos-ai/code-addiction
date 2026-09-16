@@ -118,9 +118,15 @@ export const TOOLS = [
   {
     name: 'touched_by',
     description:
-      'For a list of files: the work items that changed them, and the reference pages whose ' +
-      '`sources` globs cover them. The join between "what was already built here" and "what this ' +
-      'module is". NOT the same question as impact, which means transitive dependants.',
+      'For a list of files: the deliveries that changed them, and the reference pages whose ' +
+      '`sources` globs cover them. NOT the same question as impact, which means transitive ' +
+      'dependants. On the docs corpus a delivery hit carries `answer`: `complete` means the path ' +
+      'is in that delivery own commit and the whole diff is covered; `curated` means it is one ' +
+      'of at most five recorded anchors, a sample rather than a diff. `matched` is a list of ' +
+      'paths on a complete hit and a list of anchors on a curated one, so read `answer` before ' +
+      'parsing it. `curatedOnly` counts the hits that could answer only from anchors. ' +
+      '`unavailable` means the delivery half could not run at all, which is NOT the same fact as ' +
+      'no delivery having touched the path.',
     inputSchema: {
       type: 'object',
       properties: { files: { type: 'array', items: { type: 'string' } } },
@@ -151,7 +157,7 @@ export const TOOLS = [
       type: 'object',
       properties: {
         id: NODE_ARG,
-        limit: { type: 'number', description: 'Maximum entries to read. Defaults to 50.' },
+        limit: { type: 'number', description: 'Maximum LIVE entries to read; defaults to 50. Dead entries (superseded, gone) have their own fixed cap of 2 and no argument raises it — MATCHED_DEAD in the result says whether any were cut.' },
         layer: { type: 'string', description: 'Passed straight through to delivered.sh.' },
       },
       required: ['id'],

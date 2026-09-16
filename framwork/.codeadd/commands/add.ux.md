@@ -7,8 +7,7 @@
 
 Lightweight UX loader. Loads ux-design skill, discovers project design patterns, then applies UX knowledge to the user's free-form instruction.
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 ---
 
@@ -29,7 +28,7 @@ STEP 5 → Apply UX to user instruction
 
 ---
 
-## STEP 1: Run Feature Status
+## STEP 1: Run status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh

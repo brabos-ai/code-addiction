@@ -1,15 +1,17 @@
 # ADD Sync - Ecosystem Documentation Updater
 
 <!-- uses:
+- skill: add-artefact-graph
 - agent: readme-analyzer
 - agent: svg-analyzer
 - agent: web-docs-analyzer
 - agent: web-index-analyzer
 - skill: add-final-report
 - command: /add-framework--release
+- mention: building-commands
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Computes diff since last release, regenerates the ecosystem map, dispatches 4 analyzer agents in parallel, and applies all documentation updates as a single writer. Leaves changes uncommitted for human review.
 
@@ -148,6 +150,17 @@ node scripts/graph.js stats --json    # counts by kind, edge type, and the hubs
 node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / "used by"
 ```
 
+⛔ **The calls above are literal on purpose, and this is the one step in this ecosystem where that is
+still correct.** It is deterministic transcription with no agent deciding anything: one `neighbors`
+run per row, `--json` because the output is parsed rather than read, and `stats` once for the counts.
+The flags are the point, and `building-commands` keeps explicit bash exactly here — where the flags
+matter and are not obvious.
+
+**They are not the graph's whole surface, and no question outside this loop is answered from them.**
+`add-artefact-graph` owns which verb answers which question, both interfaces, and the standing list of
+what no query reaches. Load it the moment the question stops being "fill this row" — including any
+answer that has to be qualified before it is written down.
+
 `neighbors` returns inbound and outbound edges with their types, which is exactly
 the "skills loaded" and "used by" columns below. It is derived from each
 artefact's own declaration and validated by the build, so a row written from it
@@ -199,7 +212,7 @@ Graph 1 — Core Pipeline:
   → skills they load (loads relationship)
 
 Graph 2 — Support Commands:
-   Auxiliary commands (add, add.init, add.diagnose, add.hotfix, add.audit, add.wiki, add.brainstorm, add.ux)
+   Auxiliary commands (add, add.diagnose, add.hotfix, add.audit, add.wiki, add.brainstorm, add.ux)
   → skills they load (loads relationship)
 
 Graph 3 — Agent Dispatch:

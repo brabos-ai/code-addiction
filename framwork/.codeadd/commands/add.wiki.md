@@ -7,13 +7,11 @@
 - skill: add-ecosystem
 - skill: add-final-report
 - skill: add-wiki-maintenance
-- script: status.sh
 -->
 
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 ---
 
@@ -254,7 +252,8 @@ Each agent is independent. Dispatch ALL simultaneously — app specialists, the 
 **Mandatory Wiki Page Frontmatter (every wiki-writing analyzer):**
 ```yaml
 ---
-type: reference | how-to | explanation
+id: wiki/<path under .codeadd/wiki/, without .md>
+type: tutorial | how-to | reference | explanation
 area: backend | frontend | database | architecture | conventions | workflows | <domain>
 description: <1-2 sentences, keyword-rich — what this page covers and when to read it>
 sources: [<code paths this page derives from>]   # max 8 globs
@@ -263,6 +262,23 @@ generated: <YYYY-MM-DD>
 tags: [<grep targets: di, repository-pattern, error-handling>]   # max 6
 ---
 ```
+
+```
+IF WRITING A PAGE WITHOUT AN `id:`:
+  ⛔ DO NOT: Rely on the indexer deriving one from the file path
+  ✅ DO: Write `id: wiki/<path>` — the page is skipped and reported without it
+```
+
+**`id:` is declared, never derived.** The indexer used to name a page after where
+its file sat, so moving the file renamed the node and every relation pointing at
+it broke with nothing to show for it. The value is the same string the path would
+have produced, which is what makes writing it cost nothing.
+
+**The four `type:` values are Diátaxis**, the documentation framework this page
+set already followed in three of its four types. `tutorial` is available even
+though no analyzer writes one today: the model reads the four from
+`mcp/types.mjs`, and a page carrying a type that registry does not declare is
+reported rather than indexed.
 
 **Mandatory Wiki Page Body Format:**
 ```markdown
@@ -310,7 +326,7 @@ Follow ALL instructions.
 ## TASK
 1. Analyze ONLY [APP_PATH] using [TYPE]-specific patterns
 2. WRITE to .codeadd/wiki/domains/[TYPE].md
-   - Frontmatter: type (reference), area ([TYPE]), description, sources, commit, generated, tags
+   - Frontmatter: id (wiki/<path>), type (reference), area ([TYPE]), description, sources, commit, generated, tags
    - Body: ## TL;DR, ## TOC (if >100 lines), topic-first ## chunks with path:line refs, ## Related footer (2-4 links)
    - No structural facts — name entry points/boundaries only, point to the code graph/code for anything that rots
 3. Return: FILE_WRITTEN, TYPE, FRAMEWORKS, PATTERNS_FOUND, TOPICS count
@@ -335,7 +351,7 @@ Focus: GenericAppTemplate section
 ## TASK
 1. Discover what this app does (via CODE, not folder name)
 2. WRITE to .codeadd/wiki/domains/[TYPE].md
-   - Frontmatter: type (reference), area ([TYPE]), description, sources, commit, generated, tags
+   - Frontmatter: id (wiki/<path>), type (reference), area ([TYPE]), description, sources, commit, generated, tags
    - Body: ## TL;DR, ## TOC (if >100 lines), App Nature, Structure, Entry Points, Dependencies, Configuration, Commands/Jobs, ## Related footer
 3. Return: FILE_WRITTEN, APP_PURPOSE, ENTRY_POINT, KEY_DEPENDENCIES, TOPICS count
 
@@ -362,7 +378,7 @@ Follow ALL instructions.
 ## TASK
 1. Analyze database patterns
 2. If database found: WRITE to .codeadd/wiki/domains/database.md
-   - Frontmatter: type (reference), area (database), description, sources, commit, generated, tags
+   - Frontmatter: id (wiki/<path>), type (reference), area (database), description, sources, commit, generated, tags
    - Body: ## TL;DR, ## TOC (if >100 lines), topic-first ## chunks with path:line refs, ## Related footer
 3. If NO database: skip (do NOT write)
 4. Return: FILE_WRITTEN, STACK, PATTERNS_FOUND, TOPICS count
@@ -423,7 +439,7 @@ Follow ALL instructions.
    canonical home for cross-cutting conventions — domain-local conventions stay in domains/<area>.md and link
    here instead of restating
 3. WRITE .codeadd/wiki/workflows.md — dev workflows, validation gates, release, testing entry points (type: how-to)
-   Every page: mandatory frontmatter (type/area/description/sources/commit/generated/tags) + TL;DR + TOC
+   Every page: mandatory frontmatter (id/type/area/description/sources/commit/generated/tags) + TL;DR + TOC
    (if >100 lines) + topic-first ## chunks with path:line refs + ## Related footer. No structural facts baked in.
 4. Return: FILES_WRITTEN, TOPICS count per page
 
@@ -448,7 +464,7 @@ Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpa
 - [ ] All `{{addpath:wiki/domains/*.md}}` files from the dispatch plan exist
 - [ ] Spine — standard mode: `{{addpath:wiki/architecture.md}}`, `{{addpath:wiki/conventions.md}}`, `{{addpath:wiki/workflows.md}}` exist. Tiny mode (2.3.1): NO spine files expected; instead the spine analyzer's report contains the three folded sections
 - [ ] `docs/code-quality-review.md` exists
-- [ ] Every wiki page has complete frontmatter (type, area, description, sources, commit, generated, tags)
+- [ ] Every wiki page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
 - [ ] All wiki pages contain the mandatory body sections (TL;DR, TOC if >100 lines, topic chunks, Related footer)
 - [ ] Topic counts confirmed per page
 
@@ -524,7 +540,7 @@ Everything cut goes to the Backlog with its source anchor — never silently dro
 
 - [ ] Every link in `index.md` (excluding `INSTRUCTIONS.md` and non-`.md` files like `.meta.json`) resolves to an existing wiki page
 - [ ] Every wiki `*.md` page (excluding `index.md` and `INSTRUCTIONS.md`) is linked from `index.md`
-- [ ] Every page has complete frontmatter (type, area, description, sources, commit, generated, tags)
+- [ ] Every page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
 - [ ] Budgets respected (§5.1)
 - [ ] Terminology has ≤ 15 entries
 
@@ -826,4 +842,4 @@ quality-analyzer  → project-wide    → docs/code-quality-review.md
 
 **Note:** When multiple apps share the same type (e.g., apps/admin + apps/portal both frontend), the analyzer covers both in a single `domains/frontend.md` file. Its frontmatter `sources` lists all paths.
 
-**Result:** `index.md` hub + 3 spine pages + 4 domain pages in `{{addpath:wiki/}}`, each with frontmatter (type/area/description/sources/commit/generated/tags) + TL;DR + TOC + topic-first ## chunks + Related footer. `.meta.json` written last, only on success.
+**Result:** `index.md` hub + 3 spine pages + 4 domain pages in `{{addpath:wiki/}}`, each with frontmatter (id/type/area/description/sources/commit/generated/tags) + TL;DR + TOC + topic-first ## chunks + Related footer. `.meta.json` written last, only on success.

@@ -9,6 +9,7 @@
 - skill: add-wiki-maintenance
 - command: /add.build
 - mention: /add.new
+- mention: add-knowledge-discovery
 - command: /add.pull-request
 - command: /add.hotfix
 - command: /add.plan-to-ready
@@ -20,7 +21,7 @@
 - script: qa-evidence.sh
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Coordinator for branch finalization. Generates the changelog from changeset analysis and auto-merges to main. Same flow for all branch types (feature, hotfix, refactor, chore, docs) — review gate applies to features only.
 
@@ -645,6 +646,14 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 The changelog, the `about.md` edits and the wiki pages have all landed. Rebuild
 the index so the next command's discovery step sees this delivery:
 
+⛔ **The two calls below name their action on purpose, and stay that way.** Every
+other MCP call in the product layer states a question and lets
+`{{skill:add-knowledge-discovery/SKILL.md}}` resolve it, because a question can
+have several right answers and a pinned call holds the run to one. These two are
+**operations, not questions**: there is exactly one way to rebuild an index and
+exactly one call that returns the unresolved list, so naming it removes no
+choice. Do not rewrite them into questions.
+
 ```bash
 npx codeadd mcp --corpus=docs --action=reindex
 ```
@@ -788,6 +797,15 @@ IF RENDERING THE ENTRY:
 
 **Execute immediately after STEP 7, on the route 2.2 chose.** All three of 2.2's
 outcomes land here, including the one that asks.
+
+⛔ **This command runs no per-file post-merge check, and that is deliberate.** `done.sh`'s
+`do_cleanup` — called by both routes below, directly at 8.1 and through `--merge` at 8.2 — proves the
+merge two ways: a fetch, then `git merge-base --is-ancestor` against the merge commit. Nothing here
+re-opens the merged files to prove they match what was pushed. This project's own internal development
+tooling runs a close-out with exactly the same two checks and no more, for the same reason: a
+successful merge cannot exist without the delivered files existing, so a third, per-file check would
+only spend a git call re-proving what the merge already guarantees. This is a recorded parity gap, not
+an omission to close.
 
 ### 8.0 The ASK Branch [STOP]
 

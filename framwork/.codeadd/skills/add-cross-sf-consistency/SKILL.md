@@ -39,20 +39,20 @@ This produces no new persisted artefact of its own. A `FULL`-pass finding is app
 - Judging one subfeature in isolation against its own `about.md`/`design.md` — that is `@qa-agent` / `@ux-agent` (dual-judge QA, `add-qa`) or `@plan-reviewer-agent` (pre-delivery executability, `add-plan-review`). This rubric only fires when there are **two or more** subfeatures to compare.
 - Code-level review (naming, security, architecture, whether the code matches the plan) — `@reviewer-agent` / `add-code-review`.
 - A single-feature (non-epic) run of `/add.plan-to-ready`. With one subfeature there is nothing to compare against, so the loop never dispatches this agent.
-- **Single-plan completeness** — whether a shared enum/config was declared ONCE in the earliest subfeature instead of duplicated, whether a subfeature depending on an unbuilt sibling declares fallback behavior, whether new services are registered in DI/as workers. That is `/add.plan` STEP 10.5's job. See Boundary below.
+- **Single-plan completeness** — whether a shared enum/config was declared ONCE in the earliest subfeature instead of duplicated, whether a subfeature depending on an unbuilt sibling declares fallback behavior, whether new services are registered in DI/as workers. That is `/add.plan` STEP 9.5's job. See Boundary below.
 
-## Boundary — this rubric vs `/add.plan` 10.5
+## Boundary — this rubric vs `/add.plan` 9.5
 
-Two artefacts look across an epic's subfeature plans, and they split on one line: **`consistency-agent` DETECTS divergence between plans; `/add.plan` STEP 10.5 (Cross-SF Integration Review) fixes COMPLETENESS of a single plan, in place.** Every dimension below asks *do two declarations disagree?* — 10.5's checks ask *is one plan complete?*
+Two artefacts look across an epic's subfeature plans, and they split on one line: **`consistency-agent` DETECTS divergence between plans; `/add.plan` STEP 9.5 (Cross-SF Integration Review) fixes COMPLETENESS of a single plan, in place.** Every dimension below asks *do two declarations disagree?* — 9.5's checks ask *is one plan complete?*
 
 | Question | Owner | Mode |
 |---|---|---|
 | Do two subfeatures declare the same contract differently? | `consistency-agent` — the five dimensions below | Read-only judge: reports a verdict, never edits |
-| Is a shared enum/config declared ONCE in the earliest subfeature, or duplicated? | `/add.plan` 10.5 | Fixes `plan.md` in place |
-| Does a subfeature depending on an unbuilt sibling declare fallback behavior? | `/add.plan` 10.5 | Fixes `plan.md` in place |
-| Are new services registered in DI / as workers? | `/add.plan` 10.5 | Fixes `plan.md` in place |
+| Is a shared enum/config declared ONCE in the earliest subfeature, or duplicated? | `/add.plan` 9.5 | Fixes `plan.md` in place |
+| Does a subfeature depending on an unbuilt sibling declare fallback behavior? | `/add.plan` 9.5 | Fixes `plan.md` in place |
+| Are new services registered in DI / as workers? | `/add.plan` 9.5 | Fixes `plan.md` in place |
 
-The traffic runs both ways. 10.5 no longer derives **schema ↔ consumer alignment** or **cross-SF handoff contracts** itself — those are dimensions 2 and 1 here, and 10.5 **consumes** this agent's `FULL`-pass findings for them rather than opening a second verdict. In return, ⛔ this rubric never reports a 10.5 concern — not as a finding, not as `informational`. A duplicated declaration is not two declarations disagreeing, so the *out-of-rubric divergence → `informational`* path does not reach it either. This is also why the cap holds at five: folding 10.5's three checks in would need a sixth dimension, which is banned.
+The traffic runs both ways. 9.5 no longer derives **schema ↔ consumer alignment** or **cross-SF handoff contracts** itself — those are dimensions 2 and 1 here, and 9.5 **consumes** this agent's `FULL`-pass findings for them rather than opening a second verdict. In return, ⛔ this rubric never reports a 9.5 concern — not as a finding, not as `informational`. A duplicated declaration is not two declarations disagreeing, so the *out-of-rubric divergence → `informational`* path does not reach it either. This is also why the cap holds at five: folding 9.5's three checks in would need a sixth dimension, which is banned.
 
 ## The Five Dimensions — exactly five, nothing else
 
@@ -173,7 +173,7 @@ Capability validation follows the same hard rules `add-qa`'s coordinator referen
 [ ] Dimension 4 produced NO finding at all (not even clean) on a HAS_DESIGN=false epic
 [ ] Every finding cites both subfeatures' documents by path + section/line — no finding without evidence
 [ ] Out-of-rubric divergences are `informational` and never appear in a blocking role
-[ ] No single-plan completeness concern reported — shared-resource centralization, fallback/degradation and DI/worker registration are /add.plan 10.5's, never a finding here at any severity
+[ ] No single-plan completeness concern reported — shared-resource centralization, fallback/degradation and DI/worker registration are /add.plan 9.5's, never a finding here at any severity
 [ ] FULL-pass findings applied to the new subfeature's plan.md only — never to an already-converged sibling
 [ ] FULL-pass application followed apply → re-run feature-plan gate → one re-dispatch → blocked-on-failure, same shape as @plan-reviewer-agent's fix-then-ok/blocked loop
 [ ] DELTA-pass findings written into review-NNN.md's ## Fix Routing, not a new file

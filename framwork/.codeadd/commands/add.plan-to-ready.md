@@ -39,8 +39,7 @@ argument-hint: "[F[NNNN]] [SFxx]  (e.g. /add.plan-to-ready F0042  ·  /add.plan-
 - script: status.sh
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Runs the delivery loop that is otherwise prose the user executes by hand: plan,
 then `build ⇄ review` until the feature satisfies the same gates `/add.done`
@@ -141,8 +140,8 @@ This command takes over the coordinator role of `/add.plan`, `/add.build` and
 | Leg | Roster |
 |-----|--------|
 | Plan | `@discovery-agent`, `@ux-flow-agent`, `@ux-layout-agent`, `@ux-agent` (critique), `@database-agent`, `@backend-agent`, `@frontend-agent`, `@architecture-agent`, `@plan-reviewer-agent` (verdict gate, after consolidation) |
-| Build | `@database-agent`, `@backend-agent`, `@frontend-agent`, `@test-agent` (with `tdd-pipeline`), `@e2e-agent` (with `qa-pipeline`), `@reviewer-agent` (area validation), `@fix-agent` (correction) |
-| Review | `@reviewer-agent` (frontend ∥ backend, read-only), `@ux-agent` (review mode) ∥ `@qa-agent` (with the QA receipt present) |
+| Build | `@database-agent`, `@backend-agent`, `@frontend-agent` (one at a time), `@test-agent` (with `tdd-pipeline`, after each area's implementer), `@e2e-agent` (with `qa-pipeline`), `@reviewer-agent` (area validation), `@fix-agent` (correction — one dispatch for the whole wave) |
+| Review | `@reviewer-agent` (frontend ∥ backend, read-only), `@ux-agent` (review mode) ∥ `@qa-agent` (with `qa-pipeline` enabled AND the QA receipt present — two gates, see STEP 7) |
 
 ⛔ Dispatching one agent told to "read `{{cmd:add.plan}}` and execute it" is the
 depth-2 defect this command exists to avoid. Dispatch the roster.
@@ -520,7 +519,7 @@ and do not advance to STEP 4.
 
 **Plan review (MANDATORY, after the output check passes).** This is new
 behaviour beyond "applying `/add.plan`'s own consolidation rules" above — the
-`feature-plan` schema gate is `/add.plan` STEP 12, a separate step this loop
+`feature-plan` schema gate is `/add.plan` STEP 11, a separate step this loop
 never runs, so nothing else here re-validates `plan.md` after a fix is applied.
 
 1. **DISPATCH** `@plan-reviewer-agent` with `path` = the `plan.md` just
@@ -536,7 +535,7 @@ never runs, so nothing else here re-validates `plan.md` after a fix is applied.
      the loop is autonomous by contract.
    - **The re-gate is the `feature-plan` validation gate**
      (`{{skill:add-doc-schemas/SKILL.md}}`) against the fixed `plan.md`. That
-     re-run is the step `/add.plan` STEP 12 would otherwise have owned.
+     re-run is the step `/add.plan` STEP 11 would otherwise have owned.
    - **A standing blocker is a BLOCKED exit for this subfeature**, not a stop.
      Report the blockers verbatim and do NOT advance to STEP 4.
 3. ⛔ Never stop to ask the user during this exchange — the loop is autonomous
@@ -648,14 +647,33 @@ epic subfeature still leaves a record; today none does.
 
 ## STEP 4: Build Leg
 
-**Iteration 1 — implementation.** Dispatch the build roster per area, following
-the dependency order (contract tests → database → backend → parallel workers +
+**Iteration 1 — implementation.** Dispatch the build roster **one agent at a time**,
+following the dependency order (contract tests → database → backend → workers →
 frontend). Dispatch the area validator immediately after each area agent returns.
+
+```
+IF MORE THAN ONE AREA IS IN SCOPE:
+  ⛔ DO NOT: Send two implementation agents in one message
+  ✅ DO: Dispatch one, WAIT for its report and its validator, then the next
+```
+
+⛔ **They share one working tree.** Two writers in it at once means neither can
+tell its own build failure from its sibling's — `/add.build` STEP 10.1 owns this
+rule and this leg runs under it.
+
+**With `tdd-pipeline` on**, `@test-agent` for an area is dispatched AFTER that
+area's implementer, interleaved — `DB → test:DB → Backend → test:Backend →
+Frontend → test:Frontend`. Pass `ATTEMPT`, `MAX_ATTEMPTS = 3` and
+`KNOWN_FAILURES` (empty, rendered as `none observed`, when nothing has been
+observed yet), and an explicit `MODEL` one tier up on the final attempt only.
+A `BLOCKED` entry it returns is routed as a row, never re-dispatched to it.
+At the wave's `WAIT-ALL`, run `TEST_COMMAND` yourself rather than reading
+`TESTS_PASSING` off the reports.
 
 **Iteration 2 and later — correction leg.** The build leg consumes the previous
 round's `## Fix Routing` table from `review-NNN.md`:
 
-1. Dispatch `@fix-agent` per affected area, in the table's order, respecting `Blocked by`. Pass `AREA`, that area's `ROUTED_ROWS`, `ATTEMPT`, `MAX_ATTEMPTS = 3`, and `BUILD_ERRORS` where relevant.
+1. Dispatch **ONE** `@fix-agent` for the whole wave. Pass `AREAS` (every area the rows touch), the wave's `ROUTED_ROWS` **in the table's own order**, `ATTEMPT`, `MAX_ATTEMPTS = 3`, and `BUILD_ERRORS` where relevant. The agent works the rows in that order and honours `Blocked by` itself, which is why it receives them whole. ⛔ DO NOT slice the table by area — the ordering is severity-first, and a `Blocked by` pointing across areas cannot be resolved from inside one slice.
 2. Rows returned `NOT_MINE` (`data-seed`, `env-boot`, capability-invalid, `@ux-agent` design-spec without a citation) are collected for the report as user decisions — never silently re-dispatched.
 3. **Write the resolution annex yourself.** Append one row per routed ID into the **previous round's** `review-NNN.md` `## Resolution Annex`, append-only, then set that document's `status: finalized` exactly once.
 
@@ -695,7 +713,7 @@ findings, never fixes.
 
 It emits, for the scope:
 - `docs/features/${FEATURE_ID}/review-NNN.md`, including the unified `## Fix Routing` table;
-- one `_tests/run-NNN/qa-validation-NNN.md` per in-scope `SCOPE_DIR`, when the `/add.qa-setup` receipt is present.
+- one `_tests/run-NNN/qa-validation-NNN.md` per in-scope `SCOPE_DIR`, when `qa-pipeline` is enabled AND the `/add.qa-setup` receipt is present. ⛔ The receipt alone is not enough: the feature decides whether the review has QA steps at all, the receipt decides whether they may run.
 
 ⛔ If the review leg reports that it modified any file under `git diff --name-only`,
 treat it as a contract violation: STOP the loop and report BLOCKED naming the
@@ -714,8 +732,11 @@ from a hardcoded default.
 (`true | false | unset | no-manifest`); the defaults registry lives in
 `cli/src/features.js` and a shell script duplicating it is how the two drift.
 Resolve `unset` / `no-manifest` by the feature's own default: **`qa-pipeline`
-defaults to disabled** — the same rule `{{cmd:add.review}}` and
-`{{cmd:add.qa-setup}}` already apply to the same value.
+defaults to disabled** — the same rule `{{cmd:add.qa-setup}}` applies to the same
+value. `{{cmd:add.review}}` no longer reads this state at all: its QA steps
+arrive with the feature or do not arrive, so there is nothing left there to
+resolve. This command still resolves it because it dispatches the judges itself,
+at depth 1, rather than through that command.
 
 The two rules are compatible, not in tension: read the STATE from the script
 rather than assuming one, then apply the registry's DEFAULT to the two values
@@ -764,7 +785,7 @@ it is documentation of the script's contract, not the evaluation itself:
 | 1 | Review verdict | `GATE_REVIEW` | The highest `review-NNN.md` exists and its `\| **Overall** \|` row reads PASSED |
 | 2 | QA baseline | `GATE_QA_BASELINE` | Its `> **QA baseline:**` line is present and valid, checked against `qa-evidence.sh validate` |
 | 3 | Epic completeness | `GATE_EPIC` | `epic.md` has no pending subfeature — evaluated **only when `epic.md` exists**; a simple feature does not require one |
-| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 11's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 11 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
+| 4 | Requirements coverage | `GATE_COVERAGE` | `plan.md`'s coverage table shows zero uncovered. Two shapes are read: `/add.plan` STEP 10's `Covered?` column (resolved by header name) and the legacy `## Cobertura de Requisitos` section. On an epic the SF-level `plan.md` is read. **No coverage table at all is `ok`** — `/add.plan` STEP 10 is itself a coverage gate at plan time, and making absence blocking would mean no feature could ever converge |
 | 5 | Build ledger | `GATE_LEDGER` | Every `## Execution` task in the scope's `tasks.md` carries a `complete` line in its `build-ledger.md`. **No `tasks.md` at all is `ok`** — outside TASKS MODE the ledger's lines are keyed by area rather than task id, so there is nothing to cross-reference, the same rule gate 4 applies to an absent coverage table |
 
 **CONVERGED requires all five gates `ok`.** `missing`, `broken` and `not-probed`

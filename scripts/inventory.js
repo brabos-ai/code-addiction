@@ -75,10 +75,10 @@ const GROUPS = {
 };
 
 /**
- * Sorted by NAME, never by filename. Sorting `commands/*.md` puts `add.md` after
- * `add.init.md` and `add.plan-to-ready.md` before `add.plan.md`, because '-' (45)
- * sorts before '.' (46) and the extension shifts the comparison. Both read as
- * mistakes and both move the diff for no reason.
+ * Sorted by NAME, never by filename. Sorting `commands/*.md` puts
+ * `add.plan-to-ready.md` before `add.plan.md`, because '-' (45) sorts before
+ * '.' (46) and the extension shifts the comparison. That reads as a mistake
+ * and moves the diff for no reason.
  */
 function collectInventory(codeaddDir) {
   const out = {};

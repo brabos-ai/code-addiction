@@ -7,10 +7,39 @@
 # Usage: bash .codeadd/scripts/delivered.sh write < record.json
 #        bash .codeadd/scripts/delivered.sh read <query> [--layer product|internal] [--limit N] [--no-verify]
 #        bash .codeadd/scripts/delivered.sh verify [<id>] [--repair]
+#        bash .codeadd/scripts/delivered.sh touched <path> [<path>...]
 # Dependencies: bash 3.2+, git, node >= 18 (JSON parse/emit; guaranteed by the
 #               CLI, the same declaration qa-preflight.sh makes)
 # Output: KEY=VALUE lines, plus JSONL entries on `read`. A line starting with
 #         `{` is an entry; anything else is a key.
+#
+# READ MATCHES PER TERM. The query is split on whitespace and each term is
+# tested as a substring of the entry's text; an entry matches when it hits at
+# least one, and is scored by how many DISTINCT terms it hit. Results sort by
+# status rank, then score, then recency, then id.
+#
+# TOUCHED ANSWERS "WHICH DELIVERIES CHANGED THESE PATHS", IN TWO LAYERS.
+# The field is `answer` and NOT `layer`: `layer` is already the record's own
+# product|internal field, and writing the answer layer there would silently
+# overwrite it, so a caller could no longer tell which layer a delivery is in.
+# The delivery's commit is DERIVED, never stored: the close-out commits the
+# entry on the branch and the merge squashes that branch, so the commit that
+# introduced an entry's line IS the commit that delivered it. Each returned
+# entry carries `answer`:
+#   complete - the path is in that derived commit's own diff. Exact and whole.
+#   curated  - the path is one of the entry's `items[].at` anchors,
+#              self-healing through `verify --repair`. Carries each item's
+#              verified status.
+# An entry whose derived commit touches only `docs/` was recorded outside the
+# normal flow and answers from the curated layer alone; CURATED_ONLY counts
+# those. Keys: TOUCHED_COMPLETE, TOUCHED_CURATED, CURATED_ONLY.
+# Exit 0 always, like every other probe. Exit 2 with no path argument.
+#
+# READ CUTS IN TWO BUCKETS: 5 live (live, changed) and 2 dead (superseded,
+# gone), independently, with NO backfill of unused dead slots into live ones.
+# `--limit N` sets the live cap only; the dead cap is fixed. Both numbers are a
+# declared tunable and changing one needs evidence. MATCHED_LIVE/MATCHED_DEAD
+# report what matched; RETURNED_LIVE/RETURNED_DEAD what survived the cut.
 # Exit:   0 for probe results — `read` and `verify` always exit 0, including on
 #         an absent index. 1 ONLY when the filesystem refuses a write. 2 for
 #         caller error: a bad mode, bad arguments, a record breaking a hard ban
@@ -45,6 +74,7 @@ usage() {
     echo "Usage: delivered.sh write < record.json"
     echo "       delivered.sh read <query> [--layer product|internal] [--limit N] [--no-verify]"
     echo "       delivered.sh verify [<id>] [--repair]"
+    echo "       delivered.sh touched <path> [<path>...]"
   } >&2
   exit 2
 }
@@ -60,10 +90,11 @@ shift
 
 QUERY=""
 LAYER=""
-LIMIT="10"
+LIMIT="5"   # the LIVE cap; --limit overrides it. The dead cap is fixed, in node.
 NO_VERIFY=""
 ENTRY_ID=""
 REPAIR=""
+PATHS=""
 
 case "$MODE" in
   write)
@@ -84,6 +115,13 @@ case "$MODE" in
     case "$LAYER" in ""|product|internal) ;; *) usage ;; esac
     case "$LIMIT" in ''|*[!0-9]*) usage ;; esac
     [ "$LIMIT" -gt 0 ] || usage
+    ;;
+  touched)
+    [ "$#" -gt 0 ] || usage
+    # One newline-separated blob: the node program takes a fixed argv, so a
+    # variable-length path list needs one slot, not one slot per path.
+    PATHS=$(printf '%s
+' "$@")
     ;;
   verify)
     while [ "$#" -gt 0 ]; do
@@ -124,7 +162,7 @@ NODE_PROG=$(cat <<'NODE'
 const fs = require('fs');
 const path = require('path');
 
-const [MODE, INDEX, CORPUS_FILE, ROOT, QUERY, LAYER, LIMIT, NO_VERIFY, ENTRY_ID, REPAIR] =
+const [MODE, INDEX, CORPUS_FILE, ROOT, QUERY, LAYER, LIMIT, NO_VERIFY, ENTRY_ID, REPAIR, PATHS] =
   process.argv.slice(1);
 
 const STATUSES = ['live', 'changed', 'gone', 'superseded'];
@@ -308,7 +346,6 @@ function doWrite() {
 
   if (!Array.isArray(rec.items)) refuse('missing-field');
   if (rec.items.length === 0) refuse('no-items');
-  if (rec.items.length > 5) refuse('too-many-items');
 
   const loose = [];
   for (const it of rec.items) {
@@ -361,6 +398,30 @@ function doRead() {
   // rewrites on every anchor move, so matching it would let a query hit a
   // stale pointer and return an entry on the strength of a path that no longer
   // describes it. `find` is the byte-exact anchor and it is already in.
+  // PER-TERM, not one contiguous substring. The skill asks its callers for
+  // "the terms from the task" — plural — while this tested the whole query in
+  // one piece, so any two terms that did not appear adjacent AND in that order
+  // answered nothing. Measured before the change: `read "knowledge graph"`
+  // matched, `read "graph knowledge"` did not, and neither did any query whose
+  // terms came from two different fields.
+  //
+  // A term matches as a SUBSTRING, never on a word boundary. The haystack
+  // carries `id` (0042F), `find` (byte-exact identifiers like
+  // authGoogleHandler) and `words` (a keyword blob); a word-boundary rule would
+  // stop `auth` from reaching `authGoogleHandler`, which is the hit this index
+  // exists to return.
+  // DEDUPED, because the score is defined as the count of DISTINCT terms hit.
+  // Without this, `read "graph graph knowledge"` scores an entry matching only
+  // `graph` at 2 and one matching only `knowledge` at 1 — and the skill tells
+  // callers a full sentence is a fine query, which makes a repeated word normal
+  // input rather than a pathological one.
+  const TERMS = [...new Set(q.split(/\s+/).filter(Boolean))];
+
+  // Score is the count of DISTINCT terms an entry hit, held beside the entry
+  // rather than on it: these objects are serialised straight to stdout, and a
+  // `_score` property would ship into the caller's JSON.
+  const SCORE = new Map();
+
   list = list.filter((e) => {
     const items = Array.isArray(e.items) ? e.items : [];
     const hay = [e.id, e.name, e.words, e.node || '']
@@ -368,13 +429,24 @@ function doRead() {
       .concat(items.map((it) => (it && it.find) || ''))
       .join(' ')
       .toLowerCase();
-    return hay.indexOf(q) !== -1;
+    // An all-whitespace query keeps its old meaning — everything matches — so
+    // the degenerate case behaves as the docs corpus `search` action does
+    // rather than silently returning nothing.
+    if (TERMS.length === 0) { SCORE.set(e, 0); return true; }
+    let hits = 0;
+    for (const t of TERMS) if (hay.indexOf(t) !== -1) hits += 1;
+    SCORE.set(e, hits);
+    return hits > 0;
   });
 
-  const matched = list.length;
-
-  // Verification is bounded to what is being RETURNED, never to the file. That
-  // is what makes stale confidence structurally impossible without a scheduler.
+  // Verification is bounded to what MATCHED, never to the file. That is what
+  // makes stale confidence structurally impossible without a scheduler.
+  //
+  // It cannot be bounded to what is RETURNED: the sort below ranks on `status`,
+  // so every matched entry must be verified before the cut can choose between
+  // them. Per-term matching widened the matched set, so a verifying read now
+  // greps source for more entries than it used to — which is what `--no-verify`
+  // is for on a triage path that only needs the ranking.
   // --no-verify returns the stored status and opens no source file: /add.hotfix
   // STEP 4 forbids grepping code before its history agents are dispatched, and
   // a verifying read greps source.
@@ -384,24 +456,60 @@ function doRead() {
 
   // Ordering belongs to the read contract, not to callers: several consumers
   // each sorting one shared structure is how two of them come to disagree.
-  // Dead entries rank last and are NEVER dropped — a `gone` result is often the
-  // most valuable answer, because it says this was tried and abandoned.
+  // Dead entries rank last and get RESERVED SLOTS of their own, because a `gone`
+  // result is often the most valuable answer: it says this was tried and
+  // abandoned. They are NOT "never dropped" — the dead cap below is 2, and a
+  // larger matching dead set IS cut, which MATCHED_DEAD reports.
   list.sort((a, b) => {
     const ra = RANK[a.status] === undefined ? 9 : RANK[a.status];
     const rb = RANK[b.status] === undefined ? 9 : RANK[b.status];
     if (ra !== rb) return ra - rb;
+    // Score outranks recency: an entry that answered more of the query is a
+    // better answer than a newer one that answered less of it.
+    const sa = SCORE.get(a) || 0;
+    const sb = SCORE.get(b) || 0;
+    if (sa !== sb) return sb - sa;
     if (a.ts !== b.ts) return a.ts < b.ts ? 1 : -1;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 
-  const limit = parseInt(LIMIT, 10);
-  const returned = list.slice(0, limit);
+  // TWO INDEPENDENT CAPS, because one cap silently ate the dead entries. The
+  // list is sorted live -> changed -> superseded -> gone, so a single
+  // `slice(0, limit)` always cut from the `gone` end: every query matching more
+  // than the cap returned no dead entry at all, while three separate documents
+  // promised dead entries were never filtered.
+  //
+  // NO BACKFILL. Unused dead slots do not go to live entries. Backfilling would
+  // make the live cut depend on unrelated data, so one query would return
+  // different live sets depending on whether a dead entry happened to match.
+  //
+  // THE NUMBERS ARE A DECLARED TUNABLE, not a discovery. Changing either needs
+  // evidence and an updated line in
+  // add-doc-schemas/references/delivery-index.md.
+  const LIVE_CAP = parseInt(LIMIT, 10);
+  const DEAD_CAP = 2;
 
-  out('MATCHED', String(matched));
-  out('RETURNED', String(returned.length));
-  out('LIMIT', String(limit));
+  const DEAD = new Set(['superseded', 'gone']);
+  // An unknown status goes in the LIVE bucket. The four statuses are closed and
+  // `write` refuses any other, so this only reaches a hand-edited line - and
+  // dropping such an entry is the exact failure these caps exist to fix.
+  const liveList = list.filter((e) => !DEAD.has(e.status));
+  const deadList = list.filter((e) => DEAD.has(e.status));
+
+  const returnedLive = liveList.slice(0, LIVE_CAP);
+  const returnedDead = deadList.slice(0, DEAD_CAP);
+
+  // PER BUCKET, because `MATCHED 40 RETURNED 7` never said whether a dead entry
+  // was cut, and an agent told only the seven concludes there are seven.
+  out('MATCHED_LIVE', String(liveList.length));
+  out('MATCHED_DEAD', String(deadList.length));
+  out('RETURNED_LIVE', String(returnedLive.length));
+  out('RETURNED_DEAD', String(returnedDead.length));
+  out('LIVE_CAP', String(LIVE_CAP));
+  out('DEAD_CAP', String(DEAD_CAP));
   out('SKIPPED_LINES', skipped.join(','));
-  for (const e of returned) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of returnedLive) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of returnedDead) process.stdout.write(JSON.stringify(e) + '\n');
 }
 
 // ─── verify ──────────────────────────────────────────────────────────────────
@@ -438,15 +546,148 @@ function doVerify() {
   out('SKIPPED_LINES', skipped.join(','));
 }
 
+
+// ─── touched ─────────────────────────────────────────────────────────────────
+
+/**
+ * One git call, answered or `null`. Never throws and never exits.
+ *
+ * `touched` is the only mode that asks git anything directly — every other mode
+ * is handed its corpus by the shell above. A repository git cannot answer for —
+ * a shallow clone, a truncated history — is not an error here: the caller falls
+ * back to the curated layer and reports it, the same treatment an entry
+ * recorded outside the normal flow gets.
+ */
+function git(args) {
+  try {
+    const res = require('child_process').spawnSync('git', args, {
+      cwd: ROOT, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024,
+    });
+    if (res.error || res.status !== 0) return null;
+    return res.stdout || '';
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Every delivery's commit, in ONE git walk.
+ *
+ * `-p` over the index gives each commit with its added lines, so an id first
+ * seen on a `+` line going backwards is the id that commit introduced — the
+ * same answer a per-id pickaxe gives, at one subprocess instead of one per
+ * entry.
+ *
+ * WHY THIS SHAPE. Two earlier versions asked git per index entry: a pickaxe
+ * plus a `show` each, then a `show` of the whole index blob per commit. Measured
+ * on this repository they cost 10.3s and 13.0s per query, inside a step six
+ * product commands run. This costs three calls plus one per queried path.
+ */
+function deliveryCommits() {
+  const log = git(['log', '--format=C %h', '-p', '--', 'docs/delivered.jsonl']);
+  if (log === null) return null;
+  const owner = new Map();
+  let sha = null;
+  const lines = log.split('\n');
+  // Newest first, so the LAST assignment for an id is its oldest commit — the
+  // one that introduced it. A corrected entry has two lines and two commits;
+  // the newer one is the correction and describes nothing about the delivery.
+  for (const line of lines) {
+    if (line.startsWith('C ')) { sha = line.slice(2).trim(); continue; }
+    if (!sha || line.charAt(0) !== '+') continue;
+    const m = line.match(/"id":"([^"]+)"/);
+    if (m) owner.set(m[1], sha);
+  }
+  return owner;
+}
+
+/** The commits that touched anything outside `docs/`. `null` when git cannot answer. */
+function nonDocsCommits() {
+  const res = git(['log', '--format=%h', '--', '.', ':(exclude)docs']);
+  if (res === null) return null;
+  return new Set(res.split('\n').map((x) => x.trim()).filter(Boolean));
+}
+
+/** The commits that touched one path. `null` when git cannot answer. */
+function commitsTouching(p) {
+  const res = git(['log', '--format=%h', '--', p]);
+  if (res === null) return null;
+  return new Set(res.split('\n').map((x) => x.trim()).filter(Boolean));
+}
+
+function doTouched() {
+  const wanted = String(PATHS || '').split('\n').map((x) => norm(x.trim())).filter(Boolean);
+  const { byId, skipped } = loadIndex();
+
+  const owners = deliveryCommits();
+  const nonDocs = nonDocsCommits();
+  const touching = new Map();
+  for (const w of wanted) touching.set(w, commitsTouching(w));
+
+  const complete = [];
+  const curated = [];
+  let curatedOnly = 0;
+
+  for (const e of Array.from(byId.values())) {
+    const sha = owners ? owners.get(e.id) || null : null;
+
+    // A commit that changed nothing outside `docs/` is an index line recorded
+    // outside the normal flow — `chore(delivery-index): record …`. It describes
+    // the recording, not the delivery. A history git cannot walk lands here too,
+    // and so does a delivery that genuinely only changed documentation: all
+    // three mean the same thing to a caller, which is "the commit cannot answer
+    // this, the anchors can".
+    const usable = sha !== null && nonDocs !== null && nonDocs.has(sha);
+
+    const hitComplete = usable
+      ? wanted.filter((w) => { const s = touching.get(w); return s !== null && s !== undefined && s.has(sha); })
+      : [];
+    if (hitComplete.length) {
+      complete.push(Object.assign({}, e, { answer: 'complete', commit: sha, matched: hitComplete }));
+      continue;
+    }
+
+    // `at` is a HINT that --repair rewrites, so the ENTRY's verified status
+    // travels with the hit. It aggregates over every item, so only `gone` —
+    // which requires all of them gone — is a statement about this anchor alone.
+    const items = Array.isArray(e.items) ? e.items : [];
+    const hitCurated = [];
+    for (const it of items) {
+      if (!it || !it.at) continue;
+      if (wanted.indexOf(norm(it.at)) !== -1) hitCurated.push({ at: norm(it.at), what: it.what, find: it.find });
+    }
+    if (hitCurated.length) {
+      const status = NO_VERIFY ? e.status : verifyEntry(e).status;
+      curated.push(Object.assign({}, e, { status: status, answer: 'curated', commit: sha, matched: hitCurated }));
+      // SCOPED TO THE ANSWER, never to the index. Counting every unusable entry
+      // made this a constant per repository, sitting beside two answer-scoped
+      // numbers and inviting the misreading the two labels exist to prevent.
+      if (!usable) curatedOnly++;
+    }
+  }
+
+  out('TOUCHED_COMPLETE', String(complete.length));
+  out('TOUCHED_CURATED', String(curated.length));
+  out('CURATED_ONLY', String(curatedOnly));
+  // An empty answer and an absent index are different facts and the caller must
+  // be able to tell them apart without inspecting the filesystem.
+  out('INDEX_PRESENT', byId.size > 0 ? '1' : '0');
+  out('SKIPPED_LINES', skipped.join(','));
+  for (const e of complete) process.stdout.write(JSON.stringify(e) + '\n');
+  for (const e of curated) process.stdout.write(JSON.stringify(e) + '\n');
+}
+
+
 if (MODE === 'write') doWrite();
 else if (MODE === 'read') doRead();
 else if (MODE === 'verify') doVerify();
+else if (MODE === 'touched') doTouched();
 else process.exit(2);
 NODE
 )
 
 node -e "$NODE_PROG" \
   "$MODE" "$INDEX" "$CORPUS_FILE" "$ROOT" \
-  "$QUERY" "$LAYER" "$LIMIT" "$NO_VERIFY" "$ENTRY_ID" "$REPAIR"
+  "$QUERY" "$LAYER" "$LIMIT" "$NO_VERIFY" "$ENTRY_ID" "$REPAIR" "$PATHS"
 
 exit $?

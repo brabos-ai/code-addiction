@@ -10,6 +10,7 @@ description: Use when running agent-judged QA validation (read-PNG by default; t
 - skill: add-id-convention
 - mention: add-qa/references/coordinator.md
 - mention: @test-agent
+- mention: @e2e-agent
 - agent: qa-agent
 - agent: ux-agent
 - command: /add.build
@@ -25,7 +26,9 @@ The QA capability **judges from the persisted run evidence (screenshots + comput
 
 Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT here — they live in `/add.qa-setup` (must run before the plugin is enabled).
 
-**Feature vs plugin (canonical statement):** `qa-pipeline` (feature) decides whether QA artefacts are **authored** — the plan QA-spec, the E2E specs, and the routed QA correction in `/add.build`. `playwright` (plugin) decides whether the judge can additionally **drive the app live**. They are orthogonal: enabling the plugin does not enable the pipeline. Features toggle via `codeadd features enable|disable qa-pipeline`; every consumer references this statement instead of restating it.
+**Feature vs plugin (canonical statement):** `qa-pipeline` (feature) decides whether the QA flow exists at all — the artefacts **authored** (the plan QA-spec, the E2E specs), the routed QA correction in `/add.build`, and the **judgement** in `/add.review` (preflight, evidence capture, and the `@ux-agent` ∥ `@qa-agent` pair). `playwright` (plugin) decides whether the judge can additionally **drive the app live**. They are orthogonal: enabling the plugin does not enable the pipeline. Features toggle via `codeadd features enable|disable qa-pipeline`; every consumer references this statement instead of restating it.
+
+⛔ **Judgement is not an exception to the feature, and it used to be described as one.** Its input is the evidence `@e2e-agent` authors, which the feature already gates — so with the feature off the judges read an empty directory and every in-contract screen becomes a coverage blocker. The `/add.qa-setup` receipt is the SECOND gate, not a substitute for the first: the feature decides whether the steps exist, the receipt decides whether they can run.
 
 ## When to Use
 
@@ -56,7 +59,7 @@ The persisted spec (or, with the plugin, live driving) **captures and exercises*
 | Failure forensics | `@qa-agent` | assertion error + failure PNG + console/network |
 | a11y — ALL of it | `@qa-agent` | axe-core (incl. `color-contrast`, `target-size`) |
 
-`@ux-agent` receives NO axe results and NO computed-style JSON; `@qa-agent` receives no `design.md` judgement content. Handing either the other's input is a dispatch error. Coverage is the **coordinator's** reconciliation (STEP 4.4), computed once and handed to both — never a judge's finding.
+`@ux-agent` receives NO axe results and NO computed-style JSON; `@qa-agent` receives no `design.md` judgement content. Handing either the other's input is a dispatch error. Coverage is the **coordinator's** reconciliation, in the evidence step's own coverage sub-step, computed once and handed to both — never a judge's finding. (It was cited as STEP 4.4 here, which was wrong before the QA steps moved and is a step number this skill should not carry at all: the number lives in the fragment that owns the step.)
 
 Viewports (v1, configurable in `config.json`): desktop 1440, tablet 768, mobile 375.
 

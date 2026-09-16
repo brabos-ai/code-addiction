@@ -12,7 +12,7 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 - agent: plan-reviewer-agent
 - agent: readback-agent
 - agent: reviewer-agent
-- command: /add.brainstorm
+- mention: /add.brainstorm
 - command: /add.build
 - command: /add.new
 - command: /add.plan
@@ -105,9 +105,14 @@ read.
 Three sites, three behaviours, one reason each. **All three are correct.** Left
 unwritten, the next caller copies whichever site it happens to read.
 
+⛔ **`/add.new` and `/add.brainstorm` are absent from this table because neither
+dispatches a readback any more.** `/add.plan` runs the only one in the flow, and
+its target is the whole feature folder, so nothing goes unread — it is read once
+instead of twice.
+
 | Site | On divergence | Why |
 |---|---|---|
-| `/add.new`, `/add.brainstorm`, `/add.plan` | Apply the fix, re-run the gate, then **present the divergence and STOP** | A human is in the session and the document is still being written. Stopping is cheap and the answer is authoritative |
+| `/add.plan` | Apply the fix, re-run the gate, then **present the divergence and STOP** | A human is in the session and the document is still being written. Stopping is cheap and the answer is authoritative |
 | `/add.plan-to-ready` | Apply the fix, re-run the gate, **re-dispatch once, record, advance.** Never stop | Autonomous by contract. It compares against its Decision Log, because comparing a report against its own source is circular |
 | `/add.build` | Record a **ruling** naming the divergence and which reading was built. Continue | Execution is starting on a plan the user already approved. A stop costs a command round-trip on a decision already taken |
 
@@ -117,6 +122,37 @@ in the text, whoever wrote it.
 
 ⛔ **The readback is never a gate.** It returns no verdict, so there is nothing to
 block on. No command may report a blocked state on a readback alone.
+
+## What a Surviving Pass Costs
+
+**Three of these rules already have an owner, and this skill names it rather than
+carrying a copy.** `{{skill:add-subagent-driven-development/SKILL.md}}` owns the fix
+loop, the scoped re-review and the breaker — this file’s own When NOT to Use
+already says so. Read them there:
+
+| Rule | Owner |
+|---|---|
+| The re-review verdicts each open finding `ADDRESSED` / `NOT ADDRESSED` against the fix diff, never re-reading the document | `add-subagent-driven-development`, Fix Loop |
+| The round cap, and adjudicating only at the cap | `add-subagent-driven-development`, The Breaker |
+
+**One rule is not owned anywhere else, so it lives here:**
+
+### One fix dispatch carries the whole findings list
+
+Never one fixer per finding. A per-finding fix wave on a real delivery cost more
+than every task it was reviewing, because each dispatch re-reads the same context
+to change one line.
+
+### A third pass that still finds real problems is pointing upstream
+
+```
+IF A THIRD PASS RETURNS NON-TRIVIAL FINDINGS:
+  ⛔ DO NOT: Run a fourth
+  ✅ DO: Fix the source — a weak spec, a contradiction, or an ambiguous rule
+```
+
+**The defect is above the change, not in it.** Another pass over the same
+document buys a longer list, never a better document.
 
 ## What the Caller Owes the Report
 
@@ -181,11 +217,13 @@ two gates read it.
 ## Rules
 
 ALWAYS:
+- Send one fix dispatch carrying every finding, never one per finding
 - Re-run the validation gate between a fix and a re-dispatch
 - Decide each finding on its merits, and record what was discarded and why
 - Treat a divergent restatement as a defect in the document, never in the reader
 
 NEVER:
+- Run a pass after a third that still found real problems — fix the source
 - Re-dispatch a reader twice over one subject
 - Report a blocked state on a readback alone
 - Write a `@plan-reviewer-agent` or `@readback-agent` report to disk

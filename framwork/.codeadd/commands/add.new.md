@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-feature-specification
 - skill: add-final-report
 - skill: add-id-convention
 - skill: add-knowledge-discovery
@@ -9,7 +10,7 @@
 - skill: add-review-discipline
 - skill: add-doc-schemas/references/new-feature.md
 - agent: plan-reviewer-agent
-- agent: readback-agent
+- command: /add.brainstorm
 - command: /add.build
 - command: /add.plan
 - command: /add.wiki
@@ -21,8 +22,7 @@
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 > **The closing report at `## Completion` is exempt** — it reports in the shape `add-final-report`
 > owns, and a 20-word stub is not that shape.
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Full feature discovery command BEFORE implementation.
 
@@ -33,15 +33,43 @@ Full feature discovery command BEFORE implementation.
 ## STEP 1: Load Skills + Validate Context
 
 **Load schemas and conventions (ONE-TIME):**
-- `{{skill:add-doc-schemas/SKILL.md}}` (feature-about schema, validation gate)
+- `{{skill:add-doc-schemas/SKILL.md}}` (feature schema, validation gate)
 - `{{skill:add-id-convention/SKILL.md}}` (ID/branch format)
 - `{{skill:add-plan-review/SKILL.md}}` (fresh-reader review)
 
 All subsequent steps reference these loaded skills; DO NOT reload.
 
+### 1.1 Resolve the Intent File — BEFORE anything else
+
+`/add.brainstorm` writes `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` carrying the path it
+classified and every decision it closed. **Finding it is what stops this command re-asking them.**
+
+Match the argument as a **substring** of the basenames of `docs/brainstorm/*-intent.md`. A full
+basename always works; a 24-character timestamp prefix is not typeable, so a slug fragment is the
+normal argument.
+
+| Result | Do |
+|---|---|
+| Exactly one match | That is the file. Read it |
+| More than one | ⛔ STOP. Print every candidate basename and ask which |
+| No argument | Match the description's keywords against the basenames |
+| Nothing credible | Continue with no intent file — STEP 3 runs the three-fact test instead |
+
+```
+IF TWO OR MORE INTENT FILES MATCH:
+  ⛔ DO NOT: Pick the newest one because it is the newest
+  ⛔ DO NOT USE: Write on about.md until the user has named which
+  ✅ DO: Print the candidates and ask — another exploration's decisions written into
+         this feature's about.md is worse than one question
+```
+
+**An intent file is consumed once.** Record its path in `about.md` when STEP 6 writes the document.
+Continue Mode reads `about.md` from then on, which is the source of truth from that point — the intent
+file is never read a second time.
+
 **Validate Execution Context:**
 
-- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND validated (contains filled sections 1-3 from questionnaire) → skip STEP 2 and STEP 3, proceed to STEP 4.
+- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP 2 and STEP 3, proceed to STEP 4.
 - [NEW FEATURE] If no existing feature docs match, proceed to STEP 2.
 
 ---
@@ -55,18 +83,29 @@ All subsequent steps reference these loaded skills; DO NOT reload.
 
 **Operation Modes:**
 - `/add.new [description]` — Create new feature
+- `/add.new [slug-fragment]` — Create from a named intent file (see STEP 1.1)
 - `/add.new F0018` — Continue existing feature (F-ID)
 - `/add.new continue` — Continue feature from current branch **or most recent pending feature**
 
-**Complexity Classification** (inferred in STEP 2):
-- **SIMPLE:** "add field", "fix", "adjust", "bug", "remove" (4 steps)
-- **STANDARD:** "create", "implement", "new", "feature", integrations (7 steps)
+**Ceremony is measured, never matched against a word list.** The intent file's `path:` decides it; with
+no intent file, `{{skill:add-feature-specification/SKILL.md}}`'s three-fact test measures it — intent
+gaps, irreversible actions, footprint. Clean on all three takes the light path.
+
+```
+IF DECIDING HOW MUCH CEREMONY THIS REQUEST NEEDS:
+  ⛔ DO NOT: Classify from keywords in the request ("fix", "add field", "create")
+  ⛔ DO NOT: Assume the light path because the request reads small
+  ✅ DO: Read `path:` from the intent file, or run the three-fact test
+```
+
+**A keyword is not a measurement.** "Add a field" is a migration on a table with ten million rows as
+often as it is a one-line change, and the word list cannot tell those apart.
 
 ---
 
 ## STEP 2: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
 
-**Execute init + allocate ID:**
+**Execute init + allocate ID (`status.sh next-id F`):**
 
 ```bash
 bash .codeadd/scripts/init.sh
@@ -86,12 +125,20 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
 
 ---
 
-## STEP 3: Deep Discovery (STANDARD COMPLEXITY ONLY)
+## STEP 3: Deep Discovery (FULL PATH ONLY)
 
-**IF SIMPLE:** Skip to STEP 4.
-**IF STANDARD:** Continue below.
+**Determine the path first.** Read `path:` from the intent file resolved at STEP 1.1. With no intent
+file, load `{{skill:add-feature-specification/SKILL.md}}` and run its three-fact test.
 
-**Goal:** Collect rich context for questionnaire.
+| Classification | This STEP |
+|---|---|
+| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered |
+| `architectural`, or any fact flagged | Everything below, as written |
+
+⛔ **The light path skips the two agent dispatches, never the index and graph queries.** Those are the
+check that costs nothing and catches the expensive mistake.
+
+**Goal:** Collect rich context for the decisions the intent file left open.
 
 **Dispatch sequential agents (agent 2 depends on agent 1 output):**
 
@@ -105,7 +152,7 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
    - **Input:** past-features.md + skeleton about.md + feature request + selected wiki pages (if any, see Knowledge Base Check below)
    - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
    - **Knowledge Base Check (before dispatch):** Load `{{skill:add-knowledge-discovery/SKILL.md}}` and run its **INDEX step, its GRAPH step and then its wiki steps**, in that order.
-     - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`.
+     - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`. **GRAPH question:** does this request already exist as delivered work, and what would it depend on? Resolve it in the skill's action table; do not name an action here.
      - **Then the wiki.** This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add.wiki generates it" and dispatch without it.
 
 ```
@@ -115,13 +162,21 @@ IF THE WIKI IS ABSENT:
          STEP 6.1 writes its relations from
 ```
 
-   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go into the **STEP 4 questionnaire's "I discovered in codebase" section**, so the user sees what already exists before answering; and into **STEP 6.1's `## Relations`**, where a prerequisite becomes `depends_on`.
-   - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
+   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go to **`add-feature-specification`, which shows what already exists on the STEP 4 confirmation screen**; and into the document's `## Relations`, where a prerequisite becomes `depends_on`. The intent file's `## Prior art` covers the same ground for anything it already names — do not query twice for one answer.
+
+```
+IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
+  ⛔ DO NOT: Carry on as though the step ran
+  ✅ DO: Fill it with the hits, with `none` when the graph answered and had no match,
+         or with `NOT VERIFIED` plus the reason when the graph could not be reached
+```
+
+   - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using the section list above.
 
 <!-- plugin:gitnexus:graph-map -->
 <!-- /plugin:gitnexus:graph-map -->
 
-**Coordinator: Deep Thinking (before questionnaire)**
+**Coordinator: Deep Thinking (before STEP 4)**
 
 Evaluate using agent outputs:
 - Impact on existing features (from past-features.md)?
@@ -133,109 +188,46 @@ Evaluate using agent outputs:
 - Related features with correct relation types?
 - Technology decisions pre-decided by codebase?
 
-Generate concrete questionnaire from data (not generic).
+Feed the result to `add-feature-specification` as grounding. Anything it raises that the intent file
+already settled is context for the confirmation screen, never a new question.
 
 ---
 
-## STEP 4: Present Consultant Questionnaire [STOP]
+## STEP 4: Confirm What Will Be Written [STOP]
 
-**STOP AND WAIT. This is a mandatory pause.**
+**LOAD `{{skill:add-feature-specification/SKILL.md}}`.** It owns what goes into `about.md`: reading the
+intent file, extracting its closed decisions, asking only what is still open, the three-fact test, and
+the confirmation screen. **This STEP owns the `[STOP]` around it and nothing else.**
 
-**YOU ARE:** Product consultant, not order taker. Refine demand, bring codebase context, suggest improvements, show trade-offs, identify gaps.
+```
+IF A DECISION IS ALREADY UNDER `## Decided` IN THE INTENT FILE:
+  ⛔ DO NOT: Ask about it, confirm it as a question, or offer alternatives to it
+  ⛔ DO NOT: Rebuild the five-section questionnaire this STEP used to carry
+  ✅ DO: Show it on the confirmation screen as settled, and move on
+```
 
-**Inference Sources (priority):** 1) Codebase (similar features, patterns), 2) Request (verbs, problem), 3) Best practices (domain patterns), 4) Past decisions (UX consistency).
+**What the user sees depends on what is left open:**
 
-**Inferences by action:**
-| Action | Infer |
+| `## Open` in the intent file | This STEP |
 |---|---|
-| Cancel/delete | Confirm with user? Soft delete? |
-| Form/input | Validation? Masks? |
-| Integration | Fallback? Retry? Timeout? |
-| List | Pagination? Filters? Sort? |
-| Notification | Email? Push? In-app? |
+| Reads `None` | The confirmation screen alone. One screen, no questions |
+| Lists items | Those questions, one per turn, then the confirmation screen |
+| Absent, empty, or no intent file at all | The skill’s full question set, then the confirmation screen |
 
-**Questionnaire Template (5 sections):**
+**STOP AND WAIT after the confirmation screen, on every row.** The user corrects an extraction error or
+waves it through. **The approval never scales away — only the interrogation does.**
 
-```markdown
-## Consultant Validation - [Name] (000XF)
-
-### 1. I understand you want...
-**Goal:** [1 sentence]
-**Current problem:** [Why necessary]
-**Expected delivery:** [All layers]
-> If wrong, correct me.
-
-### 2. I discovered in codebase
-| Finding | Relevance |
-|---|---|
-| [Exists X in path] | [Reuse/extend] |
-| [Pattern Y] | [Follow same] |
-| [Z missing] | [Create new] |
-**Similar reference:** `[path]` — [leverage]
-
-### 3. Refining the Demand
-#### 3.1 [Strategic scope question]
-| Option | Includes | Trade-off |
-|---|---|---|
-| a) | [what] | [benefit/cost] |
-| b) | [what] | [benefit/cost] |
-> **Recommendation:** Option **a)** — [concrete rationale from codebase/practice]
-
-#### 3.2 [Behavior/UX question]
-| Option | Behavior | When |
-|---|---|---|
-| a) | [what] | [scenario] |
-| b) | [what] | [scenario] |
-> **Recommendation:** Option **a)** — [concrete rationale]
-
-[More questions as needed. MANDATORY Recommendation below EVERY option table — concrete, not generic.]
-
-### 4. Consultant Insights
-[Section 4 brings value user DIDN'T ask for — what they'd wish they had asked. Minimum 1, max 10.]
-
-#### [Insight title]
-- [What + Why + Impact]
-- **Effort:** Low/Medium/High
-- → Include? `Yes` / `No` / `Later`
-
-[RULE: Section 4 must NOT repeat Section 3 topics. If user asked → Section 3. If consultant brought → Section 4.]
-
-**Response Template:**
-```
-3.1: R:
-3.2: R:
-[...per refinement question...]
-Insight 1: R:
-[...per insight...]
-```
-
-### 5. How It Will Work
-[Main flow: User → Action → System → Result. Stage table. Error cases. Before/after.]
-```
-
-**Feature Type Adaptation:**
-| Type | Include | Skip |
-|---|---|---|
-| API only | Goal, Scope, Data, Errors | UI/UX |
-| UI only | Goal, Scope, Flow, States | Persistence |
-| Fullstack | ALL necessary layers | — |
-
-**How to Respond:**
-- `Ok` → Accept all recommendations
-- `Ok, but 3.2b` → Override specific choice
-- `3.1b, 3.2a` → Explicit choices
-- `Insight X: Yes/No/Later` → Decision per insight
-- `+ also want X` → Add scope
-
-**Defaults:** Unspecified options use recommendation. Unspecified insights are NOT included.
+⛔ **A confirmation screen that asks questions is a questionnaire wearing a different name.** It
+restates what is about to be written and invites a correction. It does not re-open settled decisions.
 
 ---
 
-## STEP 5: Complexity Gate (After Questionnaire Response)
+## STEP 5: Decomposition Gate
 
-**Summarize confirmed decisions from questionnaire.** Ask user to confirm. If confirmed → continue. If corrected → adjust and re-confirm.
+**Skipped entirely on the light path.** A `bounded` change is one flow by definition, and the three-fact
+test already put anything larger on the full path.
 
-**Analyze validated scope for independent user flows.**
+**Analyze the confirmed scope for independent user flows.**
 
 **Independent flow** = testable in isolation, distinct objective, could be own PR. Keywords: "will also", "and then", "another flow".
 
@@ -267,7 +259,8 @@ Decompose as subfeatures? (yes/no)
 ## STEP 6: Document (Feature + Codebase Analysis)
 
 **Completeness Check:**
-Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided (Yes/No/Later). IF MISSING → ask first. DO NOT document incomplete questionnaire.
+Verify every item the confirmation screen showed was accepted or corrected, and that no `## Open` item
+is still unanswered. IF MISSING → ask that item alone.
 
 **Consistency Check:**
 - New route/endpoint → Backend MANDATORY
@@ -275,36 +268,29 @@ Verify: Section 1 confirmed, ALL Section 3 options chosen, ALL insights decided 
 - User needs UI → Frontend MANDATORY
 - NEVER exclude layers needed to deliver validated scope
 
-**Write about.md:**
+**`add-feature-specification`, loaded at STEP 4, writes the document.** It owns the schema load, the
+sections and the extraction. This STEP owns the path and the provenance:
+
 - **Path:** `docs/features/[NNNN]F-[name]/about.md`
-- **Schema:** Use `feature-about` (loaded in STEP 1)
-- **Technique:** Read skeleton → Preserve frontmatter → Complement with validated decisions → Bump `updated:` timestamp
-- Write extractive only (requirements, not implementation)
+- **Provenance:** record the intent file path consumed at STEP 1.1 in the frontmatter. Continue Mode
+  reads `about.md` from then on and never re-reads the intent file.
 
-### 6.1 Write `## Relations` and `tags:` from what discovery already found
+⛔ **DO NOT restate the skill’s authoring rules here.** Two copies drift, and the drift is invisible
+until a document written by one entry point fails a gate the other passes.
 
-The relationships are already in hand. `past-features.md` carries a **Related Features** table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, and `discovery.md` names the prerequisites. **Sub-step 6.1 routes them into the document; 6.1 itself discovers nothing new and asks nothing.** The Codebase Analysis dispatch later in this STEP still runs and still analyses — this sentence bounds 6.1, not the whole of STEP 6.
+### 6.1 Hand the relationship material to the skill
 
-Write per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`:
+The relationships are already in hand from STEP 3: `past-features.md` carries a **Related Features**
+table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, `discovery.md` names the
+prerequisites, and the intent file’s `## Prior art` carries whatever the brainstorm already found.
 
-| Source already in hand | Becomes |
-|---|---|
-| A prerequisite feature `discovery.md` names — this feature cannot ship until it has | `- depends_on [[<id>]] — <the one-line reason discovery gave>` |
-| The parent epic, when this `about.md` is a subfeature written in STEP 5 | `- part_of [[<parent id>]]` |
-| A related feature from `past-features.md` or the delivery index that is neither of the above | leave it out. `related:` already carries it, and an untyped edge is the migration's job, not this command's |
+**Pass all four to `{{skill:add-feature-specification/SKILL.md}}`, which writes `## Relations`,
+`## Observations` and `tags:` from them.** This sub-step routes the material; it discovers nothing and
+asks nothing.
 
-Write `tags:` from the domains the questionnaire settled — bare lowercase words, the same vocabulary `/add.wiki` uses for a reference page's `area`.
-
-```
-IF NO PREREQUISITE AND NO PARENT EPIC WAS FOUND:
-  ⛔ DO NOT USE: AskUserQuestion to ask which feature this one depends on
-  ⛔ DO NOT: Invent a `depends_on` from the questionnaire conversation
-  ✅ DO: Write `## Relations` carrying the single word `None`
-```
-
-⛔ **`add-doc-schemas` owns the rule that nobody is asked**, in its Relations & Observations section. What is specific here is the provenance: the queries ran in STEP 3, the user answered every question this command needed in STEP 4, and 6.1 writes what those queries returned.
-
-Write `## Observations` from the same material: the measurements and constraints the discovery surfaced that no other section of `about.md` holds. Empty is valid.
+⛔ **DO NOT write those sections here.** The skill is the single writer of `about.md`, and it is
+reached from two entry points — a rule kept in this command applies on one of them and not the other,
+which produces two different documents from one schema.
 
 **Dispatch Agent: Codebase Analysis**
 - **Input:** Feature name, about.md path
@@ -314,43 +300,34 @@ Write `## Observations` from the same material: the measurements and constraints
 
 ## STEP 7: Validation Gate
 
-Execute validation gate for `feature-about` schema (from STEP 1 skills).
+Execute validation gate for `feature` schema (from STEP 1 skills).
 
 **MANDATORY.** DO NOT skip. DO NOT mark complete until gate returns `PASS`.
 
 ---
 
-## STEP 8: Plan Review + Comprehension Readback (fresh-reader)
+## STEP 8: Plan Review — FULL PATH ONLY
 
 Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
 
-1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md's path and `kind: feature-about`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site's divergence behaviour is the
-   first row of its table: apply, re-gate, then present and STOP. Do NOT mark `about.md` delivered
-   while a blocker stands.
+| Classification | This STEP |
+|---|---|
+| `bounded`, or clean on all three facts | **Skipped.** Zero agent dispatches — go to Completion |
+| `architectural`, or any fact flagged | Dispatch the reviewer below |
 
-3. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: feature`. Run it ONLY after the verdict above resolved to proceed and every applied fix is on disk — a readback of text about to be edited reports a version that will never exist.
+⛔ **On the light path `about.md` receives no verdict-bearing review, and that is deliberate.** The
+schema gate still ran, the confirmation screen caught extraction errors, and the three-fact test
+already excluded irreversible actions and large footprints from this path. A weak document still
+surfaces at `/add.plan`, in the verdict on the plan derived from it.
 
-```
-IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
-  ⛔ DO NOT: Apply the readback inline yourself
-  ✅ DO: Skip it, and say in Completion that it was skipped and why
-```
+1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md’s path and `kind: feature`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its **Acting on the Verdict** table governs this dispatch. Read it there. Do NOT mark `about.md` delivered while a blocker stands.
 
-   The reason there is no inline fallback here — unlike the plan review above — is that the mechanism IS the reader not holding this conversation. A readback you perform on docs you just wrote measures nothing.
+⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the sites that dispatch a readback, and this command is not one of them any more.
 
-4. **Compare the readback against what was actually decided in this conversation.** Compare against the report's closing **"In one sentence"** line, which is short and hard to soften.
-   - **Matches** → proceed to Completion, citing the readback in one line.
-   - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 7's validation gate on `about.md`.
-
-```
-IF THE READBACK DIVERGES:
-  ⛔ DO NOT: Summarize the divergence away as "close enough"
-  ⛔ DO NOT: Treat it as the subagent having misread the doc
-  ✅ DO: Show what it understood beside what was decided, then STOP
-```
-
-   ⛔ The readback is NOT a gate. It returns no verdict and cannot block. The STOP is to hand the user a decision, never a mechanical failure.
+⛔ **This command dispatches no readback.** The single readback of the whole flow runs at `/add.plan`,
+whose target is `docs/features/${FEATURE_ID}` — which already contains this `about.md`. The read moved;
+it was not removed.
 
 ---
 
@@ -359,9 +336,9 @@ IF THE READBACK DIVERGES:
 **Detect:** Feature ID from argument, from current branch (if feature branch), else list pending features and ask.
 
 **Skip Logic:**
-- If `about.md` exists AND contains completed questionnaire sections (1, 3, validated decisions) → Skip STEP 4 questionnaire, proceed to STEP 5
+- If `about.md` exists AND carries its validated decisions → Skip STEP 4, proceed to STEP 5
 - If `discovery.md` exists AND contains "Related Features" → Skip STEP 3 discovery agents, proceed to STEP 5
-- If validation gate passed (logged state) → Skip STEP 7, proceed to STEP 8
+- If validation gate passed (logged state) → Skip STEP 7, proceed to STEP 8 (full path) or Completion (light path)
 
 **Load iterations.jsonl** (if exists) to understand prior implementations/pivots. Avoid re-work.
 
@@ -378,28 +355,23 @@ This command documents a feature rather than building it, so block 2 is titled `
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
 
-Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
+Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside `/add.plan`’s own UX step when the feature touches UI), `/add.build` for implementation.
 
 ---
 
 ## Execution Rules
 
 **ALWAYS:**
-- Act as consultant — bring codebase context, trade-offs, gaps, risks
-- Recommendation block MANDATORY below every option table (concrete rationale, not generic)
-- Accept `Ok` as confirmation of all recommendations
-- Combine WebSearch + model knowledge for product feature benchmarks
-- Section 4 insights must be genuinely new (not Section 3 repeats)
-- Include Quick Response Template after insights
-- Skip questionnaire [STOP] if re-invoked and about.md already validated
+- Resolve the intent file before anything else, and stop rather than guess between two matches
+- Measure ceremony from `path:` or the three-fact test, never from keywords in the request
+- Run the INDEX and GRAPH queries on both paths — the light path skips agents, not the cheap checks
+- Record the consumed intent file path in `about.md`
 
 **NEVER:**
-- Be passive; validate what user asked without consulting
-- Infer without codebase basis; make generic suggestions
-- Present options without clear trade-offs
-- Skip Consultant Insights section
+- Ask again about anything under `## Decided` in the intent file
+- Restate `add-feature-specification`’s authoring rules in this command
+- Read `## Open` as closed when the section is empty or absent
 - Proceed without response to [STOP] points
-- Exclude layers that make feature unusable
-- Document incomplete questionnaire
-- Skip the STEP 8 plan review after the gate passes
+- Exclude layers that make the feature unusable
+- Dispatch a readback — `/add.plan` owns the only one in this flow
 - Let the reviewer see this conversation (fresh context only)

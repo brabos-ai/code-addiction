@@ -60,12 +60,41 @@ IF TEMPTED TO EDIT A framwork/ PROVIDER DIRECTORY:
   ✅ DO: Edit framwork/.codeadd/ and let build.js generate the rest
 ```
 
-## Two Rules That Bind Every Source Edit
+## Three Rules That Bind Every Source Edit
 
 - **HTML comments are stripped at build.** Use them for source-only notes. `<!-- uses: -->` and
   injection markers depend on this.
 - **Never write a raw `.codeadd/` path.** Use `{{cmd:NAME}}` / `{{skill:NAME/FILE}}`;
   `lintResourcePaths()` warns otherwise. Scripts are the exception — always `.codeadd/scripts/`.
+- **A change to the document model updates `mcp/reference.md` in the same F-block.** See below.
+
+### The Document Model Answers to `mcp/reference.md`
+
+`mcp/reference.md` is the source of truth for what a document is to the MCP — the frontmatter
+contract, the three kinds, the type registry, the owner modes, the relation vocabulary and the
+recorded divergences from OKF. Its two tables are generated from `mcp/types.mjs` by
+`node mcp/generate-reference.mjs`, and `cli/tests/mcp-document-model.test.js` L4.1 asserts they match.
+
+```
+IF AN F-BLOCK CHANGES THE DOCUMENT MODEL, THE TYPE REGISTRY, THE RELATION
+VOCABULARY, THE CORPUS RULES OR ANY ACTION'S RESULT SHAPE UNDER `mcp/`:
+  ⛔ DO NOT: Commit the block without `mcp/reference.md` in the same diff
+  ⛔ DO NOT: Leave the reference describing the previous model "until the next pass"
+  ✅ DO: Regenerate the tables, update the text around them, and say in the commit what changed
+```
+
+**The trigger is narrow on purpose.** A bug fix, a new action, a performance change or a test that
+touches `mcp/` does NOT fire it. A rule that fires on every edit is one people learn to ignore, and
+then it protects nothing on the day it matters.
+
+**Same F-block, not same delivery**, for the reason the ledger already gives about a rename: a
+dependent updated in a later block leaves the tree inconsistent at a commit boundary, and a reference
+that describes the previous model is worse than one that describes nothing — a reader trusts it.
+
+**This rule exists because that failure is on the record.** A retirement note in
+`add-doc-schemas/references/fix.md` claimed a work item's file list "lives now" in the graph index.
+It did not, and had not for weeks. The code was right and the document was wrong, and every reader
+believed the document — which is what a source of truth is for, and what makes a stale one expensive.
 
 ---
 
@@ -169,8 +198,25 @@ IF ANY TEST FAILS:
 
 **Baseline before blaming the change.** What flakiness this suite has left is load-dependent: the
 tests that drive a real subprocess stretch under a busy machine and cross their timeout. A quiet
-checkout runs the whole suite green. Compare against a clean tree (`git stash`) and report the delta,
-never the raw count.
+checkout runs the whole suite green. Compare against a clean tree and report the delta, never the raw
+count.
+
+⛔ **Get that clean tree with a throwaway worktree, NEVER with `git stash`.**
+
+```
+IF YOU NEED A CLEAN-TREE BASELINE FOR THE SUITE:
+  ⛔ DO NOT USE: Bash for git stash, git checkout, git reset, git clean or git restore
+  ✅ DO: git worktree add <tmp> HEAD --detach, run the suite in <tmp>, then git worktree remove <tmp>
+```
+
+`git stash` empties the tree you are standing in. Your own edits come back with `git stash pop`, but
+any sibling agent running against that same tree loses its uncommitted work for as long as the stash
+is held — and a build dispatches several at once. A worktree gives you the clean checkout without
+touching the tree anyone is working in.
+
+**A path-scoped read is not the substitute here.** `git diff -- <path>` answers "what changed in this
+file", which is the right tool when you are attributing one failure to one file. It cannot answer
+"does the whole suite pass on a clean checkout", and that is the question this paragraph is about.
 
 **TESTS ARE MANDATORY.** Every changed module needs coverage in `cli/tests/`. Where the plan specifies
 a RED-first matrix, write each assertion and CONFIRM IT FAILS before the implementation — a test

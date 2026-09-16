@@ -157,3 +157,30 @@ tmpclaude*
 # copies of one source under review; the release workflow builds before it
 # publishes, so CI always has it.
 cli/src/mcp/
+
+# Per-agent memory, written by a dispatched subagent while it works. It is
+# learning about THIS checkout — what a reviewer confirmed, what it should stop
+# flagging — and it accumulates per machine rather than per delivery. Tracking
+# it would put one agent's notes into another's review diff, under a commit
+# message that does not describe them.
+.claude/agent-memory/
+
+# Vitest's own cache, created under cli/ by any `npx vitest run`. Not
+# configured anywhere — it is the runner's default — and it is per machine, so
+# it belongs to nobody's diff.
+cli/.vitest/
+
+# The docs-corpus cache the MCP writes when it runs at the repository root.
+# It is build output, and `delivered.sh`'s corpus is "every file git does not
+# ignore" — so leaving it untracked put a dump of every node's id, path and
+# TL;DR into the anchor-verification haystack, which is the exact failure that
+# rule's own header says it exists to prevent.
+#
+# ⛔ THE LEADING SLASH IS LOAD-BEARING. Written bare as `.codeadd/`, this matched
+#    a directory of that name at ANY depth — including `framwork/.codeadd/`, the
+#    product layer's entire source of truth. The 216 files already tracked there
+#    kept working, because .gitignore does not reach a tracked file, so nothing
+#    broke and CI stayed green; what broke was every file added AFTERWARDS. A
+#    new command, skill or reference was invisible to `git add` and to
+#    `git status`, with no error anywhere. Anchor it to the root.
+/.codeadd/

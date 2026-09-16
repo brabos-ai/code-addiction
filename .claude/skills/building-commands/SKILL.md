@@ -7,6 +7,7 @@ description: Use when designing command workflows or refactoring existing comman
 
 <!-- uses:
 - skill: add-final-report
+- skill: add-artefact-graph
 - command: /add-framework--build
 - skill: building-commands/references/agent-dispatch.md
 - mention: add-framework-development
@@ -73,7 +74,7 @@ The high-level flow every command follows: load context → gate check → inves
 ```markdown
 # Command Name
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 [1-line description]
 
@@ -114,7 +115,7 @@ NEVER:
 
 **MANDATORY first line after title:**
 ```markdown
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 ```
 
 This ensures:
@@ -424,16 +425,21 @@ tree cannot supply one and a minimal fragment stands in.
 
 ### Family A — answered by a tool
 
-The MCP server over the artefact graph answers these three. **`node scripts/build.js` is where two of
-them already fail a build**, so family A is mostly a confirmation that the gates ran — its value is
-the third item and the neighbour list it produces for family B.
+The artefact graph answers these three. **`node scripts/build.js` is where two of them already fail a
+build**, so family A is mostly a confirmation that the gates ran — its value is the third item and the
+neighbour list it produces for family B.
 
 ```
 IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
   ⛔ DO NOT USE: Grep to reconstruct it from prose
-  ✅ DO: Ask the artefact-graph MCP — `neighbors`, `dependencies`, `impact`
-  ✅ DO: Report family A as NOT VERIFIED when the MCP does not answer
+  ✅ DO: Ask the graph
+  ✅ DO: Report family A as NOT VERIFIED when the graph does not answer
 ```
+
+**`add-artefact-graph` owns the verbs and the interfaces.** Load it rather than naming a subset here —
+the three this gate used to enumerate were three of eleven. It also carries which verbs each interface
+implements, so an agent whose allowlist blocks MCP knows when shelling out gets the same answer and
+when it does not.
 
 ### 1. Graph closed
 

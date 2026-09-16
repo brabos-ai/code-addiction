@@ -255,7 +255,7 @@ emit "EPIC_PENDING=$EPIC_PENDING"
 # 4.2's rule, which only ever knew the `| ... | X |` form — that form is written
 # by nothing in the framework, so keying on it alone made the gate unpassable.
 
-# On an epic, plan.md lives at SF level (`add.plan` STEP 5's table, and
+# On an epic, plan.md lives at SF level (`add.plan` STEP 4's table, and
 # SCOPE_DIR). Reading the feature-level path on a scoped run reported `missing`
 # for every subfeature — the gate could never pass on the exact scope the epic
 # loop runs.
@@ -268,7 +268,7 @@ if [ -n "$SF_ARG" ]; then
   done
 elif [ ! -f "$PLAN_MD" ] && [ -d "$FEATURE_DIR/subfeatures" ]; then
   # Epic-wide run: an epic normally has NO feature-level plan.md — /add.plan
-  # STEP 5 puts the plan at SF level. Reading only the feature root reported
+  # STEP 4 puts the plan at SF level. Reading only the feature root reported
   # `missing` on every healthy epic, which is the same shape as the defect
   # that made this gate unpassable before: a real document in a place the
   # gate did not look. An epic's coverage is the union of its subfeatures'.
@@ -280,14 +280,14 @@ elif [ ! -f "$PLAN_MD" ] && [ -d "$FEATURE_DIR/subfeatures" ]; then
 fi
 COVERAGE_UNCOVERED=""
 
-# Two shapes are recognised, because two exist. /add.plan STEP 11 writes an
+# Two shapes are recognised, because two exist. /add.plan STEP 10 writes an
 # UNNAMED table headed `| ID | Requirement | Covered? | ... |` with values
 # YES / EXCLUDED — that is what real plans carry. `## Cobertura de Requisitos`
 # with an `X` marker is the older shape /add.done STEP 4.2 looked for.
 #
 # When NEITHER exists the gate is `ok`, not `missing`. /add.done's rule was
 # conditional ("IF plan.md has ## Cobertura de Requisitos"), so an absent table
-# was always a pass-through, and /add.plan STEP 11 is itself a coverage gate at
+# was always a pass-through, and /add.plan STEP 10 is itself a coverage gate at
 # plan time. Making absence blocking would mean no schema-conforming feature
 # could ever converge.
 
@@ -336,7 +336,7 @@ else
 
   if [ "$COV_MODE" = "none" ]; then
     emit "GATE_COVERAGE=ok"
-    emit "GATE_COVERAGE_DETAIL=No coverage table in plan.md; /add.plan STEP 11 owns this gate at plan time"
+    emit "GATE_COVERAGE_DETAIL=No coverage table in plan.md; /add.plan STEP 10 owns this gate at plan time"
     COVERAGE_UNCOVERED=0
     pass
   elif [ "${COVERAGE_UNCOVERED:-1}" -eq 0 ]; then

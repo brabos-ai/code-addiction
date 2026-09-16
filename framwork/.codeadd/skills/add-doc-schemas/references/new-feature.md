@@ -2,7 +2,7 @@
 
 Category file for the new-feature lifecycle: discovery, specification, planning, design, exploratory ideation. Universal rules (output-length doctrine, language, formatting, ID convention, validation gate) live in `{{skill:add-doc-schemas/SKILL.md}}`. This file owns only what is specific to new-feature docs — section-shape conventions, requirement notation, decision notation, scope notation, and voice rules shared across the five schemas below.
 
-**Schemas in this category:** `feature-about`, `feature-plan`, `feature-design`, `brainstorm`, `epic`.
+**Schemas in this category:** `feature`, `feature-plan`, `feature-design`, `brainstorm`, `epic`.
 
 ## Shared Notation
 
@@ -95,11 +95,11 @@ Brainstorm docs capture exploration, not decisions. Voice rules:
 
 ## Schemas
 
-### feature-about
+### feature
 
 For `/add.new` (creates `docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature-about`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
   - **`branch:`** (required for new docs) — the branch `/add.build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add.new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
   - **`tags:`** — bare lowercase topic words, per Universal Document Requirements in `{{skill:add-doc-schemas/SKILL.md}}`, which is where that rule is stated. Written from the discovery result, never from a question put to the user.
 - **Sections (ordered):** TL;DR · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References
@@ -140,7 +140,7 @@ For `/add.plan` (feature mode, creates `docs/features/<slug>/plan.md`).
 
 ### feature-design
 
-For `/add.plan` STEP 8.1 — the sole writer of this doc, through the UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
+For `/add.plan` STEP 7.1 — the sole writer of this doc, through the UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
 
 **Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
 
@@ -193,9 +193,27 @@ For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). D
 - **Compression:** bullets only. Directions = `name — summary — pros/cons — open issues`. Voice follows Brainstorm Voice rules above.
 - **Hard bans:** committing to implementation, final decisions (those belong in plan), technical jargon that obscures the user-perspective framing, full class/method implementations or multi-line code blocks (a single illustrative one-shot snippet is allowed to anchor a direction).
 
+### brainstorm-intent
+
+For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its handoff, on the `bounded` and `architectural` paths — never on `spike`). It reuses the brainstorm document's timestamp verbatim when one was written, so the pair sorts adjacent; on `bounded`, where no document is written, it takes its own timestamp and stands alone.
+
+**This is the handoff contract, not a document anyone reads for pleasure.** `/add.new` extracts its decisions without asking a single question, so its whole value is being short enough to be read in one pass and complete enough to be trusted. If it reads like a document, it is too long.
+
+**Narrowing of Universal Document Requirements — declared, not assumed.** This schema keeps `id`, `type` and `created`, adds `path`, `topic` and `doc`, and **relaxes `related`, `tags`, `## TL;DR` and the TOC rule**. The one-screen cap is the artifact's entire purpose, and every relaxed field costs lines without being read by the one consumer this file has.
+
+- **Frontmatter:** `id: BRN-<slug>` (the same id the paired brainstorm carries — no new prefix, and never `status.sh next-id`), `type: brainstorm-intent`, `created: YYYY-MM-DD`, `path: spike|bounded|architectural`, `topic: <slug>`, `doc: <brainstorm document path, or none>`
+- **Sections:** Decided · Open · Prior art · Rejected
+- **Depth floor:**
+  - **Decided** — one bullet per closed decision, each carrying its one-line rationale. This is what `/add.new` extracts.
+  - **Open** — the literal word `None` when the conversation closed everything, which is the normal case. Otherwise one bullet per question the conversation could not close. ⛔ **A section that is present but empty is read as absent**, and the reader falls back to the full ceremony — a missing signal means "not closed", never "closed".
+  - **Prior art** — `<id> <status> — <what it was>` per hit, filled from the INDEX and GRAPH steps `/add.brainstorm` STEP 1 already ran, so the reader does not run them again for anything named here.
+  - **Rejected** — one bullet per direction the conversation discarded, with why. It stops the next session re-proposing it.
+- **Compression:** bullets only, no narrative. Every section may read `None`.
+- **Hard bans:** writing a question into **Open** that one more turn of conversation would have settled — it lands in `/add.new` as exactly the redundant questionnaire this artifact exists to remove; restating the brainstorm document; any implementation detail; a `path` value outside the three; writing this file at all on the `spike` path.
+
 ### epic
 
-For `/add.new` STEP 5 (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add.build` STEP 16 (block 16.4) and by `/add.plan-to-ready`'s checkpoint step; the `checkpoint` cell is written **only by whoever creates the checkpoint commit and its tag**. Read by `/add.plan` STEP 8.0, `/add.done` STEP 4.1, `status.sh`, and `converge-gates.sh`.
+For `/add.new` STEP 5 (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add.build` STEP 16 (block 16.4) and by `/add.plan-to-ready`'s checkpoint step; the `checkpoint` cell is written **only by whoever creates the checkpoint commit and its tag**. Read by `/add.plan` STEP 7.0, `/add.done` STEP 4.1, `status.sh`, and `converge-gates.sh`.
 
 **Compatibility.** `/add.new` STEP 5 has always written this doc freeform ("subfeature table + order + notes" — no fixed frontmatter, TL;DR, or section headings). This schema is additive: every existing `epic.md` is valid as written, nothing gets rewritten. Universal Document Requirements (frontmatter, TL;DR, TOC) bind schema-aware writes going forward; a pre-schema doc missing any of them is read as-is — warn, never fail. The one contract that already binds every `epic.md`, old or new, is the Subfeatures row shape below.
 

@@ -98,7 +98,7 @@ Never hand-roll IDs. Never reuse an ID from another namespace.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
 
-Not every artefact uses the global `[NNNN][L]` convention. QA validation reports (written by `/add.review`) use a **per-scope sequence** so each scope keeps its own local regression history.
+Not every artefact uses the global `[NNNN][L]` convention. QA validation reports (written by the QA judgement `qa-pipeline` adds to `/add.review`) use a **per-scope sequence** so each scope keeps its own local regression history.
 
 - **Format:** `<feature-id>-qa-validation-NNN` (e.g. `0001F-qa-validation-003`), `NNN` zero-padded from `001`. Filename: `_tests/run-NNN/qa-validation-NNN.md` (the `id:` stem matches the filename).
 - **Scope = the report's folder:** the subfeature folder when scoped to an SF, the feature folder otherwise. Two SFs of the same feature each have their own `qa-validation-001`.
@@ -108,7 +108,7 @@ Distinct from `[NNNN][L]`: `NNN` is a 3-digit per-scope run number, no letter su
 
 ## SF-Qualified IDs (subfeature-scoped docs)
 
-An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add.plan` STEP 8.1 writes into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
+An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add.plan` STEP 7.1 writes into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
 
 - **Format:** `[NNNN]F-SFxx` (e.g. `0042F-SF03`) — the feature ID, a hyphen, then the subfeature key exactly as `epic.md` spells it (`SF` + 2-digit zero-padded).
 - **When:** the doc lives under `subfeatures/SFxx-*/`. A feature-level `design.md` (non-epic feature) keeps the plain `[NNNN]F`.

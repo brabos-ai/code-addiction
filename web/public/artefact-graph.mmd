@@ -13,7 +13,6 @@ flowchart LR
     n_product_command_add_diagnose(["add.diagnose"])
     n_product_command_add_done(["add.done"])
     n_product_command_add_hotfix(["add.hotfix"])
-    n_product_command_add_init(["add.init"])
     n_product_command_add_new(["add.new"])
     n_product_command_add_plan(["add.plan"])
     n_product_command_add_plan_to_ready(["add.plan-to-ready"])
@@ -31,13 +30,13 @@ flowchart LR
     n_internal_command_add_framework__done -.-> n_internal_command_add_framework__brainstorm
     n_internal_command_add_framework__done -.-> n_internal_command_add_framework__plan
     n_internal_command_add_framework__plan --> n_internal_command_add_framework__build
+    n_internal_command_add_framework__plan -.-> n_internal_command_add_framework__brainstorm
     n_internal_command_add_framework__sync --> n_internal_command_add_framework__release
     n_product_command_add --> n_product_command_add_brainstorm
     n_product_command_add --> n_product_command_add_build
     n_product_command_add --> n_product_command_add_diagnose
     n_product_command_add --> n_product_command_add_done
     n_product_command_add --> n_product_command_add_hotfix
-    n_product_command_add --> n_product_command_add_init
     n_product_command_add --> n_product_command_add_new
     n_product_command_add --> n_product_command_add_plan
     n_product_command_add --> n_product_command_add_plan_to_ready
@@ -54,7 +53,6 @@ flowchart LR
     n_product_command_add_build --> n_product_command_add_wiki
     n_product_command_add_build -.-> n_product_command_add_plan
     n_product_command_add_diagnose --> n_product_command_add_hotfix
-    n_product_command_add_diagnose --> n_product_command_add_init
     n_product_command_add_diagnose --> n_product_command_add_new
     n_product_command_add_diagnose --> n_product_command_add_plan
     n_product_command_add_diagnose --> n_product_command_add_wiki
@@ -66,7 +64,7 @@ flowchart LR
     n_product_command_add_done --> n_product_command_add_wiki
     n_product_command_add_done -.-> n_product_command_add_new
     n_product_command_add_hotfix --> n_product_command_add_wiki
-    n_product_command_add_init --> n_product_command_add_new
+    n_product_command_add_new --> n_product_command_add_brainstorm
     n_product_command_add_new --> n_product_command_add_build
     n_product_command_add_new --> n_product_command_add_plan
     n_product_command_add_new --> n_product_command_add_wiki

@@ -26,7 +26,6 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - skill: add-doc-schemas/references/fix.md
 - skill: add-doc-schemas/references/history.md
 - skill: add-doc-schemas/references/new-feature.md
-- skill: add-doc-schemas/references/product.md
 - skill: add-doc-schemas/references/receipt.md
 - skill: add-doc-schemas/references/review.md
 - skill: add-doc-schemas/references/strategy.md
@@ -78,15 +77,27 @@ Schema-agnostic rules that apply to every generated doc, even when the schema is
 
   Test each sentence before writing it: does it name the action, or name something the action resembles? Replace a resemblance with the action — "confirm the tests bite" becomes "run the tests and check they fail against the broken code". That pair illustrates the device. It is **not a list of banned words**, and MUST NOT be turned into one: a word list holds in one language only, which is the failure this rule exists to prevent.
 
+- **Plain register.** Write to be read once, at speed, by someone who has other work waiting. Three rules, and they bind the same surface the rule above binds — chat replies, generated docs, commit messages, PR descriptions, code comments and identifiers:
+
+  1. **Short sentences, one idea each.** A sentence carrying a second idea is two sentences. A stack of subordinate clauses is the failure this catches — it is grammatical, factual, free of figures, and still costs the reader a second pass.
+  2. **The common word over the rare one**, wherever both are exact. "Ask" over "interrogate", "check" over "ascertain", "goes away" over "is elided". Where the rare word is the precise one and the common word is not, the rare word wins — precision is never traded for plainness.
+  3. **A technical term is explained in one line the first time it appears** in a document. Then it is used freely. The term itself stays; this adds a line, it never substitutes a vaguer word for an exact one.
+
+  **This catches what the rules above let through.** A passage can carry no filler, no figure, no marketing and no aspiration, and still be hard to read — because none of those rules says anything about register. That gap is what this closes.
+
+  ⛔ **It is not a list of banned words either, and MUST NOT become one.** The reason is the one stated directly above: a word list holds in one language only, and this rule binds output in whatever language the `### Language` table selects. Test the sentence, not its vocabulary — can it be read once and understood?
+
+  **Register is not length.** A long passage of short, plain sentences passes. A single sentence with four clauses fails. Do not turn this into a budget: the rule against numeric length caps in this skill still holds, and it holds here for the same reason.
+
 ### Language
 
 | Context | Language |
 |---|---|
-| Prose, explanations, rationale | Follow the `language` field in `owner.md` (e.g. `pt-br`, `en-us`); default to English when the field is unset or `owner.md` does not exist |
+| Prose, explanations, rationale | Match the language the user writes in; default to English. |
 | Code, git, CLI flags, technical terms | English |
 | Frontmatter keys and schema type names | English (machine-parsed) |
 
-Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English regardless of the owner's language setting. Do not translate them.
+Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English whatever language the rest of the document is written in. Do not translate them.
 
 ### Markdown Formatting
 
@@ -129,7 +140,7 @@ Every ADD doc type that participates in the reference graph has a prefix. IDs ar
 
 > **Convention:** Feature/hotfix IDs use `[NNNN][L]` (number first, letter suffix) per `{{skill:add-id-convention/SKILL.md}}`. `PRD` and `CHG` are separate namespaces with no letter suffix.
 
-Other doc types (`OWNER`, `PRODUCT`, `AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`, `RCPT-<command>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
+Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`, `RCPT-<command>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
 
 ### ID Allocation
 
@@ -268,16 +279,15 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | Category | File | Schemas |
 |----------|------|---------|
-| `new-feature` | `references/new-feature.md` | feature-about, feature-plan, feature-design, brainstorm, epic |
-| `fix` | `references/fix.md` | hotfix-about |
+| `new-feature` | `references/new-feature.md` | feature, feature-plan, feature-design, brainstorm, brainstorm-intent, epic |
+| `fix` | `references/fix.md` | hotfix |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
-| `product` | `references/product.md` | owner, product |
 | `strategy` | `references/strategy.md` | prd |
 | ~~`marketing`~~ | **retired** | `saas-copy` and `landing-page` were dropped with their category file; nothing writes either, and a command asking for one gets no schema |
 | `receipt` | `references/receipt.md` | setup-receipt |
 
-**Loading discipline.** A command that produces, say, a `feature-about` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
+**Loading discipline.** A command that produces, say, a `feature` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
 
 **Schema name → category lookup.** Use the table above. Adding a new schema = (1) place it in the right category file, (2) update this table, (3) if a new ID prefix is needed, add it to the ID Prefixes table.
 
@@ -300,13 +310,15 @@ Every generator command MUST paste the following block as **the final STEP that 
 
 Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the command complete until every check passes or warns.
 
+⛔ **A schema that explicitly narrows a Universal Document Requirement is exempt from the check that enforces it.** Universal Document Requirements says the rules bind "unless the schema explicitly relaxes them", and this is where that sentence takes effect: a frontmatter field the schema's own **Frontmatter** line does not name, and a `## TL;DR` or TOC the schema's **Sections** list does not name, are not missing — they were declared out. Checks 1, 2, 3 and 9 all read this rule. A schema that is merely silent narrows nothing; the narrowing has to be written down in the schema.
+
 1. **Frontmatter presence.** Grep `^---$` at line 1. Confirm YAML block closes. Required fields for `<SCHEMA>`:
    - `id:` matches the prefix rule in the ID Convention section of this skill
    - `type: <SCHEMA>` exact match
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
-   - `tags:` is a YAML list (may be empty `[]`). A schema whose Frontmatter line does not name it is exempt — the Universal Document Requirements list is what makes it mandatory, and a schema may narrow that.
-   - **`feature-about` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
+   - `tags:` is a YAML list (may be empty `[]`)
+   - **`feature` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 
 2. **TL;DR present and complete.** Grep `^## TL;DR$`. The body MUST convey: what the doc is, why it exists, and the headline outcome/decision. If any is missing: rewrite extractively — do NOT summarize abstractively, do NOT shrink by dropping the headline.

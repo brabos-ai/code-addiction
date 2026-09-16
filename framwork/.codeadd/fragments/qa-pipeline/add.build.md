@@ -1,3 +1,13 @@
+<!-- uses:
+- agent: database-agent
+- agent: backend-agent
+- agent: frontend-agent
+- agent: e2e-agent
+- agent: fix-agent
+- skill: add-ux-design
+- agent: ux-agent
+-->
+
 <!-- section:qa-fix -->
 
 #### QA-Routed Correction (qa-pipeline)
@@ -16,10 +26,13 @@ correction contract, one path.
    *who* fixes, never *whether*.
 3. **DISPATCH by ROUTE, not by severity.** Work the table in its given `Order`,
    respecting `Blocked by`: sequential across layers
-   (`@database-agent → @backend-agent → @frontend-agent → @e2e-agent`), parallel
-   within one agent's slice when its rows are independent. Each named agent maps
-   per the **Agent Roster**; correction rows go to `@fix-agent` per the
-   **Correction Dispatch** contract, with the `ATTEMPT` counter this command tracks.
+   (`@database-agent → @backend-agent → @frontend-agent → @e2e-agent`), and
+   **one agent in flight at a time** — STEP 10.1 owns that rule and this
+   dispatch sits inside it. ⛔ DO NOT overlap two rows because they look
+   independent: independence of two rows is not a licence to put two writers on
+   one tree. Each named agent maps per the **Agent Roster**; correction rows go to
+   `@fix-agent` per the **Correction Dispatch** contract, with the `ATTEMPT`
+   counter this command tracks.
    - **Present, do NOT dispatch** (surface as user decisions): manual routes
      `data-seed` / `env-boot` (name the `docs/qa/config.json` field to fix —
      `authSeed` / `bootHint`), capability-invalid routes, and `@ux-agent` routes

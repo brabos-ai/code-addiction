@@ -159,6 +159,60 @@ describe('L2.4 — both corpora answer identically to scripts/graph.js', () => {
 // Usage scenarios — what an agent actually asks the server
 // ---------------------------------------------------------------------------
 
+/**
+ * L3.2 / L3.3 — the two hardcoded copies, held equal by this and nothing else.
+ *
+ * ENTRY_POINT_KINDS, DEPENDENCY_TYPES and ORPHAN_DEPENDENCY_TYPES exist twice:
+ * in scripts/graph.js (internal) and in mcp/engine.mjs (product, at the repo
+ * root because it ships in the npm package). Neither can import the other —
+ * mcp/ takes NO dependency at all, since it runs from the repository root where
+ * the CLI's node_modules is off the resolution path.
+ *
+ * So the sets are compared as SOURCE TEXT. A structural read is the point: an
+ * assertion that imported both would prove only that this test can import, and
+ * the import is the exact thing that cannot exist.
+ *
+ * Without this, the two surfaces answer `orphans` differently and nothing says
+ * so out loud.
+ */
+describe('L3.2/L3.3 — graph.js and mcp/engine.mjs agree on the kind and edge sets', () => {
+  const read = (f) => fs.readFileSync(path.join(REPO, f), 'utf8');
+  const items = (txt, re) =>
+    txt.match(re)[1].split(',').map((x) => x.trim().replace(/['"]/g, '')).filter(Boolean).sort();
+
+  const G = read('scripts/graph.js');
+  const M = read('mcp/engine.mjs');
+  const after = (txt, marker) => txt.slice(txt.indexOf(marker));
+
+  it('ENTRY_POINT_KINDS is the same set on both surfaces', () => {
+    expect(items(G, /const ENTRY_POINT_KINDS = new Set\(\[([^\]]*)\]\)/))
+      .toEqual(items(after(M, 'const ENTRY_POINT_KINDS'), /artefacts: new Set\(\[([^\]]*)\]\)/));
+  });
+
+  it('DEPENDENCY_TYPES is the same set on both surfaces', () => {
+    expect(items(G, /const DEPENDENCY_TYPES = new Set\(\[([^\]]*)\]\)/))
+      .toEqual(items(after(M, 'const DEPENDENCY_TYPES'), /artefacts: new Set\(\[([^\]]*)\]\)/));
+  });
+
+  it('both derive ORPHAN_DEPENDENCY_TYPES by excluding CONTAINS, and neither inlines it', () => {
+    // ⛔ The one that matters. If either file ever hands orphans() the full
+    // DEPENDENCY_TYPES, a container exempts every file in its directory and
+    // nothing under fragments/ or plugins/ can be reported as dead weight again.
+    for (const [name, txt] of [['scripts/graph.js', G], ['mcp/engine.mjs', M]]) {
+      expect(txt, `${name} derives ORPHAN_DEPENDENCY_TYPES from DEPENDENCY_TYPES`)
+        .toMatch(/ORPHAN_DEPENDENCY_TYPES[\s\S]{0,400}?filter\(\(t\) => t !== 'CONTAINS'\)/);
+      expect(txt, `${name} orphans() reads the ORPHAN_ set`)
+        .toMatch(/orphans[\s\S]{0,600}?ORPHAN_DEPENDENCY_TYPES/);
+    }
+  });
+
+  it('CONTAINS is a dependency edge for dependencies, on both surfaces', () => {
+    expect(items(G, /const DEPENDENCY_TYPES = new Set\(\[([^\]]*)\]\)/)).toContain('CONTAINS');
+    expect(items(after(M, 'const DEPENDENCY_TYPES'), /artefacts: new Set\(\[([^\]]*)\]\)/))
+      .toContain('CONTAINS');
+  });
+});
+
 describe('scenario — "what was already built near this"', () => {
   it('L2.2 search returns one hit per *-about, and none for a user file', () => {
     const all = actions.search(docs, { terms: '', limit: 50 });
@@ -180,7 +234,7 @@ describe('scenario — "what was already built near this"', () => {
 
   it('every hit carries the fields needed to reject it without opening the file', () => {
     const hit = actions.search(docs, { terms: 'refresh' }).hits[0];
-    expect(hit).toMatchObject({ id: '0051H', kind: 'work item', status: 'live' });
+    expect(hit).toMatchObject({ id: '0051H', kind: 'work-item', status: 'live' });
     expect(hit.tags).toEqual(['auth']);
     expect(hit.path).toContain('0051H-token-refresh/about.md');
     expect(hit.relations.some((r) => r.type === 'caused_by' && r.to === '0042F')).toBe(true);
@@ -191,7 +245,7 @@ describe('scenario — "what was already built near this"', () => {
     const inFlight = makeDocsCorpus({
       'docs/features/0077F-draft/about.md': `---
 id: 0077F
-type: feature-about
+type: feature
 status: in_progress
 related: []
 tags: [auth]
@@ -215,7 +269,7 @@ A draft that has not shipped. It touches auth, which is why it must be visible.
   });
 
   it('search filters by kind and by tag', () => {
-    expect(actions.search(docs, { terms: '', kind: 'reference page' }).hits.map((h) => h.id)).toEqual([
+    expect(actions.search(docs, { terms: '', kind: 'page' }).hits.map((h) => h.id)).toEqual([
       'wiki/backend',
     ]);
     expect(actions.search(docs, { terms: '', tag: 'ledger' }).hits.map((h) => h.id).sort()).toEqual([
@@ -264,9 +318,9 @@ describe('scenario — "what breaks if I change this"', () => {
   it('a relation cycle terminates instead of hanging', () => {
     const cyclic = makeDocsCorpus({
       'docs/features/0001F-a/about.md':
-        '---\nid: 0001F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nA.\n\n## Relations\n- depends_on [[0002F]]\n',
+        '---\nid: 0001F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nA.\n\n## Relations\n- depends_on [[0002F]]\n',
       'docs/features/0002F-b/about.md':
-        '---\nid: 0002F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nB.\n\n## Relations\n- depends_on [[0001F]]\n',
+        '---\nid: 0002F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nB.\n\n## Relations\n- depends_on [[0001F]]\n',
     });
     try {
       const data = loadCorpus('docs', cyclic);
@@ -282,10 +336,26 @@ describe('scenario — "what breaks if I change this"', () => {
 });
 
 describe('scenario — "what do these files belong to"', () => {
-  it('L2.3 touched_by returns the work items AND the pages covering the same file', () => {
+  it('L2.3 touched_by still answers the PAGE half locally, from sources globs', () => {
+    // The work-item half moved to `delivered.sh` (plan 2026-09-14T145149): the
+    // question "which DELIVERY changed this file" lives in the index, not in
+    // any document, and the only thing that ever filled a work item's file set
+    // was a `hotfix-related` attachment — a retired schema this fixture still
+    // carries and nothing writes. The page half never depended on it: a
+    // reference page declares its own `sources` globs.
     const result = actions.touched_by(docs, { files: ['src/auth/refresh.ts'] });
-    expect(result.workItems.map((w) => w.id)).toEqual(['0051H']);
     expect(result.pages.map((p) => p.id)).toEqual(['wiki/backend']);
+  });
+
+  it('L2.3 the work-item half degrades rather than throwing when the script is absent', () => {
+    // This fixture is a bare tree with no `.codeadd/scripts/delivered.sh` and no
+    // git history, which is exactly the shape the delegation must survive. It
+    // reports why and still hands back the page half — withholding a good answer
+    // because the other half could not run is the worse of the two failures.
+    const result = actions.touched_by(docs, { files: ['src/auth/refresh.ts'] });
+    expect(result.workItems).toEqual([]);
+    expect(result.unavailable?.reason).toBe('script-missing');
+    expect(result.pages.length).toBeGreaterThan(0);
   });
 
   it('L2.3 a glob with ** crosses directories and a * does not', () => {
@@ -301,10 +371,12 @@ describe('scenario — "what do these files belong to"', () => {
   });
 
   it('answers for several files at once and says which matched', () => {
+    // Asserted on the PAGE half, for the same reason as above: it is the half
+    // this corpus can answer without an index and a git history.
     const result = actions.touched_by(docs, {
       files: ['src/auth/refresh.ts', 'src/auth/session.ts', 'README.md'],
     });
-    expect(result.workItems[0].matched.sort()).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
+    expect(result.pages[0].matched.sort()).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
   });
 });
 
@@ -312,9 +384,9 @@ describe('scenario — "what is the migration still missing"', () => {
   it('orphans reports a node with no relation and one with no TL;DR, with the reason', () => {
     const gappy = makeDocsCorpus({
       'docs/features/0080F-lonely/about.md':
-        '---\nid: 0080F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nStands alone.\n',
+        '---\nid: 0080F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nStands alone.\n',
       'docs/features/0081F-empty/about.md':
-        '---\nid: 0081F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- links_to [[0009F]]\n',
+        '---\nid: 0081F\ntype: feature\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- links_to [[0009F]]\n',
     });
     try {
       const data = loadCorpus('docs', gappy);
@@ -334,7 +406,7 @@ describe('scenario — "what is the migration still missing"', () => {
     // surface, and a heading with nothing under it rejects nothing.
     const blank = makeDocsCorpus({
       'docs/features/0082F-blank/about.md':
-        '---\nid: 0082F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- part_of [[0042F]]\n',
+        '---\nid: 0082F\ntype: feature\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- part_of [[0042F]]\n',
     });
     try {
       const data = loadCorpus('docs', blank);
@@ -349,8 +421,11 @@ describe('scenario — "what is the migration still missing"', () => {
     const s = actions.stats(docs);
     expect(s.corpus).toBe('docs');
     expect(s.nodes).toBe(5);
-    expect(s.byKind).toEqual({ 'work item': 4, 'reference page': 1 });
-    expect(s.skipped).toBe(3);
+    expect(s.byKind).toEqual({ 'work-item': 4, page: 1 });
+    // 5, not 3: the two retired types in the fixture — `hotfix-related` and
+    // `feature-discovery` — are now REPORTED by name rather than demoted into
+    // an attachment list where nothing would ever have noticed them.
+    expect(s.skipped).toBe(5);
     expect(s.unresolved).toContainEqual({ from: '0051H', to: '0099F' });
     // A changelog's part_of points at the work item it sits with, so it is a
     // self-edge and never inflates a hub count.
@@ -376,7 +451,7 @@ describe('scenario — the index is a cache and the markdown is the truth', () =
       fs.mkdirSync(path.dirname(added), { recursive: true });
       fs.writeFileSync(
         added,
-        '---\nid: 0090F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nA brand new feature.\n\n## Relations\n- part_of [[0042F]]\n',
+        '---\nid: 0090F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nA brand new feature.\n\n## Relations\n- part_of [[0042F]]\n',
         'utf8',
       );
       const after = run('search', { terms: 'brand new' }, { corpus: 'docs', root: live });

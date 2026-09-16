@@ -9,7 +9,7 @@
 -->
 
 > **MODEL:** Use `haiku` model
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Idempotent PR command for the current branch. Detects whether a PR already exists: creates a new one or appends an update section to the existing body. On feature branches, generates the permanent feature changelog before opening the PR so it ships as part of the diff.
 

@@ -87,7 +87,7 @@ Step        Command             What happens                        Output
 1. Discover /add.new            AI-guided feature discovery          about.md
 2. Plan     /add.plan           Technical planning + UX contract     plan.md + design.md
 3. Code     /add.build          Subagent-driven implementation       Working code
-4. Review   /add.review         Code review + spec audit + QA        review-NNN.md
+4. Review   /add.review         Code review + spec audit (+QA)       review-NNN.md
 5. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
 ```
 
@@ -120,9 +120,6 @@ EMERGENCY  (critical bug in production)
 
 TRIAGE  (ambiguous symptoms, unclear path)
   diagnose --> (hotfix OR new OR no-action)
-
-NEW PROJECT  (starting from scratch)
-  init --> build --> done
 
 ANALYSIS  (understand existing codebase)
   wiki / audit

@@ -8,7 +8,6 @@
 - command: /add.diagnose
 - command: /add.done
 - command: /add.hotfix
-- command: /add.init
 - command: /add.new
 - command: /add.plan
 - command: /add.plan-to-ready
@@ -16,8 +15,7 @@
 - script: status.sh
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner -> explain why; advanced -> essentials only).
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Entry point for the add-pro ecosystem. Answers questions, guides flow, suggests next command.
 
@@ -54,31 +52,25 @@ This file contains all add-pro commands with purpose/skills, available skills, m
 
 ---
 
-## STEP 1: Check Onboarding
-
-Read `docs/owner.md`. If it does not exist, suggest `/add.init` for project onboarding (5-10 min) and offer to answer anyway if the user prefers to skip. If it exists, proceed to STEP 2.
-
----
-
-## STEP 2: Classify Question
+## STEP 1: Classify Question
 
 | Type | Examples | Action |
 |------|----------|--------|
-| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP 4A |
-| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP 3 + STEP 4B |
-| **Status/Context** | "where am I?", "which feature is active?" | -> STEP 3 + STEP 4C |
-| **Compliance** | "does implementation follow the plan?" | -> STEP 3 + STEP 4D |
-| **Project** | "does the project have multi-tenancy?" | -> STEP 3 + STEP 4E |
-| **Next step** | "what to do now?", "next command?" | -> STEP 3 + STEP 5 |
-| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", env errors | -> STEP 4F |
+| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP 3A |
+| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP 2 + STEP 3B |
+| **Status/Context** | "where am I?", "which feature is active?" | -> STEP 2 + STEP 3C |
+| **Compliance** | "does implementation follow the plan?" | -> STEP 2 + STEP 3D |
+| **Project** | "does the project have multi-tenancy?" | -> STEP 2 + STEP 3E |
+| **Next step** | "what to do now?", "next command?" | -> STEP 2 + STEP 4 |
+| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", env errors | -> STEP 3F |
 
 ---
 
-## STEP 3: Detect Context (CONDITIONAL)
+## STEP 2: Detect Context (CONDITIONAL)
 
 Execute when question involves a specific feature, current status, "where am I?", next step, or project/architecture.
 
-### 3.1 Execute status.sh
+### 2.1 Execute status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -86,13 +78,13 @@ bash .codeadd/scripts/status.sh
 
 **Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
 
-### 3.2 Read additional context (if exists)
+### 2.2 Read additional context (if exists)
 
 Read `CLAUDE.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
 
 ---
 
-## STEP 4: Respond by Type
+## STEP 3: Respond by Type
 
 ### Type A: About ADD Commands
 
@@ -117,7 +109,7 @@ Include: feature ID, name, summary from changelog, explanation, main files (if a
 
 ### Type C: Status/Context
 
-Use output from STEP 3 (status.sh).
+Use output from STEP 2 (status.sh).
 
 Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, the highest review-NNN.md).
 
@@ -157,7 +149,7 @@ NEVER:
 
 ---
 
-## STEP 5: Smart Suggestion
+## STEP 4: Smart Suggestion
 
 ALWAYS include at end of response (except if question was only about a specific command).
 
@@ -165,7 +157,6 @@ ALWAYS include at end of response (except if question was only about a specific 
 
 | Detected Context | Suggested Command | Rationale |
 |------------------|-------------------|-----------|
-| No docs/owner.md | `/add.init` | Project onboarding |
 | Branch main, no feature | `/add.new` | Start new functionality |
 | Feature without plan.md | `/add.plan` | Next phase of flow |
 | Feature with plan, no implementation | `/add.build`, or `/add.plan-to-ready` to run the bounded build ⇄ review loop | Time to implement |

@@ -14,7 +14,7 @@ import path from 'node:path';
 const FILES = {
   'docs/features/0009F-ledger/about.md': `---
 id: 0009F
-type: feature-about
+type: feature
 slug: ledger
 status: live
 created: 2026-07-01
@@ -31,7 +31,7 @@ Every feature needs one place to write a transaction.
 
   'docs/features/0042F-itemised-purchase/about.md': `---
 id: 0042F
-type: feature-about
+type: feature
 slug: itemised-purchase
 status: live
 created: 2026-08-01
@@ -65,7 +65,7 @@ Shipped the split.
 
   'docs/features/0051H-token-refresh/about.md': `---
 id: 0051H
-type: hotfix-about
+type: hotfix
 slug: token-refresh
 severity: high
 status: live
@@ -106,7 +106,7 @@ Assets this hotfix touched.
 
   'docs/features/0012F-session-store/about.md': `---
 id: 0012F
-type: feature-about
+type: feature
 slug: session-store
 status: live
 created: 2026-06-15
@@ -121,7 +121,7 @@ Sessions live in their own store.
   // A document superseded by another, the fifth source.
   'docs/features/0003F-old-import/about.md': `---
 id: 0003F
-type: feature-about
+type: feature
 slug: old-import
 status: superseded
 superseded_by: 0042F
@@ -137,7 +137,7 @@ The first import, replaced by the itemised split.
   // A work item with no TL;DR content at all. The migration must NOT invent one.
   'docs/features/0060F-blank/about.md': `---
 id: 0060F
-type: feature-about
+type: feature
 slug: blank
 status: draft
 created: 2026-09-05

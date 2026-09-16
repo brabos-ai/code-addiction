@@ -77,10 +77,12 @@ describe('QA umbrella — add-qa reclassification (plugin → default)', () => {
 // qa-pipeline feature registry (0051 B3)
 // ---------------------------------------------------------------------------
 describe('QA umbrella — qa-pipeline feature registry', () => {
-  it('is registered, default off, gating plan/build with no provider restriction', () => {
+  // add.review joined when the QA judgement steps moved under this feature
+  // (plan 2026-09-13T153219, F14/F20b).
+  it('is registered, default off, gating plan/build/review with no provider restriction', () => {
     expect(FEATURES['qa-pipeline']).toBeDefined();
     expect(FEATURES['qa-pipeline'].default).toBe(false);
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build']);
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build', 'add.review']);
     expect(FEATURES['qa-pipeline']).not.toHaveProperty('providers');
   });
 });
@@ -93,10 +95,12 @@ describe('QA umbrella — qa-pipeline feature registry', () => {
 describe('QA umbrella — qa-pipeline injection wiring', () => {
   it('add.plan carries step-list + qa-spec anchored on stable non-tdd lines', () => {
     const pts = points('commands/add.plan.md', 'add.plan', 'command');
-    // Renumbered by plan 0057 (new 8.1 UX Design Specialist step pushed Frontend 8.3 -> 8.4).
-    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 8.4: Frontend Specialist', position: 'after' });
+    // Renumbered by plan 0057 (new 8.1 UX Design Specialist step pushed Frontend 8.3 -> 8.4),
+    // then shifted down one by 2026-09-14T215223-PLAN--remove-owner-product-onboarding,
+    // which deleted add.plan's STEP 1 (Load Founder Profile): 8.4 -> 7.4, STEP 10 -> STEP 9.
+    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 7.4: Frontend Specialist', position: 'after' });
     expect(qa(pts, 'qa-spec').anchor).toMatchObject({
-      text: '## STEP 10: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
+      text: '## STEP 9: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
       position: 'after',
     });
   });

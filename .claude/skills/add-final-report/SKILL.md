@@ -7,6 +7,7 @@ description: "Use at a command's closing step, in the internal layer — the sev
 
 <!-- uses:
 - mention: /add-framework--build
+- mention: add-build-ledger
 -->
 
 Owns the LAST thing a command says. Not what it wrote to disk — that belongs to whichever skill owns
@@ -92,10 +93,64 @@ Plain facts are different: they belong inside block 2 or block 4, wherever they 
 
 Metadata is last: paths, commit ranges, verdicts, next-step commands.
 
+## How It Reads
+
+The seven blocks fix what goes in the report. This fixes the register it is written in. A build
+report is read once, quickly, by someone deciding whether to merge — so the writing has to survive
+one pass.
+
+**Three rules:**
+
+1. **Short sentences, one idea in each.** A second idea starts a new sentence. What this catches is
+   the sentence that is accurate and still unreadable: several clauses stacked behind one verb.
+2. **The common word beats the rare one** wherever both are exact. "Goes away", not "is elided".
+   "Checks", not "asserts", unless the assertion is literally what ran. Precision always wins over
+   plainness where the two actually conflict — that is rarer than it feels while writing.
+3. **A technical term gets one line of explanation the first time it shows up**, then it is used
+   without ceremony. The reader may have dispatched this build and watched none of it.
+
+<!--
+`add-doc-schemas` is named in the paragraph below and is deliberately NOT
+declared. It is a PRODUCT skill, and `uses:` targets resolve inside the declaring
+artefact's own layer (scripts/build.js) — `- mention: add-doc-schemas` from here
+would resolve to `internal/skill/add-doc-schemas`, which does not exist, and the
+dangling gate would fail the build. The prose sniff skips cross-layer names,
+which is why this citation passes without a declaration. The product sibling of
+THIS skill declares the same target, because there they share a layer.
+-->
+
+⛔ **DO NOT turn this into a list of banned words.** `add-doc-schemas` states why for the product
+layer and the reason carries here unchanged: a word list binds one language, and this report is
+written in whichever one the user used. Test the sentence, not the vocabulary.
+
+**Register is not length**, and this adds no budget. A long report made of short plain sentences is
+fine. One sentence with four subordinate clauses is not.
+
+### What the Report Never Covers
+
+⛔ **The report never narrates your own mistakes, nor how a reviewer corrected them.** Not the story
+of a ruling you reversed, not an account of an F-block you re-did, not a retelling of a finding the
+audit stage raised against your own work.
+
+The plan changelog already carries that record, and the ledger carries the rulings — both survive
+this session, and both are where an auditor looks. A second telling here buys nothing and costs the
+reader the lines an open item needed.
+
+✅ **This binds the seven blocks, and nothing after them.** `add-build-ledger` requires every
+`Ruling:` line to reach the report, exhaustively, with its cost clause — and those come after the
+blocks, as the command's own mandatory facts. A ruling stated as a decision and its cost is a fact.
+The same ruling retold as what you got wrong and how you found out is the narration this bans. State
+the decision; drop the story.
+
+**The closing message answers three things: what was decided, what is still open, and what needs
+watching.** A sentence grading your own performance answers none of the three. A reader scanning for
+the last two has to read past it first.
+
 ## Banned
 
 | Banned | Use instead |
 |--------|-------------|
+| Narrating your own error, or retelling how the audit corrected you | Nothing in the blocks. The rulings list still prints after them, exhaustively — see What the Report Never Covers |
 | `F7`, `T3`, `L2.9` carrying the meaning | State the change; the id goes in parentheses at most |
 | Describing the artefact instead of the change ("the skill gains a section on X") | "X is added to `path/file`" |
 | "Improves consistency", "more robust" | The concrete change and what it causes |
@@ -115,6 +170,8 @@ Metadata is last: paths, commit ranges, verdicts, next-step commands.
 [ ] It describes the WORK, never the document
 [ ] Every unit of work appears somewhere in blocks 2-5
 [ ] The command's own mandatory facts are all present, none traded for the shape
+[ ] Each sentence carries one idea and lands on the first reading
+[ ] Nothing in it narrates a mistake of yours or a correction the audit asked for
 ```
 
 ## Common Rationalizations (BLOCKED)

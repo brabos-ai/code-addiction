@@ -7,6 +7,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 <!-- uses:
 - skill: add-architecture-discovery
+- mention: @architecture-agent
 - mention: add-feature-specification
 - mention: /add.plan
 - command: /add.plan-to-ready
@@ -23,7 +24,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - Per-area validator ticking sections after implementation
 - Deciding whether a section/item gets `[x]` or `[!]`
 - Reading tick state to gate review or delivery
-- Coordinator merging multi-area validator reports in `/add.plan-to-ready`
+- A dispatching command merging multi-area validator reports — `add.build` or `/add.plan-to-ready`
 
 ## When NOT to Use
 
@@ -97,7 +98,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 ### `## Requirements Coverage`
 
 - One line per RF/RN from `about.md`. The architect MUST include every RF and RN.
-- **Tick rule:** **auto-derived.** A RF/RN is `[x]` when ALL Execution tasks AND ALL Acceptance items that reference it are `[x]`. Validators do not tick this section directly — the coordinator (or `add.build`'s post-validator step) recomputes derived state after every write.
+- **Tick rule:** **auto-derived.** A RF/RN is `[x]` when ALL Execution tasks AND ALL Acceptance items that reference it are `[x]`. Validators do not tick this section directly — the dispatching command recomputes derived state when it merges and writes.
 
 ### `## TDD`
 
@@ -113,7 +114,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - `Consumes`: the **exact signature** this task calls, plus the producing task ID in parentheses — e.g. `` `UserRepository.insert(row: NewUser): Promise<User>` (T01) ``. `-` when the task calls nothing an earlier task built. Multiple entries are comma-separated, each with its own task ID.
 - `Produces`: the **exact signature** of everything a later task will call — e.g. `` `UsersService.create(dto: CreateUserDto): Promise<UserDto>` ``. `-` when nothing downstream calls into this task.
 - `Verify`: MANDATORY single line — a runnable command, curl, or browser check.
-- **Match rule:** every `Consumes` signature MUST match, **character for character**, a `Produces` signature on an **earlier** task. This is checkable by machine, not by opinion — `/add.plan`'s STEP 12 validation gate compares the strings and fails on a mismatch, printing both. A `Consumes` written as prose ("the repo insert method") fails that comparison, which is the point: a signature a machine cannot match is a signature a dispatched subagent cannot implement against.
+- **Match rule:** every `Consumes` signature MUST match, **character for character**, a `Produces` signature on an **earlier** task. This is checkable by machine, not by opinion — `/add.plan`'s STEP 11 validation gate compares the strings and fails on a mismatch, printing both. A `Consumes` written as prose ("the repo insert method") fails that comparison, which is the point: a signature a machine cannot match is a signature a dispatched subagent cannot implement against.
 - **Why these two lines exist:** a subagent implementing T02 never sees T01's code. `Deps: T01` states order; only `Consumes` / `Produces` state the contract, so both tasks build against the same name instead of each inventing one.
 - **No tick rule.** `Consumes` and `Produces` are **not** progress — an interface is a contract. Validators NEVER tick these lines and never mark them `[!]`. The tick rule below applies to the task's own `- [ ]` checkbox and to nothing inside it.
 - **Tick rule:** validator ticks `[x]` when **all** files listed in `Files` appear in the diff with **non-trivial changes**. If only some files appear, or all changes are trivial, set `[!]` with reason.
@@ -180,9 +181,9 @@ A change is **trivial** (does NOT count) when it is exclusively:
 
 In `/add.plan-to-ready`, **only the coordinator writes** to `tasks.md`. Area validators emit a structured report and the coordinator performs a single merge-write per batch — this avoids parallel-write contention without locks.
 
-## Validator Report Shape (loop coordinator)
+## Validator Report Shape
 
-Per-area validators dispatched by a coordinator that owns the `tasks.md` write (`/add.plan-to-ready`) MUST return a JSON-shaped report:
+Per-area validators MUST return a JSON-shaped report. **The dispatching command owns the `tasks.md` write** — `add.build` and `/add.plan-to-ready` alike:
 
 ```json
 {
@@ -200,7 +201,7 @@ The coordinator merges all area reports, recomputes derived `## Requirements Cov
 
 ## Architect Subagent Prompt Template
 
-When `add.plan` STEP 10.4 dispatches the architect subagent, use this prompt template:
+When `add.plan` STEP 9.4 dispatches the architect subagent, use this prompt template:
 
 ```
 You are the ARCHITECT for feature ${FEATURE_ID} (subfeature ${EPIC_CURRENT_SF} if epic).
@@ -213,7 +214,7 @@ Read these files in order:
 4. ${PLAN_DIR}/plan-test-spec.md — Test specifications (if exists)
 
 ## TASK
-Generate `${PLAN_DIR}/tasks.md` following the canonical schema defined in
+Compose the tasks document following the canonical schema defined in
 the `add-tasks-checklist` skill. Use the EXACT section headings:
   ## Metadata
   ## Requirements Coverage
@@ -229,8 +230,13 @@ SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
 Service order (TDD ordering): test → database → backend → frontend.
 
 ## OUTPUT
-Write `${PLAN_DIR}/tasks.md` only. Do not modify any other file.
+Return the complete tasks document in your report. Write NO file — you are
+read-only, and the dispatching step writes `${PLAN_DIR}/tasks.md` from what you
+return. Return the document alone, with no commentary wrapped around it.
 ```
+
+⛔ **The architect is `@architecture-agent`, which declares `readonly: true`.** A template telling it
+to write is a template it can only refuse. `add.plan` STEP 9.4 is the writer.
 
 ## Resume vs Rerun Procedure
 
@@ -251,7 +257,9 @@ Used at the start of `add.build` TASKS MODE (and any consumer that re-enters a f
 
 ## Tick Application Procedure (per area validator)
 
-Used by the per-area validator subagent in `add.build` (writes directly) and under `/add.plan-to-ready` (emits report; coordinator writes). Follow exactly:
+Used by the per-area validator subagent under both `add.build` and `/add.plan-to-ready`. **The
+validator is read-only in both: it emits a tick report and the dispatching command writes `tasks.md`
+once.** Follow exactly:
 
 1. **Inspect diff:** run `git diff` against the feature branch base. This is the source of truth for what changed — NOT any FILES_CREATED/FILES_MODIFIED list, which can lie.
 2. **Filter** `tasks.md` items for the CURRENT AREA:
@@ -259,15 +267,13 @@ Used by the per-area validator subagent in `add.build` (writes directly) and und
    - §3 Execution → tasks with `Service: ${AREA}`
    - §4 Acceptance Checklist → items whose contracts (from `plan.md` prose) belong to the area
 3. **Apply tick rules** per §Section Rules above (TDD, Execution, Acceptance).
-4. **Auto-fix** divergent items where safe (wrong status code, missing field, etc.); re-tick on success.
-5. **Output:**
-   - In `add.build`: write the updated `tasks.md` directly (full file).
-   - Under `/add.plan-to-ready`: emit the JSON validator report (see "Validator Report Shape"); the coordinator merges and writes.
+4. **Route** divergent items (wrong status code, missing field, etc.) as rows for the correction agent; tick them `[!]` with the reason. ⛔ You do not fix them yourself — you are read-only.
+5. **Output:** emit the JSON validator report (see "Validator Report Shape"). The dispatching command — `add.build` or `/add.plan-to-ready` — merges every area report and writes `tasks.md`.
 6. **Set** `SPEC_STATUS = INCOMPLETE` if any §3 or §4 item for this area is `[!]` or `[ ]`.
 
-## Coordinator Merge Procedure (loop coordinator only)
+## Coordinator Merge Procedure
 
-Used by the coordinator after collecting all per-area validator reports. The coordinator is the SOLE writer of `tasks.md` under `/add.plan-to-ready`.
+Used by the dispatching command after collecting all per-area validator reports. That command is the SOLE writer of `tasks.md`, under `add.build` and `/add.plan-to-ready` alike.
 
 1. **Collect** the JSON tick report from every area validator.
 2. **Merge** ticks across areas (no conflicts expected — areas don't overlap on §3 tasks; if conflict, last-writer-wins is acceptable since both must agree on diff state).

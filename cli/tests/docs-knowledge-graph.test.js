@@ -28,6 +28,13 @@ const FIX = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
 
 const COMMANDS = path.join(CODEADD, 'commands');
 const ADD_NEW = read(path.join(COMMANDS, 'add.new.md'));
+// add.new carried the Relations/tags authoring rules inline until
+// add-feature-specification became the single writer of about.md, reached from
+// both /add.new and /add.brainstorm's offer to continue. A rule left in the
+// command would have applied on one entry point and not the other.
+const FEATURE_SPEC = read(
+  path.join(COMMANDS, '..', 'skills', 'add-feature-specification', 'SKILL.md'),
+);
 const ADD_HOTFIX = read(path.join(COMMANDS, 'add.hotfix.md'));
 
 /**
@@ -82,9 +89,9 @@ describe('F1 — the document format lands in add-doc-schemas', () => {
     expect(gate).toMatch(/Relations[\s\S]{0,400}?FAIL/);
   });
 
-  it('feature-about carries Relations and Observations in its section list', () => {
+  it('feature carries Relations and Observations in its section list', () => {
     const schema = NEW_FEATURE.slice(
-      NEW_FEATURE.indexOf('### feature-about'),
+      NEW_FEATURE.indexOf('### feature'),
       NEW_FEATURE.indexOf('### feature-plan'),
     );
     expect(schema).toContain('Relations');
@@ -102,34 +109,45 @@ describe('F1 — the document format lands in add-doc-schemas', () => {
 describe('F2 — the hotfix-related schema retires into the about.md', () => {
   it('is no longer an active schema in the category', () => {
     const header = FIX.slice(0, FIX.indexOf('## Shared Notation'));
-    expect(header).toMatch(/\*\*Schemas in this category:\*\* `hotfix-about`\.$/m);
+    expect(header).toMatch(/\*\*Schemas in this category:\*\* `hotfix`\.$/m);
   });
 
   it('the Schema Index no longer offers it to a command', () => {
     const row = DOC_SCHEMAS.split('\n').find((l) => l.startsWith('| `fix` |'));
     expect(row).toBeTruthy();
-    expect(row).toContain('hotfix-about');
+    expect(row).toContain('hotfix');
     expect(row).not.toContain('hotfix-related');
   });
 
-  it('records the harvest rather than deleting the schema outright', () => {
-    const retired = FIX.slice(FIX.indexOf('### hotfix-related'));
-    expect(retired).toMatch(/retired/i);
-    // Both filled sections must name their new home — 15 of 19 real documents
-    // carry an explained relationship and 18 of 19 a real file list.
-    expect(retired).toMatch(/Follow-ups[\s\S]{0,300}?## Relations/);
-    expect(retired).toMatch(/Impacted Files[\s\S]{0,300}?file set/);
+  it('the retired schema section is gone from fix.md', () => {
+    // It was kept to say where each filled section went. Plan
+    // 2026-09-14T145149 deleted it: its claim that `## Impacted Files` "lives
+    // now" in the graph index was only ever true while a legacy `related.md`
+    // stayed on disk, and that reader is now deleted too. A section describing
+    // a mechanism that no longer exists is worse than no section.
+    //
+    // The measured baseline it carried — 15 of 19 hotfixes with an explained
+    // relationship, 18 of 19 with a real file list — moved to that delivery's
+    // changelog, so the evidence outlived the section.
+    expect(FIX).not.toMatch(/hotfix-related/);
   });
 
   it('stops any command writing a new related.md', () => {
-    const retired = FIX.slice(FIX.indexOf('### hotfix-related'));
-    expect(retired).toMatch(/DO NOT[\s\S]{0,200}?related\.md/);
-    // An existing related.md is a user file and is never deleted.
-    expect(retired).toMatch(/never deleted|left on disk|not deleted/i);
+    // The prohibition moved WITH the section's deletion, and it had to: the
+    // retired section carried one, and removing it silently would leave nothing
+    // stopping a command from writing `related.md` again.
+    //
+    // It is asserted where it is load-bearing — in the command that would
+    // otherwise write the file — rather than in a schema reference nothing
+    // reads at write time. Verified before the section was deleted: add.hotfix
+    // already carried both halves.
+    const hotfix = fs.readFileSync(path.join(COMMANDS, 'add.hotfix.md'), 'utf8');
+    expect(hotfix).toMatch(/DO NOT[\s\S]{0,200}?related\.md/);
+    expect(hotfix).toMatch(/never deleted|left on disk|not deleted/i);
   });
 
-  it('hotfix-about carries Relations, Observations and tags:', () => {
-    const about = FIX.slice(FIX.indexOf('### hotfix-about'), FIX.indexOf('### hotfix-related'));
+  it('hotfix carries Relations, Observations and tags:', () => {
+    const about = FIX.slice(FIX.indexOf('### hotfix'));
     expect(about).toContain('Relations');
     expect(about).toContain('Observations');
     expect(about).toMatch(/tags:/);
@@ -137,24 +155,28 @@ describe('F2 — the hotfix-related schema retires into the about.md', () => {
   });
 });
 
-describe('F3 — /add.new writes its relations from its own discovery result', () => {
+describe('F3 — the single writer writes relations from what discovery handed over', () => {
   it('L4.8 names the section, the source and the vocabulary it may use', () => {
-    const step = ADD_NEW.slice(ADD_NEW.indexOf('**Write about.md:**'), ADD_NEW.indexOf('## STEP 7'));
-    expect(step).toContain('## Relations');
-    expect(step).toContain('tags:');
-    expect(step).toContain('depends_on');
-    expect(step).toContain('part_of');
-    // The source is the discovery output the command already holds.
-    expect(step).toMatch(/past-features\.md|delivery index/);
+    expect(FEATURE_SPEC).toContain('## Relations');
+    expect(FEATURE_SPEC).toContain('tags:');
+    expect(FEATURE_SPEC).toContain('depends_on');
+    expect(FEATURE_SPEC).toContain('part_of');
+    // The source is the discovery output the CALLER holds and hands over.
+    expect(FEATURE_SPEC).toMatch(/past-features\.md|Prior art|RELATED_WORK/);
   });
 
   it('L4.8 forbids putting the question to the user', () => {
-    const step = ADD_NEW.slice(ADD_NEW.indexOf('**Write about.md:**'), ADD_NEW.indexOf('## STEP 7'));
-    expect(step).toMatch(/⛔ DO NOT[\s\S]{0,200}?ask/i);
+    expect(FEATURE_SPEC).toMatch(/⛔ DO NOT[\s\S]{0,200}?[Aa]sk/);
   });
 
   it('an epic subfeature about.md is part_of its parent', () => {
-    expect(ADD_NEW).toMatch(/part_of \[\[/);
+    expect(FEATURE_SPEC).toMatch(/part_of \[\[/);
+  });
+
+  it('(guard) add.new no longer restates those rules', () => {
+    // Two copies would drift, and the drift shows up as two different documents
+    // produced from one schema depending on which entry point ran.
+    expect(ADD_NEW).not.toMatch(/depends_on \[\[/);
   });
 });
 
@@ -317,13 +339,27 @@ describe('F20 — all six commands name a destination for the result', () => {
       // merely explains the slot. That is the same prose-not-wiring mistake
       // this whole level exists to stop making.
       'add.plan': ['travels the same two routes'],
-      'add.hotfix': ['`RELATED_WORK` destination', "touched_by` over this branch's changed paths"],
+      // The 9.1 anchor named `touched_by`. Plan 2026-09-14T102848 removed every
+      // action name from a command, so the anchor now quotes the SLOT — the
+      // paths the step runs over — which is what this level is checking anyway.
+      'add.hotfix': ['`RELATED_WORK` destination', "over this branch's changed paths"],
       'add.brainstorm': ['## Candidate Directions'],
       'add.diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
       'add.review': ['**`RELATED_WORK` from STEP 2.2**'],
     };
+    // add.review's wiring SPANS TWO FILES since the QA judgement moved under
+    // the qa-pipeline feature. STEP 2.2 produces RELATED_WORK in the base
+    // command; STEP 10.1, the slot that consumes it, is in the fragment. The
+    // destination is real and reachable with the feature on, which is what the
+    // base command's STEP 2.2 now states. Reading the command alone would
+    // report this wiring broken — the opposite of what this level is for.
+    const EXTRA_SOURCES = {
+      'add.review': [path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.review.md')],
+    };
     for (const [name, slots] of Object.entries(SLOTS)) {
-      const src = read(path.join(COMMANDS, `${name}.md`));
+      const src = [path.join(COMMANDS, `${name}.md`), ...(EXTRA_SOURCES[name] || [])]
+        .map((f) => read(f))
+        .join('\n');
       for (const slot of slots) {
         expect(src.includes(slot), `${name}: no slot carrying ${slot}`).toBe(true);
       }
@@ -359,15 +395,21 @@ describe('F20 — all six commands name a destination for the result', () => {
     expect(gate).toContain('⛔ DO NOT: Skip the INDEX and GRAPH steps');
   });
 
-  it('add.hotfix asks for touched_by only where a file list exists', () => {
+  it('add.hotfix asks the path-shaped question only where a file list exists', () => {
     const src = read(path.join(COMMANDS, 'add.hotfix.md'));
     const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
     const step9 = src.slice(src.indexOf('## STEP 9:'), src.indexOf('## STEP 10:'));
-    // STEP 4 runs before the investigation and before the fix.
-    expect(step4).toContain('`search` ONLY at this step');
-    expect(step4).not.toContain('touched_by` result over the changed files');
-    // STEP 9 has the diff in hand.
-    expect(step9).toContain('touched_by');
+    // THE CONSTRAINT IS REAL; THE ACTION NAME WAS NEVER THE POINT.
+    // This asserted "`search` ONLY at this step" and "STEP 9 contains
+    // touched_by", which pinned two calls to prove a fact about TIMING. Plan
+    // 2026-09-14T102848 removed the pins: a command states its question and
+    // add-knowledge-discovery resolves it. The fact under test is unchanged and
+    // is now asserted where it lives — in how each step PHRASES its question.
+    // STEP 4 runs before the investigation and before the fix, so there is no
+    // file list for a path-shaped question to take.
+    expect(step4).toMatch(/over WORDS, never over paths/);
+    // STEP 9 has the diff in hand, so its question is the path-shaped one.
+    expect(step9).toMatch(/phrased over PATHS/);
   });
 
   it('add.hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {

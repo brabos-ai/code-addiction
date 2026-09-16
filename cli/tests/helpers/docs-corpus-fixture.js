@@ -22,7 +22,7 @@ const FILES = {
   // ---- the feature the other two point at, so precedence is testable ------
   'docs/features/0009F-ledger/about.md': `---
 id: 0009F
-type: feature-about
+type: feature
 slug: ledger
 status: live
 created: 2026-07-01
@@ -44,7 +44,7 @@ None
   // ---- a feature: one node, three attachments -----------------------------
   'docs/features/0042F-itemised-purchase/about.md': `---
 id: 0042F
-type: feature-about
+type: feature
 slug: itemised-purchase
 status: live
 created: 2026-08-01
@@ -113,7 +113,7 @@ Where the ledger writes a purchase today.
   // ---- a hotfix: one node, one legacy attachment ---------------------------
   'docs/features/0051H-token-refresh/about.md': `---
 id: 0051H
-type: hotfix-about
+type: hotfix
 slug: token-refresh
 status: live
 severity: high
@@ -162,7 +162,7 @@ Assets this hotfix touched.
   // isolation: any edge reaching it came from that file and from nowhere else.
   'docs/features/0012F-session-store/about.md': `---
 id: 0012F
-type: feature-about
+type: feature
 slug: session-store
 status: live
 created: 2026-06-15
@@ -214,6 +214,7 @@ Frontmatter, but no \`type:\` key. Still the user's.
 
   // ---- the wiki: the second node kind --------------------------------------
   '.codeadd/wiki/backend.md': `---
+id: wiki/backend
 type: reference
 area: backend
 description: How the API worker is built — routing, persistence and tenancy.
@@ -262,19 +263,27 @@ export function removeTree(root) {
  *
  * Two work items and one reference page. Everything else in the fixture is an
  * attachment or is skipped: `plan.md`, `discovery.md`, both changelogs and
- * `related.md` all carry a recognised `type:` that does not end in `-about`,
- * and the user's two files carry no `type:` at all.
+ * carry a `type:` the registry declares, `related.md` carries a retired one
+ * that it reports by name, and the user's two files carry no `type:` at all.
  */
 export const EXPECTED_NODES = {
-  '0009F': 'work item',
-  '0012F': 'work item',
-  '0042F': 'work item',
-  '0051H': 'work item',
-  'wiki/backend': 'reference page',
+  '0009F': 'work-item',
+  '0012F': 'work-item',
+  '0042F': 'work-item',
+  '0051H': 'work-item',
+  'wiki/backend': 'page',
 };
 
 /** Files the membership rule must skip, and report once. */
 export const EXPECTED_SKIPPED = [
+  // Two RETIRED types, kept in this fixture on purpose. `related.md` carries
+  // `hotfix-related`, a schema retired on 2026-09-14. `discovery.md` carries
+  // `feature-discovery`, which no command writes and no schema declares — its
+  // template carries no frontmatter at all. Both are the case the registry
+  // exists to REPORT by name rather than demote, and a fixture holding only
+  // current-format documents tests that path not at all.
+  'docs/features/0042F-itemised-purchase/discovery.md',
+  'docs/features/0051H-token-refresh/related.md',
   '.codeadd/wiki/index.md',
   'docs/chat-gpt/transcript.md',
   'docs/critical-findings.md',

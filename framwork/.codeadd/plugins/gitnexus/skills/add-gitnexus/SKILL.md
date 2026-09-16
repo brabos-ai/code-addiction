@@ -44,15 +44,21 @@ GitNexus indexes repositories **by name** and serves them all from one MCP insta
 | Run GitNexus CLI (index / status / wiki) | `gitnexus-cli` |
 | Graph schema / available tools | `gitnexus-guide` |
 
-## Command-intent resolution
+## Resolving an intent
 
-When reached from a codeadd command, resolve as:
+**State what you must find out, then match it against the left column above.** The row you land on names the native skill to load.
 
-- `add.new` (discovery) → `gitnexus-exploring` — map modules, key call paths, entry points before questioning.
-- `add.plan` (planning) → `gitnexus-impact-analysis` — establish blast-radius (callers, dependents, dead-code) of the change surface before dispatching subagents.
-- `add.diagnose` (triage) → `gitnexus-impact-analysis` for blast-radius, or `gitnexus-debugging` to trace an error to its source.
-- `add.hotfix` (pre-edit) → `gitnexus-impact-analysis` — find impacted call sites of the symbol about to change.
-- `add.done` (post-change) → `gitnexus-cli` — re-index (`gitnexus analyze`) after significant changes so the graph stays current.
+```
+⛔ A COMMAND NAME IS NOT AN INTENT:
+  ⛔ DO NOT: Pick a native skill because of which codeadd command you were reached from
+  ⛔ DO NOT: Stop at one native skill when the intent has two halves — blast-radius AND a
+              trace to the source are two rows, and a triage run often needs both
+  ✅ DO: Say the intent in one sentence, match it, and load what that row names
+```
+
+**This used to be a table keyed by command name**, pinning `add.plan` to blast-radius and `add.new` to exploration. It read as a shortcut and behaved as a ceiling: a planning run that needed to trace an error had the mapping pointing the other way, and the run followed the mapping. The intent a command arrives with varies per invocation; the command's name does not.
+
+**A codeadd command still narrows what is USEFUL, and that is worth saying without pinning anything.** A discovery step usually arrives with "map this area"; a pre-edit step usually arrives with "what calls this symbol". Usually is not always, and the intent in hand wins over the tendency every time.
 
 ## Operating note
 

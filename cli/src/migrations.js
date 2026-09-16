@@ -190,7 +190,7 @@ function harvestRelations(ctx) {
   const notes = [];
   const unresolved = [];
   const failed = [];
-  const harvest = { docRefs: 0, related: 0, followUps: 0, impactedFiles: 0, superseded: 0 };
+  const harvest = { docRefs: 0, related: 0, followUps: 0, superseded: 0 };
   let skipped = 0;
 
   if (!fs.existsSync(docsRoot)) return { changes, notes, unresolved, harvest, skipped, failed };
@@ -230,7 +230,13 @@ function harvestRelations(ctx) {
     if (frontmatter.id && !byId.has(String(frontmatter.id))) byId.set(String(frontmatter.id), record);
   }
 
-  const isWorkItem = (r) => String(r.frontmatter.type).endsWith('-about');
+  // ⛔ NOT `endsWith('-about')`. That was a SECOND suffix test, invisible to the
+  //    artefact graph because this file is not an artefact, and it survived the
+  //    rename: against renamed documents it matched nothing and the harvest
+  //    became a permanent silent no-op — in the lost-ledger case this file
+  //    handles explicitly, on a project that had already migrated.
+  const WORK_ITEM_TYPES = new Set(['feature', 'hotfix', ...Object.keys(RETIRED_TYPE_NAMES)]);
+  const isWorkItem = (r) => WORK_ITEM_TYPES.has(String(r.frontmatter.type));
   const workItems = eligible.filter(isWorkItem);
   const nodeIds = new Set(workItems.map((r) => String(r.frontmatter.id)));
 
@@ -306,10 +312,7 @@ function harvestRelations(ctx) {
           }
         }
       }
-      // The file list is read by the INDEX, straight from this attachment, so
-      // nothing is written for it here. It is counted because the migration
-      // report is what tells a user the list was found.
-      if (sectionBody(sibling.content, 'Impacted Files')) harvest.impactedFiles += 1;
+
     }
 
     const lines = [...candidates.entries()].map(([target, pick]) =>
@@ -350,6 +353,115 @@ function harvestRelations(ctx) {
  * `run` must be idempotent: it is recorded once, but a project whose ledger was
  * lost will run it again, and that must be harmless.
  */
+/**
+ * The type names a document carried before the type registry existed.
+ *
+ * ⛔ THIS IS THE ONLY PLACE A RETIRED NAME SURVIVES, and it survives as a
+ *    MIGRATION INPUT, never as something a reader consults. `mcp/types.mjs`
+ *    declares what a type is; this map declares what a type WAS, for exactly
+ *    one pass over a project written before the rename.
+ */
+const RETIRED_TYPE_NAMES = {
+  'feature-about': 'feature',
+  'hotfix-about': 'hotfix',
+};
+
+/**
+ * The id a wiki page answered by before identity was declared.
+ *
+ * `mcp/corpora.mjs` derived this from the path and no longer does — identity is
+ * a declared `id:`. The transform lives here because this migration is its only
+ * remaining user; `cli/tests/mcp-document-model.test.js` L3.2 pins the two
+ * together by asserting no query result changes after 0003 runs.
+ */
+function wikiIdFromPath(relPath) {
+  const posix = relPath.replace(/\\/g, '/');
+  const marker = '.codeadd/wiki/';
+  const after = posix.slice(posix.indexOf(marker) + marker.length);
+  return `wiki/${after.replace(/\.md$/, '')}`;
+}
+
+/**
+ * Rewrite the retired type names, and write each wiki page the id it already
+ * answered by.
+ *
+ * ⛔ TARGETED LINE SUBSTITUTION, NEVER A YAML ROUND-TRIP. Parsing the
+ *    frontmatter and re-serialising it would leave every body byte-identical
+ *    and still reorder keys, drop comments and renormalise quotes on every
+ *    other field — passing the body check while rewriting the user's file. Only
+ *    the `type:` line is replaced, and `id:` is inserted as one new line.
+ *
+ * Additive and non-destructive like 0002: it never deletes a file, never
+ * commits, and reports every document it could not read instead of skipping it.
+ */
+function retireAboutSuffix(ctx) {
+  const changes = [];
+  const notes = [];
+  const failed = [];
+
+  const roots = [path.join(ctx.cwd, 'docs'), path.join(ctx.cwd, '.codeadd', 'wiki')];
+  const files = [];
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.md')) files.push(full);
+    }
+  };
+  for (const r of roots) walk(r);
+
+  let renamed = 0;
+  let identified = 0;
+
+  for (const full of files.sort()) {
+    const rel = path.relative(ctx.cwd, full).replace(/\\/g, '/');
+    let content;
+    try {
+      content = fs.readFileSync(full, 'utf8');
+    } catch (err) {
+      failed.push({ path: rel, error: err.message });
+      continue;
+    }
+
+    const frontmatter = readFrontmatter(content);
+    if (!frontmatter) {
+      // A `---` opener that does not parse is REPORTED, never passed over. A
+      // document codeadd cannot read is the one most likely to need the rename.
+      if (/^---\s*$/.test((content.split('\n')[0] ?? '').trim())) {
+        failed.push({ path: rel, error: 'frontmatter present but unreadable' });
+      }
+      continue;
+    }
+
+    let next = content;
+    const type = frontmatter.type ? String(frontmatter.type) : null;
+
+    if (type && RETIRED_TYPE_NAMES[type]) {
+      next = next.replace(new RegExp(`^type: ${type}[ \t]*$`, 'm'), `type: ${RETIRED_TYPE_NAMES[type]}`);
+      renamed += 1;
+      changes.push(`${rel}: type ${type} -> ${RETIRED_TYPE_NAMES[type]}`);
+    }
+
+    if (rel.includes('.codeadd/wiki/') && type && !frontmatter.id) {
+      const id = wikiIdFromPath(rel);
+      // Inserted directly after the opening `---`, so every existing key keeps
+      // its line, its order and its spelling.
+      next = next.replace(/^---\r?\n/, (m) => `${m}id: ${id}\n`);
+      identified += 1;
+      changes.push(`${rel}: id ${id} written from its path`);
+    }
+
+    if (next !== content) fs.writeFileSync(full, next, 'utf8');
+  }
+
+  if (renamed) notes.push(`renamed ${renamed} retired type value(s)`);
+  if (identified) notes.push(`wrote ${identified} wiki page id(s) from their path`);
+  for (const f of failed) notes.push(`could not read ${f.path}: ${f.error}`);
+
+  return { changes, notes, failed };
+}
+
 export const MIGRATIONS = [
   {
     id: '0001-prune-legacy-orphans',
@@ -360,6 +472,11 @@ export const MIGRATIONS = [
     id: '0002-harvest-relations',
     description: 'Harvest the relationships docs/ already carries into ## Relations — additive only, no commit',
     run: harvestRelations,
+  },
+  {
+    id: '0003-retire-about-suffix',
+    description: 'Rewrite the retired -about type names and write each wiki page the id it already answered by',
+    run: retireAboutSuffix,
   },
 ];
 

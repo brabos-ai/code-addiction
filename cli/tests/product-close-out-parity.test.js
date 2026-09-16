@@ -50,7 +50,11 @@ const P = {
 };
 
 /** The four commands that restated the discipline before F17. */
-const CALLERS = ['newCmd', 'brainstorm', 'plan', 'planToReady'];
+// add.brainstorm was the fourth caller until the intent file replaced its
+// handoff contract: it no longer dispatches plan-reviewer-agent or
+// readback-agent, so it no longer loads or declares add-review-discipline.
+// Three callers remain. See the pipeline-ceremony-rebalance delivery.
+const CALLERS = ['newCmd', 'plan', 'planToReady'];
 
 /** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
 const GATE_SWEEP = ['convergeGates', 'convergeBats', 'planToReady', 'commit', 'ecosystem'];
@@ -742,7 +746,7 @@ describe('L13 — the internal sibling note (F16)', () => {
   });
 });
 
-describe('L14 — the four callers cite the skill (F17)', () => {
+describe('L14 — the three callers cite the skill (F17)', () => {
   it('L14.1: every caller loads add-review-discipline', () => {
     for (const key of CALLERS) {
       expect(read(P[key]), `${key} must cite the skill`).toContain('add-review-discipline');
@@ -767,9 +771,16 @@ describe('L14 — the four callers cite the skill (F17)', () => {
 
   // guards — what each site must NOT lose.
   it('L14.4 (guard): every dispatch keeps its own inputs', () => {
-    expect(read(P.newCmd)).toContain('feature-about');
-    expect(read(P.brainstorm)).toContain('brainstorm');
-    expect(read(P.plan)).toContain('feature-plan');
+    // The `kind:` PREFIX is what makes these guards bite. A blind rename once
+    // reduced the first one to the bare word `feature`, which appears
+    // throughout add.new.md regardless of the dispatch site — a guard that
+    // passes whatever the command does.
+    expect(read(P.newCmd)).toContain('kind: feature');
+    expect(read(P.plan)).toContain('kind: feature-plan');
+    // add.brainstorm dispatched `kind: brainstorm` until that kind was removed
+    // from add-plan-review along with its only dispatcher. Asserting its
+    // absence is what keeps the removal from silently reverting.
+    expect(read(P.brainstorm)).not.toContain('kind: brainstorm');
   });
 
   it('L14.5 (guard): add.plan-to-ready keeps its Decision Log comparator', () => {

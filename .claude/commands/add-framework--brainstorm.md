@@ -1,6 +1,7 @@
 # ADD Brainstorm - Collaborative Ideation & Design Explorer
 
 <!-- uses:
+- skill: add-artefact-graph
 - agent: framework-discovery-agent
 - agent: plan-review-agent
 - skill: add-final-report
@@ -10,7 +11,7 @@
 - mention: add-plan-authoring
 -->
 
-> **LANG:** Respond in user's native language (detect from input). Tech terms always in English.
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Transforms rough ideas into fully-formed, final designs ready for `/add-framework--plan`. Pairs discovery-first ecosystem context with conversational exploration. Outputs documented designs with zero open questions.
 
@@ -105,22 +106,30 @@ Listen for:
 
 **Ask the index BEFORE dispatching the agent. This command is the one most likely to re-invent something that already shipped and was dropped.**
 
-For each artefact name the topic plausibly touches:
+**The question, for each artefact name the topic plausibly touches:** was this built before, and was
+it dropped?
 
-```bash
-node scripts/graph.js history <artefact-name>
-```
+**LOAD `add-artefact-graph` and resolve that question to a verb there.** ⛔ DO NOT name a verb from
+memory — the skill owns which one answers which question, and a verb named here is a verb an agent
+runs once and stops at.
 
-The index answers a question the graph cannot: **was this built before, and was it dropped?** The graph describes what exists **today**; it holds no time axis and is rebuilt from scratch on every build. A `gone` or `superseded` entry is the most valuable answer this step can return — it means the idea was tried, and it points at what replaced it.
+The index answers what the graph cannot. The graph describes what exists **today**; it holds no time
+axis and is rebuilt from scratch on every build. A `gone` or `superseded` entry is the most valuable
+answer this step can return — it means the idea was tried, and it points at what replaced it.
 
-If the verb reports the index unavailable → say so and continue. An absent index means no close-out has run yet, which is information, not a failure.
+If the index reports itself unavailable → say so and continue. An absent index means no close-out has
+run yet, which is information, not a failure.
+
+**"What does this relate to TODAY" is a second question, and the same skill owns it too.** A topic
+touching an existing artefact almost always raises it, and `### 4.5` is where this command answers it
+against the design. Load the skill before reaching for grep.
 
 Then dispatch `@framework-discovery-agent` with:
 - `topic`: captured topic from STEP 1.1
 - `scope`: `both`
 - `prior_deliveries`: the resolved entries from the lookup above — id, status, name and what each item was — or `none`
 
-**The agent parses nothing.** Its `Glob, Read` allowlist is untouched and it gets no new file: resolved results travel in the dispatch payload, exactly as selected context already does. A third parser of the index, in an agent's head, is what this avoids.
+**The agent does not parse the index.** Resolved entries travel in the dispatch payload, exactly as selected context already does — a third parser of the delivery index, in an agent's head, is what `prior_deliveries` avoids. It says nothing about the agent's other capabilities: it queries the artefact graph itself, over MCP or the CLI, and that is how it answers a relationship question.
 
 DO NOT show the agent's raw report verbatim to the user. Use the report internally as grounding context for the rest of the session.
 
@@ -229,13 +238,22 @@ Continue to STEP 3.
 
 | Path | STEPS 3 and 4 | STEPS 5 and 6 | STEP 7 |
 |------|---------------|---------------|--------|
-| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs. Enter at **7.3** — there is no document, so 7.1, 7.2 and 7.4 have nothing to show. |
-| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs. Enter at **7.3** — there is no document, so 7.1, 7.2 and 7.4 have nothing to show. |
+| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | 7.1 reports the recommendation, 7.2 omits the document path, 7.3 does NOT route to the planner, 7.4 does not apply. |
+| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs in full. 7.1 reports the design, 7.2 omits the document path, 7.4 does not apply. |
 | **architectural** | Everything written below and in STEP 4, unchanged — including the decomposition offer. | Run as written. | Runs in full, as written. |
 
-**STEP 7's `[HARD STOP]` handoff runs on all three paths.** A spike that found a real problem still routes to
-`/add-framework--plan`; a bounded design routes there too. What
-changes is whether a document precedes the suggestion — never whether the user approves.
+⛔ **`7.1` runs on all three paths.** `add-final-report` reports the WORK, not a file — a spike's
+recommendation and a bounded design in chat are the work, and they are exactly what its blocks 2 and
+3 carry. A path that skipped the report would leave its only deliverable as loose conversation the
+user has to scroll back through.
+
+**What varies is one metadata line, not the report.** `7.2` prints a document path only where 5.3
+wrote one; every other line it carries is about the work and prints on every path.
+
+**STEP 7's `[HARD STOP]` runs on all three paths, but only two of them route.** A bounded design routes
+to `/add-framework--plan` and writes an intent file; an architectural one writes both files and routes.
+**A spike reports its recommendation and stops** — routing it onward would contradict `2.2.3`, which
+already calls its follow-up a new request. What never changes is that the user approves.
 
 The `⛔ HARD GATE — ROLE BOUNDARY` applies unchanged on all three paths: no path may invoke another command,
 and **only the architectural path writes a file**. The one-question-at-a-time cadence applies on all three.
@@ -270,7 +288,15 @@ Before proceeding to exploration, confirm:
 
 ### 4.1 Conversational Exploration (Adapted from superpowers:brainstorming)
 
-Guide user through these sections (DO NOT skip any):
+**Which sections run is decided by STEP 3's routing table, not here.** That table is the newer,
+deliberate design and it governs STEPS 3 through 7; the list below is the `architectural` path's
+full set.
+
+| Path | Sections below |
+|---|---|
+| **architectural** | All eight. ⛔ DO NOT skip any |
+| **bounded** | `Scope`, `Ecosystem Impact` and `Key Decisions` — the three the short design in chat has to state. The rest are asked only where the conversation raises them |
+| **spike** | None as a checklist. A spike states a question and a probe, and reports a recommendation |
 
 ```
 [ ] Context & Motivation — why this idea matters
@@ -286,31 +312,93 @@ Guide user through these sections (DO NOT skip any):
 ### 4.2 Question Loop
 
 For each section:
-1. Ask clarifying question related to section
+1. Ask ONE clarifying question related to the section, **and say which answer you would give**
 2. User responds
-3. Check: Is this section 100% clear and validated? 
+3. Check: Is this section 100% clear and validated?
    - If NO → ask follow-up question (return to step 2 of this loop)
    - If YES → move to next section
 4. When all sections complete → confirm with user: "Does this summary match your vision?"
+
+**Every question carries a recommendation (MANDATORY).** Name the option you would take and why, in
+concrete terms drawn from this repository — what already exists, what it would break, what a
+neighbouring artefact already does. Never a generic "it depends".
+
+```
+IF ASKING A QUESTION WITH OPTIONS:
+  ⛔ DO NOT: List them and stop, leaving the choice unweighted
+  ⛔ DO NOT: Recommend by restating the user’s own preference back to them
+  ✅ DO: Name the one you would take, with the reason, then let them override
+```
+
+**A command that exists to help someone decide, and refuses to say what it would do, has handed the
+work back.** The user still chooses — they now choose against a position.
+
+**Ask through the provider’s structured-question tool**, marking the recommended option. The internal
+layer ships to one provider, so there is no capability flag to check and no markdown fallback to keep.
+
+**Close what you can close.** A question carried to the handoff lands in the intent file’s `## Open`
+and becomes a question `/add-framework--plan` has to ask instead — which is the redundancy this whole
+flow removes.
 
 ### 4.3 Discovery Integration
 
 Weave the discovery agent report (from STEP 1.2) into the conversation naturally:
 - When discussing scope: reference ranked artefacts that already exist
-- When discussing impact: show which existing commands/skills relate
+- When discussing impact: show which existing commands/skills relate. **The report's relationships come from the graph**, so they are the same answer `### 4.5` asks for — carry them there rather than re-querying, and treat anything the report marked NOT VERIFIED as still unanswered
 - When discussing decisions: surface relevant prior decisions from ranked plans
 - Prevent duplicative thinking by grounding ideas in the discovered landscape
 
 ### 4.4 Validation Checkpoint
 
-Before STEP 5:
-- [ ] Every section has a clear answer (no "maybe", no "TBD")
-- [ ] No contradictions between sections
-- [ ] User has approved the summary
-- [ ] Scope is explicit (includes + excludes both stated)
-- [ ] Ecosystem impact is identified
+**A checkbox binds only where its section ran.** STEP 3's table decides that, so a path that never
+opened a section is not blocked by the box that checks it — the box is unmet, not failed.
 
-If ANY checkbox fails → return to relevant section and continue exploring.
+Before STEP 5:
+- [ ] Every section that ran has a clear answer (no "maybe", no "TBD")
+- [ ] No contradictions between the sections that ran
+- [ ] User has approved the summary — **all three paths**, and no path skips it
+- [ ] Scope is explicit (includes + excludes both stated) — **architectural and bounded**
+- [ ] Ecosystem impact is identified — **architectural and bounded**; `### 4.5` then asks who calls
+      each artefact in it
+
+If a checkbox that binds this path fails → return to the relevant section and continue exploring.
+
+⛔ **The approval box binds every path.** A spike reports a recommendation and a bounded design is
+presented in chat; both are approved by the user before STEP 7, and neither is a document the user
+can read later instead.
+
+### 4.5 Ask Who Calls Every Artefact This Design Changes [GATE]
+
+**The question this step answers, in full:** for every artefact the design changes — who calls it
+today, and is that answer complete?
+
+**Both halves are the question.** "Who calls it" is one query. "Is that answer complete" is a second
+one for any artefact a fragment injects into, and a check against what the graph cannot see for every
+artefact. A design that answered only the first half is the failure this step exists to prevent: a
+coordinator ran one verb, got a list, and shipped a table missing a direct caller.
+
+**LOAD `add-artefact-graph`.** It resolves the question to its verb, says when one query is not
+enough, and carries the standing list of what no query reaches. ⛔ DO NOT pick a verb from memory.
+
+```
+IF AN ARTEFACT IN THE DESIGN HAS NO ANSWER TO BOTH HALVES:
+  ⛔ DO NOT USE: Write on docs/brainstorming/
+  ⛔ DO NOT: Present the design in chat as ready for approval
+  ⛔ DO NOT: Fill the caller column from filenames, grep or recollection
+  ✅ DO: Ask the graph, and fill it from the answer
+
+IF YOU HAVE NO ROUTE TO THE GRAPH:
+  ⛔ DO NOT: Leave the column blank, which reads as "nothing calls it"
+  ✅ DO: Write NOT VERIFIED in it, and say the route was missing
+```
+
+**A blank and a NOT VERIFIED are different claims.** Blank says nothing depends on this artefact,
+which is a finding. NOT VERIFIED says nobody asked. A reader who cannot tell them apart grades the
+risk of the change on an answer that was never given.
+
+**On the `bounded` path this binds the short design in chat**, which names which artefacts change and
+is approved by the user like any document. On `spike` there is no design to gate — a spike reports a
+recommendation, and STEP 3's table already says it writes nothing.
 
 ---
 
@@ -398,9 +486,13 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 
 ## Ecosystem Impact
 
-| Component | Impact | Action |
-|-----------|--------|--------|
-| [command/skill] | [how it's affected] | [required change or "none"] |
+| Component | Called by | Impact | Action |
+|-----------|-----------|--------|--------|
+| [command/skill] | [every direct caller the graph returned, or NOT VERIFIED] | [how it's affected] | [required change or "none"] |
+
+[The `Called by` column is filled from a graph answer and from nothing else — `### 4.5`'s own query,
+or the discovery report's, which is the same graph. An empty cell claims nothing calls the artefact;
+write NOT VERIFIED where the question could not be asked.]
 
 ## Trade-offs & Risks
 
@@ -498,11 +590,19 @@ A design proposes rather than executes, so block 2 is titled `What will be done`
 future tense. Fill `How it works` with the mechanism the design settles on, for a reader who was not
 in the conversation.
 
+```
+IF THIS RUN TOOK THE spike OR bounded PATH:
+  ⛔ DO NOT: Skip this step because no file was written
+  ✅ DO: Emit the same seven blocks over the recommendation or the chat design — that is the work
+```
+
 ### 7.2 Metadata, After the Report
 
-- The design document path: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
+- The design document path: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` — **omitted on `spike`
+  and `bounded`**, which write no file. Omit the line; never print a path that resolves to nothing.
 - The review verdict and the fixes applied, one line each, if any
-- The 3-5 key validated decisions from the design
+- The 3-5 key validated decisions — from the design document, or from the conversation that settled
+  them where no document exists
 
 ### 7.3 Next Step Guidance [HARD STOP]
 
@@ -511,14 +611,54 @@ One command formalizes both layers, so there is no layer routing left to do here
 in — the planning command reads it as the starting point for its own F-block tags. **An ambiguous
 layer is a note in the document, not a question to the user.**
 
-Print this, then STOP:
+#### Write the intent file first — `bounded` and `architectural`
+
+Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` before printing the handoff. Its shape,
+its naming and the `## Open` convention are owned by `add-plan-authoring` — read **The Intent File**
+there rather than restating it here.
+
+It carries the path classified at `2.2.2`, every decision this conversation closed, and whatever it
+could not. **On `architectural` it reuses the design document’s timestamp** so the pair sorts
+adjacent; on `bounded` it is the only artefact and takes its own.
+
+```
+IF ABOUT TO WRITE `## Open`:
+  ⛔ DO NOT: Park a question there that one more turn of conversation would settle
+  ⛔ DO NOT: Leave the section empty as a way of saying "nothing open"
+  ✅ DO: Write the literal `None` when everything closed — an empty section reads as absent,
+         and absent makes the planner run its full questionnaire
+```
+
+⛔ **Nothing is written on `spike`.** A spike’s output is a recommendation, and keeping it is a new
+request with its own classification.
+
+#### Then route
+
+**Name both files in the handoff**, verbatim, whichever this path wrote. The planning command reads
+`docs/brainstorming/` and needs to know which file — a handoff naming only the idea leaves it matching
+a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
+whole set sharing one timestamp.
+
+On `architectural`, print this and STOP:
 
 ```
 Idea is ready to formalize. Run: /add-framework--plan [idea]
+Design: docs/brainstorming/<the file written at 5.3>
+Intent: docs/brainstorming/<the intent file written above>
 (brainstorm stops here — it does not run the next command for you.)
 ```
 
+On `bounded`, there is no design document, so that line is omitted and the `Intent:` line stands alone.
+
+⛔ **On `spike`, do NOT route to the planner at all.** A spike’s terminal state is its recommendation.
+Sending it to a full planning pass contradicts this command’s own ratchet — `2.2.3` already says a
+spike whose answer is "yes, and here is how" is a NEW request, which gets its own classification and
+its own run. Report the recommendation and stop.
+
 ### 7.4 Offer Refinement (If Umbrella)
+
+Umbrella specs exist only on the `architectural` path, so this sub-step does not apply on the other
+two. That is a condition it already carried, not a path carve-out.
 
 If umbrella spec: "You can now refine individual subtopics by running `/add-framework--brainstorm vamos refinar [topic] -> ref: [the umbrella's own filename]`"
 
@@ -540,9 +680,22 @@ Dispatch `@framework-discovery-agent` with:
 
 Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
-### 8.3 Start STEP 2 (Understand the Idea)
+### 8.3 Start STEP 2 (Understand the Idea) — Clarifying Questions Only
 
-Ask clarifying questions specific to the subtopic, grounded in the umbrella's context.
+Ask clarifying questions specific to the subtopic, grounded in the umbrella's context. This is
+`2.1` only.
+
+```
+IF IN CONTINUE MODE:
+  ⛔ DO NOT: Re-run 2.2's effort-path classification for a subtopic
+  ⛔ DO NOT: Consult STEP 3's routing table to decide whether this subtopic writes a document
+  ✅ DO: Treat every subtopic as `architectural`, and run 8.4 as written
+```
+
+**A subtopic inherits the umbrella's path, and the path is always `architectural`.** Decomposition
+exists on no other path — STEP 3's table skips STEP 3 entirely for `spike` and `bounded`, and `7.4`
+says umbrella specs are architectural-only. Re-classifying here could return `bounded`, and 8.4 would
+then be writing a document that path forbids.
 
 ### 8.4 Follow STEP 4-7 for Subtopic
 

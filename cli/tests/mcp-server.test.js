@@ -227,8 +227,14 @@ describe('F8 — every action answers over the wire', () => {
     expect(full.tldr).toContain('every session past one hour dropped');
     expect(full.observations[0]).toMatchObject({ category: 'cause', tags: ['auth'] });
     expect(full.relations.find((r) => r.type === 'caused_by').to).toBe('0042F');
-    expect(full.files).toEqual(['src/auth/refresh.ts', 'src/auth/session.ts']);
-    expect(full.attachments.map((a) => a.type).sort()).toEqual(['changelog', 'hotfix-related']);
+    // `files` is empty on a docs node since plan 2026-09-14T145149: the only
+    // thing that ever filled it was a `hotfix-related` attachment, and that
+    // reader is deleted. The field stays on the shape because the artefacts
+    // corpus fills it from the node's own path — a work item has no file set of
+    // its own, the DELIVERY does, and `touched_by` asks the index for that.
+    expect(full.files).toEqual([]);
+    // `hotfix-related` is a retired type: reported by name, never attached.
+    expect(full.attachments.map((a) => a.type).sort()).toEqual(['changelog']);
   });
 
   it('impact, dependencies, neighbors and path all answer over the wire', async () => {
@@ -244,11 +250,15 @@ describe('F8 — every action answers over the wire', () => {
     expect(payload(frames[3]).path).toEqual(['0051H', '0042F', '0009F']);
   });
 
-  it('touched_by joins a file to its work item and its reference page', async () => {
+  it('touched_by answers the page half over the wire and degrades on the other', async () => {
+    // The work-item half moved to `delivered.sh` and this fixture is a bare tree
+    // with no script and no history, so it reports why rather than throwing —
+    // and still hands back the page half, which never needed either.
     const { frames } = await talk([call(1, 'touched_by', { files: ['src/auth/refresh.ts'] })]);
     const result = payload(frames[0]);
-    expect(result.workItems.map((w) => w.id)).toEqual(['0051H']);
     expect(result.pages.map((p) => p.id)).toEqual(['wiki/backend']);
+    expect(result.workItems).toEqual([]);
+    expect(result.unavailable.reason).toBe('script-missing');
   });
 
   it('orphans, stats and reindex answer over the wire', async () => {
@@ -267,6 +277,15 @@ describe('F8 — every action answers over the wire', () => {
       corpus: 'artefacts',
       root: REPO,
     });
+    // Ledger: 22 -> 23 (2026-09-13T153219 test-terminal-states-and-qa-feature-
+    // boundary). fragments/qa-pipeline/add.review.md is a new node and declares
+    // `skill: add-doc-schemas`, so it is a new direct dependant. Same fact as
+    // the node totals that moved in build-artefact-graph.test.js.
+    // 23 -> 21 (2026-09-14T215223 remove-owner-product-onboarding): add.init and
+    // add-product-discovery both declared `skill: add-doc-schemas` and both were
+    // deleted with the owner/product onboarding.
+    // 21 -> 22 (2026-09-15T224612 pipeline-ceremony-rebalance): add-feature-specification
+    // became the single writer of about.md and now loads the schema itself.
     expect(payload(frames[0]).dependents.length).toBe(22);
   });
 
@@ -290,7 +309,7 @@ describe('F8 — every action answers over the wire', () => {
       fs.mkdirSync(path.dirname(added), { recursive: true });
       fs.writeFileSync(
         added,
-        '---\nid: 0091F\ntype: feature-about\nrelated: []\n---\n\n## TL;DR\nWritten after the server started.\n\n## Relations\n- part_of [[0042F]]\n',
+        '---\nid: 0091F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nWritten after the server started.\n\n## Relations\n- part_of [[0042F]]\n',
         'utf8',
       );
 

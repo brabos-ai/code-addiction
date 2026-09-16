@@ -14,6 +14,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - mention: /add-framework--done
 - mention: /add-framework--build
 - mention: /add-framework--brainstorm
+- mention: /add-framework--plan
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -33,7 +34,7 @@ shaped, reviewed and delivered is here.
 
 ## File Naming
 
-Two documents are named here, and they share one timestamp rule:
+Three documents are named here — the plan, the changelog and the intent file. The first two share one timestamp rule:
 
 | Document | Path |
 |---|---|
@@ -88,11 +89,63 @@ ordinal on every member, `-000-umbrella` then `-001-` onward. `/add-framework--b
 directory and its slug; only the shape is shared. It is recorded here because a reader comparing the
 two set conventions would otherwise find the rule for one and not the other, which is how they drift.
 
+### The Intent File
+
+`/add-framework--brainstorm` writes `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its
+handoff, on the `bounded` and `architectural` paths. **Never on `spike`.**
+
+| Path | What exists afterwards |
+|---|---|
+| `architectural` | The design document AND the intent file, sharing one timestamp so the pair sorts adjacent |
+| `bounded` | The intent file alone, with its own timestamp |
+| `spike` | Nothing |
+
+**Shape — capped at one screen. If it reads like a document, it is too long.**
+
+```markdown
+---
+path: bounded            # spike | bounded | architectural
+topic: <slug>
+doc: <design document path, or none>
+---
+
+## Decided
+- <decision> — <one-line rationale>
+
+## Open
+None
+```
+
+⛔ **`## Open` reads the literal `None` when everything closed, and that is the normal case.** A
+section present but empty is read as ABSENT, and absent means not closed — `/add-framework--plan`
+then runs its full questionnaire. Falling the other way would build a plan from decisions nobody made.
+
+⛔ **There is no validation gate for this file.** `add-doc-schemas` is a product-layer skill and does
+not reach `.claude/`. The reader’s fallback-to-questionnaire rule is what covers a malformed one, so
+the shape above is a contract between two commands rather than something a gate enforces.
+
+**Why this exists at all, when the design document pointer already did:** that pointer exists on the
+`architectural` path only. `bounded` writes no design document, so on the one path a size branch
+serves there was nothing to read and nothing survived the session.
+
 ### Legacy forms resolve for reading, never for writing
 
 Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
 `NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `CLAUDE.md` and several
 documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
+
+---
+
+## The Short-Plan Shape
+
+**A `bounded` design produces a plan carrying the template’s mandatory sections only.** The five the
+template already marks *(optional)* — Current State, Accepted Trade-offs, Risks and Mitigations, the
+Combination matrix, and References — are omitted.
+
+⛔ **Nothing else shrinks.** Global Constraints still reads `None` rather than vanishing, every
+F-block still carries its layer tag and its validation, and the Produces/Consumes rule binds exactly
+as it does on a full plan. **A short plan is a plan with fewer sections, never a plan with weaker
+ones** — the sections that prove correctness are not the optional ones.
 
 ---
 
@@ -112,6 +165,7 @@ no lookup table between them.
 | `plan.md` | `docs/plans/<basename>.md` | always |
 | `ledger.md` | `docs/plans/<basename>--ledger.md` | always |
 | `design.md` | the `docs/brainstorming/` file the plan's **Context** document table names | the plan cites one |
+| `intent.md` | the `docs/brainstorming/` **intent file** the plan's **Context** document table names, resolved the same way | the plan cites one |
 | `review.md` | the highest-numbered `docs/plans/<basename>--review-v*.md` | a legacy companion is on disk |
 | `evidences/` | `docs/evidence/` files for this plan, original names kept | such files are on disk |
 
@@ -125,7 +179,12 @@ reconstructing a document on the way in produces something that reads as the rec
 is worse than an empty directory. The command that assembles it copies the bytes and proves each copy
 matches before staging.
 
-**The last three are conditional, and a directory holding none of them is the normal case.** No
+⛔ **On a `bounded` delivery the intent file is the ONLY record of what was decided and why**, because
+no design document exists. `docs/brainstorming/` is gitignored exactly as `docs/plans/` is, so without
+this member that delivery reaches `main` carrying a plan whose reasoning points at a file nobody else
+will ever have.
+
+**The last four are conditional, and a directory holding none of them is the normal case.** No
 command writes a `--review-v*` companion or anything under `docs/evidence/` any more, so both members
 exist to carry what is already on disk from before. `design.md` is absent whenever the plan carried
 its decisions inline, which most do.
