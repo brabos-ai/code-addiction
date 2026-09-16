@@ -5,7 +5,7 @@
       "commands": "commands/{name}.md",
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
-      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": true },
       "docs": [
         "https://docs.anthropic.com/en/docs/claude-code/hooks",
         "https://docs.anthropic.com/en/docs/claude-code/mcp",
@@ -18,7 +18,7 @@
       "commands": "skills/{name}/SKILL.md",
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.toml",
-      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": false },
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": false, "structuredQuestions": false },
       "docs": [
         "https://developers.openai.com/codex/config-advanced",
         "https://developers.openai.com/codex/mcp",
@@ -30,7 +30,7 @@
       "dir": "framwork/.agent",
       "commands": "skills/{name}/SKILL.md",
       "skills": "skills/{name}/SKILL.md",
-      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": false },
       "docs": [
         "https://antigravity.google/docs/rules-workflows",
         "https://antigravity.google/docs/mcp",
@@ -42,7 +42,7 @@
       "commands": "commands/{name}.md",
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
-      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": false },
       "docs": [
         "https://opencode.ai/docs/plugins/",
         "https://opencode.ai/docs/mcp-servers/",
@@ -55,7 +55,7 @@
       "commands": "commands/{name}.md",
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
-      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true },
+      "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": false },
       "docs": [
         "https://cursor.com/docs/hooks",
         "https://docs.cursor.com/context/model-context-protocol",
