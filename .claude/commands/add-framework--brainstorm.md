@@ -348,9 +348,33 @@ For each section:
    - If YES → move to next section
 4. When all sections complete → confirm with user: "Does this summary match your vision?"
 
-**Every question carries a recommendation (MANDATORY).** Name the option you would take and why, in
-concrete terms drawn from this repository — what already exists, what it would break, what a
-neighbouring artefact already does. Never a generic "it depends".
+**Every question carries a recommendation (MANDATORY).** Name the option you would take and why.
+Never a generic "it depends".
+
+**Two sources, and the question is drawn from the objective settled at 2.1.1** — a question that does
+not sharpen some part of it is a question this conversation does not need:
+
+| Source | What it supplies | Required form |
+|---|---|---|
+| **This repository** | What already exists, what it would break, what a neighbouring artefact already does | A path, an artefact name, or a line |
+| **Comparable products, frameworks and conventions** | What the user cannot derive from this tree — what others already settled on this subject | **The name of the thing.** "superpowers' brainstorming does X", "BMAD's intent file does Y", "conventional commits does Z" |
+
+```
+IF BRINGING IN OUTSIDE PRACTICE:
+  ⛔ DO NOT: Say "widely adopted", "industry standard" or "most teams" with nothing named
+  ⛔ DO NOT: Go and fetch it — this command needs no network, and a named recollection the user can
+             check is worth more than a link they will not open
+  ⛔ DO NOT: Let outside practice override a convention this repository settled for a recorded reason
+  ✅ DO: Name the product, framework or convention, and say what it does
+```
+
+**A name is what makes it checkable.** "Widely adopted" cannot be argued with, which is why it is
+worthless; "superpowers does X" can be looked at and contradicted. The name may turn out to be stale
+or wrong — that is the point, because the user can see it and say so.
+
+⛔ **Where the two sources conflict, this repository wins.** Its conventions were settled for reasons
+recorded in its own documents. Outside practice is an input to the decision, never an authority over
+it.
 
 ```
 IF ASKING A QUESTION WITH OPTIONS:
