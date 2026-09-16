@@ -270,6 +270,27 @@ IF TEMPTED TO PASTE THE CONTENT A FILE WILL RECEIVE:
 If a design doc exists in `docs/brainstorming/`, the plan **references it and does not restate it**.
 With no design doc the plan carries the decision inline — still the decision, never the file content.
 
+**`## Objective` is the one section that is COPIED rather than referenced.**
+
+```
+IF WRITING OR REVISING A PLAN:
+  ⛔ DO NOT: Re-derive the objective from the design — you will write a better sentence, and a better
+             sentence is a different objective
+  ⛔ DO NOT: Point at the design for it, the way every other section does — the reviewer, the build
+             and the close-out all read the plan, and `docs/brainstorming/` is gitignored
+  ⛔ DO NOT: Widen it to cover scope the design did not have
+  ✅ DO: Copy the design's `## Objective` byte for byte, then add what is true once the build is done
+```
+
+**It is copied because it is the one thing everything downstream is checked against.** Every other
+section can point at the design; this one is read by the reviewer's `Objective fit` dimension, and a
+pointer into a gitignored directory is not something a reviewer can read.
+
+⛔ **A plan with NO design document still states an objective**, drawn from the conversation and marked
+as such — `[from conversation, no design document]`. Otherwise the `bounded` path, which writes no
+design at all, is the one path whose work arrives with nothing to check it against. That is the
+opposite of what a short path needs.
+
 **Every F-block MUST be covered by at least one validation level.** An F-block with no proof is a gap
 the reviewer cannot see.
 

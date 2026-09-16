@@ -23,7 +23,7 @@ Transforms rough ideas into fully-formed, final designs ready for `/add-framewor
 
 ```
 STEP 1: Capture topic & discover context → detect mode, capture topic, dispatch agent
-STEP 2: Understand the idea            → clarifying questions + 2.2 classification — PATH ANNOUNCED, OWN TURN
+STEP 2: Understand the idea            → objective drafted (2.1.1), clarifying questions, 2.2 classification — PATH ANNOUNCED, OWN TURN
 STEP 3: Validate complexity            → ARCHITECTURAL PATH ONLY — simple or umbrella-worthy
 STEP 4: Explore & validate decisions   → conversational ideation (abbreviated on spike / bounded)
 STEP 5: Generate design document       → ARCHITECTURAL PATH ONLY — write draft design (no open questions)
@@ -124,10 +124,14 @@ run yet, which is information, not a failure.
 touching an existing artefact almost always raises it, and `### 4.5` is where this command answers it
 against the design. Load the skill before reaching for grep.
 
-Then dispatch `@framework-discovery-agent` with:
-- `topic`: captured topic from STEP 1.1
-- `scope`: `both`
-- `prior_deliveries`: the resolved entries from the lookup above — id, status, name and what each item was — or `none`
+**DISPATCH AGENT:** `@framework-discovery-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:** `topic` (captured at STEP 1.1), `scope: both`, and `prior_deliveries` — the resolved
+  entries from the lookup above, each with its id, status, name and what the item was.
+  **Omit `prior_deliveries` entirely when the lookup resolved nothing.** The agent declares the field
+  optional and reads its absence as "the caller resolved none"; it has no branch for a literal
+  `"none"`, so sending one takes the filled path with a string that means the opposite.
 
 **The agent does not parse the index.** Resolved entries travel in the dispatch payload, exactly as selected context already does — a third parser of the delivery index, in an agent's head, is what `prior_deliveries` avoids. It says nothing about the agent's other capabilities: it queries the artefact graph itself, over MCP or the CLI, and that is how it answers a relationship question.
 
@@ -145,13 +149,42 @@ IF the agent returned "no strong matches" → say: "This looks like novel territ
 
 ### 2.1 Clarifying Questions (One at a Time)
 
-Ask questions one per message to refine understanding:
+#### 2.1.1 Draft the objective FIRST, and have the user correct it
+
+**Write a draft objective from what the user has already said, and ask them to correct it.** One or
+two sentences, in their own words, answering one question: **what will be true when this is done that
+is not true today?**
+
+```
+IF STARTING STEP 2:
+  ⛔ DO NOT: Ask "what is your objective?" and wait — someone who could state it cold would have
+  ⛔ DO NOT: Hand back the request as the objective — "you want X" names the thing, not what it achieves
+  ⛔ DO NOT: Continue to 2.1.2 or 2.2 with the objective still unstated
+  ✅ DO: Propose the draft, then let them correct it
+```
+
+**Drafting it is the work, not a courtesy.** A user brings a problem, a symptom or a half-formed idea;
+turning that into a statement of what they are trying to achieve is the first thing this command is
+for. It is the same move `### 4.2` already makes for options — name the one you would take, then let
+them override.
+
+**Everything downstream reads this.** `### 4.2`'s questions are drawn from it, `### 5.2` writes it as
+the design's first section, `### 8.1` hands it to every subtopic, and the plan carries it to the
+build. An objective corrected here costs one line; one corrected after the plan is written costs the
+plan.
+
+#### 2.1.2 Then refine it
+
+Ask questions one per message. Each one sharpens the objective or the shape of the work:
 
 - Purpose: "What problem does this solve?"
 - Users: "Who benefits from this?"
 - Success criteria: "How do you know if it works?"
 - Constraints: "Are there limitations we must respect?"
 - Dependencies: "Does it build on anything in the landscape?"
+
+**Where an answer contradicts the drafted objective, the objective is what changes.** It was a draft;
+these five questions are how it stops being one.
 
 ### 2.2 Classification
 
@@ -319,9 +352,33 @@ For each section:
    - If YES → move to next section
 4. When all sections complete → confirm with user: "Does this summary match your vision?"
 
-**Every question carries a recommendation (MANDATORY).** Name the option you would take and why, in
-concrete terms drawn from this repository — what already exists, what it would break, what a
-neighbouring artefact already does. Never a generic "it depends".
+**Every question carries a recommendation (MANDATORY).** Name the option you would take and why.
+Never a generic "it depends".
+
+**Two sources, and the question is drawn from the objective settled at 2.1.1** — a question that does
+not sharpen some part of it is a question this conversation does not need:
+
+| Source | What it supplies | Required form |
+|---|---|---|
+| **This repository** | What already exists, what it would break, what a neighbouring artefact already does | A path, an artefact name, or a line |
+| **Comparable products, frameworks and conventions** | What the user cannot derive from this tree — what others already settled on this subject | **The name of the thing.** "superpowers' brainstorming does X", "BMAD's intent file does Y", "conventional commits does Z" |
+
+```
+IF BRINGING IN OUTSIDE PRACTICE:
+  ⛔ DO NOT: Say "widely adopted", "industry standard" or "most teams" with nothing named
+  ⛔ DO NOT: Go and fetch it — this command needs no network, and a named recollection the user can
+             check is worth more than a link they will not open
+  ⛔ DO NOT: Let outside practice override a convention this repository settled for a recorded reason
+  ✅ DO: Name the product, framework or convention, and say what it does
+```
+
+**A name is what makes it checkable.** "Widely adopted" cannot be argued with, which is why it is
+worthless; "superpowers does X" can be looked at and contradicted. The name may turn out to be stale
+or wrong — that is the point, because the user can see it and say so.
+
+⛔ **Where the two sources conflict, this repository wins.** Its conventions were settled for reasons
+recorded in its own documents. Outside practice is an input to the decision, never an authority over
+it.
 
 ```
 IF ASKING A QUESTION WITH OPTIONS:
@@ -447,6 +504,14 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
 
+## Objective
+
+[The objective settled at 2.1.1, in the user's own words. One or two sentences answering: what will be
+true when this is done that is not true today?]
+
+[A SET member does NOT write its own here — `8.1` copied the umbrella's verbatim and added the line
+saying how this subtopic serves it. Both go in, in that order.]
+
 ## Discovery
 
 [Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
@@ -480,9 +545,14 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 
 ## Key Decisions
 
-| Decision | Rationale | Validated |
-|----------|-----------|-----------|
-| [decision] | [why] | ✅ |
+| Decision | Serves | Rationale | Validated |
+|----------|--------|-----------|-----------|
+| [decision] | [which PART of the objective this advances] | [why this choice is sound] | ✅ |
+| The gate stops rather than warns | the "nothing reaches the build unchecked" half | A warning is what let the last one through | ✅ |
+
+[`Serves` names a PART, never the whole objective. A table where every row serves everything records
+nothing. A decision that cannot fill it is sound work on something this design is not for — say so in
+the row rather than deleting it.]
 
 ## Ecosystem Impact
 
@@ -516,12 +586,17 @@ Same structure +
 ```markdown
 ## Decomposition Map
 
-| Subtopic | Design Path | Purpose |
-|----------|-------------|---------|
-| [Topic 1] | the SET form's `-001-[topic1].md` member | [what it covers] |
-| [Topic 2] | the SET form's `-002-[topic2].md` member | [what it covers] |
+| Subtopic | Design Path | Serves the objective by | Purpose |
+|----------|-------------|-------------------------|---------|
+| [Topic 1] | the SET form's `-001-[topic1].md` member | [which part of the objective it advances] | [what it covers] |
+| [Topic 2] | the SET form's `-002-[topic2].md` member | [which part of the objective it advances] | [what it covers] |
 
 [Every row reuses the umbrella's timestamp verbatim — that is what keeps the set grouped in the directory.]
+
+[Worked example of the third column, from a set that shipped: `| Merge without squash | ...-002-... |
+preserves the per-F-block history a fast delivery produces | ... |`. It names a PART of the objective.
+⛔ **A row that cannot fill that cell is a subtopic this umbrella should not carry** — and it is far
+cheaper to find out here than at `8.1`, after the refinement.]
 
 ## Dependencies & Relationships
 
@@ -668,22 +743,72 @@ If umbrella spec: "You can now refine individual subtopics by running `/add-fram
 
 Triggered when STEP 1.0 detects a refinement invocation.
 
-### 8.1 Load Umbrella Spec
+### 8.1 Load Umbrella Spec, and Inherit Its Objective
 
 Read the referenced umbrella spec file at the path captured in STEP 1.0.
 
-### 8.2 Dispatch Framework Discovery Agent (SILENT)
+**Copy its `## Objective` into this subtopic VERBATIM**, then write one line beneath it: **how this
+subtopic serves that objective.**
 
-Dispatch `@framework-discovery-agent` with:
-- `topic`: subtopic extracted in STEP 8.1
-- `scope`: `both`
+```
+IF REFINING A SUBTOPIC FROM AN UMBRELLA:
+  ⛔ DO NOT: Let the subtopic author an objective of its own — a set with several objectives is
+             several sets
+  ⛔ DO NOT: Paraphrase, narrow or "clarify" the umbrella's objective on the way in
+  ⛔ DO NOT: Write the serves-line from the umbrella's own Decomposition Map cell — that cell is what
+             the map CLAIMED; this line is what the refined subtopic can actually support
+  ✅ DO: Copy the objective byte for byte, then state what this subtopic advances in it
+```
+
+**Worked example of the line**, from a set that shipped: *"Serves the objective by preserving the
+per-F-block history a fast delivery produces, so removing ceremony at the front does not cost the
+record at the back."* One clause, naming a PART of the objective — never the whole of it restated.
+
+⛔ **A subtopic that cannot write that line is not a member of this set. STOP and say so**, naming
+which of the two readings applies — the command does not pick between them:
+
+| Reading | What it means | What happens next |
+|---|---|---|
+| The subtopic belongs elsewhere | It is real work, on a different objective | It becomes its own brainstorm, not a member here. The umbrella's Decomposition Map drops the row |
+| The umbrella's objective is too narrow | The subtopic serves the actual goal; the objective was written smaller than the goal | The **umbrella** is corrected first, and every sibling re-checked against the wider objective |
+
+**Both readings have been true at once, which is why neither is assumed.** A set shipped here had a
+subtopic that did not serve the objective **and** an umbrella whose objective was written too narrowly
+to see it — the subtopic was refined, planned, reviewed and reworked before anyone read the two side
+by side. A gate that allowed only one diagnosis would have mis-read it.
+
+⛔ **This STOP presents a decision; it is not a confirmation.** Nothing downstream can recover a
+subtopic that serves nothing: the planner will carry it, the reviewer will pass it, and the build will
+deliver it.
+
+### 8.2 Ask the Delivery Index, Then Dispatch Framework Discovery (SILENT)
+
+**Ask the index BEFORE dispatching the agent, exactly as `### 1.2` requires.** ⛔ **Continue Mode
+reaches this step by jumping from `1.0`, so it never ran `1.2` and the lookup is owed here or
+nowhere.** `### 1.2` owns the question and the verb — load `add-artefact-graph` and resolve it there.
+
+**The reason `1.2` gives applies at least as strongly here.** That step calls this command *"the one
+most likely to re-invent something that already shipped and was dropped"*, and a subtopic refinement
+is where an idea first becomes a concrete artefact proposal. A `gone` or `superseded` entry is the
+answer that changes the design.
+
+**DISPATCH AGENT:** `@framework-discovery-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:** `topic` (the subtopic extracted at STEP 8.1), `scope: both`, and `prior_deliveries` on
+  the same terms `### 1.2` states — **omitted entirely when the lookup resolved nothing.**
 
 Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
 ### 8.3 Start STEP 2 (Understand the Idea) — Clarifying Questions Only
 
 Ask clarifying questions specific to the subtopic, grounded in the umbrella's context. This is
-`2.1` only.
+**`2.1.2` only.**
+
+⛔ **NOT `2.1.1`. `8.1` already settled the objective for this subtopic, by copying the umbrella's.**
+`2.1.1` drafts a fresh one and gates on it being stated; running it here would author the very thing
+`8.1` forbids a subtopic to author. The five questions at `2.1.2` still run — they sharpen how this
+subtopic serves the inherited objective, which is a different job from writing one.
 
 ```
 IF IN CONTINUE MODE:
