@@ -368,7 +368,7 @@ describe('L6 — the PR merge route (F9)', () => {
       'done.sh --commit-push',
       'gh pr checks',
       'headRefOid',
-      'gh pr merge --squash',
+      'gh pr merge --merge',
       'done.sh --cleanup',
     ];
     let at = -1;
