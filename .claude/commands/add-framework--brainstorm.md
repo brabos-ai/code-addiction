@@ -538,9 +538,14 @@ true when this is done that is not true today?]
 
 ## Key Decisions
 
-| Decision | Rationale | Validated |
-|----------|-----------|-----------|
-| [decision] | [why] | ✅ |
+| Decision | Serves | Rationale | Validated |
+|----------|--------|-----------|-----------|
+| [decision] | [which PART of the objective this advances] | [why this choice is sound] | ✅ |
+| The gate stops rather than warns | the "nothing reaches the build unchecked" half | A warning is what let the last one through | ✅ |
+
+[`Serves` names a PART, never the whole objective. A table where every row serves everything records
+nothing. A decision that cannot fill it is sound work on something this design is not for — say so in
+the row rather than deleting it.]
 
 ## Ecosystem Impact
 
