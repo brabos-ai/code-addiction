@@ -895,17 +895,16 @@ node_free_path() {
 
 # ─── L1 — `touched`, the path query ──────────────────────────────────────────
 #
-# The delivery's commit is DERIVED, never stored: the close-out commits the
-# index line on the branch and the merge squashes that branch, so the commit
-# that introduced an entry's line is the commit that delivered it. These
-# fixtures build that shape with real commits rather than asserting it.
+# The delivery's commit is DERIVED, never stored: the first-parent commit on
+# the default branch that introduced an entry's line is the commit that
+# delivered it. These fixtures build that shape with real commits rather than
+# asserting it.
 
-# seed_delivery <id> <file> <find> — the SQUASH shape, which is the one the
-# derivation depends on. The close-out commits the index line on the branch and
-# the merge squashes the whole branch, so on the default branch ONE commit
-# carries both the delivery's code and its index line. A fixture that commits
-# them separately builds the docs/-only case instead, which L1.4 covers on
-# purpose.
+# seed_delivery <id> <file> <find> — the SQUASH shape, `done.sh`'s local route:
+# ONE first-parent commit carries both the delivery's code and its index line.
+# The PR route's merge-commit shape is L1.7c. A fixture that commits them
+# separately on the trunk builds the docs/-only case instead, which L1.4 covers
+# on purpose.
 seed_delivery() {
   local id=$1 file=$2 find=$3
   src "$file" "const ${find} = 1;"

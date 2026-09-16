@@ -23,8 +23,9 @@
 # product|internal field, and writing the answer layer there would silently
 # overwrite it, so a caller could no longer tell which layer a delivery is in.
 # The delivery's commit is DERIVED, never stored: the close-out commits the
-# entry on the branch and the merge squashes that branch, so the commit that
-# introduced an entry's line IS the commit that delivered it. Each returned
+# entry on the branch, and the FIRST-PARENT commit that introduced an entry's
+# line on the default branch IS the commit that delivered it — the merge commit
+# on the PR route, the squash commit on the local one. Each returned
 # entry carries `answer`:
 #   complete - the path is in that derived commit's own diff. Exact and whole.
 #   curated  - the path is one of the entry's `items[].at` anchors,

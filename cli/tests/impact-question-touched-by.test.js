@@ -51,9 +51,16 @@ describe('L2.2 — the read contract documents the derivation', () => {
     expect(contract()).toMatch(/git log[^\n]*-S/);
   });
 
-  it('says why the derivation is correct by construction', () => {
-    // The line is committed on the branch and the merge squashes that branch.
-    expect(contract()).toMatch(/squash/i);
+  it('states the derivation along the first parent, for both merge routes', () => {
+    // Replaced a grep for the word "squash", which stayed green whatever the
+    // paragraph claimed. The pickaxe must walk the first parent with -m, or a
+    // PR merged with --merge resolves to its docs-only branch commit. The
+    // behaviour itself is exercised in L2.3b below.
+    const c = contract();
+    expect(c).toMatch(/git log --first-parent -m [^\n]*-S/);
+    expect(c).toMatch(/gh pr merge --merge/);
+    expect(c).toMatch(/git merge --squash/);
+    expect(c).not.toMatch(/the merge squashes that branch/);
   });
 
   it('names the one case where it does not hold', () => {
@@ -62,8 +69,10 @@ describe('L2.2 — the read contract documents the derivation', () => {
     expect(contract()).toMatch(/docs\/-only|only `docs\/`|only docs\//i);
   });
 
-  it('records that `commits` holds branch shas a squash makes unreachable', () => {
-    expect(contract()).toMatch(/unreachable|discard/i);
+  it('records that `commits` holds branch shas, and why that is not the delivery on either route', () => {
+    const c = contract();
+    expect(c).toMatch(/holds the BRANCH shas/);
+    expect(c).not.toMatch(/intersect `git log` on `main` at \*\*zero\*\*/);
   });
 });
 
@@ -320,4 +329,71 @@ describe('L2.3 — touched_by answers from a real project in the current format'
     console.log(`    [L2.5] touched_by over a 1-entry index: ${ms}ms`);
     expect(ms).toBeLessThan(60_000);
   });
+});
+
+// ─── L2.3b — the derivation, exercised on BOTH merge routes ──────────────────
+
+describe('L2.3b — the delivery commit is derived correctly after a merge AND after a squash', () => {
+  // Plan 2026-09-16T170340 L4.6. The contract's reason used to be "the merge
+  // squashes that branch", and its only test grepped for the word — green
+  // whatever the paragraph said. The PR route now merges with --merge, which
+  // lands the code and the index line in separate branch commits. This builds
+  // both shapes with real git and asks the engine, so the derivation is what
+  // is proven, not a sentence.
+  const make = (shape) => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), `touched-by-${shape}-`));
+    const g = (args) => execFileSync('git', args, { cwd: tmp, encoding: 'utf8' }).trim();
+    g(['init', '-q']);
+    g(['config', 'user.email', 'test@example.com']);
+    g(['config', 'user.name', 'test']);
+    fs.mkdirSync(path.join(tmp, '.codeadd', 'scripts'), { recursive: true });
+    fs.copyFileSync(
+      path.join(REPO, 'framwork', '.codeadd', 'scripts', 'delivered.sh'),
+      path.join(tmp, '.codeadd', 'scripts', 'delivered.sh'),
+    );
+    fs.mkdirSync(path.join(tmp, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'README.md'), 'base\n');
+    g(['add', '-A']);
+    g(['commit', '-q', '-m', 'base']);
+    const trunk = g(['rev-parse', '--abbrev-ref', 'HEAD']);
+
+    g(['checkout', '-q', '-b', 'feat']);
+    fs.mkdirSync(path.join(tmp, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, 'src', 'pay.ts'), 'export const chargeCard = 1;\n');
+    g(['add', '-A']);
+    g(['commit', '-q', '-m', 'F1: code']);
+    const entry = {
+      v: 1, ts: '2026-09-16T00:00:00Z', id: 'PAY', layer: 'product', by: 'done',
+      status: 'live', name: 'payments', words: 'payments charge',
+      commits: ['aaaaaaa'], origin: 'docs/features/PAY/',
+      items: [{ what: 'the charge', at: 'src/pay.ts', find: 'chargeCard' }],
+    };
+    fs.writeFileSync(path.join(tmp, 'docs', 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
+    g(['add', '-A']);
+    g(['commit', '-q', '-m', 'docs: index entry']);
+    g(['checkout', '-q', trunk]);
+    if (shape === 'merge') {
+      g(['merge', '-q', '--no-ff', 'feat', '-m', 'Merge pull request']);
+    } else {
+      g(['merge', '-q', '--squash', 'feat']);
+      g(['commit', '-q', '-m', 'squash: payments']);
+    }
+    return { tmp, head: g(['rev-parse', '--short', 'HEAD']) };
+  };
+
+  it.each(['merge', 'squash'])('%s: answers complete, with the commit that landed on the default branch', (shape) => {
+    const { tmp, head } = make(shape);
+    try {
+      const result = run('touched_by', { files: ['src/pay.ts'] }, { root: tmp, corpus: 'docs' });
+      expect(result.workItems).toHaveLength(1);
+      const hit = result.workItems[0];
+      expect(hit.answer).toBe('complete');
+      expect(head.startsWith(hit.commit) || hit.commit.startsWith(head)).toBe(true);
+      expect(result.curatedOnly).toBe(0);
+    } finally {
+      try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* windows file locks */ }
+    }
+  // Six git subprocesses plus the script: measured at ~5.5s on Windows, past
+  // the 5000ms default. The budget is the fixture, not the query.
+  }, 60_000);
 });
