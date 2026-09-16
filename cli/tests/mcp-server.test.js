@@ -284,7 +284,9 @@ describe('F8 — every action answers over the wire', () => {
     // 23 -> 21 (2026-09-14T215223 remove-owner-product-onboarding): add.init and
     // add-product-discovery both declared `skill: add-doc-schemas` and both were
     // deleted with the owner/product onboarding.
-    expect(payload(frames[0]).dependents.length).toBe(21);
+    // 21 -> 22 (2026-09-15T224612 pipeline-ceremony-rebalance): add-feature-specification
+    // became the single writer of about.md and now loads the schema itself.
+    expect(payload(frames[0]).dependents.length).toBe(22);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {

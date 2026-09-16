@@ -321,7 +321,7 @@ already excluded irreversible actions and large footprints from this path. A wea
 surfaces at `/add.plan`, in the verdict on the plan derived from it.
 
 1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md’s path and `kind: feature`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its **Acting on the Verdict** table governs this dispatch — `ok` delivers, `fix-then-ok` applies every fix that invents no user decision then re-gates, `blocked` presents only the blockers needing a person and WAITS. Do NOT mark `about.md` delivered while a blocker stands.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its **Acting on the Verdict** table governs this dispatch. Read it there. Do NOT mark `about.md` delivered while a blocker stands.
 
 ⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the sites that dispatch a readback, and this command is not one of them any more.
 

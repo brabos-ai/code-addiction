@@ -28,6 +28,13 @@ const FIX = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
 
 const COMMANDS = path.join(CODEADD, 'commands');
 const ADD_NEW = read(path.join(COMMANDS, 'add.new.md'));
+// add.new carried the Relations/tags authoring rules inline until
+// add-feature-specification became the single writer of about.md, reached from
+// both /add.new and /add.brainstorm's offer to continue. A rule left in the
+// command would have applied on one entry point and not the other.
+const FEATURE_SPEC = read(
+  path.join(COMMANDS, '..', 'skills', 'add-feature-specification', 'SKILL.md'),
+);
 const ADD_HOTFIX = read(path.join(COMMANDS, 'add.hotfix.md'));
 
 /**
@@ -148,24 +155,28 @@ describe('F2 — the hotfix-related schema retires into the about.md', () => {
   });
 });
 
-describe('F3 — /add.new writes its relations from its own discovery result', () => {
+describe('F3 — the single writer writes relations from what discovery handed over', () => {
   it('L4.8 names the section, the source and the vocabulary it may use', () => {
-    const step = ADD_NEW.slice(ADD_NEW.indexOf('**Write about.md:**'), ADD_NEW.indexOf('## STEP 7'));
-    expect(step).toContain('## Relations');
-    expect(step).toContain('tags:');
-    expect(step).toContain('depends_on');
-    expect(step).toContain('part_of');
-    // The source is the discovery output the command already holds.
-    expect(step).toMatch(/past-features\.md|delivery index/);
+    expect(FEATURE_SPEC).toContain('## Relations');
+    expect(FEATURE_SPEC).toContain('tags:');
+    expect(FEATURE_SPEC).toContain('depends_on');
+    expect(FEATURE_SPEC).toContain('part_of');
+    // The source is the discovery output the CALLER holds and hands over.
+    expect(FEATURE_SPEC).toMatch(/past-features\.md|Prior art|RELATED_WORK/);
   });
 
   it('L4.8 forbids putting the question to the user', () => {
-    const step = ADD_NEW.slice(ADD_NEW.indexOf('**Write about.md:**'), ADD_NEW.indexOf('## STEP 7'));
-    expect(step).toMatch(/⛔ DO NOT[\s\S]{0,200}?ask/i);
+    expect(FEATURE_SPEC).toMatch(/⛔ DO NOT[\s\S]{0,200}?[Aa]sk/);
   });
 
   it('an epic subfeature about.md is part_of its parent', () => {
-    expect(ADD_NEW).toMatch(/part_of \[\[/);
+    expect(FEATURE_SPEC).toMatch(/part_of \[\[/);
+  });
+
+  it('(guard) add.new no longer restates those rules', () => {
+    // Two copies would drift, and the drift shows up as two different documents
+    // produced from one schema depending on which entry point ran.
+    expect(ADD_NEW).not.toMatch(/depends_on \[\[/);
   });
 });
 
