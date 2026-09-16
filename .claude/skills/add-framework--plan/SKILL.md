@@ -352,7 +352,7 @@ why: the item becomes plan scope, and its question reaches the user at STEP 4, w
 | `## Open` in the intent file | This STEP |
 |---|---|
 | Reads `None` | **Sections 1, 2 and 5 as a confirmation screen**, plus any `blocked` item 3.4 returned as a question of its own in section 3. Section 4 prints only where the analysis raised something the design never saw |
-| Lists items | Those items become section 3’s questions — plus any `blocked` item 3.4 returned |
+| Lists items | **All five sections run in full.** Section 3’s questions are those items — plus any `blocked` item 3.4 returned — in place of fresh ones. Sections 1, 2, 4 and 5 run as written in 4.1, and nothing under `## Decided` is put to the user again, per 1.2 |
 | Absent, empty, or no intent file | Everything below, unconditionally |
 
 ⛔ **A `blocked` audit item is never silenced by this branch.** 3.4 returns items needing a person, and
