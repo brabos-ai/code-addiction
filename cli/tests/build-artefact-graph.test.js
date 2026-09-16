@@ -231,6 +231,18 @@ describe('L1 extractUses', () => {
       .toBe('internal/skill/add-commit');
   });
 
+  it('L1.9b `handoff:` emits HANDS_OFF_TO, resolving the target by its own kind', () => {
+    // Plan 2026-09-16T170340 F7. `command:` hands off to a command only, so a
+    // skill could not declare that the next pipeline stage is another skill.
+    // `handoff:` reads the target the way `mention:` does: a leading `/` is a
+    // command, `@` an agent, a bare name a skill.
+    const src = '<!-- uses:\n- handoff: add-framework--done\n- handoff: /add.review\n-->\n';
+    const edges = extractUses(src, 'add-framework--build', 'skill', 'internal');
+
+    expect(edges[0]).toMatchObject({ to: 'internal/skill/add-framework--done', type: 'HANDS_OFF_TO' });
+    expect(edges[1]).toMatchObject({ to: 'internal/command/add.review', type: 'HANDS_OFF_TO' });
+  });
+
   it('L1.3 returns no edges and does not throw when the artefact declares nothing', () => {
     // The common case during wave 1: almost no artefact declares yet. Throwing
     // here would block every build.
