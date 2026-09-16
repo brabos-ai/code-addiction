@@ -15,6 +15,8 @@ description: "Use when a framework change needs a plan document — analyses bot
 - agent: prompt-review-agent
 - handoff: add-framework--build
 - mention: add-framework--brainstorm
+- skill: building-commands/references/agent-dispatch.md
+- mention: building-commands
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -456,9 +458,8 @@ so the automatic path waits on them exactly as the confirming one does.
 
 ### Agent Dispatch Rules
 
-1. Read the required **Capability** and honour it.
-2. Prefer the named agent when the engine can address it by name.
-3. Verify the report is received before acting on the verdict.
+**`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
+apply them to every `DISPATCH AGENT` block in this skill. The block names the capability and the complexity; the rules say how to honour them.
 
 ---
 

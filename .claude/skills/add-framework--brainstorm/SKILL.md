@@ -15,6 +15,8 @@ description: "Use when an idea for the framework itself needs shaping before any
 - mention: add-framework--done
 - handoff: add-framework--plan
 - mention: add-plan-authoring
+- skill: building-commands/references/agent-dispatch.md
+- mention: building-commands
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -662,12 +664,8 @@ opinion.
 
 ### Agent Dispatch Rules
 
-When this skill instructs you to DISPATCH AGENT:
-1. Read the **Capability** required (read-only)
-2. Read the **Complexity** hint (`standard`)
-3. Choose the best available agent/task mechanism that satisfies the capability
-4. Prefer `@plan-review-agent` when the engine can address it by name
-5. Verify the report is received before acting on the verdict
+**`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
+apply them to every `DISPATCH AGENT` block in this skill. The block names the capability and the complexity; the rules say how to honour them.
 
 ---
 

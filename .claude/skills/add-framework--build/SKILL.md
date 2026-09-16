@@ -20,6 +20,7 @@ description: "Use when a plan in docs/plans/ is ready to execute, or for a direc
 - skill: add-framework--plan
 - command: /add-framework--sync
 - handoff: add-framework--done
+- skill: building-commands/references/agent-dispatch.md
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -447,14 +448,8 @@ dispatch-mechanism problem, never a reason for the delivery to go unaudited.
 
 ### Agent Dispatch Rules
 
-1. Read the required **Capability** and honour it — read-only, for every dispatch.
-2. Read the **Complexity** hint — `standard`, for every dispatch.
-3. Choose the mechanism in your engine that satisfies the capability, and dispatch them all at once.
-4. Pass the plan's content as part of each prompt. Scope 4 also takes its artefact's node id.
-5. Verify every report on your dispatch list is received before acting on any of them.
-
-You are the coordinator. Map the intent — capability plus complexity — to the best mechanism your
-engine offers.
+**`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
+apply them to every `DISPATCH AGENT` block in this skill. The capability, the complexity, the input and the wait-all gate for this step are all stated in 7.1 above.
 
 ### 7.2 Ask the Graph What the Subagents Cannot See
 
