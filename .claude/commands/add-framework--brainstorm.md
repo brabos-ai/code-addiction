@@ -124,10 +124,14 @@ run yet, which is information, not a failure.
 touching an existing artefact almost always raises it, and `### 4.5` is where this command answers it
 against the design. Load the skill before reaching for grep.
 
-Then dispatch `@framework-discovery-agent` with:
-- `topic`: captured topic from STEP 1.1
-- `scope`: `both`
-- `prior_deliveries`: the resolved entries from the lookup above — id, status, name and what each item was — or `none`
+**DISPATCH AGENT:** `@framework-discovery-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:** `topic` (captured at STEP 1.1), `scope: both`, and `prior_deliveries` — the resolved
+  entries from the lookup above, each with its id, status, name and what the item was.
+  **Omit `prior_deliveries` entirely when the lookup resolved nothing.** The agent declares the field
+  optional and reads its absence as "the caller resolved none"; it has no branch for a literal
+  `"none"`, so sending one takes the filled path with a string that means the opposite.
 
 **The agent does not parse the index.** Resolved entries travel in the dispatch payload, exactly as selected context already does — a third parser of the delivery index, in an agent's head, is what `prior_deliveries` avoids. It says nothing about the agent's other capabilities: it queries the artefact graph itself, over MCP or the CLI, and that is how it answers a relationship question.
 
@@ -767,9 +771,11 @@ deliver it.
 
 ### 8.2 Dispatch Framework Discovery Agent (SILENT)
 
-Dispatch `@framework-discovery-agent` with:
-- `topic`: subtopic extracted in STEP 8.1
-- `scope`: `both`
+**DISPATCH AGENT:** `@framework-discovery-agent`
+- **Capability:** read-only
+- **Complexity:** standard
+- **Input:** `topic` (the subtopic extracted at STEP 8.1), `scope: both`, and `prior_deliveries` on
+  the same terms `### 1.2` states — **omitted entirely when the lookup resolved nothing.**
 
 Use the report as grounding context for the exploration. Do NOT show raw output verbatim.
 
