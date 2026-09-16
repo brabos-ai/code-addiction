@@ -12,6 +12,7 @@ description: "Use when an idea for the framework itself needs shaping before any
 - skill: add-final-report
 - skill: add-review-discipline
 - mention: add-framework--build
+- mention: add-framework--done
 - handoff: add-framework--plan
 - mention: add-plan-authoring
 -->
@@ -33,7 +34,7 @@ STEP 3: Validate complexity            → ARCHITECTURAL PATH ONLY — simple or
 STEP 4: Explore & validate decisions   → conversational ideation (abbreviated on spike / bounded)
 STEP 5: Generate design document       → ARCHITECTURAL PATH ONLY — write draft design (no open questions)
 STEP 6: Review design                  → ARCHITECTURAL PATH ONLY — @plan-review-agent before any delivery
-STEP 7: Completion & next steps [HARD STOP] → ALL THREE PATHS — print suggested command as text, STOP
+STEP 7: Completion & approval [HARD STOP] → ALL THREE PATHS report; bounded/architectural ask the three-option approval
 STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
 ```
 
@@ -684,22 +685,51 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 - The 3-5 key validated decisions — from the design document, or from the conversation that settled
   them where no document exists
 
-### 7.3 Next Step Guidance [HARD STOP]
+### 7.3 Approval and Next Step [HARD STOP]
 
 One stage formalizes both layers, so there is no layer routing left to do here. Carry STEP 2.2's
 "Framework impact" classification into the design document as the layer each affected artefact sits
 in — the planning stage reads it as the starting point for its own F-block tags. **An ambiguous
 layer is a note in the document, not a question to the user.**
 
-#### Write the intent file first — `bounded` and `architectural`
+#### Ask for the one approval — `bounded` and `architectural`
 
-Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` before printing the handoff. Its shape,
-its naming and the `## Open` convention are owned by `add-plan-authoring` — read **The Intent File**
-there rather than restating it here.
+**This is the only approval the pipeline asks for by default.** Present it through the provider's
+structured-question tool, with these three options and nothing else:
 
-It carries the path classified at `2.2.2`, every decision this conversation closed, and whatever it
-could not. **On `architectural` it reuses the design document’s timestamp** so the pair sorts
-adjacent; on `bounded` it is the only artefact and takes its own.
+| Option | What happens |
+|---|---|
+| **Approve, I confirm each stage** | Today's behaviour. The intent file records `delivery: confirm`, the handoff below is printed as text, and this skill stops |
+| **Approve, deliver automatically** | The intent file records `delivery: automatic`, and this skill loads `/add-framework--plan` and continues. Every stage then hands off without waiting, **up to and including the build**. `add-framework--build` STEP 9 asks whether to open the PR — **that question is the terminus** |
+| **Keep discussing** | No intent file, no handoff. Return to STEP 4 with what the user wants to reopen |
+
+⛔ **The close-out is never reached unattended.** No option runs `/add-framework--done`, and the
+automatic path ends at a question the user answers. The merge is approved on every path.
+
+**What "without waiting" means is owned by `add-plan-authoring`** — read **The Delivery Mode**
+there. It says which stops still wait on the automatic path, and that a stop which passes through still
+prints what it would have shown.
+
+```
+IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
+  ⛔ DO NOT USE: Write on docs/brainstorming/ for the intent file
+  ⛔ DO NOT USE: Skill tool to load /add-framework--plan
+  ✅ DO: Ask, and WAIT
+
+IF THE ANSWER IS "Keep discussing":
+  ⛔ DO NOT: Write the intent file or print a handoff
+  ✅ DO: Return to STEP 4
+```
+
+#### Write the intent file — `bounded` and `architectural`
+
+Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` once the user has approved, before any
+handoff. Its shape, its naming, the `delivery:` field and the `## Open` convention are owned by
+`add-plan-authoring` — read **The Intent File** there rather than restating it here.
+
+It carries the path classified at `2.2.2`, the approval option as `delivery:`, every decision this
+conversation closed, and whatever it could not. **On `architectural` it reuses the design document’s
+timestamp** so the pair sorts adjacent; on `bounded` it is the only artefact and takes its own.
 
 ```
 IF ABOUT TO WRITE `## Open`:
@@ -709,8 +739,8 @@ IF ABOUT TO WRITE `## Open`:
          and absent makes the planner run its full questionnaire
 ```
 
-⛔ **Nothing is written on `spike`.** A spike’s output is a recommendation, and keeping it is a new
-request with its own classification.
+⛔ **Nothing is written on `spike`, and a spike is asked no three-option question.** A spike’s output
+is a recommendation, and keeping it is a new request with its own classification.
 
 #### Then route
 
@@ -719,16 +749,20 @@ request with its own classification.
 a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
 whole set sharing one timestamp.
 
-On `architectural`, print this and STOP:
+On `delivery: confirm` and `architectural`, print this and STOP:
 
 ```
 Idea is ready to formalize. Run: /add-framework--plan [idea]
 Design: docs/brainstorming/<the file written at 5.3>
 Intent: docs/brainstorming/<the intent file written above>
-(brainstorm stops here — it does not run the next command for you.)
+(brainstorm stops here — it does not run the next stage for you.)
 ```
 
 On `bounded`, there is no design document, so that line is omitted and the `Intent:` line stands alone.
+
+On `delivery: automatic`, print the same lines with the last one reading `(delivering automatically —
+the build will ask before opening the PR.)`, then load `/add-framework--plan` with the intent file as
+its argument and continue there.
 
 ⛔ **On `spike`, do NOT route to the planner at all.** A spike’s terminal state is its recommendation.
 Sending it to a full planning pass contradicts this skill’s own ratchet — `2.2.3` already says a

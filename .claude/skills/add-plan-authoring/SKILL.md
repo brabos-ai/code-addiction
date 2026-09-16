@@ -107,6 +107,7 @@ handoff, on the `bounded` and `architectural` paths. **Never on `spike`.**
 path: bounded            # spike | bounded | architectural
 topic: <slug>
 doc: <design document path, or none>
+delivery: confirm        # confirm | automatic — the answer to the brainstorm's STEP 7.3 approval
 ---
 
 ## Decided
