@@ -431,7 +431,9 @@ IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
   ✅ DO: Report which document is missing and STOP — a delivery archived without its ledger loses every ruling it made
 ```
 
-The design source is **the `docs/brainstorming/` file the plan's Context document table names**, and nothing else. `docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing no design doc gets no `design.md`, and that is not a defect.
+The design source is **the `docs/brainstorming/` file the plan's Context document table names**, and nothing else. **The intent source is the `-intent.md` file that same table names**, resolved the same way. `docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing neither gets neither member, and that is not a defect.
+
+⛔ **A `bounded` delivery cites an intent file and no design document.** `add-plan-authoring`'s Delivered Home says why that member is load-bearing there — read it rather than a copy kept here.
 
 ⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
 

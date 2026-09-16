@@ -279,7 +279,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | Category | File | Schemas |
 |----------|------|---------|
-| `new-feature` | `references/new-feature.md` | feature, feature-plan, feature-design, brainstorm, epic |
+| `new-feature` | `references/new-feature.md` | feature, feature-plan, feature-design, brainstorm, brainstorm-intent, epic |
 | `fix` | `references/fix.md` | hotfix |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
@@ -310,12 +310,14 @@ Every generator command MUST paste the following block as **the final STEP that 
 
 Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the command complete until every check passes or warns.
 
+⛔ **A schema that explicitly narrows a Universal Document Requirement is exempt from the check that enforces it.** Universal Document Requirements says the rules bind "unless the schema explicitly relaxes them", and this is where that sentence takes effect: a frontmatter field the schema's own **Frontmatter** line does not name, and a `## TL;DR` or TOC the schema's **Sections** list does not name, are not missing — they were declared out. Checks 1, 2, 3 and 9 all read this rule. A schema that is merely silent narrows nothing; the narrowing has to be written down in the schema.
+
 1. **Frontmatter presence.** Grep `^---$` at line 1. Confirm YAML block closes. Required fields for `<SCHEMA>`:
    - `id:` matches the prefix rule in the ID Convention section of this skill
    - `type: <SCHEMA>` exact match
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
-   - `tags:` is a YAML list (may be empty `[]`). A schema whose Frontmatter line does not name it is exempt — the Universal Document Requirements list is what makes it mandatory, and a schema may narrow that.
+   - `tags:` is a YAML list (may be empty `[]`)
    - **`feature` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 

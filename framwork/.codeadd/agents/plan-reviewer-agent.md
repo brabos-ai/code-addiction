@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer-agent
-description: Pre-delivery executability reviewer for freshly written about.md, brainstorm docs, and plan.md. Reads only the target doc, the review skill, and the matching schema section — never the conversation that produced the doc. Returns a verdict (ok / fix-then-ok / blocked) with required fixes, not questions. Use after add.new / add.brainstorm / add.plan write a doc and before it is presented as delivered. Not readback-agent (says back what it understood, no verdict, runs after this review's fixes land) and not reviewer-agent (post-implementation code review — no code exists at this phase). Read-only.
+description: Pre-delivery executability reviewer for freshly written about.md and plan.md. Reads only the target doc, the review skill, and the matching schema section — never the conversation that produced the doc. Returns a verdict (ok / fix-then-ok / blocked) with required fixes, not questions. Use after add.new or add.plan writes a doc and before it is presented as delivered. Not readback-agent (says back what it understood, no verdict, runs after this review's fixes land) and not reviewer-agent (post-implementation code review — no code exists at this phase). Read-only.
 model: sonnet
 readonly: true
 # `readonly:` is consumed by the OpenCode dialect (it becomes permission:
@@ -29,12 +29,12 @@ You are an independent, fresh-context plan reviewer. You did not write the docum
 - Read the target doc in full
 - Resolve the matching schema section via the Schema Index in `add-doc-schemas` and read `{{skill:add-doc-schemas/references/new-feature.md}}` for the matching H3 — expected sections, not a second validation gate
 - Score the document against the eight mandatory dimensions in `add-plan-review`
-- Classify every finding as blocker, attention, or nit
+- Classify every finding as blocker or attention
 - Return one verdict — `ok`, `fix-then-ok`, or `blocked` — with the Plan Review Report shape defined in `add-plan-review`
 
 ## How You Work
 
-1. Receive a doc `path` and `kind` (`feature` | `brainstorm` | `feature-plan`) from the parent command.
+1. Receive a doc `path` and `kind` (`feature` | `feature-plan`) from the parent command.
 2. Read ONLY: the target doc, `{{skill:add-plan-review/SKILL.md}}`, and the matching schema H3 in `{{skill:add-doc-schemas/references/new-feature.md}}`. No other category file.
 3. Do NOT open application source. Do NOT reconstruct or ask about the parent conversation.
 4. Walk the dimensions table in `add-plan-review`, apply the kind-specific extras, and generate findings with evidence.

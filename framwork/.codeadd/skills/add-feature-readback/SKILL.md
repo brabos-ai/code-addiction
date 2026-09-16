@@ -31,13 +31,11 @@ Your blindness is the whole mechanism. Reading the source code, the referenced f
 ## When to Use
 
 - A feature's documentation set is closed (`about.md` + `epic.md` + subfeature docs written and fixed) and the flow is about to move into building.
-- Dispatched as a subagent **after** the adversarial reviewer's fixes land, so the parent holds two independent reports — see [Pairing](#pairing--the-two-report-setup). Four commands do this today, each at the step that closes a document:
+- Dispatched as a subagent **after** the adversarial reviewer's fixes land, so the parent holds two independent reports — see [Pairing](#pairing--the-two-report-setup). Two commands do this today, each at the step that closes a document:
 
 | Command | Step | `scope` |
 |---|---|---|
-| `add.new` | STEP 8, after the plan-reviewer verdict, before Completion | `feature` |
 | `add.plan` | STEP 12, after the verdict, before STEP 13 | `subfeature` |
-| `add.brainstorm` | STEP 5, after the verdict, before STEP 6 | `document` |
 | `add.plan-to-ready` | STEP 3 plan leg, after the verdict **and** after the consistency pass | `subfeature` |
 
 - Manual: the user asks "read this and tell me what you understood" or wants a comprehension check before building.
@@ -47,7 +45,7 @@ Your blindness is the whole mechanism. Reading the source code, the referenced f
 - **Docs still being drafted.** The point is testing the final text. A mid-edit doc produces findings that are already being fixed.
 - **In parallel with the rubric review.** Run AFTER `@plan-reviewer-agent` and after its fixes are applied. Running alongside tests a version of the document that will not exist.
 - **Judging code, schema compliance, or delivery.** Not this skill — `add-code-review`, the gate in `add-doc-schemas`, `add-qa`.
-- **Grading one document against a rubric or a schema.** That is `add-plan-review`, which returns a verdict and required fixes. Reading one document *cold, for comprehension* is squarely this skill — that is what `scope: document` is for, and `add.brainstorm` dispatches exactly that. The line is not how many documents you get; it is whether you are grading them or saying them back.
+- **Grading one document against a rubric or a schema.** That is `add-plan-review`, which returns a verdict and required fixes. Reading one document *cold, for comprehension* is squarely this skill — that is what `scope: document` is for, though no command dispatches that scope today. The line is not how many documents you get; it is whether you are grading them or saying them back.
 
 ## Boundary — this vs. the pre-delivery reviewer
 

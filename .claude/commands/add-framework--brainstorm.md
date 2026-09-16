@@ -238,7 +238,7 @@ Continue to STEP 3.
 
 | Path | STEPS 3 and 4 | STEPS 5 and 6 | STEP 7 |
 |------|---------------|---------------|--------|
-| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs in full. 7.1 reports the recommendation, 7.2 omits the document path, 7.4 does not apply. |
+| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | 7.1 reports the recommendation, 7.2 omits the document path, 7.3 does NOT route to the planner, 7.4 does not apply. |
 | **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs in full. 7.1 reports the design, 7.2 omits the document path, 7.4 does not apply. |
 | **architectural** | Everything written below and in STEP 4, unchanged — including the decomposition offer. | Run as written. | Runs in full, as written. |
 
@@ -250,9 +250,10 @@ user has to scroll back through.
 **What varies is one metadata line, not the report.** `7.2` prints a document path only where 5.3
 wrote one; every other line it carries is about the work and prints on every path.
 
-**STEP 7's `[HARD STOP]` handoff runs on all three paths.** A spike that found a real problem still routes to
-`/add-framework--plan`; a bounded design routes there too. What
-changes is whether a document precedes the suggestion — never whether the user approves.
+**STEP 7's `[HARD STOP]` runs on all three paths, but only two of them route.** A bounded design routes
+to `/add-framework--plan` and writes an intent file; an architectural one writes both files and routes.
+**A spike reports its recommendation and stops** — routing it onward would contradict `2.2.3`, which
+already calls its follow-up a new request. What never changes is that the user approves.
 
 The `⛔ HARD GATE — ROLE BOUNDARY` applies unchanged on all three paths: no path may invoke another command,
 and **only the architectural path writes a file**. The one-question-at-a-time cadence applies on all three.
@@ -311,12 +312,33 @@ full set.
 ### 4.2 Question Loop
 
 For each section:
-1. Ask clarifying question related to section
+1. Ask ONE clarifying question related to the section, **and say which answer you would give**
 2. User responds
-3. Check: Is this section 100% clear and validated? 
+3. Check: Is this section 100% clear and validated?
    - If NO → ask follow-up question (return to step 2 of this loop)
    - If YES → move to next section
 4. When all sections complete → confirm with user: "Does this summary match your vision?"
+
+**Every question carries a recommendation (MANDATORY).** Name the option you would take and why, in
+concrete terms drawn from this repository — what already exists, what it would break, what a
+neighbouring artefact already does. Never a generic "it depends".
+
+```
+IF ASKING A QUESTION WITH OPTIONS:
+  ⛔ DO NOT: List them and stop, leaving the choice unweighted
+  ⛔ DO NOT: Recommend by restating the user’s own preference back to them
+  ✅ DO: Name the one you would take, with the reason, then let them override
+```
+
+**A command that exists to help someone decide, and refuses to say what it would do, has handed the
+work back.** The user still chooses — they now choose against a position.
+
+**Ask through the provider’s structured-question tool**, marking the recommended option. The internal
+layer ships to one provider, so there is no capability flag to check and no markdown fallback to keep.
+
+**Close what you can close.** A question carried to the handoff lands in the intent file’s `## Open`
+and becomes a question `/add-framework--plan` has to ask instead — which is the redundancy this whole
+flow removes.
 
 ### 4.3 Discovery Integration
 
@@ -589,21 +611,49 @@ One command formalizes both layers, so there is no layer routing left to do here
 in — the planning command reads it as the starting point for its own F-block tags. **An ambiguous
 layer is a note in the document, not a question to the user.**
 
-**Name the design file path in the handoff**, verbatim, when this path wrote one. The planning command
-reads `docs/brainstorming/` and needs to know which file — a handoff that names only the idea leaves
-it to match the topic against a directory of timestamped basenames, and in Continue Mode that
-directory holds a whole set sharing one timestamp.
+#### Write the intent file first — `bounded` and `architectural`
 
-Print this, then STOP:
+Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` before printing the handoff. Its shape,
+its naming and the `## Open` convention are owned by `add-plan-authoring` — read **The Intent File**
+there rather than restating it here.
+
+It carries the path classified at `2.2.2`, every decision this conversation closed, and whatever it
+could not. **On `architectural` it reuses the design document’s timestamp** so the pair sorts
+adjacent; on `bounded` it is the only artefact and takes its own.
+
+```
+IF ABOUT TO WRITE `## Open`:
+  ⛔ DO NOT: Park a question there that one more turn of conversation would settle
+  ⛔ DO NOT: Leave the section empty as a way of saying "nothing open"
+  ✅ DO: Write the literal `None` when everything closed — an empty section reads as absent,
+         and absent makes the planner run its full questionnaire
+```
+
+⛔ **Nothing is written on `spike`.** A spike’s output is a recommendation, and keeping it is a new
+request with its own classification.
+
+#### Then route
+
+**Name both files in the handoff**, verbatim, whichever this path wrote. The planning command reads
+`docs/brainstorming/` and needs to know which file — a handoff naming only the idea leaves it matching
+a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
+whole set sharing one timestamp.
+
+On `architectural`, print this and STOP:
 
 ```
 Idea is ready to formalize. Run: /add-framework--plan [idea]
 Design: docs/brainstorming/<the file written at 5.3>
+Intent: docs/brainstorming/<the intent file written above>
 (brainstorm stops here — it does not run the next command for you.)
 ```
 
-On `spike` and `bounded` there is no file, so the `Design:` line is omitted rather than filled with a
-path that does not exist. Say the design was settled in conversation instead.
+On `bounded`, there is no design document, so that line is omitted and the `Intent:` line stands alone.
+
+⛔ **On `spike`, do NOT route to the planner at all.** A spike’s terminal state is its recommendation.
+Sending it to a full planning pass contradicts this command’s own ratchet — `2.2.3` already says a
+spike whose answer is "yes, and here is how" is a NEW request, which gets its own classification and
+its own run. Report the recommendation and stop.
 
 ### 7.4 Offer Refinement (If Umbrella)
 
