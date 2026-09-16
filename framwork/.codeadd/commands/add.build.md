@@ -1125,7 +1125,7 @@ DO NOT report completion without executing this step.
 4. Bump `updated:` to today
 5. Apply schema validation gate from `{{skill:add-doc-schemas/SKILL.md}}`
 
-For EACH mutated doc, execute the validation gate (schema: `feature-plan` or `feature-about`). Verify immutables preserved. DO NOT advance to STEP 16 until gates return PASS.
+For EACH mutated doc, execute the validation gate (schema: `feature-plan` or `feature`). Verify immutables preserved. DO NOT advance to STEP 16 until gates return PASS.
 
 Reference: **cache documental** rule from `{{skill:add-doc-schemas/SKILL.md}}`
 

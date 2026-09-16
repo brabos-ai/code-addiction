@@ -252,7 +252,7 @@ describe('L2.3 — touched_by answers from a real project in the current format'
     fs.mkdirSync(path.join(tmp, 'docs', 'features', '0051F-refresh'), { recursive: true });
     fs.writeFileSync(
       path.join(tmp, 'docs', 'features', '0051F-refresh', 'about.md'),
-      '---\nid: 0051F\ntype: feature-about\n---\n# Refresh\n## TL;DR\nRenews the token before it expires.\n## Relations\nNone\n',
+      '---\nid: 0051F\ntype: feature\n---\n# Refresh\n## TL;DR\nRenews the token before it expires.\n## Relations\nNone\n',
     );
 
     const entry = {

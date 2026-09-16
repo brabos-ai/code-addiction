@@ -60,12 +60,16 @@ describe('F17 — yaml is a direct CLI dependency', () => {
 // ---------------------------------------------------------------------------
 
 describe('F18 — the registry entry', () => {
-  it('is registered once, after the prune, where the updater already runs them', async () => {
+  it('is registered once, in id order, where the updater already runs them', async () => {
     const { MIGRATIONS } = await import('../src/migrations.js');
     const ids = MIGRATIONS.map((m) => m.id);
     expect(ids).toContain('0002-harvest-relations');
-    expect(ids.indexOf('0002-harvest-relations')).toBe(ids.length - 1);
+    expect(ids.filter((id) => id === '0002-harvest-relations')).toHaveLength(1);
+    // The invariant is ORDER, not position. This asserted that 0002 sat last,
+    // which was a snapshot of the day it was written rather than a rule: the
+    // next migration to be added broke it while breaking nothing real.
     expect([...ids].sort()).toEqual(ids);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('every registry entry still declares an id, a description and a run', async () => {

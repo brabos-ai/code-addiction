@@ -127,16 +127,12 @@ grep -rE "JwtService|passport|@UseGuards" --include="*.ts" | head -5
 
 Write to `{{addpath:wiki/domains/backend.md}}` using this structure:
 
+⛔ **Frontmatter per the Wiki Page Contract in `{{skill:add-architecture-discovery/SKILL.md}}`,
+which owns it and says so.** This page sets `type: reference` and `area: backend`; every other
+field, `id:` included, comes from that one declaration. It is restated nowhere here — it was
+restated here before, and the copy had already drifted, missing `id:` entirely.
+
 ```markdown
----
-type: reference
-area: backend
-description: [1-2 sentences, keyword-rich — framework, key patterns, when to read this page]
-sources: [apps/server/**, libs/backend/**]   # ≤8 globs covering every path cited below
-commit: [short-sha at generation]
-generated: YYYY-MM-DD
-tags: [detected framework, key patterns — ≤6]
----
 
 ## TL;DR
 
