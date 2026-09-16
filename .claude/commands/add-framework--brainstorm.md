@@ -550,10 +550,10 @@ Same structure +
 ```markdown
 ## Decomposition Map
 
-| Subtopic | Design Path | Purpose |
-|----------|-------------|---------|
-| [Topic 1] | the SET form's `-001-[topic1].md` member | [what it covers] |
-| [Topic 2] | the SET form's `-002-[topic2].md` member | [what it covers] |
+| Subtopic | Design Path | Serves the objective by | Purpose |
+|----------|-------------|-------------------------|---------|
+| [Topic 1] | the SET form's `-001-[topic1].md` member | [which part of the objective it advances] | [what it covers] |
+| [Topic 2] | the SET form's `-002-[topic2].md` member | [which part of the objective it advances] | [what it covers] |
 
 [Every row reuses the umbrella's timestamp verbatim — that is what keeps the set grouped in the directory.]
 
@@ -702,9 +702,39 @@ If umbrella spec: "You can now refine individual subtopics by running `/add-fram
 
 Triggered when STEP 1.0 detects a refinement invocation.
 
-### 8.1 Load Umbrella Spec
+### 8.1 Load Umbrella Spec, and Inherit Its Objective
 
 Read the referenced umbrella spec file at the path captured in STEP 1.0.
+
+**Copy its `## Objective` into this subtopic VERBATIM**, then write one line beneath it: **how this
+subtopic serves that objective.**
+
+```
+IF REFINING A SUBTOPIC FROM AN UMBRELLA:
+  ⛔ DO NOT: Let the subtopic author an objective of its own — a set with several objectives is
+             several sets
+  ⛔ DO NOT: Paraphrase, narrow or "clarify" the umbrella's objective on the way in
+  ⛔ DO NOT: Write the serves-line from the umbrella's own Decomposition Map cell — that cell is what
+             the map CLAIMED; this line is what the refined subtopic can actually support
+  ✅ DO: Copy the objective byte for byte, then state what this subtopic advances in it
+```
+
+⛔ **A subtopic that cannot write that line is not a member of this set. STOP and say so**, naming
+which of the two readings applies — the command does not pick between them:
+
+| Reading | What it means | What happens next |
+|---|---|---|
+| The subtopic belongs elsewhere | It is real work, on a different objective | It becomes its own brainstorm, not a member here. The umbrella's Decomposition Map drops the row |
+| The umbrella's objective is too narrow | The subtopic serves the actual goal; the objective was written smaller than the goal | The **umbrella** is corrected first, and every sibling re-checked against the wider objective |
+
+**Both readings have been true at once, which is why neither is assumed.** A set shipped here had a
+subtopic that did not serve the objective **and** an umbrella whose objective was written too narrowly
+to see it — the subtopic was refined, planned, reviewed and reworked before anyone read the two side
+by side. A gate that allowed only one diagnosis would have mis-read it.
+
+⛔ **This STOP presents a decision; it is not a confirmation.** Nothing downstream can recover a
+subtopic that serves nothing: the planner will carry it, the reviewer will pass it, and the build will
+deliver it.
 
 ### 8.2 Dispatch Framework Discovery Agent (SILENT)
 
