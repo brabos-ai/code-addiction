@@ -125,8 +125,39 @@ IF ABOUT TO WRITE THE DOCUMENT:
 drift is invisible until the two disagree — at which point the validation gate rejects a document this
 skill told someone to write.
 
-Write extractively: requirements, not implementation. Preserve existing frontmatter, complement what
-is already there, and bump `updated:`.
+Write extractively: requirements, not implementation. **`add-doc-schemas` owns the update discipline**
+under its Cache Documental rule — follow it rather than a copy kept here.
+
+### 3.1 `## Relations`, `## Observations` and `tags:`
+
+**These are mandatory sections of the `feature` schema, so this skill writes them on BOTH entry
+points.** A rule kept in the calling command would apply on one path and not the other, and produce
+two different documents from one schema.
+
+The calling command hands over whatever it has — a `past-features.md` Related Features table, a
+`RELATED_WORK` set, a `discovery.md` naming prerequisites, and the intent file’s `## Prior art`.
+Some entry points supply all four and some supply only the last. Write from what arrived.
+
+| Material in hand | Becomes |
+|---|---|
+| A prerequisite this feature cannot ship without | `- depends_on [[<id>]] — <the one-line reason given>` |
+| The parent epic, when this `about.md` is a subfeature | `- part_of [[<parent id>]]` |
+| Any other related feature | Leave it out. `related:` already carries it, and an untyped edge is not this skill’s to invent |
+
+```
+IF NO PREREQUISITE AND NO PARENT EPIC ARRIVED:
+  ⛔ DO NOT: Ask the user which feature this one depends on
+  ⛔ DO NOT: Invent a `depends_on` from the conversation
+  ✅ DO: Write `## Relations` carrying the single word `None`
+```
+
+⛔ **`add-doc-schemas` owns the rule that nobody is asked**, in its Relations & Observations section.
+What is specific here is the provenance: every edge comes from material the caller handed over, never
+from a question.
+
+Write `tags:` from the domains the confirmed decisions settled — bare lowercase words. Write
+`## Observations` from the same material: measurements and constraints no other section holds. Empty
+is valid.
 
 **A required layer is never excluded.** A new route needs a backend; a new field needs a database; a
 feature the user must see needs a frontend. Excluding a layer the feature cannot work without
@@ -151,8 +182,8 @@ returns — see When NOT to Use.
 - [ ] No required layer excluded
 - [ ] Scope states what is included AND what is not
 - [ ] Decisions carry their rejected alternative
-- [ ] Edge cases carry their handling
-- [ ] Acceptance criteria are verifiable
+- [ ] `## Relations` written from material handed over, or carrying `None`
+- [ ] `## Observations` and `tags:` written from the same material
 - [ ] No HOW mixed into the WHAT — technical analysis belongs to `add-feature-discovery`
 
 ## Common Rationalizations (BLOCKED)

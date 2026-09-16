@@ -171,7 +171,7 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
          or with `NOT VERIFIED` plus the reason when the graph could not be reached
 ```
 
-   - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using discovery template.
+   - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using the section list above.
 
 <!-- plugin:gitnexus:graph-map -->
 <!-- /plugin:gitnexus:graph-map -->
@@ -278,30 +278,19 @@ sections and the extraction. This STEP owns the path and the provenance:
 ⛔ **DO NOT restate the skill’s authoring rules here.** Two copies drift, and the drift is invisible
 until a document written by one entry point fails a gate the other passes.
 
-### 6.1 Write `## Relations` and `tags:` from what discovery already found
+### 6.1 Hand the relationship material to the skill
 
-The relationships are already in hand. `past-features.md` carries a **Related Features** table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, and `discovery.md` names the prerequisites. **Sub-step 6.1 routes them into the document; 6.1 itself discovers nothing new and asks nothing.** The Codebase Analysis dispatch later in this STEP still runs and still analyses — this sentence bounds 6.1, not the whole of STEP 6.
+The relationships are already in hand from STEP 3: `past-features.md` carries a **Related Features**
+table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, `discovery.md` names the
+prerequisites, and the intent file’s `## Prior art` carries whatever the brainstorm already found.
 
-Write per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`:
+**Pass all four to `{{skill:add-feature-specification/SKILL.md}}`, which writes `## Relations`,
+`## Observations` and `tags:` from them.** This sub-step routes the material; it discovers nothing and
+asks nothing.
 
-| Source already in hand | Becomes |
-|---|---|
-| A prerequisite feature `discovery.md` names — this feature cannot ship until it has | `- depends_on [[<id>]] — <the one-line reason discovery gave>` |
-| The parent epic, when this `about.md` is a subfeature written in STEP 5 | `- part_of [[<parent id>]]` |
-| A related feature from `past-features.md` or the delivery index that is neither of the above | leave it out. `related:` already carries it, and an untyped edge is the migration's job, not this command's |
-
-Write `tags:` from the domains the confirmed decisions settled — bare lowercase words, the same vocabulary `/add.wiki` uses for a reference page's `area`.
-
-```
-IF NO PREREQUISITE AND NO PARENT EPIC WAS FOUND:
-  ⛔ DO NOT USE: AskUserQuestion to ask which feature this one depends on
-  ⛔ DO NOT: Invent a `depends_on` from the conversation
-  ✅ DO: Write `## Relations` carrying the single word `None`
-```
-
-⛔ **`add-doc-schemas` owns the rule that nobody is asked**, in its Relations & Observations section. What is specific here is the provenance: the queries ran in STEP 3, the decisions were confirmed at STEP 4, and 6.1 writes what those queries returned.
-
-Write `## Observations` from the same material: the measurements and constraints the discovery surfaced that no other section of `about.md` holds. Empty is valid.
+⛔ **DO NOT write those sections here.** The skill is the single writer of `about.md`, and it is
+reached from two entry points — a rule kept in this command applies on one of them and not the other,
+which produces two different documents from one schema.
 
 **Dispatch Agent: Codebase Analysis**
 - **Input:** Feature name, about.md path
@@ -332,7 +321,9 @@ already excluded irreversible actions and large footprints from this path. A wea
 surfaces at `/add.plan`, in the verdict on the plan derived from it.
 
 1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md’s path and `kind: feature`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
-2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site’s divergence behaviour is the first row of its table: apply, re-gate, then present and STOP. Do NOT mark `about.md` delivered while a blocker stands.
+2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its **Acting on the Verdict** table governs this dispatch — `ok` delivers, `fix-then-ok` applies every fix that invents no user decision then re-gates, `blocked` presents only the blockers needing a person and WAITS. Do NOT mark `about.md` delivered while a blocker stands.
+
+⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the sites that dispatch a readback, and this command is not one of them any more.
 
 ⛔ **This command dispatches no readback.** The single readback of the whole flow runs at `/add.plan`,
 whose target is `docs/features/${FEATURE_ID}` — which already contains this `about.md`. The read moved;
@@ -364,7 +355,7 @@ This command documents a feature rather than building it, so block 2 is titled `
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
 
-Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 7.1 when the feature touches UI), `/add.build` for implementation.
+Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside `/add.plan`’s own UX step when the feature touches UI), `/add.build` for implementation.
 
 ---
 
