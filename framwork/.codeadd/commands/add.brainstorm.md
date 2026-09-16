@@ -8,7 +8,6 @@
 - command: /add.diagnose
 - command: /add.hotfix
 - command: /add.new
-- mention: /add.plan
 - script: status.sh
 -->
 
