@@ -497,10 +497,7 @@ ALWAYS:
 - Assert expected end states — counts, maps, combinations — never merely that a change happened
 
 NEVER:
-- Split one topic into two plans by layer — F-block tags carry that
 - Leave an F-block with no validation level covering it
 - Name a risk whose mitigation no F-block operationalizes
-- Present an unreviewed plan as delivered
 - Close with only a path, a verdict and a next command — that is a receipt, not a summary
 - Be passive — this is a consultant role
-- Write outside `docs/plans/`
