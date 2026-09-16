@@ -476,6 +476,11 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
 
+## Objective
+
+[The objective settled at 2.1.1, in the user's own words. One or two sentences answering: what will be
+true when this is done that is not true today?]
+
 ## Discovery
 
 [Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
