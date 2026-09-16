@@ -303,17 +303,22 @@ describe('L2 the build dispatches both', () => {
     }
   });
 
-  it('L2.9 the build names review-vNN only as a resolver exclusion, never as an output', () => {
-    // The plan predicted this green against a flat "no --review-v anywhere".
-    // It is not: STEP 1.1 excludes `--review-v*` when resolving a plan argument,
-    // and that exclusion must SURVIVE. Review companions from before this
-    // delivery are still on disk, and a resolver that stops excluding them
-    // returns two candidates for every such plan and refuses to run.
-    // The property worth pinning is narrower: the string appears only where a
-    // path is being ruled OUT, never where one is written.
-    const lines = read(P.build).split(/\r?\n/).filter((l) => l.includes('--review-v'));
-    expect(lines.length).toBeGreaterThan(0);
-    for (const l of lines) expect(l).toMatch(/excluding/);
+  it('L2.9 review-vNN appears only as a resolver exclusion, and the build writes none', () => {
+    // The exclusion of `--review-v*` when resolving a plan argument must
+    // SURVIVE: review companions from before this delivery are still on disk,
+    // and a resolver that stops excluding them returns two candidates for every
+    // such plan and refuses to run. It now lives in add-plan-authoring's
+    // Argument Resolution, which the build delegates to (plan
+    // 2026-09-16T170340, F15, ruler item 5), so it is pinned there.
+    const owner = read(P.authoring).split(/?
+/).filter((l) => l.includes('--review-v') && /excluding/.test(l));
+    expect(owner.length).toBeGreaterThan(0);
+    // The build names the string nowhere except, at most, as an exclusion.
+    for (const l of read(P.build).split(/?
+/).filter((x) => x.includes('--review-v'))) {
+      expect(l).toMatch(/excluding/);
+    }
+    expect(read(P.build)).toMatch(/add-plan-authoring`'s Argument Resolution/);
   });
 
   it('L2.10 the two human gates survive the renumbering', () => {
