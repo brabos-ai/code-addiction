@@ -274,7 +274,8 @@ describe('L2.3 — touched_by answers from a real project in the current format'
     fs.writeFileSync(path.join(tmp, 'docs', 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
 
     // ONE commit: code and index line together, which is what a squashed branch
-    // looks like on the default branch and what the derivation depends on.
+    // looks like on the default branch. The merge-commit shape the PR route
+    // now produces is L2.3b.
     run(['add', '-A']);
     run(['commit', '-q', '-m', 'squash: token refresh']);
   });
