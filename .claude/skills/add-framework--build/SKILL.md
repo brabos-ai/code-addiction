@@ -157,23 +157,16 @@ the analysis against `building-commands` before any edit.
 
 ### 1.1 If a plan is specified
 
-**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match it as a
-**substring** of the basenames of `docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*`
-and `--ledger` companions.
-
-**All three naming forms resolve:** the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy `NNNN-PLAN--`,
-and `-SELF-PLAN--` from when planning was split by layer. There is no longer a reason to exclude the
-last one — a topic is no longer split into a paired product plan and internal plan sharing a slug.
-
-- **Exactly one match** → that is the plan. Read it.
-- **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
-- **No match** → list `docs/plans/` and STOP.
+**Resolve `[plan]` BEFORE reading anything, by `add-plan-authoring`'s Argument Resolution.** Load it
+and apply it as written: it owns the substring match, the companions it excludes, the three naming
+forms that resolve, and the stop on more than one match or none. Exactly one match is the plan — read
+it.
 
 **Extract:** the F-blocks with their layer tags, the execution order, the Global Constraints, the
 validated decisions, the per-F-block validation the plan specifies, and the `> **Delivery:**` header
 line — `confirm` when absent. `add-plan-authoring` owns what it means, under **The Delivery Mode**.
 
-**Stop kind — deciding.** The two resolution stops above present an ambiguity, and nothing approved
+**Stop kind — deciding.** The two resolution stops Argument Resolution makes present an ambiguity, and nothing approved
 which plan an ambiguous argument meant.
 
 **A plan whose F-blocks carry no layer tag is legacy.** Derive the tag from each path — `framwork/`,

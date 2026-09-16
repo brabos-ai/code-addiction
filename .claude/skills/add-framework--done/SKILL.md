@@ -126,11 +126,7 @@ Verify the current branch is **not** `main`. If it is → report and STOP: this 
 
 **One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.4 runs on `main`, because the branch it would have run on is already merged and gone.
 
-**Resolve `[plan]` the way `/add-framework--build` does.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*`, `--evidence-v*` and `--ledger` companions).
-
-- **Exactly one match** → that is the plan.
-- **More than one match** → print every candidate basename and ask which one. **NEVER guess.**
-- **No match** → list the plans in `docs/plans/` and STOP.
+**Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
 
 When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
 
