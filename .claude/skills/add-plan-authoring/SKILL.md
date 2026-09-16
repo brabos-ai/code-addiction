@@ -151,6 +151,17 @@ Every `[STOP]` in the four stages is one of two kinds:
 | **deciding** | A choice the brainstorm's approval did not cover — an open question, a blocker, an ambiguity, a push | Waits | **Waits** |
 | **confirming** | Something the approval already covered — a design, a summary, a report of work already agreed | Waits | Does not wait |
 
+⛔ **"Does not wait" means not waiting, never not printing.** A confirming stop on the automatic path
+still emits everything it would have shown — the design, the confirmation screen, the plan preview,
+the report — and then continues. Skipping the output would hide what is being decided without the
+operator in exactly the mode where they are not there to ask.
+
+```
+IF A CONFIRMING STOP IS PASSED ON THE AUTOMATIC PATH:
+  ⛔ DO NOT: Skip the content the stop presents
+  ✅ DO: Print it in full, then continue to the next step
+```
+
 ⛔ **Classify by STATE, not by marker.** One marker can be both kinds: `/add-framework--build` STEP 9
 decides on the first push of a branch with no PR, and only confirms once a PR exists. Each stage
 classifies its own stops where they sit, with the state that decides the kind.
