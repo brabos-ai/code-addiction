@@ -769,7 +769,16 @@ by side. A gate that allowed only one diagnosis would have mis-read it.
 subtopic that serves nothing: the planner will carry it, the reviewer will pass it, and the build will
 deliver it.
 
-### 8.2 Dispatch Framework Discovery Agent (SILENT)
+### 8.2 Ask the Delivery Index, Then Dispatch Framework Discovery (SILENT)
+
+**Ask the index BEFORE dispatching the agent, exactly as `### 1.2` requires.** ⛔ **Continue Mode
+reaches this step by jumping from `1.0`, so it never ran `1.2` and the lookup is owed here or
+nowhere.** `### 1.2` owns the question and the verb — load `add-artefact-graph` and resolve it there.
+
+**The reason `1.2` gives applies at least as strongly here.** That step calls this command *"the one
+most likely to re-invent something that already shipped and was dropped"*, and a subtopic refinement
+is where an idea first becomes a concrete artefact proposal. A `gone` or `superseded` entry is the
+answer that changes the design.
 
 **DISPATCH AGENT:** `@framework-discovery-agent`
 - **Capability:** read-only
