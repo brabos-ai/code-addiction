@@ -29,8 +29,9 @@ clarity for external contributors, and real value for framework consumers.
 ```
 STEP 1: Load context          → strategy docs + CLAUDE.md + discovery agent
 STEP 2: Classify              → type AND layers touched
+STEP 2.5: Size the work       → read `path:` from the intent file; bounded shrinks the document
 STEP 3: Critical analysis     → impact graph, delivery index, audit the subject, alternatives
-STEP 4: Questionnaire         → [STOP] present, wait for answers
+STEP 4: Questionnaire         → [STOP] conditional on `## Open`; confirmation when nothing is open
 STEP 5: Generate plan         → load add-plan-authoring, write the draft
 STEP 6: Review                → @plan-review-agent BEFORE any delivery
 STEP 7: Completion            → [HARD STOP] the report in the shape, then metadata
@@ -52,10 +53,10 @@ IF CONTEXT NOT LOADED (STEP 1 incomplete):
   ⛔ DO NOT: Propose a change without knowing what exists
   ✅ DO: Read the strategy docs and CLAUDE.md first
 
-IF THE QUESTIONNAIRE HAS NOT BEEN ANSWERED (STEP 4):
+IF STEP 4 HAS NOT BEEN ANSWERED:
   ⛔ DO NOT USE: Write on docs/plans/
   ⛔ DO NOT: Invent a decision the user has not made
-  ✅ DO: Present the analysis and WAIT
+  ✅ DO: Present the analysis — questionnaire or confirmation, per 4.0 — and WAIT
 
 IF THE PLAN HAS NOT BEEN REVIEWED (STEP 6):
   ⛔ DO NOT: Present the plan path, summary or next-step commands as delivered
@@ -149,6 +150,24 @@ IF THE INVOCATION NAMES A DESIGN FILE, OR THE IDEA RESTATES ONE:
   ✅ DO: Read it, and carry its validated decisions forward rather than re-deriving them
 ```
 
+**Read the intent file too, and read it FIRST.** `/add-framework--brainstorm` writes
+`docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` on the `bounded` and `architectural` paths;
+`add-plan-authoring` owns its shape. It carries the path that conversation classified, every decision
+it closed, and whatever it could not.
+
+**It exists on paths where a design document does not.** `bounded` writes no design document at all,
+so on that path the intent file is the only thing carrying the conversation forward.
+
+```
+IF A DECISION APPEARS UNDER `## Decided` IN THE INTENT FILE:
+  ⛔ DO NOT: Put it to the user again at STEP 4, in any form
+  ⛔ DO NOT: Re-derive it, or offer alternatives to it
+  ✅ DO: Restate it for confirmation and carry it into the plan as settled
+```
+
+**This is what stops the planner re-asking a design it just read.** The brainstorm guarantees it hands
+off nothing open that one more turn would have closed; `## Open` is what it could not close.
+
 ### 1.3 Dispatch Discovery (SILENT)
 
 IF no idea in the invocation args → skip, go to STEP 2.
@@ -191,6 +210,27 @@ F-block that touches it `internal` loads the wrong layer skill.
 F-block layer tags carry the distinction. **DO NOT split a topic into two plans.**
 
 Internal classification only. DO NOT produce artefacts yet.
+
+---
+
+## STEP 2.5: Size the Work — Read `path:`, Do Not Guess
+
+Read `path:` from the intent file resolved at STEP 1.2.
+
+| `path:` | STEP 3 | STEP 4 | STEP 5 writes |
+|---|---|---|---|
+| `bounded` | Runs. **3.2 and 3.3 are NOT skipped** | Conditional — see STEP 4 | The short-plan shape |
+| `architectural` | Runs in full | Conditional — see STEP 4 | The full plan |
+| No intent file, or no `path:` | Runs in full | The full questionnaire, unconditionally | The full plan |
+
+⛔ **A `bounded` plan skips the consultative questionnaire, never the graph gate or the delivery-index
+question.** Those two answer what breaks and what already shipped, and a small change gets both wrong
+exactly as easily as a large one. What shrinks is the plan document, never the analysis behind it.
+
+⛔ **A `spike` never reaches this command.** `/add-framework--brainstorm` reports its recommendation
+and stops, because a spike’s follow-up is a new request with its own classification. An invocation
+carrying `path: spike` means the user came here deliberately — treat it as no intent file at all and
+run everything.
 
 ---
 
@@ -298,6 +338,24 @@ why: the item becomes plan scope, and its question reaches the user at STEP 4, w
 ---
 
 ## STEP 4: Consultative Questionnaire [STOP]
+
+### 4.0 How much of it runs
+
+| `## Open` in the intent file | This STEP |
+|---|---|
+| Reads `None` | **Sections 1, 2 and 5 only, as a confirmation screen.** No questions. Section 3 is empty because nothing is open, and section 4 prints only where the analysis raised something the design never saw |
+| Lists items | Those items become section 3’s questions, and only those |
+| Absent, empty, or no intent file | Everything below, unconditionally |
+
+⛔ **An `## Open` section present but EMPTY is read as ABSENT.** A missing signal means "not closed",
+never "closed". Falling the other way produces a plan built from decisions nobody made — which is
+worse than the ceremony this branch exists to avoid.
+
+⛔ **The `[STOP]` binds on every row.** What scales is the questionnaire; the approval never does. On
+the confirmation row the user corrects an extraction error or waves it through, and the command waits
+either way.
+
+### 4.1 The sections
 
 Present, adapting to the type from STEP 2:
 
