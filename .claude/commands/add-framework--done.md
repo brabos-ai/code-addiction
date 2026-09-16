@@ -36,7 +36,7 @@ STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
-STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
+STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --merge (deliberate — STEP 7 says why)
 STEP 8: Cleanup                   → worktree, branch, this plan's archived originals — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
 
@@ -463,9 +463,11 @@ The PR already exists — STEP 2.3 created it, because CI cannot run without one
 gh pr checks --watch --fail-fast
 ```
 
-Then `gh pr merge --squash`.
+Then `gh pr merge --merge`.
 
-Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --squash --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open.
+⛔ **The method is deliberate, and it is never simply dropped.** `--merge` keeps every F-block commit the build made readable on `main`, each carrying what was validated and what was ruled; `--squash` flattened them into one line. Run non-interactively, `gh pr merge` with no method flag errors — `--merge, --rebase, or --squash required when not running interactively`.
+
+Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open. The method flag is the same deliberate one.
 
 If the merge is refused → report it and STOP. The entry and the changelog stay on the branch, absent from `main`, which is the honest state. **DO NOT** proceed to STEP 8.
 
