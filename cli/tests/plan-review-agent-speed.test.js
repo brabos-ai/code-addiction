@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
  * that passes before its F-block lands is a level that does not bite.
  *
  * Six assertions pass on the pre-plan tree by design, and they are marked. They
- * guard properties the plan must PRESERVE — the READ-ONLY statement, the eight
+ * guard properties the plan must PRESERVE — the READ-ONLY statement, the nine
  * dimensions, the four verdict rules, the `blocked` path in the callers. A
  * matrix that is RED everywhere has no guard against collateral damage.
  *
