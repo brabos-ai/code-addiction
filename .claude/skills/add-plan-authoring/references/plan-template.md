@@ -17,6 +17,14 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 
 ---
 
+## Objective
+
+[The design's `## Objective`, copied VERBATIM. One or two sentences: what will be true when this is
+done that is not true today.]
+
+**When this build is done:** [what the executor will have produced, as an outcome rather than a file
+list. The Impact table names the files; this names what they add up to.]
+
 ## Context
 
 [Why this need arose. Connect it to the pain point.]
