@@ -50,6 +50,17 @@ IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
   ✅ DO: At STEP 7 handoff, print the suggested command as plain text, then STOP
 ```
 
+**A chain the user authorised is not initiative.** The gate above bans this skill deciding, on its own,
+to run the next stage. When the user picks `Approve, deliver automatically` at STEP 7.3, loading
+`/add-framework--plan` is the user's decision carried out, and it is the one load this skill makes:
+
+```
+IF THE USER CHOSE "Approve, deliver automatically" AT STEP 7.3:
+  ✅ DO: Load /add-framework--plan with the intent file, after writing it — and nothing else
+  ⛔ DO NOT invoke: /add-framework--build — the plan hands off to it, not this skill
+  ⛔ DO NOT invoke: /add-framework--done — no path reaches it unattended
+```
+
 ---
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -895,7 +906,7 @@ NEVER:
 - Create umbrella specs without explicit decomposition
 - Write documents outside `docs/brainstorming/`
 - Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
-- Invoke any command or skill via Skill tool or slash — handoff is text-only, on every path
+- Invoke any command or skill via Skill tool or slash on its own initiative — handoff is text-only on every path except the one `Approve, deliver automatically` authorises
 - Downgrade an effort path mid-conversation — the ratchet only goes up
 - Treat a spike's answer as permission to build — that is a new request with its own classification
 - Write full class/method implementations in design docs (one illustrative snippet allowed)
