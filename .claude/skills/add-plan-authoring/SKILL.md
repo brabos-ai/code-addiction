@@ -176,6 +176,34 @@ documents cite plans by number. **Only `-PLAN--` with a timestamp is written for
 
 ---
 
+## The Plan Preview
+
+**What the plan will say, shown before it is written.** `/add-framework--plan` prints it at the end of
+its STEP 4, inside the stop that step already makes — on the automatic path it is the one moment the
+operator sees what is being decided without them.
+
+**Shape — five labelled items, in this order:**
+
+```markdown
+**Objective:** <one line — the objective the plan will carry>
+**Phases:** <one line per phase — its name and what it includes>
+**Order:** <the phase order, and WHY it is that order, in one or two lines>
+**Risk:** <one line per artefact the plan changes — its name and its risk grade from STEP 3.2>
+**Excluded:** <what the plan will NOT do, one line per item>
+```
+
+```
+IF COMPOSING THE PREVIEW:
+  ⛔ DO NOT: List files, validation levels, F-block ids or F-block detail — then someone reads the
+             preview instead of the plan
+  ⛔ DO NOT: Run a new query, audit or dispatch for it — it is composed from what STEP 3 produced
+  ⛔ DO NOT: Add a stop for it — STEP 4 already stops
+  ✅ DO: Compose the five items from the analysis in hand, and print them
+```
+
+**It is not the plan in miniature.** A reader who needs a file or a check opens the plan; the preview
+exists so that nobody has to, to know whether the plan is heading the right way.
+
 ## The Short-Plan Shape
 
 **A `bounded` design produces a plan carrying the template’s mandatory sections only.** The five the

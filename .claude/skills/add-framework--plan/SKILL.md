@@ -392,7 +392,13 @@ Sections:
 
 **STOP AND WAIT.** After the user responds, summarize the confirmed decisions and proceed.
 
-### 4.2 Stop kind — decided by the state 4.0 routed to
+### 4.2 End with the plan preview
+
+**Print the plan preview as the last thing this step shows, before the wait in 4.1, on every row of 4.0.** `add-plan-authoring`
+owns its five items and what it must not carry — read **The Plan Preview** there. It is composed from
+STEP 3's analysis and the answers so far; it runs no new analysis, and it adds no stop of its own.
+
+### 4.3 Stop kind — decided by the state 4.0 routed to
 
 | State | Kind | On `delivery: automatic` |
 |---|---|---|
