@@ -19,8 +19,14 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 
 ## Objective
 
+[IF a design document exists:]
 [The design's `## Objective`, copied VERBATIM. One or two sentences: what will be true when this is
 done that is not true today.]
+
+[IF NO design document exists — a `bounded` path writes none:]
+[The objective drawn from the conversation, marked `[from conversation, no design document]` so a
+later reader knows which it is. Same question, same length. The marker is not optional: an objective
+nobody can trace to a document is the one most likely to have been reconstructed rather than agreed.]
 
 **When this build is done:** [what the executor will have produced, as an outcome rather than a file
 list. The Impact table names the files; this names what they add up to.]

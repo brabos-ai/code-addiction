@@ -23,7 +23,7 @@ Transforms rough ideas into fully-formed, final designs ready for `/add-framewor
 
 ```
 STEP 1: Capture topic & discover context → detect mode, capture topic, dispatch agent
-STEP 2: Understand the idea            → clarifying questions + 2.2 classification — PATH ANNOUNCED, OWN TURN
+STEP 2: Understand the idea            → objective drafted (2.1.1), clarifying questions, 2.2 classification — PATH ANNOUNCED, OWN TURN
 STEP 3: Validate complexity            → ARCHITECTURAL PATH ONLY — simple or umbrella-worthy
 STEP 4: Explore & validate decisions   → conversational ideation (abbreviated on spike / bounded)
 STEP 5: Generate design document       → ARCHITECTURAL PATH ONLY — write draft design (no open questions)
@@ -509,6 +509,9 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 [The objective settled at 2.1.1, in the user's own words. One or two sentences answering: what will be
 true when this is done that is not true today?]
 
+[A SET member does NOT write its own here — `8.1` copied the umbrella's verbatim and added the line
+saying how this subtopic serves it. Both go in, in that order.]
+
 ## Discovery
 
 [Summary of relevant artefacts and prior decisions from framework-discovery-agent report]
@@ -589,6 +592,11 @@ Same structure +
 | [Topic 2] | the SET form's `-002-[topic2].md` member | [which part of the objective it advances] | [what it covers] |
 
 [Every row reuses the umbrella's timestamp verbatim — that is what keeps the set grouped in the directory.]
+
+[Worked example of the third column, from a set that shipped: `| Merge without squash | ...-002-... |
+preserves the per-F-block history a fast delivery produces | ... |`. It names a PART of the objective.
+⛔ **A row that cannot fill that cell is a subtopic this umbrella should not carry** — and it is far
+cheaper to find out here than at `8.1`, after the refinement.]
 
 ## Dependencies & Relationships
 
@@ -752,6 +760,10 @@ IF REFINING A SUBTOPIC FROM AN UMBRELLA:
   ✅ DO: Copy the objective byte for byte, then state what this subtopic advances in it
 ```
 
+**Worked example of the line**, from a set that shipped: *"Serves the objective by preserving the
+per-F-block history a fast delivery produces, so removing ceremony at the front does not cost the
+record at the back."* One clause, naming a PART of the objective — never the whole of it restated.
+
 ⛔ **A subtopic that cannot write that line is not a member of this set. STOP and say so**, naming
 which of the two readings applies — the command does not pick between them:
 
@@ -791,7 +803,12 @@ Use the report as grounding context for the exploration. Do NOT show raw output 
 ### 8.3 Start STEP 2 (Understand the Idea) — Clarifying Questions Only
 
 Ask clarifying questions specific to the subtopic, grounded in the umbrella's context. This is
-`2.1` only.
+**`2.1.2` only.**
+
+⛔ **NOT `2.1.1`. `8.1` already settled the objective for this subtopic, by copying the umbrella's.**
+`2.1.1` drafts a fresh one and gates on it being stated; running it here would author the very thing
+`8.1` forbids a subtopic to author. The five questions at `2.1.2` still run — they sharpen how this
+subtopic serves the inherited objective, which is a different job from writing one.
 
 ```
 IF IN CONTINUE MODE:
