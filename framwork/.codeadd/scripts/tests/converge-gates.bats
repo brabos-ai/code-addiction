@@ -446,7 +446,7 @@ write_review_detail() {
   [[ "$output" == *"GATE_REVIEW=broken"* ]]
 }
 
-@test "C3: a plan.md written to add.plan STEP 11's real shape must not block gate 4" {
+@test "C3: a plan.md written to add.plan STEP 10's real shape must not block gate 4" {
   DIR="docs/features/0043F-c3"; ABS="$TEST_REPO/$DIR"; mkdir -p "$ABS"
   {
     echo "# Plan"
@@ -573,7 +573,7 @@ write_review_detail() {
 @test "S1: an epic-wide run aggregates the SUBFEATURE plans for coverage" {
   DIR="docs/features/0054F-s1"; ABS="$TEST_REPO/$DIR"
   write_epic "$ABS" all-done
-  # On an epic there is NO feature-level plan.md — add.plan STEP 5 puts it at SF level.
+  # On an epic there is NO feature-level plan.md — add.plan STEP 4 puts it at SF level.
   mkdir -p "$ABS/subfeatures/SF01-alpha" "$ABS/subfeatures/SF02-beta"
   printf '| ID | Requirement | Covered? |
 |----|---|---|

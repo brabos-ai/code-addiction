@@ -875,7 +875,12 @@ describe('node inventory snapshot', () => {
       // declares one as of the final-report-shape plan.
       // command 24 -> 23: add-framework--review deleted, its audit folded into
       // add-framework--build as STEP 7.
-      command: 23,
+      // command 23 -> 22: add.init deleted. The owner/product onboarding it
+      // wrote was never read back — its four readers disagreed with it about
+      // both path and format — so the whole feature went rather than its paths
+      // being repaired.
+      // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
+      command: 22,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
@@ -894,7 +899,10 @@ describe('node inventory snapshot', () => {
       // plugins/*/skills/, so no gate, search or orphan check had ever seen it.
       // skill 53 -> 54: add-artefact-graph, the internal skill that became the
       // single owner of graph querying (F14 of the same plan).
-      skill: 54,
+      // skill 54 -> 53: add-product-discovery deleted. add.init was its only
+      // caller, so it was orphaned the moment that command went.
+      // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
+      skill: 53,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -902,7 +910,10 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-10T173216-PLAN--prompt-quality-ruler, F3.)
       agent: 30,
       // reference 69 -> 70: add-plan-authoring/references/plan-template.md.
-      reference: 70,
+      // reference 70 -> 69: add-doc-schemas/references/product.md deleted with
+      // the owner and product schemas it held; add.init was their only writer.
+      // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
+      reference: 69,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -967,8 +978,14 @@ describe('node inventory snapshot', () => {
     // feature. A fragment is a declaring kind, so it counts in both totals.
     // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary,
     // F15 and F21.)
-    expect(nodes).toHaveLength(228);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(132);
+    // 228 -> 225, declares 132 -> 130: -3 for add.init, add-product-discovery
+    // and add-doc-schemas/references/product.md, deleted together with the
+    // owner/product onboarding. Two of the three declare (the command and the
+    // skill); a reference does not, which is why declares drops by 2 and the
+    // total by 3.
+    // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
+    expect(nodes).toHaveLength(225);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(130);
   });
 });
 

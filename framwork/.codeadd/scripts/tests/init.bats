@@ -9,30 +9,6 @@ teardown() {
   common_teardown
 }
 
-# ─── Owner detection ────────────────────────────────────────────────
-
-@test "detects complete owner from docs/owner.md (name|level|language)" {
-  mkdir -p docs
-  printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
-  run "$SCRIPTS_DIR/init.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Maicon|advanced|pt-br"* ]]
-}
-
-@test "uses defaults when owner.md does not exist" {
-  run "$SCRIPTS_DIR/init.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:unknown|intermediate|en-us"* ]]
-}
-
-@test "uses partial defaults when owner.md has missing fields" {
-  mkdir -p docs
-  printf 'Nome: Ana\n' > docs/owner.md
-  run "$SCRIPTS_DIR/init.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Ana|intermediate|en-us"* ]]
-}
-
 # ─── Git info ────────────────────────────────────────────────────────
 
 @test "detects main branch and type=main" {

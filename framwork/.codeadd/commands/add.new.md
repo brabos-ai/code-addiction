@@ -22,7 +22,6 @@
 > **The closing report at `## Completion` is exempt** — it reports in the shape `add-final-report`
 > owns, and a 20-word stub is not that shape.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 Full feature discovery command BEFORE implementation.
 
@@ -66,7 +65,7 @@ All subsequent steps reference these loaded skills; DO NOT reload.
 
 ## STEP 2: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
 
-**Execute init + allocate ID:**
+**Execute init + allocate ID (`status.sh next-id F`):**
 
 ```bash
 bash .codeadd/scripts/init.sh
@@ -386,7 +385,7 @@ This command documents a feature rather than building it, so block 2 is titled `
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
 
-Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 8.1 when the feature touches UI), `/add.build` for implementation.
+Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside STEP 7.1 when the feature touches UI), `/add.build` for implementation.
 
 ---
 

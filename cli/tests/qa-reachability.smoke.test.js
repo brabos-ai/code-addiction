@@ -114,7 +114,7 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
     expect(warnSpy).not.toHaveBeenCalled();
     expect(modified).toBeGreaterThan(0);
 
-    expect(snapshot(targets[0])).toContain('STEP 10.0'); // QA-Spec step landed in add.plan
+    expect(snapshot(targets[0])).toContain('STEP 9.0'); // QA-Spec step landed in add.plan
     expect(snapshot(targets[1])).toContain('E2E Spec Authoring'); // e2e-dispatch landed in add.build
     expect(snapshot(targets[1])).toContain('QA-Routed Correction'); // qa-fix landed in add.build
     for (const f of targets) if (snapshot(f) !== before[f]) expect(snapshot(f)).not.toContain('<!--');
@@ -194,10 +194,12 @@ describe('scenario 5 — UX agent design ownership', () => {
   const agentFile = (name) =>
     path.join(ROOT, 'framwork', '.claude', 'agents', `${name}.md`);
 
-  it('built add.plan contains the 8.1 UX step and the 8.4 Frontend Specialist line', () => {
+  it('built add.plan contains the 7.1 UX step and the 7.4 Frontend Specialist line', () => {
+    // Was 8.1/8.4 until 2026-09-14T215223-PLAN--remove-owner-product-onboarding
+    // deleted add.plan's STEP 1 (Load Founder Profile) and shifted the rest down.
     const plan = builtCommand('add.plan');
-    expect(plan).toContain('### 8.1 UX Design Specialist');
-    expect(plan).toContain('- 8.4: Frontend Specialist');
+    expect(plan).toContain('### 7.1 UX Design Specialist');
+    expect(plan).toContain('- 7.4: Frontend Specialist');
   });
 
   it('the qa-pipeline enable/disable round-trip is still byte-identical after the anchor rename', () => {
@@ -579,7 +581,7 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
     expect(loop).not.toMatch(/\/add\.(qa|test|autopilot)(?![\w-])/);
   });
 
-  it('add.plan GATES table declares the design gates it enforces at 8.1', () => {
+  it('add.plan GATES table declares the design gates it enforces at 7.1', () => {
     const plan = builtCommand('add.plan');
     const gates = plan.slice(plan.indexOf('## GATES'), plan.indexOf('## INVARIANT'));
     expect(gates).toContain('design_gate');

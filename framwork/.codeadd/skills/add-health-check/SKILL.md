@@ -79,4 +79,4 @@ Output files: `context-discovery.md`, `documentation-report.md`, `infrastructure
 
 ## Language
 
-Reports written for entrepreneurs who may not be technical — accessible style, prioritized critical → desirable. Language follows `owner.md` (default English); technical terms stay in EN; glossary included in HEALTH-REPORT.md.
+Reports written for entrepreneurs who may not be technical — accessible style, prioritized critical → desirable. Language follows the conversation (default English); technical terms stay in EN; glossary included in HEALTH-REPORT.md.

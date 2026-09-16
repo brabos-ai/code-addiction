@@ -7,7 +7,6 @@
 - skill: add-health-check
 - skill: add-investigation
 - command: /add.new
-- script: status.sh
 -->
 
 > **DOCUMENTATION STYLE:** Follow standards defined in skill `add-doc-schemas`
@@ -17,7 +16,6 @@ Execute complete technical analysis of the project, identifying security, archit
 **Output:** `docs/audit/<YYYY-MM-DD>.md` (per `audit-report` schema) + supporting reports in `docs/audits/<YYYY-MM-DD>/`
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 
 ---
 

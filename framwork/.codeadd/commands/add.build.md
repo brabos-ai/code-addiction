@@ -55,7 +55,6 @@ Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 1 as well.
 ---
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **OWNER:** Adapt detail level to owner profile from status.sh (beginner → explain why; advanced → essentials only).
 > **ARGS:** `/add.build [F[NNNN]] [--worktree]` — explicit feature target + opt-in worktree; composable with `feature N` (legacy epic).
 
 ---
@@ -440,7 +439,7 @@ STEP 18 reprints every one of them.
 The ledger is read on entry because a compacted session looks exactly like a
 fresh start. **The same argument applies to the plan**: what a compaction erases
 is the coordinator's understanding of it, and nothing checks that what it
-recovers matches the document. `/add.plan` STEP 13's readback ran in the session
+recovers matches the document. `/add.plan` STEP 12's readback ran in the session
 that WROTE the plan, while it could still be asked; this one reads it the way a
 resumed session actually holds it — alone.
 

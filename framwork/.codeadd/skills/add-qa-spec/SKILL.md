@@ -18,7 +18,7 @@ description: Generate a code-free QA/E2E specification (reachability intent, UX 
 
 ## When to Use
 
-- `add.plan`'s `qa-pipeline`-gated QA-Spec step (STEP 10.0), to produce `plan-qa-spec.md` AND author `_tests/screens.json` before consolidation.
+- `add.plan`'s `qa-pipeline`-gated QA-Spec step (STEP 9.0), to produce `plan-qa-spec.md` AND author `_tests/screens.json` before consolidation.
 
 ## When NOT to Use
 
@@ -54,7 +54,7 @@ Write to `docs/features/${FEATURE_ID}/plan-qa-spec.md` under a `## QA/E2E Specif
 
 ## Output 2 — Screen Catalog (`_tests/screens.json`)
 
-You OWN this file when dispatched by `add.plan` STEP 10.0. (`add.qa-setup` STEP 8 only scaffolds it at setup time, before any plan exists.) One catalog entry per row of the table above.
+You OWN this file when dispatched by `add.plan` STEP 9.0. (`add.qa-setup` STEP 8 only scaffolds it at setup time, before any plan exists.) One catalog entry per row of the table above.
 
 ### Entry shape
 

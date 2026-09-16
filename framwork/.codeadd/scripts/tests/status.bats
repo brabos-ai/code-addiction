@@ -87,24 +87,6 @@ teardown() {
   [[ "$output" == *"DOCS:about.md,plan.md"* ]]
 }
 
-# ─── Owner detection ────────────────────────────────────────────────
-
-@test "detects complete owner (name|level|language)" {
-  mkdir -p docs
-  printf 'Nome: Maicon\nNivel: avancado\nIdioma: pt-br\n' > docs/owner.md
-  run "$SCRIPTS_DIR/status.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Maicon|advanced|pt-br"* ]]
-}
-
-@test "owner uses defaults for missing fields" {
-  mkdir -p docs
-  printf 'Nome: Ana\n' > docs/owner.md
-  run "$SCRIPTS_DIR/status.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"OWNER:Ana|intermediate|en-us"* ]]
-}
-
 # ─── Recommendations ────────────────────────────────────────────────
 
 @test "recommends /add.new when on main" {

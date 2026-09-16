@@ -140,7 +140,7 @@ For `/add.plan` (feature mode, creates `docs/features/<slug>/plan.md`).
 
 ### feature-design
 
-For `/add.plan` STEP 8.1 — the sole writer of this doc, through the UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
+For `/add.plan` STEP 7.1 — the sole writer of this doc, through the UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
 
 **Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
 
@@ -195,7 +195,7 @@ For `/add.brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). D
 
 ### epic
 
-For `/add.new` STEP 5 (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add.build` STEP 16 (block 16.4) and by `/add.plan-to-ready`'s checkpoint step; the `checkpoint` cell is written **only by whoever creates the checkpoint commit and its tag**. Read by `/add.plan` STEP 8.0, `/add.done` STEP 4.1, `status.sh`, and `converge-gates.sh`.
+For `/add.new` STEP 5 (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add.build` STEP 16 (block 16.4) and by `/add.plan-to-ready`'s checkpoint step; the `checkpoint` cell is written **only by whoever creates the checkpoint commit and its tag**. Read by `/add.plan` STEP 7.0, `/add.done` STEP 4.1, `status.sh`, and `converge-gates.sh`.
 
 **Compatibility.** `/add.new` STEP 5 has always written this doc freeform ("subfeature table + order + notes" — no fixed frontmatter, TL;DR, or section headings). This schema is additive: every existing `epic.md` is valid as written, nothing gets rewritten. Universal Document Requirements (frontmatter, TL;DR, TOC) bind schema-aware writes going forward; a pre-schema doc missing any of them is read as-is — warn, never fail. The one contract that already binds every `epic.md`, old or new, is the Subfeatures row shape below.
 

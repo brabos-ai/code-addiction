@@ -26,7 +26,6 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - skill: add-doc-schemas/references/fix.md
 - skill: add-doc-schemas/references/history.md
 - skill: add-doc-schemas/references/new-feature.md
-- skill: add-doc-schemas/references/product.md
 - skill: add-doc-schemas/references/receipt.md
 - skill: add-doc-schemas/references/review.md
 - skill: add-doc-schemas/references/strategy.md
@@ -94,11 +93,11 @@ Schema-agnostic rules that apply to every generated doc, even when the schema is
 
 | Context | Language |
 |---|---|
-| Prose, explanations, rationale | Follow the `language` field in `owner.md` (e.g. `pt-br`, `en-us`); default to English when the field is unset or `owner.md` does not exist |
+| Prose, explanations, rationale | Match the language the user writes in; default to English. |
 | Code, git, CLI flags, technical terms | English |
 | Frontmatter keys and schema type names | English (machine-parsed) |
 
-Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English regardless of the owner's language setting. Do not translate them.
+Technical terms (commit, branch, frontmatter, chunk, schema, hook) stay in English whatever language the rest of the document is written in. Do not translate them.
 
 ### Markdown Formatting
 
@@ -141,7 +140,7 @@ Every ADD doc type that participates in the reference graph has a prefix. IDs ar
 
 > **Convention:** Feature/hotfix IDs use `[NNNN][L]` (number first, letter suffix) per `{{skill:add-id-convention/SKILL.md}}`. `PRD` and `CHG` are separate namespaces with no letter suffix.
 
-Other doc types (`OWNER`, `PRODUCT`, `AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`, `RCPT-<command>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
+Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `BRN-<slug>`, `RCPT-<command>`) use fixed or slug-based IDs — see individual schemas in the category files. QA validation reports use a **per-scope sequence** ID (`<feature-id>-qa-validation-NNN`, not a global prefix) — see `qa-validation` in `references/review.md` and `{{skill:add-id-convention/SKILL.md}}`.
 
 ### ID Allocation
 
@@ -284,7 +283,6 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | `fix` | `references/fix.md` | hotfix |
 | `review` | `references/review.md` | audit-report, diagnose-report, review, qa-validation |
 | `history` | `references/history.md` | changelog |
-| `product` | `references/product.md` | owner, product |
 | `strategy` | `references/strategy.md` | prd |
 | ~~`marketing`~~ | **retired** | `saas-copy` and `landing-page` were dropped with their category file; nothing writes either, and a command asking for one gets no schema |
 | `receipt` | `references/receipt.md` | setup-receipt |
