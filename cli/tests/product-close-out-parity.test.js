@@ -45,7 +45,7 @@ const P = {
   newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.new.md'),
   brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.brainstorm.md'),
   plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan.md'),
-  fwBrainstorm: path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md'),
+  fwBrainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
   planAuthoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
 };
 
@@ -368,7 +368,7 @@ describe('L6 — the PR merge route (F9)', () => {
       'done.sh --commit-push',
       'gh pr checks',
       'headRefOid',
-      'gh pr merge --squash',
+      'gh pr merge --merge',
       'done.sh --cleanup',
     ];
     let at = -1;
@@ -438,7 +438,10 @@ describe('L7 — the resume and recovery routes (F10)', () => {
 
   it('L7.3: Recovery resolves the feature from the merge commit, not from plan.md', () => {
     const r = routes();
-    expect(r).toContain('git show --name-status');
+    // First-parent diff, not `git show`: on a merge commit `git show` prints a
+    // combined diff that can be smaller than the delivery, or empty.
+    expect(r).toContain('git diff --name-status <merge-commit>^1 <merge-commit>');
+    expect(r).not.toMatch(/```bash\s*\ngit show --name-status/);
     expect(r).toMatch(/docs\/features\/\[NNNN\]\[L\]/);
     expect(r).toMatch(/DO NOT/);
     expect(r).toMatch(/plan\.md/);

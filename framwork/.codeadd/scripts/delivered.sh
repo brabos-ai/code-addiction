@@ -23,8 +23,9 @@
 # product|internal field, and writing the answer layer there would silently
 # overwrite it, so a caller could no longer tell which layer a delivery is in.
 # The delivery's commit is DERIVED, never stored: the close-out commits the
-# entry on the branch and the merge squashes that branch, so the commit that
-# introduced an entry's line IS the commit that delivered it. Each returned
+# entry on the branch, and the FIRST-PARENT commit that introduced an entry's
+# line on the default branch IS the commit that delivered it — the merge commit
+# on the PR route, the squash commit on the local one. Each returned
 # entry carries `answer`:
 #   complete - the path is in that derived commit's own diff. Exact and whole.
 #   curated  - the path is one of the entry's `items[].at` anchors,
@@ -578,13 +579,21 @@ function git(args) {
  * same answer a per-id pickaxe gives, at one subprocess instead of one per
  * entry.
  *
+ * FIRST PARENT, because a merge commit is what delivers. The PR route merges
+ * with --merge, so the code and the index line reach the default branch in
+ * separate branch commits, and the one that introduced the line touches only
+ * docs/. Walking every commit would name that branch commit and degrade the
+ * delivery to curated. `--first-parent -m` reads the merge commit diffed
+ * against its first parent instead, which is the whole delivery. A squashed or
+ * linear history is all first parents, so it answers exactly as before.
+ *
  * WHY THIS SHAPE. Two earlier versions asked git per index entry: a pickaxe
  * plus a `show` each, then a `show` of the whole index blob per commit. Measured
  * on this repository they cost 10.3s and 13.0s per query, inside a step six
  * product commands run. This costs three calls plus one per queried path.
  */
 function deliveryCommits() {
-  const log = git(['log', '--format=C %h', '-p', '--', 'docs/delivered.jsonl']);
+  const log = git(['log', '--first-parent', '-m', '--format=C %h', '-p', '--', 'docs/delivered.jsonl']);
   if (log === null) return null;
   const owner = new Map();
   let sha = null;
@@ -601,16 +610,16 @@ function deliveryCommits() {
   return owner;
 }
 
-/** The commits that touched anything outside `docs/`. `null` when git cannot answer. */
+/** The first-parent commits that touched anything outside `docs/`. `null` when git cannot answer. */
 function nonDocsCommits() {
-  const res = git(['log', '--format=%h', '--', '.', ':(exclude)docs']);
+  const res = git(['log', '--first-parent', '--format=%h', '--', '.', ':(exclude)docs']);
   if (res === null) return null;
   return new Set(res.split('\n').map((x) => x.trim()).filter(Boolean));
 }
 
-/** The commits that touched one path. `null` when git cannot answer. */
+/** The first-parent commits that touched one path — the same walk as deliveryCommits. `null` when git cannot answer. */
 function commitsTouching(p) {
-  const res = git(['log', '--format=%h', '--', p]);
+  const res = git(['log', '--first-parent', '--format=%h', '--', p]);
   if (res === null) return null;
   return new Set(res.split('\n').map((x) => x.trim()).filter(Boolean));
 }

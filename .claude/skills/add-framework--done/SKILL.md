@@ -1,3 +1,8 @@
+---
+name: add-framework--done
+description: "Use when a delivered branch is ready to close out — gates it on the ledger and CI, writes the delivery-index entry and changelog, archives the plan, merges the PR with --merge and cleans up. Never reached unattended. Last stage of brainstorm → plan → build → done."
+---
+
 # ADD Done — Close-Out
 
 <!-- uses:
@@ -6,9 +11,9 @@
 - skill: add-plan-authoring
 - skill: add-build-ledger
 - skill: add-artefact-graph
-- command: /add-framework--build
-- mention: /add-framework--plan
-- mention: /add-framework--brainstorm
+- skill: add-framework--build
+- mention: add-framework--plan
+- mention: add-framework--brainstorm
 -->
 
 <!--
@@ -36,7 +41,7 @@ STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
 STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
-STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --squash
+STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --merge (deliberate — STEP 7 says why)
 STEP 8: Cleanup                   → worktree, branch, this plan's archived originals — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
 
@@ -83,12 +88,16 @@ IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
   `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
 
-ALWAYS — THIS COMMAND ENDS WORK IT DID NOT START:
+ALWAYS — THIS SKILL ENDS WORK IT DID NOT START:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
   ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
   ⛔ DO NOT: Delete another plan's files under docs/plans/, docs/brainstorming/ or docs/evidence/ — only the closed-out plan's own
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
+
+**Stop kind — every stop in this skill is deciding, in every state.** The close-out is never reached
+unattended: no delivery mode hands off to it, so it only ever runs because the operator invoked it, and
+its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 
 ---
 
@@ -113,15 +122,11 @@ Run `gh auth status`. If it fails → report it and STOP. Nothing below is writt
 
 ### 1.2 Resolve the branch and the plan
 
-Verify the current branch is **not** `main`. If it is → report and STOP: this command ends work someone else started on a branch, and it never creates one.
+Verify the current branch is **not** `main`. If it is → report and STOP: this skill ends work someone else started on a branch, and it never creates one.
 
 **One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.4 runs on `main`, because the branch it would have run on is already merged and gone.
 
-**Resolve `[plan]` the way `/add-framework--build` does.** The full basename always works; otherwise match `[plan]` as a **substring** of the basenames of `docs/plans/*PLAN--*.md` (excluding `--review-v*`, `--evidence-v*` and `--ledger` companions).
-
-- **Exactly one match** → that is the plan.
-- **More than one match** → print every candidate basename and ask which one. **NEVER guess.**
-- **No match** → list the plans in `docs/plans/` and STOP.
+**Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
 
 When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
 
@@ -172,7 +177,7 @@ a complete and correct entry. Falling through to the normal path writes a **seco
 delivery, which is exactly what a three-row table did on PR #49.
 
 **The third row is what makes a second run on the same branch safe:** the gates below would all still
-pass, and without it the command would write a second entry for one delivery.
+pass, and without it the close-out would write a second entry for one delivery.
 
 **The bottom row is the case the index exists for.** Work reached `main` and left no record. Stopping there would make the index quietly wrong about a delivery that shipped — the same lie as indexing work that never landed, in the other direction. It is recoverable, so recover it.
 
@@ -237,13 +242,19 @@ left to do:
 | Step | Normal | Recovery |
 |---|---|---|
 | 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
-| 1.3 | `git diff --name-status main...HEAD` | `git show --name-status <merge-commit>` — the squash IS the delivery |
+| 1.3 | `git diff --name-status main...HEAD` | `git diff --name-status <merge-commit>^1 <merge-commit>` — the first-parent diff, which is the whole delivery |
 | 2.2 | The ledger gate | Unchanged. It still hard-stops |
 | 2.3 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
 | 7 | Merge the PR | **Skipped.** Already merged |
 | 8 | Cleanup | The merged branch is still there to delete. Check 2 reads the merge commit resolved at 1.3, not a PR |
+
+⛔ **Never `git show` on the merge commit.** A merge commit has two parents, so `git show` prints a
+combined diff — only the paths that differ from BOTH parents. That is frequently smaller than the
+delivery and sometimes empty, and nothing reports it: the index and the changelog would record a
+wrong file list in silence. The first-parent diff above is the change the merge brought to `main`,
+and it gives the same answer on a squash commit, whose only parent is `^1`.
 
 ```
 IF THE MERGE COMMIT CANNOT BE RESOLVED:
@@ -443,7 +454,7 @@ The design source is **the `docs/brainstorming/` file the plan's Context documen
 
 Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
 
-⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit rides the squash merge to `main` under a message that does not describe it.
+⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit reaches `main` with the merge, inside a commit whose message does not describe it.
 
 The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
 
@@ -463,9 +474,11 @@ The PR already exists — STEP 2.3 created it, because CI cannot run without one
 gh pr checks --watch --fail-fast
 ```
 
-Then `gh pr merge --squash`.
+Then `gh pr merge --merge`.
 
-Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --squash --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open.
+⛔ **The method is deliberate, and it is never simply dropped.** `--merge` keeps every F-block commit the build made readable on `main`, each carrying what was validated and what was ruled; a squash flattened them into one line. Run non-interactively, `gh pr merge` with no method flag errors and asks for one.
+
+Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open. The method flag is the same deliberate one.
 
 If the merge is refused → report it and STOP. The entry and the changelog stay on the branch, absent from `main`, which is the honest state. **DO NOT** proceed to STEP 8.
 
@@ -473,7 +486,10 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 ## STEP 8: Cleanup (NON-FATAL, IN ORDER)
 
-**Run only if the index carries this plan's entry and STEP 7's merge succeeded.**
+**Run only if the index carries this plan's entry and the delivery is on `main`.** On the normal and
+resume paths STEP 7's merge put it there; on the recovery path at 2.4 it was merged before this run and
+STEP 7 was skipped. **The condition is the delivery being on `main`, never which STEP merged it** — the
+same carve-out the entry's existence already has at the top of this file.
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
@@ -540,9 +556,9 @@ a skipped cleanup into work nobody asked for, on a branch that is already merged
 
 **No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
 
-### 8.1 When this command is running inside the worktree it would remove
+### 8.1 When this skill is running inside the worktree it would remove
 
-`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and the first removal above has nothing it can do.
+`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this skill there — and the first removal above has nothing it can do.
 
 ⛔ **Attempting it anyway does damage, measured rather than assumed.** Run from inside, the command **unregisters the worktree and then fails to delete the directory** — `error: failed to delete '<path>': Permission denied`, exit 255. What is left is an orphan directory git no longer knows about, so a second `git worktree remove` answers `is not a working tree` and the operator now needs `git worktree prune` plus a manual delete. A skipped sub-step costs one clean command later; this costs a repair.
 
@@ -584,7 +600,7 @@ Then, after the seven blocks and before the metadata, report always:
 - **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
 - **The post-merge checks and their results, one line each**, whether they passed or refused the
   deletions, and whether check 2 read the PR or the merge commit. When one failed, name it, name the path, and print the `/add-framework--plan` suggestion
-  STEP 8 composed — as text the operator runs, never as something this command ran
+  STEP 8 composed — as text the operator runs, never as something this skill ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
@@ -597,3 +613,7 @@ Then, after the seven blocks and before the metadata, report always:
 
 ALWAYS:
 - Say in the report which evidence the gate accepted, CI or local, and why
+
+NEVER:
+- Switch the merge method to get a refused merge through — `--merge` is deliberate, and a refusal is reported
+- Start without the operator invoking it — no stage loads the close-out on its own, on either delivery mode

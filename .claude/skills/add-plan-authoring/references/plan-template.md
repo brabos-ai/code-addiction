@@ -1,7 +1,7 @@
 # Plan Document Template
 
 <!-- uses:
-- command: /add-framework--build
+- skill: add-framework--build
 -->
 
 Sections marked *(optional)* apply when the plan earns them. A single-artefact plan may omit them; a
@@ -14,6 +14,7 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 > **Layers:** product | internal | both
 > **Type:** command | skill | agent | script | workflow | product | architecture | cross-cutting
 > **Created:** YYYY-MM-DD
+> **Delivery:** confirm | automatic   ← copied from the intent file's `delivery:`; `confirm` when there is none
 
 ---
 

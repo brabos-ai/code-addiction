@@ -231,6 +231,18 @@ describe('L1 extractUses', () => {
       .toBe('internal/skill/add-commit');
   });
 
+  it('L1.9b `handoff:` emits HANDS_OFF_TO, resolving the target by its own kind', () => {
+    // Plan 2026-09-16T170340 F7. `command:` hands off to a command only, so a
+    // skill could not declare that the next pipeline stage is another skill.
+    // `handoff:` reads the target the way `mention:` does: a leading `/` is a
+    // command, `@` an agent, a bare name a skill.
+    const src = '<!-- uses:\n- handoff: add-framework--done\n- handoff: /add.review\n-->\n';
+    const edges = extractUses(src, 'add-framework--build', 'skill', 'internal');
+
+    expect(edges[0]).toMatchObject({ to: 'internal/skill/add-framework--done', type: 'HANDS_OFF_TO' });
+    expect(edges[1]).toMatchObject({ to: 'internal/command/add.review', type: 'HANDS_OFF_TO' });
+  });
+
   it('L1.3 returns no edges and does not throw when the artefact declares nothing', () => {
     // The common case during wave 1: almost no artefact declares yet. Throwing
     // here would block every build.
@@ -434,7 +446,7 @@ describe('L2 collectNodes', () => {
     const byId = new Map(nodes.map((n) => [n.id, n]));
 
     expect(byId.get('product/command/add.review')?.layer).toBe('product');
-    expect(byId.get('internal/command/add-framework--build')?.layer).toBe('internal');
+    expect(byId.get('internal/skill/add-framework--build')?.layer).toBe('internal');
     expect(byId.get('internal/skill/building-commands')?.layer).toBe('internal');
     expect(byId.get('internal/agent/readme-analyzer')?.layer).toBe('internal');
   });
@@ -446,7 +458,7 @@ describe('L2 collectNodes', () => {
     // A product command is registered; an internal command is not in the
     // product registry and must not be reported as drift because of it.
     expect(byId.get('product/command/add.review')?.registered).toBe(true);
-    expect(byId.get('internal/command/add-framework--build')?.registered).toBe(true);
+    expect(byId.get('internal/skill/add-framework--build')?.registered).toBe(true);
   });
 
   it('L2.4 an unregistered product artefact is marked registered:false', () => {
@@ -570,10 +582,10 @@ describe('L3 checkArtefactGraph', () => {
   it('L3.3 an internal artefact is never reported unregistered', () => {
     const g = graphOf([
       node({
-        id: 'internal/command/add-framework--build',
+        id: 'internal/skill/add-framework--build',
         layer: 'internal',
         name: 'add-framework--build',
-        path: '.claude/commands/add-framework--build.md',
+        path: '.claude/skills/add-framework--build/SKILL.md',
         registered: true,
       }),
     ]);
@@ -880,7 +892,10 @@ describe('node inventory snapshot', () => {
       // both path and format — so the whole feature went rather than its paths
       // being repaired.
       // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
-      command: 22,
+      // command 22 -> 18: add-framework--brainstorm, --plan, --build and --done
+      // became skills so each pipeline stage can load the next.
+      // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
+      command: 18,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
@@ -902,7 +917,9 @@ describe('node inventory snapshot', () => {
       // skill 54 -> 53: add-product-discovery deleted. add.init was its only
       // caller, so it was orphaned the moment that command went.
       // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
-      skill: 53,
+      // skill 53 -> 57: the same four stages, counted here now.
+      // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
+      skill: 57,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -1004,7 +1021,7 @@ describe('/add-framework--done — the CI gate it reproduces', () => {
   // command merge (plan 2026-09-08T210322-SELF-PLAN--unify-dev-commands, F1).
   // The internal layer has no provider mirror, so .claude/ is the only copy.
   const sources = [
-    path.join(ROOT, '.claude', 'commands', 'add-framework--done.md'),
+    path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
   ];
 
   for (const file of sources) {

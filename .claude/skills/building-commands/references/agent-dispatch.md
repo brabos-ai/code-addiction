@@ -83,9 +83,16 @@ Use this pattern instead of provider-specific verification:
 - If YES → Proceed to STEP N.
 ```
 
-## Agent Dispatch Rules (Include in Commands with Subagents)
+## Agent Dispatch Rules
 
-Commands that dispatch subagents MUST include this instruction block:
+**This section is the single owner of these rules.** An artefact that dispatches subagents points here
+instead of carrying a copy — three internal copies had already drifted to three different lengths
+before they were collapsed into this one.
+
+| Artefact | What it carries |
+|---|---|
+| An internal command or skill (`.claude/`) | One line naming this section. It can reach this file |
+| A product command (`framwork/.codeadd/`) | The block below, verbatim. This file does not ship, so a distributed artefact cannot point at it |
 
 ```markdown
 ## Agent Dispatch Rules
@@ -94,8 +101,9 @@ When this command instructs you to DISPATCH AGENT:
 1. Read the **Capability** required (read-only, read-write, full-access)
 2. Read the **Complexity** hint (light, standard, heavy)
 3. Choose the best available agent/task mechanism in your engine that satisfies the capability
-4. If your engine supports parallel dispatch and mode is `parallel`, dispatch all simultaneously
-5. Verify output exists before proceeding past any WAIT or GATE CHECK
+4. Prefer the named agent when your engine can address it by name
+5. If your engine supports parallel dispatch and mode is `parallel`, dispatch all simultaneously
+6. Verify every output or report exists before proceeding past any WAIT or GATE CHECK
 
 You are the coordinator. You know your engine's capabilities. Map the intent to the best available mechanism.
 ```

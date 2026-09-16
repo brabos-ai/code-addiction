@@ -280,7 +280,7 @@ describe('L3 — the documentation and registry edits', () => {
 
   it('L3.4: the close-out drops the stale Windows figure but keeps its argument and its example', () => {
     const done = fs.readFileSync(
-      path.join(REPO_ROOT, '.claude', 'commands', 'add-framework--done.md'),
+      path.join(REPO_ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
       'utf8',
     );
 

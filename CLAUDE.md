@@ -51,21 +51,30 @@ Development tools that build and maintain the framework itself. One file per art
 | Type | Path |
 |------|------|
 | Commands | `.claude/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
+| Pipeline stages | `.claude/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `.claude/agents/*.md` |
 | Plans | `docs/plans/` — gitignored working artefacts, local only |
 | Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
+### The internal pipeline — four skills
+
+`add-framework--brainstorm` → `add-framework--plan` → `add-framework--build` → `add-framework--done`. Each is invoked
+as `/<name>` and declares the next with `handoff:`.
+
+| Stage | Purpose | Operates on |
+|---------|---------|-------------|
+| `add-framework--brainstorm` | Collaborative ideation; its one approval can deliver automatically up to the build's PR question | Both layers |
+| `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
+| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
+| `add-framework--done` | Close-out — gates, `gh pr merge --merge`, index entry, cleanup. Never reached unattended | Branches, PRs, `docs/delivered.jsonl` |
+
 ### Internal commands
 
 | Command | Purpose | Operates on |
 |---------|---------|-------------|
-| `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
-| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
-| `add-framework--brainstorm` | Collaborative ideation; precedes `add-framework--plan` | Both layers |
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--done` | Close-out — gates, `gh` merge, index entry, cleanup | Branches, PRs, `docs/delivered.jsonl` |
 | `add-framework--roadmap` | Records what to do next — add, update or remove an item, then commits and pushes straight to `main` | `docs/roadmap/index.md` |
 
 ## Pipeline

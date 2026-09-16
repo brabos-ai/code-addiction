@@ -8,7 +8,7 @@ description: Use when designing command workflows or refactoring existing comman
 <!-- uses:
 - skill: add-final-report
 - skill: add-artefact-graph
-- command: /add-framework--build
+- skill: add-framework--build
 - skill: building-commands/references/agent-dispatch.md
 - mention: add-framework-development
 - mention: add-review-discipline

@@ -1,3 +1,8 @@
+---
+name: add-framework--brainstorm
+description: "Use when an idea for the framework itself needs shaping before any plan — explores it with the user, classifies it spike, bounded or architectural, writes the design and intent files, and ends on one approval that can start the rest of the internal pipeline. First stage of brainstorm → plan → build → done."
+---
+
 # ADD Brainstorm - Collaborative Ideation & Design Explorer
 
 <!-- uses:
@@ -6,9 +11,12 @@
 - agent: plan-review-agent
 - skill: add-final-report
 - skill: add-review-discipline
-- mention: /add-framework--build
-- command: /add-framework--plan
+- mention: add-framework--build
+- mention: add-framework--done
+- handoff: add-framework--plan
 - mention: add-plan-authoring
+- skill: building-commands/references/agent-dispatch.md
+- mention: building-commands
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -28,7 +36,7 @@ STEP 3: Validate complexity            → ARCHITECTURAL PATH ONLY — simple or
 STEP 4: Explore & validate decisions   → conversational ideation (abbreviated on spike / bounded)
 STEP 5: Generate design document       → ARCHITECTURAL PATH ONLY — write draft design (no open questions)
 STEP 6: Review design                  → ARCHITECTURAL PATH ONLY — @plan-review-agent before any delivery
-STEP 7: Completion & next steps [HARD STOP] → ALL THREE PATHS — print suggested command as text, STOP
+STEP 7: Completion & approval [HARD STOP] → ALL THREE PATHS report; bounded/architectural ask the three-option approval
 STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrella spec
 ```
 
@@ -42,6 +50,17 @@ IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
   ⛔ DO NOT invoke: /add-framework--plan
   ⛔ DO NOT invoke: /add-framework--build
   ✅ DO: At STEP 7 handoff, print the suggested command as plain text, then STOP
+```
+
+**A chain the user authorised is not initiative.** The gate above bans this skill deciding, on its own,
+to run the next stage. When the user picks `Approve, deliver automatically` at STEP 7.3, loading
+`/add-framework--plan` is the user's decision carried out, and it is the one load this skill makes:
+
+```
+IF THE USER CHOSE "Approve, deliver automatically" AT STEP 7.3:
+  ✅ DO: Load /add-framework--plan with the intent file, after writing it — and nothing else
+  ⛔ DO NOT invoke: /add-framework--build — the plan hands off to it, not this skill
+  ⛔ DO NOT invoke: /add-framework--done — no path reaches it unattended
 ```
 
 ---
@@ -104,7 +123,7 @@ Listen for:
 
 ### 1.2 Ask the Delivery Index, Then Dispatch Framework Discovery (SILENT)
 
-**Ask the index BEFORE dispatching the agent. This command is the one most likely to re-invent something that already shipped and was dropped.**
+**Ask the index BEFORE dispatching the agent. This skill is the one most likely to re-invent something that already shipped and was dropped.**
 
 **The question, for each artefact name the topic plausibly touches:** was this built before, and was
 it dropped?
@@ -121,7 +140,7 @@ If the index reports itself unavailable → say so and continue. An absent index
 run yet, which is information, not a failure.
 
 **"What does this relate to TODAY" is a second question, and the same skill owns it too.** A topic
-touching an existing artefact almost always raises it, and `### 4.5` is where this command answers it
+touching an existing artefact almost always raises it, and `### 4.5` is where this skill answers it
 against the design. Load the skill before reaching for grep.
 
 **DISPATCH AGENT:** `@framework-discovery-agent`
@@ -164,7 +183,7 @@ IF STARTING STEP 2:
 ```
 
 **Drafting it is the work, not a courtesy.** A user brings a problem, a symptom or a half-formed idea;
-turning that into a statement of what they are trying to achieve is the first thing this command is
+turning that into a statement of what they are trying to achieve is the first thing this skill is
 for. It is the same move `### 4.2` already makes for options — name the one you would take, then let
 them override.
 
@@ -248,7 +267,7 @@ gets its own classification.
 
 Every path ends with the user approving the intent **before** anything is implemented. What scales with
 simplicity is the **artifact** — never the approval. A bounded design may be two sentences in chat; it is
-still presented, and this command still stops until the user says yes.
+still presented, and this skill still stops until the user says yes.
 
 #### 2.2.5 Red flags — rationalisations that defeat the mechanism
 
@@ -366,7 +385,7 @@ not sharpen some part of it is a question this conversation does not need:
 ```
 IF BRINGING IN OUTSIDE PRACTICE:
   ⛔ DO NOT: Say "widely adopted", "industry standard" or "most teams" with nothing named
-  ⛔ DO NOT: Go and fetch it — this command needs no network, and a named recollection the user can
+  ⛔ DO NOT: Go and fetch it — this skill needs no network, and a named recollection the user can
              check is worth more than a link they will not open
   ⛔ DO NOT: Let outside practice override a convention this repository settled for a recorded reason
   ✅ DO: Name the product, framework or convention, and say what it does
@@ -643,14 +662,10 @@ opinion.
 
 ⛔ DO NOT invent decisions to clear blockers.
 
-### Agent Dispatch Rules
+### Dispatching the Agents Above
 
-When this command instructs you to DISPATCH AGENT:
-1. Read the **Capability** required (read-only)
-2. Read the **Complexity** hint (`standard`)
-3. Choose the best available agent/task mechanism that satisfies the capability
-4. Prefer `@plan-review-agent` when the engine can address it by name
-5. Verify the report is received before acting on the verdict
+**`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
+apply them to every `DISPATCH AGENT` block in this skill. The block names the capability and the complexity; the rules say how to honour them.
 
 ---
 
@@ -679,22 +694,56 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 - The 3-5 key validated decisions — from the design document, or from the conversation that settled
   them where no document exists
 
-### 7.3 Next Step Guidance [HARD STOP]
+### 7.3 Approval and Next Step [HARD STOP]
 
-One command formalizes both layers, so there is no layer routing left to do here. Carry STEP 2.2's
+One stage formalizes both layers, so there is no layer routing left to do here. Carry STEP 2.2's
 "Framework impact" classification into the design document as the layer each affected artefact sits
-in — the planning command reads it as the starting point for its own F-block tags. **An ambiguous
+in — the planning stage reads it as the starting point for its own F-block tags. **An ambiguous
 layer is a note in the document, not a question to the user.**
 
-#### Write the intent file first — `bounded` and `architectural`
+#### Ask for the one approval — `bounded` and `architectural`
 
-Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` before printing the handoff. Its shape,
-its naming and the `## Open` convention are owned by `add-plan-authoring` — read **The Intent File**
-there rather than restating it here.
+**This is the only approval the pipeline asks for by default.** Present it through the provider's
+structured-question tool, with these three options and nothing else:
 
-It carries the path classified at `2.2.2`, every decision this conversation closed, and whatever it
-could not. **On `architectural` it reuses the design document’s timestamp** so the pair sorts
-adjacent; on `bounded` it is the only artefact and takes its own.
+| Option | What happens |
+|---|---|
+| **Approve, I confirm each stage** | Today's behaviour. The intent file records `delivery: confirm`, the handoff below is printed as text, and this skill stops |
+| **Approve, deliver automatically** | The intent file records `delivery: automatic`, and this skill loads `/add-framework--plan` and continues. Every stage then hands off without waiting, **up to and including the build**. `add-framework--build` STEP 9 asks whether to open the PR — **that question is the terminus** |
+| **Keep discussing** | No intent file, no handoff. Return to STEP 4 with what the user wants to reopen |
+
+**Stop kind — deciding, in every state, and so is every stop in this skill before it.** The delivery
+mode does not exist until this question is answered, so nothing earlier can be a stop the approval
+already covered: the path announcement at `2.2.2`, the decomposition offer at `3.2`, the summary
+approval at `4.4`, the blockers at `6.2` and the set-membership stop at `8.1` all wait.
+
+⛔ **The close-out is never reached unattended.** No option runs `/add-framework--done`, and the
+automatic path ends at a question the user answers. The merge is approved on every path.
+
+**What "without waiting" means is owned by `add-plan-authoring`** — read **The Delivery Mode**
+there. It says which stops still wait on the automatic path, and that a stop which passes through still
+prints what it would have shown.
+
+```
+IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
+  ⛔ DO NOT USE: Write on docs/brainstorming/ for the intent file
+  ⛔ DO NOT USE: Skill tool to load /add-framework--plan
+  ✅ DO: Ask, and WAIT
+
+IF THE ANSWER IS "Keep discussing":
+  ⛔ DO NOT: Write the intent file or print a handoff
+  ✅ DO: Return to STEP 4
+```
+
+#### Write the intent file — `bounded` and `architectural`
+
+Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` once the user has approved, before any
+handoff. Its shape, its naming, the `delivery:` field and the `## Open` convention are owned by
+`add-plan-authoring` — read **The Intent File** there rather than restating it here.
+
+It carries the path classified at `2.2.2`, the approval option as `delivery:`, every decision this
+conversation closed, and whatever it could not. **On `architectural` it reuses the design document’s
+timestamp** so the pair sorts adjacent; on `bounded` it is the only artefact and takes its own.
 
 ```
 IF ABOUT TO WRITE `## Open`:
@@ -704,29 +753,33 @@ IF ABOUT TO WRITE `## Open`:
          and absent makes the planner run its full questionnaire
 ```
 
-⛔ **Nothing is written on `spike`.** A spike’s output is a recommendation, and keeping it is a new
-request with its own classification.
+⛔ **Nothing is written on `spike`, and a spike is asked no three-option question.** A spike’s output
+is a recommendation, and keeping it is a new request with its own classification.
 
 #### Then route
 
-**Name both files in the handoff**, verbatim, whichever this path wrote. The planning command reads
+**Name both files in the handoff**, verbatim, whichever this path wrote. The planning stage reads
 `docs/brainstorming/` and needs to know which file — a handoff naming only the idea leaves it matching
 a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
 whole set sharing one timestamp.
 
-On `architectural`, print this and STOP:
+On `delivery: confirm` and `architectural`, print this and STOP:
 
 ```
 Idea is ready to formalize. Run: /add-framework--plan [idea]
 Design: docs/brainstorming/<the file written at 5.3>
 Intent: docs/brainstorming/<the intent file written above>
-(brainstorm stops here — it does not run the next command for you.)
+(brainstorm stops here — it does not run the next stage for you.)
 ```
 
 On `bounded`, there is no design document, so that line is omitted and the `Intent:` line stands alone.
 
+On `delivery: automatic`, print the same lines with the last one reading `(delivering automatically —
+the build will ask before opening the PR.)`, then load `/add-framework--plan` with the intent file as
+its argument and continue there.
+
 ⛔ **On `spike`, do NOT route to the planner at all.** A spike’s terminal state is its recommendation.
-Sending it to a full planning pass contradicts this command’s own ratchet — `2.2.3` already says a
+Sending it to a full planning pass contradicts this skill’s own ratchet — `2.2.3` already says a
 spike whose answer is "yes, and here is how" is a NEW request, which gets its own classification and
 its own run. Report the recommendation and stop.
 
@@ -787,7 +840,7 @@ deliver it.
 reaches this step by jumping from `1.0`, so it never ran `1.2` and the lookup is owed here or
 nowhere.** `### 1.2` owns the question and the verb — load `add-artefact-graph` and resolve it there.
 
-**The reason `1.2` gives applies at least as strongly here.** That step calls this command *"the one
+**The reason `1.2` gives applies at least as strongly here.** That step calls this skill *"the one
 most likely to re-invent something that already shipped and was dropped"*, and a subtopic refinement
 is where an idea first becomes a concrete artefact proposal. A `gone` or `superseded` entry is the
 answer that changes the design.
@@ -851,7 +904,7 @@ NEVER:
 - Create umbrella specs without explicit decomposition
 - Write documents outside `docs/brainstorming/`
 - Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
-- Invoke any command or skill via Skill tool or slash — handoff is text-only, on every path
+- Invoke any command or skill via Skill tool or slash on its own initiative — handoff is text-only on every path except the one `Approve, deliver automatically` authorises
 - Downgrade an effort path mid-conversation — the ratchet only goes up
 - Treat a spike's answer as permission to build — that is a new request with its own classification
 - Write full class/method implementations in design docs (one illustrative snippet allowed)
