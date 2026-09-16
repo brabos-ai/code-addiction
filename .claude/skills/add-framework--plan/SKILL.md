@@ -456,7 +456,7 @@ are owned by `add-review-discipline`.** Load it. One pass, never two.
 **Stop kind — a `blocked` verdict is deciding in every state.** Its blockers are decisions nobody made,
 so the automatic path waits on them exactly as the confirming one does.
 
-### Agent Dispatch Rules
+### Dispatching the Agents Above
 
 **`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
 apply them to every `DISPATCH AGENT` block in this skill. The block names the capability and the complexity; the rules say how to honour them.

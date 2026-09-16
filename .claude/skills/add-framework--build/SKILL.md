@@ -446,7 +446,7 @@ IF `@prompt-review-agent` CANNOT BE ADDRESSED BY NAME:
 addressable until the registry has it, which for a fresh file can be after the merge. That is a
 dispatch-mechanism problem, never a reason for the delivery to go unaudited.
 
-### Agent Dispatch Rules
+### Dispatching the Agents Above
 
 **`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
 apply them to every `DISPATCH AGENT` block in this skill. The capability, the complexity, the input and the wait-all gate for this step are all stated in 7.1 above.

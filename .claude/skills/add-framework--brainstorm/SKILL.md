@@ -662,7 +662,7 @@ opinion.
 
 ⛔ DO NOT invent decisions to clear blockers.
 
-### Agent Dispatch Rules
+### Dispatching the Agents Above
 
 **`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
 apply them to every `DISPATCH AGENT` block in this skill. The block names the capability and the complexity; the rules say how to honour them.
