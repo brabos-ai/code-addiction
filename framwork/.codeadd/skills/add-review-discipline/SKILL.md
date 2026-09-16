@@ -12,7 +12,7 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 - agent: plan-reviewer-agent
 - agent: readback-agent
 - agent: reviewer-agent
-- command: /add.brainstorm
+- mention: /add.brainstorm
 - command: /add.build
 - command: /add.new
 - command: /add.plan
@@ -123,38 +123,25 @@ in the text, whoever wrote it.
 ⛔ **The readback is never a gate.** It returns no verdict, so there is nothing to
 block on. No command may report a blocked state on a readback alone.
 
-## What a Surviving Pass Costs, and How to Keep It Cheap
+## What a Surviving Pass Costs
 
-**Four rules, and each one exists because its absence was measured.**
+**Three of these rules already have an owner, and this skill names it rather than
+carrying a copy.** `{{skill:add-subagent-driven-development/SKILL.md}}` owns the fix
+loop, the scoped re-review and the breaker — this file’s own When NOT to Use
+already says so. Read them there:
 
-### The re-review is scoped to the fix, never to the document
+| Rule | Owner |
+|---|---|
+| The re-review verdicts each open finding `ADDRESSED` / `NOT ADDRESSED` against the fix diff, never re-reading the document | `add-subagent-driven-development`, Fix Loop |
+| The round cap, and adjudicating only at the cap | `add-subagent-driven-development`, The Breaker |
 
-After fixes are applied, the second read verdicts each open finding `ADDRESSED`
-or `NOT ADDRESSED`, plus anything the fix diff newly broke. Nothing else.
-
-```
-IF RE-READING AFTER A FIX:
-  ⛔ DO NOT: Re-read the whole document and form fresh opinions
-  ⛔ DO NOT: Let an out-of-scope observation extend the loop
-  ✅ DO: Verdict each open finding against the fix diff, and record the rest
-```
-
-**A full re-read produces new opinions over lightly edited text**, and new opinions
-are indistinguishable from progress while costing another full pass.
+**One rule is not owned anywhere else, so it lives here:**
 
 ### One fix dispatch carries the whole findings list
 
 Never one fixer per finding. A per-finding fix wave on a real delivery cost more
 than every task it was reviewing, because each dispatch re-reads the same context
 to change one line.
-
-### The loop has a cap, and the cap is where judgement happens
-
-Bound the fix rounds. **At the cap the coordinator adjudicates** — park what is
-open with a ruling, or rule on the load-bearing ones and move.
-
-⛔ **Adjudicate only at the cap.** Adjudicating earlier to end a loop is
-pre-judging with a different name.
 
 ### A third pass that still finds real problems is pointing upstream
 
@@ -230,9 +217,7 @@ two gates read it.
 ## Rules
 
 ALWAYS:
-- Scope a re-review to the open findings and the fix diff
 - Send one fix dispatch carrying every finding, never one per finding
-- Adjudicate at the cap, and only at the cap
 - Re-run the validation gate between a fix and a re-dispatch
 - Decide each finding on its merits, and record what was discarded and why
 - Treat a divergent restatement as a defect in the document, never in the reader
