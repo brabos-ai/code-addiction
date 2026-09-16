@@ -27,9 +27,9 @@
 # introduced an entry's line IS the commit that delivered it. Each returned
 # entry carries `answer`:
 #   complete - the path is in that derived commit's own diff. Exact and whole.
-#   curated  - the path is one of the entry's `items[].at` anchors, capped at 5
-#              and self-healing through `verify --repair`. A sample, carrying
-#              each item's verified status.
+#   curated  - the path is one of the entry's `items[].at` anchors,
+#              self-healing through `verify --repair`. Carries each item's
+#              verified status.
 # An entry whose derived commit touches only `docs/` was recorded outside the
 # normal flow and answers from the curated layer alone; CURATED_ONLY counts
 # those. Keys: TOUCHED_COMPLETE, TOUCHED_CURATED, CURATED_ONLY.
@@ -346,7 +346,6 @@ function doWrite() {
 
   if (!Array.isArray(rec.items)) refuse('missing-field');
   if (rec.items.length === 0) refuse('no-items');
-  if (rec.items.length > 5) refuse('too-many-items');
 
   const loose = [];
   for (const it of rec.items) {
