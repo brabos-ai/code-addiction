@@ -551,6 +551,11 @@ const USES_EDGE_TYPES = {
   skill: 'USES_SKILL',
   agent: 'DISPATCHES',
   command: 'HANDS_OFF_TO',
+  // The next stage when that stage is not a command. `command:` resolves to a
+  // command node only, so the internal pipeline — four skills handing off to
+  // one another — had no way to say which out-edge is the next stage. The
+  // target resolves by its own kind, with the sigils `mention:` already uses.
+  handoff: 'HANDS_OFF_TO',
   script: 'RUNS_SCRIPT',
   // An acknowledged reference that is NOT a dependency. A name-matching sniffer
   // cannot tell "uses X" from "explicitly does not use X" — add-health-check's
@@ -651,7 +656,7 @@ function fencedSpans(raw) {
  * gate unable to tell a missing file from a missing skill.
  */
 function usesTargetId(kind, target) {
-  if (kind === 'mention') {
+  if (kind === 'mention' || kind === 'handoff') {
     // Reuses sigils the framework's prose already uses, so a mention is written
     // the way the thing is written where it was mentioned:
     //   @reviewer-agent -> agent   /add.plan -> command   *.sh -> script

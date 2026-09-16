@@ -713,15 +713,23 @@ Body lines:
 - skill: <skill-name>
 - agent: <agent-name>
 - command: /<command-name>
+- handoff: <next-stage-name>
 - script: <script-name>.sh
 - mention: <name-the-prose-points-away-from>
 ```
 
 Real names, not placeholders — the placeholders above are only so this example declares nothing.
 
-Five kinds. Four are real dependencies. **`mention:` is not** — it marks prose that names an
+Six kinds. Five are real dependencies. **`mention:` is not** — it marks prose that names an
 artefact while pointing away from it ("use X instead"). It emits a `MENTIONS` edge, so the target
 is still validated, but `impact` and `dependencies` exclude it.
+
+**`handoff:` names the next stage when that stage is not a command.** `command:` resolves to a command
+node only, so a skill that hands off to a skill — the internal pipeline, brainstorm → plan → build →
+done — has no other way to mark which out-edge is the next stage. It emits `HANDS_OFF_TO`, and its
+target resolves by the sigils `mention:` uses: `/name` is a command, `@name` an agent, a bare name a
+skill. At runtime it changes nothing; it is the edge label that tells the graph which dependency is
+the hand-off.
 
 **A catalogue is not a consumer.** `add-ecosystem` maps the ecosystem and consumes none of it, so
 every row in its block is `mention:`. Declaring them as dependencies is not cosmetic: eight
