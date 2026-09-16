@@ -158,9 +158,9 @@ the analysis against `building-commands` before any edit.
 
 ### 1.1 If a plan is specified
 
-**Resolve `[plan]` BEFORE reading anything, by `add-plan-authoring`'s Argument Resolution.** Load it
-and apply it as written: it owns the substring match, the companions it excludes, the three naming
-forms that resolve, and the stop on more than one match or none. Exactly one match is the plan — read
+**Resolve `[plan]` BEFORE reading anything, by `add-plan-authoring`.** Load it and apply it as
+written: its Argument Resolution owns the substring match, the companions it excludes and the stop on
+more than one match or none, and its legacy-forms rule owns which naming forms resolve. Exactly one match is the plan — read
 it.
 
 **Extract:** the F-blocks with their layer tags, the execution order, the Global Constraints, the
@@ -470,13 +470,8 @@ indistinguishable from a leaf.
 A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
 entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
 
-**Write the answer into the ledger before STEP 8**, as its own line under the plan's entry:
-
-```
-GRAPH: <artefact> — <direct dependants, or "none">; <shipped-before answer, or "no entry">
-```
-
-One line per artefact this delivery touched, or a single `GRAPH: NOT VERIFIED — <why>` where no
+**Write the answer into the ledger before STEP 8**, as `GRAPH:` lines in the shape `add-build-ledger`
+owns — one line per artefact this delivery touched, or a single `GRAPH: NOT VERIFIED — <why>` where no
 route existed.
 
 ```

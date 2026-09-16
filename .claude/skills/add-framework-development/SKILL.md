@@ -68,12 +68,14 @@ Does it need LLM reasoning?
 
 ## Artefact Types
 
-| Type | Source path | Format | Count |
-|------|------------|--------|-------|
-| Command | `framwork/.codeadd/commands/{name}.md` | Markdown with structured sections | 19 |
-| Skill | `framwork/.codeadd/skills/{name}/SKILL.md` | Markdown with YAML frontmatter | 39 |
-| Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter | 15 |
-| Script | `framwork/.codeadd/scripts/{name}.sh` | Bash | variable |
+| Type | Source path | Format |
+|------|------------|--------|
+| Command | `framwork/.codeadd/commands/{name}.md` | Markdown with structured sections |
+| Skill | `framwork/.codeadd/skills/{name}/SKILL.md` | Markdown with YAML frontmatter |
+| Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter |
+| Script | `framwork/.codeadd/scripts/{name}.sh` | Bash |
+
+No counts: `CLAUDE.md`'s generated inventory lists what exists.
 
 Internal-only artefacts (NOT distributed): `.claude/skills/`, `.claude/commands/`
 

@@ -243,7 +243,7 @@ ALWAYS:
 - Present a `blocked` verdict's blockers to the user and wait
 
 ALSO ALWAYS:
-- Pass the ruler item numbers when dispatching `mode: confirm` — without them it is a full re-tick
+- Pass the ruler item numbers when dispatching `mode: confirm` — without them the agent returns `blocked`, never a full re-tick
 
 NEVER:
 - Ask any reader to write a file

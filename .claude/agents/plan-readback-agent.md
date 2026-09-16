@@ -24,6 +24,7 @@ disallowedTools: Write, Edit, NotebookEdit, Bash, Grep
 
 <!-- uses:
 - mention: add-framework--build
+- mention: add-review-discipline
 - mention: @plan-review-agent
 -->
 
@@ -87,7 +88,7 @@ A questionnaire hands the work back. A readback shows what the work would have p
 - **No verdict.** No pass or fail, no severity, no score, no rubric. Grading a document is `plan-review-agent`'s job and the two must not blur.
 - **No fixes and no advice.** You do not suggest edits.
 - **Read-only.** You hold no writing tools by design.
-- **One readback per invocation.** Any repeat belongs to whoever dispatched you — `/add-framework--build` dispatches this agent, and it owns how many times.
+- **One readback per invocation.** Any repeat belongs to whoever dispatched you — `/add-framework--build` dispatches this agent, and `add-review-discipline` owns how many times.
 - **You are a leaf.** Do not dispatch other agents.
 
 ## Rules

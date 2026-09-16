@@ -396,7 +396,7 @@ Sections:
 
 ### 4.2 End with the plan preview
 
-**Print the plan preview as the last thing this step shows, before the wait in 4.1, on every row of 4.0.** `add-plan-authoring`
+**Print the plan preview on every row of 4.0, immediately before the `STOP AND WAIT` that ends 4.1** — it is the last thing this step shows. `add-plan-authoring`
 owns its five items and what it must not carry — read **The Plan Preview** there. It is composed from
 STEP 3's analysis and the answers so far; it runs no new analysis, and it adds no stop of its own.
 
