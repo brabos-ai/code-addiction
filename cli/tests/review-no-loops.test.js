@@ -33,11 +33,11 @@ const P = {
   discipline: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
   readback: path.join(ROOT, '.claude', 'agents', 'plan-readback-agent.md'),
   reviewer: path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md'),
-  build: path.join(ROOT, '.claude', 'commands', 'add-framework--build.md'),
-  done: path.join(ROOT, '.claude', 'commands', 'add-framework--done.md'),
+  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
+  done: path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
   reviewCmd: path.join(ROOT, '.claude', 'commands', 'add-framework--review.md'),
-  planCmd: path.join(ROOT, '.claude', 'commands', 'add-framework--plan.md'),
-  brainstorm: path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md'),
+  planCmd: path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md'),
+  brainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
   sync: path.join(ROOT, '.claude', 'commands', 'add-framework--sync.md'),
   authoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
   claudeMd: path.join(ROOT, 'CLAUDE.md'),
@@ -519,11 +519,11 @@ const PRODUCT_SKILL = {
 };
 
 const INTERNAL_CMD = {
-  id: 'internal/command/add-framework--build',
+  id: 'internal/skill/add-framework--build',
   kind: 'command',
   layer: 'internal',
   name: 'add-framework--build',
-  path: '.claude/commands/add-framework--build.md',
+  path: '.claude/skills/add-framework--build/SKILL.md',
   registered: true,
   declares: true,
 };

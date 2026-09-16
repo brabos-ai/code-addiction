@@ -45,7 +45,7 @@ const P = {
   newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.new.md'),
   brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.brainstorm.md'),
   plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan.md'),
-  fwBrainstorm: path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md'),
+  fwBrainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
   planAuthoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
 };
 

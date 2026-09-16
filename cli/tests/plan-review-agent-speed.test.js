@@ -25,8 +25,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 const AGENT = path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md');
 const AUTHORING = path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md');
-const BRAINSTORM = path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md');
-const PLAN_CMD = path.join(ROOT, '.claude', 'commands', 'add-framework--plan.md');
+const BRAINSTORM = path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md');
+const PLAN_CMD = path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 

@@ -218,7 +218,7 @@ describe('L3.6 — the rejected design did not come back', () => {
   it.each([
     'framwork/.codeadd/commands/add.done.md',
     'framwork/.codeadd/scripts/done.sh',
-    '.claude/commands/add-framework--done.md',
+    '.claude/skills/add-framework--done/SKILL.md',
     'framwork/.codeadd/skills/add-doc-schemas/references/delivery-index.md',
   ])('%s carries no stored merge sha', (rel) => {
     const body = fs.readFileSync(path.join(REPO, rel), 'utf8');
