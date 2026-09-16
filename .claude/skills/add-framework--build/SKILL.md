@@ -170,7 +170,11 @@ last one — a topic is no longer split into a paired product plan and internal 
 - **No match** → list `docs/plans/` and STOP.
 
 **Extract:** the F-blocks with their layer tags, the execution order, the Global Constraints, the
-validated decisions, and the per-F-block validation the plan specifies.
+validated decisions, the per-F-block validation the plan specifies, and the `> **Delivery:**` header
+line — `confirm` when absent. `add-plan-authoring` owns what it means, under **The Delivery Mode**.
+
+**Stop kind — deciding.** The two resolution stops above present an ambiguity, and nothing approved
+which plan an ambiguous argument meant.
 
 **A plan whose F-blocks carry no layer tag is legacy.** Derive the tag from each path — `framwork/`,
 `provider-map.json`, `cli/` or `mcp/` is `[product]`, everything else `[internal]` — and record one
@@ -210,6 +214,14 @@ the user to see it before execution starts.
 **Direct mode:** what changes, why, its layer, and the impact on dependents.
 
 **STOP AND WAIT.** Proceed only on explicit approval or requested adjustments.
+
+**Stop kind — decided by the plan's state:**
+
+| State | Kind | Do |
+|---|---|---|
+| Planned mode, `Delivery: automatic`, and no Global Constraint overrides a gate in this skill | **confirming** | Print the design and continue to STEP 3 |
+| Planned mode, `Delivery: automatic`, and a Global Constraint overrides a gate here | **deciding** | Wait — the exception is a choice the brainstorm's approval never saw |
+| `Delivery: confirm`, absent, or direct mode | **deciding** | Wait |
 
 ---
 
@@ -274,6 +286,8 @@ assumptions constantly — that is the format working, not a defect to escalate.
 
 Where a divergence is severe enough that no reading of the plan supports one option over the others,
 that is the fourth hard stop and `add-build-ledger` owns it. Nothing else here stops.
+
+**Stop kind — the four hard stops are deciding in every state**, here and at STEP 5.3.
 
 ---
 
@@ -508,6 +522,8 @@ IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
   ✅ DO: Present that finding alone and WAIT
 ```
 
+**Stop kind — deciding, in every state.** The decision was not in the plan, so no approval covered it.
+
 ⛔ **Nothing here writes a review file.** No companion document, no versioned artefact, no verdict for
 a later command to find. What survives goes in the ledger, as rulings.
 
@@ -592,6 +608,16 @@ diff a human reviews is not the diff that merges.
 
 ⛔ **This step never merges.** It opens a PR and stops. The merge belongs to `/add-framework--done`,
 behind its own gates.
+
+**Stop kind — decided by whether a PR exists, not by the marker:**
+
+| State | Kind | Do, on either delivery mode |
+|---|---|---|
+| The branch has no PR — the first push | **deciding** | Ask and WAIT. On `Delivery: automatic` this question is the **terminus**: the automatic path ends here |
+| A PR already exists for the branch | **confirming** | Push and report the existing PR updated — the push was decided when that PR was opened |
+
+⛔ **Neither state hands off to `/add-framework--done`.** Whatever the answer, the build ends at STEP 10.
+The close-out runs only when the operator invokes it.
 
 ---
 

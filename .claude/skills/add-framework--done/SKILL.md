@@ -95,6 +95,10 @@ ALWAYS — THIS SKILL ENDS WORK IT DID NOT START:
   ⛔ DO NOT: Delete another plan's files under docs/plans/, docs/brainstorming/ or docs/evidence/ — only the closed-out plan's own
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
 
+**Stop kind — every stop in this skill is deciding, in every state.** The close-out is never reached
+unattended: no delivery mode hands off to it, so it only ever runs because the operator invoked it, and
+its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
+
 ---
 
 ## Operation Mode

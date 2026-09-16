@@ -129,6 +129,45 @@ the shape above is a contract between two commands rather than something a gate 
 `architectural` path only. `bounded` writes no design document, so on the one path a size branch
 serves there was nothing to read and nothing survived the session.
 
+### The Delivery Mode
+
+**Two values, chosen once, at `/add-framework--brainstorm` STEP 7.3, and carried — never re-asked.**
+
+| Carrier | Written by | Read by |
+|---|---|---|
+| `delivery:` in the intent file | `/add-framework--brainstorm` 7.3 | `/add-framework--plan` STEP 1.2 |
+| `> **Delivery:**` in the plan header | `/add-framework--plan` STEP 5, copied from the intent file | `/add-framework--build` STEP 1.1 |
+
+⛔ **Absent means `confirm`.** No intent file, no field, no header line, a plan written before this
+existed, a direct build — every one of them runs with a human confirming each stage. The fall is
+toward waiting, never away from it.
+
+#### The stopping rule
+
+Every `[STOP]` in the four stages is one of two kinds:
+
+| Kind | It presents | On `confirm` | On `automatic` |
+|---|---|---|---|
+| **deciding** | A choice the brainstorm's approval did not cover — an open question, a blocker, an ambiguity, a push | Waits | **Waits** |
+| **confirming** | Something the approval already covered — a design, a summary, a report of work already agreed | Waits | Does not wait |
+
+⛔ **Classify by STATE, not by marker.** One marker can be both kinds: `/add-framework--build` STEP 9
+decides on the first push of a branch with no PR, and only confirms once a PR exists. Each stage
+classifies its own stops where they sit, with the state that decides the kind.
+
+```
+IF A STOP'S KIND IS NOT OBVIOUS FROM ITS STATE:
+  ⛔ DO NOT: Treat it as confirming to keep the automatic path moving
+  ✅ DO: Treat it as deciding, and wait
+```
+
+**Three stops are deciding in every state, and nothing reclassifies them:**
+
+- **`/add-framework--build` STEP 9 on a branch with no PR** — the terminus of the automatic path.
+- **The four hard stops** `add-build-ledger` owns.
+- **Every stop in `/add-framework--done`.** The close-out is never reached unattended, so it never
+  runs in the automatic state at all.
+
 ### Legacy forms resolve for reading, never for writing
 
 Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy

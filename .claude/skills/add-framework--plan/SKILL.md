@@ -172,6 +172,10 @@ IF A DECISION APPEARS UNDER `## Decided` IN THE INTENT FILE:
 **This is what stops the planner re-asking a design it just read.** The brainstorm guarantees it hands
 off nothing open that one more turn would have closed; `## Open` is what it could not close.
 
+**Read `delivery:` from the same file.** It is `confirm` or `automatic`, and it decides which of this
+skill's stops wait. `add-plan-authoring` owns the field, the stopping rule, and the rule that an absent
+field means `confirm` — read **The Delivery Mode** there.
+
 ### 1.3 Dispatch Discovery (SILENT)
 
 IF no idea in the invocation args → skip, go to STEP 2.
@@ -388,6 +392,16 @@ Sections:
 
 **STOP AND WAIT.** After the user responds, summarize the confirmed decisions and proceed.
 
+### 4.2 Stop kind — decided by the state 4.0 routed to
+
+| State | Kind | On `delivery: automatic` |
+|---|---|---|
+| `## Open` reads `None`, and 3.4 returned no `blocked` item | **confirming** | Print the confirmation screen and continue to STEP 5 |
+| `## Open` lists items, or 3.4 returned a `blocked` item | **deciding** | Wait — these are questions the brainstorm's approval never answered |
+| No intent file, `## Open` absent or empty | **deciding** | Wait — there is no approval to have covered anything |
+
+On `delivery: confirm` every row waits, as above.
+
 ---
 
 ## STEP 5: Generate Plan
@@ -413,6 +427,9 @@ IF AN AUDIT ITEM CAME BACK ❌:
   ✅ DO: One F-block per item, each naming the item number in its validation
 ```
 
+**Write `> **Delivery:**` in the plan header, copied from the intent file's `delivery:`** — `confirm` when
+there is none. The build reads that line and nothing else to learn the mode.
+
 Write the draft. **DO NOT present the path or next steps** — go straight to STEP 6.
 
 ---
@@ -427,6 +444,9 @@ are owned by `add-review-discipline`.** Load it. One pass, never two.
 
 ⛔ DO NOT invent decisions to clear blockers.
 ⛔ DO NOT skip this STEP in Continue Mode.
+
+**Stop kind — a `blocked` verdict is deciding in every state.** Its blockers are decisions nobody made,
+so the automatic path waits on them exactly as the confirming one does.
 
 ### Agent Dispatch Rules
 
@@ -450,6 +470,16 @@ Metadata: plan path, status `draft`, review verdict, fixes applied, and the two 
 `/add-framework--build [slug]` to implement, `/add-framework--plan [slug]` to revise.
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
+
+**Stop kind — confirming.** The report describes a plan the brainstorm's approval already covered.
+
+| `> **Delivery:**` | Do |
+|---|---|
+| `confirm`, or absent | Print the report and STOP. The user runs the build |
+| `automatic` | Print the report, then load `/add-framework--build` with this plan's basename and continue there |
+
+Loading the build is a handoff, not implementation: this skill still writes nothing outside
+`docs/plans/`, and the build runs under its own gates.
 
 ---
 

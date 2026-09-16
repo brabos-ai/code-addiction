@@ -703,6 +703,11 @@ structured-question tool, with these three options and nothing else:
 | **Approve, deliver automatically** | The intent file records `delivery: automatic`, and this skill loads `/add-framework--plan` and continues. Every stage then hands off without waiting, **up to and including the build**. `add-framework--build` STEP 9 asks whether to open the PR — **that question is the terminus** |
 | **Keep discussing** | No intent file, no handoff. Return to STEP 4 with what the user wants to reopen |
 
+**Stop kind — deciding, in every state, and so is every stop in this skill before it.** The delivery
+mode does not exist until this question is answered, so nothing earlier can be a stop the approval
+already covered: the path announcement at `2.2.2`, the decomposition offer at `3.2`, the summary
+approval at `4.4`, the blockers at `6.2` and the set-membership stop at `8.1` all wait.
+
 ⛔ **The close-out is never reached unattended.** No option runs `/add-framework--done`, and the
 automatic path ends at a question the user answers. The merge is approved on every path.
 

@@ -14,6 +14,7 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 > **Layers:** product | internal | both
 > **Type:** command | skill | agent | script | workflow | product | architecture | cross-cutting
 > **Created:** YYYY-MM-DD
+> **Delivery:** confirm | automatic   ← copied from the intent file's `delivery:`; `confirm` when there is none
 
 ---
 
