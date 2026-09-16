@@ -182,7 +182,7 @@ Three rules when transcribing:
   turns those rows back into `skill:`/`agent:`/`command:`/`script:`, it has
   silently destroyed the query the graph exists for.
 
-Regenerate `framwork/.codeadd/skills/code-addiction-ecosystem/SKILL.md` from STEP 1.3 scan data.
+Regenerate `framwork/.codeadd/skills/add-ecosystem/SKILL.md` from STEP 1.3 scan data.
 
 Use the EXACT same format as the existing map:
 
@@ -355,10 +355,9 @@ Then print the sync report (omit empty sections):
 No commit was made. Run `git diff` to review changes before committing.
 ```
 
-Log iteration:
-```bash
-bash .codeadd/scripts/log-iteration.sh "enhance" "add-framework--sync" "auto-update docs from LAST_TAG..HEAD diff" "ecosystem.md,README.md,web/src/pages/docs.astro,web/src/pages/index.astro,web/public/*.svg"
-```
+No iteration log to write: `log-iteration.sh` is a product-layer script, shipped for projects that installed
+code-addiction via `.codeadd/scripts/`. This repo IS the framework's source — it has no `.codeadd/` at its
+root — so there is nothing here to call it against.
 
 ---
 
