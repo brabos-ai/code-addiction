@@ -2,12 +2,9 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-feature-specification
 - skill: add-final-report
 - skill: add-knowledge-discovery
-- skill: add-plan-review
-- skill: add-review-discipline
-- agent: plan-reviewer-agent
-- agent: readback-agent
 - command: /add.diagnose
 - command: /add.hotfix
 - command: /add.new
@@ -15,7 +12,7 @@
 -->
 
 > **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
-> **The closing report at STEP 6 is exempt** — it reports in the shape `add-final-report` owns, and a
+> **The closing report at STEP 5 is exempt** — it reports in the shape `add-final-report` owns, and a
 > 20-word stub is not that shape.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
@@ -33,25 +30,28 @@ STEP 1.5: Classify the request       → spike | bounded | architectural — ANN
 STEP 2:   Interactive Exploration    → one question at a time + 2–3 directions
 STEP 3:   Generate brainstorm doc    → ARCHITECTURAL PATH ONLY, and only on user request
 STEP 4:   Validation gate            → ARCHITECTURAL PATH ONLY, must return PASS
-STEP 5:   Plan review                → ARCHITECTURAL PATH ONLY, @plan-reviewer-agent (kind: brainstorm)
-STEP 6:   Handoff                    → ALL THREE PATHS, TEXT-ONLY suggestion [HARD STOP]
+STEP 5:   Handoff                    → bounded + architectural write the intent file; ALL THREE
+                                       paths route; the offer to continue branches [HARD STOP]
 ```
 
 **⛔ HARD GATE — READ-ONLY + NO-INVOKE:**
 
 Brainstorm **DISCUSSES, EXPLORES, DOCUMENTS**. It NEVER implements code AND NEVER invokes another command.
 
+⛔ **No command may be invoked, and loading a skill is NOT invoking a command.** Those are different
+operations and the ban covers one of them. STEP 5 loads `{{skill:add-feature-specification/SKILL.md}}`
+when the user accepts its offer, exactly as this command already loads every other skill it uses.
+
 ```
 IF a feature/bug/plan handoff is warranted:
   ⛔ DO NOT USE: Skill tool to launch /add.new, /add.diagnose, /add.hotfix, /add.plan (or any command)
   ⛔ DO NOT: Type a slash-command as if executing it
-  ✅ DO: Print the suggested command as TEXT at STEP 6, then STOP (the user runs it)
+  ✅ DO: Print the suggested command as TEXT at STEP 5, then STOP (the user runs it)
 
 IF the user asks to implement OR you spot a solution:
   ⛔ DO NOT USE: Edit on application code files
-  ⛔ DO NOT USE: Write outside docs/brainstorm/ — the one allowed target is docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md
   ⛔ DO NOT USE: Bash for implementation
-  ✅ DO: Keep exploring; route as a suggestion at STEP 6
+  ✅ DO: Keep exploring; route as a suggestion at STEP 5
 
 IF writing the brainstorm document (STEP 3):
   ⛔ DO NOT: Write full classes/methods or multi-line code blocks
@@ -59,7 +59,19 @@ IF writing the brainstorm document (STEP 3):
   ✅ DO: Stay user-perspective; one illustrative one-shot snippet is the maximum
 ```
 
-**Exception:** You MAY create a brainstorm summary in `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` when the user requests it.
+**Two files may be written, and only these two, both under `docs/brainstorm/`:**
+
+| File | When |
+|---|---|
+| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` | The brainstorm document — architectural path, and only on the user's request |
+| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` | The intent file — bounded and architectural, written at STEP 5's handoff |
+
+⛔ **Nothing is written on the `spike` path.** A spike's output is a recommendation, and keeping it is
+a new request with its own classification.
+
+⛔ **The intent file needs no separate consent.** The handoff IS the consent moment: the user is being
+told what to run next, and this file is what that next step reads. `about.md` is different — it is
+written only inside STEP 5's offer, after an explicit yes.
 
 ---
 
@@ -166,15 +178,16 @@ still presented, and this command still stops until the user says yes.
 
 | Path | What STEP 2 does | Then |
 |------|-----------------|------|
-| **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3, 4 and 5 **entirely** → STEP 6. |
-| **bounded** | Ask only the clarifying questions that matter, then present a **short design in chat**: approach, files touched, how it is tested. STOP until the user approves. | Skip STEPS 3, 4 and 5 **entirely** → STEP 6. |
-| **architectural** | Everything written below, unchanged. | STEPS 3 → 4 → 5 → 6, as written. |
+| **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 **entirely** → STEP 5. It writes no intent file either. |
+| **bounded** | Ask only the clarifying questions that matter, then present a **short design in chat**: approach, files touched, how it is tested. STOP until the user approves. | Skip STEPS 3 and 4 **entirely** → STEP 5, which still writes the intent file. |
+| **architectural** | Everything written below, unchanged. | STEPS 3 → 4 → 5, as written. |
 
-STEP 6's handoff runs on **all three** paths — a spike still routes, a bounded design still routes.
+STEP 5's handoff runs on **all three** paths — a spike still routes, a bounded design still routes.
 The cadence, the challenge techniques and the 20-word `OUTPUT RULE` apply on all three paths.
 If the conversation reveals hidden complexity, apply STEP 1.5's one-way ratchet before continuing.
-The `⛔ HARD GATE — READ-ONLY + NO-INVOKE` applies unchanged on all three paths: no path may invoke another
-command, and only the architectural path writes a file.
+The `⛔ HARD GATE — READ-ONLY + NO-INVOKE` applies unchanged on all three paths: no path may invoke
+another command. Only the architectural path writes a brainstorm document; `bounded` and
+`architectural` both write the intent file; `spike` writes nothing at all.
 
 For investigations, search the codebase before answering.
 
@@ -197,7 +210,29 @@ For investigations, search the codebase before answering.
 | Validation | "I'm thinking of adding X" | Honest assessment based on codebase state |
 | Comparison | "Is A or B better?" | Explain trade-offs at appropriate level |
 
+**Bring the outside in (MANDATORY where the topic has prior art):** combine WebSearch with model knowledge for product feature benchmarks — how established products already solve this, and which practice is widely adopted. The user often has not mapped how the thing should behave, and a named precedent is worth more than another question.
+
 **Converge with directions (MANDATORY before offering to document):** When understanding is sufficient, present **2–3 candidate directions** — each with a one-line summary, pros, cons, and open issues — and force the user to choose. DO NOT converge silently on the user's first idea.
+
+**Every set of directions carries a recommendation (MANDATORY):** say which one you would take and why, in concrete terms drawn from this codebase or from the benchmark above. Never a generic "it depends".
+
+```
+IF PRESENTING CANDIDATE DIRECTIONS:
+  ⛔ DO NOT: List options and stop, leaving the choice unweighted
+  ⛔ DO NOT: Recommend by restating the user's own preference back to them
+  ✅ DO: Name the one you would take, with the reason, then let them override
+```
+
+**This is the whole job.** A command that exists to help someone decide, and refuses to say what it
+would do, has handed the work back. The user still chooses — they now choose against a position.
+
+**Ask through the provider's structured-question tool** where the `structuredQuestions` capability
+declares one, marking the recommended option. Where it declares none, present the same content as an
+option table with the recommendation stated below it.
+
+**Close what you can close.** Do not carry a question to the handoff that one more turn would have
+settled — it lands in the intent file's `## Open` and becomes a question `/add.new` has to ask
+instead, which is the redundancy this whole flow removes.
 
 **Before documenting:** All decisions made, premises validated, trade-offs accepted, no open questions. DO NOT document with uncertainties.
 
@@ -223,85 +258,91 @@ DO NOT skip. DO NOT mark complete until the gate returns `PASS`.
 
 ---
 
-## STEP 5: Plan Review + Comprehension Readback
+## STEP 5: Handoff [HARD STOP]
 
-After the gate passes, dispatch `@plan-reviewer-agent` as a subagent in fresh context (it MUST NOT see this conversation). Pass the doc path and `kind: brainstorm`.
+### 5.1 Write the Intent File
 
-**Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** It owns how many times each reader runs, what makes a second dispatch legal, how a divergence is handled at this site, and what you owe a report you receive. The verdict table lives there; this step carries only its own dispatch inputs. This site's divergence behaviour is the
-first row of its table: apply, re-run STEP 4's gate, then present and STOP. Do NOT run STEP 6 while
-a blocker stands.
+**On `bounded` and `architectural`. Never on `spike`.**
 
-If the provider does not support subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting the conversation.
+Write `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` against the `brainstorm-intent` schema in
+`{{skill:add-doc-schemas/SKILL.md}}`. On `architectural` it reuses the brainstorm document's timestamp
+verbatim, so the pair sorts adjacent; on `bounded`, where no document was written, it takes its own
+and stands alone. Same `BRN-<slug>` id either way.
 
-### Readback (after the verdict resolves, before STEP 6)
-
-**DISPATCH** `@readback-agent` with `target` = the brainstorm document's path and `scope: document`. Run it ONLY after the verdict above resolved to proceed and every applied fix is on disk — a readback of text about to be edited reports a version that will never exist.
-
-**A brainstorm is one file, so the report is shorter by design.** Build order, disagreement between documents, and facts that never reach the builder's document all need more than one document and will be absent. Their absence is correct.
-
-```
-IF THE REPORT COMES BACK SHORT:
-  ⛔ DO NOT: Read the missing sections as a weak or failed readback
-  ⛔ DO NOT: Re-dispatch asking for more sections
-  ✅ DO: Judge it on the restatement, the gaps filled, the forks and the confidence
-```
+**This file is why the next command does not re-ask what you just settled.** It carries the path you
+classified at STEP 1.5, every decision the conversation closed with its rationale, whatever it could
+not close, the prior art STEP 1 found, and the directions that were rejected.
 
 ```
-IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
-  ⛔ DO NOT: Apply the readback inline yourself
-  ✅ DO: Skip it, and say in STEP 6 that it was skipped and why
+IF ABOUT TO WRITE `## Open`:
+  ⛔ DO NOT: Park a question there that one more turn of conversation would settle
+  ⛔ DO NOT: Leave the section empty as a way of saying "nothing open"
+  ✅ DO: Write the literal `None` when everything closed — an empty section reads as absent,
+         and absent means the next command runs its full questionnaire
 ```
 
-There is no inline fallback because the mechanism IS the reader not holding this conversation. A readback you perform on a document you just wrote measures nothing.
-
-**Compare the readback against what was actually explored in this conversation**, using the report's closing **"In one sentence"** line.
-- **Matches** → proceed to STEP 6, citing the readback in one line.
-- **Diverges** → the document failed, not the agent. Apply the fix, **re-run STEP 4's `brainstorm` gate**, then present the divergence to the user and STOP.
-
-```
-IF THE READBACK DIVERGES:
-  ⛔ DO NOT: Summarize the divergence away as "close enough"
-  ✅ DO: Show what it understood beside what was explored, then STOP
-```
-
-⛔ The readback is NOT a gate. It returns no verdict and cannot block.
-
----
-
-## STEP 6: Handoff — Suggest Next Command [HARD STOP]
+### 5.2 Report
 
 **LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
-the self-check. Emit the report FIRST, then the handoff line below.
+the self-check. Emit the report FIRST, then the handoff below.
 
 A brainstorm explores rather than executes, so block 2 is titled `What will be done` and written in
 the future tense. Fill `How it works` with the direction the conversation settled on, for a reader
 who was not in it. Judge each remaining block on this run — skip the ones that are genuinely empty,
 and never pad the rest.
 
-⛔ The prohibition below is about the NEXT command, never about loading this skill.
+### 5.3 Route, and Offer to Continue
 
-Then map the conversation signal to the right command and **print it as text** for the user to run.
+⛔ The prohibition below is about the NEXT command, never about loading a skill.
 
 ```
 IF you are about to hand off:
-  ⛔ DO NOT USE: Skill tool to invoke the command
+  ⛔ DO NOT USE: Skill tool to invoke /add.new, /add.diagnose or /add.hotfix
   ⛔ DO NOT: Run the slash-command yourself
-  ✅ DO: Print the suggestion, then STOP
+  ✅ DO: Print the suggestion, make the offer where the table allows it, then STOP
 ```
 
-| Signal | Suggest | What to say |
-|--------|---------|-------------|
-| Feature need emerges / ready to formalize | `/add.new` | Offer to document first, then formalize |
-| Vague symptom / suspected bug | `/add.diagnose` | Suggest structured triage |
-| Clear bug discovered | `/add.hotfix` | Suggest urgent fix |
-| Needs more exploration | continue brainstorm | Not ready to commit |
+| Signal | Suggest | Offer to continue? |
+|--------|---------|--------------------|
+| Feature need emerges / ready to formalize | `/add.new` | **Yes** — see below |
+| Vague symptom / suspected bug | `/add.diagnose` | No |
+| Clear bug discovered | `/add.hotfix` | No |
+| Needs more exploration | continue brainstorm | No — nothing to hand off yet |
 
-**Correct handoff shape (the ONLY allowed form the handoff itself may take):**
+**The handoff takes one of two forms, and only these two.** Both name the intent file, because the
+next command reads it and a handoff that names only the idea leaves it matching a topic against a
+directory of timestamped basenames.
 
 ```text
 Idea is ready to formalize. Run:  /add.new
+Intent: docs/brainstorm/<the file written at 5.1>
+
+Want me to write the feature documentation now instead? (yes / no)
+```
+
+```text
+Suspected bug. Run:  /add.diagnose
+Intent: docs/brainstorm/<the file written at 5.1>
 (brainstorm stops here — it does not run the next command for you.)
 ```
+
+**On `yes`:** load `{{skill:add-feature-specification/SKILL.md}}` and write `about.md` here, from the
+intent file just written. That skill owns what goes into the document and asks nothing that is already
+under `## Decided`.
+
+```
+IF THE USER SAYS yes:
+  ⛔ DO NOT: Allocate a feature id, run init.sh, or create the feature directory
+  ⛔ DO NOT: Run a schema gate or dispatch a reviewer over what you wrote
+  ✅ DO: Load the skill, write the document, and say that /add.new owns the id,
+         the directory and the gate when the user runs it
+```
+
+⛔ **Orchestration is not this command's job even when it authors the document.** `/add.new` owns the
+id, the directory, the gate and the reviewer. Doing half of them here produces a feature folder no
+command allocated.
+
+**On `no`, or no answer:** stop. The printed command is the whole handoff.
 
 ---
 
@@ -313,19 +354,20 @@ Idea is ready to formalize. Run:  /add.new
 - End every path with the user approving the intent before anything is implemented
 - Ask exactly one question per turn; wait for the answer
 - Present 2–3 candidate directions with trade-offs before offering to document
+- State which direction you would take, and why, under every set of directions
 - Load the `brainstorm` schema before writing; keep docs user-perspective and code-free
-- Hand off by printing the suggested command as text
+- Hand off by printing the suggested command as text, naming the intent file with it
 
 **NEVER:**
-- Invoke another command (Skill tool or slash-command) — handoff is text-only, on every path
+- Invoke another command by slash-command — the handoff is text, on every path
 - Downgrade a path mid-conversation — the ratchet only goes up
 - Treat a spike's answer as permission to build — that is a new request with its own classification
 - Make code changes to application files
 - Write full classes/methods in a brainstorm doc (one one-shot snippet max)
-- Create documents without user consent
-- Document with unresolved questions
+- Write a brainstorm document without user consent
+- Carry a question to the handoff that one more turn would have closed
+- Allocate a feature id, create its directory, or gate what STEP 5's offer authored
 - Inline templates — ALWAYS load from add-doc-schemas
-- Let the reviewer see this conversation
 
 ---
 
