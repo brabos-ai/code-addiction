@@ -316,7 +316,8 @@ describe('L2 the build dispatches both', () => {
     for (const l of read(P.build).split(/\r?\n/).filter((x) => x.includes('--review-v'))) {
       expect(l).toMatch(/excluding/);
     }
-    expect(read(P.build)).toMatch(/add-plan-authoring`'s Argument Resolution/);
+    expect(read(P.build)).toMatch(/by `add-plan-authoring`/);
+    expect(read(P.build)).toMatch(/Argument Resolution owns/);
   });
 
   it('L2.10 the two human gates survive the renumbering', () => {
