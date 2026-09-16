@@ -1,3 +1,8 @@
+---
+name: add-framework--plan
+description: "Use when a framework change needs a plan document — analyses both layers against the artefact graph and the delivery index, questions the user, writes docs/plans/<ts>-PLAN--<slug>.md and has it reviewed. Second stage of brainstorm → plan → build → done."
+---
+
 # ADD Plan — Ecosystem Strategic Consultant
 
 <!-- uses:
@@ -8,8 +13,8 @@
 - agent: framework-discovery-agent
 - agent: plan-review-agent
 - agent: prompt-review-agent
-- command: /add-framework--build
-- mention: /add-framework--brainstorm
+- handoff: add-framework--build
+- mention: add-framework--brainstorm
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -39,7 +44,7 @@ STEP 7: Completion            → [HARD STOP] the report in the shape, then meta
 **⛔ ABSOLUTE PROHIBITIONS:**
 
 ```
-ALWAYS — THIS COMMAND DOES NOT EXECUTE:
+ALWAYS — THIS SKILL DOES NOT EXECUTE:
   ⛔ DO NOT USE: Write outside docs/plans/
   ⛔ DO NOT USE: Edit outside docs/plans/
   ⛔ DO NOT USE: Bash for implementations, builds, tests or scripts
@@ -66,7 +71,7 @@ IF THE PLAN HAS NOT BEEN REVIEWED (STEP 6):
 
 ## ⛔⛔⛔ MANDATORY CRITICAL POSTURE ⛔⛔⛔
 
-**THIS COMMAND IS A CONSULTANT, NOT AN ORDER-TAKER.**
+**THIS SKILL IS A CONSULTANT, NOT AN ORDER-TAKER.**
 
 ```
 IF USER PROPOSES AN IDEA:
@@ -205,7 +210,7 @@ DO NOT show the raw report. Use it to fill "What already exists" in STEP 4.
 ⛔ **`mcp/` is at the root and is PRODUCT** — it ships inside the npm package. Tagging an
 F-block that touches it `internal` loads the wrong layer skill.
 
-**A plan may declare one or both.** Both is normal — one command executes it either way, and the
+**A plan may declare one or both.** Both is normal — one build executes it either way, and the
 F-block layer tags carry the distinction. **DO NOT split a topic into two plans.**
 
 Internal classification only. DO NOT produce artefacts yet.
@@ -226,7 +231,7 @@ Read `path:` from the intent file resolved at STEP 1.2.
 question.** Those two answer what breaks and what already shipped, and a small change gets both wrong
 exactly as easily as a large one. What shrinks is the plan document, never the analysis behind it.
 
-⛔ **A `spike` never reaches this command.** `/add-framework--brainstorm` reports its recommendation
+⛔ **A `spike` never reaches this skill.** `/add-framework--brainstorm` reports its recommendation
 and stops, because a spike’s follow-up is a new request with its own classification. An invocation
 carrying `path: spike` means the user came here deliberately — treat it as no intent file at all and
 run everything.
@@ -273,7 +278,7 @@ question instead of a call: guidance with no output is guidance that gets skippe
 
 **Grade on the depth-1 answer.** `add-artefact-graph` owns why — the command layer cross-references
 itself densely enough that the unbounded closure saturates and stops telling a hub from a leaf. What
-belongs to this command is the rest: the unbounded run still says whether the change sits in a corner
+belongs to this skill is the rest: the unbounded run still says whether the change sits in a corner
 of the ecosystem or reaches all of it, which is context, and the thresholds below, which are a score.
 
 Two things the output already accounts for, so do not re-reason about them:

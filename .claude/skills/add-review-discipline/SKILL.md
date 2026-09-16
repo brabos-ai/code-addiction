@@ -9,9 +9,9 @@ description: "Use when a command dispatches a reviewer, a cold reader or the pro
 - agent: plan-review-agent
 - agent: plan-readback-agent
 - agent: prompt-review-agent
-- mention: /add-framework--build
-- mention: /add-framework--plan
-- mention: /add-framework--brainstorm
+- mention: add-framework--build
+- mention: add-framework--plan
+- mention: add-framework--brainstorm
 - mention: add-plan-authoring
 - mention: add-build-ledger
 -->
@@ -46,7 +46,7 @@ Owns HOW review is dispatched in the internal layer: the counts, the fact that n
 and what the caller owes a report it receives. WHAT each reader looks for belongs to that reader's own
 definition.
 
-Three commands dispatch under this skill: `/add-framework--build`, `/add-framework--plan` and
+Three pipeline stages dispatch under this skill: `/add-framework--build`, `/add-framework--plan` and
 `/add-framework--brainstorm`. **The rule lives here and only here.** It used to be restated in each of
 them, which is exactly how it survived in some and died in others.
 

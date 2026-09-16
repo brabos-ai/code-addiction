@@ -7,7 +7,7 @@ description: "Use when executing a plan's F-blocks — the build ledger, the res
 
 <!-- uses:
 - skill: add-commit
-- mention: /add-framework--done
+- mention: add-framework--done
 -->
 
 Layer-neutral. Governs HOW execution is recorded and when it may continue. WHAT a given layer

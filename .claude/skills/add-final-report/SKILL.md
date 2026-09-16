@@ -6,7 +6,7 @@ description: "Use at a command's closing step, in the internal layer — the sev
 # Final Report — The Closing Shape
 
 <!-- uses:
-- mention: /add-framework--build
+- mention: add-framework--build
 - mention: add-build-ledger
 -->
 

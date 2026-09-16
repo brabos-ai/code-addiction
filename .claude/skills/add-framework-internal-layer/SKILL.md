@@ -10,7 +10,7 @@ description: "Use when an F-block touches the internal layer — .claude/, scrip
 - skill: add-framework-development
 - skill: add-artefact-graph
 - mention: add-build-ledger
-- mention: /add-framework--done
+- mention: add-framework--done
 -->
 
 Loaded on the first `[internal]` F-block of a build. These artefacts are the development tooling that
@@ -34,6 +34,7 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 | Type | Path |
 |------|------|
 | Commands | `.claude/commands/*.md`, namespace `add-framework--*` |
+| Pipeline stages | `.claude/skills/add-framework--<stage>/SKILL.md` — brainstorm, plan, build and done are skills in the same namespace, so each can load the next |
 | Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `.claude/agents/*.md` |
 | Support scripts | `scripts/*.js` |

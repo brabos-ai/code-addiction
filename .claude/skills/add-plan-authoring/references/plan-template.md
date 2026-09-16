@@ -1,7 +1,7 @@
 # Plan Document Template
 
 <!-- uses:
-- command: /add-framework--build
+- skill: add-framework--build
 -->
 
 Sections marked *(optional)* apply when the plan earns them. A single-artefact plan may omit them; a

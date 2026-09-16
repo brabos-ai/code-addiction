@@ -1,3 +1,8 @@
+---
+name: add-framework--build
+description: "Use when a plan in docs/plans/ is ready to execute, or for a direct build of one simple internal or product artefact — implements F-blocks one commit at a time under each block's layer tag, keeps the ledger, audits the finished delivery once, and asks before opening the PR. Third stage of brainstorm → plan → build → done."
+---
+
 # ADD Build — Layer-Aware Plan Executor
 
 <!-- uses:
@@ -12,9 +17,9 @@
 - skill: add-framework-internal-layer
 - skill: building-commands
 - skill: add-framework-development
-- command: /add-framework--plan
+- skill: add-framework--plan
 - command: /add-framework--sync
-- mention: /add-framework--done
+- handoff: add-framework--done
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -282,7 +287,7 @@ Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 ### 5.2 One F-Block at a Time
 
 The cycle — record `BASE`, implement, show, validate, commit, record `HEAD` — is owned by
-`add-build-ledger`. Two things this command adds per block:
+`add-build-ledger`. Two things this skill adds per block:
 
 1. **Read the block's layer tag first.** It selects the prohibitions above and the layer skill.
 2. **Apply the plan's own per-F-block validation** on top of the layer default, when the plan names one.
@@ -368,7 +373,7 @@ number would be wrong on almost every build.
 
 **DISPATCH ALL OF THEM AT ONCE:**
 - **Capability:** read-only throughout — Glob, Grep, Read, and Bash for `git log` / `git diff` /
-  `git show` only. No Edit, no Write. The coordinator is the only writer in this command.
+  `git show` only. No Edit, no Write. The coordinator is the only writer in this skill.
 - **Complexity:** standard
 - **Input:** the plan's content, plus the one scope below
 
@@ -524,7 +529,7 @@ leaves anywhere. Nothing else reaches disk.
 **This is what makes "exactly once" auditable.** STEP 5.1 resumes from the ledger's `complete` lines.
 Without this line a review that found nothing leaves no trace at all, so a fresh session sees the last
 F-block committed, no evidence the pass ran, and the prohibition at the top of this file tells it to
-run one — the second pass this command exists to prevent. Every rejected finding gets its own
+run one — the second pass this skill exists to prevent. Every rejected finding gets its own
 `Ruling:` line, per 7.3.
 
 ---
@@ -537,7 +542,7 @@ applies would land after its own record.
 
 - **Changelog** for new or major work, written under `docs/changelog/`. **The filename and the
   one-per-delivery rule are owned by `add-plan-authoring`** — read **File Naming** rather than
-  declaring a pattern here. This command normally creates the file; `/add-framework--done` STEP 4
+  declaring a pattern here. This skill normally creates the file; `/add-framework--done` STEP 4
   finds it and edits it rather than allocating a second timestamp.
 - **Plan status** `draft` → `implemented`, with a changelog row naming the commits it landed in.
 - **The inventory block** — run `node scripts/inventory.js` and commit `CLAUDE.md` if it changed.
@@ -568,7 +573,7 @@ IF THE USER HAS NOT ANSWERED:
   ✅ DO: Ask, and WAIT
 ```
 
-**The `main` case is not theoretical.** This command never creates a branch — STEP 1.3 only
+**The `main` case is not theoretical.** This skill never creates a branch — STEP 1.3 only
 recommends one — so a direct build can be sitting on `main`, and offering to push there would put
 work past every gate `/add-framework--done` exists to enforce.
 

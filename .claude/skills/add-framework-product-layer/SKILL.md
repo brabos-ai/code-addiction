@@ -9,7 +9,7 @@ description: "Use when an F-block touches the product layer — framwork/.codead
 - skill: building-commands
 - skill: add-framework-development
 - mention: add-build-ledger
-- mention: /add-framework--done
+- mention: add-framework--done
 -->
 
 Loaded on the first `[product]` F-block of a build. Everything here is about artefacts that ship to

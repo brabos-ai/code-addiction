@@ -23,7 +23,7 @@ disallowedTools: Write, Edit, NotebookEdit, Bash, Grep
 ---
 
 <!-- uses:
-- mention: /add-framework--build
+- mention: add-framework--build
 - mention: @plan-review-agent
 -->
 

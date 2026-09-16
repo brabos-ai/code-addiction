@@ -1,3 +1,8 @@
+---
+name: add-framework--done
+description: "Use when a delivered branch is ready to close out — gates it on the ledger and CI, writes the delivery-index entry and changelog, archives the plan, merges the PR with --merge and cleans up. Never reached unattended. Last stage of brainstorm → plan → build → done."
+---
+
 # ADD Done — Close-Out
 
 <!-- uses:
@@ -6,9 +11,9 @@
 - skill: add-plan-authoring
 - skill: add-build-ledger
 - skill: add-artefact-graph
-- command: /add-framework--build
-- mention: /add-framework--plan
-- mention: /add-framework--brainstorm
+- skill: add-framework--build
+- mention: add-framework--plan
+- mention: add-framework--brainstorm
 -->
 
 <!--
@@ -83,7 +88,7 @@ IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
   `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
 
-ALWAYS — THIS COMMAND ENDS WORK IT DID NOT START:
+ALWAYS — THIS SKILL ENDS WORK IT DID NOT START:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
   ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
@@ -113,7 +118,7 @@ Run `gh auth status`. If it fails → report it and STOP. Nothing below is writt
 
 ### 1.2 Resolve the branch and the plan
 
-Verify the current branch is **not** `main`. If it is → report and STOP: this command ends work someone else started on a branch, and it never creates one.
+Verify the current branch is **not** `main`. If it is → report and STOP: this skill ends work someone else started on a branch, and it never creates one.
 
 **One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.4 runs on `main`, because the branch it would have run on is already merged and gone.
 
@@ -172,7 +177,7 @@ a complete and correct entry. Falling through to the normal path writes a **seco
 delivery, which is exactly what a three-row table did on PR #49.
 
 **The third row is what makes a second run on the same branch safe:** the gates below would all still
-pass, and without it the command would write a second entry for one delivery.
+pass, and without it the close-out would write a second entry for one delivery.
 
 **The bottom row is the case the index exists for.** Work reached `main` and left no record. Stopping there would make the index quietly wrong about a delivery that shipped — the same lie as indexing work that never landed, in the other direction. It is recoverable, so recover it.
 
@@ -548,9 +553,9 @@ a skipped cleanup into work nobody asked for, on a branch that is already merged
 
 **No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
 
-### 8.1 When this command is running inside the worktree it would remove
+### 8.1 When this skill is running inside the worktree it would remove
 
-`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this command there — and the first removal above has nothing it can do.
+`git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this skill there — and the first removal above has nothing it can do.
 
 ⛔ **Attempting it anyway does damage, measured rather than assumed.** Run from inside, the command **unregisters the worktree and then fails to delete the directory** — `error: failed to delete '<path>': Permission denied`, exit 255. What is left is an orphan directory git no longer knows about, so a second `git worktree remove` answers `is not a working tree` and the operator now needs `git worktree prune` plus a manual delete. A skipped sub-step costs one clean command later; this costs a repair.
 
@@ -592,7 +597,7 @@ Then, after the seven blocks and before the metadata, report always:
 - **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
 - **The post-merge checks and their results, one line each**, whether they passed or refused the
   deletions, and whether check 2 read the PR or the merge commit. When one failed, name it, name the path, and print the `/add-framework--plan` suggestion
-  STEP 8 composed — as text the operator runs, never as something this command ran
+  STEP 8 composed — as text the operator runs, never as something this skill ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason

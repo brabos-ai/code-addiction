@@ -9,6 +9,8 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 - skill: add-commit
 - skill: building-commands
 - skill: add-artefact-graph
+- mention: add-framework--plan
+- mention: add-framework--build
 -->
 
 Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so `add-framework--plan` assesses viability and `add-framework--build` implements correctly.

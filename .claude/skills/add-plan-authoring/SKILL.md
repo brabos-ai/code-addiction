@@ -11,10 +11,10 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - skill: add-final-report
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
-- mention: /add-framework--done
-- mention: /add-framework--build
-- mention: /add-framework--brainstorm
-- mention: /add-framework--plan
+- mention: add-framework--done
+- mention: add-framework--build
+- mention: add-framework--brainstorm
+- mention: add-framework--plan
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -53,7 +53,7 @@ that did.
 below. Nothing reads a changelog by its filename, so a rename rewrites files for no reader.
 
 **Both writers point here and neither declares a pattern of its own** — `/add-framework--build` at
-its STEP 8, `/add-framework--done` at its STEP 4. Two commands declaring one format is how they drift.
+its STEP 8, `/add-framework--done` at its STEP 4. Two stages declaring one format is how they drift.
 
 ```
 ⛔ ONE CHANGELOG PER DELIVERY:

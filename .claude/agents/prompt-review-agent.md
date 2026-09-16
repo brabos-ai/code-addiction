@@ -15,8 +15,8 @@ memory: project
 <!-- uses:
 - skill: building-commands
 - skill: add-artefact-graph
-- mention: /add-framework--build
-- mention: /add-framework--plan
+- mention: add-framework--build
+- mention: add-framework--plan
 - mention: add-review-discipline
 - mention: @plan-review-agent
 -->
@@ -218,7 +218,7 @@ of your report must be able to see at a glance that this was the narrow pass:
 
 ```
 Verdict: fix-then-ok
-Artefact: internal/command/add-framework--build (confirm: items 4, 6 + 1, 2)
+Artefact: internal/skill/add-framework--build (confirm: items 4, 6 + 1, 2)
 
 Ruler:
 | # | Item | Tick | Evidence |

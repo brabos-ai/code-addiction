@@ -1,3 +1,8 @@
+---
+name: add-framework--brainstorm
+description: "Use when an idea for the framework itself needs shaping before any plan — explores it with the user, classifies it spike, bounded or architectural, writes the design and intent files, and ends on one approval that can start the rest of the internal pipeline. First stage of brainstorm → plan → build → done."
+---
+
 # ADD Brainstorm - Collaborative Ideation & Design Explorer
 
 <!-- uses:
@@ -6,8 +11,8 @@
 - agent: plan-review-agent
 - skill: add-final-report
 - skill: add-review-discipline
-- mention: /add-framework--build
-- command: /add-framework--plan
+- mention: add-framework--build
+- handoff: add-framework--plan
 - mention: add-plan-authoring
 -->
 
@@ -104,7 +109,7 @@ Listen for:
 
 ### 1.2 Ask the Delivery Index, Then Dispatch Framework Discovery (SILENT)
 
-**Ask the index BEFORE dispatching the agent. This command is the one most likely to re-invent something that already shipped and was dropped.**
+**Ask the index BEFORE dispatching the agent. This skill is the one most likely to re-invent something that already shipped and was dropped.**
 
 **The question, for each artefact name the topic plausibly touches:** was this built before, and was
 it dropped?
@@ -121,7 +126,7 @@ If the index reports itself unavailable → say so and continue. An absent index
 run yet, which is information, not a failure.
 
 **"What does this relate to TODAY" is a second question, and the same skill owns it too.** A topic
-touching an existing artefact almost always raises it, and `### 4.5` is where this command answers it
+touching an existing artefact almost always raises it, and `### 4.5` is where this skill answers it
 against the design. Load the skill before reaching for grep.
 
 **DISPATCH AGENT:** `@framework-discovery-agent`
@@ -164,7 +169,7 @@ IF STARTING STEP 2:
 ```
 
 **Drafting it is the work, not a courtesy.** A user brings a problem, a symptom or a half-formed idea;
-turning that into a statement of what they are trying to achieve is the first thing this command is
+turning that into a statement of what they are trying to achieve is the first thing this skill is
 for. It is the same move `### 4.2` already makes for options — name the one you would take, then let
 them override.
 
@@ -248,7 +253,7 @@ gets its own classification.
 
 Every path ends with the user approving the intent **before** anything is implemented. What scales with
 simplicity is the **artifact** — never the approval. A bounded design may be two sentences in chat; it is
-still presented, and this command still stops until the user says yes.
+still presented, and this skill still stops until the user says yes.
 
 #### 2.2.5 Red flags — rationalisations that defeat the mechanism
 
@@ -366,7 +371,7 @@ not sharpen some part of it is a question this conversation does not need:
 ```
 IF BRINGING IN OUTSIDE PRACTICE:
   ⛔ DO NOT: Say "widely adopted", "industry standard" or "most teams" with nothing named
-  ⛔ DO NOT: Go and fetch it — this command needs no network, and a named recollection the user can
+  ⛔ DO NOT: Go and fetch it — this skill needs no network, and a named recollection the user can
              check is worth more than a link they will not open
   ⛔ DO NOT: Let outside practice override a convention this repository settled for a recorded reason
   ✅ DO: Name the product, framework or convention, and say what it does
@@ -645,7 +650,7 @@ opinion.
 
 ### Agent Dispatch Rules
 
-When this command instructs you to DISPATCH AGENT:
+When this skill instructs you to DISPATCH AGENT:
 1. Read the **Capability** required (read-only)
 2. Read the **Complexity** hint (`standard`)
 3. Choose the best available agent/task mechanism that satisfies the capability
@@ -681,9 +686,9 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 
 ### 7.3 Next Step Guidance [HARD STOP]
 
-One command formalizes both layers, so there is no layer routing left to do here. Carry STEP 2.2's
+One stage formalizes both layers, so there is no layer routing left to do here. Carry STEP 2.2's
 "Framework impact" classification into the design document as the layer each affected artefact sits
-in — the planning command reads it as the starting point for its own F-block tags. **An ambiguous
+in — the planning stage reads it as the starting point for its own F-block tags. **An ambiguous
 layer is a note in the document, not a question to the user.**
 
 #### Write the intent file first — `bounded` and `architectural`
@@ -709,7 +714,7 @@ request with its own classification.
 
 #### Then route
 
-**Name both files in the handoff**, verbatim, whichever this path wrote. The planning command reads
+**Name both files in the handoff**, verbatim, whichever this path wrote. The planning stage reads
 `docs/brainstorming/` and needs to know which file — a handoff naming only the idea leaves it matching
 a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
 whole set sharing one timestamp.
@@ -726,7 +731,7 @@ Intent: docs/brainstorming/<the intent file written above>
 On `bounded`, there is no design document, so that line is omitted and the `Intent:` line stands alone.
 
 ⛔ **On `spike`, do NOT route to the planner at all.** A spike’s terminal state is its recommendation.
-Sending it to a full planning pass contradicts this command’s own ratchet — `2.2.3` already says a
+Sending it to a full planning pass contradicts this skill’s own ratchet — `2.2.3` already says a
 spike whose answer is "yes, and here is how" is a NEW request, which gets its own classification and
 its own run. Report the recommendation and stop.
 
@@ -787,7 +792,7 @@ deliver it.
 reaches this step by jumping from `1.0`, so it never ran `1.2` and the lookup is owed here or
 nowhere.** `### 1.2` owns the question and the verb — load `add-artefact-graph` and resolve it there.
 
-**The reason `1.2` gives applies at least as strongly here.** That step calls this command *"the one
+**The reason `1.2` gives applies at least as strongly here.** That step calls this skill *"the one
 most likely to re-invent something that already shipped and was dropped"*, and a subtopic refinement
 is where an idea first becomes a concrete artefact proposal. A `gone` or `superseded` entry is the
 answer that changes the design.
