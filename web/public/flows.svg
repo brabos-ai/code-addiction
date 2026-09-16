@@ -68,7 +68,7 @@
     <text x="50" y="18" text-anchor="middle" class="ntxt">Ship</text>
     <text x="50" y="32" text-anchor="middle" class="cmd">/add.done</text>
   </g>
-  <text x="40" y="120" class="sublabel" style="fill:#999">/add.review runs code review, spec audit and dual-judge QA over working evidence; /add.done validates and promotes it to immutable final snapshots (findings may remain)</text>
+  <text x="40" y="120" class="sublabel" style="fill:#999">/add.review runs code review and spec audit over working evidence (plus dual-judge QA when qa-pipeline is enabled); /add.done validates and promotes it to immutable final snapshots (findings may remain)</text>
 
   <!-- ============ STANDARD FLOW ============ -->
   <text x="40" y="150" class="label">STANDARD FLOW</text>

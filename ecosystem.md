@@ -22,23 +22,23 @@ graph LR
   DOSC{{add-doc-schemas}}
   EC{{add-ecosystem}}
   FEDI{{add-feature-discovery}}
+  FESP{{add-feature-specification}}
   FINR{{add-final-report}}
   FRDE{{add-frontend-development}}
   IDCO{{add-id-convention}}
   IN{{add-investigation}}
   KNDI{{add-knowledge-discovery}}
   PRV{{add-plan-review}}
-  QA{{add-qa}}
   RVDI{{add-review-discipline}}
   SDDA{{add-subagent-driven-development}}
   TACH{{add-tasks-checklist}}
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
-  NEW --> DOSC & FINR & IDCO & KNDI & PRV & RVDI
+  NEW --> DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI
   PLAN --> BADE & CSC & DADE & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & TACH & UXDE
   BUILD --> BADE & CORE & CO & DADE & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
-  REVIEW --> CO & DOSC & FINR & IN & KNDI & QA & TACH
+  REVIEW --> CO & DOSC & FINR & IN & KNDI & TACH
   DONE --> DOSC & EC & FINR & IDCO & WIMA
   PLANTOREADY --> CO & CSC & DOSC & FINR & RVDI
 ```
@@ -48,7 +48,6 @@ graph LR
 ```mermaid
 graph LR
   ADD(add)
-  INIT(add.init)
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
   AUDIT(add.audit)
@@ -64,28 +63,25 @@ graph LR
   DEENSE{{add-dev-environment-setup}}
   DOSC{{add-doc-schemas}}
   EC{{add-ecosystem}}
+  FESP{{add-feature-specification}}
   FINR{{add-final-report}}
   HECH{{add-health-check}}
   IDCO{{add-id-convention}}
   IN{{add-investigation}}
   KNDI{{add-knowledge-discovery}}
-  PRDI{{add-product-discovery}}
-  PRV{{add-plan-review}}
   QA{{add-qa}}
   QAMI{{add-qa-migration}}
-  RVDI{{add-review-discipline}}
   SECO{{add-setup-contract}}
   SDDA{{add-subagent-driven-development}}
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
   ADD --> DEENSE & EC
-  INIT --> DOSC & FINR & PRDI
   DIAGNOSE --> DOSC & EC & FINR & IN & KNDI
   HOTFIX --> DOSC & EC & FINR & IDCO & IN & KNDI & UXDE
   AUDIT --> DOSC & EC & FINR & HECH & IN
   WIKI --> ARDI & CLMDST & DOSC & EC & FINR & WIMA
-  BRAINSTORM --> DOSC & FINR & KNDI & PRV & RVDI
+  BRAINSTORM --> DOSC & FESP & FINR & KNDI
   UX --> UXDE
   QASETUP --> DEENSE & DOSC & FINR & QA & QAMI & SECO & SDDA
   PULLREQUEST --> CO & DOSC & FINR & IDCO
@@ -95,7 +91,6 @@ graph LR
 
 ```mermaid
 graph LR
-  BRAINSTORM(add.brainstorm)
   BUILD(add.build)
   DIAGNOSE(add.diagnose)
   HOTFIX(add.hotfix)
@@ -146,15 +141,14 @@ graph LR
   SEAU{{add-security-audit}}
   UXDE{{add-ux-design}}
 
-  BRAINSTORM --> PRA & RBA
   BUILD --> BAA & DAA & E2A & FIA & FRA & RBA & REA & TEA & UXA
   DIAGNOSE --> ARA & FEHIA & GIHIA
   HOTFIX --> ARA & COA & FAA & FEHIA & GIHIA & SEA
-  NEW --> PRA & RBA
+  NEW --> PRA
   PLAN --> ARA & BAA & CSA & DAA & DIA & FRA & PRA & QAA & RBA & UXA & UXFLA & UXLAA
   PLANTOREADY --> ARA & BAA & CSA & DAA & DIA & E2A & FIA & FRA & PRA & QAA & RBA & REA & TEA & UXA & UXFLA & UXLAA
   QASETUP --> E2A & QAA
-  REVIEW --> E2A & QAA & REA & UXA
+  REVIEW --> REA & UXA
 
   ARA --> ARDI & BAAR & FRAR
   BAA --> BADE & DADE
