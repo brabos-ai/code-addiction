@@ -694,15 +694,27 @@ Common fallback paths to check if detection fails (in order):
 2. `C:/Program Files (x86)/Git/bin/bash.exe`
 3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
 
+**The policy names BOTH shell forms, because the reader's shell is not known here.** `&` is
+PowerShell's call operator. An engine whose shell tool is already bash (OpenCode, Git Bash, MSYS)
+reads `& "..." -lc "..."` as a syntax error, and every script call fails. PowerShell hosts still need
+the `&` form to reach Git Bash instead of WSL.
+
+```
+IF WRITING THE SHELL POLICY:
+  ⛔ DO NOT: Write only the `& "<bash.exe>" -lc` form
+  ✅ DO: Write the bash-direct form and the PowerShell form, each labelled with its shell
+```
+
 **If Windows + path detected:** append to AGENTS.md:
 
 ```
 ---
 
 ## Shell policy (Windows)
-Always execute commands via Git Bash:
-`& "[DETECTED_PATH]" -lc "<command>"`
-Do not use WSL bash (`bash ...`) directly.
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: `& "[DETECTED_PATH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
 ```
 
 **If Windows + path NOT detected:** append a generic policy:
@@ -711,10 +723,10 @@ Do not use WSL bash (`bash ...`) directly.
 ---
 
 ## Shell policy (Windows)
-Always execute commands via Git Bash. Locate bash.exe first:
-`where bash`
-Then execute: `& "[PATH_TO_BASH]" -lc "<command>"`
-Do not use WSL bash (`bash ...`) directly.
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: locate bash.exe first with `where bash`, then `& "[PATH_TO_BASH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
 ```
 
 **DO NOT rewrite or regenerate content -- READ CLAUDE.md and WRITE.**
