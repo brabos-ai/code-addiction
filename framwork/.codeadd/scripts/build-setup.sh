@@ -11,7 +11,8 @@
 #   2 — feature dir not found / ambiguous
 #   3 — invalid branch: format or slug != dirname (Hard Invariant)
 #   4 — no verifiable main branch
-#   5 — dirty tracked working tree (in-place mode only)
+#   5 — dirty tracked working tree (in-place mode, and only when a checkout will happen —
+#       already on the target branch is a resumed build and passes)
 # Dependencies: git, get-main-branch.sh
 # ============================================
 
@@ -112,8 +113,10 @@ fi
 CURRENT="$(git branch --show-current 2>/dev/null || echo "")"
 
 # --- 5. Dirty-tree guard (in-place mode only; untracked allowed) ---
+# Guards a checkout. Already on the target branch nothing is checked out, so
+# uncommitted work there is the feature's own resumed build, not a leak.
 
-if [ "$WORKTREE" = false ]; then
+if [ "$WORKTREE" = false ] && [ "$CURRENT" != "$BRANCH" ]; then
   DIRTY="$(git status --porcelain 2>/dev/null | grep -v '^??' || true)"
   if [ -n "$DIRTY" ]; then
     echo "ERROR: working tree has tracked modifications (commit or stash first):" >&2

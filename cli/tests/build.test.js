@@ -19,6 +19,8 @@ const {
   METADATA,
   buildAgents,
   readMap,
+  splitFrontmatter,
+  AGENT_DIALECTS,
 } = require('../../scripts/build.js');
 
 // ---------------------------------------------------------------------------
@@ -549,6 +551,27 @@ describe('buildAgents', () => {
     expect(built).toContain('memory: project');
     // Should NOT have the md transformer's frontmatter wrapper
     expect(built).not.toMatch(/^---\ndescription:/);
+  });
+
+  // `sonnet`, `haiku` and `inherit` are Claude model names. On OpenCode, Cursor
+  // or Codex they name nothing, and a subagent pinned to one fails to dispatch
+  // on a non-Claude session. Without the key each provider uses the session model.
+  it('only the claude dialect carries the source model', () => {
+    const { fields, blocks, body } = splitFrontmatter(
+      '---\nname: probe-agent\ndescription: probe\nmodel: sonnet\n---\n\nBody.\n',
+    );
+    const meta = { name: 'probe-agent', description: 'probe', readonly: true };
+    const render = (provider) => AGENT_DIALECTS[provider]({ fields, blocks }, body, meta);
+
+    expect(render('claude')).toMatch(/^model: sonnet$/m);
+    for (const provider of ['opencode', 'cursor', 'codex']) {
+      expect(render(provider), provider).not.toMatch(/^model\s*[:=]/m);
+    }
+    // The fields that stay must survive the removal.
+    expect(render('opencode')).toMatch(/^mode: subagent$/m);
+    expect(render('opencode')).toMatch(/^  edit: deny$/m);
+    expect(render('cursor')).toMatch(/^readonly: true$/m);
+    expect(render('codex')).toMatch(/^developer_instructions = /m);
   });
 
   it('does not build agents for antigrav (no agents pattern)', () => {

@@ -35,10 +35,10 @@ graph LR
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
-  NEW --> DELMO & DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI
-  PLAN --> BADE & CSC & DADE & DELMO & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & TACH & UXDE
+  NEW --> DELMO & DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI & SDDA
+  PLAN --> BADE & CSC & DADE & DELMO & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & SDDA & TACH & UXDE
   BUILD --> BADE & CORE & CO & CSC & DADE & DELMO & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
-  REVIEW --> CO & DELMO & DOSC & FINR & IN & KNDI & TACH
+  REVIEW --> CO & DELMO & DOSC & FINR & IN & KNDI & SDDA & TACH
   DONE --> DOSC & EC & FINR & IDCO & WIMA
 ```
 
@@ -77,10 +77,10 @@ graph LR
   WIMA{{add-wiki-maintenance}}
 
   ADD --> DEENSE & EC
-  DIAGNOSE --> DOSC & EC & FINR & IN & KNDI
-  HOTFIX --> DOSC & EC & FINR & IDCO & IN & KNDI & UXDE
-  AUDIT --> DOSC & EC & FINR & HECH & IN
-  WIKI --> ARDI & CLMDST & DOSC & EC & FINR & WIMA
+  DIAGNOSE --> DOSC & EC & FINR & IN & KNDI & SDDA
+  HOTFIX --> DOSC & EC & FINR & IDCO & IN & KNDI & SDDA & UXDE
+  AUDIT --> DOSC & EC & FINR & HECH & IN & SDDA
+  WIKI --> ARDI & CLMDST & DOSC & EC & FINR & SDDA & WIMA
   BRAINSTORM --> DELMO & DOSC & FESP & FINR & KNDI
   UX --> UXDE
   QASETUP --> DEENSE & DOSC & FINR & QA & QAMI & SECO & SDDA

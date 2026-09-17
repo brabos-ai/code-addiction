@@ -26,6 +26,8 @@ description: Use when executing implementation plans via dispatched subagents wi
 - script: status.sh
 - script: task-brief.sh
 - skill: add-subagent-driven-development/references/persistent-logging-and-tasks.md
+- mention: /add.review
+- mention: add-architecture-discovery
 -->
 
 Execute a plan by dispatching named specialist agents per task, with code review after each.
@@ -360,21 +362,51 @@ implementer's report, and the plan's `## Global Constraints` block verbatim. Rev
 + ## GLOBAL CONSTRAINTS  (verbatim from plan.md — the attention lens)
   ## SKILLS
 - - [implementation skill]
-+ - {{skill:add-code-review/SKILL.md}}
++ - {{skill:add-tasks-checklist/SKILL.md}} — the Tick Application Procedure SPEC_STATUS comes from
++ - IF WIKI:present AND the area's page exists: {{addpath:wiki/domains/${AREA}.md}} + {{addpath:wiki/conventions.md}}
   ## TASK
 - [Specific deliverables from plan]
 + 1. Read all files from TASK_DOCUMENTS (spec)
 + 2. Read every file in FILES TO REVIEW (implementation)
-+ 3. Validate implementation against spec
-+ 4. Check skill patterns
-+ 5. Report findings
++ 3. Architecture Contract, FIRST: IF CLAUDE.md carries a `## Architecture Contract` section, then for
++    each file identify its layer/package, read its imports, and check them against THAT SECTION's
++    import and placement rules. A violation is a blocker — report it before anything else.
++    IF the section is absent, SKIP this check and say so in the report. Those rules are discovered
++    from this project's real dependency edges; deriving them from general architecture principles
++    instead reviews a project that does not exist
++ 4. Confirm this task's own Consumes/Produces contract is honored, character for character
++ 5. Derive SPEC_STATUS by the Tick Application Procedure in `add-tasks-checklist`: INCOMPLETE when any
++    §3 or §4 item for this task is `[!]` or `[ ]`
++ 6. IF a wiki page was loaded: flag anything in FILES TO REVIEW that contradicts it
++ 7. Report those findings, plus anything else plainly wrong you saw while reading — a piece the task's
++    own spec named that is missing, a Global Constraint violated. What is narrowed here is the RUBRIC,
++    never the attention: read every file properly, and do not run a category-by-category audit on top
   ## REPORT FORMAT
 - 1. STATUS / FILES / TESTS / CONCERNS
-+ 1. ISSUES_FOUND: [list with severity]
++ 1. ISSUES_FOUND: [list with severity and Confidence]
 + 2. BUILD_STATUS: [pass/fail]
 + 3. SPEC_STATUS: [complete/INCOMPLETE]
-+ 4. SCORE: [X/10]
 ```
+
+**Deliberately narrower than `/add.review`'s own reviewer dispatch.** `add-code-review` is no longer
+loaded here: six of its ten categories — RESTful, full OWASP, SOLID, Code Quality, Database,
+Environment — were being audited at nearly the same depth twice, once per task here and once over the
+whole finished feature in `/add.review`. Those six are now `/add.review`'s alone.
+
+**Four things are kept, and each earns its place by what it costs to discover late:**
+
+| Kept | Why it cannot wait for `/add.review` |
+|---|---|
+| Architecture Contract (step 3) | A wrong layer import is the defect that contaminates every task built on top of it. Mechanical to check — layer, imports, placement rules — so it is cheap to keep. **Only against the section CLAUDE.md actually carries**, which `add-architecture-discovery` derives from this project's real dependency edges. No section, no check — a reviewer applying architecture rules this project never adopted is worse than one applying none |
+| The task's own `Consumes`/`Produces` (step 4) | The next task is written against that signature. A mismatch here is a broken handoff, not a style note |
+| `SPEC_STATUS` (step 5) | Step 6 gates the commit on it. It is derived by `add-tasks-checklist`'s Tick Application Procedure — that skill owns the definition, and this step points at it rather than restating one |
+| Wiki conventions (step 6) | The project's own documented patterns, where a wiki exists. Free to check while reading, and the drift is cheapest to fix in the task that introduced it |
+
+⛔ **Narrower rubric, same care.** This step reads every file in `FILES TO REVIEW` properly. What it
+does not do is walk the six dropped categories — it does not skim.
+
+`SCORE` goes with `add-code-review`: it was that skill's own weighted rollup, and nothing here computes
+or consumes one any more.
 
 ### 6. Commit and Record
 
@@ -395,6 +427,23 @@ sibling area's work into the first commit and leave the second with an empty ran
 `review-package.sh` then refuses.
 
 ### 7. Fix Loop, Escalation and the Scoped Re-Review
+
+**Confidence gate, before severity routing.** A finding whose `Confidence` is `needs-verification`
+(`reviewer-agent`'s Report Format) does not go straight into the severity table below. Dispatch
+`@reviewer-agent` again, `MODE: task`, scoped to that finding alone — its file and its claim, not the
+whole spec or diff — and read back whether it confirms or retracts:
+
+- **Confirms** → the finding proceeds to severity routing below, same as one that was `confirmed`
+  from the start.
+- **Retracts** → append a `false-positive (dismissed)` line to the ledger, naming the finding and why
+  it did not hold. No fix is dispatched.
+
+**One confirm dispatch per `needs-verification` finding, never a second.** This is a check on the
+finding, not a re-review of the whole task — if the confirming pass is itself uncertain, treat that as
+a retraction: the burden is on the finding, not on the implementer.
+
+Every `confirmed` finding, and every `needs-verification` finding the confirm pass upheld, is routed
+by severity:
 
 - **Critical** issues → dispatch `@fix-agent` immediately.
 - **Important** issues → fix before next task.
@@ -579,7 +628,9 @@ Coordinator must confirm before reporting completion:
 - Backend: `{{skill:add-backend-development/SKILL.md}}`
 - Database: `{{skill:add-database-development/SKILL.md}}`
 - Frontend: `{{skill:add-frontend-development/SKILL.md}}` + `{{skill:add-ux-design/SKILL.md}}`
-- Review: `{{skill:add-code-review/SKILL.md}}`
+- Review: `{{skill:add-tasks-checklist/SKILL.md}}` for the tick, plus the wiki domain page for the
+  task's area when one exists; `/add.review`'s own end-of-feature dispatch is where
+  `add-code-review`'s full ten categories still apply
 - Commits: `{{skill:add-commit/SKILL.md}}`
 - Task shape: `{{skill:add-tasks-checklist/SKILL.md}}`
 

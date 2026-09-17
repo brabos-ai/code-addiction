@@ -137,6 +137,20 @@ make_feature() {
   [ "$status" -eq 5 ]
 }
 
+# A resumed build sits on its own branch with uncommitted work. No checkout
+# happens, so nothing can leak — the guard must not halt it.
+@test "dirty tracked tree on the target branch is allowed (resume)" {
+  make_feature "0042F-auth" "feature/0042F-auth"
+  echo "tracked" > tracked.txt
+  git add tracked.txt
+  git commit -m "add tracked" -q
+  git checkout -b feature/0042F-auth -q
+  echo "modified" >> tracked.txt
+  run "$SCRIPTS_DIR/build-setup.sh" 0042F
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STATE:current"* ]]
+}
+
 @test "untracked-only tree is allowed" {
   make_feature "0042F-auth" "feature/0042F-auth"
   echo "untracked" > untracked.txt

@@ -258,7 +258,10 @@ describe('L3.7-3.9 the dispatchers', () => {
     // The count is 3 + N now. Every literal form of the old four goes.
     expect(s7).not.toMatch(/\bfour\b/i);
     expect(s7).not.toMatch(/\b4 AGENTS\b/i);
-    expect(s7).toMatch(/3 \+ N|3\+N/);
+    // Plan 2026-09-17T153506 (cut-review-and-build-loop-cost) F4: the quality
+    // dispatch batches every touched artefact into one call, so "3 + N" (one
+    // call per file) became "3 + 1" (one call per build, regardless of N).
+    expect(s7).toMatch(/3 \+ 1|3\+1/);
 
     expect(uses(text)).toMatch(/^- agent: prompt-review-agent$/m);
   });
@@ -346,9 +349,12 @@ describe('L3.10-3.11 the review discipline', () => {
     expect(s7).toMatch(/cites a ruler item/);
 
     // Both traps closed: no full re-tick, and no confirm without items.
-    expect(s7).toMatch(/⛔ DO NOT: Send `mode: delivery`/);
-    expect(s7).toMatch(/⛔ DO NOT: Send `confirm` without `items`/);
-    expect(s7).toMatch(/⛔ DO NOT: Dispatch a third pass/);
+    // Plan 2026-09-17T153506 F4: scope 4 is one batched `nodes` call, so the
+    // per-artefact routing traps are worded per-entry, and the no-third-pass
+    // trap became no-second-batched-call (there is only ever one call now).
+    expect(s7).toMatch(/⛔ DO NOT: Send that artefact's `nodes` entry as `mode=delivery`/);
+    expect(s7).toMatch(/⛔ DO NOT: Send `mode=confirm` with `items=-`/);
+    expect(s7).toMatch(/⛔ DO NOT: Dispatch a second batched call/);
 
     // And the plan side supplies what the routing reads.
     const s5 = stepBody(read(P.planCmd), 'Generate Plan');

@@ -16,6 +16,7 @@
 - skill: add-tasks-checklist
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: backend-agent
 - agent: consistency-agent
 - agent: database-agent
@@ -359,6 +360,9 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 ### 10.0 Pre-Flight Scan and the Handoff Contract (BEFORE the first dispatch)
 
+<!-- plugin:gitnexus:graph-build -->
+<!-- /plugin:gitnexus:graph-build -->
+
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and none is satisfied by asserting it happened.
 
@@ -466,6 +470,8 @@ is the coordinator's understanding of it, and nothing checks that what it
 recovers matches the document. `/add.plan` STEP 12's readback ran in the session
 that WROTE the plan, while it could still be asked; this one reads it the way a
 resumed session actually holds it — alone.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 **DISPATCH AGENT: `@readback-agent`** [read-only]
 
@@ -1039,6 +1045,11 @@ it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 `FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — 12.3 cannot run without it. Dispatch
 **ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
+
+**Every row in the table is fixed — no pre-fix confidence check.** `/add.review`'s `Confidence` field,
+where a reviewer reported one, is not consumed here. This dispatch stays "one wave, one fix", the same
+rule `add-review-discipline` states for the review side; 12.2's re-review is what verifies the fix
+afterward, not a gate before it.
 
 ### 12.2 Scoped Re-Review (after EVERY fix round) [HARD GATE]
 

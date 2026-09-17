@@ -10,6 +10,8 @@
 - skill: add-plan-review
 - skill: add-review-discipline
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: plan-reviewer-agent
 - command: /add.brainstorm
 - command: /add.build
@@ -376,6 +378,8 @@ Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as de
 schema gate still ran, the confirmation screen caught extraction errors, and the three-fact test
 already excluded irreversible actions and large footprints from this path. A weak document still
 surfaces at `/add.plan`, in the verdict on the plan derived from it.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md’s path and `kind: feature`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
 2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its **Acting on the Verdict** table governs this dispatch. Read it there. Do NOT mark `about.md` delivered while a blocker stands.

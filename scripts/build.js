@@ -1736,9 +1736,14 @@ const skillStrategy = {
 // table (verified 2026-08-24).
 //
 //   claude    .claude/agents/<name>.md      name, description, model, tools
-//   opencode  .opencode/agents/<name>.md    description, mode: subagent, model, permission
-//   cursor    .cursor/agents/<name>.md      name, description, model, readonly
-//   codex     .codex/agents/<name>.toml     name, description, developer_instructions, model
+//   opencode  .opencode/agents/<name>.md    description, mode: subagent, permission
+//   cursor    .cursor/agents/<name>.md      name, description, readonly
+//   codex     .codex/agents/<name>.toml     name, description, developer_instructions
+//
+// `model` reaches claude only. The sources pin Claude names (sonnet, haiku,
+// inherit), which name nothing on the other three — a subagent pinned to one
+// fails to dispatch on a non-Claude session. Without the key, each of those
+// providers runs the subagent on the session model.
 //
 // antigrav is deliberately absent: its native agents live at .agents/agents/,
 // which collides with this repo's Codex skills root, and resolving that means
@@ -1819,25 +1824,22 @@ const AGENT_DIALECTS = {
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
-  opencode({ fields }, body, meta) {
+  opencode(_frontmatter, body, meta) {
     const out = [`description: ${yamlScalar(meta.description)}`, 'mode: subagent'];
-    if (fields.model) out.push(`model: ${fields.model}`);
     // A read-only agent gets its constraint enforced by the engine, not merely
     // stated in prose. OpenCode's permission map is the only dialect that can.
     if (meta.readonly) out.push('permission:', '  edit: deny', '  bash: deny', '  webfetch: allow');
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
-  cursor({ fields }, body, meta) {
+  cursor(_frontmatter, body, meta) {
     const out = [`name: ${meta.name}`, `description: ${yamlScalar(meta.description)}`];
-    if (fields.model) out.push(`model: ${fields.model}`);
     if (meta.readonly) out.push('readonly: true');
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
-  codex({ fields }, body, meta) {
+  codex(_frontmatter, body, meta) {
     const out = [`name = ${tomlString(meta.name)}`, `description = ${tomlString(meta.description)}`];
-    if (fields.model) out.push(`model = ${tomlString(fields.model)}`);
     out.push(`developer_instructions = ${tomlMultiline(body)}`);
     return `${out.join('\n')}\n`;
   },

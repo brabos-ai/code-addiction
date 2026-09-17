@@ -9,6 +9,8 @@
 - skill: add-knowledge-discovery
 - skill: add-tasks-checklist
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: reviewer-agent
 - agent: ux-agent
 - command: /add.build
@@ -428,6 +430,9 @@ Output the audit as a table with columns: Item, Type, Expected, Found at, Status
 Based on changed files, determine which reviewers to dispatch:
 - **frontend**: `apps/frontend/**` detected
 - **backend**: `apps/backend/**` OR `libs/**` detected
+- **owasp** (conditional): the diff touches a sensitive area — authentication, payment, file upload,
+  input handling/validation, or session/token paths. This is a fourth signal, independent of
+  frontend/backend — a sensitive backend file triggers both.
 
 ### Agent Roster
 
@@ -440,8 +445,9 @@ agents directly, at depth 1.
 |-------|-----------|--------|-----------------|
 | `@reviewer-agent` (frontend) | **read-only** | `TASK_DOCUMENTS`, changed frontend files, validation checklist | findings by severity, `SPEC_STATUS`, `## Fix Routing` rows |
 | `@reviewer-agent` (backend) | **read-only** | `TASK_DOCUMENTS`, changed backend files, validation checklist | findings by severity, `SPEC_STATUS`, `## Fix Routing` rows |
+| `@reviewer-agent` (owasp, conditional) | **read-only** | `MODE: owasp`, the sensitive-area changed files | findings by severity, `## Fix Routing` rows |
 
-⛔ Both reviewer dispatches are **read-only**. A reviewer that edits code invalidates
+⛔ Every reviewer dispatch is **read-only**. A reviewer that edits code invalidates
 the evidence this command just captured.
   ⛔ DO NOT instruct a reviewer to apply a fix
   ⛔ DO NOT accept a "Files Modified" section in a reviewer report
@@ -455,11 +461,24 @@ the evidence this command just captured.
 **If only ONE area exists:**
 - Dispatch single reviewer
 
-**Always wait for ALL reviewers to complete before proceeding.**
+**If the owasp trigger fired (4.1):**
+- Dispatch `@reviewer-agent` (owasp) in the SAME parallel batch as the area reviewer(s) — never
+  instead of them, never as a later round.
+
+```
+IF THE OWASP TRIGGER DID NOT FIRE:
+  ⛔ DO NOT: Dispatch @reviewer-agent (owasp) anyway "to be safe" — every diff would pay for it,
+             which is the cost this dispatch exists to avoid
+  ✅ DO: Dispatch only the area reviewer(s) frontend/backend already decide
+```
+
+**Always wait for ALL reviewers to complete before proceeding** — 2 or 3, whichever fired.
 
 **Idempotency:** Do NOT re-dispatch reviewers if a build fix occurs (see Gate 5 note).
 
 ---
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 ### DISPATCH AGENT: @reviewer-agent — Frontend Review
 
@@ -556,6 +575,40 @@ prompt: |
 
 ---
 
+### DISPATCH AGENT: @reviewer-agent — OWASP Focus (conditional — only when 4.1's owasp trigger fired)
+
+**Intent:** A systematic OWASP Top 10 pass over the diff's sensitive-area files, alongside the
+frontend/backend review — not instead of it.
+
+```
+description: "OWASP review for ${FEATURE_ID}"
+prompt: |
+  MODE: owasp
+
+  ## ROLE
+  You are the OWASP REVIEWER for feature ${FEATURE_ID}.
+
+  ## BOOTSTRAP
+  1. Read the sensitive-area changed files: [the files that fired 4.1's owasp trigger]
+  2. Read skill: add-security-audit
+
+  ## TASK
+  Go through OWASP Top 10 A01 through A10, in order, against the files above. Report only the
+  categories where you found an issue.
+
+  ## RULES
+  - READ-ONLY. Do NOT edit, write or create any file. Report findings only.
+  - Every finding carries Confidence: confirmed | needs-verification, per your Report Format
+  - This pass is not deduplicated against the area reviewer's own Security (OWASP) checklist line —
+    report what you find regardless of overlap
+
+  ## REPORT FORMAT
+  Per reviewer-agent's standard Report Format (Severity, File, Issue, Why, Fix, Confidence), one
+  finding per A01-A10 category with an actual issue.
+```
+
+---
+
 ## STEP 5: Consolidate Findings
 
 ### 5.1 Process Reviewer Outputs
@@ -586,6 +639,12 @@ prompt: |
    ```
 
 4. **Emit findings as routed rows.** Every consolidated finding becomes a `## Fix Routing` row in STEP 11.2 — area, route, file, symptom. Nothing is applied here.
+
+**One review, one fix wave, by design.** A reviewer's `Confidence` field (when present) is not carried
+into `## Fix Routing` and does not gate this pipeline — every row reaches `/add.build` STEP 12's single
+correction dispatch. `Confidence` gates the in-build task loop
+(`add-subagent-driven-development` §7); it stays informational here, on purpose, so this pipeline keeps
+one simple rule: review once, fix the whole wave once, done.
 
 ---
 

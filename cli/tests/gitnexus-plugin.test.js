@@ -43,8 +43,9 @@ describe('gitnexus catalog entry', () => {
     expect(Array.isArray(e.skills)).toBe(true);
   });
 
-  it('injects exactly the six target commands', () => {
-    expect(catalogEntry().injects.sort()).toEqual(['add.diagnose', 'add.done', 'add.hotfix', 'add.new', 'add.plan', 'add.wiki']);
+  it('injects exactly the seven target commands', () => {
+    // add.build joined when its main session was seen calling gitnexus with no guidance at all.
+    expect(catalogEntry().injects.sort()).toEqual(['add.build', 'add.diagnose', 'add.done', 'add.hotfix', 'add.new', 'add.plan', 'add.wiki']);
   });
 
   it('ships the add-gitnexus skill', () => {
@@ -70,6 +71,28 @@ describe('gitnexus fragments ⟷ command markers', () => {
         expect(cmdSource, `${cmd}.md missing close marker for ${section}`)
           .toContain(`<!-- /plugin:gitnexus:${section} -->`);
       }
+    });
+  }
+});
+
+describe('gitnexus fragments carry the repo rule themselves', () => {
+  // With more than one repo indexed, every gitnexus call without `repo` fails. The protocol lives in
+  // add-gitnexus, but a session that never loads that skill never sees it — so each fragment states
+  // the rule inside an injected section, where it actually reaches the command or agent.
+  const fragments = [
+    ...fs.readdirSync(path.join(PLUGIN_DIR, 'fragments')).filter((f) => f.endsWith('.md')),
+    ...fs.readdirSync(path.join(PLUGIN_DIR, 'fragments', 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`),
+  ];
+
+  it('covers the sixteen fragments', () => {
+    expect(fragments.length).toBe(16);
+  });
+
+  for (const rel of fragments) {
+    it(`${rel} states list_repos and the repo parameter inside an injected section`, () => {
+      const sections = parseFragmentSections(fs.readFileSync(path.join(PLUGIN_DIR, 'fragments', rel), 'utf8'));
+      const carrying = [...sections.values()].filter((body) => body.includes('list_repos') && body.includes('`repo`'));
+      expect(carrying.length, `${rel} has no section stating the repo rule`).toBeGreaterThan(0);
     });
   }
 });

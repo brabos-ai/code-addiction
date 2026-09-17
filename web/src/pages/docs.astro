@@ -238,7 +238,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.review</code>
-                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review and spec-compliance audit; with the <code class="text-foreground">qa-pipeline</code> feature enabled, also agent-judged QA (dual-judge panel over persisted run evidence). Consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them</p>
+                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review and spec-compliance audit; with the <code class="text-foreground">qa-pipeline</code> feature enabled, also agent-judged QA (dual-judge panel over persisted run evidence). Dispatches an OWASP Top 10 pass alongside the area review when the diff touches a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.audit</code>
@@ -634,7 +634,7 @@ import "../styles/global.css";
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
             <p class="text-muted-light text-sm mb-1">Code knowledge-graph navigation (call graph, refs, blast-radius) via MCP. Enables structural code navigation across discovery, planning, diagnosis, and hotfix commands — going beyond grep to understand actual call chains and impact.</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.plan</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code>, <code class="font-mono">add.wiki</code></p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add.new</code>, <code class="font-mono">add.plan</code>, <code class="font-mono">add.build</code>, <code class="font-mono">add.diagnose</code>, <code class="font-mono">add.hotfix</code>, <code class="font-mono">add.done</code>, <code class="font-mono">add.wiki</code></p>
             <p class="text-muted text-xs mb-1">Injects into agent: <code class="font-mono">ux-flow-agent</code></p>
             <p class="text-muted text-xs">Activates skill: <code class="font-mono">add-gitnexus</code> — structural/relational code navigation (call graph, references, blast-radius, trace flows, safe refactors)</p>
             <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/abhigyanpatwari/GitNexus</a></p>

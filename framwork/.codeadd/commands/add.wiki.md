@@ -7,6 +7,8 @@
 - skill: add-ecosystem
 - skill: add-final-report
 - skill: add-wiki-maintenance
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 -->
 
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
@@ -118,6 +120,8 @@ When this command instructs you to DISPATCH AGENT:
 5. Verify output exists before proceeding past any WAIT or GATE CHECK
 
 You are the coordinator. You know your engine's capabilities. Map the intent to the best available mechanism.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 ---
 
@@ -694,15 +698,27 @@ Common fallback paths to check if detection fails (in order):
 2. `C:/Program Files (x86)/Git/bin/bash.exe`
 3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
 
+**The policy names BOTH shell forms, because the reader's shell is not known here.** `&` is
+PowerShell's call operator. An engine whose shell tool is already bash (OpenCode, Git Bash, MSYS)
+reads `& "..." -lc "..."` as a syntax error, and every script call fails. PowerShell hosts still need
+the `&` form to reach Git Bash instead of WSL.
+
+```
+IF WRITING THE SHELL POLICY:
+  ⛔ DO NOT: Write only the `& "<bash.exe>" -lc` form
+  ✅ DO: Write the bash-direct form and the PowerShell form, each labelled with its shell
+```
+
 **If Windows + path detected:** append to AGENTS.md:
 
 ```
 ---
 
 ## Shell policy (Windows)
-Always execute commands via Git Bash:
-`& "[DETECTED_PATH]" -lc "<command>"`
-Do not use WSL bash (`bash ...`) directly.
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: `& "[DETECTED_PATH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
 ```
 
 **If Windows + path NOT detected:** append a generic policy:
@@ -711,10 +727,10 @@ Do not use WSL bash (`bash ...`) directly.
 ---
 
 ## Shell policy (Windows)
-Always execute commands via Git Bash. Locate bash.exe first:
-`where bash`
-Then execute: `& "[PATH_TO_BASH]" -lc "<command>"`
-Do not use WSL bash (`bash ...`) directly.
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: locate bash.exe first with `where bash`, then `& "[PATH_TO_BASH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
 ```
 
 **DO NOT rewrite or regenerate content -- READ CLAUDE.md and WRITE.**
