@@ -1,6 +1,7 @@
 <!-- uses:
 - agent: test-agent
 - skill: add-tdd
+- skill: add-delivery-mode
 - mention: /add.plan
 - mention: @fix-agent
 -->
@@ -59,6 +60,9 @@ IF test files detected (*.spec.ts, *.test.ts from test service tasks):
      c. Re-run tests (max 3 iterations)
      d. IF still failing after 3 iterations: report failures and STOP
 ```
+
+**Stop kind — the STOP in step d is deciding, in every delivery mode** (`add-delivery-mode`). Tests still
+failing after three attempts is a failure no approval covered, so an automatic delivery waits on it too.
 <!-- /section:verification -->
 
 <!-- section:detect-framework -->
