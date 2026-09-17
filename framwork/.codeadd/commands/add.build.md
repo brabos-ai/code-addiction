@@ -1259,8 +1259,9 @@ nothing and dispatches no implementer.
 
 **DISPATCH AGENT: @consistency-agent**
 - **Capability:** read-only
-- **Input:** `mode: DELTA`, the full resolved subfeature roster from `epic.md`, `HAS_DESIGN`, and the last
-  `FULL`-pass verdict recorded for each subfeature
+- **Input:** `mode: DELTA`, the full resolved subfeature roster from `epic.md`, `HAS_DESIGN`, every
+  subfeature's `plan.md` / `about.md` / `design.md` (paths), the last `FULL`-pass verdict recorded for each
+  subfeature, and which of those documents changed since that verdict (from `git log` on their paths)
 
 **WAIT** for the report. It re-checks only the dimensions whose inputs changed since their last verdict,
 and says which it skipped and why. Route its findings into the highest `review-NNN.md`'s `## Fix Routing`

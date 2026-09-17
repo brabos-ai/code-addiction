@@ -98,7 +98,7 @@ STEP 7:  Execute subagents        -> SEQUENTIAL by area
 <!-- /feature:qa-pipeline:step-list -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
-STEP 9:  Consolidate plan         -> preview, then APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
+STEP 9:  Consolidate plan         -> preview (9.0.1), then APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
 STEP 10: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP 11: Validation Gate          -> feature-plan schema gate
 STEP 12: Plan Review              -> @plan-reviewer-agent verdict + fix loop, @consistency-agent FULL (EPIC), readback (GATE: plan_reviewed)
@@ -574,7 +574,7 @@ ${RELATED_WORK}
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
-### 9.0 Plan Preview [STOP]
+### 9.0.1 Plan Preview [STOP]
 
 **Before `plan.md` is written, show what it will say** — composed from what STEPS 4-7 already
 produced. It runs no new analysis and dispatches nothing.
@@ -801,9 +801,9 @@ Schema gate PASSED. Do not present `plan.md` or the next command as delivered ye
 
 ### 12.4 Comprehension readback
 
-4. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
+1. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
 
-   Run it ONLY after step 2's verdict resolved to proceed and every applied fix is on disk.
+   Run it ONLY after the reviewer's verdict (step 2 above) resolved to proceed, 12.3 finished, and every applied fix is on disk.
 
 ```
 IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
@@ -813,7 +813,7 @@ IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
 
    There is no inline fallback because the mechanism IS the reader not holding this conversation. A readback you perform on a plan you just wrote measures nothing.
 
-5. **Compare the readback against what was actually decided in this conversation**, using the report's closing **"In one sentence"** line.
+2. **Compare the readback against what was actually decided in this conversation**, using the report's closing **"In one sentence"** line.
    - **Matches** → proceed to STEP 13, citing the readback in one line.
    - **Diverges** → the document failed, not the agent. Apply this site's row from `{{skill:add-review-discipline/SKILL.md}}`'s divergence table — its re-gate here is STEP 11's validation gate on `plan.md`.
 

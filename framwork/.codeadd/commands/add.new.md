@@ -295,7 +295,7 @@ approval.
 **IF epic confirmed:**
 1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add-doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP 1): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
 2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
-3. Create compact `about.md` per subfeature, whose `## Objective` is the feature's objective copied verbatim followed by its "serves the feature objective by" line
+3. Create a compact `about.md` per subfeature through `{{skill:add-feature-specification/SKILL.md}}` — hand it the feature's `## Objective` and that subfeature's "serves the feature objective by" line; the skill writes the objective, `## Relations` (`part_of` the epic) and the rest
 4. **On `delivery: automatic` only — ask once how the epic runs** (deciding, in every state), with the recommendation marked:
 
    | Option | What happens |
