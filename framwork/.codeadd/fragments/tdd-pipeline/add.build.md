@@ -174,6 +174,11 @@ and every area's `BLOCKED` entries.
 ⛔ **The coordinator runs `TEST_COMMAND` here, and its exit status — not any
 agent's `TESTS_PASSING` — is what `ALL_TESTS_PASSING` means.**
 
+**`TEST_COMMAND` here means local-tier only.** If the project's own detected test command bundles a
+CI-tier suite into the same run, a failure traced to that CI-tier portion does NOT get the one fix
+iteration below — CI-tier is CI's job, same rule as `gate`/`awareness`/`verification`. Only a
+local-tier failure earns the iteration.
+
 ```
 IF EVERY AREA HAS REPORTED:
   ⛔ DO NOT: Set ALL_TESTS_PASSING by AND-ing the agents' TESTS_PASSING fields
