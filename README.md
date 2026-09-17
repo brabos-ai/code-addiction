@@ -91,7 +91,7 @@ Step        Command             What happens                        Output
 5. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
 ```
 
-Steps 2-4 can also run as one bounded loop: `/add.plan-to-ready` plans, then loops build <-> review up to 3 times against the `/add.done` gates before handing control back — the merge stays human.
+Steps 1-4 can also run unattended: approve `/add.brainstorm` with "deliver automatically" and each stage hands off to the next — build <-> review runs at most 2 rounds — until `/add.build` asks whether to open the PR. `/add.done` always waits for you.
 
 ### Choose your flow
 
@@ -108,9 +108,9 @@ STANDARD  (features without complex UI)
 LEAN      (small changes, quick tasks)
   new --> build --> done
 
-AUTONOMOUS  (bounded build <-> review loop, no interaction)
-  new --> plan-to-ready --> done
-          (plans, then loops build <-> review up to 3x against the /add.done gates)
+AUTOMATIC  (one approval, no further interaction)
+  brainstorm --> new --> plan --> build <-> review --> PR question
+          (chosen at brainstorm's approval; build <-> review runs at most 2 rounds)
 
 EXPLORATION  (don't know where to start?)
   brainstorm --> new --> ...pick your flow above
