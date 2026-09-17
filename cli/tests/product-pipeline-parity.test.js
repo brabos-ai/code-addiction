@@ -50,7 +50,7 @@ function walk(dir, out = []) {
 
 /** The body of the `### <name>` schema section in new-feature.md. */
 function schema(name) {
-  const text = read(P.schemas);
+  const text = read(P.schemas).replace(/\r\n/g, '\n');
   const start = text.indexOf(`### ${name}\n`);
   expect(start, `schema ${name} exists`).toBeGreaterThan(-1);
   const next = text.indexOf('\n### ', start + 5);
