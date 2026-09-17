@@ -42,6 +42,14 @@ pipeline's schema was one option; the simpler one taken instead states explicitl
 this path is "one review, one fix wave, done" and `Confidence` stays informational there. No new
 schema, no new gate.
 
+**Per-task review stops duplicating `/add.review`'s own depth.** A follow-up conversation, after this
+PR was already open, found that the per-task reviewer dispatch inside `add-subagent-driven-development`
+(step 5, runs during `/add.build`'s initial implementation) loaded `add-code-review`'s full ten
+categories — nearly the same depth `/add.review` runs once, at the end, over the whole feature. The
+per-task dispatch now checks only the task's own `Consumes`/`Produces` contract, the wiki's documented
+conventions for that task's area, and a named "sniff test" for anything specific and obvious — RESTful,
+full OWASP, SOLID, Code Quality, Database and Environment stay exclusively `/add.review`'s job.
+
 ## What the checks found
 
 The STEP 7 auditors found a real regression (three `prompt-quality-ruler.test.js` assertions pinned
@@ -71,4 +79,8 @@ The OWASP trigger's five-item path list can miss a sensitive area outside it. A 
 `prompt-review-agent` call has no fallback yet for a very large build (15+ `.md` files). Test-tier
 routing degrades silently to today's behavior wherever `wiki/workflows.md` or its Test Workflow
 section is absent. `/add.review`'s Fix Routing pipeline still fixes every routed finding without a
-pre-fix confidence check, by explicit choice, not oversight.
+pre-fix confidence check, by explicit choice, not oversight. The narrower per-task review (T4) accepts
+that a defect in one of the dropped categories (say, a SOLID violation) now surfaces only at
+`/add.review` time instead of right after the task that introduced it — the bet is that the categories
+kept (contract, wiki, obvious mistakes) catch what would otherwise compound across later tasks, and the
+rest is cheap enough to fix once the whole feature is in view.
