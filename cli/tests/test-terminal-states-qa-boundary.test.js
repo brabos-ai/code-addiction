@@ -574,7 +574,7 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     ).not.toContain('`BLOCKED`,');
   });
 
-  it('L4.2/L4.4 add.build and add.plan-to-ready dispatch against the new contracts', () => {
+  it('L4.2 add.build dispatches against the new contracts', () => {
     const build = read('commands/add.build.md');
     expect(build, 'the fix dispatch is still one per area').not.toMatch(/one per affected area, parallel across areas/);
     expect(build, 'the fix dispatch does not pass AREAS').toMatch(/`AREAS`/);
@@ -596,12 +596,14 @@ describe('L4 — behavioural acceptance (contract text)', () => {
       .toMatch(/ONE IMPLEMENTATION AGENT AT A TIME/);
     expect(build, 'the >4 areas row still promises parallel groups')
       .not.toMatch(/Split into maximum parallel groups/);
-
-    const ready = read('commands/add.plan-to-ready.md');
-    expect(ready, 'the correction leg does not pass AREAS').toMatch(/`AREAS`/);
-    expect(ready, 'the test dispatch does not pass the cap').toContain('MAX_ATTEMPTS');
-    expect(ready, 'the test dispatch does not pass KNOWN_FAILURES').toContain('KNOWN_FAILURES');
   });
+
+  // add.plan-to-ready's own correction leg (AREAS/MAX_ATTEMPTS/KNOWN_FAILURES on
+  // its test dispatch) is gone with the command — plan
+  // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed it. It was a
+  // duplicate of the tdd-pipeline fragment's dispatch on add.build, already
+  // asserted above in "L4.4 the tdd-pipeline build fragment interleaves one
+  // agent at a time" — nothing new to re-point at.
 
   it('L2.4/L4 add-ecosystem describes the end state of both halves', () => {
     const body = read('skills/add-ecosystem/SKILL.md');

@@ -268,7 +268,7 @@ describe('provider-map.json agents section', () => {
     'conformance-agent',
     'failure-analysis-agent',
     // 0074: the product-layer plan reviewer (plan 0069, shipped by T3) and the
-    // cross-subfeature consistency judge dispatched by /add.plan-to-ready.
+    // cross-subfeature consistency judge dispatched by /add.plan and /add.build.
     'plan-reviewer-agent',
     'consistency-agent',
   ];

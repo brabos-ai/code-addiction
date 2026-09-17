@@ -49,15 +49,26 @@ const P = {
   planAuthoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
 };
 
-/** The four commands that restated the discipline before F17. */
-// add.brainstorm was the fourth caller until the intent file replaced its
-// handoff contract: it no longer dispatches plan-reviewer-agent or
-// readback-agent, so it no longer loads or declares add-review-discipline.
-// Three callers remain. See the pipeline-ceremony-rebalance delivery.
-const CALLERS = ['newCmd', 'plan', 'planToReady'];
+/** The two commands that restate the discipline today. */
+// add.brainstorm was a caller until the intent file replaced its handoff
+// contract: it no longer dispatches plan-reviewer-agent or readback-agent, so
+// it no longer loads or declares add-review-discipline. See the
+// pipeline-ceremony-rebalance delivery.
+//
+// add.plan-to-ready was a caller until plan
+// 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the command:
+// its unattended build<->review loop became the automatic delivery chain in
+// add-delivery-mode/SKILL.md, which is not a review-discipline caller in its
+// own right. Two callers remain.
+const CALLERS = ['newCmd', 'plan'];
 
-/** The six artefacts F2 sweeps. Its two false positives are NOT in this list. */
-const GATE_SWEEP = ['convergeGates', 'convergeBats', 'planToReady', 'commit', 'ecosystem'];
+/** The artefacts F2 sweeps. Its two false positives are NOT in this list. */
+// add.plan-to-ready dropped out of the sweep when plan
+// 2026-09-16T205633-PLAN--product-pipeline-parity, F11 deleted the file — its
+// gate-count prose moved into add.build.md's Checkpoint Sequence, which
+// already carries a false-positive "four gates below" phrase of its own
+// (see L2.7) and so cannot join this list without re-triggering that guard.
+const GATE_SWEEP = ['convergeGates', 'convergeBats', 'commit', 'ecosystem'];
 // add.done is swept by F3, not F2: its parse list and its gate-count sentence
 // are what STEP 4.3 reads, and a block that names a sub-step it does not create
 // leaves a pointer resolving to nothing.
@@ -154,8 +165,11 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
     expect(offenders).toEqual([]);
   });
 
+  // planToReady named this list until plan
+  // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 moved its Checkpoint
+  // Sequence into add.build.md — the six-key list moved with it.
   it('L2.6b: every gate-key list names six keys including GATE_LEDGER', () => {
-    for (const key of ['planToReady', 'commit']) {
+    for (const key of ['build', 'commit']) {
       const text = read(P[key]);
       expect(text, `${key} must name the six gate lines`).toMatch(/six gate lines/);
       expect(text, `${key} must list GATE_LEDGER`).toContain('GATE_LEDGER');
@@ -181,7 +195,9 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
   });
 
   it('L2.8: both git log --grep=GATES_OK passages survive', () => {
-    expect(read(P.planToReady)).toContain('git log --grep=GATES_OK');
+    // The planToReady passage moved into add.build.md's Checkpoint Sequence
+    // with the rest of F11 (plan 2026-09-16T205633-PLAN--product-pipeline-parity).
+    expect(read(P.build)).toContain('git log --grep=GATES_OK');
     expect(read(P.commit)).toContain('git log --grep=GATES_OK');
   });
 });
@@ -685,11 +701,13 @@ describe('L12 — the product review-discipline skill (F15)', () => {
     expect(t).toMatch(/re-gate|re-run.*validation gate/i);
   });
 
-  it('L12.4: the divergence table carries all three sites', () => {
+  // The third site was add.plan-to-ready, until plan
+  // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the command.
+  it('L12.4: the divergence table carries the two surviving sites, and add.plan-to-ready is absent', () => {
     const t = read(P.discipline);
-    expect(t).toContain('add.plan-to-ready');
+    expect(t).toContain('add.plan');
     expect(t).toContain('add.build');
-    expect(t).toMatch(/add\.brainstorm|add\.new/);
+    expect(t).not.toContain('add.plan-to-ready');
   });
 
   it('L12.5: the disk boundary permits the two files a script consumes, by name', () => {
@@ -786,10 +804,11 @@ describe('L14 — the three callers cite the skill (F17)', () => {
     expect(read(P.brainstorm)).not.toContain('kind: brainstorm');
   });
 
-  it('L14.5 (guard): add.plan-to-ready keeps its Decision Log comparator', () => {
-    const t = read(P.planToReady);
-    expect(t).toContain('Decision Log');
-    expect(t).toMatch(/does NOT stop|DO NOT: STOP/);
+  // add.plan-to-ready's Decision Log comparator (its autonomous readback) was
+  // specific to that command and was not moved anywhere — plan
+  // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed it by design.
+  it('L14.5 (absence): add.plan-to-ready is gone, its Decision Log comparator with it', () => {
+    expect(exists(P.planToReady)).toBe(false);
   });
 });
 

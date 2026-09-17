@@ -286,7 +286,10 @@ describe('F8 — every action answers over the wire', () => {
     // deleted with the owner/product onboarding.
     // 21 -> 22 (2026-09-15T224612 pipeline-ceremony-rebalance): add-feature-specification
     // became the single writer of about.md and now loads the schema itself.
-    expect(payload(frames[0]).dependents.length).toBe(22);
+    // 22 -> 21 (2026-09-16T205633 product-pipeline-parity): add.plan-to-ready
+    // declared `skill: add-doc-schemas` and was deleted. add-delivery-mode names
+    // the schema only as a mention, which impact excludes.
+    expect(payload(frames[0]).dependents.length).toBe(21);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {
