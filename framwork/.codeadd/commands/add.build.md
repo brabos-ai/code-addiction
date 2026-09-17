@@ -1046,6 +1046,11 @@ it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 **ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
+**Every row in the table is fixed — no pre-fix confidence check.** `/add.review`'s `Confidence` field,
+where a reviewer reported one, is not consumed here. This dispatch stays "one wave, one fix", the same
+rule `add-review-discipline` states for the review side; 12.2's re-review is what verifies the fix
+afterward, not a gate before it.
+
 ### 12.2 Scoped Re-Review (after EVERY fix round) [HARD GATE]
 
 **A fix that compiles and misses the finding passes today. This is the step that catches it.**
