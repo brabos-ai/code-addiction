@@ -126,8 +126,10 @@ the diffs where that is not enough. **The two are not deduplicated against each 
 diff may see the same issue reported once by each pass. That overlap is accepted, not a defect to fix
 here.
 
-Use the same **Report Format** as `MODE: task`, `Confidence` field included — every finding still
-routes through `add-subagent-driven-development` §7's confidence gate before it reaches the fix loop.
+Use the same **Report Format** as `MODE: task`, `Confidence` field included — mark it exactly as
+`MODE: task` findings do. **Whether the caller's fix pipeline gates on that field depends on which
+pipeline it is** — `add-subagent-driven-development` §7's in-build task loop does; `/add.review`'s own
+`## Fix Routing` path does not yet. Report `Confidence` regardless; do not assume it is acted on.
 
 ## Constraints
 
