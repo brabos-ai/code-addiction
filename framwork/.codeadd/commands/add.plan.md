@@ -4,8 +4,8 @@
 - skill: add-backend-development
 - skill: add-cross-sf-consistency
 - skill: add-database-development
+- skill: add-delivery-mode
 - skill: add-doc-schemas
-- skill: add-ecosystem
 - skill: add-feature-discovery
 - skill: add-final-report
 - skill: add-frontend-development
@@ -31,7 +31,6 @@
 - agent: ux-layout-agent
 - command: /add.build
 - command: /add.done
-- command: /add.plan-to-ready
 - command: /add.review
 - command: /add.wiki
 - script: status.sh
@@ -53,15 +52,20 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 
 ## GATES (Invariant Execution Blockers)
 
-| Gate | Triggered at | Condition | Action |
-|------|--------------|-----------|--------|
-| `feature_identified` | STEP 3 | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection |
-| `docs_loaded` | STEP 4 | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents |
-| `scope_determined` | STEP 6 | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first |
-| `design_gate` | STEP 7.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 7.1, continue at 7.2 |
-| `design_validated` | STEP 7.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 7.1 temps, NEVER proceed to 7.2 — fix `design.md` and re-run the gate |
-| `coverage_validated` | STEP 10 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing |
-| `plan_reviewed` | STEP 12 | `@plan-reviewer-agent` verdict is `blocked`, or blockers remain after the re-dispatch `add-review-discipline` allows | STOP, present the blockers to the user; NEVER proceed to STEP 13 Completion |
+| Gate | Triggered at | Condition | Action | Stop kind |
+|------|--------------|-----------|--------|-----------|
+| `feature_identified` | STEP 3 | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection | deciding |
+| `docs_loaded` | STEP 4 | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents | deciding |
+| `scope_determined` | STEP 6 | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first | — (not a user stop) |
+| `design_gate` | STEP 7.1.0 | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 7.1, continue at 7.2 | — (not a user stop) |
+| `design_validated` | STEP 7.1.5 | `feature-design` schema gate did not return PASS | NEVER delete the 7.1 temps, NEVER proceed to 7.2 — fix `design.md` and re-run the gate | — (not a user stop) |
+| `coverage_validated` | STEP 10 | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing | deciding |
+| `plan_reviewed` | STEP 12 | `@plan-reviewer-agent` verdict is `blocked`, blockers remain after the re-dispatch `add-review-discipline` allows, or `@consistency-agent` leaves a conflict standing | STOP, present the blockers to the user; NEVER proceed to STEP 13 Completion | deciding |
+
+**Stop kind** follows `{{skill:add-delivery-mode/SKILL.md}}`: a **deciding** stop waits on every
+delivery mode; a **confirming** stop waits only on `confirm`, and on `automatic` prints what it would
+have shown and continues. Every gate above that stops is deciding — each presents a failure or a choice
+no approval covered.
 
 ---
 
@@ -94,10 +98,10 @@ STEP 7:  Execute subagents        -> SEQUENTIAL by area
 <!-- /feature:qa-pipeline:step-list -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
-STEP 9:  Consolidate plan         -> APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
+STEP 9:  Consolidate plan         -> preview, then APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
 STEP 10: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP 11: Validation Gate          -> feature-plan schema gate
-STEP 12: Plan Review              -> @plan-reviewer-agent verdict + fix loop (GATE: plan_reviewed)
+STEP 12: Plan Review              -> @plan-reviewer-agent verdict + fix loop, @consistency-agent FULL (EPIC), readback (GATE: plan_reviewed)
 STEP 13: Completion               -> Inform user
 ```
 
@@ -184,6 +188,19 @@ Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `
 | Knowledge base | Selected wiki pages from STEP 2's Consult Knowledge Base sub-step (paths + freshness verdicts) | IF WIKI:present |
 
 **Gate enforcement:** about.md AND discovery.md are MANDATORY. IF either missing, STOP and inform user. Ref: GATES table.
+
+**Delivery mode (read here, once):** resolve `DELIVERY` per `{{skill:add-delivery-mode/SKILL.md}}`.
+
+| Source, in order | Value |
+|---|---|
+| `epic.md`'s `## Notes` carries a `delivery:` line (HAS_EPIC=true) | `automatic` for both `automatic` and `semi-automatic` — the pause between subfeatures belongs to `/add.build` |
+| The intent file named by `about.md`'s frontmatter carries `delivery:` | That value |
+| Neither | `confirm` |
+
+**Objective (read here, once):** record `about.md`'s `## Objective` as `${OBJECTIVE}`. STEP 9 copies it
+into `plan.md` verbatim. An `about.md` with no `## Objective` is a legacy document — record
+`${OBJECTIVE}` as absent; STEP 9 then writes the section from `about.md`'s Problem, marked
+`[derived from Problem, no objective in about.md]`.
 
 **Provenance source:** the `about.md` read in this step is the provenance source for STEP 7.1. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — 7.1.0 and 7.1.4 hash those same bytes.
 
@@ -557,11 +574,48 @@ ${RELATED_WORK}
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
+### 9.0 Plan Preview [STOP]
+
+**Before `plan.md` is written, show what it will say** — composed from what STEPS 4-7 already
+produced. It runs no new analysis and dispatches nothing.
+
+```markdown
+**Objective:** <one line — ${OBJECTIVE}>
+**Areas:** <one line per area planned — its name and what it includes>
+**Order:** <the implementation order, and WHY it is that order, in one or two lines>
+**Risk:** <one line per area — what is most likely to go wrong there>
+**Excluded:** <what the plan will NOT do, one line per item>
+```
+
+```
+IF COMPOSING THE PREVIEW:
+  ⛔ DO NOT: List files, task ids or task detail — then someone reads the preview instead of the plan
+  ⛔ DO NOT: Dispatch an agent or run a new query for it
+  ✅ DO: Compose the five items from the analysis in hand, and print them
+```
+
+**Stop kind — confirming.** The preview reports a plan the brainstorm's approval already covered. On
+`DELIVERY=confirm`, wait for the user to correct it or wave it through; on `automatic`, print it and
+continue. **On an automatic delivery it is the one moment the user can see what is being decided
+without them** — which is why it prints in full.
+
 **Schema load (MANDATORY):** Execute schema `feature-plan` from `{{skill:add-doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per skill.
 
 ### 9.1 Assemble plan.md
 
-Create plan.md header: `# Plan: ${FEATURE_ID}`. Append subagent outputs in order (preserving original content):
+Create plan.md header: `# Plan: ${FEATURE_ID}`, then the line `> **Delivery:** ${DELIVERY}` — `/add.build`
+and `/add.review` read that line and nothing else to learn the mode. Then `## TL;DR`, then
+**`## Objective`: `${OBJECTIVE}` copied verbatim**, followed by one line saying what is true once this plan
+is built.
+
+```
+IF WRITING `## Objective`:
+  ⛔ DO NOT: Re-word it — a better sentence is a different objective
+  ⛔ DO NOT: Point at about.md instead of copying — the reviewer reads plan.md alone
+  ✅ DO: Copy it byte for byte, then add the one "once built" line
+```
+
+Append subagent outputs in order (preserving original content):
 1. plan-test-spec.md (if exists)
 2. plan-database.md (if exists)
 3. plan-backend.md (if exists)
@@ -641,7 +695,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 
 **Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. 9.5 is the **in-place fixer**.
 
-**What 9.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add-cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by `/add.plan-to-ready`. Two checks 9.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 9.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
+**What 9.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add-cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by this command at STEP 12 (`mode: FULL`) and by `/add.build` before an epic's last checkpoint (`mode: DELTA`). Two checks 9.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 9.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
 
 **Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. `@consistency-agent` judges and never edits; 9.5 edits.
 
@@ -650,7 +704,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 2. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
 3. Worker/DI Registration (new services have DI tasks)
 
-**Consumed, never derived:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives as a concrete `plan.md` edit — apply it in place here. Do NOT open your own schema-alignment or handoff-contract comparison.
+**Consumed, never derived:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives at STEP 12.3 as a concrete `plan.md` edit — apply it in place there. Do NOT open your own schema-alignment or handoff-contract comparison.
 
 **Output:** Summary of changes (file + what changed) to stdout, marking which edits came from a `@consistency-agent` finding. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
 
@@ -717,6 +771,36 @@ Schema gate PASSED. Do not present `plan.md` or the next command as delivered ye
    STEP 13 does not run.
 3. ⛔ Do NOT re-dispatch `@ux-flow-agent`, `@ux-layout-agent`, or `@ux-agent` to satisfy a plan-review finding — those subagents own `design.md`, not `plan.md`; a `design.md` finding is out of scope for this review.
 
+### 12.3 Cross-subfeature judge — FULL pass (EPIC ONLY)
+
+**Run it after step 2's verdict resolved to proceed, and before the readback** — this pass edits
+`plan.md`, and a readback taken before it reads a version about to change.
+
+| State | This sub-step |
+|---|---|
+| Not an epic, or the epic has one subfeature | **Skip** — there is nothing to compare against |
+| Epic, and no other `epic.md` row reads `done` yet | **Skip** — `{{skill:add-cross-sf-consistency/SKILL.md}}`'s rubric only fires with two or more subfeatures to compare. Say so in STEP 13 |
+| Epic, and at least one sibling row reads `done` | Dispatch below |
+
+**DISPATCH AGENT: @consistency-agent**
+- **Capability:** read-only
+- **Input:** `mode: FULL`; this subfeature's `plan.md`, `about.md` and `design.md` (if present);
+  `epic.md`'s resolved roster; `HAS_DESIGN`; and the same three documents for every sibling whose row
+  reads `done`
+
+**WAIT** for the report. Then act on its findings:
+
+1. Apply each finding as a concrete edit to THIS subfeature's `plan.md` only — ⛔ never to a sibling's
+   `plan.md`, which is frozen once its row reads `done`. Mark in STEP 9.5's output which edits came from
+   this pass.
+2. Re-run STEP 11's `feature-plan` validation gate on the fixed `plan.md`.
+3. Re-dispatch `@consistency-agent` **once** to confirm the conflict is resolved.
+4. Still unresolved after that one re-dispatch, or the conflict needs a product decision no edit can
+   make → STOP and present it (gate `plan_reviewed`, **deciding**). STEP 13 does not run.
+5. `informational` findings are listed in STEP 13 and never applied as a `plan.md` edit.
+
+### 12.4 Comprehension readback
+
 4. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
 
    Run it ONLY after step 2's verdict resolved to proceed and every applied fix is on disk.
@@ -759,7 +843,14 @@ Then, after the seven blocks, state:
 - Design contract: the `design.md` path 7.1 wrote — or the reason 7.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
 - Plan review verdict from STEP 12, and a one-line summary of any applied fixes
-- Suggested next command: read `add-ecosystem` Main Flows section to determine `/add.build` or `/add.plan-to-ready`
+- Suggested next command: `/add.build`
+
+**Stop kind — confirming.** The report describes a plan the brainstorm's approval already covered.
+
+| `DELIVERY` | Do |
+|---|---|
+| `confirm` | Print the report and the suggestion, and STOP. The user runs `/add.build` |
+| `automatic` | Print the report and the line `(delivering automatically — continuing to /add.build.)`, then follow {{cmd:add.build}} with this feature's id, from its first step, as `add-delivery-mode` describes |
 
 ---
 
