@@ -156,3 +156,18 @@ describe('F9 — add-tdd GREEN step names the CI-tier caveat', () => {
     expect(green).toMatch(/Inert wherever no `Verify:` line exists/i);
   });
 });
+
+describe('F10 — per-task review is narrower than the end-of-feature one', () => {
+  it("L1.10 step 5's dispatch drops add-code-review, uses the wiki instead, and reports no SCORE", () => {
+    const text = read(P.subagentDriven);
+    const s5 = section(text, '5\\. Review Subagent\'s Work');
+    expect(s5).not.toBeNull();
+    expect(s5).not.toMatch(/\{\{skill:add-code-review\/SKILL\.md\}\}/);
+    expect(s5).toMatch(/WIKI:present/);
+    expect(s5).toMatch(/wiki\/domains\/\$\{AREA\}\.md/);
+    expect(s5).toMatch(/Consumes\/Produces contract/);
+    expect(s5).not.toMatch(/SCORE:/);
+    expect(s5).toMatch(/This is a sniff/i);
+    expect(s5).toMatch(/not a category audit/i);
+  });
+});

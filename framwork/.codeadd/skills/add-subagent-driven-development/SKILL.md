@@ -26,6 +26,7 @@ description: Use when executing implementation plans via dispatched subagents wi
 - script: status.sh
 - script: task-brief.sh
 - skill: add-subagent-driven-development/references/persistent-logging-and-tasks.md
+- mention: /add.review
 -->
 
 Execute a plan by dispatching named specialist agents per task, with code review after each.
@@ -360,21 +361,33 @@ implementer's report, and the plan's `## Global Constraints` block verbatim. Rev
 + ## GLOBAL CONSTRAINTS  (verbatim from plan.md — the attention lens)
   ## SKILLS
 - - [implementation skill]
-+ - {{skill:add-code-review/SKILL.md}}
++ - IF WIKI:present: {{addpath:wiki/domains/${AREA}.md}} + {{addpath:wiki/conventions.md}} — else none
   ## TASK
 - [Specific deliverables from plan]
 + 1. Read all files from TASK_DOCUMENTS (spec)
 + 2. Read every file in FILES TO REVIEW (implementation)
-+ 3. Validate implementation against spec
-+ 4. Check skill patterns
-+ 5. Report findings
++ 3. Confirm this task's own Consumes/Produces contract is honored, character for character
++ 4. IF WIKI:present: flag anything in FILES TO REVIEW that contradicts the loaded domain page or conventions
++ 5. Flag anything else specific and obvious — a broken import across a documented layer boundary, a
++    piece the task's own spec named that is missing, a Global Constraint violated. This is a sniff
++    test, not a category audit: name only what you actually noticed, do not hunt for it
++ 6. Report findings
   ## REPORT FORMAT
 - 1. STATUS / FILES / TESTS / CONCERNS
-+ 1. ISSUES_FOUND: [list with severity]
++ 1. ISSUES_FOUND: [list with severity and Confidence]
 + 2. BUILD_STATUS: [pass/fail]
 + 3. SPEC_STATUS: [complete/INCOMPLETE]
-+ 4. SCORE: [X/10]
 ```
+
+**Deliberately narrower than `/add.review`'s own reviewer dispatch.** `add-code-review`'s ten
+categories (RESTful, full OWASP, SOLID, Code Quality, Database, Environment, …) are no longer loaded
+here — they stayed duplicated, at nearly the same depth, in both this per-task pass and `/add.review`'s
+end-of-feature one. This step keeps only what would be expensive to leave broken until the end: the
+task's own contract, the wiki's documented conventions when there is a wiki, and whatever specific
+thing is plainly wrong. The full audit is `/add.review`'s job, once, over the finished feature — this
+step exists to stop an obviously bad foundation from reaching the next task, not to repeat that audit
+early. `SCORE` is dropped with it: it was `add-code-review`'s own weighted rollup, and nothing here
+computes or consumes one any more.
 
 ### 6. Commit and Record
 
@@ -596,7 +609,8 @@ Coordinator must confirm before reporting completion:
 - Backend: `{{skill:add-backend-development/SKILL.md}}`
 - Database: `{{skill:add-database-development/SKILL.md}}`
 - Frontend: `{{skill:add-frontend-development/SKILL.md}}` + `{{skill:add-ux-design/SKILL.md}}`
-- Review: `{{skill:add-code-review/SKILL.md}}`
+- Review: the wiki domain page for the task's area, when `WIKI:present` — no skill; `/add.review`'s own
+  end-of-feature dispatch is where `add-code-review`'s full ten categories still apply
 - Commits: `{{skill:add-commit/SKILL.md}}`
 - Task shape: `{{skill:add-tasks-checklist/SKILL.md}}`
 
