@@ -361,17 +361,22 @@ implementer's report, and the plan's `## Global Constraints` block verbatim. Rev
 + ## GLOBAL CONSTRAINTS  (verbatim from plan.md — the attention lens)
   ## SKILLS
 - - [implementation skill]
-+ - IF WIKI:present: {{addpath:wiki/domains/${AREA}.md}} + {{addpath:wiki/conventions.md}} — else none
++ - {{skill:add-tasks-checklist/SKILL.md}} — the Tick Application Procedure SPEC_STATUS comes from
++ - IF WIKI:present AND the area's page exists: {{addpath:wiki/domains/${AREA}.md}} + {{addpath:wiki/conventions.md}}
   ## TASK
 - [Specific deliverables from plan]
 + 1. Read all files from TASK_DOCUMENTS (spec)
 + 2. Read every file in FILES TO REVIEW (implementation)
-+ 3. Confirm this task's own Consumes/Produces contract is honored, character for character
-+ 4. IF WIKI:present: flag anything in FILES TO REVIEW that contradicts the loaded domain page or conventions
-+ 5. Flag anything else specific and obvious — a broken import across a documented layer boundary, a
-+    piece the task's own spec named that is missing, a Global Constraint violated. This is a sniff
-+    test, not a category audit: name only what you actually noticed, do not hunt for it
-+ 6. Report findings
++ 3. Architecture Contract, FIRST: for each file, identify its layer/package, read its imports, and
++    check them against CLAUDE.md's `## Architecture Contract` import and placement rules. A violation
++    here is a blocker — report it before anything else
++ 4. Confirm this task's own Consumes/Produces contract is honored, character for character
++ 5. Derive SPEC_STATUS by the Tick Application Procedure in `add-tasks-checklist`: INCOMPLETE when any
++    §3 or §4 item for this task is `[!]` or `[ ]`
++ 6. IF a wiki page was loaded: flag anything in FILES TO REVIEW that contradicts it
++ 7. Report those findings, plus anything else plainly wrong you saw while reading — a piece the task's
++    own spec named that is missing, a Global Constraint violated. What is narrowed here is the RUBRIC,
++    never the attention: read every file properly, and do not run a category-by-category audit on top
   ## REPORT FORMAT
 - 1. STATUS / FILES / TESTS / CONCERNS
 + 1. ISSUES_FOUND: [list with severity and Confidence]
@@ -379,15 +384,25 @@ implementer's report, and the plan's `## Global Constraints` block verbatim. Rev
 + 3. SPEC_STATUS: [complete/INCOMPLETE]
 ```
 
-**Deliberately narrower than `/add.review`'s own reviewer dispatch.** `add-code-review`'s ten
-categories (RESTful, full OWASP, SOLID, Code Quality, Database, Environment, …) are no longer loaded
-here — they stayed duplicated, at nearly the same depth, in both this per-task pass and `/add.review`'s
-end-of-feature one. This step keeps only what would be expensive to leave broken until the end: the
-task's own contract, the wiki's documented conventions when there is a wiki, and whatever specific
-thing is plainly wrong. The full audit is `/add.review`'s job, once, over the finished feature — this
-step exists to stop an obviously bad foundation from reaching the next task, not to repeat that audit
-early. `SCORE` is dropped with it: it was `add-code-review`'s own weighted rollup, and nothing here
-computes or consumes one any more.
+**Deliberately narrower than `/add.review`'s own reviewer dispatch.** `add-code-review` is no longer
+loaded here: six of its ten categories — RESTful, full OWASP, SOLID, Code Quality, Database,
+Environment — were being audited at nearly the same depth twice, once per task here and once over the
+whole finished feature in `/add.review`. Those six are now `/add.review`'s alone.
+
+**Four things are kept, and each earns its place by what it costs to discover late:**
+
+| Kept | Why it cannot wait for `/add.review` |
+|---|---|
+| Architecture Contract (step 3) | A wrong layer import is the defect that contaminates every task built on top of it. Mechanical to check — layer, imports, placement rules — so it is cheap to keep |
+| The task's own `Consumes`/`Produces` (step 4) | The next task is written against that signature. A mismatch here is a broken handoff, not a style note |
+| `SPEC_STATUS` (step 5) | Step 6 gates the commit on it. It is derived by `add-tasks-checklist`'s Tick Application Procedure — that skill owns the definition, and this step points at it rather than restating one |
+| Wiki conventions (step 6) | The project's own documented patterns, where a wiki exists. Free to check while reading, and the drift is cheapest to fix in the task that introduced it |
+
+⛔ **Narrower rubric, same care.** This step reads every file in `FILES TO REVIEW` properly. What it
+does not do is walk the six dropped categories — it does not skim.
+
+`SCORE` goes with `add-code-review`: it was that skill's own weighted rollup, and nothing here computes
+or consumes one any more.
 
 ### 6. Commit and Record
 
@@ -609,8 +624,9 @@ Coordinator must confirm before reporting completion:
 - Backend: `{{skill:add-backend-development/SKILL.md}}`
 - Database: `{{skill:add-database-development/SKILL.md}}`
 - Frontend: `{{skill:add-frontend-development/SKILL.md}}` + `{{skill:add-ux-design/SKILL.md}}`
-- Review: the wiki domain page for the task's area, when `WIKI:present` — no skill; `/add.review`'s own
-  end-of-feature dispatch is where `add-code-review`'s full ten categories still apply
+- Review: `{{skill:add-tasks-checklist/SKILL.md}}` for the tick, plus the wiki domain page for the
+  task's area when one exists; `/add.review`'s own end-of-feature dispatch is where
+  `add-code-review`'s full ten categories still apply
 - Commits: `{{skill:add-commit/SKILL.md}}`
 - Task shape: `{{skill:add-tasks-checklist/SKILL.md}}`
 

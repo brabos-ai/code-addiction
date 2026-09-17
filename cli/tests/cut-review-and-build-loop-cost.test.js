@@ -158,16 +158,41 @@ describe('F9 — add-tdd GREEN step names the CI-tier caveat', () => {
 });
 
 describe('F10 — per-task review is narrower than the end-of-feature one', () => {
-  it("L1.10 step 5's dispatch drops add-code-review, uses the wiki instead, and reports no SCORE", () => {
+  it("L1.10 step 5's dispatch drops add-code-review and reports no SCORE", () => {
     const text = read(P.subagentDriven);
     const s5 = section(text, '5\\. Review Subagent\'s Work');
     expect(s5).not.toBeNull();
     expect(s5).not.toMatch(/\{\{skill:add-code-review\/SKILL\.md\}\}/);
-    expect(s5).toMatch(/WIKI:present/);
-    expect(s5).toMatch(/wiki\/domains\/\$\{AREA\}\.md/);
-    expect(s5).toMatch(/Consumes\/Produces contract/);
     expect(s5).not.toMatch(/SCORE:/);
-    expect(s5).toMatch(/This is a sniff/i);
-    expect(s5).toMatch(/not a category audit/i);
+    // The rubric narrows; the attention must not.
+    expect(s5).toMatch(/Narrower rubric, same care/i);
+  });
+
+  it('L1.11 step 5 keeps the four checks whose cost of discovering late is highest', () => {
+    const text = read(P.subagentDriven);
+    const s5 = section(text, '5\\. Review Subagent\'s Work');
+
+    // Architecture Contract — mechanical, and the defect that contaminates later tasks.
+    expect(s5).toMatch(/Architecture Contract, FIRST/);
+    expect(s5).toMatch(/identify its layer\/package/);
+
+    // The task's own inter-task interface.
+    expect(s5).toMatch(/Consumes\/Produces contract/);
+
+    // SPEC_STATUS is gated on at step 6, so its derivation must be named here.
+    expect(s5).toMatch(/Derive SPEC_STATUS/);
+    expect(s5).toMatch(/Tick Application Procedure/);
+    expect(s5).toMatch(/\{\{skill:add-tasks-checklist\/SKILL\.md\}\}/);
+
+    // Wiki conventions, conditioned on the page existing — not just on a wiki existing.
+    expect(s5).toMatch(/the area's page exists/);
+    expect(s5).toMatch(/wiki\/domains\/\$\{AREA\}\.md/);
+  });
+
+  it('L1.12 step 6 still gates the commit on the SPEC_STATUS step 5 now derives', () => {
+    const text = read(P.subagentDriven);
+    const s6 = section(text, '6\\. Commit and Record');
+    expect(s6).not.toBeNull();
+    expect(s6).toMatch(/`SPEC_STATUS` is not `INCOMPLETE`/);
   });
 });
