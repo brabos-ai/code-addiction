@@ -372,9 +372,10 @@ IF THE LEDGER ALREADY CARRIES A `REVIEW:` LINE FOR THIS PLAN:
 
 ### 7.1 Dispatch the Auditors, in Parallel
 
-**The count is `3 + N`.** Three scopes read the delivery as a whole. The fourth is one dispatch per
-`.md` command, skill or agent in this build's diff, so `N` is that file count — and `N` is zero for a
-build that touched only scripts, tests or `CLAUDE.md`.
+**The count is `3 + 1`.** Three scopes read the delivery as a whole. The fourth is **one batched
+dispatch** covering every `.md` command, skill or agent in this build's diff, whatever their count —
+and that dispatch is skipped entirely for a build that touched only scripts, tests or `CLAUDE.md`,
+where there is nothing for it to cover.
 
 **LIST EVERY DISPATCH BEFORE WAITING ON ANY.** The list is what the gate below reads. A hardcoded
 number would be wrong on almost every build.
@@ -399,16 +400,19 @@ Each finding carries a severity, on the three levels the rest of this repository
    by a plan decision, and every plan-scope item carrying a diff.
 3. **Side effects** — cross-references now pointing at renamed or removed artefacts, callers of changed
    behaviour, doc references to dead paths, integration points between the layers.
-4. **Quality** — **DISPATCH AGENT:** `@prompt-review-agent`, once per `.md` command, skill or agent
-   in the diff. **Input:** `node` (that artefact's id), and the mode the F-block decides:
+4. **Quality** — **DISPATCH AGENT:** `@prompt-review-agent`, **once**, in its batched form, carrying
+   every `.md` command, skill or agent in the diff as one `nodes` list. **Input:** `nodes` — one line
+   per artefact, `<node id> mode=<mode> items=<items|->`, the mode decided per artefact by its own
+   F-block:
 
    | The artefact's F-block | Mode | Also send |
    |---|---|---|
    | cites a ruler item, so a plan-time audit already ticked all eight | `confirm` | `items` — the item numbers that F-block cites |
-   | cites none, so nothing has read it | `delivery` | nothing |
+   | cites none, so nothing has read it | `delivery` | `-` |
 
    **The plan's F-block is what tells the two apart**, because `/add-framework--plan` names the ruler
-   item in the validation of every F-block an audit produced. No item named means no audit ran.
+   item in the validation of every F-block an audit produced. No item named means no audit ran. Two
+   artefacts in the same batch commonly carry different modes — that is normal, not a conflict.
 
    Everything in the diff that is NOT a `.md` artefact — a script, a test, a JSON registry — is read
    against the conventions visible in neighbouring files, by the same generic mechanism as scopes 1
@@ -416,13 +420,16 @@ Each finding carries a severity, on the three levels the rest of this repository
 
 ```
 IF AN F-BLOCK CITES A RULER ITEM:
-  ⛔ DO NOT: Send `mode: delivery` — that re-ticks all eight over work already graded
-  ⛔ DO NOT: Send `confirm` without `items` — the agent refuses it, and should
-  ✅ DO: Send `mode: confirm` with that F-block's item numbers
+  ⛔ DO NOT: Send that artefact's `nodes` entry as `mode=delivery` — that re-ticks all eight over
+             work already graded
+  ⛔ DO NOT: Send `mode=confirm` with `items=-` — the agent refuses that entry, and should
+  ✅ DO: Send that entry as `mode=confirm items=<that F-block's item numbers>`
 
-IF A `confirm` REPORT COMES BACK fix-then-ok:
-  ⛔ DO NOT: Dispatch a third pass to check the second round of fixes
-  ✅ DO: Judge it at 7.3, apply what you accept, rule on the rest, and go to STEP 8
+IF A BATCHED REPORT COMES BACK fix-then-ok:
+  ⛔ DO NOT: Dispatch a second batched call to check the fixes — not even for the artefacts whose
+             entry was `confirm`
+  ✅ DO: Judge every artefact's findings at 7.3, apply what you accept, rule on the rest, and go to
+         STEP 8
 ```
 
 **A narrow `ok` is not a clean sweep.** `confirm` ticks the cited items plus 1 and 2, and says so on
