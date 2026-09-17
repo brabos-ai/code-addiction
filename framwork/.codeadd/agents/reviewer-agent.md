@@ -129,7 +129,9 @@ here.
 Use the same **Report Format** as `MODE: task`, `Confidence` field included — mark it exactly as
 `MODE: task` findings do. **Whether the caller's fix pipeline gates on that field depends on which
 pipeline it is** — `add-subagent-driven-development` §7's in-build task loop does; `/add.review`'s own
-`## Fix Routing` path does not yet. Report `Confidence` regardless; do not assume it is acted on.
+`## Fix Routing` path does not, by design: that pipeline stays "one review, one fix wave, done" and
+does not carry `Confidence` into its routed rows. Report `Confidence` regardless; do not assume it is
+acted on.
 
 ## Constraints
 

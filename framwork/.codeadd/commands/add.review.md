@@ -640,6 +640,12 @@ prompt: |
 
 4. **Emit findings as routed rows.** Every consolidated finding becomes a `## Fix Routing` row in STEP 11.2 — area, route, file, symptom. Nothing is applied here.
 
+**One review, one fix wave, by design.** A reviewer's `Confidence` field (when present) is not carried
+into `## Fix Routing` and does not gate this pipeline — every row reaches `/add.build` STEP 12's single
+correction dispatch. `Confidence` gates the in-build task loop
+(`add-subagent-driven-development` §7); it stays informational here, on purpose, so this pipeline keeps
+one simple rule: review once, fix the whole wave once, done.
+
 ---
 
 ## STEP 6: Build Verification
