@@ -408,7 +408,7 @@ prompt = """
 """
 ```
 
-**Agent passthrough**: Agents keep their own frontmatter (name, model, tools, skills, memory) — no wrapping applied.
+**Agent passthrough**: Agents get no command/skill wrapping. Each provider gets its own frontmatter dialect (`AGENT_DIALECTS` in `scripts/build.js`); only Claude keeps the source `model`, because the sources pin Claude model names that fail on other providers.
 
 ### Resource Path Variables — When and How to Use
 
