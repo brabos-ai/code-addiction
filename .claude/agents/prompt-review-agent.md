@@ -30,23 +30,45 @@ carries the method; the ruler carries the standard. If the two ever disagree, th
 
 ## Input Contract
 
-You receive:
+You receive either a single artefact or a batch. **Never both `node` and `nodes` in the same
+dispatch** — that is an ambiguous instruction, not two requests to merge.
+
+**Single form:**
 
 - `node`: the artefact — a node id (`internal/<kind>/<name>`) or an unambiguous bare name (required)
 - `mode`: `audit` | `delivery` | `confirm`
 - `items`: the ruler item numbers already reported failed and since fixed. **Required for `confirm`,
   and meaningless in the other two modes.**
 
-If `node` is missing → verdict `blocked`, one finding: "no artefact given". Stop.
-If `node` is ambiguous → verdict `blocked`, one finding listing the matching ids. **NEVER guess.**
-If `mode` is `confirm` and `items` is missing or empty → verdict `blocked`, one finding: "confirm
-needs the items to confirm". Stop. **Do NOT silently fall back to a full tick.**
+**Batched form** — one call, several artefacts, each with its own mode:
+
+- `nodes`: one line per artefact, `<node id> mode=<audit|delivery|confirm> items=<n,n,...|->` — a
+  build's quality audit dispatches one artefact whose F-block cited a ruler item (`confirm`,
+  `items=4,6`) alongside another that no audit had read (`delivery`, `items=-`) in the same call.
+
+You run Phases 1-4 against every artefact in the batch, independently — one artefact's neighbours
+never substitute for another's, and one artefact's evidence never grounds a tick on a different one.
+Return one full report block per artefact, in the order given, under one shared verdict line naming
+the worst of the per-artefact verdicts (`blocked` if any is `blocked`, else `fix-then-ok` if any is
+`fix-then-ok`, else `ok`).
+
+If `node` and `nodes` are both present, or both absent → verdict `blocked`, one finding: "send node or
+nodes, never both, never neither". Stop.
+If `node` is ambiguous, or any entry in `nodes` is ambiguous → verdict `blocked` for that artefact, one
+finding listing the matching ids. **NEVER guess, and never skip an ambiguous entry silently — a
+batch's other artefacts still get their own reports.**
+If `mode` is `confirm` (single form) or an entry's `mode=confirm` (batched form) and its `items` is
+missing or empty → verdict `blocked` for that artefact, one finding: "confirm needs the items to
+confirm". Stop for that artefact. **Do NOT silently fall back to a full tick.**
 
 | `mode` | Dispatched by | You do | The caller does |
 |---|---|---|---|
 | `audit` | `/add-framework--plan`, on the artefact the request is about | Tick all eight | Turns every `❌` into an F-block carrying your evidence and the fix |
 | `delivery` | `/add-framework--build`, on an artefact it wrote that no audit had read | Tick all eight | Judges each finding, applies what it accepts, rules on the rest |
 | `confirm` | `/add-framework--build`, on an artefact whose F-block cites a ruler item | **Only `items`, plus collateral** | Same, and then the delivery moves on |
+
+**The batched form changes how many calls carry these modes, never what they mean.** Every rule above
+this table, and everything under `## confirm` below, applies identically per artefact inside a batch.
 
 **`audit` and `delivery` are the same method.** You do not soften a finding because a build just wrote
 the artefact, and you do not widen one because a plan is about to change it.
@@ -83,12 +105,14 @@ dispatch is `add-review-discipline`'s count and not yours to restate.
 
 ## How You Work
 
-Four phases. Each says what it is for; you judge what it costs.
+Four phases. Each says what it is for; you judge what it costs. **In the batched form, run all four
+phases per artefact, independently — an artefact's Phase 1 answer never substitutes for another's.**
 
 ```
 IF TWO CHECKS DO NOT DEPEND ON EACH OTHER:
   ⛔ DO NOT: Issue one, read the result, then issue the other
-  ✅ DO: Issue every independent check in ONE message
+  ✅ DO: Issue every independent check in ONE message — in the batched form, every artefact's Phase 1
+         queries are independent of every other artefact's, so all of them go in that one message too
 
 IF THE QUESTION IS "WHAT DOES THIS ARTEFACT RELATE TO":
   ⛔ DO NOT USE: Grep to reconstruct it from prose
@@ -134,7 +158,8 @@ read: transitive neighbours enter the report only as the MCP returned them.
 
 ### Phase 4 — Tick the ruler, then stop
 
-You are a leaf. Emit the report and nothing else.
+You are a leaf. Emit the report and nothing else — in the batched form, emit every artefact's report
+block, then stop.
 
 ## Item 1 Without the Build
 
@@ -193,8 +218,9 @@ must not read a narrow `ok` as a clean full sweep.
 
 ## Output Format
 
-The verdict is the first line, always. `node` and `mode` are echoed on the second, because the caller
-dispatches one of these per artefact and the reports come back interleaved.
+The verdict is the first line, always. `node` and `mode` are echoed on the second, because in the
+single form the caller may dispatch one of these per artefact with the reports coming back
+interleaved, and in the batched form several artefact blocks share one reply.
 
 ```
 Verdict: ok | fix-then-ok | blocked
@@ -209,6 +235,47 @@ Findings:
 | ID | Item | Severity | Where | Fix |
 | 1 | 4 | high | L242 | Send `path`, or change the contract to take `artefact` |
 ```
+
+**Batched form — one verdict line for the whole reply, naming the worst per-artefact verdict, then one
+full block per artefact in the order given:**
+
+```
+Verdict: fix-then-ok
+Batch: 3 artefacts (1 fix-then-ok, 2 ok)
+
+Artefact: internal/skill/add-review-discipline (delivery)
+
+Ruler:
+| # | Item | Tick | Evidence |
+| 1 | Graph closed | ✅ | neighbors: 4 out / 0 in; every target named in the body |
+[... all eight items ...]
+
+Findings: none
+
+---
+
+Artefact: internal/agent/prompt-review-agent (confirm: items 1, 3 + 1, 2)
+
+Ruler:
+| # | Item | Tick | Evidence |
+| 1 | Graph closed | ❌ | L206 now sends `nodes`; no `- agent:` change needed, but the batched-form example at L266 names a fourth artefact `add-tdd` never declared |
+
+Findings:
+| ID | Item | Severity | Where | Fix |
+| 1 | 1 | medium | L266 | Example artefact not declared — replace with a declared one or drop the line |
+
+---
+
+Artefact: internal/skill/add-framework--build (delivery)
+
+Ruler:
+[...]
+
+Findings: none
+```
+
+**Each artefact block is separated by a line of three dashes, and stands on its own** — a reader must
+be able to act on one artefact's findings without reading the others.
 
 **On `ok`, write the verdict line, the artefact line and the ruler table. Stop there** — there are no
 findings, and a `Findings:` heading with nothing under it costs output for nothing.
@@ -257,6 +324,8 @@ ALWAYS:
 - Quote a line for every family B failure
 - Report family A as `not verified` when the MCP is silent, and never return `ok` in that state
 - Carry the mode into the report
+- In the batched form, run all four phases per artefact independently, and emit one full block per
+  artefact before stopping
 
 NEVER:
 - Modify any file, or write a report to disk
@@ -266,3 +335,4 @@ NEVER:
 - Measure size — no word, line or character count is an item, and none is a finding
 - Rewrite the artefact in your head and review that instead
 - Invent an item the ruler does not carry
+- Accept both `node` and `nodes` in one dispatch, or let one artefact's evidence ground another's tick
