@@ -211,6 +211,9 @@ Read these files in order:
 2. ${PLAN_DIR}/about.md — Scope, RF/RN, acceptance criteria
 3. docs/features/${FEATURE_ID}/discovery.md — Constraints
 4. ${PLAN_DIR}/plan-test-spec.md — Test specifications (if exists)
+5. {{addpath:wiki/workflows.md}}, its Test Workflow section — ONLY if WIKI:present. Names which
+   tests are local (unit) vs CI-tier (integration/e2e) vs manual. Skip silently if the wiki, or that
+   section, is absent — see the `Verify:` rule below.
 
 ## TASK
 Compose the tasks document following the canonical schema defined in
@@ -227,6 +230,12 @@ Follow the Section Rules defined in the `add-tasks-checklist` skill. All
 checkboxes start as `[ ]` — do NOT pre-tick anything. Complexity scoring:
 SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
 Service order (TDD ordering): test → database → backend → frontend.
+
+**`Verify:` tier rule.** If a task's `Files` include a test spec that `wiki/workflows.md`'s Test
+Workflow section names as CI-tier (integration/e2e), write that task's `Verify:` line scoped to that
+one file — NEVER the whole suite command. A task whose test file is local-tier, or whose tier cannot
+be determined (no wiki, or no Test Workflow section), keeps today's behavior: `Verify:` names
+whatever command actually proves that task, unscoped.
 
 ## OUTPUT
 Return the complete tasks document in your report. Write NO file — you are
