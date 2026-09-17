@@ -258,11 +258,12 @@ Artefact: internal/agent/prompt-review-agent (confirm: items 1, 3 + 1, 2)
 
 Ruler:
 | # | Item | Tick | Evidence |
-| 1 | Graph closed | ❌ | L206 now sends `nodes`; no `- agent:` change needed, but the batched-form example at L266 names a fourth artefact `add-tdd` never declared |
+| 1 | Graph closed | ✅ | neighbors: 3 out / 2 in; every target named in the body |
+| 3 | Mandatory form | ❌ | L18 opens with "You dispatch nothing", but STEP 7.1 of `add-framework--build` now sends this agent a batched call — the two do not contradict each other, but the line reads as if a caller could never address several artefacts at once |
 
 Findings:
 | ID | Item | Severity | Where | Fix |
-| 1 | 1 | medium | L266 | Example artefact not declared — replace with a declared one or drop the line |
+| 1 | 3 | low | L18 | Clarify: "You dispatch nothing" describes this agent's own tool use, not the shape of a call it receives |
 
 ---
 
