@@ -935,7 +935,10 @@ describe('node inventory snapshot', () => {
       // reference 70 -> 69: add-doc-schemas/references/product.md deleted with
       // the owner and product schemas it held; add.init was their only writer.
       // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
-      reference: 69,
+      // reference 69 -> 70: add-subagent-driven-development/references/dispatch-rules.md,
+      // the one dispatch rule every dispatching command points at.
+      // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
+      reference: 70,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -944,7 +947,9 @@ describe('node inventory snapshot', () => {
       // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
       // add.review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
-      fragment: 25,
+      // fragment 25 -> 26: plugins/gitnexus/fragments/add.build.md.
+      // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
+      fragment: 26,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1006,8 +1011,11 @@ describe('node inventory snapshot', () => {
     // skill); a reference does not, which is why declares drops by 2 and the
     // total by 3.
     // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
-    expect(nodes).toHaveLength(225);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(130);
+    // 225 -> 227, declares 130 -> 131: +1 reference (not a declaring kind) and
+    // +1 fragment (a declaring kind).
+    // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
+    expect(nodes).toHaveLength(227);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(131);
   });
 });
 

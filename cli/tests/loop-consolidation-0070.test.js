@@ -94,13 +94,15 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 45 points', () => {
+  it('L1.0 injection map totals exactly 46 points', () => {
     // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073);
     // +1 for feature:docs-pruning:prune on add.done
     // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
     // +5 for feature:qa-pipeline on add.review — step-list, preflight,
     // evidence, judge-head, judge-tail (plan 2026-09-13T153219, F15/F16/F20).
-    expect(sidecarPoints()).toHaveLength(45);
+    // +1 for plugin:gitnexus:graph-build on add.build
+    // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
+    expect(sidecarPoints()).toHaveLength(46);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {
@@ -113,9 +115,10 @@ describe('0070 L1 — build-side unit', () => {
     }
   });
 
-  it('L1.0 gitnexus contributes exactly 20 points and never targets test-agent or fix-agent', () => {
+  it('L1.0 gitnexus contributes exactly 21 points and never targets test-agent or fix-agent', () => {
     const gitnexus = sidecarPoints().filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
-    expect(gitnexus).toHaveLength(20);
+    // 20 -> 21: graph-build on add.build (plan 2026-09-17T132658, F5).
+    expect(gitnexus).toHaveLength(21);
     const targets = gitnexus.map((p) => p.resource.name);
     expect(targets).not.toContain('test-agent');
     expect(targets).not.toContain('fix-agent');

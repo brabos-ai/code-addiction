@@ -168,7 +168,7 @@ describe('L2.5 — the injection surface is untouched', () => {
     expect([...sections].filter((x) => /graph/.test(x)).length).toBeGreaterThan(0);
   });
 
-  it('the fragment file set is exactly the nine agents and the six commands', () => {
+  it('the fragment file set is exactly the nine agents and the seven commands', () => {
     // GUARD. F8 edits bodies inside existing markers; it adds, removes and
     // renames nothing, so the injection map must come out byte-identical.
     expect(agentFragments()).toEqual([
@@ -182,7 +182,9 @@ describe('L2.5 — the injection surface is untouched', () => {
       'ux-agent.md',
       'ux-flow-agent.md',
     ]);
+    // add.build.md joined with plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5.
     expect(commandFragments()).toEqual([
+      'add.build.md',
       'add.diagnose.md',
       'add.done.md',
       'add.hotfix.md',
