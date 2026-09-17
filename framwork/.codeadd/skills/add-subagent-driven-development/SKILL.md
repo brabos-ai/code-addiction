@@ -396,6 +396,23 @@ sibling area's work into the first commit and leave the second with an empty ran
 
 ### 7. Fix Loop, Escalation and the Scoped Re-Review
 
+**Confidence gate, before severity routing.** A finding whose `Confidence` is `needs-verification`
+(`reviewer-agent`'s Report Format) does not go straight into the severity table below. Dispatch
+`@reviewer-agent` again, `MODE: task`, scoped to that finding alone — its file and its claim, not the
+whole spec or diff — and read back whether it confirms or retracts:
+
+- **Confirms** → the finding proceeds to severity routing below, same as one that was `confirmed`
+  from the start.
+- **Retracts** → append a `false-positive (dismissed)` line to the ledger, naming the finding and why
+  it did not hold. No fix is dispatched.
+
+**One confirm dispatch per `needs-verification` finding, never a second.** This is a check on the
+finding, not a re-review of the whole task — if the confirming pass is itself uncertain, treat that as
+a retraction: the burden is on the finding, not on the implementer.
+
+Every `confirmed` finding, and every `needs-verification` finding the confirm pass upheld, is routed
+by severity:
+
 - **Critical** issues → dispatch `@fix-agent` immediately.
 - **Important** issues → fix before next task.
 - **Minor** issues → append a `minor (deferred)` line to the ledger, move on.
