@@ -304,7 +304,7 @@ import "../styles/global.css";
           the graph disagree.
         </p>
         <p class="text-muted-light mb-8">
-          Commands only, one hop. The full graph carries 202 artefacts and 625 relationships;
+          Commands only, one hop. The full graph carries 225 artefacts and 857 relationships;
           drawn at once it is a hairball that tells you nothing. Skills, agents and scripts are
           reachable from the query surface below.
         </p>
@@ -575,6 +575,7 @@ import "../styles/global.css";
             { name: "add-feature-readback", desc: "Use when a feature's docs are closed and you need a cold reader to say back what they understood before anyone builds — catches docs that pass every review and still make the reader build the wrong thing." },
             { name: "add-final-report", desc: "Use at a command's closing step — the seven blocks every finishing command reports in, the banned phrasings, and the self-check. Load at the last step, not at the first." },
             { name: "add-review-discipline", desc: "Use when a command dispatches a reviewer or a cold reader over a document — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk." },
+            { name: "add-delivery-mode", desc: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, how one command hands off to the next, and how the build ⇄ review loop counts its two rounds." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
