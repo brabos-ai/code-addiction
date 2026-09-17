@@ -169,7 +169,7 @@ review counts that review as history, and the loop runs a third round.
 **IF HAS_EPIC=true:**
 1. READ `docs/features/${FEATURE_ID}/epic.md`
 2. IDENTIFY current subfeature: `EPIC_CURRENT_SF` from script output
-3. IF `EPIC_CURRENT_SF` is empty → STOP. Inform all subfeatures complete → suggest `/add.done` (**deciding**, in every state — no delivery reaches `/add.done` unattended)
+3. IF `EPIC_CURRENT_SF` is empty → STOP. Inform all subfeatures complete → suggest `/add.done` (**deciding**, in every state — no delivery reaches `/add.done` unattended). **Except with `--loop-end SFxx`:** on `confirm`, STEP 16.4 already flipped the last row, so an empty `EPIC_CURRENT_SF` is expected there — set it to `SFxx` and continue
 4. SET `SF_DIR = docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/`
 5. SET `TASKS_FILE = ${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
 6. Inform: "Executing subfeature `${EPIC_CURRENT_SF}` of epic `${FEATURE_ID}`"
@@ -1422,6 +1422,10 @@ prints them.
 ## STEP 17: Publish [STOP]
 
 **⛔ GATE:** A push to a shared remote is a side effect outside this working tree. ASK.
+
+**On `DELIVERY=automatic`, this step runs only from `## Loop End`.** Reached after development or a
+correction round, skip it and go to STEP 18, which hands the delivery to `/add.review` — the publish
+question comes once, after the review loop ended, never before the first review.
 
 **Stop kind — decided by whether a PR exists, not by the marker** (`{{skill:add-delivery-mode/SKILL.md}}`):
 
