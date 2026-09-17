@@ -8,6 +8,8 @@
 - skill: add-knowledge-discovery
 - skill: add-investigation/references/differential-diagnosis.md
 - skill: add-investigation/references/symptom-disambiguation.md
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: architecture-agent
 - agent: feature-history-agent
 - agent: git-history-agent
@@ -147,6 +149,8 @@ Assemble from prior STEPs:
 This payload is passed to BOTH Fase A agents.
 
 ### 4.2 Fase A — PARALLEL dispatch (A.1 ∥ A.2)
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 ⛔ **CRITICAL:** Dispatch BOTH agents in a SINGLE message with TWO Agent tool calls (parallel execution). Do NOT dispatch sequentially.
 

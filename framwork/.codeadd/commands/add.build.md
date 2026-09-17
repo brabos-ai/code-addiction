@@ -16,6 +16,7 @@
 - skill: add-tasks-checklist
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: backend-agent
 - agent: consistency-agent
 - agent: database-agent
@@ -466,6 +467,8 @@ is the coordinator's understanding of it, and nothing checks that what it
 recovers matches the document. `/add.plan` STEP 12's readback ran in the session
 that WROTE the plan, while it could still be asked; this one reads it the way a
 resumed session actually holds it — alone.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 **DISPATCH AGENT: `@readback-agent`** [read-only]
 

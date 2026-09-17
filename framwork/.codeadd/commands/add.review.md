@@ -9,6 +9,8 @@
 - skill: add-knowledge-discovery
 - skill: add-tasks-checklist
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: reviewer-agent
 - agent: ux-agent
 - command: /add.build
@@ -460,6 +462,8 @@ the evidence this command just captured.
 **Idempotency:** Do NOT re-dispatch reviewers if a build fix occurs (see Gate 5 note).
 
 ---
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 ### DISPATCH AGENT: @reviewer-agent — Frontend Review
 
