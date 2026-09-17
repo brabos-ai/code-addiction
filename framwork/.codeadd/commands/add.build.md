@@ -360,6 +360,9 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 ### 10.0 Pre-Flight Scan and the Handoff Contract (BEFORE the first dispatch)
 
+<!-- plugin:gitnexus:graph-build -->
+<!-- /plugin:gitnexus:graph-build -->
+
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and none is satisfied by asserting it happened.
 
