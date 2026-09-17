@@ -1,3 +1,8 @@
+---
+name: add-framework--plan
+description: "Use when a framework change needs a plan document — analyses both layers against the artefact graph and the delivery index, questions the user, writes docs/plans/<ts>-PLAN--<slug>.md and has it reviewed. Second stage of brainstorm → plan → build → done."
+---
+
 # ADD Plan — Ecosystem Strategic Consultant
 
 <!-- uses:
@@ -8,8 +13,10 @@
 - agent: framework-discovery-agent
 - agent: plan-review-agent
 - agent: prompt-review-agent
-- command: /add-framework--build
-- mention: /add-framework--brainstorm
+- handoff: add-framework--build
+- mention: add-framework--brainstorm
+- skill: building-commands/references/agent-dispatch.md
+- mention: building-commands
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -39,7 +46,7 @@ STEP 7: Completion            → [HARD STOP] the report in the shape, then meta
 **⛔ ABSOLUTE PROHIBITIONS:**
 
 ```
-ALWAYS — THIS COMMAND DOES NOT EXECUTE:
+ALWAYS — THIS SKILL DOES NOT EXECUTE:
   ⛔ DO NOT USE: Write outside docs/plans/
   ⛔ DO NOT USE: Edit outside docs/plans/
   ⛔ DO NOT USE: Bash for implementations, builds, tests or scripts
@@ -66,7 +73,7 @@ IF THE PLAN HAS NOT BEEN REVIEWED (STEP 6):
 
 ## ⛔⛔⛔ MANDATORY CRITICAL POSTURE ⛔⛔⛔
 
-**THIS COMMAND IS A CONSULTANT, NOT AN ORDER-TAKER.**
+**THIS SKILL IS A CONSULTANT, NOT AN ORDER-TAKER.**
 
 ```
 IF USER PROPOSES AN IDEA:
@@ -167,6 +174,10 @@ IF A DECISION APPEARS UNDER `## Decided` IN THE INTENT FILE:
 **This is what stops the planner re-asking a design it just read.** The brainstorm guarantees it hands
 off nothing open that one more turn would have closed; `## Open` is what it could not close.
 
+**Read `delivery:` from the same file.** It is `confirm` or `automatic`, and it decides which of this
+skill's stops wait. `add-plan-authoring` owns the field, the stopping rule, and the rule that an absent
+field means `confirm` — read **The Delivery Mode** there.
+
 ### 1.3 Dispatch Discovery (SILENT)
 
 IF no idea in the invocation args → skip, go to STEP 2.
@@ -205,7 +216,7 @@ DO NOT show the raw report. Use it to fill "What already exists" in STEP 4.
 ⛔ **`mcp/` is at the root and is PRODUCT** — it ships inside the npm package. Tagging an
 F-block that touches it `internal` loads the wrong layer skill.
 
-**A plan may declare one or both.** Both is normal — one command executes it either way, and the
+**A plan may declare one or both.** Both is normal — one build executes it either way, and the
 F-block layer tags carry the distinction. **DO NOT split a topic into two plans.**
 
 Internal classification only. DO NOT produce artefacts yet.
@@ -226,7 +237,7 @@ Read `path:` from the intent file resolved at STEP 1.2.
 question.** Those two answer what breaks and what already shipped, and a small change gets both wrong
 exactly as easily as a large one. What shrinks is the plan document, never the analysis behind it.
 
-⛔ **A `spike` never reaches this command.** `/add-framework--brainstorm` reports its recommendation
+⛔ **A `spike` never reaches this skill.** `/add-framework--brainstorm` reports its recommendation
 and stops, because a spike’s follow-up is a new request with its own classification. An invocation
 carrying `path: spike` means the user came here deliberately — treat it as no intent file at all and
 run everything.
@@ -273,7 +284,7 @@ question instead of a call: guidance with no output is guidance that gets skippe
 
 **Grade on the depth-1 answer.** `add-artefact-graph` owns why — the command layer cross-references
 itself densely enough that the unbounded closure saturates and stops telling a hub from a leaf. What
-belongs to this command is the rest: the unbounded run still says whether the change sits in a corner
+belongs to this skill is the rest: the unbounded run still says whether the change sits in a corner
 of the ecosystem or reaches all of it, which is context, and the thresholds below, which are a score.
 
 Two things the output already accounts for, so do not re-reason about them:
@@ -341,7 +352,7 @@ why: the item becomes plan scope, and its question reaches the user at STEP 4, w
 | `## Open` in the intent file | This STEP |
 |---|---|
 | Reads `None` | **Sections 1, 2 and 5 as a confirmation screen**, plus any `blocked` item 3.4 returned as a question of its own in section 3. Section 4 prints only where the analysis raised something the design never saw |
-| Lists items | Those items become section 3’s questions — plus any `blocked` item 3.4 returned |
+| Lists items | **All five sections run in full.** Section 3’s questions are those items — plus any `blocked` item 3.4 returned — in place of fresh ones. Sections 1, 2, 4 and 5 run as written in 4.1, and nothing under `## Decided` is put to the user again, per 1.2 |
 | Absent, empty, or no intent file | Everything below, unconditionally |
 
 ⛔ **A `blocked` audit item is never silenced by this branch.** 3.4 returns items needing a person, and
@@ -383,6 +394,22 @@ Sections:
 
 **STOP AND WAIT.** After the user responds, summarize the confirmed decisions and proceed.
 
+### 4.2 End with the plan preview
+
+**Print the plan preview on every row of 4.0, immediately before the `STOP AND WAIT` that ends 4.1** — it is the last thing this step shows. `add-plan-authoring`
+owns its five items and what it must not carry — read **The Plan Preview** there. It is composed from
+STEP 3's analysis and the answers so far; it runs no new analysis, and it adds no stop of its own.
+
+### 4.3 Stop kind — decided by the state 4.0 routed to
+
+| State | Kind | On `delivery: automatic` |
+|---|---|---|
+| `## Open` reads `None`, and 3.4 returned no `blocked` item | **confirming** | Print the confirmation screen and continue to STEP 5 |
+| `## Open` lists items, or 3.4 returned a `blocked` item | **deciding** | Wait — these are questions the brainstorm's approval never answered |
+| No intent file, `## Open` absent or empty | **deciding** | Wait — there is no approval to have covered anything |
+
+On `delivery: confirm` every row waits, as above.
+
 ---
 
 ## STEP 5: Generate Plan
@@ -408,6 +435,9 @@ IF AN AUDIT ITEM CAME BACK ❌:
   ✅ DO: One F-block per item, each naming the item number in its validation
 ```
 
+**Write `> **Delivery:**` in the plan header, copied from the intent file's `delivery:`** — `confirm` when
+there is none. The build reads that line and nothing else to learn the mode.
+
 Write the draft. **DO NOT present the path or next steps** — go straight to STEP 6.
 
 ---
@@ -423,11 +453,13 @@ are owned by `add-review-discipline`.** Load it. One pass, never two.
 ⛔ DO NOT invent decisions to clear blockers.
 ⛔ DO NOT skip this STEP in Continue Mode.
 
-### Agent Dispatch Rules
+**Stop kind — a `blocked` verdict is deciding in every state.** Its blockers are decisions nobody made,
+so the automatic path waits on them exactly as the confirming one does.
 
-1. Read the required **Capability** and honour it.
-2. Prefer the named agent when the engine can address it by name.
-3. Verify the report is received before acting on the verdict.
+### Dispatching the Agents Above
+
+**`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
+apply them to every `DISPATCH AGENT` block in this skill. The block names the capability and the complexity; the rules say how to honour them.
 
 ---
 
@@ -446,6 +478,16 @@ Metadata: plan path, status `draft`, review verdict, fixes applied, and the two 
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
 
+**Stop kind — confirming.** The report describes a plan the brainstorm's approval already covered.
+
+| `> **Delivery:**` | Do |
+|---|---|
+| `confirm`, or absent | Print the report and STOP. The user runs the build |
+| `automatic` | Print the report, then load `/add-framework--build` with this plan's basename and continue there |
+
+Loading the build is a handoff, not implementation: this skill still writes nothing outside
+`docs/plans/`, and the build runs under its own gates.
+
 ---
 
 ## Rules
@@ -455,10 +497,7 @@ ALWAYS:
 - Assert expected end states — counts, maps, combinations — never merely that a change happened
 
 NEVER:
-- Split one topic into two plans by layer — F-block tags carry that
 - Leave an F-block with no validation level covering it
 - Name a risk whose mitigation no F-block operationalizes
-- Present an unreviewed plan as delivered
 - Close with only a path, a verdict and a next command — that is a receipt, not a summary
 - Be passive — this is a consultant role
-- Write outside `docs/plans/`

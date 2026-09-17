@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
  * that passes before its F-block lands is a level that does not bite.
  *
  * Six assertions pass on the pre-plan tree by design, and they are marked. They
- * guard properties the plan must PRESERVE — the READ-ONLY statement, the eight
+ * guard properties the plan must PRESERVE — the READ-ONLY statement, the nine
  * dimensions, the four verdict rules, the `blocked` path in the callers. A
  * matrix that is RED everywhere has no guard against collateral damage.
  *
@@ -25,8 +25,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 const AGENT = path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md');
 const AUTHORING = path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md');
-const BRAINSTORM = path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md');
-const PLAN_CMD = path.join(ROOT, '.claude', 'commands', 'add-framework--plan.md');
+const BRAINSTORM = path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md');
+const PLAN_CMD = path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
@@ -65,6 +65,7 @@ const DIMENSIONS = [
   'Testability',
   'Risks',
   'Gold-plating',
+  'Objective fit',
 ];
 
 describe('L1 — tool access (F2)', () => {
@@ -113,9 +114,9 @@ describe('L2 — work phases (F3)', () => {
     expect(text).not.toMatch(/budget[^.\n]*\d/i);
   });
 
-  // Green pre-plan on both halves by design: guards the eight dimensions and
+  // Green pre-plan on both halves by design: guards the nine dimensions and
   // guards against reintroducing the classification the user rejected.
-  it('L2.5 all eight dimensions survive and carry no tool-requirement column', () => {
+  it('L2.5 all nine dimensions survive and carry no tool-requirement column', () => {
     const text = read(AGENT);
     const section = text.split('## Dimensions')[1]?.split('\n## ')[0] ?? '';
     for (const d of DIMENSIONS) expect(section).toContain(d);

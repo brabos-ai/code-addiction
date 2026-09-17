@@ -12,13 +12,13 @@ graph LR
   BUILD(add.build)
   REVIEW(add.review)
   DONE(add.done)
-  PLANTOREADY(add.plan-to-ready)
 
   BADE{{add-backend-development}}
   CORE{{add-code-review}}
   CO{{add-commit}}
   CSC{{add-cross-sf-consistency}}
   DADE{{add-database-development}}
+  DELMO{{add-delivery-mode}}
   DOSC{{add-doc-schemas}}
   EC{{add-ecosystem}}
   FEDI{{add-feature-discovery}}
@@ -35,12 +35,11 @@ graph LR
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
-  NEW --> DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI
-  PLAN --> BADE & CSC & DADE & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & TACH & UXDE
-  BUILD --> BADE & CORE & CO & DADE & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
-  REVIEW --> CO & DOSC & FINR & IN & KNDI & TACH
+  NEW --> DELMO & DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI
+  PLAN --> BADE & CSC & DADE & DELMO & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & TACH & UXDE
+  BUILD --> BADE & CORE & CO & CSC & DADE & DELMO & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
+  REVIEW --> CO & DELMO & DOSC & FINR & IN & KNDI & TACH
   DONE --> DOSC & EC & FINR & IDCO & WIMA
-  PLANTOREADY --> CO & CSC & DOSC & FINR & RVDI
 ```
 
 ## Graph 2 - Support Commands
@@ -61,6 +60,7 @@ graph LR
   CLMDST{{add-claude-md-style}}
   CO{{add-commit}}
   DEENSE{{add-dev-environment-setup}}
+  DELMO{{add-delivery-mode}}
   DOSC{{add-doc-schemas}}
   EC{{add-ecosystem}}
   FESP{{add-feature-specification}}
@@ -81,7 +81,7 @@ graph LR
   HOTFIX --> DOSC & EC & FINR & IDCO & IN & KNDI & UXDE
   AUDIT --> DOSC & EC & FINR & HECH & IN
   WIKI --> ARDI & CLMDST & DOSC & EC & FINR & WIMA
-  BRAINSTORM --> DOSC & FESP & FINR & KNDI
+  BRAINSTORM --> DELMO & DOSC & FESP & FINR & KNDI
   UX --> UXDE
   QASETUP --> DEENSE & DOSC & FINR & QA & QAMI & SECO & SDDA
   PULLREQUEST --> CO & DOSC & FINR & IDCO
@@ -96,7 +96,6 @@ graph LR
   HOTFIX(add.hotfix)
   NEW(add.new)
   PLAN(add.plan)
-  PLANTOREADY(add.plan-to-ready)
   QASETUP(add.qa-setup)
   REVIEW(add.review)
 
@@ -146,7 +145,6 @@ graph LR
   HOTFIX --> ARA & COA & FAA & FEHIA & GIHIA & SEA
   NEW --> PRA
   PLAN --> ARA & BAA & CSA & DAA & DIA & FRA & PRA & QAA & RBA & UXA & UXFLA & UXLAA
-  PLANTOREADY --> ARA & BAA & CSA & DAA & DIA & E2A & FIA & FRA & PRA & QAA & RBA & REA & TEA & UXA & UXFLA & UXLAA
   QASETUP --> E2A & QAA
   REVIEW --> REA & UXA
 

@@ -353,7 +353,7 @@ describe('L3 the command and skill texts that held the duty', () => {
   }
 
   it('L3.1 the close-out CI gate runs, commits AND pushes, before the clean-tree check', () => {
-    const done = read('.claude', 'commands', 'add-framework--done.md');
+    const done = read('.claude', 'skills', 'add-framework--done', 'SKILL.md');
     const list = sub(done, "CI's four commands");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
@@ -381,11 +381,11 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.4 add-framework--build no longer names the Project Anatomy counts', () => {
-    expect(read('.claude', 'commands', 'add-framework--build.md')).not.toContain('Project Anatomy');
+    expect(read('.claude', 'skills', 'add-framework--build', 'SKILL.md')).not.toContain('Project Anatomy');
   });
 
   it('L3.5 the [product] block forbids writing CLAUDE.md and the [internal] block does not', () => {
-    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
     const product = build.slice(
       build.indexOf('IF THE CURRENT F-BLOCK IS TAGGED [product]:'),
       build.indexOf('IF A PATH IS NOT COVERED'),
@@ -399,7 +399,7 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.7 add-framework--build syncs the block unconditionally, as its last documented act', () => {
-    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
     const step6 = step(build, 'Document');
 
     expect(step6).toContain('scripts/inventory.js');
@@ -409,7 +409,7 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.8 the push and the PR live behind a [STOP], after the sync', () => {
-    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
     const publish = step(build, 'Publish');
 
     expect(build).toMatch(/^## STEP \d+: Publish.*\[STOP\]/m);
@@ -423,7 +423,7 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.9 the step header and the completion step follow the renumbering', () => {
-    const build = read('.claude', 'commands', 'add-framework--build.md');
+    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
     const header = build.slice(build.indexOf('STEPS IN ORDER'), build.indexOf('**⛔ ABSOLUTE'));
 
     expect(header).toMatch(/STEP \d+: Publish/);
@@ -436,7 +436,7 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.10 add-framework--done says its sync is the net, not the first writer', () => {
-    const done = read('.claude', 'commands', 'add-framework--done.md');
+    const done = read('.claude', 'skills', 'add-framework--done', 'SKILL.md');
     const list = sub(done, "CI's four commands");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 

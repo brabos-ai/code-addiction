@@ -216,17 +216,30 @@ never merged into one list.
 field; writing the answer layer there would overwrite it, and a caller would lose the one thing
 `--layer` filters on.
 
-**The delivery's commit is DERIVED, never stored.** The close-out commits the entry on the branch and
-the merge squashes that branch, so **the commit that introduced an entry's line IS the commit that
-delivered it** — by construction, on both layers, with no field to add and nothing to keep in step:
+**The delivery's commit is DERIVED, never stored.** The close-out commits the entry on the branch, and
+**the first-parent commit on the default branch that introduced an entry's line IS the commit that
+delivered it** — on both layers, with no field to add and nothing to keep in step:
 
 ```bash
-git log --format=%h -S'"id":"<id>"' -- docs/delivered.jsonl | tail -1
+git log --first-parent -m --format=%h -S'"id":"<id>"' -- docs/delivered.jsonl | tail -1
 ```
 
-⛔ **`commits` cannot answer this and is not asked to.** It holds the BRANCH shas, and a squash makes
-every one of them unreachable from the default branch. Measured on the framework's own repository: the
-shas an entry stores intersect `git log` on `main` at **zero**, for every delivery already merged.
+**It holds on both merge routes, and they reach it differently:**
+
+| Route | What lands on the default branch | The first-parent commit that introduced the line |
+|---|---|---|
+| The PR route — both close-outs run `gh pr merge --merge` | Every branch commit, plus a merge commit | **The merge commit.** Diffed against its first parent it carries the code and the line together |
+| `done.sh`'s local route — a `git merge --squash` | One squash commit | **The squash commit**, which carries both |
+
+⛔ **`--first-parent -m` is not optional on the PR route.** Without it the walk reaches the branch
+commit that added the line — the close-out's docs commit, which touches only `docs/` — and every
+merged delivery reads as a docs-only recording. `-m` is what makes the pickaxe see the merge commit's
+diff at all.
+
+⛔ **`commits` cannot answer this and is not asked to.** It holds the BRANCH shas. On the local route
+a squash makes every one of them unreachable from the default branch. On the PR route they ARE
+reachable, but as individual F-block commits, none of which is the delivery as a whole. Either way the
+stored list is not the delivery's commit.
 
 ⛔ **The pickaxe reports every commit where the id's occurrence count changed, so take the OLDEST.** A
 corrected entry has two lines — corrections are new lines, per hard ban 6 — and the newer match is the

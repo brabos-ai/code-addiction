@@ -10,7 +10,6 @@
 - command: /add.hotfix
 - command: /add.new
 - command: /add.plan
-- command: /add.plan-to-ready
 - command: /add.review
 - script: status.sh
 -->
@@ -159,7 +158,7 @@ ALWAYS include at end of response (except if question was only about a specific 
 |------------------|-------------------|-----------|
 | Branch main, no feature | `/add.new` | Start new functionality |
 | Feature without plan.md | `/add.plan` | Next phase of flow |
-| Feature with plan, no implementation | `/add.build`, or `/add.plan-to-ready` to run the bounded build ⇄ review loop | Time to implement |
+| Feature with plan, no implementation | `/add.build`, or choose automatic delivery at `/add.brainstorm`'s approval to run build ⇄ review unattended | Time to implement |
 | Feature implemented, no review | `/add.review` | Validate before finalizing |
 | Feature reviewed | `/add.done` | Finalize and generate changelog |
 | Epic with pending sub-features | `/add.build feature N` | Next sub-feature |

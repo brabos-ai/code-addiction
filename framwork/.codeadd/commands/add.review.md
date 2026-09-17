@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-commit
+- skill: add-delivery-mode
 - skill: add-doc-schemas
 - skill: add-final-report
 - skill: add-investigation
@@ -42,6 +43,18 @@ Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backe
 ## Yolo Mode
 
 If argument contains `--yolo`: Skip STEP 1, auto-stage all, execute to completion, log all auto-decisions. It does **not** re-enable auto-correction — this command has none.
+
+## Delivery Mode
+
+Resolve `DELIVERY` once, before STEP 1, from the `> **Delivery:**` line of the `plan.md` in scope, per
+`{{skill:add-delivery-mode/SKILL.md}}` — no line reads `confirm`. On an epic, also read `epic.md`'s
+`## Notes` `delivery:` line: `automatic` or `semi-automatic` there means `DELIVERY=automatic` for this
+review.
+
+**What `automatic` changes here, and nothing else:** STEP 1.1's staging question passes (below), and
+STEP 11.5 hands the delivery on instead of stopping. Every other STOP in this command is **deciding** —
+an incomplete implementation, a non-compliant spec audit, a tree the review changed — and waits in every
+delivery mode.
 
 ---
 
@@ -227,6 +240,10 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 ### 1.1 Check for Unstaged Changes
 
 Check working directory for unstaged/untracked changes.
+
+**Stop kind — confirming.** On `DELIVERY=automatic`, do not ask: print one line naming what is being
+staged and stage it as "If user agrees (Yes)" below does — `/add.build` commits per task, so what is left
+unstaged on an automatic delivery is this delivery's own work. On `confirm`, ask.
 
 **If there are unstaged changes:**
 
@@ -822,6 +839,37 @@ modified no code — and name `{{cmd:add.build}}` as the step that applies them.
 `review-NNN.md` is stale — `/add.done` detects it and sends the user back here
 for a new round.
 
+**Stop kind — confirming** on `DELIVERY=confirm` it stops here; on `automatic` it goes to 11.5.
+
+### 11.5 Hand the Delivery On — `DELIVERY=automatic` only
+
+**Count this review's round** per `{{skill:add-delivery-mode/SKILL.md}}`: read the `Delivery unit:` line
+in the build ledger (`${FEATURE_DIR}/build-ledger.md`, or `${SF_DIR}/build-ledger.md` on an epic) for its
+review baseline; the round is how many `review-NNN.md` are numbered above it, this one included.
+
+```
+IF THE LEDGER CARRIES NO `Delivery unit:` LINE:
+  ⛔ DO NOT: Guess a baseline, or treat this review as round 1
+  ✅ DO: Hand nothing on — print the next steps above and STOP, as on confirm
+```
+
+| This review | Follow |
+|---|---|
+| Round 1, with unresolved rows in `## Fix Routing` that route to an agent | {{cmd:add.build}} for this feature — its STEP 5.2 enters CORRECTION MODE from those rows |
+| Round 1 with no agent-routed row, or round 2 whatever it found | {{cmd:add.build}} with `--loop-end` and, on an epic, the subfeature this review covered |
+
+Print the line `(delivering automatically — review round <n> of 2.)`, then follow {{cmd:add.build}} as the
+row says, from its first step, as `add-delivery-mode` describes.
+
+```
+IF THIS IS ROUND 2:
+  ⛔ DO NOT: Follow /add.build without `--loop-end` — a third correction is a third round
+  ✅ DO: Hand on to the loop end; the publish question prints what is still open
+```
+
+**Manual routes are not agent work.** A `data-seed`, `env-boot` or citation-missing row counts as "no
+agent-routed row" here — the loop cannot fix it, and the publish question shows it to the user.
+
 ---
 
 ## Summary of Rules
@@ -832,14 +880,16 @@ for a new round.
 - Emit every finding class into the one `## Fix Routing` table, scope-qualified
 - Write `judged-tree` on every `qa-validation-NNN.md` the `qa-pipeline` judgement produced — the next run's skip predicate reads it
 - Load `add-investigation` and apply differential diagnosis before classifying a finding whose root cause is unclear
+- Count the round from the ledger's review baseline before handing an automatic delivery on
 
 **NEVER:**
 - Modify application code — this command routes findings, it does not apply them
 - Trust existing validation gate ticks
-- Stage files without explicit user permission
+- Stage files without explicit user permission — on an automatic delivery the approval gave it, and STEP 1.1 still prints what it stages
 - Skip product validation for RF, RN, or prerequisites
 - Accept "it works" as justification for a violation
 - Skip a reviewer if files exist in that area
 - Re-dispatch reviewers after a build failure — the review is one pass over one tree
 - Write QA evidence under `_tests/final/`, or run `qa-evidence.sh promote`
 - Recompute `run-NNN` once the `qa-pipeline` evidence step has resolved it
+- Hand an automatic delivery to a third review round

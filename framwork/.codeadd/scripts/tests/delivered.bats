@@ -895,17 +895,16 @@ node_free_path() {
 
 # ─── L1 — `touched`, the path query ──────────────────────────────────────────
 #
-# The delivery's commit is DERIVED, never stored: the close-out commits the
-# index line on the branch and the merge squashes that branch, so the commit
-# that introduced an entry's line is the commit that delivered it. These
-# fixtures build that shape with real commits rather than asserting it.
+# The delivery's commit is DERIVED, never stored: the first-parent commit on
+# the default branch that introduced an entry's line is the commit that
+# delivered it. These fixtures build that shape with real commits rather than
+# asserting it.
 
-# seed_delivery <id> <file> <find> — the SQUASH shape, which is the one the
-# derivation depends on. The close-out commits the index line on the branch and
-# the merge squashes the whole branch, so on the default branch ONE commit
-# carries both the delivery's code and its index line. A fixture that commits
-# them separately builds the docs/-only case instead, which L1.4 covers on
-# purpose.
+# seed_delivery <id> <file> <find> — the SQUASH shape, `done.sh`'s local route:
+# ONE first-parent commit carries both the delivery's code and its index line.
+# The PR route's merge-commit shape is L1.7c. A fixture that commits them
+# separately on the trunk builds the docs/-only case instead, which L1.4 covers
+# on purpose.
 seed_delivery() {
   local id=$1 file=$2 find=$3
   src "$file" "const ${find} = 1;"
@@ -1025,6 +1024,37 @@ seed_delivery() {
   [ "$(key TOUCHED_CURATED)" = "1" ]
   [ "$(key CURATED_ONLY)" = "1" ]
   [[ "$output" == *'"answer":"curated"'* ]]
+}
+
+@test "L1.7c: a delivery landed by a MERGE commit still answers complete, with the merge sha" {
+  # The PR route of both close-outs merges with --merge. The code and the index
+  # line land in SEPARATE branch commits — the second one touches only docs/ —
+  # and the merge commit is what brings both to the default branch. Reading the
+  # branch commit that introduced the line would call it a docs/-only recording
+  # and degrade every such delivery to curated. The first-parent walk reads the
+  # merge commit instead, whose diff against its first parent is the delivery.
+  src src/base.ts 'const markerBase = 1;'
+  commit_all "base"
+  local trunk
+  trunk=$(git rev-parse --abbrev-ref HEAD)
+  git checkout -q -b feat
+  src src/ten.ts 'const markerTen = 1;'
+  commit_all "F1: code"
+  mkdir -p docs
+  entry D10 live 'delivery D10' 'words D10' src/ten.ts markerTen >> "$INDEX"
+  printf '\n' >> "$INDEX"
+  git add docs >/dev/null 2>&1
+  git commit -q -m "docs: index entry for D10" >/dev/null 2>&1
+  git checkout -q "$trunk"
+  git merge -q --no-ff feat -m "Merge pull request: D10" >/dev/null 2>&1
+  local merge
+  merge=$(git log --format=%h -1)
+
+  run bash "$SCRIPTS_DIR/delivered.sh" touched src/ten.ts
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"answer":"complete"'* ]]
+  [[ "$output" == *"\"commit\":\"$merge\""* ]]
+  [ "$(key CURATED_ONLY)" = "0" ]
 }
 
 @test "L1.8: touched with no path exits 2" {

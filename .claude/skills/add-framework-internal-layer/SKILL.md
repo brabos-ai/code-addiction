@@ -10,7 +10,7 @@ description: "Use when an F-block touches the internal layer — .claude/, scrip
 - skill: add-framework-development
 - skill: add-artefact-graph
 - mention: add-build-ledger
-- mention: /add-framework--done
+- mention: add-framework--done
 -->
 
 Loaded on the first `[internal]` F-block of a build. These artefacts are the development tooling that
@@ -34,6 +34,7 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 | Type | Path |
 |------|------|
 | Commands | `.claude/commands/*.md`, namespace `add-framework--*` |
+| Pipeline stages | `.claude/skills/add-framework--<stage>/SKILL.md` — brainstorm, plan, build and done are skills in the same namespace, so each can load the next |
 | Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `.claude/agents/*.md` |
 | Support scripts | `scripts/*.js` |
@@ -69,13 +70,9 @@ Exit 0, and no warning absent from the baseline measured before the first F-bloc
 summarises warnings as a count unless `ADD_GRAPH_WARNINGS=1` is set**, so the bare form cannot
 support a "no new warning" claim. **This applies to the internal layer even though the internal layer
 is not built.** `build.js` is where the three artefact-graph gates run, and the graph covers `.claude/` as
-well as `framwork/.codeadd/`:
-
-| Condition | Result |
-|---|---|
-| A `uses:` declaration names an artefact that does not exist | **fails** |
-| A name appears in prose with no declared relationship to it | **fails** |
-| Declared but never named in prose | warns |
+well as `framwork/.codeadd/`. **`add-framework-development` § 8 owns which conditions fail and which
+warn** — read its gate table. Its unregistered-artefact row is the one that does not apply here:
+internal artefacts are never in `provider-map.json`.
 
 An internal-only change writes nothing under `framwork/` except the gitignored
 `artefact-graph.json`. Prove it:

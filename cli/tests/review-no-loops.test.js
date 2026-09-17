@@ -16,7 +16,7 @@ import { createRequire } from 'node:module';
  * distributed artefact naming an internal command.
  *
  * A number of assertions PASS on the pre-plan tree by design, and each is
- * marked. They guard properties the plan must PRESERVE — the eight reviewer
+ * marked. They guard properties the plan must PRESERVE — the nine reviewer
  * dimensions, the ledger gate in the close-out, the two prohibitions in
  * add-plan-authoring, the sync command's own gate, and the cross-layer
  * direction that is deliberately left open. A matrix that is RED everywhere has
@@ -33,11 +33,11 @@ const P = {
   discipline: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
   readback: path.join(ROOT, '.claude', 'agents', 'plan-readback-agent.md'),
   reviewer: path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md'),
-  build: path.join(ROOT, '.claude', 'commands', 'add-framework--build.md'),
-  done: path.join(ROOT, '.claude', 'commands', 'add-framework--done.md'),
+  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
+  done: path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
   reviewCmd: path.join(ROOT, '.claude', 'commands', 'add-framework--review.md'),
-  planCmd: path.join(ROOT, '.claude', 'commands', 'add-framework--plan.md'),
-  brainstorm: path.join(ROOT, '.claude', 'commands', 'add-framework--brainstorm.md'),
+  planCmd: path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md'),
+  brainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
   sync: path.join(ROOT, '.claude', 'commands', 'add-framework--sync.md'),
   authoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
   claudeMd: path.join(ROOT, 'CLAUDE.md'),
@@ -192,12 +192,12 @@ describe('L1 the two new artefacts', () => {
     expect(text).toMatch(/no question|asks? no question/i);
   });
 
-  it('L1.9 the reviewer keeps its eight dimensions and four verdict rules', () => {
+  it('L1.9 the reviewer keeps its nine dimensions and four verdict rules', () => {
     // Passes today. Guards F5 against editing more than the two references.
     const text = read(P.reviewer);
     for (const dim of [
       'Scope', 'Hidden assumptions', 'Contradictions', 'Dependencies',
-      'Executability', 'Testability', 'Risks', 'Gold-plating',
+      'Executability', 'Testability', 'Risks', 'Gold-plating', 'Objective fit',
     ]) {
       expect(text).toContain(dim);
     }
@@ -303,17 +303,21 @@ describe('L2 the build dispatches both', () => {
     }
   });
 
-  it('L2.9 the build names review-vNN only as a resolver exclusion, never as an output', () => {
-    // The plan predicted this green against a flat "no --review-v anywhere".
-    // It is not: STEP 1.1 excludes `--review-v*` when resolving a plan argument,
-    // and that exclusion must SURVIVE. Review companions from before this
-    // delivery are still on disk, and a resolver that stops excluding them
-    // returns two candidates for every such plan and refuses to run.
-    // The property worth pinning is narrower: the string appears only where a
-    // path is being ruled OUT, never where one is written.
-    const lines = read(P.build).split(/\r?\n/).filter((l) => l.includes('--review-v'));
-    expect(lines.length).toBeGreaterThan(0);
-    for (const l of lines) expect(l).toMatch(/excluding/);
+  it('L2.9 review-vNN appears only as a resolver exclusion, and the build writes none', () => {
+    // The exclusion of `--review-v*` when resolving a plan argument must
+    // SURVIVE: review companions from before this delivery are still on disk,
+    // and a resolver that stops excluding them returns two candidates for every
+    // such plan and refuses to run. It now lives in add-plan-authoring's
+    // Argument Resolution, which the build delegates to (plan
+    // 2026-09-16T170340, F15, ruler item 5), so it is pinned there.
+    const owner = read(P.authoring).split(/\r?\n/).filter((l) => l.includes('--review-v') && /excluding/.test(l));
+    expect(owner.length).toBeGreaterThan(0);
+    // The build names the string nowhere except, at most, as an exclusion.
+    for (const l of read(P.build).split(/\r?\n/).filter((x) => x.includes('--review-v'))) {
+      expect(l).toMatch(/excluding/);
+    }
+    expect(read(P.build)).toMatch(/by `add-plan-authoring`/);
+    expect(read(P.build)).toMatch(/Argument Resolution owns/);
   });
 
   it('L2.10 the two human gates survive the renumbering', () => {
@@ -519,11 +523,11 @@ const PRODUCT_SKILL = {
 };
 
 const INTERNAL_CMD = {
-  id: 'internal/command/add-framework--build',
+  id: 'internal/skill/add-framework--build',
   kind: 'command',
   layer: 'internal',
   name: 'add-framework--build',
-  path: '.claude/commands/add-framework--build.md',
+  path: '.claude/skills/add-framework--build/SKILL.md',
   registered: true,
   declares: true,
 };

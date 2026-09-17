@@ -19,8 +19,8 @@ The inventory below is **generated** — `node scripts/inventory.js` writes it f
 array has a length.
 
 [//]: # (codeadd-inventory:start)
-{"commands":["add","add.audit","add.brainstorm","add.build","add.diagnose","add.done","add.hotfix","add.new","add.plan","add.plan-to-ready","add.pull-request","add.qa-setup","add.review","add.ux","add.wiki"]}
-{"skills":["add-architecture-discovery","add-backend-architecture","add-backend-development","add-claude-md-style","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-final-report","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-review-discipline","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
+{"commands":["add","add.audit","add.brainstorm","add.build","add.diagnose","add.done","add.hotfix","add.new","add.plan","add.pull-request","add.qa-setup","add.review","add.ux","add.wiki"]}
+{"skills":["add-architecture-discovery","add-backend-architecture","add-backend-development","add-claude-md-style","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-mode","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-final-report","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-review-discipline","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","get-branch-metadata.sh","get-main-branch.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
 {"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
@@ -51,21 +51,30 @@ Development tools that build and maintain the framework itself. One file per art
 | Type | Path |
 |------|------|
 | Commands | `.claude/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
+| Pipeline stages | `.claude/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `.claude/agents/*.md` |
 | Plans | `docs/plans/` — gitignored working artefacts, local only |
 | Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
+### The internal pipeline — four skills
+
+`add-framework--brainstorm` → `add-framework--plan` → `add-framework--build` → `add-framework--done`. Each is invoked
+as `/<name>` and declares the next with `handoff:`.
+
+| Stage | Purpose | Operates on |
+|---------|---------|-------------|
+| `add-framework--brainstorm` | Collaborative ideation; its one approval can deliver automatically up to the build's PR question | Both layers |
+| `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
+| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
+| `add-framework--done` | Close-out — gates, `gh pr merge --merge`, index entry, cleanup. Never reached unattended | Branches, PRs, `docs/delivered.jsonl` |
+
 ### Internal commands
 
 | Command | Purpose | Operates on |
 |---------|---------|-------------|
-| `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
-| `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
-| `add-framework--brainstorm` | Collaborative ideation; precedes `add-framework--plan` | Both layers |
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--done` | Close-out — gates, `gh` merge, index entry, cleanup | Branches, PRs, `docs/delivered.jsonl` |
 | `add-framework--roadmap` | Records what to do next — add, update or remove an item, then commits and pushes straight to `main` | `docs/roadmap/index.md` |
 
 ## Pipeline

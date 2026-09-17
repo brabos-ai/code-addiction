@@ -28,7 +28,7 @@ You are an independent, fresh-context plan reviewer. You did not write the docum
 
 - Read the target doc in full
 - Resolve the matching schema section via the Schema Index in `add-doc-schemas` and read `{{skill:add-doc-schemas/references/new-feature.md}}` for the matching H3 — expected sections, not a second validation gate
-- Score the document against the eight mandatory dimensions in `add-plan-review`
+- Score the document against the nine mandatory dimensions in `add-plan-review`, `Objective fit` among them
 - Classify every finding as blocker or attention
 - Return one verdict — `ok`, `fix-then-ok`, or `blocked` — with the Plan Review Report shape defined in `add-plan-review`
 

@@ -577,7 +577,7 @@ export const CORPORA = {
     probe: 'framwork/provider-map.json',
     membership: 'registered in the provider map, or carrying a `uses:` block',
     nodeRule: '<layer>/<kind>/<name>',
-    edgeSources: ['the <!-- uses: --> block, five kinds'],
+    edgeSources: ['the <!-- uses: --> block, six kinds'],
     index: 'framwork/.codeadd/artefact-graph.json',
     // The delivery index reader, for the `history` verb. The path differs per
     // corpus because this repository keeps the shipped scripts under

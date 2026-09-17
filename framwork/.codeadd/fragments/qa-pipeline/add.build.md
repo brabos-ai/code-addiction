@@ -1,4 +1,5 @@
 <!-- uses:
+- skill: add-delivery-mode
 - agent: database-agent
 - agent: backend-agent
 - agent: frontend-agent
@@ -24,6 +25,9 @@ correction contract, one path.
 2. Present unresolved rows grouped by severity (blocker → polish) and CONFIRM
    before changing any code. The confirmation gate is mandatory; routing decides
    *who* fixes, never *whether*.
+   **Stop kind — confirming** (`add-delivery-mode`). On an automatic delivery,
+   print the grouped rows in full and continue: every agent-routed row is fixed.
+   The review that produced them is already part of the loop the user approved.
 3. **DISPATCH by ROUTE, not by severity.** Work the table in its given `Order`,
    respecting `Blocked by`: sequential across layers
    (`@database-agent → @backend-agent → @frontend-agent → @e2e-agent`), and
@@ -33,7 +37,7 @@ correction contract, one path.
    one tree. Each named agent maps per the **Agent Roster**; correction rows go to
    `@fix-agent` per the **Correction Dispatch** contract, with the `ATTEMPT`
    counter this command tracks.
-   - **Present, do NOT dispatch** (surface as user decisions): manual routes
+   - **Present, do NOT dispatch** (surface as user decisions — **deciding**, in every delivery mode): manual routes
      `data-seed` / `env-boot` (name the `docs/qa/config.json` field to fix —
      `authSeed` / `bootHint`), capability-invalid routes, and `@ux-agent` routes
      missing their contract-line citation.
@@ -45,13 +49,14 @@ correction contract, one path.
      its amendment to `design.md`'s `## Design Review` with the originating
      `run-NNN` + finding ID — so the next review sees why the contract changed and
      never reads a green-under-amended-contract flip as a fix.
-   - **No `## Fix Routing` section → STOP with the remedy.** The report predates
+   - **No `## Fix Routing` section → STOP with the remedy** (**deciding**, in every delivery mode). The report predates
      routing. Do NOT guess a dispatch and do NOT fall back to severity grouping —
      tell the user to re-run `{{cmd:add.review}}`, which writes a fresh
      `review-NNN.md` carrying routes.
 4. Apply fixes with CORRECTION MODE discipline: follow project patterns, frontend
    loads `add-ux-design`, the build must compile 100%. Surface all severities; the
-   user chooses the fix scope.
+   user chooses the fix scope — on an automatic delivery the scope is every
+   agent-routed row, and the manual ones wait for the user as step 3 says.
 
 Then re-run `{{cmd:add.review}}` so the two rounds can be compared side by side.
 The QA-specific nuance above sits on top of the base **Routed Correction Contract**

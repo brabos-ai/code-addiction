@@ -564,21 +564,27 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
     expect(reviewSection).toMatch(/Refuse/i);
   });
 
-  it('add.review, add.plan-to-ready and add.build resolve design.md at subfeature scope', () => {
+  it('add.review and add.build resolve design.md at subfeature scope', () => {
     // Assert the CITATION, not the prose (L7): the authority is the schema's
     // Location rule. Pinning the parenthetical here would test-lock the exact
     // wording Q18 asked to single-source.
-    for (const name of ['add.review', 'add.plan-to-ready', 'add.build']) {
+    //
+    // add.plan-to-ready was the third site until plan
+    // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the command.
+    for (const name of ['add.review', 'add.build']) {
       expect(builtCommand(name)).toMatch(/new-feature\.md/);
       expect(builtCommand(name)).toMatch(/feature-design/);
     }
   });
 
-  it('add.plan-to-ready points at add.plan and add.new, never at a removed command', () => {
-    const loop = builtCommand('add.plan-to-ready');
-    expect(loop).toMatch(/add\.plan/);
-    expect(loop).not.toMatch(/\/add\.design/);
-    expect(loop).not.toMatch(/\/add\.(qa|test|autopilot)(?![\w-])/);
+  // add.plan-to-ready is gone by design (plan
+  // 2026-09-16T205633-PLAN--product-pipeline-parity, F11): its unattended
+  // build<->review loop became the automatic delivery chain in
+  // add-delivery-mode/SKILL.md. This absence test replaces the routing test
+  // that used to read its file.
+  it('add.plan-to-ready is gone from the built provider output', () => {
+    const builtPath = path.join(BUILT_CLAUDE, 'commands', 'add.plan-to-ready.md');
+    expect(fs.existsSync(builtPath)).toBe(false);
   });
 
   it('add.plan GATES table declares the design gates it enforces at 7.1', () => {

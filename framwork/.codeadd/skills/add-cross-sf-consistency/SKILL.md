@@ -19,26 +19,26 @@ description: Use when judging contract consistency across an epic's subfeature p
 - agent: plan-reviewer-agent
 - agent: reviewer-agent
 - agent: ux-agent
+- command: /add.build
 - command: /add.plan
-- command: /add.plan-to-ready
 -->
 
 ## Overview
 
-The rubric `consistency-agent` loads before it reports. `/add.plan-to-ready`'s epic loop dispatches that agent twice per epic run: a **FULL pass** after each subfeature's `plan.md` is consolidated and reviewed (comparing it against every already-converged sibling), and one **DELTA pass** at the end of the epic (re-checking only what changed since the last verdict). The agent compares declared contracts **document against document** — `plan.md`, `about.md`, `design.md` — and never opens source code; code-level review stays `@reviewer-agent`'s job.
+The rubric `consistency-agent` loads before it reports. It is dispatched twice per epic run: a **FULL pass** by `/add.plan` after each subfeature's `plan.md` is consolidated and reviewed (comparing it against every already-converged sibling), and one **DELTA pass** by `/add.build`, from its Loop End, before the epic's last checkpoint (re-checking only what changed since the last verdict). The agent compares declared contracts **document against document** — `plan.md`, `about.md`, `design.md` — and never opens source code; code-level review stays `@reviewer-agent`'s job.
 
 This produces no new persisted artefact of its own. A `FULL`-pass finding is applied straight into the subfeature's own `plan.md`; a `DELTA`-pass finding is written into the epic's existing `review-NNN.md`. There is no `consistency-validation-NNN.md` and none should ever be invented — see Where Findings Go below.
 
 ## When to Use
 
 - `consistency-agent` loads this skill as its rubric source, on every dispatch (`FULL` or `DELTA`).
-- `/add.plan-to-ready`'s epic loop needs the routing hints to fold a `DELTA`-pass finding into `## Fix Routing`.
+- `/add.build`'s Loop End needs the routing hints to fold a `DELTA`-pass finding into `## Fix Routing`.
 
 ## When NOT to Use
 
 - Judging one subfeature in isolation against its own `about.md`/`design.md` — that is `@qa-agent` / `@ux-agent` (dual-judge QA, `add-qa`) or `@plan-reviewer-agent` (pre-delivery executability, `add-plan-review`). This rubric only fires when there are **two or more** subfeatures to compare.
 - Code-level review (naming, security, architecture, whether the code matches the plan) — `@reviewer-agent` / `add-code-review`.
-- A single-feature (non-epic) run of `/add.plan-to-ready`. With one subfeature there is nothing to compare against, so the loop never dispatches this agent.
+- A non-epic feature. With one subfeature there is nothing to compare against, so neither `/add.plan` nor `/add.build` ever dispatches this agent.
 - **Single-plan completeness** — whether a shared enum/config was declared ONCE in the earliest subfeature instead of duplicated, whether a subfeature depending on an unbuilt sibling declares fallback behavior, whether new services are registered in DI/as workers. That is `/add.plan` STEP 9.5's job. See Boundary below.
 
 ## Boundary — this rubric vs `/add.plan` 9.5
@@ -72,7 +72,7 @@ This cap is a validated decision (plan 0074 T4): an open-ended consistency judge
 
 | Severity | Meaning |
 |---|---|
-| `blocker` | A direct contradiction on a shared contract (same endpoint/entity/rule, incompatible declarations). **What it actually does:** on a `FULL` pass it is a hard exit for that subfeature's plan leg; on a `DELTA` pass it stops the checkpoint — `{{cmd:add.plan-to-ready}}`'s checkpoint sequence reads `## Fix Routing` before it flips a row, and refuses to commit, tag or push while an unresolved `blocker` stands. See Why the DELTA pass runs first, below |
+| `blocker` | A direct contradiction on a shared contract (same endpoint/entity/rule, incompatible declarations). **What it actually does:** on a `FULL` pass it is a hard exit for that subfeature's plan leg; on a `DELTA` pass it stops the checkpoint — `{{cmd:add.build}}`'s Checkpoint Sequence reads `## Fix Routing` before it flips a row, and refuses to commit or tag while an unresolved `blocker` stands. See Why the DELTA pass runs first, below |
 | `major` | A significant divergence that is not yet a hard contradiction but will produce an integration failure once both sides are built |
 | `minor` | A cosmetic or naming divergence unlikely to break integration (e.g. one plan calls it `userId`, the sibling `user_id`, but both resolve to the same column) |
 | `informational` | Anything outside the five dimensions. Always this severity, regardless of how serious it reads — **never blocks** |

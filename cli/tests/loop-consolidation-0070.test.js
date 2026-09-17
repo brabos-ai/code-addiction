@@ -314,17 +314,18 @@ describe('0070 L2 — rename migration red-green', () => {
 });
 
 describe('0070 L5 — removal integrity', () => {
-  const REMOVED = ['add.test', 'add.qa', 'add.autopilot'];
+  // add.plan-to-ready joined REMOVED by plan
+  // 2026-09-16T205633-PLAN--product-pipeline-parity, F11: its unattended
+  // build<->review loop became the automatic delivery chain in
+  // add-delivery-mode/SKILL.md, and its Checkpoint Sequence moved into
+  // add.build.md's "## Loop End" / "## The Checkpoint Sequence". The generic
+  // loops below already cover its absence, so no separate test is needed.
+  const REMOVED = ['add.test', 'add.qa', 'add.autopilot', 'add.plan-to-ready'];
   // /add.qa-setup is retained and must not be caught by an over-broad pattern.
-  const ROUTING = /\/add\.(test|qa|autopilot)(?![\w-])/;
+  const ROUTING = /\/add\.(test|qa|autopilot|plan-to-ready)(?![\w-])/;
 
   it('L5.2 provider-map registers none of the removed commands', () => {
     for (const name of REMOVED) expect(MAP.commands[name], name).toBeUndefined();
-  });
-
-  it('L5.2 provider-map registers add.plan-to-ready for all five providers', () => {
-    expect(MAP.commands['add.plan-to-ready']).toBeDefined();
-    expect(MAP.commands['add.plan-to-ready'].providers).toBeUndefined();
   });
 
   it('L5.2 provider-map registers test-agent and fix-agent', () => {
@@ -484,70 +485,21 @@ describe('0070 L6 — behavioural acceptance', () => {
 
 describe('0070 L7 — loop acceptance', () => {
   const loopPath = path.join(COMMANDS, 'add.plan-to-ready.md');
-  const loop = () => read(loopPath);
 
-  it('L7.0 the command exists with frontmatter and an argument hint', () => {
-    expect(exists(loopPath)).toBe(true);
-    const src = loop();
-    expect(src).toMatch(/^---\n/);
-    expect(src).toMatch(/argument-hint:/);
-  });
-
-  it('L7.0 the cap is 3 per invocation, explicitly not cumulative', () => {
-    const src = loop();
-    expect(src).toMatch(/3 iterations|at most 3/i);
-    expect(src).toMatch(/not cumulative|per invocation/i);
-  });
-
-  it('L7.1 the no-progress detector keys on (area, file, symptom) over two consecutive rounds', () => {
-    const src = loop();
-    expect(src).toMatch(/\(area, file, symptom\)/);
-    expect(src).toMatch(/two consecutive/i);
-  });
-
-  it('L7.2 the three outcome states are distinct and never softened into one another', () => {
-    const src = loop();
-    for (const state of ['CONVERGED', 'CAP_REACHED', 'BLOCKED']) {
-      expect(src, `missing state ${state}`).toMatch(new RegExp(state));
-    }
-    expect(src).toMatch(/NEVER[\s\S]{0,120}(soften|as success)/i);
-  });
-
-  it('L7.3 the dry-run convergence check never invokes qa-evidence.sh promote', () => {
-    const src = loop();
-    expect(src).toMatch(/dry-run/i);
-    // Plan 0074 replaced the "STEP 4.0 through 4.2" boundary this line used
-    // to assert. That step-number boundary WAS the defect: it excluded
-    // `qa-evidence.sh validate` — a pure read — only because of where it sat
-    // in /add.done's numbering, so the loop converged on a QA gate it never
-    // ran. The rule this test guards is unchanged (no side effects in the
-    // dry-run); only its expression moved from a step number to the property
-    // it always meant. Asserting the old wording would re-require the bug.
-    expect(src).toMatch(/side[- ]effect/i);
-    expect(src).toMatch(/NEVER[\s\S]{0,120}promote|promote[\s\S]{0,80}never/i);
-  });
-
-  it('L7.4 the plan leg preserves id, created and type and bumps updated', () => {
-    const src = loop();
-    expect(src).toMatch(/`id:`/);
-    expect(src).toMatch(/`created:`/);
-    expect(src).toMatch(/`type:`/);
-    expect(src).toMatch(/immutable/i);
-    expect(src).toMatch(/`updated:`/);
-  });
-
-  it('L7.5 a subfeature-scoped run can converge with siblings pending and names them', () => {
-    const src = loop();
-    expect(src).toMatch(/subfeature/i);
-    expect(src).toMatch(/remaining/i);
-  });
-
-  it('L7.6 depth discipline — dispatches agent rosters, never commands', () => {
-    const src = loop();
-    expect(src).toMatch(/depth 1/i);
-    expect(src).toMatch(/never dispatch(es)? (a )?command/i);
-    // The autopilot defect: an agent told to read a command file and execute it.
-    expect(src).not.toMatch(/Read \{\{cmd:add\.(plan|build|review)\}\} — PRIMARY reference/);
+  // Plan 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the
+  // command the eight tests below were written against. Its unattended
+  // build<->review loop became the automatic delivery chain in
+  // add-delivery-mode/SKILL.md; its Checkpoint Sequence moved into
+  // add.build.md's "## Loop End" / "## The Checkpoint Sequence". The cap of 3,
+  // the (area, file, symptom) no-progress detector and the
+  // CONVERGED/CAP_REACHED/BLOCKED outcome states were specific to that
+  // command's own bounded retry loop and are gone by design — the automatic
+  // chain now runs the ordinary /add.build <-> /add.review loop instead (capped
+  // at two review rounds; see add-delivery-mode). One absence test replaces the
+  // eight that used to read this file.
+  it('L7.0 the command is gone: no source file, no provider-map entry', () => {
+    expect(exists(loopPath)).toBe(false);
+    expect(MAP.commands['add.plan-to-ready']).toBeUndefined();
   });
 
   it('L7.6 no dispatched agent is instructed to dispatch another agent', () => {

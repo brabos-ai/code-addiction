@@ -44,7 +44,7 @@
 #         tag, push, and the two readers of epic.md agreeing on the same tree.
 #
 # CANNOT: whether an AI coordinator FOLLOWS an instruction. Commands like
-#         /add.plan-to-ready are prose an agent reads; there is no harness that
+#         /add.build are prose an agent reads; there is no harness that
 #         executes them. This file tests the mechanics those instructions
 #         prescribe, never the obedience of the reader.
 #

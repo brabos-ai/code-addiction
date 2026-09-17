@@ -343,7 +343,7 @@ describe('F20 — all six commands name a destination for the result', () => {
       // action name from a command, so the anchor now quotes the SLOT — the
       // paths the step runs over — which is what this level is checking anyway.
       'add.hotfix': ['`RELATED_WORK` destination', "over this branch's changed paths"],
-      'add.brainstorm': ['## Candidate Directions'],
+      'add.brainstorm': ['## Discovery'],
       'add.diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
       'add.review': ['**`RELATED_WORK` from STEP 2.2**'],
     };

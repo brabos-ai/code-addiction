@@ -301,9 +301,9 @@ describe('the real emitted graph', () => {
   it('L2.1 a fragment dispatch is visible — the edge this whole change exists for', () => {
     // @test-agent is dispatched from two tdd-pipeline fragments and from no
     // command directly. Before `fragment` became a declaring kind, asking who
-    // dispatched it returned add.build and add.plan-to-ready and silently
-    // omitted add.hotfix. THIS is the assertion the plan's risk table names as
-    // the guard against the 23-fragment migration writing a wrong edge.
+    // dispatched it returned only add.build and silently omitted add.hotfix.
+    // THIS is the assertion the plan's risk table names as the guard against
+    // the 23-fragment migration writing a wrong edge.
     const inbound = neighbors(real, 'product/agent/test-agent').in
       .filter((e) => e.type === 'DISPATCHES')
       .map((e) => e.from);

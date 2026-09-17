@@ -12,7 +12,6 @@
 - mention: add-knowledge-discovery
 - command: /add.pull-request
 - command: /add.hotfix
-- command: /add.plan-to-ready
 - command: /add.review
 - command: /add.wiki
 - script: converge-gates.sh
@@ -210,10 +209,14 @@ mode needs a `[NNNN][L]` in the branch name and its merge mode refuses to run on
 2. **Take the delivery facts from the merge commit**, not from a branch diff:
 
 ```bash
-git show --name-status <merge-commit>
+git diff --name-status <merge-commit>^1 <merge-commit>
 ```
 
-   The squash IS the delivery.
+   The first-parent diff is the whole delivery, whether the PR was merged or
+   squashed. ⛔ **Never `git show` on a merge commit:** it has two parents, so
+   `git show` prints a combined diff — often smaller than the delivery, sometimes
+   empty — and the entry and the changelog would record a wrong file list in
+   silence.
 3. Write the entry and the changelog, commit them on `main`, and push.
 
 ```
@@ -876,18 +879,26 @@ project with no workflows is not a project with a failing gate, and inventing a
 block there would make the PR route unusable.
 
 ```bash
-gh pr merge --squash
+gh pr merge --merge
 ```
 
-Where the repository has auto-merge enabled, `gh pr merge --squash --auto` is the
-same guarantee without holding the session open.
+⛔ **The method is deliberate.** `--merge` keeps every commit the build made
+readable on `main`; a squash flattens them into one line. Never drop the flag:
+`gh pr merge` run non-interactively errors without one. A repository that
+disallows merge commits refuses here, loudly — report the refusal below rather
+than switching method.
+
+Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the
+same guarantee without holding the session open, with the same deliberate flag.
 
 ```bash
 bash .codeadd/scripts/done.sh --cleanup "$(gh pr view --json mergeCommit --jq .mergeCommit.oid)"
 ```
 
-The sha is passed because a squash creates a NEW commit: the branch tip is not
-an ancestor of `main`, so nothing can derive it locally.
+The sha is passed because the merge creates a NEW commit on the server, and it
+is the commit that put the delivery on `main`. Passing it is what lets the
+cleanup prove the merge landed without deriving anything from local refs, which
+`gh pr merge` does not move.
 
 ```
 IF THE MERGE IS REFUSED:
@@ -916,7 +927,7 @@ bash .codeadd/scripts/done.sh --merge
 | `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add.pull-request}}`, then re-run |
 | `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP 9 and report the branch left behind, naming the check. This is not a failed delivery |
 
-On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag. It does commit — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag ownership is what `/add.build` lacks, not commits.
+On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.build`'s Checkpoint Sequence creates each one on the checkpoint commit at a subfeature boundary, and only on an epic. `/add.build` commits per task otherwise — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag creation is scoped to that Checkpoint Sequence, not to every commit `/add.build` makes.
 
 ⛔ DO NOT USE Bash for git add/commit/push manually. **`done.sh` owns every
 LOCAL git write on both routes** — the PR route calls its `--commit-push` and

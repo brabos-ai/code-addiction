@@ -11,10 +11,10 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 - skill: add-final-report
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
-- mention: /add-framework--done
-- mention: /add-framework--build
-- mention: /add-framework--brainstorm
-- mention: /add-framework--plan
+- mention: add-framework--done
+- mention: add-framework--build
+- mention: add-framework--brainstorm
+- mention: add-framework--plan
 -->
 
 Owns the plan DOCUMENT. What the plan decides is the planning command's job; how it is named,
@@ -53,7 +53,7 @@ that did.
 below. Nothing reads a changelog by its filename, so a rename rewrites files for no reader.
 
 **Both writers point here and neither declares a pattern of its own** — `/add-framework--build` at
-its STEP 8, `/add-framework--done` at its STEP 4. Two commands declaring one format is how they drift.
+its STEP 8, `/add-framework--done` at its STEP 4. Two stages declaring one format is how they drift.
 
 ```
 ⛔ ONE CHANGELOG PER DELIVERY:
@@ -107,6 +107,7 @@ handoff, on the `bounded` and `architectural` paths. **Never on `spike`.**
 path: bounded            # spike | bounded | architectural
 topic: <slug>
 doc: <design document path, or none>
+delivery: confirm        # confirm | automatic — the answer to the brainstorm's STEP 7.3 approval
 ---
 
 ## Decided
@@ -128,6 +129,56 @@ the shape above is a contract between two commands rather than something a gate 
 `architectural` path only. `bounded` writes no design document, so on the one path a size branch
 serves there was nothing to read and nothing survived the session.
 
+### The Delivery Mode
+
+**Two values, chosen once, at `/add-framework--brainstorm` STEP 7.3, and carried — never re-asked.**
+
+| Carrier | Written by | Read by |
+|---|---|---|
+| `delivery:` in the intent file | `/add-framework--brainstorm` 7.3 | `/add-framework--plan` STEP 1.2 |
+| `> **Delivery:**` in the plan header | `/add-framework--plan` STEP 5, copied from the intent file | `/add-framework--build` STEP 1.1 |
+
+⛔ **Absent means `confirm`.** No intent file, no field, no header line, a plan written before this
+existed, a direct build — every one of them runs with a human confirming each stage. The fall is
+toward waiting, never away from it.
+
+#### The stopping rule
+
+Every `[STOP]` in the four stages is one of two kinds:
+
+| Kind | It presents | On `confirm` | On `automatic` |
+|---|---|---|---|
+| **deciding** | A choice the brainstorm's approval did not cover — an open question, a blocker, an ambiguity, a push | Waits | **Waits** |
+| **confirming** | Something the approval already covered — a design, a summary, a report of work already agreed | Waits | Does not wait |
+
+⛔ **"Does not wait" means not waiting, never not printing.** A confirming stop on the automatic path
+still emits everything it would have shown — the design, the confirmation screen, the plan preview,
+the report — and then continues. Skipping the output would hide what is being decided without the
+operator in exactly the mode where they are not there to ask.
+
+```
+IF A CONFIRMING STOP IS PASSED ON THE AUTOMATIC PATH:
+  ⛔ DO NOT: Skip the content the stop presents
+  ✅ DO: Print it in full, then continue to the next step
+```
+
+⛔ **Classify by STATE, not by marker.** One marker can be both kinds: `/add-framework--build` STEP 9
+decides on the first push of a branch with no PR, and only confirms once a PR exists. Each stage
+classifies its own stops where they sit, with the state that decides the kind.
+
+```
+IF A STOP'S KIND IS NOT OBVIOUS FROM ITS STATE:
+  ⛔ DO NOT: Treat it as confirming to keep the automatic path moving
+  ✅ DO: Treat it as deciding, and wait
+```
+
+**Three stops are deciding in every state, and nothing reclassifies them:**
+
+- **`/add-framework--build` STEP 9 on a branch with no PR** — the terminus of the automatic path.
+- **The four hard stops** `add-build-ledger` owns.
+- **Every stop in `/add-framework--done`.** The close-out is never reached unattended, so it never
+  runs in the automatic state at all.
+
 ### Legacy forms resolve for reading, never for writing
 
 Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
@@ -135,6 +186,34 @@ Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PL
 documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
 
 ---
+
+## The Plan Preview
+
+**What the plan will say, shown before it is written.** `/add-framework--plan` prints it at the end of
+its STEP 4, inside the stop that step already makes — on the automatic path it is the one moment the
+operator sees what is being decided without them.
+
+**Shape — five labelled items, in this order:**
+
+```markdown
+**Objective:** <one line — the objective the plan will carry>
+**Phases:** <one line per phase — its name and what it includes>
+**Order:** <the phase order, and WHY it is that order, in one or two lines>
+**Risk:** <one line per artefact the plan changes — its name and its risk grade from STEP 3.2>
+**Excluded:** <what the plan will NOT do, one line per item>
+```
+
+```
+IF COMPOSING THE PREVIEW:
+  ⛔ DO NOT: List files, validation levels, F-block ids or F-block detail — then someone reads the
+             preview instead of the plan
+  ⛔ DO NOT: Run a new query, audit or dispatch for it — it is composed from what STEP 3 produced
+  ⛔ DO NOT: Add a stop for it — STEP 4 already stops
+  ✅ DO: Compose the five items from the analysis in hand, and print them
+```
+
+**It is not the plan in miniature.** A reader who needs a file or a check opens the plan; the preview
+exists so that nobody has to, to know whether the plan is heading the right way.
 
 ## The Short-Plan Shape
 
@@ -269,6 +348,27 @@ IF TEMPTED TO PASTE THE CONTENT A FILE WILL RECEIVE:
 
 If a design doc exists in `docs/brainstorming/`, the plan **references it and does not restate it**.
 With no design doc the plan carries the decision inline — still the decision, never the file content.
+
+**`## Objective` is the one section that is COPIED rather than referenced.**
+
+```
+IF WRITING OR REVISING A PLAN:
+  ⛔ DO NOT: Re-derive the objective from the design — you will write a better sentence, and a better
+             sentence is a different objective
+  ⛔ DO NOT: Point at the design for it, the way every other section does — the reviewer, the build
+             and the close-out all read the plan, and `docs/brainstorming/` is gitignored
+  ⛔ DO NOT: Widen it to cover scope the design did not have
+  ✅ DO: Copy the design's `## Objective` byte for byte, then add what is true once the build is done
+```
+
+**It is copied because it is the one thing everything downstream is checked against.** Every other
+section can point at the design; this one is read by the reviewer's `Objective fit` dimension, and a
+pointer into a gitignored directory is not something a reviewer can read.
+
+⛔ **A plan with NO design document still states an objective**, drawn from the conversation and marked
+as such — `[from conversation, no design document]`. Otherwise the `bounded` path, which writes no
+design at all, is the one path whose work arrives with nothing to check it against. That is the
+opposite of what a short path needs.
 
 **Every F-block MUST be covered by at least one validation level.** An F-block with no proof is a gap
 the reviewer cannot see.

@@ -1,3 +1,8 @@
+---
+name: add-framework--build
+description: "Use when a plan in docs/plans/ is ready to execute, or for a direct build of one simple internal or product artefact — implements F-blocks one commit at a time under each block's layer tag, keeps the ledger, audits the finished delivery once, and asks before opening the PR. Third stage of brainstorm → plan → build → done."
+---
+
 # ADD Build — Layer-Aware Plan Executor
 
 <!-- uses:
@@ -12,9 +17,10 @@
 - skill: add-framework-internal-layer
 - skill: building-commands
 - skill: add-framework-development
-- command: /add-framework--plan
+- skill: add-framework--plan
 - command: /add-framework--sync
-- mention: /add-framework--done
+- handoff: add-framework--done
+- skill: building-commands/references/agent-dispatch.md
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -152,20 +158,17 @@ the analysis against `building-commands` before any edit.
 
 ### 1.1 If a plan is specified
 
-**Resolve `[plan]` BEFORE reading anything.** The full basename always works; otherwise match it as a
-**substring** of the basenames of `docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*`
-and `--ledger` companions.
-
-**All three naming forms resolve:** the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy `NNNN-PLAN--`,
-and `-SELF-PLAN--` from when planning was split by layer. There is no longer a reason to exclude the
-last one — a topic is no longer split into a paired product plan and internal plan sharing a slug.
-
-- **Exactly one match** → that is the plan. Read it.
-- **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
-- **No match** → list `docs/plans/` and STOP.
+**Resolve `[plan]` BEFORE reading anything, by `add-plan-authoring`.** Load it and apply it as
+written: its Argument Resolution owns the substring match, the companions it excludes and the stop on
+more than one match or none, and its legacy-forms rule owns which naming forms resolve. Exactly one match is the plan — read
+it.
 
 **Extract:** the F-blocks with their layer tags, the execution order, the Global Constraints, the
-validated decisions, and the per-F-block validation the plan specifies.
+validated decisions, the per-F-block validation the plan specifies, and the `> **Delivery:**` header
+line — `confirm` when absent. `add-plan-authoring` owns what it means, under **The Delivery Mode**.
+
+**Stop kind — deciding.** The two resolution stops Argument Resolution makes present an ambiguity, and nothing approved
+which plan an ambiguous argument meant.
 
 **A plan whose F-blocks carry no layer tag is legacy.** Derive the tag from each path — `framwork/`,
 `provider-map.json`, `cli/` or `mcp/` is `[product]`, everything else `[internal]` — and record one
@@ -205,6 +208,14 @@ the user to see it before execution starts.
 **Direct mode:** what changes, why, its layer, and the impact on dependents.
 
 **STOP AND WAIT.** Proceed only on explicit approval or requested adjustments.
+
+**Stop kind — decided by the plan's state:**
+
+| State | Kind | Do |
+|---|---|---|
+| Planned mode, `Delivery: automatic`, and no Global Constraint overrides a gate in this skill | **confirming** | Print the design and continue to STEP 3 |
+| Planned mode, `Delivery: automatic`, and a Global Constraint overrides a gate here | **deciding** | Wait — the exception is a choice the brainstorm's approval never saw |
+| `Delivery: confirm`, absent, or direct mode | **deciding** | Wait |
 
 ---
 
@@ -270,6 +281,8 @@ assumptions constantly — that is the format working, not a defect to escalate.
 Where a divergence is severe enough that no reading of the plan supports one option over the others,
 that is the fourth hard stop and `add-build-ledger` owns it. Nothing else here stops.
 
+**Stop kind — the four hard stops are deciding in every state**, here and at STEP 5.3.
+
 ---
 
 ## STEP 5: Implement
@@ -282,7 +295,7 @@ Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 ### 5.2 One F-Block at a Time
 
 The cycle — record `BASE`, implement, show, validate, commit, record `HEAD` — is owned by
-`add-build-ledger`. Two things this command adds per block:
+`add-build-ledger`. Two things this skill adds per block:
 
 1. **Read the block's layer tag first.** It selects the prohibitions above and the layer skill.
 2. **Apply the plan's own per-F-block validation** on top of the layer default, when the plan names one.
@@ -368,7 +381,7 @@ number would be wrong on almost every build.
 
 **DISPATCH ALL OF THEM AT ONCE:**
 - **Capability:** read-only throughout — Glob, Grep, Read, and Bash for `git log` / `git diff` /
-  `git show` only. No Edit, no Write. The coordinator is the only writer in this command.
+  `git show` only. No Edit, no Write. The coordinator is the only writer in this skill.
 - **Complexity:** standard
 - **Input:** the plan's content, plus the one scope below
 
@@ -433,16 +446,10 @@ IF `@prompt-review-agent` CANNOT BE ADDRESSED BY NAME:
 addressable until the registry has it, which for a fresh file can be after the merge. That is a
 dispatch-mechanism problem, never a reason for the delivery to go unaudited.
 
-### Agent Dispatch Rules
+### Dispatching the Agents Above
 
-1. Read the required **Capability** and honour it — read-only, for every dispatch.
-2. Read the **Complexity** hint — `standard`, for every dispatch.
-3. Choose the mechanism in your engine that satisfies the capability, and dispatch them all at once.
-4. Pass the plan's content as part of each prompt. Scope 4 also takes its artefact's node id.
-5. Verify every report on your dispatch list is received before acting on any of them.
-
-You are the coordinator. Map the intent — capability plus complexity — to the best mechanism your
-engine offers.
+**`building-commands/references/agent-dispatch.md` owns them** — read its **Agent Dispatch Rules** and
+apply them to every `DISPATCH AGENT` block in this skill. The capability, the complexity, the input and the wait-all gate for this step are all stated in 7.1 above.
 
 ### 7.2 Ask the Graph What the Subagents Cannot See
 
@@ -463,13 +470,8 @@ indistinguishable from a leaf.
 A direct dependant that was neither changed nor named in the plan is a finding. So is a `superseded`
 entry naming a delivery the plan never mentions. An unavailable index is reported, never a finding.
 
-**Write the answer into the ledger before STEP 8**, as its own line under the plan's entry:
-
-```
-GRAPH: <artefact> — <direct dependants, or "none">; <shipped-before answer, or "no entry">
-```
-
-One line per artefact this delivery touched, or a single `GRAPH: NOT VERIFIED — <why>` where no
+**Write the answer into the ledger before STEP 8**, as `GRAPH:` lines in the shape `add-build-ledger`
+owns — one line per artefact this delivery touched, or a single `GRAPH: NOT VERIFIED — <why>` where no
 route existed.
 
 ```
@@ -503,6 +505,8 @@ IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
   ✅ DO: Present that finding alone and WAIT
 ```
 
+**Stop kind — deciding, in every state.** The decision was not in the plan, so no approval covered it.
+
 ⛔ **Nothing here writes a review file.** No companion document, no versioned artefact, no verdict for
 a later command to find. What survives goes in the ledger, as rulings.
 
@@ -524,7 +528,7 @@ leaves anywhere. Nothing else reaches disk.
 **This is what makes "exactly once" auditable.** STEP 5.1 resumes from the ledger's `complete` lines.
 Without this line a review that found nothing leaves no trace at all, so a fresh session sees the last
 F-block committed, no evidence the pass ran, and the prohibition at the top of this file tells it to
-run one — the second pass this command exists to prevent. Every rejected finding gets its own
+run one — the second pass this skill exists to prevent. Every rejected finding gets its own
 `Ruling:` line, per 7.3.
 
 ---
@@ -537,7 +541,7 @@ applies would land after its own record.
 
 - **Changelog** for new or major work, written under `docs/changelog/`. **The filename and the
   one-per-delivery rule are owned by `add-plan-authoring`** — read **File Naming** rather than
-  declaring a pattern here. This command normally creates the file; `/add-framework--done` STEP 4
+  declaring a pattern here. This skill normally creates the file; `/add-framework--done` STEP 4
   finds it and edits it rather than allocating a second timestamp.
 - **Plan status** `draft` → `implemented`, with a changelog row naming the commits it landed in.
 - **The inventory block** — run `node scripts/inventory.js` and commit `CLAUDE.md` if it changed.
@@ -554,7 +558,11 @@ Nothing else in `CLAUDE.md` is written here. The rest of the file changes only w
 
 ## STEP 9: Publish [STOP]
 
-**⛔ GATE:** A push to a shared remote is one of the four hard stops. ASK.
+**⛔ GATE — two behaviours, chosen by whether the branch already has a PR** (`gh pr view` resolves one):
+
+- **No PR — the first push.** A push to a shared remote is one of the four hard stops. ASK, and WAIT.
+- **A PR exists.** The push was decided when that PR was opened. Push without asking, and say the
+  existing PR was updated.
 
 ```
 IF THE CURRENT BRANCH IS main:
@@ -562,31 +570,41 @@ IF THE CURRENT BRANCH IS main:
   ⛔ DO NOT: Offer the question at all
   ✅ DO: Report that the work is committed on main and needs a branch before it can be published
 
-IF THE USER HAS NOT ANSWERED:
+IF THE BRANCH HAS NO PR AND THE USER HAS NOT ANSWERED:
   ⛔ DO NOT USE: Bash to run git push
   ⛔ DO NOT USE: Bash to run gh pr create
   ✅ DO: Ask, and WAIT
 ```
 
-**The `main` case is not theoretical.** This command never creates a branch — STEP 1.3 only
+**The `main` case is not theoretical.** This skill never creates a branch — STEP 1.3 only
 recommends one — so a direct build can be sitting on `main`, and offering to push there would put
 work past every gate `/add-framework--done` exists to enforce.
 
-Ask whether to push the branch and open the PR. Then:
+On the first push, ask whether to push the branch and open the PR. Then:
 
 | Answer | Do |
 |---|---|
 | Yes | `git push -u origin <branch>`, then `gh pr create`. Report the PR URL |
 | No | Say the work is committed locally and that `/add-framework--done` pushes and opens the PR when it runs |
 
-**Skip the question when a PR already exists for this branch** — `gh pr view` resolves one. Asking
-again on the second build of the same branch is noise. Push, and say the existing PR was updated.
+**Why the second behaviour exists:** asking again on the second build of the same branch is noise —
+the hard stop was taken, and answered, when the PR was opened.
 
 **STEP 8 ran first, and that order is not cosmetic.** The PR must carry the synced `CLAUDE.md`, or the
 diff a human reviews is not the diff that merges.
 
 ⛔ **This step never merges.** It opens a PR and stops. The merge belongs to `/add-framework--done`,
 behind its own gates.
+
+**Stop kind — decided by whether a PR exists, not by the marker:**
+
+| State | Kind | Do, on either delivery mode |
+|---|---|---|
+| The branch has no PR — the first push | **deciding** | Ask and WAIT. On `Delivery: automatic` this question is the **terminus**: the automatic path ends here |
+| A PR already exists for the branch | **confirming** | Push and report the existing PR updated — the push was decided when that PR was opened |
+
+⛔ **Neither state hands off to `/add-framework--done`.** Whatever the answer, the build ends at STEP 10.
+The close-out runs only when the operator invokes it.
 
 ---
 

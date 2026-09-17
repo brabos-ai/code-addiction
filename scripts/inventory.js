@@ -76,7 +76,7 @@ const GROUPS = {
 
 /**
  * Sorted by NAME, never by filename. Sorting `commands/*.md` puts
- * `add.plan-to-ready.md` before `add.plan.md`, because '-' (45) sorts before
+ * `add.plan-to-ready.md` (a command since removed) before `add.plan.md`, because '-' (45) sorts before
  * '.' (46) and the extension shifts the comparison. That reads as a mistake
  * and moves the diff for no reason.
  */

@@ -551,6 +551,11 @@ const USES_EDGE_TYPES = {
   skill: 'USES_SKILL',
   agent: 'DISPATCHES',
   command: 'HANDS_OFF_TO',
+  // The next stage when that stage is not a command. `command:` resolves to a
+  // command node only, so the internal pipeline — four skills handing off to
+  // one another — had no way to say which out-edge is the next stage. The
+  // target resolves by its own kind, with the sigils `mention:` already uses.
+  handoff: 'HANDS_OFF_TO',
   script: 'RUNS_SCRIPT',
   // An acknowledged reference that is NOT a dependency. A name-matching sniffer
   // cannot tell "uses X" from "explicitly does not use X" — add-health-check's
@@ -651,7 +656,7 @@ function fencedSpans(raw) {
  * gate unable to tell a missing file from a missing skill.
  */
 function usesTargetId(kind, target) {
-  if (kind === 'mention') {
+  if (kind === 'mention' || kind === 'handoff') {
     // Reuses sigils the framework's prose already uses, so a mention is written
     // the way the thing is written where it was mentioned:
     //   @reviewer-agent -> agent   /add.plan -> command   *.sh -> script
@@ -977,6 +982,11 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   // otherwise would fire the unregistered gate on 17 correct files.
   const claudeDir = path.join(internalDir, '.claude');
 
+  // The four pipeline stages — add-framework--brainstorm, --plan, --build and
+  // --done — are SKILLS, not commands: they hand off to one another, and a
+  // skill is what the agent loads to continue. The skills walk below finds
+  // them with no special case. This walk keeps the internal commands that are
+  // not pipeline stages.
   for (const f of walkFiles(path.join(claudeDir, 'commands'), '.md').sort()) {
     if (NON_ARTEFACT_FILE.test(path.basename(f))) continue;
     push('command', 'internal', path.basename(f, '.md'), f, true, []);
@@ -1259,14 +1269,21 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
   //    And it removes fenced blocks, which DO ship — so a command name in an
   //    example invocation, the likeliest place for one, passed clean. The
   //    shipped text is what `stripHtmlComments` leaves, so that is what is read.
+  //
+  // It matches the NAMESPACE, not one artefact kind. Four of its members —
+  // the pipeline stages brainstorm, plan, build and done — are skills, the
+  // rest commands, and the regex reaches both because it never resolves a
+  // node. The double dash is load-bearing: the stage skills keep it so this
+  // match still reaches them, and a single-dash rename would take them out
+  // of the gate in silence.
   const INTERNAL_COMMAND_NS = /(?<![\w.-])add-framework--[a-z0-9-]+/gi;
   const flagCrossLayer = (path_, text) => {
     for (const name of new Set(text.match(INTERNAL_COMMAND_NS) ?? [])) {
       failures.push(
-        'artefact-graph: internal command named by a distributed artefact\n' +
+        'artefact-graph: internal command or skill named by a distributed artefact\n' +
           `  ${path_}\n` +
-          `  names ${name}, which is in the internal command namespace and ships to nobody\n` +
-          '  a user installing this artefact has no such command. Describe the\n' +
+          `  names ${name}, which is in the internal add-framework-- namespace and ships to nobody\n` +
+          '  a user installing this artefact has no such command or skill. Describe the\n' +
           '  distinction without the name, or name the product equivalent.\n' +
           '  A source-only note is exempt: HTML comments are stripped at build.',
       );
