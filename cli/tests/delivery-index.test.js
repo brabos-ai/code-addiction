@@ -131,8 +131,10 @@ describe('L2 — build integrity', () => {
   // 39 + 1 (docs-pruning) + 5 for feature:qa-pipeline on add.review, which
   // moved the QA judgement steps under the feature
   // (plan 2026-09-13T153219, F15/F16/F20b).
-  it('L2.3: the injection-point total is the absolute baseline 39 + 1 + 5', () => {
-    expect(SIDECAR().points).toHaveLength(45);
+  // + 1 for plugin:gitnexus:graph-build on add.build
+  // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
+  it('L2.3: the injection-point total is the absolute baseline 39 + 1 + 5 + 1', () => {
+    expect(SIDECAR().points).toHaveLength(46);
   });
 
   it('L2.3: add.done carries exactly two injection points — gitnexus and docs-pruning', () => {

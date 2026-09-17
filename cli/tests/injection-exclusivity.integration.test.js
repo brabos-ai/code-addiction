@@ -316,13 +316,15 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
   // QA judgement steps under the feature (plan 2026-09-13T153219, F15/F16/F20b).
   // The literal is the guard — it forces a deliberate update whenever the
   // substitution set changes, so it is bumped rather than computed.
-  it('sidecar, fragments, and catalog declare the same 45 substitutions', () => {
+  // 45 -> 46: plugin:gitnexus adds graph-build on add.build, whose main session called the graph
+  // with no guidance at all.
+  it('sidecar, fragments, and catalog declare the same 46 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(45);
-    expect(all).toHaveLength(45);
+    expect(points).toHaveLength(46);
+    expect(all).toHaveLength(46);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -428,10 +430,10 @@ describe('plugin substitution on real built files', () => {
 describe('combined substitution and sibling isolation', () => {
   useFixture();
 
-  it('all 45 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('all 46 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(45);
+    expect(features.length + plugins.length).toBe(46);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);

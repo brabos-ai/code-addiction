@@ -8,6 +8,8 @@
 - skill: add-investigation
 - skill: add-knowledge-discovery
 - skill: add-ux-design
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: architecture-agent
 - agent: conformance-agent
 - agent: failure-analysis-agent
@@ -219,6 +221,8 @@ From the user's bug report plus `RECENT_CHANGELOGS` from STEP 1, write a short b
 - **The ranked index results from 4.1**, each with its id, name and status
 
 ### 4.3 Dispatch parallel
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 **DISPATCH AGENT: @feature-history-agent**
 Prompt: "Find existing features whose docs (about.md, changelog.md, plan.md) plausibly relate to this bug. Brief: <brief>. Candidate ids already ranked by the delivery index, each with its status: <index results, or 'none — index absent or no match'>. Start from those, then scan `docs/features/`, score relevance, deep-read top-10. Return structured Feature History Report."

@@ -6,6 +6,8 @@
 - skill: add-final-report
 - skill: add-health-check
 - skill: add-investigation
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - command: /add.new
 -->
 
@@ -77,6 +79,8 @@ ALWAYS:
 ## Agent Dispatch Rules & Registry
 
 **Dispatch rules:** When instructed to DISPATCH AGENTS, read the **Capability** and **Complexity** from the agent table below. Choose the best available agent/task mechanism in your engine that satisfies the capability. If your engine supports parallel dispatch, dispatch all agents in the phase simultaneously. Verify outputs exist before proceeding past WAIT gates.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 **Agent Registry:**
 

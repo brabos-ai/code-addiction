@@ -6,11 +6,15 @@
 
 **Before classifying apps, read the real topology from the graph:** load skill `add-gitnexus` and use community detection for functional areas, `route_map`/`tool_map` for entry points, and module/dependency edges for app boundaries — classify against actual structure, not only folder names and `package.json` deps. In a monorepo, `group_*` exposes cross-app dependencies the file tree hides. If the graph is empty or unindexed, say so explicitly and fall back to deps/folder signals — do not block.
 
+**Repo first:** if more than one repository is indexed, call `list_repos` once, pick this project's entry, and pass it as `repo` on every GitNexus call — a call without `repo` fails.
+
 <!-- /section:graph-classify -->
 
 <!-- section:graph-dispatch-common -->
 
 **Every analyzer dispatched below MUST run graph-first.** Append to each analyzer's dispatch prompt: load skill `add-gitnexus`, and base every structural claim (callers, dead-code, coupling, flows) on the graph — grep alone misses DI-by-token, barrels/reexports, dynamic refs, and inheritance. Each analyzer's specific graph focus is in its own sub-section below. The graph grounds analysis and evidence gathering, but structural facts stay OUT of the written wiki page (§4 no-structural-facts rule) — cite the graph as *how* a claim was verified, never as content to enumerate (no caller lists, no import inventories). If the graph is empty or unindexed, the analyzer must say so and fall back to grep — do not block.
+
+**Repo first, in every analyzer prompt too:** if more than one repository is indexed, call `list_repos` once, pick this project's entry, and pass its name to each analyzer to use as `repo` on every GitNexus call — a call without `repo` fails.
 
 <!-- /section:graph-dispatch-common -->
 

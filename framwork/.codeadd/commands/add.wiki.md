@@ -7,6 +7,8 @@
 - skill: add-ecosystem
 - skill: add-final-report
 - skill: add-wiki-maintenance
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 -->
 
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
@@ -118,6 +120,8 @@ When this command instructs you to DISPATCH AGENT:
 5. Verify output exists before proceeding past any WAIT or GATE CHECK
 
 You are the coordinator. You know your engine's capabilities. Map the intent to the best available mechanism.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 ---
 

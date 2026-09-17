@@ -6,4 +6,6 @@
 
 **Trace the component graph before building or changing UI:** load skill `add-gitnexus` (resolving the intent there, frontend-scoped: **how do render and data flow actually move through these components**) and follow render/data flow — which components compose, where hooks and state originate, what feeds props — so reuse and changes follow the real structure. Structural/relational → graph; literal text → grep. Claiming a component or hook is unused or enumerating its consumers is structural — grep alone misses barrels/reexports, dynamic imports, and indirect composition, so it is not sufficient evidence of impact. If the graph returns nothing or is unindexed, say so and fall back to grep — do not block.
 
+**Repo first:** if more than one repository is indexed, call `list_repos` once, pick this project's entry, and pass it as `repo` on every GitNexus call — a call without `repo` fails.
+
 <!-- /section:graph -->

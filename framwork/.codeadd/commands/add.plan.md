@@ -17,6 +17,8 @@
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
 - skill: add-ux-design/critique-rubric.md
+- skill: add-subagent-driven-development
+- skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: architecture-agent
 - agent: backend-agent
 - agent: consistency-agent
@@ -124,6 +126,8 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 ## STEP 2: Load Recent Context (INTELLIGENT)
 
 **Cache Detection:** IF `docs/features/${FEATURE_ID}/past-features.md` exists, read it (cache). IF cache + discovery.md has section "Related Features", use as context and skip agent dispatch. Otherwise, dispatch Past Features Discovery Agent.
+
+**Before any dispatch in this command:** read `{{skill:add-subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 **Agent Dispatch (if needed):**
 - **Agent:** @discovery-agent

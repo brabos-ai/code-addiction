@@ -211,7 +211,7 @@ Enable/disable via `codeadd features enable|disable|list <name>` — fragments a
 
 | Plugin | Type | Description | Injects into | Plugin skill |
 |--------|------|-------------|--------------|--------------|
-| gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add.new, add.plan, add.diagnose, add.hotfix, add.done, add.wiki + 9 agents (discovery, architecture, system-design, backend, database, frontend, ux, ux-flow, reviewer) | add-gitnexus |
+| gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add.new, add.plan, add.build, add.diagnose, add.hotfix, add.done, add.wiki + 9 agents (discovery, architecture, system-design, backend, database, frontend, ux, ux-flow, reviewer) | add-gitnexus |
 | playwright | mcp | Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP | add.review (command), qa-agent (agent) | — (add-qa is now default) |
 
 Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are disabled by default and require the external tool to be installed.
