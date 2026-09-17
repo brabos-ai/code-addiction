@@ -4,6 +4,7 @@
 - skill: add-delivery-mode
 - mention: /add.plan
 - mention: @fix-agent
+- mention: add-tasks-checklist
 -->
 
 <!-- section:tasks-flow -->
@@ -23,6 +24,10 @@ OVERRIDE execution with TDD ordering:
 <!-- section:gate -->
 
 **⛔ TDD GATE:** After implementing code tasks (database/backend/frontend), run existing test files. If tests fail, iterate on the implementation — do NOT modify test files to make them pass.
+
+**Tier-aware:** run the task's own scoped `Verify:` line when it is scoped to a single CI-tier test
+file (`add-tasks-checklist`'s tier rule) — never the project's whole CI-tier suite inside this
+session. A local-tier task's existing test files still run wholesale, unchanged from today.
 <!-- /section:gate -->
 
 <!-- section:verify-red -->
@@ -40,7 +45,9 @@ For each test task, before writing ANY production code:
 
 ## TDD AWARENESS (PRD0001)
 IF test files exist for your area (service=test tasks already implemented):
-  - After implementing each code task, RUN existing tests
+  - After implementing each code task, RUN existing tests — the current task's own scoped `Verify:`
+    line when it names a CI-tier file, the area's local-tier tests otherwise. Never the project's
+    whole CI-tier suite inside this session.
   - Tests are the SUCCESS GATE — not just build
   - If tests fail: fix your IMPLEMENTATION (not the tests)
   - Iterate until tests pass (max 3 attempts per task)
@@ -52,7 +59,8 @@ IF test files exist for your area (service=test tasks already implemented):
 
 ```
 IF test files detected (*.spec.ts, *.test.ts from test service tasks):
-  1. RUN test suite (TEST_COMMAND from project)
+  1. RUN test suite — TEST_COMMAND from project, for local-tier tests. For a task whose Verify: line
+     is scoped to a single CI-tier file, run only that line here, never TEST_COMMAND.
   2. IF tests pass: proceed to STEP 15
   3. IF tests fail:
      a. Analyze failures (which contract tests fail)
