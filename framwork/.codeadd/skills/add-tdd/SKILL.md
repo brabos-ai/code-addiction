@@ -24,7 +24,9 @@ If you wrote implementation before its test: delete it, start over from RED. "Ke
 ### GREEN — minimal code to pass
 1. Write the **smallest** code that makes the test pass. No cleverness, no optimization, no extra features.
 2. Run the test. It **MUST pass**.
-3. Run the existing suite. No regressions.
+3. Run the existing suite. No regressions. **CI-tier is CI's job** — re-run only the file(s) the
+   current task's `Verify:` line names, never the whole CI-tier suite inside this cycle. Local-tier
+   still runs in full, as above. Inert wherever no `Verify:` line exists.
 
 ### REFACTOR — only while GREEN
 1. Improve names, remove duplication, extract helpers.
