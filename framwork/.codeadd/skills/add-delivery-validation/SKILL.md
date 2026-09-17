@@ -7,7 +7,6 @@ description: 'Product validation: Requirements 100% implemented, prerequisites e
 
 <!-- uses:
 - command: /add.plan
-- command: /add.plan-to-ready
 - command: /add.review
 -->
 
@@ -62,7 +61,7 @@ cat docs/features/${FEATURE_ID}/tasks.md 2>/dev/null # Tick state (## Acceptance
 **Extract contracts from plan.md (prose) + tick state from tasks.md → ## Acceptance Checklist:**
 
 From `plan.md` (prose): routes, services, DTOs, guards, migrations, queues — as defined in the plan.
-From `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build` validators (or by `/add.plan-to-ready` when it holds the coordinator role).
+From `tasks.md → ## Acceptance Checklist`: a checklist where each item ends with `(RFNN/RNNN)` reference and carries `[ ]`/`[x]`/`[!]` tick state set by `add.build` validators — `add.build` is the sole coordinator that merges and writes these ticks.
 
 Map each `## Acceptance Checklist` item to the corresponding RF/RN from `about.md`. Use `## Requirements Coverage` from `tasks.md` as a derived index — every RF/RN must have coverage by ≥1 item from `## Acceptance Checklist`.
 

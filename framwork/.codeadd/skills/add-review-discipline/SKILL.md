@@ -16,8 +16,8 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 - command: /add.build
 - command: /add.new
 - command: /add.plan
-- command: /add.plan-to-ready
 - mention: add-code-review
+- mention: add-delivery-mode
 - mention: converge-gates.sh
 - mention: qa-evidence.sh
 -->
@@ -102,7 +102,7 @@ read.
 
 ## A Readback Divergence, by Site
 
-Three sites, three behaviours, one reason each. **All three are correct.** Left
+Two sites, two behaviours, one reason each. **Both are correct.** Left
 unwritten, the next caller copies whichever site it happens to read.
 
 ⛔ **`/add.new` and `/add.brainstorm` are absent from this table because neither
@@ -112,8 +112,7 @@ instead of twice.
 
 | Site | On divergence | Why |
 |---|---|---|
-| `/add.plan` | Apply the fix, re-run the gate, then **present the divergence and STOP** | A human is in the session and the document is still being written. Stopping is cheap and the answer is authoritative |
-| `/add.plan-to-ready` | Apply the fix, re-run the gate, **re-dispatch once, record, advance.** Never stop | Autonomous by contract. It compares against its Decision Log, because comparing a report against its own source is circular |
+| `/add.plan` | Apply the fix, re-run the gate, then **present the divergence and STOP** | A human is in the session and the document is still being written. Stopping is cheap and the answer is authoritative — on an automatic delivery this is still a deciding stop, per `add-delivery-mode` |
 | `/add.build` | Record a **ruling** naming the divergence and which reading was built. Continue | Execution is starting on a plan the user already approved. A stop costs a command round-trip on a decision already taken |
 
 ⛔ **A divergent restatement is a defect in the DOCUMENT, never in the reader.**

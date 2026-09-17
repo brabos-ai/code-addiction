@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-delivery-mode
 - skill: add-feature-specification
 - skill: add-final-report
 - skill: add-id-convention
@@ -62,6 +63,16 @@ IF TWO OR MORE INTENT FILES MATCH:
   ✅ DO: Print the candidates and ask — another exploration's decisions written into
          this feature's about.md is worse than one question
 ```
+
+**Read two things from it before anything else:**
+
+| Field | Carries | Absent |
+|---|---|---|
+| `delivery:` | `confirm` or `automatic` — how every stop below behaves, per `{{skill:add-delivery-mode/SKILL.md}}` | `confirm` |
+| `## Objective` | The outcome this feature is for. `add-feature-specification` copies it into `about.md`, and STEP 5 checks every subfeature against it | The skill drafts one with the user |
+
+**Stop kind — the two-match STOP above is deciding, in every state.** Nothing approved which exploration
+an ambiguous argument meant.
 
 **An intent file is consumed once.** Record its path in `about.md` when STEP 6 writes the document.
 Continue Mode reads `about.md` from then on, which is the source of truth from that point — the intent
@@ -214,8 +225,19 @@ IF A DECISION IS ALREADY UNDER `## Decided` IN THE INTENT FILE:
 | Lists items | Those questions, one per turn, then the confirmation screen |
 | Absent, empty, or no intent file at all | The skill’s full question set, then the confirmation screen |
 
-**STOP AND WAIT after the confirmation screen, on every row.** The user corrects an extraction error or
-waves it through. **The approval never scales away — only the interrogation does.**
+**STOP AND WAIT after the confirmation screen** — except where the table below says the stop passes.
+The user corrects an extraction error or waves it through. **The approval never scales away — only the
+interrogation does.**
+
+**Stop kind — decided by what is left open:**
+
+| State | Kind | On `delivery: automatic` |
+|---|---|---|
+| `## Open` reads `None` | **confirming** | Print the confirmation screen in full and continue to STEP 5 — the brainstorm's approval already covered it |
+| `## Open` lists items | **deciding** | Ask them and wait — no approval answered them |
+| Absent, empty, or no intent file | **deciding** | Wait — there is no approval to have covered anything |
+
+On `delivery: confirm` every row waits.
 
 ⛔ **A confirmation screen that asks questions is a questionnaire wearing a different name.** It
 restates what is about to be written and invites a correction. It does not re-open settled decisions.
@@ -232,12 +254,16 @@ test already put anything larger on the full path.
 **Independent flow** = testable in isolation, distinct objective, could be own PR. Keywords: "will also", "and then", "another flow".
 
 **IF N = 1:** Skip decomposition, continue to STEP 6.
-**IF N >= 2 [STOP]:** Propose decomposition:
+**IF N >= 2 [STOP]:** Propose decomposition. **Each subfeature states, in one line, how it serves the
+feature's `## Objective`** — naming a PART of it, never the whole objective restated:
+
 ```
 Identified [N] independent flows:
 
 SF01: [name] — [objective]
+      Serves the feature objective by: [the part of it this subfeature advances]
 SF02: [name] — [objective]
+      Serves the feature objective by: [the part of it this subfeature advances]
 
 Suggested order:
 1. SF01 (no deps)
@@ -246,11 +272,43 @@ Suggested order:
 Decompose as subfeatures? (yes/no)
 ```
 
+```
+IF A SUBFEATURE CANNOT WRITE ITS "SERVES THE FEATURE OBJECTIVE BY" LINE:
+  ⛔ DO NOT: Propose it as a member of this epic
+  ⛔ DO NOT: Pick between the two readings below on the user's behalf
+  ✅ DO: STOP, name the subfeature, and present both readings
+```
+
+| Reading | What it means | What happens next |
+|---|---|---|
+| The subfeature belongs elsewhere | It is real work, on a different objective | It leaves this epic and becomes its own feature, through its own `/add.brainstorm` or `/add.new` |
+| The feature's objective is too narrow | The subfeature serves the real goal; the objective was written smaller than it | `about.md`'s `## Objective` is corrected first, and every other subfeature is checked again against it |
+
+**Both readings can be true at once, which is why neither is assumed.** Nothing downstream recovers a
+subfeature that serves nothing: the plan will carry it, the reviewer will pass it, and the build will
+deliver it.
+
+**Stop kind — the decomposition proposal and this membership STOP are both deciding, in every state.**
+Whether to split the feature, and whether a subfeature belongs, were never part of the brainstorm's
+approval.
+
 **IF epic confirmed:**
 1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add-doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP 1): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
 2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
-3. Create compact `about.md` per subfeature
-4. Continue to STEP 6
+3. Create a compact `about.md` per subfeature through `{{skill:add-feature-specification/SKILL.md}}` — hand it the feature's `## Objective` and that subfeature's "serves the feature objective by" line; the skill writes the objective, `## Relations` (`part_of` the epic) and the rest
+4. **On `delivery: automatic` only — ask once how the epic runs** (deciding, in every state), with the recommendation marked:
+
+   | Option | What happens |
+   |---|---|
+   | **Continue automatic** (recommended when the subfeatures are independent) | Every pending subfeature runs in dependency order, each through plan, build and review. The PR question comes once, at the end |
+   | **Semi-automatic** (recommended when a later subfeature depends on what an earlier one decides) | Each subfeature runs unattended, then the delivery stops before the next one starts, showing what was delivered and what comes next |
+
+   Write the answer as one line under `epic.md`'s `## Notes`: `delivery: automatic` or
+   `delivery: semi-automatic`. `{{skill:add-delivery-mode/SKILL.md}}` owns what each value does, and
+   `/add.plan` and `/add.build` read that line rather than asking again.
+
+   On `delivery: confirm`, ask nothing and write no line — the epic runs one command at a time.
+5. Continue to STEP 6
 
 **IF single feature:** Continue to STEP 6.
 
@@ -288,9 +346,8 @@ prerequisites, and the intent file’s `## Prior art` carries whatever the brain
 `## Observations` and `tags:` from them.** This sub-step routes the material; it discovers nothing and
 asks nothing.
 
-⛔ **DO NOT write those sections here.** The skill is the single writer of `about.md`, and it is
-reached from two entry points — a rule kept in this command applies on one of them and not the other,
-which produces two different documents from one schema.
+⛔ **DO NOT write those sections here.** The skill is the single writer of `about.md` — a rule kept in
+this command drifts from the schema the skill writes against, and produces two readings of one document.
 
 **Dispatch Agent: Codebase Analysis**
 - **Input:** Feature name, about.md path
@@ -322,6 +379,9 @@ surfaces at `/add.plan`, in the verdict on the plan derived from it.
 
 1. **DISPATCH** `@plan-reviewer-agent` in fresh context (does NOT see this conversation) with `path` = about.md’s path and `kind: feature`. **Fallback:** if the provider has no subagent dispatch, apply `{{skill:add-plan-review/SKILL.md}}` inline, explicitly forgetting this conversation.
 2. **Act on the verdict.** **LOAD `{{skill:add-review-discipline/SKILL.md}}`.** Its **Acting on the Verdict** table governs this dispatch. Read it there. Do NOT mark `about.md` delivered while a blocker stands.
+
+**Stop kind — a `blocked` verdict is deciding in every state.** Its blockers are decisions nobody made,
+so an automatic delivery waits on them exactly as a confirmed one does.
 
 ⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the sites that dispatch a readback, and this command is not one of them any more.
 
@@ -357,6 +417,16 @@ user, not with what the document contains.
 
 Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside `/add.plan`’s own UX step when the feature touches UI), `/add.build` for implementation.
 
+**Stop kind — confirming.** The report describes work the brainstorm's approval already covered.
+
+| `delivery:` | Do |
+|---|---|
+| `confirm`, or absent | Print the report and the suggestion, and STOP. The user runs the next command |
+| `automatic` | Print the report and the line `(delivering automatically — continuing to /add.plan.)`, then follow {{cmd:add.plan}} with this feature's id, from its first step, as `add-delivery-mode` describes |
+
+⛔ **On `automatic` the next command is always `/add.plan`, never `/add.build`.** The plan is where the
+objective reaches the reviewer and where an epic's consistency check runs.
+
 ---
 
 ## Execution Rules
@@ -366,6 +436,8 @@ Then, after the seven blocks, summarize the created artifacts and suggest the ne
 - Measure ceremony from `path:` or the three-fact test, never from keywords in the request
 - Run the INDEX and GRAPH queries on both paths — the light path skips agents, not the cheap checks
 - Record the consumed intent file path in `about.md`
+- Read `delivery:` from the intent file, and treat an absent one as `confirm`
+- Check every proposed subfeature against the feature's objective before proposing the split
 
 **NEVER:**
 - Ask again about anything under `## Decided` in the intent file
@@ -375,3 +447,4 @@ Then, after the seven blocks, summarize the created artifacts and suggest the ne
 - Exclude layers that make the feature unusable
 - Dispatch a readback — `/add.plan` owns the only one in this flow
 - Let the reviewer see this conversation (fresh context only)
+- Pass a deciding stop on `automatic` — only a confirming stop passes

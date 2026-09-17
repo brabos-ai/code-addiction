@@ -29,7 +29,7 @@ Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/
 
 ## When NOT to Use
 
-- `add.build`, `add.plan-to-ready` — these read `{{addpath:wiki/index.md}}` + the already-known `domains/<area>.md` directly (pages were selected upstream by `add.plan`); do not load this full skill, it duplicates SELECT work already done
+- `add.build` — reads `{{addpath:wiki/index.md}}` + the already-known `domains/<area>.md` directly (pages were selected upstream by `add.plan`); do not load this full skill, it duplicates SELECT work already done
 - Bug-cause investigation in `add.hotfix` STEPs 4-6 — diagnosis stays history/code-driven and **wiki-blind**; the wiki portion of this skill enters only at fix time. **The INDEX and GRAPH steps are exempt and do enter, INDEX with `--no-verify`.** The rule guards diagnosis against narrative documentation that can lie about the code; neither is narrative about the code — the index records what shipped, in anchored items, and the graph records what delivered documents declare about each other — so withholding them inverts the rule's purpose. **Both are used at that step to RANK what the history agents look at, never to conclude anything about current behaviour**, which is the same use the index already had there. `--no-verify` is what keeps the exemption honest: a verifying read greps source, and that command forbids reading code before its history agents are dispatched. *(The rationale is inferred: no source states why hotfix is wiki-blind. If its author ever writes the reason down, revisit this exemption.)*
 - No wiki exists → this skill still runs (PRESENCE handles absence); do not skip the command's context step waiting for a wiki
 - No index exists → same; INDEX no-ops with a note

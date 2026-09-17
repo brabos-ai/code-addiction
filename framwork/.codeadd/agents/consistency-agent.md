@@ -1,6 +1,6 @@
 ---
 name: consistency-agent
-description: Read-only judge that compares contracts declared across an epic's subfeatures — plan.md, about.md and design.md, document against document, never code. Checks exactly five dimensions (API contracts, data schema, requirements, design tokens when HAS_DESIGN, auth/permission model); anything outside them is informational and never blocks. Runs a FULL pass after each subfeature's plan is consolidated, and a DELTA pass at end-of-epic. Dispatched by /add.plan-to-ready. Never edits — code-level review stays @reviewer-agent's job.
+description: Read-only judge that compares contracts declared across an epic's subfeatures — plan.md, about.md and design.md, document against document, never code. Checks exactly five dimensions (API contracts, data schema, requirements, design tokens when HAS_DESIGN, auth/permission model); anything outside them is informational and never blocks. Runs a FULL pass after each subfeature's plan is consolidated, and a DELTA pass at end-of-epic. Dispatched by /add.plan (FULL) and /add.build (DELTA). Never edits — code-level review stays @reviewer-agent's job.
 model: sonnet
 readonly: true
 disallowedTools: Write, Edit, NotebookEdit
@@ -13,6 +13,7 @@ skills:
 - agent: qa-agent
 - agent: reviewer-agent
 - agent: ux-agent
+- command: /add.build
 - command: /add.plan
 - command: /add.review
 -->

@@ -895,7 +895,10 @@ describe('node inventory snapshot', () => {
       // command 22 -> 18: add-framework--brainstorm, --plan, --build and --done
       // became skills so each pipeline stage can load the next.
       // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
-      command: 18,
+      // command 18 -> 17: add.plan-to-ready deleted. The automatic delivery
+      // chain replaced its bounded loop, and add.build took its checkpoint.
+      // (plan 2026-09-16T205633-PLAN--product-pipeline-parity, F11.)
+      command: 17,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
@@ -919,7 +922,9 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
       // skill 53 -> 57: the same four stages, counted here now.
       // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
-      skill: 57,
+      // skill 57 -> 58: add-delivery-mode, the product owner of the delivery
+      // mode. (plan 2026-09-16T205633-PLAN--product-pipeline-parity, F1.)
+      skill: 58,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the

@@ -10,7 +10,6 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - mention: @architecture-agent
 - mention: add-feature-specification
 - mention: /add.plan
-- command: /add.plan-to-ready
 - command: /add.wiki
 -->
 
@@ -24,7 +23,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - Per-area validator ticking sections after implementation
 - Deciding whether a section/item gets `[x]` or `[!]`
 - Reading tick state to gate review or delivery
-- A dispatching command merging multi-area validator reports — `add.build` or `/add.plan-to-ready`
+- A dispatching command merging multi-area validator reports — `add.build`, the sole coordinator
 
 ## When NOT to Use
 
@@ -170,20 +169,20 @@ A change is **trivial** (does NOT count) when it is exclusively:
 
 ## Tick Authority (who writes ticks)
 
-| Section | `add.build` | `add.plan-to-ready` |
-|---------|-------------|-----------------|
-| §1 Requirements Coverage | derived after validator writes | coordinator recomputes after batch write |
-| §2 TDD | per-area validator | coordinator merges per-area reports |
-| §3 Execution | per-area validator | coordinator merges per-area reports |
-| §4 Acceptance Checklist | per-area validator | coordinator merges per-area reports |
-| §5 Validation Gates | post-validator final step (must run real commands) | coordinator final step (must run real commands) |
-| `[!]` setting | per-area validator | coordinator (from validator reports) |
+| Section | `add.build` |
+|---------|-------------|
+| §1 Requirements Coverage | derived after validator writes |
+| §2 TDD | per-area validator |
+| §3 Execution | per-area validator |
+| §4 Acceptance Checklist | per-area validator |
+| §5 Validation Gates | post-validator final step (must run real commands) |
+| `[!]` setting | per-area validator |
 
-In `/add.plan-to-ready`, **only the coordinator writes** to `tasks.md`. Area validators emit a structured report and the coordinator performs a single merge-write per batch — this avoids parallel-write contention without locks.
+`add.build` is the sole coordinator for `tasks.md`: **only it writes**. Area validators emit a structured report and it performs a single merge-write per batch — this avoids parallel-write contention without locks.
 
 ## Validator Report Shape
 
-Per-area validators MUST return a JSON-shaped report. **The dispatching command owns the `tasks.md` write** — `add.build` and `/add.plan-to-ready` alike:
+Per-area validators MUST return a JSON-shaped report. **The dispatching command owns the `tasks.md` write** — `add.build`, the sole coordinator:
 
 ```json
 {
@@ -257,8 +256,8 @@ Used at the start of `add.build` TASKS MODE (and any consumer that re-enters a f
 
 ## Tick Application Procedure (per area validator)
 
-Used by the per-area validator subagent under both `add.build` and `/add.plan-to-ready`. **The
-validator is read-only in both: it emits a tick report and the dispatching command writes `tasks.md`
+Used by the per-area validator subagent under `add.build`. **The
+validator is read-only: it emits a tick report and the dispatching command writes `tasks.md`
 once.** Follow exactly:
 
 1. **Inspect diff:** run `git diff` against the feature branch base. This is the source of truth for what changed — NOT any FILES_CREATED/FILES_MODIFIED list, which can lie.
@@ -268,12 +267,12 @@ once.** Follow exactly:
    - §4 Acceptance Checklist → items whose contracts (from `plan.md` prose) belong to the area
 3. **Apply tick rules** per §Section Rules above (TDD, Execution, Acceptance).
 4. **Route** divergent items (wrong status code, missing field, etc.) as rows for the correction agent; tick them `[!]` with the reason. ⛔ You do not fix them yourself — you are read-only.
-5. **Output:** emit the JSON validator report (see "Validator Report Shape"). The dispatching command — `add.build` or `/add.plan-to-ready` — merges every area report and writes `tasks.md`.
+5. **Output:** emit the JSON validator report (see "Validator Report Shape"). The dispatching command — `add.build` — merges every area report and writes `tasks.md`.
 6. **Set** `SPEC_STATUS = INCOMPLETE` if any §3 or §4 item for this area is `[!]` or `[ ]`.
 
 ## Coordinator Merge Procedure
 
-Used by the dispatching command after collecting all per-area validator reports. That command is the SOLE writer of `tasks.md`, under `add.build` and `/add.plan-to-ready` alike.
+Used by the dispatching command after collecting all per-area validator reports. `add.build` is the SOLE writer of `tasks.md`.
 
 1. **Collect** the JSON tick report from every area validator.
 2. **Merge** ticks across areas (no conflicts expected — areas don't overlap on §3 tasks; if conflict, last-writer-wins is acceptable since both must agree on diff state).
@@ -282,7 +281,7 @@ Used by the dispatching command after collecting all per-area validator reports.
 
 ## Validation Gates Procedure (end of build / loop / review)
 
-Used by `add.build` (or the `/add.plan-to-ready` coordinator, or `add.review`) AFTER all area validators complete. This is where `## Validation Gates` items get ticked. **Self-attestation is forbidden.** Every tick must correspond to an actual command invocation captured in this session.
+Used by `add.build` (or `add.review`) AFTER all area validators complete. This is where `## Validation Gates` items get ticked. **Self-attestation is forbidden.** Every tick must correspond to an actual command invocation captured in this session.
 
 ### Pre-condition: migration nudge
 

@@ -1,6 +1,6 @@
 ---
 name: add-feature-specification
-description: Single writer of about.md — reads the brainstorm intent file, extracts closed decisions without asking, and asks only what is still open. Loaded by /add.new and by /add.brainstorm when it continues into authoring.
+description: Single writer of about.md — reads the brainstorm intent file, extracts the objective and the closed decisions without asking, and asks only what is still open. Loaded by /add.new.
 ---
 
 # Feature Specification
@@ -8,20 +8,20 @@ description: Single writer of about.md — reads the brainstorm intent file, ext
 <!-- uses:
 - skill: add-doc-schemas
 - command: /add.new
-- command: /add.brainstorm
+- mention: /add.brainstorm
 - mention: add-feature-discovery
 - mention: /add.plan
 -->
 
-**The single writer of `about.md`.** Two entry points load this skill and both produce the same
-document from the same rules: `/add.new`, and `/add.brainstorm` when the user accepts its offer to
-continue straight into authoring.
+**The single writer of `about.md`.** `/add.new` loads it, whether the user ran `/add.new` by hand or
+`/add.brainstorm` handed off to it on an automatic delivery. Both arrive at the same command, so both
+produce the same document from the same rules.
 
 **Principle:** Document WHAT and WHY, not HOW.
 
 ## When to Use
 
-- Writing or completing `about.md`, from either entry point.
+- Writing or completing `about.md`.
 - Requirements changed, or scope expanded, and the document must follow.
 
 ### When NOT to Use
@@ -52,6 +52,22 @@ Read `docs/features/[FEATURE_ID]/about.md`.
 the `brainstorm-intent` schema in `{{skill:add-doc-schemas/SKILL.md}}`.
 
 ### 2.1 Extract, do not re-ask
+
+**`## Objective` first.** Copy the intent file's `## Objective` into `about.md`'s `## Objective`
+verbatim, without asking. Every other section is written against it: a Scope item that cannot be traced
+to it is scope this feature is not for, and the plan reviewer fails the plan on exactly that.
+
+```
+IF THE INTENT FILE CARRIES `## Objective`:
+  ⛔ DO NOT: Re-word, narrow or "clarify" it on the way in — a better sentence is a different objective
+  ✅ DO: Copy it byte for byte
+
+IF THERE IS NO INTENT FILE, OR IT CARRIES NO `## Objective`:
+  ⛔ DO NOT: Ask the user "what is your objective?" and wait
+  ✅ DO: Draft one or two sentences from what the user already said — what will be true when this is
+         done that is not true today — ask them to correct it, and mark it
+         `[from conversation, no brainstorm]`
+```
 
 ```
 IF A DECISION APPEARS UNDER `## Decided` IN THE INTENT FILE:
@@ -130,13 +146,12 @@ under its Cache Documental rule — follow it rather than a copy kept here.
 
 ### 3.1 `## Relations`, `## Observations` and `tags:`
 
-**These are mandatory sections of the `feature` schema, so this skill writes them on BOTH entry
-points.** A rule kept in the calling command would apply on one path and not the other, and produce
-two different documents from one schema.
+**These are mandatory sections of the `feature` schema, so this skill writes them every time.** A rule
+kept in the calling command would drift from the schema this skill writes against.
 
 The calling command hands over whatever it has — a `past-features.md` Related Features table, a
 `RELATED_WORK` set, a `discovery.md` naming prerequisites, and the intent file’s `## Prior art`.
-Some entry points supply all four and some supply only the last. Write from what arrived.
+A light path may supply only the last. Write from what arrived.
 
 | Material in hand | Becomes |
 |---|---|
@@ -172,6 +187,7 @@ returns — see When NOT to Use.
 
 ## Checklist
 
+- [ ] `## Objective` copied verbatim from the intent file, or drafted, corrected and marked
 - [ ] Intent file read, and every `## Decided` item carried in without being re-asked
 - [ ] Only `## Open` items were put to the user
 - [ ] Every question asked carried a concrete recommendation

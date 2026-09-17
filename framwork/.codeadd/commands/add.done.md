@@ -12,7 +12,6 @@
 - mention: add-knowledge-discovery
 - command: /add.pull-request
 - command: /add.hotfix
-- command: /add.plan-to-ready
 - command: /add.review
 - command: /add.wiki
 - script: converge-gates.sh
@@ -928,7 +927,7 @@ bash .codeadd/scripts/done.sh --merge
 | `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add.pull-request}}`, then re-run |
 | `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP 9 and report the branch left behind, naming the check. This is not a failed delivery |
 
-On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.plan-to-ready` creates each one on the checkpoint commit at a subfeature boundary. `/add.build` never creates a checkpoint tag. It does commit — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag ownership is what `/add.build` lacks, not commits.
+On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add.build`'s Checkpoint Sequence creates each one on the checkpoint commit at a subfeature boundary, and only on an epic. `/add.build` commits per task otherwise — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag creation is scoped to that Checkpoint Sequence, not to every commit `/add.build` makes.
 
 ⛔ DO NOT USE Bash for git add/commit/push manually. **`done.sh` owns every
 LOCAL git write on both routes** — the PR route calls its `--commit-push` and

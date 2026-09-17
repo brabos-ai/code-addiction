@@ -14,7 +14,6 @@ description: Pre-delivery executability review for freshly generated about.md an
 - agent: reviewer-agent
 - command: /add.new
 - command: /add.plan
-- command: /add.plan-to-ready
 -->
 
 ## Overview
@@ -25,7 +24,6 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 
 - `plan-reviewer-agent` loads this skill as its rubric source
 - `/add.new` (STEP 8, full path only) and `/add.plan` (STEP 12) dispatch the agent, or apply this skill inline as a fallback when the provider does not support subagent dispatch
-- `/add.plan-to-ready`'s plan leg dispatches the agent directly with `kind: feature-plan` after consolidating a subfeature's `plan.md`
 
 ## When NOT to Use
 
@@ -40,7 +38,7 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 - `path` — file to review (required)
 - `kind` — `feature` | `feature-plan`
 
-## Dimensions (mandatory — skip none)
+## Dimensions (mandatory — all nine, skip none)
 
 | Dimension | Fail when |
 |-----------|-----------|
@@ -52,6 +50,9 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add.
 | Testability | No way to know the requirement is satisfied (acceptance signal, check, or observable outcome) |
 | Risks | A known-failure mode is unstated where the change is cross-cutting |
 | Gold-plating | Scope not backed by a validated decision or requirement already in the doc |
+| Objective fit | A scope item, task or requirement cannot be traced to the doc's `## Objective` — or the doc states no objective at all |
+
+⛔ **`Objective fit` is not `Gold-plating` under another name.** Gold-plating asks whether a decision was made; this asks what the decision was FOR. A document can be scoped cleanly, free of contradiction and fully testable — and still not be the work that was asked for.
 
 ## Kind-Specific Extras
 

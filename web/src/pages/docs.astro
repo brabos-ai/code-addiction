@@ -229,10 +229,6 @@ import "../styles/global.css";
                 <code class="text-accent font-mono text-sm">/add.build</code>
                 <p class="text-muted text-xs mt-0.5">Development Execution Specialist</p>
               </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add.plan-to-ready</code>
-                <p class="text-muted text-xs mt-0.5">Bounded convergence loop — plans, then loops build ⇄ review at most 3 times against the <code class="text-foreground">/add.done</code> gates evaluated in dry-run, dispatching named leaf agents at depth 1. Converges and returns control; the merge stays human</p>
-              </div>
             </div>
           </div>
 
@@ -385,14 +381,18 @@ import "../styles/global.css";
 
           <!-- Convergence -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Convergence Flow</h3>
-            <p class="text-muted text-xs mb-4">Bounded build ⇄ review loop — converges against the /add.done gates, then hands control back. The merge stays human</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Automatic Flow</h3>
+            <p class="text-muted text-xs mb-4">One approval at the brainstorm — each stage hands off to the next, build ⇄ review runs at most 2 rounds, and the build asks before opening the PR. The merge stays human</p>
             <div class="flex flex-wrap items-center gap-2">
+              <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add.brainstorm</span></span>
+              <span class="flow-arrow" style="color:#ffaa00">→</span>
               <span class="flow-node">New<br/><span class="flow-cmd">/add.new</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Plan to Ready<br/><span class="flow-cmd" style="color:#ffaa00">/add.plan-to-ready</span></span>
+              <span class="flow-node">Plan<br/><span class="flow-cmd">/add.plan</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node">Done<br/><span class="flow-cmd">/add.done</span></span>
+              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Build ⇄ Review<br/><span class="flow-cmd" style="color:#ffaa00">/add.build · /add.review</span></span>
+              <span class="flow-arrow" style="color:#ffaa00">→</span>
+              <span class="flow-node">PR question</span>
             </div>
           </div>
 
@@ -485,10 +485,10 @@ import "../styles/global.css";
               <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ffaa00;background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.2)">CONVERGENCE</span>
               <h3 class="font-display font-semibold">"Implement the 5 API endpoints from the spec"</h3>
             </div>
-            <p class="text-muted-light text-sm mb-4">Well-specified work. Let the bounded loop converge against the delivery gates, then take the merge decision yourself.</p>
+            <p class="text-muted-light text-sm mb-4">Well-specified work. Approve once, let the stages hand off, then take the merge decision yourself.</p>
             <div class="font-mono text-sm text-muted-light">
-              <span style="color:#ffaa00">/add.new</span> → define scope<br/>
-              <span style="color:#ffaa00">/add.plan-to-ready</span> → plans, then loops build ⇄ review until the /add.done gates pass<br/>
+              <span style="color:#ffaa00">/add.brainstorm</span> → approve with "deliver automatically"<br/>
+              <span style="color:#ffaa00">new → plan → build ⇄ review</span> → runs unattended until the PR question<br/>
               <span class="text-accent">/add.done</span> → finalize
             </div>
           </div>
@@ -979,7 +979,6 @@ import "../styles/global.css";
         {data:{id:'add.hotfix',label:'add.hotfix',type:'command'}},
         {data:{id:'add.new',label:'add.new',type:'command'}},
         {data:{id:'add.plan',label:'add.plan',type:'command'}},
-        {data:{id:'add.plan-to-ready',label:'add.plan-to-ready',type:'command'}},
         {data:{id:'add.pull-request',label:'add.pull-request',type:'command'}},
         {data:{id:'add.qa-setup',label:'add.qa-setup',type:'command'}},
         {data:{id:'add.review',label:'add.review',type:'command'}},
@@ -1041,15 +1040,6 @@ import "../styles/global.css";
         ['add.audit','add-doc-schemas','loads'],
         ['add.audit','add-health-check','loads'],
         ['add.audit','add-investigation','loads'],
-        ['add.plan-to-ready','add-doc-schemas','loads'],
-        ['add.plan-to-ready','add-id-convention','loads'],
-        ['add.plan-to-ready','add-tasks-checklist','loads'],
-        ['add.plan-to-ready','add-ecosystem','loads'],
-        ['add.plan-to-ready','add-ux-design','loads'],
-        ['add.plan-to-ready','add-database-development','loads'],
-        ['add.plan-to-ready','add-backend-development','loads'],
-        ['add.plan-to-ready','add-frontend-development','loads'],
-        ['add.plan-to-ready','add-code-review','loads'],
         ['add.brainstorm','add-doc-schemas','loads'],
         ['add.brainstorm','add-ecosystem','loads'],
         ['add.build','add-doc-schemas','loads'],
@@ -1103,10 +1093,6 @@ import "../styles/global.css";
         ['add.qa-setup','add-setup-contract','loads'],
         ['add.plan','add-qa-spec','loads'],
         // command → agent (dispatches)
-        ['add.plan-to-ready','backend-agent','dispatches'],
-        ['add.plan-to-ready','frontend-agent','dispatches'],
-        ['add.plan-to-ready','database-agent','dispatches'],
-        ['add.plan-to-ready','reviewer-agent','dispatches'],
         ['add.build','backend-agent','dispatches'],
         ['add.build','frontend-agent','dispatches'],
         ['add.build','database-agent','dispatches'],
@@ -1122,8 +1108,6 @@ import "../styles/global.css";
         ['add.build','e2e-agent','dispatches'],
         ['add.build','test-agent','dispatches'],
         ['add.build','fix-agent','dispatches'],
-        ['add.plan-to-ready','test-agent','dispatches'],
-        ['add.plan-to-ready','fix-agent','dispatches'],
         ['add.diagnose','discovery-agent','dispatches'],
         ['add.diagnose','architecture-agent','dispatches'],
         ['add.diagnose','feature-history-agent','dispatches'],

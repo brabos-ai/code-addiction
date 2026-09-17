@@ -31,12 +31,11 @@ Your blindness is the whole mechanism. Reading the source code, the referenced f
 ## When to Use
 
 - A feature's documentation set is closed (`about.md` + `epic.md` + subfeature docs written and fixed) and the flow is about to move into building.
-- Dispatched as a subagent **after** the adversarial reviewer's fixes land, so the parent holds two independent reports — see [Pairing](#pairing--the-two-report-setup). Two commands do this today, each at the step that closes a document:
+- Dispatched as a subagent **after** the adversarial reviewer's fixes land, so the parent holds two independent reports — see [Pairing](#pairing--the-two-report-setup). One command does this today, at the step that closes a document:
 
 | Command | Step | `scope` |
 |---|---|---|
 | `add.plan` | STEP 12, after the verdict, before STEP 13 | `subfeature` |
-| `add.plan-to-ready` | STEP 3 plan leg, after the verdict **and** after the consistency pass | `subfeature` |
 
 - Manual: the user asks "read this and tell me what you understood" or wants a comprehension check before building.
 
@@ -266,18 +265,6 @@ This skill is the second of two independent reports over the same closed docs. T
 | Diverges | blockers | Docs are not ready. Rewrite the diverging section before anything else. |
 
 ⛔ **A divergence is a defect in the document, never in the agent.** Treating a readback miss as "the subagent misread it" throws away the only signal this skill produces — the reader on the other end of the real handoff gets exactly as much context as this agent got, and no chance to be corrected.
-
-### Variant — inside an autonomous loop
-
-`add.plan-to-ready` dispatches this skill from a loop that is forbidden to stop for the user. Three things change there, and nothing else does:
-
-| | Interactive parent | Autonomous loop |
-|---|---|---|
-| Compared against | the conversation that produced the docs | the **Decision Log** — never the docs just read, which is circular and always matches |
-| On divergence | present it and stop for the user | apply the fix, re-run the schema gate, re-dispatch once, carry on |
-| Can it end the run? | the user decides | **no.** This skill issues no verdict, so there is nothing to block on. A real blocker still has to come from the reviewer or the consistency judge |
-
-The report itself is identical in both. The difference lives entirely in what the parent does with it.
 
 ## Constraints
 
