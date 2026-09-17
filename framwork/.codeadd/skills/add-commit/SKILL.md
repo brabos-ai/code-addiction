@@ -6,6 +6,7 @@ description: "Knowledge reference for smart mid-workflow commits: adaptive Conve
 # add-commit — Smart Commit
 
 <!-- uses:
+- command: /add.build (conditional)
 - mention: /add.done
 - mention: /add.pull-request
 - script: converge-gates.sh
@@ -80,11 +81,12 @@ git add -A -- . ':(exclude)docs/features/*'
 
 ---
 
-## Checkpoint Receipt (autonomous runs only)
+## Checkpoint Receipt (epic checkpoints only)
 
-A commit made by `{{cmd:add.plan-to-ready}}` at a subfeature boundary carries the
-convergence result as a **trailer**, so the checkpoint says why it was safe to
-stop there. The commit hash then points at the work AND at the proof.
+A commit made by `{{cmd:add.build}}`'s Checkpoint Sequence at a subfeature
+boundary carries the convergence result as a **trailer**, so the checkpoint says
+why it was safe to stop there. The commit hash then points at the work AND at
+the proof.
 
 The commit carries **the six gate lines** — `GATE_REVIEW`, `GATE_QA_BASELINE`,
 `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `GATES_OK` — **copied verbatim** from
@@ -121,9 +123,8 @@ subfeatures converged and on what evidence, using nothing but git.
 commit does not exist: the checkpoint is gated on all five gates reading `ok`,
 and the ABSENCE of a commit is itself the signal.
 
-**No new state file.** The receipt lives in the commit message, which is why
-this mechanism does not violate `{{cmd:add.plan-to-ready}}`'s NO NEW STATE
-invariant — a commit message is not a second source of truth that can drift
+**No new state file.** The receipt lives in the commit message, so it adds no
+state file — a commit message is not a second source of truth that can drift
 from the tree, it is part of the object that carries the tree.
 
 ---

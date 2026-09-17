@@ -11,10 +11,11 @@
 #         lives in the CLI (cli/src/features.js) and is not duplicated here.
 # Exit: always 0 — this is a diagnosis, never a gate. Exit 2 only on CLI misuse.
 #
-# WHY THIS SCRIPT EXISTS: /add.plan-to-ready STEP 6 and /add.done STEP 4 used to
-# evaluate the same five gates as prose, each in its own words. A coordinator
-# graded its own work, reported CONVERGED, and /add.done rejected the tree a
-# second later. One script now backs both verdicts so they cannot drift apart.
+# WHY THIS SCRIPT EXISTS: /add.build's Checkpoint Sequence and /add.done STEP 4
+# used to evaluate the same five gates as prose, each in its own words. A
+# coordinator graded its own work, reported CONVERGED, and /add.done rejected
+# the tree a second later. One script now backs both verdicts so they cannot
+# drift apart.
 #
 # READ-ONLY IS LOAD-BEARING: this runs inside a step that forbids side effects.
 # It never writes, and it never calls `qa-evidence.sh promote`.
