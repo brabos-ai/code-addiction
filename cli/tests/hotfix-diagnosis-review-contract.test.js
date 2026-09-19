@@ -39,4 +39,17 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(agent).toContain('ADDRESSED | NOT ADDRESSED');
     expect(agent).toMatch(/VERDICT: \[n addressed, n open\]/);
   });
+
+  it('persists every accepted diagnose route and prints the hotfix handoff command only for hotfix', () => {
+    const cmd = read('commands', 'add.diagnose.md');
+    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toContain('bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline');
+    expect(cmd).toMatch(/hotfix\/feature\/extend\/no-action/);
+    expect(cmd).toMatch(/rejected diagnosis is not written/i);
+    expect(cmd).not.toMatch(/route = no-action \| Write \| Conversational response only/);
+    expect(cmd).not.toMatch(/Persist a report when the route is no-action/);
+    expect(cmd).toContain('/add.hotfix @docs/diagnose/');
+    expect(cmd).toMatch(/only for an accepted hotfix route|only when the accepted route is hotfix/i);
+    expect(cmd).toMatch(/never invoke/i);
+  });
 });
