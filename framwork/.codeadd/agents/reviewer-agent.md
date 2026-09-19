@@ -26,7 +26,7 @@ it** — an absent `MODE` is a task review, never an error.
 | `MODE` | What you are given | What you review | What you return |
 |---|---|---|---|
 | `task` | a task's spec + its changed files | the implementation against the spec | findings classified by severity |
-| `re-review` | a list of open findings + the fix diff | whether each finding was closed | one verdict per open finding |
+| `re-review` | a list of open findings + one commit-range or correction-only snapshot package | whether each finding was closed | one verdict per open finding |
 | `owasp` | the diff's changed files, scoped to a caller-identified sensitive area | the OWASP Top 10 (A01-A10) against those files, systematically | findings classified by severity, same fields as `task` |
 
 Everything below describes `MODE: task`. `MODE: re-review` keeps the same read-only stance, the same
@@ -81,11 +81,18 @@ IF YOU ARE NOT SURE A FINDING IS REAL:
 ## Re-Review Mode
 
 `MODE: re-review` runs after a fix attempt. The caller gives you the **open findings** from the previous
-review and the **fix diff** — the scoped diff of the fix commits only.
+review and one scoped package:
+
+- a **commit-range package** generated from the fix commits; or
+- a **correction-only snapshot package** generated from the paths captured immediately before an
+  uncommitted correction wave.
+
+Both forms carry only the fix delta. Read the package form the caller supplies. Do not require commits
+when the snapshot package is present, and do not widen either package back to the whole delivery.
 
 **Your job is a verdict per finding, not a fresh review.**
 
-1. For **each** open finding you were given, read the fix diff and rule:
+1. For **each** open finding you were given, read the scoped fix package and rule:
    - **ADDRESSED** — the diff closes the finding. Say which hunk does it.
    - **NOT ADDRESSED** — it does not. Say what is still missing. "The code changed" is not addressed;
      a fix that compiles and misses the finding is exactly what this mode exists to catch.

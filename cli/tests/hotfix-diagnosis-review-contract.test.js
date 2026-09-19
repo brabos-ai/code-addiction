@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
+const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
+const read = (...parts) => fs.readFileSync(path.join(CODEADD, ...parts), 'utf8');
+
+describe('hotfix diagnosis and review contracts', () => {
+  it('defines the exact diagnose hotfix handoff and working-tree baseline', () => {
+    const schema = read('skills', 'add-doc-schemas', 'references', 'review.md');
+    expect(schema).toMatch(/route: hotfix[\s\S]*accepted: true[\s\S]*diagnosed-branch:[\s\S]*diagnosed-commit:[\s\S]*predicate:[\s\S]*root-cause:/);
+    expect(schema).toContain('ID | Severity | Area | Citation | Symbol | Finding | Required change');
+    expect(schema).toContain('### Confirmed Relations');
+    expect(schema).toContain('### Working Tree Baseline');
+    expect(schema).toContain('<state>\\t<mode>\\t<content-sha256-or-dash>\\t<path-hex>');
+    expect(schema).toMatch(/staged.*unstaged.*deleted.*untracked/s);
+    expect(schema).toMatch(/duplicate state\/path.*fail/i);
+  });
+
+  it('defines a hotfix-local receipt with exact scalars, paths and findings', () => {
+    const schema = read('skills', 'add-doc-schemas', 'references', 'fix.md');
+    expect(schema).toMatch(/status: passed \| blocked[\s\S]*reviewer: named \| generic \| inline[\s\S]*reviewed-at:[\s\S]*reviewed-tree: sha256:[\s\S]*build: passed \| blocked[\s\S]*pinned-test:/);
+    expect(schema).toContain('### Reviewed Paths');
+    expect(schema).toContain('ID | Severity | Confidence | Citation | Route | Disposition | Re-review | Detail');
+    expect(schema).toMatch(/blocker.*major.*fixed.*addressed.*accepted/s);
+    expect(schema).toMatch(/minor.*polish.*open/s);
+    expect(schema).toMatch(/creating a hotfix `review-NNN\.md`/);
+  });
+
+  it('lets re-review consume either a commit-range or correction snapshot package', () => {
+    const agent = read('agents', 'reviewer-agent.md');
+    const skill = read('skills', 'add-subagent-driven-development', 'SKILL.md');
+    for (const source of [agent, skill]) {
+      expect(source).toMatch(/commit-range/i);
+      expect(source).toMatch(/snapshot package/i);
+      expect(source).toMatch(/correction-only/i);
+    }
+    expect(agent).toContain('ADDRESSED | NOT ADDRESSED');
+    expect(agent).toMatch(/VERDICT: \[n addressed, n open\]/);
+  });
+});
