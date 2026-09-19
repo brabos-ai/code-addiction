@@ -157,7 +157,7 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 **IF HAS_EPIC=true:**
 1. READ `docs/features/${FEATURE_ID}/epic.md`
 2. IDENTIFY current subfeature: `EPIC_CURRENT_SF` from script output
-3. IF `EPIC_CURRENT_SF` is empty → STOP. Inform all subfeatures complete → suggest `/add.done` (**deciding**, in every state — no delivery reaches `/add.done` unattended). **Except with `--loop-end SFxx`:** on `confirm`, STEP 16.4 already flipped the last row, so an empty `EPIC_CURRENT_SF` is expected there — set it to `SFxx` and continue
+3. IF `EPIC_CURRENT_SF` is empty → STOP. Inform all subfeatures complete → suggest `/add.done` (**deciding**, in every state — no delivery reaches `/add.done` unattended). **Except with `--loop-end SFxx`:** a resume after the last subfeature's checkpoint flipped its row finds `EPIC_CURRENT_SF` empty by design — set it to `SFxx` and continue
 4. SET `SF_DIR = docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/`
 5. SET `TASKS_FILE = ${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
 6. Inform: "Executing subfeature `${EPIC_CURRENT_SF}` of epic `${FEATURE_ID}`"

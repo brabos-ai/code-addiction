@@ -56,7 +56,7 @@ STEP 10: Autonomous migration    → IF MIGRATE: dispatch add.new→add.plan→a
 STEP 11: Smoke test + correction → dispatch /add.review, analyze; on failure dispatch /add.build (max 3), else defer/escalate
 STEP 12: Write the receipt       → docs/qa/qa-setup.md (state + decisions; rewritten even on a no-op)
 STEP 13: Validation gate         → add-doc-schemas gate against the setup-receipt schema
-STEP 14: Hand-off                → enable plugin (optional) + run /add.review + migration/smoke/contract summary
+STEP 14: Hand-off                → enable plugin (optional) + /add.review for the QA judgement + migration/smoke/contract summary
 ```
 
 ## ⛔ ABSOLUTE PROHIBITIONS (by checkpoint)
