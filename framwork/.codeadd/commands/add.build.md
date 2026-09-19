@@ -57,7 +57,7 @@ Load `{{skill:add-subagent-driven-development/SKILL.md}}` before STEP 1 as well.
 ---
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **ARGS:** `/add.build [F[NNNN]] [--worktree]` — explicit feature target + opt-in worktree; composable with `feature N` (legacy epic). `/add.build [F[NNNN]] --loop-end [SFxx]` — close a delivery unit after its last review: checkpoint on an epic, then the next subfeature or the publish question (see `## Loop End`).
+> **ARGS:** `/add.build [F[NNNN]] [--worktree]` — explicit feature target + opt-in worktree; composable with `feature N` (legacy epic). `--loop-end [SFxx]` is an internal entry: the build reaches `## Loop End` by itself, so no user types it.
 
 ---
 
@@ -77,6 +77,7 @@ STEP 9:  Execution decision          → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP 10: Implementation              → Pre-flight scan, then dispatch by path over the Agent Roster
 STEP 11: Area validation → COMMIT    → Validator agents (MANDATORY per area), build gate, THEN the commit
 STEP 12: Routed correction           → Consume ## Fix Routing; re-review every fix; write the resolution annex
+         Final Review                → Whole-unit review, one fix wave, the `Final review:` ledger line
 STEP 13: Compliance Gate             → Cross-reference RF/RN vs implementation
 STEP 14: Integration verification    → Build MUST pass
 STEP 15: Mutate docs + Validation Gate → Cache rule + schema gate on plan.md/about.md
@@ -122,25 +123,11 @@ moment `SF_DIR` is known and before STEP 5.
 ⛔ DO NOT skip this because the conversation "looks like" a fresh start. That is exactly what a compacted
 session looks like, and re-dispatching a finished task is the failure this read exists to prevent.
 
-### 1.0.1 Delivery Mode and the Review Baseline
+### 1.0.1 Delivery Mode
 
 **Read the delivery mode once, here.** Resolve `DELIVERY` per `{{skill:add-delivery-mode/SKILL.md}}`
 from the `> **Delivery:**` line of the `plan.md` in scope, and from `epic.md`'s `## Notes` `delivery:`
 line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No line → `confirm`.
-
-**On `DELIVERY=automatic`, record the review baseline** the moment the ledger path is known, when the
-ledger carries no `Delivery unit:` line yet:
-
-```bash
-bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" "Delivery unit: <SFxx | FEATURE> — review baseline <NNN>"
-```
-
-`<NNN>` is the highest `review-NNN.md` that already exists for this feature, or `000`. Only reviews
-numbered above it count as rounds of this delivery's loop — `add-delivery-mode` owns the count and the
-cap of two.
-
-⛔ **Write it once per delivery unit, and never rewrite it.** A baseline recomputed after the first
-review counts that review as history, and the loop runs a third round.
 
 ### 1.1 Cross-Feature Decisions Context (PRD0031)
 
@@ -247,7 +234,7 @@ This command detects automatically:
 ### 5.2 Detection Flow (priority order)
 
 **Loop-end pre-check (BEFORE everything else):** IF the invocation carries `--loop-end` → skip STEPS 6
-through 18 and run `## Loop End`. It is how `/add.review` closes a delivery unit; it implements nothing.
+through 18 and run `## Loop End`. It implements nothing; a resume that stopped after `## Final Review` re-enters here.
 
 **Routed-findings pre-check (BEFORE the ladder):** IF the highest
 `docs/features/${FEATURE_ID}/review-NNN.md` carries a `## Fix Routing` table with
@@ -1120,6 +1107,26 @@ After the fix wave, append to the SAME `review-NNN.md` you consumed:
 
 ---
 
+## Final Review
+
+**Runs once per delivery unit, after its last area and before STEP 13.** `add-review-discipline` owns
+it — **LOAD `{{skill:add-review-discipline/SKILL.md}}`** and follow **The Build's Final Review**: the
+`MODE: feature` dispatch, the conditional OWASP pass, one fix wave, and the `Final review:` ledger line.
+On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
+
+**After a CORRECTION run, dispatch nothing new.** STEP 12.2's re-review is this run's review: write
+the verdict from it — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
+`blocked N` with its `Blocker suggestion:` lines. Without the line, the review STEP 12 answered stays
+the newest verdict and `/add.done` blocks on it.
+
+```
+IF THE LEDGER HAS NO `Final review:` LINE FOR THIS RUN:
+  ⛔ DO NOT: Go to STEP 13 or ## Loop End
+  ✅ DO: Run this step
+```
+
+---
+
 ## STEP 13: Coordinator Compliance Gate [HARD STOP]
 
 DO NOT report completion without executing this step.
@@ -1211,46 +1218,31 @@ absence.
 `/add.build` commits per batch (STEP 11.3), so a tag created here would point at real work — that is
 precisely why the prohibition has to be stated as ownership. A `checkpoint/*` tag does not mean "code was
 committed"; it means **this subfeature converged**, and convergence is decided by the gate run
-(`converge-gates.sh`) inside the Checkpoint Sequence, after the review loop ended. A tag created here,
-before any review, would put the same tag name on a commit nobody reviewed, and `done.sh --merge`'s
+(`converge-gates.sh`) inside the Checkpoint Sequence, after `## Final Review`. A tag created here,
+before that review, would put the same tag name on a commit nobody reviewed, and `done.sh --merge`'s
 checkpoint cleanup deletes by name — it cannot tell the two apart.
 
 Until the sequence runs, `status.sh`'s `LAST_CHECKPOINT` correctly reports nothing — and **that silence
 is the signal that this subfeature has not converged.** Commits on the branch prove work happened; only
 the tag proves it converged.
 
-**16.4 Update epic.md (IF HAS_EPIC=true only):**
-
-⛔ **On `DELIVERY=automatic`, skip this sub-step.** The Checkpoint Sequence flips the row and writes its
-`checkpoint` cell in one edit, after the review loop. Flipping it here would move `status.sh`'s
-`EPIC_CURRENT_SF` to the next subfeature while this one is still being reviewed, and the loop would close
-the wrong one.
-
-On `confirm`: IF file exists, resolve the Subfeatures row whose `id` cell equals
-`${EPIC_CURRENT_SF}` and set that row's `status` column to `done`. Read and
-write columns **by header name**, per the `epic` schema
-(`{{skill:add-doc-schemas/references/new-feature.md}}`) — never by
-string-matching the row's old text.
-
-⛔ DO NOT write the `checkpoint` cell here. Per 16.3, this step creates no
-checkpoint **tag**, so it owns none of that column — the cell names a tag, and
-naming a tag that does not exist yet is how the column starts pointing at nothing.
-Only `## The Checkpoint Sequence` writes it, in the same edit that creates the
-commit the tag points at. That the batch commits of STEP 11.3 exist changes
-nothing here: they are not checkpoint commits.
+**16.4 epic.md is NOT updated here.** `## The Checkpoint Sequence` flips the row and writes its
+`checkpoint` cell in one edit, and every delivery mode now reaches it. Flipping it here would move
+`status.sh`'s `EPIC_CURRENT_SF` to the next subfeature before this one converged.
 
 ---
 
 ## Loop End
 
-**Reached with `--loop-end [SFxx]`** — from `/add.review` on an automatic delivery, or by the user after
-a confirmed one. It closes one delivery unit: the subfeature `SFxx` on an epic (from the argument, else
-from the ledger's `Delivery unit:` line, else `EPIC_CURRENT_SF`), or the whole feature. It implements
+**Reached right after `## Final Review`, or after a correction run's verdict — on every delivery
+mode, with no user input.** `--loop-end [SFxx]` is the same entry for a resume. It closes one delivery
+unit: the subfeature `SFxx` on an epic (from the argument, else `EPIC_CURRENT_SF`), or the whole
+feature. It implements
 nothing and dispatches no implementer.
 
 1. **Not an epic** → go to STEP 17. A simple feature has no checkpoint.
-2. **Epic, and `SFxx` is the last subfeature whose row is not `done`** → run the DELTA pass below, then
-   `## The Checkpoint Sequence`, then the epic-wide gate below.
+2. **Epic, and `SFxx` is the last subfeature whose row is not `done`** → run `## The Checkpoint
+   Sequence`, then the epic-wide gate below. The DELTA pass already ran, inside `## Final Review`.
 3. **Epic, other rows still pending** → run `## The Checkpoint Sequence` only.
 4. **If the sequence exited BLOCKED** → go to STEP 17 and print why before the question. The epic does
    not advance.
@@ -1260,13 +1252,14 @@ nothing and dispatches no implementer.
    |---|---|
    | `automatic` | Print what `SFxx` delivered, then follow {{cmd:add.plan}} for this feature — it plans the next pending subfeature — as `add-delivery-mode` describes |
    | `semi-automatic` | **STOP — deciding.** Show what `SFxx` delivered and what the next subfeature will do, and WAIT. On the user's go, follow {{cmd:add.plan}} |
-   | absent (`confirm`) | Print the report and suggest `/add.plan` for the next subfeature, then STOP |
+   | absent (`confirm`) | Print the report and the complete line `/add.plan ${FEATURE_ID}` for the next subfeature, then STOP |
 
 6. **If no row is pending any more** → go to STEP 17.
 
 ### DELTA pass — the epic's last subfeature only
 
-**BEFORE the last subfeature's checkpoint**, dispatch the cross-subfeature judge once more.
+**Run from `## Final Review`, on the epic's last subfeature, before its review dispatch.** Dispatch the
+cross-subfeature judge once more.
 
 **DISPATCH AGENT: @consistency-agent**
 - **Capability:** read-only
@@ -1275,14 +1268,13 @@ nothing and dispatches no implementer.
   subfeature, and which of those documents changed since that verdict (from `git log` on their paths)
 
 **WAIT** for the report. It re-checks only the dimensions whose inputs changed since their last verdict,
-and says which it skipped and why. Route its findings into the highest `review-NNN.md`'s `## Fix Routing`
-table using `{{skill:add-cross-sf-consistency/SKILL.md}}`'s Routing Hints — **this is the only place a
-consistency finding is ever written into a review document**; `/add.plan`'s FULL pass never touches
-`## Fix Routing`. `informational` findings go in that document's notes, never as a blocking row.
+and says which it skipped and why. Its findings join `## Final Review`'s list, routed by
+`{{skill:add-cross-sf-consistency/SKILL.md}}`'s Routing Hints — same judgement, same fix wave.
+`informational` findings are reported, never blocking.
 
 ⛔ **The ordering is the mechanism.** A judgement that runs after the thing it judges was committed and
-tagged cannot gate anything, whatever severity it assigns. Running it first puts its rows in the version
-of the document the checkpoint stages, and lets the sequence's own pre-check (step 0) refuse to proceed.
+tagged cannot gate anything. Running it inside the final review lets an open `blocker` reach the
+`Final review: blocked N` line, which the Checkpoint Sequence refuses to pass.
 
 ### Epic-wide gate — after the last checkpoint
 
@@ -1316,25 +1308,21 @@ bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}" "${EPIC_CU
 ```
 
 `GATES_OK=5/5` → the subfeature **converged**, continue with step 0. Anything short of `5/5` → exit
-BLOCKED naming each gate that is not `ok`: no row flip, no commit, no tag. On an automatic delivery that
-reached this point after its second review, those gates are the findings nobody fixed, and STEP 17
-prints them.
+BLOCKED naming each gate that is not `ok`: no row flip, no commit, no tag. STEP 17 prints them.
 
-0. **Pre-check — no unresolved `blocker` stands.** Read the highest
-   `review-NNN.md` for this scope and scan its `## Fix Routing` table. If any
-   row carries `blocker` severity and is not marked resolved, **do not
-   proceed**: no row flip, no commit, no tag.
+0. **Pre-check — no unresolved `blocker` stands.** Read the source `REVIEW_SOURCE` names. `review` →
+   scan the highest `review-NNN.md`'s `## Fix Routing` for a `blocker` row not marked resolved.
+   `build` → the ledger's last `Final review:` line; `blocked N` is an unresolved blocker, and its
+   `Blocker suggestion:` lines are printed with the exit.
 
    ```
-   IF AN UNRESOLVED blocker ROW STANDS IN ## Fix Routing:
+   IF AN UNRESOLVED blocker STANDS:
      ⛔ DO NOT USE: Bash for git add, git commit or git tag
      ⛔ DO NOT: Edit epic.md to flip the row
-     ✅ DO: Exit BLOCKED naming the subfeature and every blocker row
+     ✅ DO: Exit BLOCKED naming the subfeature, every blocker, and each suggestion
    ```
 
-   This is what gives the cross-subfeature judge's `blocker` severity teeth.
-   Without it the severity is a word in a rubric that no step reads, and the
-   DELTA pass's placement above buys nothing.
+   This is what gives a `blocker` severity teeth. Without it the severity is a word no step reads.
 
 1. **Flip the row AND write the `checkpoint` cell — ONE edit.** In `epic.md`'s
    Subfeatures table, set this subfeature's `status` cell to `done` and its
@@ -1378,8 +1366,7 @@ prints them.
    already swept in by the first path above — and with `qa-pipeline` disabled it
    exists nowhere at all. `${FEATURE_DIR}/_tests/run-NNN/` is NOT a path to
    stage here; it is precisely the non-matching pathspec that aborts the run.
-   (`review-NNN.md` is this round's highest-numbered one, at `${FEATURE_DIR}`,
-   where `/add.review` writes it and `converge-gates.sh` reads it.)
+   (`review-NNN.md` is the highest-numbered one, when `/add.review` wrote any.)
 
    **Verify the index before committing.** The `git diff --cached` line is not
    optional: `epic.md` is the one file whose absence from the index is both
@@ -1435,9 +1422,7 @@ prints them.
 
 **⛔ GATE:** A push to a shared remote is a side effect outside this working tree. ASK.
 
-**On `DELIVERY=automatic`, this step runs only from `## Loop End`.** Reached after development or a
-correction round, skip it and go to STEP 18, which hands the delivery to `/add.review` — the publish
-question comes once, after the review loop ended, never before the first review.
+**This step runs only from `## Loop End`**, after the final review, on every delivery mode.
 
 **Stop kind — decided by whether a PR exists, not by the marker** (`{{skill:add-delivery-mode/SKILL.md}}`):
 
@@ -1446,9 +1431,10 @@ question comes once, after the review loop ended, never before the first review.
 | No PR for this branch yet | **deciding**, in every state. On an automatic delivery this question is where the delivery ends |
 | A PR already exists | **confirming** — push and report the PR updated |
 
-**Before asking, on a delivery whose review loop ended with findings still open, print them.** List the
-unresolved rows of the highest `review-NNN.md`'s `## Fix Routing` table, and any gate `## Loop End` or
-the Checkpoint Sequence reported as not `ok`. The user answers the question with them in view — they
+**Before asking, print what is still open.** The ledger's last `Final review:` line with its
+`Blocker suggestion:` lines, and every `Ruling:` it left; when `/add.review` ran after it, the
+unresolved rows of that review's `## Fix Routing` instead; and any gate `## Loop End` or the
+Checkpoint Sequence reported as not `ok`. The user answers the question with them in view — they
 are never fixed silently and never dropped.
 
 **Pushing publishes the checkpoint tags with the branch.** Wherever a row below pushes, push the local
@@ -1550,16 +1536,15 @@ not rulings and go in their own short list.
 
 ### 18.2 Next command
 
-- After development → `/add.review`
-- After correction → `/add.review`
-- After `## Loop End` → the step it reached: the next subfeature's `/add.plan`, or the publish question
+Print the next command as a complete line, feature ID and arguments included, ready to paste:
 
-**Stop kind — confirming.** The report describes work the approval already covered.
+- After `## Loop End` → the step it reached: `/add.plan ${FEATURE_ID}` for the next subfeature, or,
+  past the publish question, `/add.done` — with `/add.review ${FEATURE_ID}` named as optional, for
+  detail and QA
+- `Final review: blocked N` → each `Blocker suggestion:` command
 
-| `DELIVERY` | Do |
-|---|---|
-| `confirm` | Print the report and the suggestion, and STOP |
-| `automatic`, after development or correction | Print the report and the line `(delivering automatically — continuing to /add.review.)`, then follow {{cmd:add.review}} for this feature, from its first step, as `add-delivery-mode` describes |
+**Stop kind — confirming.** The report describes work the approval already covered. On every
+`DELIVERY`, print the report and the line, and STOP — the build never runs `/add.review` for you.
 
 ---
 

@@ -145,7 +145,10 @@ describe('L1 — product pipeline parity, static contract', () => {
       [P.brainstorm, 'add.new'],
       [P.newCmd, 'add.plan'],
       [P.plan, 'add.build'],
-      [P.build, 'add.review'],
+      // Plan 2026-09-19T122048 (optional review): the build no longer hands
+      // off to /add.review. Its automatic chain continues to the next
+      // subfeature's /add.plan from ## Loop End.
+      [P.build, 'add.plan'],
       [P.review, 'add.build'],
     ];
     for (const [file, next] of chain) {
