@@ -196,8 +196,8 @@ describe('F4 — /add.hotfix routes its confirmed set into the about.md', () => 
 
   it('the about.md step writes the section from that set', () => {
     const step = ADD_HOTFIX.slice(
-      ADD_HOTFIX.indexOf('## STEP 11: Write Hotfix about.md'),
-      ADD_HOTFIX.indexOf('## STEP 12:'),
+      ADD_HOTFIX.indexOf('## STEP 12: Write Hotfix about.md'),
+      ADD_HOTFIX.indexOf('## STEP 13:'),
     );
     expect(step).toContain('## Relations');
     expect(step).toContain('caused_by');

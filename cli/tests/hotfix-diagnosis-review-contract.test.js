@@ -52,4 +52,26 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(cmd).toMatch(/only for an accepted hotfix route|only when the accepted route is hotfix/i);
     expect(cmd).toMatch(/never invoke/i);
   });
+
+  it('hotfix reuses a valid diagnose report and reviews with one correction wave', () => {
+    const cmd = read('commands', 'add.hotfix.md');
+    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toContain('@docs/diagnose/');
+    expect(cmd).toContain('diagnosis-check');
+    expect(cmd).toMatch(/STEPS 4-6/);
+    expect(cmd).toMatch(/second root-cause confirmation/i);
+    expect(cmd).toContain('<!-- feature:tdd-pipeline:red-gate -->');
+    expect(cmd).toContain('@reviewer-agent');
+    expect(cmd).toMatch(/MODE: owasp/);
+    expect(cmd).toContain('@fix-agent');
+    expect(cmd).toMatch(/ATTEMPT=1/);
+    expect(cmd).toMatch(/MAX_ATTEMPTS=1/);
+    expect(cmd).toContain('snapshot-wave');
+    expect(cmd).toContain('diff-wave');
+    expect(cmd).toContain('review-fingerprint');
+    expect(cmd).toContain('review-validate');
+    expect(cmd).not.toContain('@security-agent');
+    expect(cmd).not.toContain('@conformance-agent');
+    expect(cmd).not.toContain('@failure-analysis-agent');
+  });
 });
