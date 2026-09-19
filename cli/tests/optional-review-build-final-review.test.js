@@ -146,7 +146,7 @@ describe('L4 — wording sweep', () => {
     const offenders = [];
     for (const f of mdFiles(CODEADD)) {
       const t = read(f);
-      if (/Run \/add\.review before \/add\.done|two review rounds|LAST gate/.test(t)) {
+      if (/Run \/add\.review before \/add\.done|two review rounds|LAST gate|build ⇄ review|≤ 2 rounds/.test(t)) {
         offenders.push(path.relative(ROOT, f));
       }
     }

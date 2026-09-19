@@ -1181,3 +1181,43 @@ write_final_review() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"GATES_OK=5/5"* ]]
 }
+
+@test "final review: a line with no (after review-NNN) is broken, never ok" {
+  DIR="docs/features/0080F-malformed"
+  mkdir -p "$TEST_REPO/$DIR"
+  printf '# L\nFinal review: passed\n' > "$TEST_REPO/$DIR/build-ledger.md"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+  [[ "$output" == *"GATE_REVIEW_DETAIL=Malformed"* ]]
+}
+
+@test "final review: an unknown verdict word is broken, never ok" {
+  DIR="docs/features/0081F-badword"
+  write_final_review "$TEST_REPO/$DIR" "approved (after review-000)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+}
+
+@test "final review: every suggestion of the last blocked verdict reaches the detail, earlier rounds do not" {
+  DIR="docs/features/0082F-manysugg"
+  ABS="$TEST_REPO/$DIR"
+  write_final_review "$ABS" "blocked 1 (after review-000)" "OLD-1 — /add.build F0082F"
+  write_final_review "$ABS" "blocked 2 (after review-000)" "FR-1 — /add.build F0082F" "FR-2 — /add.plan F0082F"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW_DETAIL="*"FR-1 — /add.build F0082F"*"FR-2 — /add.plan F0082F"* ]]
+  [[ "$output" != *"OLD-1"* ]]
+}
+
+@test "final review: review-008 is compared in base ten, not octal" {
+  DIR="docs/features/0083F-octal"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS"
+  write_review "$ABS" 009 '❌ BLOCKED' '> **QA baseline:** none'
+  write_final_review "$ABS" "passed (after review-008)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"REVIEW_SOURCE=review"* ]]
+}

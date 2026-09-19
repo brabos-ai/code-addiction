@@ -21,18 +21,21 @@ description: Use when judging contract consistency across an epic's subfeature p
 - agent: ux-agent
 - command: /add.build
 - command: /add.plan
+- mention: /add.review
+- mention: add-review-discipline
+- mention: @fix-agent
 -->
 
 ## Overview
 
-The rubric `consistency-agent` loads before it reports. It is dispatched twice per epic run: a **FULL pass** by `/add.plan` after each subfeature's `plan.md` is consolidated and reviewed (comparing it against every already-converged sibling), and one **DELTA pass** by `/add.build`, from its Loop End, before the epic's last checkpoint (re-checking only what changed since the last verdict). The agent compares declared contracts **document against document** — `plan.md`, `about.md`, `design.md` — and never opens source code; code-level review stays `@reviewer-agent`'s job.
+The rubric `consistency-agent` loads before it reports. It is dispatched twice per epic run: a **FULL pass** by `/add.plan` after each subfeature's `plan.md` is consolidated and reviewed (comparing it against every already-converged sibling), and one **DELTA pass** by `/add.build`, from its `## Final Review` on the epic's last subfeature, before that subfeature's checkpoint (re-checking only what changed since the last verdict). The agent compares declared contracts **document against document** — `plan.md`, `about.md`, `design.md` — and never opens source code; code-level review stays `@reviewer-agent`'s job.
 
-This produces no new persisted artefact of its own. A `FULL`-pass finding is applied straight into the subfeature's own `plan.md`; a `DELTA`-pass finding is written into the epic's existing `review-NNN.md`. There is no `consistency-validation-NNN.md` and none should ever be invented — see Where Findings Go below.
+This produces no new persisted artefact of its own. A `FULL`-pass finding is applied straight into the subfeature's own `plan.md`; a `DELTA`-pass finding joins `/add.build`'s final review, whose verdict is the `Final review:` ledger line. There is no `consistency-validation-NNN.md` and none should ever be invented — see Where Findings Go below.
 
 ## When to Use
 
 - `consistency-agent` loads this skill as its rubric source, on every dispatch (`FULL` or `DELTA`).
-- `/add.build`'s Loop End needs the routing hints to fold a `DELTA`-pass finding into `## Fix Routing`.
+- `/add.build`'s `## Final Review` needs the routing hints to fold a `DELTA`-pass finding into its fix wave.
 
 ## When NOT to Use
 
@@ -84,21 +87,19 @@ should stop has already happened. The DELTA pass therefore runs **before** the
 final subfeature's checkpoint, not after it.
 
 Run after, its verdict would arrive once that subfeature had already been
-committed, tagged and pushed — nothing re-runs the convergence gate at that
-point, and its rows would sit in a `review-NNN.md` no later step ever commits,
-because the loop makes no further commit. The severity would be real in this
-table and inert in the loop.
+committed and tagged — nothing re-runs the convergence gate at that point. The
+severity would be real in this table and inert in the build.
 
 Two things make it real, and both are required:
 
-1. the pass runs before the checkpoint, so its rows land in the version of
-   `review-NNN.md` the checkpoint stages;
-2. the checkpoint's own **step 0 pre-check** reads `## Fix Routing` and refuses
-   to proceed while an unresolved `blocker` row stands.
+1. the pass runs inside the build's final review, before the checkpoint, so a
+   `blocker` still open after the one fix wave becomes `Final review: blocked N`;
+2. the checkpoint's own **step 0 pre-check** reads that verdict and refuses to
+   proceed while a blocker stands.
 
 ⛔ Neither alone is sufficient. Moving the pass earlier without the pre-check
-leaves `blocker` decorative; a pre-check reading a document written after it
-runs would read rows that are not there yet.
+leaves `blocker` decorative; a pre-check reading a verdict written after it
+runs would read a blocker that is not there yet.
 
 A finding without evidence is not a finding — see Evidence Discipline below. This mirrors the `review` schema's own hard ban on unevidenced findings.
 
@@ -119,7 +120,7 @@ The review document (`review-NNN.md`) does not exist yet at plan time — a subf
 | Mode | Destination | Mechanism |
 |---|---|---|
 | `FULL` (plan-time) | The new subfeature's own `plan.md` | Apply the finding as a concrete edit to `plan.md` — never to an already-converged sibling's plan, those are frozen. Re-run the `feature-plan` schema gate. Re-dispatch `consistency-agent` **once** to confirm the conflict is resolved. If it still isn't after that single re-dispatch, or the conflict needs a decision no edit can make unilaterally (two shipped siblings each own a divergent shape and picking a winner is a product call, not a text fix) → `blocked`, a hard exit for the whole epic run, naming the subfeature and the dimension. This is the exact apply → re-gate → one-re-dispatch → hard-exit shape `@plan-reviewer-agent`'s `fix-then-ok` / `blocked` loop already uses (`add-plan-review`) — reused here, not reinvented. |
-| `DELTA` (end-of-epic) | The epic's `review-NNN.md`, `## Fix Routing` table | One row per finding, using the `review` schema's columns (`Scope \| ID \| Severity \| Area \| Route \| File \| Symptom \| Blocked by`). `Route` and `Area` come from the Routing Hints table below — the dispatching command derives them, never this agent. `informational` findings are **not** written into `## Fix Routing` (nothing there ever blocks the routing table's own contract) — record them in the run's notes instead, so they are visible but never gate anything. |
+| `DELTA` (end-of-epic) | `/add.build`'s `## Final Review` findings list | Each finding joins the final review's list, judged and fixed in its one `@fix-agent` wave. `Route` and `Area` come from the Routing Hints table below — the dispatching command derives them, never this agent. A `blocker` still open after the wave is written as `Final review: blocked N` with a `Blocker suggestion:` line, never as a ruling (`add-review-discipline`). `informational` findings are reported, never fixed and never blocking. Nothing is written to `review-NNN.md`, which belongs to `/add.review` alone. |
 
 `informational` findings at plan-time are noted in the Decision Log, not applied as an edit — an out-of-rubric observation is not a `plan.md` fix.
 
@@ -176,7 +177,7 @@ Capability validation follows the same hard rules `add-qa`'s coordinator referen
 [ ] No single-plan completeness concern reported — shared-resource centralization, fallback/degradation and DI/worker registration are /add.plan 9.5's, never a finding here at any severity
 [ ] FULL-pass findings applied to the new subfeature's plan.md only — never to an already-converged sibling
 [ ] FULL-pass application followed apply → re-run feature-plan gate → one re-dispatch → blocked-on-failure, same shape as @plan-reviewer-agent's fix-then-ok/blocked loop
-[ ] DELTA-pass findings written into review-NNN.md's ## Fix Routing, not a new file
+[ ] DELTA-pass findings joined /add.build's final review — no review-NNN.md write, no new file
 [ ] DELTA pass states which dimensions it skipped and why (unchanged inputs since last verdict)
 [ ] Dedupe key + cross-pass dedupe applied — no duplicate finding for one underlying conflict
 [ ] Severity precedence kept the higher severity; the lower-severity note was kept, not dropped

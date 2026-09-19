@@ -69,8 +69,10 @@ For `/add.diagnose` (creates `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
 
 For `/add.review` — the **feature-level aggregate** written at
 `docs/features/<feature-id>/review-NNN.md`, flat at the feature-directory root.
-It is the delivery receipt `/add.done` STEP 4.0 gates on: that step reads the
-**highest-numbered** one and nothing else.
+It is one of two verdicts `/add.done` STEP 4.0 can gate on — the other is
+`/add.build`'s `Final review:` ledger line. `converge-gates.sh` reads the
+**highest-numbered** review only when no line written after it exists
+(`REVIEW_SOURCE=review`); otherwise the build's line decides.
 
 Distinct from `qa-validation`, which stays per scope under
 `_tests/run-NNN/`. Both are written every run: one review round produces ONE

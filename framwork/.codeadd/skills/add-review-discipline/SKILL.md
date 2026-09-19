@@ -180,7 +180,8 @@ writes is the one `converge-gates.sh` reads when no newer review exists.
    session or token paths, the trigger `/add.review` STEP 4.1 names — dispatch a second
    `@reviewer-agent` with `MODE: owasp` and those files. On the epic's last subfeature, the DELTA
    pass's findings join this list.
-3. **Judge every finding** — see What the Caller Owes the Report below. Record each discard.
+3. **Number the findings** `FR-1`, `FR-2`, … in report order — the reviewer returns none — then
+   **judge every one**; see What the Caller Owes the Report below. Record each discard.
 4. **One `@fix-agent` wave** carrying every accepted finding, then `/add.build` STEP 12.2's scoped
    re-review of the fix diff only. There is no second wave.
 5. **Sort what is still open.**

@@ -231,7 +231,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add-setup-contract | add.qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add-qa-migration | add.qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add-subagent-driven-development | add.build, add.qa-setup (STEP 9 dispatch template, reused by migration + correction dispatch); add.audit, add.diagnose, add.hotfix, add.new, add.plan, add.review, add.wiki (`references/dispatch-rules.md` — read before any dispatch: a fresh dispatch leaves the engine's resume/session fields empty, only an id an earlier dispatch returned is passed) |
-| add-review-discipline | add.plan (STEP 12), add.new (STEP 8), add.build (10.0.4) — the dispatch discipline all three share |
+| add-review-discipline | add.plan (STEP 12), add.new (STEP 8), add.build (10.0.4 and `## Final Review`) — the dispatch discipline all three share |
 | add-plan-review | add.plan (STEP 12), add.new (STEP 8, full path only) — all via plan-reviewer-agent |
 | add-feature-readback | add.plan (STEP 12), add.build (cold readback before the first F-block) — all via readback-agent, each after the plan-review fixes land |
 | add-feature-discovery | add.plan (direct) |
@@ -281,7 +281,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | QA-validated | new → plan → build → **review ⇄ build** → done | UI features that ran `/add.qa-setup`. The review judges the rendered result and routes every finding; the build applies them and closes the round in the same `review-NNN.md`. Working runs stay local; done snapshots them before merge |
 | Standard | new → plan → build → review → done | Features without complex UI |
 | Lean | new → build → done | Small changes, quick tasks |
-| Automatic | brainstorm → new → plan → **build ⇄ review (≤ 2 rounds)** → publish question | Chosen once at `/add.brainstorm`'s approval. Each stage hands off without waiting until a deciding stop or the build's PR question; an epic asks automatic or semi-automatic at the split. `/add.done` always waits for the user |
+| Automatic | brainstorm → new → plan → **build (its own final review)** → publish question | Chosen once at `/add.brainstorm`'s approval. Each stage hands off without waiting until a deciding stop or the build's PR question; an epic asks automatic or semi-automatic at the split. `/add.done` always waits for the user |
 | Emergency | hotfix → done | Critical production bug |
 | Diagnose-backed hotfix | diagnose → hotfix @report → done | Accepted diagnosis reused; never `/add.review` |
 | Exploration | brainstorm → new → ... | Don't know where to start |

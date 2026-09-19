@@ -1310,7 +1310,7 @@ bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}" "${EPIC_CU
 `GATES_OK=5/5` → the subfeature **converged**, continue with step 0. Anything short of `5/5` → exit
 BLOCKED naming each gate that is not `ok`: no row flip, no commit, no tag. STEP 17 prints them.
 
-0. **Pre-check — no unresolved `blocker` stands.** Read the source `REVIEW_SOURCE` names. `review` →
+0. **Pre-check — no unresolved `blocker` stands.** Read whichever verdict `REVIEW_SOURCE` names. `review` →
    scan the highest `review-NNN.md`'s `## Fix Routing` for a `blocker` row not marked resolved.
    `build` → the ledger's last `Final review:` line; `blocked N` is an unresolved blocker, and its
    `Blocker suggestion:` lines are printed with the exit.
