@@ -149,7 +149,8 @@ describe('L1 — product pipeline parity, static contract', () => {
       // off to /add.review. Its automatic chain continues to the next
       // subfeature's /add.plan from ## Loop End.
       [P.build, 'add.plan'],
-      [P.review, 'add.build'],
+      // /add.review no longer hands a delivery back to /add.build (same plan):
+      // it prints the next command and stops.
     ];
     for (const [file, next] of chain) {
       expect(read(file), path.basename(file)).toMatch(new RegExp(`follow[^\\n]*\\{\\{cmd:${next.replace('.', '\\.')}\\}\\}`));
