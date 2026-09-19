@@ -682,6 +682,8 @@ if [ "$BRANCH_TYPE" = "main" ]; then
     else
         RECS="/add.new to start"
     fi
+elif [ "$BRANCH_TYPE" = "hotfix" ]; then
+    RECS="/add.done"
 elif [ -n "$FEATURE_ID" ]; then
     if [ ! -d "$FEATURE_DIR" ]; then
         RECS="/add.new to setup"

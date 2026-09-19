@@ -17,6 +17,7 @@
 - script: converge-gates.sh
 - script: delivered.sh
 - script: done.sh
+- script: hotfix-gates.sh
 - script: qa-evidence.sh
 -->
 
@@ -33,7 +34,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 STEP 1: done.sh                 -> RUN FIRST (collect context)
 STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), then the knowledge record (feature AND hotfix)
+STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), hotfix receipt gate (hotfix only), then the knowledge record (feature AND hotfix)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
 STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
@@ -109,7 +110,7 @@ bash .codeadd/scripts/done.sh
 | `docs` | Branch: docs/[NNNN]D-* |
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
-All recognized types proceed to 2.1, which routes, and then to STEP 4 — except the `Closed out` route, which stops there. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
+All recognized types proceed to 2.1, which routes, and then to STEP 4 — except the `Closed out` route, which stops there. Feature quality gates apply to `feature` only. Hotfix receipt validation applies to `hotfix` only. Other types skip STEP 5 and continue to STEP 6.
 
 
 ### 2.1 Cross the Two Facts, Then Route
@@ -296,6 +297,42 @@ bash .codeadd/scripts/converge-gates.sh "${DIR}"
 - ✅ DO: Show blocked gates and instructions to re-run /add.review
 
 **NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict on the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
+
+### 4.0H: Hotfix Review Receipt (HOTFIX BRANCHES ONLY)
+
+**SKIP this substep entirely if `BRANCH_TYPE` ≠ `hotfix`.** Feature gates stay on `converge-gates.sh`. Refactor/chore/docs stay ungated here.
+
+The `Closed out` route already stopped at STEP 2 — this gate never reruns after delivery is indexed and merged.
+
+Run `hotfix-gates.sh` against the resolved hotfix directory. **Normal and Resume** — validate the current working tree before any close-out write:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh review-validate "${DIR}"
+```
+
+**Recovery** — validate the merge commit tree, not today's `main`:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh review-validate "${DIR}" --tree "${PR_MERGE_COMMIT}"
+```
+
+Use the merge commit SHA the probe already emitted. Never `HEAD` of current `main`.
+
+**GATE CHECK (hotfix only): `HOTFIX_REVIEW` must be `ok`.**
+
+| Verdict | Action |
+|---|---|
+| `ok` | Proceed |
+| `missing`, `blocked`, `stale`, `malformed` | STOP. Show `DETAIL`. Instruct the user to rerun `/add.hotfix` so its own review becomes current |
+
+Never send a hotfix to `/add.review`.
+
+**IF BLOCKED:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+- ⛔ DO NOT USE: Write on docs/delivered.jsonl
+- ✅ DO: Show `HOTFIX_REVIEW` and `DETAIL`, then STOP
 
 ---
 

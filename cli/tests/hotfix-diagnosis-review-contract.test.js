@@ -74,4 +74,15 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(cmd).not.toContain('@conformance-agent');
     expect(cmd).not.toContain('@failure-analysis-agent');
   });
+
+  it('done gates hotfix receipts and never sends them to add.review', () => {
+    const cmd = read('commands', 'add.done.md');
+    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toContain('review-validate');
+    expect(cmd).toMatch(/BRANCH_TYPE.*=.*hotfix|hotfix branches/i);
+    expect(cmd).toContain('--tree');
+    expect(cmd).toMatch(/Closed out/);
+    expect(cmd).toMatch(/rerun[\s`]*\/add\.hotfix/i);
+    expect(cmd).toMatch(/Never send a hotfix to `?\/add\.review`?/i);
+  });
 });
