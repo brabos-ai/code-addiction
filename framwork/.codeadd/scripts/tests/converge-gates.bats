@@ -1055,3 +1055,129 @@ write_ledger() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"GATES_OK=5/5"* ]]
 }
+
+# ─── Gate 1 — the build's own final review (plan optional-review-build-final-review, F1) ───
+# /add.build writes `Final review: passed|ruled N|blocked N (after review-NNN)`
+# into the scoped build-ledger.md. Most recent wins: a review-NNN.md numbered
+# ABOVE the one the line names decides; otherwise the line does.
+
+# write_final_review <dir> <verdict text after "Final review: "> [suggestion lines...]
+write_final_review() {
+  local dir=$1 verdict=$2; shift 2
+  mkdir -p "$dir"
+  {
+    [ -f "$dir/build-ledger.md" ] || echo "# Build ledger — feature: $(basename "$dir")"
+    echo "Final review: $verdict"
+    for s in "$@"; do echo "Blocker suggestion: $s"; done
+  } >> "$dir/build-ledger.md"
+}
+
+@test "final review L1.1: passed line and no review → GATE_REVIEW=ok, REVIEW_SOURCE=build, baseline skipped" {
+  DIR="docs/features/0070F-buildpassed"
+  ABS="$TEST_REPO/$DIR"
+  write_final_review "$ABS" "passed (after review-000)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=ok"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=build"* ]]
+  [[ "$output" == *"GATE_QA_BASELINE=skipped"* ]]
+  [[ "$output" == *$'\n'"BASELINE=none"* ]]
+}
+
+@test "final review L1.2: ruled N counts as ok" {
+  DIR="docs/features/0071F-buildruled"
+  write_final_review "$TEST_REPO/$DIR" "ruled 2 (after review-000)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=ok"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=build"* ]]
+}
+
+@test "final review L1.2: blocked N → broken, detail carries the verdict and every suggestion" {
+  DIR="docs/features/0072F-buildblocked"
+  write_final_review "$TEST_REPO/$DIR" "blocked 1 (after review-000)" \
+    "F-B1 — /add.build F0072F"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=build"* ]]
+  [[ "$output" == *"GATE_REVIEW_DETAIL="*"blocked 1"*"F-B1 — /add.build F0072F"* ]]
+}
+
+@test "final review L1.3: the line names review-002 and review-002.md is BLOCKED → the build decides" {
+  DIR="docs/features/0073F-buildnewer"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS"
+  write_review "$ABS" 002 '❌ BLOCKED' '> **QA baseline:** none'
+  write_final_review "$ABS" "passed (after review-002)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=ok"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=build"* ]]
+}
+
+@test "final review L1.4: a review numbered above the line decides, exactly as before" {
+  DIR="docs/features/0074F-reviewnewer"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS"
+  write_final_review "$ABS" "passed (after review-002)"
+  write_review "$ABS" 003 '❌ BLOCKED' '> **QA baseline:** none'
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=review"* ]]
+  [[ "$output" == *"REVIEW_PATH="*"review-003.md"* ]]
+  [[ "$output" != *"GATE_QA_BASELINE=skipped"* ]]
+}
+
+@test "final review L1.5: no line and no review → missing, REVIEW_SOURCE=none" {
+  DIR="docs/features/0075F-nothing"
+  mkdir -p "$TEST_REPO/$DIR"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=missing"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=none"* ]]
+}
+
+@test "final review L1.5b: a review and no line → REVIEW_SOURCE=review" {
+  DIR=$(build_ok_tree "0076F-reviewonly")
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"REVIEW_SOURCE=review"* ]]
+  [[ "$output" == *"GATE_QA_BASELINE=ok"* ]]
+}
+
+@test "final review L1.6: SFxx scope reads the subfeature's ledger, not the feature root's" {
+  DIR="docs/features/0077F-sfscope"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS/subfeatures/SF01-thing"
+  # Root ledger says passed; the SF01 ledger says blocked. Reading the root
+  # would pass here.
+  write_final_review "$ABS" "passed (after review-000)"
+  write_final_review "$ABS/subfeatures/SF01-thing" "blocked 1 (after review-000)" "X — /add.build F0077F"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR" SF01
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=broken"* ]]
+  [[ "$output" == *"REVIEW_SOURCE=build"* ]]
+}
+
+@test "final review: the LAST Final review line is the operative one" {
+  DIR="docs/features/0078F-lastline"
+  ABS="$TEST_REPO/$DIR"
+  write_final_review "$ABS" "blocked 1 (after review-000)" "X — /add.build F0078F"
+  write_final_review "$ABS" "passed (after review-000)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATE_REVIEW=ok"* ]]
+}
+
+@test "final review: a build-verdict tree with the other gates ok reaches GATES_OK=5/5" {
+  DIR="docs/features/0079F-fivebuild"
+  ABS="$TEST_REPO/$DIR"
+  mkdir -p "$ABS"
+  write_plan_coverage "$ABS" covered
+  write_final_review "$ABS" "ruled 1 (after review-000)"
+  run bash "$SCRIPTS_DIR/converge-gates.sh" "$DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"GATES_OK=5/5"* ]]
+}
