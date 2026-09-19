@@ -1,6 +1,6 @@
 ---
 name: add-delivery-mode
-description: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, how one command hands off to the next, and how the build ⇄ review loop counts its two rounds."
+description: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, how one command hands off to the next, and where the automatic path ends."
 ---
 
 # Delivery Mode
@@ -13,20 +13,20 @@ description: "Use when a pipeline command reaches a stop or its closing handoff 
 - mention: /add.review
 - mention: /add.done
 - mention: add-doc-schemas
+- mention: add-review-discipline
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Owns HOW a delivery moves through the pipeline once the user has approved it: the two modes, where
-each is carried, which stops wait, how one command hands off to the next, and how the build ⇄ review
-loop ends. WHAT each command presents at a stop belongs to that command — every command classifies its
+each is carried, which stops wait, how one command hands off to the next, and where the automatic
+path ends. WHAT each command presents at a stop belongs to that command — every command classifies its
 own stops where they sit.
 
 ## When to Use
 
 - A command is about to stop and has to know whether the stop waits.
 - A command has finished and is about to suggest, or run, the next one.
-- `/add.build` or `/add.review` is deciding whether the review loop runs another round.
 
 ## When NOT to Use
 
@@ -141,43 +141,22 @@ looked at the same files runs without the checks it was written with.
 The pipeline, in order:
 
 ```
-/add.brainstorm → /add.new → /add.plan → /add.build ⇄ /add.review → /add.build publish question
+/add.brainstorm → /add.new → /add.plan → /add.build (its own final review) → /add.build publish question
 ```
 
 ---
 
-## The Review Loop — Two Rounds
+## Where the Automatic Path Ends
 
-**On `automatic`, `/add.build` and `/add.review` run as a loop of at most two review rounds.** After
-the second review, the delivery goes to `/add.build`'s publish question whatever the review found.
+**`/add.build` reviews its own work.** Its final review runs once per delivery unit, applies one fix
+wave and writes the verdict `/add.done` reads — `add-review-discipline` owns it. The build then goes to
+its loop end: the checkpoint on an epic, then the next subfeature or the publish question.
 
-### Counting rounds
+**`/add.review` is not on the automatic path.** It is optional, for detail and QA, and a user runs it.
+It never hands a delivery on, and nothing hands a delivery to it.
 
-1. **The baseline.** When `/add.build` starts a delivery unit on `automatic` — a simple feature, or
-   one subfeature of an epic — and the ledger carries no baseline line for that unit, it writes one:
-   the highest `review-NNN` that already exists for that unit, or `000` when there is none.
-2. **A round** is a `review-NNN.md` numbered above that baseline.
-3. **The cap is two review rounds.** Rounds 1 and 2 count; there is no round 3.
-
-**The baseline is what makes the count survive a manual run.** A `review-003.md` written by hand before
-the automatic build started is not a round: with a baseline of `003`, the rounds are `004` and `005`.
-
-### Where the loop goes
-
-| After `/add.review` writes | Next |
-|---|---|
-| Round 1, with unresolved routable `## Fix Routing` rows | `/add.build`, which enters its correction mode from those rows, then back to `/add.review` |
-| Round 1 with nothing routable, or round 2 whatever it found | `/add.build`'s loop end: the checkpoint on an epic, then the next subfeature or the publish question |
-
-```
-IF ROUND 2 STILL HAS FINDINGS:
-  ⛔ DO NOT: Run a third review, or a third correction
-  ⛔ DO NOT: Hide the findings to reach the publish question clean
-  ✅ DO: Go to the publish question and print the remaining rows before asking
-```
-
-**The remaining findings are shown, never fixed silently and never dropped.** The user decides at the
-publish question with them in front of them.
+**The publish question is where the automatic path ends.** Whatever the final review left open is
+printed there, never fixed silently and never dropped.
 
 ---
 
@@ -188,9 +167,8 @@ ALWAYS:
 - Print a confirming stop's content in full before passing it on `automatic`
 - Classify a stop by the state it runs in, and call a doubtful one deciding
 - Hand off on `automatic` by reading the next command's file and running it from its first step
-- Count review rounds from the baseline the build recorded
 
 NEVER:
 - Reach `/add.done` without the user running it
-- Run a third review round on `automatic`
+- Hand an automatic delivery to `/add.review`
 - Re-ask the delivery mode after `/add.brainstorm` recorded it
