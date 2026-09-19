@@ -158,8 +158,8 @@ ALWAYS include at end of response (except if question was only about a specific 
 |------------------|-------------------|-----------|
 | Branch main, no feature | `/add.new` | Start new functionality |
 | Feature without plan.md | `/add.plan` | Next phase of flow |
-| Feature with plan, no implementation | `/add.build`, or choose automatic delivery at `/add.brainstorm`'s approval to run build ⇄ review unattended | Time to implement |
-| Feature implemented, no review | `/add.review` | Validate before finalizing |
+| Feature with plan, no implementation | `/add.build`, or choose automatic delivery at `/add.brainstorm`'s approval to run the build, with its own final review, unattended | Time to implement |
+| Feature implemented | `/add.done` | The build already ran its final review. `/add.review` is optional — run it first for detail or the QA judgement |
 | Feature reviewed | `/add.done` | Finalize and generate changelog |
 | Epic with pending sub-features | `/add.build feature N` | Next sub-feature |
 | Architecture question | `/health-check` | Technical analysis |

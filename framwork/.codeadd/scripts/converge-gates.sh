@@ -5,7 +5,16 @@
 # ============================================
 # Usage: bash .codeadd/scripts/converge-gates.sh <FEATURE_DIR> [SFxx]
 # Dependencies: bash, node >= 18 (manifest read only; guaranteed by the CLI)
-# Output: KEY=VALUE lines. Gate statuses: ok | missing | broken | not-probed.
+# Output: KEY=VALUE lines. Gate statuses: ok | missing | broken | not-probed,
+#         plus `skipped` on gate 2 only — a pass, counted in GATES_OK.
+#         REVIEW_SOURCE=build|review|none says which verdict gate 1 read:
+#         the `Final review:` line /add.build writes to the scoped
+#         build-ledger.md, or the highest review-NNN.md. Most recent wins —
+#         a review numbered ABOVE the one the line names decides; otherwise
+#         the line does. The line's grammar is exactly
+#           Final review: passed|ruled N|blocked N (after review-NNN)
+#         followed, on `blocked`, by one `Blocker suggestion: <id> — <command>`
+#         line per open blocker, which GATE_REVIEW_DETAIL carries.
 #         QA_FEATURE_STATE is the RAW manifest value (true|false|unset|no-manifest);
 #         the calling command applies default semantics — the defaults registry
 #         lives in the CLI (cli/src/features.js) and is not duplicated here.
@@ -58,10 +67,32 @@ flatten() { printf '%s' "$1" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/^ //;
 GATES_OK=0
 pass() { GATES_OK=$((GATES_OK + 1)); }
 
+# ─── Ledger scope ────────────────────────────────────────────────────────────
+# Follows the SFxx argument exactly as gate 3 does — never guessed. Gate 1 reads
+# the build's verdict from this ledger; gate 5 reads its task lines.
+
+LEDGER_SCOPE_DIR="$FEATURE_DIR"
+LEDGER_SCOPE_LABEL="$FEATURE_DIR_ARG"
+if [ -n "$SF_ARG" ]; then
+  for sfdir in "$FEATURE_DIR/subfeatures/${SF_ARG}"-*; do
+    [ -d "$sfdir" ] || continue
+    LEDGER_SCOPE_DIR="$sfdir"
+    LEDGER_SCOPE_LABEL="$FEATURE_DIR_ARG/subfeatures/$(basename "$sfdir")"
+  done
+fi
+
+LEDGER_TASKS="$LEDGER_SCOPE_DIR/tasks.md"
+LEDGER_FILE="$LEDGER_SCOPE_DIR/build-ledger.md"
+
 # ─── Gate 1: review verdict ──────────────────────────────────────────────────
-# The highest-numbered review-NNN.md exists and its `| **Overall** |` row reads
-# PASSED. Numbering is the review sequence /add.review allocates; the highest is
-# always the operative one.
+# Two sources, and the most recent one decides.
+#   - The build's own final review: the LAST `Final review:` line of the scoped
+#     ledger, naming the highest review-NNN.md that existed when it ran.
+#   - /add.review: the highest-numbered review-NNN.md, whose `| **Overall** |`
+#     row must read PASSED.
+# A review numbered ABOVE the one the line names was written after the build's
+# review, so it decides. Otherwise the line decides — including over a review
+# it names, which the build's correction already answered. No dates compared.
 
 REVIEW_PATH=""
 REVIEW_NNN=""
@@ -71,9 +102,50 @@ for candidate in "$FEATURE_DIR"/review-[0-9][0-9][0-9].md; do
 done
 [ -n "$REVIEW_PATH" ] && REVIEW_NNN=$(basename "$REVIEW_PATH" .md | sed 's/^review-//')
 
-if [ -z "$REVIEW_PATH" ]; then
+FINAL_LINE=""
+[ -f "$LEDGER_FILE" ] && FINAL_LINE=$(grep -E '^Final review:' "$LEDGER_FILE" 2>/dev/null | tail -n 1)
+FINAL_NNN=""
+if [ -n "$FINAL_LINE" ]; then
+  FINAL_NNN=$(printf '%s' "$FINAL_LINE" | sed -nE 's/.*\(after review-([0-9]{3})\)[[:space:]]*$/\1/p')
+fi
+
+REVIEW_SOURCE=none
+if [ -n "$FINAL_LINE" ]; then
+  REVIEW_SOURCE=build
+  # 10# forces base ten: `008` is not an octal literal here.
+  if [ -n "$REVIEW_NNN" ] && [ -n "$FINAL_NNN" ] && [ $((10#$REVIEW_NNN)) -gt $((10#$FINAL_NNN)) ]; then
+    REVIEW_SOURCE=review
+  fi
+elif [ -n "$REVIEW_PATH" ]; then
+  REVIEW_SOURCE=review
+fi
+
+if [ "$REVIEW_SOURCE" = "build" ]; then
+  FINAL_VERDICT=$(printf '%s' "$FINAL_LINE" | sed -E 's/^Final review:[[:space:]]*//')
+  if [ -z "$FINAL_NNN" ]; then
+    emit "GATE_REVIEW=broken"
+    emit "GATE_REVIEW_DETAIL=Malformed ledger line (no '(after review-NNN)'): $(flatten "$FINAL_LINE")"
+  elif printf '%s' "$FINAL_VERDICT" | grep -qE '^(passed|ruled [0-9]+) \(after review-[0-9]{3}\)'; then
+    emit "GATE_REVIEW=ok"
+    emit "GATE_REVIEW_DETAIL=Build final review: $(flatten "$FINAL_VERDICT")"
+    pass
+  elif printf '%s' "$FINAL_VERDICT" | grep -qE '^blocked [0-9]+ \(after review-[0-9]{3}\)'; then
+    # The suggestions are the lines written after the LAST verdict line, up to
+    # the next verdict line. An earlier blocked round's suggestions are history.
+    SUGGESTIONS=$(awk '
+      /^Final review:/ { buf = ""; next }
+      /^Blocker suggestion:/ { sub(/^Blocker suggestion:[[:space:]]*/, ""); buf = buf (buf == "" ? "" : " | ") $0 }
+      END { print buf }
+    ' "$LEDGER_FILE")
+    emit "GATE_REVIEW=broken"
+    emit "GATE_REVIEW_DETAIL=Build final review: $(flatten "$FINAL_VERDICT")${SUGGESTIONS:+ — suggestions: $(flatten "$SUGGESTIONS")}"
+  else
+    emit "GATE_REVIEW=broken"
+    emit "GATE_REVIEW_DETAIL=Malformed ledger line (verdict is not passed, ruled N or blocked N): $(flatten "$FINAL_LINE")"
+  fi
+elif [ -z "$REVIEW_PATH" ]; then
   emit "GATE_REVIEW=missing"
-  emit "GATE_REVIEW_DETAIL=No review-NNN.md under $FEATURE_DIR_ARG"
+  emit "GATE_REVIEW_DETAIL=No review-NNN.md under $FEATURE_DIR_ARG and no Final review: line in $LEDGER_SCOPE_LABEL/build-ledger.md"
 else
   # The verdict is a CELL, not a substring of the row. Grepping the whole row
   # for PASSED passes a BLOCKED review whose Details cell happens to read
@@ -104,6 +176,7 @@ else
   fi
 fi
 emit "REVIEW_PATH=$REVIEW_PATH"
+emit "REVIEW_SOURCE=$REVIEW_SOURCE"
 
 # ─── Gate 2: QA baseline ─────────────────────────────────────────────────────
 # The review's `> **QA baseline:**` line, handed verbatim to qa-evidence.sh
@@ -112,8 +185,17 @@ emit "REVIEW_PATH=$REVIEW_PATH"
 # propagate the exit code. Letting it escape would break the exit-0 contract on
 # exactly the cases this gate exists to catch.
 
+# When the build's verdict decides there is no review document, so there is no
+# baseline to validate: `skipped`, counted as a pass, BASELINE=none. /add.done
+# owns whether QA going unjudged needs the user's word.
+
 BASELINE=""
-if [ -z "$REVIEW_PATH" ]; then
+if [ "$REVIEW_SOURCE" = "build" ]; then
+  BASELINE=none
+  emit "GATE_QA_BASELINE=skipped"
+  emit "GATE_QA_BASELINE_DETAIL=The build's final review decided; no review document carries a QA baseline"
+  pass
+elif [ -z "$REVIEW_PATH" ]; then
   emit "GATE_QA_BASELINE=missing"
   emit "GATE_QA_BASELINE_DETAIL=No review document to read a baseline from"
 else
@@ -384,18 +466,8 @@ fi
 # This is gate 4's own precedent for an absent coverage table — making absence
 # blocking would mean a whole class of feature could never converge.
 
-LEDGER_SCOPE_DIR="$FEATURE_DIR"
-LEDGER_SCOPE_LABEL="$FEATURE_DIR_ARG"
-if [ -n "$SF_ARG" ]; then
-  for sfdir in "$FEATURE_DIR/subfeatures/${SF_ARG}"-*; do
-    [ -d "$sfdir" ] || continue
-    LEDGER_SCOPE_DIR="$sfdir"
-    LEDGER_SCOPE_LABEL="$FEATURE_DIR_ARG/subfeatures/$(basename "$sfdir")"
-  done
-fi
-
-LEDGER_TASKS="$LEDGER_SCOPE_DIR/tasks.md"
-LEDGER_FILE="$LEDGER_SCOPE_DIR/build-ledger.md"
+# LEDGER_SCOPE_DIR, LEDGER_TASKS and LEDGER_FILE are resolved above gate 1,
+# which reads the same ledger for the build's `Final review:` line.
 
 if [ ! -f "$LEDGER_TASKS" ]; then
   emit "GATE_LEDGER=ok"

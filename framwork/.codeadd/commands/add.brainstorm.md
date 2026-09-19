@@ -435,7 +435,7 @@ option table — with these three options and nothing else:
 | **Keep discussing** | No intent file, no handoff. Return to STEP 2 with what the user wants to reopen |
 
 **Stop kind — deciding, in every state.** The delivery mode is what this question creates. What each
-mode does afterwards — which stops wait, how stages hand off, how the review loop ends — is owned by
+mode does afterwards — which stops wait, how stages hand off, where the automatic path ends — is owned by
 `{{skill:add-delivery-mode/SKILL.md}}`.
 
 ⛔ **No option reaches `/add.done`.** The automatic delivery ends at the build's PR question, and the
