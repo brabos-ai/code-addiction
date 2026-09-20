@@ -24,6 +24,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - script: build-setup.sh
 - skill: add-doc-schemas/references/backlog.md
 - skill: add-doc-schemas/references/delivery-index.md
+- mention: backlog.sh
 - skill: add-doc-schemas/references/fix.md
 - skill: add-doc-schemas/references/history.md
 - skill: add-doc-schemas/references/new-feature.md
