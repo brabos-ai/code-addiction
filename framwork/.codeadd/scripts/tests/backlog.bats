@@ -168,25 +168,32 @@ tickets() {
 }
 
 # L1.4 — the reference and the script cannot disagree about the vocabulary.
+# The script builds its refusals as refuse("<name>") and the reference lists
+# them as rows of a table whose first column is the name. Neither carries the
+# literal string "REFUSED=<name>", so each side is read in its own shape.
 @test "L1.4: every REFUSED= name backlog.sh can emit appears in references/backlog.md" {
   local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
   [ -f "$ref" ]
 
   local names
-  names=$(grep -oE 'REFUSED=[a-z-]+' "$SCRIPTS_DIR/backlog.sh" | sort -u | cut -d= -f2)
+  names=$(grep -oE 'refuse\("[a-z-]+"\)' "$SCRIPTS_DIR/backlog.sh" |           grep -oE '"[a-z-]+"' | tr -d '"' | sort -u)
   [ -n "$names" ]
 
   local missing=""
   while IFS= read -r n; do
-    grep -q "REFUSED=$n" "$ref" || missing="$missing $n"
+    grep -qE "^\| \`$n\` \|" "$ref" || missing="$missing $n"
   done <<< "$names"
   [ -z "$missing" ]
 }
 
-@test "L1.4b: all seven hard bans are named in the reference" {
+# Both directions. A name the reference documents but the script can no
+# longer emit is worse than a missing one: a consumer writes a branch for it
+# and that branch is dead from the day it ships.
+@test "L1.4b: the documented vocabulary and the emittable one are the same set" {
   local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
   for n in invalid-json missing-field reserved-field unknown-status duplicate-id unknown-id; do
-    grep -q "REFUSED=$n" "$ref"
+    grep -qE "^\| \`$n\` \|" "$ref"
+    grep -qF "refuse(\"$n\")" "$SCRIPTS_DIR/backlog.sh"
   done
 }
 

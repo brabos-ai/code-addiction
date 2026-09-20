@@ -88,7 +88,7 @@ tell the intent from the work — see `{{skill:add-id-convention/SKILL.md}}`.
 }
 ```
 
-Written once, on the first `backlog.sh` invocation that finds it absent. **Never rewritten after that**,
+Written once, on the first `backlog.sh` WRITE that finds it absent — a read never brings a file into existence. **Never rewritten after that**,
 and `backlog.bats` asserts it with `DEFS_PRESERVED`: a hand-edited file survives further writes
 byte-for-byte.
 
