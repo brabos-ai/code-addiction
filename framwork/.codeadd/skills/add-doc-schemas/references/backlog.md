@@ -119,10 +119,10 @@ they are entitled to make, so the two directions differ:
   `DAMAGED_LINE=<n>` line gives each number; every other ticket still answers and the exit stays 0. A
   hand-edited board is expected, not an anomaly — this is how `delivered.sh read` already treats a damaged
   index.
-- **The allocators never parse this file.** `next-id.sh` and `status.sh next-id` grep the raw text for an
-  `"id":"[0-9]{4}[A-Z]"` field, so a line whose JSON is broken still yields its id and a damaged board can
-  never block an allocation. Both stay pure bash; a JSON parse there would make `node` a dependency of
-  every `/add.new`.
+- **The allocators read this file, and how they read it is owned by `{{skill:add-id-convention/SKILL.md}}`**
+  — see its "One counter, two sources, two implementations" section. What matters here is only the
+  consequence for the format: a ticket's id must stay recoverable from the raw text of its line, which is
+  why `id` is written first and is never omitted.
 - **`list` defaults to open tickets.** `--all` returns every one, `--status <name>` filters to one.
 - **`search` matches `title`, `tldr` and `notes`**, and returns in board order — priority order survives
   the filter.
