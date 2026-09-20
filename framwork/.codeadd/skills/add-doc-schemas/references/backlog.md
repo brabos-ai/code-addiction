@@ -117,8 +117,8 @@ they are entitled to make, so the two directions differ:
 
 - **A damaged line is reported by its number and skipped.** `DAMAGED_LINES=<n>` gives the count and one
   `DAMAGED_LINE=<n>` line gives each number; every other ticket still answers and the exit stays 0. A
-  hand-edited board is expected, not an anomaly — this is how `delivered.sh read` already treats a damaged
-  index.
+  hand-edited board is expected, not an anomaly — the delivery index's own reader already treats a damaged
+  line this way, and `references/delivery-index.md` states it there.
 - **The allocators read this file, and how they read it is owned by `{{skill:add-id-convention/SKILL.md}}`**
   — see its "One counter, two sources, two implementations" section. What matters here is only the
   consequence for the format: a ticket's id must stay recoverable from the raw text of its line, which is

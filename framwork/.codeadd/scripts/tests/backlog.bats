@@ -105,6 +105,13 @@ valid_ticket() {
 JSON
 }
 
+# EVERY invocation goes through `bash`, including the ones inside a
+# `run bash -c "... | ..."` pipe. The framework's own usage lines all read
+# `bash .codeadd/scripts/<x>.sh`, and the shipped scripts are a mix of 644 and
+# 755 in git — delivered.sh, the model for this one, is 644. A test that
+# executes the file directly is testing an execute bit nothing else relies on,
+# and it passes on any checkout where someone ran chmod while failing on a
+# fresh clone. That is exactly how it passed locally and failed in CI with 127.
 nextid()  { bash "$SCRIPTS_DIR/next-id.sh" "$@"; }
 statusid() { bash "$SCRIPTS_DIR/status.sh" next-id "$@"; }
 backlog() { bash "$SCRIPTS_DIR/backlog.sh" "$@"; }
@@ -401,7 +408,7 @@ JSON
   local id
   id=$(grep -oE '"id":"[0-9]{4}B"' "$BACKLOG" | head -1 | cut -d'"' -f4)
 
-  run bash -c "printf '{\"status\":\"blocked\"}' | '$SCRIPTS_DIR/backlog.sh' update $id"
+  run bash -c "printf '{\"status\":\"blocked\"}' | bash '$SCRIPTS_DIR/backlog.sh' update $id"
   [ "$status" -eq 0 ]
   grep -q '"status":"blocked"' "$BACKLOG"
 }
@@ -535,7 +542,7 @@ JSON
   local before
   before=$(cat "$BACKLOG")
 
-  run bash -c "printf '%s' '$(valid_ticket | sed 's/"status":"open"/"status":"invented"/')' | '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf '%s' '$(valid_ticket | sed 's/"status":"open"/"status":"invented"/')' | bash '$SCRIPTS_DIR/backlog.sh' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=unknown-status'
   [ "$(cat "$BACKLOG")" = "$before" ]
@@ -615,7 +622,7 @@ JSON
 
 @test "ban 1+2: a caller-supplied id, created_at or updated_at is refused" {
   for field in '"id":"0005B"' '"created_at":"2020-01-01T00:00:00Z"' '"updated_at":"2020-01-01T00:00:00Z"'; do
-    run bash -c "printf '{%s,\"title\":\"t\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' '$field' | '$SCRIPTS_DIR/backlog.sh' add"
+    run bash -c "printf '{%s,\"title\":\"t\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' '$field' | bash '$SCRIPTS_DIR/backlog.sh' add"
     [ "$status" -eq 2 ]
     printf '%s\n' "$output" | grep -q 'REFUSED=reserved-field'
   done
@@ -623,24 +630,24 @@ JSON
 
 @test "ban 4: an id already on the board is never re-added" {
   backlog_line "0001B" "first"
-  run bash -c "printf '{\"title\":\"dup\"}' | '$SCRIPTS_DIR/backlog.sh' update 0001B"
+  run bash -c "printf '{\"title\":\"dup\"}' | bash '$SCRIPTS_DIR/backlog.sh' update 0001B"
   [ "$status" -eq 0 ]
   # The board cannot end up with two lines carrying one id, by any route.
   [ "$(grep -c '"id":"0001B"' "$BACKLOG")" -eq 1 ]
 }
 
 @test "ban 5: title, tldr and done_when are required and non-empty" {
-  run bash -c "printf '{\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf '{\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | bash '$SCRIPTS_DIR/backlog.sh' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=missing-field'
 
-  run bash -c "printf '{\"title\":\"\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf '{\"title\":\"\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | bash '$SCRIPTS_DIR/backlog.sh' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=missing-field'
 }
 
 @test "ban 6: stdin that is not one JSON object is refused" {
-  run bash -c "printf 'not json at all' | '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf 'not json at all' | bash '$SCRIPTS_DIR/backlog.sh' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=invalid-json'
 }
@@ -648,7 +655,7 @@ JSON
 @test "ban 7: update, comment, move and remove refuse an id that is not on the board" {
   backlog_line "0001B" "first"
 
-  run bash -c "printf '{\"title\":\"x\"}' | '$SCRIPTS_DIR/backlog.sh' update 0404B"
+  run bash -c "printf '{\"title\":\"x\"}' | bash '$SCRIPTS_DIR/backlog.sh' update 0404B"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=unknown-id'
 
