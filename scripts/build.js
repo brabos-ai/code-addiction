@@ -1847,11 +1847,27 @@ const AGENT_DIALECTS = {
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
-  opencode(_frontmatter, body, meta) {
+  opencode({ blocks }, body, meta) {
     const out = [`description: ${yamlScalar(meta.description)}`, 'mode: subagent'];
     // A read-only agent gets its constraint enforced by the engine, not merely
     // stated in prose. OpenCode's permission map is the only dialect that can.
-    if (meta.readonly) out.push('permission:', '  edit: deny', '  bash: deny', '  webfetch: allow');
+    //
+    // `edit: deny` is unconditional -- it is what read-only MEANS, and nothing
+    // in a source file may opt out of it.
+    //
+    // DO NOT make `bash: deny` unconditional again. Its condition is the
+    // source's own `tools:` line, and an agent that declares Bash declares it
+    // on purpose: git-history-agent runs read-only git, and
+    // framework-discovery-agent shells out to `node scripts/graph.js` where no
+    // MCP is configured. Denying bash to those two did not make them safer --
+    // it removed their only working route while the declaration went on saying
+    // otherwise. Read-only is still enforced, by `edit: deny`.
+    const declaresBash = /(^|[\s,])Bash([\s,]|$)/.test((blocks && blocks.tools) || '');
+    if (meta.readonly) {
+      out.push('permission:', '  edit: deny');
+      if (!declaresBash) out.push('  bash: deny');
+      out.push('  webfetch: allow');
+    }
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
