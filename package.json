@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/build.js",
+    "build:workbench": "node scripts/build-workbench.js",
     "test": "npm --prefix cli test",
     "test:scripts": "node scripts/run-bats.js",
     "release": "bash scripts/release.sh",
