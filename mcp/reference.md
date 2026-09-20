@@ -10,7 +10,7 @@ L4.1 fails when they differ, so a forgotten regeneration is caught in CI rather
 than shipped.
 
 ⛔ **A change to this model updates this file in the SAME F-block.**
-`.claude/skills/add-framework-product-layer/SKILL.md` states that rule. A
+`workbench/skills/add-framework-product-layer/SKILL.md` states that rule. A
 reference that lags the code is what hid the `touched_by` gap for weeks: a
 retirement note claimed a file list "lives now" in the index, and it was the
 note, not the code, that everyone believed.

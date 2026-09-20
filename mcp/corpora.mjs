@@ -569,7 +569,14 @@ function loadArtefactCorpus(root) {
 export const CORPORA = {
   artefacts: {
     name: 'artefacts',
-    roots: ['framwork/.codeadd', '.claude'],
+    // `workbench`, NOT `.claude`. Both hold the same artefacts in this
+    // repository, and only one is source: `scripts/build-workbench.js` compiles
+    // workbench/ into the root `.claude/` and `.opencode/`, and `buildResources`
+    // strips every `<!-- uses: -->` block on the way. Pointed at the output, this
+    // corpus indexes edge-free nodes and reports a graph with no relations in it
+    // — the exact failure the probe below was added to prevent, arriving from
+    // inside the repository instead of from an install.
+    roots: ['framwork/.codeadd', 'workbench'],
     // Absent from the release ZIP, which is the whole point: without this probe
     // an installed `.claude/` — its `uses:` blocks stripped at build — would
     // index as dozens of edge-free nodes and report an empty graph, which is
