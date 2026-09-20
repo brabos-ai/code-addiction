@@ -3,10 +3,17 @@ name: plan-review-agent
 description: Reviews a draft plan or brainstorm design for executability, hidden assumptions, contradictions, and missing decisions before delivery. Read-only. Use after a plan/design file is written and before presenting it as ready.
 model: sonnet
 memory: project
-# sonnet: plan-quality review needs adversarial reasoning, not a filename scan
-# no tools/disallowedTools: one shell call verifies every cited path and queries the
-# graph, where per-path tools spend a model turn each. READ-ONLY is the rule below.
 ---
+
+<!-- Frontmatter notes — source-only. stripHtmlComments removes this at build, so it
+     reaches no provider output. It lived inside the frontmatter until F12, where
+     splitFrontmatter glued it onto the preceding key and every dialect emitted it.
+
+sonnet: plan-quality review needs adversarial reasoning, not a filename scan
+no tools/disallowedTools: one shell call verifies every cited path and queries the
+graph, where per-path tools spend a model turn each. READ-ONLY is the rule below.
+-->
+
 
 <!-- uses:
 - skill: add-artefact-graph

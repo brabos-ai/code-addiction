@@ -6,19 +6,26 @@ readonly: true
 tools: Glob, Read, Bash, mcp__artefact-graph__impact, mcp__artefact-graph__dependencies, mcp__artefact-graph__neighbors, mcp__artefact-graph__path, mcp__artefact-graph__orphans, mcp__artefact-graph__search, mcp__artefact-graph__get, mcp__artefact-graph__stats, mcp__artefact-graph__touched_by, mcp__artefact-graph__history
 disallowedTools: Write, Edit, NotebookEdit, Grep
 memory: project
-# haiku: the graph answers the relationship question, so what is left is filename scans
-# and short reads — no deep reasoning, and fast dispatch over all plan slugs.
-# `Bash` is granted for ONE purpose: shelling out to `node scripts/graph.js` where MCP
-# is not configured. The denylist keeps every write tool out, and `readonly: true` is
-# kept alongside it for the reason plan-readback-agent records — provider dialects read
-# different keys, so dropping either leaves some provider unenforced.
-# ⛔ NEITHER KEY CAN STOP A SHELL WRITE. With `Bash` granted, "writes no file" rests on
-# the Constraints section below, not on the dialect. That cost is stated in the plan
-# this agent was changed by, and it is why the constraint is written as a prohibition
-# rather than as a description.
-# `reindex` is deliberately absent from the MCP list: it rebuilds an index, and this
-# agent investigates.
 ---
+
+<!-- Frontmatter notes — source-only. stripHtmlComments removes this at build, so it
+     reaches no provider output. It lived inside the frontmatter until F12, where
+     splitFrontmatter glued it onto the preceding key and every dialect emitted it.
+
+haiku: the graph answers the relationship question, so what is left is filename scans
+and short reads — no deep reasoning, and fast dispatch over all plan slugs.
+`Bash` is granted for ONE purpose: shelling out to `node scripts/graph.js` where MCP
+is not configured. The denylist keeps every write tool out, and `readonly: true` is
+kept alongside it for the reason plan-readback-agent records — provider dialects read
+different keys, so dropping either leaves some provider unenforced.
+⛔ NEITHER KEY CAN STOP A SHELL WRITE. With `Bash` granted, "writes no file" rests on
+the Constraints section below, not on the dialect. That cost is stated in the plan
+this agent was changed by, and it is why the constraint is written as a prohibition
+rather than as a description.
+`reindex` is deliberately absent from the MCP list: it rebuilds an index, and this
+agent investigates.
+-->
+
 
 <!-- uses:
 - skill: add-artefact-graph

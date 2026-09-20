@@ -5,22 +5,29 @@ model: sonnet
 readonly: true
 tools: Glob, Read
 disallowedTools: Write, Edit, NotebookEdit, Bash, Grep
-# The denylist is not redundant with the allowlist. Provider dialects read
-# different keys — `readonly:` is what OpenCode turns into a deny and what Cursor
-# reads directly, while the Claude dialect passes through `tools`/`disallowedTools`
-# only. Dropping either leaves some provider unenforced.
-# What NEITHER key can do is narrow `Read` to one path. That limit is prose, and
-# the body says so rather than claiming an enforcement that does not exist.
-# Three deliberate absences, recorded so nobody "fixes" them:
-#   no `memory:` — every sibling agent carries `memory: project`, but memory would
-#   let this reader recall context the document never gave it, which is the one way
-#   to make the readback worthless.
-#   no `skills:` — the method is here, in full. Preloading the caller's dispatch
-#   discipline would tell a leaf about pass counts it cannot control.
-#   no plugin injection marker — the allowlist keeps MCP out, and that part IS
-#   enforced. A code-graph tool would let the reader repair a gap from outside the
-#   document and report a comprehension the text never delivered.
 ---
+
+<!-- Frontmatter notes — source-only. stripHtmlComments removes this at build, so it
+     reaches no provider output. It lived inside the frontmatter until F12, where
+     splitFrontmatter glued it onto the preceding key and every dialect emitted it.
+
+The denylist is not redundant with the allowlist. Provider dialects read
+different keys — `readonly:` is what OpenCode turns into a deny and what Cursor
+reads directly, while the Claude dialect passes through `tools`/`disallowedTools`
+only. Dropping either leaves some provider unenforced.
+What NEITHER key can do is narrow `Read` to one path. That limit is prose, and
+the body says so rather than claiming an enforcement that does not exist.
+Three deliberate absences, recorded so nobody "fixes" them:
+no `memory:` — every sibling agent carries `memory: project`, but memory would
+let this reader recall context the document never gave it, which is the one way
+to make the readback worthless.
+no `skills:` — the method is here, in full. Preloading the caller's dispatch
+discipline would tell a leaf about pass counts it cannot control.
+no plugin injection marker — the allowlist keeps MCP out, and that part IS
+enforced. A code-graph tool would let the reader repair a gap from outside the
+document and report a comprehension the text never delivered.
+-->
+
 
 <!-- uses:
 - mention: add-framework--build

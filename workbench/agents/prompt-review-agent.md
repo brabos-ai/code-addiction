@@ -3,14 +3,21 @@ name: prompt-review-agent
 description: Ticks the eight-item prompt quality ruler over one internal artefact — a command, skill or agent — with evidence per item, and returns a verdict. Reads the artefact and its direct graph neighbours. Read-only. Use on a delivery the build just wrote, or on an artefact a plan is about to change.
 model: sonnet
 memory: project
-# sonnet: items 4 through 8 are judgements about prose, not a filename scan
-# no tools/disallowedTools: the artefact-graph MCP verbs arrive with the open tool
-# set, and family A is answered by those verbs or not at all. A restriction that
-# kept MCP out would leave three of eight items permanently unverifiable.
-# The mould is plan-review-agent, deliberately: same open set, same READ-ONLY
-# rule in the body, same verdict vocabulary. What differs is the subject — that
-# reviewer reads a document about work, this one reads the work.
 ---
+
+<!-- Frontmatter notes — source-only. stripHtmlComments removes this at build, so it
+     reaches no provider output. It lived inside the frontmatter until F12, where
+     splitFrontmatter glued it onto the preceding key and every dialect emitted it.
+
+sonnet: items 4 through 8 are judgements about prose, not a filename scan
+no tools/disallowedTools: the artefact-graph MCP verbs arrive with the open tool
+set, and family A is answered by those verbs or not at all. A restriction that
+kept MCP out would leave three of eight items permanently unverifiable.
+The mould is plan-review-agent, deliberately: same open set, same READ-ONLY
+rule in the body, same verdict vocabulary. What differs is the subject — that
+reviewer reads a document about work, this one reads the work.
+-->
+
 
 <!-- uses:
 - skill: building-commands
