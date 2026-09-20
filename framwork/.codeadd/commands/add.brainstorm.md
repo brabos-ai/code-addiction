@@ -30,7 +30,7 @@ end on one approval that decides how the delivery continues.
 **STEPS IN ORDER:**
 ```
 STEP 1:   Load context (status.sh)   → SILENT, FIRST
-STEP 1.5: Classify the request       → spike | bounded | architectural — ANNOUNCED, OWN TURN
+STEP 1.5: Classify the request       → spike | bounded | architectural — STATED, NO STOP
 STEP 2:   Interactive Exploration    → objective drafted first, then one question at a time
 STEP 3:   Write the brainstorm doc   → ARCHITECTURAL PATH ONLY — always, before the approval
 STEP 4:   Self-review + gate         → ARCHITECTURAL PATH ONLY, must return PASS
@@ -125,28 +125,32 @@ IF AN ENTRY CAME BACK gone OR superseded:
 
 ---
 
-## STEP 1.5: Classify the Request — Announce the Path [OWN TURN]
+## STEP 1.5: Classify the Request — State the Path [NO STOP]
 
-Sort the request into **exactly one** of three paths, then **say it out loud in one line and STOP**.
+Sort the request into **exactly one** of three paths, **state it in one line, and keep going in the
+same turn.**
 
-A classification the user cannot see is one they cannot correct — and they are the one who knows whether the
-flow being changed already exists.
+**This is YOUR call, not the user's.** The path measures the repository — whether the flow being
+changed already exists — and that is something you read off disk. The user cannot be expected to know
+what `bounded` and `architectural` mean here, so asking them to confirm or override buys nothing and
+costs a full round trip on every idea. State it so it is on the record, then continue.
 
 ```
 IF you have decided the path:
-  ⛔ DO NOT: Announce the path and ask the first question in the same turn
-  ⛔ DO NOT: Classify silently and start exploring
-  ✅ DO: Print the one-line announcement, WAIT for the user's turn, THEN continue on that path
+  ⛔ DO NOT: Ask the user to confirm, approve or override the path
+  ⛔ DO NOT: End the turn on the path line and wait
+  ⛔ DO NOT: Classify silently — the line is still printed
+  ✅ DO: Print the one line, then continue on that path in the SAME turn
 ```
 
-**Stop kind — deciding, in every state.** The delivery mode does not exist until STEP 5.2, so no stop
-before it can have been covered by an approval.
-
-| Path | The request is | Announce (one line, then stop) |
+| Path | The request is | State (one line, then continue) |
 |------|---------------|-------------------------------|
-| **spike** | a feasibility question — "can we…", "is it possible…", "quick and dirty is fine" | `Path: spike — I'll probe and report back. Override with bounded or architectural.` |
-| **bounded** | a well-scoped change to a flow **that already exists in this repo** | `Path: bounded — questions, then a short design in chat. Override if this needs a document.` |
-| **architectural** | a new subsystem, a change that restructures how parts fit together, or one that alters an interface others depend on | `Path: architectural — full exploration and a brainstorm document. Override if that is too much.` |
+| **spike** | a feasibility question — "can we…", "is it possible…", "quick and dirty is fine" | `Path: spike — I'll probe and report back.` |
+| **bounded** | a well-scoped change to a flow **that already exists in this repo** | `Path: bounded — questions, then a short design in chat.` |
+| **architectural** | a new subsystem, a change that restructures how parts fit together, or one that alters an interface others depend on | `Path: architectural — full exploration and a brainstorm document.` |
+
+**The user can still change it, unprompted.** If they say the path is wrong, re-classify and carry on.
+What is removed is the question, not their ability to answer it.
 
 **Bounded measures the repository, not familiarity.** Understanding the *kind* of change is not enough. If
 there is no existing flow you can open, read and modify, the work is **architectural** — whatever it
@@ -178,7 +182,8 @@ still presented, and this command still stops until the user says yes.
 | "I understand this kind of app, so it's bounded" | Bounded measures the repository. No existing flow to read and modify ⇒ architectural. |
 | "The spike works, so I'll keep the code" | Spike output is throwaway by definition. Keeping it is a new request with its own classification. |
 | "It grew, but I'm almost done" | Growth upgrades the path. Nearly finished on the wrong path is not nearly finished. |
-| "The user is in a hurry — announce and ask together" | The announcement costs one line and is the only moment a misclassification is cheap to fix. |
+| "The user should confirm the path" | They cannot — the path measures the repository, which you read and they do not. Decide it, state it, move on. |
+| "Nobody answers the line, so I'll drop it" | The line is the record of which path this run took. The final report states it and the intent file carries it. |
 
 ---
 
@@ -517,7 +522,7 @@ file as its argument, from its first step, as `add-delivery-mode` describes.
 
 **ALWAYS:**
 - Run status.sh and load context before answering
-- Announce the classified path in its own turn, before the first question
+- State the classified path in one line and continue in the same turn — never ask the user to confirm it
 - Draft the objective and have the user correct it before any other question
 - Ask exactly one question per turn; wait for the answer
 - Name the source of every recommendation; let this project win over outside practice

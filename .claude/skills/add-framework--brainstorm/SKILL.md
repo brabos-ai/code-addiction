@@ -31,7 +31,7 @@ Transforms rough ideas into fully-formed, final designs ready for `/add-framewor
 
 ```
 STEP 1: Capture topic & discover context → detect mode, capture topic, dispatch agent
-STEP 2: Understand the idea            → objective drafted (2.1.1), clarifying questions, 2.2 classification — PATH ANNOUNCED, OWN TURN
+STEP 2: Understand the idea            → objective drafted (2.1.1), clarifying questions, 2.2 classification — PATH STATED, NO STOP
 STEP 3: Validate complexity            → ARCHITECTURAL PATH ONLY — simple or umbrella-worthy
 STEP 4: Explore & validate decisions   → conversational ideation (abbreviated on spike / bounded)
 STEP 5: Generate design document       → ARCHITECTURAL PATH ONLY — write draft design (no open questions)
@@ -212,7 +212,7 @@ these five questions are how it stops being one.
 - **Sizing** (2.2.1) answers *which artefacts, and how many topics*. It feeds STEP 3's decomposition offer and
   the layer note STEP 7.3 carries into the design document. It stays internal.
 - **Effort path** (2.2.2) answers *how much process this request needs*. It routes STEPS 3 through 7. It is
-  announced.
+  stated in one line, in the same turn as whatever comes next, and it is NOT put to the user for approval.
 
 A future reader must not collapse them: delete the sizing and STEP 3 has no input; delete the effort path and
 every request pays the architectural price.
@@ -227,25 +227,32 @@ Internally classify:
 This sizing is **not announced**. It is an implementation detail of STEP 3's decomposition offer and the
 layer note STEP 7.3 carries into the design document, not a decision the user needs to correct.
 
-#### 2.2.2 Effort Path (ANNOUNCED — OWN TURN)
+#### 2.2.2 Effort Path (STATED — NO STOP)
 
-Sort the request into **exactly one** of three paths, then **say it out loud in one line and STOP**.
+Sort the request into **exactly one** of three paths, **state it in one line, and keep going in the same
+turn.**
 
-A classification the user cannot see is one they cannot correct — and they are the one who knows whether the
-artefact being changed already exists.
+**This is YOUR call, not the user's.** The path measures the repository — whether the artefact being
+changed already exists — and that is something you read off disk. The user cannot be expected to know
+what `bounded` and `architectural` mean here, so asking them to confirm or override buys nothing and
+costs a full round trip on every idea. State it so it is on the record, then continue.
 
 ```
 IF you have decided the path:
-  ⛔ DO NOT: Announce the path and ask the next question in the same turn
-  ⛔ DO NOT: Classify silently and continue to STEP 3
-  ✅ DO: Print the one-line announcement, WAIT for the user's turn, THEN continue on that path
+  ⛔ DO NOT: Ask the user to confirm, approve or override the path
+  ⛔ DO NOT: End the turn on the path line and wait
+  ⛔ DO NOT: Classify silently — the line is still printed
+  ✅ DO: Print the one line, then continue on that path in the SAME turn
 ```
 
-| Path | The request is | Announce (one line, then stop) |
+| Path | The request is | State (one line, then continue) |
 |------|---------------|-------------------------------|
-| **spike** | a feasibility question — "can we…", "is it possible…", "quick and dirty is fine" | `Path: spike — I'll probe and report back. Override with bounded or architectural.` |
-| **bounded** | a change to a command, skill, agent or script **that already exists** in this repo | `Path: bounded — questions, then a short design in chat. Override if this needs a document.` |
-| **architectural** | a **new** artefact of any kind, a change that restructures how artefacts fit together, or one that alters an interface others depend on | `Path: architectural — full exploration and a design document. Override if that is too much.` |
+| **spike** | a feasibility question — "can we…", "is it possible…", "quick and dirty is fine" | `Path: spike — I'll probe and report back.` |
+| **bounded** | a change to a command, skill, agent or script **that already exists** in this repo | `Path: bounded — questions, then a short design in chat.` |
+| **architectural** | a **new** artefact of any kind, a change that restructures how artefacts fit together, or one that alters an interface others depend on | `Path: architectural — full exploration and a design document.` |
+
+**The user can still change it, unprompted.** If they say the path is wrong, re-classify and carry on.
+What is removed is the question, not their ability to answer it.
 
 **Bounded measures the repository, not familiarity.** Understanding the *kind* of change is not enough. Here
 the test is concrete: a change to a command, skill, agent or script **that already exists** is bounded; a
@@ -278,7 +285,8 @@ still presented, and this skill still stops until the user says yes.
 | "I know this codebase, so it's bounded" | Bounded measures the repository. A new command, skill, agent or script has no existing flow to read and modify ⇒ architectural. |
 | "The spike worked, so I'll keep it" | Spike output is throwaway by definition. Keeping it is a new request with its own classification. |
 | "It grew, but I'm almost done" | Growth upgrades the path. Nearly finished on the wrong path is not nearly finished. |
-| "The user is in a hurry — announce and ask together" | The announcement costs one line and is the only moment a misclassification is cheap to fix. |
+| "The user should confirm the path" | They cannot — the path measures the repository, which you read and they do not. Decide it, state it, move on. |
+| "Nobody answers the line, so I'll drop it" | The line is the record of which path this run took. STEP 7 reports it and the intent file carries it. |
 
 Continue to STEP 3.
 
@@ -714,8 +722,8 @@ structured-question tool, with these three options and nothing else:
 
 **Stop kind — deciding, in every state, and so is every stop in this skill before it.** The delivery
 mode does not exist until this question is answered, so nothing earlier can be a stop the approval
-already covered: the path announcement at `2.2.2`, the decomposition offer at `3.2`, the summary
-approval at `4.4`, the blockers at `6.2` and the set-membership stop at `8.1` all wait.
+already covered: the decomposition offer at `3.2`, the summary approval at `4.4`, the blockers at
+`6.2` and the set-membership stop at `8.1` all wait. **`2.2.2` is not in that list — it never stops.**
 
 ⛔ **The close-out is never reached unattended.** No option runs `/add-framework--done`, and the
 automatic path ends at a question the user answers. The merge is approved on every path.
@@ -886,7 +894,7 @@ Generate the subtopic design doc as the SET form's next `-NNN-[subtopic].md` mem
 ALWAYS:
 - Capture topic BEFORE dispatching discovery agent (STEP 1.1 before 1.2)
 - Dispatch `@framework-discovery-agent` silently before any exploration
-- Announce the classified effort path in its own turn, before continuing to STEP 3
+- State the classified effort path in one line and continue in the same turn — never ask the user to confirm it
 - End every path with the user approving the intent before anything is implemented
 - Ask one question at a time during exploration
 - Validate every section 100% before writing design doc
