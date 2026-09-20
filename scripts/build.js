@@ -1237,7 +1237,23 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
 
   const sniffable = graph.nodes.filter((n) => SNIFFABLE_KINDS.has(n.kind));
 
-  // --- FAIL: a distributed artefact naming an internal command ---------------
+  // --- FAIL: a distributed artefact naming a workbench command ---------------
+  //
+  // THE WORKBENCH NOW HAS PROVIDER OUTPUT, AND THIS GATE IS UNCHANGED BY IT.
+  // `scripts/build-workbench.js` compiles `workbench/` into `.claude/` and
+  // `.opencode/` at the REPOSITORY root. That is a provider mirror, and it used
+  // to be this layer's defining absence -- so a reader meeting the gate after
+  // that change can reasonably wonder whether it still holds.
+  //
+  // It does, because its reason was never 'the internal layer is not built'.
+  // Its reason is that an artefact reaching a USER'S project must not point them
+  // at something their install does not contain, and nothing under `workbench/`
+  // is in `framwork/provider-map.json`, packaged by `release.yml`, or written by
+  // `cli/src/installer.js`. Building it for two providers inside this repository
+  // changes none of those three.
+  //
+  // DO NOT weaken or remove this gate on the grounds that the workbench 'is
+  // distributed now'. It is built; it is not distributed.
   //
   // The same-layer sniff below is deliberately blind here: `add-commit` exists
   // in both layers, so a product artefact naming it means the product one. That
@@ -1290,7 +1306,7 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
       failures.push(
         'artefact-graph: internal command or skill named by a distributed artefact\n' +
           `  ${path_}\n` +
-          `  names ${name}, which is in the internal add-framework-- namespace and ships to nobody\n` +
+          `  names ${name}, which is in the workbench add-framework-- namespace, built for this repository only\n` +
           '  a user installing this artefact has no such command or skill. Describe the\n' +
           '  distinction without the name, or name the product equivalent.\n' +
           '  A source-only note is exempt: HTML comments are stripped at build.',
