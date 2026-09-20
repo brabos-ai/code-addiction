@@ -61,7 +61,7 @@
 #       3 status must be defined in definitions      REFUSED=unknown-status
 #       4 an id already on the board is never re-added  REFUSED=duplicate-id
 #       5 title, tldr and done_when are required     REFUSED=missing-field
-#       6 stdin must be exactly one JSON object      REFUSED=bad-json
+#       6 stdin must be exactly one JSON object      REFUSED=invalid-json
 #       7 an id named by update/comment/move/remove must exist  REFUSED=unknown-id
 #
 #   - backlog.sh WRITES FILES AND NEVER COMMITS. The git route to the base
@@ -185,7 +185,7 @@ tickets() {
 
 @test "L1.4b: all seven hard bans are named in the reference" {
   local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
-  for n in bad-json missing-field reserved-field unknown-status duplicate-id unknown-id; do
+  for n in invalid-json missing-field reserved-field unknown-status duplicate-id unknown-id; do
     grep -q "REFUSED=$n" "$ref"
   done
 }
@@ -635,7 +635,7 @@ JSON
 @test "ban 6: stdin that is not one JSON object is refused" {
   run bash -c "printf 'not json at all' | '$SCRIPTS_DIR/backlog.sh' add"
   [ "$status" -eq 2 ]
-  printf '%s\n' "$output" | grep -q 'REFUSED=bad-json'
+  printf '%s\n' "$output" | grep -q 'REFUSED=invalid-json'
 }
 
 @test "ban 7: update, comment, move and remove refuse an id that is not on the board" {
