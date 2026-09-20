@@ -77,7 +77,7 @@ Does it need LLM reasoning?
 
 No counts: `CLAUDE.md`'s generated inventory lists what exists.
 
-Internal-only artefacts (NOT distributed): `.claude/skills/`, `.claude/commands/`
+Workbench artefacts (source at `workbench/`, built to the root provider dirs, shipped to no user): `workbench/skills/`, `workbench/commands/`
 
 **The graph holds five kinds these four do not cover**, and every one of them ships:
 
@@ -553,7 +553,7 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 
 ### Internal-Only Artefact
 
-1. Create directly in `.claude/skills/{name}/SKILL.md` or `.claude/commands/{name}.md`
+1. Create directly in `workbench/skills/{name}/SKILL.md` or `workbench/commands/{name}.md`
 2. Do NOT register in provider-map.json
 3. Do NOT add to framwork/.codeadd/
 4. These are NOT distributed by build.js

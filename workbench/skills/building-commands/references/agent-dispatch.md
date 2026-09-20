@@ -91,7 +91,7 @@ before they were collapsed into this one.
 
 | Artefact | What it carries |
 |---|---|
-| An internal command or skill (`.claude/`) | One line naming this section. It can reach this file |
+| An internal command or skill (`workbench/`) | One line naming this section. It can reach this file |
 | A product command (`framwork/.codeadd/`) | The block below, verbatim. This file does not ship, so a distributed artefact cannot point at it |
 
 ```markdown

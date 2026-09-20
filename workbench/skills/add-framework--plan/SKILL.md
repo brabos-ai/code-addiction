@@ -23,7 +23,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.
 **Plans BOTH layers in one document** — the distributed product layer (`framwork/.codeadd/`, `cli/`)
-and the internal development layer (`.claude/`, `scripts/`, `CLAUDE.md`). Every F-block declares which.
+and the internal development layer (`workbench/`, `scripts/`, `CLAUDE.md`). Every F-block declares which.
 
 This is an **open-source project for the community**. Every decision weighs technical soundness,
 clarity for external contributors, and real value for framework consumers.
@@ -143,7 +143,7 @@ Missing strategy docs → say so and proceed with limited context. `CLAUDE.md` i
 ### 1.2 Read the Artefacts the Idea Names
 
 Whatever the idea points at: `framwork/.codeadd/commands|skills|agents|scripts/`, `cli/src/`,
-`.claude/commands|skills|agents/`, `scripts/`.
+`workbench/commands|skills|agents/`, `scripts/`.
 
 **Read `docs/brainstorming/` too, whenever the idea came from a design.** That directory holds the
 design documents `/add-framework--brainstorm` writes, and a plan is expected to reference the design
@@ -211,7 +211,7 @@ DO NOT show the raw report. Use it to fill "What already exists" in STEP 4.
 | Layer | Paths |
 |-------|-------|
 | `product` | `framwork/.codeadd/`, `framwork/provider-map.json`, `cli/` |
-| `internal` | `.claude/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
+| `internal` | `workbench/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
 
 ⛔ **`mcp/` is at the root and is PRODUCT** — it ships inside the npm package. Tagging an
 F-block that touches it `internal` loads the wrong layer skill.

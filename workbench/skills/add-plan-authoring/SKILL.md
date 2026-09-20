@@ -122,7 +122,7 @@ section present but empty is read as ABSENT, and absent means not closed — `/a
 then runs its full questionnaire. Falling the other way would build a plan from decisions nobody made.
 
 ⛔ **There is no validation gate for this file.** `add-doc-schemas` is a product-layer skill and does
-not reach `.claude/`. The reader’s fallback-to-questionnaire rule is what covers a malformed one, so
+not reach `workbench/`. The reader’s fallback-to-questionnaire rule is what covers a malformed one, so
 the shape above is a contract between two commands rather than something a gate enforces.
 
 **Why this exists at all, when the design document pointer already did:** that pointer exists on the
@@ -289,14 +289,14 @@ removed by hand if abandoned.
 instead of committing one half of a working change and waiting.
 
 ```
-- **F1** [internal] — `.claude/commands/foo.md`: ...
+- **F1** [internal] — `workbench/commands/foo.md`: ...
 - **F2** [product]  — `framwork/.codeadd/scripts/bar.sh`: ...
 ```
 
 | Tag | Means | Paths |
 |-----|-------|-------|
 | `[product]` | Distributed artefacts | `framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`, `mcp/` |
-| `[internal]` | Development tooling | `.claude/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
+| `[internal]` | Development tooling | `workbench/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
 
 ⛔ **`mcp/` is at the repository root and is PRODUCT.** It holds the knowledge-graph MCP
 server, which `scripts/build.js` copies into the npm package — shipping is what decides the

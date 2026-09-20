@@ -13,7 +13,7 @@ does with the answer belongs to that command.
 what holds an agent to one query when the question needed two.
 
 **The graph is emitted by `node scripts/build.js` into `framwork/.codeadd/artefact-graph.json`, and it
-covers `.claude/` as well as `framwork/.codeadd/`.** It is rebuilt from scratch on every build and is
+covers `workbench/` as well as `framwork/.codeadd/`.** It is rebuilt from scratch on every build and is
 gitignored, so it holds no history — `history` is the one verb that reads something else.
 
 ## When to Use

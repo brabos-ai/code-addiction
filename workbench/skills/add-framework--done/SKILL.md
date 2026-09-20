@@ -209,7 +209,7 @@ test-scripts         npm run test:scripts   (bats)                              
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
-1. **Sync the `CLAUDE.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add CLAUDE.md` (that path alone, never `-A`), commit it with a message per `.claude/skills/add-commit/SKILL.md`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `CLAUDE.md`, not permission to skip the sync.
+1. **Sync the `CLAUDE.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add CLAUDE.md` (that path alone, never `-A`), commit it with a message per `{{skill:add-commit/SKILL.md}}`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `CLAUDE.md`, not permission to skip the sync.
 
    **`already current` is the expected outcome, not a sign this step is redundant.** `/add-framework--build` STEP 8 syncs before it offers to open the PR, so the block normally arrives here correct. This is the net under three cases where it cannot have: a build that hard-stopped before STEP 8, a hotfix that never ran a full build, and the recovery path at 2.4 where the merge came first.
 2. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
@@ -452,7 +452,7 @@ The design source is **the `docs/brainstorming/` file the plan's Context documen
 
 ### 6.2 Commit and push
 
-Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `.claude/skills/add-commit/SKILL.md`. Then push. **On the recovery path the branch is `main`.**
+Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `{{skill:add-commit/SKILL.md}}`. Then push. **On the recovery path the branch is `main`.**
 
 ⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit reaches `main` with the merge, inside a commit whose message does not describe it.
 

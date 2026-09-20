@@ -1,6 +1,6 @@
 ---
 name: add-framework-internal-layer
-description: "Use when an F-block touches the internal layer — .claude/, scripts/, CLAUDE.md or the repo root, mcp/ excepted. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
+description: "Use when an F-block touches the internal layer — workbench/, scripts/, CLAUDE.md or the repo root, mcp/ excepted. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
 ---
 
 # Internal Layer Mechanics
@@ -19,7 +19,7 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 
 ## When to Use
 
-- An F-block naming `.claude/`, `scripts/`, `CLAUDE.md`, `.gitignore`, or a repo-root file.
+- An F-block naming `workbench/`, `scripts/`, `CLAUDE.md`, `.gitignore`, or a repo-root file.
 
 ## When NOT to Use
 
@@ -33,10 +33,10 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 
 | Type | Path |
 |------|------|
-| Commands | `.claude/commands/*.md`, namespace `add-framework--*` |
-| Pipeline stages | `.claude/skills/add-framework--<stage>/SKILL.md` — brainstorm, plan, build and done are skills in the same namespace, so each can load the next |
-| Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
-| Agents | `.claude/agents/*.md` |
+| Commands | `workbench/commands/*.md`, namespace `add-framework--*` |
+| Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — brainstorm, plan, build and done are skills in the same namespace, so each can load the next |
+| Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
+| Agents | `workbench/agents/*.md` |
 | Support scripts | `scripts/*.js` |
 | Structural map | `CLAUDE.md` |
 
@@ -44,7 +44,7 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 ⛔ INTERNAL ARTEFACTS ARE NOT REGISTERED:
   ⛔ DO NOT: Add an internal command, skill or agent to framwork/provider-map.json
   ⛔ DO NOT: Copy an internal artefact into framwork/.codeadd/
-  ✅ DO: Create it directly at its .claude/ path — build.js never distributes it
+  ✅ DO: Create it directly at its workbench/ path — build.js never distributes it
 ```
 
 **The internal layer has no provider mirror.** One file per artefact, no adapter to keep in step.
@@ -69,7 +69,7 @@ ADD_GRAPH_WARNINGS=1 node scripts/build.js
 Exit 0, and no warning absent from the baseline measured before the first F-block. **`build.js`
 summarises warnings as a count unless `ADD_GRAPH_WARNINGS=1` is set**, so the bare form cannot
 support a "no new warning" claim. **This applies to the internal layer even though the internal layer
-is not built.** `build.js` is where the three artefact-graph gates run, and the graph covers `.claude/` as
+is not built.** `build.js` is where the three artefact-graph gates run, and the graph covers `workbench/` as
 well as `framwork/.codeadd/`. **`add-framework-development` § 8 owns which conditions fail and which
 warn** — read its gate table. Its unregistered-artefact row is the one that does not apply here:
 internal artefacts are never in `provider-map.json`.
@@ -111,7 +111,7 @@ What is not expected is an orphan still present at the end of the build.
 ### The sweep — grep is not redundant with the gate
 
 ```bash
-grep -rn "<old-name>" .claude/ CLAUDE.md
+grep -rn "<old-name>" workbench/ CLAUDE.md
 ```
 
 Run it after every remove and every rename. **The prose gate does not catch everything a human reads

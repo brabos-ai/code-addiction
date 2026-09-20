@@ -126,12 +126,12 @@ three weeks; one naming the four files and the grep that proves it is done is wo
 READ, and nothing else:
 
 1. The files, directories and artefacts the request names.
-2. Whatever a grep of the request's own terms surfaces in `.claude/` and `framwork/.codeadd/`.
+2. Whatever a grep of the request's own terms surfaces in `workbench/` and `framwork/.codeadd/`.
 
 Use what that returns to write a concrete body: the real paths the work touches, and a
 `**Done when:**` line that names a check someone can actually run.
 
-**Resolve Scope from the same read** — never from assumption. Paths under `.claude/` (or the repo
+**Resolve Scope from the same read** — never from assumption. Paths under `workbench/` (or the repo
 root, `docs/`) make it `internal`; paths under `framwork/.codeadd/` or `cli/` make it `product`;
 touching both makes it `both`. When the user states the scope outright ("tanto interno quanto do
 framework"), that statement wins over what the grep alone would imply.

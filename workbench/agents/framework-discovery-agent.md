@@ -127,9 +127,9 @@ Scan filenames and read first ~20 lines of each artefact:
 - `Glob framwork/.codeadd/agents/*.md` → read first 20 lines of each
 
 **scope = internal or both:**
-- `Glob .claude/commands/*.md` → read first 20 lines of each
-- `Glob .claude/skills/*/SKILL.md` → read first 20 lines of each
-- `Glob .claude/agents/*.md` → read first 20 lines of each
+- `Glob workbench/commands/*.md` → read first 20 lines of each
+- `Glob workbench/skills/*/SKILL.md` → read first 20 lines of each
+- `Glob workbench/agents/*.md` → read first 20 lines of each
 
 ### 2. Plan Scan (always, regardless of scope)
 
