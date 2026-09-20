@@ -417,8 +417,15 @@ IF ASKING A QUESTION WITH OPTIONS:
 **A command that exists to help someone decide, and refuses to say what it would do, has handed the
 work back.** The user still chooses — they now choose against a position.
 
-**Ask through the provider’s structured-question tool**, marking the recommended option. The internal
-layer ships to one provider, so there is no capability flag to check and no markdown fallback to keep.
+**Ask through the provider’s structured-question tool** where the `structuredQuestions` capability
+declares one, marking the recommended option. Where it declares none, present the same content as an
+option table with the recommendation stated below it.
+
+⛔ **The workbench no longer ships to one provider, and that sentence used to say it did.** It built
+to Claude Code alone, so this step could assume a structured-question tool and keep no fallback.
+`workbench/provider-map.json` now targets opencode too, which declares `structuredQuestions: false` —
+and the option table is not a downgrade: it carries the same options and the same marked
+recommendation, in text.
 
 **Close what you can close.** A question carried to the handoff lands in the intent file’s `## Open`
 and becomes a question `/add-framework--plan` has to ask instead — which is the redundancy this whole
@@ -712,7 +719,8 @@ layer is a note in the document, not a question to the user.**
 #### Ask for the one approval — `bounded` and `architectural`
 
 **This is the only approval the pipeline asks for by default.** Present it through the provider's
-structured-question tool, with these three options and nothing else:
+structured-question tool where the `structuredQuestions` capability declares one — otherwise as an
+option table with the recommendation marked — with these three options and nothing else:
 
 | Option | What happens |
 |---|---|
