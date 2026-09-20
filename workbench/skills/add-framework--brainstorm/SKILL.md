@@ -46,7 +46,7 @@ STEP 8: Continue Mode (JUMP FROM STEP 1.0 only) → topic refinement from umbrel
 
 ```
 IF ABOUT TO INVOKE A COMMAND OR SKILL (ANY STEP):
-  ⛔ DO NOT USE: Skill tool (invoking any skill or command)
+  ⛔ DO NOT: Load another skill or command, by whatever mechanism this provider offers
   ⛔ DO NOT invoke: /add-framework--plan
   ⛔ DO NOT invoke: /add-framework--build
   ✅ DO: At STEP 7 handoff, print the suggested command as plain text, then STOP
@@ -743,7 +743,7 @@ prints what it would have shown.
 ```
 IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
   ⛔ DO NOT USE: Write on docs/brainstorming/ for the intent file
-  ⛔ DO NOT USE: Skill tool to load /add-framework--plan
+  ⛔ DO NOT: Load /add-framework--plan, by whatever mechanism this provider offers
   ✅ DO: Ask, and WAIT
 
 IF THE ANSWER IS "Keep discussing":
@@ -920,7 +920,7 @@ NEVER:
 - Create umbrella specs without explicit decomposition
 - Write documents outside `docs/brainstorming/`
 - Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
-- Invoke any command or skill via Skill tool or slash on its own initiative — handoff is text-only on every path except the one `Approve, deliver automatically` authorises
+- Load any command or skill on its own initiative, by whatever mechanism this provider offers — handoff is text-only on every path except the one `Approve, deliver automatically` authorises
 - Downgrade an effort path mid-conversation — the ratchet only goes up
 - Treat a spike's answer as permission to build — that is a new request with its own classification
 - Write full class/method implementations in design docs (one illustrative snippet allowed)
