@@ -943,7 +943,8 @@ describe('node inventory snapshot', () => {
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
-      script: 17,
+      // script 17 -> 18: hotfix-gates.sh, the diagnosis/review freshness owner.
+      script: 18,
       // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
       // add.review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1014,7 +1015,9 @@ describe('node inventory snapshot', () => {
     // 225 -> 227, declares 130 -> 131: +1 reference (not a declaring kind) and
     // +1 fragment (a declaring kind).
     // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
-    expect(nodes).toHaveLength(227);
+    // 227 -> 228: +1 script, hotfix-gates.sh. declares stays 131 because
+    // scripts are not in DECLARING_KINDS.
+    expect(nodes).toHaveLength(228);
     expect(nodes.filter((n) => n.declares)).toHaveLength(131);
   });
 });

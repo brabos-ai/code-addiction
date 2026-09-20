@@ -17,6 +17,7 @@
 - script: converge-gates.sh
 - script: delivered.sh
 - script: done.sh
+- script: hotfix-gates.sh
 - script: qa-evidence.sh
 -->
 
@@ -33,7 +34,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 STEP 1: done.sh                 -> RUN FIRST (collect context)
 STEP 2: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP 3: Resolve directory       -> From CHANGED_FILES paths
-STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), then the knowledge record (feature AND hotfix)
+STEP 4: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), hotfix receipt gate (hotfix only), then the knowledge record (feature AND hotfix)
 STEP 5: Promote QA evidence     -> Exact review baseline -> immutable final snapshots (feature only)
 STEP 6: Generate documentation -> Changelog + decisions + wiki + delivery index entry
 STEP 7: Preview                 -> INFORMATIVE ONLY (NO confirmation)
@@ -109,7 +110,7 @@ bash .codeadd/scripts/done.sh
 | `docs` | Branch: docs/[NNNN]D-* |
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
-All recognized types proceed to 2.1, which routes, and then to STEP 4 — except the `Closed out` route, which stops there. Quality gates apply to `feature` only — other types skip STEP 5 and continue to STEP 6.
+All recognized types proceed to 2.1, which routes, and then to STEP 4 — except the `Closed out` route, which stops there. Feature quality gates apply to `feature` only. Hotfix receipt validation applies to `hotfix` only. Other types skip STEP 5 and continue to STEP 6.
 
 
 ### 2.1 Cross the Two Facts, Then Route
@@ -268,34 +269,86 @@ delivery it describes is fine; one that hides how it got there is not.
 bash .codeadd/scripts/converge-gates.sh "${DIR}"
 ```
 
-**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1, 4.2 and 4.3 pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
+**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `REVIEW_SOURCE`, `QA_FEATURE_STATE`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1, 4.2 and 4.3 pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
 
 ### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
 
-**SKIP this substep entirely if `BRANCH_TYPE` ≠ `feature`.** Hotfix/refactor/chore/docs branches do not require `/add.review`.
+**SKIP this substep entirely if `BRANCH_TYPE` ≠ `feature`.** Hotfix/refactor/chore/docs branches are not gated here.
 
-**GATE CHECK (feature only): `GATE_REVIEW` must be `ok` AND `GATE_QA_BASELINE` must be `ok`.** Both are read here; neither substitutes for the other.
+**`/add.review` is optional.** `REVIEW_SOURCE` says which verdict the gate read — most recent wins:
+`build` is `/add.build`'s `Final review:` line, `review` is the highest `review-NNN.md`, `none` is
+neither. **GATE CHECK (feature only): `GATE_REVIEW` must be `ok` AND `GATE_QA_BASELINE` must be `ok`
+or `skipped`.**
 
-1. `REVIEW_PATH` from the preflight names the **highest-numbered** `docs/features/${FEATURE_ID}/review-NNN.md`. That one is the delivery receipt; earlier rounds are history and are never read here.
-2. IF `GATE_REVIEW=missing`: "Review not executed. Run /add.review before /add.done." -> BLOCKED
-3. IF `GATE_REVIEW=broken` or `not-probed`: Show `GATE_REVIEW_DETAIL` (the table of BLOCKED gates it names) -> BLOCKED
-4. IF `GATE_REVIEW=ok`: Take `BASELINE` from the preflight output verbatim and store it as `QA_BASELINE` for STEP 5.
-5. IF `GATE_QA_BASELINE` is `missing`, `broken`, or `not-probed`: Show `GATE_QA_BASELINE_DETAIL` -> BLOCKED. `missing` means the review carries no `> **QA baseline:**` line to read; `broken` means `qa-evidence.sh validate` rejected the one it does carry. Both send the user back to `/add.review` — never author, repair, or guess a baseline here.
-6. IF `GATE_QA_BASELINE=ok`: Proceed.
+1. IF `GATE_REVIEW=missing` (`REVIEW_SOURCE=none`): the build never wrote its final review → BLOCKED.
+   Print the complete line `/add.build ${FEATURE_ID}` — it resumes into its final review.
+2. IF `REVIEW_SOURCE=build` and `GATE_REVIEW=broken`: print `GATE_REVIEW_DETAIL` whole — the
+   `blocked N` verdict and every blocker suggestion, each a ready-to-paste command → BLOCKED. ⛔ Never
+   open `build-ledger.md` to read them yourself; the detail carries them.
+3. IF `REVIEW_SOURCE=review` and `GATE_REVIEW=broken` or `not-probed`: show `GATE_REVIEW_DETAIL` (the
+   table of BLOCKED gates it names) → BLOCKED.
+4. IF `GATE_REVIEW=ok`: take `BASELINE` from the preflight output verbatim and store it as
+   `QA_BASELINE` for STEP 5.
+5. IF `GATE_QA_BASELINE=skipped` (`REVIEW_SOURCE=build`, `BASELINE=none`): no review judged QA.
+   Resolve `QA_FEATURE_STATE`, the `qa-pipeline` feature — `true` is enabled; `false`, `unset` and `no-manifest` are disabled,
+   the feature's default. **Disabled → proceed. Enabled → STOP — deciding, in every state:** "QA was
+   not judged for this feature — close it out without a QA judgement?" Yes → proceed with
+   `BASELINE=none`. No → print `/add.review ${FEATURE_ID}` and STOP.
+6. IF `GATE_QA_BASELINE` is `missing`, `broken`, or `not-probed`: show `GATE_QA_BASELINE_DETAIL` →
+   BLOCKED. `missing` means the review carries no `> **QA baseline:**` line; `broken` means
+   `qa-evidence.sh validate` rejected it. Both send the user to `/add.review ${FEATURE_ID}` — never
+   author, repair, or guess a baseline here.
+7. IF `GATE_QA_BASELINE=ok`: proceed.
 
 ⛔ **Reading `GATE_QA_BASELINE` is MANDATORY.** The preflight emits it and it is the gate whose silent loss let a feature whose evidence no longer matched its review reach the merge. Ignoring a computed gate is worse than never computing it.
 
 **This is the EARLY, read-only check, NOT a replacement for STEP 5.** The preflight's own `qa-evidence.sh validate` runs read-only and proves nothing about promotion; STEP 5 STILL runs `qa-evidence.sh validate` again immediately before `promote`, and that second run remains the one that gates finalization.
 
-`QA_BASELINE` **ABSENT, `GATE_REVIEW` not `ok`, or `GATE_QA_BASELINE` not `ok`** → **BLOCKED**. Re-run `/add.review`; never infer a baseline or compare dates. STEP 5 performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
+`GATE_REVIEW` not `ok`, or `GATE_QA_BASELINE` neither `ok` nor `skipped` → **BLOCKED**. Never infer a baseline or compare dates. STEP 5 performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.sh --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
-- ✅ DO: Show blocked gates and instructions to re-run /add.review
+- ✅ DO: Show blocked gates and the complete command that clears each one
 
-**NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict on the passed review and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
+**NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict — the build's or the review's — and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
+
+### 4.0H: Hotfix Review Receipt (HOTFIX BRANCHES ONLY)
+
+**SKIP this substep entirely if `BRANCH_TYPE` ≠ `hotfix`.** Feature gates stay on `converge-gates.sh`. Refactor/chore/docs stay ungated here.
+
+The `Closed out` route already stopped at STEP 2 — this gate never reruns after delivery is indexed and merged.
+
+Run `hotfix-gates.sh` against the resolved hotfix directory. **Normal and Resume** — validate the current working tree before any close-out write:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh review-validate "${DIR}"
+```
+
+**Recovery** — validate the merge commit tree, not today's `main`:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh review-validate "${DIR}" --tree "${PR_MERGE_COMMIT}"
+```
+
+Use the merge commit SHA the probe already emitted. Never `HEAD` of current `main`.
+
+**GATE CHECK (hotfix only): `HOTFIX_REVIEW` must be `ok`.**
+
+| Verdict | Action |
+|---|---|
+| `ok` | Proceed |
+| `missing`, `blocked`, `stale`, `malformed` | STOP. Show `DETAIL`. Instruct the user to rerun `/add.hotfix` so its own review becomes current |
+
+Never send a hotfix to `/add.review`.
+
+**IF BLOCKED:**
+- ⛔ DO NOT USE: Write to create changelog.md
+- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
+- ⛔ DO NOT USE: Write on docs/delivered.jsonl
+- ✅ DO: Show `HOTFIX_REVIEW` and `DETAIL`, then STOP
 
 ---
 

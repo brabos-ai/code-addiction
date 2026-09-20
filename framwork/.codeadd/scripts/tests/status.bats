@@ -95,6 +95,27 @@ teardown() {
   [[ "$output" == *"REC:/add.new to start"* ]]
 }
 
+@test "recommends /add.review or /add.done on a completed feature" {
+  mkdir -p docs/features/0001F-test
+  echo "# Changelog" > docs/features/0001F-test/changelog.md
+  git checkout -b feature/0001F-test -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TYPE:feature"* ]]
+  [[ "$output" == *"REC:/add.review or /add.done"* ]]
+}
+
+@test "recommends /add.done on a hotfix branch" {
+  mkdir -p docs/features/0001H-urgent
+  echo "# Hotfix" > docs/features/0001H-urgent/about.md
+  git checkout -b hotfix/0001H-urgent -q
+  run "$SCRIPTS_DIR/status.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TYPE:hotfix"* ]]
+  [[ "$output" == *"REC:/add.done"* ]]
+  [[ "$output" != *"/add.review"* ]]
+}
+
 @test "recommends /add.build when phase=planned" {
   mkdir -p docs/features/0001F-test
   echo "# Plan" > docs/features/0001F-test/plan.md

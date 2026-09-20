@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-doc-schemas/references/fix.md
 - skill: add-ecosystem
 - skill: add-final-report
 - skill: add-id-convention
@@ -11,13 +12,15 @@
 - skill: add-subagent-driven-development
 - skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: architecture-agent
-- agent: conformance-agent
-- agent: failure-analysis-agent
 - agent: feature-history-agent
+- agent: fix-agent
 - agent: git-history-agent
-- agent: security-agent
+- agent: reviewer-agent
+- command: /add.diagnose
 - command: /add.wiki
+- mention: /add.review
 - script: delivered.sh
+- script: hotfix-gates.sh
 - script: status.sh
 -->
 
@@ -38,19 +41,19 @@ Load `{{skill:add-doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal
 
 **STEPS IN ORDER:**
 ```
-STEP 1:  Run status.sh             → FIRST COMMAND
-STEP 2:  Check branch              → IF main: STOP (step 3 required)
+STEP 1:  Run status.sh             → FIRST COMMAND; parse optional @docs/diagnose/*.md
+STEP 2:  Check branch              → IF main: STOP (step 3 required); validate diagnose report before branch creation
 STEP 3:  Allocate ID + branch      → status.sh next-id H, branch, skeleton about.md
 STEP 4:  Discover history (index + parallel agents) → delivery index (--no-verify) → @feature-history-agent ∥ @git-history-agent
 STEP 5:  Synthesize history outputs → Confirm related features; retain blast radius for STEP 9
 STEP 6:  Investigate code          → ONLY AFTER steps 1-5
 STEP 7:  Confirm root cause        → BEFORE implementing; pin it RED when tdd-pipeline is on
 STEP 8:  Implement fix             → drive the pinned test GREEN + verify build
-STEP 9:  Delivery review (parallel judges) → @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent
-STEP 10: Triage + corrective pass  → verify citations, ONE pass, re-verify build
-STEP 11: Write hotfix about.md     → schema hotfix, extractive, incl. ## Relations
-STEP 12: Validation gate           → run gate block on about.md
-STEP 13: Log iteration             → MANDATORY BEFORE informing user
+STEP 9:  Delivery review           → @reviewer-agent, conditional OWASP, citation verification
+STEP 10: Correction wave           → one @fix-agent wave, snapshot re-review, re-verify build
+STEP 11: Log iteration             → MANDATORY BEFORE writing the receipt
+STEP 12: Write hotfix about.md     → schema hotfix receipt, fingerprint, no later file changes
+STEP 13: Validation gate           → hotfix schema gate and review-validate
 STEP 14: Completion                → Inform user, awaiting /add.done
 ```
 
@@ -72,20 +75,20 @@ IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
   ✅ DO: Create hotfix/[NNNN]H-[slug] branch and docs/features/[NNNN]H-[slug]/
 
-IF HISTORY AGENTS NOT DISPATCHED:
+IF HISTORY AGENTS NOT DISPATCHED AND NO VALID DIAGNOSE REPORT:
   ⛔ DO NOT USE: Grep on code
   ⛔ DO NOT USE: Read on code
   ✅ DO: Dispatch @feature-history-agent ∥ @git-history-agent (parallel) and wait for both reports
 
-IF ROOT CAUSE NOT CONFIRMED:
+IF ROOT CAUSE NOT CONFIRMED AND NO VALID DIAGNOSE REPORT:
   ⛔ DO NOT USE: Edit on code files
   ⛔ DO NOT: Implementation
   ✅ DO: Present root cause to user and WAIT for confirmation
 
-IF FIX IMPLEMENTED AND JUDGES NOT DISPATCHED:
+IF FIX IMPLEMENTED AND REVIEWER NOT DISPATCHED:
   ⛔ DO NOT USE: Write to create about.md
   ⛔ DO NOT: Report the hotfix complete
-  ✅ DO: Dispatch STEP 9's three judges and wait for all three
+  ✅ DO: Dispatch STEP 9's reviewer and wait for the report
 
 IF A FINDING'S CITATION IS NOT VERIFIED:
   ⛔ DO NOT: Present it as a blocker
@@ -119,9 +122,31 @@ bash .codeadd/scripts/status.sh
 - `RECENT_CHANGELOGS`: Last 5 completed items (identify related features)
 - `WIKI:present` / `WIKI_STALE_COUNT`: Knowledge base availability (used in STEP 8.1)
 
+### 1.1 Parse optional diagnose report
+
+If the invocation carries `@docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
+
 ---
 
 ## STEP 2: Branch Check (HARD STOP)
+
+### 2.0 Validate diagnose report before any branch change
+
+If `DIAGNOSE_REPORT` is set:
+
+1. Read the document. It must pass `diagnose-report` and carry a complete `## Hotfix Handoff`.
+2. Run:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh diagnosis-check <DIAGNOSE_REPORT>
+```
+
+3. Exit 2 or a missing/duplicate handoff field → STOP. Instruct `/add.diagnose` again. Do not parse pre-handoff reports.
+4. Exit 3 (`diagnosed-commit` unavailable) → STOP. Instruct `/add.diagnose` again.
+5. `OVERLAP=none` → the report is current. Continue.
+6. `OVERLAP=present` → inspect the delta paths against each finding's path, symbol, cited hunk, and causal chain. Unrelated drift does not block. Relevant drift → STOP and instruct `/add.diagnose` again.
+
+This gate runs before STEP 3 creates or changes a branch.
 
 **Look at script output. What is the BRANCH value?**
 
@@ -147,7 +172,7 @@ bash .codeadd/scripts/status.sh
 bash .codeadd/scripts/status.sh next-id H
 ```
 
-Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for the frontmatter write in STEP 11.
+Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for the frontmatter write in STEP 12.
 
 > **Skill:** Apply `{{skill:add-id-convention/SKILL.md}}` for ID/branch format.
 
@@ -163,13 +188,20 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 
 ```
 docs/features/[NNNN]H-<slug>/
-├── about.md    (schema: hotfix — written in STEP 11)
+├── about.md    (schema: hotfix — written in STEP 12)
 └── iterations.jsonl
 ```
 
-DO NOT write doc contents yet — the schema is loaded and applied in STEP 11.
+DO NOT write doc contents yet — the schema is loaded and applied in STEP 12.
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
+
+```
+IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
+  ⛔ DO NOT: Run STEPS 4-6
+  ✅ DO: Copy the accepted root cause, findings, relations, and boundaries into working context
+  ✅ DO: Proceed to STEP 7
+```
 
 ---
 
@@ -254,8 +286,8 @@ Present the top related features (with FEAT_IDs) + the top suspicious commits an
 
 | Destination | What it does with the set | Step |
 |---|---|---|
-| The `about.md` `## Relations` section | Each confirmed feature becomes `- caused_by [[<id>]] — <the one-line reason>` | STEP 11 |
-| The **blast radius** `@failure-analysis-agent` judges against | Confirmed features plus the suspicious commits, unchanged from how STEP 9 has always read them | STEP 9 |
+| The `about.md` `## Relations` section | Each confirmed feature becomes `- caused_by [[<id>]] — <the one-line reason>` | STEP 12 |
+| The **blast radius** `@reviewer-agent` reads | Confirmed features plus the suspicious commits | STEP 9 |
 
 Retain them as identifiers with a one-line reason each — this set is confirmed context, and re-deriving it later loses the user's acknowledgement. **STEP 9's use is unchanged by the routing added here**: the set it reads is the same set, carrying the same fields.
 
@@ -300,7 +332,14 @@ LOAD {{skill:add-investigation/SKILL.md}} and apply Phases 2-3 (Pattern Analysis
 - **Solution:** 1-2 sentences describing the fix
 - **Files:** list of files to modify
 
-**WAIT for explicit confirmation before proceeding.**
+```
+IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
+  ⛔ DO NOT: Ask a second root-cause confirmation
+  ✅ DO: Treat the handoff root cause, files, and required changes as already confirmed
+  ✅ DO: Still run the injected TDD RED gate below
+```
+
+**WAIT for explicit confirmation before proceeding, unless a valid diagnose report already confirmed the root cause.**
 
 <!-- feature:tdd-pipeline:red-gate -->
 <!-- /feature:tdd-pipeline:red-gate -->
@@ -344,53 +383,50 @@ Verify build passes for affected apps (backend, frontend, or both).
 
 ---
 
-## STEP 9: Delivery Review (PARALLEL JUDGES)
+## STEP 9: Delivery Review
 
-⛔ **GATE:** Fix implemented and build verified (STEP 8.3). The judges are READ-ONLY — they report, this command applies.
+⛔ **GATE:** Fix implemented and build verified (STEP 8.3). The reviewer is READ-ONLY — it reports, this command applies.
 
 ### 9.1 Assemble the shared input
 
-All three judges receive the SAME input set:
 - the change under review — this branch's diff against its base, and the paths it touches
-- the confirmed root cause from STEP 7
-- the **blast radius** retained in STEP 5.2 — related feature IDs and suspicious commits, as identifiers plus a one-line reason each. Pass identifiers, NEVER inlined document content
+- the confirmed root cause from STEP 7 or the diagnose handoff
+- the **blast radius** retained in STEP 5.2, or the handoff's confirmed relations when STEPS 4-6 were skipped
 - **the file-overlap half of the graph.** The fix exists now, so a file list exists now. **GRAPH question:** which delivered work items touch the files this fix changed? It is phrased over PATHS. Run `add-knowledge-discovery`'s GRAPH step over this branch's changed paths, resolve the question in its action table, and add the work items it returns to the blast radius above, as identifiers with one line each. STEP 4.1 could not ask this: it runs before the investigation and before the fix, so nothing had changed yet
 - the `WIKI:` fields from STEP 1
+- `reviewer:` starts as `named`
 
-### 9.2 Dispatch
+### 9.2 Dispatch @reviewer-agent
 
-**DISPATCH 3 AGENTS IN PARALLEL:** single message, three calls. Each is independent.
+**DISPATCH AGENT: @reviewer-agent** [read-only, standard]
+- **MODE:** `task`
+- **Input:** STEP 9.1
 
-1. **@security-agent** [read-only, standard] — OWASP axis
-2. **@conformance-agent** [read-only, standard] — documented-rules axis
-3. **@failure-analysis-agent** [read-only, standard] — failure-mode + blast-radius axis
+If the named agent is unavailable, dispatch a generic read-only subagent with the same inputs and set `reviewer: generic`. If no read-only subagent exists, perform the same review inline and set `reviewer: inline`.
 
-**WAIT-ALL before STEP 10.**
+**WAIT** for the report.
 
-⛔ Each judge owns ONE axis and reports the axes it did not judge. There is no dedupe step in this flow — non-overlapping axes are what replaces it.
-  ⛔ DO NOT instruct a judge to fix anything
-  ⛔ DO NOT accept a "Files Modified" section in a judge report
-  ✅ DO collect the findings and triage them yourself in STEP 10
+### 9.3 Conditional OWASP
 
-**Soft-degrade, evaluated per dispatch INDEPENDENTLY:** if a named agent is unavailable in this engine, dispatch a generic read-only subagent with that judge's directive plus its named skill. An axis that did not run is reported as not judged — never silently dropped.
+Dispatch `@reviewer-agent` again with `MODE: owasp` only when changed paths touch authentication, payment, upload, input handling, session, token, or another caller-identified sensitive area. Never by default. Use the same fallbacks as 9.2.
 
----
+### 9.4 Verify every citation
 
-## STEP 10: Triage + Corrective Pass
-
-### 10.1 Verify every citation (BEFORE presenting anything)
-
-For each finding a judge marked blocking, READ the cited lines yourself.
+For each finding marked blocking, READ the cited lines yourself.
 
 | Citation check | Action |
 |---|---|
 | The cited `path:line` supports the claim | Keep the finding |
 | The lines do not say what the finding claims | Downgrade to observation, record the mismatch |
-| The path or line does not exist | Discard, record the judge and the bad citation |
+| The path or line does not exist | Discard, record the bad citation |
 
-⛔ This is the false-positive gate. A hallucinated citation is the most common way an agent finding is wrong, and one read catches it.
+Map reviewer severity: `Critical` → `blocker`, `Important` → `major`, `Minor` → `minor`. Allocate `HF-R001` onward after sorting by severity, path, and line. Do not invent `polish` by downgrading `Minor`.
 
-### 10.2 Partition by disposition
+---
+
+## STEP 10: Correction Wave
+
+### 10.1 Partition by disposition
 
 | Disposition | Meaning | May block? |
 |---|---|---|
@@ -399,15 +435,28 @@ For each finding a judge marked blocking, READ the cited lines yourself.
 | `unverifiable` | The verification method did not run — WITH the reason | No |
 | `accepted` | Real, and the user decides to ship anyway | No |
 
-⛔ DO NOT widen the fix to resolve a `pre-existing` finding. It belongs in the `## Review` section as an observation, and in the `about.md` `## Observations` section (STEP 11) when it deserves to be findable later.
+⛔ DO NOT widen the fix to resolve a `pre-existing` finding. Record it in `## Review` and in `## Observations` (STEP 12) when it deserves to be findable later.
 
-### 10.3 Corrective pass (AT MOST ONE)
+### 10.2 One whole-wave correction
 
-Correct the `introduced` findings in severity order, under STEP 8.2's constraints — root cause, minimal, existing patterns.
+If any `blocker` or `major` introduced finding remains:
 
-⛔ ONE pass. A finding that survives it is reported open, never iterated on — the bounded correction loop is `{{cmd:add.review}}` ⇄ `{{cmd:add.build}}` on the feature path, not this command.
+1. Write the routed paths as path-hex, one per line.
+2. Run `bash .codeadd/scripts/hotfix-gates.sh snapshot-wave <path-hex-file>` and store `SNAPSHOT`.
+3. **DISPATCH AGENT: @fix-agent** [full-access, standard] with the diagnose report when present, `AREAS`, the full ordered `ROUTED_ROWS`, `ATTEMPT=1`, `MAX_ATTEMPTS=1`, and build errors verbatim. There is no second dispatch.
+4. If `@fix-agent` is unavailable, a generic full-access subagent or the coordinator applies the same whole wave inline.
 
-### 10.4 Re-verify (MANDATORY when 10.3 changed any file)
+⛔ ONE pass. A finding that survives it stays open. Never send a hotfix to `{{cmd:add.review}}`.
+
+### 10.3 Snapshot re-review
+
+If 10.2 changed files:
+
+1. Run `bash .codeadd/scripts/hotfix-gates.sh diff-wave <SNAPSHOT> <package>`.
+2. **DISPATCH AGENT: @reviewer-agent** `MODE: re-review` with the open findings and that correction-only snapshot package.
+3. Use the same named/generic/inline fallback as STEP 9.2.
+
+### 10.4 Re-verify (MANDATORY when 10.2 changed any file)
 
 1. Re-run STEP 8.3's build verification.
 2. IF `tdd-pipeline` is enabled AND a RED test was written: re-run it and confirm it is still GREEN.
@@ -417,48 +466,13 @@ Correct the `introduced` findings in severity order, under STEP 8.2's constraint
   ⛔ DO NOT report the hotfix complete
   ✅ DO report the regression the corrective pass introduced, and STOP
 
-A correction that breaks the build or reopens the pinned bug is the failure a single unverified pass invites.
+Any `blocker` or `major` still `open` or `not-addressed` after re-review blocks completion.
 
 ---
 
-## STEP 11: Write Hotfix about.md (schema: hotfix)
+## STEP 11: Log Iteration (MANDATORY — PRD0031)
 
-EXECUTE schema `hotfix` from `{{skill:add-doc-schemas/SKILL.md}}`.
-
-**Path:** `docs/features/[NNNN]H-<slug>/about.md`
-
-**ID:** `[NNNN]H` from STEP 3. Write per `hotfix` schema. Extractive only.
-
-The `## Review` section carries STEP 10's triaged outcome — one row per finding with its axis, severity, `path:line`, cited rule and disposition. A judged hotfix whose `about.md` omits it reads as unreviewed from a fresh clone. When a judge could not run, record that there too.
-
-### 11.1 Write `## Relations`, `## Observations` and `tags:`
-
-The set was confirmed with the user in STEP 5.2 and has been in hand ever since. **This routes it; it confirms nothing again.**
-
-| Source already in hand | Becomes |
-|---|---|
-| Each feature the user confirmed as related in STEP 5.2 | `- caused_by [[<id>]] — <the one-line reason that set carries>` |
-| The trigger, the measured impact and the safeguard that missed it, from STEP 7's root cause | `- [<category>] <text>` lines under `## Observations` |
-| The domains the fix touched | `tags:` — bare lowercase words |
-
-⛔ **A `caused_by` the user never confirmed does not get written.** STEP 5.2 is where a person acknowledged the connection; inventing one here is a relationship nobody can reproduce. A hotfix whose cause resolves to no recorded work item writes `## Relations` carrying the single word `None`.
-
-**The same set still reaches STEP 9 unchanged.** Routing it here neither consumes it nor reshapes it.
-
----
-
-## STEP 12: Validation Gate
-
-Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` on the one doc written:
-`hotfix` — `docs/features/[NNNN]H-<slug>/about.md`
-
-⛔ DO NOT skip. DO NOT mark the command complete until the gate returns `PASS`. Gate check 7 covers the `## Relations` lines 11.1 wrote: an unresolved target is a FAIL, not a warning.
-
----
-
-## STEP 13: Log Iteration (MANDATORY — PRD0031)
-
-**BEFORE informing user, append entry to iterations.jsonl:**
+**BEFORE writing the receipt, append entry to iterations.jsonl:**
 
 ```bash
 bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
@@ -468,6 +482,56 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.json
 - `slug`: kebab-case identifier (ex: modal-confirm-btn, null-check-user)
 - `what`: Brief description max 60 chars
 - `files`: Array of affected file paths
+
+---
+
+## STEP 12: Write Hotfix about.md (schema: hotfix)
+
+EXECUTE schema `hotfix` from `{{skill:add-doc-schemas/SKILL.md}}` and `{{skill:add-doc-schemas/references/fix.md}}`.
+
+**Path:** `docs/features/[NNNN]H-<slug>/about.md`
+
+**ID:** `[NNNN]H` from STEP 3. Write per `hotfix` schema. Extractive only.
+
+Write the complete `## Review` receipt with `reviewed-tree: sha256:<PENDING>`. Fill `reviewer:` from STEP 9. Fill Findings from STEPS 9-10. An empty review still writes the table header.
+
+### 12.1 Write `## Relations`, `## Observations` and `tags:`
+
+On the normal path the set was confirmed in STEP 5.2. On the report-backed path it was confirmed in `/add.diagnose`. **This routes it; it confirms nothing again.**
+
+| Source already in hand | Becomes |
+|---|---|
+| Each confirmed `caused_by` work item | `- caused_by [[<id>]] — <the one-line reason>` |
+| The trigger, the measured impact and the safeguard that missed it | `- [<category>] <text>` lines under `## Observations` |
+| The domains the fix touched | `tags:` — bare lowercase words |
+
+⛔ **A `caused_by` the user never confirmed does not get written.** A hotfix whose cause resolves to no recorded work item writes `## Relations` carrying the single word `None`.
+
+### 12.2 Fingerprint
+
+1. Run `bash .codeadd/scripts/hotfix-gates.sh review-manifest docs/features/[NNNN]H-<slug>/`.
+2. Replace the Reviewed Paths fence with that manifest.
+3. Run `bash .codeadd/scripts/hotfix-gates.sh review-fingerprint docs/features/[NNNN]H-<slug>/`.
+4. Replace `sha256:<PENDING>` with the printed `REVIEWED_TREE` value. Replace only that field.
+
+⛔ No hotfix-owned file changes after this replacement.
+
+---
+
+## STEP 13: Validation Gate
+
+Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` on:
+`hotfix` — `docs/features/[NNNN]H-<slug>/about.md`
+
+Then run:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh review-validate docs/features/[NNNN]H-<slug>/
+```
+
+`HOTFIX_REVIEW` must be `ok`. Any other verdict STOPS.
+
+⛔ DO NOT skip. DO NOT mark the command complete until the schema gate returns `PASS` and `review-validate` returns `ok`.
 
 ---
 
@@ -495,28 +559,29 @@ files, build status.
 - Use `status.sh next-id H` to allocate hotfix ID
 - Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
 - Load the `hotfix` schema from add-doc-schemas before writing
-- Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code
-- Wait for both history reports before any Grep/Read on code
-- Confirm root cause with user before implementing
+- Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code, unless a valid diagnose report already supplied that investigation
+- Wait for both history reports before any Grep/Read on code, unless STEPS 4-6 were skipped
+- Confirm root cause with user before implementing, unless a valid diagnose report already confirmed it
 - Fix root cause, not symptoms
 - Keep changes minimal and focused
-- Run the validation gate on about.md before completing
-- Log iteration entry before informing user
+- Run the validation gate and `review-validate` on about.md before completing
+- Log iteration entry before writing the receipt
 - Verify build passes after implementing fix
-- Dispatch all three judges, however small the fix
+- Dispatch @reviewer-agent after the fix, with conditional OWASP and one @fix-agent wave
 
 **NEVER:**
 - Investigate code while on main branch
 - Inline any doc template — ALWAYS load from add-doc-schemas
 - Use abstractive summarization to fit word caps
-- Grep or read code before the parallel history agents return
-- Implement fix without user confirming root cause
+- Grep or read code before the parallel history agents return, unless a valid diagnose report skipped STEPS 4-6
+- Implement fix without a confirmed root cause
 - Refactor unrelated code during hotfix
 - Add new features inside a hotfix
 - Commit changes before user review
 - Skip the validation gate
-- Write a `caused_by` relation the user did not confirm in STEP 5.2
-- Soften a judge's severity to avoid a corrective pass
+- Write a `caused_by` relation the user did not confirm
+- Soften a reviewer's severity to avoid a corrective pass
+- Recommend or invoke `/add.review` for a hotfix
 
 ---
 
@@ -535,13 +600,10 @@ files, build status.
 # STEP 6: Investigate code
 # STEP 7: Confirm root cause with user
 # STEP 8: (tdd-pipeline on) RED test pins the bug → implement → GREEN → verify build
-# STEP 9: Dispatch @security-agent ∥ @conformance-agent ∥ @failure-analysis-agent
-#   → security: none; conformance: 1 pre-existing (observation);
-#     failure: 1 introduced — null path reaches F0036's caller
-# STEP 10: Verify citations → 1 introduced blocker → correct → re-run build + RED test (GREEN)
-# STEP 11: Write about.md via hotfix schema, incl. ## Review
-#   11.1 ## Relations: caused_by [[0036F]] — the validation path this fix corrects
-# STEP 12: Validation gate — hotfix
-# STEP 13: Log iteration
-# STEP 14: Hotfix complete → ownership transfers to ecosystem
+# STEP 9: Dispatch @reviewer-agent; OWASP only if the diff is sensitive
+# STEP 10: One @fix-agent wave with ATTEMPT=1 MAX_ATTEMPTS=1 → snapshot re-review → build + GREEN
+# STEP 11: Log iteration
+# STEP 12: Write about.md receipt, insert Reviewed Paths, replace sha256:<PENDING>
+# STEP 13: Validation gate + review-validate
+# STEP 14: Hotfix complete → /add.done
 ```

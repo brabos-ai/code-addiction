@@ -22,6 +22,7 @@ description: Use when executing implementation plans via dispatched subagents wi
 - agent: frontend-agent
 - agent: reviewer-agent
 - script: build-ledger.sh
+- script: hotfix-gates.sh
 - script: review-package.sh
 - script: status.sh
 - script: task-brief.sh
@@ -455,11 +456,15 @@ line stating priority. Everything else mirrors the implementation prompt.
 **Never patch manually — always dispatch a fix subagent.** Patching inline pollutes the coordinator's
 context with implementation detail it then carries into every later dispatch.
 
-**Every fix round is re-reviewed.** Record `FIX_BASE` before the fix dispatch, run
-`bash .codeadd/scripts/review-package.sh FIX_BASE HEAD "${FEATURE_DIR}/_build"`, and dispatch `@reviewer-agent` again with `MODE: re-review`. In that
-mode the reviewer verdicts **each open finding** `ADDRESSED` or `NOT ADDRESSED` and flags new breakage
-**in the fix diff only**. Out-of-scope observations come back as deferred minors and go to the ledger;
-they never extend the loop. A fix that compiles and misses the finding is exactly what this catches.
+**Every fix round is re-reviewed.** Two scoped package forms are valid. A committed feature fix uses a
+**commit-range package**: record `FIX_BASE`, then run
+`bash .codeadd/scripts/review-package.sh FIX_BASE HEAD "${FEATURE_DIR}/_build"`. An uncommitted hotfix
+correction uses the **correction-only snapshot package** emitted by `hotfix-gates.sh diff-wave` from a
+snapshot captured immediately before that wave. Dispatch `@reviewer-agent` with `MODE: re-review` and
+the one package the caller owns. In that mode the reviewer verdicts **each open finding** `ADDRESSED`
+or `NOT ADDRESSED` and flags new breakage **in the scoped fix package only**. Out-of-scope observations
+come back as deferred minors and go to the ledger; they never extend the loop. A fix that compiles and
+misses the finding is exactly what this catches.
 
 **`MAX_ATTEMPTS` is 3.**
 

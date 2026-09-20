@@ -27,7 +27,7 @@ correction contract, one path.
    *who* fixes, never *whether*.
    **Stop kind — confirming** (`add-delivery-mode`). On an automatic delivery,
    print the grouped rows in full and continue: every agent-routed row is fixed.
-   The review that produced them is already part of the loop the user approved.
+   The user ran the review that produced them, and asked for its routes to be applied.
 3. **DISPATCH by ROUTE, not by severity.** Work the table in its given `Order`,
    respecting `Blocked by`: sequential across layers
    (`@database-agent → @backend-agent → @frontend-agent → @e2e-agent`), and
@@ -58,7 +58,8 @@ correction contract, one path.
    user chooses the fix scope — on an automatic delivery the scope is every
    agent-routed row, and the manual ones wait for the user as step 3 says.
 
-Then re-run `{{cmd:add.review}}` so the two rounds can be compared side by side.
+`## Final Review` then writes this run's verdict. Re-running `{{cmd:add.review}}` is optional — it
+writes the next `review-NNN.md` when a side-by-side QA comparison is wanted.
 The QA-specific nuance above sits on top of the base **Routed Correction Contract**
 in STEP 12 — the resolution annex and the finalized marker are written there,
 whether or not this section was injected.

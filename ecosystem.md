@@ -101,12 +101,10 @@ graph LR
 
   ARA>architecture-agent]
   BAA>backend-agent]
-  COA>conformance-agent]
   CSA>consistency-agent]
   DAA>database-agent]
   DIA>discovery-agent]
   E2A>e2e-agent]
-  FAA>failure-analysis-agent]
   FEHIA>feature-history-agent]
   FIA>fix-agent]
   FRA>frontend-agent]
@@ -115,7 +113,6 @@ graph LR
   QAA>qa-agent]
   REA>reviewer-agent]
   RBA>readback-agent]
-  SEA>security-agent]
   TEA>test-agent]
   UXA>ux-agent]
   UXFLA>ux-flow-agent]
@@ -134,15 +131,14 @@ graph LR
   FRAR{{add-frontend-architecture}}
   FRDE{{add-frontend-development}}
   IN{{add-investigation}}
-  KNDI{{add-knowledge-discovery}}
   PRV{{add-plan-review}}
   QA{{add-qa}}
   SEAU{{add-security-audit}}
   UXDE{{add-ux-design}}
 
-  BUILD --> BAA & DAA & E2A & FIA & FRA & RBA & REA & TEA & UXA
+  BUILD --> BAA & CSA & DAA & E2A & FIA & FRA & RBA & REA & TEA & UXA
   DIAGNOSE --> ARA & FEHIA & GIHIA
-  HOTFIX --> ARA & COA & FAA & FEHIA & GIHIA & SEA
+  HOTFIX --> ARA & FEHIA & FIA & GIHIA & REA
   NEW --> PRA
   PLAN --> ARA & BAA & CSA & DAA & DIA & FRA & PRA & QAA & RBA & UXA & UXFLA & UXLAA
   QASETUP --> E2A & QAA
@@ -150,11 +146,9 @@ graph LR
 
   ARA --> ARDI & BAAR & FRAR
   BAA --> BADE & DADE
-  COA --> CORE & KNDI
   CSA --> CSC
   DAA --> DADE
   DIA --> FEDI & FESP
-  FAA --> CORE & IN
   FEHIA --> IN
   FIA --> UXDE
   FRA --> FRDE
@@ -163,7 +157,6 @@ graph LR
   QAA --> QA
   REA --> CORE & SEAU
   RBA --> FERB
-  SEA --> CORE & SEAU
   UXA --> UXDE
   UXFLA --> UXDE
   UXLAA --> UXDE

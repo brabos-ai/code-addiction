@@ -497,9 +497,11 @@ describe('0070 L7 — loop acceptance', () => {
   // the (area, file, symptom) no-progress detector and the
   // CONVERGED/CAP_REACHED/BLOCKED outcome states were specific to that
   // command's own bounded retry loop and are gone by design — the automatic
-  // chain now runs the ordinary /add.build <-> /add.review loop instead (capped
-  // at two review rounds; see add-delivery-mode). One absence test replaces the
-  // eight that used to read this file.
+  // chain then ran the ordinary /add.build <-> /add.review loop, capped at two
+  // review rounds — until plan 2026-09-19T122048 (optional review) removed that
+  // loop too: /add.build now runs its own final review and /add.review is off
+  // the automatic path. One absence test replaces the eight that used to read
+  // this file.
   it('L7.0 the command is gone: no source file, no provider-map entry', () => {
     expect(exists(loopPath)).toBe(false);
     expect(MAP.commands['add.plan-to-ready']).toBeUndefined();

@@ -44,21 +44,35 @@ For `/add.audit` (creates `docs/audit/<date>.md`).
 For `/add.diagnose` (creates `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
 
 - **Frontmatter:** `id: DIAG-<slug>`, `type: diagnose-report`, `related: []`
-- **Sections:** TL;DR · Symptom · Hypotheses · Evidence · Recommended Route
+- **Sections:** TL;DR · Symptom · Hypotheses · Evidence · Recommended Route · Hotfix Handoff (hotfix route only)
 - **Depth floor:**
   - **Symptom** — same shape as the Symptom Notation in `references/fix.md`: when / where / impact / detection.
   - **Hypotheses** — per hypothesis: mechanism, likelihood, test that would confirm or falsify. Use Hypothesis Notation above.
   - **Evidence** — per item: source (log, metric, code ref), observation, which hypothesis it supports or rules out.
   - **Recommended Route** — a single sentence + target command (`/add.hotfix` | `/add.new` | `extend` | `no-action`), grounded in the evidence.
+  - **Hotfix Handoff** — required only when Recommended Route is `/add.hotfix`. The section starts with these scalar lines exactly once and in this order:
+
+    ```text
+    route: hotfix
+    accepted: true
+    diagnosed-branch: <branch>
+    diagnosed-commit: <40 lowercase hex SHA>
+    predicate: <WHEN / THEN / BUT CURRENTLY>
+    root-cause: <accepted causal chain>
+    ```
+
+    Then write exactly three subsections. `### Findings` is a table `ID | Severity | Area | Citation | Symbol | Finding | Required change`. IDs are `DIAG-F001` onward. Severity is `blocker | major | minor | polish`. Citation is `path:line`. Only Symbol may be blank. `### Confirmed Relations` contains the user-confirmed `- caused_by [[<id>]] — <reason>` lines or the single word `None`. `### Working Tree Baseline` contains one fenced `text` block. A clean tree contains only `clean`. Otherwise each line is `<state>\t<mode>\t<content-sha256-or-dash>\t<path-hex>`, sorted by decoded path bytes. State is `staged | unstaged | deleted | untracked`. Staged and unstaged rows may share a path. A duplicate state/path pair is a schema failure. Deletion uses `-`; symlinks hash target bytes; empty files hash zero bytes; CRLF stays raw.
 - **Compression:** Hypotheses = table `hypothesis | likelihood | test`. Evidence = bullets `source → observation → supports/refutes`.
-- **Hard bans:** speculation presented as conclusion, recommended fix without an evidence chain.
+- **Hard bans:** speculation presented as conclusion, recommended fix without an evidence chain, a Hotfix Handoff on a non-hotfix route, a hotfix route without the handoff, duplicate or reordered handoff scalars, blank required finding cells, malformed citations, and duplicate state/path baseline rows.
 
 ### review
 
 For `/add.review` — the **feature-level aggregate** written at
 `docs/features/<feature-id>/review-NNN.md`, flat at the feature-directory root.
-It is the delivery receipt `/add.done` STEP 4.0 gates on: that step reads the
-**highest-numbered** one and nothing else.
+It is one of two verdicts `/add.done` STEP 4.0 can gate on — the other is
+`/add.build`'s `Final review:` ledger line. `converge-gates.sh` reads the
+**highest-numbered** review only when no line written after it exists
+(`REVIEW_SOURCE=review`); otherwise the build's line decides.
 
 Distinct from `qa-validation`, which stays per scope under
 `_tests/run-NNN/`. Both are written every run: one review round produces ONE

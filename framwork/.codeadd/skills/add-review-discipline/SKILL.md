@@ -1,6 +1,6 @@
 ---
 name: add-review-discipline
-description: "Use when a command dispatches a reviewer or a cold reader over a document — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk."
+description: "Use when a command dispatches a reviewer or a cold reader over a document, or when /add.build runs its final review over a delivery unit — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk."
 ---
 
 # Review Discipline
@@ -12,7 +12,9 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 - agent: plan-reviewer-agent
 - agent: readback-agent
 - agent: reviewer-agent
+- agent: fix-agent
 - mention: /add.brainstorm
+- mention: /add.review
 - command: /add.build
 - command: /add.new
 - command: /add.plan
@@ -20,6 +22,8 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 - mention: add-delivery-mode
 - mention: converge-gates.sh
 - mention: qa-evidence.sh
+- script: review-package.sh
+- script: build-ledger.sh
 -->
 
 <!--
@@ -48,6 +52,7 @@ rubric.
 
 - A command is about to dispatch `@plan-reviewer-agent` or `@readback-agent`.
 - A report has come back and the caller is deciding what to do with it.
+- `/add.build` has finished a delivery unit's last area and runs its final review.
 
 ## When NOT to Use
 
@@ -66,6 +71,7 @@ rubric.
 |---|---|---|
 | `@plan-reviewer-agent` | "Can this be executed? What breaks?" | A verdict and required fixes |
 | `@readback-agent` | "Would someone with a clean context build the right thing?" | A restatement and every gap it filled in. **No verdict** |
+| `@reviewer-agent` in `MODE: feature` | "What breaks only when the unit's areas are read together, and is every RF/RN met?" | Findings by severity — Critical is a `blocker` |
 | `@reviewer-agent` in `MODE: re-review` | "Did this fix address the finding, and did it break anything on the way?" | One `ADDRESSED` or `NOT ADDRESSED` per open finding |
 
 **No two are opinions on one question.** A document can satisfy every rubric and
@@ -153,6 +159,65 @@ IF A THIRD PASS RETURNS NON-TRIVIAL FINDINGS:
 **The defect is above the change, not in it.** Another pass over the same
 document buys a longer list, never a better document.
 
+## The Build's Final Review
+
+**`/add.build` runs this once per delivery unit — the feature, or one epic subfeature — after its last
+area and before `## Loop End`.** It is what makes `/add.review` optional at close-out: the verdict it
+writes is the one `converge-gates.sh` reads when no newer review exists.
+
+1. **Package the whole unit** with `review-package.sh`. `BASE` is the commit the unit's first area started from — the ledger's
+   first `complete` line for the unit names it.
+
+   ```bash
+   bash .codeadd/scripts/review-package.sh "${BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
+   ```
+
+   Exit 2 means an empty range: nothing was built, so there is nothing to review. Record
+   `Final review: passed (after review-NNN)` and stop here.
+2. **DISPATCH AGENT: `@reviewer-agent`** [read-only] with `MODE: feature`, the package path and the
+   unit's `about.md` / `plan.md` paths. **In the same parallel batch**, and only when the package
+   touches a sensitive area — authentication, payment, file upload, input handling or validation,
+   session or token paths, the trigger `/add.review` STEP 4.1 names — dispatch a second
+   `@reviewer-agent` with `MODE: owasp` and those files. On the epic's last subfeature, the DELTA
+   pass's findings join this list.
+3. **Number the findings** `FR-1`, `FR-2`, … in report order — the reviewer returns none — then
+   **judge every one**; see What the Caller Owes the Report below. Record each discard.
+4. **One `@fix-agent` wave** carrying every accepted finding, then `/add.build` STEP 12.2's scoped
+   re-review of the fix diff only. There is no second wave.
+5. **Sort what is still open.**
+   - Not Critical → one `Ruling:` ledger line each; the delivery continues.
+   - **Critical — a `blocker` — is never turned into a `Ruling:`.** It stops the delivery.
+6. **Write the verdict**, through `build-ledger.sh`, exactly one of:
+
+   ```
+   Final review: passed (after review-NNN)
+   Final review: ruled N (after review-NNN)
+   Final review: blocked N (after review-NNN)
+   ```
+
+   `NNN` is the highest `review-NNN.md` in the feature folder at this moment, `000` when there is
+   none. On `blocked`, write one line per open blocker right after it:
+
+   ```
+   Blocker suggestion: <finding id> — <ready-to-paste command>
+   ```
+
+   **The suggestion is reasoned from the unit's objective** in `about.md` / `plan.md`: the fix
+   direction you recommend and the command that carries it out, whether the plan itself needs
+   revisiting (`/add.plan <ID>`), or that `/add.review <ID>` would add the evidence to decide. The
+   command is complete — feature ID and arguments included — so the user copies it and runs it.
+
+```
+IF A FINDING IS STILL CRITICAL AFTER THE FIX WAVE:
+  ⛔ DO NOT: Write it as a Ruling: line to keep the delivery moving
+  ⛔ DO NOT: Write `blocked N` with no Blocker suggestion: lines
+  ✅ DO: Write `blocked N`, one suggestion per blocker, and print them before the next stop
+```
+
+**Why a ledger line and not a review document:** `review-NNN.md` belongs to `/add.review` alone. The
+line is a ledger event, and `converge-gates.sh` reads it deterministically — see Where a Verdict May
+Reach Disk.
+
 ## What the Caller Owes the Report
 
 **A finding is judged before it is applied, never applied blindly.** The reader
@@ -180,9 +245,11 @@ Apply it and continue.
 
 ## Where a Verdict May Reach Disk
 
-**Two files, and only because a deterministic script consumes them.**
+**Two files and one ledger line, and only because a deterministic script consumes them.**
 
-`review-NNN.md` and `qa-validation-NNN.md` are written on purpose.
+`review-NNN.md` and `qa-validation-NNN.md` are written on purpose, and so is the build's
+`Final review:` line in `build-ledger.md`, which `converge-gates.sh` reads as gate 1's verdict when
+no newer review exists.
 `qa-evidence.sh` promotes immutable run snapshots keyed to their report numbers,
 and `converge-gates.sh` reads the review's `| **Overall** |` row and its
 `> **QA baseline:**` line. Neither is a stored opinion a human must find; both
@@ -193,7 +260,8 @@ IF A READER'S OUTPUT WOULD REACH DISK:
   ⛔ DO NOT USE: Write for a @plan-reviewer-agent or @readback-agent report, in any form
   ⛔ DO NOT: Gate a later command on a report no script consumes
   ✅ DO: Store a verdict only where a deterministic script reads it — today,
-         review-NNN.md and qa-validation-NNN.md, and nothing else
+         review-NNN.md, qa-validation-NNN.md and the ledger's Final review: line,
+         and nothing else
 ```
 
 ⛔ **Do not import the internal layer's no-file rule and delete the review
@@ -217,6 +285,7 @@ two gates read it.
 
 ALWAYS:
 - Send one fix dispatch carrying every finding, never one per finding
+- Write a blocked final review with one ready-to-paste suggestion per blocker
 - Re-run the validation gate between a fix and a re-dispatch
 - Decide each finding on its merits, and record what was discarded and why
 - Treat a divergent restatement as a defect in the document, never in the reader
@@ -226,4 +295,5 @@ NEVER:
 - Re-dispatch a reader twice over one subject
 - Report a blocked state on a readback alone
 - Write a `@plan-reviewer-agent` or `@readback-agent` report to disk
+- Turn a Critical finding of the build's final review into a `Ruling:`
 - Merge this skill with its internal sibling, or check them for equality

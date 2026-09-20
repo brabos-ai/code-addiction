@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-doc-schemas
+- skill: add-doc-schemas/references/review.md
 - skill: add-ecosystem
 - skill: add-final-report
 - skill: add-investigation
@@ -17,6 +18,7 @@
 - command: /add.new
 - command: /add.plan
 - command: /add.wiki
+- script: hotfix-gates.sh
 - script: status.sh
 -->
 
@@ -41,9 +43,9 @@ STEP 2: Capture & reformulate → internal only, no stop
 STEP 3: Load investigation    → add-investigation skill, apply Phase 0
 STEP 4: Two-phase agent dispatch → A.1 ∥ A.2 (parallel) → B (sequential)
 STEP 5: Phases 2-3            → pattern analysis, differential diagnosis
-STEP 6: Phase 4 synthesis     → diagnosis + route from ecosystem map
-STEP 7: Present report        → STOP for user decision
-STEP 8: Persist (conditional) → schema-driven write
+STEP 6: Phase 4 synthesis     → diagnosis + route + diagnosis-baseline
+STEP 7: Present report        → STOP for user agreement
+STEP 8: Persist on acceptance → schema-driven write
 STEP 9: Validation Gate       → diagnose-report schema gate
 STEP 10: Completion           → report the diagnosis in the shared shape
 ```
@@ -59,10 +61,9 @@ STEP 10: Completion           → report the diagnosis in the shared shape
 | **STEP 4** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
 | **STEP 4** | A outputs incomplete | Proceed to STEP 5, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
 | **STEP 5** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
-| **READ-ONLY** | Always | Edit files, Bash (except status.sh), Write outside docs/diagnose/, branches, commits, /add.new/hotfix/build | Suggest next steps |
-| **STEP 6-8** | route = no-action | Write | Conversational response only |
-| **STEP 8** | User declined persistence | Write | Respond in chat only |
-| **STEP 9** | Doc not written | Skip validation gate | Run gate before complete |
+| **READ-ONLY** | Always | Edit files, Bash (except status.sh and hotfix-gates.sh), Write outside docs/diagnose/, branches, commits, /add.new/hotfix/build | Suggest next steps |
+| **STEP 8** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
+| **STEP 9** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
 | **STEP 10** | Always | Report before STEP 10, or skip it on a no-action route | Emit the report in the shape, on every route |
 
 ---
@@ -226,6 +227,16 @@ Use the Command Next-Steps Routing table from {{skill:add-ecosystem/SKILL.md}} t
 
 ⛔ DO NOT invent a route. Consult the ecosystem map.
 
+### 6.3 Capture repository baseline
+
+Run:
+
+```bash
+bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline
+```
+
+Store `DIAGNOSED_BRANCH`, `DIAGNOSED_COMMIT`, and the `BASELINE_BEGIN` / `BASELINE_END` block. This is the working-tree state the investigation used. Do not recapture after the user answers. The script is read-only.
+
 ---
 
 ## STEP 7: Present Report [STOP]
@@ -260,26 +271,26 @@ Present the full diagnosis in chat using this structure:
 **Risks of NOT acting:** [list]
 ```
 
-### 7.1 Ask for decision
+### 7.1 Ask for agreement
 
-Ask the user:
-1. Do you agree with this diagnosis?
-2. Do you want to persist this as a report (`docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`) that the next command can consume?
-3. Ready to proceed with the suggested route?
+User agreement is the persistence decision for every route, including no-action.
 
-⛔ HARD STOP. Wait for answers.
+If the recommended route is hotfix, show the `caused_by` candidates in the same stop. Agreement accepts the diagnosis and those links together.
+
+Ask only: do you agree with this diagnosis?
+
+⛔ HARD STOP. Wait for the answer.
 
 ---
 
-## STEP 8: Persist (Conditional) — schema-driven write
+## STEP 8: Persist on acceptance — schema-driven write
 
 ### 8.1 Persistence decision tree
 
-| route | user_confirmed_persistence | Action |
-|---|---|---|
-| no-action | any | Skip to 8.4 (conversational only) |
-| hotfix/feature/extend | no | Skip to 8.4 (conversational only) |
-| hotfix/feature/extend | yes | Execute 8.2 → 8.3 → 8.4 |
+| user_agrees | Action |
+|---|---|
+| no | Skip to STEP 10. A rejected diagnosis is not written |
+| yes | Persist for hotfix/feature/extend/no-action. Execute 8.2 → 8.3 → 8.4 |
 
 ### 8.2 Determine slug & schema
 
@@ -291,6 +302,8 @@ Ask the user:
 
 Load {{skill:add-doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
+When the accepted route is hotfix, append `## Hotfix Handoff` from `{{skill:add-doc-schemas/references/review.md}}`. Fill scalars from STEP 6.3. Fill Findings from the accepted causal chain. Fill Confirmed Relations from the links shown at STEP 7. Paste the Working Tree Baseline fence from `diagnosis-baseline`, or `clean`. Omit `## Hotfix Handoff` on every other accepted route.
+
 ### 8.4 Carry these into STEP 10
 
 ⛔ **DO NOT print them here.** The report comes first, and STEP 10 owns it. Emitting the path and
@@ -299,13 +312,14 @@ the next command at 8.4 puts metadata in front of the report and then repeats it
 STEP 10 states:
 - Report path (if persisted)
 - Recommended next command (from ecosystem map routing)
+- When the accepted route is hotfix: the copy-ready command `/add.hotfix @docs/diagnose/<file>.md`. Print it only for an accepted hotfix route. Never invoke `/add.hotfix`
 - Reminder: `add.diagnose` is READ-ONLY; user executes the next command when ready
 
 ---
 
 ## STEP 9: Validation Gate
 
-Only run this gate when STEP 8 actually wrote a doc. If the doc was not persisted (route = no-action OR user declined), skip directly to STEP 10 — which runs on every route.
+Only run this gate when STEP 8 actually wrote a doc. If the diagnosis was rejected, skip directly to STEP 10.
 
 Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema `diagnose-report`.
 
@@ -318,7 +332,7 @@ Execute the validation gate from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 **LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the report path and the recommended command come after it.
 
-**This step runs on every route, including no-action and a declined persistence.** The gate above is
+**This step runs on every route, including no-action and a rejected diagnosis.** The gate above is
 conditional; the report is not. A run that wrote no document still owes the user its diagnosis.
 
 This command is advisory and changes no code, so `Files touched` reads "none" on every row unless
@@ -326,7 +340,7 @@ STEP 8 persisted a document. Fill `What was delivered` with the diagnosis and th
 `How it works` with the causal chain — what fails, where, and why the evidence points there rather
 than at the runner-up hypothesis.
 
-Then, after the seven blocks, state the recommended command and that this command never runs it.
+Then, after the seven blocks, state the recommended command and that this command never runs it. Print `/add.hotfix @docs/diagnose/<file>.md` only when the accepted route is hotfix. Never invoke it.
 
 ---
 
@@ -339,7 +353,8 @@ ALWAYS:
 - Wait for both A reports before Fase B (STEP 4.4) — architecture-agent needs combined direction
 - Enumerate 3+ hypotheses (STEP 5) — prevents single-cause bias
 - Consult the ecosystem map for the route (STEP 6) — the route must stay framework-consistent
-- Persist only when the route is not no-action and the user confirmed (STEP 8) — avoids noise in diagnose/
+- Capture diagnosis-baseline after synthesis and before the user answers (STEP 6)
+- Persist every accepted diagnosis, including no-action (STEP 8)
 - Credit the add-investigation skill (STEP 7) — methodology transparency
 
 NEVER:
@@ -347,5 +362,6 @@ NEVER:
 - Execute the recommended command (STEP 7) — add.diagnose is advisory only
 - Modify code — READ-ONLY boundary, applies throughout
 - Accept "something is weird" as a symptom (STEP 2) — push for an observable predicate (WHEN/THEN/BUT)
-- Persist a report when the route is no-action (STEP 8) — keeps diagnose/ focused
+- Persist a rejected diagnosis (STEP 8)
+- Invoke `/add.hotfix` from this command — print the copy-ready path only
 - Guess past the 3-failure stop rule (STEP 5) — return to framing instead

@@ -145,8 +145,12 @@ describe('L1 — product pipeline parity, static contract', () => {
       [P.brainstorm, 'add.new'],
       [P.newCmd, 'add.plan'],
       [P.plan, 'add.build'],
-      [P.build, 'add.review'],
-      [P.review, 'add.build'],
+      // Plan 2026-09-19T122048 (optional review): the build no longer hands
+      // off to /add.review. Its automatic chain continues to the next
+      // subfeature's /add.plan from ## Loop End.
+      [P.build, 'add.plan'],
+      // /add.review no longer hands a delivery back to /add.build (same plan):
+      // it prints the next command and stops.
     ];
     for (const [file, next] of chain) {
       expect(read(file), path.basename(file)).toMatch(new RegExp(`follow[^\\n]*\\{\\{cmd:${next.replace('.', '\\.')}\\}\\}`));
@@ -167,9 +171,12 @@ describe('L1 — product pipeline parity, static contract', () => {
     expect(read(P.tddBuild)).toMatch(/deciding/);
   });
 
-  it('L1.13 add-delivery-mode names the review-round baseline and the cap of two', () => {
+  // Plan 2026-09-19T122048 (optional review) removed the build <-> review loop
+  // and its two-round cap; the automatic path now ends at the publish question
+  // after the build's own final review. Inverted from "names the baseline".
+  it('L1.13 add-delivery-mode ends the automatic path at the build, with no review loop', () => {
     const text = read(P.mode);
-    expect(text).toMatch(/baseline/);
-    expect(text).toMatch(/two review/i);
+    expect(text).not.toMatch(/two review/i);
+    expect(text).toMatch(/## Where the Automatic Path Ends/);
   });
 });

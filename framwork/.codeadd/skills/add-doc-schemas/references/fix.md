@@ -42,9 +42,22 @@ For `/add.hotfix` (creates `docs/features/[NNNN]H-<slug>/about.md`).
   - **Root Cause** — the actual mechanism per Root Cause Notation above. The trigger, the faulty code path or data state, why existing safeguards (tests, types, validation) failed to catch it. This section MUST explain *why*, not just *where*.
   - **Fix** — file-level list of changes with the intent of each change (not a diff).
   - **Verification** — the check that proves the fix works: test added, manual repro no longer reproduces, metric returned to baseline. When a test pinned the bug, name it (`path::test name`); when none could, carry the recorded escape `RED_TEST: none — REASON: <…>` verbatim.
-  - **Review** — the triaged outcome of the delivery review, one row per finding: axis (security / conformance / failure), severity, `path:line`, the rule cited, and **disposition** (`fixed` / `accepted` / `unverifiable` / `pre-existing`). List every axis that was judged, including one that could not run and why — an omitted axis is indistinguishable from a passed one. Empty of findings is a valid state; the section itself is not optional.
+  - **Review** — the current hotfix-local delivery receipt. It starts with these scalar lines exactly once and in this order:
+
+    ```text
+    status: passed | blocked
+    reviewer: named | generic | inline
+    reviewed-at: <RFC3339 UTC>
+    reviewed-tree: sha256:<64 lowercase hex>
+    build: passed | blocked
+    pinned-test: passed | none:<reason> | blocked
+    ```
+
+    `### Reviewed Paths` follows. Its fenced `text` manifest has one sorted line per required delivery path: `<present|deleted>\t<mode>\t<content-sha256-or-dash>\t<path-hex>`. Include tracked deletions and both sides of a rename. Include `about.md` itself. Fingerprinting normalizes only `reviewed-tree`, the content hash in `about.md`'s own manifest row, and the close-out-owned `## Addendum: Additional Deliveries` block. `### Findings` follows with table `ID | Severity | Confidence | Citation | Route | Disposition | Re-review | Detail`. Severity is `blocker | major | minor | polish`; confidence is `confirmed | needs-verification`; disposition is `fixed | accepted | pre-existing | unverifiable | open`; re-review is `addressed | not-addressed | not-run`. An empty review writes the header and separator with no data row.
+
+    `status: passed` requires `build: passed`, a pinned test of `passed` or `none:<reason>`, and every blocker or major finding either `fixed` plus `addressed`, or `accepted` by an explicit user decision. A blocker or major with `unverifiable`, `open`, `not-addressed`, or `not-run` makes the receipt blocked. Open minor and polish findings are allowed and remain in the table. Every other combination is schema-invalid.
   - **Relations** — one `- caused_by [[<id>]]` line per work item whose change produced this bug, per the Relations & Observations section of `{{skill:add-doc-schemas/SKILL.md}}`. **Sourced from the candidate set `/add.hotfix` already confirmed with the user during its history synthesis**, never from a fresh question. A hotfix whose cause resolves to no recorded work item writes the section with the single word `None`.
   - **Observations** — `- [<category>] <text>` lines carrying the facts the postmortem surfaced: the trigger, the measured impact, the safeguard that missed it. This is where the analysis that used to spread across prose becomes findable.
-- **Compression:** Symptom = bullets `when / where / impact / detection`. Root Cause = topic sentence + extractive bullets tracing the mechanism. Fix = bullets `path:line — what changed — why`. Verification = checklist. Review = table. Relations and Observations = one line each, no prose.
-- **Hard bans:** blame narrative, long stack traces inline (link instead), post-mortem opinion without evidence, a Review row with no `path:line`, recording a `pre-existing` finding as though this change caused it, and a `caused_by` relation the user never confirmed.
+- **Compression:** Symptom = bullets `when / where / impact / detection`. Root Cause = topic sentence + extractive bullets tracing the mechanism. Fix = bullets `path:line — what changed — why`. Verification = checklist. Review = scalars + path manifest + findings table. Relations and Observations = one line each, no prose.
+- **Hard bans:** blame narrative, long stack traces inline (link instead), post-mortem opinion without evidence, a Review finding with no citation, recording a `pre-existing` finding as though this change caused it, a `caused_by` relation the user never confirmed, creating a hotfix `review-NNN.md`, omitting a delivered path, changing a hotfix-owned file after fingerprinting, and marking a blocker or major receipt passed while its finding remains unresolved.
 - **Avoid unless load-bearing:** skipping the "why safeguards missed it" — that failure analysis is the whole point of the Root Cause section.

@@ -355,13 +355,10 @@ describe('0073 L4 — behavioural acceptance', () => {
     expect(fix).toMatch(/Finding & Evidence Discipline/);
   });
 
-  it('L4.11 the ecosystem map lists all three judges and wires them to add.hotfix', () => {
-    // Asserted on the built provider copy: a stale build is caught too.
-    const built = path.join(BUILT_CLAUDE, 'skills', 'add-ecosystem', 'SKILL.md');
-    const eco = read(built);
-    for (const name of JUDGES) expect(eco, name).toContain(name);
-    const hotfixRow = eco.split('\n').find((l) => l.startsWith('| add.hotfix '));
-    expect(hotfixRow).toBeTruthy();
-    for (const name of JUDGES) expect(hotfixRow, `${name} on add.hotfix row`).toContain(name);
+  it('L4.11 hotfix dispatches reviewer-agent and fix-agent, not the three retained judges', () => {
+    const src = HOTFIX_SRC();
+    expect(src).toContain('@reviewer-agent');
+    expect(src).toContain('@fix-agent');
+    for (const name of JUDGES) expect(src, name).not.toContain(`@${name}`);
   });
 });
