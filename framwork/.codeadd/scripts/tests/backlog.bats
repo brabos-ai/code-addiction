@@ -217,10 +217,13 @@ tickets() {
 }
 
 @test "L1.5c: neither allocator gained a node dependency — both stay pure bash" {
-  run grep -nE 'command -v node|(^|[^a-z])node[[:space:]]' "$SCRIPTS_DIR/next-id.sh"
-  [ "$status" -ne 0 ]
-  run grep -nE 'command -v node|(^|[^a-z])node[[:space:]]' "$SCRIPTS_DIR/status.sh"
-  [ "$status" -ne 0 ]
+  # Comment lines are stripped first. Both scripts EXPLAIN in their headers
+  # why they do not call node, and an assertion that reads prose would fail
+  # on the explanation of the very rule it is checking.
+  for s in next-id.sh status.sh; do
+    run bash -c "grep -vE '^[[:space:]]*#' '$SCRIPTS_DIR/$s' | grep -nE 'command -v node|(^|[^a-zA-Z_-])node([[:space:]]|\$)'"
+    [ "$status" -ne 0 ]
+  done
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
