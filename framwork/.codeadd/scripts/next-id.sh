@@ -54,8 +54,11 @@ BACKLOG_FILE="docs/backlog.jsonl"
 # Find all existing IDs in format [NNNN][L] (e.g., 0001F, 0002H, etc.)
 # Directory pattern: docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/
 # If directory doesn't exist yet, EXISTING_IDS will be empty and we'll start at 0001
+# The match is on the directory NAME, never the path above it: an id lives in
+# the basename, and grepping the full path let a parent directory carrying
+# four digits — a temp dir, a year in someone's checkout path — pose as an id.
 EXISTING_IDS=$(find "$DOCS_DIR" -maxdepth 1 -type d -regex ".*/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
-    grep -oE '[0-9]{4}[A-Z]' | sort -u || true)
+    sed 's#.*/##' | grep -oE '^[0-9]{4}[A-Z]' | sort -u || true)
 
 # Fold in the ids already on the backlog board.
 #

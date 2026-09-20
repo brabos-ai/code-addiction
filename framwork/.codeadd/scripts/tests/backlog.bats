@@ -269,6 +269,34 @@ tickets() {
   done
 }
 
+# L2.1b — the divergence this block was written to close, in its worst form.
+# A slug ending in a year made status.sh return 2025F where next-id.sh
+# returned 0002F: two thousand ids burnt, silently, by every command that
+# allocates — and they all allocate through status.sh.
+@test "L2.1b: NEXT_ID_AGREE when a slug carries four digits of its own" {
+  feature_dir "0001F-auth-2024"
+
+  run nextid F
+  [ "$status" -eq 0 ]
+  [ "$output" = "0002F" ]
+
+  run statusid F
+  [ "$status" -eq 0 ]
+  [ "$output" = "0002F" ]
+}
+
+@test "L2.1c: NEXT_ID_AGREE is not disturbed by digits in the path ABOVE docs/" {
+  # TEST_TEMP_DIR is a mktemp name and can carry four digits of its own. An
+  # id lives in the directory basename; nothing above it counts.
+  feature_dir "0003F-login"
+
+  run nextid F
+  local a="$output"
+  run statusid F
+  [ "$output" = "$a" ]
+  [ "$output" = "0004F" ]
+}
+
 @test "L2.2b: an EMPTY docs/backlog.jsonl changes nothing either" {
   feature_dir "0004F-login"
   mkdir -p docs && : > "$BACKLOG"
