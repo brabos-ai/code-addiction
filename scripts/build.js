@@ -795,7 +795,7 @@ function relId(from, full) {
  *
  * @param {object} map  provider-map.json
  * @param {string} codeaddDir  product-layer root
- * @param {string} internalDir  repo root holding `.claude/`
+ * @param {string} internalDir  repo root holding `workbench/`
  * @returns {Array<{id,kind,layer,name,path,registered,providers,declares}>}, plus `readonly` on
  *          every `agent` node
  */
@@ -977,10 +977,18 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   }
 
   // --- Internal layer -----------------------------------------------------
-  // provider-map.json registers the PRODUCT layer only. Internal artefacts are
-  // never distributed, so `registered` is true by definition — marking them
-  // otherwise would fire the unregistered gate on 17 correct files.
-  const claudeDir = path.join(internalDir, '.claude');
+  // provider-map.json registers the PRODUCT layer only. The workbench has a
+  // registry of its own — workbench/provider-map.json, read by
+  // scripts/build-workbench.js — and nothing in it reaches a user's project,
+  // so `registered` stays true by definition here; marking these otherwise
+  // would fire the unregistered gate on 17 correct files.
+  //
+  // ⛔ THIS READS SOURCE, NEVER OUTPUT. `buildResources` calls
+  //    stripHtmlComments on everything it writes, so the generated .claude/
+  //    and .opencode/ trees carry no `<!-- uses: -->` block at all. Pointed at
+  //    either of them, extractUses returns [] with no error and no warning,
+  //    and the graph silently loses every internal edge.
+  const claudeDir = path.join(internalDir, 'workbench');
 
   // The four pipeline stages — add-framework--brainstorm, --plan, --build and
   // --done — are SKILLS, not commands: they hand off to one another, and a
