@@ -8,6 +8,7 @@
 # Usage: bash .codeadd/scripts/backlog.sh add                < ticket.json
 #        bash .codeadd/scripts/backlog.sh update  <id>       < patch.json
 #        bash .codeadd/scripts/backlog.sh comment <id>       < comment.json
+#        bash .codeadd/scripts/backlog.sh move    <id> --top | --after <id> | --bottom
 #        bash .codeadd/scripts/backlog.sh remove  <id>
 #        bash .codeadd/scripts/backlog.sh list   [--all | --status <name>]
 #        bash .codeadd/scripts/backlog.sh search  <query>
@@ -66,6 +67,7 @@ USAGE: bash .codeadd/scripts/backlog.sh <mode> [args]
   add                       < ticket.json
   update  <id>              < patch.json
   comment <id>              < comment.json
+  move    <id> --top | --after <id> | --bottom
   remove  <id>
   list    [--all | --status <name>]
   search  <query>
@@ -74,7 +76,7 @@ USAGE
 
 MODE="${1:-}"
 case "$MODE" in
-    add|update|comment|remove|list|search) ;;
+    add|update|comment|move|remove|list|search) ;;
     *) echo "ERROR=bad-mode"; usage; exit 2 ;;
 esac
 shift
@@ -84,6 +86,8 @@ shift
 # Checked in bash so a caller error never reaches the JSON layer, where it
 # would be reported as a record problem instead of an argument one.
 TARGET_ID=""
+MOVE_DIR=""
+MOVE_ANCHOR=""
 FILTER="open"
 QUERY=""
 
@@ -91,6 +95,24 @@ case "$MODE" in
     update|comment|remove)
         TARGET_ID="${1:-}"
         [ -n "$TARGET_ID" ] || { echo "ERROR=missing-id"; usage; exit 2; }
+        ;;
+    move)
+        TARGET_ID="${1:-}"
+        [ -n "$TARGET_ID" ] || { echo "ERROR=missing-id"; usage; exit 2; }
+        shift
+        # A move with no direction is a caller error, not a default. Guessing
+        # one would silently reprioritise a board the caller only meant to
+        # look at.
+        case "${1:-}" in
+            --top)    MOVE_DIR="top" ;;
+            --bottom) MOVE_DIR="bottom" ;;
+            --after)
+                MOVE_DIR="after"
+                MOVE_ANCHOR="${2:-}"
+                [ -n "$MOVE_ANCHOR" ] || { echo "ERROR=missing-anchor"; usage; exit 2; }
+                ;;
+            *) echo "ERROR=missing-direction"; usage; exit 2 ;;
+        esac
         ;;
     list)
         case "${1:-}" in
@@ -136,7 +158,7 @@ esac
 # end the program early.
 NODE_PROG='
 const fs = require("fs");
-const [mode, targetId, filter, query, newId] = process.argv.slice(1);
+const [mode, targetId, moveDir, moveAnchor, filter, query, newId] = process.argv.slice(1);
 
 const BACKLOG = "docs/backlog.jsonl";
 const DEFS    = "docs/backlog.definitions.json";
@@ -156,7 +178,7 @@ const flush = (code) => { if (out.length) process.stdout.write(out.join("\n") + 
 const refuse = (name) => { process.stdout.write("REFUSED=" + name + "\n"); process.exit(2); };
 const cannotWrite = (why) => { process.stdout.write("ERROR=write-failed:" + why + "\n"); process.exit(1); };
 
-const isWrite = ["add", "update", "comment", "remove"].includes(mode);
+const isWrite = ["add", "update", "comment", "move", "remove"].includes(mode);
 
 // ── The definitions file ────────────────────────────────────────────────
 // Created when absent, on a WRITE only — a read never brings a file into
@@ -319,6 +341,31 @@ if (mode === "remove") {
   flush(0);
 }
 
+if (mode === "move") {
+  const row = findRow(board.rows, targetId);
+  if (!row) refuse("unknown-id");
+  const rest = board.rows.filter(r => r !== row);
+  let next;
+  if (moveDir === "top") {
+    next = [row].concat(rest);
+  } else if (moveDir === "bottom") {
+    next = rest.concat([row]);
+  } else {
+    const anchor = findRow(rest, moveAnchor);
+    if (!anchor) refuse("unknown-id");
+    const at = rest.indexOf(anchor);
+    next = rest.slice(0, at + 1).concat([row], rest.slice(at + 1));
+  }
+  // THE ONLY MODE THAT REWRITES THE FILE, and the only one whose
+  // correctness is about the whole board rather than one line. Every line
+  // keeps its bytes — a damaged one included, which is why rows carry their
+  // raw text — and only the order changes. That is what LINES_BYTE_STABLE
+  // checks under move: the multiset of lines before and after is equal.
+  writeBoard(next);
+  key("TICKET_ID", targetId);
+  flush(0);
+}
+
 // ── Reads ───────────────────────────────────────────────────────────────
 
 const parsed  = board.rows.filter(r => r.ticket);
@@ -357,4 +404,4 @@ process.exit(0);
 '
 
 BACKLOG_STDIN="$STDIN_JSON" node -e "$NODE_PROG" -- \
-    "$MODE" "$TARGET_ID" "$FILTER" "$QUERY" "$NEW_ID"
+    "$MODE" "$TARGET_ID" "$MOVE_DIR" "$MOVE_ANCHOR" "$FILTER" "$QUERY" "$NEW_ID"
