@@ -1503,6 +1503,21 @@ function lintResourcePaths(content, srcPath) {
   // Skip the resource-path-convention skill itself (it documents the patterns)
   if (relPath.includes('add-resource-path-convention')) return;
 
+  // Skip the workbench layer, for the same reason and a second one.
+  //
+  // The rule this lint enforces exists because `.codeadd/` does not exist in a
+  // user's installed project, so a raw path there resolves to nothing. The
+  // workbench reaches no user's project, and its artefacts are the ones that
+  // DOCUMENT the product layer: add-framework-development spells out the lint
+  // rule itself, and add-framework-product-layer describes where product
+  // resources live. Those strings are prose about a path, not a reference to
+  // resolve — and `{{cmd:}}` inside a workbench artefact would resolve against
+  // the WORKBENCH registry, to `.claude/commands/`, which is a different file.
+  //
+  // Regression this prevents: 13 warnings on every `build-workbench.js` run,
+  // none of them actionable, which is how a warning stream stops being read.
+  if (relPath.startsWith('workbench' + path.sep) || relPath.startsWith('workbench/')) return;
+
   // Lint each source file at most once per build (postWrite invokes per provider)
   if (LINTED_PATHS.has(relPath)) return;
   LINTED_PATHS.add(relPath);
