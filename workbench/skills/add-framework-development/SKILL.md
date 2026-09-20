@@ -13,7 +13,7 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 - mention: add-framework--build
 -->
 
-Operational knowledge for creating and modifying ADD framework artefacts. NOT distributed to users — exists so `add-framework--plan` assesses viability and `add-framework--build` implements correctly.
+Operational knowledge for creating and modifying ADD framework artefacts. Built to the workbench providers and distributed to no user — exists so `add-framework--plan` assesses viability and `add-framework--build` implements correctly.
 
 ## When to Use
 - `add-framework--plan` analyzing if a proposal is technically viable (STEP 0 and STEP 2)
@@ -554,9 +554,9 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 ### Internal-Only Artefact
 
 1. Create directly in `workbench/skills/{name}/SKILL.md` or `workbench/commands/{name}.md`
-2. Do NOT register in provider-map.json
+2. Register it in `workbench/provider-map.json` — NEVER in `framwork/provider-map.json`
 3. Do NOT add to framwork/.codeadd/
-4. These are NOT distributed by build.js
+4. `scripts/build.js` never distributes it. `scripts/build-workbench.js` builds it to `.claude/` and `.opencode/` at the repository root, and neither is packaged by `release.yml` nor written by the installer
 
 ---
 

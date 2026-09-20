@@ -14,7 +14,7 @@ description: "Use when an F-block touches the internal layer — workbench/, scr
 -->
 
 Loaded on the first `[internal]` F-block of a build. These artefacts are the development tooling that
-builds and maintains the framework. **They are NOT distributed to users.** WHAT gets recorded about
+builds and maintains the framework. **They are built to more than one provider, and they reach no user.** WHAT gets recorded about
 execution is `add-build-ledger`'s job; the product layer has its own skill.
 
 ## When to Use
@@ -41,13 +41,24 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 | Structural map | `CLAUDE.md` |
 
 ```
-⛔ INTERNAL ARTEFACTS ARE NOT REGISTERED:
-  ⛔ DO NOT: Add an internal command, skill or agent to framwork/provider-map.json
-  ⛔ DO NOT: Copy an internal artefact into framwork/.codeadd/
-  ✅ DO: Create it directly at its workbench/ path — build.js never distributes it
+⛔ A WORKBENCH ARTEFACT IS REGISTERED IN ITS OWN REGISTRY, NEVER THE PRODUCT'S:
+  ⛔ DO NOT: Add a workbench command, skill or agent to framwork/provider-map.json
+  ⛔ DO NOT: Copy a workbench artefact into framwork/.codeadd/
+  ✅ DO: Create it at its workbench/ path AND register it in workbench/provider-map.json
+  ✅ DO: Run `node scripts/build-workbench.js` — `scripts/build.js` never sees it
 ```
 
-**The internal layer has no provider mirror.** One file per artefact, no adapter to keep in step.
+**The internal layer HAS a provider mirror, and still ships to nobody. Both halves are true and
+neither survives alone.**
+
+| Half | What it means | What breaks if it is dropped |
+|---|---|---|
+| It has a provider mirror | `workbench/{commands,skills,agents}/` is source; `scripts/build-workbench.js` compiles it into the repository-root `.claude/` and `.opencode/`, which are gitignored output | Someone edits the generated copy, and the next build overwrites it |
+| It reaches no user | Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and `cli/src/installer.js` never writes it | The cross-layer gate in `scripts/build.js` looks wrong, and a product artefact starts naming a workbench command a user does not have |
+
+⛔ **Edit the SOURCE, never the built copy.** A change made under `.claude/commands/`,
+`.claude/skills/`, `.claude/agents/` or the `.opencode/` equivalents is gitignored and is erased by
+the next `node scripts/build-workbench.js`.
 
 `add-framework-development` carries the artefact anatomies, the agent frontmatter fields and the
 `<!-- uses: -->` syntax. Read it when creating a new internal artefact.
