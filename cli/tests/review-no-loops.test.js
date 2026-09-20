@@ -30,16 +30,16 @@ const require_ = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const P = {
-  discipline: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
-  readback: path.join(ROOT, '.claude', 'agents', 'plan-readback-agent.md'),
-  reviewer: path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
-  done: path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
-  reviewCmd: path.join(ROOT, '.claude', 'commands', 'add-framework--review.md'),
-  planCmd: path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md'),
-  brainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
-  sync: path.join(ROOT, '.claude', 'commands', 'add-framework--sync.md'),
-  authoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
+  discipline: path.join(ROOT, 'workbench', 'skills', 'add-review-discipline', 'SKILL.md'),
+  readback: path.join(ROOT, 'workbench', 'agents', 'plan-readback-agent.md'),
+  reviewer: path.join(ROOT, 'workbench', 'agents', 'plan-review-agent.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
+  done: path.join(ROOT, 'workbench', 'skills', 'add-framework--done', 'SKILL.md'),
+  reviewCmd: path.join(ROOT, 'workbench', 'commands', 'add-framework--review.md'),
+  planCmd: path.join(ROOT, 'workbench', 'skills', 'add-framework--plan', 'SKILL.md'),
+  brainstorm: path.join(ROOT, 'workbench', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
+  sync: path.join(ROOT, 'workbench', 'commands', 'add-framework--sync.md'),
+  authoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
   claudeMd: path.join(ROOT, 'CLAUDE.md'),
   productPlanReview: path.join(
     ROOT, 'framwork', '.codeadd', 'skills', 'add-plan-review', 'SKILL.md',
@@ -99,7 +99,7 @@ function claudeMarkdown() {
       else if (e.name.endsWith('.md')) out.push([full, fs.readFileSync(full, 'utf8')]);
     }
   };
-  walk(path.join(ROOT, '.claude'));
+  walk(path.join(ROOT, 'workbench'));
   return out;
 }
 

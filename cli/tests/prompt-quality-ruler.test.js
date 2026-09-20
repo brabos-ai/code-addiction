@@ -36,17 +36,17 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const P = {
-  ruler: path.join(ROOT, '.claude', 'skills', 'building-commands', 'SKILL.md'),
-  agent: path.join(ROOT, '.claude', 'agents', 'prompt-review-agent.md'),
-  discipline: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
-  planCmd: path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md'),
-  internalLayer: path.join(ROOT, '.claude', 'skills', 'add-framework-internal-layer', 'SKILL.md'),
-  productLayer: path.join(ROOT, '.claude', 'skills', 'add-framework-product-layer', 'SKILL.md'),
-  devSkill: path.join(ROOT, '.claude', 'skills', 'add-framework-development', 'SKILL.md'),
+  ruler: path.join(ROOT, 'workbench', 'skills', 'building-commands', 'SKILL.md'),
+  agent: path.join(ROOT, 'workbench', 'agents', 'prompt-review-agent.md'),
+  discipline: path.join(ROOT, 'workbench', 'skills', 'add-review-discipline', 'SKILL.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
+  planCmd: path.join(ROOT, 'workbench', 'skills', 'add-framework--plan', 'SKILL.md'),
+  internalLayer: path.join(ROOT, 'workbench', 'skills', 'add-framework-internal-layer', 'SKILL.md'),
+  productLayer: path.join(ROOT, 'workbench', 'skills', 'add-framework-product-layer', 'SKILL.md'),
+  devSkill: path.join(ROOT, 'workbench', 'skills', 'add-framework-development', 'SKILL.md'),
   claudeMd: path.join(ROOT, 'CLAUDE.md'),
-  readback: path.join(ROOT, '.claude', 'agents', 'plan-readback-agent.md'),
-  reviewer: path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md'),
+  readback: path.join(ROOT, 'workbench', 'agents', 'plan-readback-agent.md'),
+  reviewer: path.join(ROOT, 'workbench', 'agents', 'plan-review-agent.md'),
 };
 
 const exists = (p) => fs.existsSync(p);

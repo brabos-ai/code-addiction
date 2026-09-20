@@ -256,7 +256,7 @@ describe('L3 — the documentation and registry edits', () => {
 
   it('L3.3: the product-layer skill carries the conditional bats gate, and the vitest gate is untouched', () => {
     const skill = fs.readFileSync(
-      path.join(REPO_ROOT, '.claude', 'skills', 'add-framework-product-layer', 'SKILL.md'),
+      path.join(REPO_ROOT, 'workbench', 'skills', 'add-framework-product-layer', 'SKILL.md'),
       'utf8',
     );
 
@@ -280,7 +280,7 @@ describe('L3 — the documentation and registry edits', () => {
 
   it('L3.4: the close-out drops the stale Windows figure but keeps its argument and its example', () => {
     const done = fs.readFileSync(
-      path.join(REPO_ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
+      path.join(REPO_ROOT, 'workbench', 'skills', 'add-framework--done', 'SKILL.md'),
       'utf8',
     );
 

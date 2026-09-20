@@ -1037,7 +1037,7 @@ describe('/add-framework--done — the CI gate it reproduces', () => {
   // command merge (plan 2026-09-08T210322-SELF-PLAN--unify-dev-commands, F1).
   // The internal layer has no provider mirror, so .claude/ is the only copy.
   const sources = [
-    path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
+    path.join(ROOT, 'workbench', 'skills', 'add-framework--done', 'SKILL.md'),
   ];
 
   for (const file of sources) {

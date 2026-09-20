@@ -28,8 +28,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const P = {
   reviewerAgent: path.join(ROOT, 'framwork', '.codeadd', 'agents', 'reviewer-agent.md'),
   subagentDriven: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
-  promptReviewAgent: path.join(ROOT, '.claude', 'agents', 'prompt-review-agent.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
+  promptReviewAgent: path.join(ROOT, 'workbench', 'agents', 'prompt-review-agent.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
   addReview: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.review.md'),
   tasksChecklist: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-tasks-checklist', 'SKILL.md'),
   tddFragment: path.join(ROOT, 'framwork', '.codeadd', 'fragments', 'tdd-pipeline', 'add.build.md'),
