@@ -91,7 +91,7 @@ Step        Command             What happens                        Output
 5. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
 ```
 
-Steps 1-4 can also run unattended: approve `/add.brainstorm` with "deliver automatically" and each stage hands off to the next — build <-> review runs at most 2 rounds — until `/add.build` asks whether to open the PR. `/add.done` always waits for you.
+Steps 1-4 can also run unattended: approve `/add.brainstorm` with "deliver automatically" and each stage hands off to the next until `/add.build` runs its own final review and asks whether to open the PR. `/add.done` always waits for you.
 
 ### Choose your flow
 
@@ -109,8 +109,8 @@ LEAN      (small changes, quick tasks)
   new --> build --> done
 
 AUTOMATIC  (one approval, no further interaction)
-  brainstorm --> new --> plan --> build <-> review --> PR question
-          (chosen at brainstorm's approval; build <-> review runs at most 2 rounds)
+  brainstorm --> new --> plan --> build --> publish question
+          (chosen at brainstorm's approval; build runs its own final review, then asks to publish)
 
 EXPLORATION  (don't know where to start?)
   brainstorm --> new --> ...pick your flow above
@@ -119,7 +119,8 @@ EMERGENCY  (critical bug in production)
   hotfix --> done
 
 TRIAGE  (ambiguous symptoms, unclear path)
-  diagnose --> (hotfix OR new OR no-action)
+  diagnose --> hotfix @report --> done
+           (diagnose can also route to new, or stop at no-action)
 
 ANALYSIS  (understand existing codebase)
   wiki / audit

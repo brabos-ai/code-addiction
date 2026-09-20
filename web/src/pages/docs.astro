@@ -227,7 +227,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.build</code>
-                <p class="text-muted text-xs mt-0.5">Development Execution Specialist</p>
+                <p class="text-muted text-xs mt-0.5">Development Execution Specialist — closes each delivery unit with its own Final Review</p>
               </div>
             </div>
           </div>
@@ -238,7 +238,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.review</code>
-                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review and spec-compliance audit; with the <code class="text-foreground">qa-pipeline</code> feature enabled, also agent-judged QA (dual-judge panel over persisted run evidence). Dispatches an OWASP Top 10 pass alongside the area review when the diff touches a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them</p>
+                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review and spec-compliance audit; with the <code class="text-foreground">qa-pipeline</code> feature enabled, also agent-judged QA (dual-judge panel over persisted run evidence). Dispatches an OWASP Top 10 pass alongside the area review when the diff touches a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them. Optional — <code class="text-foreground">/add.build</code> runs its own Final Review, and <code class="text-foreground">/add.done</code> accepts whichever verdict is most recent</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.audit</code>
@@ -246,7 +246,7 @@ import "../styles/global.css";
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.diagnose</code>
-                <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only)</p>
+                <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only); persists the diagnosis for <code class="text-foreground">/add.hotfix</code> to reuse</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.qa-setup</code>
@@ -261,7 +261,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.done</code>
-                <p class="text-muted text-xs mt-0.5">Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges</p>
+                <p class="text-muted text-xs mt-0.5">Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges. Hotfix close-out requires a passed Review receipt in <code class="text-foreground">about.md</code></p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add.pull-request</code>
@@ -269,7 +269,7 @@ import "../styles/global.css";
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm" style="color:#ff4444">/add.hotfix</code>
-                <p class="text-muted text-xs mt-0.5">Emergency fix with global ID (H[NNNN])</p>
+                <p class="text-muted text-xs mt-0.5">Emergency fix with global ID (H[NNNN]) — reuses an accepted <code class="text-foreground">/add.diagnose</code> when available</p>
               </div>
             </div>
           </div>
@@ -382,7 +382,7 @@ import "../styles/global.css";
           <!-- Convergence -->
           <div>
             <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Automatic Flow</h3>
-            <p class="text-muted text-xs mb-4">One approval at the brainstorm — each stage hands off to the next, build ⇄ review runs at most 2 rounds, and the build asks before opening the PR. The merge stays human</p>
+            <p class="text-muted text-xs mb-4">One approval at the brainstorm — each stage hands off to the next, the build closes each delivery unit with its own Final Review, and it asks before opening the PR. The merge stays human</p>
             <div class="flex flex-wrap items-center gap-2">
               <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add.brainstorm</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
@@ -390,7 +390,7 @@ import "../styles/global.css";
               <span class="flow-arrow" style="color:#ffaa00">→</span>
               <span class="flow-node">Plan<br/><span class="flow-cmd">/add.plan</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Build ⇄ Review<br/><span class="flow-cmd" style="color:#ffaa00">/add.build · /add.review</span></span>
+              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Build (final review)<br/><span class="flow-cmd" style="color:#ffaa00">/add.build</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
               <span class="flow-node">PR question</span>
             </div>
@@ -488,7 +488,7 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-4">Well-specified work. Approve once, let the stages hand off, then take the merge decision yourself.</p>
             <div class="font-mono text-sm text-muted-light">
               <span style="color:#ffaa00">/add.brainstorm</span> → approve with "deliver automatically"<br/>
-              <span style="color:#ffaa00">new → plan → build ⇄ review</span> → runs unattended until the PR question<br/>
+              <span style="color:#ffaa00">new → plan → build (final review)</span> → runs unattended until the PR question<br/>
               <span class="text-accent">/add.done</span> → finalize
             </div>
           </div>
@@ -575,7 +575,7 @@ import "../styles/global.css";
             { name: "add-feature-readback", desc: "Use when a feature's docs are closed and you need a cold reader to say back what they understood before anyone builds — catches docs that pass every review and still make the reader build the wrong thing." },
             { name: "add-final-report", desc: "Use at a command's closing step — the seven blocks every finishing command reports in, the banned phrasings, and the self-check. Load at the last step, not at the first." },
             { name: "add-review-discipline", desc: "Use when a command dispatches a reviewer or a cold reader over a document — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk." },
-            { name: "add-delivery-mode", desc: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, how one command hands off to the next, and how the build ⇄ review loop counts its two rounds." },
+            { name: "add-delivery-mode", desc: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, how one command hands off to the next, and where the automatic path ends — the build's publish question." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
@@ -1115,6 +1115,8 @@ import "../styles/global.css";
         ['add.diagnose','git-history-agent','dispatches'],
         ['add.hotfix','feature-history-agent','dispatches'],
         ['add.hotfix','git-history-agent','dispatches'],
+        ['add.hotfix','reviewer-agent','dispatches'],
+        ['add.hotfix','fix-agent','dispatches'],
         // agent → skill (uses)
         ['backend-agent','add-backend-development','uses'],
         ['backend-agent','add-database-development','uses'],
