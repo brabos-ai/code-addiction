@@ -393,7 +393,7 @@ else
     # requirement per extra plan. Found by a smoke test, not by the unit suite.
     FNR == 1 { covidx = 0; inblock = 0; fence = 0; if (mode == "column") mode = "none" }
     # Fence-aware: a fenced example below the last heading is documentation,
-    # not data. CLAUDE.md records this same lesson for the ## Materializes block.
+    # not data. AGENTS.md records this same lesson for the ## Materializes block.
     /^[[:space:]]*```/ { fence = !fence; next }
     fence { next }
     tolower($0) ~ /^##[[:space:]]+cobertura de requisitos/ { mode = "legacy"; found = "legacy"; inblock = 1; next }

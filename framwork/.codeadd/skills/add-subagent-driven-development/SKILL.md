@@ -369,7 +369,7 @@ implementer's report, and the plan's `## Global Constraints` block verbatim. Rev
 - [Specific deliverables from plan]
 + 1. Read all files from TASK_DOCUMENTS (spec)
 + 2. Read every file in FILES TO REVIEW (implementation)
-+ 3. Architecture Contract, FIRST: IF CLAUDE.md carries a `## Architecture Contract` section, then for
++ 3. Architecture Contract, FIRST: IF AGENTS.md carries a `## Architecture Contract` section, then for
 +    each file identify its layer/package, read its imports, and check them against THAT SECTION's
 +    import and placement rules. A violation is a blocker — report it before anything else.
 +    IF the section is absent, SKIP this check and say so in the report. Those rules are discovered
@@ -398,7 +398,7 @@ whole finished feature in `/add.review`. Those six are now `/add.review`'s alone
 
 | Kept | Why it cannot wait for `/add.review` |
 |---|---|
-| Architecture Contract (step 3) | A wrong layer import is the defect that contaminates every task built on top of it. Mechanical to check — layer, imports, placement rules — so it is cheap to keep. **Only against the section CLAUDE.md actually carries**, which `add-architecture-discovery` derives from this project's real dependency edges. No section, no check — a reviewer applying architecture rules this project never adopted is worse than one applying none |
+| Architecture Contract (step 3) | A wrong layer import is the defect that contaminates every task built on top of it. Mechanical to check — layer, imports, placement rules — so it is cheap to keep. **Only against the section AGENTS.md actually carries**, which `add-architecture-discovery` derives from this project's real dependency edges. No section, no check — a reviewer applying architecture rules this project never adopted is worse than one applying none |
 | The task's own `Consumes`/`Produces` (step 4) | The next task is written against that signature. A mismatch here is a broken handoff, not a style note |
 | `SPEC_STATUS` (step 5) | Step 6 gates the commit on it. It is derived by `add-tasks-checklist`'s Tick Application Procedure — that skill owns the definition, and this step points at it rather than restating one |
 | Wiki conventions (step 6) | The project's own documented patterns, where a wiki exists. Free to check while reading, and the drift is cheapest to fix in the task that introduced it |

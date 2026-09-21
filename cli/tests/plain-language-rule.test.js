@@ -266,8 +266,8 @@ describe('L3 — add.wiki wiring', () => {
     );
   });
 
-  it('L3.5 — REGRESSION GUARD: add-wiki-maintenance still refuses CLAUDE.md', () => {
-    expect(WIKI_MAINTENANCE).toMatch(/never touches CLAUDE\.md/i);
+  it('L3.5 — REGRESSION GUARD: add-wiki-maintenance still refuses AGENTS.md, the context file', () => {
+    expect(WIKI_MAINTENANCE).toMatch(/never touches AGENTS\.md/i);
   });
 });
 

@@ -79,7 +79,7 @@ bash .codeadd/scripts/status.sh
 
 ### 2.2 Read additional context (if exists)
 
-Read `CLAUDE.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
+Read `AGENTS.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
 
 ---
 
@@ -126,7 +126,7 @@ Include: feature ID, requirements summary (X/Y fulfilled), implemented items, pe
 
 ### Type E: About the Project
 
-1. Read `CLAUDE.md` for architecture patterns
+1. Read `AGENTS.md` for architecture patterns
 2. Search relevant docs for the queried term
 
 Include: reformulated question, answer (Yes/No/Partially), explanation based on evidence, source files as evidence.

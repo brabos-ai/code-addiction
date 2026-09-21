@@ -15,9 +15,9 @@ Stack-agnostic skill for frontend architecture and implementation patterns.
 **Use for:** Pages, State, Data Fetching, Types, API integration, Forms, Routing, Components
 **Do not use for:** UI/Design (ux-design), Backend (backend-development), mobile-native (React Native/Flutter), build tooling/bundler config
 
-**Stack orientation:** Consult `CLAUDE.md ## Architecture Contract` for the frontend framework, UI library, state management, and data-fetching tool. Apply the principles below using that framework's APIs.
+**Stack orientation:** Consult `AGENTS.md ## Architecture Contract` for the frontend framework, UI library, state management, and data-fetching tool. Apply the principles below using that framework's APIs.
 
-**Reference:** Always consult `CLAUDE.md` for general project standards.
+**Reference:** Always consult `AGENTS.md` for general project standards.
 
 ---
 
@@ -37,7 +37,7 @@ The ux-design skill provides the SaaS UX Pattern Library (Dashboard, Settings, B
 
 ## Structure
 
-Organize source files by concern. Exact paths and extensions depend on the framework (see `CLAUDE.md`).
+Organize source files by concern. Exact paths and extensions depend on the framework (see `AGENTS.md`).
 
 ```
 [frontend-src]/
@@ -69,7 +69,7 @@ Organize source files by concern. Exact paths and extensions depend on the frame
 
 {"separation":"UI state (local, ephemeral) vs Server state (cache of backend data) — NEVER mix them","requirements":["consistent hierarchical cache keys (e.g. ['resource'], ['resource', id])","loading indicator while fetching","error state handled and displayed","invalidate related cache after mutations","conditional fetching when prerequisites missing (e.g. ID exists)","return library primitives directly — do not wrap unnecessarily"]}
 
-Use the project's data-fetching library (see `CLAUDE.md`) to handle server state.
+Use the project's data-fetching library (see `AGENTS.md`) to handle server state.
 
 ---
 
@@ -79,7 +79,7 @@ Separate state into two categories — never mix them:
 
 | Category | What belongs here | Where it lives |
 |----------|-------------------|----------------|
-| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see `CLAUDE.md`) |
+| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see `AGENTS.md`) |
 | **Server state** | Data from the backend, CRUD results, cached responses | Data-fetching library cache |
 
 UI state is local and ephemeral — losing it on refresh is acceptable. Server state is a cache of the backend (the source of truth). Never store fetched data in a UI store.

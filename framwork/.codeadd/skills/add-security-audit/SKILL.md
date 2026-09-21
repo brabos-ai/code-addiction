@@ -9,7 +9,7 @@ description: |
 **Use for:** Validate security, audit codebase, identify vulnerabilities
 **Do not use for:** Writing security fixes, dependency upgrades, incident response, general code review
 
-**Reference:** Always consult `CLAUDE.md` for general project standards.
+**Reference:** Always consult `AGENTS.md` for general project standards.
 
 ---
 
@@ -170,7 +170,7 @@ Formula: `score = 10 - (weighted_sum / 5)`
 
 ## Process
 
-1. **Setup:** Read `security.md`, `CLAUDE.md`, identify scope files
+1. **Setup:** Read `security.md`, `AGENTS.md`, identify scope files
 2. **Analyze:** For EACH OWASP category → run searches → verify (no false positives) → classify severity
 3. **Multi-Tenant:** Check ALL queries filter `account_id`, ID from JWT
 4. **Report:** Calculate score, group by severity, create `security-report.md`
@@ -228,7 +228,7 @@ Formula: `score = 10 - (weighted_sum / 5)`
 
 ## False Positive Prevention
 
-Stack-specific protections (NestJS sanitization, Kysely parametrization, React escaping, etc.) and accepted patterns (e.g. `process.env.NODE_ENV`, internal `.raw()`, validated `PartialType`): consult `CLAUDE.md` for the project's stack and documented exceptions.
+Stack-specific protections (NestJS sanitization, Kysely parametrization, React escaping, etc.) and accepted patterns (e.g. `process.env.NODE_ENV`, internal `.raw()`, validated `PartialType`): consult `AGENTS.md` for the project's stack and documented exceptions.
 
 Project patterns:
 

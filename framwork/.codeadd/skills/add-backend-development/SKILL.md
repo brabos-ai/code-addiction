@@ -19,9 +19,9 @@ Skill for backend API implementation following universal architectural principle
 **Use for:** Routes/Controllers, Services, DTOs, Domain logic, Data access, Error handling
 **Not for:** Frontend (`ux-design`), Database migrations (`database-development`), Security (`security-audit`)
 
-**Stack resolution:** Consult `CLAUDE.md ## Architecture Contract` for the framework in use (Express, Fastify, NestJS, Hono, Elysia, etc.). Apply these principles using the framework's idiomatic patterns. The AI already knows each framework's syntax — this skill teaches architecture, not framework tutorials.
+**Stack resolution:** Consult `AGENTS.md ## Architecture Contract` for the framework in use (Express, Fastify, NestJS, Hono, Elysia, etc.). Apply these principles using the framework's idiomatic patterns. The AI already knows each framework's syntax — this skill teaches architecture, not framework tutorials.
 
-**Reference:** Always consult `CLAUDE.md` for general project standards.
+**Reference:** Always consult `AGENTS.md` for general project standards.
 
 ---
 
