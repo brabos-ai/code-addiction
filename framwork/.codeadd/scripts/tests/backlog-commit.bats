@@ -47,8 +47,8 @@
 #
 #   - STAGING IS THE TWO PATHS BY NAME, never -A and never `.`, because this
 #     commit goes to the base branch and the caller's tree may carry unrelated
-#     work. add-framework--roadmap carries the same stop block for the same
-#     reason.
+#     work. The framework's own internal backlog command carries the same stop
+#     block for the same reason.
 #
 #   - THE WRITE IS NEVER DISCARDED. Four degradation CATEGORIES, each carrying
 #     a precise DEGRADED= reason so a report can say which:

@@ -68,7 +68,7 @@ one-line-diff promise, and `.codeadd/scripts/tests/backlog.bats` asserts it dire
 | `comments` | yes | `[{"content": "...", "created_at": "..."}]`, append-only, `[]` when none. A ticket picked up weeks later needs what was learnt since it was written |
 | `work_id` | yes | The `[NNNN][L]` of the work this ticket became, or `null`. Filled when the ticket is picked up |
 
-**There is no `scope: internal|product` field.** That field exists on the framework's own roadmap because
+**There is no `scope: internal|product` field.** That field exists on the framework's own internal backlog because
 that repository has two layers. A user's project has one, so the field would be noise on every ticket.
 
 **`work_id` is why the ticket's own id is not reused as the work's id.** The counter is global: `0007B` is
