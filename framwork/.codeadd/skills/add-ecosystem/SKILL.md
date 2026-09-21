@@ -9,7 +9,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-architecture-discovery
 - mention: add-backend-architecture
 - mention: add-backend-development
-- mention: add-claude-md-style
+- mention: add-agents-md-style
 - mention: add-code-review
 - mention: add-commit
 - mention: add-cross-sf-consistency
@@ -121,7 +121,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add-dev-environment-setup, add-doc-schemas, add-final-report, add-qa, add-qa-migration, add-setup-contract, add-subagent-driven-development |
 | add.review | Feature Review Specialist — read-only on code. Code review + spec-compliance audit + the absorbed QA validation (preflight / evidence / judgement), which arrives with the `qa-pipeline` feature and then self-gates on the `/add.qa-setup` receipt — two gates: the feature decides whether the steps exist, the receipt decides whether they can run. Dispatches `@reviewer-agent` in `MODE: owasp` alongside the frontend/backend reviewer(s), conditional on the diff touching a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding class into one `## Fix Routing` table and writes a versioned `review-NNN.md`; `/add.build` applies the routes and appends the resolution annex. Optional — `/add.done` accepts the build's own final review; the most recent verdict wins | add-commit, add-delivery-mode, add-doc-schemas, add-final-report, add-investigation, add-knowledge-discovery, add-qa (qa-pipeline), add-subagent-driven-development, add-tasks-checklist |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
-| add.wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add.wiki update` runs incremental maintenance | add-architecture-discovery, add-claude-md-style, add-doc-schemas, add-ecosystem, add-final-report, add-subagent-driven-development, add-wiki-maintenance |
+| add.wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add.wiki update` runs incremental maintenance | add-architecture-discovery, add-agents-md-style, add-doc-schemas, add-ecosystem, add-final-report, add-subagent-driven-development, add-wiki-maintenance |
 
 ## Skills
 
@@ -130,7 +130,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-architecture-discovery | Map architecture, detect patterns, dispatch domain analyzers for the project wiki |
 | add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy |
 | add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic |
-| add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write |
+| add-agents-md-style | AGENTS.md generation guide: migrates legacy context files, content rules, format (JSON/markdown), line budget — load before any AGENTS.md write |
 | add-code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID |
 | add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules |
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |

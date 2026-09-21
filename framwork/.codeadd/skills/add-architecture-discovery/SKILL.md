@@ -6,7 +6,7 @@ description: Use when documenting project architecture — generates Technical S
 # Architecture Discovery
 
 <!-- uses:
-- skill: add-claude-md-style
+- skill: add-agents-md-style
 - command: /add.build
 - command: /add.plan
 - command: /add.wiki
@@ -218,7 +218,7 @@ Real code examples, one per topic, trimmed.>
 - **CLAUDE.md** = WHERE things are (structure, paths, layers) + a pointer to the wiki
 - **`.codeadd/wiki/`** = HOW to implement (patterns, conventions, workflows, architecture rationale)
 
-CLAUDE.md no longer carries a hand-written `### Implementation Patterns` block — that section is REPLACED by the codeadd-wiki managed block, owned by `/add.wiki` STEP 6 (see `{{skill:add-claude-md-style/SKILL.md}}`). This skill's analyzers only produce the wiki pages; they do not write the managed block themselves.
+CLAUDE.md no longer carries a hand-written `### Implementation Patterns` block — that section is REPLACED by the codeadd-wiki managed block, owned by `/add.wiki` STEP 6 (see `{{skill:add-agents-md-style/SKILL.md}}`). This skill's analyzers only produce the wiki pages; they do not write the managed block themselves.
 
 ## Cleanup
 
@@ -280,7 +280,7 @@ Report discoveries + suggest `/add.wiki` if `.codeadd/wiki/` doesn't exist.
 
 ### Project Knowledge Base (CLAUDE.md managed block — NOT written by this skill)
 {"note":"CLAUDE.md carries a codeadd-wiki managed block instead of a hand-written Implementation Patterns section"}
-{"owner":"/add.wiki STEP 6 + add-claude-md-style — see that skill for the block template"}
+{"owner":"/add.wiki STEP 6 + add-agents-md-style — see that skill for the block template"}
 {"location":".codeadd/wiki/","entrypoint":".codeadd/wiki/index.md"}
 {"generate":"Run /add.wiki to create or refresh the wiki"}
 ```

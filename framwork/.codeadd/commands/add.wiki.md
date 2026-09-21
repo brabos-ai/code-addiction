@@ -2,7 +2,7 @@
 
 <!-- uses:
 - skill: add-architecture-discovery
-- skill: add-claude-md-style
+- skill: add-agents-md-style
 - skill: add-doc-schemas
 - skill: add-ecosystem
 - skill: add-final-report
@@ -563,7 +563,7 @@ IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP 6 unti
 <!-- plugin:gitnexus:graph-contract -->
 <!-- /plugin:gitnexus:graph-contract -->
 
-Read skill `{{skill:add-claude-md-style/SKILL.md}}` BEFORE dispatching the agent.
+Read skill `{{skill:add-agents-md-style/SKILL.md}}` BEFORE dispatching the agent.
 
 **DISPATCH AGENT:**
 - **Capability:** read-write (must update CLAUDE.md)
@@ -577,7 +577,7 @@ You are the CONTEXT FILES UPDATER.
 ## SELF-BOOTSTRAP
 Read: skill add-architecture-discovery
 Follow OUTPUT FORMAT and TEMPLATE sections.
-Read: skill add-claude-md-style
+Read: skill add-agents-md-style
 Apply ALL content rules from that skill.
 
 ## INPUTS TO READ
@@ -633,7 +633,7 @@ Describe the action, the mechanism or the state directly. Never put a figure of 
 
 [//]: # (codeadd-style:end)
 
-## CONSTRAINTS (from add-claude-md-style skill)
+## CONSTRAINTS (from add-agents-md-style skill)
 Target: 80-150 lines total.
 
 DO NOT include:
