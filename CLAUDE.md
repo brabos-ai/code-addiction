@@ -105,12 +105,31 @@ entry point:
 ```
 workbench/  (source of truth for the framework's OWN pipeline)
   ↓
-node scripts/build-workbench.js  (reads workbench/provider-map.json; requires scripts/build.js)
+node scripts/build-workbench.js  (reads workbench/provider-map.json; imports scripts/build.js as a module)
   ↓  the SAME buildResources, resolveResourcePaths and AGENT_DIALECTS — imported, never copied
 .claude/, .opencode/  at the repository root  (gitignored; 2 providers)
   ↓
 nothing. It ships to no user, and `release.yml` does not run it.
 ```
+
+**`npm run setup` is the install.** A fresh clone carries `workbench/` and `.claude/settings.json`
+and nothing else under the provider directories — every command, skill and agent the pipeline runs
+on is build output, so until it is run there is no pipeline to run. It is an alias for
+`build:workbench` and nothing more: it takes no dependency, needs no `npm install` first, and does
+NOT run the product build, which compiles 728 files this repository's own pipeline never reads.
+
+```
+⛔ THE SCRIPT IS NOT NAMED `install`:
+  ⛔ DO NOT: Rename it to `install` because `npm run install` reads better
+  ✅ DO: Keep `setup` — npm treats a script named `install` as a LIFECYCLE hook and runs it on
+         every `npm install`, which would fire the workbench build on every dependency install
+```
+
+⛔ **`setup` does not emit the artefact graph.** `framwork/.codeadd/artefact-graph.json` is a
+`scripts/build.js` sidecar, and the workbench skills query it — so `add-artefact-graph` reports
+NOT VERIFIED until `npm run build` has also run at least once. That is the product build's job and
+it stays out of `setup` deliberately: installing the workbench and compiling the product are two
+different acts, and one should not silently cost the other.
 
 Two rules bind anyone editing an artefact:
 
