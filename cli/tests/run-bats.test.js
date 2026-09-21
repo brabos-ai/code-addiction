@@ -38,7 +38,7 @@ import path from 'node:path';
 const require_ = createRequire(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const WRAPPER_PATH = path.join(REPO_ROOT, 'scripts', 'run-bats.js');
-const DOCKERFILE_PATH = path.join(REPO_ROOT, 'scripts', 'bats.Dockerfile');
+const DOCKERFILE_PATH = path.join(REPO_ROOT, 'scripts', 'tests.Dockerfile');
 
 /**
  * The value `package.json` -> scripts.test:scripts held before F4, copied here

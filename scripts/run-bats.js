@@ -34,7 +34,7 @@ const { createHash } = require('crypto');
 const { spawnSync } = require('child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
-const DOCKERFILE = path.join(REPO_ROOT, 'scripts', 'bats.Dockerfile');
+const DOCKERFILE = path.join(REPO_ROOT, 'scripts', 'tests.Dockerfile');
 
 const IMAGE_PREFIX = 'codeadd-bats';
 const DEFAULT_JOBS = 4;
