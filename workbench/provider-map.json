@@ -47,8 +47,8 @@
     "add-framework--release": {
       "description": "Release manager — tags, GitHub releases and the CLI publish, merging main into production."
     },
-    "add-framework--roadmap": {
-      "description": "Records what to do next — adds, updates or removes a roadmap item, then commits and pushes straight to main."
+    "add-framework--backlog": {
+      "description": "Records what to do next — adds, updates or removes a backlog item, then commits and pushes straight to main."
     }
   },
   "skills": {

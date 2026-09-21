@@ -1,4 +1,4 @@
-# ADD Roadmap — Durable Capture
+# ADD Backlog — Durable Capture
 
 <!-- uses:
 - skill: add-final-report
@@ -6,7 +6,7 @@
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
-Records what the user wants to do next into `docs/roadmap/index.md`, then commits and pushes it to
+Records what the user wants to do next into `docs/backlog/index.md`, then commits and pushes it to
 `main`. Adds an item, updates one, or removes one. Grounds every entry in a bounded read of the
 project so it still means something weeks later.
 
@@ -16,11 +16,11 @@ project so it still means something weeks later.
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Read the roadmap        → create it if absent
+STEP 1: Read the backlog        → create it if absent
 STEP 2: Resolve the operation   → add | update | remove, and its target
 STEP 3: Check the project       → BOUNDED to what the request names
 STEP 4: Apply the edit          → surgical; no other item changes
-STEP 5: Commit                  → docs/roadmap/index.md alone
+STEP 5: Commit                  → docs/backlog/index.md alone
 STEP 6: Reconcile with origin   → fetch, rebase if behind, abort on conflict
 STEP 7: Report what else goes up
 STEP 8: Push to main
@@ -31,14 +31,14 @@ STEP 9: Report operation, item, sha
 
 ```
 ALWAYS — THIS COMMAND OWNS ONE FILE:
-  ⛔ DO NOT USE: Write or Edit on any path but docs/roadmap/index.md
+  ⛔ DO NOT USE: Write or Edit on any path but docs/backlog/index.md
   ⛔ DO NOT: Create a branch, open a PR, or merge
-  ⛔ DO NOT: Regenerate docs/roadmap/index.md — rewriting the whole file to apply one
+  ⛔ DO NOT: Regenerate docs/backlog/index.md — rewriting the whole file to apply one
              change is the defect this command exists to avoid
   ⛔ DO NOT: Touch any item but the one the request targets
 
 IF THE OPERATION OR ITS TARGET IS NOT RESOLVED (STEP 2 incomplete):
-  ⛔ DO NOT USE: Write or Edit on docs/roadmap/index.md
+  ⛔ DO NOT USE: Write or Edit on docs/backlog/index.md
   ⛔ DO NOT: Guess which item the user meant
   ⛔ DO NOT: Fall back to adding a new item when an update or a removal was asked for
   ✅ DO: Name the candidates, or say the item was not found, and STOP
@@ -47,7 +47,7 @@ IF EXECUTING STEP 3 (the project check):
   ⛔ DO NOT USE: Agent or any subagent dispatch
   ⛔ DO NOT USE: scripts/graph.js, or read docs/plans/, docs/brainstorming/, docs/delivered.jsonl
   ⛔ DO NOT: Read a file the request did not name and no grep of its own terms surfaced
-  ✅ DO: Record intent. Planning the work is what the roadmap points at, not what it is
+  ✅ DO: Record intent. Planning the work is what the backlog points at, not what it is
 
 IF THE REBASE IN STEP 6 CONFLICTS:
   ⛔ DO NOT: Resolve the conflict
@@ -64,7 +64,7 @@ IF ASKED TO CONFIRM BEFORE WRITING:
 ## Operation Mode
 
 ```
-/add-framework--roadmap <free text>   → add, update or remove, decided from the text
+/add-framework--backlog <free text>   → add, update or remove, decided from the text
 ```
 
 There is no subcommand grammar. The text carries the operation, the target and, when the user says
@@ -72,9 +72,9 @@ so, the position.
 
 ---
 
-## STEP 1: Read the Roadmap
+## STEP 1: Read the Backlog
 
-READ `docs/roadmap/index.md` in full. Its structure is the contract for every later STEP:
+READ `docs/backlog/index.md` in full. Its structure is the contract for every later STEP:
 
 - `## N. <theme>` — a numbered theme, in priority order.
 - `### N.M — <title>` — an item inside that theme, in priority order.
@@ -143,7 +143,7 @@ IF THE REQUEST NAMES NOTHING CHECKABLE:
   ✅ DO: Still record a Scope from whatever the user's own words name, even ungrounded
 ```
 
-**This STEP is capped by design.** It informs one roadmap entry. A command that dispatches an agent,
+**This STEP is capped by design.** It informs one backlog entry. A command that dispatches an agent,
 opens the artefact graph or reads a plan here has stopped recording intent and started doing the
 work.
 
@@ -193,7 +193,7 @@ Match the surrounding voice: the file is prose the user reads, not a database.
 
 ## STEP 5: Commit
 
-Stage `docs/roadmap/index.md` by path and commit it alone. Conventional Commits, scope `roadmap`.
+Stage `docs/backlog/index.md` by path and commit it alone. Conventional Commits, scope `backlog`.
 
 ⛔ **DO NOT stage with `-A` or `.`** — the working tree may carry unrelated work, and this command
 publishes to `main`.
@@ -216,7 +216,7 @@ List every commit on the local branch that this invocation did not create and th
 carry to `main`.
 
 **Informative only. It never blocks.** Publishing someone else's work by accident is worth one line
-of warning; refusing to capture a roadmap item because the branch carries unrelated commits is not.
+of warning; refusing to capture a backlog item because the branch carries unrelated commits is not.
 
 ---
 
@@ -255,11 +255,11 @@ ALWAYS:
 - Resolve Scope from what STEP 3 actually read, or from what the user stated outright
 - Keep surviving item numbers stable across a removal
 - Write back the line endings the file already uses
-- Stage `docs/roadmap/index.md` by path, never the whole tree
+- Stage `docs/backlog/index.md` by path, never the whole tree
 - Report the commit sha — it is the only undo this command offers
 
 NEVER:
-- Write any file but `docs/roadmap/index.md`
+- Write any file but `docs/backlog/index.md`
 - Rewrite the whole file to apply one change
 - Resolve a rebase conflict
 - Invent a path to make an entry look concrete
