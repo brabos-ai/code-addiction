@@ -303,6 +303,8 @@ describe('L3 — the documentation and registry edits', () => {
   it('L3.1: test:scripts points at the runner, and no script invokes bats directly', () => {
     const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
     expect(pkg.scripts['test:scripts']).toBe('node scripts/run-tests.js bats');
+    expect(pkg.scripts.test).toBe('node scripts/run-tests.js vitest');
+    expect(pkg.scripts['test:all']).toBe('node scripts/run-tests.js all');
 
     const directBats = Object.entries(pkg.scripts)
       // bats as the COMMAND — at the start or after a shell operator — not as an
