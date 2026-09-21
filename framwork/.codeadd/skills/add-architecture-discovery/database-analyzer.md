@@ -14,7 +14,7 @@ Generate `{{addpath:wiki/domains/database.md}}` with real project patterns. Foll
 
 **Do NOT assume anything. Discover via config files and code.**
 
-1. Read CLAUDE.md to understand the project structure
+1. Read AGENTS.md to understand the project structure
 2. Read config files to identify database dependencies:
    ```bash
    # Dependencies list ORMs, drivers, query builders

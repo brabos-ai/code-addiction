@@ -1,6 +1,6 @@
 ---
 name: add-architecture-discovery
-description: Use when documenting project architecture — generates Technical Spec section in CLAUDE.md
+description: Use when documenting project architecture — generates Technical Spec section in AGENTS.md
 ---
 
 # Architecture Discovery
@@ -16,15 +16,15 @@ description: Use when documenting project architecture — generates Technical S
 - skill: add-architecture-discovery/spine-analyzer.md
 -->
 
-Analyzes the codebase and updates the Technical Spec section of CLAUDE.md with structured data in a token-efficient format.
+Analyzes the codebase and updates the Technical Spec section of AGENTS.md with structured data in a token-efficient format.
 
-**Principle:** Discover, don't impose. Document what EXISTS in the code. CLAUDE.md is self-contained. Never invent patterns. Never create separate `technical-spec.md` files.
+**Principle:** Discover, don't impose. Document what EXISTS in the code. AGENTS.md is self-contained. Never invent patterns. Never create separate `technical-spec.md` files.
 
 ---
 
 ## When to Use
 
-Triggers: need architecture docs, update CLAUDE.md, document technical spec, `/add.plan` needs context, `/add.build` needs patterns.
+Triggers: need architecture docs, update AGENTS.md, document technical spec, `/add.plan` needs context, `/add.build` needs patterns.
 
 Auto-loaded by: `/add.plan`, `/add.build`.
 
@@ -32,7 +32,7 @@ Auto-loaded by: `/add.plan`, `/add.build`.
 
 - Greenfield projects with no code yet — nothing to discover
 - Single-file scripts or trivial repos — no architecture to document
-- `.codeadd/wiki/` already current and CLAUDE.md Technical Spec reflects the codebase
+- `.codeadd/wiki/` already current and AGENTS.md Technical Spec reflects the codebase
 
 ---
 
@@ -46,7 +46,7 @@ Read the discovery document COMPLETE before any manual searches — primary sour
 
 ## Phase 1 — Architecture Contract
 
-Generate the dependency contract BEFORE Technical Spec. Output → `CLAUDE.md → ## Architecture Contract`.
+Generate the dependency contract BEFORE Technical Spec. Output → `AGENTS.md → ## Architecture Contract`.
 
 Steps:
 - Identify packages/apps in the monorepo (or modules if single-app)
@@ -126,7 +126,7 @@ Rules: discover via code not name; include real examples; skip empty sections; p
 
 Detect runnable commands for 5 universal gate intents — `lint`, `typecheck`, `test`, `build`, `format` — across ANY language/ecosystem.
 
-Output → `CLAUDE.md → ## Validation Gates` (minified JSON), placed after `## Technical Spec`, before `## Implementation Patterns`.
+Output → `AGENTS.md → ## Validation Gates` (minified JSON), placed after `## Technical Spec`, before `## Implementation Patterns`.
 
 **Language-agnostic.** Inspect manifests the project actually has — `package.json`, `pyproject.toml`, `*.csproj`/`*.sln`, `Makefile`, `Cargo.toml`, `go.mod`, `mix.exs`, `composer.json`, `Gemfile`, `build.gradle`, `pom.xml`, etc. Map each intent to the real command. Do NOT assume language; do NOT fabricate gates.
 
@@ -158,11 +158,18 @@ If NO gates detected → omit the section (do not emit empty object).
 
 ---
 
-## Output Format — Token Efficient (CLAUDE.md sections)
+## Output Format — Token Efficient (AGENTS.md sections)
 
 {"format":"JSON minified one-line","max":"10 words per description","sections":["Stack","Structure","Patterns","Domain","API Routes","Critical Files","Background Processing","Scheduling","Events","Webhooks","Validation Gates"]}
 
-Skip sections that don't apply. Update WITHIN CLAUDE.md.
+Skip sections that don't apply. Update WITHIN AGENTS.md — the only context file; write no other.
+
+```
+IF ABOUT TO WRITE A SECTION INTO AGENTS.md:
+  ⛔ DO NOT USE: Write or Edit on AGENTS.md before the Migration in add-agents-md-style has run
+  ✅ DO: Run that Migration first and report every line it prints — a leftover legacy context file
+         makes Claude Code ignore AGENTS.md, so a section written beside it is never read
+```
 
 ## Wiki Page Contract — Shared by ALL Analyzers
 
@@ -215,10 +222,10 @@ Real code examples, one per topic, trimmed.>
 
 ## Implementation Patterns Reference
 
-- **CLAUDE.md** = WHERE things are (structure, paths, layers) + a pointer to the wiki
+- **AGENTS.md** = WHERE things are (structure, paths, layers) + a pointer to the wiki
 - **`.codeadd/wiki/`** = HOW to implement (patterns, conventions, workflows, architecture rationale)
 
-CLAUDE.md no longer carries a hand-written `### Implementation Patterns` block — that section is REPLACED by the codeadd-wiki managed block, owned by `/add.wiki` STEP 6 (see `{{skill:add-agents-md-style/SKILL.md}}`). This skill's analyzers only produce the wiki pages; they do not write the managed block themselves.
+AGENTS.md no longer carries a hand-written `### Implementation Patterns` block — that section is REPLACED by the codeadd-wiki managed block, owned by `/add.wiki` STEP 6 (see `{{skill:add-agents-md-style/SKILL.md}}`). This skill's analyzers only produce the wiki pages; they do not write the managed block themselves.
 
 ## Cleanup
 
@@ -278,8 +285,8 @@ Report discoveries + suggest `/add.wiki` if `.codeadd/wiki/` doesn't exist.
 ### Validation Gates (if any detected — see Validation Gates Detection above)
 {"validation_gates":{"lint":"<command>","typecheck":"<command>","test":"<command>","build":"<command>","format":"<command-in-check-mode>"}}
 
-### Project Knowledge Base (CLAUDE.md managed block — NOT written by this skill)
-{"note":"CLAUDE.md carries a codeadd-wiki managed block instead of a hand-written Implementation Patterns section"}
+### Project Knowledge Base (AGENTS.md managed block — NOT written by this skill)
+{"note":"AGENTS.md carries a codeadd-wiki managed block instead of a hand-written Implementation Patterns section"}
 {"owner":"/add.wiki STEP 6 + add-agents-md-style — see that skill for the block template"}
 {"location":".codeadd/wiki/","entrypoint":".codeadd/wiki/index.md"}
 {"generate":"Run /add.wiki to create or refresh the wiki"}
