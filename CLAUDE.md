@@ -222,7 +222,7 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Ledger, rulings, hard stops, one commit per F-block | `add-build-ledger` |
 | Product-layer build mechanics | `add-framework-product-layer` |
 | Internal-layer build mechanics | `add-framework-internal-layer` |
-| `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 8 |
+| `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 9 |
 | Querying the graph — the eleven verbs, both interfaces, and what it cannot see | `add-artefact-graph` |
 | `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
 | What belongs in a `CLAUDE.md` | `add-claude-md-style` |

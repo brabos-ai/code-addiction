@@ -700,7 +700,7 @@ Always include fallback table for providers without agent support:
 | [area] | @[name]-agent | Generic subagent + skill add-[area]-development |
 ```
 
-## 8. Declaring Relationships — the `<!-- uses: -->` Block
+## 9. Declaring Relationships — the `<!-- uses: -->` Block
 
 Every artefact declares what it uses, in a source-only HTML comment near the top. The build reads
 it with `extractUses()` **before** `stripHtmlComments()`, so it ships to nobody in the product

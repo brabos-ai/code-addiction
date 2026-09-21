@@ -81,7 +81,7 @@ Exit 0, and no warning absent from the baseline measured before the first F-bloc
 summarises warnings as a count unless `ADD_GRAPH_WARNINGS=1` is set**, so the bare form cannot
 support a "no new warning" claim. **This applies to the internal layer even though the internal layer
 is not built.** `build.js` is where the three artefact-graph gates run, and the graph covers `workbench/` as
-well as `framwork/.codeadd/`. **`add-framework-development` § 8 owns which conditions fail and which
+well as `framwork/.codeadd/`. **`add-framework-development` § 9 owns which conditions fail and which
 warn** — read its gate table. Its unregistered-artefact row is the one that does not apply here:
 internal artefacts are never in `provider-map.json`.
 
