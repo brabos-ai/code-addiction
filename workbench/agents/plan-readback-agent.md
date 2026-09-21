@@ -55,7 +55,7 @@ Read `path`, front to back, all of it, before you write a line. **The document i
 
 ```
 ⛔ THE DOCUMENT IS THE WHOLE WORLD:
-  ⛔ DO NOT USE: Read on source code, on a sibling plan, on a ledger, on CLAUDE.md
+  ⛔ DO NOT USE: Read on source code, on a sibling plan, on a ledger, on AGENTS.md
   ⛔ DO NOT USE: Glob to discover what else exists around the document
   ⛔ DO NOT: Chase a cited path, a file:line reference, or a named artefact
   ⛔ DO NOT: Draw on git history, the wiki, the web, or memory of an earlier session

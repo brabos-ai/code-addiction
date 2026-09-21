@@ -55,7 +55,7 @@ only record of the reasoning in a gitignored directory.]
 `None` when there are none — never omit the section.]
 
 - Agents build only for a provider declaring an `agents` pattern (provider-map.json → providers)
-- `node scripts/build.js` exits 0 and emits no new warning (CLAUDE.md, Pipeline)
+- `node scripts/build.js` exits 0 and emits no new warning (AGENTS.md, Pipeline)
 
 ## Problem
 

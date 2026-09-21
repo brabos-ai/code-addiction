@@ -182,7 +182,7 @@ IF A STOP'S KIND IS NOT OBVIOUS FROM ITS STATE:
 ### Legacy forms resolve for reading, never for writing
 
 Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
-`NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `CLAUDE.md` and several
+`NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `AGENTS.md` and several
 documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
 
 ---
@@ -296,12 +296,12 @@ instead of committing one half of a working change and waiting.
 | Tag | Means | Paths |
 |-----|-------|-------|
 | `[product]` | Distributed artefacts | `framwork/.codeadd/`, `framwork/provider-map.json`, `cli/`, `mcp/` |
-| `[internal]` | Development tooling | `workbench/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
+| `[internal]` | Development tooling | `workbench/`, `scripts/`, `AGENTS.md`, the repo root **except `mcp/`** |
 
 ⛔ **`mcp/` is at the repository root and is PRODUCT.** It holds the knowledge-graph MCP
 server, which `scripts/build.js` copies into the npm package — shipping is what decides the
 layer, not depth in the tree. It is the only root directory on the product side, and
-`CLAUDE.md` carries the same note where it maps the anatomy.
+`AGENTS.md` carries the same note where it maps the anatomy.
 
 A plan whose F-blocks are all one tag is a single-layer plan. That is normal, not a defect.
 

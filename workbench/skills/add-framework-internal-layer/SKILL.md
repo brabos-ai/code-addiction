@@ -1,6 +1,6 @@
 ---
 name: add-framework-internal-layer
-description: "Use when an F-block touches the internal layer — workbench/, scripts/, CLAUDE.md or the repo root, mcp/ excepted. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
+description: "Use when an F-block touches the internal layer — workbench/, scripts/, AGENTS.md or the repo root, mcp/ excepted. Coherence and dependency checks, the rename/remove sweep, and why the graph gates still apply."
 ---
 
 # Internal Layer Mechanics
@@ -19,7 +19,7 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 
 ## When to Use
 
-- An F-block naming `workbench/`, `scripts/`, `CLAUDE.md`, `.gitignore`, or a repo-root file.
+- An F-block naming `workbench/`, `scripts/`, `AGENTS.md`, `.gitignore`, or a repo-root file.
 
 ## When NOT to Use
 
@@ -38,7 +38,7 @@ execution is `add-build-ledger`'s job; the product layer has its own skill.
 | Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `workbench/agents/*.md` |
 | Support scripts | `scripts/*.js` |
-| Structural map | `CLAUDE.md` |
+| Structural map | `AGENTS.md` |
 
 ```
 ⛔ A WORKBENCH ARTEFACT IS REGISTERED IN ITS OWN REGISTRY, NEVER THE PRODUCT'S:
@@ -92,16 +92,16 @@ An internal-only change writes nothing under `framwork/` except the gitignored
 git status --porcelain framwork/    # must be empty
 ```
 
-### CLAUDE.md is not bookkeeping
+### AGENTS.md is not bookkeeping
 
-An `[internal]` F-block may write `CLAUDE.md`, but **only where the plan told it to**. There is no
+An `[internal]` F-block may write `AGENTS.md`, but **only where the plan told it to**. There is no
 standing duty to bring it in step with whatever the build happened to change.
 
 Its inventory block is generated — `node scripts/inventory.js` writes it and `/add-framework--done`
 keeps it current. Never hand-edit between the markers; the next close-out overwrites it.
 
 Everything else in the file changes because a plan decided it should. A build that reaches for
-`CLAUDE.md` on its own initiative is doing what grew it to 4212 words before commit 47321fd cut it
+`AGENTS.md` on its own initiative is doing what grew it to 4212 words before commit 47321fd cut it
 back.
 
 ### Coherence, per modified artefact
@@ -122,11 +122,11 @@ What is not expected is an orphan still present at the end of the build.
 ### The sweep — grep is not redundant with the gate
 
 ```bash
-grep -rn "<old-name>" workbench/ CLAUDE.md
+grep -rn "<old-name>" workbench/ AGENTS.md
 ```
 
 Run it after every remove and every rename. **The prose gate does not catch everything a human reads
-as a broken pointer**, and `CLAUDE.md` is not a graph node at all, so nothing in `build.js` inspects
+as a broken pointer**, and `AGENTS.md` is not a graph node at all, so nothing in `build.js` inspects
 it. The grep is the real proof.
 
 ---
@@ -153,7 +153,7 @@ Risk grading at planning time is a different question and belongs to the plannin
 |--------|---------|
 | "The internal layer isn't built, so build.js is irrelevant" | It is where the graph gates run |
 | "I deleted the file, the rename is done" | Sweep first. A dangling declaration fails the build |
-| "The gate passed, so no reference is stale" | `CLAUDE.md` is not a node. Grep it |
+| "The gate passed, so no reference is stale" | `AGENTS.md` is not a node. Grep it |
 | "This artefact belongs in provider-map too, for symmetry" | It ships to nobody. Registering it is wrong |
 | "The new skill shows as an orphan, something broke" | Expected until its consumer lands. Not at the end |
 
