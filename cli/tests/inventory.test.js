@@ -417,7 +417,7 @@ describe('L3 the command and skill texts that held the duty', () => {
     // Skipped when a PR already exists — asking twice on the same branch is noise.
     expect(publish).toMatch(/already exists|existing PR/i);
 
-    // The sync must precede the push, or the PR carries a AGENTS.md the reviewer
+    // The sync must precede the push, or the PR carries an AGENTS.md the reviewer
     // was never shown and the merge diff differs from the reviewed one.
     expect(build.indexOf('scripts/inventory.js')).toBeLessThan(build.indexOf('gh pr create'));
   });
