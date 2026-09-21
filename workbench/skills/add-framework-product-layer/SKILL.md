@@ -277,7 +277,7 @@ changes nothing about that.
 |--------|---------|
 | "I'll edit the provider file directly, it's faster" | build.js overwrites it. Edit `.codeadd/` |
 | "The suite is flaky, this failure is noise" | Baseline against a clean tree, report the delta |
-| "I ran vitest natively on Windows, it is the same run" | It is not. Native Windows times out under load and is the override's path. `npm test` is the gate |
+| "I ran vitest natively on Windows, it is the same run" | It is not. Outside the container the parallel projects time out under load on Windows; the `CODEADD_TESTS_RUNNER=native` override avoids that by running serially, and is slow. `npm test` through the container is the gate |
 | "It's a small artefact, registration can wait" | Unregistered ships to nobody and fails the gate |
 | "That test asserts the old rule, delete it" | Update it, and comment why |
 
