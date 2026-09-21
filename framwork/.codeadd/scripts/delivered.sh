@@ -345,6 +345,13 @@ function doWrite() {
   if (STATUSES.indexOf(rec.status) === -1) refuse('bad-status');
   if (rec.status === 'superseded' && !rec.superseded_by) refuse('superseded-without-by');
 
+  // A superseded line is declared AFTER its replacement deleted its files, so
+  // the anchor search below cannot apply to it — it would refuse the entry at
+  // the one moment the declaration is needed. Its pointer is what it carries
+  // instead, and a pointer to no indexed id points at nothing.
+  const superseded = rec.status === 'superseded';
+  if (superseded && !loadIndex().byId.has(rec.superseded_by)) refuse('superseded-by-unknown');
+
   if (!Array.isArray(rec.items)) refuse('missing-field');
   if (rec.items.length === 0) refuse('no-items');
 
@@ -363,6 +370,7 @@ function doWrite() {
     // such an item is born `changed`, which is honest.
     if (fs.existsSync(path.join(ROOT, at)) && !inCorpus(at)) refuse('item-ignored');
 
+    if (superseded) continue;
     const hits = filesMatching(it.find, 21);
     if (hits.length === 0) refuse('find-absent');
     if (hits.length > 20) refuse('find-over-matched');
