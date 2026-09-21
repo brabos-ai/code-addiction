@@ -55,3 +55,8 @@ take 113 s serially.
 
 - On Windows the parallel projects still time out outside the container (2 of 1578 at 5000 ms). The
   `CODEADD_TESTS_RUNNER=native` override therefore keeps vitest serial there (93 s, green).
+- This delivery replaces the runner and image of `2026-09-10T230600-PLAN--fast-local-bats`, but the
+  index could not record that entry as `superseded`: `delivered.sh write` checks every item anchor even
+  on a `superseded` line, and one of its anchors (`run-bats.js`) no longer exists anywhere. The old
+  entry therefore reads `changed`. Fixing the script and then writing the supersession is on the
+  backlog.
