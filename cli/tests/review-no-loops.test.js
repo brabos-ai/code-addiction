@@ -377,10 +377,13 @@ describe('L3 the review command is gone', () => {
     const text = read(P.claudeMd);
     expect(text).not.toMatch(/^\|\s*`add-framework--review`/m);
     // Passes today on this half. Guards against deleting neighbouring rows.
+    // add-framework--roadmap was renamed add-framework--backlog so the internal
+    // board and the product one share a name; the row it guards moved with it
+    // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F12).
     for (const cmd of [
       'add-framework--plan', 'add-framework--build', 'add-framework--brainstorm',
       'add-framework--sync', 'add-framework--release', 'add-framework--done',
-      'add-framework--roadmap',
+      'add-framework--backlog',
     ]) {
       expect(text, cmd).toMatch(new RegExp(`^\\|\\s*\`${cmd}\``, 'm'));
     }
