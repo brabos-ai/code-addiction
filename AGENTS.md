@@ -49,7 +49,8 @@ and one source has to read the same way in both.
 
 **The second root product directory: a read-only board over `docs/backlog.jsonl`** — kanban, priority
 list and ticket detail, shaped to grow into activity management. It is `[product]` for the reason
-`mcp/` is: it ships to users, as a separate release asset installed under `.codeadd/board/`.
+`mcp/` is: it is built to ship to users, as a separate release asset installed under
+`.codeadd/board/` — the distribution half lands with subtopic 004 of the backlog-board set.
 
 ```
 ⛔ ONLY `board/server.mjs` IS ZERO-DEPENDENCY — THE REST OF `board/` IS NOT:
