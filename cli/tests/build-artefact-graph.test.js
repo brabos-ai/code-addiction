@@ -924,7 +924,10 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
       // skill 57 -> 58: add-delivery-mode, the product owner of the delivery
       // mode. (plan 2026-09-16T205633-PLAN--product-pipeline-parity, F1.)
-      skill: 58,
+      // skill 58 -> 59: add-backlog, the capture skill — the first caller of
+      // backlog.sh, which shipped with none.
+      // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F3.)
+      skill: 59,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -951,7 +954,10 @@ describe('node inventory snapshot', () => {
       // has no caller until the capture skill lands, so it reports as an
       // orphan — correct and expected, like get-main-branch.sh and log-jsonl.sh.
       // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F7.)
-      script: 19,
+      // script 19 -> 20: backlog-commit.sh, the git route that wraps backlog.sh
+      // so a ticket reaches the base branch. backlog.sh itself still runs no git.
+      // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F2.)
+      script: 20,
       // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
       // add.review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1028,8 +1034,11 @@ describe('node inventory snapshot', () => {
     // add-doc-schemas/references/backlog.md. declares stays 131 — neither a
     // script nor a reference is a declaring kind.
     // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5 and F7.)
-    expect(nodes).toHaveLength(230);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(131);
+    // 230 -> 232, declares 131 -> 132: +1 skill, add-backlog (a declaring kind),
+    // and +1 script, backlog-commit.sh (not one). The same asymmetry as above.
+    // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F2 and F3.)
+    expect(nodes).toHaveLength(232);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(132);
   });
 });
 

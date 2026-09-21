@@ -289,7 +289,10 @@ describe('F8 — every action answers over the wire', () => {
     // 22 -> 21 (2026-09-16T205633 product-pipeline-parity): add.plan-to-ready
     // declared `skill: add-doc-schemas` and was deleted. add-delivery-mode names
     // the schema only as a mention, which impact excludes.
-    expect(payload(frames[0]).dependents.length).toBe(21);
+    // 21 -> 22 (2026-09-20T222814 project-backlog-skill-lifecycle-and-rename, F3):
+    // add-backlog declares `skill: add-doc-schemas`, because it composes records
+    // against the backlog.md reference that skill owns.
+    expect(payload(frames[0]).dependents.length).toBe(22);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {
