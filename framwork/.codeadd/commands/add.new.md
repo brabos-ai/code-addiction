@@ -23,7 +23,7 @@
 - script: status.sh
 -->
 
-> **REF:** `CLAUDE.md` for architecture patterns
+> **REF:** `AGENTS.md` for architecture patterns
 > **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
 > **The closing report at `## Completion` is exempt** — it reports in the shape `add-final-report`
 > owns, and a 20-word stub is not that shape.
@@ -127,6 +127,10 @@ often as it is a one-line change, and the word list cannot tell those apart.
 bash .codeadd/scripts/init.sh
 bash .codeadd/scripts/status.sh next-id F
 ```
+
+**If `init.sh` printed a `LEGACY_CONTEXT:` line**, tell the user which files it lists and that
+`/add.wiki update` folds them into AGENTS.md — while one of them is left, Claude Code ignores
+AGENTS.md. This is a notice: continue the STEP whatever the answer.
 
 Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it exists. Match user request keywords against changelog; if match found, read full `changelog.md` for patterns/files/implementations.
 

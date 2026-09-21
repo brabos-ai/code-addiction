@@ -113,7 +113,20 @@ fi
 # ARCHITECTURE
 # =============================================================================
 
-[ -f "CLAUDE.md" ] && echo "ARCH:CLAUDE.md" || echo "ARCH:none"
+# AGENTS.md is the only context file. A legacy one left at the root hides it
+# from Claude Code (CLAUDE.md) or overrides it in Antigravity (GEMINI.md), so it
+# is reported separately; /add.wiki update migrates it.
+[ -f "AGENTS.md" ] && echo "ARCH:AGENTS.md" || echo "ARCH:none"
+
+LEGACY_CONTEXT=""
+for legacy in CLAUDE.md .claude/CLAUDE.md GEMINI.md; do
+    if [ -f "$legacy" ]; then
+        LEGACY_CONTEXT="${LEGACY_CONTEXT:+$LEGACY_CONTEXT,}$legacy"
+    fi
+done
+if [ -n "$LEGACY_CONTEXT" ]; then
+    echo "LEGACY_CONTEXT:$LEGACY_CONTEXT"
+fi
 
 # =============================================================================
 # STACK (detect from package.json)

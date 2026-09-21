@@ -60,17 +60,44 @@ teardown() {
 
 # ─── Architecture detection ─────────────────────────────────────────
 
-@test "detects CLAUDE.md when it exists" {
-  echo "# Claude" > CLAUDE.md
+@test "detects AGENTS.md when it exists" {
+  echo "# Agents" > AGENTS.md
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"ARCH:CLAUDE.md"* ]]
+  [[ "$output" == *"ARCH:AGENTS.md"* ]]
 }
 
-@test "reports ARCH:none when CLAUDE.md does not exist" {
+@test "reports ARCH:none when AGENTS.md does not exist" {
   run "$SCRIPTS_DIR/init.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"ARCH:none"* ]]
+}
+
+@test "a CLAUDE.md alone is not the context file: ARCH:none plus LEGACY_CONTEXT" {
+  echo "# Claude" > CLAUDE.md
+  run "$SCRIPTS_DIR/init.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ARCH:none"* ]]
+  [[ "$output" == *"LEGACY_CONTEXT:CLAUDE.md"* ]]
+}
+
+@test "LEGACY_CONTEXT lists every legacy file present, in order" {
+  mkdir -p .claude
+  echo "a" > CLAUDE.md
+  echo "b" > .claude/CLAUDE.md
+  echo "c" > GEMINI.md
+  echo "d" > AGENTS.md
+  run "$SCRIPTS_DIR/init.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ARCH:AGENTS.md"* ]]
+  [[ "$output" == *"LEGACY_CONTEXT:CLAUDE.md,.claude/CLAUDE.md,GEMINI.md"* ]]
+}
+
+@test "no legacy file means no LEGACY_CONTEXT line at all" {
+  echo "# Agents" > AGENTS.md
+  run "$SCRIPTS_DIR/init.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"LEGACY_CONTEXT"* ]]
 }
 
 # ─── Stack detection ────────────────────────────────────────────────
