@@ -1,10 +1,10 @@
-# Roadmap
+# Backlog
 
 Items are listed in execution order — the number **is** the priority. An item may only start once
 every item above it is done. Scope lives with each item, not with this document — an item names
 the layer(s) it touches.
 
-⛔ **A delivered item is removed, never renumbered, and the gap it leaves stays.** `git log` on this
+⛔ **A delivered item is removed, never renumbered, and the gap it leaves stays.** `git log --follow` on this
 file carries what it was, and every changelog, commit message and index entry that shipped alongside
 it names it by its number — renumbering makes those references point at a different item. Missing
 numbers here mean delivered, not lost.
@@ -18,13 +18,13 @@ numbers here mean delivered, not lost.
 **Scope:** product
 **TLDR:** An opt-in command that builds an initial relationship structure over features delivered before the typed-relation format existed, grouped by app/group/category as a tree or graph, so the agent can find correlated features and know what to search.
 
-- **The relationship format this item migrates INTO is delivered, so nothing blocks this any more.** (It was item 1.1, removed from this roadmap on delivery — `git log docs/roadmap/index.md` has it.) `2026-09-12T104012-PLAN--docs-knowledge-graph-mcp` shipped the typed `## Relations` section, the closed vocabulary (`caused_by`, `depends_on`, `part_of`, `links_to`) and the docs-corpus MCP that reads them. `templates/related.md` is gone and the `hotfix-related` schema is retired.
+- **The relationship format this item migrates INTO is delivered, so nothing blocks this any more.** (It was item 1.1, removed from this backlog on delivery — `git log --follow docs/backlog/index.md` has it.) `2026-09-12T104012-PLAN--docs-knowledge-graph-mcp` shipped the typed `## Relations` section, the closed vocabulary (`caused_by`, `depends_on`, `part_of`, `links_to`) and the docs-corpus MCP that reads them. `templates/related.md` is gone and the `hotfix-related` schema is retired.
 - **Half of the migration also shipped.** `cli/src/migrations.js` migration 0002 (`harvestRelations`) walks a brownfield project's `docs/`, harvests the relationships it already wrote — body references, `related:` ids, Follow-up sentences — and writes them as `links_to` lines. Additive-only: it never deletes, never commits, and reports every id that resolves to no work item.
 - **What is left is the project that declared nothing.** 0002 finds nothing in a project whose documents never named each other, and that is the common case for deliveries predating the format. Such a project needs a structure derived from what its deliveries have in common — path overlap, directory, domain — rather than from a declaration nobody made.
 - Scan past deliveries (`docs/features`, changelogs) and group them — by app, group or category, tree or graph: the shape is still open, and choosing it is the first half of this item.
 - Ships as an enabled feature, not part of the default flow.
 - When the gitnexus plugin is enabled, the grouping also points at what to search in gitnexus per group.
-- **Deliberately deferred past 1.4.** The `add-knowledge-discovery` step this command consults on its first run was repaired on 2026-09-14, and the impact question — where a work item's file set lives, which is half of what this migration would have to write — shipped on 2026-09-14 (`git log docs/roadmap/index.md` carries the item it was). What is still missing is 1.4: this migration cannot know what it is walking until something reports which of a project's documents the MCP can already read. The usual "finish everything above before starting" rule is suspended for that reason, and recorded here rather than left as an unexplained skip.
+- **Deliberately deferred past 1.4.** The `add-knowledge-discovery` step this command consults on its first run was repaired on 2026-09-14, and the impact question — where a work item's file set lives, which is half of what this migration would have to write — shipped on 2026-09-14 (`git log --follow docs/backlog/index.md` carries the item it was). What is still missing is 1.4: this migration cannot know what it is walking until something reports which of a project's documents the MCP can already read. The usual "finish everything above before starting" rule is suspended for that reason, and recorded here rather than left as an unexplained skip.
 - **Done when:** running the command on a project whose deliveries declare no relationship produces the initial grouped structure with relationships filled, and add.new/add.plan/add.hotfix use it as the investigation entry point.
 
 ### 1.4 — A doctor for document schemas, and an opt-in pass that makes a project's documents fit
