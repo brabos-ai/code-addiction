@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * inventory.js — write the product-layer inventory block into CLAUDE.md.
+ * inventory.js — write the product-layer inventory block into AGENTS.md, this repository's context file.
  *
  * Usage:
  *   node scripts/inventory.js                 write the block, report whether it changed
@@ -10,7 +10,7 @@
  * Exit codes: 0 current or written, 2 stale, malformed, or bad arguments.
  * 2 rather than 1 throughout, matching scripts/graph.js.
  *
- * Why a block in CLAUDE.md and not a fourth sidecar: CLAUDE.md is loaded into
+ * Why a block in AGENTS.md and not a fourth sidecar: AGENTS.md is loaded into
  * every session with no action taken. A sidecar answers the same question only
  * to whoever remembers to open it, which is the failure mode this replaces.
  *
@@ -107,7 +107,7 @@ function renderBlock(inv) {
 
 /**
  * Replace what sits between the markers. Replace-only by design: the product
- * layer's managed blocks append because a user's CLAUDE.md is arbitrary, but this
+ * layer's managed blocks append because a user's AGENTS.md is arbitrary, but this
  * file is ours and the block belongs inside `## Project Anatomy`. Appending would
  * put it somewhere else and still look like success.
  */
@@ -124,21 +124,21 @@ function spliceBlock(markdown, body) {
 
 function paths(root) {
   return {
-    claudeMd: path.join(root, 'CLAUDE.md'),
+    contextFile: path.join(root, 'AGENTS.md'),
     codeadd: path.join(root, 'framwork', '.codeadd'),
   };
 }
 
-function writeBlock(claudeMdPath, codeaddDir) {
-  const before = fs.readFileSync(claudeMdPath, 'utf8');
+function writeBlock(contextFilePath, codeaddDir) {
+  const before = fs.readFileSync(contextFilePath, 'utf8');
   const after = spliceBlock(before, renderBlock(collectInventory(codeaddDir)));
   if (after === before) return { changed: false };
-  fs.writeFileSync(claudeMdPath, after);
+  fs.writeFileSync(contextFilePath, after);
   return { changed: true };
 }
 
-function checkBlock(claudeMdPath, codeaddDir) {
-  const before = fs.readFileSync(claudeMdPath, 'utf8');
+function checkBlock(contextFilePath, codeaddDir) {
+  const before = fs.readFileSync(contextFilePath, 'utf8');
   const after = spliceBlock(before, renderBlock(collectInventory(codeaddDir)));
   return after === before
     ? { current: true, reason: null }
@@ -160,11 +160,11 @@ function main(argv) {
   }
 
   const root = flags.includes('--root') ? path.resolve(valueOf('--root')) : REPO_ROOT;
-  const { claudeMd, codeadd } = paths(root);
+  const { contextFile, codeadd } = paths(root);
 
   try {
     if (flags.includes('--check')) {
-      const { current, reason } = checkBlock(claudeMd, codeadd);
+      const { current, reason } = checkBlock(contextFile, codeadd);
       if (current) {
         console.log('inventory block is current');
         return;
@@ -173,8 +173,8 @@ function main(argv) {
       process.exitCode = 2;
       return;
     }
-    const { changed } = writeBlock(claudeMd, codeadd);
-    console.log(changed ? `inventory block updated in ${claudeMd}` : 'inventory block already current');
+    const { changed } = writeBlock(contextFile, codeadd);
+    console.log(changed ? `inventory block updated in ${contextFile}` : 'inventory block already current');
   } catch (err) {
     console.error(`inventory.js: ${err.message}`);
     process.exitCode = 2;

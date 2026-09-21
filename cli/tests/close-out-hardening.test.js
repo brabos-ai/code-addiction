@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
  * prohibitions block heads its five `⛔ DO NOT` lines with a bare `ALWAYS:`,
  * the ledger's line schema is restated at STEP 1.3 and STEP 2.2 without ever
  * naming `add-build-ledger`, `## Rules` repeats three rules its STEP bodies
- * already state, and `CLAUDE.md` does not say who owns the changelog filename.
+ * already state, and `AGENTS.md` does not say who owns the changelog filename.
  *
  * Several assertions PASS on the pre-plan tree and each carries a `guard`
  * comment. They pin what the six edits to one command must NOT lose: its nine
@@ -33,10 +33,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const P = {
-  done: path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
-  authoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
-  claudeMd: path.join(ROOT, 'CLAUDE.md'),
+  done: path.join(ROOT, 'workbench', 'skills', 'add-framework--done', 'SKILL.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
+  authoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
+  agentsMd: path.join(ROOT, 'AGENTS.md'),
 };
 
 const exists = (p) => fs.existsSync(p);
@@ -261,7 +261,7 @@ describe('L3.7-3.9 the ruler items', () => {
 
     // The siblings whose block has the same job qualify it: /add-framework--plan
     // writes "ALWAYS — THIS COMMAND DOES NOT EXECUTE:" and
-    // /add-framework--roadmap "ALWAYS — THIS COMMAND OWNS ONE FILE:".
+    // /add-framework--backlog "ALWAYS — THIS COMMAND OWNS ONE FILE:".
     expect(label[0]).not.toBe('ALWAYS:');
     expect(label[0]).toMatch(/^ALWAYS — .+:$/);
 
@@ -312,9 +312,9 @@ describe('L3.7-3.9 the ruler items', () => {
 // L3.10 — the map points at the owner
 // ---------------------------------------------------------------------------
 
-describe('L3.10 CLAUDE.md', () => {
+describe('L3.10 AGENTS.md', () => {
   it('L3.10 Where the details live names add-plan-authoring and the changelog', () => {
-    const details = section(read(P.claudeMd), 'Where the details live');
+    const details = section(read(P.agentsMd), 'Where the details live');
     expect(details).not.toBeNull();
 
     const row = tableRows(details).find((r) => /add-plan-authoring/.test(r));

@@ -66,14 +66,14 @@ delivery mode.
 **STEPS IN ORDER:**
 ```
 STEP 1: Pre-Review Setup        → CHECK unstaged, ASK user
-STEP 2: Bootstrap Context       → status.sh, load docs, load CLAUDE.md, read changed files
+STEP 2: Bootstrap Context       → status.sh, load docs, load AGENTS.md, read changed files
 STEP 3: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
 STEP 4: Dispatch Reviewers      → PARALLEL (Frontend + Backend), READ-ONLY
 STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
 STEP 6: Build Verification      → Run build; a failure is a routed finding, NOT a fix
-STEP 7: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from CLAUDE.md (do NOT trust ticks)
+STEP 7: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from AGENTS.md (do NOT trust ticks)
 <!-- feature:qa-pipeline:step-list -->
 <!-- /feature:qa-pipeline:step-list -->
 STEP 11: Quality Gate Report    → Create review-NNN.md (incl. ## Fix Routing) + console output
@@ -107,7 +107,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Feature metadata | `bash .codeadd/scripts/status.sh` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
 | Feature docs | `docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
 | Knowledge base | via `{{skill:add-knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
-| Architecture reference | `CLAUDE.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
+| Architecture reference | `AGENTS.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
 
 **Success Criteria:** ALL context loaded. Proceed to STEP 3.
@@ -159,7 +159,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 
 | Step | Action | Condition |
 |------|--------|-----------|
-| Run build | Project build command (see CLAUDE.md) | Capture exit code + stderr |
+| Run build | Project build command (see AGENTS.md) | Capture exit code + stderr |
 | Build fails | Emit each error as a `## Fix Routing` row, area-scoped, severity `blocker` | Mark Overall BLOCKED |
 | Idempotency | Do NOT re-dispatch reviewers | The review is a single pass over one tree |
 
@@ -173,12 +173,12 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 
 ### Gate 6: Validation Gates Re-Run Independently (STEP 7)
 
-**Validation:** Every gate from CLAUDE.md `validation_gates` block re-executed in current session.
+**Validation:** Every gate from AGENTS.md `validation_gates` block re-executed in current session.
 
 | Condition | Rule |
 |-----------|------|
 | Precondition | Build passes (Gate 5). STEP 7.5 (iteration logging) completed if files modified. |
-| Load gates | Read CLAUDE.md `validation_gates` block. If missing → emit one-line nudge and skip rest of STEP 7. |
+| Load gates | Read AGENTS.md `validation_gates` block. If missing → emit one-line nudge and skip rest of STEP 7. |
 | Re-run procedure | For each `(intent, command)` in block: invoke via Bash, capture stdout/stderr/exit code in this session |
 | Exit 0 | Confirm `[x]` (or upgrade `[!]`/`[ ]` to `[x]`) |
 | Exit ≠ 0 | Partition failures into `TOUCHED_FAILURES` (git diff --name-only) vs `UNTOUCHED_FAILURES` |
@@ -191,7 +191,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Failure:** Any `[!]` on touched file. Mark review BLOCKED. Report reason to user.
 
 **Special Cases:**
-- CLAUDE.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in CLAUDE.md. Run /add.wiki to enable validation gates." Skip rest of STEP 7.
+- AGENTS.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in AGENTS.md. Run /add.wiki to enable validation gates." Skip rest of STEP 7.
 
 ### Gate 7: Review Document Writable (STEP 11)
 
@@ -223,12 +223,12 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Prohibition | When | Alternative |
 |-------------|------|-------------|
 | Do NOT dispatch reviewers (Task) | Implementation NOT complete (Gate 1) | Stop and inform user to complete first |
-| Do NOT write spec audit output | Context NOT loaded (Gate 2) | Load all docs and CLAUDE.md first |
+| Do NOT write spec audit output | Context NOT loaded (Gate 2) | Load all docs and AGENTS.md first |
 | Do NOT dispatch reviewers (Task) | Spec audit NOT complete (Gate 3) | Execute Spec Compliance Audit first |
 | Do NOT proceed to STEP 7/8 | Build failing after fixes | Fix build errors until 100% passing (Gate 5) |
 | Do NOT trust ticks on Validation Gates | Existing `[x]` marks in tasks.md | Re-run every gate command independently (Gate 6) |
 | Do NOT mark review READY | Any gate red on touched file after re-run | Report gate failure; block review (Gate 6) |
-| Do NOT skip review silently | CLAUDE.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
+| Do NOT skip review silently | AGENTS.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
 | Do NOT use Bash git commit | Any point in workflow | Use /add-commit skill instead |
 | Do NOT stage files silently | Pre-Review Setup (STEP 1) | Ask user permission first via AskUserQuestion |
 | Do NOT USE Edit or Write on application code | Any point in workflow | Emit a `## Fix Routing` row; `/add.build` applies it |
@@ -335,7 +335,7 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 ### 2.3 Load Project Architecture Reference
 
-Read CLAUDE.md and **extract from specification:**
+Read AGENTS.md and **extract from specification:**
 - Configuration patterns (env vars, configs)
 - DI patterns (service injection)
 - Repository patterns
@@ -345,7 +345,7 @@ Read CLAUDE.md and **extract from specification:**
 - Security rules
 - Expected file structure
 
-**CLAUDE.md is the source of truth** for validating code.
+**AGENTS.md is the source of truth** for validating code.
 
 ### 2.4 Read ALL Changed Files (Gate 2)
 
@@ -651,7 +651,7 @@ one simple rule: review once, fix the whole wave once, done.
 
 ## STEP 6: Build Verification
 
-Run the project build command (see CLAUDE.md). Capture the exit code and stderr.
+Run the project build command (see AGENTS.md). Capture the exit code and stderr.
 
 **Expected:** the build succeeds.
 
@@ -673,9 +673,9 @@ The reviewer's job is to verify, not to trust. Existing `[x]` ticks on `## Valid
 
 ### 7.1 Pre-condition
 
-Read CLAUDE.md `validation_gates` block.
+Read AGENTS.md `validation_gates` block.
 
-- **Block missing** → emit one-line nudge `Note: validation_gates not detected in CLAUDE.md. Run /add.wiki to enable validation gates.` and skip the rest of STEP 7.
+- **Block missing** → emit one-line nudge `Note: validation_gates not detected in AGENTS.md. Run /add.wiki to enable validation gates.` and skip the rest of STEP 7.
 - **Block present** → proceed.
 
 ### 7.2 Re-Run Procedure
@@ -755,7 +755,7 @@ Collect results from all previous steps:
 | Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED | X/Y items compliant |
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
-| Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if CLAUDE.md has no validation_gates) |
+| Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if AGENTS.md has no validation_gates) |
 | QA Judgement | ✅ PASSED / ⚠️ DEGRADED / ❌ BLOCKED / ⊘ NOT SET UP / ⊘ FEATURE OFF | Per-scope roll-up from the `qa-pipeline` judgement step, when that feature supplied one. The two ⊘ values are distinguished below |
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 

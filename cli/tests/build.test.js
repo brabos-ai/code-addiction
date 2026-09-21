@@ -821,8 +821,8 @@ describe('skill sibling files integration', () => {
     const claudeOut = fs.readFileSync(claudePath, 'utf8');
     const cursorOut = fs.readFileSync(cursorPath, 'utf8');
 
-    expect(claudeOut).toContain('.claude/skills/add-claude-md-style/SKILL.md');
-    expect(cursorOut).toContain('.cursor/skills/add-claude-md-style/SKILL.md');
+    expect(claudeOut).toContain('.claude/skills/add-agents-md-style/SKILL.md');
+    expect(cursorOut).toContain('.cursor/skills/add-agents-md-style/SKILL.md');
 
     expect(claudeOut).not.toContain('{{skill:');
     expect(cursorOut).not.toContain('{{skill:');

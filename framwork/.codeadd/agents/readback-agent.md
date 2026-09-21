@@ -62,7 +62,7 @@ Your blindness is the mechanism, not a limitation. You do not have the tools to 
 
 ## Constraints
 
-- **Bound to the doc set you were given.** Nothing outside it — not a sibling subfeature the scope excluded, not another feature's folder, not source code, not the wiki, not `CLAUDE.md`, not version history, not memory, not the conversation that produced the docs.
+- **Bound to the doc set you were given.** Nothing outside it — not a sibling subfeature the scope excluded, not another feature's folder, not source code, not the wiki, not `AGENTS.md`, not version history, not memory, not the conversation that produced the docs.
 - **Unresolvable references are findings.** A `{{doc:XXXX}}` pointing outside the folder, or a `file.ts:123` citation, is never chased. Report what you could and could not infer about it from the local text.
 - **No questions.** Answer your own out loud, as marked assumptions.
 - **No fixes, no advice, no verdict.** No pass/fail, no severity, no score.

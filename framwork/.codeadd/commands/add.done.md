@@ -7,6 +7,8 @@
 - skill: add-final-report
 - skill: add-id-convention
 - skill: add-wiki-maintenance
+- skill: add-backlog
+- skill: add-backlog/references/lifecycle.md
 - command: /add.build
 - mention: /add.new
 - mention: add-knowledge-discovery
@@ -988,9 +990,27 @@ LOCAL git write on both routes** — the PR route calls its `--commit-push` and
 local git write: it asks the forge to merge, and touches no ref here. That is
 why it is the one call this command makes directly.
 
+### 8.3 Close the Ticket
+
+**Only after the merge landed, on either route.** Before it, the ticket would read `done` for work that
+is not on the main branch, and a refused merge would leave it lying.
+
+If `${DIR}/about.md`'s frontmatter carries `ticket:`, follow the `add.done` row of
+`{{skill:add-backlog/references/lifecycle.md}}`: read the ticket, and set `status` to `done` **unless
+it already reads `done`** — a Resume run reaches this sub-step again, and the read is what stops it
+writing twice. No `ticket:`, nothing to do.
+
+```
+IF CLOSING THE TICKET FAILS OR IS REFUSED:
+  ⛔ DO NOT: Treat it as a failed delivery — the merge already landed
+  ⛔ DO NOT: Retry the push or resolve a rebase on the user's behalf
+  ✅ DO: Carry the one line saying what did not happen into STEP 9, and continue
+```
+
 **After merge, carry this into STEP 9 — do NOT print it here:**
 - Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
 - **Which evidence the gate accepted, and why** — the PR's checks on a named SHA, or the local route with the reason no PR was available.
+- **The ticket result from 8.3** — closed, already closed, or what did not happen. Omit the line when `about.md` carries no `ticket:`.
 
 **Resolve the next command here, state it at STEP 9:**
 READ skill `add-ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP 9 owns it.
@@ -1024,6 +1044,9 @@ Then, after the seven blocks, state:
   accepts is worse than a slow one.
 - **Which route 2.1 and 2.2 chose**, and on a Resume run, the STEPs it skipped
   and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
+- **The ticket result from 8.3** — closed, already closed, or what did not happen. Omit the line when
+  `about.md` carries no `ticket:`. A ticket that silently stays open after its work merged is the
+  failure 8.3 exists to prevent, so a close that did not land reaches the user here or nowhere.
 - The next command, from the `add-ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
 

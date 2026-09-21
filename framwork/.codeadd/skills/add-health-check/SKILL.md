@@ -11,7 +11,7 @@ description: |
 - skill: add-health-check/context-discovery.md
 -->
 
-Suite of skills for complete technical analysis of the project. Always consult `CLAUDE.md` for general project standards.
+Suite of skills for complete technical analysis of the project. Always consult `AGENTS.md` for general project standards.
 
 ## When NOT to Use
 
@@ -27,7 +27,7 @@ Suite of skills for complete technical analysis of the project. Always consult `
 /tech-health-check
 ├── PHASE 1 - DISCOVERY (parallel)
 │   ├── context-discovery     → architecture, multi-tenancy, modules
-│   ├── documentation-analyzer → CLAUDE.md, patterns
+│   ├── documentation-analyzer → AGENTS.md, patterns
 │   └── infrastructure-check   → MCP, env vars, deps
 │
 ├── PHASE 2 - ANALYSIS (parallel, depends on Phase 1)

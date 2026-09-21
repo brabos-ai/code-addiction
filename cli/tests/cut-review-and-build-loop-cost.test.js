@@ -28,8 +28,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const P = {
   reviewerAgent: path.join(ROOT, 'framwork', '.codeadd', 'agents', 'reviewer-agent.md'),
   subagentDriven: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
-  promptReviewAgent: path.join(ROOT, '.claude', 'agents', 'prompt-review-agent.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
+  promptReviewAgent: path.join(ROOT, 'workbench', 'agents', 'prompt-review-agent.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
   addReview: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.review.md'),
   tasksChecklist: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-tasks-checklist', 'SKILL.md'),
   tddFragment: path.join(ROOT, 'framwork', '.codeadd', 'fragments', 'tdd-pipeline', 'add.build.md'),
@@ -175,7 +175,7 @@ describe('F10 — per-task review is narrower than the end-of-feature one', () =
     // Architecture Contract — mechanical, and the defect that contaminates later tasks.
     expect(s5).toMatch(/Architecture Contract, FIRST/);
     expect(s5).toMatch(/identify its layer\/package/);
-    // Guarded: no section in CLAUDE.md means no check, never invented rules.
+    // Guarded: no section in AGENTS.md means no check, never invented rules.
     expect(s5).toMatch(/IF the section is absent, SKIP this check/);
     expect(s5).toMatch(/reviews a project that does not exist/);
 

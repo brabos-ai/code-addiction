@@ -30,17 +30,17 @@ const require_ = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const P = {
-  discipline: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
-  readback: path.join(ROOT, '.claude', 'agents', 'plan-readback-agent.md'),
-  reviewer: path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
-  done: path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
-  reviewCmd: path.join(ROOT, '.claude', 'commands', 'add-framework--review.md'),
-  planCmd: path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md'),
-  brainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
-  sync: path.join(ROOT, '.claude', 'commands', 'add-framework--sync.md'),
-  authoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
-  claudeMd: path.join(ROOT, 'CLAUDE.md'),
+  discipline: path.join(ROOT, 'workbench', 'skills', 'add-review-discipline', 'SKILL.md'),
+  readback: path.join(ROOT, 'workbench', 'agents', 'plan-readback-agent.md'),
+  reviewer: path.join(ROOT, 'workbench', 'agents', 'plan-review-agent.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
+  done: path.join(ROOT, 'workbench', 'skills', 'add-framework--done', 'SKILL.md'),
+  reviewCmd: path.join(ROOT, 'workbench', 'commands', 'add-framework--review.md'),
+  planCmd: path.join(ROOT, 'workbench', 'skills', 'add-framework--plan', 'SKILL.md'),
+  brainstorm: path.join(ROOT, 'workbench', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
+  sync: path.join(ROOT, 'workbench', 'commands', 'add-framework--sync.md'),
+  authoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
+  agentsMd: path.join(ROOT, 'AGENTS.md'),
   productPlanReview: path.join(
     ROOT, 'framwork', '.codeadd', 'skills', 'add-plan-review', 'SKILL.md',
   ),
@@ -99,7 +99,7 @@ function claudeMarkdown() {
       else if (e.name.endsWith('.md')) out.push([full, fs.readFileSync(full, 'utf8')]);
     }
   };
-  walk(path.join(ROOT, '.claude'));
+  walk(path.join(ROOT, 'workbench'));
   return out;
 }
 
@@ -337,12 +337,12 @@ describe('L3 the review command is gone', () => {
     expect(exists(P.reviewCmd)).toBe(false);
   });
 
-  it('L3.2 nothing under .claude/, CLAUDE.md or .codeadd/ names it', () => {
+  it('L3.2 nothing under .claude/, AGENTS.md or .codeadd/ names it', () => {
     const offenders = [];
     for (const [file, text] of claudeMarkdown()) {
       if (text.includes('add-framework--review')) offenders.push(path.relative(ROOT, file));
     }
-    if (read(P.claudeMd).includes('add-framework--review')) offenders.push('CLAUDE.md');
+    if (read(P.agentsMd).includes('add-framework--review')) offenders.push('AGENTS.md');
 
     const codeadd = path.join(ROOT, 'framwork', '.codeadd');
     const walk = (dir) => {
@@ -373,14 +373,17 @@ describe('L3 the review command is gone', () => {
     expect(uses).not.toMatch(/add-framework--review/);
   });
 
-  it('L3.5 the CLAUDE.md internal-command table loses that row and keeps the rest', () => {
-    const text = read(P.claudeMd);
+  it('L3.5 the AGENTS.md internal-command table loses that row and keeps the rest', () => {
+    const text = read(P.agentsMd);
     expect(text).not.toMatch(/^\|\s*`add-framework--review`/m);
     // Passes today on this half. Guards against deleting neighbouring rows.
+    // add-framework--roadmap was renamed add-framework--backlog so the internal
+    // board and the product one share a name; the row it guards moved with it
+    // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F12).
     for (const cmd of [
       'add-framework--plan', 'add-framework--build', 'add-framework--brainstorm',
       'add-framework--sync', 'add-framework--release', 'add-framework--done',
-      'add-framework--roadmap',
+      'add-framework--backlog',
     ]) {
       expect(text, cmd).toMatch(new RegExp(`^\\|\\s*\`${cmd}\``, 'm'));
     }

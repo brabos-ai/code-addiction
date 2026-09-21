@@ -150,10 +150,12 @@ Commands and skills install to every provider you select. Subagents install to C
 
 ## Repository structure
 
+- `AGENTS.md`: project instructions read by AI coding assistants (replaces `CLAUDE.md` at the repo root)
 - `cli/`: installer CLI published as `codeadd`
 - `mcp/`: the knowledge-graph MCP server (two corpora, selected by `--corpus`), shipped in the npm package
 - `framework/`: framework payload copied into target projects by the installer
   - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
+- `workbench/`: internal-layer source for the framework's own commands, skills and agents, with its own build pipeline (compiles to `.claude/` and `.opencode/` at the repo root, gitignored)
 - `docs/deliveries/`: durable delivery history — closed-out plan archives
 - `docs/delivered.jsonl`: the delivery index every close-out appends to
 

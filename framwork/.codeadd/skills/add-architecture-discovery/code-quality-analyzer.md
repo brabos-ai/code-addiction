@@ -14,7 +14,7 @@ Generate `docs/code-quality-review.md` with analysis of:
 
 **Do NOT assume anything. Analyze the real code.**
 
-1. Read CLAUDE.md to understand the project structure
+1. Read AGENTS.md to understand the project structure
 2. Read .codeadd/project/*.md if they exist (already documented patterns)
 3. Analyze real code to identify gaps
 

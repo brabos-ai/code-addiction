@@ -33,6 +33,21 @@ jobs:
         working-directory: .
         run: node scripts/build.js
 
+      # The workbench layer — the framework's own pipeline — has its own source
+      # root and its own entry point, and it is deliberately ABSENT from
+      # release.yml: nothing under workbench/ ships, so a failure here can never
+      # block a product release. This is the only place its correctness is
+      # enforced, because its output is gitignored and therefore invisible both
+      # locally and in review.
+      - name: Build workbench provider files
+        working-directory: .
+        run: node scripts/build-workbench.js
+
+      # Plain vitest inside cli/, which runs the two projects in
+      # cli/vitest.config.js: every file in parallel, then the subprocess
+      # spawners serially. Root `npm test` goes through scripts/run-tests.js,
+      # which is native here anyway; calling vitest directly keeps this job
+      # independent of the runner.
       - name: Run tests
         run: npm test
 
@@ -55,5 +70,12 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
+      # bats -j needs GNU parallel. It is on the runner image today; install it
+      # only if that ever stops being true, rather than fail with a bats error.
+      - name: Ensure GNU parallel
+        run: command -v parallel || (sudo apt-get update && sudo apt-get install -y parallel)
+
       - name: Run script test suite (bats)
+        env:
+          CODEADD_TESTS_JOBS: 4
         run: npm run test:scripts

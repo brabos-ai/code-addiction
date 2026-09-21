@@ -7,9 +7,9 @@ import os from 'node:os';
 import path from 'node:path';
 
 /**
- * CLAUDE.md inventory block (plan 2026-09-08T234054-PLAN--claude-md-inventory-block).
+ * AGENTS.md inventory block (plan 2026-09-08T234054-PLAN--claude-md-inventory-block).
  *
- * `CLAUDE.md` is loaded into every session, and until now two skills held a
+ * `AGENTS.md` is loaded into every session, and until now two skills held a
  * standing licence to write prose into it on every build. That licence is what
  * grew the file to 4212 words before commit 47321fd cut it back. The replacement
  * is a managed block a script owns end to end, so the file's inventory section
@@ -30,7 +30,7 @@ import path from 'node:path';
  *
  *   L1.7 — absent or malformed markers are a hard error, never a silent no-op and
  *   never an append. The product-layer convention appends because a user's
- *   CLAUDE.md is arbitrary; this file is under our control and the block belongs
+ *   AGENTS.md is arbitrary; this file is under our control and the block belongs
  *   inside `## Project Anatomy`. Appending would put it somewhere else and look
  *   like success.
  */
@@ -100,9 +100,9 @@ function fixtureCodeadd() {
   return dir;
 }
 
-/** A CLAUDE.md with the markers in place and an empty block between them. */
+/** A AGENTS.md with the markers in place and an empty block between them. */
 function fixtureClaudeMd(body = '') {
-  const file = path.join(tmpDir('inventory-md-'), 'CLAUDE.md');
+  const file = path.join(tmpDir('inventory-md-'), 'AGENTS.md');
   write(file, `# Project\n\n## Project Anatomy\n\n${MARK_START}\n${body}${MARK_END}\n\n## Pipeline\n`);
   return file;
 }
@@ -213,7 +213,7 @@ describe('L1.5 checkBlock and the --check exit codes', () => {
     const codeadd = fixtureCodeadd();
     const root = path.resolve(codeadd, '..', '..');
 
-    const md = path.join(root, 'CLAUDE.md');
+    const md = path.join(root, 'AGENTS.md');
     fs.copyFileSync(fixtureClaudeMd(), md);
     writeBlock(md, codeadd);
     expect(() => execFileSync('node', [SCRIPT, '--check', '--root', root])).not.toThrow();
@@ -249,7 +249,7 @@ describe('L1.6 sidecars come from the constant, never from disk', () => {
 
 describe('L1.7 absent or malformed markers are a hard error', () => {
   it('throws rather than appending when both markers are missing', () => {
-    const file = path.join(tmpDir('inventory-md-'), 'CLAUDE.md');
+    const file = path.join(tmpDir('inventory-md-'), 'AGENTS.md');
     write(file, '# Project\n\n## Project Anatomy\n\nno markers here\n');
     const before = fs.readFileSync(file, 'utf8');
 
@@ -258,13 +258,13 @@ describe('L1.7 absent or malformed markers are a hard error', () => {
   });
 
   it('throws when the end marker is missing', () => {
-    const file = path.join(tmpDir('inventory-md-'), 'CLAUDE.md');
+    const file = path.join(tmpDir('inventory-md-'), 'AGENTS.md');
     write(file, `# Project\n\n${MARK_START}\n{"commands":[]}\n`);
     expect(() => writeBlock(file, fixtureCodeadd())).toThrow(/codeadd-inventory:end/);
   });
 
   it('throws when the end marker precedes the start marker', () => {
-    const file = path.join(tmpDir('inventory-md-'), 'CLAUDE.md');
+    const file = path.join(tmpDir('inventory-md-'), 'AGENTS.md');
     write(file, `# Project\n\n${MARK_END}\n{"commands":[]}\n${MARK_START}\n`);
     expect(() => writeBlock(file, fixtureCodeadd())).toThrow();
   });
@@ -272,7 +272,7 @@ describe('L1.7 absent or malformed markers are a hard error', () => {
   it('exits 2 rather than 0 when the markers are absent', () => {
     const codeadd = fixtureCodeadd();
     const root = path.dirname(codeadd);
-    write(path.join(root, 'CLAUDE.md'), '# Project\n\nno markers\n');
+    write(path.join(root, 'AGENTS.md'), '# Project\n\nno markers\n');
 
     let code = 0;
     try {
@@ -290,7 +290,7 @@ describe('L1.7 absent or malformed markers are a hard error', () => {
 
 describe('L2 the real repository', () => {
   const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
-  const CLAUDE_MD = path.join(ROOT, 'CLAUDE.md');
+  const AGENTS_MD = path.join(ROOT, 'AGENTS.md');
 
   it('L2.1 counts agree with provider-map.json', () => {
     const map = require(path.join(ROOT, 'framwork', 'provider-map.json'));
@@ -300,8 +300,8 @@ describe('L2 the real repository', () => {
     expect(inv.agents).toHaveLength(Object.keys(map.agents).length);
   });
 
-  it('L2.2 CLAUDE.md carries exactly one marker pair, in order, inside Project Anatomy', () => {
-    const md = fs.readFileSync(CLAUDE_MD, 'utf8');
+  it('L2.2 AGENTS.md carries exactly one marker pair, in order, inside Project Anatomy', () => {
+    const md = fs.readFileSync(AGENTS_MD, 'utf8');
     expect(md.split(MARK_START)).toHaveLength(2);
     expect(md.split(MARK_END)).toHaveLength(2);
     expect(md.indexOf(MARK_START)).toBeLessThan(md.indexOf(MARK_END));
@@ -309,8 +309,8 @@ describe('L2 the real repository', () => {
     expect(md.indexOf(MARK_END)).toBeLessThan(md.indexOf('## Pipeline'));
   });
 
-  it('L2.3 CLAUDE.md no longer carries the hand-maintained count rows', () => {
-    const md = fs.readFileSync(CLAUDE_MD, 'utf8');
+  it('L2.3 AGENTS.md no longer carries the hand-maintained count rows', () => {
+    const md = fs.readFileSync(AGENTS_MD, 'utf8');
     // Target the COUNT column, not the row label. The Internal Layer keeps a
     // legitimate `| Type | Path |` table whose rows are also labelled Commands,
     // Skills and Agents — matching on the label alone condemns the wrong table.
@@ -319,7 +319,7 @@ describe('L2 the real repository', () => {
   });
 
   it('L2.4 the block on disk is current', () => {
-    expect(checkBlock(CLAUDE_MD, CODEADD).current).toBe(true);
+    expect(checkBlock(AGENTS_MD, CODEADD).current).toBe(true);
   });
 });
 
@@ -363,10 +363,10 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(list.slice(list.indexOf('\n2. '))).toMatch(/working tree must be clean/i);
   });
 
-  it('L3.2 add-framework-product-layer lost both CLAUDE.md sections and stopped there', () => {
+  it('L3.2 add-framework-product-layer lost both AGENTS.md sections and stopped there', () => {
     const skill = read('.claude', 'skills', 'add-framework-product-layer', 'SKILL.md');
     expect(skill).not.toContain('Project Anatomy');
-    expect(skill).not.toContain('The rest of CLAUDE.md');
+    expect(skill).not.toContain('The rest of AGENTS.md');
     // The boundary marker: the next section down must survive. It was `## Changelog`
     // until PR #43 removed that section for its own reason, so the anchor moved to
     // the one that now follows. The point is unchanged — prove the deletion stopped.
@@ -374,9 +374,9 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(skill).toContain('## Rules');
   });
 
-  it('L3.3 add-framework-internal-layer lost its CLAUDE.md table, kept the coherence check', () => {
+  it('L3.3 add-framework-internal-layer lost its AGENTS.md table, kept the coherence check', () => {
     const skill = read('.claude', 'skills', 'add-framework-internal-layer', 'SKILL.md');
-    expect(skill).not.toContain('CLAUDE.md, per changed artefact list');
+    expect(skill).not.toContain('AGENTS.md, per changed artefact list');
     expect(skill).toContain('### Coherence, per modified artefact');
   });
 
@@ -384,7 +384,7 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(read('.claude', 'skills', 'add-framework--build', 'SKILL.md')).not.toContain('Project Anatomy');
   });
 
-  it('L3.5 the [product] block forbids writing CLAUDE.md and the [internal] block does not', () => {
+  it('L3.5 the [product] block forbids writing AGENTS.md and the [internal] block does not', () => {
     const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
     const product = build.slice(
       build.indexOf('IF THE CURRENT F-BLOCK IS TAGGED [product]:'),
@@ -394,8 +394,8 @@ describe('L3 the command and skill texts that held the duty', () => {
       build.indexOf('IF THE CURRENT F-BLOCK IS TAGGED [internal]:'),
       build.indexOf('IF THE CURRENT F-BLOCK IS TAGGED [product]:'),
     );
-    expect(product).toContain('CLAUDE.md');
-    expect(internal).not.toContain('CLAUDE.md');
+    expect(product).toContain('AGENTS.md');
+    expect(internal).not.toContain('AGENTS.md');
   });
 
   it('L3.7 add-framework--build syncs the block unconditionally, as its last documented act', () => {
@@ -417,7 +417,7 @@ describe('L3 the command and skill texts that held the duty', () => {
     // Skipped when a PR already exists — asking twice on the same branch is noise.
     expect(publish).toMatch(/already exists|existing PR/i);
 
-    // The sync must precede the push, or the PR carries a CLAUDE.md the reviewer
+    // The sync must precede the push, or the PR carries an AGENTS.md the reviewer
     // was never shown and the merge diff differs from the reviewed one.
     expect(build.indexOf('scripts/inventory.js')).toBeLessThan(build.indexOf('gh pr create'));
   });
@@ -450,15 +450,15 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.6 the dead bootstrap script is gone, and the sweep finds no pointer left', () => {
-    expect(fs.existsSync(path.join(ROOT, '.claude', 'bootstrap-framework-context.sh'))).toBe(false);
+    expect(fs.existsSync(path.join(ROOT, 'workbench', 'bootstrap-framework-context.sh'))).toBe(false);
 
-    // Scoped to `.claude/` and CLAUDE.md — the sweep add-framework-internal-layer
+    // Scoped to `.claude/` and AGENTS.md — the sweep add-framework-internal-layer
     // prescribes. A repo-wide grep would match this very file and could never pass.
     let hits = '';
     try {
       hits = execFileSync(
         'git',
-        ['grep', '-l', 'bootstrap-framework-context', '--', '.claude/', 'CLAUDE.md'],
+        ['grep', '-l', 'bootstrap-framework-context', '--', '.claude/', 'AGENTS.md'],
         { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
       );
     } catch (e) {

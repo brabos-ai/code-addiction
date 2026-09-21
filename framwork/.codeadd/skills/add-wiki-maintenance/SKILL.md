@@ -26,7 +26,7 @@ Keeps `{{addpath:wiki/}}` accurate between full `/add.wiki` regenerations. Two t
 
 ## WRITE BOUNDARY
 
-Only three writers touch `{{addpath:wiki/}}`: `/add.wiki` (full gen), this skill's executions (surgical edits), the user. `INSTRUCTIONS.md` is NEVER machine-written — read-only steering, always. This skill never touches CLAUDE.md (owned by `/add.wiki` STEP 6).
+Only three writers touch `{{addpath:wiki/}}`: `/add.wiki` (full gen), this skill's executions (surgical edits), the user. `INSTRUCTIONS.md` is NEVER machine-written — read-only steering, always. This skill never touches AGENTS.md (owned by `/add.wiki` STEP 6).
 
 ## NO-OP IS A FIRST-CLASS OUTCOME
 

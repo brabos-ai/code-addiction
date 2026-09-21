@@ -28,7 +28,7 @@ Skill for validating implemented code against project standards.
 - Planning or specifying work — planning belongs to `/add.plan`, which writes `plan.md` against the `feature-plan` schema; specifying belongs to `add-feature-specification`
 - Codebase discovery or architecture analysis (use `add-feature-discovery` / `add-architecture-discovery`)
 
-**Reference:** Always consult `CLAUDE.md` for general project standards.
+**Reference:** Always consult `AGENTS.md` for general project standards.
 
 ---
 
@@ -99,7 +99,7 @@ Spec Compliance scoring:
 
 **Architecture violation = CRITICAL BLOCKER. Fix BEFORE any other validation.**
 
-Source: `CLAUDE.md → ## Architecture Contract`.
+Source: `AGENTS.md → ## Architecture Contract`.
 
 Validation steps:
 
@@ -251,7 +251,7 @@ Weights and status (lookup):
 
 1. `bash .codeadd/scripts/status.sh`
 2. Read reference skills (backend, database, frontend, security)
-3. Read `CLAUDE.md`
+3. Read `AGENTS.md`
 4. Identify ALL changed files
 5. Create TodoWrite (see MANDATORY RULE) covering each validation category and changed file
 

@@ -2,9 +2,12 @@
   "name": "codeadd",
   "private": true,
   "scripts": {
+    "setup": "node scripts/build-workbench.js",
     "build": "node scripts/build.js",
-    "test": "npm --prefix cli test",
-    "test:scripts": "node scripts/run-bats.js",
+    "build:workbench": "node scripts/build-workbench.js",
+    "test": "node scripts/run-tests.js vitest",
+    "test:all": "node scripts/run-tests.js all",
+    "test:scripts": "node scripts/run-tests.js bats",
     "release": "bash scripts/release.sh",
     "publish": "cd cli && npm publish",
     "login": "npm login"

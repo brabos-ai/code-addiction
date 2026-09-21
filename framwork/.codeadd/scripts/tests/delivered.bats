@@ -882,7 +882,7 @@ node_free_path() {
 }
 
 @test "L4.3: an entry with no node at all is still readable by its text" {
-  # The field is optional — top-level scripts, CLAUDE.md and .gitignore produce
+  # The field is optional — top-level scripts, AGENTS.md and .gitignore produce
   # no graph node — so the haystack must tolerate its absence.
   src a.md 'marker_gamma lives here'
   commit_all

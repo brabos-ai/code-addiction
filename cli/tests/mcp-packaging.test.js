@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 /**
  * Plan 2026-09-12T104012 — F12 and F13, distribution.
@@ -16,7 +18,7 @@ import path from 'node:path';
  */
 
 const require = createRequire(import.meta.url);
-const { MCP_SOURCE, MCP_PACKAGED } = require('../../scripts/build.js');
+const { MCP_SOURCE, MCP_PACKAGED, copyMcpIntoCli } = require('../../scripts/build.js');
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const RELEASE_WORKFLOW = path.join(ROOT, '.github', 'workflows', 'release.yml');
@@ -30,6 +32,13 @@ function tree(dir, rel = '', out = []) {
     else out.push(next);
   }
   return out.sort();
+}
+
+/** One hash over every file's path and bytes, so any change to the tree shows. */
+function hashTree(dir) {
+  const h = createHash('sha256');
+  for (const rel of tree(dir)) h.update(rel).update(fs.readFileSync(path.join(dir, rel)));
+  return h.digest('hex');
 }
 
 describe('F12 — the build copies mcp/ into the CLI package', () => {
@@ -70,11 +79,31 @@ describe('F12 — the build copies mcp/ into the CLI package', () => {
   it('the build removes a stale file the source no longer has', () => {
     // A copy that only adds leaves a deleted module in every published package
     // forever, which is the class of bug the sidecar prune already guards.
-    const stale = path.join(ROOT, MCP_PACKAGED, 'stale-module.mjs');
-    fs.writeFileSync(stale, 'export const gone = true;\n', 'utf8');
-    execFileSync(process.execPath, ['scripts/build.js'], { cwd: ROOT, stdio: 'ignore' });
-    expect(fs.existsSync(stale)).toBe(false);
-  }, 120000);
+    //
+    // Run against a temporary root, never the real one. Running the real build
+    // here deleted and rewrote the three sidecars mid-suite, and wrote into the
+    // real cli/src/mcp — so any test reading a sidecar after this one could
+    // fail, and the suite's verdict depended on file order.
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'mcp-packaging-'));
+    try {
+      fs.cpSync(path.join(ROOT, MCP_SOURCE), path.join(tmpRoot, MCP_SOURCE), { recursive: true });
+      const stale = path.join(tmpRoot, MCP_PACKAGED, 'stale-module.mjs');
+      fs.mkdirSync(path.dirname(stale), { recursive: true });
+      fs.writeFileSync(stale, 'export const gone = true;\n', 'utf8');
+
+      const before = hashTree(path.join(ROOT, MCP_PACKAGED));
+      const { copied, pruned } = copyMcpIntoCli(tmpRoot);
+
+      expect(fs.existsSync(stale)).toBe(false);
+      expect(pruned).toBe(1);
+      expect(tree(path.join(tmpRoot, MCP_PACKAGED))).toEqual(tree(path.join(ROOT, MCP_SOURCE)));
+      expect(copied).toBeGreaterThan(0);
+      // The real packaged copy is untouched.
+      expect(hashTree(path.join(ROOT, MCP_PACKAGED))).toBe(before);
+    } finally {
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('F12 — L1.5 the packed tarball really contains it', () => {

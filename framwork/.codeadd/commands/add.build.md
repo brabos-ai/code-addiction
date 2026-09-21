@@ -17,6 +17,8 @@
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
 - skill: add-subagent-driven-development/references/dispatch-rules.md
+- skill: add-backlog
+- skill: add-backlog/references/lifecycle.md
 - agent: backend-agent
 - agent: consistency-agent
 - agent: database-agent
@@ -148,7 +150,8 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
 4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory).
-5. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
+5. **Ticket.** If `about.md`'s frontmatter carries `ticket:`, follow the `add.build` row of `{{skill:add-backlog/references/lifecycle.md}}`: ONE board write setting `work_id` to `FEATURE_ID` and `status` to `doing`, skipped when the ticket already reads both. **Here, and not earlier** — until `build-setup.sh` returned, the run could still stop, and a ticket marked `doing` for a build that never started is a lie the board cannot correct. **Never a stop:** a refused or degraded write is one line in STEP 18's report, and the build continues.
+6. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
 
 ---
 
@@ -757,7 +760,7 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 #### 10.3 Area-Specific Notes
 
-**Paths and build commands are project-specific. Consult CLAUDE.md for exact locations and commands.**
+**Paths and build commands are project-specific. Consult AGENTS.md for exact locations and commands.**
 
 - **Database:** Entities, Kysely types, Knex migration, Repository, barrel exports
 - **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
@@ -876,7 +879,7 @@ ${FILES_MODIFIED}
 3. Validate each checklist item
 4. Report EVERY violation as a routed row — file, item, what is wrong, what it must become.
    Do NOT edit any file: the coordinator routes these rows to @fix-agent, which is full-access.
-5. Run the build command (from CLAUDE.md) and report its exit status as BUILD_STATUS
+5. Run the build command (from AGENTS.md) and report its exit status as BUILD_STATUS
 
 RULES: No questions. Every checklist violation is reported, never deferred and never silently
 accepted. You do not fix and you do not tick — reporting IS your output.
@@ -956,7 +959,7 @@ Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 
    report in hand. ⛔ IF no validator report exists for this batch: DO NOT commit. Go back to 11.2.
 2. **`SPEC_STATUS` is not `INCOMPLETE`.** ⛔ IF it is: DO NOT commit. Implement the missing spec items or
    escalate, then re-validate.
-3. **The build PASSED.** Run the project build command (CLAUDE.md) and read its exit status in this
+3. **The build PASSED.** Run the project build command (AGENTS.md) and read its exit status in this
    session. ⛔ IF it is red: DO NOT commit. Dispatch `@fix-agent` per the **Correction Dispatch** contract
    and return to gate 1 afterwards. `BUILD_STATUS: pass` is a fact you observed, never one you assumed.
 4. **NOW commit — and record the bracket.**
@@ -1004,9 +1007,9 @@ lives here, so there is exactly one place to check that validation came first.
 
 After ALL area validators return AND build verification passes, run the **Validation Gates Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
 
-**Hard requirement:** every gate command listed in CLAUDE.md `validation_gates` MUST be invoked via Bash in this session. Tick `[x]` only when the most recent invocation exited 0 (after fixing touched-file failures). Tick `[!]` when touched-file failures persist after a fix attempt. Append untouched-file failures to `### Known Issues` (cap 10 + `+N more`).
+**Hard requirement:** every gate command listed in AGENTS.md `validation_gates` MUST be invoked via Bash in this session. Tick `[x]` only when the most recent invocation exited 0 (after fixing touched-file failures). Tick `[!]` when touched-file failures persist after a fix attempt. Append untouched-file failures to `### Known Issues` (cap 10 + `+N more`).
 
-**Migration nudge:** if CLAUDE.md has no `validation_gates` block, emit the one-line nudge and skip this sub-step (no gates to enforce).
+**Migration nudge:** if AGENTS.md has no `validation_gates` block, emit the one-line nudge and skip this sub-step (no gates to enforce).
 
 **CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.
 <!-- feature:qa-pipeline:e2e-dispatch -->
@@ -1146,7 +1149,7 @@ DO NOT report completion without executing this step.
 ## STEP 14: Integration Verification
 
 1. **Contract Adherence:** Endpoints, events, commands match plan
-2. **Build Verification:** Run project build command (see CLAUDE.md)
+2. **Build Verification:** Run project build command (see AGENTS.md)
 <!-- feature:tdd-pipeline:verification -->
 <!-- /feature:tdd-pipeline:verification -->
 <!-- feature:tdd-pipeline:coverage -->
@@ -1495,13 +1498,15 @@ Fill the blocks from this build:
 - **`How it works`** — what the built feature does now, for a reader who did not watch the run.
 - **`Files touched`** — split by verb. The Deleted row is written even when it reads "none".
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
-  and the one or two places the work is most likely to have gone wrong.
+  the one or two places the work is most likely to have gone wrong, and a ticket write from STEP 2
+  item 5 that did not land.
 
 Then, after the seven blocks and before any metadata, print 18.1 and 18.2 below — whole, in their
 own shape.
 
-**Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
-its commit brackets.
+**Metadata last:** feature ID, files summary (per area count), build status, the ledger path with
+its commit brackets, and — when `about.md` carries `ticket:` — what STEP 2 item 5 did to it: set to
+`doing`, already `doing`, or what did not happen.
 
 ### 18.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 

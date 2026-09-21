@@ -1,7 +1,7 @@
 ---
 name: add-database-development
 description: |
-  Database layer: entities, repos, migrations, multi-tenancy. Stack-agnostic. Consult CLAUDE.md for ORM.
+  Database layer: entities, repos, migrations, multi-tenancy. Stack-agnostic. Consult AGENTS.md for ORM.
 ---
 
 # Database Development
@@ -11,7 +11,7 @@ Skill for implementing the database layer following universal data architecture 
 **Use for:** Entities, Migrations, Repositories, Enums, Database types
 **Do not use for:** Controllers/DTOs (`backend-development`), Frontend (`ux-design`), API contracts, query optimization tuning
 
-**Stack orientation:** Consult `CLAUDE.md ## Architecture Contract` for the ORM and database in use. Apply these principles using the project's ORM API.
+**Stack orientation:** Consult `AGENTS.md ## Architecture Contract` for the ORM and database in use. Apply these principles using the project's ORM API.
 
 ---
 

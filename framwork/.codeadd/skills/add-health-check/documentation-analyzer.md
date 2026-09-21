@@ -13,7 +13,7 @@
 ## Mission
 
 You are a subagent specialized in documentation analysis. Your job is to verify:
-1. Existence of CLAUDE.md
+1. Existence of AGENTS.md — the only context file — and that no legacy one is left beside it
 2. Compliance with documentation standards
 3. Paths mentioned in documentation exist in the project
 4. Documentation reflects the current state (not aspirational)
@@ -26,32 +26,40 @@ You are a subagent specialized in documentation analysis. Your job is to verify:
 
 ```bash
 # Required documentation
-ls CLAUDE.md 2>/dev/null
+ls AGENTS.md 2>/dev/null
+
+# Legacy context files — each one is a finding (DOC-008)
+ls CLAUDE.md .claude/CLAUDE.md GEMINI.md 2>/dev/null
 
 # Feature documentation
 ls docs/features/ 2>/dev/null
 
 # Documentation skills
 ls {{skill:add-doc-schemas/SKILL.md}} 2>/dev/null
-ls {{skill:add-claude-md-style/SKILL.md}} 2>/dev/null
+ls {{skill:add-agents-md-style/SKILL.md}} 2>/dev/null
 ```
 
 ### Classify
 
 | Document | Status | Criticality |
 |----------|--------|-------------|
-| CLAUDE.md | Exists/Does not exist | 🔴 Critical |
+| AGENTS.md | Exists/Does not exist | 🔴 Critical |
+| CLAUDE.md, .claude/CLAUDE.md, GEMINI.md | Left/Absent | 🟠 High when left |
 | docs/features/* | Exists/Does not exist | 🟡 Medium |
+
+**A legacy context file left at the root is a finding, never a second source to check.** Claude Code
+reads AGENTS.md only when no CLAUDE.md exists, and Antigravity lets GEMINI.md override it — so a
+leftover file means the analysed AGENTS.md is not what those tools read.
 
 ---
 
-## Analysis 2: CLAUDE.md - Compliance
+## Analysis 2: AGENTS.md - Compliance
 
-### If CLAUDE.md Exists
+### If AGENTS.md Exists
 
 **Read the file:**
 ```bash
-cat CLAUDE.md
+cat AGENTS.md
 ```
 
 **Check required sections:**
@@ -65,7 +73,7 @@ cat CLAUDE.md
 
 **Check compliance with skill:**
 ```bash
-cat {{skill:add-claude-md-style/SKILL.md}}
+cat {{skill:add-agents-md-style/SKILL.md}}
 ```
 
 **Compliance checklist:**
@@ -83,11 +91,11 @@ cat {{skill:add-claude-md-style/SKILL.md}}
 ### Automated Check
 
 ```bash
-# Extract paths mentioned in CLAUDE.md
-grep -oP '`[^`]+\.(ts|js|json|yml|yaml|md)`' CLAUDE.md 2>/dev/null | sort -u
+# Extract paths mentioned in AGENTS.md
+grep -oP '`[^`]+\.(ts|js|json|yml|yaml|md)`' AGENTS.md 2>/dev/null | sort -u
 
 # Extract directory paths
-grep -oP '`[^`]+/`' CLAUDE.md 2>/dev/null | sort -u
+grep -oP '`[^`]+/`' AGENTS.md 2>/dev/null | sort -u
 
 # Check each path
 # For each extracted path, verify whether it exists
@@ -139,8 +147,8 @@ ls libs/domain/src/entities/ 2>/dev/null
 ```
 
 **Compare:**
-- Modules in CLAUDE.md vs real modules
-- Stack in CLAUDE.md vs package.json
+- Modules in AGENTS.md vs real modules
+- Stack in AGENTS.md vs package.json
 - Listed entities vs existing entities
 
 ---
@@ -168,7 +176,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 
 | Document | Status | Compliance |
 |----------|--------|------------|
-| CLAUDE.md | ✅/❌ | [X%] |
+| AGENTS.md | ✅/❌ | [X%] |
 | docs/features/* | ✅/❌ | [X features documented] |
 
 ---
@@ -177,33 +185,40 @@ ls libs/domain/src/entities/ 2>/dev/null
 
 ### 🔴 Critical
 
-#### [DOC-001] CLAUDE.md does not exist
+#### [DOC-001] AGENTS.md does not exist
 **Impact:** AI-assisted development will be inconsistent and low quality
-**Fix:** Create CLAUDE.md following `{{skill:add-claude-md-style/SKILL.md}}`
+**Fix:** Create AGENTS.md following `{{skill:add-agents-md-style/SKILL.md}}`
 
 ---
 
-#### [DOC-002] Invalid path in CLAUDE.md
-**File:** CLAUDE.md:45
+#### [DOC-002] Invalid path in AGENTS.md
+**File:** AGENTS.md:45
 **Path mentioned:** `libs/shared/src/services/`
 **Problem:** Directory does not exist
-**Fix:** Update CLAUDE.md with the correct path or remove the reference
+**Fix:** Update AGENTS.md with the correct path or remove the reference
 
 ---
 
 ### 🟠 High
 
-#### [DOC-004] CLAUDE.md with more than 500 words
+#### [DOC-004] AGENTS.md with more than 500 words
 **Current count:** [X] words
 **Impact:** Document is too long, difficult to maintain
-**Fix:** Simplify CLAUDE.md keeping only essential information
+**Fix:** Simplify AGENTS.md keeping only essential information
+
+---
+
+#### [DOC-008] Legacy context file left at the root
+**File:** [CLAUDE.md / .claude/CLAUDE.md / GEMINI.md]
+**Impact:** Claude Code ignores AGENTS.md while a CLAUDE.md exists; Antigravity lets GEMINI.md override it
+**Fix:** Run /add.wiki update — it folds the file into AGENTS.md without losing a line, then deletes it
 
 ---
 
 #### [DOC-005] Undocumented module
 **Module:** apps/backend/src/api/modules/[module]/
 **Impact:** AI is unaware of this module, development will be inconsistent
-**Fix:** Add module to the structure section of CLAUDE.md
+**Fix:** Add module to the structure section of AGENTS.md
 
 ---
 
@@ -218,17 +233,18 @@ ls libs/domain/src/entities/ 2>/dev/null
 
 ### 🟢 Low
 
-#### [DOC-007] Outdated version in CLAUDE.md
+#### [DOC-007] Outdated version in AGENTS.md
 **Documented:** React 18.2
 **Actual:** React 18.3 (check package.json)
-**Fix:** Update version in CLAUDE.md
+**Fix:** Update version in AGENTS.md
 
 ---
 
 ## Compliance Checklist
 
-### CLAUDE.md
+### AGENTS.md
 - [ ] Exists
+- [ ] No CLAUDE.md, .claude/CLAUDE.md or GEMINI.md left at the root
 - [ ] ~500 words or fewer
 - [ ] No extensive code blocks
 - [ ] Verifiable paths
@@ -257,9 +273,10 @@ ls libs/domain/src/entities/ 2>/dev/null
 ## Scoring
 
 **Score calculation:**
-- CLAUDE.md does not exist: -5 points
+- AGENTS.md does not exist: -5 points
+- Each legacy context file left at the root: -1 point
 - Each invalid path: -1 point
-- CLAUDE.md > 500 words: -0.5 points
+- AGENTS.md > 500 words: -0.5 points
 - Undocumented module: -0.5 points
 - Incomplete feature: -0.25 points
 
