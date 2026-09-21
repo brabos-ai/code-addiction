@@ -62,7 +62,7 @@ ALWAYS:
     │
     ├── STEP 3 - DISCOVERY (parallel)
     │   ├── context-discovery      → Architecture, multi-tenancy, features
-    │   ├── documentation-analyzer → CLAUDE.md, patterns
+    │   ├── documentation-analyzer → AGENTS.md, patterns
     │   └── infrastructure-check   → MCP Supabase, env vars
     │
     ├── STEP 5 - ANALYSIS (parallel, depends on STEP 3)
@@ -113,7 +113,7 @@ mkdir -p "docs/audit"
 
 ## STEP 2: Validate Prerequisites (BEFORE discovery)
 
-Check whether `CLAUDE.md` exists at project root. Detect project layout (look for `apps/`, `libs/`, `src/` or equivalent).
+Check whether `AGENTS.md` exists at project root. Detect project layout (look for `apps/`, `libs/`, `src/` or equivalent).
 
 **⛔ GATE CHECK: Project structure valid?**
 - If no recognisable source directories → Warn user about non-standard structure.

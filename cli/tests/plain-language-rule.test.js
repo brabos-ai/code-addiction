@@ -23,7 +23,7 @@ const COMMANDS = path.join(CODEADD, 'commands');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
-const CLAUDE_MD_STYLE = read(path.join(SKILLS, 'add-claude-md-style', 'SKILL.md'));
+const AGENTS_MD_STYLE = read(path.join(SKILLS, 'add-agents-md-style', 'SKILL.md'));
 const DOC_SCHEMAS = read(path.join(SKILLS, 'add-doc-schemas', 'SKILL.md'));
 const TOKEN_EFFICIENCY = read(path.join(SKILLS, 'add-token-efficiency', 'SKILL.md'));
 const WIKI_MAINTENANCE = read(path.join(SKILLS, 'add-wiki-maintenance', 'SKILL.md'));
@@ -87,21 +87,21 @@ function artefactNames() {
   return names.filter((n) => /[.\-]/.test(n) && n.length >= 5);
 }
 
-describe('L1 — Writing Style block content contract (add-claude-md-style)', () => {
+describe('L1 — Writing Style block content contract (add-agents-md-style)', () => {
   it('L1.1 — the managed-block subsection exists under Section Templates', () => {
-    const templates = section(CLAUDE_MD_STYLE, '## Section Templates');
+    const templates = section(AGENTS_MD_STYLE, '## Section Templates');
     expect(templates).not.toBeNull();
     expect(templates).toContain('### Writing Style (managed block)');
   });
 
   it('L1.2 — the block exists and fits the 14-line cap, markers included', () => {
-    const block = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
-    expect(block, 'codeadd-style markers not found in add-claude-md-style').not.toBeNull();
+    const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
+    expect(block, 'codeadd-style markers not found in add-agents-md-style').not.toBeNull();
     expect(block.length).toBeLessThanOrEqual(14);
   });
 
   it('L1.3 — all seven contract elements are present and separately identifiable', () => {
-    const block = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
+    const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     expect(block).not.toBeNull();
     const text = block.join('\n');
 
@@ -125,7 +125,7 @@ describe('L1 — Writing Style block content contract (add-claude-md-style)', ()
   });
 
   it('L1.4 — the carve-out names at least three kept technical terms', () => {
-    const block = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
+    const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     expect(block).not.toBeNull();
     const text = block.join('\n').toLowerCase();
     const kept = ['branch', 'tree', 'cache', 'pipeline', 'parent', 'orphan', 'handler', 'race'];
@@ -133,19 +133,19 @@ describe('L1 — Writing Style block content contract (add-claude-md-style)', ()
   });
 
   it('L1.5 — the block carries no build-time resource variable', () => {
-    const block = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
+    const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     expect(block).not.toBeNull();
     expect(block.join('\n')).not.toContain('{{');
   });
 
   it('L1.6 — the block carries no HTML comment', () => {
-    const block = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
+    const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     expect(block).not.toBeNull();
     expect(block.join('\n')).not.toContain('<!--');
   });
 
   it('L1.7 — the block names no framework artefact', () => {
-    const block = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
+    const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     expect(block).not.toBeNull();
     const text = block.join('\n');
     const named = artefactNames().filter((n) => text.includes(n));
@@ -153,7 +153,7 @@ describe('L1 — Writing Style block content contract (add-claude-md-style)', ()
   });
 
   it('L1.8 — the budget line accounts for both managed blocks as one combined total', () => {
-    const formatRules = section(CLAUDE_MD_STYLE, '## Format Rules');
+    const formatRules = section(AGENTS_MD_STYLE, '## Format Rules');
     expect(formatRules).not.toBeNull();
     const budget = formatRules.split('\n').find((l) => l.includes('80-150'));
     expect(budget, 'the 80-150 budget line is gone').toBeTruthy();
@@ -163,7 +163,7 @@ describe('L1 — Writing Style block content contract (add-claude-md-style)', ()
   });
 
   it('L1.9 — the validation checklist covers the new block and keeps the old one', () => {
-    const checklist = section(CLAUDE_MD_STYLE, '## Validation Checklist');
+    const checklist = section(AGENTS_MD_STYLE, '## Validation Checklist');
     expect(checklist).not.toBeNull();
     expect(checklist).toContain('codeadd-style:start');
     expect(checklist, 'the pre-existing wiki checklist item must survive').toContain('codeadd-wiki:start');
@@ -172,7 +172,7 @@ describe('L1 — Writing Style block content contract (add-claude-md-style)', ()
 
 describe('L2 — no drift between the skill template and the command prompt', () => {
   it('L2.1 — REGRESSION GUARD: the Project Knowledge Base block is identical in both files', () => {
-    const inSkill = extractBlock(CLAUDE_MD_STYLE, WIKI_START, WIKI_END);
+    const inSkill = extractBlock(AGENTS_MD_STYLE, WIKI_START, WIKI_END);
     const inCommand = extractBlock(ADD_WIKI, WIKI_START, WIKI_END);
     expect(inSkill).not.toBeNull();
     expect(inCommand).not.toBeNull();
@@ -180,15 +180,15 @@ describe('L2 — no drift between the skill template and the command prompt', ()
   });
 
   it('L2.2 — the Writing Style block is identical in both files', () => {
-    const inSkill = extractBlock(CLAUDE_MD_STYLE, STYLE_START, STYLE_END);
+    const inSkill = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     const inCommand = extractBlock(ADD_WIKI, STYLE_START, STYLE_END);
-    expect(inSkill, 'block missing from add-claude-md-style').not.toBeNull();
+    expect(inSkill, 'block missing from add-agents-md-style').not.toBeNull();
     expect(inCommand, 'block missing from add.wiki').not.toBeNull();
     expect(inSkill).toEqual(inCommand);
   });
 
   /**
-   * Asserted on a STANDALONE LINE, not on any occurrence. add-claude-md-style
+   * Asserted on a STANDALONE LINE, not on any occurrence. add-agents-md-style
    * quotes `<!-- codeadd-wiki:start -->` mid-sentence to explain why that form is
    * banned; forbidding the string outright would forbid documenting the rule.
    * What must never exist is a line that IS an HTML-comment marker, because that
@@ -196,7 +196,7 @@ describe('L2 — no drift between the skill template and the command prompt', ()
    */
   it('L2.3 — REGRESSION GUARD: neither marker is ever used as an HTML comment', () => {
     const markerLine = /^<!--\s*codeadd-(style|wiki):(start|end)\s*-->$/;
-    for (const [name, source] of [['add-claude-md-style', CLAUDE_MD_STYLE], ['add.wiki', ADD_WIKI]]) {
+    for (const [name, source] of [['add-agents-md-style', AGENTS_MD_STYLE], ['add.wiki', ADD_WIKI]]) {
       const offenders = source.split('\n').map((l) => l.trim()).filter((l) => markerLine.test(l));
       expect(offenders, `${name} uses an HTML-comment marker: ${offenders.join(', ')}`).toHaveLength(0);
     }
@@ -205,7 +205,7 @@ describe('L2 — no drift between the skill template and the command prompt', ()
 
 describe('L3 — add.wiki wiring', () => {
   it('L3.1 — STEP 6 tasks the agent with the block, verbatim and replace-or-append', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update CLAUDE.md');
+    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
     expect(step6).not.toBeNull();
     expect(step6).toMatch(/\d+\.\s+\*\*Writing Style managed block\*\*/);
     expect(step6).toContain(STYLE_START);
@@ -215,18 +215,36 @@ describe('L3 — add.wiki wiring', () => {
   });
 
   it('L3.2 — STEP 6 reports what happened to the block', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update CLAUDE.md');
+    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
     expect(step6).toContain('WRITING_STYLE_BLOCK');
   });
 
-  it('L3.3 — STEP 7 verifies both marker pairs in all three context files', () => {
-    const step7 = section(ADD_WIKI, '## STEP 7: Copy Context Files to Other Engines');
+  it('L3.3 — STEP 7 verifies AGENTS.md alone: every marker pair, and no legacy file left', () => {
+    const step7 = section(ADD_WIKI, '## STEP 7: Verify AGENTS.md');
     expect(step7).not.toBeNull();
     expect(step7).toContain('codeadd-style:start');
     expect(step7).toContain('codeadd-wiki:start');
-    for (const f of ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md']) {
-      expect(step7).toContain(f);
+    expect(step7).toContain('codeadd-shell:start');
+    expect(step7).toContain('AGENTS.md');
+    for (const legacy of ['CLAUDE.md', 'GEMINI.md']) {
+      expect(step7, `STEP 7 must check that no root ${legacy} is left`).toContain(legacy);
     }
+  });
+
+  it('L3.6 — add.wiki copies to no other context file and migrates before it writes', () => {
+    expect(ADD_WIKI).not.toMatch(/## STEP 7: Copy Context Files/);
+    expect(ADD_WIKI).not.toMatch(/GEMINI\.md\s*←/);
+    expect(ADD_WIKI).not.toMatch(/AGENTS\.md\s*←\s*copy/);
+    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    expect(step6, 'STEP 6 must run the migration before any write').toMatch(/Migration/);
+  });
+
+  it('L3.7 — the shell policy is a managed block in bracket form, replace-or-append', () => {
+    expect(ADD_WIKI).toContain('[//]: # (codeadd-shell:start)');
+    expect(ADD_WIKI).toContain('[//]: # (codeadd-shell:end)');
+    const markerLine = /^<!--\s*codeadd-shell:(start|end)\s*-->$/;
+    const offenders = ADD_WIKI.split('\n').map((l) => l.trim()).filter((l) => markerLine.test(l));
+    expect(offenders).toHaveLength(0);
   });
 
   /**
@@ -248,8 +266,8 @@ describe('L3 — add.wiki wiring', () => {
     );
   });
 
-  it('L3.5 — REGRESSION GUARD: add-wiki-maintenance still refuses CLAUDE.md', () => {
-    expect(WIKI_MAINTENANCE).toMatch(/never touches CLAUDE\.md/i);
+  it('L3.5 — REGRESSION GUARD: add-wiki-maintenance still refuses AGENTS.md, the context file', () => {
+    expect(WIKI_MAINTENANCE).toMatch(/never touches AGENTS\.md/i);
   });
 });
 

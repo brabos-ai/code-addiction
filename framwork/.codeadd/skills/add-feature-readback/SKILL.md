@@ -90,7 +90,7 @@ Where several docs disagree in weight, the specification docs (`about.md`, `epic
 
 - **Source code.** Even when a doc cites `file.ts:539`. Especially then — whether the doc stands up without the reader opening that file IS the measurement.
 - **Other features' docs.** A `{{doc:0027H}}` reference you cannot follow is not an obstacle; it is a finding. Report what you could and could not infer about it from the local text.
-- **`.codeadd/wiki/`, `CLAUDE.md`, git history, GitNexus, memory, the web.**
+- **`.codeadd/wiki/`, `AGENTS.md`, git history, GitNexus, memory, the web.**
 - **The conversation that produced the docs**, even if it is in your context or summarized in a doc.
 
 **Anti-rationalization.** Every one of these will feel justified in the moment: *"I'll just confirm what `runTurn` does"*, *"one grep and this reference resolves"*, *"the wiki would clear this up in a second"*. Each of those looks like diligence and is the exact opposite: the moment you fill a gap from outside the folder, you report comprehension the document did not produce, and the gap ships to the builder unrecorded. **A reference you cannot resolve from the folder alone is a result, not a blocker.** Write it down and move on.

@@ -33,7 +33,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 ## Canonical Structure
 
-`tasks.md` has **6 sections in this exact order with these exact headings** (validators parse by exact text). The 6th section (`## Validation Gates`) is **conditional** — present only when CLAUDE.md exposes a `validation_gates` block.
+`tasks.md` has **6 sections in this exact order with these exact headings** (validators parse by exact text). The 6th section (`## Validation Gates`) is **conditional** — present only when AGENTS.md exposes a `validation_gates` block.
 
 ```markdown
 # Tasks: [feature or SF name]
@@ -90,7 +90,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - [ ] Run `npm run format:check` and fix failures in files touched by this work
 ```
 
-> The exact items above are auto-derived from CLAUDE.md `validation_gates`. The example shows a Node project; for Python the items would read `Run \`pytest\` …`, for .NET `Run \`dotnet test\` …`, etc. — language-agnostic.
+> The exact items above are auto-derived from AGENTS.md `validation_gates`. The example shows a Node project; for Python the items would read `Run \`pytest\` …`, for .NET `Run \`dotnet test\` …`, etc. — language-agnostic.
 
 ## Section Rules
 
@@ -126,9 +126,9 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 ### `## Validation Gates`
 
-- **Auto-derived** from the `validation_gates` JSON block in CLAUDE.md (written by `add-architecture-discovery` / `add.wiki`). One checklist line per detected gate. If the block is absent or empty, **omit this section entirely** — never fabricate gate items.
+- **Auto-derived** from the `validation_gates` JSON block in AGENTS.md (written by `add-architecture-discovery` / `add.wiki`). One checklist line per detected gate. If the block is absent or empty, **omit this section entirely** — never fabricate gate items.
 - Item line format: `- [ ] Run \`<gate command>\` and fix failures in files touched by this work` (drop "in files touched by this work" for the `build` gate, which is global).
-- The `format` gate appears only when CLAUDE.md provides a non-mutating check command (e.g. `prettier --check`, `ruff format --check`, `dotnet format --verify-no-changes`).
+- The `format` gate appears only when AGENTS.md provides a non-mutating check command (e.g. `prettier --check`, `ruff format --check`, `dotnet format --verify-no-changes`).
 - **Tick rule (build / loop coordinator):** the validator MUST actually invoke the gate command via Bash, capture exit code and output, then:
   - Exit 0 → tick `[x]`.
   - Exit ≠ 0 → identify failures restricted to files in `git diff --name-only` against the feature base; fix only those; re-run; tick `[x]` only when the re-run is green. Never tick on red. Never tick based on self-attestation.
@@ -223,7 +223,7 @@ the `add-tasks-checklist` skill. Use the EXACT section headings:
   ## TDD
   ## Execution
   ## Acceptance Checklist
-  ## Validation Gates    (omit entirely if CLAUDE.md has no validation_gates block)
+  ## Validation Gates    (omit entirely if AGENTS.md has no validation_gates block)
 
 ## RULES
 Follow the Section Rules defined in the `add-tasks-checklist` skill. All
@@ -294,15 +294,15 @@ Used by `add.build` (or `add.review`) AFTER all area validators complete. This i
 
 ### Pre-condition: migration nudge
 
-Read CLAUDE.md. If no `validation_gates` JSON block exists, emit ONE single line to the user:
+Read AGENTS.md. If no `validation_gates` JSON block exists, emit ONE single line to the user:
 
-> Note: `validation_gates` not detected in CLAUDE.md. Run `/add.wiki` to enable validation gates.
+> Note: `validation_gates` not detected in AGENTS.md. Run `/add.wiki` to enable validation gates.
 
-Do NOT auto-run wiki generation. Do NOT block. Skip the rest of this procedure when the block is absent (no gates to enforce). When the block is present but `## Validation Gates` is missing from `tasks.md`, that is a planning bug — surface it but still run the gates from CLAUDE.md.
+Do NOT auto-run wiki generation. Do NOT block. Skip the rest of this procedure when the block is absent (no gates to enforce). When the block is present but `## Validation Gates` is missing from `tasks.md`, that is a planning bug — surface it but still run the gates from AGENTS.md.
 
 ### Steps
 
-1. Parse `validation_gates` from CLAUDE.md → ordered list of `(intent, command)` pairs.
+1. Parse `validation_gates` from AGENTS.md → ordered list of `(intent, command)` pairs.
 2. Compute `TOUCHED_FILES = git diff --name-only <feature-base>...HEAD` (plus uncommitted changes for `add.build`).
 3. For EACH `(intent, command)`: invoke per §Section Rules → `## Validation Gates` (build / loop coordinator tick rule). On red touched-file failures after fix-and-rerun, set `[!]` with reason. Append untouched failures to `### Known Issues` (cap 10; truncate with `- +N more (run \`<command>\` for full list)`).
 4. Recompute `## Requirements Coverage` derived state one final time.

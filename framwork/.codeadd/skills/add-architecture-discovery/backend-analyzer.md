@@ -12,7 +12,7 @@ Generate `{{addpath:wiki/domains/backend.md}}` with real project patterns. Follo
 
 **Do NOT assume anything. Discover via config files and code.**
 
-1. Read CLAUDE.md to understand the project structure
+1. Read AGENTS.md to understand the project structure
 2. Read config files to identify dependencies:
    ```bash
    # Dependencies list everything the project uses

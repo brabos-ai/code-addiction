@@ -9,7 +9,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add-architecture-discovery
 - mention: add-backend-architecture
 - mention: add-backend-development
-- mention: add-claude-md-style
+- mention: add-agents-md-style
 - mention: add-code-review
 - mention: add-commit
 - mention: add-cross-sf-consistency
@@ -121,7 +121,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add.qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add-dev-environment-setup, add-doc-schemas, add-final-report, add-qa, add-qa-migration, add-setup-contract, add-subagent-driven-development |
 | add.review | Feature Review Specialist — read-only on code. Code review + spec-compliance audit + the absorbed QA validation (preflight / evidence / judgement), which arrives with the `qa-pipeline` feature and then self-gates on the `/add.qa-setup` receipt — two gates: the feature decides whether the steps exist, the receipt decides whether they can run. Dispatches `@reviewer-agent` in `MODE: owasp` alongside the frontend/backend reviewer(s), conditional on the diff touching a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding class into one `## Fix Routing` table and writes a versioned `review-NNN.md`; `/add.build` applies the routes and appends the resolution annex. Optional — `/add.done` accepts the build's own final review; the most recent verdict wins | add-commit, add-delivery-mode, add-doc-schemas, add-final-report, add-investigation, add-knowledge-discovery, add-qa (qa-pipeline), add-subagent-driven-development, add-tasks-checklist |
 | add.ux | Quick UX - loads add-ux-design and applies to user's free-form instruction | add-ux-design |
-| add.wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add.wiki update` runs incremental maintenance | add-architecture-discovery, add-claude-md-style, add-doc-schemas, add-ecosystem, add-final-report, add-subagent-driven-development, add-wiki-maintenance |
+| add.wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add.wiki update` runs incremental maintenance | add-architecture-discovery, add-agents-md-style, add-doc-schemas, add-ecosystem, add-final-report, add-subagent-driven-development, add-wiki-maintenance |
 
 ## Skills
 
@@ -130,7 +130,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add-architecture-discovery | Map architecture, detect patterns, dispatch domain analyzers for the project wiki |
 | add-backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy |
 | add-backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic |
-| add-claude-md-style | CLAUDE.md generation guide: content rules, format (JSON/markdown), line budget — load before any CLAUDE.md write |
+| add-agents-md-style | AGENTS.md generation guide: migrates legacy context files, content rules, format (JSON/markdown), line budget — load before any AGENTS.md write |
 | add-code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID |
 | add-commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules |
 | add-database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |
@@ -183,7 +183,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | frontend-agent | Frontend implementation specialist | add.build, add.plan |
 | reviewer-agent | Code review (read-only) — `MODE: task` (default), `MODE: re-review`, `MODE: feature` (one delivery unit whole, for `/add.build`'s final review), and `MODE: owasp`, a systematic OWASP Top 10 pass dispatched alongside the area reviewer(s) when the diff touches a sensitive area (auth, payment, upload, input handling, session/token). Every finding, in every mode, carries `Confidence: confirmed \| needs-verification` | add.review, add.build, add.hotfix |
 | security-agent | OWASP judge for a delivered change — judges the diff against A01-A10 plus XSS and mass assignment, asking first whether the change removed or weakened an existing control. Owns the security axis exclusively; a pre-existing finding is an observation, never a blocker (read-only) | no base command — retained; add.hotfix no longer dispatches it |
-| conformance-agent | Documented-rules judge — judges the diff against the wiki when present, CLAUDE.md plus surrounding code when absent. Freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift for /add.wiki update (read-only) | no base command — retained; add.hotfix no longer dispatches it |
+| conformance-agent | Documented-rules judge — judges the diff against the wiki when present, AGENTS.md plus surrounding code when absent. Freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift for /add.wiki update (read-only) | no base command — retained; add.hotfix no longer dispatches it |
 | failure-analysis-agent | Failure-mode judge — unhandled error paths, null propagation, missing rollback or idempotency, resource leaks, retry and ordering assumptions, reasoned against the blast radius of related features and suspicious commits confirmed earlier in the flow (read-only) | no base command — retained; add.hotfix no longer dispatches it |
 | test-agent | Unit + integration test generator for ONE area — reads the area's target files and feature docs, generates tests at the project's conventional location, and ends in one of three declared states — green, BLOCKED naming the assertion and the source symbol when its own correct test caught a real bug, or out of attempts. The cap comes from the caller. Dispatched AFTER its area's implementer, one agent at a time. CORRECTION mode writes one RED test pinning the bug instead of regenerating. Read-write on test files only | add.build (tdd-pipeline feature) |
 | fix-agent | Correction specialist for ONE WHOLE WAVE — consumes the review's `## Fix Routing` rows across every area the wave touches (code-review findings, build errors, red validation gates, QA findings), in the table's own order, and applies the fixes. Honours `Blocked by` by deferring a blocked row, continuing, and returning to it once its predecessor lands. One dispatch and one attempt counter per wave, both supplied by the caller, never decided by the agent | add.build, add.hotfix |

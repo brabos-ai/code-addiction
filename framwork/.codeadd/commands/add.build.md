@@ -760,7 +760,7 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 #### 10.3 Area-Specific Notes
 
-**Paths and build commands are project-specific. Consult CLAUDE.md for exact locations and commands.**
+**Paths and build commands are project-specific. Consult AGENTS.md for exact locations and commands.**
 
 - **Database:** Entities, Kysely types, Knex migration, Repository, barrel exports
 - **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
@@ -879,7 +879,7 @@ ${FILES_MODIFIED}
 3. Validate each checklist item
 4. Report EVERY violation as a routed row — file, item, what is wrong, what it must become.
    Do NOT edit any file: the coordinator routes these rows to @fix-agent, which is full-access.
-5. Run the build command (from CLAUDE.md) and report its exit status as BUILD_STATUS
+5. Run the build command (from AGENTS.md) and report its exit status as BUILD_STATUS
 
 RULES: No questions. Every checklist violation is reported, never deferred and never silently
 accepted. You do not fix and you do not tick — reporting IS your output.
@@ -959,7 +959,7 @@ Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 
    report in hand. ⛔ IF no validator report exists for this batch: DO NOT commit. Go back to 11.2.
 2. **`SPEC_STATUS` is not `INCOMPLETE`.** ⛔ IF it is: DO NOT commit. Implement the missing spec items or
    escalate, then re-validate.
-3. **The build PASSED.** Run the project build command (CLAUDE.md) and read its exit status in this
+3. **The build PASSED.** Run the project build command (AGENTS.md) and read its exit status in this
    session. ⛔ IF it is red: DO NOT commit. Dispatch `@fix-agent` per the **Correction Dispatch** contract
    and return to gate 1 afterwards. `BUILD_STATUS: pass` is a fact you observed, never one you assumed.
 4. **NOW commit — and record the bracket.**
@@ -1007,9 +1007,9 @@ lives here, so there is exactly one place to check that validation came first.
 
 After ALL area validators return AND build verification passes, run the **Validation Gates Procedure** from `{{skill:add-tasks-checklist/SKILL.md}}`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
 
-**Hard requirement:** every gate command listed in CLAUDE.md `validation_gates` MUST be invoked via Bash in this session. Tick `[x]` only when the most recent invocation exited 0 (after fixing touched-file failures). Tick `[!]` when touched-file failures persist after a fix attempt. Append untouched-file failures to `### Known Issues` (cap 10 + `+N more`).
+**Hard requirement:** every gate command listed in AGENTS.md `validation_gates` MUST be invoked via Bash in this session. Tick `[x]` only when the most recent invocation exited 0 (after fixing touched-file failures). Tick `[!]` when touched-file failures persist after a fix attempt. Append untouched-file failures to `### Known Issues` (cap 10 + `+N more`).
 
-**Migration nudge:** if CLAUDE.md has no `validation_gates` block, emit the one-line nudge and skip this sub-step (no gates to enforce).
+**Migration nudge:** if AGENTS.md has no `validation_gates` block, emit the one-line nudge and skip this sub-step (no gates to enforce).
 
 **CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.
 <!-- feature:qa-pipeline:e2e-dispatch -->
@@ -1149,7 +1149,7 @@ DO NOT report completion without executing this step.
 ## STEP 14: Integration Verification
 
 1. **Contract Adherence:** Endpoints, events, commands match plan
-2. **Build Verification:** Run project build command (see CLAUDE.md)
+2. **Build Verification:** Run project build command (see AGENTS.md)
 <!-- feature:tdd-pipeline:verification -->
 <!-- /feature:tdd-pipeline:verification -->
 <!-- feature:tdd-pipeline:coverage -->

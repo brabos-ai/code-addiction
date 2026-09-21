@@ -116,7 +116,7 @@
     "add-tdd":                         {},
     "add-test-specification":          {},
     "add-token-efficiency":            {},
-    "add-claude-md-style":             {},
+    "add-agents-md-style":             {},
     "add-ux-design":                   {},
     "add-review-discipline":           {},
     "add-delivery-mode":               {},
@@ -147,7 +147,7 @@
   "fix-agent":             { "description": "Correction specialist for one whole fix wave. Consumes a review's `## Fix Routing` rows across every affected area (code-review findings, build errors, red validation gates, QA findings) in the table's own order, honouring `Blocked by`, and applies the fixes. The attempt counter is supplied by the caller — the agent never decides its own retry budget. Read-write on the source and tests of the areas its rows name. Leaf agent." },
   "e2e-agent":             { "description": "Cross-cutting E2E spec author — authors <surface>.qa.spec (functional assertions + multi-viewport capture + axe a11y), finalizes the screens.json reachability recipe, green-confirms via the @playwright/test runner (no MCP, read-write on test files only)" },
     "security-agent":        { "description": "OWASP security judge for a delivered change — judges the diff against A01-A10 plus XSS and mass assignment, asking first whether the change removed or weakened an existing control. Owns the security axis exclusively (read-only)" },
-    "conformance-agent":     { "description": "Documented-rules judge for a delivered change — judges the diff against the wiki when present (conventions, architecture, domains) or CLAUDE.md plus surrounding code when absent; freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift (read-only)" },
+    "conformance-agent":     { "description": "Documented-rules judge for a delivered change — judges the diff against the wiki when present (conventions, architecture, domains) or AGENTS.md plus surrounding code when absent; freshness-gates every cited page so a stale page never grounds a blocker, and reports the reverse case as wiki-drift (read-only)" },
     "failure-analysis-agent": { "description": "Failure-mode judge for a delivered change — unhandled error paths, null propagation, missing rollback or idempotency, resource leaks, retry and ordering assumptions, reasoned against the confirmed blast radius of related features and suspicious commits (read-only)" }
   }
 }

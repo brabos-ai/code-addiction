@@ -361,8 +361,8 @@ describe('L3 — the documentation and registry edits', () => {
     expect(done).toMatch(/qa-preflight/);
   });
 
-  it('L3.5: CLAUDE.md names the runner exactly once and does not restate its mechanics', () => {
-    const claude = fs.readFileSync(path.join(REPO_ROOT, 'CLAUDE.md'), 'utf8');
+  it('L3.5: AGENTS.md names the runner exactly once and does not restate its mechanics', () => {
+    const claude = fs.readFileSync(path.join(REPO_ROOT, 'AGENTS.md'), 'utf8');
 
     expect(claude).not.toContain('run-bats');
     const mentions = claude.split('\n').filter((l) => l.includes('scripts/run-tests.js'));

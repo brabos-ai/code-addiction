@@ -2028,7 +2028,7 @@ function pruneStaleOutputs(map) {
  *   2. framwork/.gitignore, which must ignore each — or every build dirties the tree
  *   3. .github/workflows/release.yml, which must package each explicitly:
  *      a sidecar is a file, not a subdir, so the `for subdir` loop misses it
- *   4. CLAUDE.md, which documents them
+ *   4. AGENTS.md, which documents them
  *
  * Commit 56bc22d fixed exactly this class of bug ("the registry has three
  * consumers, and the build only checked two"). The fix is not a test that

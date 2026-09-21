@@ -44,7 +44,7 @@ const P = {
   internalLayer: path.join(ROOT, 'workbench', 'skills', 'add-framework-internal-layer', 'SKILL.md'),
   productLayer: path.join(ROOT, 'workbench', 'skills', 'add-framework-product-layer', 'SKILL.md'),
   devSkill: path.join(ROOT, 'workbench', 'skills', 'add-framework-development', 'SKILL.md'),
-  claudeMd: path.join(ROOT, 'CLAUDE.md'),
+  agentsMd: path.join(ROOT, 'AGENTS.md'),
   readback: path.join(ROOT, 'workbench', 'agents', 'plan-readback-agent.md'),
   reviewer: path.join(ROOT, 'workbench', 'agents', 'plan-review-agent.md'),
 };
@@ -385,8 +385,8 @@ describe('L3.12-3.15 references and guards', () => {
     expect(read(P.devSkill)).not.toMatch(/max\s*10\s*words/i);
   });
 
-  it('L3.14 CLAUDE.md points the ruler at its owner', () => {
-    const details = section(read(P.claudeMd), 'Where the details live');
+  it('L3.14 AGENTS.md points the ruler at its owner', () => {
+    const details = section(read(P.agentsMd), 'Where the details live');
     expect(details).not.toBeNull();
     const row = details.split(/\r?\n/).find((l) => /^\|/.test(l) && /ruler/i.test(l));
     expect(row, 'a row naming the ruler').toBeTruthy();

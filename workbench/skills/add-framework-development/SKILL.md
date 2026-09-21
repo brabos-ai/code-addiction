@@ -26,7 +26,7 @@ Operational knowledge for creating and modifying ADD framework artefacts. Built 
 - **Implementing user-facing features** (backend/frontend code) → use development skills directly
 - **Understanding what artefacts exist** → use `add-ecosystem` skill (ecosystem map)
 - **Writing prompts for commands** → use `building-commands` skill (prompt engineering patterns)
-- **Running the project** → use `CLAUDE.md` (project standards and conventions)
+- **Running the project** → use `AGENTS.md` (project standards and conventions)
 
 ---
 
@@ -75,7 +75,7 @@ Does it need LLM reasoning?
 | Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter |
 | Script | `framwork/.codeadd/scripts/{name}.sh` | Bash |
 
-No counts: `CLAUDE.md`'s generated inventory lists what exists.
+No counts: `AGENTS.md`'s generated inventory lists what exists.
 
 Workbench artefacts (source at `workbench/`, built to the root provider dirs, shipped to no user): `workbench/skills/`, `workbench/commands/`
 
@@ -292,7 +292,7 @@ memory: project
 
 ### Plugin Agent-Injection Markers
 
-Plugins (see CLAUDE.md → Plugin System) can inject capability into agent definitions, not just commands — carrying an external-tool capability across the command→subagent dispatch boundary (agents never see a command's injected fragment). To make an agent a plugin injection target:
+Plugins (see AGENTS.md → Plugin System) can inject capability into agent definitions, not just commands — carrying an external-tool capability across the command→subagent dispatch boundary (agents never see a command's injected fragment). To make an agent a plugin injection target:
 
 - Add a `<!-- plugin:PLUGIN:SECTION -->` / `<!-- /plugin:PLUGIN:SECTION -->` marker pair to the agent source body. Markers are **stripped at build** — `extractInjectionPoints()` records each as a content anchor in `framwork/.codeadd/injection-points.json`; the built agent files ship marker-free and injection is anchored to adjacent prose post-install.
 - Place the marker **on its own line** (an inline marker shown inside prose/code as documentation is ignored — only standalone-line markers are injection points), and ensure the line directly above it is plain text, not a `{{cmd:}}`/`{{skill:}}`/`{{addpath:}}` variable (the build walks past variable lines and fails loud if no variable-free adjacent line exists).

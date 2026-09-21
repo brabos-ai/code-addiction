@@ -243,7 +243,7 @@ describe('L2 — build integrity', () => {
   });
 
   it('L2.5: no provider has its own scripts directory', () => {
-    // CLAUDE.md's Resource Path Variables table: scripts are "Always
+    // AGENTS.md's Resource Path Variables table: scripts are "Always
     // .codeadd/scripts/ (no variable needed)". A framwork/<provider>/scripts/
     // would be an invented second home.
     const framwork = path.join(ROOT, 'framwork');

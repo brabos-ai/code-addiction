@@ -40,7 +40,7 @@
 - script: status.sh
 -->
 
-> **ARCHITECTURE REFERENCE:** Use `CLAUDE.md` as source of patterns.
+> **ARCHITECTURE REFERENCE:** Use `AGENTS.md` as source of patterns.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARGS:** `/add.plan [F[NNNN]]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
@@ -446,7 +446,7 @@ ${RELATED_WORK}
 
   ## Rules
   - NO code examples, only structure
-  - MUST search codebase for similar files as references (paths from CLAUDE.md)
+  - MUST search codebase for similar files as references (paths from AGENTS.md)
   - Keep it under 40 lines
   ```
 
@@ -511,7 +511,7 @@ ${RELATED_WORK}
 
   ## Rules
   - NO code examples, only contracts
-  - MUST search codebase for similar module as reference (paths from CLAUDE.md)
+  - MUST search codebase for similar module as reference (paths from AGENTS.md)
   - Combine API + Workers in same section
   - Keep it under 60 lines
   - MUST follow skill `add-backend-development` patterns
@@ -568,7 +568,7 @@ ${RELATED_WORK}
   ## Rules
   - NO code examples, only structure
   - Types MUST mirror backend DTOs
-  - MUST search codebase for similar files as references (paths from CLAUDE.md)
+  - MUST search codebase for similar files as references (paths from AGENTS.md)
   - NEVER restate design.md layout/tokens/states — reference them (Reference, Never Repeat)
   - Keep it under 40 lines
   ```
@@ -640,14 +640,14 @@ Append subagent outputs in order (preserving original content):
 
 Separate each section with `---`. **NEVER rewrite or summarize subagent content. Append directly.**
 
-**Write `## Global Constraints`** immediately after `## Context`, per the `feature-plan` schema. One line per requirement that binds the WHOLE plan rather than one task — RNFs from `about.md`, stack pins and validation gates from `CLAUDE.md`, tokens from `design-system.md`. Copy each value **verbatim from its source** and cite that source in parentheses:
+**Write `## Global Constraints`** immediately after `## Context`, per the `feature-plan` schema. One line per requirement that binds the WHOLE plan rather than one task — RNFs from `about.md`, stack pins and validation gates from `AGENTS.md`, tokens from `design-system.md`. Copy each value **verbatim from its source** and cite that source in parentheses:
 
 ```markdown
 ## Global Constraints
 
 - List renders in under 200ms for up to 100 items (about.md RNF01)
-- Node 20.x; no `^` or `~` in package.json (CLAUDE.md stack)
-- `npm run lint` and `npm run typecheck` exit 0 (CLAUDE.md validation_gates)
+- Node 20.x; no `^` or `~` in package.json (AGENTS.md stack)
+- `npm run lint` and `npm run typecheck` exit 0 (AGENTS.md validation_gates)
 - Spacing only through `--space-*` tokens (design-system.md)
 ```
 
@@ -695,7 +695,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 ```
 
 **Rules:**
-- tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Validation Gates` (validators parse by text). **The sixth is conditional** — write it only when `CLAUDE.md` exposes a `validation_gates` block, and omit the section entirely otherwise
+- tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Validation Gates` (validators parse by text). **The sixth is conditional** — write it only when `AGENTS.md` exposes a `validation_gates` block, and omit the section entirely otherwise
 - Every `## Execution` task carries **6** metadata sub-bullets in order: `Service`, `Files`, `Deps`, `Consumes`, `Produces`, `Verify` — never 4. `Produces` is the **exact signature** a later task will call (`-` when nothing); `Consumes` is the **exact signature** plus the producing task ID in parentheses (`-` when nothing). Every `Consumes` MUST match a `Produces` on an **earlier** task **character for character** — STEP 11 checks this mechanically, and a `Consumes` written as prose fails there
 - plan.md FROZEN after this step (no spec checklist section)
 - Every RF/RN in Requirements Coverage MUST link to ≥1 Acceptance Checklist item

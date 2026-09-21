@@ -6,7 +6,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 # Documentation Schemas & Standards
 
 <!-- uses:
-- skill: add-claude-md-style
+- skill: add-agents-md-style
 - skill: add-feature-readback
 - skill: add-id-convention
 - skill: add-plan-review
@@ -365,7 +365,7 @@ This skill is itself at risk of becoming unmaintainable. Rules:
 - `{{skill:add-resource-path-convention/SKILL.md}}` — build-time resource refs (`{{cmd:}}` / `{{skill:}}`)
 - `{{skill:add-tasks-checklist/SKILL.md}}` — `tasks.md` schema (sibling, not absorbed here)
 - `{{skill:add-feature-readback/SKILL.md}}` — cold-read comprehension readback; takes a doc set and a scope, never a `schema_name`, and runs after the review's fixes land
-- `{{skill:add-claude-md-style/SKILL.md}}` — CLAUDE.md generation rules (separate pipeline)
+- `{{skill:add-agents-md-style/SKILL.md}}` — AGENTS.md generation rules (separate pipeline)
 - `{{doc:PRD0009}}` — Documentation Context Engineering (originating PRD)
 - `{{doc:PRD0012}}` — Doc Skills Consolidation
 - `{{doc:PRD0019}}` — Documentation Standards Refactor (current structure: schemas by category, no length caps)

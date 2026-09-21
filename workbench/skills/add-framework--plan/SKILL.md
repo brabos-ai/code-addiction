@@ -23,7 +23,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.
 **Plans BOTH layers in one document** — the distributed product layer (`framwork/.codeadd/`, `cli/`)
-and the internal development layer (`workbench/`, `scripts/`, `CLAUDE.md`). Every F-block declares which.
+and the internal development layer (`workbench/`, `scripts/`, `AGENTS.md`). Every F-block declares which.
 
 This is an **open-source project for the community**. Every decision weighs technical soundness,
 clarity for external contributors, and real value for framework consumers.
@@ -34,7 +34,7 @@ clarity for external contributors, and real value for framework consumers.
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Load context          → strategy docs + CLAUDE.md + discovery agent
+STEP 1: Load context          → strategy docs + AGENTS.md + discovery agent
 STEP 2: Classify              → type, layers touched, AND size from the intent file’s `path:`
 STEP 3: Critical analysis     → impact graph, delivery index, audit the subject, alternatives
 STEP 4: Questionnaire         → [STOP] conditional on `## Open`; confirmation when nothing is open
@@ -57,7 +57,7 @@ ALWAYS — THIS SKILL DOES NOT EXECUTE:
 IF CONTEXT NOT LOADED (STEP 1 incomplete):
   ⛔ DO NOT USE: Write on any file
   ⛔ DO NOT: Propose a change without knowing what exists
-  ✅ DO: Read the strategy docs and CLAUDE.md first
+  ✅ DO: Read the strategy docs and AGENTS.md first
 
 IF STEP 4 HAS NOT BEEN ANSWERED:
   ⛔ DO NOT USE: Write on docs/plans/
@@ -131,14 +131,14 @@ is never delivered before review, and it gets the same single pass a new plan ge
 The plan may end up touching one layer or both, and that is not known yet. Read both maps:
 
 ```
-CLAUDE.md                                                     # internal layer + project anatomy
+AGENTS.md                                                     # internal layer + project anatomy
 framwork/.codeadd/skills/add-ecosystem/SKILL.md               # product ecosystem map
 framwork/.codeadd/skills/add-resource-path-convention/SKILL.md
 docs/strategy/ADD-ECOSYSTEM-STRATEGY.md                       # if present
 docs/strategy/ADD-MASTER-DOCUMENT-v4.md                       # if present
 ```
 
-Missing strategy docs → say so and proceed with limited context. `CLAUDE.md` is never optional.
+Missing strategy docs → say so and proceed with limited context. `AGENTS.md` is never optional.
 
 ### 1.2 Read the Artefacts the Idea Names
 
@@ -211,7 +211,7 @@ DO NOT show the raw report. Use it to fill "What already exists" in STEP 4.
 | Layer | Paths |
 |-------|-------|
 | `product` | `framwork/.codeadd/`, `framwork/provider-map.json`, `cli/` |
-| `internal` | `workbench/`, `scripts/`, `CLAUDE.md`, the repo root **except `mcp/`** |
+| `internal` | `workbench/`, `scripts/`, `AGENTS.md`, the repo root **except `mcp/`** |
 
 ⛔ **`mcp/` is at the root and is PRODUCT** — it ships inside the npm package. Tagging an
 F-block that touches it `internal` loads the wrong layer skill.
@@ -298,7 +298,7 @@ Two things the output already accounts for, so do not re-reason about them:
 | **MEDIUM** | 1-2 |
 | **HIGH** | 3+ |
 
-Answer by hand, because the graph does not model it: **does this change `CLAUDE.md`?**
+Answer by hand, because the graph does not model it: **does this change `AGENTS.md`?**
 
 Stale or missing graph → `node scripts/build.js` emits it.
 

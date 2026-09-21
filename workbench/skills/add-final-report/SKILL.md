@@ -78,7 +78,7 @@ answer. "`/add-framework--build` STEP 3, before the skill load" is.
 **6. `Not included`** — the scope boundaries the user must know.
 
 **7. `⚠️ Needs your attention`** — only genuinely consequential: anything deleted, anything
-irreversible, any `CLAUDE.md` edit (it rewrites what every future session loads), anything changing
+irreversible, any `AGENTS.md` edit (it rewrites what every future session loads), anything changing
 how an existing command behaves mid-flow, and the one or two places the work is most likely to have
 gone wrong. Omit the block entirely when there is nothing real; never manufacture a warning.
 

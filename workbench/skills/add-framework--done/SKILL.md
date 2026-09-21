@@ -209,7 +209,7 @@ test-scripts         npm run test:scripts   (bats, -j 4)                        
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
-1. **Sync the `CLAUDE.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add CLAUDE.md` (that path alone, never `-A`), commit it with a message per `{{skill:add-commit/SKILL.md}}`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `CLAUDE.md`, not permission to skip the sync.
+1. **Sync the `AGENTS.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add AGENTS.md` (that path alone, never `-A`), commit it with a message per `{{skill:add-commit/SKILL.md}}`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `AGENTS.md`, not permission to skip the sync.
 
    **`already current` is the expected outcome, not a sign this step is redundant.** `/add-framework--build` STEP 8 syncs before it offers to open the PR, so the block normally arrives here correct. This is the net under three cases where it cannot have: a build that hard-stopped before STEP 8, a hotfix that never ran a full build, and the recovery path at 2.4 where the merge came first.
 2. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
@@ -219,7 +219,7 @@ test-scripts         npm run test:scripts   (bats, -j 4)                        
 6. **Compare the SHA before reading the verdict** — see below.
 7. Every required check concludes `success` → the gate passes. Anything else → report which check, with its URL, and STOP.
 
-⛔ **Item 1 runs BEFORE item 2, and stages one path.** The order is what makes both work: a sync that writes and does not commit leaves the tree dirty, and item 2 hard-stops on it — the close-out would block on its own output. Staging `CLAUDE.md` alone is what keeps item 2 able to still catch every unrelated edit sitting beside it.
+⛔ **Item 1 runs BEFORE item 2, and stages one path.** The order is what makes both work: a sync that writes and does not commit leaves the tree dirty, and item 2 hard-stops on it — the close-out would block on its own output. Staging `AGENTS.md` alone is what keeps item 2 able to still catch every unrelated edit sitting beside it.
 
 ⛔ **A green check is evidence only for the commit it ran on.** Compare `gh pr view --json headRefOid` against `git rev-parse HEAD` and **refuse a verdict from any other SHA**. Without this the command reads yesterday's green run and calls today's untested code gated — the same class of lie as a gate that silently invokes a script that does not exist, and harder to see, because the output says `pass`.
 
@@ -337,13 +337,13 @@ Entry fields:
 
   ⛔ **`cli/` and `mcp/` are product, and no other rule here may imply otherwise.** This is the same
   four-path test `/add-framework--build` STEP 1.1 uses to derive a missing layer tag, and the same
-  split `CLAUDE.md` documents. `mcp/` sits at the repository root and still counts as product,
+  split `AGENTS.md` documents. `mcp/` sits at the repository root and still counts as product,
   because `scripts/build.js` copies it into the npm package — a three-path test indexes the graph
   server as internal and the delivery vanishes from a product-layer read. A narrower "under `framwork/` or else internal" reading indexes a
   `cli/`-heavy delivery as internal, and it then vanishes from `delivered.sh read --layer product`.
 
   ⛔ **Derive it from the item paths, NOT from the entry's `node`.** STEP 3.2 above records that
-  top-level `scripts/`, `CLAUDE.md` and `.gitignore` produce no graph node, so `node` is legitimately
+  top-level `scripts/`, `AGENTS.md` and `.gitignore` produce no graph node, so `node` is legitimately
   absent on some entries — a rule keyed to it would have no answer for exactly the cross-layer
   deliveries one plan now produces. Item paths are always present.
 
