@@ -1044,6 +1044,9 @@ Then, after the seven blocks, state:
   accepts is worse than a slow one.
 - **Which route 2.1 and 2.2 chose**, and on a Resume run, the STEPs it skipped
   and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
+- **The ticket result from 8.3** — closed, already closed, or what did not happen. Omit the line when
+  `about.md` carries no `ticket:`. A ticket that silently stays open after its work merged is the
+  failure 8.3 exists to prevent, so a close that did not land reaches the user here or nowhere.
 - The next command, from the `add-ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
 
