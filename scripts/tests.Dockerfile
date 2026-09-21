@@ -21,11 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       parallel \
  && rm -rf /var/lib/apt/lists/*
 
-# The cli dependencies are installed HERE, not taken from the mounted checkout.
+# The cli dependencies are installed HERE, not taken from the checkout.
 # A Windows `cli/node_modules` carries Windows builds of vitest's native
-# dependencies (rollup, esbuild), which do not load on Linux. The runner mounts
-# an anonymous volume at /code/cli/node_modules, which Docker fills from this
-# layer and which hides the host's copy from the container.
+# bindings (@rolldown/binding-win32-x64-msvc), which do not load on Linux. The
+# runner copies the checkout into /code as a tarball that leaves
+# cli/node_modules out, so this layer is the only copy the container sees.
 #
 # The build context is a scratch directory holding only this file and the two
 # package files — never the repository, which would drag node_modules across

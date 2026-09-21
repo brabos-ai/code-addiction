@@ -6,7 +6,7 @@
     "build": "node scripts/build.js",
     "build:workbench": "node scripts/build-workbench.js",
     "test": "npm --prefix cli test",
-    "test:scripts": "node scripts/run-bats.js",
+    "test:scripts": "node scripts/run-tests.js bats",
     "release": "bash scripts/release.sh",
     "publish": "cd cli && npm publish",
     "login": "npm login"
