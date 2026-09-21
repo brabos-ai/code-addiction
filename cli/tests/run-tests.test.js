@@ -364,7 +364,8 @@ describe('L3 — the documentation and registry edits', () => {
   it('L3.5: CLAUDE.md names the runner exactly once and does not restate its mechanics', () => {
     const claude = fs.readFileSync(path.join(REPO_ROOT, 'CLAUDE.md'), 'utf8');
 
-    const mentions = claude.split('\n').filter((l) => l.includes('scripts/run-bats.js'));
+    expect(claude).not.toContain('run-bats');
+    const mentions = claude.split('\n').filter((l) => l.includes('scripts/run-tests.js'));
     expect(mentions).toHaveLength(1);
     expect(mentions[0].length).toBeLessThan(200);
 
