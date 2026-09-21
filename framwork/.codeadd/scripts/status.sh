@@ -10,31 +10,59 @@ set -euo pipefail
 
 # =============================================================================
 # SUBCOMMAND: next-id <PREFIX>
-# Prints the next available doc ID for F|H|PRD|CHG based on directory structure.
-# Uses [NNNN][L] format (e.g., 0001F, 0002H) — consistent with next-id.sh.
+# Prints the next available doc ID for F|H|PRD|CHG|B based on the project's
+# existing work. Uses [NNNN][L] format (e.g., 0001F, 0002H, 0003B).
+#
+# ⛔ THIS REIMPLEMENTS next-id.sh AND MUST STAY EQUAL TO IT. The two are not
+# one source of truth despite the comment that used to claim it here: this
+# subcommand has its own scan, every command allocates through THIS one, and
+# only `framwork/.codeadd/scripts/tests/backlog.bats` (NEXT_ID_AGREE) holds
+# them together. Change one and change the other, in the same commit.
+#
+# ONE COUNTER OVER TWO SOURCES: docs/features/[NNNN][L]-*/ directories and the
+# ids on the backlog board, docs/backlog.jsonl. The backlog is READ BY GREP,
+# never parsed — this script is pure bash and must stay that way, and a line
+# whose JSON is damaged still yields its id rather than blocking allocation.
+# An absent backlog is a no-op.
+#
+# THE MATCH IS ON THE DIRECTORY NAME, NEVER THE PATH ABOVE IT. Matching the
+# whole path let a slug like `0001F-auth-2024` return 2025F while next-id.sh
+# returned 0002F — two thousand ids burnt, silently, by every command that
+# allocates. A temp directory carrying four digits did the same thing.
 # =============================================================================
 if [ "${1:-}" = "next-id" ]; then
     PREFIX="${2:-}"
     case "$PREFIX" in
-        F|H|PRD|CHG) ;;
+        F|H|PRD|CHG|B) ;;
         *)
-            echo "ERROR:unknown prefix '${PREFIX}' (valid: F, H, PRD, CHG)" >&2
+            echo "ERROR:unknown prefix '${PREFIX}' (valid: F, H, PRD, CHG, B)" >&2
             exit 2
             ;;
     esac
     MAX=0
     DOCS_DIR="docs/features"
+    BACKLOG_FILE="docs/backlog.jsonl"
+
+    # ids() feeds the loop below. Both sources emit bare 4-digit numbers.
     if [ -d "$DOCS_DIR" ]; then
-        # Collect numeric parts from directory names like: [NNNN][L]-*
-        # Same source of truth as next-id.sh for consistency
         while IFS= read -r num; do
             [ -n "$num" ] || continue
             # strip leading zeros for arithmetic
             n=$((10#$num))
             [ "$n" -gt "$MAX" ] && MAX=$n
         done < <(find "$DOCS_DIR" -maxdepth 1 -type d -regex ".*/[0-9][0-9][0-9][0-9][A-Z]-.*" 2>/dev/null | \
+            sed 's#.*/##' | grep -oE '^[0-9]{4}[A-Z]' | grep -oE '^[0-9]{4}' | sort -u || true)
+    fi
+
+    if [ -f "$BACKLOG_FILE" ]; then
+        while IFS= read -r num; do
+            [ -n "$num" ] || continue
+            n=$((10#$num))
+            [ "$n" -gt "$MAX" ] && MAX=$n
+        done < <(grep -oE '"id":"[0-9]{4}[A-Z]"' "$BACKLOG_FILE" 2>/dev/null | \
             grep -oE '[0-9]{4}' | sort -u || true)
     fi
+
     NEXT=$((MAX + 1))
     printf "%04d%s\n" "$NEXT" "$PREFIX"
     exit 0

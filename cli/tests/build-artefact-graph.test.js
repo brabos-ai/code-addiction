@@ -938,13 +938,20 @@ describe('node inventory snapshot', () => {
       // reference 69 -> 70: add-subagent-driven-development/references/dispatch-rules.md,
       // the one dispatch rule every dispatching command points at.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
-      reference: 70,
+      // reference 70 -> 71: add-doc-schemas/references/backlog.md, the record
+      // format for docs/backlog.jsonl and docs/backlog.definitions.json.
+      // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5.)
+      reference: 71,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
       // script 17 -> 18: hotfix-gates.sh, the diagnosis/review freshness owner.
-      script: 18,
+      // script 18 -> 19: backlog.sh, which owns the project backlog board. It
+      // has no caller until the capture skill lands, so it reports as an
+      // orphan — correct and expected, like get-main-branch.sh and log-jsonl.sh.
+      // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F7.)
+      script: 19,
       // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
       // add.review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1017,7 +1024,11 @@ describe('node inventory snapshot', () => {
     // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
     // 227 -> 228: +1 script, hotfix-gates.sh. declares stays 131 because
     // scripts are not in DECLARING_KINDS.
-    expect(nodes).toHaveLength(228);
+    // 228 -> 230: +1 script, backlog.sh, and +1 reference,
+    // add-doc-schemas/references/backlog.md. declares stays 131 — neither a
+    // script nor a reference is a declaring kind.
+    // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5 and F7.)
+    expect(nodes).toHaveLength(230);
     expect(nodes.filter((n) => n.declares)).toHaveLength(131);
   });
 });
