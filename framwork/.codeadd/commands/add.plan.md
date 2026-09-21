@@ -16,6 +16,8 @@
 - skill: add-tasks-checklist
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
+- skill: add-backlog
+- skill: add-backlog/references/lifecycle.md
 - skill: add-ux-design/critique-rubric.md
 - skill: add-subagent-driven-development
 - skill: add-subagent-driven-development/references/dispatch-rules.md
@@ -205,6 +207,12 @@ Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `
 into `plan.md` verbatim. An `about.md` with no `## Objective` is a legacy document — record
 `${OBJECTIVE}` as absent; STEP 9 then writes the section from `about.md`'s Problem, marked
 `[derived from Problem, no objective in about.md]`.
+
+**Ticket (read here, once):** when `about.md`'s frontmatter carries `ticket:`, follow the `add.plan` row
+of `{{skill:add-backlog/references/lifecycle.md}}` — read that ticket and record its `done_when`,
+`notes` and `paths` as `${TICKET}`, planning input beside `${OBJECTIVE}`. **Its `done_when` is a
+definition of finished the user already wrote**; a plan that contradicts it has re-decided something
+without saying so. Read-only — this command writes nothing to the board. No `ticket:`, no ticket.
 
 **Provenance source:** the `about.md` read in this step is the provenance source for STEP 7.1. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — 7.1.0 and 7.1.4 hash those same bytes.
 
