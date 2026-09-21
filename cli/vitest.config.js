@@ -26,6 +26,20 @@ import { serialFiles } from './tests/helpers/test-groups.js';
  *
  * tests/vitest-projects.test.js holds every file in exactly one project and
  * every spawner in `serial`.
+ *
+ * Measured 2026-09-21 on one Windows machine, same commit range, 1578 tests:
+ *
+ *   native, fully serial (the old config)          113s   all green
+ *   native, these two projects                      88s   2 timeouts (mcp-server, qa-reachability)
+ *   native, CODEADD_TESTS_RUNNER=native (serial)    93s   all green
+ *   container, these two projects, three runs    13-18s   all green, same count each time
+ *
+ * So on Windows the parallel projects are only safe inside the Linux
+ * container, which is what root `npm test` uses by default; the native
+ * override keeps the serial run (scripts/run-tests.js passes
+ * --no-file-parallelism there). The container copies the checkout in rather
+ * than bind-mounting it: through the bind mount, 11 tests walking the tree
+ * timed out at 5000ms and three files took 121s.
  */
 
 const SERIAL = serialFiles();
