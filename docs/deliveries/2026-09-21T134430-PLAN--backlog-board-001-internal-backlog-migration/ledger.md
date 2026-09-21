@@ -1,0 +1,20 @@
+# Build ledger — plan: docs/plans/2026-09-21T134430-PLAN--backlog-board-001-internal-backlog-migration.md
+
+F1: Ruling: readback matched the plan's goal, order and F-blocks; its marked gaps are closed as follows — `labels` gets no per-element validation, exactly like `notes`; source items nest at most one level (verified in index.md), so the fold rule is complete; `grounded` is true iff `paths` is non-empty, per L2.3 — the reader held only the plan, and the design plus the current command file answer the rest — costs a stricter labels check later if a consumer needs string-only elements
+F1: complete (commits 1cd20ba..19eb501, backlog.bats: L4.1-L4.3 RED on the assertion, L4.4-L4.5 green, 47 prior green; build.js clean vs baseline)
+F2: Ruling: ran the two bats suites that execute backlog.sh (backlog.bats, backlog-commit.bats — 70/70) instead of the full npm run test:scripts — the change is one field inside backlog.sh's add and no other suite reads the board; the plan's execution order names these two — costs a red CI run if another suite depends on the exact ticket shape
+F2: complete (commits 19eb501..7606c0d, backlog.bats + backlog-commit.bats 70/70 incl. L4.1-L4.3 now GREEN; build.js clean vs baseline)
+F3: complete (commits 7606c0d..f1539f0, build.js clean vs baseline; no 'thirteen' left under framwork/.codeadd/)
+F4: Ruling: excluded two backtick texts that resolve on disk from paths — `docs/` in item 1.2 (it names a user project's docs/, not this repository's) and gitignored build output under `.claude/` in item 3.1 (the source is workbench/) — the plan's rule reads "resolves to an existing path", and both resolve only by coincidence — costs one update per ticket if either was meant
+F4: complete (commits f1539f0..e9273f1, L2.1-L2.4 green: TICKETS_TOTAL=4, DAMAGED_LINES=0, order 1.4/1.2/2.1/3.1, labels product/product/product/both, notes-1 = top-level bullets 7/7/4/5, grounded iff paths non-empty, index.md gone, LF only; build.js clean vs baseline)
+F5: complete (commits e9273f1..3735e60, build.js clean vs baseline after declaring mention: add-framework--done; build-workbench exit 0; framwork/ clean; no docs/backlog/index.md left in workbench/ outside the migrated-note match rule; ruler self-ticked)
+F6: complete (commits 3735e60..9a0a202, build.js clean vs baseline; framwork/ clean; AGENTS.md names no docs/backlog/index.md)
+GRAPH: add-framework--backlog — none; no entry
+GRAPH: backlog.sh — add-backlog (named in the plan, unchanged: passing labels is optional); live entry 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, no supersession
+GRAPH: add-doc-schemas/references/backlog.md — add-backlog, add-doc-schemas (both changed in F3); no entry
+GRAPH: add-backlog — add.brainstorm, add.build, add.done, add.new, add.plan (neither changed nor named; the change to add-backlog removes one count word and alters no instruction they rely on); live entry, no supersession
+GRAPH: add-doc-schemas — 22 direct dependants (neither changed nor named; the change is one count word in the references index row, no rule or schema changes); three entries, none superseded
+F5: Ruling: rejected the conformance finding that add-framework--backlog still names docs/backlog/index.md — the string is the literal text of the migrated tickets' first note, which the command must match to resolve an old number; L3.3 exists to catch a live pointer to the deleted file, and this is none — costs one reworded sentence if a reader takes it for a live path
+F5: Ruling: rejected the conformance finding that L3.4 was only self-ticked — the delivery pass L3.4 names ran in this review as the batched @prompt-review-agent dispatch and returned ok with no ❌ for add-framework--backlog — costs nothing; the evidence is that dispatch
+F4: Ruling: rejected the completeness finding that ticket 0004B omits `.claude/` from paths — already ruled in F4: `.claude/` is gitignored build output of workbench/, and the source paths are what a ticket should point at — costs one update to 0004B if the built copy was meant
+REVIEW: complete (3 findings, 0 applied, 3 rejected)
