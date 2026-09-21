@@ -296,9 +296,10 @@ from the curated layer is answering honestly rather than failing.
 Every one of these is a string or count check, testable before anything depends on it.
 
 **A `superseded` line is declared, not anchored.** It is written after its replacement deleted its files,
-so ban 3 and the over-match thresholds below — the two checks that search the corpus — do not run on it,
-and it reports no `LOOSE=`. Every other ban still does, ban 4 and ban 9 included: they check the line's
-own shape, not the repository. Its `superseded_by` is what it carries instead, so ban 7 requires that
+so the checks that read the repository as it is now do not run on it: ban 3, the over-match thresholds
+below, and the ignored-path half of ban 9 — a path can become ignored after the line was written, as
+build output that used to be tracked does. It reports no `LOOSE=`. Every other ban still runs, ban 4
+and the `docs/` half of ban 9 included: they check the line's own text, not the repository. Its `superseded_by` is what it carries instead, so ban 7 requires that
 pointer to resolve.
 
 ## `REFUSED=` vocabulary
@@ -322,7 +323,7 @@ names cover what no numbered ban states — input that is not a record, and the 
 | `superseded-without-by` | 7 | `status` is `superseded` with no `superseded_by` |
 | `superseded-by-unknown` | 7 | `superseded_by` names an id no line of the index carries — an absent index resolves nothing |
 | `item-in-docs` | 9 | an item's `at` is under `docs/` |
-| `item-ignored` | 9 | an item's `at` is a path the project's `.gitignore` excludes |
+| `item-ignored` | 9 | an item's `at` is a path the project's `.gitignore` excludes — never on a `superseded` line |
 | `find-over-matched` | — | the `find` string appears in **more than 20** corpus files |
 
 Bans 6 and 8 carry no `REFUSED=` name because neither is something a caller can submit: they are structural

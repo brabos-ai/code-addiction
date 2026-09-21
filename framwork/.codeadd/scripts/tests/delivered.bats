@@ -612,6 +612,26 @@ superseded_record() {
   [[ "$output" == *"REFUSED=find-whitespace"* ]]
 }
 
+@test "L1.14: a superseded line anchored into a path ignored since it was written is accepted" {
+  src .gitignore 'generated/'
+  src generated/client.ts 'export const generatedClient = 1;'
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  printf '{"id":"0042F","layer":"product","by":"human","status":"superseded","superseded_by":"0099F","name":"n","words":"w","commits":["a1b2c3d"],"origin":"o","items":[{"what":"w","at":"generated/client.ts","find":"generatedClient"}]}' > "$TEST_TEMP_DIR/record.json"
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 0 ]
+  [ "$(key ENTRY)" = "0042F" ]
+}
+
+@test "L1.14: a superseded line anchored into docs/ is still refused" {
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  printf '{"id":"0042F","layer":"product","by":"human","status":"superseded","superseded_by":"0099F","name":"n","words":"w","commits":["a1b2c3d"],"origin":"o","items":[{"what":"w","at":"docs/x.md","find":"authGoogleHandler"}]}' > "$TEST_TEMP_DIR/record.json"
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"REFUSED=item-in-docs"* ]]
+}
+
 @test "L1.14: a changed line whose anchor is gone is still refused (ban 3)" {
   valid_source; commit_all
   run bash -c 'printf "%s" "{\"id\":\"0042F\",\"layer\":\"product\",\"by\":\"done\",\"status\":\"changed\",\"name\":\"n\",\"words\":\"w\",\"commits\":[\"a1b2c3d\"],\"origin\":\"o\",\"items\":[{\"what\":\"w\",\"at\":\"src/auth/google.ts\",\"find\":\"neverAppearsAnywhere\"}]}" | bash "$0" write' "$SCRIPTS_DIR/delivered.sh"

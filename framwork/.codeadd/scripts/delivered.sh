@@ -368,9 +368,12 @@ function doWrite() {
     // "Exists but excluded" is what `ignored` means. A path that simply is not
     // there yet is not a ban — ban 3 only demands the FIND string resolve, and
     // such an item is born `changed`, which is honest.
+    // A superseded line stops here: item-ignored and the anchor search both read
+    // the repository as it is NOW, and a path can become ignored after the line
+    // it anchors was written (build output that used to be tracked).
+    if (superseded) continue;
     if (fs.existsSync(path.join(ROOT, at)) && !inCorpus(at)) refuse('item-ignored');
 
-    if (superseded) continue;
     const hits = filesMatching(it.find, 21);
     if (hits.length === 0) refuse('find-absent');
     if (hits.length > 20) refuse('find-over-matched');
