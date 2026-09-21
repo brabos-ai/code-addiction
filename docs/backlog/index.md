@@ -65,16 +65,6 @@ numbers here mean delivered, not lost.
 - Extend the relevant `add-doc-schemas` (`feature-plan`, `hotfix-about`, `changelog`) to carry the compatibility decision and any attached migration/cleanup artifact.
 - **Done when:** a feature that rewrites an existing model produces a `plan.md` entry stating `backward compatibility: no` plus a migration script path, and `/add.done` reports either `dead code: none` or a concrete cleanup candidate list.
 
-### 2.2 — Remove what the parallel-tests delivery left behind: let the index record a supersession
-
-**Scope:** both
-**TLDR:** The delivery index cannot mark an entry `superseded` once its anchors are deleted, so the old bats-only runner's entry still reads `changed` after being replaced. Fix the script, record the supersession, and sweep for anything else of the old runner.
-
-- **The defect.** `framwork/.codeadd/scripts/delivered.sh` `write` runs `refuse('find-absent')` and `refuse('find-over-matched')` (lines 367–368) on every item, whatever the line's status. The schema in `add-doc-schemas/references/delivery-index.md` says `superseded` "is never recomputed, even when every item's source is long gone" — so a line declaring `superseded` should skip those two checks. Today an entry whose anchors were deleted can never be declared superseded, which is exactly when it needs to be. Fix it with a case in `framwork/.codeadd/scripts/tests/delivered.bats`.
-- **The record it blocked.** `2026-09-10T230600-PLAN--fast-local-bats` built `scripts/run-bats.js` and `scripts/bats.Dockerfile`; `2026-09-21T001942-PLAN--parallel-tests-in-one-container` (PR #83) replaced both with `scripts/run-tests.js` and `scripts/tests.Dockerfile`. The close-out tried to write `status: superseded, superseded_by: 2026-09-21T001942-PLAN--parallel-tests-in-one-container` and got `REFUSED=find-absent`, because one of the old anchors (`run-bats.js` in `package.json`) no longer exists anywhere. Write that line once the script accepts it.
-- **The sweep.** Confirm nothing of the bats-only runner survives outside `docs/` history and the tests that assert its absence: no `run-bats`, `bats.Dockerfile` or `CODEADD_BATS_` in `workbench/`, `framwork/.codeadd/`, `scripts/`, `cli/`, `.github/` or the built `.claude/`. The old `codeadd-bats:*` Docker images stay on every machine that ran the old runner — say in the `scripts/run-tests.js` header how to prune them (`docker image ls codeadd-bats`), since nothing rebuilds or removes them now.
-- **Done when:** `bash framwork/.codeadd/scripts/delivered.sh read fast-local-bats` returns that entry as `superseded` pointing at the parallel-tests entry; a bats case writes a `superseded` line whose anchors are gone and it is accepted; and a grep for `run-bats|bats\.Dockerfile|CODEADD_BATS_` outside `docs/` finds only the assertions of absence in `cli/tests/run-tests.test.js`.
-
 ## 3. Prompt density
 
 ### 3.1 — Sweep the artefacts for text that informs without instructing, and name the rule that keeps it out
