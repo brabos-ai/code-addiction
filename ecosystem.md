@@ -14,6 +14,7 @@ graph LR
   DONE(add.done)
 
   BADE{{add-backend-development}}
+  BALO{{add-backlog}}
   CORE{{add-code-review}}
   CO{{add-commit}}
   CSC{{add-cross-sf-consistency}}
@@ -35,11 +36,11 @@ graph LR
   UXDE{{add-ux-design}}
   WIMA{{add-wiki-maintenance}}
 
-  NEW --> DELMO & DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI & SDDA
-  PLAN --> BADE & CSC & DADE & DELMO & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & SDDA & TACH & UXDE
-  BUILD --> BADE & CORE & CO & CSC & DADE & DELMO & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
+  NEW --> BALO & DELMO & DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI & SDDA
+  PLAN --> BADE & BALO & CSC & DADE & DELMO & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & SDDA & TACH & UXDE
+  BUILD --> BADE & BALO & CORE & CO & CSC & DADE & DELMO & DOSC & EC & FINR & FRDE & IDCO & RVDI & SDDA & TACH & UXDE
   REVIEW --> CO & DELMO & DOSC & FINR & IN & KNDI & SDDA & TACH
-  DONE --> DOSC & EC & FINR & IDCO & WIMA
+  DONE --> BALO & DOSC & EC & FINR & IDCO & WIMA
 ```
 
 ## Graph 2 - Support Commands
@@ -56,8 +57,9 @@ graph LR
   QASETUP(add.qa-setup)
   PULLREQUEST(add.pull-request)
 
+  AGMDST{{add-agents-md-style}}
   ARDI{{add-architecture-discovery}}
-  CLMDST{{add-claude-md-style}}
+  BALO{{add-backlog}}
   CO{{add-commit}}
   DEENSE{{add-dev-environment-setup}}
   DELMO{{add-delivery-mode}}
@@ -80,8 +82,8 @@ graph LR
   DIAGNOSE --> DOSC & EC & FINR & IN & KNDI & SDDA
   HOTFIX --> DOSC & EC & FINR & IDCO & IN & KNDI & SDDA & UXDE
   AUDIT --> DOSC & EC & FINR & HECH & IN & SDDA
-  WIKI --> ARDI & CLMDST & DOSC & EC & FINR & SDDA & WIMA
-  BRAINSTORM --> DELMO & DOSC & FESP & FINR & KNDI
+  WIKI --> AGMDST & ARDI & DOSC & EC & FINR & SDDA & WIMA
+  BRAINSTORM --> BALO & DELMO & DOSC & FESP & FINR & KNDI
   UX --> UXDE
   QASETUP --> DEENSE & DOSC & FINR & QA & QAMI & SECO & SDDA
   PULLREQUEST --> CO & DOSC & FINR & IDCO
