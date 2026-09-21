@@ -9,6 +9,7 @@
 - skill: add-wiki-maintenance
 - skill: add-subagent-driven-development
 - skill: add-subagent-driven-development/references/dispatch-rules.md
+- script: migrate-context-files.sh
 -->
 
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
@@ -34,24 +35,25 @@ IF {{addpath:wiki/index.md}} exists:
   Load skill {{skill:add-wiki-maintenance/SKILL.md}} and execute its full update
   discipline (evidence chain, computed candidates, impact plan, surgical edits,
   per-page stamp bumps, hub sync, .meta.json advance, report).
-  THEN run the managed-block tasks of STEP 6 — items 1, 4 and 5 of its prompt —
-  followed by all of STEP 7.
+  THEN run STEP 6.1 and 6.2, the managed-block tasks of STEP 6 — items 1, 4, 5 and 6
+  of its prompt — followed by all of STEP 7.
 ELSE:
   No wiki exists yet — fall back to full generation (STEP 1 onward).
 ```
 
-**Why update mode reaches CLAUDE.md at all.** `add-wiki-maintenance` never writes that file,
-by its own rule. Without these two lines the managed blocks land only on a first generation,
+**Why update mode reaches AGENTS.md at all.** `add-wiki-maintenance` never writes that file,
+by its own rule. Without these lines the managed blocks land only on a first generation,
 so every project that has already run this command once — which is every project with a wiki —
-would never receive them, and never receive a refresh when their text changes.
+would never receive them, and never receive a refresh when their text changes. It is also the
+route that migrates an existing project off CLAUDE.md: 6.1 runs in update mode too.
 
 ```
 IF invoked as `/add.wiki update`:
   ⛔ DO NOT: Regenerate the Architecture Contract section
   ⛔ DO NOT: Regenerate the Technical Spec section
   ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
-  ⛔ DO NOT: Dispatch the STEP 6 agent for anything beyond items 1, 4 and 5
-  ✅ DO: Replace-or-append the two managed blocks, then copy the file per STEP 7
+  ⛔ DO NOT: Dispatch the STEP 6 agent for anything beyond items 1, 4, 5 and 6
+  ✅ DO: Migrate (6.1), replace-or-append the managed blocks, then verify per STEP 7
 ```
 
 Update mode is surgical everywhere else, and it stays surgical here.
@@ -68,8 +70,8 @@ STEP 2.5: Read User Brief          → INSTRUCTIONS.md scope/priorities (if pres
 STEP 3: Dispatch Analyzers         → ALL IN PARALLEL (specialists + spine + quality)
 STEP 4: Consolidate Pages          → WAIT-ALL before proceeding
 STEP 5: Generate Hub + Gate        → DERIVE index.md + bijection/budget gate
-STEP 6: Update CLAUDE.md           → DISPATCH agent (managed block)
-STEP 7: Copy Context Files         → CLAUDE.md → AGENTS.md, GEMINI.md
+STEP 6: Update AGENTS.md           → MIGRATE legacy files, DISPATCH agent (managed blocks)
+STEP 7: Verify AGENTS.md           → the only context file, every managed block once
 STEP 8: Write .meta.json           → CORPUS STAMP + gitignore check
 STEP 9: Report & Cleanup           → SUMMARY + backlog + next steps
 ```
@@ -95,7 +97,7 @@ ALWAYS:
 - Derive every index.md link description from page frontmatter, never hand-write it
 - Require frontmatter + TL;DR + TOC (if >100 lines) + Related footer on every wiki page
 - Preserve coordinator/dispatcher pattern
-- Verify the bijection/budget gate before touching CLAUDE.md
+- Verify the bijection/budget gate before touching AGENTS.md
 - Treat INSTRUCTIONS.md as read-only scope/priority steering when present
 
 NEVER:
@@ -558,17 +560,96 @@ IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP 6 unti
 
 ---
 
-## STEP 6: Update CLAUDE.md
+## STEP 6: Update AGENTS.md
 
 <!-- plugin:gitnexus:graph-contract -->
 <!-- /plugin:gitnexus:graph-contract -->
 
-Read skill `{{skill:add-agents-md-style/SKILL.md}}` BEFORE dispatching the agent.
+**AGENTS.md is the only context file this command writes.** Claude Code, Codex, Cursor, OpenCode and
+Antigravity all read it. No CLAUDE.md and no GEMINI.md is written, copied or updated.
+
+Read skill `{{skill:add-agents-md-style/SKILL.md}}` BEFORE anything else in this STEP.
+
+### 6.1 Run the Migration (coordinator)
+
+Run the skill's **Migration** — `bash .codeadd/scripts/migrate-context-files.sh` at the project root.
+Keep every `MIGRATED:`, `LEGACY_LOCAL:` and `CONTEXT_MIGRATION:` line for the STEP 9 report.
+
+```
+IF THE MIGRATION HAS NOT RUN OR EXITED NON-ZERO:
+  ⛔ DO NOT: Dispatch the agent in 6.3
+  ⛔ DO NOT USE: Write or Edit on AGENTS.md
+  ✅ DO: Report the script's error and STOP — a leftover CLAUDE.md hides AGENTS.md from Claude Code
+```
+
+### 6.2 Resolve the Shell Policy Block (coordinator)
+
+**Detect OS and Git Bash path:**
+
+```bash
+uname -s
+```
+
+- If output is `Linux` or `Darwin` → no shell block. Tell 6.3 `SHELL_BLOCK: none`
+- If output contains `MINGW`, `CYGWIN`, or `MSYS` (Git Bash on Windows) OR env `OS=Windows_NT` is set → detect Git Bash path:
+
+```bash
+where bash 2>/dev/null || which bash 2>/dev/null
+```
+
+Common fallback paths to check if detection fails (in order):
+1. `C:/Program Files/Git/bin/bash.exe`
+2. `C:/Program Files (x86)/Git/bin/bash.exe`
+3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
+
+**The policy names BOTH shell forms, because the reader's shell is not known here.** `&` is
+PowerShell's call operator. An engine whose shell tool is already bash (OpenCode, Git Bash, MSYS)
+reads `& "..." -lc "..."` as a syntax error, and every script call fails. PowerShell hosts still need
+the `&` form to reach Git Bash instead of WSL.
+
+```
+IF WRITING THE SHELL POLICY:
+  ⛔ DO NOT: Write only the `& "<bash.exe>" -lc` form
+  ✅ DO: Write the bash-direct form and the PowerShell form, each labelled with its shell
+```
+
+**If Windows + path detected**, the block handed to 6.3 is:
+
+```
+[//]: # (codeadd-shell:start)
+
+## Shell policy (Windows)
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: `& "[DETECTED_PATH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
+
+[//]: # (codeadd-shell:end)
+```
+
+**If Windows + path NOT detected**, the block handed to 6.3 is the generic one:
+
+```
+[//]: # (codeadd-shell:start)
+
+## Shell policy (Windows)
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: locate bash.exe first with `where bash`, then `& "[PATH_TO_BASH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
+
+[//]: # (codeadd-shell:end)
+```
+
+**It is a managed block because AGENTS.md is written in place.** Appending it on every run would
+stack one copy per run; replace-or-append on its markers keeps exactly one.
+
+### 6.3 Dispatch the Updater
 
 **DISPATCH AGENT:**
-- **Capability:** read-write (must update CLAUDE.md)
+- **Capability:** read-write (must update AGENTS.md)
 - **Complexity:** standard
-- **Prompt:**
+- **Prompt:** (append the resolved shell block from 6.2, or `SHELL_BLOCK: none`)
 
 ```
 ## ROLE
@@ -584,7 +665,8 @@ Apply ALL content rules from that skill.
 1. .codeadd/wiki/index.md and every page it links (frontmatter descriptions)
 
 ## TASK
-Update CLAUDE.md with these sections, in order:
+Update AGENTS.md — the only context file — with these sections, in order. Write no
+CLAUDE.md and no GEMINI.md:
 
 1. **DELETE FIRST** any existing section referencing `project-patterns` or `pattern-search.sh`
    (legacy Implementation Patterns pointer) — migration cleanup, before writing anything else
@@ -633,6 +715,12 @@ Describe the action, the mechanism or the state directly. Never put a figure of 
 
 [//]: # (codeadd-style:end)
 
+6. **Shell policy managed block** — only when the coordinator appended a block below. Find
+   markers `[//]: # (codeadd-shell:start)` / `[//]: # (codeadd-shell:end)`. If present, REPLACE
+   the block between them. If absent, APPEND it with a blank-line separator, after the Writing
+   Style block. Copy it exactly as appended. On `SHELL_BLOCK: none`, leave any existing
+   codeadd-shell block untouched — another developer on Windows may rely on it.
+
 ## CONSTRAINTS (from add-agents-md-style skill)
 Target: 80-150 lines total.
 
@@ -649,104 +737,44 @@ DO NOT include:
 ## OUTPUT FORMAT
 - JSON minified one-line per object
 - Max 10 words per description value
-- Both managed blocks copied verbatim from this prompt — do not paraphrase them
+- Every managed block copied verbatim from this prompt — do not paraphrase them
 
 ## REPORT FORMAT
 Return summary:
-- CLAUDE_MD_UPDATED: YES
+- AGENTS_MD_UPDATED: YES
 - LEGACY_SECTION_REMOVED: [YES/NO]
 - TOTAL_LINES: [count]
 - SECTIONS_UPDATED: [list]
 - WRITING_STYLE_BLOCK: [WRITTEN/REPLACED]
+- SHELL_POLICY_BLOCK: [WRITTEN/REPLACED/SKIPPED]
 ```
 
-- **Output:** Update `CLAUDE.md`
+- **Output:** Update `AGENTS.md`
 
-WAIT: Do NOT proceed until CLAUDE.md has been updated.
+WAIT: Do NOT proceed until AGENTS.md has been updated.
 
 ---
 
-## STEP 7: Copy Context Files to Other Engines
+## STEP 7: Verify AGENTS.md
 
-**Coordinator action (no subagent needed).**
-
-**AFTER CLAUDE.md is confirmed updated:**
-
-### 7.1 Copy to GEMINI.md
-
-GEMINI.md ← identical copy of CLAUDE.md.
-
-### 7.2 Copy to AGENTS.md
-
-AGENTS.md ← copy of CLAUDE.md + conditionally append shell policy.
-
-**Detect OS and Git Bash path before writing:**
-
-```bash
-uname -s
-```
-
-- If output is `Linux` or `Darwin` → skip shell policy, do NOT append anything
-- If output contains `MINGW`, `CYGWIN`, or `MSYS` (Git Bash on Windows) OR env `OS=Windows_NT` is set → detect Git Bash path:
-
-```bash
-where bash 2>/dev/null || which bash 2>/dev/null
-```
-
-Common fallback paths to check if detection fails (in order):
-1. `C:/Program Files/Git/bin/bash.exe`
-2. `C:/Program Files (x86)/Git/bin/bash.exe`
-3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
-
-**The policy names BOTH shell forms, because the reader's shell is not known here.** `&` is
-PowerShell's call operator. An engine whose shell tool is already bash (OpenCode, Git Bash, MSYS)
-reads `& "..." -lc "..."` as a syntax error, and every script call fails. PowerShell hosts still need
-the `&` form to reach Git Bash instead of WSL.
+**Coordinator action (no subagent needed).** Nothing is copied: AGENTS.md is the one file every
+provider reads. This STEP checks it is the only context file left and that every managed block
+landed once.
 
 ```
-IF WRITING THE SHELL POLICY:
-  ⛔ DO NOT: Write only the `& "<bash.exe>" -lc` form
-  ✅ DO: Write the bash-direct form and the PowerShell form, each labelled with its shell
+IF A CHECK BELOW FAILS:
+  ⛔ DO NOT: Write a CLAUDE.md or a GEMINI.md to make up for it
+  ⛔ DO NOT: Proceed to STEP 8
+  ✅ DO: Re-run the failing part of STEP 6 (6.1 for a leftover file, 6.3 for a block), then check again
 ```
 
-**If Windows + path detected:** append to AGENTS.md:
-
-```
----
-
-## Shell policy (Windows)
-Always execute commands via Git Bash. Pick the form for the shell your tool runs:
-- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
-- Shell is PowerShell: `& "[DETECTED_PATH]" -lc "<command>"`
-Do not use WSL bash (`bash ...` from PowerShell) directly.
-```
-
-**If Windows + path NOT detected:** append a generic policy:
-
-```
----
-
-## Shell policy (Windows)
-Always execute commands via Git Bash. Pick the form for the shell your tool runs:
-- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
-- Shell is PowerShell: locate bash.exe first with `where bash`, then `& "[PATH_TO_BASH]" -lc "<command>"`
-Do not use WSL bash (`bash ...` from PowerShell) directly.
-```
-
-**DO NOT rewrite or regenerate content -- READ CLAUDE.md and WRITE.**
-**GEMINI.md = exact copy. AGENTS.md = exact copy + shell policy append.**
-
-Verify all 3 files exist before proceeding:
-- [ ] CLAUDE.md exists
-- [ ] AGENTS.md exists (with shell policy section at the end)
-- [ ] GEMINI.md exists
-
-Then verify both managed blocks survived the copy. A block that reached CLAUDE.md and not
-AGENTS.md is the failure this check exists to catch, and it is invisible without it:
-
-- [ ] `[//]: # (codeadd-wiki:start)` and `[//]: # (codeadd-wiki:end)` present in CLAUDE.md, AGENTS.md and GEMINI.md
-- [ ] `[//]: # (codeadd-style:start)` and `[//]: # (codeadd-style:end)` present in CLAUDE.md, AGENTS.md and GEMINI.md
-- [ ] each pair appears exactly once per file
+- [ ] AGENTS.md exists at the project root
+- [ ] No CLAUDE.md, `.claude/CLAUDE.md` or GEMINI.md is left at the project root — a leftover CLAUDE.md
+      makes Claude Code ignore AGENTS.md, and a leftover GEMINI.md overrides it in Antigravity
+- [ ] `[//]: # (codeadd-wiki:start)` and `[//]: # (codeadd-wiki:end)` present in AGENTS.md
+- [ ] `[//]: # (codeadd-style:start)` and `[//]: # (codeadd-style:end)` present in AGENTS.md
+- [ ] On Windows only: `[//]: # (codeadd-shell:start)` and `[//]: # (codeadd-shell:end)` present in AGENTS.md
+- [ ] each pair appears exactly once
 
 ---
 
@@ -779,11 +807,12 @@ shared with the team. Do NOT silently continue as if unaffected.
 the self-check. Emit the report FIRST — the detail list and the navigation guidance come after it.
 
 Fill `How it works` with how the wiki is meant to be read: the hub is the only entrypoint, and the
-frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries and the gitignore
-warning, because both are the user's to act on.
+frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries, the gitignore
+warning and every legacy context file STEP 6.1 deleted or left, because all three are the user's to
+act on — the Deleted row of `Files touched` names each deleted CLAUDE.md or GEMINI.md.
 
 **Then report to user:**
-Include: context files updated, apps analyzed with types, code quality scores, wiki areas/pages
+Include: AGENTS.md updated, every `MIGRATED:` / `LEGACY_LOCAL:` line from STEP 6.1, apps analyzed with types, code quality scores, wiki areas/pages
 generated, Backlog entries (if any), gitignore warning (if triggered), migration cleanup performed
 (if any — STEP 5.4).
 

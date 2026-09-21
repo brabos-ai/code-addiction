@@ -205,7 +205,7 @@ describe('L2 — no drift between the skill template and the command prompt', ()
 
 describe('L3 — add.wiki wiring', () => {
   it('L3.1 — STEP 6 tasks the agent with the block, verbatim and replace-or-append', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update CLAUDE.md');
+    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
     expect(step6).not.toBeNull();
     expect(step6).toMatch(/\d+\.\s+\*\*Writing Style managed block\*\*/);
     expect(step6).toContain(STYLE_START);
@@ -215,18 +215,36 @@ describe('L3 — add.wiki wiring', () => {
   });
 
   it('L3.2 — STEP 6 reports what happened to the block', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update CLAUDE.md');
+    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
     expect(step6).toContain('WRITING_STYLE_BLOCK');
   });
 
-  it('L3.3 — STEP 7 verifies both marker pairs in all three context files', () => {
-    const step7 = section(ADD_WIKI, '## STEP 7: Copy Context Files to Other Engines');
+  it('L3.3 — STEP 7 verifies AGENTS.md alone: every marker pair, and no legacy file left', () => {
+    const step7 = section(ADD_WIKI, '## STEP 7: Verify AGENTS.md');
     expect(step7).not.toBeNull();
     expect(step7).toContain('codeadd-style:start');
     expect(step7).toContain('codeadd-wiki:start');
-    for (const f of ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md']) {
-      expect(step7).toContain(f);
+    expect(step7).toContain('codeadd-shell:start');
+    expect(step7).toContain('AGENTS.md');
+    for (const legacy of ['CLAUDE.md', 'GEMINI.md']) {
+      expect(step7, `STEP 7 must check that no root ${legacy} is left`).toContain(legacy);
     }
+  });
+
+  it('L3.6 — add.wiki copies to no other context file and migrates before it writes', () => {
+    expect(ADD_WIKI).not.toMatch(/## STEP 7: Copy Context Files/);
+    expect(ADD_WIKI).not.toMatch(/GEMINI\.md\s*←/);
+    expect(ADD_WIKI).not.toMatch(/AGENTS\.md\s*←\s*copy/);
+    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    expect(step6, 'STEP 6 must run the migration before any write').toMatch(/Migration/);
+  });
+
+  it('L3.7 — the shell policy is a managed block in bracket form, replace-or-append', () => {
+    expect(ADD_WIKI).toContain('[//]: # (codeadd-shell:start)');
+    expect(ADD_WIKI).toContain('[//]: # (codeadd-shell:end)');
+    const markerLine = /^<!--\s*codeadd-shell:(start|end)\s*-->$/;
+    const offenders = ADD_WIKI.split('\n').map((l) => l.trim()).filter((l) => markerLine.test(l));
+    expect(offenders).toHaveLength(0);
   });
 
   /**
