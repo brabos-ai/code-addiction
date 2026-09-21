@@ -556,7 +556,7 @@ applies would land after its own record.
 
 **This runs ALWAYS, whether or not a PR follows.** The block is derived from `framwork/.codeadd/`, so
 its correctness is a fact about the tree, not about anyone's publishing decision. Tying it to STEP 9's
-answer would leave the branch carrying a `AGENTS.md` that contradicts its own artefacts every time
+answer would leave the branch carrying an `AGENTS.md` that contradicts its own artefacts every time
 someone declines.
 
 Nothing else in `AGENTS.md` is written here. The rest of the file changes only where a plan said so.
