@@ -11,6 +11,7 @@ description: "Use when something should be done later but not now — record it 
 - skill: add-final-report
 - skill: add-doc-schemas
 - skill: add-doc-schemas/references/backlog.md
+- skill: add-backlog/references/lifecycle.md
 - mention: add-commit
 -->
 
@@ -58,6 +59,15 @@ IF THE INTENT IS list OR search:
 **The format is not defined here.** The two files, the thirteen ticket fields, the status vocabulary
 and the `REFUSED=` names live in `{{skill:add-doc-schemas/references/backlog.md}}`. Read it before
 composing a record.
+
+## References
+
+| File | Owns | Read by |
+|---|---|---|
+| `{{skill:add-backlog/references/lifecycle.md}}` | How work comes back out: the `ticket:` field, what each of the five pipeline commands does with it, the two status transitions, and why none of it ever stops a command | `add.brainstorm`, `add.new`, `add.plan`, `add.build`, `add.done` — each at its own row |
+
+**This skill captures and reads; the reference carries a ticket through the pipeline.** A user reaches
+the first by asking. The commands reach the second on their own, when a document names a ticket.
 
 ---
 

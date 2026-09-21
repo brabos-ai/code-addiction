@@ -944,7 +944,10 @@ describe('node inventory snapshot', () => {
       // reference 70 -> 71: add-doc-schemas/references/backlog.md, the record
       // format for docs/backlog.jsonl and docs/backlog.definitions.json.
       // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5.)
-      reference: 71,
+      // reference 71 -> 72: add-backlog/references/lifecycle.md, the one
+      // procedure the five pipeline commands share for a ticket they carry.
+      // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
+      reference: 72,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -1037,7 +1040,10 @@ describe('node inventory snapshot', () => {
     // 230 -> 232, declares 131 -> 132: +1 skill, add-backlog (a declaring kind),
     // and +1 script, backlog-commit.sh (not one). The same asymmetry as above.
     // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F2 and F3.)
-    expect(nodes).toHaveLength(232);
+    // 232 -> 233: +1 reference, add-backlog/references/lifecycle.md. declares
+    // stays 132 — a reference is not a declaring kind.
+    // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
+    expect(nodes).toHaveLength(233);
     expect(nodes.filter((n) => n.declares)).toHaveLength(132);
   });
 });
