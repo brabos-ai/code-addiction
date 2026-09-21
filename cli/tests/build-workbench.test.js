@@ -6,6 +6,12 @@
  * gitignored, which is exactly why it needs a suite — a break there is invisible
  * locally and invisible in review, and `ci.yml` is the only place it surfaces.
  *
+ * `release.yml` deliberately never builds the workbench (L4.1/L4.2 pin that),
+ * so any assertion reading `.claude/`/`.opencode/` output — here and in
+ * inventory.test.js's L3, mcp-document-model.test.js's L4.3 — self-skips when
+ * that output is absent, rather than failing on a missing prerequisite that
+ * was never meant to exist in that context.
+ *
  * What this file deliberately does NOT re-assert: anything `build.test.js`
  * already covers about the shared transformation. `build-workbench.js` imports
  * `buildResources`, `resolveResourcePaths`, `stripHtmlComments`, `TRANSFORMERS`
@@ -80,7 +86,13 @@ describe('L1 — the registry and the tree agree', () => {
   });
 });
 
-describe('L2 — the expected output map', () => {
+// release.yml never runs scripts/build-workbench.js (L4.1 pins that), so
+// `.claude/`/`.opencode/` may not exist when this suite runs there. Missing
+// output means "not built in this context", not a broken build — skip rather
+// than fail on a prerequisite this environment was never meant to provide.
+const WORKBENCH_BUILT = PROVIDERS.every((key) => exists(MAP.providers[key].dir, 'commands'));
+
+describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
   it('L2.1 every command, skill and agent lands under every provider', () => {
     const missing = [];
     for (const key of PROVIDERS) {
@@ -142,7 +154,7 @@ describe('L2 — the expected output map', () => {
   });
 });
 
-describe('L3 — the agent dialect, where the workbench differs', () => {
+describe.skipIf(!WORKBENCH_BUILT)('L3 — the agent dialect, where the workbench differs', () => {
   it('L3.1 a readonly agent declaring Bash keeps it; one that does not, does not', () => {
     // The condition is the SOURCE's tools: line. Denying bash unconditionally
     // closed framework-discovery-agent's only route to the graph where no MCP
