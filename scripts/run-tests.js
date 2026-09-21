@@ -37,6 +37,13 @@
  *   `.git` is bind-mounted, because git reads a handful of files. A worktree's
  *   `.git` names a host path the container cannot follow, so it is remapped.
  *
+ * The native runner works on a copy too, in a temp directory removed on exit.
+ * The suite's globalSetup rebuilds framwork/ output and its sidecars, and a run
+ * must never rewrite the checkout it was started from. Both runners set
+ * CODEADD_TESTS_COPY=1, and cli/tests/helpers/global-setup.js refuses to run
+ * without it outside CI — so a bare `npx vitest` in cli/ stops instead of
+ * writing the real tree.
+ *
  * Architecture:
  *   parseArgs      → the suite, then the arguments that follow it
  *   resolveRunner  → override, then platform, then whether the daemon answered
@@ -76,6 +83,15 @@ const CONTAINER_TREE = '/src/tree.tar';
  * node_modules IS packed — it carries the pinned bats the suite runs.
  */
 const TREE_EXCLUDES = ['./.git', './.worktrees', './.claude/worktrees', './cli/node_modules', './web/node_modules'];
+
+/**
+ * What the native copy leaves out. Unlike the container it KEEPS `.git` and
+ * cli/node_modules: the host's own git data, and the host's native bindings.
+ */
+const NATIVE_COPY_EXCLUDES = ['.worktrees', '.claude/worktrees', 'web/node_modules'];
+
+/** Set on every run that works on a copy. Its twin lives in cli/tests/helpers/global-setup.js. */
+const COPY_MARKER = 'CODEADD_TESTS_COPY';
 
 /**
  * Named here rather than assembled at the call site, because it is asserted.
@@ -234,9 +250,12 @@ function buildCommands({
   if (runner === 'native') {
     // Native Windows is the override's path, never the default. There the
     // parallel project still times out under load (measured: 2 of 1577 at
-    // 5000ms), so it keeps the serial run it always had.
-    const serialFlag = platform === 'win32' ? ['--no-file-parallelism'] : [];
-    const vitestFlags = [...serialFlag, ...extra];
+    // 5000ms), so it keeps the serial run it always had. It also runs on a copy
+    // in %TEMP%, where first reads are slower than in a checkout (measured: the
+    // tree fixture's first root() 1.5s from C:\github, 7.9s from %TEMP%, same
+    // bytes), so two files' first tests pass 5000ms — hence the longer timeout.
+    const windowsFlags = platform === 'win32' ? ['--no-file-parallelism', '--testTimeout=30000'] : [];
+    const vitestFlags = [...windowsFlags, ...extra];
     const vitest = vitestFlags.length > 0 ? `npm --prefix cli test --${vitestArgs(vitestFlags)}` : 'npm --prefix cli test';
     const bats = `npx bats ${batsArgs({ jobs, parallelAvailable, extra })}`;
     const pick = { vitest: [vitest], bats: [bats], all: [vitest, bats] }[suite];
@@ -270,6 +289,7 @@ function buildCommands({
     // git would refresh the index it reads; the mount is read-only and this
     // stops git trying, so the container never writes the host's repository.
     '-e', 'GIT_OPTIONAL_LOCKS=0',
+    '-e', `${COPY_MARKER}=1`,
     '-w', '/code',
     tag,
     'bash', '-c', inner,
@@ -280,6 +300,19 @@ function buildCommands({
 /** The tar invocation that packs the checkout, run with the repo as cwd. */
 function tarArgs() {
   return ['-c', '-f', '-', ...TREE_EXCLUDES.map((e) => `--exclude=${e}`), '.'];
+}
+
+/** cpSync filter for the native copy: true keeps the entry. */
+function nativeCopyFilter(repoRoot) {
+  return (src) => {
+    const rel = path.relative(repoRoot, src).split(path.sep).join('/');
+    return !NATIVE_COPY_EXCLUDES.some((e) => rel === e || rel.startsWith(`${e}/`));
+  };
+}
+
+/** Copy the checkout to `dest`. verbatimSymlinks keeps node_modules/.bin links pointing inside the copy. */
+function copyCheckout(repoRoot, dest) {
+  fs.cpSync(repoRoot, dest, { recursive: true, filter: nativeCopyFilter(repoRoot), verbatimSymlinks: true });
 }
 
 /** What to announce before spending a minute of someone's time. */
@@ -386,6 +419,23 @@ function main() {
   let scratch = null;
   let treeTar = '';
   let gitMount = null;
+  let cwd = REPO_ROOT;
+  // Ctrl+C ends the children with the same signal; exiting here, rather than on
+  // Node's default, is what lets the 'exit' cleanup below remove the copy.
+  process.on('SIGINT', () => process.exit(130));
+  if (runner === 'native') {
+    scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-tests-native-'));
+    const dir = scratch;
+    process.on('exit', () => fs.rmSync(dir, { recursive: true, force: true }));
+    cwd = path.join(scratch, 'tree');
+    process.stdout.write(`Copying the checkout to ${cwd} — the run never writes the real tree.
+`);
+    try {
+      copyCheckout(REPO_ROOT, cwd);
+    } catch (err) {
+      fail(`Could not copy the checkout: ${err.message}`);
+    }
+  }
   if (runner === 'docker') {
     const inputs = {
       dockerfile: fs.readFileSync(DOCKERFILE, 'utf8'),
@@ -434,9 +484,12 @@ function main() {
   // A debugger bootloader in NODE_OPTIONS prints onto stdout and breaks tests
   // that read a child's output. The container clears it with -e; this clears it
   // for the native children.
-  const childEnv = { ...env, NODE_OPTIONS: '' };
+  // GIT_OPTIONAL_LOCKS=0 does for the copy what the read-only mount does for
+  // the container: a worktree's copied `.git` still points at the host's admin
+  // directory, and git must not refresh an index there.
+  const childEnv = { ...env, NODE_OPTIONS: '', GIT_OPTIONAL_LOCKS: '0', [COPY_MARKER]: '1' };
   const codes = specs.map((spec) =>
-    exitCodeFrom(spawnSync(spec.file, spec.args, { shell: spec.shell, stdio: 'inherit', cwd: REPO_ROOT, env: childEnv })),
+    exitCodeFrom(spawnSync(spec.file, spec.args, { shell: spec.shell, stdio: 'inherit', cwd, env: childEnv })),
   );
   process.exit(combineExitCodes(codes));
 }
@@ -449,6 +502,8 @@ module.exports = {
   CONTAINER_MODULES,
   CONTAINER_TREE,
   TREE_EXCLUDES,
+  NATIVE_COPY_EXCLUDES,
+  COPY_MARKER,
   DOCKER_MISSING_MESSAGE,
   parseArgs,
   imageTag,
@@ -456,6 +511,8 @@ module.exports = {
   resolveRunner,
   worktreeGit,
   buildCommands,
+  nativeCopyFilter,
+  copyCheckout,
   tarArgs,
   announcement,
   exitCodeFrom,

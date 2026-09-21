@@ -180,6 +180,17 @@ container, and everywhere else — CI included — it runs it natively. On Windo
 it exits 2, a refusal to run, and the shell-script section below says what to do with that; the same
 applies here.
 
+**Both runners work on a copy of the checkout, never on the checkout itself.** The suite rebuilds
+`framwork/` output, the sidecars and `cli/src/mcp`, and a developer's tree must come out of a run
+unchanged. The native copy lives in the OS temp directory and is removed on exit.
+
+```
+IF YOU WANT ONE FILE:
+  ⛔ DO NOT: Run `npx vitest` inside cli/ — outside CI the global setup refuses, because that is the
+             real checkout
+  ✅ DO: `npm test -- tests/<name>.test.js` at the root
+```
+
 **The suite runs in two projects, and a green run is proof.** Every file that does not spawn a
 subprocess runs in parallel; the files that do run one at a time, after the rest. It used to be serial
 or nothing, for two reasons that each now have their own fix: a test that rebuilt the real tree and
