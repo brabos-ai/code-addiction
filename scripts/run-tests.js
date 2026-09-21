@@ -225,14 +225,19 @@ function gitMountArgs({ repoRoot, gitMount }) {
  * running both suites, with the exit codes combined in bash.
  */
 function buildCommands({
-  suite, runner, repoRoot, tag, jobs, parallelAvailable = true, extra = [], treeTar = '', gitMount = null,
+  suite, runner, repoRoot, tag, jobs, parallelAvailable = true, extra = [], treeTar = '', gitMount = null, platform,
 }) {
   if (suite === 'all' && extra.length > 0) {
     throw new Error('`all` takes no arguments — run `vitest` or `bats` alone to filter');
   }
 
   if (runner === 'native') {
-    const vitest = extra.length > 0 ? `npm --prefix cli test --${vitestArgs(extra)}` : 'npm --prefix cli test';
+    // Native Windows is the override's path, never the default. There the
+    // parallel project still times out under load (measured: 2 of 1577 at
+    // 5000ms), so it keeps the serial run it always had.
+    const serialFlag = platform === 'win32' ? ['--no-file-parallelism'] : [];
+    const vitestFlags = [...serialFlag, ...extra];
+    const vitest = vitestFlags.length > 0 ? `npm --prefix cli test --${vitestArgs(vitestFlags)}` : 'npm --prefix cli test';
     const bats = `npx bats ${batsArgs({ jobs, parallelAvailable, extra })}`;
     const pick = { vitest: [vitest], bats: [bats], all: [vitest, bats] }[suite];
     return pick.map((command) => ({ file: command, args: [], shell: true, display: command }));
@@ -411,7 +416,7 @@ function main() {
   let specs;
   try {
     specs = buildCommands({
-      suite, runner, repoRoot: REPO_ROOT, tag, jobs: jobsFrom(env), parallelAvailable, extra, treeTar, gitMount,
+      suite, runner, repoRoot: REPO_ROOT, tag, jobs: jobsFrom(env), parallelAvailable, extra, treeTar, gitMount, platform,
     });
   } catch (err) {
     fail(err.message);
