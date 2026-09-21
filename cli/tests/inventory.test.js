@@ -323,13 +323,9 @@ describe('L2 the real repository', () => {
   });
 });
 
-// release.yml never builds the workbench (build-workbench.test.js L4.1 pins
-// that), so `.claude/` may be absent when this suite runs there. Missing
-// output means "not built in this context", not a broken text — skip rather
-// than fail on a prerequisite this environment was never meant to provide.
-describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md')))(
-  'L3 the command and skill texts that held the duty',
-  () => {
+// Reads the workbench SOURCE, never the built `.claude/` copy: that copy is
+// gitignored build output, and release.yml never produces it.
+describe('L3 the command and skill texts that held the duty', () => {
   const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 
   /**
@@ -359,7 +355,7 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   }
 
   it('L3.1 the close-out CI gate runs, commits AND pushes, before the clean-tree check', () => {
-    const done = read('.claude', 'skills', 'add-framework--done', 'SKILL.md');
+    const done = read('workbench', 'skills', 'add-framework--done', 'SKILL.md');
     const list = sub(done, "CI's four commands");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
@@ -370,7 +366,7 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   });
 
   it('L3.2 add-framework-product-layer lost both AGENTS.md sections and stopped there', () => {
-    const skill = read('.claude', 'skills', 'add-framework-product-layer', 'SKILL.md');
+    const skill = read('workbench', 'skills', 'add-framework-product-layer', 'SKILL.md');
     expect(skill).not.toContain('Project Anatomy');
     expect(skill).not.toContain('The rest of AGENTS.md');
     // The boundary marker: the next section down must survive. It was `## Changelog`
@@ -381,17 +377,17 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   });
 
   it('L3.3 add-framework-internal-layer lost its AGENTS.md table, kept the coherence check', () => {
-    const skill = read('.claude', 'skills', 'add-framework-internal-layer', 'SKILL.md');
+    const skill = read('workbench', 'skills', 'add-framework-internal-layer', 'SKILL.md');
     expect(skill).not.toContain('AGENTS.md, per changed artefact list');
     expect(skill).toContain('### Coherence, per modified artefact');
   });
 
   it('L3.4 add-framework--build no longer names the Project Anatomy counts', () => {
-    expect(read('.claude', 'skills', 'add-framework--build', 'SKILL.md')).not.toContain('Project Anatomy');
+    expect(read('workbench', 'skills', 'add-framework--build', 'SKILL.md')).not.toContain('Project Anatomy');
   });
 
   it('L3.5 the [product] block forbids writing AGENTS.md and the [internal] block does not', () => {
-    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
+    const build = read('workbench', 'skills', 'add-framework--build', 'SKILL.md');
     const product = build.slice(
       build.indexOf('IF THE CURRENT F-BLOCK IS TAGGED [product]:'),
       build.indexOf('IF A PATH IS NOT COVERED'),
@@ -405,7 +401,7 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   });
 
   it('L3.7 add-framework--build syncs the block unconditionally, as its last documented act', () => {
-    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
+    const build = read('workbench', 'skills', 'add-framework--build', 'SKILL.md');
     const step6 = step(build, 'Document');
 
     expect(step6).toContain('scripts/inventory.js');
@@ -415,7 +411,7 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   });
 
   it('L3.8 the push and the PR live behind a [STOP], after the sync', () => {
-    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
+    const build = read('workbench', 'skills', 'add-framework--build', 'SKILL.md');
     const publish = step(build, 'Publish');
 
     expect(build).toMatch(/^## STEP \d+: Publish.*\[STOP\]/m);
@@ -429,7 +425,7 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   });
 
   it('L3.9 the step header and the completion step follow the renumbering', () => {
-    const build = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
+    const build = read('workbench', 'skills', 'add-framework--build', 'SKILL.md');
     const header = build.slice(build.indexOf('STEPS IN ORDER'), build.indexOf('**⛔ ABSOLUTE'));
 
     expect(header).toMatch(/STEP \d+: Publish/);
@@ -442,7 +438,7 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   });
 
   it('L3.10 add-framework--done says its sync is the net, not the first writer', () => {
-    const done = read('.claude', 'skills', 'add-framework--done', 'SKILL.md');
+    const done = read('workbench', 'skills', 'add-framework--done', 'SKILL.md');
     const list = sub(done, "CI's four commands");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
@@ -458,13 +454,13 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
   it('L3.6 the dead bootstrap script is gone, and the sweep finds no pointer left', () => {
     expect(fs.existsSync(path.join(ROOT, 'workbench', 'bootstrap-framework-context.sh'))).toBe(false);
 
-    // Scoped to `.claude/` and AGENTS.md — the sweep add-framework-internal-layer
+    // Scoped to `workbench/` and AGENTS.md — the sweep add-framework-internal-layer
     // prescribes. A repo-wide grep would match this very file and could never pass.
     let hits = '';
     try {
       hits = execFileSync(
         'git',
-        ['grep', '-l', 'bootstrap-framework-context', '--', '.claude/', 'AGENTS.md'],
+        ['grep', '-l', 'bootstrap-framework-context', '--', 'workbench/', 'AGENTS.md'],
         { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
       );
     } catch (e) {
@@ -473,5 +469,4 @@ describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framewo
     }
     expect(hits.trim()).toBe('');
   });
-  },
-);
+});

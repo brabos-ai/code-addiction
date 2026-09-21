@@ -4,13 +4,12 @@
  * The workbench is the framework's OWN pipeline: source at `workbench/`, built
  * into `.claude/` and `.opencode/` at the repository root. Its output is
  * gitignored, which is exactly why it needs a suite — a break there is invisible
- * locally and invisible in review, and `ci.yml` is the only place it surfaces.
+ * locally and invisible in review.
  *
- * `release.yml` deliberately never builds the workbench (L4.1/L4.2 pin that),
- * so any assertion reading `.claude/`/`.opencode/` output — here and in
- * inventory.test.js's L3, mcp-document-model.test.js's L4.3 — self-skips when
- * that output is absent, rather than failing on a missing prerequisite that
- * was never meant to exist in that context.
+ * L2 and L3 never read the repository's own `.claude/`/`.opencode/`: whether
+ * those exist depends on who ran the build before the test, and `release.yml`
+ * never does. They build the real entry point into a temp copy instead, so the
+ * verdict is the same on every machine and in every workflow.
  *
  * What this file deliberately does NOT re-assert: anything `build.test.js`
  * already covers about the shared transformation. `build-workbench.js` imports
@@ -21,8 +20,10 @@
  * output tree, and the two things the workbench does differently.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
@@ -30,7 +31,43 @@ const SRC = path.join(ROOT, 'workbench');
 const MAP = JSON.parse(fs.readFileSync(path.join(SRC, 'provider-map.json'), 'utf8'));
 
 const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
-const exists = (...p) => fs.existsSync(path.join(ROOT, ...p));
+
+/**
+ * The workbench built into a temp copy of the three things the build reads —
+ * `workbench/` and the two scripts — by the real entry point. build.js resolves
+ * its root from its own location, so the output lands in the copy and the
+ * repository is never touched. Built once per file, on first use, so L1 and L4
+ * pay nothing.
+ */
+let outDir = null;
+function out() {
+  if (outDir) return outDir;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'build-workbench-'));
+  fs.cpSync(SRC, path.join(dir, 'workbench'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'scripts'));
+  for (const f of ['build.js', 'build-workbench.js']) {
+    fs.copyFileSync(path.join(ROOT, 'scripts', f), path.join(dir, 'scripts', f));
+  }
+  const res = spawnSync(process.execPath, [path.join(dir, 'scripts', 'build-workbench.js')], {
+    cwd: dir,
+    encoding: 'utf8',
+    env: { ...process.env, NODE_OPTIONS: '' },
+  });
+  if (res.error || res.status !== 0) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    throw new Error(`build-workbench.js failed (exit ${res.status})
+${res.stdout}
+${res.stderr}`);
+  }
+  outDir = dir;
+  return outDir;
+}
+afterAll(() => {
+  if (outDir) fs.rmSync(outDir, { recursive: true, force: true });
+});
+
+const built = (...p) => fs.readFileSync(path.join(out(), ...p), 'utf8');
+const builtExists = (...p) => fs.existsSync(path.join(out(), ...p));
 
 const PROVIDERS = Object.keys(MAP.providers);
 const COMMANDS = Object.keys(MAP.commands);
@@ -86,20 +123,14 @@ describe('L1 — the registry and the tree agree', () => {
   });
 });
 
-// release.yml never runs scripts/build-workbench.js (L4.1 pins that), so
-// `.claude/`/`.opencode/` may not exist when this suite runs there. Missing
-// output means "not built in this context", not a broken build — skip rather
-// than fail on a prerequisite this environment was never meant to provide.
-const WORKBENCH_BUILT = PROVIDERS.every((key) => exists(MAP.providers[key].dir, 'commands'));
-
-describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
+describe('L2 — the expected output map', () => {
   it('L2.1 every command, skill and agent lands under every provider', () => {
     const missing = [];
     for (const key of PROVIDERS) {
       const dir = MAP.providers[key].dir;
-      for (const n of COMMANDS) if (!exists(dir, 'commands', `${n}.md`)) missing.push(`${dir}/commands/${n}.md`);
-      for (const n of SKILLS) if (!exists(dir, 'skills', n, 'SKILL.md')) missing.push(`${dir}/skills/${n}/SKILL.md`);
-      for (const n of AGENTS) if (!exists(dir, 'agents', `${n}.md`)) missing.push(`${dir}/agents/${n}.md`);
+      for (const n of COMMANDS) if (!builtExists(dir, 'commands', `${n}.md`)) missing.push(`${dir}/commands/${n}.md`);
+      for (const n of SKILLS) if (!builtExists(dir, 'skills', n, 'SKILL.md')) missing.push(`${dir}/skills/${n}/SKILL.md`);
+      for (const n of AGENTS) if (!builtExists(dir, 'agents', `${n}.md`)) missing.push(`${dir}/agents/${n}.md`);
     }
     expect(missing).toEqual([]);
   });
@@ -110,9 +141,9 @@ describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
     // that name.
     for (const key of PROVIDERS) {
       const dir = MAP.providers[key].dir;
-      expect(exists(dir, 'skills', 'add-plan-authoring', 'references', 'plan-template.md'), key).toBe(true);
-      expect(exists(dir, 'skills', 'building-commands', 'references', 'agent-dispatch.md'), key).toBe(true);
-      expect(exists(dir, 'skills', 'add-commit', 'evals', 'evals.json'), key).toBe(true);
+      expect(builtExists(dir, 'skills', 'add-plan-authoring', 'references', 'plan-template.md'), key).toBe(true);
+      expect(builtExists(dir, 'skills', 'building-commands', 'references', 'agent-dispatch.md'), key).toBe(true);
+      expect(builtExists(dir, 'skills', 'add-commit', 'evals', 'evals.json'), key).toBe(true);
     }
   });
 
@@ -120,7 +151,7 @@ describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
     for (const key of PROVIDERS) {
       const dir = MAP.providers[key].dir;
       for (const n of COMMANDS) {
-        const body = read(dir, 'commands', `${n}.md`);
+        const body = built(dir, 'commands', `${n}.md`);
         expect(body, `${dir}/${n}`).toMatch(/^---\n/);
         expect(body, `${dir}/${n}`).toContain(MAP.commands[n].description);
       }
@@ -132,7 +163,7 @@ describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
     for (const key of PROVIDERS) {
       const dir = MAP.providers[key].dir;
       for (const n of SKILLS) {
-        const body = read(dir, 'skills', n, 'SKILL.md');
+        const body = built(dir, 'skills', n, 'SKILL.md');
         // A variable with a NAME must be resolved. `{{skill:}}` with nothing
         // after the colon is the syntax being documented, not a reference.
         const m = body.match(/\{\{(cmd|skill|addpath):[^}\s]+\}\}/g);
@@ -145,8 +176,8 @@ describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
   it('L2.5 a skill pointer resolves to the provider that is reading it', () => {
     // This is the whole reason the literals became variables: the same source
     // line has to name a different path per provider.
-    const claude = read('.claude', 'skills', 'add-framework--build', 'SKILL.md');
-    const opencode = read('.opencode', 'skills', 'add-framework--build', 'SKILL.md');
+    const claude = built('.claude', 'skills', 'add-framework--build', 'SKILL.md');
+    const opencode = built('.opencode', 'skills', 'add-framework--build', 'SKILL.md');
     expect(claude).toContain('.claude/skills/add-build-ledger/SKILL.md');
     expect(opencode).toContain('.opencode/skills/add-build-ledger/SKILL.md');
     expect(claude).not.toContain('.opencode/skills/add-build-ledger');
@@ -154,16 +185,16 @@ describe.skipIf(!WORKBENCH_BUILT)('L2 — the expected output map', () => {
   });
 });
 
-describe.skipIf(!WORKBENCH_BUILT)('L3 — the agent dialect, where the workbench differs', () => {
+describe('L3 — the agent dialect, where the workbench differs', () => {
   it('L3.1 a readonly agent declaring Bash keeps it; one that does not, does not', () => {
     // The condition is the SOURCE's tools: line. Denying bash unconditionally
     // closed framework-discovery-agent's only route to the graph where no MCP
     // is configured, while its own frontmatter said it had one.
-    const withBash = read('.opencode', 'agents', 'framework-discovery-agent.md');
+    const withBash = built('.opencode', 'agents', 'framework-discovery-agent.md');
     expect(withBash).toContain('edit: deny');
     expect(withBash).not.toContain('bash: deny');
 
-    const withoutBash = read('.opencode', 'agents', 'plan-readback-agent.md');
+    const withoutBash = built('.opencode', 'agents', 'plan-readback-agent.md');
     expect(withoutBash).toContain('edit: deny');
     expect(withoutBash).toContain('bash: deny');
   });
@@ -172,7 +203,7 @@ describe.skipIf(!WORKBENCH_BUILT)('L3 — the agent dialect, where the workbench
     for (const n of AGENTS) {
       const src = read('workbench', 'agents', `${n}.md`);
       if (!/^readonly:\s*true/m.test(src)) continue;
-      expect(read('.opencode', 'agents', `${n}.md`), n).toContain('edit: deny');
+      expect(built('.opencode', 'agents', `${n}.md`), n).toContain('edit: deny');
     }
   });
 
@@ -185,7 +216,7 @@ describe.skipIf(!WORKBENCH_BUILT)('L3 — the agent dialect, where the workbench
     for (const key of PROVIDERS) {
       const dir = MAP.providers[key].dir;
       for (const n of AGENTS) {
-        const lines = read(dir, 'agents', `${n}.md`).split('\n');
+        const lines = built(dir, 'agents', `${n}.md`).split('\n');
         if (lines[0].trim() !== '---') continue;
         const end = lines.findIndex((l, i) => i > 0 && l.trim() === '---');
         const comments = lines.slice(1, end).filter((l) => l.trim().startsWith('#'));
@@ -204,8 +235,8 @@ describe('L4 — the workbench stays out of the product', () => {
   });
 
   it('L4.2 ci.yml runs the workbench build', () => {
-    // The output is gitignored, so this step is the only thing that surfaces a
-    // break. Without it the suite above asserts over a tree nobody rebuilds.
+    // L2/L3 build into a temp copy; this step is what runs the build against the
+    // real tree — the stale-output prune included — on every push.
     expect(read('.github', 'workflows', 'ci.yml')).toContain('node scripts/build-workbench.js');
   });
 

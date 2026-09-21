@@ -9,10 +9,15 @@ const BIN = fileURLToPath(new URL('../bin/codeadd.js', import.meta.url));
 const CLI = fileURLToPath(new URL('../src/cli.js', import.meta.url));
 const USAGE = 'Usage: codeadd <command>';
 
+// A debugger bootloader in the parent's NODE_OPTIONS prints onto the child's
+// stderr, which the no-output assertion below reads as a failure.
+const CHILD_ENV = { ...process.env, NODE_OPTIONS: '' };
+
 function runNode(script, args) {
   return spawnSync(process.execPath, [script, ...args], {
     encoding: 'utf8',
     timeout: 30000,
+    env: CHILD_ENV,
   });
 }
 
@@ -59,7 +64,7 @@ describe('bin entrypoint (process level)', () => {
     const result = spawnSync(
       process.execPath,
       ['--input-type=module', '-e', `await import(${JSON.stringify(pathToFileURL(CLI).href)})`],
-      { encoding: 'utf8', timeout: 30000 },
+      { encoding: 'utf8', timeout: 30000, env: CHILD_ENV },
     );
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('');

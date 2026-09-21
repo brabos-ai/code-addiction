@@ -19,10 +19,11 @@
  *    and only cli/tests/mcp-engine.test.js holds them together. Here the
  *    import is available, so isolation is free.
  *
- * ⛔ IT IS DELIBERATELY OUT OF THE RELEASE PATH. `release.yml` runs
+ * ⛔ ITS OUTPUT IS OUT OF THE RELEASE PATH. `release.yml` runs
  *    `node scripts/build.js` and packages `framwork/`; nothing here is
- *    published, so a failure in this file can never block a product release.
- *    `ci.yml` runs it, which is where its correctness is enforced.
+ *    published. `cli/tests/build-workbench.test.js` does run this file, into a
+ *    temp copy, so a break here fails `npm test` in every workflow, release
+ *    included — main is already red by then, since `ci.yml` runs the same test.
  *
  * Usage: node scripts/build-workbench.js
  */
