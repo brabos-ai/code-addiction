@@ -25,16 +25,26 @@ export function spawns(source) {
   return SPAWNS.test(source);
 }
 
-/** Every test file directly under cli/tests, as a path relative to cli/. */
+/**
+ * Every test file under cli/tests, at any depth, as a path relative to cli/.
+ * Recursive because the config's include glob is — a nested spawning file
+ * missed here would run in the parallel project.
+ */
 export function testFiles(dir = TESTS_DIR) {
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.test.js'))
-    .sort()
-    .map((f) => `tests/${f}`);
+  const out = [];
+  const walk = (d, rel) => {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      if (entry.name === 'node_modules') continue;
+      const next = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) walk(path.join(d, entry.name), next);
+      else if (entry.name.endsWith('.test.js')) out.push(`tests/${next}`);
+    }
+  };
+  walk(dir, '');
+  return out.sort();
 }
 
 /** The test files that go to the serial project, relative to cli/. */
 export function serialFiles(dir = TESTS_DIR) {
-  return testFiles(dir).filter((f) => spawns(fs.readFileSync(path.join(dir, path.basename(f)), 'utf8')));
+  return testFiles(dir).filter((f) => spawns(fs.readFileSync(path.join(dir, f.slice('tests/'.length)), 'utf8')));
 }

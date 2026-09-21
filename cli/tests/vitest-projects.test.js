@@ -32,8 +32,11 @@ describe('the classifier', () => {
       fs.writeFileSync(path.join(dir, 'a.test.js'), "import 'node:fs';\n");
       fs.writeFileSync(path.join(dir, 'b.test.js'), "import { spawn } from 'node:child_process';\n");
       fs.writeFileSync(path.join(dir, 'helper.js'), "import 'node:child_process';\n");
-      expect(testFiles(dir)).toEqual(['tests/a.test.js', 'tests/b.test.js']);
-      expect(serialFiles(dir)).toEqual(['tests/b.test.js']);
+      // Nested too: the config's include glob is recursive, so the classifier must be.
+      fs.mkdirSync(path.join(dir, 'nested'));
+      fs.writeFileSync(path.join(dir, 'nested', 'c.test.js'), "import 'child_process';\n");
+      expect(testFiles(dir)).toEqual(['tests/a.test.js', 'tests/b.test.js', 'tests/nested/c.test.js']);
+      expect(serialFiles(dir)).toEqual(['tests/b.test.js', 'tests/nested/c.test.js']);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -53,7 +56,7 @@ describe('the config', () => {
     const excludedFromParallel = new Set(byName.parallel.exclude);
 
     for (const file of testFiles()) {
-      const source = fs.readFileSync(path.join(TESTS_DIR, path.basename(file)), 'utf8');
+      const source = fs.readFileSync(path.join(TESTS_DIR, file.slice('tests/'.length)), 'utf8');
       const inSerial = serial.has(file);
       const inParallel = !excludedFromParallel.has(file);
       expect(inSerial !== inParallel, `${file} must be in exactly one project`).toBe(true);
