@@ -275,6 +275,23 @@ describe('L1 — the runner\'s decisions', () => {
     }
   });
 
+  it('L1.14: the native Windows override keeps vitest serial; everywhere else it runs the projects as configured', () => {
+    const r = loadRunner();
+    const [win] = r.buildCommands({ suite: 'vitest', runner: 'native', repoRoot: 'C:/repo', jobs: 4, platform: 'win32' });
+    expect(win.file).toBe('npm --prefix cli test -- --no-file-parallelism');
+
+    const [winFiltered] = r.buildCommands({ suite: 'vitest', runner: 'native', repoRoot: 'C:/repo', jobs: 4, platform: 'win32', extra: ['mcp'] });
+    expect(winFiltered.file).toBe('npm --prefix cli test -- --no-file-parallelism mcp');
+
+    // CI's path: Linux, native, parallel projects untouched.
+    const [linux] = r.buildCommands({ suite: 'vitest', runner: 'native', repoRoot: '/repo', jobs: 4, platform: 'linux' });
+    expect(linux.file).toBe('npm --prefix cli test');
+
+    // The container is Linux too, whatever the host.
+    const [docker] = r.buildCommands({ suite: 'vitest', runner: 'docker', repoRoot: 'C:/repo', tag: 'x', jobs: 4, platform: 'win32' });
+    expect(innerOf(docker)).not.toContain('no-file-parallelism');
+  });
+
   it('L1.12: the glob is written once, so the two runners cannot point at different files', () => {
     const source = fs.readFileSync(RUNNER_PATH, 'utf8');
     const literals = source.match(/framwork\/\.codeadd\/scripts\/tests\/\*\.bats/g) || [];
