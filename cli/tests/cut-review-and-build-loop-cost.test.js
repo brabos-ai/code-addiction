@@ -175,7 +175,7 @@ describe('F10 — per-task review is narrower than the end-of-feature one', () =
     // Architecture Contract — mechanical, and the defect that contaminates later tasks.
     expect(s5).toMatch(/Architecture Contract, FIRST/);
     expect(s5).toMatch(/identify its layer\/package/);
-    // Guarded: no section in CLAUDE.md means no check, never invented rules.
+    // Guarded: no section in AGENTS.md means no check, never invented rules.
     expect(s5).toMatch(/IF the section is absent, SKIP this check/);
     expect(s5).toMatch(/reviews a project that does not exist/);
 

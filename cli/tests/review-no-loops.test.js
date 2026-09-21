@@ -40,7 +40,7 @@ const P = {
   brainstorm: path.join(ROOT, 'workbench', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
   sync: path.join(ROOT, 'workbench', 'commands', 'add-framework--sync.md'),
   authoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
-  claudeMd: path.join(ROOT, 'CLAUDE.md'),
+  agentsMd: path.join(ROOT, 'AGENTS.md'),
   productPlanReview: path.join(
     ROOT, 'framwork', '.codeadd', 'skills', 'add-plan-review', 'SKILL.md',
   ),
@@ -337,12 +337,12 @@ describe('L3 the review command is gone', () => {
     expect(exists(P.reviewCmd)).toBe(false);
   });
 
-  it('L3.2 nothing under .claude/, CLAUDE.md or .codeadd/ names it', () => {
+  it('L3.2 nothing under .claude/, AGENTS.md or .codeadd/ names it', () => {
     const offenders = [];
     for (const [file, text] of claudeMarkdown()) {
       if (text.includes('add-framework--review')) offenders.push(path.relative(ROOT, file));
     }
-    if (read(P.claudeMd).includes('add-framework--review')) offenders.push('CLAUDE.md');
+    if (read(P.agentsMd).includes('add-framework--review')) offenders.push('AGENTS.md');
 
     const codeadd = path.join(ROOT, 'framwork', '.codeadd');
     const walk = (dir) => {
@@ -373,8 +373,8 @@ describe('L3 the review command is gone', () => {
     expect(uses).not.toMatch(/add-framework--review/);
   });
 
-  it('L3.5 the CLAUDE.md internal-command table loses that row and keeps the rest', () => {
-    const text = read(P.claudeMd);
+  it('L3.5 the AGENTS.md internal-command table loses that row and keeps the rest', () => {
+    const text = read(P.agentsMd);
     expect(text).not.toMatch(/^\|\s*`add-framework--review`/m);
     // Passes today on this half. Guards against deleting neighbouring rows.
     // add-framework--roadmap was renamed add-framework--backlog so the internal

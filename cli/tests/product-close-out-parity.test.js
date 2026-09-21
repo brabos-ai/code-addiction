@@ -17,10 +17,10 @@ import { fileURLToPath } from 'node:url';
  *     The artefact graph is a gitignored sidecar, so a CI checkout has no graph
  *     to query until `build.js` has run. The sibling suite for the close-out
  *     hardening plan states the same exclusion for the same reason.
- *   - `CLAUDE.md`'s generated inventory block. It lists every script by name,
+ *   - `AGENTS.md`'s generated inventory block. It lists every script by name,
  *     so it names `feature-pr.sh` until `node scripts/inventory.js` regenerates
  *     it at the build's STEP 8. F1 is tagged `[product]` and is forbidden from
- *     writing `CLAUDE.md` at all, so an assertion over that block would demand
+ *     writing `AGENTS.md` at all, so an assertion over that block would demand
  *     a layer violation to go green.
  */
 
@@ -84,7 +84,7 @@ function uses(text) {
 
 /**
  * Every tracked source file that could name a script, excluding the two places
- * the header explains: the gitignored graph sidecar and `CLAUDE.md`'s generated
+ * the header explains: the gitignored graph sidecar and `AGENTS.md`'s generated
  * inventory block.
  */
 function sourceFiles() {

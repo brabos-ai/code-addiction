@@ -963,8 +963,8 @@ describe('node inventory snapshot', () => {
       // script 19 -> 20: backlog-commit.sh, the git route that wraps backlog.sh
       // so a ticket reaches the base branch. backlog.sh itself still runs no git.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F2.)
-      // script 20 -> 21: migrate-context-files.sh, which folds legacy CLAUDE.md
-      // and GEMINI.md into AGENTS.md before any write. add-agents-md-style runs it.
+      // script 20 -> 21: migrate-context-files.sh, which folds legacy context
+      // files into AGENTS.md before any write. add-agents-md-style runs it.
       // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1.)
       script: 21,
       // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
@@ -1052,8 +1052,8 @@ describe('node inventory snapshot', () => {
     // stays 132 — a reference is not a declaring kind.
     // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
     // 233 -> 234: +1 script, migrate-context-files.sh. declares stays 132 —
-    // scripts are not a declaring kind. The add-claude-md-style ->
-    // add-agents-md-style rename moves no count.
+    // scripts are not a declaring kind. Renaming the style skill to
+    // add-agents-md-style moves no count.
     // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1 and F2.)
     expect(nodes).toHaveLength(234);
     expect(nodes.filter((n) => n.declares)).toHaveLength(132);
