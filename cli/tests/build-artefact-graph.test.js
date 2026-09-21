@@ -884,7 +884,10 @@ describe('node inventory snapshot', () => {
       // shared- commands were renamed, which moves no count.
       // command 23 -> 24: add-framework--roadmap, the internal writer for
       // docs/roadmap/index.md. It carried no uses: block when it was added; it
-      // declares one as of the final-report-shape plan.
+      // declares one as of the final-report-shape plan. Since renamed
+      // add-framework--backlog, writing docs/backlog/index.md — a rename, so no
+      // count moved. The name above is kept as it was when this line was true.
+      // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F12 and F13.)
       // command 24 -> 23: add-framework--review deleted, its audit folded into
       // add-framework--build as STEP 7.
       // command 23 -> 22: add.init deleted. The owner/product onboarding it
@@ -987,6 +990,8 @@ describe('node inventory snapshot', () => {
     // NOT "this file has one". add-framework--roadmap carried no block and added
     // no edge when it landed, and it still moved this count.
     // (plan 2026-09-09T065116-PLAN--roadmap-command, F1.)
+    // That command is now add-framework--backlog; the rename moved neither count.
+    // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F12.)
     // 212 -> 213: -1 command, +1 skill, +1 agent.
     // declares 100 -> 101: the same net +1, since DECLARING_KINDS covers all
     // three kinds that moved.

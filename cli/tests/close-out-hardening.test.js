@@ -261,7 +261,7 @@ describe('L3.7-3.9 the ruler items', () => {
 
     // The siblings whose block has the same job qualify it: /add-framework--plan
     // writes "ALWAYS — THIS COMMAND DOES NOT EXECUTE:" and
-    // /add-framework--roadmap "ALWAYS — THIS COMMAND OWNS ONE FILE:".
+    // /add-framework--backlog "ALWAYS — THIS COMMAND OWNS ONE FILE:".
     expect(label[0]).not.toBe('ALWAYS:');
     expect(label[0]).toMatch(/^ALWAYS — .+:$/);
 
