@@ -323,7 +323,13 @@ describe('L2 the real repository', () => {
   });
 });
 
-describe('L3 the command and skill texts that held the duty', () => {
+// release.yml never builds the workbench (build-workbench.test.js L4.1 pins
+// that), so `.claude/` may be absent when this suite runs there. Missing
+// output means "not built in this context", not a broken text — skip rather
+// than fail on a prerequisite this environment was never meant to provide.
+describe.skipIf(!fs.existsSync(path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md')))(
+  'L3 the command and skill texts that held the duty',
+  () => {
   const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 
   /**
@@ -467,4 +473,5 @@ describe('L3 the command and skill texts that held the duty', () => {
     }
     expect(hits.trim()).toBe('');
   });
-});
+  },
+);
