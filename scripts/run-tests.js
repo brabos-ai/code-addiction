@@ -93,7 +93,7 @@ const TREE_EXCLUDES = ['./.git', './.worktrees', './.claude/worktrees', './cli/n
  * What the native copy leaves out. Unlike the container it KEEPS `.git` and
  * cli/node_modules: the host's own git data, and the host's native bindings.
  */
-const NATIVE_COPY_EXCLUDES = ['.worktrees', '.claude/worktrees', 'web/node_modules', 'board/node_modules'];
+const NATIVE_COPY_EXCLUDES = ['.worktrees', '.claude/worktrees', 'web/node_modules', 'board/node_modules', 'board/dist'];
 
 /** Set on every run that works on a copy. Its twin lives in cli/tests/helpers/global-setup.js. */
 const COPY_MARKER = 'CODEADD_TESTS_COPY';
