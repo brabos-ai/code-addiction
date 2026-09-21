@@ -83,7 +83,7 @@ as `/<name>` and declares the next with `handoff:`.
 |---------|---------|-------------|
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--roadmap` | Records what to do next — add, update or remove an item, then commits and pushes straight to `main` | `docs/roadmap/index.md` |
+| `add-framework--backlog` | Records what to do next — add, update or remove an item, then commits and pushes straight to `main` | `docs/backlog/index.md` |
 
 ## Pipeline
 
