@@ -165,32 +165,42 @@ Simulate execution against three scenarios: happy path, gate violation, edge cas
 ### CLI artefacts — a mental test is NOT evidence
 
 ```bash
-cd cli && npx vitest run --no-file-parallelism
+npm test          # at the repository root
 ```
 
 ```
-IF type=cli AND THE SUITE HAS NOT BEEN RUN SERIALLY:
+IF type=cli AND THE SUITE HAS NOT BEEN RUN THROUGH `npm test`:
   ⛔ DO NOT: Report the F-block complete
   ⛔ DO NOT: Claim a validation level passed
   ✅ DO: Run it and read the result
 ```
 
-**Serial is not a preference.** Under twelve workers the suite loses ten more tests than it saves
-seconds: 153s with 12 failures against 208s with 2, measured back to back. Every one of the twelve is
-a timeout in a file that spawns a subprocess, because a loaded machine cannot give a spawn its
-5000ms. Never accept a green parallel run as proof.
+**Root `npm test` goes through `scripts/run-tests.js`.** On Windows it runs the suite inside a Linux
+container, and everywhere else — CI included — it runs it natively. On Windows with no Docker daemon
+it exits 2, a refusal to run, and the shell-script section below says what to do with that; the same
+applies here.
 
-**The reason used to be shared-fixture races, and is not any more.** `build.test.js` redirects its
-writes to a temp directory and the injection round-trips copy the tree before touching it, so the
-EBUSY collisions that first justified this rule no longer reproduce. `cli/vitest.config.js` carries
-the measurement and the full history; if the two ever disagree, that file is the one with the numbers
+**The suite runs in two projects, and a green run is proof.** Every file that does not spawn a
+subprocess runs in parallel; the files that do run one at a time, after the rest. It used to be serial
+or nothing, for two reasons that each now have their own fix: a test that rebuilt the real tree and
+deleted the sidecars mid-run, and subprocesses timing out under a dozen workers. `cli/vitest.config.js`
+carries the history and the numbers; if the two ever disagree, that file is the one with the numbers
 in it.
+
+```
+IF THE RUN FAILS WITH "A test changed a build sidecar in the real tree":
+  ⛔ DO NOT: Re-run until it passes, or treat it as flakiness
+  ✅ DO: Find the test that wrote into framwork/.codeadd/ and make it work on a copy
+```
+
+**That message is the suite's own guard, not noise.** A test that writes into the real tree breaks
+every test reading it afterwards, in whatever order the workers run.
 
 ```
 IF ANY TEST FAILS:
   ⛔ DO NOT: Attribute it to flakiness without evidence
   ⛔ DO NOT: Report the raw failure count as this block's result
-  ✅ DO: Re-run serially, baseline against a clean tree, report the delta
+  ✅ DO: Re-run that file alone (`npm test -- <name>`), baseline against a clean tree, report the delta
 ```
 
 **If stdout carries `Debugger listening on ws://…`**, an editor injected `NODE_OPTIONS`. Clear it
@@ -267,7 +277,7 @@ changes nothing about that.
 |--------|---------|
 | "I'll edit the provider file directly, it's faster" | build.js overwrites it. Edit `.codeadd/` |
 | "The suite is flaky, this failure is noise" | Baseline against a clean tree, report the delta |
-| "Parallel vitest was green" | Not proof. Serial or nothing |
+| "I ran vitest natively on Windows, it is the same run" | It is not. Outside the container the parallel projects time out under load on Windows; the `CODEADD_TESTS_RUNNER=native` override avoids that by running serially, and is slow. `npm test` through the container is the gate |
 | "It's a small artefact, registration can wait" | Unregistered ships to nobody and fails the gate |
 | "That test asserts the old rule, delete it" | Update it, and comment why |
 

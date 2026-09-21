@@ -2062,11 +2062,16 @@ const MCP_PACKAGED = 'cli/src/mcp';
  * every published package forever, which is the same class of bug the sidecar
  * prune above already guards against.
  *
+ * `root` defaults to this repository. A test passes a temporary one, so it can
+ * prove the prune without touching the real cli/src/mcp or running the whole
+ * build — which clears the sidecars every other test reads.
+ *
+ * @param {string} [root]
  * @returns {{copied: number, pruned: number}}
  */
-function copyMcpIntoCli() {
-  const from = path.join(ROOT, MCP_SOURCE);
-  const to = path.join(ROOT, MCP_PACKAGED);
+function copyMcpIntoCli(root = ROOT) {
+  const from = path.join(root, MCP_SOURCE);
+  const to = path.join(root, MCP_PACKAGED);
   if (!fs.existsSync(from)) return { copied: 0, pruned: 0 };
 
   const wanted = new Set();

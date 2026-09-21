@@ -1,58 +1,71 @@
 import { defineConfig } from 'vitest/config';
+import { serialFiles } from './tests/helpers/test-groups.js';
 
 /**
- * Test files run one at a time, on purpose — but not for the reason this
- * comment used to give.
+ * Two projects: most files in parallel, then the subprocess spawners serially.
  *
- * It used to say that build.test.js wrote provider output into the real tree,
- * that the injection round-trips enabled and disabled injection inside
- * framwork/.claude/**, and that parallel workers therefore collided on the same
- * files until Windows reported EBUSY. The symptom was real and worth keeping on
- * the record: three full runs failed 8, then 6, then 6 tests with almost no
- * overlap, and every one of them passed in isolation. POSIX CI never saw any of
- * it, because replacing a file another process holds open is legal there.
+ * The suite ran fully serial until plan 2026-09-21T001942. Two things kept it
+ * there, and each now has its own fix rather than a global setting.
  *
- * Both causes were then fixed in the tests and the comment was never updated.
- * build.test.js redirects every write into a temp directory through its
- * redirected() helper, and all four round-trip suites copy the tree before
- * touching it. They only read the real tree now, and concurrent readers do not
- * produce EBUSY. (cli/tests/build.test.js still narrates the old hazard beside
- * redirected(); that comment describes why the helper exists, which is still
- * true, not a live race.)
+ * 1. Shared state. mcp-packaging ran scripts/build.js in the real tree, which
+ *    deletes and rewrites the three sidecars other files read — so the verdict
+ *    depended on which file ran after which, and one unchanged commit gave 6,
+ *    13, 47 and 28 failures across four runs. That test now works on a copy,
+ *    an audit of every file found no other writer, and the globalSetup below
+ *    builds once before any worker starts and FAILS the run if a sidecar
+ *    changes during it. (The older EBUSY collisions in build.test.js and the
+ *    injection round-trips were fixed earlier by redirecting their writes.)
  *
- * What does reproduce is different. Measured 2026-09-11, both ways, back to
- * back on one Windows machine while other work was running on it:
+ * 2. Contention. Measured 2026-09-11 on a loaded Windows machine, serial vs
+ *    twelve workers: 208s with 2 failures against 153s with 12. Every one of
+ *    the twelve was a subprocess timing out at 5000ms in a file that spawns
+ *    one. Those files — whatever imports child_process, found on every run by
+ *    tests/helpers/test-groups.js — form the `serial` project. It runs one file
+ *    at a time, and only after the `parallel` project has finished
+ *    (sequence.groupOrder), so a spawn never competes with a dozen workers.
  *
- *   serial               208s, 2 failures
- *   --file-parallelism   153s, 12 failures
+ * tests/vitest-projects.test.js holds every file in exactly one project and
+ * every spawner in `serial`.
  *
- * Every one of those twelve is a timeout, and every one is in a file that
- * spawns a subprocess: bin-entrypoint, graph-mcp, graph-query, plugins,
- * updater, inventory, features. Twelve workers on one machine cannot give a
- * spawn its 5000ms. The heaviest suite got slower rather than faster —
- * qa-reachability went from 105.8s to 149.3s — because the workers were
- * fighting over one disk, which is also why the 26% saved is far less than
- * twelve-way parallelism suggests. So parallelism bought about a quarter of the
- * wall time for ten new failures, and slowed down the file that dominated the
- * run.
+ * Measured 2026-09-21 on one Windows machine, same commit range, 1578 tests:
  *
- * Those two rows are the only pair measured against each other, and they are
- * the comparison that matters. They are NOT comparable to a figure from an idle
- * checkout: the same serial suite on a quiet clean worktree was 164s with zero
- * failures on the same day, and the two `graph-query` failures above are
- * load-dependent timeouts that do not reproduce there at all.
+ *   native, fully serial (the old config)          113s   all green
+ *   native, these two projects                      88s   2 timeouts (mcp-server, qa-reachability)
+ *   native, CODEADD_TESTS_RUNNER=native (serial)    93s   all green
+ *   container, these two projects, three runs    13-18s   all green, same count each time
  *
- * On that quiet baseline the fixture work in plan 2026-09-11T005514 took the
- * serial run from 164s to around 80s without touching this setting, which is
- * the other reason it stays off: the cost parallelism was being asked to hide
- * was mostly a fixture nobody needed.
- *
- * Worth re-measuring if the subprocess-spawning suites ever stop spawning, or
- * once their timeouts are sized for contention the way graph-query's history
- * block now is. Until then, serial.
+ * So on Windows the parallel projects are only safe inside the Linux
+ * container, which is what root `npm test` uses by default; the native
+ * override keeps the serial run (scripts/run-tests.js passes
+ * --no-file-parallelism there). The container copies the checkout in rather
+ * than bind-mounting it: through the bind mount, 11 tests walking the tree
+ * timed out at 5000ms and three files took 121s.
  */
+
+const SERIAL = serialFiles();
+
 export default defineConfig({
   test: {
-    fileParallelism: false,
+    globalSetup: ['./tests/helpers/global-setup.js'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'parallel',
+          include: ['tests/**/*.test.js'],
+          exclude: [...SERIAL, '**/node_modules/**'],
+          sequence: { groupOrder: 0 },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'serial',
+          include: SERIAL,
+          fileParallelism: false,
+          sequence: { groupOrder: 1 },
+        },
+      },
+    ],
   },
 });
