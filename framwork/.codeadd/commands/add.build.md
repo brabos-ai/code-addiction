@@ -17,6 +17,8 @@
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
 - skill: add-subagent-driven-development/references/dispatch-rules.md
+- skill: add-backlog
+- skill: add-backlog/references/lifecycle.md
 - agent: backend-agent
 - agent: consistency-agent
 - agent: database-agent
@@ -148,7 +150,8 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
 4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory).
-5. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
+5. **Ticket.** If `about.md`'s frontmatter carries `ticket:`, follow the `add.build` row of `{{skill:add-backlog/references/lifecycle.md}}`: ONE board write setting `work_id` to `FEATURE_ID` and `status` to `doing`, skipped when the ticket already reads both. **Here, and not earlier** — until `build-setup.sh` returned, the run could still stop, and a ticket marked `doing` for a build that never started is a lie the board cannot correct. **Never a stop:** a refused or degraded write is one line in STEP 18's report, and the build continues.
+6. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
 
 ---
 
