@@ -35,7 +35,7 @@
 # not here — a script that commits cannot be called from the middle of a
 # build without disturbing that build's own history.
 #
-# THE FORMAT IS NOT DEFINED HERE. The two files, the thirteen ticket fields,
+# THE FORMAT IS NOT DEFINED HERE. The two files, the ticket fields,
 # the status vocabulary, the seven hard bans and the REFUSED= names live in
 # add-doc-schemas/references/backlog.md. This script implements that
 # reference; it does not extend it. Its bats suite pins both.
@@ -281,6 +281,7 @@ if (mode === "add") {
     id: newId,
     title: rec.title,
     theme: typeof rec.theme === "string" ? rec.theme : "",
+    labels: Array.isArray(rec.labels) ? rec.labels : [],
     tldr: rec.tldr,
     notes: Array.isArray(rec.notes) ? rec.notes : [],
     done_when: rec.done_when,

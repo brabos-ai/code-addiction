@@ -705,3 +705,60 @@ JSON
   printf '%s\n' "$output" | grep -q 'ERROR=node-missing'
   printf '%s\n' "$output" | grep -qv 'REFUSED='
 }
+
+# ═══════════════════════════════════════════════════════════════════════════
+# L4 — `labels`, the optional grouping field
+# (plan docs/plans/2026-09-21T134430-PLAN--backlog-board-001-internal-backlog-migration.md,
+# F1). RED-FIRST: L4.1–L4.3 fail until backlog.sh `add` keeps the field;
+# L4.4 and L4.5 are regression guards that pass today and must keep passing.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# add_with <json> — run `add` with one inline record, from a file so the
+# record never passes through the shell's quoting.
+add_with() {
+  printf '%s' "$1" > "$TEST_TEMP_DIR/rec.json"
+  run bash -c "bash '$SCRIPTS_DIR/backlog.sh' add < '$TEST_TEMP_DIR/rec.json'"
+}
+
+# field <name> — the JSON value of <name> on the board's last line, or
+# `undefined` when the key is absent.
+field() {
+  tail -1 "$BACKLOG" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const t=JSON.parse(s);console.log(Object.prototype.hasOwnProperty.call(t,process.argv[1])?JSON.stringify(t[process.argv[1]]):"undefined")})' "$1"
+}
+
+@test "L4.1: add keeps a labels array as given" {
+  add_with '{"title":"a","tldr":"a","done_when":"it works","labels":["internal"]}'
+  [ "$status" -eq 0 ]
+  [ "$(field labels)" = '["internal"]' ]
+}
+
+@test "L4.2: add without labels writes an empty array" {
+  add_with '{"title":"a","tldr":"a","done_when":"it works"}'
+  [ "$status" -eq 0 ]
+  [ "$(field labels)" = '[]' ]
+}
+
+@test "L4.3: add with a labels value that is not an array writes an empty array" {
+  add_with '{"title":"a","tldr":"a","done_when":"it works","labels":"internal"}'
+  [ "$status" -eq 0 ]
+  [ "$(field labels)" = '[]' ]
+}
+
+@test "L4.4: add still drops a field the format does not define" {
+  add_with '{"title":"a","tldr":"a","done_when":"it works","foo":"bar"}'
+  [ "$status" -eq 0 ]
+  [ "$(field foo)" = 'undefined' ]
+}
+
+@test "L4.5: update replaces labels on its own line; every other line is byte-identical" {
+  backlog_line "0001B" "first"
+  backlog_line "0002B" "second"
+  backlog_line "0003B" "third"
+  cp "$BACKLOG" "$TEST_TEMP_DIR/before"
+
+  printf '{"labels":["product","both"]}' | backlog update 0002B
+
+  [ "$(sed -n 1p "$BACKLOG")" = "$(sed -n 1p "$TEST_TEMP_DIR/before")" ]
+  [ "$(sed -n 3p "$BACKLOG")" = "$(sed -n 3p "$TEST_TEMP_DIR/before")" ]
+  sed -n 2p "$BACKLOG" | grep -q '"labels":\["product","both"\]'
+}

@@ -48,7 +48,7 @@
       "description": "Release manager — tags, GitHub releases and the CLI publish, merging main into production."
     },
     "add-framework--backlog": {
-      "description": "Records what to do next — adds, updates or removes a backlog item, then commits and pushes straight to main."
+      "description": "Records what to do next — adds, updates, reprioritises or closes a backlog ticket, then commits and pushes it to main through backlog-commit.sh."
     }
   },
   "skills": {

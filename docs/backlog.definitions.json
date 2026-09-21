@@ -1,0 +1,24 @@
+{
+  "statuses": [
+    {
+      "name": "open",
+      "order": 1,
+      "means": "decided, not started"
+    },
+    {
+      "name": "doing",
+      "order": 2,
+      "means": "work is in progress"
+    },
+    {
+      "name": "done",
+      "order": 3,
+      "means": "delivered"
+    },
+    {
+      "name": "dropped",
+      "order": 4,
+      "means": "decided against"
+    }
+  ]
+}

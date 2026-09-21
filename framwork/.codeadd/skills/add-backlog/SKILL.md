@@ -56,7 +56,7 @@ IF THE INTENT IS list OR search:
   ✅ DO: Run backlog.sh directly
 ```
 
-**The format is not defined here.** The two files, the thirteen ticket fields, the status vocabulary
+**The format is not defined here.** The two files, the ticket fields, the status vocabulary
 and the `REFUSED=` names live in `{{skill:add-doc-schemas/references/backlog.md}}`. Read it before
 composing a record.
 
