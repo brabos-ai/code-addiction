@@ -23,10 +23,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
-const AGENT = path.join(ROOT, '.claude', 'agents', 'plan-review-agent.md');
-const AUTHORING = path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md');
-const BRAINSTORM = path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md');
-const PLAN_CMD = path.join(ROOT, '.claude', 'skills', 'add-framework--plan', 'SKILL.md');
+const AGENT = path.join(ROOT, 'workbench', 'agents', 'plan-review-agent.md');
+const AUTHORING = path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md');
+const BRAINSTORM = path.join(ROOT, 'workbench', 'skills', 'add-framework--brainstorm', 'SKILL.md');
+const PLAN_CMD = path.join(ROOT, 'workbench', 'skills', 'add-framework--plan', 'SKILL.md');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
@@ -210,7 +210,7 @@ describe('L4 — the second review pass is gone (F5)', () => {
   );
 
   it('L4.2b the owner carries the report fields the callers stopped copying', () => {
-    const discipline = read(path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'));
+    const discipline = read(path.join(ROOT, 'workbench', 'skills', 'add-review-discipline', 'SKILL.md'));
     expect(discipline).toContain('blocked');
     expect(discipline).toContain('Required fix');
     expect(discipline).toContain('Do not change');

@@ -15,5 +15,12 @@
     "external_directory": {
       "/tmp/**": "allow"
     }
+  },
+  "mcp": {
+    "artefact-graph": {
+      "type": "local",
+      "command": ["node", "mcp/server.mjs", "--corpus=artefacts"],
+      "enabled": true
+    }
   }
 }

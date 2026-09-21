@@ -1,0 +1,96 @@
+{
+  "providers": {
+    "claude": {
+      "dir": ".claude",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "agents": "agents/{name}.md",
+      "capabilities": {
+        "hooks": true,
+        "agentDispatch": true,
+        "mcp": true,
+        "nativeFormat": "md",
+        "slashCommands": true,
+        "structuredQuestions": true
+      },
+      "docs": [
+        "https://docs.anthropic.com/en/docs/claude-code/hooks",
+        "https://docs.anthropic.com/en/docs/claude-code/mcp",
+        "https://docs.anthropic.com/en/docs/claude-code/slash-commands"
+      ]
+    },
+    "opencode": {
+      "dir": ".opencode",
+      "commands": "commands/{name}.md",
+      "skills": "skills/{name}/SKILL.md",
+      "agents": "agents/{name}.md",
+      "capabilities": {
+        "hooks": true,
+        "agentDispatch": true,
+        "mcp": true,
+        "nativeFormat": "md",
+        "slashCommands": true,
+        "structuredQuestions": false
+      },
+      "docs": [
+        "https://opencode.ai/docs/plugins/",
+        "https://opencode.ai/docs/mcp-servers/",
+        "https://opencode.ai/docs/agents/",
+        "https://opencode.ai/docs/commands/"
+      ]
+    }
+  },
+  "commands": {
+    "add-framework--sync": {
+      "description": "Regenerates the ecosystem map, README and web docs from the current artefact set — four analyzer agents in parallel, then applies their reports."
+    },
+    "add-framework--release": {
+      "description": "Release manager — tags, GitHub releases and the CLI publish, merging main into production."
+    },
+    "add-framework--roadmap": {
+      "description": "Records what to do next — adds, updates or removes a roadmap item, then commits and pushes straight to main."
+    }
+  },
+  "skills": {
+    "add-artefact-graph": {},
+    "add-build-ledger": {},
+    "add-commit": {},
+    "add-final-report": {},
+    "add-framework--brainstorm": {},
+    "add-framework--build": {},
+    "add-framework--done": {},
+    "add-framework--plan": {},
+    "add-framework-development": {},
+    "add-framework-internal-layer": {},
+    "add-framework-product-layer": {},
+    "add-plan-authoring": {},
+    "add-review-discipline": {},
+    "building-commands": {}
+  },
+  "agents": {
+    "framework-discovery-agent": {
+      "description": "Framework discovery specialist. Given a topic and scope (product|internal|both), answers from the artefact graph first, then scans artefact filenames and first ~20 lines for keyword relevance, scores all plan slugs for overlap, deep-reads top-5 plans, and returns a ranked relevance report. Read-only — it runs read-only graph queries and writes no file."
+    },
+    "plan-readback-agent": {
+      "description": "Cold reader for one internal-layer document — reads it with nothing else in hand and says back what it understood must be built, marking every gap it filled in on its own. Issues no verdict and asks no question (read-only)."
+    },
+    "plan-review-agent": {
+      "description": "Reviews a draft plan or brainstorm design for executability, hidden assumptions, contradictions, and missing decisions before delivery. Read-only. Use after a plan/design file is written and before presenting it as ready."
+    },
+    "prompt-review-agent": {
+      "description": "Ticks the eight-item prompt quality ruler over one internal artefact — a command, skill or agent — with evidence per item, and returns a verdict. Reads the artefact and its direct graph neighbours. Read-only. Use on a delivery the build just wrote, or on an artefact a plan is about to change."
+    },
+    "readme-analyzer": {
+      "description": "Analyzes README.md against a Change Payload and returns an Update Report with exact old→new edits. Read-only — reports only, never modifies files."
+    },
+    "svg-analyzer": {
+      "description": "Analyzes web/public/*.svg against a Change Payload and returns text-only Update Report. Layout changes go to manual_items. Read-only — reports only, never modifies files."
+    },
+    "web-docs-analyzer": {
+      "description": "Analyzes web/src/pages/docs.astro against a Change Payload and returns an Update Report with exact old→new edits. Read-only — reports only, never modifies files."
+    },
+    "web-index-analyzer": {
+      "description": "Analyzes web/src/pages/index.astro against a Change Payload and returns an Update Report with exact old→new edits. Read-only — reports only, never modifies files."
+    }
+  }
+}

@@ -40,13 +40,13 @@ const P = {
   sdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
   history: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-doc-schemas', 'references', 'history.md'),
   discipline: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-review-discipline', 'SKILL.md'),
-  disciplineInternal: path.join(ROOT, '.claude', 'skills', 'add-review-discipline', 'SKILL.md'),
+  disciplineInternal: path.join(ROOT, 'workbench', 'skills', 'add-review-discipline', 'SKILL.md'),
   providerMap: path.join(ROOT, 'framwork', 'provider-map.json'),
   newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.new.md'),
   brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.brainstorm.md'),
   plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan.md'),
-  fwBrainstorm: path.join(ROOT, '.claude', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
-  planAuthoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
+  fwBrainstorm: path.join(ROOT, 'workbench', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
+  planAuthoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
 };
 
 /** The two commands that restate the discipline today. */
@@ -90,7 +90,7 @@ function uses(text) {
 function sourceFiles() {
   const roots = [
     path.join(ROOT, 'framwork', '.codeadd'),
-    path.join(ROOT, '.claude'),
+    path.join(ROOT, 'workbench'),
     path.join(ROOT, 'cli', 'src'),
   ];
   const out = [];

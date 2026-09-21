@@ -44,16 +44,24 @@ because `--corpus=artefacts` runs from the repository root where the CLI's `node
 resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
 and one source has to read the same way in both.
 
-### Internal Layer — `.claude/`
+### Internal Layer — `workbench/`
 
-Development tools that build and maintain the framework itself. One file per artefact, no provider mirror. NOT distributed to users, and absent from `provider-map.json`.
+Development tools that build and maintain the framework itself. **It has a provider mirror and it reaches no user, and both halves matter.** `workbench/` is the source; `node scripts/build-workbench.js` compiles it into `.claude/` and `.opencode/` at the repository root, which are gitignored output. Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and the installer never writes it — which is what keeps the cross-layer gate in `scripts/build.js` correct.
+
+```
+⛔ EDIT THE SOURCE, NEVER THE BUILT COPY:
+  ⛔ DO NOT: Edit `.claude/commands/`, `.claude/skills/`, `.claude/agents/` or the `.opencode/`
+             equivalents — they are gitignored and the next build erases the change
+  ✅ DO: Edit `workbench/`, register in `workbench/provider-map.json`, run the workbench build
+```
 
 | Type | Path |
 |------|------|
-| Commands | `.claude/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
-| Pipeline stages | `.claude/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
-| Skills | `.claude/skills/<name>/SKILL.md`, subdocs in `references/` |
-| Agents | `.claude/agents/*.md` |
+| Registry | `workbench/provider-map.json` — its own, targeting claude and opencode. NEVER `framwork/provider-map.json` |
+| Commands | `workbench/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
+| Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
+| Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
+| Agents | `workbench/agents/*.md` |
 | Plans | `docs/plans/` — gitignored working artefacts, local only |
 | Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
@@ -89,6 +97,19 @@ framwork/.claude/, framwork/.agents/, framwork/.gemini/, ...  (15 provider dirs)
 cli/src/installer.js  (downloads release ZIP, installs to user's project)
   ↓  applyEnabledFeatures (injects feature fragments post-install)
 user's project (.claude/, .gemini/, .cursor/, ...)
+```
+
+The workbench has a second, deliberately separate pipeline. It shares every transformation and no
+entry point:
+
+```
+workbench/  (source of truth for the framework's OWN pipeline)
+  ↓
+node scripts/build-workbench.js  (reads workbench/provider-map.json; requires scripts/build.js)
+  ↓  the SAME buildResources, resolveResourcePaths and AGENT_DIALECTS — imported, never copied
+.claude/, .opencode/  at the repository root  (gitignored; 2 providers)
+  ↓
+nothing. It ships to no user, and `release.yml` does not run it.
 ```
 
 Two rules bind anyone editing an artefact:
@@ -201,7 +222,7 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Ledger, rulings, hard stops, one commit per F-block | `add-build-ledger` |
 | Product-layer build mechanics | `add-framework-product-layer` |
 | Internal-layer build mechanics | `add-framework-internal-layer` |
-| `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 8 |
+| `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 9 |
 | Querying the graph — the eleven verbs, both interfaces, and what it cannot see | `add-artefact-graph` |
 | `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
 | What belongs in a `CLAUDE.md` | `add-claude-md-style` |

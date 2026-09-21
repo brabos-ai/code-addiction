@@ -184,3 +184,24 @@ cli/.vitest/
 #    new command, skill or reference was invisible to `git add` and to
 #    `git status`, with no error anywhere. Anchor it to the root.
 /.codeadd/
+
+# Workbench build output — `node scripts/build-workbench.js` compiles
+# workbench/{commands,skills,agents}/ into these. The SOURCE is workbench/,
+# which is tracked; what lands here is generated and is not.
+#
+# ⛔ THE THREE SUBDIRECTORIES, NEVER THE PROVIDER DIRECTORY ITSELF.
+#    `.claude/settings.json` is authored by hand and must stay tracked, and
+#    `.claude/agent-memory/` already has its own rule above. Written bare as
+#    `.claude/`, this would untrack the settings file and nobody would notice
+#    until a fresh clone came up without it.
+#
+# ⛔ THE LEADING SLASH IS LOAD-BEARING, for the reason the /.codeadd/ comment
+#    above records: written bare, each line would match a directory of that
+#    name at ANY depth — including workbench/skills/*/ — and the source tree
+#    would silently stop being added.
+/.claude/commands/
+/.claude/skills/
+/.claude/agents/
+/.opencode/commands/
+/.opencode/skills/
+/.opencode/agents/

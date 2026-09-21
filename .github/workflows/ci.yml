@@ -33,6 +33,16 @@ jobs:
         working-directory: .
         run: node scripts/build.js
 
+      # The workbench layer — the framework's own pipeline — has its own source
+      # root and its own entry point, and it is deliberately ABSENT from
+      # release.yml: nothing under workbench/ ships, so a failure here can never
+      # block a product release. This is the only place its correctness is
+      # enforced, because its output is gitignored and therefore invisible both
+      # locally and in review.
+      - name: Build workbench provider files
+        working-directory: .
+        run: node scripts/build-workbench.js
+
       - name: Run tests
         run: npm test
 

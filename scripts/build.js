@@ -795,7 +795,7 @@ function relId(from, full) {
  *
  * @param {object} map  provider-map.json
  * @param {string} codeaddDir  product-layer root
- * @param {string} internalDir  repo root holding `.claude/`
+ * @param {string} internalDir  repo root holding `workbench/`
  * @returns {Array<{id,kind,layer,name,path,registered,providers,declares}>}, plus `readonly` on
  *          every `agent` node
  */
@@ -977,10 +977,18 @@ function collectNodes(map, codeaddDir = CODEADD_DIR, internalDir = ROOT) {
   }
 
   // --- Internal layer -----------------------------------------------------
-  // provider-map.json registers the PRODUCT layer only. Internal artefacts are
-  // never distributed, so `registered` is true by definition — marking them
-  // otherwise would fire the unregistered gate on 17 correct files.
-  const claudeDir = path.join(internalDir, '.claude');
+  // provider-map.json registers the PRODUCT layer only. The workbench has a
+  // registry of its own — workbench/provider-map.json, read by
+  // scripts/build-workbench.js — and nothing in it reaches a user's project,
+  // so `registered` stays true by definition here; marking these otherwise
+  // would fire the unregistered gate on 17 correct files.
+  //
+  // ⛔ THIS READS SOURCE, NEVER OUTPUT. `buildResources` calls
+  //    stripHtmlComments on everything it writes, so the generated .claude/
+  //    and .opencode/ trees carry no `<!-- uses: -->` block at all. Pointed at
+  //    either of them, extractUses returns [] with no error and no warning,
+  //    and the graph silently loses every internal edge.
+  const claudeDir = path.join(internalDir, 'workbench');
 
   // The four pipeline stages — add-framework--brainstorm, --plan, --build and
   // --done — are SKILLS, not commands: they hand off to one another, and a
@@ -1229,7 +1237,23 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
 
   const sniffable = graph.nodes.filter((n) => SNIFFABLE_KINDS.has(n.kind));
 
-  // --- FAIL: a distributed artefact naming an internal command ---------------
+  // --- FAIL: a distributed artefact naming a workbench command ---------------
+  //
+  // THE WORKBENCH NOW HAS PROVIDER OUTPUT, AND THIS GATE IS UNCHANGED BY IT.
+  // `scripts/build-workbench.js` compiles `workbench/` into `.claude/` and
+  // `.opencode/` at the REPOSITORY root. That is a provider mirror, and it used
+  // to be this layer's defining absence -- so a reader meeting the gate after
+  // that change can reasonably wonder whether it still holds.
+  //
+  // It does, because its reason was never 'the internal layer is not built'.
+  // Its reason is that an artefact reaching a USER'S project must not point them
+  // at something their install does not contain, and nothing under `workbench/`
+  // is in `framwork/provider-map.json`, packaged by `release.yml`, or written by
+  // `cli/src/installer.js`. Building it for two providers inside this repository
+  // changes none of those three.
+  //
+  // DO NOT weaken or remove this gate on the grounds that the workbench 'is
+  // distributed now'. It is built; it is not distributed.
   //
   // The same-layer sniff below is deliberately blind here: `add-commit` exists
   // in both layers, so a product artefact naming it means the product one. That
@@ -1282,7 +1306,7 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
       failures.push(
         'artefact-graph: internal command or skill named by a distributed artefact\n' +
           `  ${path_}\n` +
-          `  names ${name}, which is in the internal add-framework-- namespace and ships to nobody\n` +
+          `  names ${name}, which is in the workbench add-framework-- namespace, built for this repository only\n` +
           '  a user installing this artefact has no such command or skill. Describe the\n' +
           '  distinction without the name, or name the product equivalent.\n' +
           '  A source-only note is exempt: HTML comments are stripped at build.',
@@ -1494,6 +1518,21 @@ function lintResourcePaths(content, srcPath) {
 
   // Skip the resource-path-convention skill itself (it documents the patterns)
   if (relPath.includes('add-resource-path-convention')) return;
+
+  // Skip the workbench layer, for the same reason and a second one.
+  //
+  // The rule this lint enforces exists because `.codeadd/` does not exist in a
+  // user's installed project, so a raw path there resolves to nothing. The
+  // workbench reaches no user's project, and its artefacts are the ones that
+  // DOCUMENT the product layer: add-framework-development spells out the lint
+  // rule itself, and add-framework-product-layer describes where product
+  // resources live. Those strings are prose about a path, not a reference to
+  // resolve — and `{{cmd:}}` inside a workbench artefact would resolve against
+  // the WORKBENCH registry, to `.claude/commands/`, which is a different file.
+  //
+  // Regression this prevents: 13 warnings on every `build-workbench.js` run,
+  // none of them actionable, which is how a warning stream stops being read.
+  if (relPath.startsWith('workbench' + path.sep) || relPath.startsWith('workbench/')) return;
 
   // Lint each source file at most once per build (postWrite invokes per provider)
   if (LINTED_PATHS.has(relPath)) return;
@@ -1824,11 +1863,27 @@ const AGENT_DIALECTS = {
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 
-  opencode(_frontmatter, body, meta) {
+  opencode({ blocks }, body, meta) {
     const out = [`description: ${yamlScalar(meta.description)}`, 'mode: subagent'];
     // A read-only agent gets its constraint enforced by the engine, not merely
     // stated in prose. OpenCode's permission map is the only dialect that can.
-    if (meta.readonly) out.push('permission:', '  edit: deny', '  bash: deny', '  webfetch: allow');
+    //
+    // `edit: deny` is unconditional -- it is what read-only MEANS, and nothing
+    // in a source file may opt out of it.
+    //
+    // DO NOT make `bash: deny` unconditional again. Its condition is the
+    // source's own `tools:` line, and an agent that declares Bash declares it
+    // on purpose: git-history-agent runs read-only git, and
+    // framework-discovery-agent shells out to `node scripts/graph.js` where no
+    // MCP is configured. Denying bash to those two did not make them safer --
+    // it removed their only working route while the declaration went on saying
+    // otherwise. Read-only is still enforced, by `edit: deny`.
+    const declaresBash = /(^|[\s,])Bash([\s,]|$)/.test((blocks && blocks.tools) || '');
+    if (meta.readonly) {
+      out.push('permission:', '  edit: deny');
+      if (!declaresBash) out.push('  bash: deny');
+      out.push('  webfetch: allow');
+    }
     return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 

@@ -33,9 +33,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const P = {
-  done: path.join(ROOT, '.claude', 'skills', 'add-framework--done', 'SKILL.md'),
-  build: path.join(ROOT, '.claude', 'skills', 'add-framework--build', 'SKILL.md'),
-  authoring: path.join(ROOT, '.claude', 'skills', 'add-plan-authoring', 'SKILL.md'),
+  done: path.join(ROOT, 'workbench', 'skills', 'add-framework--done', 'SKILL.md'),
+  build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
+  authoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
   claudeMd: path.join(ROOT, 'CLAUDE.md'),
 };
 

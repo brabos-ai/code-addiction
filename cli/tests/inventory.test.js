@@ -450,7 +450,7 @@ describe('L3 the command and skill texts that held the duty', () => {
   });
 
   it('L3.6 the dead bootstrap script is gone, and the sweep finds no pointer left', () => {
-    expect(fs.existsSync(path.join(ROOT, '.claude', 'bootstrap-framework-context.sh'))).toBe(false);
+    expect(fs.existsSync(path.join(ROOT, 'workbench', 'bootstrap-framework-context.sh'))).toBe(false);
 
     // Scoped to `.claude/` and CLAUDE.md — the sweep add-framework-internal-layer
     // prescribes. A repo-wide grep would match this very file and could never pass.
