@@ -100,8 +100,9 @@ Brainstorm docs record the design the user approves before anything is written a
 
 For `/add.new` (creates `docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`, and optionally `ticket: [NNNN]B`
   - **`branch:`** (required for new docs) — the branch `/add.build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add.new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
+  - **`ticket:`** (optional) — the backlog ticket this feature came from, when it came from one. Written by `/add.new` from the intent file, on the line after `branch:`. **Absent is the normal case** — most work never comes from a ticket, which is why this field is not in the validation gate's required set. What each command does with it is owned by `{{skill:add-backlog/references/lifecycle.md}}`; nothing here restates it.
   - **`tags:`** — bare lowercase topic words, per Universal Document Requirements in `{{skill:add-doc-schemas/SKILL.md}}`, which is where that rule is stated. Written from the discovery result, never from a question put to the user.
 - **Sections (ordered):** TL;DR · Objective · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References
 - **Depth floor:**
