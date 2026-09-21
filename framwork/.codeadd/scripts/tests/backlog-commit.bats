@@ -237,6 +237,31 @@ base_file_lines() {
   [ "$(base_file_lines)" -eq 1 ]
 }
 
+# L1.5b — the push reaches a remote that REFUSES it. Distinct from L1.5: there
+# IS a remote, the fetch and the rebase succeed, and only the push fails —
+# what a protected branch or a ruleset does. Added at review: the plan's F1
+# named "the refused push" and the first cut of this suite covered only the
+# no-remote case, leaving the push-refused branch of the script with no test.
+@test "L1.5b: a refused push keeps the commit on the local base branch and says push-refused" {
+  setup_remote
+  seed_board
+  git push -q origin main
+
+  # Every push is refused, as a branch protection rule would.
+  printf '#!/bin/sh\necho "protected branch" >&2\nexit 1\n' > "$TEST_TEMP_DIR/remote/hooks/pre-receive"
+  chmod +x "$TEST_TEMP_DIR/remote/hooks/pre-receive"
+
+  run bash -c "$(declare -f valid_ticket); valid_ticket | bash '$SCRIPTS_DIR/backlog-commit.sh' add"
+  [ "$status" -eq 0 ]
+  [ "$(key PUSHED)" = "no" ]
+  [ "$(key DEGRADED)" = "push-refused" ]
+  [ -n "$(key SHA)" ]
+  # Durable on the local base branch although the remote refused it.
+  [ "$(base_file_lines)" -eq 2 ]
+  # And the remote really did not take it.
+  [ "$(git --git-dir="$TEST_TEMP_DIR/remote" rev-parse main)" != "$(git rev-parse main)" ]
+}
+
 # L1.6 — the rebase conflicts with nobody present to resolve it. The one
 # outcome worse than an unpushed commit is a repository left mid-rebase.
 @test "L1.6: a conflicting rebase is ABORTED, the commit survives, nothing is left mid-rebase" {
