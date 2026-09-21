@@ -351,7 +351,10 @@ describe('L3 — the documentation and registry edits', () => {
       'utf8',
     );
     expect(done.replace(/\s+/g, ' ')).not.toMatch(/over an hour/i);
-    expect(done).toMatch(/CODEADD_BATS_RUNNER=native/);
+    expect(done).toMatch(/CODEADD_TESTS_RUNNER=native/);
+    expect(done).not.toMatch(/CODEADD_BATS_/);
+    // Root npm test now goes through the same runner, so its exit 2 is a refusal too.
+    expect(done).toMatch(/`npm test` or `npm run test:scripts` exiting 2 or 127 is a REFUSAL to run/);
     expect(done).toMatch(/REFUSAL to run/);
     expect(done).toMatch(/one machine/i);
     expect(done).toMatch(/one Node version/i);
