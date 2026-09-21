@@ -28,8 +28,9 @@ array has a length.
 
 ### Product Layer — `mcp/`
 
-**A product-layer directory at the repository ROOT, and the only one.** It holds the knowledge-graph
-MCP server: the corpus registry, the two parsers, the query engine and the stdio transport.
+**A product-layer directory at the repository ROOT.** It holds the knowledge-graph MCP server: the
+corpus registry, the two parsers, the query engine and the stdio transport. `board/` is the second —
+see below.
 
 ```
 ⛔ THE ROOT-MEANS-INTERNAL RULE DOES NOT REACH IT:
@@ -43,6 +44,24 @@ artefact the build distributes to providers. It takes **no dependency at all**, 
 because `--corpus=artefacts` runs from the repository root where the CLI's `node_modules` is off the
 resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
 and one source has to read the same way in both.
+
+### Product Layer — `board/`
+
+**The second root product directory: a read-only board over `docs/backlog.jsonl`** — kanban, priority
+list and ticket detail, shaped to grow into activity management. It is `[product]` for the reason
+`mcp/` is: it ships to users, as a separate release asset installed under `.codeadd/board/`.
+
+```
+⛔ ONLY `board/server.mjs` IS ZERO-DEPENDENCY — THE REST OF `board/` IS NOT:
+  ⛔ DO NOT: Add an import to `server.mjs`, or read `docs/backlog.jsonl` in it — tickets come from
+             `backlog.sh list --all`, the one reader of that format
+  ⛔ DO NOT: Treat `board/src/` like `mcp/` — it is a TypeScript/React/Vite app with its own
+             `package.json`, and building it needs `npm ci`
+  ✅ DO: Keep `server.mjs` on Node built-ins, bound to 127.0.0.1; ship `server.mjs` + `dist/`
+```
+
+Unlike `mcp/`, nothing copies it into `cli/src/`: the npm package and the main release ZIP do not
+carry it.
 
 ### Internal Layer — `workbench/`
 
@@ -114,9 +133,13 @@ nothing. It ships to no user, and `release.yml` does not run it.
 
 **`npm run setup` is the install.** A fresh clone carries `workbench/` and `.claude/settings.json`
 and nothing else under the provider directories — every command, skill and agent the pipeline runs
-on is build output, so until it is run there is no pipeline to run. It is an alias for
-`build:workbench` and nothing more: it takes no dependency, needs no `npm install` first, and does
-NOT run the product build, which compiles 728 files this repository's own pipeline never reads.
+on is build output, so until it is run there is no pipeline to run. It runs `build:workbench`, then
+`build:board`. The workbench half takes no dependency and needs no `npm install` first; the board half
+runs `npm ci` and a Vite build inside `board/`, so the board is there by default — `npm run board`
+opens it on this repository's backlog. The workbench builds FIRST, so a board failure (offline, an npm
+error) still leaves the pipeline installed; `npm run build:board` retries the second half alone.
+`setup` does NOT run the product build, which compiles 728 files this repository's own pipeline
+never reads.
 
 ```
 ⛔ THE SCRIPT IS NOT NAMED `install`:
@@ -146,6 +169,7 @@ Key files:
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — runs the suites natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
+| `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, read through `backlog.sh`; `src/` is TypeScript/React. `npm run board` opens it here |
 | `framwork/.codeadd/scripts/*.sh` | Shipped verbatim. Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
