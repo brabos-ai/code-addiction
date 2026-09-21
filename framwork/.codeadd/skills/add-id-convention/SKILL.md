@@ -1,6 +1,6 @@
 ---
 name: add-id-convention
-description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creating branches — canonical `[NNNN][L]` format that the scripts (next-id.sh, get-branch-metadata.sh, build-setup.sh, done.sh) expect
+description: Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs or creating branches — canonical `[NNNN][L]` format that the scripts (next-id.sh, get-branch-metadata.sh, build-setup.sh, done.sh) expect
 ---
 
 # ID & Branch Naming Convention
@@ -15,6 +15,7 @@ description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creat
 - script: done.sh
 - script: get-branch-metadata.sh
 - script: next-id.sh
+- mention: init.sh
 - script: qa-evidence.sh
 - script: status.sh
 -->
@@ -56,8 +57,21 @@ Scripts enforce this format; commands that diverge (e.g., letter-first `H0001` i
 | `D` | docs |
 | `P` | perf |
 | `T` | test |
+| `B` | backlog ticket — decided, not started |
 
 Must match the regex in `.codeadd/scripts/get-branch-metadata.sh` (`[0-9]{4}[A-Z]`).
+
+⛔ **`B` IS THE ONE LETTER WITH NO BRANCH.** A ticket records work that has not started, so there is
+nothing to check out. When the ticket becomes work, that work allocates its own id of the matching
+type — `0007B` becomes feature `0012F`, not `feature/0007B-...`. The ticket keeps a `work_id` field
+pointing at the id it became, and the two stay distinct.
+
+```
+IF A TICKET IS BEING PICKED UP:
+  ⛔ DO NOT USE: Bash for git checkout -b on a B id
+  ⛔ DO NOT: Reuse the ticket's number for the work — the counter is global and 0007 is spent
+  ✅ DO: Allocate a new id of the work's own type, and record it on the ticket
+```
 
 ### Branch format
 
@@ -92,9 +106,36 @@ Always via:
 bash .codeadd/scripts/status.sh next-id <LETTER>
 ```
 
-Examples: `status.sh next-id F` → `0001F`, `status.sh next-id H` → `0001H`.
+Examples: `status.sh next-id F` → `0001F`, `status.sh next-id H` → `0001H`,
+`status.sh next-id B` → `0001B`.
 
 Never hand-roll IDs. Never reuse an ID from another namespace.
+
+### One counter, two sources, two implementations
+
+The number is global across every letter. It is the max over **both** the
+`docs/features/[NNNN][L]-*/` directories **and** the ids already on the backlog board,
+`docs/backlog.jsonl` — counting only the first would hand out a number a ticket already holds.
+
+⛔ **`status.sh next-id` DOES NOT CALL `next-id.sh`. It reimplements the scan.** Every command
+allocates through `status.sh`; only `init.sh` calls `next-id.sh` directly. Nothing in the code holds
+the two equal, and they have diverged before: `status.sh` matched four digits anywhere in the find
+path, so a slug like `0001F-auth-2024` returned `2025F` where `next-id.sh` returned `0002F` — two
+thousand ids burnt, silently, on the path every command uses.
+
+```
+IF CHANGING HOW AN ID IS ALLOCATED:
+  ⛔ DO NOT: Change one allocator and leave the other — they answer the same question
+  ⛔ DO NOT: Make either parse JSON to read the backlog — both are pure bash, and a node
+             dependency here reaches every /add.new
+  ✅ DO: Change `next-id.sh` and `status.sh` in the same commit
+  ✅ DO: Run the NEXT_ID_AGREE assertions in `.codeadd/scripts/tests/backlog.bats` — they are
+         the only gate that holds the two together
+```
+
+**Both read the backlog by grep, never by parse.** A line whose JSON is damaged still yields its id,
+so a hand-broken board can never block an allocation. An absent board is a no-op: a project with no
+`docs/backlog.jsonl` gets exactly the id it got before.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
 
