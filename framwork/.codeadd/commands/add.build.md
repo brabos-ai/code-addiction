@@ -1498,13 +1498,15 @@ Fill the blocks from this build:
 - **`How it works`** — what the built feature does now, for a reader who did not watch the run.
 - **`Files touched`** — split by verb. The Deleted row is written even when it reads "none".
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
-  and the one or two places the work is most likely to have gone wrong.
+  the one or two places the work is most likely to have gone wrong, and a ticket write from STEP 2
+  item 5 that did not land.
 
 Then, after the seven blocks and before any metadata, print 18.1 and 18.2 below — whole, in their
 own shape.
 
-**Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
-its commit brackets.
+**Metadata last:** feature ID, files summary (per area count), build status, the ledger path with
+its commit brackets, and — when `about.md` carries `ticket:` — what STEP 2 item 5 did to it: set to
+`doing`, already `doing`, or what did not happen.
 
 ### 18.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 
