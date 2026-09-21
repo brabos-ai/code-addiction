@@ -170,7 +170,11 @@ async function boardPayload() {
 const clients = new Set();
 
 function broadcast(event) {
-  for (const res of clients) res.write(`event: ${event}\ndata: {}\n\n`);
+  for (const res of clients) {
+    // A client that went away between its close event and this write must not
+    // take the server down for every other open tab.
+    try { res.write(`event: ${event}\ndata: {}\n\n`); } catch { clients.delete(res); }
+  }
 }
 
 let debounce = null;
@@ -263,7 +267,8 @@ function handler(port) {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
       res.write(': connected\n\n');
       clients.add(res);
-      const ping = setInterval(() => res.write(': ping\n\n'), 25000);
+      res.on('error', () => clients.delete(res));
+      const ping = setInterval(() => { try { res.write(': ping\n\n'); } catch { /* the close handler cleans up */ } }, 25000);
       req.on('close', () => { clearInterval(ping); clients.delete(res); });
       return;
     }
