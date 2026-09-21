@@ -55,8 +55,8 @@ describe('L2.3 routes', () => {
     expect(screen.queryByText('Doctor for schemas')).not.toBeInTheDocument();
   });
 
-  it('/board/0002B renders the ticket over the board', async () => {
+  it('/board/0002B opens the ticket as a dialog over the board', async () => {
     await open('/board/0002B');
-    expect(await screen.findByRole('complementary', { name: 'Ticket' })).toHaveTextContent('Sweep prompt density');
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Sweep prompt density');
   });
 });
