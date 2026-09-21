@@ -322,7 +322,7 @@ describe('L3 — the documentation and registry edits', () => {
     expect(job.indexOf('command -v parallel')).toBeLessThan(job.indexOf('npm run test:scripts'));
   });
 
-  it('L3.3: the product-layer skill carries the conditional bats gate, and the vitest gate is untouched', () => {
+  it('L3.3: the product-layer skill gates on the runner and the two projects, and keeps the conditional bats gate', () => {
     const skill = fs.readFileSync(
       path.join(REPO_ROOT, 'workbench', 'skills', 'add-framework-product-layer', 'SKILL.md'),
       'utf8',
@@ -335,8 +335,14 @@ describe('L3 — the documentation and registry edits', () => {
     expect(skill).toMatch(/costs?\b/i);
     expect(skill.replace(/\s+/g, ' ')).not.toMatch(/over an hour/i);
 
-    expect(skill).toContain('cd cli && npx vitest run --no-file-parallelism');
-    expect(skill).toContain('**Serial is not a preference.**');
+    // The vitest gate is the runner now, and the serial-or-nothing rule is gone.
+    expect(skill).toContain('npm test          # at the repository root');
+    expect(skill).toContain('scripts/run-tests.js');
+    expect(skill).toMatch(/two projects/);
+    expect(skill).toContain('A test changed a build sidecar in the real tree');
+    expect(skill).not.toContain('--no-file-parallelism');
+    expect(skill).not.toContain('Serial is not a preference');
+    expect(skill).not.toMatch(/Serial or nothing/);
   });
 
   it('L3.4: the close-out drops the stale Windows figure but keeps its argument and its example', () => {
