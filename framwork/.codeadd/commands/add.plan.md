@@ -210,9 +210,11 @@ into `plan.md` verbatim. An `about.md` with no `## Objective` is a legacy docume
 
 **Ticket (read here, once):** when `about.md`'s frontmatter carries `ticket:`, follow the `add.plan` row
 of `{{skill:add-backlog/references/lifecycle.md}}` — read that ticket and record its `done_when`,
-`notes` and `paths` as `${TICKET}`, planning input beside `${OBJECTIVE}`. **Its `done_when` is a
-definition of finished the user already wrote**; a plan that contradicts it has re-decided something
-without saying so. Read-only — this command writes nothing to the board. No `ticket:`, no ticket.
+`notes` and `paths` as `${TICKET}`. Its `notes` and `paths` inform the scope STEP 6 determines. **Its
+`done_when` is a definition of finished the user already wrote**, so STEP 9.1 writes it into `plan.md`
+under the objective, where the plan reviewer can check the plan against it — a plan that contradicts it
+has re-decided something without saying so. Read-only — this command writes nothing to the board. No
+`ticket:`, no ticket.
 
 **Provenance source:** the `about.md` read in this step is the provenance source for STEP 7.1. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — 7.1.0 and 7.1.4 hash those same bytes.
 
@@ -618,7 +620,9 @@ without them** — which is why it prints in full.
 Create plan.md header: `# Plan: ${FEATURE_ID}`, then the line `> **Delivery:** ${DELIVERY}` — `/add.build`
 and `/add.review` read that line and nothing else to learn the mode. Then `## TL;DR`, then
 **`## Objective`: `${OBJECTIVE}` copied verbatim**, followed by one line saying what is true once this plan
-is built.
+is built. **When STEP 4 recorded `${TICKET}`**, add one more line under it: `**Done when (ticket
+<id>):**` followed by the ticket's `done_when`, copied verbatim — for the same reason the objective is
+copied: the reviewer reads `plan.md` alone.
 
 ```
 IF WRITING `## Objective`:
