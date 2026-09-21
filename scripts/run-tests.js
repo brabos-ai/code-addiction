@@ -37,6 +37,11 @@
  *   `.git` is bind-mounted, because git reads a handful of files. A worktree's
  *   `.git` names a host path the container cannot follow, so it is remapped.
  *
+ * Images left by the bats-only runner this one replaced are tagged
+ * `codeadd-bats:<hash>`. Nothing builds or removes them any more, so a machine
+ * that ran it keeps them until pruned by hand: list them with
+ * `docker image ls codeadd-bats`, remove them with `docker image rm <id>`.
+ *
  * The native runner works on a copy too, in a temp directory removed on exit.
  * The suite's globalSetup rebuilds framwork/ output and its sidecars, and a run
  * must never rewrite the checkout it was started from. Both runners set

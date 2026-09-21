@@ -281,11 +281,13 @@ from the curated layer is answering honestly rather than failing.
    after a proven merge.
 3. **No `find` string absent from the source at write time**, checked against the same corpus verification
    uses. Writing an already-broken anchor makes the item permanently `gone` and silently poisons the index.
+   **Not checked on a `superseded` line** — see below.
 4. **No `find` containing whitespace or a line break.**
 5. **No more than 5 items** — and no fewer than 1. Enforced, not advised: this is where "lean" is
    mechanically defended. A delivery that genuinely needs more was two deliveries.
 6. **Never rewrite or delete a line.** Corrections are new lines.
-7. **No `status` outside the four values**, and no `superseded` without `superseded_by`.
+7. **No `status` outside the four values**, no `superseded` without `superseded_by`, and no
+   `superseded_by` naming an id the index does not already hold.
 8. **The anchor check honours `.gitignore`** — neither a filesystem walk nor a tracked-files-only scan. This
    binds the anchor check specifically and says nothing about unrelated searches a consumer may perform.
 9. **No item anchored into `docs/`, or into a path the project ignores.** Both produce an item that can
@@ -293,14 +295,21 @@ from the curated layer is answering honestly rather than failing.
 
 Every one of these is a string or count check, testable before anything depends on it.
 
+**A `superseded` line is declared, not anchored.** It is written after its replacement deleted its files,
+so the checks that read the repository as it is now do not run on it: ban 3, the over-match thresholds
+below, and the ignored-path half of ban 9 — a path can become ignored after the line was written, as
+build output that used to be tracked does. It reports no `LOOSE=`. Every other ban still runs, ban 4
+and the `docs/` half of ban 9 included: they check the line's own text, not the repository. Its `superseded_by` is what it carries instead, so ban 7 requires that
+pointer to resolve.
+
 ## `REFUSED=` vocabulary
 
 A record breaking a hard ban is caller error in the same sense a bad mode is: `delivered.sh write` exits
 **2** and prints `REFUSED=<name>`. The names are the machine-readable contract — a consumer branches on
 them, so they are listed here rather than left implicit in the script.
 
-Twelve names cover nine bans, because three bans have more than one distinguishable way to break and one
-name covers a threshold the bans imply but do not number.
+Twelve names cover nine bans: ban 7 has three distinguishable ways to break and ban 9 has two, and two
+names cover what no numbered ban states — input that is not a record, and the over-match threshold.
 
 | `REFUSED=` | Ban | The record did this |
 |---|---|---|
@@ -312,14 +321,16 @@ name covers a threshold the bans imply but do not number.
 | `no-items` | 5 | `items` is empty |
 | `bad-status` | 7 | `status` is outside `live` \| `changed` \| `gone` \| `superseded` |
 | `superseded-without-by` | 7 | `status` is `superseded` with no `superseded_by` |
+| `superseded-by-unknown` | 7 | `superseded_by` names an id no line of the index carries — an absent index resolves nothing |
 | `item-in-docs` | 9 | an item's `at` is under `docs/` |
-| `item-ignored` | 9 | an item's `at` is a path the project's `.gitignore` excludes |
+| `item-ignored` | 9 | an item's `at` is a path the project's `.gitignore` excludes — never on a `superseded` line |
 | `find-over-matched` | — | the `find` string appears in **more than 20** corpus files |
 
 Bans 6 and 8 carry no `REFUSED=` name because neither is something a caller can submit: they are structural
 promises the script keeps — it only ever appends, and it only ever searches the corpus.
 
-**The over-match thresholds**, measured in **files, not occurrences**, over the corpus above:
+**The over-match thresholds**, measured in **files, not occurrences**, over the corpus above. None of
+them applies to a `superseded` line:
 
 | Match count | Action |
 |---|---|

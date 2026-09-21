@@ -549,6 +549,96 @@ node_free_path() {
   [ ! -f "$INDEX" ]
 }
 
+# ─── L1.14 — a superseded line is declared, not anchored ─────────────────────
+#
+# A delivery is declared superseded AFTER its replacement deleted its files, so
+# the two repository-reading checks (find-absent, find-over-matched) cannot
+# apply to it. Every shape check still does, and superseded_by must name an id
+# the index already holds.
+
+# superseded_record <find> <superseded_by> — written to a file, never piped
+# into `run` (see run_valid_record_write).
+superseded_record() {
+  printf '{"id":"0042F","layer":"product","by":"human","status":"superseded","superseded_by":"%s","name":"n","words":"w","commits":["a1b2c3d"],"origin":"o","items":[{"what":"w","at":"src/auth/google.ts","find":"%s"}]}' \
+    "$2" "$1" > "$TEST_TEMP_DIR/record.json"
+}
+
+@test "L1.14: a superseded line whose anchor is gone is accepted" {
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  superseded_record neverAppearsAnywhere 0099F
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 0 ]
+  [ "$(key ENTRY)" = "0042F" ]
+  [ "$(index_lines)" = "2" ]
+}
+
+@test "L1.14: a superseded line whose find matches more than 20 files is accepted, with no LOOSE flag" {
+  local i
+  for i in $(seq 1 25); do src "src/f$i.ts" 'const user = 1;'; done
+  commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/f1.ts user)"
+  superseded_record user 0099F
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"LOOSE="* ]]
+}
+
+@test "L1.14: superseded_by naming no indexed id is refused and appends nothing" {
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  superseded_record authGoogleHandler 9999X
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"REFUSED=superseded-by-unknown"* ]]
+  [ "$(index_lines)" = "1" ]
+}
+
+@test "L1.14: with no index at all, superseded_by resolves nothing and is refused" {
+  valid_source; commit_all
+  superseded_record authGoogleHandler 0099F
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"REFUSED=superseded-by-unknown"* ]]
+  [ ! -f "$INDEX" ]
+}
+
+@test "L1.14: a superseded line still gets the shape checks — whitespace in find is refused" {
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  superseded_record 'two words' 0099F
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"REFUSED=find-whitespace"* ]]
+}
+
+@test "L1.14: a superseded line anchored into a path ignored since it was written is accepted" {
+  src .gitignore 'generated/'
+  src generated/client.ts 'export const generatedClient = 1;'
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  printf '{"id":"0042F","layer":"product","by":"human","status":"superseded","superseded_by":"0099F","name":"n","words":"w","commits":["a1b2c3d"],"origin":"o","items":[{"what":"w","at":"generated/client.ts","find":"generatedClient"}]}' > "$TEST_TEMP_DIR/record.json"
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 0 ]
+  [ "$(key ENTRY)" = "0042F" ]
+}
+
+@test "L1.14: a superseded line anchored into docs/ is still refused" {
+  valid_source; commit_all
+  write_index "$(entry 0099F live 'new' 'new' src/auth/google.ts authGoogleHandler)"
+  printf '{"id":"0042F","layer":"product","by":"human","status":"superseded","superseded_by":"0099F","name":"n","words":"w","commits":["a1b2c3d"],"origin":"o","items":[{"what":"w","at":"docs/x.md","find":"authGoogleHandler"}]}' > "$TEST_TEMP_DIR/record.json"
+  run bash "$SCRIPTS_DIR/delivered.sh" write < "$TEST_TEMP_DIR/record.json"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"REFUSED=item-in-docs"* ]]
+}
+
+@test "L1.14: a changed line whose anchor is gone is still refused (ban 3)" {
+  valid_source; commit_all
+  run bash -c 'printf "%s" "{\"id\":\"0042F\",\"layer\":\"product\",\"by\":\"done\",\"status\":\"changed\",\"name\":\"n\",\"words\":\"w\",\"commits\":[\"a1b2c3d\"],\"origin\":\"o\",\"items\":[{\"what\":\"w\",\"at\":\"src/auth/google.ts\",\"find\":\"neverAppearsAnywhere\"}]}" | bash "$0" write' "$SCRIPTS_DIR/delivered.sh"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"REFUSED=find-absent"* ]]
+}
+
 # ─── L1.9 — the over-match thresholds ────────────────────────────────────────
 
 @test "L1.9: a find matching more than 20 files is refused" {

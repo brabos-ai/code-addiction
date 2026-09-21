@@ -345,6 +345,13 @@ function doWrite() {
   if (STATUSES.indexOf(rec.status) === -1) refuse('bad-status');
   if (rec.status === 'superseded' && !rec.superseded_by) refuse('superseded-without-by');
 
+  // A superseded line is declared AFTER its replacement deleted its files, so
+  // the anchor search below cannot apply to it — it would refuse the entry at
+  // the one moment the declaration is needed. Its pointer is what it carries
+  // instead, and a pointer to no indexed id points at nothing.
+  const superseded = rec.status === 'superseded';
+  if (superseded && !loadIndex().byId.has(rec.superseded_by)) refuse('superseded-by-unknown');
+
   if (!Array.isArray(rec.items)) refuse('missing-field');
   if (rec.items.length === 0) refuse('no-items');
 
@@ -361,6 +368,10 @@ function doWrite() {
     // "Exists but excluded" is what `ignored` means. A path that simply is not
     // there yet is not a ban — ban 3 only demands the FIND string resolve, and
     // such an item is born `changed`, which is honest.
+    // A superseded line stops here: item-ignored and the anchor search both read
+    // the repository as it is NOW, and a path can become ignored after the line
+    // it anchors was written (build output that used to be tracked).
+    if (superseded) continue;
     if (fs.existsSync(path.join(ROOT, at)) && !inCorpus(at)) refuse('item-ignored');
 
     const hits = filesMatching(it.find, 21);

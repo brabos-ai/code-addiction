@@ -1,0 +1,26 @@
+# Build ledger — plan: docs/plans/2026-09-21T094332-PLAN--delivery-index-superseded-write.md
+
+F1: Ruling: created branch fix/delivery-index-superseded-write off main before the first F-block — the build was invoked on main and STEP 9 forbids publishing from main — costs a branch rename if the operator wanted another name
+F1: Ruling: readback matched the plan's scope and order; its gaps are answered by the code — superseded_by resolves through the existing loadIndex() (absent index -> empty map -> refused), LOOSE is the LOOSE= output flag computed from the same repository search, the F4 line copies the old record changing only status/superseded_by/by — costs a rework of F2 if the reviewer reads "index" as something other than docs/delivered.jsonl
+F1: Ruling: baseline ADD_GRAPH_WARNINGS=1 build.js = exit 0 with 3 pre-existing WARN lines (add-ecosystem stale mention: acknowledgements for backlog.sh, backlog-commit.sh, migrate-context-files.sh) — not this plan's to fix — costs nothing if wrong, they are listed verbatim
+F1: Ruling: committed the six L1.14 cases with four RED against the unchanged script — F1's validation is the observed RED (4 fail, 2 guards pass), not a green suite — costs one red commit in bisect if wrong
+F1: complete (commits 84f5bfb..84f5bfb, L1.14 RED observed 4/6, build.js exit 0 baseline warnings only)
+F2: Ruling: left the script header unchanged — it lists no refusals and defers the vocabulary to delivery-index.md, so the plan's "update the header where it lists refusals" has no target; the why is a comment beside the new branch — costs one header line if a reviewer wants it there
+F2: complete (commits 361b1fe..361b1fe, npm run test:scripts exit 0 — 535 ok, 0 not ok; build.js exit 0 baseline warnings only)
+F3: complete (commits 83c3792..83c3792, build.js exit 0 baseline warnings only; no cli test asserts the reference's content)
+F4: Ruling: opened F7 [product] before closing F4 — the fast-local-bats record anchors two items under .claude/, which was tracked when written and is gitignored build output today, so write would refuse it item-ignored; item-ignored also reads the repository (existsSync + corpus) and a superseded line is never verified again, so it joins the skipped checks while item-in-docs (a string check) stays — costs reverting F7 and hand-trimming the record's items if the reviewer holds that ban 9 must bind superseded lines
+F7: complete (commits 3a160e5..3a160e5, L1.14 ignored-path case RED then green; npm run test:scripts exit 0 — 537 ok, 0 not ok; build.js exit 0 baseline warnings only)
+F4: complete (commits b373abf..b373abf, write exit 0 LINES 54->55; read fast-local-bats -> superseded, superseded_by parallel-tests; verify leaves it superseded, REPAIRED=0; framwork/ clean)
+F5: Ruling: the header names the old runner without its filename — writing "run-bats" there would put a new hit in the plan's own L3.3 sweep grep — costs one word if a reader wants the old filename
+F5: complete (commits 06bace9..06bace9, node -c ok; npm test -- tests/run-tests.test.js 23/23; sweep grep outside docs/ = only the four absence assertions in cli/tests/run-tests.test.js; built .claude/ has none; framwork/ clean)
+F6: complete (commits ebd7b2c..ebd7b2c, no ### 2.2 heading, every other number unchanged; build.js baseline; framwork/ clean)
+GRAPH: delivered.sh — add.done, add.hotfix, add-knowledge-discovery (all named in the plan's Impact row; none writes superseded); live entry 2026-09-14T145149-PLAN--the-impact-question-which-deliveries-touched-this-file, no gone/superseded entry
+GRAPH: add-doc-schemas/references/delivery-index.md — add.done, add-doc-schemas (both unchanged; additive text); no entry
+GRAPH: delivered.bats, docs/delivered.jsonl, scripts/run-tests.js, docs/backlog/index.md — NOT VERIFIED — not graph nodes (tests, data and top-level scripts/ are outside the graph by design)
+REVIEW: Ruling: scope 4 (@prompt-review-agent) not dispatched — the diff holds no command, skill or agent body; its one .md is a schema reference under a skill, which the eight-item ruler (LANG header, STEP form, Rules section) does not govern — costs one batched dispatch if a reviewer holds references to the ruler
+F8: Ruling: accepted the side-effects auditor's medium finding (add-framework--done STEP 3.4 restated ban 9 as binding every line) and added the ordering it missed — superseded_by must now resolve, so the close-out writes its own entry before any superseded line pointing at it; opened as F8 [internal] — costs one paragraph if the close-out already wrote in that order by accident
+F8: complete (commits 7f35eb5..7f35eb5, build-workbench exit 0; build.js baseline warnings only; framwork/ clean; npm test 67 files / 1590 tests passed)
+F9: Ruling: accepted the diff auditor's low finding (one unwrapped header line in scripts/run-tests.js); rejected-none — costs nothing
+F9: complete (commits 646e796..646e796, node -c ok; framwork/ clean)
+F2: Ruling: kept the conformance auditor's low note as already covered by the F2 header ruling; left add.done.md's find-absent guidance unchanged (side-effects low) — add.done never writes a superseded line, so the advice stays correct where it sits — costs one sentence if add.done ever gains supersession
+REVIEW: complete (4 findings, 2 applied, 2 rejected)
