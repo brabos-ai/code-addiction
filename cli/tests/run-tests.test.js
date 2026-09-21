@@ -314,6 +314,14 @@ describe('L3 — the documentation and registry edits', () => {
     expect(directBats).toEqual([]);
   });
 
+  it('L3.2: CI runs bats with jobs and makes sure GNU parallel is there first', () => {
+    const ci = fs.readFileSync(path.join(REPO_ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
+    const job = ci.slice(ci.indexOf('test-scripts:'));
+    expect(job).toMatch(/CODEADD_TESTS_JOBS:\s*4/);
+    expect(job).toMatch(/command -v parallel \|\|/);
+    expect(job.indexOf('command -v parallel')).toBeLessThan(job.indexOf('npm run test:scripts'));
+  });
+
   it('L3.3: the product-layer skill carries the conditional bats gate, and the vitest gate is untouched', () => {
     const skill = fs.readFileSync(
       path.join(REPO_ROOT, 'workbench', 'skills', 'add-framework-product-layer', 'SKILL.md'),
