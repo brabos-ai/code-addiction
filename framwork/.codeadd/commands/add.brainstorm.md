@@ -433,7 +433,9 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 ```
 
 After the report: the document path (architectural only — never print a path that resolves to
-nothing) and the 3-5 key decisions.
+nothing), the 3-5 key decisions, and **the ticket id when STEP 1 resolved one**. On the `spike` path
+this line is the only place the ticket survives — a spike writes no file to carry it — so it is never
+omitted there.
 
 ### 5.2 Ask for the one approval — `bounded` and `architectural`
 
