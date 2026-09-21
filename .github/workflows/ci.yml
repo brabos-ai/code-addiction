@@ -78,3 +78,38 @@ jobs:
         env:
           CODEADD_TESTS_JOBS: 4
         run: npm run test:scripts
+
+  # The board app (board/). Its server shells out to the real
+  # framwork/.codeadd/scripts/backlog.sh, so the job checks out the whole tree
+  # and runs from board/. The e2e suite serves the BUILT app through server.mjs
+  # at three viewports, so it runs after the build.
+  board:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: board
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: board/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests (360, 768, 1080)
+        run: npm run test:e2e
