@@ -396,10 +396,19 @@ function main() {
     if (!ensureImage(tag, inputs)) fail(`Could not build ${tag}. See the output above.`);
 
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-tests-run-'));
+    // Removed on every exit, fail() included — a failed pack would otherwise
+    // leave a ~28 MB tarball behind on each attempt.
+    const dir = scratch;
+    process.on('exit', () => fs.rmSync(dir, { recursive: true, force: true }));
     treeTar = path.join(scratch, 'tree.tar');
     if (!packTree(treeTar)) fail('Could not pack the checkout with tar. See the output above.');
 
-    const wt = worktreeGit(REPO_ROOT);
+    let wt;
+    try {
+      wt = worktreeGit(REPO_ROOT);
+    } catch (err) {
+      fail(`Could not map this worktree's .git into the container: ${err.message}`);
+    }
     if (wt) {
       const gitFilePath = path.join(scratch, 'dotgit');
       fs.writeFileSync(gitFilePath, wt.gitFile);
@@ -429,7 +438,6 @@ function main() {
   const codes = specs.map((spec) =>
     exitCodeFrom(spawnSync(spec.file, spec.args, { shell: spec.shell, stdio: 'inherit', cwd: REPO_ROOT, env: childEnv })),
   );
-  if (scratch) fs.rmSync(scratch, { recursive: true, force: true });
   process.exit(combineExitCodes(codes));
 }
 
