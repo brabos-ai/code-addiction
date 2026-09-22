@@ -499,9 +499,9 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 
 ### The ticket — first, before any deletion
 
-**When the plan header carries `> **Ticket:**`, make the `done` write now** — read first, skipped when the
-ticket already reads `done`, never a reason to stop. `add-plan-authoring` owns the write and every
-degradation, under **The Ticket**.
+**When the plan header carries `> **Ticket:**`, make the `done` write now.** `add-plan-authoring` owns when
+it is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting
+from memory.
 
 It runs here because this is the first point every route shares with the delivery already on `main`: the
 normal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not
