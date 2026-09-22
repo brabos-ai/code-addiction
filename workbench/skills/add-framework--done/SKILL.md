@@ -497,6 +497,17 @@ same carve-out the entry's existence already has at the top of this file.
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
+### The ticket — first, before any deletion
+
+**When the plan header carries `> **Ticket:**`, make the `done` write now** — read first, skipped when the
+ticket already reads `done`, never a reason to stop. `add-plan-authoring` owns the write and every
+degradation, under **The Ticket**.
+
+It runs here because this is the first point every route shares with the delivery already on `main`: the
+normal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not
+before the merge — a ticket reading `done` for work that never landed is a lie a refused merge would
+leave behind. It reads the plan before the third removal below deletes the local copy.
+
 ```
 IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
   ⛔ DO NOT USE: Bash to run rm on it
@@ -610,6 +621,8 @@ Then, after the seven blocks and before the metadata, report always:
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
   `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
+- **The ticket, when the plan carried one** — the id, and the `done` write's `SHA`, that it was already
+  there, or what did not happen
 
 ---
 
