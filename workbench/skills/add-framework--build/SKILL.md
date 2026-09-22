@@ -293,8 +293,8 @@ Planned mode only. Path, format, identity line and the resume rule are owned by 
 Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 
 **Then, before the first F-block, the ticket.** When the plan header carries `> **Ticket:**`, make the
-`doing` write — read first, skipped when the ticket already holds it, never a reason to stop.
-`add-plan-authoring` owns the write and every degradation, under **The Ticket**. Not before this point:
+`doing` write. `add-plan-authoring` owns when it is skipped, how it is made and every degradation, under
+**The Ticket** — load it rather than acting from memory. Not before this point:
 a ticket marked `doing` for a build that stopped at STEP 2 is a claim the board cannot take back.
 
 ### 5.2 One F-Block at a Time
