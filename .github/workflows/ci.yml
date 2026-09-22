@@ -5,6 +5,11 @@ on:
   push:
     branches: [main, master]
 
+# Least privilege: every job here reads the checkout and runs tests, none pushes
+# or opens anything, so the default token needs read access and nothing more.
+permissions:
+  contents: read
+
 jobs:
   test-cli:
     runs-on: ubuntu-latest
