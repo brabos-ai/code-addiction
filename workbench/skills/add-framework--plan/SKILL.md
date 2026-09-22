@@ -443,8 +443,8 @@ IF AN AUDIT ITEM CAME BACK ❌:
 there is none. The build reads that line and nothing else to learn the mode.
 
 **When STEP 1.2 read a `ticket:`, write `> **Ticket:**` in the plan header and the ticket's `done_when` as
-`**Ticket done when:**`**, where the template places them. From here on the plan header is the ticket's
-only carrier — the build and the close-out read it and never the intent file.
+`**Ticket done when:**`**, where the template places them. Which document carries the ticket after this
+point is owned by **The Ticket** in `add-plan-authoring`.
 
 Write the draft. **DO NOT present the path or next steps** — go straight to STEP 6.
 
