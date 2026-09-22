@@ -1,0 +1,178 @@
+/**
+ * Design Direction: Data-Dense + Utilitarian | DQS: 12/15
+ * Differentiation: the priority rank. Line order on the board IS the priority,
+ * so every card and row carries its queue position as a large tabular numeral —
+ * the one bold element; everything around it stays quiet.
+ * Palette "stone and cobalt": cool neutrals, one cobalt accent, status hues only
+ * where a status is named.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f2f3ef;
+  --surface: #ffffff;
+  --surface-2: #f7f8f5;
+  --ink: #15171c;
+  --muted: #62676f;
+  --faint: #8c9199;
+  --line: #dfe1db;
+  --line-strong: #cdd0c8;
+  --accent: #2d4be0;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6eafc;
+  --focus: #2d4be0;
+
+  --s-open: #5b6472;
+  --s-open-soft: #eceef1;
+  --s-doing: #a86400;
+  --s-doing-soft: #fbf0dc;
+  --s-done: #237a52;
+  --s-done-soft: #dff2e8;
+  --s-dropped: #8c9199;
+  --s-dropped-soft: #eeefec;
+  --warn: #9a5b00;
+  --warn-soft: #fff4de;
+  --danger: #b3261e;
+  --danger-soft: #fdecea;
+
+  --shadow-card: 0 1px 0 rgb(21 23 28 / 0.04), 0 2px 8px -2px rgb(45 75 224 / 0.06);
+  --shadow-lift: 0 1px 0 rgb(21 23 28 / 0.04), 0 10px 28px -10px rgb(45 75 224 / 0.22);
+  --shadow-sheet: -24px 0 60px -24px rgb(21 23 28 / 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111317;
+    --surface: #181b20;
+    --surface-2: #1d2026;
+    --ink: #ecedef;
+    --muted: #a0a6b0;
+    --faint: #7b818b;
+    --line: #282c33;
+    --line-strong: #353a42;
+    --accent: #8398ff;
+    --accent-ink: #0d0f14;
+    --accent-soft: #1e2440;
+    --focus: #8398ff;
+
+    --s-open: #a8b0bd;
+    --s-open-soft: #22262d;
+    --s-doing: #f0b24a;
+    --s-doing-soft: #2e2618;
+    --s-done: #5fc795;
+    --s-done-soft: #17291f;
+    --s-dropped: #7b818b;
+    --s-dropped-soft: #202328;
+    --warn: #f0b24a;
+    --warn-soft: #2b2416;
+    --danger: #ff8a80;
+    --danger-soft: #2d1a19;
+
+    --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3), 0 2px 10px -2px rgb(0 0 0 / 0.4);
+    --shadow-lift: 0 1px 0 rgb(0 0 0 / 0.3), 0 14px 32px -12px rgb(0 0 0 / 0.7);
+    --shadow-sheet: -24px 0 60px -24px rgb(0 0 0 / 0.8);
+  }
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+  --shadow-sheet: var(--shadow-sheet);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
+    min-height: 100dvh;
+  }
+  a, button, [role="tab"], select, summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+/* Status hue per ticket — set on an element with data-status. */
+[data-status] {
+  --st: var(--s-open);
+  --st-soft: var(--s-open-soft);
+}
+[data-status="doing"] {
+  --st: var(--s-doing);
+  --st-soft: var(--s-doing-soft);
+}
+[data-status="done"] {
+  --st: var(--s-done);
+  --st-soft: var(--s-done-soft);
+}
+[data-status="dropped"] {
+  --st: var(--s-dropped);
+  --st-soft: var(--s-dropped-soft);
+}
+
+@keyframes sheet-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes sheet-in-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

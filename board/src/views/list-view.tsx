@@ -1,0 +1,98 @@
+import { useMemo } from 'react';
+import { Link, Outlet, useSearch } from '@tanstack/react-router';
+import type { BoardData, Ticket } from '@/api/types';
+import { AppShell } from '@/components/app-shell';
+import { FilterBar } from '@/components/filter-bar';
+import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/states';
+import { TicketMeta } from '@/components/ticket-card';
+import { StatusPill } from '@/components/ui';
+import { useBoard } from '@/hooks/use-board';
+import { formatRank, relativeTime } from '@/lib/format';
+import { hasFilters } from '@/lib/search';
+import { facets, filterTickets, rankOf } from '@/lib/tickets';
+import { cn } from '@/lib/utils';
+
+export function ListView() {
+  const board = useBoard();
+  if (board.kind === 'error') {
+    return <AppShell view="list"><ErrorPanel error={board.error} /></AppShell>;
+  }
+  return <List data={board.data} />;
+}
+
+function List({ data }: { data: BoardData }) {
+  const search = useSearch({ from: '/list' });
+  const { themes, labels } = useMemo(() => facets(data.tickets), [data.tickets]);
+  const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
+  const visible = filterTickets(data.tickets, search);
+  const total = data.tickets.length;
+
+  const toolbar = data.present ? (
+    <FilterBar to="/list" search={search} themes={themes} labels={labels} statuses={data.statuses} showStatus />
+  ) : undefined;
+
+  return (
+    <AppShell view="list" data={data} toolbar={toolbar}>
+      <HealthBanner data={data} />
+      {!data.present ? (
+        <EmptyBoard />
+      ) : visible.length === 0 && hasFilters(search) ? (
+        <NoMatches to="/list" />
+      ) : (
+        <section aria-label="Tickets by priority" className="overflow-hidden rounded-2xl bg-surface shadow-card ring-1 ring-line">
+          <div
+            aria-hidden
+            className="hidden grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] gap-4 border-b border-line px-4 py-2.5 text-xs font-medium text-faint md:grid lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_10rem_6.5rem]"
+          >
+            <span>Priority</span>
+            <span>Ticket</span>
+            <span>Status</span>
+            <span className="hidden lg:block">Theme</span>
+            <span className="text-right">Updated</span>
+          </div>
+          <ol>
+            {visible.map((t) => <Row key={t.id} ticket={t} rank={ranks.get(t.id) ?? 0} total={total} />)}
+          </ol>
+        </section>
+      )}
+      <Outlet />
+    </AppShell>
+  );
+}
+
+function Row({ ticket, rank, total }: { ticket: Ticket; rank: number; total: number }) {
+  return (
+    <li className="border-b border-line last:border-b-0">
+      <Link
+        to="/list/$ticketId"
+        params={{ ticketId: ticket.id }}
+        search={(prev) => prev}
+        className={cn(
+          'group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-3 gap-y-2 px-4 py-3.5',
+          'md:grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] md:items-center md:gap-4 lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_10rem_6.5rem]',
+          'transition-colors duration-200 ease-spring hover:bg-ink/[0.025] focus-visible:bg-ink/[0.03]',
+        )}
+      >
+        <span
+          aria-label={`Priority ${rank}`}
+          className="tabular row-span-2 text-[22px] leading-none font-semibold tracking-tight text-ink/25 transition-colors group-hover:text-accent md:row-span-1"
+        >
+          {formatRank(rank, total)}
+        </span>
+        <div className="min-w-0">
+          <p className="line-clamp-2 text-[15px] font-medium text-ink [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
+          {ticket.tldr && <p className="mt-0.5 line-clamp-2 text-[13px] text-muted md:line-clamp-1">{ticket.tldr}</p>}
+          <TicketMeta ticket={ticket} showTheme={false} showId={false} className="mt-2 md:hidden" />
+        </div>
+        <div className="col-start-2 flex items-center gap-2 md:col-start-auto">
+          <StatusPill status={ticket.status} />
+          <span translate="no" className="tabular text-xs text-faint md:hidden">{ticket.id}</span>
+        </div>
+        <span className="hidden min-w-0 truncate text-[13px] text-muted lg:block">{ticket.theme || "—"}</span>
+        <span className="hidden text-right text-xs text-faint md:block" title={ticket.updated_at}>
+          {relativeTime(ticket.updated_at)}
+        </span>
+      </Link>
+    </li>
+  );
+}

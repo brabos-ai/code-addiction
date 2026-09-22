@@ -87,13 +87,13 @@ const CONTAINER_TREE = '/src/tree.tar';
  * comes from the image; worktrees are other checkouts entirely. The root
  * node_modules IS packed — it carries the pinned bats the suite runs.
  */
-const TREE_EXCLUDES = ['./.git', './.worktrees', './.claude/worktrees', './cli/node_modules', './web/node_modules'];
+const TREE_EXCLUDES = ['./.git', './.worktrees', './.claude/worktrees', './cli/node_modules', './web/node_modules', './board/node_modules', './board/dist'];
 
 /**
  * What the native copy leaves out. Unlike the container it KEEPS `.git` and
  * cli/node_modules: the host's own git data, and the host's native bindings.
  */
-const NATIVE_COPY_EXCLUDES = ['.worktrees', '.claude/worktrees', 'web/node_modules'];
+const NATIVE_COPY_EXCLUDES = ['.worktrees', '.claude/worktrees', 'web/node_modules', 'board/node_modules', 'board/dist'];
 
 /** Set on every run that works on a copy. Its twin lives in cli/tests/helpers/global-setup.js. */
 const COPY_MARKER = 'CODEADD_TESTS_COPY';
