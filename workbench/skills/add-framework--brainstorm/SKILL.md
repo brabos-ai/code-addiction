@@ -114,6 +114,9 @@ Inspect the user's invocation string:
 
 IF topic or idea is present in the invocation args → extract it directly and proceed to STEP 1.2.
 
+**A ticket id in the invocation (`[0-9]{4}B`) is resolved here.** Read that ticket and use it as exploration
+input; `add-plan-authoring` owns the rules, under **The Ticket** — load it rather than acting from memory.
+
 IF no topic in args → ask: "What do you want to explore?" Wait for the user's response before continuing.
 
 Listen for:
@@ -537,6 +540,7 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 > **Status:** final (ready for /add-framework--plan)
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
+> **Ticket:** [the id STEP 1.1 resolved — omit the line when there is none; see `add-plan-authoring`, The Ticket]
 
 ## Objective
 
@@ -758,7 +762,7 @@ handoff. Its shape, its naming, the `delivery:` field and the `## Open` conventi
 `add-plan-authoring` — read **The Intent File** there rather than restating it here.
 
 It carries the path classified at `2.2.2`, the approval option as `delivery:`, every decision this
-conversation closed, and whatever it could not. **On `architectural` it reuses the design document’s
+conversation closed, whatever it could not, and `ticket:` when STEP 1.1 resolved one. **On `architectural` it reuses the design document’s
 timestamp** so the pair sorts adjacent; on `bounded` it is the only artefact and takes its own.
 
 ```
