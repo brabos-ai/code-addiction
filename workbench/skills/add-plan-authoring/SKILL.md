@@ -228,7 +228,7 @@ link costs one manual update; a wrong one costs the board's credibility.
 | | STEP 7.3 records it | `ticket: <id>` in the intent file — `bounded` and `architectural`. A spike names it in its report and writes nothing | no |
 | `add-framework--plan` | STEP 1.2 reads it; STEP 5 records it | Reads `ticket:` from the intent file with `delivery:`, then writes `> **Ticket:**` in the plan header and the ticket's `done_when` as `**Ticket done when:**` under the objective | no |
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | **The `doing` write** — below | **yes** |
-| `add-framework--done` | After the merge, before STEP 8 — on the normal, resume and recovery paths | **The `done` write** — below | **yes** |
+| `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | **The `done` write** — below | **yes** |
 
 **After the plan, the plan header is the only carrier.** Build and done read `> **Ticket:**` from the plan
 and never from the intent file. A direct build has no plan, so it carries no ticket and touches no board.
