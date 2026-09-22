@@ -14,7 +14,7 @@ description: "Use when an idea for the framework itself needs shaping before any
 - mention: add-framework--build
 - mention: add-framework--done
 - handoff: add-framework--plan
-- mention: add-plan-authoring
+- skill: add-plan-authoring
 - skill: building-commands/references/agent-dispatch.md
 - mention: building-commands
 -->
@@ -712,6 +712,9 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 - The review verdict and the fixes applied, one line each, if any
 - The 3-5 key validated decisions — from the design document, or from the conversation that settled
   them where no document exists
+- **The ticket, when STEP 1.1 resolved one — on every path, the spike included.** A spike writes no file,
+  so this line is the only place its ticket surfaces; `add-plan-authoring`, The Ticket, says what the other
+  paths record
 
 ### 7.3 Approval and Next Step [HARD STOP]
 
