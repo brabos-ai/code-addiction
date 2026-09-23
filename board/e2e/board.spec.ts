@@ -263,6 +263,27 @@ for (const scheme of ['light', 'dark'] as const) {
   });
 }
 
+test('L4.5 an empty column collapses, and the row still does not scroll the page', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone layout shows one column at a time');
+  // The fixture deliberately fills every status, so the unfiltered board has no
+  // empty column to measure. This filter narrows it to one open ticket.
+  await page.goto('/board?q=sweep');
+  await expect(page.getByRole('link', { name: /Sweep the artefacts/ })).toBeVisible();
+
+  const width = (status: string) =>
+    page.locator(`#col-${status}`).evaluate((el) => el.getBoundingClientRect().width);
+  const [open, doing, done, dropped] = await Promise.all(
+    ['open', 'doing', 'done', 'dropped'].map(width),
+  );
+  for (const [name, empty] of [['doing', doing], ['done', done], ['dropped', dropped]] as const) {
+    expect(empty, `the empty ${name} column is narrower than the populated one`).toBeLessThan(open!);
+  }
+  // Fixed-width columns can exceed the viewport. That overflow must live on the
+  // columns row, never on the document.
+  await noSidewaysScroll(page);
+  await shot(page, 'board-collapsed');
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');
