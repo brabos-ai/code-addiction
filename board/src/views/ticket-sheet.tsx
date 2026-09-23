@@ -106,7 +106,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
         {ticket.title}
       </Dialog.Title>
       {ticket.tldr ? (
-        <Dialog.Description className="mt-2 text-body leading-relaxed text-muted">{ticket.tldr}</Dialog.Description>
+        <Dialog.Description className="mt-2 max-w-[56ch] text-body leading-normal text-muted">{ticket.tldr}</Dialog.Description>
       ) : (
         <Dialog.Description className="sr-only">Ticket {ticket.id}</Dialog.Description>
       )}
@@ -142,7 +142,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
         // version read as a documentation callout, and it was spending the
         // palette's one accent on a block that is already the loudest thing here.
         <div className="mt-6 rounded-r-xl border-l-2 border-accent bg-surface-2 px-4 py-3">
-          <h3 className="text-xs font-semibold text-accent">Done when</h3>
+          <h3 className="text-sm font-semibold text-accent">Done when</h3>
           <Markdown className="mt-1.5 text-body">{ticket.done_when}</Markdown>
         </div>
       )}
@@ -191,7 +191,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-7">
+    <section className="mt-7 border-t border-line pt-5">
       <h3 className="mb-3 text-sm font-semibold text-ink">{title}</h3>
       {children}
     </section>

@@ -402,6 +402,30 @@ test('L5.1/L5.4 the sheet shows what a ticket IS without scrolling', async ({ pa
   await expect(dialog.getByRole('heading', { name: 'Details' })).toHaveCount(0);
 });
 
+test('L5.3 no prose in the sheet runs past 70 characters a line', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop-1080', 'the narrow panels are already under the cap');
+  await page.goto('/board/0001B');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  // Measured in the element's own font rather than guessed from a class: a
+  // 70-character sample is drawn on a canvas at the computed font and its width
+  // is the ceiling. Anything wider is a line the eye has to track back across.
+  const tooWide = await page.evaluate(() => {
+    const sample = 'n'.repeat(70);
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    return Array.from(document.querySelectorAll('[data-sheet-body] p'))
+      .filter((el) => (el.textContent ?? '').trim().length > 90)
+      .map((el) => {
+        const style = getComputedStyle(el);
+        ctx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        const ceiling = ctx.measureText(sample).width;
+        const width = el.getBoundingClientRect().width;
+        return { width: Math.round(width), ceiling: Math.round(ceiling), text: (el.textContent ?? '').slice(0, 40) };
+      })
+      .filter((m) => m.width > m.ceiling);
+  });
+  expect(tooWide, 'prose blocks past the 70-character ceiling').toEqual([]);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');
