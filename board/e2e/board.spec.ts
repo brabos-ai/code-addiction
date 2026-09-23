@@ -268,25 +268,30 @@ for (const route of ['/board', '/list'] as const) {
 }
 }
 
-test('L4.5 an empty column collapses, and the row still does not scroll the page', async ({ page }) => {
+test('L4.5 columns share the row evenly, and an empty one shows only its header', async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'the phone layout shows one column at a time');
-  // The fixture deliberately fills every status, so the unfiltered board has no
-  // empty column to measure. This filter narrows it to one open ticket.
+  // The fixture fills every status, so this filter is what empties three of
+  // them — the state a real board sits in most of the time.
   await page.goto('/board?q=sweep');
   await expect(page.getByRole('link', { name: /Sweep the artefacts/ })).toBeVisible();
 
-  const width = (status: string) =>
-    page.locator(`#col-${status}`).evaluate((el) => el.getBoundingClientRect().width);
-  const [open, doing, done, dropped] = await Promise.all(
-    ['open', 'doing', 'done', 'dropped'].map(width),
+  const columns = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('section[id^="col-"]')).map((el) => ({
+      id: el.id,
+      width: Math.round(el.getBoundingClientRect().width),
+      items: el.querySelectorAll('li').length,
+    })),
   );
-  for (const [name, empty] of [['doing', doing], ['done', done], ['dropped', dropped]] as const) {
-    expect(empty, `the empty ${name} column is narrower than the populated one`).toBeLessThan(open!);
+  // Every status keeps its own territory. Collapsing the empty ones crowded the
+  // populated column to one side and left the rest of the board a void.
+  const widths = [...new Set(columns.map((c) => c.width))];
+  expect(widths, `columns differ in width: ${JSON.stringify(columns)}`).toHaveLength(1);
+  // An empty column renders its header and nothing else — no placeholder row.
+  for (const column of columns.filter((c) => c.id !== 'col-open')) {
+    expect(column.items, `${column.id} holds no placeholder`).toBe(0);
   }
-  // Fixed-width columns can exceed the viewport. That overflow must live on the
-  // columns row, never on the document.
   await noSidewaysScroll(page);
-  await shot(page, 'board-collapsed');
+  await shot(page, 'board-filtered');
 });
 
 test('L4 the sheet shows how to close it without adding a second button', async ({ page }) => {
