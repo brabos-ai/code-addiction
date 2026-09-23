@@ -7,7 +7,7 @@ import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/st
 import { TicketMeta } from '@/components/ticket-card';
 import { StatusPill } from '@/components/ui';
 import { useBoard } from '@/hooks/use-board';
-import { formatRank, relativeTime } from '@/lib/format';
+import { absoluteTime, formatRank, relativeTime } from '@/lib/format';
 import { hasFilters } from '@/lib/search';
 import { facets, filterTickets, rankOf } from '@/lib/tickets';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,7 @@ function List({ data }: { data: BoardData }) {
         <section aria-label="Tickets by priority" className="overflow-hidden rounded-2xl bg-surface shadow-card ring-1 ring-line">
           <div
             aria-hidden
-            className="hidden grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] gap-4 border-b border-line px-4 py-2.5 text-xs font-medium text-faint md:grid lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_10rem_6.5rem]"
+            className="hidden grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] gap-4 border-b border-line px-4 py-2.5 text-xs font-medium text-faint md:grid lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_14rem_6.5rem]"
           >
             <span>Priority</span>
             <span>Ticket</span>
@@ -69,27 +69,28 @@ function Row({ ticket, rank, total }: { ticket: Ticket; rank: number; total: num
         search={(prev) => prev}
         className={cn(
           'group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-3 gap-y-2 px-4 py-3.5',
-          'md:grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] md:items-center md:gap-4 lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_10rem_6.5rem]',
+          'md:grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] md:items-center md:gap-4 lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_14rem_6.5rem]',
           'transition-colors duration-200 ease-spring hover:bg-surface-hover focus-visible:bg-surface-hover',
         )}
       >
         <span
           aria-label={`Priority ${rank}`}
-          className="tabular row-span-2 text-display leading-none font-semibold tracking-tight text-ink/25 transition-colors group-hover:text-accent md:row-span-1"
+          className="tabular row-span-2 text-display leading-none font-semibold tracking-tight text-rank md:row-span-1"
         >
           {formatRank(rank, total)}
         </span>
         <div className="min-w-0">
-          <p className="line-clamp-2 text-body font-medium text-ink [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
+          {/* Hover lands on the title here too, matching the board card. */}
+          <p className="line-clamp-2 text-body font-medium text-ink transition-colors duration-200 group-hover:text-accent [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
           {ticket.tldr && <p className="mt-0.5 line-clamp-2 text-meta text-muted md:line-clamp-1">{ticket.tldr}</p>}
           <TicketMeta ticket={ticket} showTheme={false} showId={false} className="mt-2 md:hidden" />
         </div>
         <div className="col-start-2 flex items-center gap-2 md:col-start-auto">
           <StatusPill status={ticket.status} />
-          <span translate="no" className="tabular text-xs text-faint md:hidden">{ticket.id}</span>
+          <span translate="no" className="tabular text-micro tracking-[0.04em] text-muted md:hidden">{ticket.id}</span>
         </div>
         <span className="hidden min-w-0 truncate text-meta text-muted lg:block">{ticket.theme || "—"}</span>
-        <span className="hidden text-right text-xs text-faint md:block" title={ticket.updated_at}>
+        <span className="hidden text-right text-xs text-faint md:block" title={absoluteTime(ticket.updated_at)}>
           {relativeTime(ticket.updated_at)}
         </span>
       </Link>

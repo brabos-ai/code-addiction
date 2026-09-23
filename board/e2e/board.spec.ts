@@ -236,10 +236,14 @@ test('L4 the theme chip and the label chip read as two treatments in dark', asyn
   expect(lift, 'the theme chip is filled enough to see').toBeGreaterThan(0.012);
 });
 
+// The id and the rank render on the board card and on the list row alike, and a
+// floor met on one surface and missed on the other is the same datum told two
+// different ways.
 for (const scheme of ['light', 'dark'] as const) {
-  test(`L4.1/L4.2 the card's id and rank clear their contrast floors in ${scheme}`, async ({ page }) => {
+for (const route of ['/board', '/list'] as const) {
+  test(`L4.1/L4.2 ${route} id and rank clear their contrast floors in ${scheme}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
-    await page.goto('/board');
+    await page.goto(route);
     const card = page.getByRole('link', { name: /A doctor for document schemas/ });
     await expect(card).toBeVisible();
     const surface = await token(page, '--surface');
@@ -259,8 +263,9 @@ for (const scheme of ['light', 'dark'] as const) {
       Array.from(el.querySelectorAll('*')).map((n) => parseFloat(getComputedStyle(n).fontSize)),
     );
     const rankSize = await rank.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    expect(rankSize, 'the rank is still the largest type on the card').toBe(Math.max(...sizes));
+    expect(rankSize, 'the rank is still the largest type here').toBe(Math.max(...sizes));
   });
+}
 }
 
 test('L4.5 an empty column collapses, and the row still does not scroll the page', async ({ page }) => {
