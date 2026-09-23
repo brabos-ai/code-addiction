@@ -324,6 +324,40 @@ test('L4.6 green means done, and the accent is actually on the page', async ({ p
   expect(luminance(active)).toBeCloseTo(luminance(accent), 4);
 });
 
+// --surface-3 is a NEW plane and it is lighter than --surface, so every text
+// token calibrated against the card has to be re-checked on it. The sheet is
+// the only place it renders.
+for (const scheme of ['light', 'dark'] as const) {
+  test(`L4 text inside the sheet clears 4.5:1 on its own plane in ${scheme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/board/0001B');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const plane = await token(page, '--surface-3');
+    for (const text of [dialog.getByText('0001B'), dialog.getByText(/^Priority \d+ of \d+$/)]) {
+      const colour = await composited(text, plane, 'color');
+      expect(contrast(colour, plane), await text.innerText()).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  test(`L4 every status pill clears 4.5:1 in ${scheme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/list');
+    await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+    // Scoped to the table: the filter bar's status toggles carry data-status
+    // too, and they are plain buttons that clear any floor trivially.
+    const table = page.locator('section[aria-label="Tickets by priority"]');
+    for (const status of ['open', 'doing', 'done', 'dropped']) {
+      const pill = table.locator(`span[data-status="${status}"]`).first();
+      await expect(pill, `a ${status} pill is on the page`).toBeVisible();
+      const surface = await token(page, '--surface');
+      const bg = await composited(pill, surface);
+      const fg = await composited(pill, bg, 'color');
+      expect(contrast(fg, bg), `the ${status} pill`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+}
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

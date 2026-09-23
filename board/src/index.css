@@ -39,7 +39,8 @@
      apart by hue, not by a shade of the same grey. */
   --s-open: #5b6472;
   --s-open-soft: #eceef1;
-  --s-doing: #a86400;
+  /* Darkened from #a86400, which sat at 4.14:1 on its own soft chip. */
+  --s-doing: #9a5b00;
   --s-doing-soft: #fbf0dc;
   --s-done: #237a52;
   --s-done-soft: #dff2e8;

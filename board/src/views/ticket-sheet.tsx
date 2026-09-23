@@ -69,7 +69,9 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
               hint and not a control: the header holds one button, the close. */}
           <span
             aria-hidden
-            className="absolute top-5 right-15 hidden rounded border border-line-strong px-1.5 py-0.5 text-micro text-faint sm:block sm:top-6 sm:right-16"
+            // Filled rather than outlined: a --line-strong rule on --surface-3
+            // measures 1.37:1, well under the 3:1 a component outline needs.
+            className="absolute top-5 right-15 hidden rounded bg-surface-sunken px-1.5 py-0.5 text-micro text-muted sm:block sm:top-6 sm:right-16"
           >
             Esc
           </span>
@@ -90,8 +92,12 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
     <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-8 sm:px-8 sm:pt-7">
       <div className="flex flex-wrap items-center gap-2 pr-12">
         <StatusPill status={ticket.status} />
-        <span translate="no" className="tabular text-xs text-faint">{ticket.id}</span>
-        {rank > 0 && <span className="tabular text-xs text-faint">Priority {rank} of {total}</span>}
+        {/* --muted, not --faint. This text sits on --surface-3, which is lighter
+            than the card --faint was calibrated against: it read 3.86:1 there.
+            The id is also set like the card's and the list's, being the same
+            datum on a third surface. */}
+        <span translate="no" className="tabular text-xs tracking-[0.04em] text-muted">{ticket.id}</span>
+        {rank > 0 && <span className="tabular text-xs text-muted">Priority {rank} of {total}</span>}
       </div>
 
       <Dialog.Title className="mt-3 text-display leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
