@@ -77,7 +77,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
           <select
             {...form.register('theme')}
             className={cn(
-              'h-9 w-full min-w-0 appearance-none rounded-full bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-[13px]',
+              'h-9 w-full min-w-0 appearance-none rounded-full bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-meta',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong',
               values.theme ? 'text-accent ring-accent/40' : 'text-muted',
             )}
@@ -128,7 +128,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
               <span className="sr-only">Clear search</span>
             </button>
           ) : (
-            <kbd className="pointer-events-none absolute right-3 hidden rounded border border-line px-1.5 text-[11px] leading-4 text-faint md:block">/</kbd>
+            <kbd className="pointer-events-none absolute right-3 hidden rounded border border-line px-1.5 text-micro leading-4 text-faint md:block">/</kbd>
           )}
         </label>
 
@@ -144,7 +144,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
           <SlidersHorizontal {...ICON} />
           <span className="sr-only">Filters</span>
           {refinements > 0 && (
-            <span className="tabular absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink">
+            <span className="tabular absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-accent text-micro font-semibold text-accent-ink">
               {refinements}
             </span>
           )}
@@ -191,7 +191,7 @@ function ToggleGroup({
             data-status={status ? o : undefined}
             onClick={() => onToggle(o)}
             className={cn(
-              'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium md:h-8',
+              'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-meta font-medium md:h-8',
               'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]',
               on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
             )}

@@ -31,7 +31,7 @@ export function AppShell({ view, data, toolbar, children }: {
       <header className="flex h-16 items-center gap-3">
         <Link to="/board" search={{}} className="flex items-center gap-2.5 rounded-lg pr-1 text-ink" aria-label="Board — home">
           <Mark />
-          <span className="text-[17px] font-semibold tracking-tight">Board</span>
+          <span className="text-section font-semibold tracking-tight">Board</span>
         </Link>
 
         <nav aria-label="Views" className="ml-auto sm:ml-4">
@@ -57,7 +57,7 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
       search={(prev) => prev}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium',
+        'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-meta font-medium',
         'transition-[background-color,color,box-shadow] duration-200 ease-spring [&_svg]:size-4',
         active ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
       )}

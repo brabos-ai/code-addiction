@@ -83,11 +83,11 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
         {rank > 0 && <span className="tabular text-xs text-faint">Priority {rank} of {total}</span>}
       </div>
 
-      <Dialog.Title className="mt-3 text-[22px] leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
+      <Dialog.Title className="mt-3 text-display leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
         {ticket.title}
       </Dialog.Title>
       {ticket.tldr ? (
-        <Dialog.Description className="mt-2 text-[15px] leading-relaxed text-muted">{ticket.tldr}</Dialog.Description>
+        <Dialog.Description className="mt-2 text-body leading-relaxed text-muted">{ticket.tldr}</Dialog.Description>
       ) : (
         <Dialog.Description className="sr-only">Ticket {ticket.id}</Dialog.Description>
       )}
@@ -95,7 +95,7 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
       {ticket.done_when && (
         <div className="mt-6 rounded-2xl bg-accent-soft/70 p-4">
           <h3 className="text-xs font-semibold text-accent">Done when</h3>
-          <Markdown className="mt-1.5 text-[15px]">{ticket.done_when}</Markdown>
+          <Markdown className="mt-1.5 text-body">{ticket.done_when}</Markdown>
         </div>
       )}
 
@@ -117,7 +117,7 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
           <ul className="flex flex-wrap gap-1.5">
             {ticket.paths.map((p) => (
               <li key={p} className="min-w-0 max-w-full">
-                <code translate="no" className="block truncate rounded-lg bg-ink/[0.05] px-2 py-1 text-[13px] text-ink">{p}</code>
+                <code translate="no" className="block truncate rounded-lg bg-ink/[0.05] px-2 py-1 text-meta text-ink">{p}</code>
               </li>
             ))}
           </ul>

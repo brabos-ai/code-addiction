@@ -141,7 +141,7 @@ function Column({ group, ranks, total, hiddenOnPhone }: {
           </li>
         ))}
         {group.tickets.length === 0 && (
-          <li className="rounded-xl border border-dashed border-line px-3 py-6 text-center text-[13px] text-faint">
+          <li className="rounded-xl border border-dashed border-line px-3 py-6 text-center text-meta text-faint">
             Nothing {group.status.name}
           </li>
         )}

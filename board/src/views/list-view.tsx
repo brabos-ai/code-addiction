@@ -75,20 +75,20 @@ function Row({ ticket, rank, total }: { ticket: Ticket; rank: number; total: num
       >
         <span
           aria-label={`Priority ${rank}`}
-          className="tabular row-span-2 text-[22px] leading-none font-semibold tracking-tight text-ink/25 transition-colors group-hover:text-accent md:row-span-1"
+          className="tabular row-span-2 text-display leading-none font-semibold tracking-tight text-ink/25 transition-colors group-hover:text-accent md:row-span-1"
         >
           {formatRank(rank, total)}
         </span>
         <div className="min-w-0">
-          <p className="line-clamp-2 text-[15px] font-medium text-ink [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
-          {ticket.tldr && <p className="mt-0.5 line-clamp-2 text-[13px] text-muted md:line-clamp-1">{ticket.tldr}</p>}
+          <p className="line-clamp-2 text-body font-medium text-ink [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
+          {ticket.tldr && <p className="mt-0.5 line-clamp-2 text-meta text-muted md:line-clamp-1">{ticket.tldr}</p>}
           <TicketMeta ticket={ticket} showTheme={false} showId={false} className="mt-2 md:hidden" />
         </div>
         <div className="col-start-2 flex items-center gap-2 md:col-start-auto">
           <StatusPill status={ticket.status} />
           <span translate="no" className="tabular text-xs text-faint md:hidden">{ticket.id}</span>
         </div>
-        <span className="hidden min-w-0 truncate text-[13px] text-muted lg:block">{ticket.theme || "—"}</span>
+        <span className="hidden min-w-0 truncate text-meta text-muted lg:block">{ticket.theme || "—"}</span>
         <span className="hidden text-right text-xs text-faint md:block" title={ticket.updated_at}>
           {relativeTime(ticket.updated_at)}
         </span>

@@ -2,13 +2,26 @@
 // board/src/index.css and the components as text: a token that exists in one
 // colour scheme and not the other, or a raw px/alpha left in a component, is a
 // hole in the system that renders correctly and cannot be themed.
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 // vitest runs with board/ as its root, so cwd is the package directory.
 const ROOT = process.cwd();
 const CSS = readFileSync(join(ROOT, 'src/index.css'), 'utf8');
+
+/** Every .tsx under src/, as [package-relative path, contents]. */
+function components(): [string, string][] {
+  const out: [string, string][] = [];
+  (function walk(dir: string) {
+    for (const entry of readdirSync(dir)) {
+      const path = join(dir, entry);
+      if (statSync(path).isDirectory()) walk(path);
+      else if (entry.endsWith('.tsx')) out.push([relative(ROOT, path).replaceAll('\\', '/'), readFileSync(path, 'utf8')]);
+    }
+  })(join(ROOT, 'src'));
+  return out;
+}
 
 /** The token block for a scheme, as a name → value map. */
 function tokens(scheme: 'light' | 'dark'): Map<string, string> {
@@ -38,6 +51,23 @@ function resolve(map: Map<string, string>, name: string): string | undefined {
 
 const LIGHT = tokens('light');
 const DARK = tokens('dark');
+
+describe('L2 — no arbitrary type size survives in the components', () => {
+  it('carries no text-[Npx] literal', () => {
+    const found = components().flatMap(([path, src]) =>
+      [...src.matchAll(/text-\[\d+px\]/g)].map((m) => `${path}: ${m[0]}`),
+    );
+    expect(found).toEqual([]);
+  });
+
+  it('declares the five-step scale in @theme inline', () => {
+    const theme = CSS.slice(CSS.indexOf('@theme inline'));
+    const missing = ['--text-micro', '--text-meta', '--text-body', '--text-section', '--text-display'].filter(
+      (t) => !theme.includes(`${t}:`),
+    );
+    expect(missing).toEqual([]);
+  });
+});
 
 describe('L2 — the two colour schemes declare the same tokens', () => {
   it('declares every token in both schemes', () => {
