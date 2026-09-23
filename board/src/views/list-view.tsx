@@ -70,7 +70,7 @@ function Row({ ticket, rank, total }: { ticket: Ticket; rank: number; total: num
         className={cn(
           'group grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-3 gap-y-2 px-4 py-3.5',
           'md:grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] md:items-center md:gap-4 lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_10rem_6.5rem]',
-          'transition-colors duration-200 ease-spring hover:bg-ink/[0.025] focus-visible:bg-ink/[0.03]',
+          'transition-colors duration-200 ease-spring hover:bg-surface-hover focus-visible:bg-surface-hover',
         )}
       >
         <span

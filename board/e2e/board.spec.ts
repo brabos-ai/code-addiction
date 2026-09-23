@@ -1,6 +1,6 @@
 // The board in a real browser, at 360, 768 and 1080 px (plan F4, L3).
 // Every test runs once per viewport project in playwright.config.ts.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const errors = new WeakMap<Page, string[]>();
 
@@ -126,16 +126,44 @@ async function token(page: Page, name: string) {
   return page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
 }
 
-/** Relative luminance per WCAG, from a #rrggbb or rgb() string. */
+/** A colour as [r, g, b], from #rrggbb or any rgb()/rgba() string. */
+function channels(colour: string): [number, number, number] {
+  if (colour.startsWith('#')) {
+    return [1, 3, 5].map((i) => parseInt(colour.slice(i, i + 2), 16)) as [number, number, number];
+  }
+  const n = [...colour.matchAll(/[\d.]+/g)].map((m) => Number(m[0]));
+  return [n[0] ?? 0, n[1] ?? 0, n[2] ?? 0];
+}
+
+/** Relative luminance per WCAG, from an OPAQUE colour. */
 function luminance(colour: string): number {
-  const parts = colour.startsWith('#')
-    ? [1, 3, 5].map((i) => parseInt(colour.slice(i, i + 2), 16))
-    : [...colour.matchAll(/\d+/g)].slice(0, 3).map((m) => Number(m[0]));
-  const [r, g, b] = parts.map((v) => {
+  const [r, g, b] = channels(colour).map((v) => {
     const s = v / 255;
     return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   }) as [number, number, number];
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * What the eye actually receives from a translucent fill, as opaque rgb().
+ *
+ * getComputedStyle reports the DECLARED colour, and Chromium reports a Tailwind
+ * alpha utility as oklab(L a b / α) — so parsing it as rgb reads the lightness
+ * channel as red and silently drops the sign. Painting it over its backdrop on
+ * a 1×1 canvas hands the blend to the browser's own colour engine instead.
+ */
+async function composited(target: Locator, backdrop: string): Promise<string> {
+  return target.evaluate((el, back) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = back;
+    ctx.fillRect(0, 0, 1, 1);
+    ctx.fillStyle = getComputedStyle(el).backgroundColor;
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    return `rgb(${r}, ${g}, ${b})`;
+  }, backdrop);
 }
 
 test('L4.3 dark mode separates page, card and sheet into three planes', async ({ page }) => {
@@ -163,6 +191,24 @@ test('L4.3 the sheet sits on its own plane, not the card plane', async ({ page }
   // A floating panel drawn at the card's own lightness is not a layer.
   expect(luminance(panel)).toBeCloseTo(luminance(sheet), 4);
   expect(luminance(panel)).not.toBeCloseTo(luminance(surface), 4);
+});
+
+test('L4 the theme chip and the label chip read as two treatments in dark', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/board');
+  const card = page.getByRole('link', { name: /A doctor for document schemas/ });
+  await expect(card).toBeVisible();
+  const surface = await token(page, '--surface');
+  // The theme's text sits in an inner truncating span; the Chip is its parent.
+  const themeChip = card.getByText('Delivered-work relationships').locator('xpath=..');
+  const labelChip = card.getByText('product', { exact: true });
+
+  // Filled vs outlined is the theme/label distinction. In dark both fell below
+  // perception, so the markup was right and nothing could be seen.
+  const label = await labelChip.evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(label, 'the label chip is outlined, so it has no fill').toMatch(/rgba?\(0, 0, 0, 0\)|transparent/);
+  const lift = luminance(await composited(themeChip, surface)) - luminance(surface);
+  expect(lift, 'the theme chip is filled enough to see').toBeGreaterThan(0.012);
 });
 
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {

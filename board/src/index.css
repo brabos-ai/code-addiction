@@ -75,9 +75,12 @@
     --focus: #8398ff;
     --rank: #656b75;
 
-    --surface-hover: rgb(236 237 239 / 0.055);
+    /* Sunken runs heavier here than in light: a 5% light film over a #1a1e25
+       card lifts it by 0.008, below what the eye separates, which is why the
+       filled theme chip and the outlined label chip looked alike in dark. */
+    --surface-hover: rgb(236 237 239 / 0.05);
     --surface-active: rgb(236 237 239 / 0.09);
-    --surface-sunken: rgb(236 237 239 / 0.055);
+    --surface-sunken: rgb(236 237 239 / 0.08);
 
     --s-open: #a8b0bd;
     --s-open-soft: #22262d;

@@ -63,7 +63,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
             </div>
           )}
           <Dialog.Close
-            className="absolute top-3 right-3 grid size-10 place-items-center rounded-full text-muted transition-colors duration-200 hover:bg-ink/[0.06] hover:text-ink sm:top-4 sm:right-4"
+            className="absolute top-3 right-3 grid size-10 place-items-center rounded-full text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink sm:top-4 sm:right-4"
           >
             <X {...ICON} className="size-5" />
             <span className="sr-only">Close</span>
@@ -117,7 +117,7 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
           <ul className="flex flex-wrap gap-1.5">
             {ticket.paths.map((p) => (
               <li key={p} className="min-w-0 max-w-full">
-                <code translate="no" className="block truncate rounded-lg bg-ink/[0.05] px-2 py-1 text-meta text-ink">{p}</code>
+                <code translate="no" className="block truncate rounded-lg bg-surface-sunken px-2 py-1 text-meta text-ink">{p}</code>
               </li>
             ))}
           </ul>

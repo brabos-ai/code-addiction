@@ -60,6 +60,13 @@ describe('L2 — no arbitrary type size survives in the components', () => {
     expect(found).toEqual([]);
   });
 
+  it('carries no ink/[0.0XX] arbitrary alpha', () => {
+    const found = components().flatMap(([path, src]) =>
+      [...src.matchAll(/ink\/\[0\.\d+\]/g)].map((m) => `${path}: ${m[0]}`),
+    );
+    expect(found).toEqual([]);
+  });
+
   it('declares the five-step scale in @theme inline', () => {
     const theme = CSS.slice(CSS.indexOf('@theme inline'));
     const missing = ['--text-micro', '--text-meta', '--text-body', '--text-section', '--text-display'].filter(

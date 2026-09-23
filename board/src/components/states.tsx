@@ -32,7 +32,7 @@ export function ErrorPanel({ error }: { error: BoardError }) {
           <h2 className="text-base font-semibold">{copy.title}</h2>
           <p className="mt-1 text-sm text-muted">{copy.body}</p>
           {error.detail && (
-            <pre className="scrollbar-thin mt-3 max-h-40 overflow-auto rounded-lg bg-ink/[0.05] p-3 text-xs whitespace-pre-wrap text-muted">
+            <pre className="scrollbar-thin mt-3 max-h-40 overflow-auto rounded-lg bg-surface-sunken p-3 text-xs whitespace-pre-wrap text-muted">
               {error.detail}
             </pre>
           )}
@@ -97,8 +97,8 @@ export function BoardSkeleton() {
     <div aria-hidden className="grid animate-[pulse-soft_1.6s_ease-in-out_infinite] grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
       {[0, 1, 2, 3].map((c) => (
         <div key={c} className={c > 0 ? 'hidden md:block' : ''}>
-          <div className="mb-3 h-5 w-24 rounded bg-ink/[0.07]" />
-          {[0, 1, 2].map((r) => <div key={r} className="mb-2 h-28 rounded-xl bg-ink/[0.05]" />)}
+          <div className="mb-3 h-5 w-24 rounded bg-surface-active" />
+          {[0, 1, 2].map((r) => <div key={r} className="mb-2 h-28 rounded-xl bg-surface-sunken" />)}
         </div>
       ))}
     </div>

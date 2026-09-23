@@ -35,7 +35,7 @@ export function AppShell({ view, data, toolbar, children }: {
         </Link>
 
         <nav aria-label="Views" className="ml-auto sm:ml-4">
-          <div className="flex items-center rounded-full bg-ink/[0.05] p-1">
+          <div className="flex items-center rounded-full bg-surface-sunken p-1">
             <ViewLink to="/board" active={view === 'board'} icon={<Columns3 {...ICON} />} label="Board" />
             <ViewLink to="/list" active={view === 'list'} icon={<Rows3 {...ICON} />} label="List" />
           </div>

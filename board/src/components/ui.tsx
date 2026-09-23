@@ -11,7 +11,7 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary: 'bg-accent text-accent-ink hover:brightness-110',
-        quiet: 'text-muted hover:bg-ink/[0.06] hover:text-ink',
+        quiet: 'text-muted hover:bg-surface-hover hover:text-ink',
         outline: 'bg-surface text-ink shadow-card ring-1 ring-line hover:ring-line-strong',
       },
       size: {
@@ -37,9 +37,11 @@ export function Chip({ className, tone = 'plain', ...props }: ComponentProps<'sp
     <span
       className={cn(
         'inline-flex max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-full px-2 py-0.5 text-xs font-medium leading-5 whitespace-nowrap',
-        tone === 'plain' && 'bg-ink/[0.05] text-muted',
+        tone === 'plain' && 'bg-surface-sunken text-muted',
         tone === 'accent' && 'bg-accent-soft text-accent',
-        tone === 'outline' && 'text-muted ring-1 ring-line ring-inset',
+        // line-strong, not line: against a card in dark the softer rule falls to
+        // ~1.4:1 and the outlined chip stops reading as outlined at all.
+        tone === 'outline' && 'text-muted ring-1 ring-line-strong ring-inset',
         className,
       )}
       {...props}

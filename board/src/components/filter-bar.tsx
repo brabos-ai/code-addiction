@@ -122,7 +122,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             <button
               type="button"
               onClick={() => form.setValue('q', '')}
-              className="absolute right-2 grid size-7 place-items-center rounded-full text-faint hover:bg-ink/[0.06] hover:text-ink"
+              className="absolute right-2 grid size-7 place-items-center rounded-full text-faint hover:bg-surface-hover hover:text-ink"
             >
               <X {...ICON} className="size-3.5" />
               <span className="sr-only">Clear search</span>
