@@ -453,6 +453,45 @@ test('L5.7 the four statuses are told apart with colour removed', async ({ page 
   expect(new Set(shapes).size, `four statuses, ${new Set(shapes).size} distinct shapes`).toBe(4);
 });
 
+test('L5.8 J and K move between tickets without closing the sheet', async ({ page }) => {
+  await page.goto('/board/0001B?q=e');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('j');
+  await expect(page).toHaveURL(/\/board\/0002B/);
+  await expect(dialog, 'the sheet stays open across the move').toBeVisible();
+  await expect(page, 'the filter survives the move').toHaveURL(/q=e/);
+  await page.keyboard.press('k');
+  await expect(page).toHaveURL(/\/board\/0001B/);
+  // Esc still closes, which is the gesture this must not have taken over.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+});
+
+test('L5.9 ? opens the shortcut list and Esc closes it', async ({ page }) => {
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  await page.keyboard.press('?');
+  const help = page.getByRole('dialog', { name: /shortcut/i });
+  await expect(help).toBeVisible();
+  await expect(help).toContainText('Esc');
+  await page.keyboard.press('Escape');
+  await expect(help).toHaveCount(0);
+  // The one shortcut that already existed still works and is not swallowed.
+  await page.keyboard.press('/');
+  await expect(page.getByRole('searchbox', { name: 'Search tickets' })).toBeFocused();
+});
+
+test('L5.10 the sheet id copies itself when clicked', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/board/0001B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: /copy ticket id/i }).click();
+  await expect(dialog.getByText('Copied')).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('0001B');
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

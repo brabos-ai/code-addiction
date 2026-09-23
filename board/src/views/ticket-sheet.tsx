@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react';
+import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { CircleCheck, CircleDashed, X } from 'lucide-react';
@@ -32,6 +32,22 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
   const ticket = tickets.find((t) => t.id === ticketId);
   const rank = rankOf(tickets).get(ticketId);
 
+  // The header already says "Priority N of M"; this is what makes it navigable.
+  // Additive only: Esc still closes, Back still closes, and the filters ride
+  // along because the parent's search is passed through unchanged.
+  const step = (delta: number) => {
+    const at = tickets.findIndex((t) => t.id === ticketId);
+    const next = at < 0 ? undefined : tickets[at + delta];
+    if (next) void navigate({ to: `${from}/$ticketId`, params: { ticketId: next.id }, search });
+  };
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const delta = e.key === 'j' || e.key === 'ArrowDown' ? 1 : e.key === 'k' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!delta) return;
+    e.preventDefault();
+    step(delta);
+  };
+
   return (
     <Dialog.Root open onOpenChange={(open) => { if (!open) close(); }}>
       <Dialog.Portal>
@@ -43,6 +59,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           // Focus the panel, not the close button: a ring on a button nobody reached
           // with the keyboard reads as a selection. Tab still lands on Close first.
           onOpenAutoFocus={(e) => { e.preventDefault(); panel.current?.focus(); }}
+          onKeyDown={onKeyDown}
           className={cn(
             'fixed z-50 flex flex-col bg-surface-3 text-ink outline-none',
             // Phone: a bottom sheet the thumb can reach. Wider: a side panel.
