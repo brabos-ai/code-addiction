@@ -4,6 +4,7 @@ import { Columns3, Rows3 } from 'lucide-react';
 import type { BoardData } from '@/api/types';
 import { absoluteTime, relativeTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { Shortcuts } from './shortcuts';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
@@ -46,6 +47,7 @@ export function AppShell({ view, data, toolbar, children }: {
 
       {toolbar && <div className="pb-4">{toolbar}</div>}
       <main id="content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col gap-4 outline-none">{children}</main>
+      <Shortcuts />
     </div>
   );
 }
