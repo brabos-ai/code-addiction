@@ -12,29 +12,41 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --bg: #f2f3ef;
+  /* Three planes, page to sheet. In light the ramp tops out at white, so the
+     sheet separates by shadow rather than by lightness. */
+  --bg: #f1f2f5;
   --surface: #ffffff;
-  --surface-2: #f7f8f5;
+  --surface-2: #f6f7f9;
+  --surface-3: #ffffff;
   --ink: #15171c;
   --muted: #62676f;
-  --faint: #8c9199;
-  --line: #dfe1db;
-  --line-strong: #cdd0c8;
+  --faint: #7c828c;
+  --line: #dee0e6;
+  --line-strong: #c9cdd6;
   --accent: #2d4be0;
   --accent-ink: #ffffff;
   --accent-soft: #e6eafc;
   --focus: #2d4be0;
+  /* The priority rank: quiet, and still the card's one bold element. */
+  --rank: #868d99;
 
+  /* Interaction overlays. Named so the two schemes can tune them apart. */
+  --surface-hover: rgb(21 23 28 / 0.045);
+  --surface-active: rgb(21 23 28 / 0.08);
+  --surface-sunken: rgb(21 23 28 / 0.05);
+
+  /* open is steel, dropped is violet: the two most opposed states are told
+     apart by hue, not by a shade of the same grey. */
   --s-open: #5b6472;
   --s-open-soft: #eceef1;
   --s-doing: #a86400;
   --s-doing-soft: #fbf0dc;
   --s-done: #237a52;
   --s-done-soft: #dff2e8;
-  --s-dropped: #8c9199;
-  --s-dropped-soft: #eeefec;
-  --warn: #9a5b00;
-  --warn-soft: #fff4de;
+  --s-dropped: #625f7a;
+  --s-dropped-soft: #eeeef4;
+  --warn: var(--s-doing);
+  --warn-soft: var(--s-doing-soft);
   --danger: #b3261e;
   --danger-soft: #fdecea;
 
@@ -45,18 +57,27 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #111317;
-    --surface: #181b20;
-    --surface-2: #1d2026;
+    /* The page drops well below the card so the three planes read as three.
+       Elevation here comes from the inset highlight in --shadow-card, never
+       from black over near-black. */
+    --bg: #0c0e12;
+    --surface: #1a1e25;
+    --surface-2: #212630;
+    --surface-3: #2a2f3a;
     --ink: #ecedef;
     --muted: #a0a6b0;
-    --faint: #7b818b;
-    --line: #282c33;
-    --line-strong: #353a42;
+    --faint: #848a94;
+    --line: #30353e;
+    --line-strong: #3d4450;
     --accent: #8398ff;
     --accent-ink: #0d0f14;
     --accent-soft: #1e2440;
     --focus: #8398ff;
+    --rank: #656b75;
+
+    --surface-hover: rgb(236 237 239 / 0.055);
+    --surface-active: rgb(236 237 239 / 0.09);
+    --surface-sunken: rgb(236 237 239 / 0.055);
 
     --s-open: #a8b0bd;
     --s-open-soft: #22262d;
@@ -64,12 +85,12 @@
     --s-doing-soft: #2e2618;
     --s-done: #5fc795;
     --s-done-soft: #17291f;
-    --s-dropped: #7b818b;
-    --s-dropped-soft: #202328;
-    --warn: #f0b24a;
-    --warn-soft: #2b2416;
-    --danger: #ff8a80;
-    --danger-soft: #2d1a19;
+    --s-dropped: #918cab;
+    --s-dropped-soft: #262433;
+    --warn: var(--s-doing);
+    --warn-soft: var(--s-doing-soft);
+    --danger: #e8897f;
+    --danger-soft: #301f1d;
 
     --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3), 0 2px 10px -2px rgb(0 0 0 / 0.4);
     --shadow-lift: 0 1px 0 rgb(0 0 0 / 0.3), 0 14px 32px -12px rgb(0 0 0 / 0.7);
@@ -82,9 +103,14 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-surface-sunken: var(--surface-sunken);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
+  --color-rank: var(--rank);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);

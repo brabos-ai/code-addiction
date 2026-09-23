@@ -114,9 +114,53 @@ test('dark mode follows the system and keeps every route readable', async ({ pag
   await page.goto('/board');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(bg).toBe('rgb(17, 19, 23)');
+  expect(bg).toBe('rgb(12, 14, 18)');
   await shot(page, 'board-dark');
   await page.goto('/board/0004B');
   await expect(page.getByRole('dialog')).toBeVisible();
   await shot(page, 'ticket-dark');
+});
+
+/** A token's computed value, read off :root in whatever scheme is emulated. */
+async function token(page: Page, name: string) {
+  return page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
+}
+
+/** Relative luminance per WCAG, from a #rrggbb or rgb() string. */
+function luminance(colour: string): number {
+  const parts = colour.startsWith('#')
+    ? [1, 3, 5].map((i) => parseInt(colour.slice(i, i + 2), 16))
+    : [...colour.matchAll(/\d+/g)].slice(0, 3).map((m) => Number(m[0]));
+  const [r, g, b] = parts.map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+test('L4.3 dark mode separates page, card and sheet into three planes', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  const planes = await Promise.all(['--bg', '--surface', '--surface-3'].map((t) => token(page, t)));
+  const [bg, surface, sheet] = planes.map(luminance) as [number, number, number];
+  // Elevation must read as elevation: each plane lighter than the one below it.
+  expect(planes, 'all three planes declared').not.toContain('');
+  expect(bg).toBeLessThan(surface);
+  expect(surface).toBeLessThan(sheet);
+});
+
+test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  // "Cool" is blue >= green in the raw channels. A warm ground under cool type
+  // is what the stylesheet's own "cool neutrals" direction rules out.
+  const warm: string[] = [];
+  for (const name of ['--bg', '--surface-2', '--line', '--line-strong', '--muted', '--faint', '--ink']) {
+    const hex = await token(page, name);
+    const [, r, g, b] = /^#(\w\w)(\w\w)(\w\w)$/.exec(hex) ?? [];
+    if (r && g && b && parseInt(b, 16) < parseInt(g, 16)) warm.push(`${name}: ${hex}`);
+  }
+  expect(warm).toEqual([]);
 });
