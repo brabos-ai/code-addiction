@@ -426,6 +426,18 @@ test('L5.3 no prose in the sheet runs past 70 characters a line', async ({ page 
   expect(tooWide, 'prose blocks past the 70-character ceiling').toEqual([]);
 });
 
+test('L5.6 the filter row sits on one rhythm', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone collapses the refine controls');
+  await page.goto('/list');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  const box = (l: Locator) => l.evaluate((el) => Math.round(el.getBoundingClientRect().height));
+  const search = await box(page.getByRole('searchbox', { name: 'Search tickets' }));
+  const filter = await box(page.getByRole('button', { name: 'product', exact: true }));
+  // The search was taller than every control beside it, which is what made it
+  // the heaviest thing in a row where it is the least used.
+  expect(search, 'search matches the height of the controls beside it').toBe(filter);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

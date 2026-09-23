@@ -102,7 +102,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
   return (
     <form role="search" onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:items-start">
-        <label className="relative flex min-w-0 flex-1 items-center md:basis-full lg:basis-auto lg:max-w-sm">
+        <label className="relative flex min-w-0 flex-1 items-center md:basis-full lg:basis-auto lg:max-w-xs">
           <span className="sr-only">Search tickets</span>
           <Search {...ICON} aria-hidden className="pointer-events-none absolute left-3.5 size-4 text-faint" />
           <input
@@ -113,7 +113,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             spellCheck={false}
             placeholder="Search tickets…"
             className={cn(
-              'h-10 w-full min-w-0 rounded-full bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:text-sm',
+              'h-9 w-full min-w-0 rounded-full bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:h-8 md:text-sm',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none',
               '[&::-webkit-search-cancel-button]:hidden',
             )}
