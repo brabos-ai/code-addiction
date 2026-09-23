@@ -92,9 +92,12 @@
     --danger: #e8897f;
     --danger-soft: #301f1d;
 
-    --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3), 0 2px 10px -2px rgb(0 0 0 / 0.4);
-    --shadow-lift: 0 1px 0 rgb(0 0 0 / 0.3), 0 14px 32px -12px rgb(0 0 0 / 0.7);
-    --shadow-sheet: -24px 0 60px -24px rgb(0 0 0 / 0.8);
+    /* Elevation on a dark ground comes from light, not from shadow: black over
+       near-black darkens nothing. The top inset is the lit edge of the plane;
+       the sheet's runs down its left side, the edge that faces the board. */
+    --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.045), 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-lift: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 12px 28px -12px rgb(0 0 0 / 0.8);
+    --shadow-sheet: inset 1px 0 0 rgb(255 255 255 / 0.06), -24px 0 60px -24px rgb(0 0 0 / 0.85);
   }
 }
 

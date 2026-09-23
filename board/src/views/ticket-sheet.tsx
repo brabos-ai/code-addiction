@@ -35,7 +35,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
   return (
     <Dialog.Root open onOpenChange={(open) => { if (!open) close(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/25 animate-[fade-in_200ms_ease-out] dark:bg-black/50" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/25 backdrop-blur-[2px] animate-[fade-in_200ms_ease-out] dark:bg-black/60" />
         <Dialog.Content
           ref={panel}
           tabIndex={-1}
@@ -44,7 +44,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           // with the keyboard reads as a selection. Tab still lands on Close first.
           onOpenAutoFocus={(e) => { e.preventDefault(); panel.current?.focus(); }}
           className={cn(
-            'fixed z-50 flex flex-col bg-surface text-ink outline-none',
+            'fixed z-50 flex flex-col bg-surface-3 text-ink outline-none',
             // Phone: a bottom sheet the thumb can reach. Wider: a side panel.
             'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[22px] shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
             'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(560px,92vw)] sm:rounded-none sm:rounded-l-[22px]',

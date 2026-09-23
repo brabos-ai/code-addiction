@@ -150,6 +150,21 @@ test('L4.3 dark mode separates page, card and sheet into three planes', async ({
   expect(surface).toBeLessThan(sheet);
 });
 
+test('L4.3 the sheet sits on its own plane, not the card plane', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/board/0001B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const [panel, surface, sheet] = await Promise.all([
+    dialog.evaluate((el) => getComputedStyle(el).backgroundColor),
+    token(page, '--surface'),
+    token(page, '--surface-3'),
+  ]);
+  // A floating panel drawn at the card's own lightness is not a layer.
+  expect(luminance(panel)).toBeCloseTo(luminance(sheet), 4);
+  expect(luminance(panel)).not.toBeCloseTo(luminance(surface), 4);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');
