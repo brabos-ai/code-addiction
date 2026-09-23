@@ -111,6 +111,32 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
         <Dialog.Description className="sr-only">Ticket {ticket.id}</Dialog.Description>
       )}
 
+      {/* What the ticket IS, adjacent to its title. This was a Details section
+          after Notes, Paths and Comments, so learning a ticket's theme meant
+          scrolling past everything written about it. */}
+      <dl className="mt-5 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-y border-line py-4 text-sm">
+        <Detail term="Theme">{ticket.theme || <span className="text-faint">None</span>}</Detail>
+        <Detail term="Labels">
+          {ticket.labels.length ? (
+            <span className="flex flex-wrap gap-1.5">{ticket.labels.map((l) => <Chip key={l} tone="outline">{l}</Chip>)}</span>
+          ) : (
+            <span className="text-faint">None</span>
+          )}
+        </Detail>
+        <Detail term="Grounded">
+          <span className="inline-flex items-center gap-1.5">
+            {ticket.grounded ? (
+              <><CircleCheck {...ICON} className="size-4 text-[var(--s-done)]" />Checked against the repository</>
+            ) : (
+              <><CircleDashed {...ICON} className="size-4 text-faint" />Recorded as stated</>
+            )}
+          </span>
+        </Detail>
+        <Detail term="Work">{ticket.work_id ?? <span className="text-faint">Not picked up</span>}</Detail>
+        <Detail term="Created"><time dateTime={ticket.created_at}>{absoluteTime(ticket.created_at)}</time></Detail>
+        <Detail term="Updated"><time dateTime={ticket.updated_at}>{absoluteTime(ticket.updated_at)}</time></Detail>
+      </dl>
+
       {ticket.done_when && (
         // A rule on the accent rather than a filled accent box: the filled
         // version read as a documentation callout, and it was spending the
@@ -159,30 +185,6 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
         </Section>
       )}
 
-      <Section title="Details">
-        <dl className="grid grid-cols-[7rem_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-sm">
-          <Detail term="Theme">{ticket.theme || <span className="text-faint">None</span>}</Detail>
-          <Detail term="Labels">
-            {ticket.labels.length ? (
-              <span className="flex flex-wrap gap-1.5">{ticket.labels.map((l) => <Chip key={l} tone="outline">{l}</Chip>)}</span>
-            ) : (
-              <span className="text-faint">None</span>
-            )}
-          </Detail>
-          <Detail term="Grounded">
-            <span className="inline-flex items-center gap-1.5">
-              {ticket.grounded ? (
-                <><CircleCheck {...ICON} className="size-4 text-[var(--s-done)]" />Checked against the repository</>
-              ) : (
-                <><CircleDashed {...ICON} className="size-4 text-faint" />Recorded as stated</>
-              )}
-            </span>
-          </Detail>
-          <Detail term="Work">{ticket.work_id ?? <span className="text-faint">Not picked up</span>}</Detail>
-          <Detail term="Created"><time dateTime={ticket.created_at}>{absoluteTime(ticket.created_at)}</time></Detail>
-          <Detail term="Updated"><time dateTime={ticket.updated_at}>{absoluteTime(ticket.updated_at)}</time></Detail>
-        </dl>
-      </Section>
     </div>
   );
 }

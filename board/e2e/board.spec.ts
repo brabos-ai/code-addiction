@@ -392,6 +392,16 @@ test('L5.2 the sheet keeps status and id in view while the body scrolls', async 
   await expect(dialog.locator('[data-status]').first()).toBeInViewport();
 });
 
+test('L5.1/L5.4 the sheet shows what a ticket IS without scrolling', async ({ page }) => {
+  await page.goto('/board/0001B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  // Theme and labels lived in a Details section after every note, so learning
+  // what area a ticket belonged to meant scrolling past all of it.
+  await expect(dialog.getByText('Delivered-work relationships')).toBeInViewport();
+  await expect(dialog.getByRole('heading', { name: 'Details' })).toHaveCount(0);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');
