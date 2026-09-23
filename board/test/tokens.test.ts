@@ -98,6 +98,22 @@ describe('L2 — the two colour schemes declare the same tokens', () => {
   });
 });
 
+describe('L2 — the shell tracks the palette', () => {
+  // index.html is static: it cannot read a CSS variable, so its theme-color
+  // (the browser and PWA chrome) silently keeps whatever --bg used to be.
+  const HTML = readFileSync(join(ROOT, 'index.html'), 'utf8');
+
+  function themeColor(scheme: 'light' | 'dark'): string | undefined {
+    const tag = new RegExp(`<meta name="theme-color"[^>]*content="([^"]+)"[^>]*media="\\(prefers-color-scheme: ${scheme}\\)"`).exec(HTML);
+    return tag?.[1]?.toLowerCase();
+  }
+
+  it('matches theme-color to --bg in both schemes', () => {
+    expect(themeColor('light')).toBe(resolve(LIGHT, '--bg')?.toLowerCase());
+    expect(themeColor('dark')).toBe(resolve(DARK, '--bg')?.toLowerCase());
+  });
+});
+
 describe('L2 — tokens that must agree, and tokens that must not', () => {
   // --warn and --s-doing were equal in dark and unequal in light. One pair of
   // tokens cannot be an alias in one scheme and a distinction in the other.
