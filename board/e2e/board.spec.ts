@@ -196,31 +196,39 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-test('L4.3 dark mode separates page, card and sheet into three planes', async ({ page }) => {
+test('L4.3 dark mode separates the page from what sits on it', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/board');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
-  const planes = await Promise.all(['--bg', '--surface', '--surface-3'].map((t) => token(page, t)));
-  const [bg, surface, sheet] = planes.map(luminance) as [number, number, number];
-  // Elevation must read as elevation: each plane lighter than the one below it.
-  expect(planes, 'all three planes declared').not.toContain('');
+  const planes = await Promise.all(['--bg', '--surface'].map((t) => token(page, t)));
+  const [bg, surface] = planes.map(luminance) as [number, number];
+  expect(planes, 'both planes declared').not.toContain('');
+  // A card reads as raised without a shadow, which is what lets the sheet drop
+  // its own and still be legible as a separate surface.
   expect(bg).toBeLessThan(surface);
-  expect(surface).toBeLessThan(sheet);
 });
 
-test('L4.3 the sheet sits on its own plane, not the card plane', async ({ page }) => {
+test('L4.3 the sheet is a pane, not a slab dropped on the board', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'a phone bottom sheet keeps its radius and shadow');
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/board/0001B');
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  const [panel, surface, sheet] = await Promise.all([
-    dialog.evaluate((el) => getComputedStyle(el).backgroundColor),
-    token(page, '--surface'),
-    token(page, '--surface-3'),
-  ]);
-  // A floating panel drawn at the card's own lightness is not a layer.
-  expect(luminance(panel)).toBeCloseTo(luminance(sheet), 4);
-  expect(luminance(panel)).not.toBeCloseTo(luminance(surface), 4);
+  const style = await dialog.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { shadow: s.boxShadow, radius: s.borderTopLeftRadius, border: s.borderLeftWidth, bg: s.backgroundColor };
+  });
+  // It shared the app's lightest surface, a drop shadow, an inset highlight and
+  // a radius all at once. What separates it now is one rule.
+  //
+  // Tailwind's shadow-none paints a zero-alpha shadow rather than resolving to
+  // the keyword, so what is asserted is that nothing is painted: every colour
+  // in the value carries alpha 0.
+  const painted = (style.shadow.match(/rgba?\([^)]*\)/g) ?? []).filter((c) => !/,\s*0\s*\)$/.test(c));
+  expect(painted, 'no drop shadow above sm').toEqual([]);
+  expect(parseFloat(style.radius), 'square against the edge').toBe(0);
+  expect(parseFloat(style.border), 'separated by a rule').toBeGreaterThan(0);
+  expect(luminance(style.bg)).toBeCloseTo(luminance(await token(page, '--surface')), 4);
 });
 
 test('L4 the theme chip and the label chip read as two treatments in dark', async ({ page }) => {
@@ -335,16 +343,16 @@ test('L4.6 green means done, and the accent is actually on the page', async ({ p
   expect(luminance(active)).toBeCloseTo(luminance(accent), 4);
 });
 
-// --surface-3 is a NEW plane and it is lighter than --surface, so every text
-// token calibrated against the card has to be re-checked on it. The sheet is
-// the only place it renders.
+// Text inside the sheet is measured against the sheet's OWN rendered
+// background rather than a token, so the assertion survives the surface being
+// changed under it — which is exactly what direction A did to it.
 for (const scheme of ['light', 'dark'] as const) {
   test(`L4 text inside the sheet clears 4.5:1 on its own plane in ${scheme}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/board/0001B');
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    const plane = await token(page, '--surface-3');
+    const plane = await dialog.evaluate((el) => getComputedStyle(el).backgroundColor);
     for (const text of [dialog.getByText('0001B'), dialog.getByText(/^Priority \d+ of \d+$/)]) {
       const colour = await composited(text, plane, 'color');
       expect(contrast(colour, plane), await text.innerText()).toBeGreaterThanOrEqual(4.5);
@@ -496,6 +504,50 @@ test('L5.10 the sheet id copies itself when clicked', async ({ page, context }) 
   await dialog.getByRole('button', { name: /copy ticket id/i }).click();
   await expect(dialog.getByText('Copied')).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('0001B');
+});
+
+for (const scheme of ['light', 'dark'] as const) {
+  test(`L5 the shortcut keys clear 4.5:1 in ${scheme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/board');
+    await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+    await page.keyboard.press('?');
+    const key = page.getByRole('dialog', { name: /shortcut/i }).locator('kbd').first();
+    await expect(key).toBeVisible();
+    // The kbd is a translucent film on the sheet plane, so its backdrop is the
+    // composite, not the token. Both layers are resolved before measuring.
+    const plane = await page.getByRole('dialog', { name: /shortcut/i }).evaluate((el) => getComputedStyle(el).backgroundColor);
+    const behind = await composited(key, plane);
+    expect(contrast(await composited(key, behind, 'color'), behind)).toBeGreaterThanOrEqual(4.5);
+  });
+}
+
+test('L5 the copy acknowledgement does not follow you to the next ticket', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/board/0001B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: /copy ticket id/i }).click();
+  await expect(dialog.getByText('Copied')).toBeVisible();
+  // J within the acknowledgement's second: the panel re-renders with a new id
+  // rather than unmounting, so the check can stay lit on a ticket nobody copied.
+  await page.keyboard.press('j');
+  await expect(page).toHaveURL(/0002B/);
+  await expect(dialog.getByText('Copied'), 'the tick belongs to the id that was copied').toHaveCount(0, { timeout: 400 });
+});
+
+test('L5 ? works with a ticket already open, and Esc unstacks one layer at a time', async ({ page }) => {
+  await page.goto('/board/0001B');
+  // Radix points aria-labelledby at Dialog.Title, which wins over aria-label,
+  // so the sheet's accessible name is the ticket's own title.
+  const sheet = page.getByRole('dialog', { name: /A doctor for document schemas/ });
+  await expect(sheet).toBeVisible();
+  await page.keyboard.press('?');
+  const help = page.getByRole('dialog', { name: /shortcut/i });
+  await expect(help).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(help, 'Esc closes the top layer').toHaveCount(0);
+  await expect(sheet, 'and leaves the ticket open under it').toBeVisible();
 });
 
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {

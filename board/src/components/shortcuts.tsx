@@ -38,7 +38,7 @@ export function Shortcuts() {
         <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/25 backdrop-blur-[2px] animate-[fade-in_200ms_ease-out] dark:bg-black/60" />
         <Dialog.Content
           aria-label="Keyboard shortcuts"
-          className="fixed top-1/2 left-1/2 z-50 w-[min(26rem,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface-3 p-5 shadow-sheet outline-none sm:p-6"
+          className="fixed top-1/2 left-1/2 z-50 w-[min(26rem,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-5 shadow-lift ring-1 ring-line-strong outline-none sm:p-6"
         >
           <Dialog.Title className="text-section font-semibold tracking-tight">Keyboard shortcuts</Dialog.Title>
           <Dialog.Description className="sr-only">Every key the board responds to.</Dialog.Description>
@@ -47,7 +47,7 @@ export function Shortcuts() {
               <div key={row.does} className="flex items-baseline gap-3">
                 <dt className="flex shrink-0 gap-1">
                   {row.keys.map((k) => (
-                    <kbd key={k} className="rounded bg-surface-sunken px-1.5 py-0.5 text-micro text-muted">{k}</kbd>
+                    <kbd key={k} className="rounded bg-surface-sunken px-1.5 py-0.5 text-micro text-ink">{k}</kbd>
                   ))}
                 </dt>
                 <dd className="text-sm text-muted">{row.does}</dd>

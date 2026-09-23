@@ -12,12 +12,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Three planes, page to sheet. In light the ramp tops out at white, so the
-     sheet separates by shadow rather than by lightness. */
+  /* Two planes: the page, and the cards and panes on it. The sheet used to
+     hold a third, which read as a slab; it now shares --surface and separates
+     by a rule. */
   --bg: #f1f2f5;
   --surface: #ffffff;
   --surface-2: #f6f7f9;
-  --surface-3: #ffffff;
   --ink: #15171c;
   --muted: #62676f;
   --faint: #7c828c;
@@ -58,13 +58,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* The page drops well below the card so the three planes read as three.
-       Elevation here comes from the inset highlight in --shadow-card, never
-       from black over near-black. */
+    /* The page drops well below the card, so a card reads as raised without a
+       shadow: elevation here comes from the inset highlight in --shadow-card,
+       never from black over near-black. */
     --bg: #0c0e12;
     --surface: #1a1e25;
     --surface-2: #212630;
-    --surface-3: #2a2f3a;
     --ink: #ecedef;
     --muted: #a0a6b0;
     --faint: #848a94;
@@ -117,7 +116,6 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
   --color-surface-hover: var(--surface-hover);
   --color-surface-active: var(--surface-active);
   --color-surface-sunken: var(--surface-sunken);

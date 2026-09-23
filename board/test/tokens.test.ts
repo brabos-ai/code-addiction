@@ -84,14 +84,14 @@ describe('L2 — the two colour schemes declare the same tokens', () => {
   });
 
   it('declares the tokens this design system was rebuilt around', () => {
-    const required = ['--surface-3', '--surface-hover', '--surface-active', '--surface-sunken', '--rank'];
+    const required = ['--surface-hover', '--surface-active', '--surface-sunken', '--rank'];
     expect(required.filter((t) => !LIGHT.has(t))).toEqual([]);
     expect(required.filter((t) => !DARK.has(t))).toEqual([]);
   });
 
   it('exposes every colour token to Tailwind through @theme inline', () => {
     const theme = CSS.slice(CSS.indexOf('@theme inline'));
-    const missing = ['--surface-3', '--surface-hover', '--surface-active', '--surface-sunken', '--rank'].filter(
+    const missing = ['--surface-hover', '--surface-active', '--surface-sunken', '--rank'].filter(
       (t) => !theme.includes(`var(${t})`),
     );
     expect(missing).toEqual([]);

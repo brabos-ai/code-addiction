@@ -51,7 +51,9 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
   return (
     <Dialog.Root open onOpenChange={(open) => { if (!open) close(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/25 backdrop-blur-[2px] animate-[fade-in_200ms_ease-out] dark:bg-black/60" />
+        {/* A hint that the board is behind, not a curtain over it. The blur and the
+            heavier dim were half of what made the panel feel like a modal. */}
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/15 animate-[fade-in_200ms_ease-out] dark:bg-black/45" />
         <Dialog.Content
           ref={panel}
           tabIndex={-1}
@@ -61,15 +63,17 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           onOpenAutoFocus={(e) => { e.preventDefault(); panel.current?.focus(); }}
           onKeyDown={onKeyDown}
           className={cn(
-            'fixed z-50 flex flex-col bg-surface-3 text-ink outline-none',
-            // Phone: a bottom sheet the thumb can reach. Wider: a side panel.
-            // The radius falls on the exposed edge and only there: the top on a
-            // bottom sheet, the left on a panel anchored to the right. One 16px
-            // step for both, where the two used to disagree at 22px and 0.
+            'fixed z-50 flex flex-col bg-surface text-ink outline-none',
+            // A pane, not an object on top of one. On a phone it is still a
+            // bottom sheet the thumb can reach, so it keeps its radius and its
+            // shadow. Above sm it is flush to the edge, square, and separated
+            // by a single rule: this is a child route of the page behind it,
+            // and the old treatment — the lightest surface in the app, a drop
+            // shadow, an inset highlight and a blurred backdrop, all at once —
+            // read as a slab dropped on the board.
             'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
-            // Wider than it was: the content is long-form, and F16 caps the
-            // measure from the inside rather than letting the panel do it.
-            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(680px,94vw)] sm:rounded-none sm:rounded-l-2xl',
+            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(680px,94vw)]',
+            'sm:rounded-none sm:border-l sm:border-line-strong sm:shadow-none',
             'sm:animate-[sheet-in-right_420ms_var(--ease-spring)]',
           )}
         >
@@ -80,7 +84,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           {ticket && (
             <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-5 py-3.5 pr-28 sm:px-8 sm:py-4">
               <StatusPill status={ticket.status} />
-              <CopyId id={ticket.id} />
+              <CopyId key={ticket.id} id={ticket.id} />
               {(rank ?? 0) > 0 && <span className="tabular text-xs text-muted">Priority {rank} of {tickets.length}</span>}
             </div>
           )}
@@ -98,8 +102,8 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
               hint and not a control: the header holds one button, the close. */}
           <span
             aria-hidden
-            // Filled rather than outlined: a --line-strong rule on --surface-3
-            // measures 1.37:1, well under the 3:1 a component outline needs.
+            // Filled rather than outlined: a --line-strong rule on the sheet's
+            // surface measures under the 3:1 a component outline needs.
             className="absolute top-5 right-15 hidden rounded bg-surface-sunken px-1.5 py-0.5 text-micro text-muted sm:block sm:top-6 sm:right-16"
           >
             Esc
@@ -119,7 +123,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
 function TicketBody({ ticket }: { ticket: Ticket }) {
   return (
     <div data-sheet-body className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5 pb-8 sm:px-8">
-      <Dialog.Title className="text-display leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
+      <Dialog.Title className="text-display leading-tight font-semibold tracking-tight text-balance">
         {ticket.title}
       </Dialog.Title>
       {ticket.tldr ? (
@@ -131,7 +135,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
       {/* What the ticket IS, adjacent to its title. This was a Details section
           after Notes, Paths and Comments, so learning a ticket's theme meant
           scrolling past everything written about it. */}
-      <dl className="mt-5 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-2 border-y border-line py-4 text-sm">
+      <dl className="mt-6 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-sm">
         <Detail term="Theme">{ticket.theme || <span className="text-faint">None</span>}</Detail>
         <Detail term="Labels">
           {ticket.labels.length ? (
@@ -158,7 +162,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
         // A rule on the accent rather than a filled accent box: the filled
         // version read as a documentation callout, and it was spending the
         // palette's one accent on a block that is already the loudest thing here.
-        <div className="mt-6 rounded-r-xl border-l-2 border-accent bg-surface-2 px-4 py-3">
+        <div className="mt-7 border-l-2 border-accent pl-4">
           <h3 className="text-sm font-semibold text-accent">Done when</h3>
           <Markdown className="mt-1.5 text-body">{ticket.done_when}</Markdown>
         </div>
