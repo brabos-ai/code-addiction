@@ -302,6 +302,28 @@ test('L4 the sheet shows how to close it without adding a second button', async 
   await expect(dialog.getByRole('button')).toHaveCount(1);
 });
 
+test('L4.6 green means done, and the accent is actually on the page', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the header hides the live stamp below sm');
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+
+  // The heartbeat read var(--s-done) directly, so green meant both "this ticket
+  // is finished" and "the server is connected" in one viewport.
+  const [heartbeat, done] = await Promise.all([
+    page.locator('p[aria-live="polite"] span span').last().evaluate((el) => getComputedStyle(el).backgroundColor),
+    token(page, '--s-done'),
+  ]);
+  expect(luminance(heartbeat)).not.toBeCloseTo(luminance(done), 4);
+
+  // An accent that renders nowhere on either main view is not an accent. The
+  // active view switch is a navigational role, never a status one.
+  const [active, accent] = await Promise.all([
+    page.getByRole('link', { name: 'Board', exact: true }).evaluate((el) => getComputedStyle(el).color),
+    token(page, '--accent'),
+  ]);
+  expect(luminance(active)).toBeCloseTo(luminance(accent), 4);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

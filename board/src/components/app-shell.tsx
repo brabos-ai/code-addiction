@@ -59,7 +59,9 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
       className={cn(
         'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-meta font-medium',
         'transition-[background-color,color,box-shadow] duration-200 ease-spring [&_svg]:size-4',
-        active ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
+        // The accent's standing job: say which view you are on. Navigational,
+        // never a status — the palette reserves status hues for named statuses.
+        active ? 'bg-surface text-accent shadow-card' : 'text-muted hover:text-ink',
       )}
     >
       {icon}
@@ -72,9 +74,12 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
 function LiveStamp({ readAt }: { readAt: string }) {
   return (
     <p aria-live="polite" className="ml-auto hidden items-center gap-2 text-xs text-faint sm:flex" title={`Read ${absoluteTime(readAt)}`}>
+      {/* Neutral, not --s-done. Green is the done status; a heartbeat borrowing
+          it made one colour mean "this ticket is finished" and "the server is
+          connected" in the same viewport. The pulse carries the liveness. */}
       <span aria-hidden className="relative flex size-2">
-        <span className="absolute inset-0 animate-[pulse-soft_2.4s_ease-in-out_infinite] rounded-full bg-[var(--s-done)] opacity-60" />
-        <span className="relative size-2 rounded-full bg-[var(--s-done)]" />
+        <span className="absolute inset-0 animate-[pulse-soft_2.4s_ease-in-out_infinite] rounded-full bg-muted opacity-60" />
+        <span className="relative size-2 rounded-full bg-muted" />
       </span>
       Live, read {relativeTime(readAt)}
     </p>
