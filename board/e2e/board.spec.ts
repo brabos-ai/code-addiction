@@ -86,8 +86,13 @@ test('L3.5 the detail header holds only the close button; no Runs item renders',
   await page.goto('/board/0003B');
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole('button')).toHaveCount(1);
+  // A tripwire on the EXACT set, not a cap. What this guards is the action
+  // region for running or refining a ticket, which ticket-sheet.tsx:19-22 says
+  // is designed and deliberately not rendered — so any button arriving here
+  // still trips this and has to be argued for, as the id copy was.
+  await expect(dialog.getByRole('button')).toHaveCount(2);
   await expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: /^Copy ticket id/ })).toBeVisible();
 });
 
 test('L3.6 at 360 px the kanban shows one column and a status switcher', async ({ page }) => {
@@ -294,7 +299,7 @@ test('L4.5 columns share the row evenly, and an empty one shows only its header'
   await shot(page, 'board-filtered');
 });
 
-test('L4 the sheet shows how to close it without adding a second button', async ({ page }) => {
+test('L4 the sheet shows how to close it, and the Esc hint is not a control', async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'a phone has no Esc key, so the hint is hidden there');
   await page.goto('/board/0001B');
   const dialog = page.getByRole('dialog');
@@ -304,7 +309,8 @@ test('L4 the sheet shows how to close it without adding a second button', async 
   const hint = dialog.getByText('Esc', { exact: true });
   await expect(hint).toBeVisible();
   expect(await hint.evaluate((el) => el.tagName)).not.toBe('BUTTON');
-  await expect(dialog.getByRole('button')).toHaveCount(1);
+  // The exact set, pinned in L3.5 too: Close and the id copy, nothing else.
+  await expect(dialog.getByRole('button')).toHaveCount(2);
 });
 
 test('L4.6 green means done, and the accent is actually on the page', async ({ page }) => {

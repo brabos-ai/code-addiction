@@ -1,7 +1,7 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { CircleCheck, CircleDashed, X } from 'lucide-react';
+import { Check, CircleCheck, CircleDashed, Copy, X } from 'lucide-react';
 import type { Ticket } from '@/api/types';
 import { Markdown } from '@/components/markdown';
 import { Chip, StatusPill } from '@/components/ui';
@@ -80,7 +80,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           {ticket && (
             <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-5 py-3.5 pr-28 sm:px-8 sm:py-4">
               <StatusPill status={ticket.status} />
-              <span translate="no" className="tabular text-xs tracking-[0.04em] text-muted">{ticket.id}</span>
+              <CopyId id={ticket.id} />
               {(rank ?? 0) > 0 && <span className="tabular text-xs text-muted">Priority {rank} of {tickets.length}</span>}
             </div>
           )}
@@ -221,5 +221,33 @@ function Detail({ term, children }: { term: string; children: ReactNode }) {
       <dt className="text-muted">{term}</dt>
       <dd className="min-w-0 [overflow-wrap:anywhere]">{children}</dd>
     </>
+  );
+}
+
+/**
+ * The id exists to be pasted into a command, and it was inert text you had to
+ * select by hand.
+ *
+ * It lives here and NOT on the card: a card is one big <a>, and a button inside
+ * an anchor is invalid interaction semantics, not merely a click to intercept.
+ * The card's id stays selectable text.
+ */
+function CopyId({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={`Copy ticket id ${id}`}
+      onClick={() => {
+        void navigator.clipboard?.writeText(id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1000);
+      }}
+      className="group inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink"
+    >
+      <span translate="no" className="tabular text-xs tracking-[0.04em]">{id}</span>
+      {copied ? <Check {...ICON} className="size-3.5 text-[var(--s-done)]" /> : <Copy {...ICON} className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />}
+      <span aria-live="polite" className={copied ? 'text-micro text-muted' : 'sr-only'}>{copied ? 'Copied' : ''}</span>
+    </button>
   );
 }
