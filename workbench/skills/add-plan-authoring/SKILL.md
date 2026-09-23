@@ -108,6 +108,7 @@ path: bounded            # spike | bounded | architectural
 topic: <slug>
 doc: <design document path, or none>
 delivery: confirm        # confirm | automatic — the answer to the brainstorm's STEP 7.3 approval
+ticket: 0007B            # optional — present only when the work came from a ticket; see The Ticket
 ---
 
 ## Decided
@@ -184,6 +185,106 @@ IF A STOP'S KIND IS NOT OBVIOUS FROM ITS STATE:
 Three forms are on disk and all three RESOLVE: the current `YYYY-MM-DDTHHMMSS-PLAN--`, the legacy
 `NNNN-PLAN--`, and `-SELF-PLAN--` from when planning was split by layer. `AGENTS.md` and several
 documents cite plans by number. **Only `-PLAN--` with a timestamp is written for a NEW plan.**
+
+---
+
+## The Ticket
+
+<!--
+Modelled on the product procedure, add-backlog/references/lifecycle.md, and
+kept to the same rules. `backlog.sh`, `backlog-commit.sh` and
+`add-doc-schemas/references/backlog.md` are PRODUCT nodes, named in prose on
+purpose and deliberately NOT declared under `uses:`: targets resolve inside the
+declaring artefact's own layer (scripts/build.js), so a `- script:` entry here
+would resolve to a nonexistent internal/script/ node and fail the graph gate.
+This repository is those scripts' source and calls them by repository path, as
+add-framework--done calls delivered.sh.
+-->
+
+**A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
+does.** Each stage carries one line pointing here; **this section is the only place the rules live.**
+
+### The rules
+
+```
+IF WORK MIGHT HAVE COME FROM A TICKET:
+  ⛔ DO NOT: Search the board for a ticket whose title resembles the work
+  ⛔ DO NOT: Act on a ticket no document names — match by nothing but the declared id
+  ⛔ DO NOT: Create a ticket from any stage — only the user does, through /add-framework--backlog
+  ✅ DO: Act on the id a `ticket:` field or a `> **Ticket:**` line declares, and on nothing else
+```
+
+**A wrong inferred match closes someone else's ticket, and nothing downstream can detect it.** A missed
+link costs one manual update; a wrong one costs the board's credibility.
+
+**The id is `[0-9]{4}B`** — four digits and the letter `B`, from the shared global counter.
+
+### Where it travels
+
+| Stage | Where | Does | Writes the board? |
+|---|---|---|---|
+| `add-framework--brainstorm` | STEP 1.1 resolves it | Matches `[0-9]{4}B` anywhere in the invocation, reads that ticket, and uses its `title`, `tldr`, `notes`, `paths` and `done_when` as exploration input | no |
+| | STEP 5.2 records it | `> **Ticket:** <id>` in the design header, after `> **Type:**` — `architectural` only | no |
+| | STEP 7.3 records it | `ticket: <id>` in the intent file — `bounded` and `architectural`. A spike names it in its report and writes nothing | no |
+| `add-framework--plan` | STEP 1.2 reads it; STEP 5 records it | Reads `ticket:` from the intent file with `delivery:`, then writes `> **Ticket:**` in the plan header and the ticket's `done_when` as `**Ticket done when:**` under the objective | no |
+| `add-framework--build` | STEP 5.1, right after the ledger is opened | **The `doing` write** — below | **yes** |
+| `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | **The `done` write** — below | **yes** |
+
+**After the plan, the plan header is the only carrier.** Build and done read `> **Ticket:**` from the plan
+and never from the intent file. A direct build has no plan, so it carries no ticket and touches no board.
+
+### Reading one ticket
+
+`backlog.sh` has no mode that returns one ticket by id. Read the whole board and keep the one line — the
+format writes `id` first on every line, so the line is recoverable from its raw text:
+
+```bash
+bash framwork/.codeadd/scripts/backlog.sh list --all | grep '"id":"<id>"'
+```
+
+No output line means the id is not on the board: report it and continue with no ticket.
+
+### The two writes — read first, skip when already there
+
+**Both check the ticket's current state first and write nothing when it already holds the target.** That
+makes a resumed close-out or a re-run build safe by construction, with no guard of its own.
+
+| Write | Skipped when the ticket already reads | Otherwise, one call |
+|---|---|---|
+| `doing` (build) | `status: doing` **and** `work_id` = this plan's basename | `printf '%s' '{"status":"doing","work_id":"<plan basename>"}' \| bash framwork/.codeadd/scripts/backlog-commit.sh update <id>` |
+| `done` (done) | `status: done` | `printf '%s' '{"status":"done"}' \| bash framwork/.codeadd/scripts/backlog-commit.sh update <id>` |
+
+**`work_id` is the plan basename** — the internal work's identity in the ledger, the delivery index and
+`docs/deliveries/`. A ticket already `doing` under a **different** `work_id` is written over, exactly as the
+product procedure does, and the stage reports the `work_id` it replaced.
+
+**`doing` and `work_id` travel in ONE write**, so the two can never disagree about whether the work started.
+
+The script picks its own route: on `main` it commits directly, on a feature branch it writes through a
+locked worktree, so the ticket reaches `main` without touching the branch being built.
+
+### Degradations — none of them is a stop
+
+**The board is a side-record.** A build that fails because a ticket could not be moved has inverted the
+relationship between the work and the note about the work.
+
+| State | Do |
+|---|---|
+| No `ticket:` / no `> **Ticket:**` | Nothing. Most work never came from a ticket |
+| `BACKLOG_PRESENT=no` | Nothing |
+| The id is not on the board | Report it, continue with no ticket |
+| `REFUSED=unknown-status` — the user renamed `doing` or `done` | Report which status, continue. Never pick another status by its `order` |
+| `DEGRADED=<reason>` | Report what did not happen and the local `SHA`, continue. Never push or rebase by hand |
+
+```
+IF A TICKET READ OR WRITE FAILS:
+  ⛔ DO NOT: Stop the stage, fail the build, or refuse the merge
+  ✅ DO: Put one line in the stage's final report saying what did not happen, and continue
+```
+
+**Every outcome reaches the user through the stage's final report** — the write's `SHA`, or what did not
+happen. A ticket that silently stays `open` after its work shipped is the failure this section exists to
+prevent.
 
 ---
 

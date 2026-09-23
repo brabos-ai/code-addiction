@@ -292,6 +292,11 @@ that is the fourth hard stop and `add-build-ledger` owns it. Nothing else here s
 Planned mode only. Path, format, identity line and the resume rule are owned by `add-build-ledger`.
 Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 
+**Then, before the first F-block, the ticket.** When the plan header carries `> **Ticket:**`, make the
+`doing` write. `add-plan-authoring` owns when it is skipped, how it is made and every degradation, under
+**The Ticket** — load it rather than acting from memory. Not before this point:
+a ticket marked `doing` for a build that stopped at STEP 2 is a claim the board cannot take back.
+
 ### 5.2 One F-Block at a Time
 
 The cycle — record `BASE`, implement, show, validate, commit, record `HEAD` — is owned by
@@ -641,6 +646,8 @@ Then, after the seven blocks and before the metadata, report always:
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
+- **The ticket, when the plan carried one** — the id, and the `doing` write's `SHA`, that it was already
+  there, or what did not happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block.
 

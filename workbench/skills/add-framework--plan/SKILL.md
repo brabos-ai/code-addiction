@@ -178,6 +178,10 @@ off nothing open that one more turn would have closed; `## Open` is what it coul
 skill's stops wait. `add-plan-authoring` owns the field, the stopping rule, and the rule that an absent
 field means `confirm` — read **The Delivery Mode** there.
 
+**Read `ticket:` from the same file, when present**, then read that ticket. Its `done_when` goes into the
+plan at STEP 5, and this skill writes nothing to the board — **The Ticket** in `add-plan-authoring` owns
+how.
+
 ### 1.3 Dispatch Discovery (SILENT)
 
 IF no idea in the invocation args → skip, go to STEP 2.
@@ -437,6 +441,10 @@ IF AN AUDIT ITEM CAME BACK ❌:
 
 **Write `> **Delivery:**` in the plan header, copied from the intent file's `delivery:`** — `confirm` when
 there is none. The build reads that line and nothing else to learn the mode.
+
+**When STEP 1.2 read a `ticket:`, write `> **Ticket:**` in the plan header and the ticket's `done_when` as
+`**Ticket done when:**`**, where the template places them. Which document carries the ticket after this
+point is owned by **The Ticket** in `add-plan-authoring`.
 
 Write the draft. **DO NOT present the path or next steps** — go straight to STEP 6.
 

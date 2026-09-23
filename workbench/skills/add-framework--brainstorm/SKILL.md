@@ -14,7 +14,7 @@ description: "Use when an idea for the framework itself needs shaping before any
 - mention: add-framework--build
 - mention: add-framework--done
 - handoff: add-framework--plan
-- mention: add-plan-authoring
+- skill: add-plan-authoring
 - skill: building-commands/references/agent-dispatch.md
 - mention: building-commands
 -->
@@ -113,6 +113,9 @@ Inspect the user's invocation string:
 ### 1.1 Capture Topic
 
 IF topic or idea is present in the invocation args → extract it directly and proceed to STEP 1.2.
+
+**A ticket id in the invocation (`[0-9]{4}B`) is resolved here.** Read that ticket and use it as exploration
+input; `add-plan-authoring` owns the rules, under **The Ticket** — load it rather than acting from memory.
 
 IF no topic in args → ask: "What do you want to explore?" Wait for the user's response before continuing.
 
@@ -537,6 +540,7 @@ replace that adds `-000-` to a standalone name is the failure this warning exist
 > **Status:** final (ready for /add-framework--plan)
 > **Date:** YYYY-MM-DD
 > **Type:** [command|skill|script|workflow|product|architecture]
+> **Ticket:** [the id STEP 1.1 resolved — omit the line when there is none; see `add-plan-authoring`, The Ticket]
 
 ## Objective
 
@@ -708,6 +712,9 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 - The review verdict and the fixes applied, one line each, if any
 - The 3-5 key validated decisions — from the design document, or from the conversation that settled
   them where no document exists
+- **The ticket, when STEP 1.1 resolved one — on every path, the spike included.** A spike writes no file,
+  so this line is the only place its ticket surfaces; `add-plan-authoring`, The Ticket, says what the other
+  paths record
 
 ### 7.3 Approval and Next Step [HARD STOP]
 
@@ -758,7 +765,7 @@ handoff. Its shape, its naming, the `delivery:` field and the `## Open` conventi
 `add-plan-authoring` — read **The Intent File** there rather than restating it here.
 
 It carries the path classified at `2.2.2`, the approval option as `delivery:`, every decision this
-conversation closed, and whatever it could not. **On `architectural` it reuses the design document’s
+conversation closed, whatever it could not, and `ticket:` when STEP 1.1 resolved one. **On `architectural` it reuses the design document’s
 timestamp** so the pair sorts adjacent; on `bounded` it is the only artefact and takes its own.
 
 ```
