@@ -358,6 +358,22 @@ for (const scheme of ['light', 'dark'] as const) {
   });
 }
 
+test('L4.5 a full board still fits the desktop viewport', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop-1080', 'the narrower projects scroll by design');
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  // Fixed-width columns put the fourth status off-screen here: four of them at
+  // a readable width do not fit 1080. Columns share the row instead, down to a
+  // floor, and grow only when a sibling collapses.
+  const overflow = await page.evaluate(() => {
+    const view = document.documentElement.clientWidth;
+    return Array.from(document.querySelectorAll('section[id^="col-"]'))
+      .filter((el) => el.getBoundingClientRect().right > view + 1)
+      .map((el) => el.id);
+  });
+  expect(overflow, 'every status column is reachable without scrolling').toEqual([]);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

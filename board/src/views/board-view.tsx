@@ -129,8 +129,14 @@ function Column({ group, ranks, total, hiddenOnPhone }: {
       aria-label={group.status.name}
       className={cn(
         'w-full shrink-0 snap-start',
+        // A range, not a fixed width. Four fixed columns at a readable width do
+        // not fit 1080, which pushed the fourth status off-screen — worse than
+        // the equal shares this replaced. Populated columns share the row down
+        // to a legible floor and grow toward the cap as siblings collapse.
         // An empty column keeps its header and gives the rest of its width back.
-        group.tickets.length === 0 ? 'sm:w-[7.5rem]' : 'sm:w-[300px] lg:w-[21rem]',
+        group.tickets.length === 0
+          ? 'sm:w-[7.5rem] sm:shrink-0 sm:grow-0'
+          : 'sm:w-auto sm:min-w-[15rem] sm:max-w-[21rem] sm:flex-1 sm:basis-0',
         hiddenOnPhone && 'hidden sm:block',
       )}
     >
