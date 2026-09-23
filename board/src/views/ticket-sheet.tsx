@@ -50,13 +50,25 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
             // bottom sheet, the left on a panel anchored to the right. One 16px
             // step for both, where the two used to disagree at 22px and 0.
             'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
-            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(560px,92vw)] sm:rounded-none sm:rounded-l-2xl',
+            // Wider than it was: the content is long-form, and F16 caps the
+            // measure from the inside rather than letting the panel do it.
+            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(680px,94vw)] sm:rounded-none sm:rounded-l-2xl',
             'sm:animate-[sheet-in-right_420ms_var(--ease-spring)]',
           )}
         >
           <div aria-hidden className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-line-strong sm:hidden" />
+          {/* What a reader must never lose while scrolling: which ticket this is
+              and what state it is in. Only the close control used to be anchored,
+              so anyone deep in the notes had lost both. */}
+          {ticket && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-5 py-3.5 pr-28 sm:px-8 sm:py-4">
+              <StatusPill status={ticket.status} />
+              <span translate="no" className="tabular text-xs tracking-[0.04em] text-muted">{ticket.id}</span>
+              {(rank ?? 0) > 0 && <span className="tabular text-xs text-muted">Priority {rank} of {tickets.length}</span>}
+            </div>
+          )}
           {ticket ? (
-            <TicketBody ticket={ticket} rank={rank ?? 0} total={tickets.length} />
+            <TicketBody ticket={ticket} />
           ) : (
             <div className="p-6">
               <Dialog.Title className="text-lg font-semibold">Ticket {ticketId} is not on the board</Dialog.Title>
@@ -87,20 +99,10 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
   );
 }
 
-function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; total: number }) {
+function TicketBody({ ticket }: { ticket: Ticket }) {
   return (
-    <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-8 sm:px-8 sm:pt-7">
-      <div className="flex flex-wrap items-center gap-2 pr-12">
-        <StatusPill status={ticket.status} />
-        {/* --muted, not --faint. This text sits on --surface-3, which is lighter
-            than the card --faint was calibrated against: it read 3.86:1 there.
-            The id is also set like the card's and the list's, being the same
-            datum on a third surface. */}
-        <span translate="no" className="tabular text-xs tracking-[0.04em] text-muted">{ticket.id}</span>
-        {rank > 0 && <span className="tabular text-xs text-muted">Priority {rank} of {total}</span>}
-      </div>
-
-      <Dialog.Title className="mt-3 text-display leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
+    <div data-sheet-body className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5 pb-8 sm:px-8">
+      <Dialog.Title className="text-display leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
         {ticket.title}
       </Dialog.Title>
       {ticket.tldr ? (

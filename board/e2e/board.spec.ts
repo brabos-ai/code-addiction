@@ -379,6 +379,19 @@ test('L4.5 a full board still fits the desktop viewport', async ({ page }) => {
   expect(overflow, 'every status column is reachable without scrolling').toEqual([]);
 });
 
+test('L5.2 the sheet keeps status and id in view while the body scrolls', async ({ page }) => {
+  await page.goto('/board/0001B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const id = dialog.getByText('0001B');
+  await expect(id).toBeInViewport();
+  // 0001B carries long notes, so its body scrolls at every viewport.
+  await dialog.locator('[data-sheet-body]').evaluate((el) => el.scrollTo(0, el.scrollHeight));
+  await expect(dialog.locator('[data-sheet-body]')).not.toHaveJSProperty('scrollTop', 0);
+  await expect(id, 'the id is still in view at the bottom of the notes').toBeInViewport();
+  await expect(dialog.locator('[data-status]').first()).toBeInViewport();
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');
