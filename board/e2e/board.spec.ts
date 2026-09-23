@@ -126,10 +126,22 @@ async function token(page: Page, name: string) {
   return page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
 }
 
-/** A colour as [r, g, b], from #rrggbb or any rgb()/rgba() string. */
+/**
+ * A hex colour as #rrggbb, expanding the #rgb shorthand.
+ *
+ * The build minifies CSS, so an authored #ffffff is served as #fff and a
+ * three-digit value reaches any test that reads a token back.
+ */
+function hex6(colour: string): string {
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(colour);
+  return short ? `#${short[1]}${short[1]}${short[2]}${short[2]}${short[3]}${short[3]}` : colour;
+}
+
+/** A colour as [r, g, b], from a hex or any rgb()/rgba() string. */
 function channels(colour: string): [number, number, number] {
   if (colour.startsWith('#')) {
-    return [1, 3, 5].map((i) => parseInt(colour.slice(i, i + 2), 16)) as [number, number, number];
+    const full = hex6(colour);
+    return [1, 3, 5].map((i) => parseInt(full.slice(i, i + 2), 16)) as [number, number, number];
   }
   const n = [...colour.matchAll(/[\d.]+/g)].map((m) => Number(m[0]));
   return [n[0] ?? 0, n[1] ?? 0, n[2] ?? 0];
@@ -152,18 +164,31 @@ function luminance(colour: string): number {
  * channel as red and silently drops the sign. Painting it over its backdrop on
  * a 1×1 canvas hands the blend to the browser's own colour engine instead.
  */
-async function composited(target: Locator, backdrop: string): Promise<string> {
-  return target.evaluate((el, back) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    const ctx = canvas.getContext('2d')!;
-    ctx.fillStyle = back;
-    ctx.fillRect(0, 0, 1, 1);
-    ctx.fillStyle = getComputedStyle(el).backgroundColor;
-    ctx.fillRect(0, 0, 1, 1);
-    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-    return `rgb(${r}, ${g}, ${b})`;
-  }, backdrop);
+async function composited(
+  target: Locator,
+  backdrop: string,
+  prop: 'backgroundColor' | 'color' = 'backgroundColor',
+): Promise<string> {
+  return target.evaluate(
+    (el, [back, which]) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = back as string;
+      ctx.fillRect(0, 0, 1, 1);
+      ctx.fillStyle = getComputedStyle(el)[which as 'color'];
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      return `rgb(${r}, ${g}, ${b})`;
+    },
+    [backdrop, prop] as const,
+  );
+}
+
+/** WCAG contrast ratio between two opaque colours. */
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
 }
 
 test('L4.3 dark mode separates page, card and sheet into three planes', async ({ page }) => {
@@ -211,17 +236,49 @@ test('L4 the theme chip and the label chip read as two treatments in dark', asyn
   expect(lift, 'the theme chip is filled enough to see').toBeGreaterThan(0.012);
 });
 
+for (const scheme of ['light', 'dark'] as const) {
+  test(`L4.1/L4.2 the card's id and rank clear their contrast floors in ${scheme}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/board');
+    const card = page.getByRole('link', { name: /A doctor for document schemas/ });
+    await expect(card).toBeVisible();
+    const surface = await token(page, '--surface');
+
+    // The id is what a person copies into a command. It carried --faint, at
+    // ~2.8:1 on the light page, which is decoration contrast, not text contrast.
+    const id = card.getByText('0001B');
+    expect(contrast(await composited(id, surface, 'color'), surface)).toBeGreaterThanOrEqual(4.5);
+
+    // The rank is the card's declared one bold element (board/src/index.css:3-5).
+    // The size half of this assertion is deliberate: it stops the contrast floor
+    // being met by shrinking the very thing the stylesheet nominates as bold.
+    const rank = card.getByLabel(/^Priority \d/);
+    expect(contrast(await composited(rank, surface, 'color'), surface)).toBeGreaterThanOrEqual(3);
+
+    const sizes = await card.evaluate((el) =>
+      Array.from(el.querySelectorAll('*')).map((n) => parseFloat(getComputedStyle(n).fontSize)),
+    );
+    const rankSize = await rank.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(rankSize, 'the rank is still the largest type on the card').toBe(Math.max(...sizes));
+  });
+}
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
   // "Cool" is blue >= green in the raw channels. A warm ground under cool type
   // is what the stylesheet's own "cool neutrals" direction rules out.
+  const names = ['--bg', '--surface-2', '--line', '--line-strong', '--muted', '--faint', '--ink'];
   const warm: string[] = [];
-  for (const name of ['--bg', '--surface-2', '--line', '--line-strong', '--muted', '--faint', '--ink']) {
-    const hex = await token(page, name);
-    const [, r, g, b] = /^#(\w\w)(\w\w)(\w\w)$/.exec(hex) ?? [];
-    if (r && g && b && parseInt(b, 16) < parseInt(g, 16)) warm.push(`${name}: ${hex}`);
+  const unread: string[] = [];
+  for (const name of names) {
+    const value = await token(page, name);
+    if (!/^#[0-9a-f]{3}$|^#[0-9a-f]{6}$/i.test(value)) { unread.push(`${name}: ${value}`); continue; }
+    const [, g, b] = channels(value);
+    if (b < g) warm.push(`${name}: ${value}`);
   }
+  // A token this test could not parse is a token it silently stopped checking.
+  expect(unread, 'every neutral was read').toEqual([]);
   expect(warm).toEqual([]);
 });
