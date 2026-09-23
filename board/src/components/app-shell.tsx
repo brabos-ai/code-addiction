@@ -4,6 +4,7 @@ import { Columns3, Rows3 } from 'lucide-react';
 import type { BoardData } from '@/api/types';
 import { absoluteTime, relativeTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { Shortcuts } from './shortcuts';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
@@ -31,11 +32,11 @@ export function AppShell({ view, data, toolbar, children }: {
       <header className="flex h-16 items-center gap-3">
         <Link to="/board" search={{}} className="flex items-center gap-2.5 rounded-lg pr-1 text-ink" aria-label="Board — home">
           <Mark />
-          <span className="text-[17px] font-semibold tracking-tight">Board</span>
+          <span className="text-section font-semibold tracking-tight">Board</span>
         </Link>
 
         <nav aria-label="Views" className="ml-auto sm:ml-4">
-          <div className="flex items-center rounded-full bg-ink/[0.05] p-1">
+          <div className="flex items-center rounded-full bg-surface-sunken p-1">
             <ViewLink to="/board" active={view === 'board'} icon={<Columns3 {...ICON} />} label="Board" />
             <ViewLink to="/list" active={view === 'list'} icon={<Rows3 {...ICON} />} label="List" />
           </div>
@@ -46,6 +47,7 @@ export function AppShell({ view, data, toolbar, children }: {
 
       {toolbar && <div className="pb-4">{toolbar}</div>}
       <main id="content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col gap-4 outline-none">{children}</main>
+      <Shortcuts />
     </div>
   );
 }
@@ -57,9 +59,11 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
       search={(prev) => prev}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium',
+        'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-meta font-medium',
         'transition-[background-color,color,box-shadow] duration-200 ease-spring [&_svg]:size-4',
-        active ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
+        // The accent's standing job: say which view you are on. Navigational,
+        // never a status — the palette reserves status hues for named statuses.
+        active ? 'bg-surface text-accent shadow-card' : 'text-muted hover:text-ink',
       )}
     >
       {icon}
@@ -72,9 +76,12 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
 function LiveStamp({ readAt }: { readAt: string }) {
   return (
     <p aria-live="polite" className="ml-auto hidden items-center gap-2 text-xs text-faint sm:flex" title={`Read ${absoluteTime(readAt)}`}>
+      {/* Neutral, not --s-done. Green is the done status; a heartbeat borrowing
+          it made one colour mean "this ticket is finished" and "the server is
+          connected" in the same viewport. The pulse carries the liveness. */}
       <span aria-hidden className="relative flex size-2">
-        <span className="absolute inset-0 animate-[pulse-soft_2.4s_ease-in-out_infinite] rounded-full bg-[var(--s-done)] opacity-60" />
-        <span className="relative size-2 rounded-full bg-[var(--s-done)]" />
+        <span className="absolute inset-0 animate-[pulse-soft_2.4s_ease-in-out_infinite] rounded-full bg-muted opacity-60" />
+        <span className="relative size-2 rounded-full bg-muted" />
       </span>
       Live, read {relativeTime(readAt)}
     </p>

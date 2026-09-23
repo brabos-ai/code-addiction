@@ -5,6 +5,7 @@ import { AppShell } from '@/components/app-shell';
 import { FilterBar } from '@/components/filter-bar';
 import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/states';
 import { TicketCard } from '@/components/ticket-card';
+import { StatusGlyph } from '@/components/ui';
 import { useBoard } from '@/hooks/use-board';
 import { hasFilters } from '@/lib/search';
 import { facets, filterTickets, groupByStatus, rankOf, type StatusGroup } from '@/lib/tickets';
@@ -92,7 +93,7 @@ function Columns({ groups, ranks, total }: { groups: StatusGroup[]; ranks: Map<s
                 on ? 'bg-surface text-ink shadow-card ring-1 ring-line' : 'text-muted',
               )}
             >
-              <span aria-hidden className="size-2 rounded-full bg-[var(--st)]" />
+              <StatusGlyph status={g.status.name} />
               {g.status.name}
               <span className="tabular text-xs text-faint">{g.tickets.length}</span>
             </button>
@@ -100,13 +101,17 @@ function Columns({ groups, ranks, total }: { groups: StatusGroup[]; ranks: Map<s
         })}
       </div>
 
-      <div
-        className={cn(
-          'scrollbar-thin -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6',
-          'lg:mx-0 lg:grid lg:snap-none lg:overflow-visible lg:px-0',
-        )}
-        style={{ gridTemplateColumns: `repeat(${Math.max(groups.length, 1)}, minmax(0, 1fr))` }}
-      >
+      {/*
+        A scrolling row of fixed-width columns at EVERY size. It used to become a
+        grid of equal 1fr shares at lg, which spread four columns across the
+        viewport however little they held — so a board whose tickets were all in
+        one status rendered one column of content and three of empty space.
+
+        lg:overflow-visible went with it. Fixed widths can exceed the viewport,
+        and that overflow has to stay on this row: the e2e suite measures
+        document.scrollingElement, and the 1080 project sits inside lg.
+      */}
+      <div className="scrollbar-thin -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
         {groups.map((g) => (
           <Column key={g.status.name} group={g} ranks={ranks} total={total} hiddenOnPhone={g.status.name !== current} />
         ))}
@@ -124,27 +129,31 @@ function Column({ group, ranks, total, hiddenOnPhone }: {
       id={`col-${group.status.name}`}
       aria-label={group.status.name}
       className={cn(
-        'w-full shrink-0 snap-start sm:w-[300px] lg:w-auto lg:min-w-0',
+        'w-full shrink-0 snap-start',
+        // Every status keeps its own territory, empty or not, at one width for
+        // all of them. Collapsing the empty ones crowded the populated column
+        // to one side and left the rest of the board a void — and no kanban
+        // worth copying does it: an empty column shows its header and its zero.
+        // The floor keeps a card legible; below it the row scrolls.
+        'sm:w-auto sm:min-w-[15rem] sm:max-w-[26rem] sm:flex-1 sm:basis-0',
         hiddenOnPhone && 'hidden sm:block',
       )}
     >
       <header className="mb-3 hidden items-center gap-2 px-0.5 sm:flex" data-status={group.status.name} title={group.status.means || undefined}>
-        <span aria-hidden className="size-2 rounded-full bg-[var(--st)]" />
+        <StatusGlyph status={group.status.name} />
         <h2 className="text-sm font-semibold">{group.status.name}</h2>
         <span className="tabular text-xs text-faint">{group.tickets.length}</span>
         {group.undefined && <span className="text-xs text-warn">not defined</span>}
       </header>
+      {/* An empty column renders its header and stops. The count in that header
+          already says nothing is here, and three dashed boxes saying it again
+          were the largest objects on the board. */}
       <ol className="flex flex-col gap-2.5">
         {group.tickets.map((t: Ticket) => (
           <li key={t.id}>
             <TicketCard ticket={t} rank={ranks.get(t.id) ?? 0} total={total} from="/board" quiet={quiet} />
           </li>
         ))}
-        {group.tickets.length === 0 && (
-          <li className="rounded-xl border border-dashed border-line px-3 py-6 text-center text-[13px] text-faint">
-            Nothing {group.status.name}
-          </li>
-        )}
       </ol>
     </section>
   );

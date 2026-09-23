@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Status } from '@/api/types';
 import { hasFilters, parseBoardSearch, type BoardSearch } from '@/lib/search';
 import { cn } from '@/lib/utils';
-import { Button } from './ui';
+import { Button, StatusGlyph } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
@@ -77,7 +77,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
           <select
             {...form.register('theme')}
             className={cn(
-              'h-9 w-full min-w-0 appearance-none rounded-full bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-[13px]',
+              'h-9 w-full min-w-0 appearance-none rounded-full bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-meta',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong',
               values.theme ? 'text-accent ring-accent/40' : 'text-muted',
             )}
@@ -102,7 +102,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
   return (
     <form role="search" onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:items-start">
-        <label className="relative flex min-w-0 flex-1 items-center md:basis-full lg:basis-auto lg:max-w-sm">
+        <label className="relative flex min-w-0 flex-1 items-center md:basis-full lg:basis-auto lg:max-w-xs">
           <span className="sr-only">Search tickets</span>
           <Search {...ICON} aria-hidden className="pointer-events-none absolute left-3.5 size-4 text-faint" />
           <input
@@ -113,7 +113,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             spellCheck={false}
             placeholder="Search tickets…"
             className={cn(
-              'h-10 w-full min-w-0 rounded-full bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:text-sm',
+              'h-9 w-full min-w-0 rounded-full bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:h-8 md:text-sm',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none',
               '[&::-webkit-search-cancel-button]:hidden',
             )}
@@ -122,13 +122,13 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             <button
               type="button"
               onClick={() => form.setValue('q', '')}
-              className="absolute right-2 grid size-7 place-items-center rounded-full text-faint hover:bg-ink/[0.06] hover:text-ink"
+              className="absolute right-2 grid size-7 place-items-center rounded-full text-faint hover:bg-surface-hover hover:text-ink"
             >
               <X {...ICON} className="size-3.5" />
               <span className="sr-only">Clear search</span>
             </button>
           ) : (
-            <kbd className="pointer-events-none absolute right-3 hidden rounded border border-line px-1.5 text-[11px] leading-4 text-faint md:block">/</kbd>
+            <kbd className="pointer-events-none absolute right-3 hidden rounded border border-line px-1.5 text-micro leading-4 text-faint md:block">/</kbd>
           )}
         </label>
 
@@ -144,7 +144,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
           <SlidersHorizontal {...ICON} />
           <span className="sr-only">Filters</span>
           {refinements > 0 && (
-            <span className="tabular absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-accent text-[10px] font-semibold text-accent-ink">
+            <span className="tabular absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-accent text-micro font-semibold text-accent-ink">
               {refinements}
             </span>
           )}
@@ -191,12 +191,12 @@ function ToggleGroup({
             data-status={status ? o : undefined}
             onClick={() => onToggle(o)}
             className={cn(
-              'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium md:h-8',
+              'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-meta font-medium md:h-8',
               'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]',
               on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
             )}
           >
-            {status && <span aria-hidden className="size-1.5 rounded-full bg-[var(--st)]" />}
+            {status && <StatusGlyph status={o} className="size-3" />}
             {o}
           </button>
         );

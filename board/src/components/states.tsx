@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { AlertTriangle, SearchX, Terminal } from 'lucide-react';
 import type { BoardData, BoardError } from '@/api/types';
+import { cn } from '@/lib/utils';
 import { Button } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
@@ -32,7 +33,7 @@ export function ErrorPanel({ error }: { error: BoardError }) {
           <h2 className="text-base font-semibold">{copy.title}</h2>
           <p className="mt-1 text-sm text-muted">{copy.body}</p>
           {error.detail && (
-            <pre className="scrollbar-thin mt-3 max-h-40 overflow-auto rounded-lg bg-ink/[0.05] p-3 text-xs whitespace-pre-wrap text-muted">
+            <pre className="scrollbar-thin mt-3 max-h-40 overflow-auto rounded-lg bg-surface-sunken p-3 text-xs whitespace-pre-wrap text-muted">
               {error.detail}
             </pre>
           )}
@@ -94,11 +95,13 @@ export function HealthBanner({ data }: { data: BoardData }) {
 
 export function BoardSkeleton() {
   return (
-    <div aria-hidden className="grid animate-[pulse-soft_1.6s_ease-in-out_infinite] grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
+    // Mirrors the board's own layout — a row of fixed-width columns — so the
+    // first real paint replaces this in place instead of jumping.
+    <div aria-hidden className="flex animate-[pulse-soft_1.6s_ease-in-out_infinite] gap-4 overflow-hidden">
       {[0, 1, 2, 3].map((c) => (
-        <div key={c} className={c > 0 ? 'hidden md:block' : ''}>
-          <div className="mb-3 h-5 w-24 rounded bg-ink/[0.07]" />
-          {[0, 1, 2].map((r) => <div key={r} className="mb-2 h-28 rounded-xl bg-ink/[0.05]" />)}
+        <div key={c} className={cn('w-full shrink-0 sm:w-[300px] lg:w-[21rem]', c > 0 && 'hidden sm:block')}>
+          <div className="mb-3 h-5 w-24 rounded bg-surface-active" />
+          {[0, 1, 2].map((r) => <div key={r} className="mb-2 h-28 rounded-xl bg-surface-sunken" />)}
         </div>
       ))}
     </div>

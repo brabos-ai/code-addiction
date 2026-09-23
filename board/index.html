@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f2f3ef" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)" />
+    <!-- These must equal --bg in board/src/index.css. This file is static and
+         cannot read the token, so board/test/tokens.test.ts holds them equal. -->
+    <meta name="theme-color" content="#f1f2f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)" />
     <title>Board</title>
   </head>
   <body>

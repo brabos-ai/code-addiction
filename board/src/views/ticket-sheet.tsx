@@ -1,7 +1,7 @@
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { CircleCheck, CircleDashed, X } from 'lucide-react';
+import { Check, CircleCheck, CircleDashed, Copy, X } from 'lucide-react';
 import type { Ticket } from '@/api/types';
 import { Markdown } from '@/components/markdown';
 import { Chip, StatusPill } from '@/components/ui';
@@ -32,10 +32,28 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
   const ticket = tickets.find((t) => t.id === ticketId);
   const rank = rankOf(tickets).get(ticketId);
 
+  // The header already says "Priority N of M"; this is what makes it navigable.
+  // Additive only: Esc still closes, Back still closes, and the filters ride
+  // along because the parent's search is passed through unchanged.
+  const step = (delta: number) => {
+    const at = tickets.findIndex((t) => t.id === ticketId);
+    const next = at < 0 ? undefined : tickets[at + delta];
+    if (next) void navigate({ to: `${from}/$ticketId`, params: { ticketId: next.id }, search });
+  };
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const delta = e.key === 'j' || e.key === 'ArrowDown' ? 1 : e.key === 'k' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!delta) return;
+    e.preventDefault();
+    step(delta);
+  };
+
   return (
     <Dialog.Root open onOpenChange={(open) => { if (!open) close(); }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/25 animate-[fade-in_200ms_ease-out] dark:bg-black/50" />
+        {/* A hint that the board is behind, not a curtain over it. The blur and the
+            heavier dim were half of what made the panel feel like a modal. */}
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/15 animate-[fade-in_200ms_ease-out] dark:bg-black/45" />
         <Dialog.Content
           ref={panel}
           tabIndex={-1}
@@ -43,17 +61,35 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           // Focus the panel, not the close button: a ring on a button nobody reached
           // with the keyboard reads as a selection. Tab still lands on Close first.
           onOpenAutoFocus={(e) => { e.preventDefault(); panel.current?.focus(); }}
+          onKeyDown={onKeyDown}
           className={cn(
             'fixed z-50 flex flex-col bg-surface text-ink outline-none',
-            // Phone: a bottom sheet the thumb can reach. Wider: a side panel.
-            'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[22px] shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
-            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(560px,92vw)] sm:rounded-none sm:rounded-l-[22px]',
+            // A pane, not an object on top of one. On a phone it is still a
+            // bottom sheet the thumb can reach, so it keeps its radius and its
+            // shadow. Above sm it is flush to the edge, square, and separated
+            // by a single rule: this is a child route of the page behind it,
+            // and the old treatment — the lightest surface in the app, a drop
+            // shadow, an inset highlight and a blurred backdrop, all at once —
+            // read as a slab dropped on the board.
+            'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
+            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(680px,94vw)]',
+            'sm:rounded-none sm:border-l sm:border-line-strong sm:shadow-none',
             'sm:animate-[sheet-in-right_420ms_var(--ease-spring)]',
           )}
         >
           <div aria-hidden className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-line-strong sm:hidden" />
+          {/* What a reader must never lose while scrolling: which ticket this is
+              and what state it is in. Only the close control used to be anchored,
+              so anyone deep in the notes had lost both. */}
+          {ticket && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-line px-5 py-3.5 pr-28 sm:px-8 sm:py-4">
+              <StatusPill status={ticket.status} />
+              <CopyId key={ticket.id} id={ticket.id} />
+              {(rank ?? 0) > 0 && <span className="tabular text-xs text-muted">Priority {rank} of {tickets.length}</span>}
+            </div>
+          )}
           {ticket ? (
-            <TicketBody ticket={ticket} rank={rank ?? 0} total={tickets.length} />
+            <TicketBody ticket={ticket} />
           ) : (
             <div className="p-6">
               <Dialog.Title className="text-lg font-semibold">Ticket {ticketId} is not on the board</Dialog.Title>
@@ -62,8 +98,18 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
               </Dialog.Description>
             </div>
           )}
+          {/* Esc is the gesture people reach for, so the sheet says so. It is a
+              hint and not a control: the header holds one button, the close. */}
+          <span
+            aria-hidden
+            // Filled rather than outlined: a --line-strong rule on the sheet's
+            // surface measures under the 3:1 a component outline needs.
+            className="absolute top-5 right-15 hidden rounded bg-surface-sunken px-1.5 py-0.5 text-micro text-muted sm:block sm:top-6 sm:right-16"
+          >
+            Esc
+          </span>
           <Dialog.Close
-            className="absolute top-3 right-3 grid size-10 place-items-center rounded-full text-muted transition-colors duration-200 hover:bg-ink/[0.06] hover:text-ink sm:top-4 sm:right-4"
+            className="absolute top-3 right-3 grid size-10 place-items-center rounded-full text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink sm:top-4 sm:right-4"
           >
             <X {...ICON} className="size-5" />
             <span className="sr-only">Close</span>
@@ -74,28 +120,51 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
   );
 }
 
-function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; total: number }) {
+function TicketBody({ ticket }: { ticket: Ticket }) {
   return (
-    <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-8 sm:px-8 sm:pt-7">
-      <div className="flex flex-wrap items-center gap-2 pr-12">
-        <StatusPill status={ticket.status} />
-        <span translate="no" className="tabular text-xs text-faint">{ticket.id}</span>
-        {rank > 0 && <span className="tabular text-xs text-faint">Priority {rank} of {total}</span>}
-      </div>
-
-      <Dialog.Title className="mt-3 text-[22px] leading-tight font-semibold tracking-tight text-balance sm:text-2xl">
+    <div data-sheet-body className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5 pb-8 sm:px-8">
+      <Dialog.Title className="text-display leading-tight font-semibold tracking-tight text-balance">
         {ticket.title}
       </Dialog.Title>
       {ticket.tldr ? (
-        <Dialog.Description className="mt-2 text-[15px] leading-relaxed text-muted">{ticket.tldr}</Dialog.Description>
+        <Dialog.Description className="mt-2 max-w-[56ch] text-body leading-normal text-muted">{ticket.tldr}</Dialog.Description>
       ) : (
         <Dialog.Description className="sr-only">Ticket {ticket.id}</Dialog.Description>
       )}
 
+      {/* What the ticket IS, adjacent to its title. This was a Details section
+          after Notes, Paths and Comments, so learning a ticket's theme meant
+          scrolling past everything written about it. */}
+      <dl className="mt-6 grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-sm">
+        <Detail term="Theme">{ticket.theme || <span className="text-faint">None</span>}</Detail>
+        <Detail term="Labels">
+          {ticket.labels.length ? (
+            <span className="flex flex-wrap gap-1.5">{ticket.labels.map((l) => <Chip key={l} tone="outline">{l}</Chip>)}</span>
+          ) : (
+            <span className="text-faint">None</span>
+          )}
+        </Detail>
+        <Detail term="Grounded">
+          <span className="inline-flex items-center gap-1.5">
+            {ticket.grounded ? (
+              <><CircleCheck {...ICON} className="size-4 text-[var(--s-done)]" />Checked against the repository</>
+            ) : (
+              <><CircleDashed {...ICON} className="size-4 text-faint" />Recorded as stated</>
+            )}
+          </span>
+        </Detail>
+        <Detail term="Work">{ticket.work_id ?? <span className="text-faint">Not picked up</span>}</Detail>
+        <Detail term="Created"><time dateTime={ticket.created_at}>{absoluteTime(ticket.created_at)}</time></Detail>
+        <Detail term="Updated"><time dateTime={ticket.updated_at}>{absoluteTime(ticket.updated_at)}</time></Detail>
+      </dl>
+
       {ticket.done_when && (
-        <div className="mt-6 rounded-2xl bg-accent-soft/70 p-4">
-          <h3 className="text-xs font-semibold text-accent">Done when</h3>
-          <Markdown className="mt-1.5 text-[15px]">{ticket.done_when}</Markdown>
+        // A rule on the accent rather than a filled accent box: the filled
+        // version read as a documentation callout, and it was spending the
+        // palette's one accent on a block that is already the loudest thing here.
+        <div className="mt-7 border-l-2 border-accent pl-4">
+          <h3 className="text-sm font-semibold text-accent">Done when</h3>
+          <Markdown className="mt-1.5 text-body">{ticket.done_when}</Markdown>
         </div>
       )}
 
@@ -117,7 +186,7 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
           <ul className="flex flex-wrap gap-1.5">
             {ticket.paths.map((p) => (
               <li key={p} className="min-w-0 max-w-full">
-                <code translate="no" className="block truncate rounded-lg bg-ink/[0.05] px-2 py-1 text-[13px] text-ink">{p}</code>
+                <code translate="no" className="block truncate rounded-lg bg-surface-sunken px-2 py-1 text-meta text-ink">{p}</code>
               </li>
             ))}
           </ul>
@@ -137,37 +206,13 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
         </Section>
       )}
 
-      <Section title="Details">
-        <dl className="grid grid-cols-[7rem_minmax(0,1fr)] gap-x-4 gap-y-2.5 text-sm">
-          <Detail term="Theme">{ticket.theme || <span className="text-faint">None</span>}</Detail>
-          <Detail term="Labels">
-            {ticket.labels.length ? (
-              <span className="flex flex-wrap gap-1.5">{ticket.labels.map((l) => <Chip key={l} tone="outline">{l}</Chip>)}</span>
-            ) : (
-              <span className="text-faint">None</span>
-            )}
-          </Detail>
-          <Detail term="Grounded">
-            <span className="inline-flex items-center gap-1.5">
-              {ticket.grounded ? (
-                <><CircleCheck {...ICON} className="size-4 text-[var(--s-done)]" />Checked against the repository</>
-              ) : (
-                <><CircleDashed {...ICON} className="size-4 text-faint" />Recorded as stated</>
-              )}
-            </span>
-          </Detail>
-          <Detail term="Work">{ticket.work_id ?? <span className="text-faint">Not picked up</span>}</Detail>
-          <Detail term="Created"><time dateTime={ticket.created_at}>{absoluteTime(ticket.created_at)}</time></Detail>
-          <Detail term="Updated"><time dateTime={ticket.updated_at}>{absoluteTime(ticket.updated_at)}</time></Detail>
-        </dl>
-      </Section>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-7">
+    <section className="mt-7 border-t border-line pt-5">
       <h3 className="mb-3 text-sm font-semibold text-ink">{title}</h3>
       {children}
     </section>
@@ -180,5 +225,33 @@ function Detail({ term, children }: { term: string; children: ReactNode }) {
       <dt className="text-muted">{term}</dt>
       <dd className="min-w-0 [overflow-wrap:anywhere]">{children}</dd>
     </>
+  );
+}
+
+/**
+ * The id exists to be pasted into a command, and it was inert text you had to
+ * select by hand.
+ *
+ * It lives here and NOT on the card: a card is one big <a>, and a button inside
+ * an anchor is invalid interaction semantics, not merely a click to intercept.
+ * The card's id stays selectable text.
+ */
+function CopyId({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      aria-label={`Copy ticket id ${id}`}
+      onClick={() => {
+        void navigator.clipboard?.writeText(id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1000);
+      }}
+      className="group inline-flex items-center gap-1.5 rounded px-1 py-0.5 text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink"
+    >
+      <span translate="no" className="tabular text-xs tracking-[0.04em]">{id}</span>
+      {copied ? <Check {...ICON} className="size-3.5 text-[var(--s-done)]" /> : <Copy {...ICON} className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />}
+      <span aria-live="polite" className={copied ? 'text-micro text-muted' : 'sr-only'}>{copied ? 'Copied' : ''}</span>
+    </button>
   );
 }

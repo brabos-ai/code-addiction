@@ -16,7 +16,10 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, className 
   return (
     <div className={cn('flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1.5', className)}>
       {showTheme && ticket.theme && (
-        <Chip className="max-w-full" title={ticket.theme}>
+        // Capped, not max-w-full: a long theme took the whole row and pushed
+        // every label onto a second line, making cards different heights for no
+        // reason a reader could see. The full text stays in the title attribute.
+        <Chip className="max-w-[60%]" title={ticket.theme}>
           <span className="truncate">{ticket.theme}</span>
         </Chip>
       )}
@@ -39,7 +42,13 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, className 
           <span className="truncate">{workLabel(ticket.work_id)}</span>
         </span>
       )}
-      {showId && <span translate="no" className="tabular ml-auto pl-1 text-[11px] text-faint">{ticket.id}</span>}
+      {/* The id is what a person copies into a command, so it is set like one and
+          reaches text contrast. It carried --faint, at ~3.9:1 on a light card. */}
+      {showId && (
+        <span translate="no" className="tabular ml-auto pl-1 text-micro tracking-[0.04em] text-muted">
+          {ticket.id}
+        </span>
+      )}
     </div>
   );
 }
@@ -56,18 +65,28 @@ export function TicketCard({ ticket, rank, total, from, quiet }: Props) {
       <span
         aria-label={`Priority ${rank}`}
         className={cn(
-          'tabular w-[2.2ch] shrink-0 pt-px text-[22px] leading-none font-semibold tracking-tight text-ink/25',
-          'transition-colors duration-200 group-hover:text-accent',
-          quiet && 'text-ink/15',
+          // The card's one bold element (index.css:3-5). It kept its size and
+          // weight and left ink/25, which rendered at ~2.1:1 in dark — too faint
+          // to perform the job the stylesheet gives it. No quiet variant: the
+          // card already dims through its surface and its title.
+          'tabular w-[2.2ch] shrink-0 pt-px text-display leading-none font-semibold tracking-tight text-rank',
         )}
       >
         {formatRank(rank, total)}
       </span>
       <div className="min-w-0 flex-1">
-        <h3 className={cn('line-clamp-2 text-[15px] leading-snug font-medium text-ink [overflow-wrap:anywhere]', quiet && 'text-muted')}>
+        <h3
+          className={cn(
+            'line-clamp-2 text-body leading-snug font-medium text-ink [overflow-wrap:anywhere]',
+            // Hover lands on the title, which is what the card is about. It used
+            // to light up the rank instead.
+            'transition-colors duration-200 group-hover:text-accent',
+            quiet && 'text-muted',
+          )}
+        >
           {ticket.title}
         </h3>
-        {ticket.tldr && <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-muted [overflow-wrap:anywhere]">{ticket.tldr}</p>}
+        {ticket.tldr && <p className="mt-1 line-clamp-2 text-meta leading-snug text-muted [overflow-wrap:anywhere]">{ticket.tldr}</p>}
         <TicketMeta ticket={ticket} className="mt-2.5" />
       </div>
     </>
