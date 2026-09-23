@@ -27,7 +27,9 @@ about behaviour changes: no route, filter, data path, ARIA role or keyboard hand
   apparent height. Elevation now comes from light: a top inset highlight marks each plane's lit edge.
   `--bg` drops to `#0c0e12` and a new `--surface-3` gives the sheet a plane of its own, so page, card
   and sheet read as three. The backdrop gains a blur and rises, because dimming a near-black page by
-  half is not a dim.
+  half is not a dim. **Superseded by checkpoint 2:** the sheet's third plane, its blur and its shadow
+  were what made it read as a slab; the token is retired and the panel is flat. The card's inset-light
+  elevation stands.
 
 - **A named type scale and named interaction surfaces** — 21 `text-[Npx]` literals across 8 files
   spanning six sizes become five steps named by their job; 12 arbitrary `ink/[0.0XX]` alphas across 7
@@ -47,7 +49,9 @@ about behaviour changes: no route, filter, data path, ARIA role or keyboard hand
   box repeating the zero its header already showed. Columns now share the row within a range and an
   empty one collapses to its header. `lg:overflow-visible` went with the grid: the overflow has to stay
   on the row, because the suite measures `document.scrollingElement` and the 1080 project sits inside
-  `lg`.
+  `lg`. **Superseded within checkpoint 1:** collapsing an empty column crowded the cards to one side
+  and voided the rest of the board, so every column keeps one share. The dashed placeholder stays
+  removed — it was the noise, not the width.
 
 - **The sheet** (`ticket-sheet.tsx`) — an `Esc` hint beside the close control, as a span rather than a
   second button; one 16px radius on the exposed edge; and `Done when` traded its filled accent box,
@@ -69,9 +73,9 @@ about behaviour changes: no route, filter, data path, ARIA role or keyboard hand
   drifting from `--bg`.
 
 - **Eleven behavioural assertions in `board/e2e/board.spec.ts`**, at 360, 768 and 1080 in both schemes:
-  the three dark planes in ascending luminance, no warm neutral in light, the id and rank contrast
-  floors on `/board` and `/list`, every status pill against its own chip, text inside the sheet on
-  `--surface-3`, the theme chip readably filled against the outlined label chip, an empty column
+  the dark planes in ascending luminance, no warm neutral in light, the id and rank contrast
+  floors on `/board` and `/list`, every status pill against its own chip, text inside the sheet against
+  its own rendered background, the theme chip readably filled against the outlined label chip, an empty column
   narrower than a populated one, a full board fitting 1080, the `Esc` hint not being a button, and the
   heartbeat no longer sharing a colour with `done`.
 
