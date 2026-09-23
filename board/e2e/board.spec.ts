@@ -438,6 +438,21 @@ test('L5.6 the filter row sits on one rhythm', async ({ page }) => {
   expect(search, 'search matches the height of the controls beside it').toBe(filter);
 });
 
+test('L5.7 the four statuses are told apart with colour removed', async ({ page }) => {
+  await page.goto('/list');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  const table = page.locator('section[aria-label="Tickets by priority"]');
+  const shapes: string[] = [];
+  for (const status of ['open', 'doing', 'done', 'dropped']) {
+    const glyph = table.locator(`span[data-status="${status}"] [data-glyph]`).first();
+    await expect(glyph, `the ${status} pill carries a glyph`).toBeAttached();
+    // The markup, not the computed colour: hue comes from a CSS variable, so a
+    // difference here is a difference in shape.
+    shapes.push(await glyph.evaluate((el) => el.innerHTML));
+  }
+  expect(new Set(shapes).size, `four statuses, ${new Set(shapes).size} distinct shapes`).toBe(4);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

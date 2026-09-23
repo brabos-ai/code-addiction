@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Status } from '@/api/types';
 import { hasFilters, parseBoardSearch, type BoardSearch } from '@/lib/search';
 import { cn } from '@/lib/utils';
-import { Button } from './ui';
+import { Button, StatusGlyph } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
@@ -196,7 +196,7 @@ function ToggleGroup({
               on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
             )}
           >
-            {status && <span aria-hidden className="size-1.5 rounded-full bg-[var(--st)]" />}
+            {status && <StatusGlyph status={o} className="size-3" />}
             {o}
           </button>
         );

@@ -5,6 +5,7 @@ import { AppShell } from '@/components/app-shell';
 import { FilterBar } from '@/components/filter-bar';
 import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/states';
 import { TicketCard } from '@/components/ticket-card';
+import { StatusGlyph } from '@/components/ui';
 import { useBoard } from '@/hooks/use-board';
 import { hasFilters } from '@/lib/search';
 import { facets, filterTickets, groupByStatus, rankOf, type StatusGroup } from '@/lib/tickets';
@@ -92,7 +93,7 @@ function Columns({ groups, ranks, total }: { groups: StatusGroup[]; ranks: Map<s
                 on ? 'bg-surface text-ink shadow-card ring-1 ring-line' : 'text-muted',
               )}
             >
-              <span aria-hidden className="size-2 rounded-full bg-[var(--st)]" />
+              <StatusGlyph status={g.status.name} />
               {g.status.name}
               <span className="tabular text-xs text-faint">{g.tickets.length}</span>
             </button>
@@ -139,7 +140,7 @@ function Column({ group, ranks, total, hiddenOnPhone }: {
       )}
     >
       <header className="mb-3 hidden items-center gap-2 px-0.5 sm:flex" data-status={group.status.name} title={group.status.means || undefined}>
-        <span aria-hidden className="size-2 rounded-full bg-[var(--st)]" />
+        <StatusGlyph status={group.status.name} />
         <h2 className="text-sm font-semibold">{group.status.name}</h2>
         <span className="tabular text-xs text-faint">{group.tickets.length}</span>
         {group.undefined && <span className="text-xs text-warn">not defined</span>}
