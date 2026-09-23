@@ -284,6 +284,19 @@ test('L4.5 an empty column collapses, and the row still does not scroll the page
   await shot(page, 'board-collapsed');
 });
 
+test('L4 the sheet shows how to close it without adding a second button', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'a phone has no Esc key, so the hint is hidden there');
+  await page.goto('/board/0001B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  // Esc is the gesture people actually use, so the sheet says so. It must stay
+  // a hint: the header carries the close control and nothing else (L3.5).
+  const hint = dialog.getByText('Esc', { exact: true });
+  await expect(hint).toBeVisible();
+  expect(await hint.evaluate((el) => el.tagName)).not.toBe('BUTTON');
+  await expect(dialog.getByRole('button')).toHaveCount(1);
+});
+
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/board');

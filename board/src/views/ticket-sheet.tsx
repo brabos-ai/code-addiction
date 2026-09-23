@@ -46,8 +46,11 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
           className={cn(
             'fixed z-50 flex flex-col bg-surface-3 text-ink outline-none',
             // Phone: a bottom sheet the thumb can reach. Wider: a side panel.
-            'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[22px] shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
-            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(560px,92vw)] sm:rounded-none sm:rounded-l-[22px]',
+            // The radius falls on the exposed edge and only there: the top on a
+            // bottom sheet, the left on a panel anchored to the right. One 16px
+            // step for both, where the two used to disagree at 22px and 0.
+            'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl shadow-sheet animate-[sheet-in-up_420ms_var(--ease-spring)]',
+            'sm:inset-x-auto sm:top-0 sm:right-0 sm:bottom-0 sm:max-h-none sm:w-[min(560px,92vw)] sm:rounded-none sm:rounded-l-2xl',
             'sm:animate-[sheet-in-right_420ms_var(--ease-spring)]',
           )}
         >
@@ -62,6 +65,14 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
               </Dialog.Description>
             </div>
           )}
+          {/* Esc is the gesture people reach for, so the sheet says so. It is a
+              hint and not a control: the header holds one button, the close. */}
+          <span
+            aria-hidden
+            className="absolute top-5 right-15 hidden rounded border border-line-strong px-1.5 py-0.5 text-micro text-faint sm:block sm:top-6 sm:right-16"
+          >
+            Esc
+          </span>
           <Dialog.Close
             className="absolute top-3 right-3 grid size-10 place-items-center rounded-full text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink sm:top-4 sm:right-4"
           >
@@ -93,7 +104,10 @@ function TicketBody({ ticket, rank, total }: { ticket: Ticket; rank: number; tot
       )}
 
       {ticket.done_when && (
-        <div className="mt-6 rounded-2xl bg-accent-soft/70 p-4">
+        // A rule on the accent rather than a filled accent box: the filled
+        // version read as a documentation callout, and it was spending the
+        // palette's one accent on a block that is already the loudest thing here.
+        <div className="mt-6 rounded-r-xl border-l-2 border-accent bg-surface-2 px-4 py-3">
           <h3 className="text-xs font-semibold text-accent">Done when</h3>
           <Markdown className="mt-1.5 text-body">{ticket.done_when}</Markdown>
         </div>
