@@ -91,3 +91,62 @@ sheet already had a backdrop that failed only in dark, for the same reason the s
 A fourth reversal happened during the build and is in the ledger: fixed column widths put the fourth
 status off-screen at 1080, which is worse than the equal shares they replaced, so columns share the
 row within a range instead.
+
+---
+
+## Checkpoint 2 — the ticket sheet, and what it taught the rest
+
+Added on the same branch after the user reviewed the running board. Checkpoint 1 was already audited
+and committed; nothing below reopens it.
+
+### The sheet stopped being a document and a slab
+
+It carried its properties — theme, labels, grounded, work, dates — in a `Details` section **after**
+every note, so learning what area a ticket belonged to meant scrolling past everything written about
+it. They move next to the title. The header with status, id and `Priority N of M` stops scrolling
+away, so a reader deep in the notes still knows where they are. Prose takes a 56-character measure,
+leading drops from relaxed to normal, sections gain a hairline, and `Done when` falls to section
+weight — it is an acceptance criterion and it was reading louder than the ticket.
+
+Then the panel itself. It accumulated four elevation signals at once — the app's lightest surface, a
+drop shadow, an inset highlight and a corner radius, over a blurred backdrop — and read as a slab
+dropped on the board rather than the child route it is. Above `sm` it is now flush, square,
+unshadowed, and separated by a single rule; on a phone it stays a bottom sheet. `--surface-3` is
+retired with the slab that needed it, and the board is two planes again.
+
+### A status is a shape now
+
+Four states were one 6px dot in four colours, which is four states a colour-blind reader cannot tell
+apart at all. Each takes a shape that carries the progression — an open ring, that ring half filled,
+solid with a check cut out, and struck through — in all four places a status appears. Hue became
+reinforcement instead of the whole signal.
+
+### Four keys, and an id that copies itself
+
+`J`/`K` and the arrows step through tickets without closing the sheet, with the filters riding along.
+`?` lists every shortcut, which nothing did before — `/` and `Esc` shipped unnamed. Clicking the id
+copies it. All additive: no gesture that existed changed, which is the line the plan's amended
+constraint draws.
+
+The id copy lives in the sheet and not on the card, because a card is one big `<a>` and a button
+inside an anchor is invalid interaction semantics. It is the sheet's second button, which `L3.5`
+forbade — that guard became a tripwire on the exact set rather than a cap, so a third button still
+trips it and still has to be argued for.
+
+### What the review caught
+
+Its own findings, all applied: the shortcut keys measured 4.38:1 in dark against a 4.5:1 floor; the
+copy acknowledgement outlived its ticket, because `J` re-renders the panel rather than unmounting it,
+so the tick could sit lit on a ticket nobody copied; and nothing covered `?` with a ticket already
+open. It works — now it is asserted, along with `Esc` unstacking one layer at a time.
+
+### Notes
+
+Two of checkpoint 1's own decisions were reversed here, both after seeing the board rendered rather
+than reasoning about it: fixed column widths put the fourth status off-screen at 1080, so columns
+share the row within a range; and the sheet's third plane was the thing that made it feel heavy. The
+plan's ledger carries both with their cost.
+
+**Checkpoint 3 keeps** grouping by theme, a compact density and a board selection cursor — each
+changes how the board behaves rather than how it reads, and the third collides with the arrow-key
+handler the mobile status tablist already owns.
