@@ -1,21 +1,29 @@
 /**
- * Design Direction: Data-Dense + Utilitarian | DQS: 12/15
- * Differentiation: the priority rank. Line order on the board IS the priority,
- * so every card and row carries its queue position as a large tabular numeral —
- * the one bold element; everything around it stays quiet.
+ * Design Direction: Data-Dense + Utilitarian
+ * Differentiation: the lane. Each column is a tinted lane the cards sit in, so
+ * the board reads as a board even where a column is empty, and a populated
+ * column is wider than an empty one. The card gives its whole width to the
+ * title: status, id and priority share one small line above it, and the
+ * priority rank is a badge on that line, not a column of its own.
  * Palette "stone and cobalt": cool neutrals, one cobalt accent, status hues only
- * where a status is named.
+ * where a status is named. Dark is graphite, not near-black: the page, the lane
+ * and the card are three close steps, so nothing on the board glares.
+ * Scheme: set on <html data-theme>, by the inline script in index.html before
+ * the first paint and by lib/theme.ts after. "System" follows the OS; a choice
+ * made in the header overrides it and is kept in localStorage.
  */
 @import "tailwindcss";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  /* Two planes: the page, and the cards and panes on it. The sheet used to
-     hold a third, which read as a slab; it now shares --surface and separates
-     by a rule. */
+  color-scheme: light;
+  /* Three planes: the page, the lane a column's cards sit in, and the cards
+     and panes themselves. The sheet used to hold a plane of its own, which
+     read as a slab; it now shares --surface and separates by a rule. */
   --bg: #f1f2f5;
+  --lane: #e7e9ee;
   --surface: #ffffff;
   --surface-2: #f6f7f9;
   --ink: #15171c;
@@ -27,7 +35,8 @@
   --accent-ink: #ffffff;
   --accent-soft: #e6eafc;
   --focus: #2d4be0;
-  /* The priority rank: quiet, and still the card's one bold element. */
+  /* The priority rank in the list's Priority column. The card shows it as a
+     badge in ink instead. */
   --rank: #868d99;
 
   /* Interaction overlays. Named so the two schemes can tune them apart. */
@@ -56,52 +65,54 @@
   --shadow-sheet: -24px 0 60px -24px rgb(21 23 28 / 0.28);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* The page drops well below the card, so a card reads as raised without a
-       shadow: elevation here comes from the inset highlight in --shadow-card,
-       never from black over near-black. */
-    --bg: #0c0e12;
-    --surface: #1a1e25;
-    --surface-2: #212630;
-    --ink: #ecedef;
-    --muted: #a0a6b0;
-    --faint: #848a94;
-    --line: #30353e;
-    --line-strong: #3d4450;
-    --accent: #8398ff;
-    --accent-ink: #0d0f14;
-    --accent-soft: #1e2440;
-    --focus: #8398ff;
-    --rank: #656b75;
+/* The dark scheme applies only when <html> says so. index.html sets it before
+   the first paint, from the saved choice or the OS, so there is no flash. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* Graphite, not near-black. The previous ground (#0c0e12) sat so far below
+     the card that every card glared off it. Page, lane and card are now three
+     close steps, and the ring does the separating. */
+  --bg: #1b1c1f;
+  --lane: #222327;
+  --surface: #2a2b30;
+  --surface-2: #313238;
+  --ink: #ececee;
+  --muted: #a8aab0;
+  --faint: #8d9097;
+  --line: #37393f;
+  --line-strong: #46484f;
+  --accent: #93a4ff;
+  --accent-ink: #14151a;
+  --accent-soft: #2c3252;
+  --focus: #93a4ff;
+  --rank: #9195a0;
 
-    /* Sunken runs heavier here than in light: a 5% light film over a #1a1e25
-       card lifts it by 0.008, below what the eye separates, which is why the
-       filled theme chip and the outlined label chip looked alike in dark. */
-    --surface-hover: rgb(236 237 239 / 0.05);
-    --surface-active: rgb(236 237 239 / 0.09);
-    --surface-sunken: rgb(236 237 239 / 0.08);
+  /* Sunken runs heavier here than in light: a 5% light film over a dark card
+     lifts it below what the eye separates. */
+  --surface-hover: rgb(236 237 239 / 0.05);
+  --surface-active: rgb(236 237 239 / 0.09);
+  --surface-sunken: rgb(236 237 239 / 0.08);
 
-    --s-open: #a8b0bd;
-    --s-open-soft: #22262d;
-    --s-doing: #f0b24a;
-    --s-doing-soft: #2e2618;
-    --s-done: #5fc795;
-    --s-done-soft: #17291f;
-    --s-dropped: #918cab;
-    --s-dropped-soft: #262433;
-    --warn: var(--s-doing);
-    --warn-soft: var(--s-doing-soft);
-    --danger: #e8897f;
-    --danger-soft: #301f1d;
+  /* The soft chips sit ABOVE the card here, not below it: on a graphite card a
+     darker chip reads as a hole. */
+  --s-open: #a8b0bd;
+  --s-open-soft: #35373d;
+  --s-doing: #f0b24a;
+  --s-doing-soft: #3b3223;
+  --s-done: #62c997;
+  --s-done-soft: #243a2f;
+  --s-dropped: #aba6c8;
+  --s-dropped-soft: #36344a;
+  --warn: var(--s-doing);
+  --warn-soft: var(--s-doing-soft);
+  --danger: #e8897f;
+  --danger-soft: #3b2625;
 
-    /* Elevation on a dark ground comes from light, not from shadow: black over
-       near-black darkens nothing. The top inset is the lit edge of the plane;
-       the sheet's runs down its left side, the edge that faces the board. */
-    --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.045), 0 1px 2px rgb(0 0 0 / 0.5);
-    --shadow-lift: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 12px 28px -12px rgb(0 0 0 / 0.8);
-    --shadow-sheet: inset 1px 0 0 rgb(255 255 255 / 0.06), -24px 0 60px -24px rgb(0 0 0 / 0.85);
-  }
+  /* Elevation on a dark ground comes from light, not from shadow. The top
+     inset is the lit edge of the plane; the sheet's runs down its left side. */
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-lift: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 12px 28px -12px rgb(0 0 0 / 0.6);
+  --shadow-sheet: inset 1px 0 0 rgb(255 255 255 / 0.05), -24px 0 60px -24px rgb(0 0 0 / 0.7);
 }
 
 @theme inline {
@@ -114,6 +125,7 @@
   --text-section: 1.0625rem; /* 17px — the app name */
   --text-display: 1.375rem;  /* 22px — the priority rank, the sheet title */
   --color-bg: var(--bg);
+  --color-lane: var(--lane);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-hover: var(--surface-hover);
@@ -140,7 +152,6 @@
 
 @layer base {
   html {
-    color-scheme: light dark;
     -webkit-text-size-adjust: 100%;
   }
   body {

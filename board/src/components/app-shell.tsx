@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Columns3, Rows3 } from 'lucide-react';
+import { Columns3, Monitor, Moon, Rows3, Sun } from 'lucide-react';
 import type { BoardData } from '@/api/types';
 import { absoluteTime, relativeTime } from '@/lib/format';
+import { followSystem, readChoice, saveChoice, type ThemeChoice } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { Shortcuts } from './shortcuts';
 
@@ -21,7 +22,9 @@ export function AppShell({ view, data, toolbar, children }: {
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1600px] flex-col px-4 pb-10 sm:px-6">
+    // The gutter widens with the screen: 16px on a phone, 40px on a desktop,
+    // where 24px left the filters and the first column against the edge.
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1680px] flex-col px-4 pb-10 sm:px-6 lg:px-10">
       <a
         href="#content"
         className="sr-only z-50 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
@@ -29,10 +32,12 @@ export function AppShell({ view, data, toolbar, children }: {
         Skip to tickets
       </a>
       <h1 className="sr-only">{view === 'board' ? 'Board' : 'Tickets by priority'}</h1>
-      <header className="flex h-16 items-center gap-3">
+      <header className="flex h-16 items-center gap-3 lg:h-[4.5rem]">
         <Link to="/board" search={{}} className="flex items-center gap-2.5 rounded-lg pr-1 text-ink" aria-label="Board — home">
           <Mark />
-          <span className="text-section font-semibold tracking-tight">Board</span>
+          {/* Hidden on a phone: the view switch beside it already says Board,
+              and the row needs the room for the theme switch. */}
+          <span className="hidden text-section font-semibold tracking-tight sm:inline">Board</span>
         </Link>
 
         <nav aria-label="Views" className="ml-auto sm:ml-4">
@@ -42,10 +47,13 @@ export function AppShell({ view, data, toolbar, children }: {
           </div>
         </nav>
 
-        {data && <LiveStamp readAt={data.readAt} />}
+        <div className="flex items-center gap-4 sm:ml-auto">
+          {data && <LiveStamp readAt={data.readAt} />}
+          <ThemeSwitch />
+        </div>
       </header>
 
-      {toolbar && <div className="pb-4">{toolbar}</div>}
+      {toolbar && <div className="pb-6">{toolbar}</div>}
       <main id="content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col gap-4 outline-none">{children}</main>
       <Shortcuts />
     </div>
@@ -72,10 +80,50 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
   );
 }
 
+const THEMES: { value: ThemeChoice; label: string; icon: ReactNode }[] = [
+  { value: 'system', label: 'System theme', icon: <Monitor {...ICON} /> },
+  { value: 'light', label: 'Light theme', icon: <Sun {...ICON} /> },
+  { value: 'dark', label: 'Dark theme', icon: <Moon {...ICON} /> },
+];
+
+/**
+ * System, light or dark. The scheme followed the OS and nothing else, so a
+ * reader on a dark desktop had no way to see the board light.
+ */
+function ThemeSwitch() {
+  const [choice, setChoice] = useState<ThemeChoice>(readChoice);
+  useEffect(() => followSystem(choice), [choice]);
+  return (
+    <div role="radiogroup" aria-label="Theme" className="flex shrink-0 items-center rounded-full bg-surface-sunken p-1">
+      {THEMES.map((t) => {
+        const on = t.value === choice;
+        return (
+          <button
+            key={t.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            aria-label={t.label}
+            title={t.label}
+            onClick={() => { saveChoice(t.value); setChoice(t.value); }}
+            className={cn(
+              'grid size-7 place-items-center rounded-full [&_svg]:size-3.5',
+              'transition-[background-color,color,box-shadow] duration-200 ease-spring',
+              on ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
+            )}
+          >
+            {t.icon}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** "Live": the server pushes changes to docs/backlog.jsonl, so this is never stale for long. */
 function LiveStamp({ readAt }: { readAt: string }) {
   return (
-    <p aria-live="polite" className="ml-auto hidden items-center gap-2 text-xs text-faint sm:flex" title={`Read ${absoluteTime(readAt)}`}>
+    <p aria-live="polite" className="hidden items-center gap-2 text-xs text-faint sm:flex" title={`Read ${absoluteTime(readAt)}`}>
       {/* Neutral, not --s-done. Green is the done status; a heartbeat borrowing
           it made one colour mean "this ticket is finished" and "the server is
           connected" in the same viewport. The pulse carries the liveness. */}

@@ -119,7 +119,7 @@ test('dark mode follows the system and keeps every route readable', async ({ pag
   await page.goto('/board');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  expect(bg).toBe('rgb(12, 14, 18)');
+  expect(bg).toBe('rgb(27, 28, 31)');
   await shot(page, 'board-dark');
   await page.goto('/board/0004B');
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -231,22 +231,25 @@ test('L4.3 the sheet is a pane, not a slab dropped on the board', async ({ page 
   expect(luminance(style.bg)).toBeCloseTo(luminance(await token(page, '--surface')), 4);
 });
 
-test('L4 the theme chip and the label chip read as two treatments in dark', async ({ page }) => {
+test('L4 the theme and the label read as two treatments in dark', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/board');
   const card = page.getByRole('link', { name: /A doctor for document schemas/ });
   await expect(card).toBeVisible();
-  const surface = await token(page, '--surface');
-  // The theme's text sits in an inner truncating span; the Chip is its parent.
-  const themeChip = card.getByText('Delivered-work relationships').locator('xpath=..');
-  const labelChip = card.getByText('product', { exact: true });
-
-  // Filled vs outlined is the theme/label distinction. In dark both fell below
-  // perception, so the markup was right and nothing could be seen.
-  const label = await labelChip.evaluate((el) => getComputedStyle(el).backgroundColor);
-  expect(label, 'the label chip is outlined, so it has no fill').toMatch(/rgba?\(0, 0, 0, 0\)|transparent/);
-  const lift = luminance(await composited(themeChip, surface)) - luminance(surface);
-  expect(lift, 'the theme chip is filled enough to see').toBeGreaterThan(0.012);
+  // A theme is where a ticket belongs, a label is a tag on it. Two filled or two
+  // outlined chips side by side read as two tags, so the theme is text behind a
+  // folder mark and the label is the one outlined chip.
+  const theme = card.getByTitle('Delivered-work relationships');
+  const label = card.getByText('product', { exact: true });
+  const style = (l: Locator) => l.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { bg: s.backgroundColor, ring: s.boxShadow };
+  });
+  const [t, l] = [await style(theme), await style(label)];
+  expect(t.bg, 'the theme has no fill').toMatch(/rgba?\(0, 0, 0, 0\)|transparent/);
+  expect(t.ring, 'the theme has no outline').toBe('none');
+  await expect(theme.locator('svg'), 'the theme carries its folder mark').toHaveCount(1);
+  expect(l.ring, 'the label is outlined').not.toBe('none');
 });
 
 // The id and the rank render on the board card and on the list row alike, and a
@@ -266,22 +269,31 @@ for (const route of ['/board', '/list'] as const) {
     const id = card.getByText('0001B');
     expect(contrast(await composited(id, surface, 'color'), surface)).toBeGreaterThanOrEqual(4.5);
 
-    // The rank is the card's declared one bold element (board/src/index.css:3-5).
-    // The size half of this assertion is deliberate: it stops the contrast floor
-    // being met by shrinking the very thing the stylesheet nominates as bold.
     const rank = card.getByLabel(/^Priority \d/);
-    expect(contrast(await composited(rank, surface, 'color'), surface)).toBeGreaterThanOrEqual(3);
-
-    const sizes = await card.evaluate((el) =>
-      Array.from(el.querySelectorAll('*')).map((n) => parseFloat(getComputedStyle(n).fontSize)),
-    );
-    const rankSize = await rank.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-    expect(rankSize, 'the rank is still the largest type here').toBe(Math.max(...sizes));
+    if (route === '/list') {
+      // In the list the rank is its own Priority column, set large. The size
+      // half stops the floor being met by shrinking it.
+      expect(contrast(await composited(rank, surface, 'color'), surface)).toBeGreaterThanOrEqual(3);
+      const sizes = await card.evaluate((el) =>
+        Array.from(el.querySelectorAll('*')).map((n) => parseFloat(getComputedStyle(n).fontSize)),
+      );
+      const rankSize = await rank.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      expect(rankSize, 'the rank is still the largest type in the row').toBe(Math.max(...sizes));
+    } else {
+      // On the card the rank is small text in a badge, so it takes the text floor.
+      const badge = await composited(rank, surface);
+      expect(contrast(await composited(rank, badge, 'color'), badge)).toBeGreaterThanOrEqual(4.5);
+      // And it takes no column: the title starts at the card's content edge,
+      // where the status line starts. It sat 36px in, behind the rank.
+      const left = (l: Locator) => l.evaluate((el) => Math.round(el.getBoundingClientRect().left));
+      const statusLine = rank.locator('xpath=..');
+      expect(await left(card.getByRole('heading')), 'the title uses the full width').toBe(await left(statusLine));
+    }
   });
 }
 }
 
-test('L4.5 columns share the row evenly, and an empty one shows only its header', async ({ page }) => {
+test('L4.5 a lane with cards is wider than an empty one, and an empty one shows only its header', async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'the phone layout shows one column at a time');
   // The fixture puts a ticket in five of the six visible columns, so this filter
   // is what empties them — the state a real board sits in most of the time.
@@ -295,14 +307,14 @@ test('L4.5 columns share the row evenly, and an empty one shows only its header'
       items: el.querySelectorAll('li').length,
     })),
   );
-  // Every column keeps its own territory. Collapsing the empty ones crowded the
-  // populated column to one side and left the rest of the board a void.
-  const widths = [...new Set(columns.map((c) => c.width))];
-  expect(widths, `columns differ in width: ${JSON.stringify(columns)}`).toHaveLength(1);
-  // An empty column renders its header and nothing else — no placeholder row.
-  for (const column of columns.filter((c) => c.id !== 'col-backlog')) {
-    expect(column.items, `${column.id} holds no placeholder`).toBe(0);
-  }
+  // Equal shares made the one column with cards the narrowest thing on the
+  // board at 1080-1536px. The lane with cards gets the room; the empty ones
+  // share one narrower width, and their tint keeps them reading as columns.
+  const full = columns.filter((c) => c.items > 0);
+  const empty = columns.filter((c) => c.items === 0);
+  expect(full.length, `one lane holds the match: ${JSON.stringify(columns)}`).toBe(1);
+  expect(new Set(empty.map((c) => c.width)).size, 'empty lanes share one width').toBe(1);
+  expect(full[0]!.width).toBeGreaterThan(empty[0]!.width);
   await noSidewaysScroll(page);
   await shot(page, 'board-filtered');
 });
@@ -562,7 +574,7 @@ test('L4.4 the light scheme is cool throughout, ground and type alike', async ({
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
   // "Cool" is blue >= green in the raw channels. A warm ground under cool type
   // is what the stylesheet's own "cool neutrals" direction rules out.
-  const names = ['--bg', '--surface-2', '--line', '--line-strong', '--muted', '--faint', '--ink'];
+  const names = ['--bg', '--lane', '--surface-2', '--line', '--line-strong', '--muted', '--faint', '--ink'];
   const warm: string[] = [];
   const unread: string[] = [];
   for (const name of names) {
@@ -609,4 +621,39 @@ test('L15.6 a shaped ticket shows its feature, and Work is still not picked up',
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('dt', { hasText: /^Feature$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText('0042F');
   await expect(dialog.locator('dt', { hasText: /^Work$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText('Not picked up');
+});
+
+test('the theme switch overrides the OS, survives a reload, and System hands it back', async ({ page }) => {
+  // The scheme followed the OS and nothing else: on a dark desktop there was no
+  // way to see the board light.
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/board');
+  const theme = page.getByRole('radiogroup', { name: 'Theme' });
+  await expect(theme.getByRole('radio', { name: 'System theme' })).toHaveAttribute('aria-checked', 'true');
+  const scheme = () => page.evaluate(() => document.documentElement.dataset.theme);
+  expect(await scheme()).toBe('dark');
+
+  await theme.getByRole('radio', { name: 'Light theme' }).click();
+  expect(await scheme()).toBe('light');
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(241, 242, 245)');
+  await page.reload();
+  expect(await scheme(), 'the choice survives a reload').toBe('light');
+  await expect(theme.getByRole('radio', { name: 'Light theme' })).toHaveAttribute('aria-checked', 'true');
+
+  await theme.getByRole('radio', { name: 'System theme' }).click();
+  expect(await scheme(), 'System follows the OS again').toBe('dark');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect.poll(scheme, { message: 'and keeps following it' }).toBe('light');
+});
+
+test('the filter toggles and the view switch render at the meta size', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone collapses the refine controls');
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  // tailwind-merge read text-meta as a colour and dropped it beside text-muted,
+  // so these rendered at the browser's 16px, bigger than the search beside them.
+  const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
+  expect(await size(page.getByRole('button', { name: 'product', exact: true }))).toBe('13px');
+  expect(await size(page.getByRole('button', { name: 'Show dropped' }))).toBe('13px');
+  expect(await size(page.getByRole('link', { name: 'Board', exact: true }))).toBe('13px');
 });

@@ -52,14 +52,14 @@ function Board({ data }: { data: BoardData }) {
       ) : visible.length === 0 && hasFilters(search) ? (
         <NoMatches to="/board" />
       ) : (
-        <Columns groups={groups} ranks={ranks} total={data.tickets.length} />
+        <Columns groups={groups} ranks={ranks} />
       )}
       <Outlet />
     </AppShell>
   );
 }
 
-function Columns({ groups, ranks, total }: { groups: ColumnGroup[]; ranks: Map<string, number>; total: number }) {
+function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, number> }) {
   // On a phone one column shows at a time, picked by a column switcher. The
   // choice is this screen's own and not view state worth a URL: it does not
   // survive a rotation to a wider screen, where every column shows.
@@ -109,18 +109,19 @@ function Columns({ groups, ranks, total }: { groups: ColumnGroup[]; ranks: Map<s
       </div>
 
       {/*
-        A scrolling row of fixed-width columns at EVERY size. It used to become a
-        grid of equal 1fr shares at lg, which spread four columns across the
-        viewport however little they held — so a board whose tickets were all in
-        one status rendered one column of content and three of empty space.
+        A scrolling row of lanes at every size. A lane holding cards is 20rem;
+        an empty one is 11rem and shows its header and zero. Equal shares gave
+        the six columns 245px each at 1080-1536px, so the one column with cards
+        was the narrowest thing on the board while four empty ones took the
+        same room. The lane's tint is what keeps an empty column reading as a
+        column rather than a gap.
 
-        lg:overflow-visible went with it. Fixed widths can exceed the viewport,
-        and that overflow has to stay on this row: the e2e suite measures
-        document.scrollingElement, and the 1080 project sits inside lg.
+        The overflow stays on this row, never the page: the e2e suite measures
+        document.scrollingElement.
       */}
-      <div className="scrollbar-thin -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
+      <div className="scrollbar-thin -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:-mx-10 lg:scroll-px-10 lg:px-10">
         {groups.map((g) => (
-          <Column key={g.column.name} group={g} ranks={ranks} total={total} hiddenOnPhone={g.column.name !== current} />
+          <Column key={g.column.name} group={g} ranks={ranks} hiddenOnPhone={g.column.name !== current} />
         ))}
       </div>
     </>
@@ -132,8 +133,8 @@ function columnLabel(g: ColumnGroup): string {
   return g.column.label ?? g.column.name;
 }
 
-function Column({ group, ranks, total, hiddenOnPhone }: {
-  group: ColumnGroup; ranks: Map<string, number>; total: number; hiddenOnPhone: boolean;
+function Column({ group, ranks, hiddenOnPhone }: {
+  group: ColumnGroup; ranks: Map<string, number>; hiddenOnPhone: boolean;
 }) {
   // The status each card carries, and whether the vocabulary defines it.
   const undefinedStatus = new Set(group.statuses.filter((sg) => sg.undefined).map((sg) => sg.status.name));
@@ -143,31 +144,25 @@ function Column({ group, ranks, total, hiddenOnPhone }: {
       id={`col-${group.column.name}`}
       aria-label={columnLabel(group)}
       className={cn(
-        'w-full shrink-0 snap-start',
-        // Every column keeps its own territory, empty or not, at one width for
-        // all of them. Collapsing the empty ones crowded the populated column
-        // to one side and left the rest of the board a void — and no kanban
-        // worth copying does it: an empty column shows its header and its zero.
-        // The floor keeps a card legible; below it the row scrolls.
-        'sm:w-auto sm:min-w-[15rem] sm:max-w-[26rem] sm:flex-1 sm:basis-0',
+        'w-full shrink-0 snap-start sm:rounded-2xl sm:bg-lane sm:p-2',
+        group.tickets.length ? 'sm:w-80' : 'sm:w-44',
         hiddenOnPhone && 'hidden sm:block',
       )}
     >
-      <header className="mb-3 hidden items-center gap-2 px-0.5 sm:flex" title={means || undefined}>
-        <h2 className="text-sm font-semibold">{columnLabel(group)}</h2>
+      <header className="hidden items-center gap-2 px-2 pt-1.5 pb-2.5 sm:flex" title={means || undefined}>
+        <h2 className="truncate text-sm font-semibold">{columnLabel(group)}</h2>
         <span className="tabular text-xs text-faint">{group.tickets.length}</span>
         {(group.undefined || undefinedStatus.size > 0) && <span className="text-xs text-warn">not defined</span>}
       </header>
       {/* An empty column renders its header and stops. The count in that header
           already says nothing is here, and three dashed boxes saying it again
           were the largest objects on the board. */}
-      <ol className="flex flex-col gap-2.5">
+      <ol className="flex flex-col gap-2">
         {group.tickets.map((t: Ticket) => (
           <li key={t.id}>
             <TicketCard
               ticket={t}
               rank={ranks.get(t.id) ?? 0}
-              total={total}
               from="/board"
               quiet={QUIET.has(t.status) || undefinedStatus.has(t.status)}
               showStatus

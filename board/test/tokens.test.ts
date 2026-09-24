@@ -25,10 +25,11 @@ function components(): [string, string][] {
 
 /** The token block for a scheme, as a name → value map. */
 function tokens(scheme: 'light' | 'dark'): Map<string, string> {
+  const DARK_BLOCK = ':root[data-theme="dark"] {';
   const block =
     scheme === 'light'
-      ? CSS.slice(CSS.indexOf(':root {'), CSS.indexOf('@media (prefers-color-scheme: dark)'))
-      : CSS.slice(CSS.indexOf('@media (prefers-color-scheme: dark)'), CSS.indexOf('@theme inline'));
+      ? CSS.slice(CSS.indexOf(':root {'), CSS.indexOf(DARK_BLOCK))
+      : CSS.slice(CSS.indexOf(DARK_BLOCK), CSS.indexOf('@theme inline'));
   const map = new Map<string, string>();
   for (const match of block.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)) {
     const [, name, value] = match;
@@ -84,14 +85,14 @@ describe('L2 — the two colour schemes declare the same tokens', () => {
   });
 
   it('declares the tokens this design system was rebuilt around', () => {
-    const required = ['--surface-hover', '--surface-active', '--surface-sunken', '--rank'];
+    const required = ['--surface-hover', '--surface-active', '--surface-sunken', '--rank', '--lane'];
     expect(required.filter((t) => !LIGHT.has(t))).toEqual([]);
     expect(required.filter((t) => !DARK.has(t))).toEqual([]);
   });
 
   it('exposes every colour token to Tailwind through @theme inline', () => {
     const theme = CSS.slice(CSS.indexOf('@theme inline'));
-    const missing = ['--surface-hover', '--surface-active', '--surface-sunken', '--rank'].filter(
+    const missing = ['--surface-hover', '--surface-active', '--surface-sunken', '--rank', '--lane'].filter(
       (t) => !theme.includes(`var(${t})`),
     );
     expect(missing).toEqual([]);
@@ -135,5 +136,17 @@ describe('L2 — tokens that must agree, and tokens that must not', () => {
   it('keeps --s-dropped distinct from --s-open in both schemes', () => {
     expect(resolve(LIGHT, '--s-dropped')).not.toBe(resolve(LIGHT, '--s-open'));
     expect(resolve(DARK, '--s-dropped')).not.toBe(resolve(DARK, '--s-open'));
+  });
+});
+
+describe('L2 — the scheme is chosen on <html>, not only by the OS', () => {
+  // The dark tokens lived under @media (prefers-color-scheme: dark) alone, so
+  // nothing on the page could pick light on a dark desktop.
+  it('declares no scheme under a media query', () => {
+    expect(CSS).not.toContain('@media (prefers-color-scheme');
+  });
+
+  it('points the dark: variant at data-theme', () => {
+    expect(CSS).toMatch(/@custom-variant dark \(&:where\(\[data-theme="dark"\]/);
   });
 });
