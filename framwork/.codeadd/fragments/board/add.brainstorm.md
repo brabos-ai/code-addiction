@@ -28,3 +28,19 @@ only place the ticket survives — a spike writes no file to carry it — so it 
 `/add.new` reads, so it is the carrier the ticket travels on. **A spike writes no intent file and
 therefore carries no ticket**; name the ticket in 5.1's report instead.
 <!-- /section:ticket-intent -->
+
+<!-- section:ticket-refining -->
+
+**Ticket — the entry write.** When STEP 1 resolved a ticket and the path you just stated is `bounded` or
+`architectural`, write `refining` now, per the `add.brainstorm` row of
+`{{skill:add-backlog/references/lifecycle.md}}`. **On `spike`, write nothing** — a spike's answer is not
+permission to build, and a ticket moved by one that ends in "no" would stay there with nothing behind it.
+<!-- /section:ticket-refining -->
+
+<!-- section:ticket-shaped -->
+
+**Ticket — the exit write.** Once the gate passed and the intent file exists, write `shaped`, per the
+`add.brainstorm` row of `{{skill:add-backlog/references/lifecycle.md}}`. It follows the intent file and not
+the report, because the report came before the approval. A write that did not land is one line printed
+with 5.4's handoff.
+<!-- /section:ticket-shaped -->

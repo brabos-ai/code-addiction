@@ -39,7 +39,7 @@ const BOARD_COMMANDS = ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'a
 // The END-STATE MAP. Fourteen sections: add.new's two adjacent sites were
 // merged into one, which is why the plan's fifteen became fourteen.
 const MAP = {
-  'add.brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-report', 'ticket-resolve'],
+  'add.brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-refining', 'ticket-report', 'ticket-resolve', 'ticket-shaped'],
   'add.new': ['ticket-intent-field', 'ticket-skeleton'],
   'add.plan': ['ticket-done-when', 'ticket-read'],
   'add.build': ['ticket-attention', 'ticket-doing', 'ticket-metadata'],
@@ -67,7 +67,7 @@ describe('board — the registry and the map', () => {
     }
     for (const k of Object.keys(got)) got[k].sort();
     expect(got).toEqual(MAP);
-    expect(boardPoints()).toHaveLength(14);
+    expect(boardPoints()).toHaveLength(16);
   });
 
   it('no board marker shares an anchor line with another namespace — L6.2 has no subject', () => {

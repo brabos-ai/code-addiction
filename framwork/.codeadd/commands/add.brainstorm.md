@@ -160,6 +160,8 @@ resembles. Bounded requires you to name the existing flow being changed.
 
 **When in doubt between two paths, take the heavier one.** Reaching for the lighter label to skip work IS
 the doubt.
+<!-- feature:board:ticket-refining -->
+<!-- /feature:board:ticket-refining -->
 
 ### The ratchet is one-way
 
@@ -493,6 +495,8 @@ IF ABOUT TO WRITE `## Open`:
 **Then run the validation gate** from `{{skill:add-doc-schemas/SKILL.md}}` for schema
 `brainstorm-intent`. ⛔ DO NOT skip it and DO NOT hand off until it returns `PASS` — the next command
 extracts decisions from this file without asking.
+<!-- feature:board:ticket-shaped -->
+<!-- /feature:board:ticket-shaped -->
 
 ### 5.4 Route
 

@@ -336,13 +336,14 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
   // 52 -> 54: feature:board moves add.plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
   // 54 -> 57: feature:board moves add.build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
   // 57 -> 60: feature:board moves add.done's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
-  it('sidecar, fragments, and catalog declare the same 60 substitutions', () => {
+  // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
+  it('sidecar, fragments, and catalog declare the same 62 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(60);
-    expect(all).toHaveLength(60);
+    expect(points).toHaveLength(62);
+    expect(all).toHaveLength(62);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -448,10 +449,10 @@ describe('plugin substitution on real built files', () => {
 describe('combined substitution and sibling isolation', () => {
   useFixture();
 
-  it('all 60 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('all 62 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(60);
+    expect(features.length + plugins.length).toBe(62);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);
