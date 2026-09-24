@@ -1,5 +1,5 @@
 // The e2e fixture: a project whose docs/ holds a board varied enough to stress
-// the layout — every status, long titles, several labels, comments, a picked-up
+// the layout — the shipped nine statuses over seven columns, long titles, several labels, comments, a picked-up
 // ticket, markdown notes. Written synchronously when the Playwright config loads,
 // so it exists before the web server answers its first request.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ type T = Record<string, unknown>;
 function ticket(id: string, over: T): T {
   return {
     id, title: '', theme: '', labels: [], tldr: '', notes: [], done_when: '', paths: [], grounded: true,
-    status: 'open', created_at: '2026-09-18T10:00:00Z', updated_at: '2026-09-20T15:30:00Z', comments: [], work_id: null,
+    status: 'open', created_at: '2026-09-18T10:00:00Z', updated_at: '2026-09-20T15:30:00Z', comments: [], work_id: null, feature: null,
     ...over,
   };
 }
@@ -31,7 +31,7 @@ export const FIXTURE_TICKETS: T[] = [
   }),
   ticket('0002B', {
     title: 'Migration command: initial relationship graph for old installs', theme: 'Delivered-work relationships',
-    labels: ['product'], status: 'open', tldr: 'Build a relationship structure over features delivered before the typed-relation format existed.',
+    labels: ['product'], status: 'shaped', feature: '0042F', tldr: 'Build a relationship structure over features delivered before the typed-relation format existed.',
     done_when: 'Running the command on a project whose deliveries declare no relationship produces the grouped structure.',
     paths: ['cli/src/migrations.js'],
   }),
@@ -62,9 +62,116 @@ export const FIXTURE_TICKETS: T[] = [
   }),
   ticket('0007B', {
     title: 'Averyveryverylongunbrokenidentifierthatmustnotpushthelayoutsidewaysonaphone', theme: 'Tooling',
-    labels: ['internal'], status: 'open', tldr: 'A stress case for wrapping.', done_when: 'It wraps.',
+    labels: ['internal'], status: 'in-review', tldr: 'A stress case for wrapping.', done_when: 'It wraps.',
   }),
 ];
+
+/** Nine statuses over seven columns, dropped hidden: six visible by default. */
+const SHIPPED_DEFS = {
+  "columns": [
+    {
+      "name": "backlog",
+      "order": 1,
+      "label": "Backlog"
+    },
+    {
+      "name": "shaping",
+      "order": 2,
+      "label": "Shaping"
+    },
+    {
+      "name": "planning",
+      "order": 3,
+      "label": "Planning"
+    },
+    {
+      "name": "building",
+      "order": 4,
+      "label": "Building"
+    },
+    {
+      "name": "review",
+      "order": 5,
+      "label": "Review"
+    },
+    {
+      "name": "done",
+      "order": 6,
+      "label": "Done"
+    },
+    {
+      "name": "dropped",
+      "order": 7,
+      "label": "Dropped",
+      "hidden": true
+    }
+  ],
+  "statuses": [
+    {
+      "name": "open",
+      "order": 1,
+      "column": "backlog",
+      "label": "Open",
+      "means": "decided, nobody picked it up"
+    },
+    {
+      "name": "refining",
+      "order": 2,
+      "column": "shaping",
+      "label": "Refining",
+      "means": "add.brainstorm or add.new running"
+    },
+    {
+      "name": "shaped",
+      "order": 3,
+      "column": "shaping",
+      "label": "Shaped",
+      "means": "about.md exists, waiting to plan"
+    },
+    {
+      "name": "planning",
+      "order": 4,
+      "column": "planning",
+      "label": "Planning",
+      "means": "add.plan running"
+    },
+    {
+      "name": "planned",
+      "order": 5,
+      "column": "planning",
+      "label": "Planned",
+      "means": "plan approved, waiting to build"
+    },
+    {
+      "name": "doing",
+      "order": 6,
+      "column": "building",
+      "label": "Doing",
+      "means": "add.build running"
+    },
+    {
+      "name": "in-review",
+      "order": 7,
+      "column": "review",
+      "label": "In review",
+      "means": "PR open"
+    },
+    {
+      "name": "done",
+      "order": 8,
+      "column": "done",
+      "label": "Done",
+      "means": "delivered"
+    },
+    {
+      "name": "dropped",
+      "order": 9,
+      "column": "dropped",
+      "label": "Dropped",
+      "means": "decided against"
+    }
+  ]
+};
 
 export function writeFixture(root: string): void {
   rmSync(root, { recursive: true, force: true });
@@ -72,13 +179,8 @@ export function writeFixture(root: string): void {
   writeFileSync(join(root, 'docs/backlog.jsonl'), FIXTURE_TICKETS.map((t) => `${JSON.stringify(t)}\n`).join(''));
   writeFileSync(
     join(root, 'docs/backlog.definitions.json'),
-    JSON.stringify({
-      statuses: [
-        { name: 'open', order: 1, means: 'decided, not started' },
-        { name: 'doing', order: 2, means: 'work is in progress' },
-        { name: 'done', order: 3, means: 'delivered' },
-        { name: 'dropped', order: 4, means: 'decided against' },
-      ],
-    }, null, 2),
+    // The definitions the product ships -- DEFAULT_DEFS in backlog.sh, which
+    // docs/backlog.definitions.json at the repository root is seeded from.
+    JSON.stringify(SHIPPED_DEFS, null, 2),
   );
 }
