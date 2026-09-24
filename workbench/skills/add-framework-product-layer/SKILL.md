@@ -274,7 +274,9 @@ machine. A gate nobody can afford to satisfy is a gate everybody rules their way
 
 **Run the suite the change can reach, one file at a time, through the container:**
 `node scripts/run-tests.js bats framwork/.codeadd/scripts/tests/<name>.bats`. It returns in seconds; the full
-`test:scripts` takes the better part of an hour.
+`test:scripts` takes the better part of an hour. **That scoped run is what closes the block** when the
+change reaches only those files — a `.sh` whose own `.bats` is the only suite that calls it. When the
+change reaches a script other suites exercise, run each of those files too, or the whole suite.
 
 ```
 IF RUNNING BATS ON WINDOWS:
