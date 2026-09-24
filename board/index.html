@@ -9,15 +9,19 @@
     <meta name="theme-color" content="#f1f2f5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1b1c1f" media="(prefers-color-scheme: dark)" />
     <title>Board</title>
-    <!-- Sets data-theme before the first paint, so a saved scheme never flashes
-         the other one. Must match THEME_KEY and resolveScheme in
-         board/src/lib/theme.ts; board/test/theme.test.ts holds them together. -->
+    <!-- Sets data-theme and data-density before the first paint, so a saved
+         choice never flashes the other one. Must match THEME_KEY and
+         resolveScheme in board/src/lib/theme.ts and DENSITY_KEY in
+         board/src/lib/density.ts; board/test/theme.test.ts holds them together. -->
     <script>
       (function () {
         var choice = null;
         try { choice = localStorage.getItem('board-theme'); } catch (e) {}
         var dark = choice === 'dark' || (choice !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        var density = null;
+        try { density = localStorage.getItem('board-density'); } catch (e) {}
+        document.documentElement.dataset.density = density === 'compact' ? 'compact' : 'comfortable';
       })();
     </script>
   </head>

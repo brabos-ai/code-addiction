@@ -13,6 +13,10 @@
  * header and as the status on its cards, never as a fill or a wash — lanes and
  * cards stay neutral. Dark is graphite, not near-black: the page, the lane and
  * the card are three close steps, so nothing on the board glares.
+ * Density: comfortable or compact (<html data-density>, the `compact:` variant).
+ * Compact keeps a card's status line, a one-line title and its labels.
+ * A card names its status only where its lane holds more than one; an empty
+ * lane says what its statuses mean instead of standing blank.
  * Shape: a tight radius scale (3/4/6/8px). Controls and chips are rounded
  * rectangles, not pills; only true circles (status glyphs, dots) are round.
  * Scheme: set on <html data-theme>, by the inline script in index.html before
@@ -23,6 +27,7 @@
 @import "@fontsource-variable/geist";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant compact (&:where([data-density="compact"] *));
 
 :root {
   color-scheme: light;

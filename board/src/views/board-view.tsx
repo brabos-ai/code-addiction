@@ -141,7 +141,7 @@ function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, 
         <div
           ref={row}
           onScroll={measure}
-          className="scrollbar-thin flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:min-h-0 sm:flex-1 sm:scroll-px-6 sm:px-6 lg:scroll-px-10 lg:px-10"
+          className="scrollbar-thin flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:min-h-0 sm:flex-1 sm:scroll-px-6 sm:px-6 lg:scroll-px-10 lg:px-10"
         >
           {groups.map((g) => (
             <Column key={g.column.name} group={g} ranks={ranks} hiddenOnPhone={g.column.name !== current} />
@@ -170,7 +170,13 @@ function Column({ group, ranks, hiddenOnPhone }: {
 }) {
   // The status each card carries, and whether the vocabulary defines it.
   const undefinedStatus = new Set(group.statuses.filter((sg) => sg.undefined).map((sg) => sg.status.name));
-  const means = group.statuses.map((sg) => sg.status.means && `${sg.status.label ?? sg.status.name}: ${sg.status.means}`).filter(Boolean).join('\n');
+  const meanings = group.statuses
+    .filter((sg) => sg.status.means)
+    .map((sg) => ({ name: sg.status.name, label: sg.status.label ?? sg.status.name, means: sg.status.means }));
+  const means = meanings.map((m) => `${m.label}: ${m.means}`).join('\n');
+  // A lane with one status says it once, in its header; every card repeating
+  // "open" in Backlog was noise. Two or more, and the card names its own.
+  const showStatus = group.statuses.length > 1;
   return (
     <section
       id={`col-${group.column.name}`}
@@ -178,7 +184,9 @@ function Column({ group, ranks, hiddenOnPhone }: {
       data-phase={group.column.name}
       className={cn(
         'flex w-full shrink-0 snap-start flex-col sm:min-h-0 sm:rounded-lg sm:bg-lane sm:pt-2',
-        group.tickets.length ? 'sm:w-80' : 'sm:w-44',
+        // 18.5rem with cards, 10rem empty, 0.75rem apart: six lanes with three
+        // populated fit a 1536px screen, which is 1920 at 125% zoom.
+        group.tickets.length ? 'sm:w-[18.5rem]' : 'sm:w-40',
         hiddenOnPhone && 'hidden sm:flex',
       )}
     >
@@ -190,9 +198,20 @@ function Column({ group, ranks, hiddenOnPhone }: {
         {(group.undefined || undefinedStatus.size > 0) && <span className="text-xs text-warn">not defined</span>}
         <span className="tabular ml-auto rounded-sm bg-surface-sunken px-1.5 text-xs leading-5 font-medium text-muted">{group.tickets.length}</span>
       </header>
-      {/* An empty column renders its header and stops. The count in that header
-          already says nothing is here, and three dashed boxes saying it again
-          were the largest objects on the board. */}
+      {/* An empty lane says what its statuses mean, in the definitions' own
+          words — the one thing a reader new to the pipeline cannot see
+          anywhere else on the board. No placeholder card: the count in the
+          header already says nothing is here. */}
+      {group.tickets.length === 0 && meanings.length > 0 && (
+        <dl className="hidden space-y-2 px-4 pb-3 text-xs leading-snug text-faint sm:block">
+          {meanings.map((m) => (
+            <div key={m.name}>
+              {meanings.length > 1 && <dt className="font-medium text-muted">{m.label}</dt>}
+              <dd>{m.means}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       <ol className="scrollbar-thin flex flex-col gap-2 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-2 sm:pt-0.5 sm:pb-2">
         {group.tickets.map((t: Ticket) => (
           <li key={t.id}>
@@ -201,7 +220,7 @@ function Column({ group, ranks, hiddenOnPhone }: {
               rank={ranks.get(t.id) ?? 0}
               from="/board"
               quiet={QUIET.has(t.status) || undefinedStatus.has(t.status)}
-              showStatus
+              showStatus={showStatus}
             />
           </li>
         ))}

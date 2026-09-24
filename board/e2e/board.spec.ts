@@ -674,8 +674,9 @@ test('each phase has a hue of its own, and a status takes its phase hue', async 
     })),
   );
   expect(new Set(markers.map((m) => m.colour)).size, JSON.stringify(markers)).toBe(markers.length);
-  // A card's status line carries its lane's hue.
-  const lane = page.locator('section[data-phase="review"]');
+  // A card's status line carries its lane's hue. Shaping holds two statuses,
+  // so its cards name theirs.
+  const lane = page.locator('section[data-phase="shaping"]');
   const status = lane.locator('a [data-status]').first();
   await expect(status).toBeVisible();
   const [ph, st] = await Promise.all([
@@ -704,3 +705,45 @@ test('the board is one screen tall, so the sideways scrollbar is always in view'
   expect(m.page, 'the page does not scroll down').toBe(0);
   expect(m.lane, 'a full lane scrolls its own cards').toBe(true);
 });
+
+test('a card names its status only where its lane holds more than one', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'checked on the lanes side by side');
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  // Backlog holds only open: every card saying "open" there was noise.
+  await expect(page.locator('#col-backlog a [data-status]')).toHaveCount(0);
+  // Shaping holds refining and shaped, so the card says which.
+  await expect(page.locator('#col-shaping a [data-status]').first()).toBeVisible();
+});
+
+test('an empty lane says what its statuses mean', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone shows one lane at a time');
+  await page.goto('/board?q=sweep');
+  await expect(page.getByRole('link', { name: /Sweep the artefacts/ })).toBeVisible();
+  // The definitions' own words, which lived only in a tooltip on the header.
+  await expect(page.locator('#col-building')).toContainText('add.build running');
+  await expect(page.locator('#col-shaping')).toContainText('Refining');
+});
+
+test('compact cards drop the summary, keep the labels, and survive a reload', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the switch is not on a phone');
+  await page.goto('/board');
+  const card = page.getByRole('link', { name: /A doctor for document schemas/ });
+  await expect(card).toBeVisible();
+  const tall = await card.evaluate((el) => el.getBoundingClientRect().height);
+  const summary = card.locator('p');
+  await expect(summary).toBeVisible();
+
+  const toggle = page.getByRole('button', { name: 'Compact cards' });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(summary).toBeHidden();
+  await expect(card.getByText('product', { exact: true })).toBeVisible();
+  const short = await card.evaluate((el) => el.getBoundingClientRect().height);
+  expect(short, 'a compact card is well under the comfortable one').toBeLessThan(tall * 0.6);
+
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Compact cards' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ }).locator('p')).toBeHidden();
+});
+

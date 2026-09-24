@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Columns3, Monitor, Moon, Rows3, Sun } from 'lucide-react';
+import { Columns3, Monitor, Moon, Rows3, Rows4, Sun } from 'lucide-react';
 import type { BoardData } from '@/api/types';
 import { absoluteTime, relativeTime } from '@/lib/format';
+import { readDensity, saveDensity, type Density } from '@/lib/density';
 import { followSystem, readChoice, saveChoice, type ThemeChoice } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { Shortcuts } from './shortcuts';
@@ -59,6 +60,7 @@ export function AppShell({ view, data, toolbar, fill, children }: {
 
         <div className="flex items-center gap-4 sm:ml-auto">
           {data && <LiveStamp readAt={data.readAt} />}
+          {view === 'board' && <DensitySwitch />}
           <ThemeSwitch />
         </div>
       </header>
@@ -87,6 +89,29 @@ function ViewLink({ to, active, icon, label }: { to: '/board' | '/list'; active:
       {icon}
       {label}
     </Link>
+  );
+}
+
+/** Compact cards on or off. Only the board has cards to compact. */
+function DensitySwitch() {
+  const [density, setDensity] = useState<Density>(readDensity);
+  const compact = density === 'compact';
+  return (
+    <button
+      type="button"
+      aria-pressed={compact}
+      aria-label="Compact cards"
+      title="Compact cards"
+      onClick={() => { const next = compact ? 'comfortable' : 'compact'; saveDensity(next); setDensity(next); }}
+      className={cn(
+        // Not on a phone: the header is full there, and a phone shows one lane.
+        'hidden size-9 shrink-0 place-items-center rounded-lg sm:grid [&_svg]:size-4',
+        'transition-[background-color,color,box-shadow] duration-200 ease-spring',
+        compact ? 'bg-surface text-ink shadow-card ring-1 ring-line' : 'bg-surface-sunken text-muted hover:text-ink',
+      )}
+    >
+      {compact ? <Rows4 {...ICON} /> : <Rows3 {...ICON} />}
+    </button>
   );
 }
 
