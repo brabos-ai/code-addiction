@@ -950,7 +950,8 @@ describe('node inventory snapshot', () => {
       // reference 71 -> 72: add-backlog/references/lifecycle.md, the one
       // procedure the five pipeline commands share for a ticket they carry.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
-      reference: 72,
+      // reference 72 -> 73: add-backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
+      reference: 73,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -1071,7 +1072,10 @@ describe('node inventory snapshot', () => {
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13.)
     // 239 -> 240, declares 136 -> 137: +1 fragment, board/add.done.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15.)
-    expect(nodes).toHaveLength(240);
+    // 240 -> 241: +1 reference, add-backlog/references/phases.md -- the phase model,
+    // split out of lifecycle.md. declares stays 137: a reference is not a declaring kind.
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19.)
+    expect(nodes).toHaveLength(241);
     expect(nodes.filter((n) => n.declares)).toHaveLength(137);
   });
 });
