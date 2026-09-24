@@ -139,6 +139,19 @@ describe('uninstall', () => {
     expect(gitignore).not.toContain('# END ADD');
   });
 
+  it('corrupted-manifest fallback removes .zcode (agents-only, project scope)', async () => {
+    const zcodeAgent = path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md');
+    fs.mkdirSync(path.dirname(zcodeAgent), { recursive: true });
+    fs.writeFileSync(zcodeAgent, '# agent');
+
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'not json{{{', 'utf8');
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+
+    expect(fs.existsSync(zcodeAgent)).toBe(false);
+  });
+
   it('global corrupted-manifest fallback removes .config/opencode and keeps .gitignore', async () => {
     // Global install dir that ADD_DIRS does not list — only GLOBAL_ADD_DIRS does
     const ocSkill = path.join(tmpDir, '.config', 'opencode', 'skills', 'add', 'SKILL.md');
