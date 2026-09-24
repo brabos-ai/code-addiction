@@ -209,8 +209,8 @@ describe('provider-map.json capabilities', () => {
     }
   });
 
-  it('reduced to the 5 MCP-capable providers', () => {
-    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode']);
+  it('reduced to the 6 MCP-capable providers', () => {
+    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode', 'zcode']);
   });
 
   it('claude has all capabilities enabled', () => {
@@ -528,9 +528,9 @@ describe('buildAgents', () => {
   }
 
   it('builds agent files for every agent-capable provider', () => {
-    // 22 agents × 4 providers (claude, cursor, opencode, codex).
+    // 22 agents × 5 providers (claude, cursor, opencode, codex, zcode).
     const count = buildAgents(redirected());
-    expect(count).toBe(88);
+    expect(count).toBe(110);
   });
 
   it('fails loud when a registered agent has no source file', () => {
@@ -564,7 +564,7 @@ describe('buildAgents', () => {
     const render = (provider) => AGENT_DIALECTS[provider]({ fields, blocks }, body, meta);
 
     expect(render('claude')).toMatch(/^model: sonnet$/m);
-    for (const provider of ['opencode', 'cursor', 'codex']) {
+    for (const provider of ['opencode', 'cursor', 'codex', 'zcode']) {
       expect(render(provider), provider).not.toMatch(/^model\s*[:=]/m);
     }
     // The fields that stay must survive the removal.
@@ -574,9 +574,37 @@ describe('buildAgents', () => {
     expect(render('codex')).toMatch(/^developer_instructions = /m);
   });
 
+  // ZCode's documented agent keys match Claude's dialect (name, description,
+  // tools, disallowedTools, skills) — the one difference is `model`, covered
+  // above. This pins the shape itself rather than just the model's absence.
+  it('the zcode dialect matches the claude dialect minus model', () => {
+    const { fields, blocks, body } = splitFrontmatter(
+      '---\nname: probe-agent\ndescription: probe\nmodel: sonnet\ntools: Read, Grep\n---\n\nBody.\n',
+    );
+    const meta = { name: 'probe-agent', description: 'probe', readonly: true };
+    const zcodeHeader = AGENT_DIALECTS.zcode({ fields, blocks }, body, meta);
+    const claudeHeader = AGENT_DIALECTS.claude({ fields, blocks }, body, meta);
+
+    expect(zcodeHeader).toBe(claudeHeader.replace('model: sonnet\n', ''));
+    expect(zcodeHeader).toMatch(/^disallowedTools: Write, Edit, NotebookEdit$/m);
+    expect(zcodeHeader).toMatch(/^tools: Read, Grep$/m);
+  });
+
   it('does not build agents for antigrav (no agents pattern)', () => {
     const antigravAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.agent', 'agents');
     expect(fs.existsSync(antigravAgentsDir)).toBe(false);
+  });
+
+  it('zcode reuses codex\'s dir, commands and skills patterns byte for byte', () => {
+    // zcode never gets its own commands/skills tree — it reads the exact same
+    // files codex already writes to framwork/.agents. Only its agent pattern
+    // and agentsDir are its own.
+    const { zcode, codex } = map.providers;
+    expect(zcode.dir).toBe(codex.dir);
+    expect(zcode.commands).toBe(codex.commands);
+    expect(zcode.skills).toBe(codex.skills);
+    expect(zcode.agentsDir).not.toBe(codex.agentsDir);
+    expect(zcode.agents).not.toBe(codex.agents);
   });
 
   it('handles missing agents section gracefully', () => {

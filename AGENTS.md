@@ -1,6 +1,6 @@
 # Code-Addiction (ADD Framework)
 
-Open-source framework that distributes AI-assisted development commands, skills, and agents to 5 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity, OpenCode).
+Open-source framework that distributes AI-assisted development commands, skills, and agents to 6 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity, OpenCode, ZCode).
 
 **This file is an overview.** It says what exists and where. The mechanics of each thing live in the command or skill that owns it — see **Where the details live** at the bottom.
 
@@ -185,7 +185,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 
 ### Providers
 
-The 5 supported providers (claude, codex, cursor, antigrav, opencode) are all MCP-capable and markdown-native. Commands and skills build to all 5 by default; agents only to providers declaring an `agents` pattern. Antigravity agents are deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. Per-provider capabilities and distribution overrides live in `provider-map.json` → `providers.{name}`.
+The 6 supported providers (claude, codex, cursor, antigrav, opencode, zcode) are all MCP-capable and markdown-native. Commands and skills build to all 6 by default; agents only to providers declaring an `agents` pattern. Antigravity agents are deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. ZCode reuses codex's `dir`/`commands`/`skills` values verbatim rather than building its own tree, and has its own `agentsDir`. Per-provider capabilities and distribution overrides live in `provider-map.json` → `providers.{name}`.
 
 ## Feature Injection System
 

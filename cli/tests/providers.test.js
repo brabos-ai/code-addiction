@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected, globalCapable } from '../src/providers.js';
+import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected, globalCapable, agentDest } from '../src/providers.js';
 
 describe('PROVIDERS', () => {
-  it('contains exactly the 5 MCP-capable provider keys', () => {
-    for (const k of ['claude', 'codex', 'cursor', 'antigrav', 'opencode']) {
+  it('contains exactly the 6 MCP-capable provider keys', () => {
+    for (const k of ['claude', 'codex', 'cursor', 'antigrav', 'opencode', 'zcode']) {
       expect(PROVIDERS, `missing provider: ${k}`).toHaveProperty(k);
     }
-    expect(Object.keys(PROVIDERS).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode']);
+    expect(Object.keys(PROVIDERS).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode', 'zcode']);
   });
 
   it('each provider has src, dest, label, hint', () => {
@@ -22,8 +22,8 @@ describe('PROVIDERS', () => {
 });
 
 describe('PROVIDER_PRIORITY', () => {
-  it('lists claude, codex, cursor, antigrav, opencode in that order', () => {
-    expect(PROVIDER_PRIORITY).toEqual(['claude', 'codex', 'cursor', 'antigrav', 'opencode']);
+  it('lists claude, codex, cursor, antigrav, opencode, zcode in that order', () => {
+    expect(PROVIDER_PRIORITY).toEqual(['claude', 'codex', 'cursor', 'antigrav', 'opencode', 'zcode']);
   });
 
   it('all priority keys exist in PROVIDERS', () => {
@@ -74,6 +74,25 @@ describe('globalDest', () => {
     expect(PROVIDERS.cursor.globalDest).toBeNull();
     expect(PROVIDERS.antigrav.globalDest).toBeNull();
     expect(PROVIDERS.opencode.globalDest).toBe('.config/opencode');
+    expect(PROVIDERS.zcode.globalDest).toBe('.agents');
+  });
+});
+
+describe('zcode', () => {
+  it('reuses codex\'s src/dest for commands and skills, and has its own agents dest', () => {
+    expect(PROVIDERS.zcode.src).toBe(PROVIDERS.codex.src);
+    expect(PROVIDERS.zcode.dest).toBe(PROVIDERS.codex.dest);
+    expect(PROVIDERS.zcode.commandsSubdir).toBeNull();
+    expect(PROVIDERS.zcode.skillsSubdir).toBe('skills');
+    expect(PROVIDERS.zcode.agentsSrc).toBe('framwork/.zcode');
+    expect(PROVIDERS.zcode.agentsDest).toBe('.zcode');
+    expect(agentDest(resolveSelected(['zcode'])[0])).toBe('.zcode');
+  });
+
+  it('installing codex and zcode together writes to exactly one commands/skills destination', () => {
+    const result = resolveSelected(['codex', 'zcode']);
+    expect(result.map((r) => r.dest)).toEqual(['.agents', '.agents']);
+    expect(result.map((r) => r.src)).toEqual(['framwork/.agents', 'framwork/.agents']);
   });
 });
 
@@ -102,6 +121,7 @@ describe('globalCapable', () => {
     expect(globalCapable('claude')).toBe(true);
     expect(globalCapable('codex')).toBe(true);
     expect(globalCapable('opencode')).toBe(true);
+    expect(globalCapable('zcode')).toBe(true);
     expect(globalCapable('cursor')).toBe(false);
     expect(globalCapable('antigrav')).toBe(false);
   });

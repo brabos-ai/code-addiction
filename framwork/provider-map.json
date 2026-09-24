@@ -62,6 +62,21 @@
         "https://cursor.com/changelog/2-0",
         "https://cursor.com/changelog/1-6"
       ]
+    },
+    "zcode": {
+      "dir": "framwork/.agents",
+      "agentsDir": "framwork/.zcode",
+      "commands": "skills/{name}/SKILL.md",
+      "skills": "skills/{name}/SKILL.md",
+      "agents": "agents/{name}.md",
+      "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": true },
+      "docs": [
+        "https://zcode.z.ai/en/docs/commands",
+        "https://zcode.z.ai/en/docs/skill",
+        "https://zcode.z.ai/en/docs/subagents",
+        "https://zcode.z.ai/en/docs/mcp-services",
+        "https://zcode.z.ai/en/docs/hooks"
+      ]
     }
   },
   "commands": {
