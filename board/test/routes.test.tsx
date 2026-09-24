@@ -65,3 +65,42 @@ describe('L2.3 routes', () => {
     expect(await screen.findByRole('dialog')).toHaveTextContent('Sweep prompt density');
   });
 });
+
+// Plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F40 / L15.5. RED-FIRST.
+describe('L15 the board by column', () => {
+  const phased: BoardData = {
+    ...data,
+    statuses: [
+      { name: 'in-review', order: 1, means: 'PR open', column: 'review', label: 'In review' },
+      { name: 'done', order: 2, means: 'delivered', column: 'review', label: 'Done' },
+    ],
+    columns: [{ name: 'review', order: 1, label: 'Review' }],
+    tickets: [
+      { ...data.tickets[0]!, id: '0010B', title: 'Awaiting review', status: 'in-review' },
+      { ...data.tickets[0]!, id: '0011B', title: 'Already merged', status: 'done' },
+    ],
+  };
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(phased), { headers: { 'content-type': 'application/json' } })));
+  });
+
+  it('two statuses sharing a column render as one column, by its label', async () => {
+    await open('/board');
+    const cols = await screen.findAllByRole('region');
+    expect(cols.map((c) => c.getAttribute('aria-label'))).toEqual(['Review']);
+  });
+
+  it('each card carries its own status badge', async () => {
+    await open('/board');
+    const card = (await screen.findByText('Awaiting review')).closest('a')!;
+    expect(card.querySelector('[data-status="in-review"]')).not.toBeNull();
+  });
+
+  it('L15.5 QUIET dims the done card and not the in-review card beside it', async () => {
+    await open('/board');
+    const running = (await screen.findByText('Awaiting review')).closest('a')!;
+    const finished = screen.getByText('Already merged').closest('a')!;
+    expect(finished.getAttribute('data-quiet')).toBe('true');
+    expect(running.getAttribute('data-quiet')).toBeNull();
+  });
+});
