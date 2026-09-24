@@ -1489,6 +1489,8 @@ already answered.
 **LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
 come after it, never in front of it.
+<!-- feature:board:ticket-in-review -->
+<!-- /feature:board:ticket-in-review -->
 
 Fill the blocks from this build:
 

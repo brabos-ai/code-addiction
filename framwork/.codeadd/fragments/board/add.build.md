@@ -18,3 +18,12 @@
 **With a ticket:** the metadata also says what STEP 2's ticket write did — set to `doing`, already
 `doing`, or what did not happen.
 <!-- /section:ticket-metadata -->
+
+<!-- section:ticket-in-review -->
+
+**Before the report — the ticket's review write.** When `about.md` carries `ticket:`, read the `Publish:`
+line this build recorded in its ledger. If it reads `pr-opened` or `pr-updated`, write `in-review`, per
+the `add.build` row of `{{skill:add-backlog/references/lifecycle.md}}`. Any other outcome writes nothing:
+no PR exists to review, and the ticket stays `doing`, which is true. A write that did not land is one line
+in the report below.
+<!-- /section:ticket-in-review -->
