@@ -6,7 +6,7 @@
     "build": "node scripts/build.js",
     "build:workbench": "node scripts/build-workbench.js",
     "build:board": "npm --prefix board ci && npm --prefix board run build",
-    "board": "node board/server.mjs --scripts framwork/.codeadd/scripts",
+    "board": "node board/server.mjs --scripts framwork/.codeadd/scripts --layers",
     "test": "node scripts/run-tests.js vitest",
     "test:all": "node scripts/run-tests.js all",
     "test:scripts": "node scripts/run-tests.js bats",

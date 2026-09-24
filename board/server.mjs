@@ -3,13 +3,14 @@
 // BOARD SERVER
 // Serves the board app and a read-only JSON view of the project backlog.
 // ============================================
-// Usage: node server.mjs [--root <dir>] [--scripts <dir>] [--port <n>] [--no-open]
+// Usage: node server.mjs [--root <dir>] [--scripts <dir>] [--port <n>] [--no-open] [--layers]
 //
 //   --root     the project whose docs/ holds the board. Default: the cwd.
 //   --scripts  where backlog.sh lives. Default: <root>/.codeadd/scripts.
 //   --port     first port to try. Default 4317; a busy port moves to the next,
 //              up to +10. All eleven busy -> one line and exit 1.
 //   --no-open  do not open a browser.
+//   --layers   enable the fixed product/internal/both layer filter. Off by default.
 //   --dist     the built app. Default: ./dist next to this file. Tests use it.
 //
 // Output: `BOARD_URL=<url>` on stdout once listening — the one line a caller
@@ -48,7 +49,7 @@ const PORT_SPAN = 10;
 // --- Arguments ------------------------------------------------------------
 
 function parseArgs(argv) {
-  const opts = { root: process.cwd(), scripts: null, port: 4317, open: true, dist: join(HERE, 'dist') };
+  const opts = { root: process.cwd(), scripts: null, port: 4317, open: true, layers: false, dist: join(HERE, 'dist') };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => argv[++i];
@@ -57,6 +58,7 @@ function parseArgs(argv) {
     else if (a === '--port') opts.port = Number(next());
     else if (a === '--dist') opts.dist = next();
     else if (a === '--no-open') opts.open = false;
+    else if (a === '--layers') opts.layers = true;
     else {
       console.error(`unknown argument: ${a}`);
       process.exit(2);
@@ -191,6 +193,7 @@ async function boardPayload() {
   return {
     present: boardPresent || defs !== null,
     tickets: listed.tickets,
+    ...(opts.layers ? { layerFilter: { name: 'Layer', values: ['product', 'internal', 'both'] } } : {}),
     statuses,
     columns: defs?.columns ?? deriveColumns(statuses),
     damagedLines: listed.multi.DAMAGED_LINE.map(Number).filter(Number.isFinite),

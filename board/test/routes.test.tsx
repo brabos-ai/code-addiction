@@ -1,6 +1,6 @@
 // The route tree over a mocked /api/board (plan F3, L2.3). RED-FIRST.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { makeRouter } from '@/router';
@@ -42,6 +42,91 @@ async function open(url: string) {
   await router.load();
   return router;
 }
+
+describe.each(['/board', '/list'] as const)('Layer capability on %s', (route) => {
+  const layers = { name: 'Layer', values: ['product', 'internal', 'both'] };
+  const layered: BoardData = {
+    ...data,
+    layerFilter: layers,
+    tickets: [
+      data.tickets[0]!,
+      { ...data.tickets[1]!, labels: ['both', 'quality'] },
+      { ...data.tickets[0]!, id: '0003B', title: 'Internal doctor', labels: ['internal'] },
+    ],
+  };
+  const serve = (payload: BoardData) => vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(payload))));
+
+  it('hides label chips and Layer controls without opt-in, but keeps detail labels', async () => {
+    await open(route);
+    const card = (await screen.findByText('Doctor for schemas')).closest('a')!;
+    expect(within(card).queryByText('product', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Layer' })).not.toBeInTheDocument();
+    fireEvent.click(card);
+    expect(await screen.findByRole('dialog')).toHaveTextContent('product');
+  });
+
+  it('ignores disabled labels immediately, replaces the URL and preserves the other fields', async () => {
+    const router = await open(`${route}?label=%5B%22internal%22%5D&q=doctor&status=%5B%22open%22%5D&column=%5B%22done%22%5D`);
+    expect(await screen.findByText('Doctor for schemas')).toBeInTheDocument();
+    await waitFor(() => expect(router.state.location.search).toEqual({ q: 'doctor', status: ['open'], column: ['done'] }));
+    expect(router.history.length).toBe(1);
+    expect(new URL(router.state.location.href, 'http://board.test').searchParams.has('label')).toBe(false);
+    fireEvent.click(screen.getByRole('link', { name: route === '/board' ? 'List' : 'Board' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe(route === '/board' ? '/list' : '/board'));
+    expect(router.state.location.search).not.toHaveProperty('label');
+  });
+
+  it('shows ordered controls, applies multiple selections, survives view switches and clears', async () => {
+    serve(layered);
+    const router = await open(route);
+    const group = (await screen.findAllByRole('group', { name: 'Layer' }))[0]!;
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(layers.values);
+    fireEvent.click(within(group).getByRole('button', { name: 'product' }));
+    await waitFor(() => expect(router.state.location.search).toEqual({ label: ['product'] }));
+    expect(screen.queryByText('Sweep prompt density')).not.toBeInTheDocument();
+    expect(screen.queryByText('Internal doctor')).not.toBeInTheDocument();
+    fireEvent.click(within(group).getByRole('button', { name: 'both' }));
+    await waitFor(() => expect(router.state.location.search).toEqual({ label: ['product', 'both'] }));
+    expect(router.state.location.href).toContain('label=%5B%22product%22%2C%22both%22%5D');
+    expect(screen.getByRole('button', { name: /Filters/ })).toHaveTextContent('2');
+    expect(await screen.findByText('Sweep prompt density')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: route === '/board' ? 'List' : 'Board' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe(route === '/board' ? '/list' : '/board'));
+    expect(router.state.location.search.label).toEqual(['product', 'both']);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    await waitFor(() => expect(router.state.location.search).toEqual({}));
+    expect(await screen.findByText('Internal doctor')).toBeInTheDocument();
+  });
+
+  it('sanitizes mixed deep links while retaining the detail route and free labels in the sheet', async () => {
+    serve(layered);
+    const router = await open(`${route}/0002B?label=%5B%22both%22%2C%22quality%22%5D`);
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent('quality');
+    expect(dialog).toHaveTextContent('both');
+    await waitFor(() => expect(router.state.location.search).toEqual({ label: ['both'] }));
+    expect(router.state.location.pathname).toBe(`${route}/0002B`);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    const card = (await screen.findByText('Sweep prompt density')).closest('a')!;
+    expect(within(card).getByText('both', { exact: true })).toBeInTheDocument();
+    expect(within(card).queryByText('quality', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Doctor for schemas')).not.toBeInTheDocument();
+  });
+
+  it('drops unknown-only selections without hiding tickets or showing active filters', async () => {
+    serve(layered);
+    const router = await open(`${route}?label=%5B%22quality%22%5D`);
+    expect(await screen.findByText('Doctor for schemas')).toBeInTheDocument();
+    await waitFor(() => expect(router.state.location.search).toEqual({}));
+    expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument();
+  });
+
+  it('sanitizes a disabled label even for an empty board without a toolbar', async () => {
+    serve({ ...data, present: false, tickets: [] });
+    const router = await open(`${route}?label=internal`);
+    await waitFor(() => expect(router.state.location.search).toEqual({}));
+  });
+});
 
 describe('L2.3 routes', () => {
   it('/ redirects to /board', async () => {

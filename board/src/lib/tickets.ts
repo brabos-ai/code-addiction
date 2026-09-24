@@ -1,8 +1,9 @@
-import type { Column, Status, Ticket } from '@/api/types';
-import type { BoardSearch } from './search';
+import type { Column, LayerFilter, Status, Ticket } from '@/api/types';
+import { effectiveBoardSearch, type BoardSearch } from './search';
 
 /** Filters in board order. Fields combine with AND; the values inside one field with OR. */
-export function filterTickets(tickets: Ticket[], s: BoardSearch): Ticket[] {
+export function filterTickets(tickets: Ticket[], search: BoardSearch, layerFilter?: LayerFilter): Ticket[] {
+  const s = effectiveBoardSearch(search, layerFilter);
   const q = s.q?.toLowerCase();
   return tickets.filter((t) => {
     if (q) {
@@ -10,6 +11,7 @@ export function filterTickets(tickets: Ticket[], s: BoardSearch): Ticket[] {
       if (!hay.includes(q)) return false;
     }
     if (s.status?.length && !s.status.includes(t.status)) return false;
+    if (s.label?.length && !s.label.some((label) => t.labels.includes(label))) return false;
     return true;
   });
 }

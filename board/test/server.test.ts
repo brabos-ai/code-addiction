@@ -8,6 +8,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from 'node:fs';
 import { createServer } from 'node:net';
+import { get } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -88,6 +89,37 @@ afterEach(async () => {
 });
 
 describe('L1 — /api/board', () => {
+  it.each([false, true])('layer opt-in %s preserves the board and advertises only when enabled', async (layers) => {
+    const original = { ...JSON.parse(ticket('0001B', 'layered')), labels: ['product', 'internal', 'both', 'quality'] };
+    const defs = {
+      statuses: [{ name: 'open', order: 1, means: 'ready', column: 'backlog' }],
+      columns: [{ name: 'backlog', order: 1 }],
+    };
+    const r = await start(project([JSON.stringify(original)], defs), layers ? ['--layers'] : []);
+    const { status, body } = await board(r);
+    expect(status).toBe(200);
+    expect(body.tickets).toEqual([original]);
+    expect(body.statuses).toEqual(defs.statuses);
+    expect(body.columns).toEqual(defs.columns);
+    if (layers) expect(body.layerFilter).toEqual({ name: 'Layer', values: ['product', 'internal', 'both'] });
+    else expect(body).not.toHaveProperty('layerFilter');
+    expect(new URL(r.url).hostname).toBe('127.0.0.1');
+    const denied = await new Promise<number | undefined>((ok, fail) => {
+      get(`${r.url}/api/board`, { headers: { host: 'untrusted.example' } }, (res) => {
+        res.resume();
+        ok(res.statusCode);
+      }).on('error', fail);
+    });
+    expect(denied).toBe(403);
+  });
+
+  it('layer opt-in preserves error responses', async () => {
+    const r = await start(project(null), ['--layers', '--scripts', join(tmpdir(), 'no-such-scripts-dir')]);
+    const { body } = await board(r);
+    expect(body.error).toBe('script-missing');
+    expect(body).not.toHaveProperty('layerFilter');
+  });
+
   it('L1.1 returns the tickets in line order with present: true', async () => {
     const r = await start(project([ticket('0003B', 'third first'), ticket('0001B', 'one'), ticket('0002B', 'two')]));
     const { status, body } = await board(r);
@@ -226,12 +258,12 @@ describe('L1 — network', () => {
     expect(new URL(r.url).hostname).toBe('127.0.0.1');
   });
 
-  it('L1.6b moves to the next port when the first is taken', async () => {
+  it.each([false, true])('L1.6b moves to the next port when the first is taken (layers: %s)', async (layers) => {
     const blocker = createServer();
     await new Promise<void>((ok) => blocker.listen(0, '127.0.0.1', ok));
     const busy = (blocker.address() as { port: number }).port;
     try {
-      const r = await start(project(null), ['--port', String(busy)]);
+      const r = await start(project(null), ['--port', String(busy), ...(layers ? ['--layers'] : [])]);
       expect(Number(new URL(r.url).port)).toBeGreaterThan(busy);
       expect(Number(new URL(r.url).port)).toBeLessThanOrEqual(busy + 10);
     } finally {

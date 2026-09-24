@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Link, Outlet, useSearch } from '@tanstack/react-router';
-import type { BoardData, Ticket } from '@/api/types';
+import type { BoardData, LayerFilter, Ticket } from '@/api/types';
 import { AppShell } from '@/components/app-shell';
-import { FilterBar } from '@/components/filter-bar';
+import { FilterBar, useLayerSearch } from '@/components/filter-bar';
 import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/states';
 import { TicketMeta } from '@/components/ticket-card';
 import { StatusPill } from '@/components/ui';
@@ -21,13 +21,13 @@ export function ListView() {
 }
 
 function List({ data }: { data: BoardData }) {
-  const search = useSearch({ from: '/list' });
+  const search = useLayerSearch(useSearch({ from: '/list' }), data.layerFilter);
   const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
-  const visible = filterTickets(data.tickets, search);
+  const visible = filterTickets(data.tickets, search, data.layerFilter);
   const total = data.tickets.length;
 
   const toolbar = data.present ? (
-    <FilterBar to="/list" search={search} statuses={data.statuses} showStatus />
+    <FilterBar to="/list" search={search} statuses={data.statuses} layerFilter={data.layerFilter} showStatus />
   ) : undefined;
 
   return (
@@ -35,7 +35,7 @@ function List({ data }: { data: BoardData }) {
       <HealthBanner data={data} />
       {!data.present ? (
         <EmptyBoard />
-      ) : visible.length === 0 && hasFilters(search) ? (
+      ) : visible.length === 0 && hasFilters(search, data.layerFilter) ? (
         <NoMatches to="/list" />
       ) : (
         <section aria-label="Tickets by priority" className="overflow-hidden rounded-2xl bg-surface shadow-card ring-1 ring-line">
@@ -50,7 +50,7 @@ function List({ data }: { data: BoardData }) {
             <span className="text-right">Updated</span>
           </div>
           <ol>
-            {visible.map((t) => <Row key={t.id} ticket={t} rank={ranks.get(t.id) ?? 0} total={total} />)}
+            {visible.map((t) => <Row key={t.id} ticket={t} rank={ranks.get(t.id) ?? 0} total={total} layerFilter={data.layerFilter} />)}
           </ol>
         </section>
       )}
@@ -59,7 +59,7 @@ function List({ data }: { data: BoardData }) {
   );
 }
 
-function Row({ ticket, rank, total }: { ticket: Ticket; rank: number; total: number }) {
+function Row({ ticket, rank, total, layerFilter }: { ticket: Ticket; rank: number; total: number; layerFilter?: LayerFilter }) {
   return (
     <li className="border-b border-line last:border-b-0">
       <Link
@@ -82,7 +82,7 @@ function Row({ ticket, rank, total }: { ticket: Ticket; rank: number; total: num
           {/* Hover lands on the title here too, matching the board card. */}
           <p className="line-clamp-2 text-body font-medium text-ink transition-colors duration-200 group-hover:text-accent [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
           {ticket.tldr && <p className="mt-0.5 line-clamp-2 text-meta text-muted md:line-clamp-1">{ticket.tldr}</p>}
-          <TicketMeta ticket={ticket} showTheme={false} showId={false} className="mt-2 md:hidden" />
+          <TicketMeta ticket={ticket} layerFilter={layerFilter} showTheme={false} showId={false} className="mt-2 md:hidden" />
         </div>
         <div className="col-start-2 flex items-center gap-2 md:col-start-auto">
           <StatusPill status={ticket.status} />
