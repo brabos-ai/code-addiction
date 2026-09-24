@@ -94,7 +94,7 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 52 points', () => {
+  it('L1.0 injection map totals exactly 54 points', () => {
     // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073);
     // +1 for feature:docs-pruning:prune on add.done
     // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
@@ -104,7 +104,8 @@ describe('0070 L1 — build-side unit', () => {
     // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
     // 46 -> 50: feature:board moves add.brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
     // 50 -> 52: feature:board moves add.new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
-    expect(sidecarPoints()).toHaveLength(52);
+    // 52 -> 54: feature:board moves add.plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+    expect(sidecarPoints()).toHaveLength(54);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {

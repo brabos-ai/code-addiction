@@ -974,7 +974,8 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
       // fragment 26 -> 27: fragments/board/add.brainstorm.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
       // fragment 27 -> 28: fragments/board/add.new.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
-      fragment: 28,
+      // fragment 28 -> 29: fragments/board/add.plan.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+      fragment: 29,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1062,8 +1063,10 @@ describe('node inventory snapshot', () => {
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7.)
     // 236 -> 237, declares 133 -> 134: +1 fragment, board/add.new.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9.)
-    expect(nodes).toHaveLength(237);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(134);
+    // 237 -> 238, declares 134 -> 135: +1 fragment, board/add.plan.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11.)
+    expect(nodes).toHaveLength(238);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(135);
   });
 });
 
