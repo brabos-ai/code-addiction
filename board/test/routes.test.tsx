@@ -13,9 +13,14 @@ const data: BoardData = {
     { name: 'doing', order: 2, means: 'in progress' },
     { name: 'done', order: 3, means: 'delivered' },
   ],
+  columns: [
+    { name: 'open', order: 1 },
+    { name: 'doing', order: 2 },
+    { name: 'done', order: 3 },
+  ],
   tickets: [
-    { id: '0001B', title: 'Doctor for schemas', theme: 'graph', labels: ['product'], tldr: 't', notes: [], done_when: 'x', paths: [], grounded: true, status: 'open', created_at: '', updated_at: '', comments: [], work_id: null },
-    { id: '0002B', title: 'Sweep prompt density', theme: 'prompts', labels: ['both'], tldr: 't', notes: [], done_when: 'x', paths: [], grounded: false, status: 'doing', created_at: '', updated_at: '', comments: [], work_id: null },
+    { id: '0001B', title: 'Doctor for schemas', theme: 'graph', labels: ['product'], tldr: 't', notes: [], done_when: 'x', paths: [], grounded: true, status: 'open', created_at: '', updated_at: '', comments: [], work_id: null, feature: null },
+    { id: '0002B', title: 'Sweep prompt density', theme: 'prompts', labels: ['both'], tldr: 't', notes: [], done_when: 'x', paths: [], grounded: false, status: 'doing', created_at: '', updated_at: '', comments: [], work_id: null, feature: null },
   ],
   damagedLines: [],
   undefinedStatuses: [],

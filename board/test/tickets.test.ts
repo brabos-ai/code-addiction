@@ -8,7 +8,7 @@ function t(id: string, over: Partial<Ticket> = {}): Ticket {
   return {
     id, title: `title ${id}`, theme: '', labels: [], tldr: `tldr ${id}`, notes: [], done_when: 'x', paths: [],
     grounded: false, status: 'open', created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z',
-    comments: [], work_id: null, ...over,
+    comments: [], work_id: null, feature: null, ...over,
   };
 }
 

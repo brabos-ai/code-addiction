@@ -19,14 +19,20 @@ export type Ticket = {
   updated_at: string;
   comments: Comment[];
   work_id: string | null;
+  /** The feature id add.new created for this ticket — an id, never a path. */
+  feature: string | null;
 };
 
-export type Status = { name: string; order: number; means: string };
+export type Status = { name: string; order: number; means: string; column?: string; label?: string };
+
+/** A board column. Several statuses may share one; `hidden` keeps it off the board unless the URL asks. */
+export type Column = { name: string; order: number; label?: string; hidden?: boolean };
 
 export type BoardData = {
   present: boolean;
   tickets: Ticket[];
   statuses: Status[];
+  columns: Column[];
   damagedLines: number[];
   undefinedStatuses: string[];
   readAt: string;
