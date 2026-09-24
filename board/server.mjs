@@ -123,20 +123,56 @@ function runList() {
   });
 }
 
-/** The definitions file, or null when absent or unreadable. */
+/**
+ * The definitions file as { statuses, columns }, or null when absent or
+ * unreadable. Both mappers are allowlists: a key they do not name does not
+ * reach the board, so a new key in the file is a line here too.
+ */
 function readDefs() {
   const path = join(DOCS, DEFS_FILE);
   if (!existsSync(path)) return null;
   try {
     const d = JSON.parse(readFileSync(path, 'utf8'));
     if (!d || !Array.isArray(d.statuses)) return null;
-    return d.statuses
+    const statuses = d.statuses
       .filter((s) => s && typeof s.name === 'string')
-      .map((s, i) => ({ name: s.name, order: Number.isFinite(s.order) ? s.order : i + 1, means: typeof s.means === 'string' ? s.means : '' }))
+      .map((s, i) => ({
+        name: s.name,
+        order: Number.isFinite(s.order) ? s.order : i + 1,
+        means: typeof s.means === 'string' ? s.means : '',
+        ...(typeof s.column === 'string' ? { column: s.column } : {}),
+        ...(typeof s.label === 'string' ? { label: s.label } : {}),
+      }))
       .sort((a, b) => a.order - b.order);
+    const columns = Array.isArray(d.columns)
+      ? d.columns
+        .filter((c) => c && typeof c.name === 'string')
+        .map((c, i) => ({
+          name: c.name,
+          order: Number.isFinite(c.order) ? c.order : i + 1,
+          ...(typeof c.label === 'string' ? { label: c.label } : {}),
+          ...(c.hidden === true ? { hidden: true } : {}),
+        }))
+        .sort((a, b) => a.order - b.order)
+      : null;
+    return { statuses, columns };
   } catch {
     return null;
   }
+}
+
+/**
+ * One column per distinct column a status names, in the statuses' order. A
+ * status that names none is its own column — which is also what a board with
+ * no definitions file gets, one column per status in use.
+ */
+function deriveColumns(statuses) {
+  const names = [];
+  for (const s of statuses) {
+    const name = s.column ?? s.name;
+    if (!names.includes(name)) names.push(name);
+  }
+  return names.map((name, i) => ({ name, order: i + 1 }));
 }
 
 async function boardPayload() {
@@ -145,7 +181,7 @@ async function boardPayload() {
 
   const defs = readDefs();
   const boardPresent = listed.keys.BACKLOG_PRESENT === 'yes';
-  let statuses = defs;
+  let statuses = defs?.statuses ?? null;
   if (!statuses) {
     const seen = [];
     for (const t of listed.tickets) if (typeof t.status === 'string' && !seen.includes(t.status)) seen.push(t.status);
@@ -156,6 +192,7 @@ async function boardPayload() {
     present: boardPresent || defs !== null,
     tickets: listed.tickets,
     statuses,
+    columns: defs?.columns ?? deriveColumns(statuses),
     damagedLines: listed.multi.DAMAGED_LINE.map(Number).filter(Number.isFinite),
     // Without a definitions file the columns come from the statuses in use, so
     // nothing can be undefined — the script's own report compares against its
