@@ -70,9 +70,21 @@ async function board(r: Running) {
   return { status: res.status, body: (await res.json()) as Record<string, unknown> };
 }
 
-afterEach(() => {
-  for (const r of running.splice(0)) r.proc.kill();
-  for (const t of temps.splice(0)) rmSync(t, { recursive: true, force: true });
+// Wait for each server to EXIT before removing its project. On Windows a
+// process still in docs/ -- the server's watcher, or the bash it spawned --
+// holds the directory, and an rmSync right after kill() fails with EPERM,
+// intermittently, on whichever test ran last. Removal retries, and a directory
+// still held after that is left in the OS temp dir: a failed cleanup says
+// nothing about the server, so it must not fail the test.
+afterEach(async () => {
+  await Promise.all(running.splice(0).map((r) => new Promise<void>((ok) => {
+    if (r.proc.exitCode !== null || r.proc.signalCode !== null) return ok();
+    r.proc.once('exit', () => ok());
+    r.proc.kill();
+  })));
+  for (const t of temps.splice(0)) {
+    try { rmSync(t, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); } catch { /* see above */ }
+  }
 });
 
 describe('L1 — /api/board', () => {
