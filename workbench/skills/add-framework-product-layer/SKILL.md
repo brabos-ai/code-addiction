@@ -110,6 +110,15 @@ An artefact absent from `framwork/provider-map.json` **fails the build** — it 
 Default providers = all. Omit the `providers` field to get all. Use `["antigrav"]` for a skill not
 exposed to the end user.
 
+**A provider entry may reuse another provider's `dir`, `commands` and `skills` strings verbatim,
+rather than building its own tree.** ZCode does this with codex: it declares no independent
+`commands`/`skills` output of its own conceptually, but its entry still names the SAME `dir`,
+`commands` and `skills` values codex's entry does, so `buildResources` writes the identical bytes to
+the identical path a second time rather than a new one. The result is one tree on disk shared by both
+providers — no duplicate file, and a user with both installed never sees a skill listed twice. Only
+what genuinely differs (ZCode's own agent dialect and `agentsDir`) gets a provider-specific pattern.
+Reach for this when a new provider's own layout would otherwise duplicate an existing one exactly.
+
 ```
 ⛔ cli/ IS NOT IN THE REGISTRY:
   ⛔ DO NOT: Register a cli/ module in provider-map.json
