@@ -176,21 +176,55 @@ has to remember, and it covers a re-run `add.build` for free.
 
 ## The Status Names
 
-The hooks write the **shipped default names**: `doing` and `done`. The status vocabulary belongs to
-the user, though, in `docs/backlog.definitions.json`, and they are entitled to rename either.
+**Nine names are shipped, and they are the ones a command writes.** `docs/backlog.definitions.json`
+seeds all nine on its first write, grouped into seven columns:
 
-**When they have, the write is refused with `REFUSED=unknown-status`.** Report it and continue.
+| Column | Something is running | Nothing is — it is parked |
+|---|---|---|
+| Backlog | — | `open` |
+| Shaping | `refining` | `shaped` |
+| Planning | `planning` | `planned` |
+| Building | `doing` | — |
+| Review | — | `in-review` |
+| Done | — | `done` |
+| Dropped | — | `dropped` |
+
+**Two statuses share a column wherever a phase has both states.** That is what lets seven columns hold
+nine statuses, and it is why a board can say *"planning, and someone is in it"* apart from *"planned,
+and nobody picked it up"*.
+
+⛔ **Which command writes which of them is NOT here.** This section names the vocabulary; the per-command
+table above is what says who writes what and when. A reader who takes this table as a sequence will
+build a state machine, and there is none — see below.
+
+**The vocabulary belongs to the user, and they are entitled to rename any of the nine.** Nothing enforces
+them: the names are a contract this file and the record format both state, not a mechanism.
+
+**When a name has been renamed or removed, the write is refused with `REFUSED=unknown-status`.** Report
+it and continue. With nine names in play a single rename can produce **several** refusals in one run —
+one per write that names it — and each gets its own line.
 
 ```
-IF A HOOK'S STATUS WRITE IS REFUSED WITH unknown-status:
+IF A STATUS WRITE IS REFUSED WITH unknown-status:
   ⛔ DO NOT: Read the definitions file and pick a status by its `order` field
-  ⛔ DO NOT: Add the missing status to the definitions file
-  ✅ DO: Report which status was refused, and continue the command
+  ⛔ DO NOT: Add the missing status to the definitions file, reserved or not
+  ⛔ DO NOT: Report only the last refusal when a run made several
+  ✅ DO: Report which status was refused, once per refusal, and continue the command
 ```
 
-**`order` is not a meaning.** It is the sort order `list` groups by, and the record format says so in
-as many words. Treating `order: 2` as "in progress" would invent a semantic the format deliberately
-withheld — and it would be wrong the first time someone reorders their statuses.
+**`order` is not a meaning, and with columns it sorts twice over.** A status's `order` sorts it within
+its own column; a column's `order` sorts the columns. Neither is a position in the flow.
+
+```
+⛔ NOTHING DERIVES A PHASE OR A NEXT STEP FROM order:
+  ⛔ DO NOT: Treat `order: 6` as "further along" than `order: 4`
+  ⛔ DO NOT: Compare two statuses by order to decide whether a write moves forward
+  ✅ DO: Compare a status by its NAME — the moment someone reorders their statuses, any rule built
+         on `order` is wrong and nothing reports it
+```
+
+**The record format says the same thing in as many words**, and it is repeated here because this is the
+file a command reads at the moment it is about to write.
 
 ---
 

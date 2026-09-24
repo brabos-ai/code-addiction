@@ -220,6 +220,19 @@ tickets() {
   done
 }
 
+# L1.4d — lifecycle.md is the file a command reads at the moment it writes, so
+# it carries the nine names too. A third copy of a list is a third place to
+# drift, and this is what holds it to the other two.
+@test "L1.4d: lifecycle.md names all nine reserved statuses in its Status Names section" {
+  local lc="$SCRIPTS_DIR/../skills/add-backlog/references/lifecycle.md"
+  local section
+  section=$(sed -n '/^## The Status Names/,/^## /p' "$lc")
+
+  for n in open refining shaped planning planned doing in-review done dropped; do
+    printf '%s' "$section" | grep -qF "\`$n\`"
+  done
+}
+
 # L1.5 — the two structural rules delivered.sh states, restated here as tests.
 @test "L1.5: backlog.sh sets -u, never -e, and checks node before any file I/O" {
   [ -f "$SCRIPTS_DIR/backlog.sh" ]
