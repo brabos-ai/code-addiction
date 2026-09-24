@@ -1778,9 +1778,10 @@ const skillStrategy = {
 //   opencode  .opencode/agents/<name>.md    description, mode: subagent, permission
 //   cursor    .cursor/agents/<name>.md      name, description, readonly
 //   codex     .codex/agents/<name>.toml     name, description, developer_instructions
+//   zcode     .zcode/agents/<name>.md       name, description, tools, disallowedTools
 //
 // `model` reaches claude only. The sources pin Claude names (sonnet, haiku,
-// inherit), which name nothing on the other three — a subagent pinned to one
+// inherit), which name nothing on the other four — a subagent pinned to one
 // fails to dispatch on a non-Claude session. Without the key, each of those
 // providers runs the subagent on the session model.
 //
@@ -1897,6 +1898,22 @@ const AGENT_DIALECTS = {
     const out = [`name = ${tomlString(meta.name)}`, `description = ${tomlString(meta.description)}`];
     out.push(`developer_instructions = ${tomlMultiline(body)}`);
     return `${out.join('\n')}\n`;
+  },
+
+  zcode({ blocks }, body, meta) {
+    // Same shape as claude — ZCode's documented agent keys (name, description,
+    // tools, disallowedTools, skills) match Claude's dialect. `model` is
+    // dropped: ZCode model ids are not `sonnet`/`opus`/`inherit`, so passing
+    // Claude's value through would pin the agent to a name that means nothing
+    // there, rather than running it on the session model.
+    const out = [`name: ${meta.name}`, `description: ${yamlScalar(meta.description)}`];
+    for (const key of ['tools', 'disallowedTools', 'skills', 'memory']) {
+      if (blocks[key]) out.push(blocks[key]);
+    }
+    if (meta.readonly && !blocks.disallowedTools) {
+      out.push('disallowedTools: Write, Edit, NotebookEdit');
+    }
+    return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 };
 
