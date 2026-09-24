@@ -5,9 +5,16 @@
  * column is wider than an empty one. The card gives its whole width to the
  * title: status, id and priority share one small line above it, and the
  * priority rank is a badge on that line, not a column of its own.
- * Palette "stone and cobalt": cool neutrals, one cobalt accent, status hues only
- * where a status is named. Dark is graphite, not near-black: the page, the lane
- * and the card are three close steps, so nothing on the board glares.
+ * The board fills exactly one screen from sm up: each lane scrolls its own
+ * cards, so the row's sideways scrollbar is always at the bottom of the view.
+ * Palette "stone and cobalt": cool neutrals, one cobalt accent, and one hue per
+ * pipeline phase (backlog steel, shaping violet, planning blue, building amber,
+ * review teal, done green). A phase's hue appears as the marker in its lane
+ * header and as the status on its cards, never as a fill or a wash — lanes and
+ * cards stay neutral. Dark is graphite, not near-black: the page, the lane and
+ * the card are three close steps, so nothing on the board glares.
+ * Shape: a tight radius scale (3/4/6/8px). Controls and chips are rounded
+ * rectangles, not pills; only true circles (status glyphs, dots) are round.
  * Scheme: set on <html data-theme>, by the inline script in index.html before
  * the first paint and by lib/theme.ts after. "System" follows the OS; a choice
  * made in the header overrides it and is kept in localStorage.
@@ -60,6 +67,16 @@
   --danger: #b3261e;
   --danger-soft: #fdecea;
 
+  /* The three phases that had no hue of their own. Every status in them
+     rendered as the grey fallback dot, so only Done carried colour. Each
+     clears 4.5:1 on white and on its own soft chip. */
+  --s-shaping: #6a48c2;
+  --s-shaping-soft: #efeafb;
+  --s-planning: #1d68b3;
+  --s-planning-soft: #e3eefa;
+  --s-review: #08706d;
+  --s-review-soft: #dcf2f1;
+
   --shadow-card: 0 1px 0 rgb(21 23 28 / 0.04), 0 2px 8px -2px rgb(45 75 224 / 0.06);
   --shadow-lift: 0 1px 0 rgb(21 23 28 / 0.04), 0 10px 28px -10px rgb(45 75 224 / 0.22);
   --shadow-sheet: -24px 0 60px -24px rgb(21 23 28 / 0.28);
@@ -108,6 +125,13 @@
   --danger: #e8897f;
   --danger-soft: #3b2625;
 
+  --s-shaping: #b39af0;
+  --s-shaping-soft: #342c4a;
+  --s-planning: #7fb0f0;
+  --s-planning-soft: #1f3148;
+  --s-review: #4fc9c4;
+  --s-review-soft: #1d3a39;
+
   /* Elevation on a dark ground comes from light, not from shadow. The top
      inset is the lit edge of the plane; the sheet's runs down its left side. */
   --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.35);
@@ -148,6 +172,14 @@
   --shadow-lift: var(--shadow-lift);
   --shadow-sheet: var(--shadow-sheet);
   --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  /* A tight radius scale. Pills and 12-16px corners made every control and
+     card read soft and toy-like; the board is a work tool. A nested shape
+     takes a smaller radius than the one it sits in: lane 6, card 4. */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
 }
 
 @layer base {
@@ -166,7 +198,7 @@
   :focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 4px;
   }
   ::selection {
     background: var(--accent-soft);
@@ -183,14 +215,29 @@
   }
 }
 
-/* Status hue per ticket — set on an element with data-status. */
+/* Status hue per ticket — set on an element with data-status. A status takes
+   the hue of the phase it belongs to; the glyph's shape tells the statuses of
+   one phase apart (ui.tsx). A status the shipped definitions do not name keeps
+   the neutral steel. */
 [data-status] {
   --st: var(--s-open);
   --st-soft: var(--s-open-soft);
 }
+[data-status="refining"], [data-status="shaped"] {
+  --st: var(--s-shaping);
+  --st-soft: var(--s-shaping-soft);
+}
+[data-status="planning"], [data-status="planned"] {
+  --st: var(--s-planning);
+  --st-soft: var(--s-planning-soft);
+}
 [data-status="doing"] {
   --st: var(--s-doing);
   --st-soft: var(--s-doing-soft);
+}
+[data-status="in-review"] {
+  --st: var(--s-review);
+  --st-soft: var(--s-review-soft);
 }
 [data-status="done"] {
   --st: var(--s-done);
@@ -200,6 +247,20 @@
   --st: var(--s-dropped);
   --st-soft: var(--s-dropped-soft);
 }
+
+/* Phase hue per lane — set on a column with data-phase. The lane shows it in
+   two places: the marker in its header and, through data-status, the status
+   on each card. The lane itself stays neutral. */
+[data-phase] { --ph: var(--faint); }
+[data-phase="backlog"] { --ph: var(--s-open); }
+[data-phase="shaping"] { --ph: var(--s-shaping); }
+[data-phase="planning"] { --ph: var(--s-planning); }
+[data-phase="building"] { --ph: var(--s-doing); }
+[data-phase="review"] { --ph: var(--s-review); }
+[data-phase="done"] { --ph: var(--s-done); }
+[data-phase="dropped"] { --ph: var(--s-dropped); }
+
+
 
 @keyframes sheet-in-right {
   from { transform: translateX(100%); }

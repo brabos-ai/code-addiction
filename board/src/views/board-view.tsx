@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useSearch } from '@tanstack/react-router';
 import type { BoardData, Ticket } from '@/api/types';
 import { AppShell } from '@/components/app-shell';
@@ -45,7 +45,7 @@ function Board({ data }: { data: BoardData }) {
   ) : undefined;
 
   return (
-    <AppShell view="board" data={data} toolbar={toolbar}>
+    <AppShell view="board" data={data} toolbar={toolbar} fill>
       <HealthBanner data={data} />
       {!data.present ? (
         <EmptyBoard />
@@ -66,6 +66,22 @@ function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, 
   const firstFull = groups.find((g) => g.tickets.length)?.column.name ?? groups[0]?.column.name ?? '';
   const [picked, setPicked] = useState<string | null>(null);
   const current = groups.some((g) => g.column.name === picked) ? picked! : firstFull;
+
+  // Whether lanes lie past the right edge. Drives the fade, nothing else.
+  const row = useRef<HTMLDivElement | null>(null);
+  const [more, setMore] = useState(false);
+  const measure = () => {
+    const el = row.current;
+    if (el) setMore(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  };
+  useEffect(() => {
+    const el = row.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [groups.length]);
 
   return (
     <>
@@ -96,7 +112,7 @@ function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, 
               aria-controls={`col-${g.column.name}`}
               onClick={() => setPicked(g.column.name)}
               className={cn(
-                'inline-flex h-10 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-medium',
+                'inline-flex h-10 shrink-0 items-center gap-2 rounded-md px-3.5 text-sm font-medium',
                 'transition-[background-color,color,box-shadow] duration-200 ease-spring',
                 on ? 'bg-surface text-ink shadow-card ring-1 ring-line' : 'text-muted',
               )}
@@ -117,12 +133,28 @@ function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, 
         column rather than a gap.
 
         The overflow stays on this row, never the page: the e2e suite measures
-        document.scrollingElement.
+        document.scrollingElement. From sm up the row fills the rest of the
+        screen, so its scrollbar is always in view, and each lane scrolls its
+        own cards. A fade on the right edge says more lanes wait that way.
       */}
-      <div className="scrollbar-thin -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:-mx-10 lg:scroll-px-10 lg:px-10">
-        {groups.map((g) => (
-          <Column key={g.column.name} group={g} ranks={ranks} hiddenOnPhone={g.column.name !== current} />
-        ))}
+      <div className="relative -mx-4 flex flex-col sm:-mx-6 sm:min-h-0 sm:flex-1 lg:-mx-10">
+        <div
+          ref={row}
+          onScroll={measure}
+          className="scrollbar-thin flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:min-h-0 sm:flex-1 sm:scroll-px-6 sm:px-6 lg:scroll-px-10 lg:px-10"
+        >
+          {groups.map((g) => (
+            <Column key={g.column.name} group={g} ranks={ranks} hiddenOnPhone={g.column.name !== current} />
+          ))}
+        </div>
+        <div
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute top-0 right-0 bottom-3 hidden w-16 bg-gradient-to-l from-bg to-transparent',
+            'transition-opacity duration-200',
+            more ? 'sm:block' : 'opacity-0',
+          )}
+        />
       </div>
     </>
   );
@@ -143,21 +175,25 @@ function Column({ group, ranks, hiddenOnPhone }: {
     <section
       id={`col-${group.column.name}`}
       aria-label={columnLabel(group)}
+      data-phase={group.column.name}
       className={cn(
-        'w-full shrink-0 snap-start sm:rounded-2xl sm:bg-lane sm:p-2',
+        'flex w-full shrink-0 snap-start flex-col sm:min-h-0 sm:rounded-lg sm:bg-lane sm:pt-2',
         group.tickets.length ? 'sm:w-80' : 'sm:w-44',
-        hiddenOnPhone && 'hidden sm:block',
+        hiddenOnPhone && 'hidden sm:flex',
       )}
     >
-      <header className="hidden items-center gap-2 px-2 pt-1.5 pb-2.5 sm:flex" title={means || undefined}>
+      <header className="hidden items-center gap-2 px-4 pt-1.5 pb-2.5 sm:flex" title={means || undefined}>
+        {/* The phase's hue. Each card's status carries the same one, so a
+            column is told by colour before it is read. */}
+        <span aria-hidden className="size-2 shrink-0 rounded-[2px] bg-[var(--ph)]" />
         <h2 className="truncate text-sm font-semibold">{columnLabel(group)}</h2>
-        <span className="tabular text-xs text-faint">{group.tickets.length}</span>
         {(group.undefined || undefinedStatus.size > 0) && <span className="text-xs text-warn">not defined</span>}
+        <span className="tabular ml-auto rounded-sm bg-surface-sunken px-1.5 text-xs leading-5 font-medium text-muted">{group.tickets.length}</span>
       </header>
       {/* An empty column renders its header and stops. The count in that header
           already says nothing is here, and three dashed boxes saying it again
           were the largest objects on the board. */}
-      <ol className="flex flex-col gap-2">
+      <ol className="scrollbar-thin flex flex-col gap-2 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-2 sm:pt-0.5 sm:pb-2">
         {group.tickets.map((t: Ticket) => (
           <li key={t.id}>
             <TicketCard

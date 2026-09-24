@@ -26,7 +26,7 @@ export function ErrorPanel({ error }: { error: BoardError }) {
   return (
     <div role="alert" className="mx-auto mt-10 max-w-lg rounded-2xl bg-surface p-5 shadow-card ring-1 ring-line sm:p-6">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-danger-soft text-danger">
+        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-md bg-danger-soft text-danger">
           <Terminal {...ICON} className="size-4" />
         </span>
         <div className="min-w-0">

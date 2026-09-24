@@ -378,7 +378,11 @@ for (const scheme of ['light', 'dark'] as const) {
     // Scoped to the table: the filter bar's status toggles carry data-status
     // too, and they are plain buttons that clear any floor trivially.
     const table = page.locator('section[aria-label="Tickets by priority"]');
-    for (const status of ['open', 'doing', 'done', 'dropped']) {
+    // Every status on the page, not a fixed four: shaped and in-review took
+    // phase hues of their own, and each has to clear the floor on its chip.
+    const present = [...new Set(await table.locator('span[data-status]').evaluateAll((els) => els.map((e) => e.getAttribute('data-status') ?? '')))];
+    expect(present.length, `statuses on the page: ${present.join(', ')}`).toBeGreaterThanOrEqual(6);
+    for (const status of present) {
       const pill = table.locator(`span[data-status="${status}"]`).first();
       await expect(pill, `a ${status} pill is on the page`).toBeVisible();
       const surface = await token(page, '--surface');
@@ -656,4 +660,47 @@ test('the filter toggles and the view switch render at the meta size', async ({ 
   expect(await size(page.getByRole('button', { name: 'product', exact: true }))).toBe('13px');
   expect(await size(page.getByRole('button', { name: 'Show dropped' }))).toBe('13px');
   expect(await size(page.getByRole('link', { name: 'Board', exact: true }))).toBe('13px');
+});
+
+test('each phase has a hue of its own, and a status takes its phase hue', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone shows one lane at a time');
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  // Only four of nine statuses had a hue, so every lane but Done read grey.
+  const markers = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('section[data-phase]')).map((el) => ({
+      phase: el.getAttribute('data-phase'),
+      colour: getComputedStyle(el.querySelector('header > span[aria-hidden]')!).backgroundColor,
+    })),
+  );
+  expect(new Set(markers.map((m) => m.colour)).size, JSON.stringify(markers)).toBe(markers.length);
+  // A card's status line carries its lane's hue.
+  const lane = page.locator('section[data-phase="review"]');
+  const status = lane.locator('a [data-status]').first();
+  await expect(status).toBeVisible();
+  const [ph, st] = await Promise.all([
+    lane.locator('header > span[aria-hidden]').evaluate((el) => getComputedStyle(el).backgroundColor),
+    status.evaluate((el) => getComputedStyle(el).color),
+  ]);
+  expect(st).toBe(ph);
+});
+
+test('the board is one screen tall, so the sideways scrollbar is always in view', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone shows one lane at a time and scrolls the page');
+  await page.setViewportSize({ width: 1080, height: 500 });
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  // The row's scrollbar sat under the tallest lane, far below the fold.
+  const m = await page.evaluate(() => {
+    const row = document.querySelector('section[id^="col-"]')!.parentElement!;
+    return {
+      rowBottom: row.getBoundingClientRect().bottom,
+      view: innerHeight,
+      page: document.scrollingElement!.scrollHeight - document.scrollingElement!.clientHeight,
+      lane: Array.from(document.querySelectorAll("section[id^=\"col-\"] ol")).some((ol) => ol.scrollHeight > ol.clientHeight),
+    };
+  });
+  expect(m.rowBottom, 'the row ends inside the screen').toBeLessThanOrEqual(m.view);
+  expect(m.page, 'the page does not scroll down').toBe(0);
+  expect(m.lane, 'a full lane scrolls its own cards').toBe(true);
 });

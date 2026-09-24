@@ -79,7 +79,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
           <select
             {...form.register('theme')}
             className={cn(
-              'h-9 w-full min-w-0 appearance-none rounded-full bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-meta',
+              'h-9 w-full min-w-0 appearance-none rounded-md bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-meta',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong',
               values.theme ? 'text-accent ring-accent/40' : 'text-muted',
             )}
@@ -107,7 +107,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             aria-pressed={on}
             onClick={() => toggle('column', c.name)}
             className={cn(
-              'inline-flex h-9 items-center rounded-full px-3 text-meta font-medium md:h-8',
+              'inline-flex h-9 items-center rounded-md px-3 text-meta font-medium md:h-8',
               'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]',
               on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
             )}
@@ -133,7 +133,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             spellCheck={false}
             placeholder="Search tickets…"
             className={cn(
-              'h-9 w-full min-w-0 rounded-full bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:h-8 md:text-sm',
+              'h-9 w-full min-w-0 rounded-md bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:h-8 md:text-sm',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none',
               '[&::-webkit-search-cancel-button]:hidden',
             )}
@@ -142,7 +142,7 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
             <button
               type="button"
               onClick={() => form.setValue('q', '')}
-              className="absolute right-2 grid size-7 place-items-center rounded-full text-faint hover:bg-surface-hover hover:text-ink"
+              className="absolute right-2 grid size-7 place-items-center rounded-md text-faint hover:bg-surface-hover hover:text-ink"
             >
               <X {...ICON} className="size-3.5" />
               <span className="sr-only">Clear search</span>
@@ -211,7 +211,7 @@ function ToggleGroup({
             data-status={status ? o : undefined}
             onClick={() => onToggle(o)}
             className={cn(
-              'inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-meta font-medium md:h-8',
+              'inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-meta font-medium md:h-8',
               'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]',
               on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
             )}

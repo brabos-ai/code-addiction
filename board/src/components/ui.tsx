@@ -4,7 +4,7 @@ import type { ComponentProps, ReactElement } from 'react';
 import { cn } from '@/lib/utils';
 
 export const buttonVariants = cva(
-  'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium select-none ' +
+  'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium select-none ' +
     'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.97] ' +
     'disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
   {
@@ -36,7 +36,7 @@ export function Chip({ className, tone = 'plain', ...props }: ComponentProps<'sp
   return (
     <span
       className={cn(
-        'inline-flex max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-full px-2 py-0.5 text-xs font-medium leading-5 whitespace-nowrap',
+        'inline-flex max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-sm px-1.5 py-0.5 text-xs font-medium leading-5 whitespace-nowrap',
         tone === 'plain' && 'bg-surface-sunken text-muted',
         tone === 'accent' && 'bg-accent-soft text-accent',
         // line-strong, not line: against a card in dark the softer rule falls to
@@ -90,6 +90,14 @@ const SHAPES: Record<string, ReactElement> = {
       <path d="M5 8.2l2.2 2.2L11 6.6" fill="none" stroke="var(--st-soft)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  // Waiting for the next phase: the outline with a point at its centre — the
+  // work of this phase is finished, the next has not started.
+  shaped: (
+    <>
+      <circle {...RING} />
+      <circle cx="8" cy="8" r="2" fill="var(--st)" />
+    </>
+  ),
   // Abandoned: struck through, the one shape that reads as "not happening".
   dropped: (
     <>
@@ -99,13 +107,21 @@ const SHAPES: Record<string, ReactElement> = {
   ),
 };
 
+// A phase's running status shares doing's shape and its waiting status shares
+// shaped's; the hue says which phase. A pipeline read left to right is then
+// ring, half, point, half, point, half, half, check.
+SHAPES.refining = SHAPES.doing!;
+SHAPES.planning = SHAPES.doing!;
+SHAPES['in-review'] = SHAPES.doing!;
+SHAPES.planned = SHAPES.shaped!;
+
 /** The ticket's status, in its own hue and its own shape. */
 export function StatusPill({ status, className }: { status: string; className?: string }) {
   return (
     <span
       data-status={status}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full bg-[var(--st-soft)] px-2 py-0.5 text-xs font-medium leading-5 text-[var(--st)]',
+        'inline-flex items-center gap-1.5 rounded-sm bg-[var(--st-soft)] px-2 py-0.5 text-xs font-medium leading-5 text-[var(--st)]',
         className,
       )}
     >

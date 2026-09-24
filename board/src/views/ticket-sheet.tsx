@@ -109,7 +109,7 @@ export function TicketSheet({ from }: { from: '/board' | '/list' }) {
             Esc
           </span>
           <Dialog.Close
-            className="absolute top-3 right-3 grid size-10 place-items-center rounded-full text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink sm:top-4 sm:right-4"
+            className="absolute top-3 right-3 grid size-10 place-items-center rounded-md text-muted transition-colors duration-200 hover:bg-surface-hover hover:text-ink sm:top-4 sm:right-4"
           >
             <X {...ICON} className="size-5" />
             <span className="sr-only">Close</span>

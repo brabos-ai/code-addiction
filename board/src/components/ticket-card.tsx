@@ -68,7 +68,7 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, showStatus
 
 export function TicketCard({ ticket, rank, from, quiet, showStatus }: Props) {
   const className = cn(
-    'group relative block rounded-xl bg-surface px-4 py-3.5 shadow-card ring-1 ring-line',
+    'group relative block rounded-md bg-surface px-4 py-3.5 shadow-card ring-1 ring-line',
     'transition-[box-shadow,transform] duration-300 ease-spring hover:-translate-y-px hover:shadow-lift hover:ring-line-strong',
     'active:translate-y-0 active:scale-[0.995]',
     quiet && 'bg-surface/70',
@@ -90,7 +90,7 @@ export function TicketCard({ ticket, rank, from, quiet, showStatus }: Props) {
         <span translate="no" className="tabular tracking-[0.04em]">{ticket.id}</span>
         <span
           aria-label={`Priority ${rank}`}
-          className="tabular ml-auto rounded-md bg-surface-sunken px-1.5 font-semibold text-ink"
+          className="tabular ml-auto rounded-sm bg-surface-sunken px-1.5 font-semibold text-ink"
         >
           #{rank}
         </span>
