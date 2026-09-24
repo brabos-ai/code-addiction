@@ -64,6 +64,11 @@ list and ticket detail, shaped to grow into activity management. It is `[product
 Unlike `mcp/`, nothing copies it into `cli/src/`: the npm package and the main release ZIP do not
 carry it.
 
+`npm run board` in this repository passes `--layers` to enable the Layer filter and
+`product` / `internal` / `both` chips in board cards and mobile list rows. The distributed server
+starts without that flag, so these controls and chips are absent. Labels remain in the API and
+ticket detail in both modes.
+
 ### Internal Layer — `workbench/`
 
 Development tools that build and maintain the framework itself. **It has a provider mirror and it reaches no user, and both halves matter.** `workbench/` is the source; `node scripts/build-workbench.js` compiles it into `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repository root, which are gitignored output. Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and the installer never writes it — which is what keeps the cross-layer gate in `scripts/build.js` correct.
