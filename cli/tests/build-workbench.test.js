@@ -2,11 +2,11 @@
  * build-workbench.test.js — the workbench build entry point.
  *
  * The workbench is the framework's OWN pipeline: source at `workbench/`, built
- * into `.claude/` and `.opencode/` at the repository root. Its output is
- * gitignored, which is exactly why it needs a suite — a break there is invisible
- * locally and invisible in review.
+ * into `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repository root.
+ * Its output is gitignored, which is exactly why it needs a suite — a break there
+ * is invisible locally and invisible in review.
  *
- * L2 and L3 never read the repository's own `.claude/`/`.opencode/`: whether
+ * L2 and L3 never read the repository's own provider trees: whether
  * those exist depends on who ran the build before the test, and `release.yml`
  * never does. They build the real entry point into a temp copy instead, so the
  * verdict is the same on every machine and in every workflow.
@@ -74,6 +74,19 @@ const COMMANDS = Object.keys(MAP.commands);
 const SKILLS = Object.keys(MAP.skills);
 const AGENTS = Object.keys(MAP.agents);
 
+/**
+ * Resolve one registry pattern to the path the build writes for a provider.
+ * The registry is what carries per-provider layouts — codex commands build as
+ * skills and its agents live in a separate `agentsDir` — so the assertions
+ * resolve the pattern instead of assuming `commands/*.md` / `agents/*.md`.
+ */
+const commandFile = (key, n) => `${MAP.providers[key].dir}/${MAP.providers[key].commands.replace('{name}', n)}`;
+const skillFile = (key, n) => `${MAP.providers[key].dir}/${MAP.providers[key].skills.replace('{name}', n)}`;
+const agentFile = (key, n) => {
+  const p = MAP.providers[key];
+  return `${p.agentsDir ?? p.dir}/${p.agents.replace('{name}', n)}`;
+};
+
 describe('L1 — the registry and the tree agree', () => {
   it('L1.1 every registered resource has a source file, and every source file is registered', () => {
     const onDisk = {
@@ -89,12 +102,18 @@ describe('L1 — the registry and the tree agree', () => {
   it('L1.2 the registry targets the repository-root provider dirs, not framwork/', () => {
     // A `dir` under framwork/ would write the workbench into the product's
     // output tree, which release.yml packages — and the workbench ships to
-    // nobody. This is the assertion that keeps that true by construction.
+    // nobody. This is the assertion that keeps that true by construction. An
+    // `agentsDir` carries the same risk for the providers whose agents live
+    // outside their skills root, so it gets the same anchored check.
     for (const [key, p] of Object.entries(MAP.providers)) {
       expect(p.dir, key).toMatch(/^\.[a-z]+$/);
       expect(p.dir, key).not.toMatch(/framwork/);
+      if (p.agentsDir) {
+        expect(p.agentsDir, key).toMatch(/^\.[a-z]+$/);
+        expect(p.agentsDir, key).not.toMatch(/framwork/);
+      }
     }
-    expect(PROVIDERS.sort()).toEqual(['claude', 'opencode']);
+    expect(PROVIDERS.sort()).toEqual(['claude', 'codex', 'opencode']);
   });
 
   it('L1.3 commands and agents carry a description; skills do not need one', () => {
@@ -124,13 +143,12 @@ describe('L1 — the registry and the tree agree', () => {
 });
 
 describe('L2 — the expected output map', () => {
-  it('L2.1 every command, skill and agent lands under every provider', () => {
+  it('L2.1 every command, skill and agent lands under every provider, at its own pattern', () => {
     const missing = [];
     for (const key of PROVIDERS) {
-      const dir = MAP.providers[key].dir;
-      for (const n of COMMANDS) if (!builtExists(dir, 'commands', `${n}.md`)) missing.push(`${dir}/commands/${n}.md`);
-      for (const n of SKILLS) if (!builtExists(dir, 'skills', n, 'SKILL.md')) missing.push(`${dir}/skills/${n}/SKILL.md`);
-      for (const n of AGENTS) if (!builtExists(dir, 'agents', `${n}.md`)) missing.push(`${dir}/agents/${n}.md`);
+      for (const n of COMMANDS) if (!builtExists(commandFile(key, n))) missing.push(commandFile(key, n));
+      for (const n of SKILLS) if (!builtExists(skillFile(key, n))) missing.push(skillFile(key, n));
+      for (const n of AGENTS) if (!builtExists(agentFile(key, n))) missing.push(agentFile(key, n));
     }
     expect(missing).toEqual([]);
   });
@@ -149,11 +167,10 @@ describe('L2 — the expected output map', () => {
 
   it('L2.3 a built command acquires the registry description as frontmatter', () => {
     for (const key of PROVIDERS) {
-      const dir = MAP.providers[key].dir;
       for (const n of COMMANDS) {
-        const body = built(dir, 'commands', `${n}.md`);
-        expect(body, `${dir}/${n}`).toMatch(/^---\n/);
-        expect(body, `${dir}/${n}`).toContain(MAP.commands[n].description);
+        const body = built(commandFile(key, n));
+        expect(body, commandFile(key, n)).toMatch(/^---\n/);
+        expect(body, commandFile(key, n)).toContain(MAP.commands[n].description);
       }
     }
   });
@@ -175,13 +192,18 @@ describe('L2 — the expected output map', () => {
 
   it('L2.5 a skill pointer resolves to the provider that is reading it', () => {
     // This is the whole reason the literals became variables: the same source
-    // line has to name a different path per provider.
+    // line has to name a different path per provider. Codex shares opencode's
+    // shape for skills — one more provider carrying the same contract.
     const claude = built('.claude', 'skills', 'add-framework--build', 'SKILL.md');
     const opencode = built('.opencode', 'skills', 'add-framework--build', 'SKILL.md');
+    const codex = built('.agents', 'skills', 'add-framework--build', 'SKILL.md');
     expect(claude).toContain('.claude/skills/add-build-ledger/SKILL.md');
     expect(opencode).toContain('.opencode/skills/add-build-ledger/SKILL.md');
+    expect(codex).toContain('.agents/skills/add-build-ledger/SKILL.md');
     expect(claude).not.toContain('.opencode/skills/add-build-ledger');
     expect(opencode).not.toContain('.claude/skills/add-build-ledger');
+    expect(codex).not.toContain('.claude/skills/add-build-ledger');
+    expect(codex).not.toContain('.opencode/skills/add-build-ledger');
   });
 });
 
@@ -211,16 +233,18 @@ describe('L3 — the agent dialect, where the workbench differs', () => {
     // splitFrontmatter appends a non-`key:` line to the PREVIOUS key's block,
     // and the claude dialect pushes that block verbatim — so a `#` note inside
     // the frontmatter shipped glued onto `memory:`. Source-only notes belong in
-    // an HTML comment, which stripHtmlComments removes.
+    // an HTML comment, which stripHtmlComments removes. A provider whose agent
+    // dialect emits no frontmatter (codex: TOML) contributes no lines here —
+    // that is the `continue`, not a gap in the check.
     const leaked = [];
     for (const key of PROVIDERS) {
-      const dir = MAP.providers[key].dir;
       for (const n of AGENTS) {
-        const lines = built(dir, 'agents', `${n}.md`).split('\n');
+        const file = agentFile(key, n);
+        const lines = built(file).split('\n');
         if (lines[0].trim() !== '---') continue;
         const end = lines.findIndex((l, i) => i > 0 && l.trim() === '---');
         const comments = lines.slice(1, end).filter((l) => l.trim().startsWith('#'));
-        if (comments.length) leaked.push(`${dir}/agents/${n}: ${comments.length}`);
+        if (comments.length) leaked.push(`${file}: ${comments.length}`);
       }
     }
     expect(leaked).toEqual([]);
