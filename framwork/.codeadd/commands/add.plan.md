@@ -845,6 +845,8 @@ the self-check. Emit the report FIRST — the feature ID, the paths and the next
 A plan proposes rather than executes, so block 2 is titled `What will be done` and written in the
 future tense. Fill `How it works` with the mechanism the plan settles on — what the feature will do
 once built, for a reader who never opens `plan.md`.
+<!-- feature:board:ticket-planned -->
+<!-- /feature:board:ticket-planned -->
 
 Then, after the seven blocks, state:
 - Feature ID and plan path

@@ -41,7 +41,7 @@ const BOARD_COMMANDS = ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'a
 const MAP = {
   'add.brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-refining', 'ticket-report', 'ticket-resolve', 'ticket-shaped'],
   'add.new': ['ticket-board-write', 'ticket-intent-field', 'ticket-shaped', 'ticket-skeleton'],
-  'add.plan': ['ticket-done-when', 'ticket-read'],
+  'add.plan': ['ticket-done-when', 'ticket-planned', 'ticket-read'],
   'add.build': ['ticket-attention', 'ticket-doing', 'ticket-metadata'],
   'add.done': ['ticket-carry', 'ticket-close', 'ticket-report'],
 };
@@ -67,7 +67,7 @@ describe('board — the registry and the map', () => {
     }
     for (const k of Object.keys(got)) got[k].sort();
     expect(got).toEqual(MAP);
-    expect(boardPoints()).toHaveLength(18);
+    expect(boardPoints()).toHaveLength(19);
   });
 
   it('no board marker shares an anchor line with another namespace — L6.2 has no subject', () => {
