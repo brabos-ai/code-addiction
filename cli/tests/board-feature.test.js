@@ -36,8 +36,10 @@ const SIDECAR = path.join(ROOT, 'framwork', '.codeadd', 'injection-points.json')
 const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir).map(([k]) => k);
 const BOARD_COMMANDS = ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done', 'add.hotfix'];
 
-// The END-STATE MAP. Fourteen sections: add.new's two adjacent sites were
-// merged into one, which is why the plan's fifteen became fourteen.
+// The END-STATE MAP. Twenty-four sections over six commands. Checkpoint 2 moved
+// fourteen -- add.new's two adjacent sites were merged into one, which is why
+// the plan's fifteen became fourteen -- and checkpoint 3 added ten: the five new
+// writes' sections, add.new's board-write permission, and add.hotfix's four.
 const MAP = {
   'add.brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-refining', 'ticket-report', 'ticket-resolve', 'ticket-shaped'],
   'add.new': ['ticket-board-write', 'ticket-intent-field', 'ticket-shaped', 'ticket-skeleton'],
