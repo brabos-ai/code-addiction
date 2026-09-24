@@ -975,7 +975,8 @@ describe('node inventory snapshot', () => {
       // fragment 26 -> 27: fragments/board/add.brainstorm.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
       // fragment 27 -> 28: fragments/board/add.new.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
       // fragment 28 -> 29: fragments/board/add.plan.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
-      fragment: 29,
+      // fragment 29 -> 30: fragments/board/add.build.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+      fragment: 30,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1065,8 +1066,10 @@ describe('node inventory snapshot', () => {
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9.)
     // 237 -> 238, declares 134 -> 135: +1 fragment, board/add.plan.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11.)
-    expect(nodes).toHaveLength(238);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(135);
+    // 238 -> 239, declares 135 -> 136: +1 fragment, board/add.build.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13.)
+    expect(nodes).toHaveLength(239);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(136);
   });
 });
 

@@ -321,13 +321,14 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
   // 46 -> 50: feature:board moves add.brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
   // 50 -> 52: feature:board moves add.new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
   // 52 -> 54: feature:board moves add.plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
-  it('sidecar, fragments, and catalog declare the same 54 substitutions', () => {
+  // 54 -> 57: feature:board moves add.build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+  it('sidecar, fragments, and catalog declare the same 57 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(54);
-    expect(all).toHaveLength(54);
+    expect(points).toHaveLength(57);
+    expect(all).toHaveLength(57);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -433,10 +434,10 @@ describe('plugin substitution on real built files', () => {
 describe('combined substitution and sibling isolation', () => {
   useFixture();
 
-  it('all 54 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('all 57 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(54);
+    expect(features.length + plugins.length).toBe(57);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);
