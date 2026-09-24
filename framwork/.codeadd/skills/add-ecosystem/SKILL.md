@@ -279,7 +279,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | task-brief.sh | add.build (STEP 10 dispatch), add-subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
 | backlog.sh | add-backlog — the project backlog: seven modes over `docs/backlog.jsonl`, where line order is the priority and only `move` reorders. Owns the status vocabulary in `docs/backlog.definitions.json`, which it seeds when absent and never rewrites. **Runs no git command at all** |
 | backlog-commit.sh | add-backlog — the git route for a backlog write: wraps `backlog.sh` so the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise |
-| migrate-context-files.sh | add.wiki, add-agents-md-style — folds legacy context files into `AGENTS.md` without losing a line, because a leftover CLAUDE.md or GEMINI.md hides or overrides it |
+| migrate-context-files.sh | add.wiki, add-agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.sh | add.build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add-subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
 ## Main Flows
