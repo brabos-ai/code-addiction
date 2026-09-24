@@ -66,7 +66,7 @@ composing a record.
 | File | Owns | Read by |
 |---|---|---|
 | `{{skill:add-backlog/references/phases.md}}` | The model: the nine statuses, the seven columns, and what each one means to a person reading the board. Nothing about who writes a status | Anyone reading the board, and the lifecycle reference, which points here instead of restating it |
-| `{{skill:add-backlog/references/lifecycle.md}}` | How work comes back out: the `ticket:` field, what each of the five pipeline commands does with it, the two status transitions, and why none of it ever stops a command | `add.brainstorm`, `add.new`, `add.plan`, `add.build`, `add.done` — each at its own row |
+| `{{skill:add-backlog/references/lifecycle.md}}` | The procedure: the `ticket:` field, the two rules that decide whether a write happens, the seven writes and the exact step each one stands at, and why none of it ever stops a command | The `board` feature's fragments for `add.brainstorm`, `add.new`, `add.plan`, `add.build`, `add.done` and `add.hotfix` — each at its own row |
 
 **This skill captures and reads; the reference carries a ticket through the pipeline.** A user reaches
 the first by asking. The commands reach the second on their own, when a document names a ticket.
