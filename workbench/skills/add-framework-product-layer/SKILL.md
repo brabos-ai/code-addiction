@@ -228,7 +228,16 @@ count.
 IF YOU NEED A CLEAN-TREE BASELINE FOR THE SUITE:
   ⛔ DO NOT USE: Bash for git stash, git checkout, git reset, git clean or git restore
   ✅ DO: git worktree add <tmp> HEAD --detach, run the suite in <tmp>, then git worktree remove <tmp>
+  ✅ DO: Before running bats in <tmp>, COPY the root node_modules into it — cp -r, never a junction
 ```
+
+⛔ **A fresh worktree has no `node_modules`, and a junction to the checkout's does not fix it.** The
+container runner packs the tree without following a junction, so bats exits **127** with
+`./node_modules/.bin/bats: No such file or directory` — and a grep over that output finds nothing,
+which reads exactly like a clean pass. The root `node_modules` is ~546 KB (bats, bats-assert,
+bats-support); copy it. vitest does not need it — it uses the `cli/node_modules` built into the image.
+To take a junction out of a worktree, `cmd //c rmdir <path>` removes the link alone; `rm -rf` through a
+junction can empty the checkout it points at.
 
 `git stash` empties the tree you are standing in. Your own edits come back with `git stash pop`, but
 any sibling agent running against that same tree loses its uncommitted work for as long as the stash
@@ -262,6 +271,18 @@ IF THE BLOCK CHANGED A .sh FILE AND THE SUITE HAS NOT BEEN RUN:
 **This gate was unenforceable until recently, and that is why it did not exist.** The suite was far
 too slow to run on Windows and reported a `qa-preflight.bats` failure that appeared on no other
 machine. A gate nobody can afford to satisfy is a gate everybody rules their way past.
+
+**Run the suite the change can reach, one file at a time, through the container:**
+`node scripts/run-tests.js bats framwork/.codeadd/scripts/tests/<name>.bats`. It returns in seconds; the full
+`test:scripts` takes the better part of an hour.
+
+```
+IF RUNNING BATS ON WINDOWS:
+  ⛔ DO NOT USE: Bash for `npx bats` — the native path is far slower than the container, and it is
+                 not the gate
+  ✅ DO: node scripts/run-tests.js bats <file> — then read its EXIT and count the `ok` lines;
+         an empty grep is not a pass
+```
 
 **The gate binds only where a runner resolves, and `npm run test:scripts` owns that decision.** It
 runs the suite directly off Windows and inside a Linux container on it. On Windows with no Docker
