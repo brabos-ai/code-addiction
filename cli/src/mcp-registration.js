@@ -29,6 +29,7 @@ export const SERVER_NAME = 'codeadd-docs';
  * |--------------|---------|-----|
  * | `mcpServers` | yes | the common object: `{ mcpServers: { <name>: {command, args} } }` |
  * | `opencode`   | yes | JSON, different shape: `{ mcp: { <name>: {type, command[], enabled} } }` |
+ * | `mcp.servers` | yes | the common `{command, args}` entry, nested one level: `{ mcp: { servers: { <name>: {command, args} } } }` |
  * | `toml`       | **no, printed** | writing TOML by hand into a config the user already edited is the same shortcut that mangles a multi-line YAML value, and this runs unattended |
  *
  * A provider absent from this table is printed too. Printing the exact line is
@@ -41,6 +42,7 @@ export const MCP_CONFIG = {
   antigrav: { file: '.agent/mcp_config.json', format: 'mcpServers' },
   opencode: { file: 'opencode.json', format: 'opencode' },
   codex: { file: '.codex/config.toml', format: 'toml' },
+  zcode: { file: '.zcode/config.json', format: 'mcp.servers' },
 };
 
 /**
@@ -108,6 +110,16 @@ export function registerProvider(cwd, providerKey, version, corpus = 'docs') {
     }
     servers[SERVER_NAME] = entry;
     writeJson(file, { ...current, mcpServers: servers });
+    return { provider: providerKey, status: 'written', file: config.file, line };
+  }
+
+  if (config.format === 'mcp.servers') {
+    const servers = { ...(current.mcp?.servers ?? {}) };
+    if (JSON.stringify(servers[SERVER_NAME]) === JSON.stringify(entry)) {
+      return { provider: providerKey, status: 'current', file: config.file, line };
+    }
+    servers[SERVER_NAME] = entry;
+    writeJson(file, { ...current, mcp: { ...(current.mcp ?? {}), servers } });
     return { provider: providerKey, status: 'written', file: config.file, line };
   }
 
