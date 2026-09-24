@@ -205,6 +205,7 @@ cli/.vitest/
 /.opencode/commands/
 /.opencode/skills/
 /.opencode/agents/
+/.codex/agents/
 
 # The board app's build output and test artefacts. board/node_modules/ is already
 # covered by the node_modules/ pattern above.
