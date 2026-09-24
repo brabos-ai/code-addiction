@@ -139,6 +139,8 @@ describe('install command e2e', () => {
       'tdd-pipeline': true,
       'qa-pipeline': false,
       'docs-pruning': false,
+      // board is opt-in: no project uses the board yet (2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
+      board: false,
     });
     // Removing the feature prompt must not disturb the plugin path:
     // plugins stay disabled (empty) by default on a fresh install.

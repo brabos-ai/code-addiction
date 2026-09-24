@@ -133,8 +133,9 @@ describe('L2 — build integrity', () => {
   // (plan 2026-09-13T153219, F15/F16/F20b).
   // + 1 for plugin:gitnexus:graph-build on add.build
   // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
-  it('L2.3: the injection-point total is the absolute baseline 39 + 1 + 5 + 1', () => {
-    expect(SIDECAR().points).toHaveLength(46);
+  // + 4 for feature:board on add.brainstorm (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 50', () => {
+    expect(SIDECAR().points).toHaveLength(50);
   });
 
   it('L2.3: add.done carries exactly two injection points — gitnexus and docs-pruning', () => {

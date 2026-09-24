@@ -5,8 +5,6 @@
 - skill: add-delivery-mode
 - skill: add-final-report
 - skill: add-knowledge-discovery
-- skill: add-backlog
-- skill: add-backlog/references/lifecycle.md
 - command: /add.diagnose
 - command: /add.hotfix
 - command: /add.new
@@ -111,11 +109,9 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 ```
 
 - **ARCHITECTURE:** Read AGENTS.md and product.md (if exists)
-- **TICKET:** if the invocation carries a backlog ticket id — the literal pattern `[0-9]{4}B` — follow
-  the `add.brainstorm` row of `{{skill:add-backlog/references/lifecycle.md}}`: read that ticket and use
-  it as input to the exploration. **Declared, never inferred** — with no id in the invocation there is
-  no ticket, whatever the topic resembles
 - **Mental inventory:** Prior work from the index, architecture, business context, current work
+<!-- feature:board:ticket-resolve -->
+<!-- /feature:board:ticket-resolve -->
 
 ```
 IF THE TOPIC RESEMBLES SOMETHING THE INDEX RETURNED:
@@ -383,7 +379,8 @@ IF ON THE architectural PATH AND 2.6 IS APPROVED:
 it owns the sections, the `Decision | Serves | Rationale` table and the `Used by` column. DO NOT include
 full classes/methods — a single one-shot snippet is the maximum allowed.
 
-**Ticket:** when STEP 1 resolved one, write `ticket: <id>` into the document's frontmatter.
+<!-- feature:board:ticket-frontmatter -->
+<!-- /feature:board:ticket-frontmatter -->
 
 ---
 
@@ -433,9 +430,9 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 ```
 
 After the report: the document path (architectural only — never print a path that resolves to
-nothing), the 3-5 key decisions, and **the ticket id when STEP 1 resolved one**. On the `spike` path
-this line is the only place the ticket survives — a spike writes no file to carry it — so it is never
-omitted there.
+nothing) and the 3-5 key decisions.
+<!-- feature:board:ticket-report -->
+<!-- /feature:board:ticket-report -->
 
 ### 5.2 Ask for the one approval — `bounded` and `architectural`
 
@@ -482,9 +479,8 @@ classified at STEP 1.5, the approval's answer as `delivery:`, the objective from
 conversation closed with its rationale and what it serves, whatever it could not close, the prior art
 STEP 1 found, and the directions that were rejected.
 
-**It also carries `ticket: <id>` in its frontmatter when STEP 1 resolved one** — this file is what
-`/add.new` reads, so it is the carrier the ticket travels on. **A spike writes no intent file and
-therefore carries no ticket**; name the ticket in 5.1's report instead.
+<!-- feature:board:ticket-intent -->
+<!-- /feature:board:ticket-intent -->
 
 ```
 IF ABOUT TO WRITE `## Open`:

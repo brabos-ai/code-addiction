@@ -972,7 +972,8 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
       // fragment 25 -> 26: plugins/gitnexus/fragments/add.build.md.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
-      fragment: 26,
+      // fragment 26 -> 27: fragments/board/add.brainstorm.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+      fragment: 27,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -980,7 +981,8 @@ describe('node inventory snapshot', () => {
       // feature 0 -> 3, plugin 0 -> 2: container nodes, one per directory under
       // .codeadd/fragments/ and .codeadd/plugins/. Entry points, so they are
       // never reported as orphans; they own their members through CONTAINS.
-      feature: 3,
+      // feature 3 -> 4: fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+      feature: 4,
       plugin: 2,
     });
     // 208 -> 211: +4 skills, +1 reference, -2 commands.
@@ -1055,8 +1057,10 @@ describe('node inventory snapshot', () => {
     // scripts are not a declaring kind. Renaming the style skill to
     // add-agents-md-style moves no count.
     // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1 and F2.)
-    expect(nodes).toHaveLength(234);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(132);
+    // 234 -> 236, declares 132 -> 133: +1 fragment, board/add.brainstorm.md (a declaring kind) and +1 feature node, `board`, derived from the fragments/board/ directory (not a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7.)
+    expect(nodes).toHaveLength(236);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(133);
   });
 });
 
