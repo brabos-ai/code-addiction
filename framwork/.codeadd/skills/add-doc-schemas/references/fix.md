@@ -35,7 +35,8 @@ Skipping the third point is the most common failure mode of a hotfix postmortem.
 
 For `/add.hotfix` (creates `docs/features/[NNNN]H-<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]H`, `type: hotfix`, `severity:`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]H`, `type: hotfix`, `severity:`, `related: []`, `tags: []`, and optionally `ticket: [NNNN]B`
+  - **`ticket:`** (optional) — the backlog ticket this hotfix works, when its invocation named one. Written by `/add.hotfix` before the file is fingerprinted. **Absent is the normal case**, which is why it is not in the validation gate's required set. What each command does with it is owned by `{{skill:add-backlog/references/lifecycle.md}}`; nothing here restates it.
 - **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification · Review · Relations · Observations
 - **Depth floor:**
   - **Symptom** — when it occurs, where (component/endpoint/file), observable impact, affected users or scope, detection signal. Use Symptom Notation above.

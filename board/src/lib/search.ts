@@ -13,11 +13,15 @@ export const boardSearchSchema = z.object({
   theme: text.optional(),
   label: list.optional(),
   status: list.optional(),
+  // Columns to show ON TOP OF the ones visible by default — an additive union,
+  // never an override list. A column the definitions mark hidden shows only
+  // when this names it.
+  column: list.optional(),
 });
 
 export type BoardSearch = z.infer<typeof boardSearchSchema>;
 
-const FIELDS = { q: text, theme: text, label: list, status: list } as const;
+const FIELDS = { q: text, theme: text, label: list, status: list, column: list } as const;
 
 export function parseBoardSearch(input: Record<string, unknown>): BoardSearch {
   const out: Record<string, unknown> = {};
@@ -30,5 +34,5 @@ export function parseBoardSearch(input: Record<string, unknown>): BoardSearch {
 }
 
 export function hasFilters(s: BoardSearch): boolean {
-  return Boolean(s.q || s.theme || s.label?.length || s.status?.length);
+  return Boolean(s.q || s.theme || s.label?.length || s.status?.length || s.column?.length);
 }

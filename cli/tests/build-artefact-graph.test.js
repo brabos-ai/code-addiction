@@ -950,7 +950,8 @@ describe('node inventory snapshot', () => {
       // reference 71 -> 72: add-backlog/references/lifecycle.md, the one
       // procedure the five pipeline commands share for a ticket they carry.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
-      reference: 72,
+      // reference 72 -> 73: add-backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
+      reference: 73,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add.pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -972,7 +973,13 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
       // fragment 25 -> 26: plugins/gitnexus/fragments/add.build.md.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
-      fragment: 26,
+      // fragment 26 -> 27: fragments/board/add.brainstorm.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+      // fragment 27 -> 28: fragments/board/add.new.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+      // fragment 28 -> 29: fragments/board/add.plan.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+      // fragment 29 -> 30: fragments/board/add.build.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+      // fragment 30 -> 31: fragments/board/add.done.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+      // fragment 31 -> 32: fragments/board/add.hotfix.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+      fragment: 32,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -980,7 +987,8 @@ describe('node inventory snapshot', () => {
       // feature 0 -> 3, plugin 0 -> 2: container nodes, one per directory under
       // .codeadd/fragments/ and .codeadd/plugins/. Entry points, so they are
       // never reported as orphans; they own their members through CONTAINS.
-      feature: 3,
+      // feature 3 -> 4: fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+      feature: 4,
       plugin: 2,
     });
     // 208 -> 211: +4 skills, +1 reference, -2 commands.
@@ -1055,8 +1063,23 @@ describe('node inventory snapshot', () => {
     // scripts are not a declaring kind. Renaming the style skill to
     // add-agents-md-style moves no count.
     // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1 and F2.)
-    expect(nodes).toHaveLength(234);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(132);
+    // 234 -> 236, declares 132 -> 133: +1 fragment, board/add.brainstorm.md (a declaring kind) and +1 feature node, `board`, derived from the fragments/board/ directory (not a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7.)
+    // 236 -> 237, declares 133 -> 134: +1 fragment, board/add.new.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9.)
+    // 237 -> 238, declares 134 -> 135: +1 fragment, board/add.plan.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11.)
+    // 238 -> 239, declares 135 -> 136: +1 fragment, board/add.build.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13.)
+    // 239 -> 240, declares 136 -> 137: +1 fragment, board/add.done.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15.)
+    // 240 -> 241: +1 reference, add-backlog/references/phases.md -- the phase model,
+    // split out of lifecycle.md. declares stays 137: a reference is not a declaring kind.
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19.)
+    // 241 -> 242, declares 137 -> 138: +1 fragment, board/add.hotfix.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30.)
+    expect(nodes).toHaveLength(242);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(138);
   });
 });
 

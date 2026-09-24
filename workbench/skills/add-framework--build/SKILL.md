@@ -622,6 +622,11 @@ The close-out runs only when the operator invokes it.
 
 ## STEP 10: Completion
 
+**Ticket — before the report, the review write.** When the plan header carries `> **Ticket:**`, read
+STEP 9's answer. A PR opened, or one that already existed and was pushed to, writes `in-review`. **"No"
+writes nothing:** the close-out then opens the PR and merges it in one run, and the ticket goes `doing` →
+`done`. **The Ticket** in `add-plan-authoring` owns the rules.
+
 **LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
 the report FIRST — the ledger path, the commit ranges and the rulings come after it, never in front
 of it and never instead of it.
@@ -646,8 +651,9 @@ Then, after the seven blocks and before the metadata, report always:
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
-- **The ticket, when the plan carried one** — the id, and the `doing` write's `SHA`, that it was already
-  there, or what did not happen.
+- **The ticket, when the plan carried one** — the id, and for EACH of its two writes (`doing` at 5.1,
+  `in-review` here) the `SHA`, that it was already there, that STEP 9's answer skipped it, or what did not
+  happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block.
 

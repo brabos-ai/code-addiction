@@ -153,6 +153,7 @@ function TicketBody({ ticket }: { ticket: Ticket }) {
             )}
           </span>
         </Detail>
+        <Detail term="Feature">{ticket.feature ?? <span className="text-faint">No feature yet</span>}</Detail>
         <Detail term="Work">{ticket.work_id ?? <span className="text-faint">Not picked up</span>}</Detail>
         <Detail term="Created"><time dateTime={ticket.created_at}>{absoluteTime(ticket.created_at)}</time></Detail>
         <Detail term="Updated"><time dateTime={ticket.updated_at}>{absoluteTime(ticket.updated_at)}</time></Detail>

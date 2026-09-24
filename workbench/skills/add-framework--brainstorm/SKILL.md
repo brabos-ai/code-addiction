@@ -262,6 +262,11 @@ the test is concrete: a change to a command, skill, agent or script **that alrea
 **new** artefact of any kind is architectural — there is no existing flow to open, read and modify, whatever
 the change resembles. Bounded requires you to name the existing artefact being changed.
 
+**Ticket — the entry write, once the path is stated.** When STEP 1.1 resolved a ticket and the path is
+`bounded` or `architectural`, write `refining` now. **On `spike`, write nothing:** a spike's answer is not
+permission to build, and a ticket moved by one that ends in "no" would stay there with nothing behind it.
+`add-plan-authoring` owns the rules, under **The Ticket**.
+
 **When in doubt between two paths, take the heavier one.** Reaching for the lighter label to skip work IS
 the doubt.
 
@@ -767,6 +772,10 @@ handoff. Its shape, its naming, the `delivery:` field and the `## Open` conventi
 It carries the path classified at `2.2.2`, the approval option as `delivery:`, every decision this
 conversation closed, whatever it could not, and `ticket:` when STEP 1.1 resolved one. **On `architectural` it reuses the design document’s
 timestamp** so the pair sorts adjacent; on `bounded` it is the only artefact and takes its own.
+
+**Ticket — the exit write.** When STEP 1.1 resolved a ticket, write `shaped` once the intent file is written.
+It follows the intent file and not `7.1`'s report, because the report comes before the approval that lets
+the file exist. `add-plan-authoring` owns the rules, under **The Ticket**.
 
 ```
 IF ABOUT TO WRITE `## Open`:

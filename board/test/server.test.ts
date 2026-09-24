@@ -70,9 +70,21 @@ async function board(r: Running) {
   return { status: res.status, body: (await res.json()) as Record<string, unknown> };
 }
 
-afterEach(() => {
-  for (const r of running.splice(0)) r.proc.kill();
-  for (const t of temps.splice(0)) rmSync(t, { recursive: true, force: true });
+// Wait for each server to EXIT before removing its project. On Windows a
+// process still in docs/ -- the server's watcher, or the bash it spawned --
+// holds the directory, and an rmSync right after kill() fails with EPERM,
+// intermittently, on whichever test ran last. Removal retries, and a directory
+// still held after that is left in the OS temp dir: a failed cleanup says
+// nothing about the server, so it must not fail the test.
+afterEach(async () => {
+  await Promise.all(running.splice(0).map((r) => new Promise<void>((ok) => {
+    if (r.proc.exitCode !== null || r.proc.signalCode !== null) return ok();
+    r.proc.once('exit', () => ok());
+    r.proc.kill();
+  })));
+  for (const t of temps.splice(0)) {
+    try { rmSync(t, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); } catch { /* see above */ }
+  }
 });
 
 describe('L1 — /api/board', () => {
@@ -125,6 +137,64 @@ describe('L1 — /api/board', () => {
     const { status, body } = await board(r);
     expect(status).toBe(200);
     expect(body.error).toBe('script-missing');
+  });
+});
+
+// Plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F37 / L13. RED-FIRST.
+describe('L13 — columns in /api/board', () => {
+  const nine = {
+    columns: [
+      { name: 'backlog', order: 1, label: 'Backlog' },
+      { name: 'dropped', order: 3, label: 'Dropped', hidden: true },
+      { name: 'building', order: 2, label: 'Building' },
+    ],
+    statuses: [
+      { name: 'open', order: 1, column: 'backlog', label: 'Open', means: 'a' },
+      { name: 'doing', order: 2, column: 'building', label: 'Doing', means: 'b' },
+      { name: 'dropped', order: 3, column: 'dropped', label: 'Dropped', means: 'c' },
+    ],
+  };
+  type S = { name: string; column?: string; label?: string };
+  type C = { name: string; order: number; label?: string; hidden?: boolean };
+
+  it('L13.1a a status keeps its column', async () => {
+    const { body } = await board(await start(project([ticket('0001B', 'one')], nine)));
+    expect((body.statuses as S[]).find((s) => s.name === 'doing')!.column).toBe('building');
+  });
+  it('L13.1b a status keeps its label', async () => {
+    const { body } = await board(await start(project([ticket('0001B', 'one')], nine)));
+    expect((body.statuses as S[]).find((s) => s.name === 'doing')!.label).toBe('Doing');
+  });
+  it('L13.1c a column keeps its label', async () => {
+    const { body } = await board(await start(project([ticket('0001B', 'one')], nine)));
+    expect((body.columns as C[]).find((c) => c.name === 'building')!.label).toBe('Building');
+  });
+  it('L13.1d a column keeps hidden', async () => {
+    const { body } = await board(await start(project([ticket('0001B', 'one')], nine)));
+    expect((body.columns as C[]).find((c) => c.name === 'dropped')!.hidden).toBe(true);
+  });
+
+  it('L13.2 columns present in the file are used as written, sorted by order', async () => {
+    const { body } = await board(await start(project([ticket('0001B', 'one')], nine)));
+    expect((body.columns as C[]).map((c) => c.name)).toEqual(['backlog', 'building', 'dropped']);
+  });
+
+  it('L13.3 columns absent derive one per distinct status column, in status order', async () => {
+    const defs = {
+      statuses: [
+        { name: 'shaped', order: 3, column: 'shaping', means: '' },
+        { name: 'open', order: 1, column: 'backlog', means: '' },
+        { name: 'refining', order: 2, column: 'shaping', means: '' },
+      ],
+    };
+    const { body } = await board(await start(project([ticket('0001B', 'one')], defs)));
+    expect((body.columns as C[]).map((c) => c.name)).toEqual(['backlog', 'shaping']);
+  });
+
+  it('L13.4 with no definitions file each status in use is its own column', async () => {
+    const { body } = await board(await start(project([ticket('0001B', 'a', 'doing'), ticket('0002B', 'b', 'open')])));
+    expect((body.statuses as S[]).map((s) => s.name)).toEqual(['doing', 'open']);
+    expect((body.columns as C[]).map((c) => c.name)).toEqual(['doing', 'open']);
   });
 });
 

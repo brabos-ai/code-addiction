@@ -170,6 +170,40 @@ function groupPointsByAnchor(points) {
 }
 
 /**
+ * Resolve the resource-path placeholders a fragment section carries, for ONE
+ * provider -- the same rule scripts/build.js resolveResourcePaths() applies when
+ * it writes a command. A fragment is never built: release.yml packs
+ * .codeadd/fragments as authored, so without this the literal `{{skill:...}}`
+ * lands in the installed command. The CLI cannot import build.js at runtime, so
+ * this is a second copy of the rule; cli/tests/fragment-placeholders.test.js P1
+ * holds the two equal, provider by provider, against the build's own function.
+ *
+ * The base is the provider's SOURCE directory, never its install destination:
+ * a global install puts OpenCode under .config/opencode, yet the built command
+ * it receives still says `.opencode/skills/...`, and the injected block must
+ * say the same thing the rest of the file does.
+ * @param {string} text
+ * @param {{src: string, commandsSubdir: string|null, skillsSubdir: string|null}} provider
+ * @returns {string}
+ */
+export function resolvePlaceholders(text, provider) {
+  const base = provider.src.replace(/^framwork\//, '');
+  return text
+    .replace(/\{\{cmd:([^}]+)\}\}/g, (m, name) =>
+      provider.commandsSubdir ? `${base}/${provider.commandsSubdir}/${name}.md` : m)
+    .replace(/\{\{skill:([^/}]+)\/([^}]+)\}\}/g, (m, name, file) =>
+      provider.skillsSubdir ? `${base}/${provider.skillsSubdir}/${name}/${file}` : m)
+    .replace(/\{\{addpath:([^}]+)\}\}/g, (_, sub) => `.codeadd/${sub}`);
+}
+
+/** A copy of `sections` with every body resolved for `provider`. */
+function resolveSections(sections, provider) {
+  const out = new Map();
+  for (const [name, body] of sections) out.set(name, resolvePlaceholders(body, provider));
+  return out;
+}
+
+/**
  * Apply all of one resource's injection points to its file content.
  * Inserts bottom-up so higher anchors' ordinals stay valid across inserts.
  * @param {string} content
@@ -177,7 +211,8 @@ function groupPointsByAnchor(points) {
  * @param {Map<string,string>} sections  fragment sections
  * @returns {{content: string, missed: Array<{sections:string[], anchor:object}>}}
  */
-export function applyInjectionToContent(content, points, sections) {
+export function applyInjectionToContent(content, points, sections, provider = null) {
+  if (provider) sections = resolveSections(sections, provider);
   const groups = groupPointsByAnchor(points.filter((p) => sections.has(p.section)));
   let result = content;
   const missed = [];
@@ -198,7 +233,15 @@ export function applyInjectionToContent(content, points, sections) {
  * @param {Map<string,string>} sections
  * @returns {string}
  */
-export function removeInjectionFromContent(content, points, sections) {
+export function removeInjectionFromContent(content, points, sections, provider = null) {
+  // With a provider, remove the RESOLVED block this CLI injects -- and then the
+  // raw one, which a CLI from before placeholder resolution injected. Each pass
+  // is a no-op where its block is absent, so an install from either era comes
+  // out clean.
+  if (provider) {
+    const resolved = removeInjectionFromContent(content, points, resolveSections(sections, provider));
+    return removeInjectionFromContent(resolved, points, sections);
+  }
   const groups = groupPointsByAnchor(points.filter((p) => sections.has(p.section)));
   let result = content;
   // Forward order is safe (unlike applyInjectionToContent's reversed inserts):
@@ -242,6 +285,17 @@ export function loadInjectionPoints(cwd) {
  * @returns {string[]} absolute paths
  */
 export function resolveResourceFiles(cwd, resource) {
+  return resolveResourceTargets(cwd, resource).map((t) => t.file);
+}
+
+/**
+ * Like resolveResourceFiles, with the provider each file belongs to -- which
+ * injection needs, because a placeholder resolves differently per provider.
+ * @param {string} cwd
+ * @param {{name: string, kind: 'command'|'agent'}} resource
+ * @returns {Array<{file: string, provider: object}>}
+ */
+export function resolveResourceTargets(cwd, resource) {
   const manifest = readManifest(cwd);
   // Scope-aware: a global install resolves provider dests under the home dir
   // (e.g. OpenCode .config/opencode, not .opencode). manifest.scope is authoritative.
@@ -252,13 +306,13 @@ export function resolveResourceFiles(cwd, resource) {
     // see the agentInjection note in providers.js.
     return providers
       .filter((p) => p.agentInjection && p.agentsSubdir)
-      .map((p) => path.join(cwd, agentDest(p), p.agentsSubdir, `${resource.name}.md`))
-      .filter((f) => fs.existsSync(f));
+      .map((p) => ({ file: path.join(cwd, agentDest(p), p.agentsSubdir, `${resource.name}.md`), provider: p }))
+      .filter((t) => fs.existsSync(t.file));
   }
   return providers
     .filter((p) => p.commandsSubdir)
-    .map((p) => path.join(cwd, p.dest, p.commandsSubdir, `${resource.name}.md`))
-    .filter((f) => fs.existsSync(f));
+    .map((p) => ({ file: path.join(cwd, p.dest, p.commandsSubdir, `${resource.name}.md`), provider: p }))
+    .filter((t) => fs.existsSync(t.file));
 }
 
 // ---------------------------------------------------------------------------
@@ -374,9 +428,9 @@ export function injectAgentFragments(cwd, pluginName) {
     const agentPoints = points.filter((p) => p.resource.name === agentName);
     if (agentPoints.length === 0) continue;
 
-    for (const file of resolveResourceFiles(cwd, { name: agentName, kind: 'agent' })) {
+    for (const { file, provider } of resolveResourceTargets(cwd, { name: agentName, kind: 'agent' })) {
       const original = fs.readFileSync(file, 'utf8');
-      const { content: updated } = applyInjectionToContent(original, agentPoints, sections);
+      const { content: updated } = applyInjectionToContent(original, agentPoints, sections, provider);
       if (updated !== original) {
         fs.writeFileSync(file, updated, 'utf8');
         modified.push(file);
@@ -405,9 +459,9 @@ export function removeAgentFragments(cwd, pluginName) {
     const agentPoints = points.filter((p) => p.resource.name === agentName);
     if (agentPoints.length === 0) continue;
 
-    for (const file of resolveResourceFiles(cwd, { name: agentName, kind: 'agent' })) {
+    for (const { file, provider } of resolveResourceTargets(cwd, { name: agentName, kind: 'agent' })) {
       const original = fs.readFileSync(file, 'utf8');
-      const updated = removeInjectionFromContent(original, agentPoints, sections);
+      const updated = removeInjectionFromContent(original, agentPoints, sections, provider);
       if (updated !== original) {
         fs.writeFileSync(file, updated, 'utf8');
         modified.push(file);

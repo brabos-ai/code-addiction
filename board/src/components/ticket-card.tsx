@@ -1,20 +1,23 @@
 import { Link } from '@tanstack/react-router';
-import { CircleDashed, GitBranch, MessageSquare } from 'lucide-react';
+import { CircleDashed, GitBranch, MessageSquare, Package } from 'lucide-react';
 import type { Ticket } from '@/api/types';
 import { formatRank, workLabel } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { Chip } from './ui';
+import { Chip, StatusPill } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
-type Props = { ticket: Ticket; rank: number; total: number; from: '/board' | '/list'; quiet?: boolean };
+type Props = { ticket: Ticket; rank: number; total: number; from: '/board' | '/list'; quiet?: boolean; showStatus?: boolean };
 
 /** The meta line a card and a list row share: theme, labels, and what a glance should catch. */
-export function TicketMeta({ ticket, showTheme = true, showId = true, className }: {
-  ticket: Ticket; showTheme?: boolean; showId?: boolean; className?: string;
+export function TicketMeta({ ticket, showTheme = true, showId = true, showStatus = false, className }: {
+  ticket: Ticket; showTheme?: boolean; showId?: boolean; showStatus?: boolean; className?: string;
 }) {
   return (
     <div className={cn('flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1.5', className)}>
+      {/* On the board a column can hold several statuses, so the card names its
+          own. The list shows status in a column of its table and leaves it off. */}
+      {showStatus && <StatusPill status={ticket.status} />}
       {showTheme && ticket.theme && (
         // Capped, not max-w-full: a long theme took the whole row and pushed
         // every label onto a second line, making cards different heights for no
@@ -36,6 +39,14 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, className 
           {ticket.comments.length}
         </span>
       )}
+      {/* The feature id, never its path: the path carries a slug that can be
+          renamed, the id cannot. add.new writes it before any build starts. */}
+      {ticket.feature && (
+        <span translate="no" className="tabular inline-flex items-center gap-1 text-xs text-faint" title={`Feature ${ticket.feature}`}>
+          <Package {...ICON} className="size-3.5 shrink-0" />
+          {ticket.feature}
+        </span>
+      )}
       {ticket.work_id && (
         <span className="inline-flex min-w-0 max-w-full items-center gap-1 text-xs text-faint" title={`Picked up as ${ticket.work_id}`}>
           <GitBranch {...ICON} className="size-3.5 shrink-0" />
@@ -53,7 +64,7 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, className 
   );
 }
 
-export function TicketCard({ ticket, rank, total, from, quiet }: Props) {
+export function TicketCard({ ticket, rank, total, from, quiet, showStatus }: Props) {
   const className = cn(
     'group relative flex gap-3 rounded-xl bg-surface p-3.5 shadow-card ring-1 ring-line',
     'transition-[box-shadow,transform] duration-300 ease-spring hover:-translate-y-px hover:shadow-lift hover:ring-line-strong',
@@ -87,12 +98,12 @@ export function TicketCard({ ticket, rank, total, from, quiet }: Props) {
           {ticket.title}
         </h3>
         {ticket.tldr && <p className="mt-1 line-clamp-2 text-meta leading-snug text-muted [overflow-wrap:anywhere]">{ticket.tldr}</p>}
-        <TicketMeta ticket={ticket} className="mt-2.5" />
+        <TicketMeta ticket={ticket} showStatus={showStatus} className="mt-2.5" />
       </div>
     </>
   );
   return from === '/board' ? (
-    <Link to="/board/$ticketId" params={{ ticketId: ticket.id }} search={(prev) => prev} className={className}>
+    <Link to="/board/$ticketId" params={{ ticketId: ticket.id }} search={(prev) => prev} className={className} data-quiet={quiet || undefined}>
       {body}
     </Link>
   ) : (

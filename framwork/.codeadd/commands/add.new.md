@@ -10,8 +10,6 @@
 - skill: add-plan-review
 - skill: add-review-discipline
 - skill: add-doc-schemas/references/new-feature.md
-- skill: add-backlog
-- skill: add-backlog/references/lifecycle.md
 - skill: add-subagent-driven-development
 - skill: add-subagent-driven-development/references/dispatch-rules.md
 - agent: plan-reviewer-agent
@@ -74,7 +72,8 @@ IF TWO OR MORE INTENT FILES MATCH:
 |---|---|---|
 | `delivery:` | `confirm` or `automatic` — how every stop below behaves, per `{{skill:add-delivery-mode/SKILL.md}}` | `confirm` |
 | `## Objective` | The outcome this feature is for. `add-feature-specification` copies it into `about.md`, and STEP 5 checks every subfeature against it | The skill drafts one with the user |
-| `ticket:` | The backlog ticket this work came from. STEP 2 copies it into `about.md`, per the `add.new` row of `{{skill:add-backlog/references/lifecycle.md}}` | No ticket — the normal case |
+<!-- feature:board:ticket-intent-field -->
+<!-- /feature:board:ticket-intent-field -->
 
 **Stop kind — the two-match STOP above is deciding, in every state.** Nothing approved which exploration
 an ambiguous argument meant.
@@ -96,6 +95,8 @@ file is never read a second time.
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
 - ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh (NO git writes — branch is created later by /add.build)
+<!-- feature:board:ticket-board-write -->
+<!-- /feature:board:ticket-board-write -->
 
 **Operation Modes:**
 - `/add.new [description]` — Create new feature
@@ -139,16 +140,9 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
 **Create structure:**
 1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO git writes — /add.build creates the branch)
 2. `mkdir docs/features/[NNNN]F-[name]/`
-3. Create skeleton `about.md` with frontmatter (now including `branch:`, and `ticket:` on the line after it when STEP 1.1 read one; full content in STEP 4)
-
-```
-IF STEP 1.1 READ A ticket:
-  ⛔ DO NOT USE: Bash to run backlog-commit.sh or any other board write — this command
-                 makes NO git writes, and the READ-ONLY GUARANTEE above says so
-  ⛔ DO NOT: Set the ticket's work_id here, though the feature id is now in hand —
-             /add.build owns that write
-  ✅ DO: Copy the id into about.md frontmatter, and stop there
-```
+3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP 4)
+<!-- feature:board:ticket-skeleton -->
+<!-- /feature:board:ticket-skeleton -->
 
 **Output:** Feature ID, branch (recorded — created by /add.build), directory.
 
@@ -434,6 +428,8 @@ the self-check. Emit the report FIRST — the artefact paths and the next comman
 This command documents a feature rather than building it, so block 2 is titled `What will be done`
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
+<!-- feature:board:ticket-shaped -->
+<!-- /feature:board:ticket-shaped -->
 
 Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside `/add.plan`’s own UX step when the feature touches UI), `/add.build` for implementation.
 

@@ -11,7 +11,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin, disablePlugin } from '../src/plugins.js';
-import { parseFragmentSections } from '../src/injection-core.js';
+import { parseFragmentSections, resolvePlaceholders } from '../src/injection-core.js';
 import { PROVIDERS } from '../src/providers.js';
 import { treeFixture } from './helpers/tree-fixture.js';
 
@@ -176,19 +176,29 @@ function loadPluginMatrix() {
   return matrix;
 }
 
+// Each target carries its provider key, because the block that lands is the
+// fragment section RESOLVED for that provider: a `{{skill:...}}` in a fragment
+// becomes `.claude/skills/...` in one file and `.opencode/skills/...` in the
+// next. Comparing against the raw section pinned the bug this suite used to
+// share with the CLI -- the raw placeholder landing in the installed command
+// (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F48).
 function targetFiles(cwd, entry) {
   if (entry.kind === 'agent') {
-    return AGENT_PROVIDERS.map((k) => agentPath(cwd, k, entry.resource)).filter(fs.existsSync);
+    return AGENT_PROVIDERS.map((k) => ({ key: k, file: agentPath(cwd, k, entry.resource) })).filter((t) => fs.existsSync(t.file));
   }
-  return CMD_PROVIDERS.map((k) => commandPath(cwd, k, entry.resource)).filter(fs.existsSync);
+  return CMD_PROVIDERS.map((k) => ({ key: k, file: commandPath(cwd, k, entry.resource) })).filter((t) => fs.existsSync(t.file));
+}
+
+function landedBlock(entry, key) {
+  return resolvePlaceholders(entry.block, PROVIDERS[key]);
 }
 
 function assertBlockOnce(cwd, entries, label) {
   for (const entry of entries) {
-    const files = targetFiles(cwd, entry);
-    expect(files.length, `${label} ${entry.name}:${entry.resource}:${entry.section} has no targets`).toBeGreaterThan(0);
-    for (const file of files) {
-      const n = count(lf(snapshot(file)), entry.block);
+    const targets = targetFiles(cwd, entry);
+    expect(targets.length, `${label} ${entry.name}:${entry.resource}:${entry.section} has no targets`).toBeGreaterThan(0);
+    for (const { key, file } of targets) {
+      const n = count(lf(snapshot(file)), landedBlock(entry, key));
       expect(n, `${label} ${path.relative(cwd, file)} ${entry.name}:${entry.section} block-count=${n}`).toBe(1);
     }
   }
@@ -196,8 +206,11 @@ function assertBlockOnce(cwd, entries, label) {
 
 function assertBlockAbsent(cwd, entries, label) {
   for (const entry of entries) {
-    for (const file of targetFiles(cwd, entry)) {
-      expect(lf(snapshot(file)), `${label} ${path.relative(cwd, file)} still has ${entry.name}:${entry.section}`).not.toContain(entry.block);
+    for (const { key, file } of targetFiles(cwd, entry)) {
+      const body = lf(snapshot(file));
+      expect(body, `${label} ${path.relative(cwd, file)} still has ${entry.name}:${entry.section}`).not.toContain(landedBlock(entry, key));
+      // The raw form too: a block that landed unresolved is a block that landed.
+      expect(body, `${label} ${path.relative(cwd, file)} still has raw ${entry.name}:${entry.section}`).not.toContain(entry.block);
     }
   }
 }
@@ -318,13 +331,23 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
   // substitution set changes, so it is bumped rather than computed.
   // 45 -> 46: plugin:gitnexus adds graph-build on add.build, whose main session called the graph
   // with no guidance at all.
-  it('sidecar, fragments, and catalog declare the same 46 substitutions', () => {
+  // 46 -> 50: feature:board moves add.brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+  // 50 -> 52: feature:board moves add.new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+  // 52 -> 54: feature:board moves add.plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+  // 54 -> 57: feature:board moves add.build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+  // 57 -> 60: feature:board moves add.done's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+  // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
+  // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
+  // 64 -> 65: feature:board adds add.plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
+  // 65 -> 66: feature:board adds add.build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
+  // 66 -> 70: feature:board brings add.hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+  it('sidecar, fragments, and catalog declare the same 70 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(46);
-    expect(all).toHaveLength(46);
+    expect(points).toHaveLength(70);
+    expect(all).toHaveLength(70);
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -381,7 +404,7 @@ describe('feature substitution on real built files', () => {
     it(`${feature}: full block exactly-once, disable byte-identical, re-enable idempotent`, () => {
       const matrix = loadFeatureMatrix().filter((e) => e.name === feature);
       expect(matrix.length).toBeGreaterThan(0);
-      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e)))];
+      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e).map((t) => t.file)))];
       const baseline = snapshotTree(files);
 
       const { modified } = enableFeature(tmp, feature);
@@ -409,7 +432,7 @@ describe('plugin substitution on real built files', () => {
     it(`${plugin}: full block exactly-once, skills byte-identical, disable restores`, () => {
       const matrix = loadPluginMatrix().filter((e) => e.name === plugin);
       expect(matrix.length).toBeGreaterThan(0);
-      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e)))];
+      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e).map((t) => t.file)))];
       const baseline = snapshotTree(files);
 
       const result = enablePlugin(tmp, plugin);
@@ -430,10 +453,10 @@ describe('plugin substitution on real built files', () => {
 describe('combined substitution and sibling isolation', () => {
   useFixture();
 
-  it('all 46 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('all 70 full blocks land exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(46);
+    expect(features.length + plugins.length).toBe(70);
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);

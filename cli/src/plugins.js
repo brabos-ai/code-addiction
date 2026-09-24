@@ -7,7 +7,7 @@ import { resolveSelected } from './providers.js';
 import {
   parseFragmentSections,
   loadInjectionPoints,
-  resolveResourceFiles,
+  resolveResourceTargets,
   applyInjectionToContent,
   removeInjectionFromContent,
   readManifest,
@@ -171,9 +171,9 @@ export function enablePlugin(cwd, pluginName) {
     const cmdPoints = points.filter((p) => p.resource.name === commandName);
     if (cmdPoints.length === 0) continue;
 
-    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
+    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections);
+      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections, provider);
       if (missed.length) warnMissed(pluginName, commandName, missed);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
@@ -219,9 +219,9 @@ export function disablePlugin(cwd, pluginName) {
     const cmdPoints = points.filter((p) => p.resource.name === commandName);
     if (cmdPoints.length === 0) continue;
 
-    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
+    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = removeInjectionFromContent(original, cmdPoints, sections);
+      const updated = removeInjectionFromContent(original, cmdPoints, sections, provider);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
         modifiedPaths.push(cmdPath);
@@ -287,7 +287,7 @@ export function getPluginStates(cwd) {
 
 /**
  * CLI entry point for `codeadd plugins` subcommand.
- * Scope flows through manifest.scope (read by resolveResourceFiles and skill
+ * Scope flows through manifest.scope (read by resolveResourceTargets and skill
  * activation); the param exists so bin can pass it positionally.
  * @param {string} cwd
  * @param {string[]} args

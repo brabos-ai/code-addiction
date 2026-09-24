@@ -163,12 +163,36 @@ const [mode, targetId, moveDir, moveAnchor, filter, query, newId] = process.argv
 const BACKLOG = "docs/backlog.jsonl";
 const DEFS    = "docs/backlog.definitions.json";
 
+// The nine reserved statuses and the seven columns they group into. A status
+// name is the machine state a pipeline command writes; `label` is what a board
+// shows; `column` is which column groups it. Two statuses share a column
+// wherever a phase has both a running state and a parked one -- that pairing is
+// what lets seven columns hold nine statuses.
+//
+// RESERVED IS A CONTRACT, NOT A MECHANISM. Nothing here enforces the nine
+// names. A user who renames one gets REFUSED=unknown-status on every write that
+// names it, which is loud and is their own edit. This shape is written ONLY
+// when the definitions file is absent; an existing file is never touched.
 const DEFAULT_DEFS = {
+  columns: [
+    { name: "backlog",  order: 1, label: "Backlog"  },
+    { name: "shaping",  order: 2, label: "Shaping"  },
+    { name: "planning", order: 3, label: "Planning" },
+    { name: "building", order: 4, label: "Building" },
+    { name: "review",   order: 5, label: "Review"   },
+    { name: "done",     order: 6, label: "Done"     },
+    { name: "dropped",  order: 7, label: "Dropped", hidden: true }
+  ],
   statuses: [
-    { name: "open",    order: 1, means: "decided, not started" },
-    { name: "doing",   order: 2, means: "work is in progress" },
-    { name: "done",    order: 3, means: "delivered" },
-    { name: "dropped", order: 4, means: "decided against" }
+    { name: "open",      order: 1, column: "backlog",  label: "Open",       means: "decided, nobody picked it up" },
+    { name: "refining",  order: 2, column: "shaping",  label: "Refining",   means: "add.brainstorm or add.new running" },
+    { name: "shaped",    order: 3, column: "shaping",  label: "Shaped",     means: "about.md exists, waiting to plan" },
+    { name: "planning",  order: 4, column: "planning", label: "Planning",   means: "add.plan running" },
+    { name: "planned",   order: 5, column: "planning", label: "Planned",    means: "plan approved, waiting to build" },
+    { name: "doing",     order: 6, column: "building", label: "Doing",      means: "add.build running" },
+    { name: "in-review", order: 7, column: "review",   label: "In review",  means: "PR open" },
+    { name: "done",      order: 8, column: "done",     label: "Done",       means: "delivered" },
+    { name: "dropped",   order: 9, column: "dropped",  label: "Dropped",    means: "decided against" }
   ]
 };
 
@@ -291,6 +315,11 @@ if (mode === "add") {
     created_at: ts,
     updated_at: ts,
     comments: [],
+    // `feature` is which feature carries this ticket; `work_id` is that the
+    // build started. Two fields because they answer different questions and
+    // arrive at different moments -- and because work_id is what the phase
+    // logic reads, so it cannot double as the feature pointer.
+    feature: typeof rec.feature === "string" ? rec.feature : null,
     work_id: typeof rec.work_id === "string" ? rec.work_id : null
   };
 

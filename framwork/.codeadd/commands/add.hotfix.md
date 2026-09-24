@@ -125,6 +125,8 @@ bash .codeadd/scripts/status.sh
 ### 1.1 Parse optional diagnose report
 
 If the invocation carries `@docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
+<!-- feature:board:ticket-resolve -->
+<!-- /feature:board:ticket-resolve -->
 
 ---
 
@@ -195,6 +197,8 @@ docs/features/[NNNN]H-<slug>/
 DO NOT write doc contents yet — the schema is loaded and applied in STEP 12.
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
+<!-- feature:board:ticket-doing -->
+<!-- /feature:board:ticket-doing -->
 
 ```
 IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
@@ -492,6 +496,8 @@ EXECUTE schema `hotfix` from `{{skill:add-doc-schemas/SKILL.md}}` and `{{skill:a
 **Path:** `docs/features/[NNNN]H-<slug>/about.md`
 
 **ID:** `[NNNN]H` from STEP 3. Write per `hotfix` schema. Extractive only.
+<!-- feature:board:ticket-frontmatter -->
+<!-- /feature:board:ticket-frontmatter -->
 
 Write the complete `## Review` receipt with `reviewed-tree: sha256:<PENDING>`. Fill `reviewer:` from STEP 9. Fill Findings from STEPS 9-10. An empty review still writes the table header.
 
@@ -548,6 +554,8 @@ outside the reported symptom, because a hotfix is where that hurts most.
 
 Then, after the seven blocks, state: hotfix ID, branch, problem, root cause, solution, modified
 files, build status.
+<!-- feature:board:ticket-report -->
+<!-- /feature:board:ticket-report -->
 
 **Next Phase:** Hotfix ownership ends; merging is handled by ecosystem flow. Reference skill `add-ecosystem` Main Flows section for context-aware routing.
 

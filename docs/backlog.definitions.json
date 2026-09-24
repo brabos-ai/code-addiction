@@ -1,23 +1,104 @@
 {
+  "columns": [
+    {
+      "name": "backlog",
+      "order": 1,
+      "label": "Backlog"
+    },
+    {
+      "name": "shaping",
+      "order": 2,
+      "label": "Shaping"
+    },
+    {
+      "name": "planning",
+      "order": 3,
+      "label": "Planning"
+    },
+    {
+      "name": "building",
+      "order": 4,
+      "label": "Building"
+    },
+    {
+      "name": "review",
+      "order": 5,
+      "label": "Review"
+    },
+    {
+      "name": "done",
+      "order": 6,
+      "label": "Done"
+    },
+    {
+      "name": "dropped",
+      "order": 7,
+      "label": "Dropped",
+      "hidden": true
+    }
+  ],
   "statuses": [
     {
       "name": "open",
       "order": 1,
-      "means": "decided, not started"
+      "column": "backlog",
+      "label": "Open",
+      "means": "decided, nobody picked it up"
+    },
+    {
+      "name": "refining",
+      "order": 2,
+      "column": "shaping",
+      "label": "Refining",
+      "means": "add.brainstorm or add.new running"
+    },
+    {
+      "name": "shaped",
+      "order": 3,
+      "column": "shaping",
+      "label": "Shaped",
+      "means": "about.md exists, waiting to plan"
+    },
+    {
+      "name": "planning",
+      "order": 4,
+      "column": "planning",
+      "label": "Planning",
+      "means": "add.plan running"
+    },
+    {
+      "name": "planned",
+      "order": 5,
+      "column": "planning",
+      "label": "Planned",
+      "means": "plan approved, waiting to build"
     },
     {
       "name": "doing",
-      "order": 2,
-      "means": "work is in progress"
+      "order": 6,
+      "column": "building",
+      "label": "Doing",
+      "means": "add.build running"
+    },
+    {
+      "name": "in-review",
+      "order": 7,
+      "column": "review",
+      "label": "In review",
+      "means": "PR open"
     },
     {
       "name": "done",
-      "order": 3,
+      "order": 8,
+      "column": "done",
+      "label": "Done",
       "means": "delivered"
     },
     {
       "name": "dropped",
-      "order": 4,
+      "order": 9,
+      "column": "dropped",
+      "label": "Dropped",
       "means": "decided against"
     }
   ]

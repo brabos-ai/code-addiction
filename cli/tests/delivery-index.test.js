@@ -133,15 +133,31 @@ describe('L2 — build integrity', () => {
   // (plan 2026-09-13T153219, F15/F16/F20b).
   // + 1 for plugin:gitnexus:graph-build on add.build
   // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
-  it('L2.3: the injection-point total is the absolute baseline 39 + 1 + 5 + 1', () => {
-    expect(SIDECAR().points).toHaveLength(46);
+  // + 4 for feature:board on add.brainstorm (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+  // + 2 for feature:board on add.new (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+  // + 2 for feature:board on add.plan (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+  // + 3 for feature:board on add.build (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+  // + 3 for feature:board on add.done (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+  // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
+  // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
+  // 64 -> 65: feature:board adds add.plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
+  // 65 -> 66: feature:board adds add.build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
+  // 66 -> 70: feature:board brings add.hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 70', () => {
+    expect(SIDECAR().points).toHaveLength(70);
   });
 
-  it('L2.3: add.done carries exactly two injection points — gitnexus and docs-pruning', () => {
+  // Two became five: feature:board moves add.done's three ticket sections into
+  // fragments/board/ (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses,
+  // F14+F15). The gitnexus and docs-pruning points must survive that intact.
+  it('L2.3: add.done carries exactly five injection points — gitnexus, docs-pruning and three board', () => {
     const onDone = SIDECAR().points.filter(
       (p) => p.resource.kind === 'command' && p.resource.name === 'add.done',
     );
-    expect(onDone).toHaveLength(2);
+    expect(onDone).toHaveLength(5);
+
+    const board = onDone.filter((p) => p.namespace === 'feature' && p.name === 'board').map((p) => p.section).sort();
+    expect(board).toEqual(['ticket-carry', 'ticket-close', 'ticket-report']);
 
     const gitnexus = onDone.find((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
     expect(gitnexus, 'the pre-existing gitnexus point on add.done was lost').toBeTruthy();

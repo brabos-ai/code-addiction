@@ -1,14 +1,14 @@
 // Pure data functions and the shared search schema (plan F3, L2.1–L2.2). RED-FIRST.
 import { describe, expect, it } from 'vitest';
-import type { Status, Ticket } from '@/api/types';
-import { filterTickets, groupByStatus, facets } from '@/lib/tickets';
+import type { Column, Status, Ticket } from '@/api/types';
+import { columnVisible, filterTickets, groupByColumn, groupByStatus, facets } from '@/lib/tickets';
 import { parseBoardSearch } from '@/lib/search';
 
 function t(id: string, over: Partial<Ticket> = {}): Ticket {
   return {
     id, title: `title ${id}`, theme: '', labels: [], tldr: `tldr ${id}`, notes: [], done_when: 'x', paths: [],
     grounded: false, status: 'open', created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z',
-    comments: [], work_id: null, ...over,
+    comments: [], work_id: null, feature: null, ...over,
   };
 }
 
@@ -63,6 +63,67 @@ describe('L2.1 groupByStatus', () => {
   });
 });
 
+// Plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F39 / L14. RED-FIRST.
+describe('L14 groupByColumn', () => {
+  const phased: Status[] = [
+    { name: 'open', order: 1, means: '', column: 'backlog' },
+    { name: 'refining', order: 2, means: '', column: 'shaping' },
+    { name: 'shaped', order: 3, means: '', column: 'shaping' },
+    { name: 'in-review', order: 4, means: '', column: 'review' },
+    { name: 'done', order: 5, means: '', column: 'review' },
+  ];
+  const cols: Column[] = [
+    { name: 'backlog', order: 1, label: 'Backlog' },
+    { name: 'shaping', order: 2, label: 'Shaping' },
+    { name: 'review', order: 3, label: 'Review' },
+  ];
+
+  it('puts the statuses that share a column into it, tickets in board line order', () => {
+    const groups = groupByColumn(
+      [t('0003B', { status: 'shaped' }), t('0001B', { status: 'refining' }), t('0002B', { status: 'shaped' })],
+      phased, cols,
+    );
+    expect(groups.map((g) => g.column.name)).toEqual(['backlog', 'shaping', 'review']);
+    expect(groups[1]!.tickets.map((x) => x.id)).toEqual(['0003B', '0001B', '0002B']);
+    expect(groups[1]!.statuses.map((s) => s.status.name)).toEqual(['refining', 'shaped']);
+  });
+
+  it('L14.1 a ticket whose status is undefined keeps its trailing undefined status group', () => {
+    const groups = groupByColumn([t('0001B', { status: 'ghost' })], phased, cols);
+    const last = groups[groups.length - 1]!;
+    expect(last.column.name).toBe('ghost');
+    expect(last.statuses[0]!.undefined).toBe(true);
+    expect(last.implicit).toBe(true);
+    expect(last.undefined).toBe(false);
+  });
+
+  it('L14.2 a status whose column is not in columns makes a trailing undefined column', () => {
+    const odd: Status[] = [...phased, { name: 'parked', order: 6, means: '', column: 'attic' }];
+    const groups = groupByColumn([t('0001B', { status: 'parked' })], odd, cols);
+    const last = groups[groups.length - 1]!;
+    expect(last.column.name).toBe('attic');
+    expect(last.undefined).toBe(true);
+    expect(last.implicit).toBe(false);
+    expect(last.statuses[0]!.undefined).toBe(false);
+  });
+
+  it('L14.3 a status with no column falls back to its own name, marked implicit', () => {
+    const bare: Status[] = [...phased, { name: 'waiting', order: 6, means: '' }];
+    const groups = groupByColumn([t('0001B', { status: 'waiting' })], bare, cols);
+    const g = groups.find((x) => x.column.name === 'waiting')!;
+    expect(g.implicit).toBe(true);
+    expect(g.undefined).toBe(false);
+    expect(g.statuses[0]!.undefined).toBe(false);
+  });
+
+  it('a column hidden by default shows only when the column param names it', () => {
+    const dropped: Column = { name: 'dropped', order: 7, hidden: true };
+    expect(columnVisible(dropped, undefined)).toBe(false);
+    expect(columnVisible(dropped, ['dropped'])).toBe(true);
+    expect(columnVisible(cols[0]!, ['dropped'])).toBe(true);
+  });
+});
+
 describe('facets', () => {
   it('lists the themes and labels in use, sorted, without blanks', () => {
     const f = facets([t('1', { theme: 'b', labels: ['y'] }), t('2', { theme: '', labels: ['x', 'y'] }), t('3', { theme: 'a' })]);
@@ -82,6 +143,9 @@ describe('L2.2 parseBoardSearch', () => {
   });
   it('drops an invalid param and keeps the valid ones', () => {
     expect(parseBoardSearch({ q: 42, theme: 'graph', label: [1, 2], extra: 'x' })).toEqual({ theme: 'graph' });
+  });
+  it('keeps a column list, and accepts a single column', () => {
+    expect(parseBoardSearch({ column: 'dropped' })).toEqual({ column: ['dropped'] });
   });
   it('drops empty strings and empty arrays', () => {
     expect(parseBoardSearch({ q: '', label: [] })).toEqual({});

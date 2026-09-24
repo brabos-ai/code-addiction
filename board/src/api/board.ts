@@ -22,7 +22,7 @@ export const boardQueryOptions = queryOptions({
 // board; the screens rely on arrays being arrays.
 export function normaliseTicket(t: Partial<Ticket> & { id: string }): Ticket {
   return {
-    title: '', theme: '', tldr: '', done_when: '', status: '', created_at: '', updated_at: '', grounded: false, work_id: null,
+    title: '', theme: '', tldr: '', done_when: '', status: '', created_at: '', updated_at: '', grounded: false, work_id: null, feature: null,
     ...t,
     labels: Array.isArray(t.labels) ? t.labels : [],
     notes: Array.isArray(t.notes) ? t.notes : [],

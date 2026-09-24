@@ -28,6 +28,13 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 
 Build-time variables are available. `build.js` replaces them with the correct provider path during build.
 
+**A fragment's variables are resolved at a different moment, by the same rule.** A fragment under
+`fragments/` or `plugins/*/fragments/` is never built: it ships as authored, and the CLI injects it into
+the installed commands when a feature or plugin is enabled. The CLI resolves each variable for the
+provider of the file it is injecting into, with the rule `build.js` uses —
+`cli/tests/fragment-placeholders.test.js` holds the two equal. **Write a fragment exactly as you write a
+command.** Until that resolution existed, every variable in a fragment landed raw in the installed file.
+
 ### `{{cmd:NAME}}`
 
 Resolves to the full path of a command file for the target provider.

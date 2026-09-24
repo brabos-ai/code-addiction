@@ -17,8 +17,6 @@
 - skill: add-ux-design
 - skill: add-doc-schemas/references/new-feature.md
 - skill: add-subagent-driven-development/references/dispatch-rules.md
-- skill: add-backlog
-- skill: add-backlog/references/lifecycle.md
 - agent: backend-agent
 - agent: consistency-agent
 - agent: database-agent
@@ -150,8 +148,9 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
 4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory).
-5. **Ticket.** If `about.md`'s frontmatter carries `ticket:`, follow the `add.build` row of `{{skill:add-backlog/references/lifecycle.md}}`: ONE board write setting `work_id` to `FEATURE_ID` and `status` to `doing`, skipped when the ticket already reads both. **Here, and not earlier** — until `build-setup.sh` returned, the run could still stop, and a ticket marked `doing` for a build that never started is a lie the board cannot correct. **Never a stop:** a refused or degraded write is one line in STEP 18's report, and the build continues.
-6. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
+<!-- feature:board:ticket-doing -->
+<!-- /feature:board:ticket-doing -->
+5. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
 
 ---
 
@@ -1490,6 +1489,8 @@ already answered.
 **LOAD `{{skill:add-final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
 come after it, never in front of it.
+<!-- feature:board:ticket-in-review -->
+<!-- /feature:board:ticket-in-review -->
 
 Fill the blocks from this build:
 
@@ -1498,15 +1499,17 @@ Fill the blocks from this build:
 - **`How it works`** — what the built feature does now, for a reader who did not watch the run.
 - **`Files touched`** — split by verb. The Deleted row is written even when it reads "none".
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
-  the one or two places the work is most likely to have gone wrong, and a ticket write from STEP 2
-  item 5 that did not land.
+  and the one or two places the work is most likely to have gone wrong.
+<!-- feature:board:ticket-attention -->
+<!-- /feature:board:ticket-attention -->
 
 Then, after the seven blocks and before any metadata, print 18.1 and 18.2 below — whole, in their
 own shape.
 
-**Metadata last:** feature ID, files summary (per area count), build status, the ledger path with
-its commit brackets, and — when `about.md` carries `ticket:` — what STEP 2 item 5 did to it: set to
-`doing`, already `doing`, or what did not happen.
+**Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
+its commit brackets.
+<!-- feature:board:ticket-metadata -->
+<!-- /feature:board:ticket-metadata -->
 
 ### 18.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 

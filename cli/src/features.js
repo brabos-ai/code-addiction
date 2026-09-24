@@ -5,7 +5,7 @@ import { promptFeatures } from './prompt.js';
 import {
   parseFragmentSections,
   loadInjectionPoints,
-  resolveResourceFiles,
+  resolveResourceTargets,
   applyInjectionToContent,
   removeInjectionFromContent,
   readManifest,
@@ -66,6 +66,16 @@ export const FEATURES = {
     description: 'Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written',
     default: false,
     commands: ['add.done'],
+  },
+  // OFF by default because there is nothing to preserve: no project uses the
+  // board yet, and the board app ships as a separate release asset, so a fresh
+  // install has no board and no docs/backlog.jsonl. EVERY ticket instruction the
+  // pipeline commands carry lives in fragments/board/ -- with this off, none of
+  // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
+  board: {
+    description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
+    default: false,
+    commands: ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done', 'add.hotfix'],
   },
 };
 
@@ -171,9 +181,9 @@ export function enableFeature(cwd, featureName) {
     const cmdPoints = points.filter((p) => p.resource.name === commandName);
     if (cmdPoints.length === 0) continue;
 
-    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
+    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections);
+      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections, provider);
       if (missed.length) warnMissed('feature', featureName, commandName, missed);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
@@ -212,9 +222,9 @@ export function disableFeature(cwd, featureName) {
     const cmdPoints = points.filter((p) => p.resource.name === commandName);
     if (cmdPoints.length === 0) continue;
 
-    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
+    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
       const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = removeInjectionFromContent(original, cmdPoints, sections);
+      const updated = removeInjectionFromContent(original, cmdPoints, sections, provider);
       if (updated !== original) {
         fs.writeFileSync(cmdPath, updated, 'utf8');
         modifiedPaths.push(cmdPath);
@@ -286,7 +296,7 @@ export function getFeatureStates(cwd) {
 
 /**
  * CLI entry point for `codeadd features` subcommand.
- * Scope flows through manifest.scope (read by resolveResourceFiles); the param
+ * Scope flows through manifest.scope (read by resolveResourceTargets); the param
  * exists so bin can pass it positionally and is the fallback when absent.
  * @param {string} cwd
  * @param {string[]} args

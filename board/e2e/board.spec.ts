@@ -95,13 +95,13 @@ test('L3.5 the detail header holds only the close button; no Runs item renders',
   await expect(dialog.getByRole('button', { name: /^Copy ticket id/ })).toBeVisible();
 });
 
-test('L3.6 at 360 px the kanban shows one column and a status switcher', async ({ page }) => {
+test('L3.6 at 360 px the kanban shows one column and a column switcher', async ({ page }) => {
   test.skip(test.info().project.name !== 'mobile-360', 'phone layout only');
   await page.goto('/board');
-  const tabs = page.getByRole('tablist', { name: 'Status' });
+  const tabs = page.getByRole('tablist', { name: 'Column' });
   await expect(tabs).toBeVisible();
   await expect(page.getByRole('region').filter({ visible: true })).toHaveCount(1);
-  await tabs.getByRole('tab', { name: /doing/ }).click();
+  await tabs.getByRole('tab', { name: /Building/ }).click();
   await expect(page.getByRole('link', { name: /backward compatibility/ })).toBeVisible();
   await noSidewaysScroll(page);
   await shot(page, 'board-doing');
@@ -109,7 +109,7 @@ test('L3.6 at 360 px the kanban shows one column and a status switcher', async (
 
 test('keyboard: "/" focuses the search', async ({ page }) => {
   await page.goto('/board');
-  await page.getByRole('heading', { name: 'open' }).or(page.getByRole('tablist')).first().waitFor();
+  await page.getByRole('heading', { name: 'Backlog' }).or(page.getByRole('tablist')).first().waitFor();
   await page.keyboard.press('/');
   await expect(page.getByRole('searchbox', { name: 'Search tickets' })).toBeFocused();
 });
@@ -283,8 +283,8 @@ for (const route of ['/board', '/list'] as const) {
 
 test('L4.5 columns share the row evenly, and an empty one shows only its header', async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'the phone layout shows one column at a time');
-  // The fixture fills every status, so this filter is what empties three of
-  // them — the state a real board sits in most of the time.
+  // The fixture puts a ticket in five of the six visible columns, so this filter
+  // is what empties them — the state a real board sits in most of the time.
   await page.goto('/board?q=sweep');
   await expect(page.getByRole('link', { name: /Sweep the artefacts/ })).toBeVisible();
 
@@ -295,12 +295,12 @@ test('L4.5 columns share the row evenly, and an empty one shows only its header'
       items: el.querySelectorAll('li').length,
     })),
   );
-  // Every status keeps its own territory. Collapsing the empty ones crowded the
+  // Every column keeps its own territory. Collapsing the empty ones crowded the
   // populated column to one side and left the rest of the board a void.
   const widths = [...new Set(columns.map((c) => c.width))];
   expect(widths, `columns differ in width: ${JSON.stringify(columns)}`).toHaveLength(1);
   // An empty column renders its header and nothing else — no placeholder row.
-  for (const column of columns.filter((c) => c.id !== 'col-open')) {
+  for (const column of columns.filter((c) => c.id !== 'col-backlog')) {
     expect(column.items, `${column.id} holds no placeholder`).toBe(0);
   }
   await noSidewaysScroll(page);
@@ -377,20 +377,26 @@ for (const scheme of ['light', 'dark'] as const) {
   });
 }
 
-test('L4.5 a full board still fits the desktop viewport', async ({ page }) => {
+test('L4.5 a full board: the page stays put and every column is reachable along the row', async ({ page }) => {
   test.skip(test.info().project.name !== 'desktop-1080', 'the narrower projects scroll by design');
   await page.goto('/board');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
-  // Fixed-width columns put the fourth status off-screen here: four of them at
-  // a readable width do not fit 1080. Columns share the row instead, down to a
-  // floor, and grow only when a sibling collapses.
-  const overflow = await page.evaluate(() => {
+  // This asserted that every column fit 1080 with no scrolling at all. That held
+  // at four columns; the shipped phase model puts six on the board, and at the
+  // 15rem floor six do not fit 1080. The user chose, on 2026-09-23, to ship the
+  // six with the ROW scrolling rather than shrink the floor or merge columns
+  // (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, L16.2); a
+  // layout that fits them is its own delivery. What stays guarded: the page
+  // never scrolls sideways, and scrolling the row brings every column in.
+  await noSidewaysScroll(page);
+  const unreachable = await page.evaluate(() => {
     const view = document.documentElement.clientWidth;
-    return Array.from(document.querySelectorAll('section[id^="col-"]'))
-      .filter((el) => el.getBoundingClientRect().right > view + 1)
-      .map((el) => el.id);
+    const columns = Array.from(document.querySelectorAll('section[id^="col-"]'));
+    const row = columns[0]!.parentElement!;
+    row.scrollLeft = row.scrollWidth;
+    return columns.filter((el) => el.getBoundingClientRect().right > view + 1).map((el) => el.id);
   });
-  expect(overflow, 'every status column is reachable without scrolling').toEqual([]);
+  expect(unreachable, 'the last column is in view once the row is scrolled to its end').toEqual([]);
 });
 
 test('L5.2 the sheet keeps status and id in view while the body scrolls', async ({ page }) => {
@@ -568,4 +574,39 @@ test('L4.4 the light scheme is cool throughout, ground and type alike', async ({
   // A token this test could not parse is a token it silently stopped checking.
   expect(unread, 'every neutral was read').toEqual([]);
   expect(warm).toEqual([]);
+});
+
+// Plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F43 / L15-L16.
+// L16.1 is a MEASUREMENT: the shipped definitions put six columns on the board
+// by default and seven with ?column=dropped, and the page must not scroll
+// sideways at either count on any of the three viewports.
+for (const [url, count] of [['/board', 6], ['/board?column=dropped', 7]] as const) {
+  test(`L16.1 ${count} columns: no sideways scroll`, async ({ page }) => {
+    await page.goto(url);
+    await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+    await expect(page.locator('section[id^="col-"]')).toHaveCount(count);
+    await noSidewaysScroll(page);
+    await shot(page, `board-${count}-columns`);
+  });
+}
+
+test('L15.2-L15.4 show dropped is additive and survives a reload', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone collapses the refine controls');
+  await page.goto('/board');
+  await expect(page.locator('#col-dropped')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show dropped' }).first().click();
+  // The router writes a list param as JSON: column=%5B%22dropped%22%5D.
+  await expect(page).toHaveURL(/column=.*dropped/);
+  await expect(page.locator('section[id^="col-"]')).toHaveCount(7);
+  await page.reload();
+  await expect(page.locator('#col-dropped')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Cache the provider map/ })).toBeVisible();
+});
+
+test('L15.6 a shaped ticket shows its feature, and Work is still not picked up', async ({ page }) => {
+  await page.goto('/board/0002B');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('dt', { hasText: /^Feature$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText('0042F');
+  await expect(dialog.locator('dt', { hasText: /^Work$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText('Not picked up');
 });

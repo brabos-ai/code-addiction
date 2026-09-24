@@ -204,6 +204,35 @@ tickets() {
   done
 }
 
+# L1.4c — the SAME pattern as L1.4b, one level up: the nine reserved status
+# names and the seven column names are two lists in two files, and nothing but
+# this holds them equal. It is the guard the delivery that introduced them asked
+# for by name.
+@test "L1.4c: the nine reserved statuses and seven columns are the same set in the script and the reference" {
+  local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
+  for n in open refining shaped planning planned doing in-review done dropped; do
+    grep -qF "{ name: \"$n\"," "$SCRIPTS_DIR/backlog.sh"
+    grep -qF "{ \"name\": \"$n\"," "$ref"
+  done
+  for c in backlog shaping planning building review done dropped; do
+    grep -qF "{ name: \"$c\"," "$SCRIPTS_DIR/backlog.sh"
+    grep -qF "{ \"name\": \"$c\"," "$ref"
+  done
+}
+
+# L1.4d — lifecycle.md is the file a command reads at the moment it writes, so
+# it carries the nine names too. A third copy of a list is a third place to
+# drift, and this is what holds it to the other two.
+@test "L1.4d: lifecycle.md names all nine reserved statuses in its Status Names section" {
+  local lc="$SCRIPTS_DIR/../skills/add-backlog/references/lifecycle.md"
+  local section
+  section=$(sed -n '/^## The Status Names/,/^## /p' "$lc")
+
+  for n in open refining shaped planning planned doing in-review done dropped; do
+    printf '%s' "$section" | grep -qF "\`$n\`"
+  done
+}
+
 # L1.5 — the two structural rules delivered.sh states, restated here as tests.
 @test "L1.5: backlog.sh sets -u, never -e, and checks node before any file I/O" {
   [ -f "$SCRIPTS_DIR/backlog.sh" ]
@@ -373,6 +402,56 @@ tickets() {
   [ "$(wc -l < "$BACKLOG")" -eq 2 ]
   head -1 "$BACKLOG" | grep -q "cache the provider map"
   tail -1 "$BACKLOG" | grep -q "second thing"
+}
+
+# ─── The seeded shape ────────────────────────────────────────────────────────
+# L3.1d–L3.1h assert WHAT the seed contains, which L3.1 above never did — it
+# only asserted the file appears. They are the plan's L1.1–L1.5
+# (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F4).
+#
+# EVERY STATUS CARRIES ITS column AND label EXPLICITLY. The fallbacks those keys
+# have when absent are real and are asserted where their consumer lives, in
+# board/test/server.test.ts — backlog.sh reads a status in two places and both
+# read s.name alone, so it resolves no fallback and a test here would be
+# asserting against nothing.
+
+# defs_json <expr> — evaluate a JS expression over the parsed definitions file.
+defs_json() {
+  node -e 'const d=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(eval(process.argv[2]));' "$DEFS" "$1"
+}
+
+@test "L3.1d: a first write with no definitions file seeds NINE statuses and SEVEN columns" {
+  valid_ticket | backlog add
+  [ -f "$DEFS" ]
+  run defs_json '(d.statuses||[]).length+" "+(d.columns||[]).length'
+  [ "$output" = "9 7" ]
+}
+
+@test "L3.1e: the nine status names are exactly the reserved set, in phase order" {
+  valid_ticket | backlog add
+  run defs_json 'd.statuses.map(s=>s.name).join(",")'
+  [ "$output" = "open,refining,shaped,planning,planned,doing,in-review,done,dropped" ]
+}
+
+@test "L3.1f: EVERY seeded status carries an explicit column and an explicit label" {
+  valid_ticket | backlog add
+  run defs_json 'd.statuses.filter(s=>typeof s.column!=="string"||!s.column||typeof s.label!=="string"||!s.label).length'
+  [ "$output" = "0" ]
+}
+
+@test "L3.1g: the seven columns are the expected set and ONLY dropped is hidden" {
+  valid_ticket | backlog add
+  run defs_json 'd.columns.map(c=>c.name).join(",")+"|"+d.columns.filter(c=>c.hidden===true).map(c=>c.name).join(",")'
+  [ "$output" = "backlog,shaping,planning,building,review,done,dropped|dropped" ]
+}
+
+# THIS is what makes seven columns hold nine statuses: a phase with a running
+# state and a parked one puts both in one column. Delete this assertion and the
+# nine could drift into nine columns without anything noticing.
+@test "L3.1h: two statuses share a column wherever a phase has a running and a parked state" {
+  valid_ticket | backlog add
+  run defs_json 'd.statuses.filter(s=>s.column==="shaping").map(s=>s.name).join("+")+" "+d.statuses.filter(s=>s.column==="planning").map(s=>s.name).join("+")'
+  [ "$output" = "refining+shaped planning+planned" ]
 }
 
 # L3.2 — DEFS_PRESERVED. The file is created once and never rewritten.
@@ -761,4 +840,36 @@ field() {
   [ "$(sed -n 1p "$BACKLOG")" = "$(sed -n 1p "$TEST_TEMP_DIR/before")" ]
   [ "$(sed -n 3p "$BACKLOG")" = "$(sed -n 3p "$TEST_TEMP_DIR/before")" ]
   sed -n 2p "$BACKLOG" | grep -q '"labels":\["product","both"\]'
+}
+
+# ─── The feature field ───────────────────────────────────────────────────────
+# L4.6 is the plan's L1.6a. `feature` is which feature carries this ticket;
+# `work_id` is that the build started. Two fields because work_id is what the
+# phase logic reads — one field doing both jobs would suppress add.plan's
+# planning write. L4.4 above still holds: a field the format does not define is
+# dropped, and this asserts BOTH halves in one test so neither can pass alone.
+@test "L4.6: the feature field round-trips on add, and an undefined field is still dropped" {
+  printf '%s' '{"title":"t","tldr":"t","done_when":"t","status":"open","feature":"0042F","nonsense":"x"}' | backlog add
+
+  run node -e 'const t=JSON.parse(require("fs").readFileSync("docs/backlog.jsonl","utf8").trim().split("\n")[0]);console.log((t.feature==="0042F")+" "+("nonsense" in t));'
+  [ "$output" = "true false" ]
+}
+
+@test "L4.7: add without a feature writes null, the way it does for work_id" {
+  valid_ticket | backlog add
+
+  run node -e 'const t=JSON.parse(require("fs").readFileSync("docs/backlog.jsonl","utf8").trim().split("\n")[0]);console.log((t.feature===null)+" "+(t.work_id===null));'
+  [ "$output" = "true true" ]
+}
+
+# THE WRITE add.new MAKES. One update carrying status and feature together —
+# the feature id is allocated in the same step, so the pointer costs no extra
+# commit. work_id stays null: the build has not started.
+@test "L4.8: update sets status and feature in ONE write, leaving work_id null" {
+  backlog_line "0001B" "first"
+
+  printf '%s' '{"status":"refining","feature":"0042F"}' | backlog update 0001B
+
+  run node -e 'const t=JSON.parse(require("fs").readFileSync("docs/backlog.jsonl","utf8").trim().split("\n")[0]);console.log(t.status+" "+t.feature+" "+t.work_id);'
+  [ "$output" = "refining 0042F null" ]
 }
