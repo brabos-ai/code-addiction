@@ -258,12 +258,12 @@ describe('L1 — network', () => {
     expect(new URL(r.url).hostname).toBe('127.0.0.1');
   });
 
-  it('L1.6b moves to the next port when the first is taken', async () => {
+  it.each([false, true])('L1.6b moves to the next port when the first is taken (layers: %s)', async (layers) => {
     const blocker = createServer();
     await new Promise<void>((ok) => blocker.listen(0, '127.0.0.1', ok));
     const busy = (blocker.address() as { port: number }).port;
     try {
-      const r = await start(project(null), ['--port', String(busy)]);
+      const r = await start(project(null), ['--port', String(busy), ...(layers ? ['--layers'] : [])]);
       expect(Number(new URL(r.url).port)).toBeGreaterThan(busy);
       expect(Number(new URL(r.url).port)).toBeLessThanOrEqual(busy + 10);
     } finally {
