@@ -210,6 +210,53 @@ describe('install command e2e', () => {
   });
 });
 
+/**
+ * Release zip carrying content for both codex (framwork/.agents) and zcode's
+ * own agents dir (framwork/.zcode) — proves the shared-tree reuse at install
+ * time, not just at build time.
+ */
+function buildZcodeZip() {
+  const zip = new AdmZip();
+  zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\n'));
+  zip.addFile(`framwork/.codeadd/injection-points.json`, Buffer.from('{"version":1,"points":[]}\n'));
+  zip.addFile(`framwork/.agents/skills/add.plan/SKILL.md`, Buffer.from('---\nname: add.plan\n---\n'));
+  zip.addFile(`framwork/.agents/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
+  zip.addFile(`framwork/.zcode/agents/reviewer-agent.md`, Buffer.from('---\nname: reviewer-agent\n---\n'));
+  return zip.toBuffer();
+}
+
+describe('install command e2e — zcode reuses the codex tree (L3.1, L3.2)', () => {
+  it('installing zcode alone writes .agents (shared) and .zcode (its own agents)', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZcodeZip());
+    mocks.promptProviders.mockResolvedValue(['zcode']);
+
+    await install(tmpDir);
+
+    expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'add.plan', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md'))).toBe(true);
+    // No independent .zcode/skills or .zcode/commands tree — those are absent
+    // on purpose, the reused .agents tree is where ZCode reads them from.
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'skills'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'commands'))).toBe(false);
+  });
+
+  it('installing codex and zcode together writes exactly one .agents tree, never twice', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZcodeZip());
+    mocks.promptProviders.mockResolvedValue(['codex', 'zcode']);
+
+    await install(tmpDir);
+
+    const skillFile = path.join(tmpDir, '.agents', 'skills', 'add.plan', 'SKILL.md');
+    expect(fs.readFileSync(skillFile, 'utf8')).toBe('---\nname: add.plan\n---\n');
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md'))).toBe(true);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.providers.sort()).toEqual(['codex', 'zcode']);
+  });
+});
+
 describe('install command e2e — global scope', () => {
   let homeDir;
 
