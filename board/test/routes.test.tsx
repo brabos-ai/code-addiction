@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router';
 import { makeRouter } from '@/router';
+import { BoardSkeleton } from '@/components/states';
 import type { BoardData } from '@/api/types';
 
 const data: BoardData = {
@@ -102,5 +103,12 @@ describe('L15 the board by column', () => {
     const finished = screen.getByText('Already merged').closest('a')!;
     expect(finished.getAttribute('data-quiet')).toBe('true');
     expect(running.getAttribute('data-quiet')).toBeNull();
+  });
+});
+
+describe('L15.1 the skeleton', () => {
+  it('renders six columns, the visible count the shipped default has', () => {
+    const { container } = render(<BoardSkeleton />);
+    expect(container.firstElementChild!.children).toHaveLength(6);
   });
 });

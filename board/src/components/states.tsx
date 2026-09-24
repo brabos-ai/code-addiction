@@ -96,9 +96,11 @@ export function HealthBanner({ data }: { data: BoardData }) {
 export function BoardSkeleton() {
   return (
     // Mirrors the board's own layout — a row of fixed-width columns — so the
-    // first real paint replaces this in place instead of jumping.
+    // first real paint replaces this in place instead of jumping. Six is the
+    // shipped default's visible column count, written as a literal: this is the
+    // router's pendingComponent, and it renders before any payload exists.
     <div aria-hidden className="flex animate-[pulse-soft_1.6s_ease-in-out_infinite] gap-4 overflow-hidden">
-      {[0, 1, 2, 3].map((c) => (
+      {[0, 1, 2, 3, 4, 5].map((c) => (
         <div key={c} className={cn('w-full shrink-0 sm:w-[300px] lg:w-[21rem]', c > 0 && 'hidden sm:block')}>
           <div className="mb-3 h-5 w-24 rounded bg-surface-active" />
           {[0, 1, 2].map((r) => <div key={r} className="mb-2 h-28 rounded-xl bg-surface-sunken" />)}
