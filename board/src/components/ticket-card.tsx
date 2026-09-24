@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CircleDashed, GitBranch, MessageSquare } from 'lucide-react';
+import { CircleDashed, GitBranch, MessageSquare, Package } from 'lucide-react';
 import type { Ticket } from '@/api/types';
 import { formatRank, workLabel } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,14 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, showStatus
         <span className="tabular inline-flex items-center gap-1 text-xs text-faint" title={`${ticket.comments.length} comment(s)`}>
           <MessageSquare {...ICON} className="size-3.5" />
           {ticket.comments.length}
+        </span>
+      )}
+      {/* The feature id, never its path: the path carries a slug that can be
+          renamed, the id cannot. add.new writes it before any build starts. */}
+      {ticket.feature && (
+        <span translate="no" className="tabular inline-flex items-center gap-1 text-xs text-faint" title={`Feature ${ticket.feature}`}>
+          <Package {...ICON} className="size-3.5 shrink-0" />
+          {ticket.feature}
         </span>
       )}
       {ticket.work_id && (

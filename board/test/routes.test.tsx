@@ -145,3 +145,28 @@ describe('L15 a hidden column and the column param', () => {
     expect(await regions()).toEqual(names);
   });
 });
+
+// Plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F44 / L15.6. RED-FIRST.
+describe('L15.6 the feature a ticket points at', () => {
+  const shaped: BoardData = {
+    ...data,
+    tickets: [{ ...data.tickets[0]!, id: '0030B', title: 'Shaped, not built', status: 'open', feature: '0042F', work_id: null }],
+  };
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(shaped), { headers: { 'content-type': 'application/json' } })));
+  });
+
+  it('the card shows the feature id', async () => {
+    await open('/board');
+    const card = (await screen.findByText('Shaped, not built')).closest('a')!;
+    expect(card).toHaveTextContent('0042F');
+  });
+
+  it('the sheet shows Feature and Work as two rows, Work still Not picked up', async () => {
+    await open('/board/0030B');
+    const dialog = await screen.findByRole('dialog');
+    const term = (name: string) => Array.from(dialog.querySelectorAll('dt')).find((d) => d.textContent === name);
+    expect(term('Feature')?.nextElementSibling).toHaveTextContent('0042F');
+    expect(term('Work')?.nextElementSibling).toHaveTextContent('Not picked up');
+  });
+});
