@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 
 /**
@@ -17,6 +17,21 @@ const KEYS: { keys: string[]; does: string }[] = [
 
 export function Shortcuts() {
   const [open, setOpen] = useState(false);
+
+  // Own Escape as soon as help mounts. Radix registers its document listener
+  // in a passive effect; a fast key can arrive before that layer is registered.
+  // Window capture also keeps the ticket underneath from handling the same key.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape, true);
+    return () => window.removeEventListener('keydown', closeOnEscape, true);
+  }, [open]);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {

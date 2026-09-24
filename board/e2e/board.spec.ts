@@ -570,6 +570,29 @@ test('L5 ? works with a ticket already open, and Esc unstacks one layer at a tim
   await page.keyboard.press('Escape');
   await expect(help, 'Esc closes the top layer').toHaveCount(0);
   await expect(sheet, 'and leaves the ticket open under it').toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet, 'the next Esc closes the ticket').toHaveCount(0);
+});
+
+test('Escape closes shortcuts immediately after mounting without closing the ticket', async ({ page }) => {
+  await page.goto('/board/0001B');
+  const sheet = page.getByRole('dialog', { name: /A doctor for document schemas/ });
+  await expect(sheet).toBeVisible();
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      const help = document.querySelector('[role="dialog"][aria-label="Keyboard shortcuts"]');
+      if (!help) return;
+      observer.disconnect();
+      help.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      document.documentElement.dataset.immediateEscape = 'sent';
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+  await page.keyboard.press('?');
+  await expect(page.locator('html')).toHaveAttribute('data-immediate-escape', 'sent');
+  await expect(page.getByRole('dialog', { name: /shortcut/i })).toHaveCount(0);
+  await expect(sheet).toBeVisible();
+  await expect(page).toHaveURL(/\/board\/0001B$/);
 });
 
 test('L4.4 the light scheme is cool throughout, ground and type alike', async ({ page }) => {
