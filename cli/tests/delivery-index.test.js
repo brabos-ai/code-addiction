@@ -137,15 +137,22 @@ describe('L2 — build integrity', () => {
   // + 2 for feature:board on add.new (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
   // + 2 for feature:board on add.plan (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
   // + 3 for feature:board on add.build (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
-  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 57', () => {
-    expect(SIDECAR().points).toHaveLength(57);
+  // + 3 for feature:board on add.done (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 60', () => {
+    expect(SIDECAR().points).toHaveLength(60);
   });
 
-  it('L2.3: add.done carries exactly two injection points — gitnexus and docs-pruning', () => {
+  // Two became five: feature:board moves add.done's three ticket sections into
+  // fragments/board/ (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses,
+  // F14+F15). The gitnexus and docs-pruning points must survive that intact.
+  it('L2.3: add.done carries exactly five injection points — gitnexus, docs-pruning and three board', () => {
     const onDone = SIDECAR().points.filter(
       (p) => p.resource.kind === 'command' && p.resource.name === 'add.done',
     );
-    expect(onDone).toHaveLength(2);
+    expect(onDone).toHaveLength(5);
+
+    const board = onDone.filter((p) => p.namespace === 'feature' && p.name === 'board').map((p) => p.section).sort();
+    expect(board).toEqual(['ticket-carry', 'ticket-close', 'ticket-report']);
 
     const gitnexus = onDone.find((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
     expect(gitnexus, 'the pre-existing gitnexus point on add.done was lost').toBeTruthy();
