@@ -166,5 +166,5 @@ ALWAYS:
   returns in that same F-block
 
 NEVER:
-- Register an internal artefact in `provider-map.json`
+- Register an internal artefact in `framwork/provider-map.json` — its own is `workbench/provider-map.json`
 - Leave an artefact orphaned at the end of a build

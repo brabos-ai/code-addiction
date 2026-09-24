@@ -133,8 +133,9 @@ node scripts/build-workbench.js  (reads workbench/provider-map.json; imports scr
 nothing. It ships to no user, and `release.yml` does not run it.
 ```
 
-**`npm run setup` is the install.** A fresh clone carries `workbench/` and `.claude/settings.json`
-and nothing else under the provider directories — every command, skill and agent the pipeline runs
+**`npm run setup` is the install.** A fresh clone carries `workbench/`, `.claude/settings.json` and
+`.codex/config.toml` (the two authored provider configs) and nothing else under the provider
+directories — every command, skill and agent the pipeline runs
 on is build output, so until it is run there is no pipeline to run. It runs `build:workbench`, then
 `build:board`. The workbench half takes no dependency and needs no `npm install` first; the board half
 runs `npm ci` and a Vite build inside `board/`, so the board is there by default — `npm run board`
