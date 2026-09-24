@@ -204,6 +204,22 @@ tickets() {
   done
 }
 
+# L1.4c — the SAME pattern as L1.4b, one level up: the nine reserved status
+# names and the seven column names are two lists in two files, and nothing but
+# this holds them equal. It is the guard the delivery that introduced them asked
+# for by name.
+@test "L1.4c: the nine reserved statuses and seven columns are the same set in the script and the reference" {
+  local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
+  for n in open refining shaped planning planned doing in-review done dropped; do
+    grep -qF "{ name: \"$n\"," "$SCRIPTS_DIR/backlog.sh"
+    grep -qF "{ \"name\": \"$n\"," "$ref"
+  done
+  for c in backlog shaping planning building review done dropped; do
+    grep -qF "{ name: \"$c\"," "$SCRIPTS_DIR/backlog.sh"
+    grep -qF "{ \"name\": \"$c\"," "$ref"
+  done
+}
+
 # L1.5 — the two structural rules delivered.sh states, restated here as tests.
 @test "L1.5: backlog.sh sets -u, never -e, and checks node before any file I/O" {
   [ -f "$SCRIPTS_DIR/backlog.sh" ]
