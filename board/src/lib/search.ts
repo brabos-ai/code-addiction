@@ -8,10 +8,13 @@ import { z } from 'zod';
 const text = z.string().trim().min(1).max(200);
 const list = z.preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(text).min(1).max(20));
 
+// There is no theme or label filter. Labels carry whatever a project puts in
+// them (this repository uses them for its own layer tags), so a row of toggles
+// built from them meant nothing on a board installed anywhere else, and the
+// theme dropdown repeated what the search already finds. An old URL carrying
+// theme= or label= is read without them: no filter the page cannot show.
 export const boardSearchSchema = z.object({
   q: text.optional(),
-  theme: text.optional(),
-  label: list.optional(),
   status: list.optional(),
   // Columns to show ON TOP OF the ones visible by default — an additive union,
   // never an override list. A column the definitions mark hidden shows only
@@ -21,7 +24,7 @@ export const boardSearchSchema = z.object({
 
 export type BoardSearch = z.infer<typeof boardSearchSchema>;
 
-const FIELDS = { q: text, theme: text, label: list, status: list, column: list } as const;
+const FIELDS = { q: text, status: list, column: list } as const;
 
 export function parseBoardSearch(input: Record<string, unknown>): BoardSearch {
   const out: Record<string, unknown> = {};
@@ -34,5 +37,5 @@ export function parseBoardSearch(input: Record<string, unknown>): BoardSearch {
 }
 
 export function hasFilters(s: BoardSearch): boolean {
-  return Boolean(s.q || s.theme || s.label?.length || s.status?.length || s.column?.length);
+  return Boolean(s.q || s.status?.length || s.column?.length);
 }

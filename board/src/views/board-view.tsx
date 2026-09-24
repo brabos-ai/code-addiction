@@ -7,7 +7,7 @@ import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/st
 import { TicketCard } from '@/components/ticket-card';
 import { useBoard } from '@/hooks/use-board';
 import { hasFilters } from '@/lib/search';
-import { columnVisible, facets, filterTickets, groupByColumn, rankOf, type ColumnGroup } from '@/lib/tickets';
+import { columnVisible, filterTickets, groupByColumn, rankOf, type ColumnGroup } from '@/lib/tickets';
 import { cn } from '@/lib/utils';
 
 // Dimmed per card, not per column: a column can hold a running status and a
@@ -25,7 +25,6 @@ export function BoardView() {
 
 function Board({ data }: { data: BoardData }) {
   const search = useSearch({ from: '/board' });
-  const { themes, labels } = useMemo(() => facets(data.tickets), [data.tickets]);
   const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
   const visible = filterTickets(data.tickets, search);
   const groups = groupByColumn(visible, data.statuses, data.columns).filter(
@@ -37,8 +36,6 @@ function Board({ data }: { data: BoardData }) {
     <FilterBar
       to="/board"
       search={search}
-      themes={themes}
-      labels={labels}
       statuses={data.statuses}
       hiddenColumns={data.columns.filter((c) => c.hidden)}
     />

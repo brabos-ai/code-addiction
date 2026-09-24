@@ -9,17 +9,15 @@ import { Button, StatusGlyph } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
-type FormValues = { q: string; theme: string; label: string[]; status: string[]; column: string[] };
+type FormValues = { q: string; status: string[]; column: string[] };
 
 function toForm(s: BoardSearch): FormValues {
-  return { q: s.q ?? '', theme: s.theme ?? '', label: s.label ?? [], status: s.status ?? [], column: s.column ?? [] };
+  return { q: s.q ?? '', status: s.status ?? [], column: s.column ?? [] };
 }
 
 type Props = {
   to: '/board' | '/list';
   search: BoardSearch;
-  themes: string[];
-  labels: string[];
   statuses: Status[];
   /** The board shows statuses as its columns; only the list filters by them. */
   showStatus?: boolean;
@@ -33,7 +31,7 @@ type Props = {
  * board can be reloaded, shared and stepped back through. The same schema that
  * validates the route parses what this form sends.
  */
-export function FilterBar({ to, search, themes, labels, statuses, showStatus = false, hiddenColumns = [] }: Props) {
+export function FilterBar({ to, search, statuses, showStatus = false, hiddenColumns = [] }: Props) {
   const navigate = useNavigate();
   const form = useForm<FormValues>({ values: toForm(search) });
   const values = useWatch({ control: form.control }) as FormValues;
@@ -63,40 +61,18 @@ export function FilterBar({ to, search, themes, labels, statuses, showStatus = f
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const toggle = (field: 'label' | 'status' | 'column', value: string) => {
+  const toggle = (field: 'status' | 'column', value: string) => {
     const cur = form.getValues(field);
     form.setValue(field, cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value]);
   };
 
-  const refinements = (values.theme ? 1 : 0) + values.label.length + values.status.length + values.column.length;
+  const refinements = values.status.length + values.column.length;
   const { ref: qRef, ...qField } = form.register('q');
 
   const refineControls = (
     <>
-      {themes.length > 0 && (
-        <label className="relative flex min-w-0 items-center">
-          <span className="sr-only">Theme</span>
-          <select
-            {...form.register('theme')}
-            className={cn(
-              'h-9 w-full min-w-0 appearance-none rounded-md bg-surface pr-8 pl-3 text-base shadow-card ring-1 ring-line md:w-auto md:max-w-56 md:text-meta',
-              'transition-shadow duration-200 ease-spring hover:ring-line-strong',
-              values.theme ? 'text-accent ring-accent/40' : 'text-muted',
-            )}
-          >
-            <option value="">All themes</option>
-            {themes.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <svg aria-hidden viewBox="0 0 16 16" className="pointer-events-none absolute right-3 size-3.5 text-faint">
-            <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </label>
-      )}
       {showStatus && (
         <ToggleGroup label="Status" options={statuses.map((s) => s.name)} selected={values.status} onToggle={(v) => toggle('status', v)} status />
-      )}
-      {labels.length > 0 && (
-        <ToggleGroup label="Labels" options={labels} selected={values.label} onToggle={(v) => toggle('label', v)} />
       )}
       {hiddenColumns.map((c) => {
         const on = values.column.includes(c.name);

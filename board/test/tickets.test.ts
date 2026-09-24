@@ -1,7 +1,7 @@
 // Pure data functions and the shared search schema (plan F3, L2.1–L2.2). RED-FIRST.
 import { describe, expect, it } from 'vitest';
 import type { Column, Status, Ticket } from '@/api/types';
-import { columnVisible, filterTickets, groupByColumn, groupByStatus, facets } from '@/lib/tickets';
+import { columnVisible, filterTickets, groupByColumn, groupByStatus } from '@/lib/tickets';
 import { parseBoardSearch } from '@/lib/search';
 
 function t(id: string, over: Partial<Ticket> = {}): Ticket {
@@ -35,13 +35,12 @@ describe('L2.1 filterTickets', () => {
   it('matches q against the id', () => {
     expect(filterTickets(all, { q: '0003b' }).map((x) => x.id)).toEqual(['0003B']);
   });
-  it('filters by theme, by any of several labels, and by any of several statuses', () => {
-    expect(filterTickets(all, { theme: 'graph' }).map((x) => x.id)).toEqual(['0001B', '0003B']);
-    expect(filterTickets(all, { label: ['both', 'internal'] }).map((x) => x.id)).toEqual(['0002B', '0003B']);
+  it('filters by any of several statuses', () => {
     expect(filterTickets(all, { status: ['open', 'done'] }).map((x) => x.id)).toEqual(['0001B', '0003B']);
   });
   it('combines filters with AND', () => {
-    expect(filterTickets(all, { theme: 'graph', status: ['done'] }).map((x) => x.id)).toEqual(['0003B']);
+    expect(filterTickets(all, { q: 'doctor', status: ['done'] }).map((x) => x.id)).toEqual(['0003B']);
+    expect(filterTickets(all, { q: 'doctor', status: ['open'] })).toEqual([]);
   });
 });
 
@@ -124,30 +123,23 @@ describe('L14 groupByColumn', () => {
   });
 });
 
-describe('facets', () => {
-  it('lists the themes and labels in use, sorted, without blanks', () => {
-    const f = facets([t('1', { theme: 'b', labels: ['y'] }), t('2', { theme: '', labels: ['x', 'y'] }), t('3', { theme: 'a' })]);
-    expect(f.themes).toEqual(['a', 'b']);
-    expect(f.labels).toEqual(['x', 'y']);
-  });
-});
-
 describe('L2.2 parseBoardSearch', () => {
   it('keeps valid params', () => {
-    expect(parseBoardSearch({ q: 'abc', theme: 'graph', label: ['a'], status: ['open'] })).toEqual({
-      q: 'abc', theme: 'graph', label: ['a'], status: ['open'],
-    });
+    expect(parseBoardSearch({ q: 'abc', status: ['open'] })).toEqual({ q: 'abc', status: ['open'] });
   });
   it('accepts a single string where an array is expected', () => {
-    expect(parseBoardSearch({ label: 'a', status: 'open' })).toEqual({ label: ['a'], status: ['open'] });
+    expect(parseBoardSearch({ status: 'open' })).toEqual({ status: ['open'] });
   });
   it('drops an invalid param and keeps the valid ones', () => {
-    expect(parseBoardSearch({ q: 42, theme: 'graph', label: [1, 2], extra: 'x' })).toEqual({ theme: 'graph' });
+    expect(parseBoardSearch({ q: 42, status: [1, 2], column: 'dropped', extra: 'x' })).toEqual({ column: ['dropped'] });
+  });
+  it('drops the theme and label params an old URL may still carry', () => {
+    expect(parseBoardSearch({ q: 'abc', theme: 'graph', label: ['a'] })).toEqual({ q: 'abc' });
   });
   it('keeps a column list, and accepts a single column', () => {
     expect(parseBoardSearch({ column: 'dropped' })).toEqual({ column: ['dropped'] });
   });
   it('drops empty strings and empty arrays', () => {
-    expect(parseBoardSearch({ q: '', label: [] })).toEqual({});
+    expect(parseBoardSearch({ q: '', status: [] })).toEqual({});
   });
 });

@@ -9,8 +9,6 @@ export function filterTickets(tickets: Ticket[], s: BoardSearch): Ticket[] {
       const hay = [t.id, t.title, t.tldr, ...t.notes].join('\n').toLowerCase();
       if (!hay.includes(q)) return false;
     }
-    if (s.theme && t.theme !== s.theme) return false;
-    if (s.label?.length && !t.labels.some((l) => s.label!.includes(l))) return false;
     if (s.status?.length && !s.status.includes(t.status)) return false;
     return true;
   });
@@ -81,16 +79,6 @@ export function groupByColumn(tickets: Ticket[], statuses: Status[], columns: Co
 /** A column shows unless it is hidden by default and the `column` param does not name it. */
 export function columnVisible(column: Column, param: string[] | undefined): boolean {
   return !column.hidden || Boolean(param?.includes(column.name));
-}
-
-export function facets(tickets: Ticket[]): { themes: string[]; labels: string[] } {
-  const themes = new Set<string>();
-  const labels = new Set<string>();
-  for (const t of tickets) {
-    if (t.theme) themes.add(t.theme);
-    for (const l of t.labels) if (l) labels.add(l);
-  }
-  return { themes: [...themes].sort(), labels: [...labels].sort() };
 }
 
 /** The 1-based priority of a ticket: its position on the board, unfiltered. */

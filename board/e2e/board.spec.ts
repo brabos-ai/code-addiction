@@ -468,7 +468,7 @@ test('L5.6 the filter row sits on one rhythm', async ({ page }) => {
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
   const box = (l: Locator) => l.evaluate((el) => Math.round(el.getBoundingClientRect().height));
   const search = await box(page.getByRole('searchbox', { name: 'Search tickets' }));
-  const filter = await box(page.getByRole('button', { name: 'product', exact: true }));
+  const filter = await box(page.getByRole('button', { name: 'open', exact: true }));
   // The search was taller than every control beside it, which is what made it
   // the heaviest thing in a row where it is the least used.
   expect(search, 'search matches the height of the controls beside it').toBe(filter);
@@ -657,7 +657,6 @@ test('the filter toggles and the view switch render at the meta size', async ({ 
   // tailwind-merge read text-meta as a colour and dropped it beside text-muted,
   // so these rendered at the browser's 16px, bigger than the search beside them.
   const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
-  expect(await size(page.getByRole('button', { name: 'product', exact: true }))).toBe('13px');
   expect(await size(page.getByRole('button', { name: 'Show dropped' }))).toBe('13px');
   expect(await size(page.getByRole('link', { name: 'Board', exact: true }))).toBe('13px');
 });
@@ -747,3 +746,20 @@ test('compact cards drop the summary, keep the labels, and survive a reload', as
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ }).locator('p')).toBeHidden();
 });
 
+
+test('the filter row holds the search and Show dropped, and nothing built from labels or themes', async ({ page }) => {
+  test.skip(test.info().project.name === 'mobile-360', 'the phone collapses the refine controls');
+  await page.goto('/board');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  const form = page.getByRole('search');
+  await expect(form.getByRole('searchbox', { name: 'Search tickets' })).toBeVisible();
+  await expect(form.getByRole('button', { name: 'Show dropped' })).toBeVisible();
+  // Labels are a project's own tags, so toggles built from them meant nothing
+  // on a board installed anywhere else; the theme dropdown repeated the search.
+  await expect(form.getByRole('combobox')).toHaveCount(0);
+  await expect(form.getByRole('group', { name: 'Labels' })).toHaveCount(0);
+  // An old URL with those params loads unfiltered, not filtered by a control
+  // the page no longer shows.
+  await page.goto('/board?label=%5B%22internal%22%5D&theme=Tooling');
+  await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+});

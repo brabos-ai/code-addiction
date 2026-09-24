@@ -9,7 +9,7 @@ import { StatusPill } from '@/components/ui';
 import { useBoard } from '@/hooks/use-board';
 import { absoluteTime, formatRank, relativeTime } from '@/lib/format';
 import { hasFilters } from '@/lib/search';
-import { facets, filterTickets, rankOf } from '@/lib/tickets';
+import { filterTickets, rankOf } from '@/lib/tickets';
 import { cn } from '@/lib/utils';
 
 export function ListView() {
@@ -22,13 +22,12 @@ export function ListView() {
 
 function List({ data }: { data: BoardData }) {
   const search = useSearch({ from: '/list' });
-  const { themes, labels } = useMemo(() => facets(data.tickets), [data.tickets]);
   const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
   const visible = filterTickets(data.tickets, search);
   const total = data.tickets.length;
 
   const toolbar = data.present ? (
-    <FilterBar to="/list" search={search} themes={themes} labels={labels} statuses={data.statuses} showStatus />
+    <FilterBar to="/list" search={search} statuses={data.statuses} showStatus />
   ) : undefined;
 
   return (
