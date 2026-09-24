@@ -978,7 +978,8 @@ describe('node inventory snapshot', () => {
       // fragment 28 -> 29: fragments/board/add.plan.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
       // fragment 29 -> 30: fragments/board/add.build.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
       // fragment 30 -> 31: fragments/board/add.done.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
-      fragment: 31,
+      // fragment 31 -> 32: fragments/board/add.hotfix.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+      fragment: 32,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1075,8 +1076,10 @@ describe('node inventory snapshot', () => {
     // 240 -> 241: +1 reference, add-backlog/references/phases.md -- the phase model,
     // split out of lifecycle.md. declares stays 137: a reference is not a declaring kind.
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19.)
-    expect(nodes).toHaveLength(241);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(137);
+    // 241 -> 242, declares 137 -> 138: +1 fragment, board/add.hotfix.md (a declaring kind).
+    // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30.)
+    expect(nodes).toHaveLength(242);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(138);
   });
 });
 

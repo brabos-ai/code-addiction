@@ -94,7 +94,7 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 66 points', () => {
+  it('L1.0 injection map totals exactly 70 points', () => {
     // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073);
     // +1 for feature:docs-pruning:prune on add.done
     // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
@@ -111,7 +111,8 @@ describe('0070 L1 — build-side unit', () => {
     // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
     // 64 -> 65: feature:board adds add.plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
     // 65 -> 66: feature:board adds add.build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
-    expect(sidecarPoints()).toHaveLength(66);
+    // 66 -> 70: feature:board brings add.hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+    expect(sidecarPoints()).toHaveLength(70);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {

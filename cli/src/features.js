@@ -75,7 +75,7 @@ export const FEATURES = {
   board: {
     description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
     default: false,
-    commands: ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done'],
+    commands: ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done', 'add.hotfix'],
   },
 };
 

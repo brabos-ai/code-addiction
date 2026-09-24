@@ -34,7 +34,7 @@ import { treeFixture } from './helpers/tree-fixture.js';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SIDECAR = path.join(ROOT, 'framwork', '.codeadd', 'injection-points.json');
 const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir).map(([k]) => k);
-const BOARD_COMMANDS = ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done'];
+const BOARD_COMMANDS = ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done', 'add.hotfix'];
 
 // The END-STATE MAP. Fourteen sections: add.new's two adjacent sites were
 // merged into one, which is why the plan's fifteen became fourteen.
@@ -44,6 +44,7 @@ const MAP = {
   'add.plan': ['ticket-done-when', 'ticket-planned', 'ticket-read'],
   'add.build': ['ticket-attention', 'ticket-doing', 'ticket-in-review', 'ticket-metadata'],
   'add.done': ['ticket-carry', 'ticket-close', 'ticket-report'],
+  'add.hotfix': ['ticket-doing', 'ticket-frontmatter', 'ticket-report', 'ticket-resolve'],
 };
 
 const points = () => JSON.parse(fs.readFileSync(SIDECAR, 'utf8')).points;
@@ -54,7 +55,7 @@ const projectCommand = (cwd, prov, name) =>
   path.join(cwd, PROVIDERS[prov].dest, PROVIDERS[prov].commandsSubdir, `${name}.md`);
 
 describe('board — the registry and the map', () => {
-  it('is registered OFF, over exactly the five pipeline commands', () => {
+  it('is registered OFF, over exactly the six pipeline commands', () => {
     expect(FEATURES.board.default).toBe(false);
     expect([...FEATURES.board.commands].sort()).toEqual([...BOARD_COMMANDS].sort());
   });
@@ -67,7 +68,7 @@ describe('board — the registry and the map', () => {
     }
     for (const k of Object.keys(got)) got[k].sort();
     expect(got).toEqual(MAP);
-    expect(boardPoints()).toHaveLength(20);
+    expect(boardPoints()).toHaveLength(24);
   });
 
   it('no board marker shares an anchor line with another namespace — L6.2 has no subject', () => {
