@@ -1,17 +1,17 @@
 import { Link } from '@tanstack/react-router';
 import { CircleDashed, Folder, GitBranch, MessageSquare, Package } from 'lucide-react';
-import type { Ticket } from '@/api/types';
+import type { LayerFilter, Ticket } from '@/api/types';
 import { workLabel } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { Chip, StatusGlyph, StatusPill } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
-type Props = { ticket: Ticket; rank: number; from: '/board' | '/list'; quiet?: boolean; showStatus?: boolean };
+type Props = { ticket: Ticket; rank: number; from: '/board' | '/list'; quiet?: boolean; showStatus?: boolean; layerFilter?: LayerFilter };
 
-/** The meta line a card and a list row share: theme, labels, and what a glance should catch. */
-export function TicketMeta({ ticket, showTheme = true, showId = true, showStatus = false, className }: {
-  ticket: Ticket; showTheme?: boolean; showId?: boolean; showStatus?: boolean; className?: string;
+/** The shared meta line: theme, opt-in layer chips, and what a glance should catch. */
+export function TicketMeta({ ticket, layerFilter, showTheme = true, showId = true, showStatus = false, className }: {
+  ticket: Ticket; layerFilter?: LayerFilter; showTheme?: boolean; showId?: boolean; showStatus?: boolean; className?: string;
 }) {
   return (
     <div className={cn('flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1.5', className)}>
@@ -28,7 +28,7 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, showStatus
           <span className="truncate">{ticket.theme}</span>
         </span>
       )}
-      {ticket.labels.map((l) => <Chip key={l} tone="outline">{l}</Chip>)}
+      {ticket.labels.filter((l) => layerFilter?.values.includes(l)).map((l) => <Chip key={l} tone="outline">{l}</Chip>)}
       {!ticket.grounded && (
         <span className="inline-flex items-center text-faint" title="Recorded as stated — not checked against the repository">
           <CircleDashed {...ICON} className="size-3.5" />
@@ -66,7 +66,7 @@ export function TicketMeta({ ticket, showTheme = true, showId = true, showStatus
   );
 }
 
-export function TicketCard({ ticket, rank, from, quiet, showStatus }: Props) {
+export function TicketCard({ ticket, rank, from, quiet, showStatus, layerFilter }: Props) {
   const className = cn(
     'group relative block rounded-md bg-surface px-4 py-3.5 shadow-card ring-1 ring-line compact:py-2.5',
     'transition-[box-shadow,transform] duration-300 ease-spring hover:-translate-y-px hover:shadow-lift hover:ring-line-strong',
@@ -106,7 +106,7 @@ export function TicketCard({ ticket, rank, from, quiet, showStatus }: Props) {
         {ticket.title}
       </h3>
       {ticket.tldr && <p className="mt-1 line-clamp-2 text-meta leading-snug text-muted [overflow-wrap:anywhere] compact:hidden">{ticket.tldr}</p>}
-      <TicketMeta ticket={ticket} showId={false} className="mt-3 compact:mt-2" />
+      <TicketMeta ticket={ticket} layerFilter={layerFilter} showId={false} className="mt-3 compact:mt-2" />
     </>
   );
   return from === '/board' ? (

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useSearch } from '@tanstack/react-router';
-import type { BoardData, Ticket } from '@/api/types';
+import type { BoardData, LayerFilter, Ticket } from '@/api/types';
 import { AppShell } from '@/components/app-shell';
-import { FilterBar } from '@/components/filter-bar';
+import { FilterBar, useLayerSearch } from '@/components/filter-bar';
 import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/states';
 import { TicketCard } from '@/components/ticket-card';
 import { useBoard } from '@/hooks/use-board';
@@ -24,9 +24,9 @@ export function BoardView() {
 }
 
 function Board({ data }: { data: BoardData }) {
-  const search = useSearch({ from: '/board' });
+  const search = useLayerSearch(useSearch({ from: '/board' }), data.layerFilter);
   const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
-  const visible = filterTickets(data.tickets, search);
+  const visible = filterTickets(data.tickets, search, data.layerFilter);
   const groups = groupByColumn(visible, data.statuses, data.columns).filter(
     (g) => columnVisible(g.column, search.column)
       && (!search.status?.length || g.statuses.some((sg) => search.status!.includes(sg.status.name))),
@@ -37,6 +37,7 @@ function Board({ data }: { data: BoardData }) {
       to="/board"
       search={search}
       statuses={data.statuses}
+      layerFilter={data.layerFilter}
       hiddenColumns={data.columns.filter((c) => c.hidden)}
     />
   ) : undefined;
@@ -46,17 +47,17 @@ function Board({ data }: { data: BoardData }) {
       <HealthBanner data={data} />
       {!data.present ? (
         <EmptyBoard />
-      ) : visible.length === 0 && hasFilters(search) ? (
+      ) : visible.length === 0 && hasFilters(search, data.layerFilter) ? (
         <NoMatches to="/board" />
       ) : (
-        <Columns groups={groups} ranks={ranks} />
+        <Columns groups={groups} ranks={ranks} layerFilter={data.layerFilter} />
       )}
       <Outlet />
     </AppShell>
   );
 }
 
-function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, number> }) {
+function Columns({ groups, ranks, layerFilter }: { groups: ColumnGroup[]; ranks: Map<string, number>; layerFilter?: LayerFilter }) {
   // On a phone one column shows at a time, picked by a column switcher. The
   // choice is this screen's own and not view state worth a URL: it does not
   // survive a rotation to a wider screen, where every column shows.
@@ -141,7 +142,7 @@ function Columns({ groups, ranks }: { groups: ColumnGroup[]; ranks: Map<string, 
           className="scrollbar-thin flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:min-h-0 sm:flex-1 sm:scroll-px-6 sm:px-6 lg:scroll-px-10 lg:px-10"
         >
           {groups.map((g) => (
-            <Column key={g.column.name} group={g} ranks={ranks} hiddenOnPhone={g.column.name !== current} />
+            <Column key={g.column.name} group={g} ranks={ranks} layerFilter={layerFilter} hiddenOnPhone={g.column.name !== current} />
           ))}
         </div>
         <div
@@ -162,8 +163,8 @@ function columnLabel(g: ColumnGroup): string {
   return g.column.label ?? g.column.name;
 }
 
-function Column({ group, ranks, hiddenOnPhone }: {
-  group: ColumnGroup; ranks: Map<string, number>; hiddenOnPhone: boolean;
+function Column({ group, ranks, layerFilter, hiddenOnPhone }: {
+  group: ColumnGroup; ranks: Map<string, number>; layerFilter?: LayerFilter; hiddenOnPhone: boolean;
 }) {
   // The status each card carries, and whether the vocabulary defines it.
   const undefinedStatus = new Set(group.statuses.filter((sg) => sg.undefined).map((sg) => sg.status.name));
@@ -214,6 +215,7 @@ function Column({ group, ranks, hiddenOnPhone }: {
           <li key={t.id}>
             <TicketCard
               ticket={t}
+              layerFilter={layerFilter}
               rank={ranks.get(t.id) ?? 0}
               from="/board"
               quiet={QUIET.has(t.status) || undefinedStatus.has(t.status)}

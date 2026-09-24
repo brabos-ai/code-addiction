@@ -1,24 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-import type { Column, Status } from '@/api/types';
-import { hasFilters, parseBoardSearch, type BoardSearch } from '@/lib/search';
+import type { Column, LayerFilter, Status } from '@/api/types';
+import { effectiveBoardSearch, hasFilters, parseBoardSearch, type BoardSearch } from '@/lib/search';
 import { cn } from '@/lib/utils';
 import { Button, StatusGlyph } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
 
-type FormValues = { q: string; status: string[]; column: string[] };
+type FormValues = { q: string; status: string[]; column: string[]; label: string[] };
 
 function toForm(s: BoardSearch): FormValues {
-  return { q: s.q ?? '', status: s.status ?? [], column: s.column ?? [] };
+  return { q: s.q ?? '', status: s.status ?? [], column: s.column ?? [], label: s.label ?? [] };
+}
+
+/** Both loaded views use the effective search immediately, even without a toolbar. */
+export function useLayerSearch(search: BoardSearch, layerFilter?: LayerFilter): BoardSearch {
+  const navigate = useNavigate();
+  const rawLabel = useLocation({ select: (location) => location.search.label });
+  const effective = effectiveBoardSearch(search, layerFilter);
+  const canonicalLabel = JSON.stringify(effective.label);
+  useEffect(() => {
+    if (JSON.stringify(rawLabel) === canonicalLabel) return;
+    // Stay on the current route: keep an open ticket while replacing only
+    // the unsupported label selection. The updater reads the latest search.
+    void navigate({ to: '.', search: (prev) => effectiveBoardSearch(prev, layerFilter), replace: true });
+  }, [rawLabel, canonicalLabel, layerFilter, navigate]);
+  return effective;
 }
 
 type Props = {
   to: '/board' | '/list';
   search: BoardSearch;
   statuses: Status[];
+  layerFilter?: LayerFilter;
   /** The board shows statuses as its columns; only the list filters by them. */
   showStatus?: boolean;
   /** The board's columns hidden by default. Each gets a "Show" toggle writing its name to `column`. */
@@ -31,7 +47,7 @@ type Props = {
  * board can be reloaded, shared and stepped back through. The same schema that
  * validates the route parses what this form sends.
  */
-export function FilterBar({ to, search, statuses, showStatus = false, hiddenColumns = [] }: Props) {
+export function FilterBar({ to, search, statuses, layerFilter, showStatus = false, hiddenColumns = [] }: Props) {
   const navigate = useNavigate();
   const form = useForm<FormValues>({ values: toForm(search) });
   const values = useWatch({ control: form.control }) as FormValues;
@@ -40,12 +56,12 @@ export function FilterBar({ to, search, statuses, showStatus = false, hiddenColu
 
   // Text waits for a pause; toggles apply at once.
   useEffect(() => {
-    const next = parseBoardSearch({ ...values });
+    const next = effectiveBoardSearch(parseBoardSearch({ ...values }), layerFilter);
     const same = JSON.stringify(next) === JSON.stringify(parseBoardSearch({ ...search }));
     if (same) return;
     const t = setTimeout(() => void navigate({ to, search: next, replace: true }), values.q !== (search.q ?? '') ? 250 : 0);
     return () => clearTimeout(t);
-  }, [values, search, navigate, to]);
+  }, [values, search, navigate, to, layerFilter]);
 
   // "/" focuses the search, as in most tools people already use.
   useEffect(() => {
@@ -61,18 +77,21 @@ export function FilterBar({ to, search, statuses, showStatus = false, hiddenColu
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const toggle = (field: 'status' | 'column', value: string) => {
+  const toggle = (field: 'status' | 'column' | 'label', value: string) => {
     const cur = form.getValues(field);
     form.setValue(field, cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value]);
   };
 
-  const refinements = values.status.length + values.column.length;
+  const refinements = values.status.length + values.column.length + values.label.length;
   const { ref: qRef, ...qField } = form.register('q');
 
   const refineControls = (
     <>
       {showStatus && (
         <ToggleGroup label="Status" options={statuses.map((s) => s.name)} selected={values.status} onToggle={(v) => toggle('status', v)} status />
+      )}
+      {layerFilter && (
+        <ToggleGroup label={layerFilter.name} options={layerFilter.values} selected={values.label} onToggle={(v) => toggle('label', v)} />
       )}
       {hiddenColumns.map((c) => {
         const on = values.column.includes(c.name);
@@ -148,7 +167,7 @@ export function FilterBar({ to, search, statuses, showStatus = false, hiddenColu
 
         <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 md:flex md:pt-1 lg:pt-0">{refineControls}</div>
 
-        {hasFilters(search) && (
+        {hasFilters(search, layerFilter) && (
           <Button type="button" variant="quiet" size="sm" className="hidden md:inline-flex" onClick={() => form.reset(toForm({}))}>
             Clear
           </Button>
@@ -160,7 +179,7 @@ export function FilterBar({ to, search, statuses, showStatus = false, hiddenColu
         className={cn('flex-col gap-3 rounded-2xl bg-surface p-3 shadow-card ring-1 ring-line md:hidden', open ? 'flex' : 'hidden')}
       >
         {refineControls}
-        {hasFilters(search) && (
+        {hasFilters(search, layerFilter) && (
           <Button type="button" variant="quiet" size="sm" className="self-start" onClick={() => form.reset(toForm({}))}>
             Clear filters
           </Button>
