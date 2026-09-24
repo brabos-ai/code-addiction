@@ -231,9 +231,9 @@ test('L4.3 the sheet is a pane, not a slab dropped on the board', async ({ page 
   expect(luminance(style.bg)).toBeCloseTo(luminance(await token(page, '--surface')), 4);
 });
 
-test('L4 the theme and the label read as two treatments in dark', async ({ page }) => {
+test('L4 opt-in theme and layer chip read as two treatments in dark', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/board');
+  await page.goto(`${test.info().config.metadata.layersURL}/board`);
   const card = page.getByRole('link', { name: /A doctor for document schemas/ });
   await expect(card).toBeVisible();
   // A theme is where a ticket belongs, a label is a tag on it. Two filled or two
@@ -724,9 +724,10 @@ test('an empty lane says what its statuses mean', async ({ page }) => {
   await expect(page.locator('#col-shaping')).toContainText('Refining');
 });
 
-test('compact cards drop the summary, keep the labels, and survive a reload', async ({ page }) => {
+for (const layers of [false, true]) {
+test(`compact cards respect layer opt-in ${layers} and survive a reload`, async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'the switch is not on a phone');
-  await page.goto('/board');
+  await page.goto(layers ? `${test.info().config.metadata.layersURL}/board` : '/board');
   const card = page.getByRole('link', { name: /A doctor for document schemas/ });
   await expect(card).toBeVisible();
   const tall = await card.evaluate((el) => el.getBoundingClientRect().height);
@@ -737,7 +738,8 @@ test('compact cards drop the summary, keep the labels, and survive a reload', as
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
   await expect(summary).toBeHidden();
-  await expect(card.getByText('product', { exact: true })).toBeVisible();
+  if (layers) await expect(card.getByText('product', { exact: true })).toBeVisible();
+  else await expect(card.getByText('product', { exact: true })).toHaveCount(0);
   const short = await card.evaluate((el) => el.getBoundingClientRect().height);
   expect(short, 'a compact card is well under the comfortable one').toBeLessThan(tall * 0.6);
 
@@ -745,6 +747,7 @@ test('compact cards drop the summary, keep the labels, and survive a reload', as
   await expect(page.getByRole('button', { name: 'Compact cards' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ }).locator('p')).toBeHidden();
 });
+}
 
 
 test('the filter row holds the search and Show dropped, and nothing built from labels or themes', async ({ page }) => {
@@ -758,8 +761,105 @@ test('the filter row holds the search and Show dropped, and nothing built from l
   // on a board installed anywhere else; the theme dropdown repeated the search.
   await expect(form.getByRole('combobox')).toHaveCount(0);
   await expect(form.getByRole('group', { name: 'Labels' })).toHaveCount(0);
+  await expect(form.getByRole('group', { name: 'Layer' })).toHaveCount(0);
   // An old URL with those params loads unfiltered, not filtered by a control
   // the page no longer shows.
   await page.goto('/board?label=%5B%22internal%22%5D&theme=Tooling');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.has('label')).toBe(false);
 });
+
+async function expandFilters(page: Page) {
+  await expect(page.getByRole('searchbox', { name: 'Search tickets' })).toBeVisible();
+  const toggle = page.getByRole('button', { name: /^Filters/ });
+  if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+}
+
+const ticketLinks = (page: Page) => page.locator('#content a[href^="/board/"], #content a[href^="/list/"]');
+
+for (const route of ['/board', '/list'] as const) {
+  test(`layers disabled ${route}: no summary chips, detail keeps all labels`, async ({ page }) => {
+    await page.goto(route);
+    const sweep = page.getByRole('link', { name: /Sweep the artefacts/ });
+    await expect(sweep).toBeVisible();
+    await expandFilters(page);
+    await expect(page.getByRole('group', { name: 'Layer' })).toHaveCount(0);
+    for (const label of ['product', 'internal', 'both', 'quality']) {
+      await expect(ticketLinks(page).getByText(label, { exact: true })).toHaveCount(0);
+    }
+    await sweep.click();
+    const detail = page.getByRole('dialog');
+    await expect(detail.getByText('quality', { exact: true })).toBeVisible();
+    await expect(detail.getByText('both', { exact: true })).toBeVisible();
+  });
+
+  test(`layers disabled ${route}: deep link is replaced, preserves other filters and stays clean on view switch`, async ({ page }) => {
+    await page.goto(`${route}?label=%5B%22internal%22%5D&q=doctor&status=%5B%22open%22%5D&column=%5B%22dropped%22%5D`);
+    const historyLength = await page.evaluate(() => history.length);
+    await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+    await expect.poll(() => new URL(page.url()).searchParams.has('label')).toBe(false);
+    expect(await page.evaluate(() => history.length)).toBe(historyLength);
+    const params = new URL(page.url()).searchParams;
+    expect(params.get('q')).toBe('doctor');
+    expect(JSON.parse(params.get('status')!)).toEqual(['open']);
+    expect(JSON.parse(params.get('column')!)).toEqual(['dropped']);
+    await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: route === '/board' ? 'List' : 'Board', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(route === '/board' ? '/list\\?' : '/board\\?'));
+    expect(new URL(page.url()).searchParams.has('label')).toBe(false);
+    await page.reload();
+    await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
+    expect(new URL(page.url()).searchParams.has('label')).toBe(false);
+  });
+
+  test(`layers enabled ${route}: OR selection, reload, view switch, mobile counter and clear`, async ({ page }) => {
+    await page.goto(`${test.info().config.metadata.layersURL}${route}`);
+    await expandFilters(page);
+    const group = page.getByRole('group', { name: 'Layer' });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole('button')).toHaveText(['product', 'internal', 'both']);
+    await group.getByRole('button', { name: 'product', exact: true }).click();
+    await expect(page).toHaveURL(/label=%5B%22product%22%5D/);
+    await expect(ticketLinks(page)).toHaveCount(route === '/board' ? 3 : 4);
+    await expect(ticketLinks(page).filter({ hasText: 'Sweep the artefacts' })).toHaveCount(0);
+    await group.getByRole('button', { name: 'both', exact: true }).click();
+    await expect(page).toHaveURL(/label=%5B%22product%22%2C%22both%22%5D/);
+    await expect(ticketLinks(page)).toHaveCount(route === '/board' ? 4 : 5);
+    const sweep = ticketLinks(page).filter({ hasText: 'Sweep the artefacts' });
+    await expect(sweep.getByText('quality', { exact: true })).toHaveCount(0);
+    if (route === '/board' || test.info().project.name === 'mobile-360') {
+      await expect(sweep.getByText('both', { exact: true })).toBeVisible();
+    }
+    if (test.info().project.name === 'mobile-360') {
+      await expect(page.getByRole('button', { name: /^Filters/ })).toHaveText('Filters2');
+    }
+    await noSidewaysScroll(page);
+    await shot(page, `layers-${route.slice(1)}`);
+    await page.reload();
+    await expandFilters(page);
+    await expect(group.getByRole('button', { name: 'product', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(group.getByRole('button', { name: 'both', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: route === '/board' ? 'List' : 'Board', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(route === '/board' ? '/list\\?' : '/board\\?'));
+    await expect(page).toHaveURL(/label=%5B%22product%22%2C%22both%22%5D/);
+    await expect(ticketLinks(page)).toHaveCount(route === '/board' ? 5 : 4);
+    await expandFilters(page);
+    await page.getByRole('button', { name: test.info().project.name === 'mobile-360' ? 'Clear filters' : 'Clear', exact: true }).click();
+    await expect.poll(() => new URL(page.url()).search).toBe('');
+    await expect(ticketLinks(page)).toHaveCount(route === '/board' ? 7 : 6);
+  });
+
+  test(`layers enabled ${route}: mixed deep link keeps valid labels and detail retains quality`, async ({ page }) => {
+    await page.goto(`${test.info().config.metadata.layersURL}${route}/0004B?label=%5B%22both%22%2C%22quality%22%5D&q=sweep&status=%5B%22open%22%5D`);
+    const detail = page.getByRole('dialog');
+    await expect(detail).toBeVisible();
+    await expect.poll(() => new URL(page.url()).searchParams.get('label')).toBe('["both"]');
+    expect(new URL(page.url()).pathname).toBe(`${route}/0004B`);
+    expect(new URL(page.url()).searchParams.get('q')).toBe('sweep');
+    expect(new URL(page.url()).searchParams.get('status')).toBe('["open"]');
+    await expect(detail.getByText('quality', { exact: true })).toBeVisible();
+    await expect(detail.getByText('both', { exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(ticketLinks(page)).toHaveCount(1);
+    await expect(ticketLinks(page).getByText('quality', { exact: true })).toHaveCount(0);
+  });
+}
