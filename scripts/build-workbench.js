@@ -9,7 +9,7 @@
  * gained here is a source/output split, so the same artefacts can be read by
  * more than one provider inside this repository.
  *
- *   workbench/{commands,skills,agents}/  →  .claude/…  .opencode/…
+ *   workbench/{commands,skills,agents}/  →  .claude/…  .opencode/…  .agents/…  .codex/…
  *
  * ⛔ THIS FILE OWNS NO TRANSFORMATION. Every line of it is registry, strategy
  *    and wiring; `scripts/build.js` does the work and is imported, never

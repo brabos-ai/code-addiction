@@ -53,12 +53,12 @@ neither survives alone.**
 
 | Half | What it means | What breaks if it is dropped |
 |---|---|---|
-| It has a provider mirror | `workbench/{commands,skills,agents}/` is source; `scripts/build-workbench.js` compiles it into the repository-root `.claude/` and `.opencode/`, which are gitignored output | Someone edits the generated copy, and the next build overwrites it |
+| It has a provider mirror | `workbench/{commands,skills,agents}/` is source; `scripts/build-workbench.js` compiles it into the repository-root `.claude/`, `.opencode/`, `.agents/` and `.codex/`, which are gitignored output | Someone edits the generated copy, and the next build overwrites it |
 | It reaches no user | Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and `cli/src/installer.js` never writes it | The cross-layer gate in `scripts/build.js` looks wrong, and a product artefact starts naming a workbench command a user does not have |
 
 ⛔ **Edit the SOURCE, never the built copy.** A change made under `.claude/commands/`,
-`.claude/skills/`, `.claude/agents/` or the `.opencode/` equivalents is gitignored and is erased by
-the next `node scripts/build-workbench.js`.
+`.claude/skills/`, `.claude/agents/`, the `.opencode/` equivalents or the `.agents/`/`.codex/`
+output trees is gitignored and is erased by the next `node scripts/build-workbench.js`.
 
 `add-framework-development` carries the artefact anatomies, the agent frontmatter fields and the
 `<!-- uses: -->` syntax. Read it when creating a new internal artefact.
@@ -166,5 +166,5 @@ ALWAYS:
   returns in that same F-block
 
 NEVER:
-- Register an internal artefact in `provider-map.json`
+- Register an internal artefact in `framwork/provider-map.json` — its own is `workbench/provider-map.json`
 - Leave an artefact orphaned at the end of a build

@@ -556,7 +556,7 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 1. Create directly in `workbench/skills/{name}/SKILL.md` or `workbench/commands/{name}.md`
 2. Register it in `workbench/provider-map.json` — NEVER in `framwork/provider-map.json`
 3. Do NOT add to framwork/.codeadd/
-4. `scripts/build.js` never distributes it. `scripts/build-workbench.js` builds it to `.claude/` and `.opencode/` at the repository root, and neither is packaged by `release.yml` nor written by the installer
+4. `scripts/build.js` never distributes it. `scripts/build-workbench.js` builds it to `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repository root, and none of those is packaged by `release.yml` nor written by the installer
 
 ---
 

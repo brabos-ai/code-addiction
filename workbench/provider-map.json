@@ -38,6 +38,27 @@
         "https://opencode.ai/docs/agents/",
         "https://opencode.ai/docs/commands/"
       ]
+    },
+    "codex": {
+      "dir": ".agents",
+      "agentsDir": ".codex",
+      "commands": "skills/{name}/SKILL.md",
+      "skills": "skills/{name}/SKILL.md",
+      "agents": "agents/{name}.toml",
+      "capabilities": {
+        "hooks": true,
+        "agentDispatch": true,
+        "mcp": true,
+        "nativeFormat": "md",
+        "slashCommands": false,
+        "structuredQuestions": false
+      },
+      "docs": [
+        "https://developers.openai.com/codex/config-advanced",
+        "https://developers.openai.com/codex/mcp",
+        "https://developers.openai.com/codex/subagents",
+        "https://developers.openai.com/codex/skills"
+      ]
     }
   },
   "commands": {

@@ -189,11 +189,17 @@ cli/.vitest/
 # workbench/{commands,skills,agents}/ into these. The SOURCE is workbench/,
 # which is tracked; what lands here is generated and is not.
 #
-# ⛔ THE THREE SUBDIRECTORIES, NEVER THE PROVIDER DIRECTORY ITSELF.
+# ⛔ THE OUTPUT SUBDIRECTORIES, NEVER THE PROVIDER DIRECTORY ITSELF.
 #    `.claude/settings.json` is authored by hand and must stay tracked, and
 #    `.claude/agent-memory/` already has its own rule above. Written bare as
 #    `.claude/`, this would untrack the settings file and nobody would notice
-#    until a fresh clone came up without it.
+#    until a fresh clone came up without it. codex emits one subtree only
+#    (agents; skills live in `.agents/`) — its authored `.codex/config.toml`
+#    must stay tracked for the same reason.
+#
+# ⛔ CODEX SKILLS RIDE THE `.agents/*` LINE IN THE LOCAL-ARTEFACTS SECTION
+#    ABOVE, not this block — the two are coupled: deleting that line exposes
+#    the generated `.agents/skills/` tree.
 #
 # ⛔ THE LEADING SLASH IS LOAD-BEARING, for the reason the /.codeadd/ comment
 #    above records: written bare, each line would match a directory of that
@@ -205,6 +211,7 @@ cli/.vitest/
 /.opencode/commands/
 /.opencode/skills/
 /.opencode/agents/
+/.codex/agents/
 
 # The board app's build output and test artefacts. board/node_modules/ is already
 # covered by the node_modules/ pattern above.
