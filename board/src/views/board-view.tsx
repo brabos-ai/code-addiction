@@ -29,12 +29,19 @@ function Board({ data }: { data: BoardData }) {
   const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
   const visible = filterTickets(data.tickets, search);
   const groups = groupByColumn(visible, data.statuses, data.columns).filter(
-    (g) => columnVisible(g.column, undefined)
+    (g) => columnVisible(g.column, search.column)
       && (!search.status?.length || g.statuses.some((sg) => search.status!.includes(sg.status.name))),
   );
 
   const toolbar = data.present ? (
-    <FilterBar to="/board" search={search} themes={themes} labels={labels} statuses={data.statuses} />
+    <FilterBar
+      to="/board"
+      search={search}
+      themes={themes}
+      labels={labels}
+      statuses={data.statuses}
+      hiddenColumns={data.columns.filter((c) => c.hidden)}
+    />
   ) : undefined;
 
   return (

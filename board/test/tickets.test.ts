@@ -144,6 +144,9 @@ describe('L2.2 parseBoardSearch', () => {
   it('drops an invalid param and keeps the valid ones', () => {
     expect(parseBoardSearch({ q: 42, theme: 'graph', label: [1, 2], extra: 'x' })).toEqual({ theme: 'graph' });
   });
+  it('keeps a column list, and accepts a single column', () => {
+    expect(parseBoardSearch({ column: 'dropped' })).toEqual({ column: ['dropped'] });
+  });
   it('drops empty strings and empty arrays', () => {
     expect(parseBoardSearch({ q: '', label: [] })).toEqual({});
   });
