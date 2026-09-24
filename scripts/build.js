@@ -1240,8 +1240,9 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
   // --- FAIL: a distributed artefact naming a workbench command ---------------
   //
   // THE WORKBENCH NOW HAS PROVIDER OUTPUT, AND THIS GATE IS UNCHANGED BY IT.
-  // `scripts/build-workbench.js` compiles `workbench/` into `.claude/` and
-  // `.opencode/` at the REPOSITORY root. That is a provider mirror, and it used
+  // `scripts/build-workbench.js` compiles `workbench/` into `.claude/`,
+  // `.opencode/`, `.agents/` and `.codex/` at the REPOSITORY root. That is a
+  // provider mirror, and it used
   // to be this layer's defining absence -- so a reader meeting the gate after
   // that change can reasonably wonder whether it still holds.
   //
@@ -1249,8 +1250,8 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
   // Its reason is that an artefact reaching a USER'S project must not point them
   // at something their install does not contain, and nothing under `workbench/`
   // is in `framwork/provider-map.json`, packaged by `release.yml`, or written by
-  // `cli/src/installer.js`. Building it for two providers inside this repository
-  // changes none of those three.
+  // `cli/src/installer.js`. Building it for three providers inside this
+  // repository changes none of those three.
   //
   // DO NOT weaken or remove this gate on the grounds that the workbench 'is
   // distributed now'. It is built; it is not distributed.

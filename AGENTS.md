@@ -66,18 +66,19 @@ carry it.
 
 ### Internal Layer — `workbench/`
 
-Development tools that build and maintain the framework itself. **It has a provider mirror and it reaches no user, and both halves matter.** `workbench/` is the source; `node scripts/build-workbench.js` compiles it into `.claude/` and `.opencode/` at the repository root, which are gitignored output. Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and the installer never writes it — which is what keeps the cross-layer gate in `scripts/build.js` correct.
+Development tools that build and maintain the framework itself. **It has a provider mirror and it reaches no user, and both halves matter.** `workbench/` is the source; `node scripts/build-workbench.js` compiles it into `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repository root, which are gitignored output. Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and the installer never writes it — which is what keeps the cross-layer gate in `scripts/build.js` correct.
 
 ```
 ⛔ EDIT THE SOURCE, NEVER THE BUILT COPY:
-  ⛔ DO NOT: Edit `.claude/commands/`, `.claude/skills/`, `.claude/agents/` or the `.opencode/`
-             equivalents — they are gitignored and the next build erases the change
+  ⛔ DO NOT: Edit `.claude/commands/`, `.claude/skills/`, `.claude/agents/`, the `.opencode/`
+             equivalents or the `.agents/`/`.codex/` output trees — they are gitignored and the
+             next build erases the change
   ✅ DO: Edit `workbench/`, register in `workbench/provider-map.json`, run the workbench build
 ```
 
 | Type | Path |
 |------|------|
-| Registry | `workbench/provider-map.json` — its own, targeting claude and opencode. NEVER `framwork/provider-map.json` |
+| Registry | `workbench/provider-map.json` — its own, targeting claude, codex and opencode. NEVER `framwork/provider-map.json` |
 | Commands | `workbench/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
 | Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
@@ -127,7 +128,7 @@ workbench/  (source of truth for the framework's OWN pipeline)
   ↓
 node scripts/build-workbench.js  (reads workbench/provider-map.json; imports scripts/build.js as a module)
   ↓  the SAME buildResources, resolveResourcePaths and AGENT_DIALECTS — imported, never copied
-.claude/, .opencode/  at the repository root  (gitignored; 2 providers)
+.claude/, .opencode/, .agents/, .codex/  at the repository root  (gitignored; 3 providers)
   ↓
 nothing. It ships to no user, and `release.yml` does not run it.
 ```
