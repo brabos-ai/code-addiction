@@ -73,13 +73,29 @@ export const PROVIDERS = {
     agentsSubdir: 'agents',
     globalDest: '.config/opencode',
   },
+  zcode: {
+    label: 'ZCode (Z.ai)',
+    hint: '.agents/skills/',
+    // Reuses codex's src/dest for commands and skills — ZCode reads skills
+    // from BOTH .zcode/skills and .agents/skills (merged), so pointing it at
+    // the same tree codex already writes means one file on disk instead of
+    // two, and no user ever sees a skill listed twice.
+    src: 'framwork/.agents',
+    dest: '.agents',
+    commandsSubdir: null,
+    skillsSubdir: 'skills',
+    agentsSubdir: 'agents',
+    agentsSrc: 'framwork/.zcode',
+    agentsDest: '.zcode',
+    globalDest: '.agents',
+  },
 };
 
 /**
  * Priority-ordered provider keys shown first in the install prompt.
  * Remaining providers are sorted alphabetically after these.
  */
-export const PROVIDER_PRIORITY = ['claude', 'codex', 'cursor', 'antigrav', 'opencode'];
+export const PROVIDER_PRIORITY = ['claude', 'codex', 'cursor', 'antigrav', 'opencode', 'zcode'];
 
 /**
  * Resolve selected provider keys to scope-aware { src, dest, ... } pairs.
