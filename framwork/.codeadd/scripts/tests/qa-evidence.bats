@@ -124,6 +124,18 @@ EOF
   [[ "$output" == *"differs from current working evidence"* ]]
 }
 
+@test "validate accepts valid frontmatter larger than a pipe buffer" {
+  make_run "$FEATURE" run-001
+  report="$FEATURE/_tests/run-001/qa-validation-001.md"
+  # An early grep -q match must not make its producer fail with SIGPIPE.
+  awk 'NR == 3 { printf "context: "; for (i=0; i<131072; i++) printf "x"; print "" } { print }' "$report" > "$report.tmp"
+  mv "$report.tmp" "$report"
+
+  run bash "$SCRIPTS_DIR/qa-evidence.sh" validate "$FEATURE" "feature:run-001"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"STATUS=OK"* ]]
+}
+
 @test "validate rejects duplicate scope keys and malformed IDs" {
   make_run "$FEATURE" run-003
   run bash "$SCRIPTS_DIR/qa-evidence.sh" validate "$FEATURE" "feature:run-003,feature:run-003"
