@@ -11,7 +11,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin, disablePlugin } from '../src/plugins.js';
-import { parseFragmentSections } from '../src/injection-core.js';
+import { parseFragmentSections, resolvePlaceholders } from '../src/injection-core.js';
 import { PROVIDERS } from '../src/providers.js';
 import { treeFixture } from './helpers/tree-fixture.js';
 
@@ -176,19 +176,29 @@ function loadPluginMatrix() {
   return matrix;
 }
 
+// Each target carries its provider key, because the block that lands is the
+// fragment section RESOLVED for that provider: a `{{skill:...}}` in a fragment
+// becomes `.claude/skills/...` in one file and `.opencode/skills/...` in the
+// next. Comparing against the raw section pinned the bug this suite used to
+// share with the CLI -- the raw placeholder landing in the installed command
+// (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F48).
 function targetFiles(cwd, entry) {
   if (entry.kind === 'agent') {
-    return AGENT_PROVIDERS.map((k) => agentPath(cwd, k, entry.resource)).filter(fs.existsSync);
+    return AGENT_PROVIDERS.map((k) => ({ key: k, file: agentPath(cwd, k, entry.resource) })).filter((t) => fs.existsSync(t.file));
   }
-  return CMD_PROVIDERS.map((k) => commandPath(cwd, k, entry.resource)).filter(fs.existsSync);
+  return CMD_PROVIDERS.map((k) => ({ key: k, file: commandPath(cwd, k, entry.resource) })).filter((t) => fs.existsSync(t.file));
+}
+
+function landedBlock(entry, key) {
+  return resolvePlaceholders(entry.block, PROVIDERS[key]);
 }
 
 function assertBlockOnce(cwd, entries, label) {
   for (const entry of entries) {
-    const files = targetFiles(cwd, entry);
-    expect(files.length, `${label} ${entry.name}:${entry.resource}:${entry.section} has no targets`).toBeGreaterThan(0);
-    for (const file of files) {
-      const n = count(lf(snapshot(file)), entry.block);
+    const targets = targetFiles(cwd, entry);
+    expect(targets.length, `${label} ${entry.name}:${entry.resource}:${entry.section} has no targets`).toBeGreaterThan(0);
+    for (const { key, file } of targets) {
+      const n = count(lf(snapshot(file)), landedBlock(entry, key));
       expect(n, `${label} ${path.relative(cwd, file)} ${entry.name}:${entry.section} block-count=${n}`).toBe(1);
     }
   }
@@ -196,8 +206,11 @@ function assertBlockOnce(cwd, entries, label) {
 
 function assertBlockAbsent(cwd, entries, label) {
   for (const entry of entries) {
-    for (const file of targetFiles(cwd, entry)) {
-      expect(lf(snapshot(file)), `${label} ${path.relative(cwd, file)} still has ${entry.name}:${entry.section}`).not.toContain(entry.block);
+    for (const { key, file } of targetFiles(cwd, entry)) {
+      const body = lf(snapshot(file));
+      expect(body, `${label} ${path.relative(cwd, file)} still has ${entry.name}:${entry.section}`).not.toContain(landedBlock(entry, key));
+      // The raw form too: a block that landed unresolved is a block that landed.
+      expect(body, `${label} ${path.relative(cwd, file)} still has raw ${entry.name}:${entry.section}`).not.toContain(entry.block);
     }
   }
 }
@@ -386,7 +399,7 @@ describe('feature substitution on real built files', () => {
     it(`${feature}: full block exactly-once, disable byte-identical, re-enable idempotent`, () => {
       const matrix = loadFeatureMatrix().filter((e) => e.name === feature);
       expect(matrix.length).toBeGreaterThan(0);
-      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e)))];
+      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e).map((t) => t.file)))];
       const baseline = snapshotTree(files);
 
       const { modified } = enableFeature(tmp, feature);
@@ -414,7 +427,7 @@ describe('plugin substitution on real built files', () => {
     it(`${plugin}: full block exactly-once, skills byte-identical, disable restores`, () => {
       const matrix = loadPluginMatrix().filter((e) => e.name === plugin);
       expect(matrix.length).toBeGreaterThan(0);
-      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e)))];
+      const files = [...new Set(matrix.flatMap((e) => targetFiles(tmp, e).map((t) => t.file)))];
       const baseline = snapshotTree(files);
 
       const result = enablePlugin(tmp, plugin);

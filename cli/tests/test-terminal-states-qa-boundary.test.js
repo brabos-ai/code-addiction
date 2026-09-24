@@ -10,7 +10,7 @@ vi.mock('@clack/prompts', async (importOriginal) => {
 
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { enablePlugin } from '../src/plugins.js';
-import { parseFragmentSections } from '../src/injection-core.js';
+import { parseFragmentSections, resolvePlaceholders } from '../src/injection-core.js';
 import { PROVIDERS } from '../src/providers.js';
 import { treeFixture } from './helpers/tree-fixture.js';
 
@@ -141,7 +141,10 @@ describe('L2 — integration', () => {
     for (const [section, body] of sections) {
       const lines = lf(body).split('\n');
       if (lines.length && lines[lines.length - 1] === '') lines.pop();
-      const block = lines.join('\n');
+      // What lands is the section RESOLVED for the provider, not the raw text:
+      // placeholders become claude paths in a claude file (plan
+      // 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F48).
+      const block = resolvePlaceholders(lines.join('\n'), PROVIDERS.claude);
       const occurrences = installed.split(block).length - 1;
       expect(occurrences, `section ${section} landed ${occurrences}× (expected exactly 1)`).toBe(1);
     }
