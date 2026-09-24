@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { LayerFilter } from '@/api/types';
 
 // ONE schema for the view state of /board and /list. The route's validateSearch
 // and the filter form both use it, so the URL and the form cannot disagree.
@@ -8,11 +9,8 @@ import { z } from 'zod';
 const text = z.string().trim().min(1).max(200);
 const list = z.preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(text).min(1).max(20));
 
-// There is no theme or label filter. Labels carry whatever a project puts in
-// them (this repository uses them for its own layer tags), so a row of toggles
-// built from them meant nothing on a board installed anywhere else, and the
-// theme dropdown repeated what the search already finds. An old URL carrying
-// theme= or label= is read without them: no filter the page cannot show.
+// Theme stays ignored. Label is parsed here, then restricted to the server's
+// opt-in capability before it can filter tickets or count as an active filter.
 export const boardSearchSchema = z.object({
   q: text.optional(),
   status: list.optional(),
@@ -20,11 +18,12 @@ export const boardSearchSchema = z.object({
   // never an override list. A column the definitions mark hidden shows only
   // when this names it.
   column: list.optional(),
+  label: list.optional(),
 });
 
 export type BoardSearch = z.infer<typeof boardSearchSchema>;
 
-const FIELDS = { q: text, status: list, column: list } as const;
+const FIELDS = { q: text, status: list, column: list, label: list } as const;
 
 export function parseBoardSearch(input: Record<string, unknown>): BoardSearch {
   const out: Record<string, unknown> = {};
@@ -36,6 +35,13 @@ export function parseBoardSearch(input: Record<string, unknown>): BoardSearch {
   return out as BoardSearch;
 }
 
-export function hasFilters(s: BoardSearch): boolean {
-  return Boolean(s.q || s.status?.length || s.column?.length);
+export function effectiveBoardSearch(s: BoardSearch, layerFilter?: LayerFilter): BoardSearch {
+  const { label, ...rest } = s;
+  const allowed = label?.filter((value) => layerFilter?.values.includes(value));
+  return allowed?.length ? { ...rest, label: allowed } : rest;
+}
+
+export function hasFilters(s: BoardSearch, layerFilter?: LayerFilter): boolean {
+  const effective = effectiveBoardSearch(s, layerFilter);
+  return Boolean(effective.q || effective.status?.length || effective.column?.length || effective.label?.length);
 }

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Column, Status, Ticket } from '@/api/types';
 import { columnVisible, filterTickets, groupByColumn, groupByStatus } from '@/lib/tickets';
-import { parseBoardSearch } from '@/lib/search';
+import { effectiveBoardSearch, hasFilters, parseBoardSearch } from '@/lib/search';
 
 function t(id: string, over: Partial<Ticket> = {}): Ticket {
   return {
@@ -133,13 +133,50 @@ describe('L2.2 parseBoardSearch', () => {
   it('drops an invalid param and keeps the valid ones', () => {
     expect(parseBoardSearch({ q: 42, status: [1, 2], column: 'dropped', extra: 'x' })).toEqual({ column: ['dropped'] });
   });
-  it('drops the theme and label params an old URL may still carry', () => {
-    expect(parseBoardSearch({ q: 'abc', theme: 'graph', label: ['a'] })).toEqual({ q: 'abc' });
+  it('drops theme but retains label for capability validation after loading', () => {
+    expect(parseBoardSearch({ q: 'abc', theme: 'graph', label: ['product'] })).toEqual({ q: 'abc', label: ['product'] });
   });
   it('keeps a column list, and accepts a single column', () => {
     expect(parseBoardSearch({ column: 'dropped' })).toEqual({ column: ['dropped'] });
   });
   it('drops empty strings and empty arrays', () => {
     expect(parseBoardSearch({ q: '', status: [] })).toEqual({});
+  });
+});
+
+describe('Layer capability search', () => {
+  const layerFilter = { name: 'Layer', values: ['product', 'internal', 'both'] };
+  const all = [
+    t('0001B', { labels: ['product'], title: 'doctor', status: 'open' }),
+    t('0002B', { labels: ['both', 'quality'], title: 'doctor', status: 'doing' }),
+    t('0003B', { labels: ['internal'], title: 'doctor', status: 'open' }),
+    t('0004B', { labels: ['product-extra', 'Product'], title: 'doctor' }),
+  ];
+  it('parses arrays decoded by the router and single strings', () => {
+    const url = new URL('https://board.test/board?label=%5B%22product%22%2C%22both%22%5D');
+    expect(parseBoardSearch({ label: JSON.parse(url.searchParams.get('label')!) })).toEqual({ label: ['product', 'both'] });
+    expect(parseBoardSearch({ label: 'internal' })).toEqual({ label: ['internal'] });
+  });
+  it('matches exact labels with OR and does not expand product to both', () => {
+    expect(filterTickets(all, { label: ['product'] }, layerFilter).map((x) => x.id)).toEqual(['0001B']);
+    expect(filterTickets(all, { label: ['product', 'both'] }, layerFilter).map((x) => x.id)).toEqual(['0001B', '0002B']);
+  });
+  it('combines labels with q and status using AND', () => {
+    expect(filterTickets(all, { label: ['product', 'both'], q: 'doctor', status: ['doing'] }, layerFilter).map((x) => x.id)).toEqual(['0002B']);
+    expect(filterTickets(all, { label: ['product'], q: 'missing' }, layerFilter)).toEqual([]);
+  });
+  it('ignores labels entirely without a capability, including active-filter detection', () => {
+    const search = parseBoardSearch({ label: ['internal'] });
+    expect(filterTickets(all, search)).toEqual(all);
+    expect(effectiveBoardSearch(search)).toEqual({});
+    expect(hasFilters(search)).toBe(false);
+    expect(hasFilters(search, layerFilter)).toBe(true);
+  });
+  it('removes unknown values, preserves valid selections and the other fields', () => {
+    const search = { q: 'doctor', status: ['open'], column: ['dropped'], label: ['quality', 'internal'] };
+    expect(effectiveBoardSearch(search, layerFilter)).toEqual({ ...search, label: ['internal'] });
+    expect(effectiveBoardSearch(search)).toEqual({ q: 'doctor', status: ['open'], column: ['dropped'] });
+    expect(filterTickets(all, { label: ['quality'] }, layerFilter)).toEqual(all);
+    expect(hasFilters({ label: ['quality'] }, layerFilter)).toBe(false);
   });
 });
