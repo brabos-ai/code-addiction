@@ -139,8 +139,9 @@ describe('L2 — build integrity', () => {
   // + 3 for feature:board on add.build (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
   // + 3 for feature:board on add.done (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
   // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
-  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 62', () => {
-    expect(SIDECAR().points).toHaveLength(62);
+  // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
+  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 64', () => {
+    expect(SIDECAR().points).toHaveLength(64);
   });
 
   // Two became five: feature:board moves add.done's three ticket sections into

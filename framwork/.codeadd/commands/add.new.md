@@ -95,6 +95,8 @@ file is never read a second time.
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
 - ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh (NO git writes — branch is created later by /add.build)
+<!-- feature:board:ticket-board-write -->
+<!-- /feature:board:ticket-board-write -->
 
 **Operation Modes:**
 - `/add.new [description]` — Create new feature
@@ -426,6 +428,8 @@ the self-check. Emit the report FIRST — the artefact paths and the next comman
 This command documents a feature rather than building it, so block 2 is titled `What will be done`
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
+<!-- feature:board:ticket-shaped -->
+<!-- /feature:board:ticket-shaped -->
 
 Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add.plan` for technical planning (design is produced inside `/add.plan`’s own UX step when the feature touches UI), `/add.build` for implementation.
 
