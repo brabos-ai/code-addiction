@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { CircleDashed, Folder, GitBranch, MessageSquare, Package } from 'lucide-react';
+import { CircleDashed, GitBranch, MessageSquare, Package } from 'lucide-react';
 import type { LayerFilter, Ticket } from '@/api/types';
 import { workLabel } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -19,13 +19,11 @@ export function TicketMeta({ ticket, layerFilter, showTheme = true, showId = tru
           own. The list shows status in a column of its table and leaves it off. */}
       {showStatus && <StatusPill status={ticket.status} />}
       {showTheme && ticket.theme && (
-        // Text with a folder mark, not a filled chip: a theme is where a ticket
-        // belongs, a label is a tag on it, and two chips side by side read as
-        // two tags. Capped so a long theme does not push the labels onto a
-        // second line; the full text stays in the title attribute.
-        <span className="inline-flex min-w-0 max-w-[65%] items-center gap-1 text-xs text-muted compact:hidden" title={ticket.theme}>
-          <Folder {...ICON} className="size-3.5 shrink-0 text-faint" />
-          <span className="truncate">{ticket.theme}</span>
+        // Text, not a chip: a theme is where a ticket belongs, a label is a tag
+        // on it, and two chips side by side read as two tags. Capped so a long
+        // theme does not push the labels onto a second line.
+        <span className="min-w-0 max-w-[65%] truncate text-xs text-faint compact:hidden" title={ticket.theme}>
+          {ticket.theme}
         </span>
       )}
       {ticket.labels.filter((l) => layerFilter?.values.includes(l)).map((l) => <Chip key={l} tone="outline">{l}</Chip>)}
@@ -68,7 +66,7 @@ export function TicketMeta({ ticket, layerFilter, showTheme = true, showId = tru
 
 export function TicketCard({ ticket, rank, from, quiet, showStatus, layerFilter }: Props) {
   const className = cn(
-    'group relative block rounded-md bg-surface px-4 py-3.5 shadow-card ring-1 ring-line compact:py-2.5',
+    'group relative block rounded-md bg-surface px-4 py-3.5 shadow-card ring-1 ring-line dark:ring-line-strong compact:py-2',
     'transition-[box-shadow,transform] duration-300 ease-spring hover:-translate-y-px hover:shadow-lift hover:ring-line-strong',
     'active:translate-y-0 active:scale-[0.995]',
     quiet && 'bg-surface/70',
@@ -105,7 +103,7 @@ export function TicketCard({ ticket, rank, from, quiet, showStatus, layerFilter 
       >
         {ticket.title}
       </h3>
-      {ticket.tldr && <p className="mt-1 line-clamp-2 text-meta leading-snug text-muted [overflow-wrap:anywhere] compact:hidden">{ticket.tldr}</p>}
+      {ticket.tldr && <p className="mt-1 line-clamp-1 text-meta leading-snug text-faint [overflow-wrap:anywhere] compact:hidden">{ticket.tldr}</p>}
       <TicketMeta ticket={ticket} layerFilter={layerFilter} showId={false} className="mt-3 compact:mt-2" />
     </>
   );

@@ -32,13 +32,14 @@ function Board({ data }: { data: BoardData }) {
       && (!search.status?.length || g.statuses.some((sg) => search.status!.includes(sg.status.name))),
   );
 
+  const hiddenColumns = data.columns.filter((c) => c.hidden);
   const toolbar = data.present ? (
     <FilterBar
       to="/board"
       search={search}
       statuses={data.statuses}
       layerFilter={data.layerFilter}
-      hiddenColumns={data.columns.filter((c) => c.hidden)}
+      hiddenColumns={hiddenColumns}
     />
   ) : undefined;
 
@@ -123,12 +124,12 @@ function Columns({ groups, ranks, layerFilter }: { groups: ColumnGroup[]; ranks:
       </div>
 
       {/*
-        A scrolling row of lanes at every size. A lane holding cards is 20rem;
-        an empty one is 11rem and shows its header and zero. Equal shares gave
+        A scrolling row of lanes at every size. A lane holding cards grows
+        (flex-1, min 18.5rem); an empty one is a 4.5rem rail. Equal shares gave
         the six columns 245px each at 1080-1536px, so the one column with cards
         was the narrowest thing on the board while four empty ones took the
-        same room. The lane's tint is what keeps an empty column reading as a
-        column rather than a gap.
+        same room. The rail plus the phase stripe keep an empty column reading
+        as a column rather than a gap, without taking the work's width.
 
         The overflow stays on this row, never the page: the e2e suite measures
         document.scrollingElement. From sm up the row fills the rest of the
@@ -181,35 +182,32 @@ function Column({ group, ranks, layerFilter, hiddenOnPhone }: {
       aria-label={columnLabel(group)}
       data-phase={group.column.name}
       className={cn(
-        'flex w-full shrink-0 snap-start flex-col sm:min-h-0 sm:rounded-lg sm:bg-lane sm:pt-2',
-        // 18.5rem with cards, 10rem empty, 0.75rem apart: six lanes with three
-        // populated fit a 1536px screen, which is 1920 at 125% zoom.
-        group.tickets.length ? 'sm:w-[18.5rem]' : 'sm:w-40',
+        'flex w-full shrink-0 snap-start flex-col sm:min-h-0 sm:rounded-lg sm:border-t-2 sm:border-[var(--ph)] sm:bg-lane sm:pt-2',
+        // Populated lanes share the leftover width; empty ones stay a rail so
+        // six default columns fit 1080 without the empty phases dominating.
+        group.tickets.length ? 'sm:min-w-[18.5rem] sm:flex-1' : 'sm:w-[4.5rem]',
         hiddenOnPhone && 'hidden sm:flex',
       )}
     >
-      <header className="hidden items-center gap-2 px-4 pt-1.5 pb-2.5 sm:flex" title={means || undefined}>
+      <header
+        className={cn(
+          'hidden sm:flex',
+          group.tickets.length ? 'items-center gap-2 px-3 pt-1.5 pb-2' : 'flex-col items-center gap-2 px-1 pt-1.5 pb-2',
+        )}
+        title={means || undefined}
+      >
         {/* The phase's hue. Each card's status carries the same one, so a
             column is told by colour before it is read. */}
-        <span aria-hidden className="size-2 shrink-0 rounded-[2px] bg-[var(--ph)]" />
-        <h2 className="truncate text-sm font-semibold">{columnLabel(group)}</h2>
+        <span aria-hidden className="size-2.5 shrink-0 rounded-[2px] bg-[var(--ph)]" />
+        <h2 className={cn('font-semibold', group.tickets.length ? 'truncate text-sm' : 'text-micro [writing-mode:vertical-rl]')}>
+          {columnLabel(group)}
+        </h2>
         {(group.undefined || undefinedStatus.size > 0) && <span className="text-xs text-warn">not defined</span>}
-        <span className="tabular ml-auto rounded-sm bg-surface-sunken px-1.5 text-xs leading-5 font-medium text-muted">{group.tickets.length}</span>
+        <span className={cn(
+          'tabular rounded-sm bg-surface-sunken px-1.5 text-xs leading-5 font-medium text-muted',
+          group.tickets.length && 'ml-auto',
+        )}>{group.tickets.length}</span>
       </header>
-      {/* An empty lane says what its statuses mean, in the definitions' own
-          words — the one thing a reader new to the pipeline cannot see
-          anywhere else on the board. No placeholder card: the count in the
-          header already says nothing is here. */}
-      {group.tickets.length === 0 && meanings.length > 0 && (
-        <dl className="hidden space-y-2 px-4 pb-3 text-xs leading-snug text-faint sm:block">
-          {meanings.map((m) => (
-            <div key={m.name}>
-              {meanings.length > 1 && <dt className="font-medium text-muted">{m.label}</dt>}
-              <dd>{m.means}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
       <ol className="scrollbar-thin flex flex-col gap-2 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-2 sm:pt-0.5 sm:pb-2">
         {group.tickets.map((t: Ticket) => (
           <li key={t.id}>

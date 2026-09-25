@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useForm, useWatch } from 'react-hook-form';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Eye, EyeOff, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Column, LayerFilter, Status } from '@/api/types';
 import { effectiveBoardSearch, hasFilters, parseBoardSearch, type BoardSearch } from '@/lib/search';
 import { cn } from '@/lib/utils';
 import { Button, StatusGlyph } from './ui';
 
 const ICON = { strokeWidth: 1.5 } as const;
+export const HEADER_ACTIONS_ID = 'board-header-actions';
+
+const WELL_BTN =
+  'inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-meta font-medium md:h-8 ' +
+  'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]';
 
 type FormValues = { q: string; status: string[]; column: string[]; label: string[] };
 
@@ -84,16 +90,40 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
 
   const refinements = values.status.length + values.column.length + values.label.length;
   const { ref: qRef, ...qField } = form.register('q');
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => { setHeaderSlot(document.getElementById(HEADER_ACTIONS_ID)); }, []);
 
-  const refineControls = (
+  const headerDropped = hiddenColumns.map((c) => {
+    const on = values.column.includes(c.name);
+    const name = `Show ${(c.label ?? c.name).toLowerCase()}`;
+    return (
+      <button
+        key={c.name}
+        type="button"
+        aria-pressed={on}
+        aria-label={name}
+        title={name}
+        onClick={() => toggle('column', c.name)}
+        className={cn(
+          'hidden size-7 shrink-0 place-items-center rounded-md text-meta sm:grid [&_svg]:size-3.5',
+          'transition-[background-color,color,box-shadow] duration-200 ease-spring',
+          on ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
+        )}
+      >
+        {on ? <Eye {...ICON} /> : <EyeOff {...ICON} />}
+      </button>
+    );
+  });
+
+  const refineControls = (dropped: boolean) => (
     <>
       {showStatus && (
-        <ToggleGroup label="Status" options={statuses.map((s) => s.name)} selected={values.status} onToggle={(v) => toggle('status', v)} status />
+        <StatusToggles statuses={statuses} selected={values.status} onToggle={(v) => toggle('status', v)} />
       )}
       {layerFilter && (
         <ToggleGroup label={layerFilter.name} options={layerFilter.values} selected={values.label} onToggle={(v) => toggle('label', v)} />
       )}
-      {hiddenColumns.map((c) => {
+      {dropped && hiddenColumns.map((c) => {
         const on = values.column.includes(c.name);
         return (
           <button
@@ -102,9 +132,8 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
             aria-pressed={on}
             onClick={() => toggle('column', c.name)}
             className={cn(
-              'inline-flex h-9 items-center rounded-md px-3 text-meta font-medium md:h-8',
-              'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]',
-              on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
+              WELL_BTN,
+              on ? 'bg-surface text-accent shadow-card' : 'bg-surface text-muted ring-1 ring-line hover:text-ink',
             )}
           >
             Show {(c.label ?? c.name).toLowerCase()}
@@ -115,6 +144,8 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
   );
 
   return (
+    <>
+    {headerSlot && headerDropped.length > 0 && createPortal(headerDropped, headerSlot)}
     <form role="search" onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-2.5">
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:items-start">
         <label className="relative flex min-w-0 flex-1 items-center md:basis-full lg:basis-auto lg:max-w-xs">
@@ -128,7 +159,7 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
             spellCheck={false}
             placeholder="Search tickets…"
             className={cn(
-              'h-9 w-full min-w-0 rounded-md bg-surface pr-9 pl-10 text-base text-ink shadow-card ring-1 ring-line placeholder:text-faint md:h-8 md:text-sm',
+              'h-9 w-full min-w-0 rounded-md bg-surface pr-9 pl-10 text-base text-ink ring-1 ring-line placeholder:text-faint md:h-8 md:text-sm',
               'transition-shadow duration-200 ease-spring hover:ring-line-strong focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none',
               '[&::-webkit-search-cancel-button]:hidden',
             )}
@@ -165,7 +196,7 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
           )}
         </Button>
 
-        <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2 md:flex md:pt-1 lg:pt-0">{refineControls}</div>
+        <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 md:flex md:pt-1 lg:pt-0">{refineControls(false)}</div>
 
         {hasFilters(search, layerFilter) && (
           <Button type="button" variant="quiet" size="sm" className="hidden md:inline-flex" onClick={() => form.reset(toForm({}))}>
@@ -178,7 +209,7 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
         id="refine"
         className={cn('flex-col gap-3 rounded-2xl bg-surface p-3 shadow-card ring-1 ring-line md:hidden', open ? 'flex' : 'hidden')}
       >
-        {refineControls}
+        {refineControls(true)}
         {hasFilters(search, layerFilter) && (
           <Button type="button" variant="quiet" size="sm" className="self-start" onClick={() => form.reset(toForm({}))}>
             Clear filters
@@ -186,36 +217,75 @@ export function FilterBar({ to, search, statuses, layerFilter, showStatus = fals
         )}
       </div>
     </form>
+    </>
   );
 }
 
 function ToggleGroup({
-  label, options, selected, onToggle, status,
-}: { label: string; options: string[]; selected: string[]; onToggle: (v: string) => void; status?: boolean }) {
+  label, options, selected, onToggle,
+}: { label: string; options: string[]; selected: string[]; onToggle: (v: string) => void }) {
   if (!options.length) return null;
   return (
     <div role="group" aria-label={label} className="flex min-w-0 flex-wrap items-center gap-1.5">
       <span className="mr-0.5 text-xs text-faint">{label}</span>
-      {options.map((o) => {
-        const on = selected.includes(o);
-        return (
-          <button
-            key={o}
-            type="button"
-            aria-pressed={on}
-            data-status={status ? o : undefined}
-            onClick={() => onToggle(o)}
-            className={cn(
-              'inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-meta font-medium md:h-8',
-              'transition-[background-color,color,box-shadow,transform] duration-200 ease-spring active:scale-[0.96]',
-              on ? 'bg-accent-soft text-accent ring-1 ring-accent/30' : 'bg-surface text-muted shadow-card ring-1 ring-line hover:text-ink',
-            )}
-          >
-            {status && <StatusGlyph status={o} className="size-3" />}
-            {o}
-          </button>
-        );
-      })}
+      <div className="flex flex-wrap items-center rounded-lg bg-surface-sunken p-0.5">
+        {options.map((o) => {
+          const on = selected.includes(o);
+          return (
+            <button
+              key={o}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onToggle(o)}
+              className={cn(WELL_BTN, on ? 'bg-surface text-accent shadow-card' : 'text-muted hover:text-ink')}
+            >
+              {o}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+function StatusToggles({
+  statuses, selected, onToggle,
+}: { statuses: Status[]; selected: string[]; onToggle: (v: string) => void }) {
+  if (!statuses.length) return null;
+  const groups: { key: string; items: Status[] }[] = [];
+  for (const s of statuses) {
+    const key = s.column ?? s.name;
+    const g = groups.find((x) => x.key === key);
+    if (g) g.items.push(s);
+    else groups.push({ key, items: [s] });
+  }
+  return (
+    <div role="group" aria-label="Status" className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <span className="mr-0.5 text-xs text-faint">Status</span>
+      <div className="flex flex-wrap items-center rounded-lg bg-surface-sunken p-0.5">
+        {groups.map((g, i) => (
+          <div key={g.key} className={cn('flex items-center', i > 0 && 'border-l border-line pl-0.5')}>
+            {g.items.map((s) => {
+              const on = selected.includes(s.name);
+              return (
+                <button
+                  key={s.name}
+                  type="button"
+                  aria-pressed={on}
+                  data-status={s.name}
+                  onClick={() => onToggle(s.name)}
+                  className={cn(WELL_BTN, on ? 'bg-surface text-accent shadow-card' : 'text-muted hover:text-ink')}
+                >
+                  <StatusGlyph status={s.name} className="size-3" />
+                  {s.name}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+

@@ -23,11 +23,6 @@ export function absoluteTime(iso: string): string {
   return new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }).format(t);
 }
 
-/** The rank as the queue shows it: padded to the width of the largest rank. */
-export function formatRank(rank: number, total: number): string {
-  return String(rank).padStart(String(Math.max(total, 1)).length, '0');
-}
-
 /**
  * What a work id reads as on a card. Internal work is named by its plan
  * basename (`2026-09-21T145331-PLAN--backlog-board-002-board-app`), whose

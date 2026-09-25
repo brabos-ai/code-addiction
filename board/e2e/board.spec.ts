@@ -236,9 +236,9 @@ test('L4 opt-in theme and layer chip read as two treatments in dark', async ({ p
   await page.goto(`${test.info().config.metadata.layersURL}/board`);
   const card = page.getByRole('link', { name: /A doctor for document schemas/ });
   await expect(card).toBeVisible();
-  // A theme is where a ticket belongs, a label is a tag on it. Two filled or two
-  // outlined chips side by side read as two tags, so the theme is text behind a
-  // folder mark and the label is the one outlined chip.
+  // A theme is where a ticket belongs, a label is a tag on it. Two chips side
+  // by side read as two tags, so the theme is plain text and the label is the
+  // one outlined chip.
   const theme = card.getByTitle('Delivered-work relationships');
   const label = card.getByText('product', { exact: true });
   const style = (l: Locator) => l.evaluate((el) => {
@@ -248,7 +248,7 @@ test('L4 opt-in theme and layer chip read as two treatments in dark', async ({ p
   const [t, l] = [await style(theme), await style(label)];
   expect(t.bg, 'the theme has no fill').toMatch(/rgba?\(0, 0, 0, 0\)|transparent/);
   expect(t.ring, 'the theme has no outline').toBe('none');
-  await expect(theme.locator('svg'), 'the theme carries its folder mark').toHaveCount(1);
+  await expect(theme.locator('svg'), 'the theme is text, not an icon').toHaveCount(0);
   expect(l.ring, 'the label is outlined').not.toBe('none');
 });
 
@@ -271,8 +271,7 @@ for (const route of ['/board', '/list'] as const) {
 
     const rank = card.getByLabel(/^Priority \d/);
     if (route === '/list') {
-      // In the list the rank is its own Priority column, set large. The size
-      // half stops the floor being met by shrinking it.
+      // In the list the rank is its own Priority column, set as #n like the card.
       expect(contrast(await composited(rank, surface, 'color'), surface)).toBeGreaterThanOrEqual(3);
       const sizes = await card.evaluate((el) =>
         Array.from(el.querySelectorAll('*')).map((n) => parseFloat(getComputedStyle(n).fontSize)),
@@ -720,12 +719,14 @@ test('the board is one screen tall, so the sideways scrollbar is always in view'
       rowBottom: row.getBoundingClientRect().bottom,
       view: innerHeight,
       page: document.scrollingElement!.scrollHeight - document.scrollingElement!.clientHeight,
-      lane: Array.from(document.querySelectorAll("section[id^=\"col-\"] ol")).some((ol) => ol.scrollHeight > ol.clientHeight),
+      lane: Array.from(document.querySelectorAll('section[id^="col-"] ol')).map((ol) => getComputedStyle(ol).overflowY),
     };
   });
   expect(m.rowBottom, 'the row ends inside the screen').toBeLessThanOrEqual(m.view);
   expect(m.page, 'the page does not scroll down').toBe(0);
-  expect(m.lane, 'a full lane scrolls its own cards').toBe(true);
+  // Wider populated lanes wrap less, so a short viewport may not overflow; the
+  // lane still owns vertical scrolling when the cards do not fit.
+  expect(m.lane.some((o) => o === 'auto' || o === 'scroll'), 'lanes scroll their own cards').toBe(true);
 });
 
 test('a card names its status only where its lane holds more than one', async ({ page }) => {
@@ -738,13 +739,15 @@ test('a card names its status only where its lane holds more than one', async ({
   await expect(page.locator('#col-shaping a [data-status]').first()).toBeVisible();
 });
 
-test('an empty lane says what its statuses mean', async ({ page }) => {
+test('an empty lane keeps its status meanings on the header tooltip', async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'the phone shows one lane at a time');
   await page.goto('/board?q=sweep');
   await expect(page.getByRole('link', { name: /Sweep the artefacts/ })).toBeVisible();
-  // The definitions' own words, which lived only in a tooltip on the header.
-  await expect(page.locator('#col-building')).toContainText('add.build running');
-  await expect(page.locator('#col-shaping')).toContainText('Refining');
+  // The definitions' own words sit on the header title, not as body text that
+  // reads as a stub ticket in the lane.
+  await expect(page.locator('#col-building header')).toHaveAttribute('title', /add\.build running/);
+  await expect(page.locator('#col-shaping header')).toHaveAttribute('title', /Refining/);
+  await expect(page.locator('#col-building')).not.toContainText('add.build running');
 });
 
 for (const layers of [false, true]) {
@@ -773,13 +776,14 @@ test(`compact cards respect layer opt-in ${layers} and survive a reload`, async 
 }
 
 
-test('the filter row holds the search and Show dropped, and nothing built from labels or themes', async ({ page }) => {
+test('the filter row holds the search, Show dropped sits in the header, and nothing is built from labels or themes', async ({ page }) => {
   test.skip(test.info().project.name === 'mobile-360', 'the phone collapses the refine controls');
   await page.goto('/board');
   await expect(page.getByRole('link', { name: /A doctor for document schemas/ })).toBeVisible();
   const form = page.getByRole('search');
   await expect(form.getByRole('searchbox', { name: 'Search tickets' })).toBeVisible();
-  await expect(form.getByRole('button', { name: 'Show dropped' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show dropped' }).first()).toBeVisible();
+  await expect(form.getByRole('button', { name: 'Show dropped' })).toHaveCount(0);
   // Labels are a project's own tags, so toggles built from them meant nothing
   // on a board installed anywhere else; the theme dropdown repeated the search.
   await expect(form.getByRole('combobox')).toHaveCount(0);

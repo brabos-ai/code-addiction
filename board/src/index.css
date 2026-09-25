@@ -7,16 +7,15 @@
  * priority rank is a badge on that line, not a column of its own.
  * The board fills exactly one screen from sm up: each lane scrolls its own
  * cards, so the row's sideways scrollbar is always at the bottom of the view.
- * Palette "stone and cobalt": cool neutrals, one cobalt accent, and one hue per
- * pipeline phase (backlog steel, shaping violet, planning blue, building amber,
- * review teal, done green). A phase's hue appears as the marker in its lane
- * header and as the status on its cards, never as a fill or a wash — lanes and
- * cards stay neutral. Dark is graphite, not near-black: the page, the lane and
- * the card are three close steps, so nothing on the board glares.
+ * A lane with cards grows; an empty one is a rail (marker, vertical name, count)
+ * so empty phases do not take more width than the work. The phase hue is the
+ * marker, a 2px stripe on the lane's top edge, and the status on its cards —
+ * never a fill or a wash. Dark is graphite, not near-black: the page, the lane
+ * and the card are three close steps, so nothing on the board glares.
  * Density: comfortable or compact (<html data-density>, the `compact:` variant).
  * Compact keeps a card's status line, a one-line title and its labels.
  * A card names its status only where its lane holds more than one; an empty
- * lane says what its statuses mean instead of standing blank.
+ * lane keeps its status meanings on the header's title, not as body text.
  * Shape: a tight radius scale (3/4/6/8px). Controls and chips are rounded
  * rectangles, not pills; only true circles (status glyphs, dots) are round.
  * Scheme: set on <html data-theme>, by the inline script in index.html before

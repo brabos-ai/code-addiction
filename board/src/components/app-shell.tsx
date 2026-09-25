@@ -6,6 +6,7 @@ import { absoluteTime, relativeTime } from '@/lib/format';
 import { readDensity, saveDensity, type Density } from '@/lib/density';
 import { followSystem, readChoice, saveChoice, type ThemeChoice } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import { HEADER_ACTIONS_ID } from './filter-bar';
 import { Shortcuts } from './shortcuts';
 
 const ICON = { strokeWidth: 1.5 } as const;
@@ -58,14 +59,18 @@ export function AppShell({ view, data, toolbar, fill, children }: {
           </div>
         </nav>
 
-        <div className="flex items-center gap-4 sm:ml-auto">
+        <div className="flex items-center gap-3 sm:ml-auto">
           {data && <LiveStamp readAt={data.readAt} />}
-          {view === 'board' && <DensitySwitch />}
-          <ThemeSwitch />
+          <div className="flex items-center rounded-lg bg-surface-sunken p-1">
+            {view === 'board' && <DensitySwitch />}
+            {view === 'board' && <div id={HEADER_ACTIONS_ID} className="contents" />}
+            {view === 'board' && <span aria-hidden className="mx-0.5 hidden h-4 w-px bg-line sm:block" />}
+            <ThemeSwitch />
+          </div>
         </div>
       </header>
 
-      {toolbar && <div className="pb-6">{toolbar}</div>}
+      {toolbar && <div className="pb-4">{toolbar}</div>}
       <main id="content" tabIndex={-1} className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 outline-none">{children}</main>
       <Shortcuts />
     </div>
@@ -105,9 +110,9 @@ function DensitySwitch() {
       onClick={() => { const next = compact ? 'comfortable' : 'compact'; saveDensity(next); setDensity(next); }}
       className={cn(
         // Not on a phone: the header is full there, and a phone shows one lane.
-        'hidden size-9 shrink-0 place-items-center rounded-lg sm:grid [&_svg]:size-4',
+        'hidden size-7 shrink-0 place-items-center rounded-md sm:grid [&_svg]:size-3.5',
         'transition-[background-color,color,box-shadow] duration-200 ease-spring',
-        compact ? 'bg-surface text-ink shadow-card ring-1 ring-line' : 'bg-surface-sunken text-muted hover:text-ink',
+        compact ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink',
       )}
     >
       {compact ? <Rows4 {...ICON} /> : <Rows3 {...ICON} />}
@@ -129,7 +134,7 @@ function ThemeSwitch() {
   const [choice, setChoice] = useState<ThemeChoice>(readChoice);
   useEffect(() => followSystem(choice), [choice]);
   return (
-    <div role="radiogroup" aria-label="Theme" className="flex shrink-0 items-center rounded-lg bg-surface-sunken p-1">
+    <div role="radiogroup" aria-label="Theme" className="flex shrink-0 items-center">
       {THEMES.map((t) => {
         const on = t.value === choice;
         return (
@@ -158,7 +163,12 @@ function ThemeSwitch() {
 /** "Live": the server pushes changes to docs/backlog.jsonl, so this is never stale for long. */
 function LiveStamp({ readAt }: { readAt: string }) {
   return (
-    <p aria-live="polite" className="hidden items-center gap-2 text-xs text-faint sm:flex" title={`Read ${absoluteTime(readAt)}`}>
+    <p
+      aria-live="polite"
+      className="hidden size-7 items-center justify-center sm:flex"
+      title={`Live, read ${relativeTime(readAt)}. Read ${absoluteTime(readAt)}`}
+    >
+      <span className="sr-only">Live, read {relativeTime(readAt)}</span>
       {/* Neutral, not --s-done. Green is the done status; a heartbeat borrowing
           it made one colour mean "this ticket is finished" and "the server is
           connected" in the same viewport. The pulse carries the liveness. */}
@@ -166,7 +176,6 @@ function LiveStamp({ readAt }: { readAt: string }) {
         <span className="absolute inset-0 animate-[pulse-soft_2.4s_ease-in-out_infinite] rounded-full bg-muted opacity-60" />
         <span className="relative size-2 rounded-full bg-muted" />
       </span>
-      Live, read {relativeTime(readAt)}
     </p>
   );
 }

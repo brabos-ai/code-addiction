@@ -7,7 +7,7 @@ import { EmptyBoard, ErrorPanel, HealthBanner, NoMatches } from '@/components/st
 import { TicketMeta } from '@/components/ticket-card';
 import { StatusPill } from '@/components/ui';
 import { useBoard } from '@/hooks/use-board';
-import { absoluteTime, formatRank, relativeTime } from '@/lib/format';
+import { absoluteTime, relativeTime } from '@/lib/format';
 import { hasFilters } from '@/lib/search';
 import { filterTickets, rankOf } from '@/lib/tickets';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,6 @@ function List({ data }: { data: BoardData }) {
   const search = useLayerSearch(useSearch({ from: '/list' }), data.layerFilter);
   const ranks = useMemo(() => rankOf(data.tickets), [data.tickets]);
   const visible = filterTickets(data.tickets, search, data.layerFilter);
-  const total = data.tickets.length;
 
   const toolbar = data.present ? (
     <FilterBar to="/list" search={search} statuses={data.statuses} layerFilter={data.layerFilter} showStatus />
@@ -38,7 +37,7 @@ function List({ data }: { data: BoardData }) {
       ) : visible.length === 0 && hasFilters(search, data.layerFilter) ? (
         <NoMatches to="/list" />
       ) : (
-        <section aria-label="Tickets by priority" className="overflow-hidden rounded-2xl bg-surface shadow-card ring-1 ring-line">
+        <section aria-label="Tickets by priority" className="overflow-hidden rounded-lg bg-surface shadow-card ring-1 ring-line">
           <div
             aria-hidden
             className="hidden grid-cols-[3.5rem_minmax(0,1fr)_7rem_6.5rem] gap-4 border-b border-line px-4 py-2.5 text-xs font-medium text-faint md:grid lg:grid-cols-[3.5rem_minmax(0,1fr)_7rem_14rem_6.5rem]"
@@ -50,7 +49,7 @@ function List({ data }: { data: BoardData }) {
             <span className="text-right">Updated</span>
           </div>
           <ol>
-            {visible.map((t) => <Row key={t.id} ticket={t} rank={ranks.get(t.id) ?? 0} total={total} layerFilter={data.layerFilter} />)}
+            {visible.map((t) => <Row key={t.id} ticket={t} rank={ranks.get(t.id) ?? 0} layerFilter={data.layerFilter} />)}
           </ol>
         </section>
       )}
@@ -59,7 +58,7 @@ function List({ data }: { data: BoardData }) {
   );
 }
 
-function Row({ ticket, rank, total, layerFilter }: { ticket: Ticket; rank: number; total: number; layerFilter?: LayerFilter }) {
+function Row({ ticket, rank, layerFilter }: { ticket: Ticket; rank: number; layerFilter?: LayerFilter }) {
   return (
     <li className="border-b border-line last:border-b-0">
       <Link
@@ -74,14 +73,14 @@ function Row({ ticket, rank, total, layerFilter }: { ticket: Ticket; rank: numbe
       >
         <span
           aria-label={`Priority ${rank}`}
-          className="tabular row-span-2 text-display leading-none font-semibold tracking-tight text-rank md:row-span-1"
+          className="tabular row-span-2 text-section leading-none font-semibold tracking-tight text-ink md:row-span-1"
         >
-          {formatRank(rank, total)}
+          #{rank}
         </span>
         <div className="min-w-0">
           {/* Hover lands on the title here too, matching the board card. */}
           <p className="line-clamp-2 text-body font-medium text-ink transition-colors duration-200 group-hover:text-accent [overflow-wrap:anywhere] md:line-clamp-1">{ticket.title}</p>
-          {ticket.tldr && <p className="mt-0.5 line-clamp-2 text-meta text-muted md:line-clamp-1">{ticket.tldr}</p>}
+          {ticket.tldr && <p className="mt-0.5 line-clamp-1 text-meta text-faint">{ticket.tldr}</p>}
           <TicketMeta ticket={ticket} layerFilter={layerFilter} showTheme={false} showId={false} className="mt-2 md:hidden" />
         </div>
         <div className="col-start-2 flex items-center gap-2 md:col-start-auto">
