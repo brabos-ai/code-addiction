@@ -85,6 +85,7 @@
     "add-framework-internal-layer": {},
     "add-framework-product-layer": {},
     "add-plan-authoring": {},
+    "add-product-artefact-renaming": {},
     "add-review-discipline": {},
     "building-commands": {}
   },

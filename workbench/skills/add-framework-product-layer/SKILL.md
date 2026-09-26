@@ -8,6 +8,7 @@ description: "Use when an F-block touches the product layer — framwork/.codead
 <!-- uses:
 - skill: building-commands
 - skill: add-framework-development
+- skill: add-product-artefact-renaming
 - mention: add-build-ledger
 - mention: add-framework--done
 -->
@@ -99,6 +100,8 @@ believed the document — which is what a source of truth is for, and what makes
 ---
 
 ## Registration (MANDATORY for a new command, skill or agent)
+
+For a product command or skill rename, load `add-product-artefact-renaming` first. Preview and apply the product source change under its own F-block tag; keep root docs and workbench text in an internal block.
 
 An artefact absent from `framwork/provider-map.json` **fails the build** — it is built for no provider.
 

@@ -9,6 +9,7 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 - skill: add-commit
 - skill: building-commands
 - skill: add-artefact-graph
+- skill: add-product-artefact-renaming
 - mention: add-framework--plan
 - mention: add-framework--build
 -->
@@ -771,6 +772,8 @@ The table that used to sit here named five verbs and omitted `neighbors`, which 
 answers "what does this relate to". A partial list in a second place is how the two drifted.
 
 ### Cross-Artefact Impact (MANDATORY for any change)
+
+When renaming a product command or skill, load `add-product-artefact-renaming` before touching its source. It owns the checked preview/apply procedure and the separation of product and internal names.
 
 When creating or modifying any artefact, check:
 1. `provider-map.json` — is it registered? description accurate?
