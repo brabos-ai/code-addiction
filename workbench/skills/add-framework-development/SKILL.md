@@ -25,7 +25,7 @@ Operational knowledge for creating and modifying ADD framework artefacts. Built 
 
 ## When NOT to Use
 - **Implementing user-facing features** (backend/frontend code) → use development skills directly
-- **Understanding what artefacts exist** → use `add-ecosystem` skill (ecosystem map)
+- **Understanding what artefacts exist** → use `add--ecosystem` skill (ecosystem map)
 - **Writing prompts for commands** → use `building-commands` skill (prompt engineering patterns)
 - **Running the project** → use `AGENTS.md` (project standards and conventions)
 
@@ -163,7 +163,7 @@ Prompt: [full prompt with ${FEATURE_ID}, output path, format template]
 - `docs/features/${FEATURE_ID}/design.md`
 - Temp files: `plan-database.md`, `plan-backend.md`, etc.
 
-**Completion** — Always reference `add-ecosystem` skill for next steps.
+**Completion** — Always reference `add--ecosystem` skill for next steps.
 
 ---
 
@@ -214,7 +214,7 @@ add-qa/
   references/coordinator.md   ← reference doc
 ```
 
-⛔ **One convention only: `references/`.** It is what `add-skill-creator` prescribes (anti-pattern table + pre-deploy checklist) and what the majority of skills use — `add-doc-schemas`, `add-investigation`, `add-skill-creator`, `add-backend-architecture`, `add-frontend-architecture`, `add-subagent-driven-development`, `add-qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
+⛔ **One convention only: `references/`.** It is what `add--skill-creator` prescribes (anti-pattern table + pre-deploy checklist) and what the majority of skills use — `add--doc-schemas`, `add--investigation`, `add--skill-creator`, `add--backend-architecture`, `add--frontend-architecture`, `add--subagent-driven-development`, `add--qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
 
 **Flat siblings are legacy**, not an alternative: `add-ux-design` (14 files), `add-architecture-discovery`, `add-health-check`, `add-stripe`. Adding a subdoc to one of those may follow its existing flat layout — mixing both inside one skill is worse than either. Do NOT introduce a flat subdoc in a skill that has none.
 
@@ -358,7 +358,7 @@ framwork/.github/           ← GitHub Copilot output
     }
   },
   "commands": { "add-build": { "description": "..." } },  // registry
-  "skills":   { "add-backend-development": {} },           // registry
+  "skills":   { "add--backend-development": {} },           // registry
   "agents":   { "backend-agent": { "description": "..." }} // registry
 }
 ```
@@ -437,13 +437,13 @@ Read .gemini/commands/add-plan.toml for the technical plan.
 
 ```markdown
 <!-- IN YOUR SOURCE FILE: -->
-Load {{skill:add-backend-development/SKILL.md}} before implementation.
+Load {{skill:add--backend-development/SKILL.md}} before implementation.
 
 <!-- AFTER BUILD for Claude: -->
-Load .claude/skills/add-backend-development/SKILL.md before implementation.
+Load .claude/skills/add--backend-development/SKILL.md before implementation.
 
 <!-- AFTER BUILD for Copilot: -->
-Load .github/skills/add-backend-development/SKILL.md before implementation.
+Load .github/skills/add--backend-development/SKILL.md before implementation.
 ```
 
 #### Scripts — NO variable needed
@@ -534,7 +534,7 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 1. Create `framwork/.codeadd/commands/{name}.md` following command anatomy
 2. Register in `framwork/provider-map.json` → `commands` section
 3. Run `node scripts/build.js` to distribute
-4. Update `add-ecosystem` skill with new command entry
+4. Update `add--ecosystem` skill with new command entry
 
 ### New Skill
 
@@ -542,14 +542,14 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 2. For Tier 3: add reference subdocs in same directory
 3. Register in `framwork/provider-map.json` → `skills` section
 4. Run `node scripts/build.js` to distribute
-5. Update `add-ecosystem` skill with new skill entry
+5. Update `add--ecosystem` skill with new skill entry
 
 ### New Agent
 
 1. Create `framwork/.codeadd/agents/{name}-agent.md` following agent anatomy
 2. Register in `framwork/provider-map.json` → `agents` section
 3. Run `node scripts/build.js` to distribute
-4. Update `add-ecosystem` skill with new agent entry
+4. Update `add--ecosystem` skill with new agent entry
 5. Update commands that should dispatch this agent (add `@{name}-agent` to dispatch table)
 
 ### Internal-Only Artefact
@@ -570,10 +570,10 @@ Commands instruct the LLM to read skill files. This is NOT automatic — it's a 
 ```markdown
 <!-- In a command source file: -->
 ## STEP 1: Load Context
-Read {{skill:add-backend-development/SKILL.md}} before implementation.
+Read {{skill:add--backend-development/SKILL.md}} before implementation.
 ```
 
-At runtime, the LLM sees the resolved path (e.g., `.claude/skills/add-backend-development/SKILL.md`) and uses the `Read` tool to load the file into its context. The skill content then informs subsequent decisions.
+At runtime, the LLM sees the resolved path (e.g., `.claude/skills/add--backend-development/SKILL.md`) and uses the `Read` tool to load the file into its context. The skill content then informs subsequent decisions.
 
 **Key distinction:**
 - **Command `Read` instruction** = LLM reads file at runtime (on-demand, costs tokens)
@@ -643,7 +643,7 @@ bash .codeadd/scripts/status.sh
 | No fallback for agent dispatch | Command fails on providers without agentDispatch | Always include fallback table with generic subagent option |
 | Dispatching agents without loading docs first | Agent gets no context, produces generic output | Add `**WAIT:**` after doc loading, before dispatch |
 | Missing `MANDATORY SEQUENTIAL EXECUTION` block | Agent skips steps or reorders them | Always include the numbered step summary at top |
-| No completion/next-steps section | User doesn't know what to do after command finishes | Reference `add-ecosystem` skill for flow guidance |
+| No completion/next-steps section | User doesn't know what to do after command finishes | Reference `add--ecosystem` skill for flow guidance |
 
 ### Skill Authoring Errors
 
@@ -736,7 +736,7 @@ target resolves by the sigils `mention:` uses: `/name` is a command, `@name` an 
 skill. At runtime it changes nothing; it is the edge label that tells the graph which dependency is
 the hand-off.
 
-**A catalogue is not a consumer.** `add-ecosystem` maps the ecosystem and consumes none of it, so
+**A catalogue is not a consumer.** `add--ecosystem` maps the ecosystem and consumes none of it, so
 every row in its block is `mention:`. Declaring them as dependencies is not cosmetic: eight
 commands load that skill, so everything it lists would inherit ~82 transitive dependants and
 `impact` would degrade into a constant.
@@ -777,7 +777,7 @@ When renaming a product command or skill, load `add-product-artefact-renaming` b
 
 When creating or modifying any artefact, check:
 1. `provider-map.json` — is it registered? description accurate?
-2. `add-ecosystem` skill — does the ecosystem map reflect the change?
+2. `add--ecosystem` skill — does the ecosystem map reflect the change?
 3. Commands that reference it — do dispatch tables, skill loads, or script calls need updating?
 4. Agents that preload it — does the `skills:` array need updating?
 5. Run `node scripts/build.js` — any LINT warnings?

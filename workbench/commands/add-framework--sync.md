@@ -182,7 +182,7 @@ Three rules when transcribing:
   turns those rows back into `skill:`/`agent:`/`command:`/`script:`, it has
   silently destroyed the query the graph exists for.
 
-Regenerate `framwork/.codeadd/skills/add-ecosystem/SKILL.md` from STEP 1.3 scan data.
+Regenerate `framwork/.codeadd/skills/add--ecosystem/SKILL.md` from STEP 1.3 scan data.
 
 Use the EXACT same format as the existing map:
 
@@ -225,9 +225,9 @@ Build edges from STEP 1.3 scan:
 - `command → agent` for every agent dispatched by a command (parse via @agent-name or "DISPATCH AGENT" blocks)
 - `agent → skill` from each agent's frontmatter
 
-Mermaid syntax: use `graph LR` per block, node shapes `(command)` rounded, `{{skill}}` hexagon, `>agent]` flag. Use short alias IDs (e.g. `NEW(add-new)`, `DS{{add-doc-schemas}}`, `BA>backend-agent]`) to keep edges readable.
+Mermaid syntax: use `graph LR` per block, node shapes `(command)` rounded, `{{skill}}` hexagon, `>agent]` flag. Use short alias IDs (e.g. `NEW(add-new)`, `DS{{add--doc-schemas}}`, `BA>backend-agent]`) to keep edges readable.
 
-**File header:** include the auto-generation marker at top + footer link to `framwork/.codeadd/skills/add-ecosystem/SKILL.md` as the AI-side source of truth.
+**File header:** include the auto-generation marker at top + footer link to `framwork/.codeadd/skills/add--ecosystem/SKILL.md` as the AI-side source of truth.
 
 ⛔ DO NOT USE: Edit on `ecosystem.md` — file is fully regenerated each run, always Write.
 

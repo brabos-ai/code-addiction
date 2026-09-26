@@ -87,7 +87,7 @@ Read `AGENTS.md` for project architecture patterns. List `.codeadd/projects/` fo
 
 ### Type A: About ADD Commands
 
-Use ecosystem-map from STEP 0. If specific command details are needed, read `.claude/commands/add.[command].md`.
+Use ecosystem-map from STEP 0. If specific command details are needed, read `.claude/commands/add-[command].md`.
 
 Include: what the command does, when to use it, which skills it loads, and main flow steps.
 

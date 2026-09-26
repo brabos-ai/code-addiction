@@ -5,6 +5,8 @@ description: "Use when renaming product command or skill identities in bulk; der
 
 # Rename Product Artefacts
 
+> **LANG:** Respond in the user's language. Tech terms stay in English. Short sentences.
+
 <!-- uses:
 - skill: add-artefact-graph
 -->
@@ -19,14 +21,20 @@ description: "Use when renaming product command or skill identities in bulk; der
 - Renaming internal workbench identities, agents, features or scripts: this tool maps product commands and skills only.
 - Rewriting archived deliveries, tickets, changelogs or documents in existing users' projects: preserve history.
 
+```
+IF THE CURRENT F-BLOCK HAS ONLY ONE LAYER TAG:
+  ⛔ DO NOT USE: Bash to run the renamer with --scope all
+  ✅ DO: Use --scope product for a [product] block and --scope docs for an [internal] block
+```
+
 ## Procedure
 
 1. Ask `add-artefact-graph` who calls every target and what each target needs. For an injected command, query each fragment returned by its direct impact separately. Inspect active non-artefact references too; `AGENTS.md`, CLI code and tests are not graph nodes.
-2. Write tests that fail on the old identity. Read `framwork/provider-map.json` and `cli/src/plugins.json`; the tool derives the default old→new map from them. Pass `--map <file>` only to override mappings for active names; the override file has `commands` and `skills` objects.
-3. Run `node scripts/rename-product-artefacts.js preview --scope product --output <scratch-file>` for large migrations, or omit `--output` to get JSONL on stdout and the summary on stderr. `--root <repo>` is optional. `--scope docs` previews current README, AGENTS.md, web and workbench text separately; `--scope all` combines both, but never use it in an F-block with only one layer tag.
+2. Write the failing tests in `cli/tests/` or `scripts/tests/` before the rename. Assert the old command id (`add.new`) and the old skill id (`add-commit`) are absent, and the new ids (`add-new`, `add--commit`) are present. Read `framwork/provider-map.json` and `cli/src/plugins.json`; the tool derives the default old→new map from them. Pass `--map <file>` only to override mappings for active names; the override file has `commands` and `skills` objects.
+3. Run `node scripts/rename-product-artefacts.js preview --scope <product|docs|all> --output <scratch-file>` for large migrations, or omit `--output` to get JSONL on stdout and the summary on stderr. `--root <repo>` is optional. `--scope docs` previews current README, AGENTS.md, web and workbench text separately; `--scope all` combines both. Pick the scope that matches the F-block layer tag.
 4. Read the summary's `records`, `files` and `bytes`. Read the JSONL selectively by path and record type. Check each move and excerpt, especially fragments, frontmatter, runtime references and paths. A header carries the map and scope; a footer closes the preview. Do not treat a truncated or absent footer as approval.
-5. Run `node scripts/rename-product-artefacts.js apply --scope product --preview <scratch-file>`. `--preview -` reads the same JSONL from stdin. Use exactly the scope, map and root of preview. Apply regenerates the preview, checks its bytes and all source hashes/destinations before writing anything; a stale or modified preview is rejected, so rerun preview instead of bypassing checks.
-6. Sweep active files outside the tool's scope, run the product build with graph warnings enabled, query new node IDs and their edges, then run install/update and provider-specific tests. Do not report success based on filename changes alone.
+5. Run `node scripts/rename-product-artefacts.js apply --preview <scratch-file>` with the same `--scope`, `--map` and `--root` as that preview. `--preview -` reads the same JSONL from stdin. Apply regenerates the preview, checks its bytes and all source hashes/destinations before writing anything; a stale or modified preview is rejected, so rerun preview instead of bypassing checks.
+6. Sweep active files outside the tool's scope. Run `ADD_GRAPH_WARNINGS=1 node scripts/build.js` and require exit 0 with no new warning. Query the new node ids and their depth-1 edges. Then run `npm test` in `cli/` for install, update and provider output. Do not report success based on filename changes alone.
 
 ## Rules
 

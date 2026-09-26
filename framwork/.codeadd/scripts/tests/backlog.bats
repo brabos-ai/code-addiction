@@ -179,7 +179,7 @@ tickets() {
 # them as rows of a table whose first column is the name. Neither carries the
 # literal string "REFUSED=<name>", so each side is read in its own shape.
 @test "L1.4: every REFUSED= name backlog.sh can emit appears in references/backlog.md" {
-  local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
+  local ref="$SCRIPTS_DIR/../skills/add--doc-schemas/references/backlog.md"
   [ -f "$ref" ]
 
   local names
@@ -197,7 +197,7 @@ tickets() {
 # longer emit is worse than a missing one: a consumer writes a branch for it
 # and that branch is dead from the day it ships.
 @test "L1.4b: the documented vocabulary and the emittable one are the same set" {
-  local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
+  local ref="$SCRIPTS_DIR/../skills/add--doc-schemas/references/backlog.md"
   for n in invalid-json missing-field reserved-field unknown-status duplicate-id unknown-id; do
     grep -qE "^\| \`$n\` \|" "$ref"
     grep -qF "refuse(\"$n\")" "$SCRIPTS_DIR/backlog.sh"
@@ -209,7 +209,7 @@ tickets() {
 # this holds them equal. It is the guard the delivery that introduced them asked
 # for by name.
 @test "L1.4c: the nine reserved statuses and seven columns are the same set in the script and the reference" {
-  local ref="$SCRIPTS_DIR/../skills/add-doc-schemas/references/backlog.md"
+  local ref="$SCRIPTS_DIR/../skills/add--doc-schemas/references/backlog.md"
   for n in open refining shaped planning planned doing in-review done dropped; do
     grep -qF "{ name: \"$n\"," "$SCRIPTS_DIR/backlog.sh"
     grep -qF "{ \"name\": \"$n\"," "$ref"
@@ -224,7 +224,7 @@ tickets() {
 # it carries the nine names too. A third copy of a list is a third place to
 # drift, and this is what holds it to the other two.
 @test "L1.4d: lifecycle.md names all nine reserved statuses in its Status Names section" {
-  local lc="$SCRIPTS_DIR/../skills/add-backlog/references/lifecycle.md"
+  local lc="$SCRIPTS_DIR/../skills/add--backlog/references/lifecycle.md"
   local section
   section=$(sed -n '/^## The Status Names/,/^## /p' "$lc")
 

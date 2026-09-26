@@ -7,7 +7,7 @@ All machine state lives in frontmatter. The body carries only `## TL;DR` and `##
 ## Schema: `setup-receipt`
 
 **Produced by:** any command that materializes state into the user's project. First consumer: `/add-qa-setup`.
-**Path convention:** ``<command's doc root>/<command name without the `add.` prefix>.md`` — e.g. `add-qa-setup` writes `docs/qa/qa-setup.md`.
+**Path convention:** ``<command's doc root>/<command name without the `add-` prefix>.md`` — e.g. `add-qa-setup` writes `docs/qa/qa-setup.md`.
 **ID:** `RCPT-<command name>` — e.g. `RCPT-add-qa-setup`. Slug-based, not sequenced.
 
 ### Frontmatter

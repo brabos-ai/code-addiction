@@ -142,7 +142,7 @@ phase_a() {
       if [ ! -f "$SIDECAR" ]; then
         echo "QA_CONTRACT_MATCH=missing"
       else
-        CURRENT=$(awk '/"add\.qa-setup"[[:space:]]*:/{f=1}
+        CURRENT=$(awk '/"add-qa-setup"[[:space:]]*:/{f=1}
                        f && /"shape"[[:space:]]*:[[:space:]]*"sha256:[0-9a-f]+"/{
                            if (match($0, /sha256:[0-9a-f]+/)) print substr($0, RSTART, RLENGTH);
                            exit
