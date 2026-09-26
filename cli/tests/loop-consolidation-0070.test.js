@@ -79,39 +79,39 @@ function walkFiles(dir, extensions, visit) {
 // ---------------------------------------------------------------------------
 
 const EXPECTED_MAP = [
-  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.plan', count: 2 },
-  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.build', count: 8 },
-  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.review', count: 2 },
-  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add.hotfix', count: 1 },
-  { namespace: 'feature', name: 'qa-pipeline', resource: 'add.plan', count: 2 },
-  { namespace: 'feature', name: 'qa-pipeline', resource: 'add.build', count: 2 },
+  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add-plan', count: 2 },
+  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add-build', count: 8 },
+  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add-review', count: 2 },
+  { namespace: 'feature', name: 'tdd-pipeline', resource: 'add-hotfix', count: 1 },
+  { namespace: 'feature', name: 'qa-pipeline', resource: 'add-plan', count: 2 },
+  { namespace: 'feature', name: 'qa-pipeline', resource: 'add-build', count: 2 },
   // Five sections — step-list, preflight, evidence, judge-head, judge-tail.
   // The head/tail split keeps the playwright pair below from being enclosed by
   // a feature pair (plan 2026-09-13T153219, F15/F16/F20).
-  { namespace: 'feature', name: 'qa-pipeline', resource: 'add.review', count: 5 },
-  { namespace: 'plugin', name: 'playwright', resource: 'add.review', count: 1 },
+  { namespace: 'feature', name: 'qa-pipeline', resource: 'add-review', count: 5 },
+  { namespace: 'plugin', name: 'playwright', resource: 'add-review', count: 1 },
   { namespace: 'plugin', name: 'playwright', resource: 'qa-agent', count: 1 },
 ];
 
 describe('0070 L1 — build-side unit', () => {
   it('L1.0 injection map totals exactly 70 points', () => {
-    // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add.hotfix (plan 0073);
-    // +1 for feature:docs-pruning:prune on add.done
+    // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add-hotfix (plan 0073);
+    // +1 for feature:docs-pruning:prune on add-done
     // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
-    // +5 for feature:qa-pipeline on add.review — step-list, preflight,
+    // +5 for feature:qa-pipeline on add-review — step-list, preflight,
     // evidence, judge-head, judge-tail (plan 2026-09-13T153219, F15/F16/F20).
-    // +1 for plugin:gitnexus:graph-build on add.build
+    // +1 for plugin:gitnexus:graph-build on add-build
     // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
-    // 46 -> 50: feature:board moves add.brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
-    // 50 -> 52: feature:board moves add.new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
-    // 52 -> 54: feature:board moves add.plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
-    // 54 -> 57: feature:board moves add.build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
-    // 57 -> 60: feature:board moves add.done's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
-    // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
-    // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
-    // 64 -> 65: feature:board adds add.plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
-    // 65 -> 66: feature:board adds add.build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
-    // 66 -> 70: feature:board brings add.hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+    // 46 -> 50: feature:board moves add-brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+    // 50 -> 52: feature:board moves add-new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+    // 52 -> 54: feature:board moves add-plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+    // 54 -> 57: feature:board moves add-build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+    // 57 -> 60: feature:board moves add-done's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+    // 60 -> 62: feature:board adds add-brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
+    // 62 -> 64: feature:board adds add-new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
+    // 64 -> 65: feature:board adds add-plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
+    // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
+    // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
     expect(sidecarPoints()).toHaveLength(70);
   });
 
@@ -127,7 +127,7 @@ describe('0070 L1 — build-side unit', () => {
 
   it('L1.0 gitnexus contributes exactly 21 points and never targets test-agent or fix-agent', () => {
     const gitnexus = sidecarPoints().filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
-    // 20 -> 21: graph-build on add.build (plan 2026-09-17T132658, F5).
+    // 20 -> 21: graph-build on add-build (plan 2026-09-17T132658, F5).
     expect(gitnexus).toHaveLength(21);
     const targets = gitnexus.map((p) => p.resource.name);
     expect(targets).not.toContain('test-agent');
@@ -142,7 +142,7 @@ describe('0070 L1 — build-side unit', () => {
   });
 
   it('L1.1 re-keyed tdd-pipeline marker pairs stay empty (0067 guard regression)', () => {
-    for (const file of ['add.plan.md', 'add.build.md', 'add.review.md', 'add.hotfix.md']) {
+    for (const file of ['add-plan.md', 'add-build.md', 'add-review.md', 'add-hotfix.md']) {
       const src = read(path.join(COMMANDS, file));
       const pairs =
         src.match(/<!-- feature:tdd-pipeline:([a-z0-9-]+) -->\s*<!-- \/feature:tdd-pipeline:\1 -->/g) || [];
@@ -273,9 +273,9 @@ describe('0070 L1 — build-side unit', () => {
     expect(root).not.toBe('framwork/.agents');
   });
 
-  it('L1.5 contracts.json still declares add.qa-setup and nothing else', () => {
+  it('L1.5 contracts.json still declares add-qa-setup and nothing else', () => {
     const contracts = JSON.parse(read(path.join(CODEADD, 'contracts.json')));
-    expect(Object.keys(contracts.contracts ?? contracts)).toEqual(['add.qa-setup']);
+    expect(Object.keys(contracts.contracts ?? contracts)).toEqual(['add-qa-setup']);
   });
 
   it('L1.6 (F3) the qa-pipeline manifest key literal appears exactly once in qa-preflight.sh', () => {
@@ -284,8 +284,8 @@ describe('0070 L1 — build-side unit', () => {
     expect(src).toMatch(/^QA_FEATURE_KEY="qa-pipeline"$/m);
   });
 
-  it('L1.7 (F5) add-ecosystem feature table reads tdd-pipeline in the built provider copy', () => {
-    const built = path.join(ROOT, 'framwork', '.claude', 'skills', 'add-ecosystem', 'SKILL.md');
+  it('L1.7 (F5) add--ecosystem feature table reads tdd-pipeline in the built provider copy', () => {
+    const built = path.join(ROOT, 'framwork', '.claude', 'skills', 'add--ecosystem', 'SKILL.md');
     const content = read(built);
     expect(content).toMatch(/tdd-pipeline/);
     expect(content).not.toMatch(/\|\s*`tdd`\s*\|/);
@@ -306,11 +306,11 @@ describe('0070 L2 — rename migration red-green', () => {
   });
 
   // "plan and build only" was the OLD boundary and it moved with the QA
-  // judgement steps (plan 2026-09-13T153219, F14/F20). add.review's preflight,
+  // judgement steps (plan 2026-09-13T153219, F14/F20). add-review's preflight,
   // evidence capture and judge pair now arrive from a fragment under this
   // feature, so the feature gates the whole QA flow instead of authoring alone.
   it('L2.0 qa-pipeline gates plan, build and review — add.test is gone', () => {
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build', 'add.review']);
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add-plan', 'add-build', 'add-review']);
   });
 
   it('L2.6 every FEATURES key has a matching fragment directory', () => {
@@ -330,11 +330,11 @@ describe('0070 L5 — removal integrity', () => {
   // add.plan-to-ready joined REMOVED by plan
   // 2026-09-16T205633-PLAN--product-pipeline-parity, F11: its unattended
   // build<->review loop became the automatic delivery chain in
-  // add-delivery-mode/SKILL.md, and its Checkpoint Sequence moved into
-  // add.build.md's "## Loop End" / "## The Checkpoint Sequence". The generic
+  // add--delivery-mode/SKILL.md, and its Checkpoint Sequence moved into
+  // add-build.md's "## Loop End" / "## The Checkpoint Sequence". The generic
   // loops below already cover its absence, so no separate test is needed.
   const REMOVED = ['add.test', 'add.qa', 'add.autopilot', 'add.plan-to-ready'];
-  // /add.qa-setup is retained and must not be caught by an over-broad pattern.
+  // /add-qa-setup is retained and must not be caught by an over-broad pattern.
   const ROUTING = /\/add\.(test|qa|autopilot|plan-to-ready)(?![\w-])/;
 
   it('L5.2 provider-map registers none of the removed commands', () => {
@@ -377,14 +377,14 @@ describe('0070 L5 — removal integrity', () => {
     const serialized = JSON.stringify(CATALOG);
     expect(serialized).not.toMatch(/"add\.qa"/);
     expect(serialized).not.toMatch(/"add\.test"/);
-    expect(CATALOG.playwright.injects).toContain('add.review');
+    expect(CATALOG.playwright.injects).toContain('add-review');
   });
 
-  it('L5.4 add-ecosystem names only commands that exist in provider-map', () => {
-    const content = read(path.join(SKILLS, 'add-ecosystem', 'SKILL.md'));
+  it('L5.4 add--ecosystem names only commands that exist in provider-map', () => {
+    const content = read(path.join(SKILLS, 'add--ecosystem', 'SKILL.md'));
     const named = new Set((content.match(/\/add\.[a-z-]+(?![\w-])/g) || []).map((s) => s.slice(1)));
     for (const name of named) {
-      expect(MAP.commands[name], `add-ecosystem names /${name}, absent from provider-map`).toBeDefined();
+      expect(MAP.commands[name], `add--ecosystem names /${name}, absent from provider-map`).toBeDefined();
     }
   });
 
@@ -403,8 +403,8 @@ describe('0070 L5 — removal integrity', () => {
 });
 
 describe('0070 L6 — behavioural acceptance', () => {
-  const build = () => read(path.join(COMMANDS, 'add.build.md'));
-  const review = () => read(path.join(COMMANDS, 'add.review.md'));
+  const build = () => read(path.join(COMMANDS, 'add-build.md'));
+  const review = () => read(path.join(COMMANDS, 'add-review.md'));
 
   /** Depth of feature-marker nesting at a character offset (0 = ungated base body). */
   function markerDepthAt(src, offset) {
@@ -417,7 +417,7 @@ describe('0070 L6 — behavioural acceptance', () => {
   }
 
   it('L6.1 CORRECTION mode runs red-green, never a regeneration sweep', () => {
-    const frag = read(path.join(FRAGMENTS, 'tdd-pipeline', 'add.build.md'));
+    const frag = read(path.join(FRAGMENTS, 'tdd-pipeline', 'add-build.md'));
     expect(frag).toMatch(/CORRECTION/);
     expect(frag).toMatch(/red-green|RED[\s\S]{0,40}GREEN/i);
     expect(frag).toMatch(/DO NOT[\s\S]{0,80}(regenerat|rewrite passing)/i);
@@ -426,7 +426,7 @@ describe('0070 L6 — behavioural acceptance', () => {
   it('L6.2 the tdd-pipeline self-check lives in the ungated base body', () => {
     const src = build();
     const notice = src.indexOf('test generation is disabled');
-    expect(notice, 'self-detection notice absent from add.build base body').toBeGreaterThan(-1);
+    expect(notice, 'self-detection notice absent from add-build base body').toBeGreaterThan(-1);
     expect(markerDepthAt(src, notice), 'notice nested inside a feature marker pair').toBe(0);
   });
 
@@ -439,7 +439,7 @@ describe('0070 L6 — behavioural acceptance', () => {
 
   it('L6.3 generation sections exist and anchor at mode-independent points', () => {
     const points = sidecarPoints().filter(
-      (p) => p.name === 'tdd-pipeline' && p.resource.name === 'add.build',
+      (p) => p.name === 'tdd-pipeline' && p.resource.name === 'add-build',
     );
     const sections = points.map((p) => p.section);
     for (const s of ['detect-framework', 'test-dispatch', 'coverage']) {
@@ -447,7 +447,7 @@ describe('0070 L6 — behavioural acceptance', () => {
     }
   });
 
-  it('L6.4 add.review is read-only on code', () => {
+  it('L6.4 add-review is read-only on code', () => {
     const src = review();
     expect(src).not.toMatch(/AUTO-CORRECTION RULE/);
     expect(src).toMatch(/read-only/i);
@@ -478,18 +478,18 @@ describe('0070 L6 — behavioural acceptance', () => {
     expect(src).toMatch(/finalized/i);
   });
 
-  it('L6.0 the /add.build qa argument mode is retired', () => {
+  it('L6.0 the /add-build qa argument mode is retired', () => {
     expect(build()).not.toMatch(/\/add\.build qa/);
   });
 
-  it('L6.0 add.done reads the highest-numbered review-NNN.md', () => {
-    const done = read(path.join(COMMANDS, 'add.done.md'));
+  it('L6.0 add-done reads the highest-numbered review-NNN.md', () => {
+    const done = read(path.join(COMMANDS, 'add-done.md'));
     expect(done).toMatch(/review-NNN\.md/);
     expect(done).toMatch(/highest/i);
   });
 
   it('L6.0 the qa-validation schema carries judged-tree and a review schema entry exists', () => {
-    const schema = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'review.md'));
+    const schema = read(path.join(SKILLS, 'add--doc-schemas', 'references', 'review.md'));
     expect(schema).toMatch(/judged-tree/);
     expect(schema).toMatch(/^### review$/m);
     expect(schema).toMatch(/status: open \| finalized/);
@@ -502,14 +502,14 @@ describe('0070 L7 — loop acceptance', () => {
   // Plan 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the
   // command the eight tests below were written against. Its unattended
   // build<->review loop became the automatic delivery chain in
-  // add-delivery-mode/SKILL.md; its Checkpoint Sequence moved into
-  // add.build.md's "## Loop End" / "## The Checkpoint Sequence". The cap of 3,
+  // add--delivery-mode/SKILL.md; its Checkpoint Sequence moved into
+  // add-build.md's "## Loop End" / "## The Checkpoint Sequence". The cap of 3,
   // the (area, file, symptom) no-progress detector and the
   // CONVERGED/CAP_REACHED/BLOCKED outcome states were specific to that
   // command's own bounded retry loop and are gone by design — the automatic
-  // chain then ran the ordinary /add.build <-> /add.review loop, capped at two
+  // chain then ran the ordinary /add-build <-> /add-review loop, capped at two
   // review rounds — until plan 2026-09-19T122048 (optional review) removed that
-  // loop too: /add.build now runs its own final review and /add.review is off
+  // loop too: /add-build now runs its own final review and /add-review is off
   // the automatic path. One absence test replaces the eight that used to read
   // this file.
   it('L7.0 the command is gone: no source file, no provider-map entry', () => {

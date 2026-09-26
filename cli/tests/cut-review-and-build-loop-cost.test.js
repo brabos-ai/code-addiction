@@ -8,12 +8,12 @@ import { fileURLToPath } from 'node:url';
  *
  * The plan's own Validation Matrix, L1 (text/structure assertions), one item
  * per F-block. Written RED against the pre-plan tree: reviewer-agent.md had
- * two MODE values and no Confidence field, add-subagent-driven-development's
+ * two MODE values and no Confidence field, add--subagent-driven-development's
  * §7 routed by severity alone, prompt-review-agent.md took a single `node`
  * only, add-framework--build STEP 7.1 dispatched one call per `.md` file,
- * add.review.md had no OWASP trigger, add-tasks-checklist's architect prompt
+ * add-review.md had no OWASP trigger, add--tasks-checklist's architect prompt
  * never read the wiki, the tdd-pipeline fragment's gate/verification/
- * awareness sections had no tier distinction, and add-tdd's GREEN step had no
+ * awareness sections had no tier distinction, and add--tdd's GREEN step had no
  * CI-tier caveat.
  *
  * L2 (Consumes/Produces string matches, `build.js` clean) and L3 (behavioural
@@ -27,13 +27,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 const P = {
   reviewerAgent: path.join(ROOT, 'framwork', '.codeadd', 'agents', 'reviewer-agent.md'),
-  subagentDriven: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
+  subagentDriven: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--subagent-driven-development', 'SKILL.md'),
   promptReviewAgent: path.join(ROOT, 'workbench', 'agents', 'prompt-review-agent.md'),
   build: path.join(ROOT, 'workbench', 'skills', 'add-framework--build', 'SKILL.md'),
-  addReview: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.review.md'),
-  tasksChecklist: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-tasks-checklist', 'SKILL.md'),
-  tddFragment: path.join(ROOT, 'framwork', '.codeadd', 'fragments', 'tdd-pipeline', 'add.build.md'),
-  addTdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-tdd', 'SKILL.md'),
+  addReview: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-review.md'),
+  tasksChecklist: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--tasks-checklist', 'SKILL.md'),
+  tddFragment: path.join(ROOT, 'framwork', '.codeadd', 'fragments', 'tdd-pipeline', 'add-build.md'),
+  addTdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--tdd', 'SKILL.md'),
 };
 
 const read = (p) => fs.readFileSync(p, 'utf8');
@@ -62,7 +62,7 @@ describe('F1 — reviewer-agent.md carries a Confidence field', () => {
   });
 });
 
-describe('F2 — add-subagent-driven-development routes by confidence before severity', () => {
+describe('F2 — add--subagent-driven-development routes by confidence before severity', () => {
   it('L1.2 §7 names a confidence-based branch before the severity dispatch table', () => {
     const text = read(P.subagentDriven);
     const s7 = section(text, '7\\. Fix Loop, Escalation and the Scoped Re-Review');
@@ -109,7 +109,7 @@ describe('F5 — reviewer-agent.md gains MODE: owasp', () => {
   });
 });
 
-describe('F6 — add.review.md dispatches OWASP conditionally', () => {
+describe('F6 — add-review.md dispatches OWASP conditionally', () => {
   it('L1.6 STEP 4.1 names the trigger, STEP 4.2 names the conditional third dispatch', () => {
     const text = read(P.addReview);
     const s41 = section(text, '4\\.1 Detect Scope');
@@ -124,7 +124,7 @@ describe('F6 — add.review.md dispatches OWASP conditionally', () => {
   });
 });
 
-describe('F7 — add-tasks-checklist reads the wiki before writing Verify:', () => {
+describe('F7 — add--tasks-checklist reads the wiki before writing Verify:', () => {
   it('L1.7 CONTEXT lists wiki/workflows.md, RULES states the CI-tier scoping rule', () => {
     const text = read(P.tasksChecklist);
     expect(text).toMatch(/wiki\/workflows\.md/);
@@ -134,7 +134,7 @@ describe('F7 — add-tasks-checklist reads the wiki before writing Verify:', () 
   });
 });
 
-describe('F8 — tdd-pipeline/add.build.md gate is tier-aware', () => {
+describe('F8 — tdd-pipeline/add-build.md gate is tier-aware', () => {
   it('L1.8 sections gate, awareness and verification each name the local/CI-tier distinction', () => {
     const text = read(P.tddFragment);
     const gate = text.match(/<!-- section:gate -->([\s\S]*?)<!-- \/section:gate -->/)?.[1] ?? '';
@@ -147,7 +147,7 @@ describe('F8 — tdd-pipeline/add.build.md gate is tier-aware', () => {
   });
 });
 
-describe('F9 — add-tdd GREEN step names the CI-tier caveat', () => {
+describe('F9 — add--tdd GREEN step names the CI-tier caveat', () => {
   it('L1.9 GREEN step 3 names CI-tier and stays inert with no Verify: line', () => {
     const text = read(P.addTdd);
     const green = section(text, 'GREEN — minimal code to pass');
@@ -158,11 +158,11 @@ describe('F9 — add-tdd GREEN step names the CI-tier caveat', () => {
 });
 
 describe('F10 — per-task review is narrower than the end-of-feature one', () => {
-  it("L1.10 step 5's dispatch drops add-code-review and reports no SCORE", () => {
+  it("L1.10 step 5's dispatch drops add--code-review and reports no SCORE", () => {
     const text = read(P.subagentDriven);
     const s5 = section(text, '5\\. Review Subagent\'s Work');
     expect(s5).not.toBeNull();
-    expect(s5).not.toMatch(/\{\{skill:add-code-review\/SKILL\.md\}\}/);
+    expect(s5).not.toMatch(/\{\{skill:add--code-review\/SKILL\.md\}\}/);
     expect(s5).not.toMatch(/SCORE:/);
     // The rubric narrows; the attention must not.
     expect(s5).toMatch(/Narrower rubric, same care/i);
@@ -185,7 +185,7 @@ describe('F10 — per-task review is narrower than the end-of-feature one', () =
     // SPEC_STATUS is gated on at step 6, so its derivation must be named here.
     expect(s5).toMatch(/Derive SPEC_STATUS/);
     expect(s5).toMatch(/Tick Application Procedure/);
-    expect(s5).toMatch(/\{\{skill:add-tasks-checklist\/SKILL\.md\}\}/);
+    expect(s5).toMatch(/\{\{skill:add--tasks-checklist\/SKILL\.md\}\}/);
 
     // Wiki conventions, conditioned on the page existing — not just on a wiki existing.
     expect(s5).toMatch(/the area's page exists/);

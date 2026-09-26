@@ -351,7 +351,7 @@ promote_baseline() {
 ensure_ignore() {
     local project_root=$1
     local file="$project_root/.gitignore"
-    local start='# ADD QA evidence - managed by add.qa-setup'
+    local start='# ADD QA evidence - managed by add-qa-setup'
     local end='# END ADD QA evidence'
     local starts ends temp
     [ ! -L "$file" ] || fail ".gitignore must not be a symlink: $file"

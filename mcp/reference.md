@@ -101,7 +101,7 @@ reader could not tell which had happened.
 
 The four page types are [Diátaxis](https://diataxis.fr/) — tutorial, how-to,
 reference, explanation — the documentation framework Django, Canonical and
-Cloudflare document with, and the one `add.wiki` already followed in three of its
+Cloudflare document with, and the one `add-wiki` already followed in three of its
 four types. The fourth is declared even though no analyzer writes one: shipping
 three of four is the defect this model was built to fix.
 
@@ -172,7 +172,7 @@ model describes, declares:
 empty graph and a missing one look identical to a caller and mean opposite things.
 
 ⛔ **`probe` and `roots` are not the same list, and the gap is real.** The probe is
-`docs` alone, so a project that ran `/add.wiki` and never `/add.new` has pages under a
+`docs` alone, so a project that ran `/add-wiki` and never `/add-new` has pages under a
 declared root and the corpus still refuses to open: `corpus "docs" is not present here`.
 Measured 2026-09-15. That is the behaviour today, recorded here rather than left for the
 next reader to rediscover — widening the probe is a behaviour change nobody has decided.

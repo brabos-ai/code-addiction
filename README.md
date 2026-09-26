@@ -83,15 +83,15 @@ Every feature follows a clear path from idea to delivery. Pick the trail that fi
 ```
 Step        Command             What happens                        Output
 ───────────────────────────────────────────────────────────────────────────────
-0. Explore  /add.brainstorm     Brainstorm ideas (read-only)        Initial concept
-1. Discover /add.new            AI-guided feature discovery          about.md
-2. Plan     /add.plan           Technical planning + UX contract     plan.md + design.md
-3. Code     /add.build          Subagent-driven implementation       Working code
-4. Review   /add.review         Code review + spec audit (+QA)       review-NNN.md
-5. Done     /add.done           QA evidence, changelog, docs, merge  Merged branch
+0. Explore  /add-brainstorm     Brainstorm ideas (read-only)        Initial concept
+1. Discover /add-new            AI-guided feature discovery          about.md
+2. Plan     /add-plan           Technical planning + UX contract     plan.md + design.md
+3. Code     /add-build          Subagent-driven implementation       Working code
+4. Review   /add-review         Code review + spec audit (+QA)       review-NNN.md
+5. Done     /add-done           QA evidence, changelog, docs, merge  Merged branch
 ```
 
-Steps 1-4 can also run unattended: approve `/add.brainstorm` with "deliver automatically" and each stage hands off to the next until `/add.build` runs its own final review and asks whether to open the PR. `/add.done` always waits for you.
+Steps 1-4 can also run unattended: approve `/add-brainstorm` with "deliver automatically" and each stage hands off to the next until `/add-build` runs its own final review and asks whether to open the PR. `/add-done` always waits for you.
 
 ### Choose your flow
 
@@ -100,7 +100,7 @@ Pick the shortest path that fits. Less ceremony, same quality.
 ```
 COMPLETE  (complex features with UI)
   brainstorm --> new --> plan --> build --> review --> done
-                         (design is produced inside /add.plan STEP 8.1)
+                         (design is produced inside /add-plan STEP 8.1)
 
 STANDARD  (features without complex UI)
   new --> plan --> build --> review --> done

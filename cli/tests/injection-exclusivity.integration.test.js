@@ -262,7 +262,7 @@ function forceDetectableCatalog() {
 }
 
 function planFiles(cwd) {
-  return CMD_PROVIDERS.map((k) => commandPath(cwd, k, 'add.plan')).filter(fs.existsSync);
+  return CMD_PROVIDERS.map((k) => commandPath(cwd, k, 'add-plan')).filter(fs.existsSync);
 }
 
 function pointKey(p) {
@@ -323,24 +323,24 @@ afterAll(() => {
 });
 
 describe('substitution completeness (catalog × fragments × sidecar × built anchors)', () => {
-  // 39 -> 40: the docs-pruning feature adds ONE section on add.done (plan
+  // 39 -> 40: the docs-pruning feature adds ONE section on add-done (plan
   // 2026-09-07T160328-PLAN--delivery-index, F12-F14).
-  // 40 -> 45: feature:qa-pipeline adds FIVE sections on add.review, moving the
+  // 40 -> 45: feature:qa-pipeline adds FIVE sections on add-review, moving the
   // QA judgement steps under the feature (plan 2026-09-13T153219, F15/F16/F20b).
   // The literal is the guard — it forces a deliberate update whenever the
   // substitution set changes, so it is bumped rather than computed.
-  // 45 -> 46: plugin:gitnexus adds graph-build on add.build, whose main session called the graph
+  // 45 -> 46: plugin:gitnexus adds graph-build on add-build, whose main session called the graph
   // with no guidance at all.
-  // 46 -> 50: feature:board moves add.brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
-  // 50 -> 52: feature:board moves add.new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
-  // 52 -> 54: feature:board moves add.plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
-  // 54 -> 57: feature:board moves add.build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
-  // 57 -> 60: feature:board moves add.done's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
-  // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
-  // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
-  // 64 -> 65: feature:board adds add.plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
-  // 65 -> 66: feature:board adds add.build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
-  // 66 -> 70: feature:board brings add.hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+  // 46 -> 50: feature:board moves add-brainstorm's 4 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+  // 50 -> 52: feature:board moves add-new's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+  // 52 -> 54: feature:board moves add-plan's 2 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+  // 54 -> 57: feature:board moves add-build's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+  // 57 -> 60: feature:board moves add-done's 3 ticket section(s) into fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+  // 60 -> 62: feature:board adds add-brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
+  // 62 -> 64: feature:board adds add-new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
+  // 64 -> 65: feature:board adds add-plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
+  // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
+  // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
   it('sidecar, fragments, and catalog declare the same 70 substitutions', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();

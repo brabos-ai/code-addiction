@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # QA-PREFLIGHT
-# Deterministic QA prerequisite probes shared by /add.review and /add.qa-setup
+# Deterministic QA prerequisite probes shared by /add-review and /add-qa-setup
 # ============================================
 # Usage: bash .codeadd/scripts/qa-preflight.sh a
 #        bash .codeadd/scripts/qa-preflight.sh b <FEATURE_DIR> [SPEC_GLOB]

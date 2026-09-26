@@ -4,7 +4,7 @@
  * resolves a placeholder per provider when it writes a command; a FRAGMENT is
  * never built: release.yml packs .codeadd/fragments exactly as authored, and
  * the CLI injects it post-install. Until this suite, nothing resolved it, so
- * every tdd-pipeline install carried a literal `{{skill:add-tdd/SKILL.md}}`
+ * every tdd-pipeline install carried a literal `{{skill:add--tdd/SKILL.md}}`
  * in its commands (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses,
  * F48).
  *
@@ -33,13 +33,13 @@ const { resolveResourcePaths } = require(path.join(ROOT, 'scripts', 'build.js'))
 const PROVIDER_MAP = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8')).providers;
 const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir).map(([k]) => k);
 // A placeholder carries an argument, as the build's own patterns require. Prose
-// that NAMES the placeholders -- `{{cmd:}}` in add.qa-setup -- is not one.
+// that NAMES the placeholders -- `{{cmd:}}` in add-qa-setup -- is not one.
 const PLACEHOLDER = /\{\{(skill|cmd|addpath):[^}]+\}\}/;
 
 const SAMPLE = [
-  'see {{skill:add-backlog/references/lifecycle.md}} for the row,',
-  'run {{cmd:add.plan}} next, and read {{addpath:scripts/backlog.sh}}.',
-  'two on one line: {{skill:add-tdd/SKILL.md}} and {{skill:add-qa/SKILL.md}}',
+  'see {{skill:add--backlog/references/lifecycle.md}} for the row,',
+  'run {{cmd:add-plan}} next, and read {{addpath:scripts/backlog.sh}}.',
+  'two on one line: {{skill:add--tdd/SKILL.md}} and {{skill:add--qa/SKILL.md}}',
 ].join('\n');
 
 describe('P1 -- the CLI resolves exactly as the build does', () => {
@@ -88,9 +88,9 @@ describe('P2/P3 -- injected commands, on disk', () => {
   it('P2b: the board pointer resolves to each provider\'s own path', () => {
     enableFeature(tmp, 'board');
     for (const key of CMD_PROVIDERS) {
-      const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add.plan.md');
+      const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add-plan.md');
       if (!fs.existsSync(file)) continue;
-      const want = resolvePlaceholders('{{skill:add-backlog/references/lifecycle.md}}', PROVIDERS[key]);
+      const want = resolvePlaceholders('{{skill:add--backlog/references/lifecycle.md}}', PROVIDERS[key]);
       expect(fs.readFileSync(file, 'utf8'), key).toContain(want);
     }
   });
@@ -99,10 +99,10 @@ describe('P2/P3 -- injected commands, on disk', () => {
   // fix carries the RAW block. Disabling with the new CLI must still take it out.
   it('P3: disable removes a block an older CLI injected raw', () => {
     const key = CMD_PROVIDERS[0];
-    const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add.plan.md');
+    const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add-plan.md');
     const pristine = fs.readFileSync(file, 'utf8');
-    const sections = parseFragmentSections(fs.readFileSync(path.join(tmp, '.codeadd', 'fragments', 'board', 'add.plan.md'), 'utf8'));
-    const points = loadInjectionPoints(tmp).filter((p) => p.namespace === 'feature' && p.name === 'board' && p.resource.name === 'add.plan');
+    const sections = parseFragmentSections(fs.readFileSync(path.join(tmp, '.codeadd', 'fragments', 'board', 'add-plan.md'), 'utf8'));
+    const points = loadInjectionPoints(tmp).filter((p) => p.namespace === 'feature' && p.name === 'board' && p.resource.name === 'add-plan');
     const legacy = applyInjectionToContent(pristine, points, sections).content; // no provider: the old, raw behaviour
     expect(legacy).not.toBe(pristine);
     expect(legacy).toMatch(PLACEHOLDER);

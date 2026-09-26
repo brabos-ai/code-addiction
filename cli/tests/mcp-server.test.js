@@ -273,24 +273,24 @@ describe('F8 — every action answers over the wire', () => {
   });
 
   it('serves the artefact corpus from this repository with the same tools', async () => {
-    const { frames } = await talk([call(1, 'impact', { id: 'add-doc-schemas', depth: 1 })], {
+    const { frames } = await talk([call(1, 'impact', { id: 'add--doc-schemas', depth: 1 })], {
       corpus: 'artefacts',
       root: REPO,
     });
     // Ledger: 22 -> 23 (2026-09-13T153219 test-terminal-states-and-qa-feature-
-    // boundary). fragments/qa-pipeline/add.review.md is a new node and declares
-    // `skill: add-doc-schemas`, so it is a new direct dependant. Same fact as
+    // boundary). fragments/qa-pipeline/add-review.md is a new node and declares
+    // `skill: add--doc-schemas`, so it is a new direct dependant. Same fact as
     // the node totals that moved in build-artefact-graph.test.js.
     // 23 -> 21 (2026-09-14T215223 remove-owner-product-onboarding): add.init and
-    // add-product-discovery both declared `skill: add-doc-schemas` and both were
+    // add-product-discovery both declared `skill: add--doc-schemas` and both were
     // deleted with the owner/product onboarding.
-    // 21 -> 22 (2026-09-15T224612 pipeline-ceremony-rebalance): add-feature-specification
+    // 21 -> 22 (2026-09-15T224612 pipeline-ceremony-rebalance): add--feature-specification
     // became the single writer of about.md and now loads the schema itself.
     // 22 -> 21 (2026-09-16T205633 product-pipeline-parity): add.plan-to-ready
-    // declared `skill: add-doc-schemas` and was deleted. add-delivery-mode names
+    // declared `skill: add--doc-schemas` and was deleted. add--delivery-mode names
     // the schema only as a mention, which impact excludes.
     // 21 -> 22 (2026-09-20T222814 project-backlog-skill-lifecycle-and-rename, F3):
-    // add-backlog declares `skill: add-doc-schemas`, because it composes records
+    // add--backlog declares `skill: add--doc-schemas`, because it composes records
     // against the backlog.md reference that skill owns.
     expect(payload(frames[0]).dependents.length).toBe(22);
   });

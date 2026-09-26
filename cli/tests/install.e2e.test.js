@@ -219,7 +219,7 @@ function buildZcodeZip() {
   const zip = new AdmZip();
   zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\n'));
   zip.addFile(`framwork/.codeadd/injection-points.json`, Buffer.from('{"version":1,"points":[]}\n'));
-  zip.addFile(`framwork/.agents/skills/add.plan/SKILL.md`, Buffer.from('---\nname: add.plan\n---\n'));
+  zip.addFile(`framwork/.agents/skills/add-plan/SKILL.md`, Buffer.from('---\nname: add-plan\n---\n'));
   zip.addFile(`framwork/.agents/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
   zip.addFile(`framwork/.zcode/agents/reviewer-agent.md`, Buffer.from('---\nname: reviewer-agent\n---\n'));
   return zip.toBuffer();
@@ -233,7 +233,7 @@ describe('install command e2e — zcode reuses the codex tree (L3.1, L3.2)', () 
 
     await install(tmpDir);
 
-    expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'add.plan', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'add-plan', 'SKILL.md'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md'))).toBe(true);
     // No independent .zcode/skills or .zcode/commands tree — those are absent
     // on purpose, the reused .agents tree is where ZCode reads them from.
@@ -248,8 +248,8 @@ describe('install command e2e — zcode reuses the codex tree (L3.1, L3.2)', () 
 
     await install(tmpDir);
 
-    const skillFile = path.join(tmpDir, '.agents', 'skills', 'add.plan', 'SKILL.md');
-    expect(fs.readFileSync(skillFile, 'utf8')).toBe('---\nname: add.plan\n---\n');
+    const skillFile = path.join(tmpDir, '.agents', 'skills', 'add-plan', 'SKILL.md');
+    expect(fs.readFileSync(skillFile, 'utf8')).toBe('---\nname: add-plan\n---\n');
     expect(fs.existsSync(path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md'))).toBe(true);
 
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
@@ -401,7 +401,7 @@ describe('install-path migration ledger (L2.7, L2.8)', () => {
   it('L2.7 — a fresh install records every known id and executes no migration', async () => {
     // The legacy orphan is present but must NOT be touched: a pristine project
     // has nothing to migrate, so the back-catalogue is stamped, not executed.
-    const planted = seedFile(tmpDir, '.agents/skills/add-skill-creator/render-graphs.js', '// x');
+    const planted = seedFile(tmpDir, '.agents/skills/add--skill-creator/render-graphs.js', '// x');
 
     mocks.getLatestTag.mockResolvedValue('v1.2.3');
     mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());

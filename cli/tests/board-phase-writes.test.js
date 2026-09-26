@@ -14,7 +14,7 @@ import { FEATURES } from '../src/features.js';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 const exists = (...p) => fs.existsSync(path.join(ROOT, ...p));
-const REF = ['framwork', '.codeadd', 'skills', 'add-backlog', 'references'];
+const REF = ['framwork', '.codeadd', 'skills', 'add--backlog', 'references'];
 const lifecycle = () => read(...REF, 'lifecycle.md');
 const phases = () => read(...REF, 'phases.md');
 const fragment = (cmd) => parseFragmentSections(read('framwork', '.codeadd', 'fragments', 'board', `${cmd}.md`));
@@ -54,7 +54,7 @@ describe('L11.2/L11.3 -- lifecycle.md carries the procedure', () => {
 
   it('states both rules, once each, and points at phases.md for the model', () => {
     for (const s of RULE_SENTINELS) expect(lifecycle().split(s).length - 1, s).toBe(1);
-    expect(lifecycle()).toContain('add-backlog/references/phases.md');
+    expect(lifecycle()).toContain('add--backlog/references/phases.md');
   });
 
   // The per-command section, not the whole file: The Status Names already lists
@@ -80,39 +80,39 @@ describe('L8/L9 -- each write sits in the section its step reads', () => {
     const s = fragment(cmd).get(section);
     expect(s, `${cmd}:${section} missing`).toBeTruthy();
     for (const n of needles) expect(s, `${cmd}:${section} lacks ${n}`).toContain(n);
-    expect(s, `${cmd}:${section} does not point at the lifecycle`).toContain('add-backlog/references/lifecycle.md');
+    expect(s, `${cmd}:${section} does not point at the lifecycle`).toContain('add--backlog/references/lifecycle.md');
   };
 
-  it('add.brainstorm: refining once the path is stated, never on a spike; shaped after the intent file', () => {
-    has('add.brainstorm', 'ticket-refining', tick('refining'), 'spike');
-    has('add.brainstorm', 'ticket-shaped', tick('shaped'));
+  it('add-brainstorm: refining once the path is stated, never on a spike; shaped after the intent file', () => {
+    has('add-brainstorm', 'ticket-refining', tick('refining'), 'spike');
+    has('add-brainstorm', 'ticket-shaped', tick('shaped'));
   });
 
-  it('add.new: refining and the feature pointer in one write; shaped before its report', () => {
-    has('add.new', 'ticket-skeleton', tick('refining'), tick('feature'));
-    has('add.new', 'ticket-shaped', tick('shaped'));
+  it('add-new: refining and the feature pointer in one write; shaped before its report', () => {
+    has('add-new', 'ticket-skeleton', tick('refining'), tick('feature'));
+    has('add-new', 'ticket-shaped', tick('shaped'));
   });
 
-  it('add.plan: planning where the ticket is read; planned before its report', () => {
-    has('add.plan', 'ticket-read', tick('planning'));
-    has('add.plan', 'ticket-planned', tick('planned'));
+  it('add-plan: planning where the ticket is read; planned before its report', () => {
+    has('add-plan', 'ticket-read', tick('planning'));
+    has('add-plan', 'ticket-planned', tick('planned'));
   });
 
-  it('add.build: in-review only on a PR that was opened or updated', () => {
-    has('add.build', 'ticket-in-review', tick('in-review'), 'pr-opened', 'pr-updated');
+  it('add-build: in-review only on a PR that was opened or updated', () => {
+    has('add-build', 'ticket-in-review', tick('in-review'), 'pr-opened', 'pr-updated');
   });
 
-  it('add.hotfix: resolves from the invocation, writes doing, persists ticket:, never in-review', () => {
-    expect(FEATURES.board.commands).toContain('add.hotfix');
-    has('add.hotfix', 'ticket-resolve', '[0-9]{4}B');
-    has('add.hotfix', 'ticket-doing', tick('doing'), tick('work_id'));
-    expect(fragment('add.hotfix').get('ticket-frontmatter')).toContain('ticket:');
-    expect(fragment('add.hotfix').get('ticket-report')).toMatch(/never[^\n]*in-review|in-review[^\n]*never/);
+  it('add-hotfix: resolves from the invocation, writes doing, persists ticket:, never in-review', () => {
+    expect(FEATURES.board.commands).toContain('add-hotfix');
+    has('add-hotfix', 'ticket-resolve', '[0-9]{4}B');
+    has('add-hotfix', 'ticket-doing', tick('doing'), tick('work_id'));
+    expect(fragment('add-hotfix').get('ticket-frontmatter')).toContain('ticket:');
+    expect(fragment('add-hotfix').get('ticket-report')).toMatch(/never[^\n]*in-review|in-review[^\n]*never/);
   });
 
-  it('no add.build fragment line cites add.build STEP 17 or 18 (product-close-out-parity L4.6)', () => {
-    const lines = [...fragment('add.build').values()].join('\n').split('\n');
-    expect(lines.filter((l) => l.includes('add.build') && /STEP 1[78]/.test(l))).toEqual([]);
+  it('no add-build fragment line cites add-build STEP 17 or 18 (product-close-out-parity L4.6)', () => {
+    const lines = [...fragment('add-build').values()].join('\n').split('\n');
+    expect(lines.filter((l) => l.includes('add-build') && /STEP 1[78]/.test(l))).toEqual([]);
   });
 });
 
@@ -156,6 +156,6 @@ describe('L11.6 -- this repository runs on the nine', () => {
 
 describe('the hotfix schema declares the field its command now writes', () => {
   it('fix.md lists ticket: as optional frontmatter', () => {
-    expect(read('framwork', '.codeadd', 'skills', 'add-doc-schemas', 'references', 'fix.md')).toContain('optionally `ticket: [NNNN]B`');
+    expect(read('framwork', '.codeadd', 'skills', 'add--doc-schemas', 'references', 'fix.md')).toContain('optionally `ticket: [NNNN]B`');
   });
 });

@@ -4,14 +4,14 @@ description: Feature discovery and specification specialist for codebase analysi
 model: haiku
 readonly: true
 skills:
-  - add-feature-discovery
-  - add-feature-specification
+  - add--feature-discovery
+  - add--feature-specification
 memory: project
 ---
 
 <!-- uses:
-- skill: add-feature-discovery
-- skill: add-feature-specification
+- skill: add--feature-discovery
+- skill: add--feature-specification
 -->
 
 You are a feature discovery specialist. Your role is to explore codebases, extract patterns, and scope features. You are read-only — you discover and report, never implement.

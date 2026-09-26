@@ -35,7 +35,7 @@ const {
 } = require('../../scripts/build.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const REAL_COMMAND = path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.qa-setup.md');
+const REAL_COMMAND = path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-qa-setup.md');
 
 const TMP_DIRS = [];
 
@@ -55,7 +55,7 @@ afterAll(() => {
  */
 function source(opts = {}) {
   const {
-    contract = 'add.qa-setup',
+    contract = 'add-qa-setup',
     shape = 'sha256:0000000000000000',
     owner = 'setup',
     yamlExtra = '',
@@ -141,8 +141,8 @@ describe('contract extraction', () => {
   });
 
   it('case 2 — a valid block yields contract/shape/paths with owners preserved', () => {
-    const c = extractContract(sealed(), 'add.qa-setup');
-    expect(c.contract).toBe('add.qa-setup');
+    const c = extractContract(sealed(), 'add-qa-setup');
+    expect(c.contract).toBe('add-qa-setup');
     expect(c.shape).toMatch(/^sha256:[0-9a-f]{16}$/);
     expect(c.version).toBeUndefined();
     expect(c.recipes).toBeUndefined();
@@ -154,13 +154,13 @@ describe('contract extraction', () => {
   it('case 13 — a missing "contract" or a missing "shape" fails loud', () => {
     const missingField = /missing a required field/i;
     const noContract = sealed().replace(/^contract: .*\n/m, '');
-    expect(() => extractContract(noContract, 'add.qa-setup')).toThrow(missingField);
+    expect(() => extractContract(noContract, 'add-qa-setup')).toThrow(missingField);
     const noShape = source().replace(/^shape: .*\n/m, '');
-    expect(() => extractContract(noShape, 'add.qa-setup')).toThrow(missingField);
+    expect(() => extractContract(noShape, 'add-qa-setup')).toThrow(missingField);
   });
 
   it('the sidecar key must match the command name', () => {
-    expect(() => extractContract(sealed({ contract: 'add.typo' }), 'add.qa-setup'))
+    expect(() => extractContract(sealed({ contract: 'add.typo' }), 'add-qa-setup'))
       .toThrow(/declares contract: add\.typo/);
   });
 
@@ -189,8 +189,8 @@ describe('I1 — the block boundary is fence-aware', () => {
   });
 
   it('case 5 — a resource-path variable BELOW a fenced "##" heading is still banned', () => {
-    const raw = source({ belowFencedHeading: '\n- {{skill:add-qa/SKILL.md}}' });
-    expect(() => extractContract(raw, 'add.qa-setup')).toThrow(/resource-path variable/i);
+    const raw = source({ belowFencedHeading: '\n- {{skill:add--qa/SKILL.md}}' });
+    expect(() => extractContract(raw, 'add-qa-setup')).toThrow(/resource-path variable/i);
   });
 });
 
@@ -200,27 +200,27 @@ describe('I1 — the block boundary is fence-aware', () => {
 
 describe('I3 — no resource-path variables in the block', () => {
   it('case 6 — a variable in the yaml preamble fails loud', () => {
-    const raw = source({ yamlExtra: 'note: {{skill:add-qa/SKILL.md}}\n' });
-    expect(() => extractContract(raw, 'add.qa-setup')).toThrow(/resource-path variable/i);
+    const raw = source({ yamlExtra: 'note: {{skill:add--qa/SKILL.md}}\n' });
+    expect(() => extractContract(raw, 'add-qa-setup')).toThrow(/resource-path variable/i);
   });
 
   it('each of the three namespaces is banned in its resolvable form', () => {
-    for (const v of ['{{cmd:add.plan}}', '{{skill:add-qa/SKILL.md}}', '{{addpath:manifest.json}}']) {
-      expect(() => extractContract(source({ afterYaml: `\n${v}\n` }), 'add.qa-setup'))
+    for (const v of ['{{cmd:add-plan}}', '{{skill:add--qa/SKILL.md}}', '{{addpath:manifest.json}}']) {
+      expect(() => extractContract(source({ afterYaml: `\n${v}\n` }), 'add-qa-setup'))
         .toThrow(/resource-path variable/i);
     }
   });
 
   it('a whitespace-padded variable is banned — it still resolves per provider', () => {
-    for (const v of ['{{cmd: add.plan}}', '{{skill: add-qa/SKILL.md}}', '{{addpath: manifest.json}}']) {
-      expect(() => extractContract(source({ afterYaml: `\n${v}\n` }), 'add.qa-setup'))
+    for (const v of ['{{cmd: add-plan}}', '{{skill: add--qa/SKILL.md}}', '{{addpath: manifest.json}}']) {
+      expect(() => extractContract(source({ afterYaml: `\n${v}\n` }), 'add-qa-setup'))
         .toThrow(/resource-path variable/i);
     }
   });
 
   it('the EMPTY forms are documentation, not references, and are allowed', () => {
     const raw = sealed({ afterYaml: '\nVariables ({{cmd:}}, {{skill:}}, {{addpath:}}) are FORBIDDEN here.\n' });
-    expect(() => extractContract(raw, 'add.qa-setup')).not.toThrow();
+    expect(() => extractContract(raw, 'add-qa-setup')).not.toThrow();
   });
 });
 
@@ -269,7 +269,7 @@ describe('I4 — the declared shape gates a forgotten paste', () => {
     const computed = contractShape(sliceContractBlock(raw));
     let err;
     try {
-      extractContract(raw, 'add.qa-setup');
+      extractContract(raw, 'add-qa-setup');
     } catch (e) {
       err = e;
     }
@@ -332,7 +332,7 @@ describe('I7/I8 — sidecar output', () => {
       .filter((f) => /^## Materializes[ \t]*$/m.test(fs.readFileSync(path.join(commandDir, f), 'utf8')))
       .map((f) => f.replace(/\.md$/, ''));
     expect(Object.keys(parsed.contracts).sort()).toEqual(declaring.sort());
-    expect(declaring).toContain('add.qa-setup');
+    expect(declaring).toContain('add-qa-setup');
   });
 });
 
@@ -340,11 +340,11 @@ describe('I7/I8 — sidecar output', () => {
 // The real source
 // ---------------------------------------------------------------------------
 
-describe('the shipped add.qa-setup contract', () => {
+describe('the shipped add-qa-setup contract', () => {
   it('case 15 — extracts with .gitignore as shared state and no version/recipes', () => {
-    const c = extractContract(fs.readFileSync(REAL_COMMAND, 'utf8'), 'add.qa-setup');
+    const c = extractContract(fs.readFileSync(REAL_COMMAND, 'utf8'), 'add-qa-setup');
     expect(c).not.toBeNull();
-    expect(c.contract).toBe('add.qa-setup');
+    expect(c.contract).toBe('add-qa-setup');
     expect(c.version).toBeUndefined();
     expect(c.recipes).toBeUndefined();
     expect(c.paths.map((p) => p.path)).toEqual([

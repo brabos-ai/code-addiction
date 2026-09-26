@@ -8,7 +8,7 @@ const read = (...parts) => fs.readFileSync(path.join(CODEADD, ...parts), 'utf8')
 
 describe('hotfix diagnosis and review contracts', () => {
   it('defines the exact diagnose hotfix handoff and working-tree baseline', () => {
-    const schema = read('skills', 'add-doc-schemas', 'references', 'review.md');
+    const schema = read('skills', 'add--doc-schemas', 'references', 'review.md');
     expect(schema).toMatch(/route: hotfix[\s\S]*accepted: true[\s\S]*diagnosed-branch:[\s\S]*diagnosed-commit:[\s\S]*predicate:[\s\S]*root-cause:/);
     expect(schema).toContain('ID | Severity | Area | Citation | Symbol | Finding | Required change');
     expect(schema).toContain('### Confirmed Relations');
@@ -19,7 +19,7 @@ describe('hotfix diagnosis and review contracts', () => {
   });
 
   it('defines a hotfix-local receipt with exact scalars, paths and findings', () => {
-    const schema = read('skills', 'add-doc-schemas', 'references', 'fix.md');
+    const schema = read('skills', 'add--doc-schemas', 'references', 'fix.md');
     expect(schema).toMatch(/status: passed \| blocked[\s\S]*reviewer: named \| generic \| inline[\s\S]*reviewed-at:[\s\S]*reviewed-tree: sha256:[\s\S]*build: passed \| blocked[\s\S]*pinned-test:/);
     expect(schema).toContain('### Reviewed Paths');
     expect(schema).toContain('ID | Severity | Confidence | Citation | Route | Disposition | Re-review | Detail');
@@ -30,7 +30,7 @@ describe('hotfix diagnosis and review contracts', () => {
 
   it('lets re-review consume either a commit-range or correction snapshot package', () => {
     const agent = read('agents', 'reviewer-agent.md');
-    const skill = read('skills', 'add-subagent-driven-development', 'SKILL.md');
+    const skill = read('skills', 'add--subagent-driven-development', 'SKILL.md');
     for (const source of [agent, skill]) {
       expect(source).toMatch(/commit-range/i);
       expect(source).toMatch(/snapshot package/i);
@@ -41,20 +41,20 @@ describe('hotfix diagnosis and review contracts', () => {
   });
 
   it('persists every accepted diagnose route and prints the hotfix handoff command only for hotfix', () => {
-    const cmd = read('commands', 'add.diagnose.md');
+    const cmd = read('commands', 'add-diagnose.md');
     expect(cmd).toMatch(/script: hotfix-gates\.sh/);
     expect(cmd).toContain('bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline');
     expect(cmd).toMatch(/hotfix\/feature\/extend\/no-action/);
     expect(cmd).toMatch(/rejected diagnosis is not written/i);
     expect(cmd).not.toMatch(/route = no-action \| Write \| Conversational response only/);
     expect(cmd).not.toMatch(/Persist a report when the route is no-action/);
-    expect(cmd).toContain('/add.hotfix @docs/diagnose/');
+    expect(cmd).toContain('/add-hotfix @docs/diagnose/');
     expect(cmd).toMatch(/only for an accepted hotfix route|only when the accepted route is hotfix/i);
     expect(cmd).toMatch(/never invoke/i);
   });
 
   it('hotfix reuses a valid diagnose report and reviews with one correction wave', () => {
-    const cmd = read('commands', 'add.hotfix.md');
+    const cmd = read('commands', 'add-hotfix.md');
     expect(cmd).toMatch(/script: hotfix-gates\.sh/);
     expect(cmd).toContain('@docs/diagnose/');
     expect(cmd).toContain('diagnosis-check');
@@ -75,14 +75,14 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(cmd).not.toContain('@failure-analysis-agent');
   });
 
-  it('done gates hotfix receipts and never sends them to add.review', () => {
-    const cmd = read('commands', 'add.done.md');
+  it('done gates hotfix receipts and never sends them to add-review', () => {
+    const cmd = read('commands', 'add-done.md');
     expect(cmd).toMatch(/script: hotfix-gates\.sh/);
     expect(cmd).toContain('review-validate');
     expect(cmd).toMatch(/BRANCH_TYPE.*=.*hotfix|hotfix branches/i);
     expect(cmd).toContain('--tree');
     expect(cmd).toMatch(/Closed out/);
-    expect(cmd).toMatch(/rerun[\s`]*\/add\.hotfix/i);
-    expect(cmd).toMatch(/Never send a hotfix to `?\/add\.review`?/i);
+    expect(cmd).toMatch(/rerun[\s`]*\/add-hotfix/i);
+    expect(cmd).toMatch(/Never send a hotfix to `?\/add-review`?/i);
   });
 });

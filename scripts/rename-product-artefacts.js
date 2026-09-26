@@ -31,10 +31,11 @@ function mapping(root, override) {
   const pluginsFile = path.join(root, 'cli/src/plugins.json');
   const plugins = fs.existsSync(pluginsFile) ? JSON.parse(fs.readFileSync(pluginsFile, 'utf8')) : {};
   const commands = Object.fromEntries(Object.keys(registry.commands || {}).filter((n) => /^add\.[a-z0-9-]+$/.test(n)).map((n) => [n, n.replace('add.', 'add-')]));
-  const skills = Object.fromEntries(Object.keys(registry.skills || {}).filter((n) => /^add-[a-z0-9-]+$/.test(n)).map((n) => [n, n.replace(/^add-/, 'add--')]));
+  const legacySkill = (n) => /^add-(?!-)[a-z0-9-]+$/.test(n);
+  const skills = Object.fromEntries(Object.keys(registry.skills || {}).filter(legacySkill).map((n) => [n, n.replace(/^add-/, 'add--')]));
   for (const plugin of Object.values(plugins)) {
     if (!plugin || !Array.isArray(plugin.skills)) continue;
-    for (const name of plugin.skills) if (/^add-[a-z0-9-]+$/.test(name)) skills[name] = name.replace(/^add-/, 'add--');
+    for (const name of plugin.skills) if (legacySkill(name)) skills[name] = name.replace(/^add-/, 'add--');
   }
   if (override) {
     const extra = JSON.parse(fs.readFileSync(path.resolve(override), 'utf8'));
@@ -86,6 +87,7 @@ function files(root, scope) {
 }
 
 function movedPath(file, map) {
+  if (!file.startsWith('framwork/.codeadd/')) return file;
   let target = file;
   for (const [oldName, newName] of Object.entries(map.commands)) {
     target = target.replace(`framwork/.codeadd/commands/${oldName}.md`, `framwork/.codeadd/commands/${newName}.md`);
@@ -93,7 +95,6 @@ function movedPath(file, map) {
     target = target.replace(new RegExp(`(\\/fragments\\/(?:[^/]+\\/)?(?:fragments\\/)?)(?:${oldName.replace('.', '\\.')})(\\.md)$`), `$1${newName}$2`);
   }
   for (const [oldName, newName] of Object.entries(map.skills)) {
-    target = target.replace(`framwork/.codeadd/skills/${oldName}/`, `framwork/.codeadd/skills/${newName}/`);
     target = target.replace(`/skills/${oldName}/`, `/skills/${newName}/`);
   }
   return target;

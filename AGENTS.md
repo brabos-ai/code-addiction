@@ -19,8 +19,8 @@ The inventory below is **generated** — `node scripts/inventory.js` writes it f
 array has a length.
 
 [//]: # (codeadd-inventory:start)
-{"commands":["add","add.audit","add.brainstorm","add.build","add.diagnose","add.done","add.hotfix","add.new","add.plan","add.pull-request","add.qa-setup","add.review","add.ux","add.wiki"]}
-{"skills":["add-agents-md-style","add-architecture-discovery","add-backend-architecture","add-backend-development","add-backlog","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-mode","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-final-report","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-review-discipline","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
+{"commands":["add","add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-ux","add-wiki"]}
+{"skills":["add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--id-convention","add--investigation","add--knowledge-discovery","add--optimizing-git-workflow","add--plan-based-features","add--plan-review","add--project-scaffolding","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--skill-creator","add--stripe","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["backlog-commit.sh","backlog.sh","build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","get-branch-metadata.sh","get-main-branch.sh","hotfix-gates.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-context-files.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
 {"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
@@ -207,9 +207,9 @@ Optional features inject content into commands **post-install**, so they can be 
 
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
-| `tdd-pipeline` | enabled | add.plan, add.build, add.review, add.hotfix |
-| `qa-pipeline` | disabled | add.plan, add.build, add.review |
-| `docs-pruning` | disabled | add.done |
+| `tdd-pipeline` | enabled | add-plan, add-build, add-review, add-hotfix |
+| `qa-pipeline` | disabled | add-plan, add-build, add-review |
+| `docs-pruning` | disabled | add-done |
 
 ## Plugin System
 
@@ -233,12 +233,12 @@ A command that materializes state into a user's project declares a `## Materiali
 | Component | Path |
 |---|---|
 | Contract declaration | `## Materializes` H2 in the command source |
-| Receipt schema | `add-doc-schemas/references/receipt.md` |
+| Receipt schema | `add--doc-schemas/references/receipt.md` |
 | Receipt in user project | `docs/qa/qa-setup.md` |
-| Comparison procedure | `add-setup-contract` skill |
+| Comparison procedure | `add--setup-contract` skill |
 | Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
 
-Current consumer: `add.qa-setup` only. `add.wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
+Current consumer: `add-qa-setup` only. `add-wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
 
 ## Web / Documentation
 
@@ -275,10 +275,10 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Internal-layer build mechanics | `add-framework-internal-layer` |
 | `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 9 |
 | Querying the graph — the eleven verbs, both interfaces, and what it cannot see | `add-artefact-graph` |
-| `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
-| What belongs in a project's `AGENTS.md` | `add-agents-md-style` |
-| Doc schemas, voice, output length | `add-doc-schemas` |
-| How a command closes its final report | `add-final-report` — one per layer, deliberately not shared |
-| Setup-contract comparison | `add-setup-contract` |
+| `{{cmd:}}` / `{{skill:}}` resolution | `add--resource-path-convention` |
+| What belongs in a project's `AGENTS.md` | `add--agents-md-style` |
+| Doc schemas, voice, output length | `add--doc-schemas` |
+| How a command closes its final report | product `add--final-report`, internal `add-final-report` — one per layer, deliberately not shared |
+| Setup-contract comparison | `add--setup-contract` |
 | A script's contract and exit codes | that script's own header, plus its `.bats` suite |
 | Injection anchor internals | `cli/src/injection-core.js` |

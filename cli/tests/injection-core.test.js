@@ -65,7 +65,7 @@ describe('loadInjectionPoints', () => {
   });
 
   it('returns the points array', () => {
-    const points = [{ namespace: 'feature', name: 'tdd', section: 'gate', resource: { name: 'add.build', kind: 'command' }, anchor: { text: 'x', ordinal: 1, position: 'after', next: null } }];
+    const points = [{ namespace: 'feature', name: 'tdd', section: 'gate', resource: { name: 'add-build', kind: 'command' }, anchor: { text: 'x', ordinal: 1, position: 'after', next: null } }];
     fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }));
     expect(loadInjectionPoints(cwd)).toEqual(points);
   });
@@ -212,12 +212,12 @@ describe('resolveResourceFiles', () => {
 
   it('resolves a command to every installed provider that has a commandsSubdir', () => {
     manifest(['claude', 'cursor', 'codex']); // codex has no commandsSubdir
-    touch('.claude/commands/add.new.md');
-    touch('.cursor/commands/add.new.md');
-    const files = resolveResourceFiles(cwd, { name: 'add.new', kind: 'command' });
+    touch('.claude/commands/add-new.md');
+    touch('.cursor/commands/add-new.md');
+    const files = resolveResourceFiles(cwd, { name: 'add-new', kind: 'command' });
     expect(files.sort()).toEqual([
-      path.join(cwd, '.claude', 'commands', 'add.new.md'),
-      path.join(cwd, '.cursor', 'commands', 'add.new.md'),
+      path.join(cwd, '.claude', 'commands', 'add-new.md'),
+      path.join(cwd, '.cursor', 'commands', 'add-new.md'),
     ].sort());
   });
 
@@ -239,9 +239,9 @@ describe('resolveResourceFiles', () => {
       path.join(cwd, '.codeadd', 'manifest.json'),
       JSON.stringify({ version: '1', providers: ['opencode'], scope: 'global' }),
     );
-    touch('.config/opencode/commands/add.new.md');
-    const files = resolveResourceFiles(cwd, { name: 'add.new', kind: 'command' });
-    expect(files).toEqual([path.join(cwd, '.config', 'opencode', 'commands', 'add.new.md')]);
+    touch('.config/opencode/commands/add-new.md');
+    const files = resolveResourceFiles(cwd, { name: 'add-new', kind: 'command' });
+    expect(files).toEqual([path.join(cwd, '.config', 'opencode', 'commands', 'add-new.md')]);
   });
 });
 
@@ -282,12 +282,12 @@ describe('manifest + hash IO', () => {
   });
 
   it('recalculateHashes records relative paths', () => {
-    const f = path.join(cwd, '.claude', 'commands', 'add.new.md');
+    const f = path.join(cwd, '.claude', 'commands', 'add-new.md');
     fs.mkdirSync(path.dirname(f), { recursive: true });
     fs.writeFileSync(f, 'x');
     const manifest = {};
     recalculateHashes(cwd, manifest, [f]);
-    expect(manifest.hashes['.claude/commands/add.new.md']).toMatch(/^[a-f0-9]{64}$/);
+    expect(manifest.hashes['.claude/commands/add-new.md']).toMatch(/^[a-f0-9]{64}$/);
   });
 });
 

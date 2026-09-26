@@ -31,19 +31,19 @@ const CODEADD = path.join(REPO, 'framwork', '.codeadd');
 
 const read = (...p) => fs.readFileSync(path.join(CODEADD, ...p), 'utf8');
 
-const SKILL = ['skills', 'add-knowledge-discovery', 'SKILL.md'];
-const CONTRACT = ['skills', 'add-doc-schemas', 'references', 'delivery-index.md'];
+const SKILL = ['skills', 'add--knowledge-discovery', 'SKILL.md'];
+const CONTRACT = ['skills', 'add--doc-schemas', 'references', 'delivery-index.md'];
 const SCRIPT = ['scripts', 'delivered.sh'];
-const GITNEXUS = ['plugins', 'gitnexus', 'skills', 'add-gitnexus', 'SKILL.md'];
+const GITNEXUS = ['plugins', 'gitnexus', 'skills', 'add--gitnexus', 'SKILL.md'];
 
 /** The six commands that load the skill and consume its GRAPH step. */
 const GRAPH_COMMANDS = [
-  'add.plan.md',
-  'add.new.md',
-  'add.hotfix.md',
-  'add.brainstorm.md',
-  'add.diagnose.md',
-  'add.review.md',
+  'add-plan.md',
+  'add-new.md',
+  'add-hotfix.md',
+  'add-brainstorm.md',
+  'add-diagnose.md',
+  'add-review.md',
 ];
 
 /** The per-bucket keys F2 emits in place of MATCHED/RETURNED. */
@@ -100,13 +100,13 @@ describe('L2.3 — every reader of doRead output speaks the new keys, and there 
     for (const k of BUCKET_KEYS) expect(s).toContain(k);
   });
 
-  it('add.hotfix.md, which calls `delivered.sh read` directly, names them too', () => {
-    const h = read('commands', 'add.hotfix.md');
+  it('add-hotfix.md, which calls `delivered.sh read` directly, names them too', () => {
+    const h = read('commands', 'add-hotfix.md');
     for (const k of BUCKET_KEYS) expect(h).toContain(k);
   });
 
   it('no third artefact invokes `delivered.sh read`', () => {
-    // GUARD. add.done.md calls `verify` and `write` and never `read`, so it
+    // GUARD. add-done.md calls `verify` and `write` and never `read`, so it
     // carries no output key and must not be asserted to.
     const hits = [];
     const walk = (dir) => {
@@ -120,8 +120,8 @@ describe('L2.3 — every reader of doRead output speaks the new keys, and there 
     };
     walk(CODEADD);
     expect(hits.sort()).toEqual([
-      'commands/add.hotfix.md',
-      'skills/add-knowledge-discovery/SKILL.md',
+      'commands/add-hotfix.md',
+      'skills/add--knowledge-discovery/SKILL.md',
     ]);
   });
 });
@@ -132,7 +132,7 @@ describe('L2.4 — the gitnexus agent fragments keep what makes each one distinc
       const body = fs.readFileSync(path.join(AGENT_FRAGMENT_DIR, f), 'utf8');
       expect(body, `${f} open marker`).toMatch(/<!-- section:graph -->/);
       expect(body, `${f} close marker`).toMatch(/<!-- \/section:graph -->/);
-      expect(body, `${f} uses block`).toMatch(/<!-- uses:[\s\S]*skill: add-gitnexus[\s\S]*-->/);
+      expect(body, `${f} uses block`).toMatch(/<!-- uses:[\s\S]*skill: add--gitnexus[\s\S]*-->/);
     }
   });
 
@@ -182,15 +182,15 @@ describe('L2.5 — the injection surface is untouched', () => {
       'ux-agent.md',
       'ux-flow-agent.md',
     ]);
-    // add.build.md joined with plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5.
+    // add-build.md joined with plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5.
     expect(commandFragments()).toEqual([
-      'add.build.md',
-      'add.diagnose.md',
-      'add.done.md',
-      'add.hotfix.md',
-      'add.new.md',
-      'add.plan.md',
-      'add.wiki.md',
+      'add-build.md',
+      'add-diagnose.md',
+      'add-done.md',
+      'add-hotfix.md',
+      'add-new.md',
+      'add-plan.md',
+      'add-wiki.md',
     ]);
   });
 });
@@ -287,7 +287,7 @@ describe('L3.3 — the GRAPH step resolves every action the engine implements', 
   });
 });
 
-describe('L3.4 — add-gitnexus resolves by intent, never by command name', () => {
+describe('L3.4 — add--gitnexus resolves by intent, never by command name', () => {
   const skill = () => read(...GITNEXUS);
 
   it('carries no section mapping a command name to a native skill', () => {
@@ -326,7 +326,7 @@ describe('L3.5 — no gitnexus agent fragment pins a native skill', () => {
 });
 
 describe('L3.6 — an operation still names its call, and says why', () => {
-  const done = () => read('commands', 'add.done.md');
+  const done = () => read('commands', 'add-done.md');
 
   it('keeps both --action= calls', () => {
     // GUARD. reindex and stats are operations with exactly one call each.

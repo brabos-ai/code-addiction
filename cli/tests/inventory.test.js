@@ -18,7 +18,7 @@ import path from 'node:path';
  * Three cases here are load-bearing and must never be relaxed:
  *
  *   L1.3 — `fragments` and `plugins` list the OWNING DIRECTORY, never their files.
- *   `add.plan.md` exists three times on disk (fragments/qa-pipeline/,
+ *   `add-plan.md` exists three times on disk (fragments/qa-pipeline/,
  *   fragments/tdd-pipeline/, plugins/gitnexus/fragments/). A flat filename array
  *   silently collapses or duplicates them, and the block would then disagree with
  *   the tree it claims to describe.
@@ -70,7 +70,7 @@ function write(file, body = 'x') {
 /**
  * A .codeadd tree small enough to assert byte-for-byte, and shaped to carry every
  * trap the real one carries: the `add` / `add.init` sort order, the
- * `add.plan` / `add.plan-to-ready` sort order, and `add.plan.md` living under
+ * `add-plan` / `add.plan-to-ready` sort order, and `add-plan.md` living under
  * three different fragment/plugin owners at once.
  */
 function fixtureCodeadd() {
@@ -81,9 +81,9 @@ function fixtureCodeadd() {
   write(path.join(dir, 'commands', 'add.md'));
   write(path.join(dir, 'commands', 'add.init.md'));
   write(path.join(dir, 'commands', 'add.plan-to-ready.md'));
-  write(path.join(dir, 'commands', 'add.plan.md'));
-  write(path.join(dir, 'skills', 'add-qa', 'SKILL.md'));
-  write(path.join(dir, 'skills', 'add-qa-spec', 'SKILL.md'));
+  write(path.join(dir, 'commands', 'add-plan.md'));
+  write(path.join(dir, 'skills', 'add--qa', 'SKILL.md'));
+  write(path.join(dir, 'skills', 'add--qa-spec', 'SKILL.md'));
   fs.mkdirSync(path.join(dir, 'skills', 'not-a-skill'), { recursive: true });
   write(path.join(dir, 'agents', 'qa-agent.md'));
   write(path.join(dir, 'agents', 'ux-agent.md'));
@@ -91,11 +91,11 @@ function fixtureCodeadd() {
   write(path.join(dir, 'scripts', 'status.sh'));
   write(path.join(dir, 'scripts', 'tests', 'done.bats'));
   write(path.join(dir, 'templates', 'hotfix.md'));
-  write(path.join(dir, 'fragments', 'qa-pipeline', 'add.plan.md'));
-  write(path.join(dir, 'fragments', 'tdd-pipeline', 'add.plan.md'));
-  write(path.join(dir, 'plugins', 'gitnexus', 'fragments', 'add.plan.md'));
-  write(path.join(dir, 'plugins', 'gitnexus', 'skills', 'add-gitnexus', 'SKILL.md'));
-  write(path.join(dir, 'plugins', 'playwright', 'fragments', 'add.review.md'));
+  write(path.join(dir, 'fragments', 'qa-pipeline', 'add-plan.md'));
+  write(path.join(dir, 'fragments', 'tdd-pipeline', 'add-plan.md'));
+  write(path.join(dir, 'plugins', 'gitnexus', 'fragments', 'add-plan.md'));
+  write(path.join(dir, 'plugins', 'gitnexus', 'skills', 'add--gitnexus', 'SKILL.md'));
+  write(path.join(dir, 'plugins', 'playwright', 'fragments', 'add-review.md'));
   write(path.join(dir, 'transforms', 'gemini', 'commands.md'));
   return dir;
 }
@@ -108,8 +108,8 @@ function fixtureClaudeMd(body = '') {
 }
 
 const EXPECTED_BLOCK = [
-  '{"commands":["add","add.init","add.plan","add.plan-to-ready"]}',
-  '{"skills":["add-qa","add-qa-spec"]}',
+  '{"commands":["add","add-plan","add.init","add.plan-to-ready"]}',
+  '{"skills":["add--qa","add--qa-spec"]}',
   '{"agents":["qa","ux"]}',
   '{"scripts":["done.sh","status.sh"]}',
   '{"templates":["hotfix"],"fragments":["qa-pipeline","tdd-pipeline"],'
@@ -148,10 +148,10 @@ describe('L1.2 sorting is by NAME, never by filename', () => {
     expect(commands.indexOf('add')).toBeLessThan(commands.indexOf('add.init'));
   });
 
-  it('puts `add.plan` before `add.plan-to-ready`', () => {
+  it('puts `add-plan` before `add.plan-to-ready`', () => {
     // Sorting the FILENAMES reverses this, because '-' (45) sorts before '.' (46).
     const { commands } = collectInventory(fixtureCodeadd());
-    expect(commands.indexOf('add.plan')).toBeLessThan(commands.indexOf('add.plan-to-ready'));
+    expect(commands.indexOf('add-plan')).toBeLessThan(commands.indexOf('add.plan-to-ready'));
   });
 });
 
@@ -162,7 +162,7 @@ describe('L1.3 no group contains a duplicate entry', () => {
     expect(inv.plugins).toEqual(['gitnexus', 'playwright']);
   });
 
-  it('has no duplicate in any group, on a tree where add.plan.md exists three times', () => {
+  it('has no duplicate in any group, on a tree where add-plan.md exists three times', () => {
     const inv = collectInventory(fixtureCodeadd());
     for (const [group, items] of Object.entries(inv)) {
       expect(new Set(items).size, `duplicate in ${group}`).toBe(items.length);

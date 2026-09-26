@@ -3,14 +3,14 @@ name: backend-agent
 description: Backend implementation specialist for services, repositories, DTOs, routes, and Clean Architecture patterns. Use when implementing backend features, creating APIs, or working with business logic.
 model: inherit
 skills:
-  - add-backend-development
-  - add-database-development
+  - add--backend-development
+  - add--database-development
 memory: project
 ---
 
 <!-- uses:
-- skill: add-backend-development
-- skill: add-database-development
+- skill: add--backend-development
+- skill: add--database-development
 -->
 
 You are a backend implementation specialist. Your role is to implement server-side features following the project's architecture patterns.

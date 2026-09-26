@@ -63,12 +63,12 @@ description: a command
 # Some Command
 
 <!-- uses:
-- skill: add-doc-schemas/references/new-feature.md
-- skill: add-tasks-checklist
+- skill: add--doc-schemas/references/new-feature.md
+- skill: add--tasks-checklist
 - agent: reviewer-agent (depth 1)
-- command: /add.review (handoff)
+- command: /add-review (handoff)
 - script: qa-evidence.sh
-- skill: add-tdd (conditional)
+- skill: add--tdd (conditional)
 -->
 
 ## STEP 1
@@ -82,10 +82,10 @@ Body prose.
 
 describe('L1 extractUses', () => {
   it('L1.1 yields one edge per entry, with kind, target and modifier resolved', () => {
-    const edges = extractUses(WELL_FORMED, 'add.build', 'command');
+    const edges = extractUses(WELL_FORMED, 'add-build', 'command');
 
     expect(edges).toHaveLength(6);
-    expect(edges.every((e) => e.from === 'product/command/add.build')).toBe(true);
+    expect(edges.every((e) => e.from === 'product/command/add-build')).toBe(true);
     expect(edges.every((e) => e.origin === 'declared')).toBe(true);
 
     // A skill target carrying a path is a reference node, not a skill node.
@@ -93,15 +93,15 @@ describe('L1 extractUses', () => {
     // resolver decides the node kind. Collapsing these two would make the
     // dangling-reference gate unable to tell a missing file from a missing skill.
     expect(edges[0]).toMatchObject({
-      to: 'product/reference/add-doc-schemas/references/new-feature.md',
+      to: 'product/reference/add--doc-schemas/references/new-feature.md',
       type: 'USES_SKILL',
       modifier: null,
     });
-    expect(edges[1]).toMatchObject({ to: 'product/skill/add-tasks-checklist', type: 'USES_SKILL' });
+    expect(edges[1]).toMatchObject({ to: 'product/skill/add--tasks-checklist', type: 'USES_SKILL' });
     expect(edges[2]).toMatchObject({ to: 'product/agent/reviewer-agent', type: 'DISPATCHES', modifier: 'depth 1' });
-    expect(edges[3]).toMatchObject({ to: 'product/command/add.review', type: 'HANDS_OFF_TO', modifier: 'handoff' });
+    expect(edges[3]).toMatchObject({ to: 'product/command/add-review', type: 'HANDS_OFF_TO', modifier: 'handoff' });
     expect(edges[4]).toMatchObject({ to: 'product/script/qa-evidence.sh', type: 'RUNS_SCRIPT' });
-    expect(edges[5]).toMatchObject({ to: 'product/skill/add-tdd', modifier: 'conditional' });
+    expect(edges[5]).toMatchObject({ to: 'product/skill/add--tdd', modifier: 'conditional' });
   });
 
   it('L1.2 the block is removed by the EXISTING stripping pass, not a new one', () => {
@@ -112,7 +112,7 @@ describe('L1 extractUses', () => {
     const stripped = stripHtmlComments(WELL_FORMED);
 
     expect(stripped).not.toMatch(/uses:/);
-    expect(stripped).not.toMatch(/add-tasks-checklist/);
+    expect(stripped).not.toMatch(/add--tasks-checklist/);
     expect(stripped).toContain('## STEP 1'); // the rest of the body survives
   });
 
@@ -120,11 +120,11 @@ describe('L1 extractUses', () => {
     // The mechanism against the real tree, across every provider that received
     // one of the three pilots. Requires `node scripts/build.js` to have run.
     const built = [
-      'framwork/.claude/commands/add.ux.md',
-      'framwork/.cursor/commands/add.ux.md',
-      'framwork/.opencode/commands/add.ux.md',
-      'framwork/.agents/skills/add.ux/SKILL.md',
-      'framwork/.claude/skills/add-frontend-development/SKILL.md',
+      'framwork/.claude/commands/add-ux.md',
+      'framwork/.cursor/commands/add-ux.md',
+      'framwork/.opencode/commands/add-ux.md',
+      'framwork/.agents/skills/add-ux/SKILL.md',
+      'framwork/.claude/skills/add--frontend-development/SKILL.md',
       'framwork/.claude/agents/database-agent.md',
     ];
 
@@ -144,36 +144,36 @@ describe('L1 extractUses', () => {
   it('L1.11 `mention:` records an acknowledged reference and creates NO edge', () => {
     // Wave 2 turns "mentioned but not declared" into a build failure, and a
     // name-matching sniffer cannot tell "uses X" from "explicitly does NOT use
-    // X". add-health-check's only reference to add-security-audit is
-    // "- Security-only audit (use add-security-audit)" — a pointer AWAY, inside
+    // X". add--health-check's only reference to add--security-audit is
+    // "- Security-only audit (use add--security-audit)" — a pointer AWAY, inside
     // a list of when not to use the skill. Declaring it would put a false edge
     // in the graph; leaving it undeclared would fail the build on correct prose.
     // `mention:` is the third option: acknowledged, reviewable, edge-free.
     // It is a typed edge, not a side channel: the graph gains the fact that one
     // doc points at another without depending on it, and the dangling gate
     // validates the target for free.
-    const src = '<!-- uses:\n- skill: add-qa\n- mention: add-security-audit\n-->\n';
-    const edges = extractUses(src, 'add-health-check', 'skill');
+    const src = '<!-- uses:\n- skill: add--qa\n- mention: add--security-audit\n-->\n';
+    const edges = extractUses(src, 'add--health-check', 'skill');
 
     expect(edges).toHaveLength(2);
-    expect(edges[0]).toMatchObject({ to: 'product/skill/add-qa', type: 'USES_SKILL' });
-    expect(edges[1]).toMatchObject({ to: 'product/skill/add-security-audit', type: 'MENTIONS' });
+    expect(edges[0]).toMatchObject({ to: 'product/skill/add--qa', type: 'USES_SKILL' });
+    expect(edges[1]).toMatchObject({ to: 'product/skill/add--security-audit', type: 'MENTIONS' });
   });
 
   it('L1.11 a MENTIONS edge suppresses the undeclared-reference failure', () => {
     const nodes = [
       {
-        id: 'product/skill/add-health-check', kind: 'skill', layer: 'product',
-        name: 'add-health-check', path: 'x/SKILL.md', registered: true,
+        id: 'product/skill/add--health-check', kind: 'skill', layer: 'product',
+        name: 'add--health-check', path: 'x/SKILL.md', registered: true,
         providers: [], declares: true,
       },
       {
-        id: 'product/skill/add-security-audit', kind: 'skill', layer: 'product',
-        name: 'add-security-audit', path: 'y/SKILL.md', registered: true,
+        id: 'product/skill/add--security-audit', kind: 'skill', layer: 'product',
+        name: 'add--security-audit', path: 'y/SKILL.md', registered: true,
         providers: [], declares: false,
       },
     ];
-    const prose = () => 'Security-only audit (use add-security-audit)';
+    const prose = () => 'Security-only audit (use add--security-audit)';
 
     // Undeclared: fails.
     expect(checkArtefactGraph({ nodes, edges: [] }, { readSource: prose }).failures.length)
@@ -181,8 +181,8 @@ describe('L1 extractUses', () => {
 
     // Acknowledged: silent, and no USES_SKILL edge was invented to get there.
     const edges = [{
-      from: 'product/skill/add-health-check',
-      to: 'product/skill/add-security-audit',
+      from: 'product/skill/add--health-check',
+      to: 'product/skill/add--security-audit',
       type: 'MENTIONS', origin: 'declared', modifier: null,
     }];
     expect(checkArtefactGraph({ nodes, edges }, { readSource: prose }).failures).toEqual([]);
@@ -193,12 +193,12 @@ describe('L1 extractUses', () => {
     // would silence the sniffer forever against a name nothing will ever match.
     const graph = {
       nodes: [{
-        id: 'product/skill/add-health-check', kind: 'skill', layer: 'product',
-        name: 'add-health-check', path: 'x/SKILL.md', registered: true,
+        id: 'product/skill/add--health-check', kind: 'skill', layer: 'product',
+        name: 'add--health-check', path: 'x/SKILL.md', registered: true,
         providers: [], declares: true,
       }],
       edges: [{
-        from: 'product/skill/add-health-check',
+        from: 'product/skill/add--health-check',
         to: 'product/skill/add-securty-audit',
         type: 'MENTIONS', origin: 'declared', modifier: null,
       }],
@@ -209,26 +209,26 @@ describe('L1 extractUses', () => {
   });
 
   it('L1.10 a target ending in /SKILL.md names the SKILL, not a reference file', () => {
-    // `{{skill:add-ux-design/SKILL.md}}` is how a source points at a skill
+    // `{{skill:add--ux-design/SKILL.md}}` is how a source points at a skill
     // itself. Under a bare "contains a slash → reference" rule it resolves to
-    // reference/add-ux-design/SKILL.md — a node that does not exist, because
+    // reference/add--ux-design/SKILL.md — a node that does not exist, because
     // SKILL.md files are skills. The dangling gate would then fail the build on
     // a correct declaration.
-    const src = '<!-- uses:\n- skill: add-ux-design/SKILL.md\n-->\n';
-    expect(extractUses(src, 'add-frontend-development', 'skill')[0].to)
-      .toBe('product/skill/add-ux-design');
+    const src = '<!-- uses:\n- skill: add--ux-design/SKILL.md\n-->\n';
+    expect(extractUses(src, 'add--frontend-development', 'skill')[0].to)
+      .toBe('product/skill/add--ux-design');
   });
 
   it('L1.9 resolves targets within the declaring artefact own layer', () => {
-    // `add-commit` is BOTH a product skill and an internal skill. A bare name is
+    // `add--commit` is BOTH a product skill and an internal skill. A bare name is
     // ambiguous across layers and unambiguous within one, so the declaring
     // artefact's layer decides. Without this, the two collide on one id.
-    const src = '<!-- uses:\n- skill: add-commit\n-->\n';
+    const src = '<!-- uses:\n- skill: add--commit\n-->\n';
 
-    expect(extractUses(src, 'add.done', 'command', 'product')[0].to)
-      .toBe('product/skill/add-commit');
+    expect(extractUses(src, 'add-done', 'command', 'product')[0].to)
+      .toBe('product/skill/add--commit');
     expect(extractUses(src, 'add-framework--build', 'command', 'internal')[0].to)
-      .toBe('internal/skill/add-commit');
+      .toBe('internal/skill/add--commit');
   });
 
   it('L1.9b `handoff:` emits HANDS_OFF_TO, resolving the target by its own kind', () => {
@@ -236,48 +236,48 @@ describe('L1 extractUses', () => {
     // skill could not declare that the next pipeline stage is another skill.
     // `handoff:` reads the target the way `mention:` does: a leading `/` is a
     // command, `@` an agent, a bare name a skill.
-    const src = '<!-- uses:\n- handoff: add-framework--done\n- handoff: /add.review\n-->\n';
+    const src = '<!-- uses:\n- handoff: add-framework--done\n- handoff: /add-review\n-->\n';
     const edges = extractUses(src, 'add-framework--build', 'skill', 'internal');
 
     expect(edges[0]).toMatchObject({ to: 'internal/skill/add-framework--done', type: 'HANDS_OFF_TO' });
-    expect(edges[1]).toMatchObject({ to: 'internal/command/add.review', type: 'HANDS_OFF_TO' });
+    expect(edges[1]).toMatchObject({ to: 'internal/command/add-review', type: 'HANDS_OFF_TO' });
   });
 
   it('L1.3 returns no edges and does not throw when the artefact declares nothing', () => {
     // The common case during wave 1: almost no artefact declares yet. Throwing
     // here would block every build.
-    expect(extractUses('# Plain\n\nNo block here.\n', 'add.audit', 'command')).toEqual([]);
+    expect(extractUses('# Plain\n\nNo block here.\n', 'add-audit', 'command')).toEqual([]);
   });
 
   it('L1.4 fails on an unknown kind, naming the artefact and the line', () => {
     const src = '<!-- uses:\n- widget: something\n-->\n';
-    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/add\.build/);
-    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/widget/);
+    expect(() => extractUses(src, 'add-build', 'command')).toThrow(/add-build/);
+    expect(() => extractUses(src, 'add-build', 'command')).toThrow(/widget/);
   });
 
   it('L1.4 fails on a missing colon', () => {
-    expect(() => extractUses('<!-- uses:\n- skill add-tdd\n-->\n', 'add.build', 'command'))
-      .toThrow(/add\.build/);
+    expect(() => extractUses('<!-- uses:\n- skill add--tdd\n-->\n', 'add-build', 'command'))
+      .toThrow(/add-build/);
   });
 
   it('L1.4 fails on an empty target', () => {
-    expect(() => extractUses('<!-- uses:\n- skill:\n-->\n', 'add.build', 'command'))
-      .toThrow(/add\.build/);
+    expect(() => extractUses('<!-- uses:\n- skill:\n-->\n', 'add-build', 'command'))
+      .toThrow(/add-build/);
   });
 
   it('L1.4 never silently skips an unparseable line', () => {
     // Skipping turns a typo into a missing edge, which is invisible: the graph
     // simply under-reports and every consumer trusts it.
-    const src = '<!-- uses:\n- skill: add-tdd\n- this is not an entry\n-->\n';
+    const src = '<!-- uses:\n- skill: add--tdd\n- this is not an entry\n-->\n';
     // A bare .toThrow() would pass on ANY throw, including "extractUses is not
     // a function" — it cannot tell a correct rejection from a missing
     // implementation. Assert the message identifies the artefact.
-    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/add\.build/);
+    expect(() => extractUses(src, 'add-build', 'command')).toThrow(/add-build/);
   });
 
   it('L1.5 parses (conditional) as the reserved modifier and other text as free-form', () => {
-    const src = '<!-- uses:\n- skill: add-tdd (conditional)\n- skill: add-qa (loaded in STEP 4)\n-->\n';
-    const edges = extractUses(src, 'add.build', 'command');
+    const src = '<!-- uses:\n- skill: add--tdd (conditional)\n- skill: add--qa (loaded in STEP 4)\n-->\n';
+    const edges = extractUses(src, 'add-build', 'command');
 
     expect(edges[0].modifier).toBe('conditional');
     expect(edges[1].modifier).toBe('loaded in STEP 4');
@@ -286,8 +286,8 @@ describe('L1 extractUses', () => {
   it('L1.6 fails when one artefact carries two declaration blocks', () => {
     // Ambiguity must not resolve to "first wins" silently — the second block
     // would vanish from the graph while reading as declared in the source.
-    const src = '<!-- uses:\n- skill: add-tdd\n-->\n\ntext\n\n<!-- uses:\n- skill: add-qa\n-->\n';
-    expect(() => extractUses(src, 'add.build', 'command')).toThrow(/two|second|multiple/i);
+    const src = '<!-- uses:\n- skill: add--tdd\n-->\n\ntext\n\n<!-- uses:\n- skill: add--qa\n-->\n';
+    expect(() => extractUses(src, 'add-build', 'command')).toThrow(/two|second|multiple/i);
   });
 
   it('L1.7 ignores a block inside a fenced code region', () => {
@@ -300,19 +300,19 @@ describe('L1 extractUses', () => {
       '',
       '```markdown',
       '<!-- uses:',
-      '- skill: add-tdd',
+      '- skill: add--tdd',
       '-->',
       '```',
       '',
     ].join('\n');
 
-    expect(extractUses(src, 'add-skill-creator', 'skill')).toEqual([]);
+    expect(extractUses(src, 'add--skill-creator', 'skill')).toEqual([]);
   });
 
   it('L1.8 accepts blank lines and indentation inside the block', () => {
-    const src = '<!-- uses:\n\n  - skill: add-tdd\n\n  - agent: qa-agent\n\n-->\n';
-    const edges = extractUses(src, 'add.build', 'command');
-    expect(edges.map((e) => e.to)).toEqual(['product/skill/add-tdd', 'product/agent/qa-agent']);
+    const src = '<!-- uses:\n\n  - skill: add--tdd\n\n  - agent: qa-agent\n\n-->\n';
+    const edges = extractUses(src, 'add-build', 'command');
+    expect(edges.map((e) => e.to)).toEqual(['product/skill/add--tdd', 'product/agent/qa-agent']);
   });
 });
 
@@ -445,7 +445,7 @@ describe('L2 collectNodes', () => {
     const nodes = collectNodes(map, CODEADD);
     const byId = new Map(nodes.map((n) => [n.id, n]));
 
-    expect(byId.get('product/command/add.review')?.layer).toBe('product');
+    expect(byId.get('product/command/add-review')?.layer).toBe('product');
     expect(byId.get('internal/skill/add-framework--build')?.layer).toBe('internal');
     expect(byId.get('internal/skill/building-commands')?.layer).toBe('internal');
     expect(byId.get('internal/agent/readme-analyzer')?.layer).toBe('internal');
@@ -457,7 +457,7 @@ describe('L2 collectNodes', () => {
 
     // A product command is registered; an internal command is not in the
     // product registry and must not be reported as drift because of it.
-    expect(byId.get('product/command/add.review')?.registered).toBe(true);
+    expect(byId.get('product/command/add-review')?.registered).toBe(true);
     expect(byId.get('internal/skill/add-framework--build')?.registered).toBe(true);
   });
 
@@ -480,7 +480,7 @@ describe('L2 collectNodes', () => {
 
   it('L2.5 providers on a node match what the registry resolves for it', () => {
     const nodes = collectNodes(map, CODEADD);
-    const cmd = nodes.find((n) => n.id === 'product/command/add.review');
+    const cmd = nodes.find((n) => n.id === 'product/command/add-review');
 
     expect(cmd.providers).toEqual(Object.keys(map.providers));
   });
@@ -507,11 +507,11 @@ describe('L3 checkArtefactGraph', () => {
   }
 
   const node = (over) => ({
-    id: 'product/command/add.build',
+    id: 'product/command/add-build',
     kind: 'command',
     layer: 'product',
-    name: 'add.build',
-    path: 'framwork/.codeadd/commands/add.build.md',
+    name: 'add-build',
+    path: 'framwork/.codeadd/commands/add-build.md',
     registered: true,
     providers: [],
     declares: true,
@@ -524,7 +524,7 @@ describe('L3 checkArtefactGraph', () => {
     const g = graphOf(
       [node()],
       [{
-        from: 'product/command/add.build',
+        from: 'product/command/add-build',
         to: 'product/skill/add-typo',
         type: 'USES_SKILL',
         origin: 'declared',
@@ -536,7 +536,7 @@ describe('L3 checkArtefactGraph', () => {
 
     expect(failures).toHaveLength(1);
     expect(failures[0]).toMatch(/add-typo/);
-    expect(failures[0]).toMatch(/add\.build\.md/);
+    expect(failures[0]).toMatch(/add-build\.md/);
   });
 
   it('L3.2 an unregistered artefact FAILS — the readback shape', () => {
@@ -568,9 +568,9 @@ describe('L3 checkArtefactGraph', () => {
     const g = graphOf([
       node(),
       node({
-        id: 'product/reference/add-qa/references/coordinator.md',
+        id: 'product/reference/add--qa/references/coordinator.md',
         kind: 'reference',
-        name: 'add-qa/references/coordinator.md',
+        name: 'add--qa/references/coordinator.md',
         registered: false,
         declares: false,
       }),
@@ -599,14 +599,14 @@ describe('L3 checkArtefactGraph', () => {
     // three-level split existed precisely so it could wait for the declarations.
     const g = graphOf([
       node(),
-      node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md', declares: true }),
+      node({ id: 'product/skill/add--tdd', kind: 'skill', name: 'add--tdd', path: 'x/SKILL.md', declares: true }),
     ]);
 
     const { failures } = checkArtefactGraph(g, {
-      readSource: (n) => (n.name === 'add.build' ? 'Load the add-tdd skill in STEP 3.' : ''),
+      readSource: (n) => (n.name === 'add-build' ? 'Load the add--tdd skill in STEP 3.' : ''),
     });
 
-    expect(failures.join('\n')).toMatch(/add-tdd/);
+    expect(failures.join('\n')).toMatch(/add--tdd/);
     // The message must offer both fixes, or an author hits it and guesses.
     expect(failures.join('\n')).toMatch(/mention:/);
   });
@@ -620,11 +620,11 @@ describe('L3 checkArtefactGraph', () => {
     const g = graphOf(
       [
         node(),
-        node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md' }),
+        node({ id: 'product/skill/add--tdd', kind: 'skill', name: 'add--tdd', path: 'x/SKILL.md' }),
       ],
       [{
-        from: 'product/command/add.build',
-        to: 'product/skill/add-tdd',
+        from: 'product/command/add-build',
+        to: 'product/skill/add--tdd',
         type: 'USES_SKILL',
         origin: 'declared',
         modifier: null,
@@ -634,7 +634,7 @@ describe('L3 checkArtefactGraph', () => {
     const { failures, warnings } = checkArtefactGraph(g, { readSource: noSource });
 
     expect(failures).toEqual([]);
-    expect(warnings.join('\n')).toMatch(/add-tdd/);
+    expect(warnings.join('\n')).toMatch(/add--tdd/);
     expect(warnings.join('\n')).toMatch(/phantom edge/);
   });
 
@@ -642,11 +642,11 @@ describe('L3 checkArtefactGraph', () => {
     const mk = (modifier) => graphOf(
       [
         node(),
-        node({ id: 'product/skill/add-tdd', kind: 'skill', name: 'add-tdd', path: 'x/SKILL.md' }),
+        node({ id: 'product/skill/add--tdd', kind: 'skill', name: 'add--tdd', path: 'x/SKILL.md' }),
       ],
       [{
-        from: 'product/command/add.build',
-        to: 'product/skill/add-tdd',
+        from: 'product/command/add-build',
+        to: 'product/skill/add--tdd',
         type: 'USES_SKILL',
         origin: 'declared',
         modifier,
@@ -660,38 +660,38 @@ describe('L3 checkArtefactGraph', () => {
   });
 
   it('L3.4 a longer name is not matched inside another name', () => {
-    // `/add` matches inside `/add.plan` and `add-qa` inside `add-qa-migration`
+    // `/add` matches inside `/add-plan` and `add--qa` inside `add--qa-migration`
     // under a naive \b boundary. Both produced wrong counts while specifying
     // this change; a sniffer that does it fires warnings nobody can act on.
     const g = graphOf([
       node(),
-      node({ id: 'product/skill/add-qa', kind: 'skill', name: 'add-qa', path: 'x/SKILL.md' }),
+      node({ id: 'product/skill/add--qa', kind: 'skill', name: 'add--qa', path: 'x/SKILL.md' }),
       node({ id: 'product/command/add', kind: 'command', name: 'add', path: 'y.md' }),
     ]);
 
     const { failures } = checkArtefactGraph(g, {
-      readSource: (n) => (n.name === 'add.build' ? 'See add-qa-migration and /add.plan for details.' : ''),
+      readSource: (n) => (n.name === 'add-build' ? 'See add--qa-migration and /add-plan for details.' : ''),
     });
 
     // Assert the node IDS are absent. An earlier version matched /"add"/ —
     // the failure text carries no quotes, so it could never match whether the
     // bug existed or not, which is a dead line dressed as coverage.
     const text = failures.join('\n');
-    expect(text).not.toContain('product/skill/add-qa');
+    expect(text).not.toContain('product/skill/add--qa');
     expect(text).not.toContain('product/command/add\n');
     expect(failures).toEqual([]);
   });
 
   it('L3.8 a command is only matched with its slash, never as a bare word', () => {
-    // `add.done` carries "DO NOT USE Bash for git add/commit/push". Under a
+    // `add-done` carries "DO NOT USE Bash for git add/commit/push". Under a
     // bare-word match the command named `add` matches inside `git add`, and the
     // graph gains an edge invented out of an English sentence. Commands are
-    // always written `/add.plan` where they are actually referenced, so the
+    // always written `/add-plan` where they are actually referenced, so the
     // slash is part of the name for sniffing purposes.
     const nodes = [
       {
-        id: 'product/command/add.done', kind: 'command', layer: 'product',
-        name: 'add.done', path: 'x.md', registered: true, providers: [], declares: true,
+        id: 'product/command/add-done', kind: 'command', layer: 'product',
+        name: 'add-done', path: 'x.md', registered: true, providers: [], declares: true,
       },
       {
         id: 'product/command/add', kind: 'command', layer: 'product',
@@ -700,12 +700,12 @@ describe('L3 checkArtefactGraph', () => {
     ];
 
     const bare = checkArtefactGraph({ nodes, edges: [] }, {
-      readSource: (n) => (n.name === 'add.done' ? 'DO NOT USE Bash for git add/commit/push.' : ''),
+      readSource: (n) => (n.name === 'add-done' ? 'DO NOT USE Bash for git add/commit/push.' : ''),
     });
     expect(bare.failures).toEqual([]);
 
     const slashed = checkArtefactGraph({ nodes, edges: [] }, {
-      readSource: (n) => (n.name === 'add.done' ? 'Route back to /add when unsure.' : ''),
+      readSource: (n) => (n.name === 'add-done' ? 'Route back to /add when unsure.' : ''),
     });
     expect(slashed.failures.join('\n')).toMatch(/product\/command\/add\b/);
   });
@@ -760,9 +760,9 @@ describe('L4 artefact-graph sidecar', () => {
     // The two sections on one fragment must stay two edges — collapsing them
     // would lose which section landed where.
     const points = [
-      { namespace: 'feature', name: 'tdd-pipeline', section: 'step-list', resource: { name: 'add.build', kind: 'command' } },
-      { namespace: 'feature', name: 'tdd-pipeline', section: 'spec-audit', resource: { name: 'add.build', kind: 'command' } },
-      { namespace: 'plugin', name: 'gitnexus', section: 'graph', resource: { name: 'add.plan', kind: 'command' } },
+      { namespace: 'feature', name: 'tdd-pipeline', section: 'step-list', resource: { name: 'add-build', kind: 'command' } },
+      { namespace: 'feature', name: 'tdd-pipeline', section: 'spec-audit', resource: { name: 'add-build', kind: 'command' } },
+      { namespace: 'plugin', name: 'gitnexus', section: 'graph', resource: { name: 'add-plan', kind: 'command' } },
       { namespace: 'plugin', name: 'gitnexus', section: 'graph', resource: { name: 'backend-agent', kind: 'agent' } },
     ];
 
@@ -773,8 +773,8 @@ describe('L4 artefact-graph sidecar', () => {
     expect(injects.every((e) => e.origin === 'sidecar')).toBe(true);
     expect(injects.map((e) => e.from)).toEqual(
       expect.arrayContaining([
-        'product/fragment/fragments/tdd-pipeline/add.build.md',
-        'product/fragment/plugins/gitnexus/fragments/add.plan.md',
+        'product/fragment/fragments/tdd-pipeline/add-build.md',
+        'product/fragment/plugins/gitnexus/fragments/add-plan.md',
         'product/fragment/plugins/gitnexus/fragments/agents/backend-agent.md',
       ]),
     );
@@ -818,7 +818,7 @@ describe('L4 artefact-graph sidecar', () => {
 describe('L5 acceptance', () => {
   it('L5.1 the readback reproduction: an unregistered agent and skill fail the build', () => {
     // THE acceptance test for wave 1, rebuilt from a real event. Commit 49422ad
-    // landed readback-agent.md and add-feature-readback/ on main. They read
+    // landed readback-agent.md and add--feature-readback/ on main. They read
     // correctly, are referenced in prose, and — until a later commit registered
     // them — were built for no provider at all. Nothing in the build, the suite
     // or CI said a word.
@@ -827,8 +827,8 @@ describe('L5 acceptance', () => {
     fs.mkdirSync(path.join(codeadd, 'agents'), { recursive: true });
     fs.writeFileSync(path.join(codeadd, 'agents', 'readback-agent.md'), '# readback\n');
 
-    fs.mkdirSync(path.join(codeadd, 'skills', 'add-feature-readback'), { recursive: true });
-    fs.writeFileSync(path.join(codeadd, 'skills', 'add-feature-readback', 'SKILL.md'), '# readback\n');
+    fs.mkdirSync(path.join(codeadd, 'skills', 'add--feature-readback'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd, 'skills', 'add--feature-readback', 'SKILL.md'), '# readback\n');
 
     // A registry that knows about neither — exactly the shape 49422ad shipped.
     const map = { providers: {}, commands: {}, skills: {}, agents: {} };
@@ -839,7 +839,7 @@ describe('L5 acceptance', () => {
 
     const joined = failures.join('\n');
     expect(joined).toMatch(/readback-agent/);
-    expect(joined).toMatch(/add-feature-readback/);
+    expect(joined).toMatch(/add--feature-readback/);
     // The message has to say what is wrong and what to do, or the gate costs
     // more than it saves.
     expect(joined).toMatch(/never built for any provider/);
@@ -899,22 +899,22 @@ describe('node inventory snapshot', () => {
       // became skills so each pipeline stage can load the next.
       // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
       // command 18 -> 17: add.plan-to-ready deleted. The automatic delivery
-      // chain replaced its bounded loop, and add.build took its checkpoint.
+      // chain replaced its bounded loop, and add-build took its checkpoint.
       // (plan 2026-09-16T205633-PLAN--product-pipeline-parity, F11.)
       command: 17,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
-      // skill 48 -> 49: add-review-discipline, the single owner of how many
+      // skill 48 -> 49: add--review-discipline, the single owner of how many
       // times each reader runs and what a caller owes the report.
-      // skill 49 -> 51: add-final-report, one per layer. The internal and
+      // skill 49 -> 51: add--final-report, one per layer. The internal and
       // product copies are separate nodes and both are counted.
       // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
-      // skill 51 -> 52: add-review-discipline in the product layer, the
+      // skill 51 -> 52: add--review-discipline in the product layer, the
       // deliberate sibling of the internal skill of the same name. Both are
       // counted: they are separate nodes in separate layers.
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F15.)
-      // skill 52 -> 53: add-gitnexus, a plugin's own bundled skill. It ships
+      // skill 52 -> 53: add--gitnexus, a plugin's own bundled skill. It ships
       // and installs like any other — cli/src/plugins.js copies it into every
       // provider's skills dir — but collectNodes never walked
       // plugins/*/skills/, so no gate, search or orphan check had ever seen it.
@@ -925,12 +925,12 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
       // skill 53 -> 57: the same four stages, counted here now.
       // (plan 2026-09-16T170340-PLAN--the-pipeline-chains, F8.)
-      // skill 57 -> 58: add-delivery-mode, the product owner of the delivery
+      // skill 57 -> 58: add--delivery-mode, the product owner of the delivery
       // mode. (plan 2026-09-16T205633-PLAN--product-pipeline-parity, F1.)
-      // skill 58 -> 59: add-backlog, the capture skill — the first caller of
+      // skill 58 -> 59: add--backlog, the capture skill — the first caller of
       // backlog.sh, which shipped with none.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F3.)
-      skill: 59,
+      skill: 60,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -938,22 +938,22 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-10T173216-PLAN--prompt-quality-ruler, F3.)
       agent: 30,
       // reference 69 -> 70: add-plan-authoring/references/plan-template.md.
-      // reference 70 -> 69: add-doc-schemas/references/product.md deleted with
+      // reference 70 -> 69: add--doc-schemas/references/product.md deleted with
       // the owner and product schemas it held; add.init was their only writer.
       // (plan 2026-09-14T215223-PLAN--remove-owner-product-onboarding, F2.)
-      // reference 69 -> 70: add-subagent-driven-development/references/dispatch-rules.md,
+      // reference 69 -> 70: add--subagent-driven-development/references/dispatch-rules.md,
       // the one dispatch rule every dispatching command points at.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
-      // reference 70 -> 71: add-doc-schemas/references/backlog.md, the record
+      // reference 70 -> 71: add--doc-schemas/references/backlog.md, the record
       // format for docs/backlog.jsonl and docs/backlog.definitions.json.
       // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5.)
-      // reference 71 -> 72: add-backlog/references/lifecycle.md, the one
+      // reference 71 -> 72: add--backlog/references/lifecycle.md, the one
       // procedure the five pipeline commands share for a ticket they carry.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
-      // reference 72 -> 73: add-backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
+      // reference 72 -> 73: add--backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
       reference: 73,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
-      // only declaring command, add.pull-request, forbade calling it; that
+      // only declaring command, add-pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
       // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
       // script 17 -> 18: hotfix-gates.sh, the diagnosis/review freshness owner.
@@ -965,20 +965,20 @@ describe('node inventory snapshot', () => {
       // so a ticket reaches the base branch. backlog.sh itself still runs no git.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F2.)
       // script 20 -> 21: migrate-context-files.sh, which folds legacy context
-      // files into AGENTS.md before any write. add-agents-md-style runs it.
+      // files into AGENTS.md before any write. add--agents-md-style runs it.
       // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1.)
       script: 21,
-      // fragment 24 -> 25: fragments/qa-pipeline/add.review.md, which carries
-      // add.review's QA judgement steps under the feature
+      // fragment 24 -> 25: fragments/qa-pipeline/add-review.md, which carries
+      // add-review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
-      // fragment 25 -> 26: plugins/gitnexus/fragments/add.build.md.
+      // fragment 25 -> 26: plugins/gitnexus/fragments/add-build.md.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
-      // fragment 26 -> 27: fragments/board/add.brainstorm.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
-      // fragment 27 -> 28: fragments/board/add.new.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
-      // fragment 28 -> 29: fragments/board/add.plan.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
-      // fragment 29 -> 30: fragments/board/add.build.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
-      // fragment 30 -> 31: fragments/board/add.done.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
-      // fragment 31 -> 32: fragments/board/add.hotfix.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+      // fragment 26 -> 27: fragments/board/add-brainstorm.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+      // fragment 27 -> 28: fragments/board/add-new.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+      // fragment 28 -> 29: fragments/board/add-plan.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+      // fragment 29 -> 30: fragments/board/add-build.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+      // fragment 30 -> 31: fragments/board/add-done.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+      // fragment 31 -> 32: fragments/board/add-hotfix.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
       fragment: 32,
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
@@ -1007,7 +1007,7 @@ describe('node inventory snapshot', () => {
     // declares 100 -> 101: the same net +1, since DECLARING_KINDS covers all
     // three kinds that moved.
     // (plan 2026-09-09T090201-PLAN--review-no-loops, F2, F3 and F7.)
-    // 213 -> 215, declares 101 -> 103: add-final-report in both layers.
+    // 213 -> 215, declares 101 -> 103: add--final-report in both layers.
     // (plan 2026-09-09T163448-PLAN--final-report-shape, F1 and F5.)
     // 215 -> 216, declares 103 -> 104: prompt-review-agent.
     // (plan 2026-09-10T173216-PLAN--prompt-quality-ruler, F3.)
@@ -1015,14 +1015,14 @@ describe('node inventory snapshot', () => {
     // are not in DECLARING_KINDS, so a deleted script changes the node total
     // and nothing else.
     // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F1.)
-    // 215 -> 216, declares 104 -> 105: +1 skill, the product add-review-discipline.
+    // 215 -> 216, declares 104 -> 105: +1 skill, the product add--review-discipline.
     // A skill IS in DECLARING_KINDS, so both counts move together — the
     // asymmetry with the script above is the rule, not an oversight.
     // (plan 2026-09-11T014333-PLAN--product-close-out-parity, F15.)
-    // 216 -> 221: +1 skill (add-gitnexus, a plugin's own bundled skill, now
+    // 216 -> 221: +1 skill (add--gitnexus, a plugin's own bundled skill, now
     // walked) and +4 templates (a new kind over .codeadd/templates). Both were
     // shipped classes that produced no node at all.
-    // declares 105 -> 130: +1 for add-gitnexus, and +24 for every fragment.
+    // declares 105 -> 130: +1 for add--gitnexus, and +24 for every fragment.
     // `fragment` joined DECLARING_KINDS, and `declares` is
     // DECLARING_KINDS.has(kind) — a flag meaning "the build scans this file for
     // a uses: block", not "this file has one". All 24 moved; 23 gained a block.
@@ -1033,13 +1033,13 @@ describe('node inventory snapshot', () => {
     // internal skill add-artefact-graph (F14).
     // declares 130 -> 131: containers add nothing (a directory has no uses: block,
     // so both kinds are deliberately outside DECLARING_KINDS); the new skill does.
-    // 227 -> 228, declares 131 -> 132: +1 for fragments/qa-pipeline/add.review.md,
-    // the fragment that carries add.review's QA judgement steps under the
+    // 227 -> 228, declares 131 -> 132: +1 for fragments/qa-pipeline/add-review.md,
+    // the fragment that carries add-review's QA judgement steps under the
     // feature. A fragment is a declaring kind, so it counts in both totals.
     // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary,
     // F15 and F21.)
     // 228 -> 225, declares 132 -> 130: -3 for add.init, add-product-discovery
-    // and add-doc-schemas/references/product.md, deleted together with the
+    // and add--doc-schemas/references/product.md, deleted together with the
     // owner/product onboarding. Two of the three declare (the command and the
     // skill); a reference does not, which is why declares drops by 2 and the
     // total by 3.
@@ -1050,36 +1050,38 @@ describe('node inventory snapshot', () => {
     // 227 -> 228: +1 script, hotfix-gates.sh. declares stays 131 because
     // scripts are not in DECLARING_KINDS.
     // 228 -> 230: +1 script, backlog.sh, and +1 reference,
-    // add-doc-schemas/references/backlog.md. declares stays 131 — neither a
+    // add--doc-schemas/references/backlog.md. declares stays 131 — neither a
     // script nor a reference is a declaring kind.
     // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5 and F7.)
-    // 230 -> 232, declares 131 -> 132: +1 skill, add-backlog (a declaring kind),
+    // 230 -> 232, declares 131 -> 132: +1 skill, add--backlog (a declaring kind),
     // and +1 script, backlog-commit.sh (not one). The same asymmetry as above.
     // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F2 and F3.)
-    // 232 -> 233: +1 reference, add-backlog/references/lifecycle.md. declares
+    // 232 -> 233: +1 reference, add--backlog/references/lifecycle.md. declares
     // stays 132 — a reference is not a declaring kind.
     // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
     // 233 -> 234: +1 script, migrate-context-files.sh. declares stays 132 —
     // scripts are not a declaring kind. Renaming the style skill to
-    // add-agents-md-style moves no count.
+    // add--agents-md-style moves no count.
     // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1 and F2.)
-    // 234 -> 236, declares 132 -> 133: +1 fragment, board/add.brainstorm.md (a declaring kind) and +1 feature node, `board`, derived from the fragments/board/ directory (not a declaring kind).
+    // 234 -> 236, declares 132 -> 133: +1 fragment, board/add-brainstorm.md (a declaring kind) and +1 feature node, `board`, derived from the fragments/board/ directory (not a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7.)
-    // 236 -> 237, declares 133 -> 134: +1 fragment, board/add.new.md (a declaring kind).
+    // 236 -> 237, declares 133 -> 134: +1 fragment, board/add-new.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9.)
-    // 237 -> 238, declares 134 -> 135: +1 fragment, board/add.plan.md (a declaring kind).
+    // 237 -> 238, declares 134 -> 135: +1 fragment, board/add-plan.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11.)
-    // 238 -> 239, declares 135 -> 136: +1 fragment, board/add.build.md (a declaring kind).
+    // 238 -> 239, declares 135 -> 136: +1 fragment, board/add-build.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13.)
-    // 239 -> 240, declares 136 -> 137: +1 fragment, board/add.done.md (a declaring kind).
+    // 239 -> 240, declares 136 -> 137: +1 fragment, board/add-done.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15.)
-    // 240 -> 241: +1 reference, add-backlog/references/phases.md -- the phase model,
+    // 240 -> 241: +1 reference, add--backlog/references/phases.md -- the phase model,
     // split out of lifecycle.md. declares stays 137: a reference is not a declaring kind.
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19.)
-    // 241 -> 242, declares 137 -> 138: +1 fragment, board/add.hotfix.md (a declaring kind).
+    // 241 -> 242, declares 137 -> 138: +1 fragment, board/add-hotfix.md (a declaring kind).
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30.)
-    expect(nodes).toHaveLength(242);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(138);
+    // 242 -> 243, declares 138 -> 139: +1 internal skill, the reusable
+    // product artefact rename procedure. Renaming product identities moves no count.
+    expect(nodes).toHaveLength(243);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(139);
   });
 });
 

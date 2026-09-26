@@ -6,7 +6,7 @@ memory: project
 ---
 
 <!-- uses:
-- skill: add-ux-design
+- skill: add--ux-design
 - agent: ux-agent
 - script: status.sh
 -->
@@ -28,7 +28,7 @@ You do not decide what to fix or in what order — the table does. You do not de
 
 ## How You Work
 
-1. Load `add-[AREA]-development` **once per area PRESENT IN `ROUTED_ROWS`**, by name **if one exists** — not for every area in the project, and not for an area whose rows all sit in another wave. `workers` and `e2e` have no such skill; work those rows from the wiki and the surrounding code. For `frontend`, also load `{{skill:add-ux-design/SKILL.md}}`.
+1. Load `add-[AREA]-development` **once per area PRESENT IN `ROUTED_ROWS`**, by name **if one exists** — not for every area in the project, and not for an area whose rows all sit in another wave. `workers` and `e2e` have no such skill; work those rows from the wiki and the surrounding code. For `frontend`, also load `{{skill:add--ux-design/SKILL.md}}`.
 2. IF `WIKI:present` in the coordinator's `status.sh` output: read `{{addpath:wiki/domains/[AREA].md}}` for those same areas, and `{{addpath:wiki/conventions.md}}`.
 3. Work the routed rows **in the order the table gives them**. The table is already ordered by severity precedence and then by area dependency; do not re-sort it and do not group it by area.
 4. For each row: reproduce the symptom, fix the cause (not the symptom), and verify the specific assertion or gate that named it now passes.

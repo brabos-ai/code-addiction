@@ -201,7 +201,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     // A first fix swapped the count for a note saying the lists were found and
     // not carried. That was still a live read of a dead schema's section name,
     // and the premise behind it was wrong: nobody hand-writes those files —
-    // `/add.hotfix` STEP 12 wrote them — so there is no author to inform.
+    // `/add-hotfix` STEP 12 wrote them — so there is no author to inform.
     //
     // The migration now knows nothing about them. The files stay on disk,
     // untouched, like every other file it does not own.
@@ -323,9 +323,9 @@ describe('F18 — L4.1 what the graph says after the harvest', () => {
 // F19 — the close-out gate, and the index rebuild
 // ---------------------------------------------------------------------------
 
-describe('F19 — /add.done keeps the format from decaying', () => {
+describe('F19 — /add-done keeps the format from decaying', () => {
   const DONE = fs.readFileSync(
-    path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.done.md'),
+    path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-done.md'),
     'utf8',
   );
 
@@ -354,7 +354,7 @@ describe('F19 — /add.done keeps the format from decaying', () => {
   });
 
   it('rebuilds the docs index, through the shipped one-shot form', () => {
-    // `/add.done` runs in a user's project, where the server lives in the npm
+    // `/add-done` runs in a user's project, where the server lives in the npm
     // package and nothing is installed locally. It asks the CLI for one answer
     // rather than speaking JSON-RPC to a subprocess it spawned for one call.
     expect(DONE).toMatch(/codeadd mcp --corpus=docs --action=reindex/);
@@ -406,7 +406,7 @@ describe('F18 — the report reaches the driver, not just the return value', () 
 
 describe('F19 — 6.7.1 asks for what the action actually returns', () => {
   const DONE = fs.readFileSync(
-    path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.done.md'),
+    path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-done.md'),
     'utf8',
   );
 

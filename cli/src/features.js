@@ -43,29 +43,29 @@ export const FEATURES = {
     description: 'TDD pipeline (test-first ordering + unit/integration generation)',
     default: true,
     aliases: ['tdd'],
-    commands: ['add.plan', 'add.build', 'add.review', 'add.hotfix'],
+    commands: ['add-plan', 'add-build', 'add-review', 'add-hotfix'],
   },
   'qa-pipeline': {
     description: 'QA pipeline (E2E authoring + agent QA validation)',
     default: false,
-    // add.review joined in 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary.
-    // The judgement steps used to sit in add.review's ungated base body and
-    // self-gate on the /add.qa-setup receipt alone. Their INPUT is authored by
+    // add-review joined in 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary.
+    // The judgement steps used to sit in add-review's ungated base body and
+    // self-gate on the /add-qa-setup receipt alone. Their INPUT is authored by
     // @e2e-agent, which this feature already gates — so with the feature off
     // the judges read an empty directory and every in-contract screen became a
     // coverage blocker. Gating them here is what makes the flag mean one thing
     // for the whole QA flow.
-    commands: ['add.plan', 'add.build', 'add.review'],
+    commands: ['add-plan', 'add-build', 'add-review'],
   },
   // OFF by default, and that is the decision, not an oversight: this one
   // DELETES the user's documentation, which is their call to make. It also
-  // refuses to run at all unless /add.done wrote a delivery index entry in the
+  // refuses to run at all unless /add-done wrote a delivery index entry in the
   // same run — pruning the scaffolding before the record exists inverts the
   // whole design.
   'docs-pruning': {
     description: 'Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written',
     default: false,
-    commands: ['add.done'],
+    commands: ['add-done'],
   },
   // OFF by default because there is nothing to preserve: no project uses the
   // board yet, and the board app ships as a separate release asset, so a fresh
@@ -75,7 +75,7 @@ export const FEATURES = {
   board: {
     description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
     default: false,
-    commands: ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done', 'add.hotfix'],
+    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'],
   },
 };
 

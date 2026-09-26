@@ -7,34 +7,34 @@
 
 ```mermaid
 graph LR
-  NEW(add.new)
-  PLAN(add.plan)
-  BUILD(add.build)
-  REVIEW(add.review)
-  DONE(add.done)
+  NEW(add-new)
+  PLAN(add-plan)
+  BUILD(add-build)
+  REVIEW(add-review)
+  DONE(add-done)
 
-  BADE{{add-backend-development}}
-  BALO{{add-backlog}}
-  CORE{{add-code-review}}
-  CO{{add-commit}}
-  CSC{{add-cross-sf-consistency}}
-  DADE{{add-database-development}}
-  DELMO{{add-delivery-mode}}
-  DOSC{{add-doc-schemas}}
-  EC{{add-ecosystem}}
-  FEDI{{add-feature-discovery}}
-  FESP{{add-feature-specification}}
-  FINR{{add-final-report}}
-  FRDE{{add-frontend-development}}
-  IDCO{{add-id-convention}}
-  IN{{add-investigation}}
-  KNDI{{add-knowledge-discovery}}
-  PRV{{add-plan-review}}
-  RVDI{{add-review-discipline}}
-  SDDA{{add-subagent-driven-development}}
-  TACH{{add-tasks-checklist}}
-  UXDE{{add-ux-design}}
-  WIMA{{add-wiki-maintenance}}
+  BADE{{add--backend-development}}
+  BALO{{add--backlog}}
+  CORE{{add--code-review}}
+  CO{{add--commit}}
+  CSC{{add--cross-sf-consistency}}
+  DADE{{add--database-development}}
+  DELMO{{add--delivery-mode}}
+  DOSC{{add--doc-schemas}}
+  EC{{add--ecosystem}}
+  FEDI{{add--feature-discovery}}
+  FESP{{add--feature-specification}}
+  FINR{{add--final-report}}
+  FRDE{{add--frontend-development}}
+  IDCO{{add--id-convention}}
+  IN{{add--investigation}}
+  KNDI{{add--knowledge-discovery}}
+  PRV{{add--plan-review}}
+  RVDI{{add--review-discipline}}
+  SDDA{{add--subagent-driven-development}}
+  TACH{{add--tasks-checklist}}
+  UXDE{{add--ux-design}}
+  WIMA{{add--wiki-maintenance}}
 
   NEW --> BALO & DELMO & DOSC & FESP & FINR & IDCO & KNDI & PRV & RVDI & SDDA
   PLAN --> BADE & BALO & CSC & DADE & DELMO & DOSC & EC & FEDI & FINR & FRDE & IDCO & KNDI & PRV & RVDI & SDDA & TACH & UXDE
@@ -48,35 +48,35 @@ graph LR
 ```mermaid
 graph LR
   ADD(add)
-  DIAGNOSE(add.diagnose)
-  HOTFIX(add.hotfix)
-  AUDIT(add.audit)
-  WIKI(add.wiki)
-  BRAINSTORM(add.brainstorm)
-  UX(add.ux)
-  QASETUP(add.qa-setup)
-  PULLREQUEST(add.pull-request)
+  DIAGNOSE(add-diagnose)
+  HOTFIX(add-hotfix)
+  AUDIT(add-audit)
+  WIKI(add-wiki)
+  BRAINSTORM(add-brainstorm)
+  UX(add-ux)
+  QASETUP(add-qa-setup)
+  PULLREQUEST(add-pull-request)
 
-  AGMDST{{add-agents-md-style}}
-  ARDI{{add-architecture-discovery}}
-  BALO{{add-backlog}}
-  CO{{add-commit}}
-  DEENSE{{add-dev-environment-setup}}
-  DELMO{{add-delivery-mode}}
-  DOSC{{add-doc-schemas}}
-  EC{{add-ecosystem}}
-  FESP{{add-feature-specification}}
-  FINR{{add-final-report}}
-  HECH{{add-health-check}}
-  IDCO{{add-id-convention}}
-  IN{{add-investigation}}
-  KNDI{{add-knowledge-discovery}}
-  QA{{add-qa}}
-  QAMI{{add-qa-migration}}
-  SECO{{add-setup-contract}}
-  SDDA{{add-subagent-driven-development}}
-  UXDE{{add-ux-design}}
-  WIMA{{add-wiki-maintenance}}
+  AGMDST{{add--agents-md-style}}
+  ARDI{{add--architecture-discovery}}
+  BALO{{add--backlog}}
+  CO{{add--commit}}
+  DEENSE{{add--dev-environment-setup}}
+  DELMO{{add--delivery-mode}}
+  DOSC{{add--doc-schemas}}
+  EC{{add--ecosystem}}
+  FESP{{add--feature-specification}}
+  FINR{{add--final-report}}
+  HECH{{add--health-check}}
+  IDCO{{add--id-convention}}
+  IN{{add--investigation}}
+  KNDI{{add--knowledge-discovery}}
+  QA{{add--qa}}
+  QAMI{{add--qa-migration}}
+  SECO{{add--setup-contract}}
+  SDDA{{add--subagent-driven-development}}
+  UXDE{{add--ux-design}}
+  WIMA{{add--wiki-maintenance}}
 
   ADD --> DEENSE & EC
   DIAGNOSE --> DOSC & EC & FINR & IN & KNDI & SDDA
@@ -93,13 +93,13 @@ graph LR
 
 ```mermaid
 graph LR
-  BUILD(add.build)
-  DIAGNOSE(add.diagnose)
-  HOTFIX(add.hotfix)
-  NEW(add.new)
-  PLAN(add.plan)
-  QASETUP(add.qa-setup)
-  REVIEW(add.review)
+  BUILD(add-build)
+  DIAGNOSE(add-diagnose)
+  HOTFIX(add-hotfix)
+  NEW(add-new)
+  PLAN(add-plan)
+  QASETUP(add-qa-setup)
+  REVIEW(add-review)
 
   ARA>architecture-agent]
   BAA>backend-agent]
@@ -120,23 +120,23 @@ graph LR
   UXFLA>ux-flow-agent]
   UXLAA>ux-layout-agent]
 
-  ARDI{{add-architecture-discovery}}
-  BAAR{{add-backend-architecture}}
-  BADE{{add-backend-development}}
-  CORE{{add-code-review}}
-  CSC{{add-cross-sf-consistency}}
-  DADE{{add-database-development}}
-  DOSC{{add-doc-schemas}}
-  FEDI{{add-feature-discovery}}
-  FERB{{add-feature-readback}}
-  FESP{{add-feature-specification}}
-  FRAR{{add-frontend-architecture}}
-  FRDE{{add-frontend-development}}
-  IN{{add-investigation}}
-  PRV{{add-plan-review}}
-  QA{{add-qa}}
-  SEAU{{add-security-audit}}
-  UXDE{{add-ux-design}}
+  ARDI{{add--architecture-discovery}}
+  BAAR{{add--backend-architecture}}
+  BADE{{add--backend-development}}
+  CORE{{add--code-review}}
+  CSC{{add--cross-sf-consistency}}
+  DADE{{add--database-development}}
+  DOSC{{add--doc-schemas}}
+  FEDI{{add--feature-discovery}}
+  FERB{{add--feature-readback}}
+  FESP{{add--feature-specification}}
+  FRAR{{add--frontend-architecture}}
+  FRDE{{add--frontend-development}}
+  IN{{add--investigation}}
+  PRV{{add--plan-review}}
+  QA{{add--qa}}
+  SEAU{{add--security-audit}}
+  UXDE{{add--ux-design}}
 
   BUILD --> BAA & CSA & DAA & E2A & FIA & FRA & RBA & REA & TEA & UXA
   DIAGNOSE --> ARA & FEHIA & GIHIA
@@ -164,4 +164,4 @@ graph LR
   UXLAA --> UXDE
 ```
 
-> Source of truth for AI agents: `framwork/.codeadd/skills/add-ecosystem/SKILL.md`
+> Source of truth for AI agents: `framwork/.codeadd/skills/add--ecosystem/SKILL.md`

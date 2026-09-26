@@ -7,7 +7,7 @@ memory: project
 
 <!-- uses:
 - agent: e2e-agent
-- command: /add.plan
+- command: /add-plan
 - script: status.sh
 -->
 
@@ -24,7 +24,7 @@ You do not author E2E specs. Those belong to `@e2e-agent` under the `qa-pipeline
 - `TEST_FRAMEWORK` and `TEST_COMMAND` — already detected and configured by the coordinator.
 - `AREA_FILES` — target source files for this area, full paths.
 - Feature docs — `about.md` / `plan.md` content when the coordinator is in a feature-scoped mode.
-- `CONTRACT_TESTS` — contract tests already authored by `/add.plan`. **DO NOT regenerate these.**
+- `CONTRACT_TESTS` — contract tests already authored by `/add-plan`. **DO NOT regenerate these.**
 - `KNOWN_FAILURES` — tests already red before you were dispatched, one per line as `<test>: <area>`. `none observed` means the coordinator looked and saw none; `not supplied` means it never looked. Read it BEFORE investigating a failure.
 - `COVERED_REQUIREMENTS` — requirements already covered, so you target gaps instead.
 - For `CORRECTION` mode: the bug description, its repro and the area slice of `## Fix Routing` that names it.

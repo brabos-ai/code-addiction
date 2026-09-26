@@ -165,7 +165,7 @@ describe('orphans', () => {
     //
     // This needs a synthetic member because the real tree cannot show it: every
     // container member today is either a fragment (an entry point, excluded
-    // anyway) or add-gitnexus, which carries 15 real USES_SKILL edges. The leak
+    // anyway) or add--gitnexus, which carries 15 real USES_SKILL edges. The leak
     // is LATENT, so the orphan count does not move either way on the real graph
     // — which is exactly why only a fixture can catch a future collapse of
     // ORPHAN_DEPENDENCY_TYPES back into DEPENDENCY_TYPES.
@@ -213,12 +213,12 @@ describe('orphans', () => {
     // finding.
     const withFragment = {
       nodes: [...G.nodes, {
-        id: 'product/fragment/fragments/tdd-pipeline/add.build.md', kind: 'fragment',
-        layer: 'product', name: 'fragments/tdd-pipeline/add.build.md', path: 'f.md',
+        id: 'product/fragment/fragments/tdd-pipeline/add-build.md', kind: 'fragment',
+        layer: 'product', name: 'fragments/tdd-pipeline/add-build.md', path: 'f.md',
         registered: true, providers: [], declares: false,
       }],
       edges: [...G.edges, {
-        from: 'product/fragment/fragments/tdd-pipeline/add.build.md',
+        from: 'product/fragment/fragments/tdd-pipeline/add-build.md',
         to: 'product/command/cmdA', type: 'INJECTS_INTO', origin: 'sidecar', modifier: null,
       }],
     };
@@ -250,36 +250,36 @@ describe('the real emitted graph', () => {
     expect(real.edges.length).toBeGreaterThan(100);
   });
 
-  it('add-doc-schemas is a hub — its blast radius is large and transitive', () => {
-    const hit = impact(real, 'product/skill/add-doc-schemas');
+  it('add--doc-schemas is a hub — its blast radius is large and transitive', () => {
+    const hit = impact(real, 'product/skill/add--doc-schemas');
     expect(hit.length).toBeGreaterThan(10);
     expect(hit.some((r) => r.depth > 1)).toBe(true);
   });
 
   it('a catalogue skill declares no dependencies — impact stays discriminating', () => {
-    // add-ecosystem is a MAP of the ecosystem: its body is ## Commands,
+    // add--ecosystem is a MAP of the ecosystem: its body is ## Commands,
     // ## Skills, ## Agents, ## Dependency Index. It consumes none of it.
     //
     // Its 81 rows were first generated as real dependency edges, and because
     // eight commands load this skill, every artefact it lists inherited ~83
-    // transitive dependants. `impact add-stripe` — a leaf nothing uses —
-    // returned 84, one MORE than add-doc-schemas, the actual hub. The headline
+    // transitive dependants. `impact add--stripe` — a leaf nothing uses —
+    // returned 84, one MORE than add--doc-schemas, the actual hub. The headline
     // query had become a constant.
     //
     // If a --sync regeneration turns these rows back into skill:/agent:/
     // command:/script:, that happens again and nothing else would notice.
-    const eco = real.edges.filter((e) => e.from === 'product/skill/add-ecosystem');
+    const eco = real.edges.filter((e) => e.from === 'product/skill/add--ecosystem');
 
     expect(eco.length).toBeGreaterThan(50);
-    expect(eco.every((e) => e.type === 'MENTIONS'), 'add-ecosystem must catalogue, not depend').toBe(true);
+    expect(eco.every((e) => e.type === 'MENTIONS'), 'add--ecosystem must catalogue, not depend').toBe(true);
   });
 
   it('impact --depth 1 tells a leaf from a hub', () => {
     // The property C1 destroyed and the wave-5 consumers grade on. The
     // unbounded closure saturates over a densely cross-referencing command
     // layer, so depth 1 is what carries signal.
-    const leaf = impact(real, 'product/skill/add-stripe', { depth: 1 }).length;
-    const hub = impact(real, 'product/skill/add-doc-schemas', { depth: 1 }).length;
+    const leaf = impact(real, 'product/skill/add--stripe', { depth: 1 }).length;
+    const hub = impact(real, 'product/skill/add--doc-schemas', { depth: 1 }).length;
 
     expect(leaf).toBe(0);
     expect(hub).toBeGreaterThan(15);
@@ -301,20 +301,20 @@ describe('the real emitted graph', () => {
   it('L2.1 a fragment dispatch is visible — the edge this whole change exists for', () => {
     // @test-agent is dispatched from two tdd-pipeline fragments and from no
     // command directly. Before `fragment` became a declaring kind, asking who
-    // dispatched it returned only add.build and silently omitted add.hotfix.
+    // dispatched it returned only add-build and silently omitted add-hotfix.
     // THIS is the assertion the plan's risk table names as the guard against
     // the 23-fragment migration writing a wrong edge.
     const inbound = neighbors(real, 'product/agent/test-agent').in
       .filter((e) => e.type === 'DISPATCHES')
       .map((e) => e.from);
-    expect(inbound).toContain('product/fragment/fragments/tdd-pipeline/add.hotfix.md');
-    expect(inbound).toContain('product/fragment/fragments/tdd-pipeline/add.build.md');
+    expect(inbound).toContain('product/fragment/fragments/tdd-pipeline/add-hotfix.md');
+    expect(inbound).toContain('product/fragment/fragments/tdd-pipeline/add-build.md');
   });
 
   it('L1.4/L2.3 the plugin-bundled skill is a node, under its plugin path', () => {
-    const n = real.nodes.find((x) => x.id === 'product/skill/add-gitnexus');
-    expect(n, 'add-gitnexus ships and installs; it must be indexed').toBeTruthy();
-    expect(n.path).toMatch(/plugins\/gitnexus\/skills\/add-gitnexus\/SKILL\.md$/);
+    const n = real.nodes.find((x) => x.id === 'product/skill/add--gitnexus');
+    expect(n, 'add--gitnexus ships and installs; it must be indexed').toBeTruthy();
+    expect(n.path).toMatch(/plugins\/gitnexus\/skills\/add--gitnexus\/SKILL\.md$/);
     expect(n.kind).toBe('skill');
   });
 
@@ -330,16 +330,16 @@ describe('the real emitted graph', () => {
 
   it('L2.5 a feature node answers what enabling it touches', () => {
     const ids = dependencies(real, 'product/feature/tdd-pipeline').map((r) => r.id);
-    expect(ids).toContain('product/fragment/fragments/tdd-pipeline/add.build.md');
-    expect(ids).toContain('product/fragment/fragments/tdd-pipeline/add.hotfix.md');
+    expect(ids).toContain('product/fragment/fragments/tdd-pipeline/add-build.md');
+    expect(ids).toContain('product/fragment/fragments/tdd-pipeline/add-hotfix.md');
   });
 
   it('L2.6-real a container member with real edges is still reachable as a dependant', () => {
     // The plugin skill is contained by its plugin AND used by 15 fragments.
     // CONTAINS must not be what keeps it off the orphan list.
-    expect(orphans(real).map((n) => n.id)).not.toContain('product/skill/add-gitnexus');
+    expect(orphans(real).map((n) => n.id)).not.toContain('product/skill/add--gitnexus');
     const viaUses = real.edges.filter(
-      (e) => e.to === 'product/skill/add-gitnexus' && e.type === 'USES_SKILL',
+      (e) => e.to === 'product/skill/add--gitnexus' && e.type === 'USES_SKILL',
     );
     expect(viaUses.length).toBeGreaterThan(0);
   });

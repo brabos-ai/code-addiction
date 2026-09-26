@@ -18,11 +18,11 @@ disallowedTools: Write, Edit, NotebookEdit, Bash, Grep
 #   boundary. A code-graph tool would let the reader repair a gap from outside the
 #   docs and report a comprehension the document never delivered.
 skills:
-  - add-feature-readback
+  - add--feature-readback
 ---
 
 <!-- uses:
-- skill: add-feature-readback
+- skill: add--feature-readback
 - agent: consistency-agent
 -->
 
@@ -57,7 +57,7 @@ Your blindness is the mechanism, not a limitation. You do not have the tools to 
 
 2. Skip anything under `_superseded/` (replaced drafts) and `_tests/` (QA run evidence) when those directories are present. Neither is guaranteed to exist.
 3. Read every remaining file front to back, all of them, before you write a line.
-4. Produce the readback in the format defined in `add-feature-readback`, **in the language the docs you just read are written in** — section headings included.
+4. Produce the readback in the format defined in `add--feature-readback`, **in the language the docs you just read are written in** — section headings included.
 5. Stop. You are a leaf — do not dispatch other agents.
 
 ## Constraints
@@ -69,4 +69,4 @@ Your blindness is the mechanism, not a limitation. You do not have the tools to 
 - **Read-only.** You hold no writing tools by design.
 - **One readback per invocation.** Any loop belongs to the dispatching command.
 
-See `{{skill:add-feature-readback/SKILL.md}}` for the full method: the paraphrase test, the three-line gap shape, fork reporting, the output format, and how a parent reads this report alongside an adversarial review.
+See `{{skill:add--feature-readback/SKILL.md}}` for the full method: the paraphrase test, the three-line gap shape, fork reporting, the output format, and how a parent reads this report alongside an adversarial review.

@@ -227,7 +227,7 @@ add-qa/
 - **Enforcement:** `⚠️ REGRA OBRIGATÓRIA`, `NEVER/MUST`, `**OBRIGATÓRIO**`
 - **Cross-references:** `{{skill:add-[name]/[file]}}` for files, `/add.[name]` for commands
 - **Token efficiency:** JSON minified, no decorative formatting
-- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review`, where it skips the staging question. Unattended delivery is not this flag: it is the `delivery: automatic` mode `add-delivery-mode` owns, chosen once at `add.brainstorm`'s approval. With a read-only `add.review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
+- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add-review`, where it skips the staging question. Unattended delivery is not this flag: it is the `delivery: automatic` mode `add-delivery-mode` owns, chosen once at `add-brainstorm`'s approval. With a read-only `add-review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add-plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
 
 ---
 
@@ -357,7 +357,7 @@ framwork/.github/           ← GitHub Copilot output
       }
     }
   },
-  "commands": { "add.build": { "description": "..." } },  // registry
+  "commands": { "add-build": { "description": "..." } },  // registry
   "skills":   { "add-backend-development": {} },           // registry
   "agents":   { "backend-agent": { "description": "..." }} // registry
 }
@@ -395,14 +395,14 @@ description: [from provider-map.json]
 If the output path contains `SKILL.md` (e.g., Codex commands → `skills/{name}/SKILL.md`), adds `name:` field:
 ```yaml
 ---
-name: add.build
+name: add-build
 description: Development execution specialist...
 ---
 ```
 
 **`toml` transformer** (Gemini only): Wraps content in TOML format:
 ```toml
-# AUTO-GENERATED - source: framwork/.codeadd/commands/add.build.md
+# AUTO-GENERATED - source: framwork/.codeadd/commands/add-build.md
 description = "Development execution specialist..."
 prompt = """
 [original content]
@@ -413,24 +413,24 @@ prompt = """
 
 ### Resource Path Variables — When and How to Use
 
-**The problem:** You write a command that references another command or skill. If you hardcode `.claude/commands/add.plan.md`, it breaks for Codex (which puts commands in `.agents/skills/add.plan/SKILL.md`).
+**The problem:** You write a command that references another command or skill. If you hardcode `.claude/commands/add-plan.md`, it breaks for Codex (which puts commands in `.agents/skills/add-plan/SKILL.md`).
 
 **The solution:** Build-time variables that resolve per provider.
 
 #### `{{cmd:NAME}}` — Reference a command
 
 ```markdown
-<!-- IN YOUR SOURCE FILE (.codeadd/commands/add.build.md): -->
-Read {{cmd:add.plan}} for the technical plan.
+<!-- IN YOUR SOURCE FILE (.codeadd/commands/add-build.md): -->
+Read {{cmd:add-plan}} for the technical plan.
 
 <!-- AFTER BUILD for Claude: -->
-Read .claude/commands/add.plan.md for the technical plan.
+Read .claude/commands/add-plan.md for the technical plan.
 
 <!-- AFTER BUILD for Codex: -->
-Read .agents/skills/add.plan/SKILL.md for the technical plan.
+Read .agents/skills/add-plan/SKILL.md for the technical plan.
 
 <!-- AFTER BUILD for Gemini: -->
-Read .gemini/commands/add.plan.toml for the technical plan.
+Read .gemini/commands/add-plan.toml for the technical plan.
 ```
 
 #### `{{skill:NAME/FILE}}` — Reference a skill file
@@ -629,7 +629,7 @@ bash .codeadd/scripts/status.sh
 | Error | Symptom | Prevention |
 |-------|---------|------------|
 | Forgot to register in provider-map.json | File exists in `.codeadd/` but never appears in provider dirs | ALWAYS register BEFORE running build |
-| Used raw path `.codeadd/commands/add.plan.md` | Works on Claude, breaks on Codex/Gemini/etc. | Use `{{cmd:add.plan}}` variable |
+| Used raw path `.codeadd/commands/add-plan.md` | Works on Claude, breaks on Codex/Gemini/etc. | Use `{{cmd:add-plan}}` variable |
 | Used raw path `.codeadd/skills/add-x/SKILL.md` | Works on Claude, breaks on other providers | Use `{{skill:add-x/SKILL.md}}` variable |
 | Agent file not named `{name}-agent.md` | build.js can't find the source file | Follow naming convention exactly |
 | Skill dir name doesn't match `name:` in frontmatter | Confusion between directory and metadata | Keep them identical |

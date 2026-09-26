@@ -115,7 +115,7 @@ fi
 
 # AGENTS.md is the only context file. A legacy one left at the root hides it
 # from Claude Code (CLAUDE.md) or overrides it in Antigravity (GEMINI.md), so it
-# is reported separately; /add.wiki update migrates it.
+# is reported separately; /add-wiki update migrates it.
 [ -f "AGENTS.md" ] && echo "ARCH:AGENTS.md" || echo "ARCH:none"
 
 LEGACY_CONTEXT=""

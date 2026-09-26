@@ -20,8 +20,8 @@
     "homepage": "https://github.com/abhigyanpatwari/GitNexus",
     "installHint": "Install globally: npm install -g gitnexus",
     "postEnableHint": "gitnexus enabled. Make the graph usable:\n  1) gitnexus setup     # wire MCP (once)\n  2) gitnexus analyze   # index this repo (from repo root)\n  3) verify: ask Claude to run gitnexus list_repos (or /mcp) — this repo MUST appear indexed; if it does not, the commands silently fall back to grep.\nRe-run analyze after large changes. Docs: https://github.com/abhigyanpatwari/GitNexus",
-    "injects": ["add.new", "add.plan", "add.build", "add.diagnose", "add.hotfix", "add.done", "add.wiki"],
-    "skills": ["add-gitnexus"],
+    "injects": ["add-new", "add-plan", "add-build", "add-diagnose", "add-hotfix", "add-done", "add-wiki"],
+    "skills": ["add--gitnexus"],
     "agents": [
       { "agent": "discovery-agent", "sections": ["graph"] },
       { "agent": "architecture-agent", "sections": ["graph"] },
@@ -39,9 +39,9 @@
     "description": "Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP",
     "detect": "npx --yes @playwright/mcp@latest --version",
     "homepage": "https://github.com/microsoft/playwright-mcp",
-    "installHint": "Install the Playwright MCP server (@playwright/mcp) + chromium, then wire it as an MCP server. Run /add.qa-setup for guided, per-OS install + project QA config. Tool: https://github.com/microsoft/playwright-mcp",
-    "postEnableHint": "playwright enabled — adds live browser driving to the already-present QA validation. Make it runnable:\n  1) /add.qa-setup        # install prereqs (chromium + Playwright MCP) + scaffold project QA config\n  2) verify the Playwright MCP server is connected (e.g. /mcp) — it MUST appear; if not, the QA judgement runs in degraded read-PNG mode\n  3) /add.review                   # the audit runs inside the review\nDocs: https://github.com/microsoft/playwright-mcp",
-    "injects": ["add.review"],
+    "installHint": "Install the Playwright MCP server (@playwright/mcp) + chromium, then wire it as an MCP server. Run /add-qa-setup for guided, per-OS install + project QA config. Tool: https://github.com/microsoft/playwright-mcp",
+    "postEnableHint": "playwright enabled — adds live browser driving to the already-present QA validation. Make it runnable:\n  1) /add-qa-setup        # install prereqs (chromium + Playwright MCP) + scaffold project QA config\n  2) verify the Playwright MCP server is connected (e.g. /mcp) — it MUST appear; if not, the QA judgement runs in degraded read-PNG mode\n  3) /add-review                   # the audit runs inside the review\nDocs: https://github.com/microsoft/playwright-mcp",
+    "injects": ["add-review"],
     "skills": [],
     "agents": [
       { "agent": "qa-agent", "sections": ["drive"] }

@@ -25,7 +25,22 @@ const ROOT = path.resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 
 function readMap() {
-  return JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+  const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+  assertProductNames(map);
+  return map;
+}
+
+function assertProductNames(map) {
+  for (const name of Object.keys(map.commands || {})) {
+    if (name !== 'add' && !/^add-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+      throw new Error(`Invalid product command name: ${name}`);
+    }
+  }
+  for (const name of Object.keys(map.skills || {})) {
+    if (!/^add--[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+      throw new Error(`Invalid product skill name: ${name}`);
+    }
+  }
 }
 
 function readFile(filePath) {
@@ -481,7 +496,7 @@ function extractContract(rawContent, resourceName, _codeaddDir = CODEADD_DIR) {
     throw new Error(
       `Contract shape changed in ${resourceName}.\n` +
         `  declared: ${decl.shape}\n  computed: ${computed}\n` +
-        `Set shape: ${computed}. Every installed project will need /add.qa-setup.`,
+        `Set shape: ${computed}. Every installed project will need /add-qa-setup.`,
     );
   }
 
@@ -1477,7 +1492,7 @@ const TRANSFORMERS = {
  *
  * {{addpath:X}} resolves to literal `.codeadd/X` regardless of provider — used for
  * runtime paths that exist in the user's installed project (e.g. the wiki generated
- * by /add.wiki, manifest.json, runtime-only artefacts).
+ * by /add-wiki, manifest.json, runtime-only artefacts).
  *
  * @param {string} content   raw content with variables
  * @param {object} provider  provider config from provider-map.json
@@ -1518,7 +1533,7 @@ function lintResourcePaths(content, srcPath) {
   const relPath = path.relative(ROOT, srcPath);
 
   // Skip the resource-path-convention skill itself (it documents the patterns)
-  if (relPath.includes('add-resource-path-convention')) return;
+  if (relPath.includes('add--resource-path-convention') || relPath.includes('add-resource-path-convention')) return;
 
   // Skip the workbench layer, for the same reason and a second one.
   //
@@ -2186,6 +2201,7 @@ function main() {
 
 // Export for testing
 module.exports = {
+  assertProductNames,
   stripHtmlComments,
   extractInjectionPoints,
   collectInjectionPoints,
