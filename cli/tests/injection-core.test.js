@@ -21,6 +21,7 @@ import {
   renderSlots,
   captureBaselines,
   renderInstalledResource,
+  reconcileSlots,
 } from '../src/injection-core.js';
 
 // ---------------------------------------------------------------------------
@@ -486,6 +487,43 @@ describe('slot render', () => {
     fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({ providers: ['claude'] }));
     expect(captureBaselines(dir)).toEqual({ captured: [], pruned: [], warnings: [] });
     expect(fs.existsSync(path.join(dir, '.codeadd', 'baselines'))).toBe(false);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('reconcile renders tdd before qa from the baseline, and a missing section warns without clearing the flag', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-rec-'));
+    const file = path.join(dir, '.claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const pristine = 'Before\n\nAfter\n';
+    fs.writeFileSync(file, pristine);
+    fs.mkdirSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands', 'add-plan.md'), pristine);
+    fs.mkdirSync(path.join(dir, '.codeadd', 'fragments', 'tdd-pipeline'), { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, '.codeadd', 'fragments', 'tdd-pipeline', 'add-plan.md'),
+      '<!-- section:step-list -->\nSTEP tdd-pipeline.test-spec: Generate contract test cases\n<!-- /section:step-list -->\n',
+    );
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: FALLBACK,
+      members: [
+        { namespace: 'feature', name: 'tdd-pipeline', section: 'step-list' },
+        { namespace: 'feature', name: 'qa-pipeline', section: 'step-list' },
+      ],
+      anchor: { text: 'Before', ordinal: 1, position: 'after', next: 'After' },
+    };
+    fs.writeFileSync(path.join(dir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 2, slots: [slot] }));
+    fs.writeFileSync(
+      path.join(dir, '.codeadd', 'manifest.json'),
+      JSON.stringify({ providers: ['claude'], scope: 'project', features: { 'tdd-pipeline': true, 'qa-pipeline': true }, plugins: {}, hashes: {} }),
+    );
+    const result = reconcileSlots(dir);
+    expect(fs.readFileSync(file, 'utf8')).toBe('Before\nSTEP tdd-pipeline.test-spec: Generate contract test cases\nAfter\n');
+    expect(result.warnings).toEqual([
+      { resource: 'add-plan', slot: 'plan-specs', member: 'feature:qa-pipeline:step-list', reason: 'file missing' },
+    ]);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8')).features['qa-pipeline']).toBe(true);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 });

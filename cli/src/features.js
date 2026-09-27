@@ -11,7 +11,10 @@ import {
   readManifest,
   saveManifest,
   recalculateHashes,
+  loadInjectionSidecar,
+  reconcileSlots,
 } from './injection-core.js';
+import { isPluginDetected } from './plugins.js';
 
 /**
  * Emit an actionable, loud warning when an anchor cannot be located (the user
@@ -21,6 +24,23 @@ import {
  * @param {string} resourceName
  * @param {Array<{sections:string[], anchor:object}>} missed
  */
+function isV2(cwd) {
+  return loadInjectionSidecar(cwd)?.version === 2;
+}
+
+function logSlotWarnings(warnings) {
+  for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
+}
+
+function setFeatureFlag(cwd, featureName, enabled) {
+  const manifest = readManifest(cwd);
+  if (!manifest) return;
+  if (!manifest.features) manifest.features = {};
+  manifest.features[featureName] = enabled;
+  manifest.features = normalizeFeatureStates(manifest.features).states;
+  saveManifest(cwd, manifest);
+}
+
 function warnMissed(namespace, name, resourceName, missed) {
   for (const m of missed) {
     log.warn(
@@ -170,6 +190,12 @@ function getFragments(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function enableFeature(cwd, featureName) {
+  if (isV2(cwd)) {
+    setFeatureFlag(cwd, featureName, true);
+    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+    logSlotWarnings(result.warnings);
+    return { modified: result.modified.length };
+  }
   const fragments = getFragments(cwd, featureName);
   const points = loadInjectionPoints(cwd).filter(
     (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
@@ -211,6 +237,12 @@ export function enableFeature(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function disableFeature(cwd, featureName) {
+  if (isV2(cwd)) {
+    setFeatureFlag(cwd, featureName, false);
+    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+    logSlotWarnings(result.warnings);
+    return { modified: result.modified.length };
+  }
   const fragments = getFragments(cwd, featureName);
   const points = loadInjectionPoints(cwd).filter(
     (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
@@ -251,6 +283,16 @@ export function disableFeature(cwd, featureName) {
 export function applyEnabledFeatures(cwd) {
   const manifest = readManifest(cwd);
   if (!manifest) return;
+  if (isV2(cwd)) {
+    const { states, changed } = normalizeFeatureStates(manifest.features ?? {});
+    if (changed) {
+      manifest.features = states;
+      saveManifest(cwd, manifest);
+    }
+    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+    logSlotWarnings(result.warnings);
+    return result.modified.length;
+  }
 
   const featureStates = manifest.features ?? {};
   let totalModified = 0;

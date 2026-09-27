@@ -623,3 +623,82 @@ export function renderInstalledResource(cwd, resource, slots, providerKey) {
   }
   return { written: false, warnings };
 }
+
+function fragmentFile(cwd, member, resource) {
+  if (member.namespace === 'feature') {
+    return path.join(cwd, '.codeadd', 'fragments', member.name, `${resource.name}.md`);
+  }
+  if (resource.kind === 'agent') {
+    return path.join(cwd, '.codeadd', 'plugins', member.name, 'fragments', 'agents', `${resource.name}.md`);
+  }
+  return path.join(cwd, '.codeadd', 'plugins', member.name, 'fragments', `${resource.name}.md`);
+}
+
+function memberState(cwd, member, resource, manifest, provider, pluginActive) {
+  const enabled = member.namespace === 'feature'
+    ? manifest.features?.[member.name] === true
+    : manifest.plugins?.[member.name]?.enabled === true && (!pluginActive || pluginActive(member.name));
+  if (!enabled) return { contribute: false };
+  const file = fragmentFile(cwd, member, resource);
+  if (!fs.existsSync(file)) return { contribute: false, warning: 'file missing' };
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { contribute: false, warning: 'bad payload' };
+  }
+  const sections = parseFragmentSections(raw);
+  if (!sections.has(member.section)) return { contribute: false, warning: 'section missing' };
+  const body = sections.get(member.section);
+  if (typeof body !== 'string' || body.length === 0) return { contribute: false, warning: 'bad payload' };
+  return { contribute: true, text: provider ? resolvePlaceholders(body, provider) : body };
+}
+
+export function reconcileSlots(cwd, options = {}) {
+  const sidecar = loadInjectionSidecar(cwd);
+  if (!sidecar || sidecar.version !== 2) return null;
+  const manifest = readManifest(cwd);
+  if (!manifest) return { modified: [], warnings: [] };
+
+  const groups = new Map();
+  for (const slot of sidecar.slots || []) {
+    const key = `${slot.resource.kind}:${slot.resource.name}`;
+    if (!groups.has(key)) groups.set(key, { resource: slot.resource, slots: [] });
+    groups.get(key).slots.push(slot);
+  }
+
+  const modified = [];
+  const warnings = [];
+  for (const group of groups.values()) {
+    for (const target of resolveResourceTargets(cwd, group.resource)) {
+      const prepared = group.slots.map((slot) => {
+        const states = slot.members.map((m) => memberState(cwd, m, group.resource, manifest, target.provider, options.pluginActive));
+        const composed = composeSlot(slot, states);
+        warnings.push(...composed.warnings);
+        return { ...slot, text: composed.text };
+      });
+      const basePath = path.join(cwd, baselineRel(target.provider.key, group.resource));
+      if (!fs.existsSync(basePath)) {
+        warnings.push({ resource: group.resource.name, slot: group.slots[0].id, member: '-', reason: 'missing baseline' });
+        continue;
+      }
+      const rendered = renderSlots(fs.readFileSync(basePath, 'utf8'), prepared);
+      if (rendered.missed.length) {
+        for (const id of rendered.missed) {
+          warnings.push({ resource: group.resource.name, slot: id, member: '-', reason: 'anchor missed' });
+        }
+        continue;
+      }
+      if (rendered.content !== fs.readFileSync(target.file, 'utf8')) {
+        fs.writeFileSync(target.file, rendered.content, 'utf8');
+        modified.push(target.file);
+      }
+    }
+  }
+  if (modified.length) {
+    const current = readManifest(cwd);
+    recalculateHashes(cwd, current, modified);
+    saveManifest(cwd, current);
+  }
+  return { modified, warnings };
+}

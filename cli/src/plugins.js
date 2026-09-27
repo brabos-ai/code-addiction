@@ -15,11 +15,21 @@ import {
   recalculateHashes,
   injectAgentFragments,
   removeAgentFragments,
+  loadInjectionSidecar,
+  reconcileSlots,
 } from './injection-core.js';
 
 /**
  * Loud, actionable warning when a plugin anchor can't be located (drift / edit).
  */
+function isV2(cwd) {
+  return loadInjectionSidecar(cwd)?.version === 2;
+}
+
+function logSlotWarnings(warnings) {
+  for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
+}
+
 function warnMissed(pluginName, resourceName, missed) {
   for (const m of missed) {
     log.warn(
@@ -69,6 +79,11 @@ export function validate(entry) {
   } catch {
     return false;
   }
+}
+
+export function isPluginDetected(name) {
+  const entry = loadCatalog()[name];
+  return !!entry && validate(entry);
 }
 
 /**
@@ -160,6 +175,20 @@ export function enablePlugin(cwd, pluginName) {
     return { ok: false, modified: 0, agents: 0, skills: 0, reason: 'not-detected' };
   }
 
+  if (isV2(cwd)) {
+    const skills = activateSkills(cwd, pluginName, entry.skills);
+    const manifest = readManifest(cwd);
+    if (manifest) {
+      if (!manifest.plugins) manifest.plugins = {};
+      manifest.plugins[pluginName] = { enabled: true };
+      saveManifest(cwd, manifest);
+    }
+    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+    logSlotWarnings(result.warnings);
+    const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
+    return { ok: true, modified: result.modified.length - agents, agents, skills };
+  }
+
   // Inject command fragments
   const fragments = getFragments(cwd, pluginName);
   const points = loadInjectionPoints(cwd).filter(
@@ -209,6 +238,20 @@ export function disablePlugin(cwd, pluginName) {
   const catalog = loadCatalog();
   const entry = catalog[pluginName] ?? {};
 
+  if (isV2(cwd)) {
+    const skills = deactivateSkills(cwd, entry.skills);
+    const manifest = readManifest(cwd);
+    if (manifest) {
+      if (!manifest.plugins) manifest.plugins = {};
+      manifest.plugins[pluginName] = { enabled: false };
+      saveManifest(cwd, manifest);
+    }
+    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+    logSlotWarnings(result.warnings);
+    const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
+    return { modified: result.modified.length - agents, agents, skills };
+  }
+
   const fragments = getFragments(cwd, pluginName);
   const points = loadInjectionPoints(cwd).filter(
     (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'command',
@@ -254,6 +297,16 @@ export function disablePlugin(cwd, pluginName) {
 export function applyEnabledPlugins(cwd) {
   const manifest = readManifest(cwd);
   if (!manifest) return 0;
+  if (isV2(cwd)) {
+    let total = 0;
+    for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
+      if (state?.enabled) {
+        const result = enablePlugin(cwd, name);
+        if (result.ok) total += result.modified;
+      }
+    }
+    return total;
+  }
 
   const pluginStates = manifest.plugins ?? {};
   let totalModified = 0;
