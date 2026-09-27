@@ -385,7 +385,6 @@ function anchorAt(surviving, survivingPos, label) {
 }
 
 // Build-run accumulator (reset per build).
-let INJECTION_POINTS = [];
 let INJECTION_SLOTS = [];
 let INJECTION_MODE = null;
 
@@ -415,11 +414,6 @@ function collectInjectionPoints(rawContent, resourceName, resourceKind) {
     throw new Error(`Legacy injection markers in ${resourceName} are not accepted. Wrap them in a slot.`);
   }
   INJECTION_SLOTS.push(...extractSlots(rawContent, resourceName, resourceKind, readProductFallback));
-}
-
-/** @returns {Array} the points accumulated so far this build */
-function getInjectionPoints() {
-  return INJECTION_POINTS;
 }
 
 /**
@@ -1210,7 +1204,7 @@ function fragmentNodeName(point) {
  * @param {Array} points  injection points; defaults to this build's accumulator
  * @returns {{nodes: Array, edges: Array}}
  */
-function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, points = INJECTION_POINTS) {
+function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, points = []) {
   const nodes = collectNodes(map, codeaddDir, internalDir);
   const edges = [];
 
@@ -2286,7 +2280,8 @@ function copyMcpIntoCli(root = ROOT) {
 function main() {
   console.log('Building provider files...\n');
 
-  INJECTION_POINTS = [];
+  INJECTION_SLOTS = [];
+  INJECTION_MODE = null;
   CONTRACTS = {};
 
   // Clear the sidecar BEFORE building. A gate firing mid-build aborts before
@@ -2311,12 +2306,10 @@ function main() {
 
   const contractCount = writeContracts(contractsPath);
 
-  // Built AFTER the resource passes so INJECTION_POINTS is fully populated —
-  // the INJECTS_INTO edges are derived from it, never re-extracted.
+  // Built AFTER the resource passes so every slot member is in hand.
+  // INJECTS_INTO edges come from those members, never from a second extractor.
   const graphPath = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
-  const injectionPoints = INJECTION_MODE === 'v2'
-    ? INJECTION_SLOTS.flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource })))
-    : INJECTION_POINTS;
+  const injectionPoints = INJECTION_SLOTS.flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource })));
   const artefactGraph = buildArtefactGraph(map, CODEADD_DIR, ROOT, injectionPoints);
   // Gate BEFORE writing, so a failed build never leaves a sidecar describing a
   // tree the gate rejected — the same reason contracts.json is cleared upfront.
@@ -2343,9 +2336,8 @@ module.exports = {
   assertProductNames,
   stripHtmlComments,
   collectInjectionPoints,
-  getInjectionPoints,
   writeInjectionPoints,
-  _resetInjectionPoints: () => { INJECTION_POINTS = []; INJECTION_SLOTS = []; INJECTION_MODE = null; },
+  _resetInjectionPoints: () => { INJECTION_SLOTS = []; INJECTION_MODE = null; },
   injectionMode,
   extractSlots,
   extractUses,

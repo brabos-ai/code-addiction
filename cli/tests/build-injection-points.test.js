@@ -9,7 +9,6 @@ const require = createRequire(import.meta.url);
 const {
   extractSlots,
   collectInjectionPoints,
-  getInjectionPoints,
   _resetInjectionPoints,
   writeInjectionPoints,
 } = require('../../scripts/build.js');
@@ -42,7 +41,12 @@ describe('injection-points collector + emit', () => {
 
   it('collecting content without markers adds nothing', () => {
     collectInjectionPoints('# no markers here', 'add.x', 'command');
-    expect(getInjectionPoints()).toHaveLength(0);
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slots-none-'));
+    writeInjectionPoints(path.join(dir, 'injection-points.json'));
+    const data = JSON.parse(fs.readFileSync(path.join(dir, 'injection-points.json'), 'utf8'));
+    expect(data.slots).toEqual([]);
+    expect(data.points).toEqual([]);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 
   it('writeInjectionPoints emits v2 when no slot was collected', () => {
