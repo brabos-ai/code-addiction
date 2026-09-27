@@ -8,6 +8,7 @@ import { PROVIDERS } from '../src/providers.js';
 const require = createRequire(import.meta.url);
 const {
   extractInjectionPoints,
+  extractSlots,
   collectInjectionPoints,
   getInjectionPoints,
   _resetInjectionPoints,
@@ -371,6 +372,44 @@ describe('slot membership map v2', () => {
 
   it('active numeric STEP reference files match the frozen inventory', () => {
     expect(stepRefFiles()).toEqual(MAP.activeStepRefFiles.map((e) => e.file).sort());
+  });
+
+  it('extractSlots reads fallback bytes and keeps member order', () => {
+    const src = [
+      'Before',
+      '<!-- slot:plan-specs fallback="fallbacks/plan-specs.md" -->',
+      '<!-- feature:tdd-pipeline:step-list -->',
+      '<!-- /feature:tdd-pipeline:step-list -->',
+      '<!-- feature:qa-pipeline:step-list -->',
+      '<!-- /feature:qa-pipeline:step-list -->',
+      '<!-- /slot:plan-specs -->',
+      'After',
+    ].join('\n');
+    const files = {
+      'fallbacks/plan-specs.md': 'No optional test-spec or QA-spec step is available. Continue with STEP add-plan.consolidate.',
+      'fallbacks/empty.md': '',
+    };
+    const slots = extractSlots(src, 'add-plan', 'command', (rel) => {
+      if (!(rel in files)) throw new Error(`absent ${rel}`);
+      return files[rel];
+    });
+    expect(slots).toHaveLength(1);
+    expect(slots[0].fallback).toBe(files['fallbacks/plan-specs.md']);
+    expect(slots[0].members.map((m) => m.name)).toEqual(['tdd-pipeline', 'qa-pipeline']);
+    expect(slots[0].anchor).toMatchObject({ text: 'Before', next: 'After', position: 'after' });
+  });
+
+  it('extractSlots rejects a mixed marker outside a slot', () => {
+    const src = [
+      'Before',
+      '<!-- slot:a fallback="fallbacks/empty.md" -->',
+      '<!-- feature:tdd:gate -->',
+      '<!-- /feature:tdd:gate -->',
+      '<!-- /slot:a -->',
+      '<!-- feature:board:ticket-read -->',
+      '<!-- /feature:board:ticket-read -->',
+    ].join('\n');
+    expect(() => extractSlots(src, 'add-plan', 'command', () => '')).toThrow(/Mixed injection source/);
   });
 
   it.skip('F5 dormant — add-plan step-list source order is tdd then qa', () => {

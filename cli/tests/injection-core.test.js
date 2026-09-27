@@ -16,6 +16,11 @@ import {
   getAgentFragments,
   injectAgentFragments,
   removeAgentFragments,
+  composeSlot,
+  renderSlotRegion,
+  renderSlots,
+  captureBaselines,
+  renderInstalledResource,
 } from '../src/injection-core.js';
 
 // ---------------------------------------------------------------------------
@@ -409,5 +414,78 @@ describe('agent injection (sidecar-driven)', () => {
       JSON.stringify({ version: '1.0.0', providers: ['claude'], plugins: {}, hashes: {} }, null, 2),
     );
     expect(injectAgentFragments(cwd, 'gx')).toEqual([]);
+  });
+});
+
+const FALLBACK = 'No optional test-spec or QA-spec step is available. Continue with STEP add-plan.consolidate.';
+
+describe('slot render', () => {
+  const anchor = { text: 'Before', ordinal: 1, position: 'after', next: 'After' };
+  const baseline = 'Before\n\nAfter\n';
+
+  it('empty fallback removes the pristine gap and adds no blank line', () => {
+    expect(renderSlotRegion(baseline, anchor, '')).toBe('Before\nAfter\n');
+  });
+
+  it('nonempty fallback replaces the gap with the approved line', () => {
+    expect(renderSlotRegion(baseline, anchor, FALLBACK)).toBe(`Before\n${FALLBACK}\nAfter\n`);
+  });
+
+  it('a contributing member suppresses the fallback', () => {
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: FALLBACK,
+      members: [{ namespace: 'feature', name: 'tdd-pipeline', section: 'step-list' }],
+      anchor,
+    };
+    const composed = composeSlot(slot, [{ contribute: true, text: 'STEP tdd-pipeline.test-spec: Generate contract test cases\n' }]);
+    expect(composed.usedFallback).toBe(false);
+    const rendered = renderSlots(baseline, [{ ...slot, text: composed.text }]);
+    expect(rendered.content).toBe('Before\nSTEP tdd-pipeline.test-spec: Generate contract test cases\nAfter\n');
+    expect(rendered.content).not.toContain(FALLBACK);
+  });
+
+  it('a warned member with no sibling uses the fallback and keeps the warning', () => {
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: FALLBACK,
+      members: [{ namespace: 'feature', name: 'qa-pipeline', section: 'step-list' }],
+    };
+    const composed = composeSlot(slot, [{ contribute: false, warning: 'section missing' }]);
+    expect(composed.usedFallback).toBe(true);
+    expect(composed.warnings).toEqual([
+      { resource: 'add-plan', slot: 'plan-specs', member: 'feature:qa-pipeline:step-list', reason: 'section missing' },
+    ]);
+  });
+
+  it('a missing baseline leaves the installed file intact', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-base-'));
+    const file = path.join(dir, '.claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, 'installed\n');
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({ providers: ['claude'], scope: 'project' }));
+    const result = renderInstalledResource(
+      dir,
+      { name: 'add-plan', kind: 'command' },
+      [{ id: 'plan-specs', resource: { name: 'add-plan', kind: 'command' }, fallback: FALLBACK, members: [], anchor, memberStates: [] }],
+      'claude',
+    );
+    expect(result.written).toBe(false);
+    expect(result.warnings[0].reason).toBe('missing baseline');
+    expect(fs.readFileSync(file, 'utf8')).toBe('installed\n');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('v1 sidecar capture is a no-op', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-v1-'));
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points: [] }));
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({ providers: ['claude'] }));
+    expect(captureBaselines(dir)).toEqual({ captured: [], pruned: [], warnings: [] });
+    expect(fs.existsSync(path.join(dir, '.codeadd', 'baselines'))).toBe(false);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });

@@ -470,3 +470,156 @@ export function removeAgentFragments(cwd, pluginName) {
   }
   return modified;
 }
+
+const BASELINE_ROOT = '.codeadd/baselines';
+
+export function loadInjectionSidecar(cwd) {
+  const p = path.join(cwd, '.codeadd', 'injection-points.json');
+  if (!fs.existsSync(p)) return null;
+  try {
+    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return data && typeof data === 'object' ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+export function baselineRel(providerKey, resource) {
+  const kind = resource.kind === 'agent' ? 'agents' : 'commands';
+  return `${BASELINE_ROOT}/${providerKey}/${kind}/${resource.name}.md`;
+}
+
+export function renderSlotRegion(content, anchor, text) {
+  const lines = content.split('\n');
+  const idx = findAnchorLine(lines, anchor);
+  if (idx === -1) return null;
+  const start = anchor.position === 'before' ? idx : idx + 1;
+  let end = start;
+  if (anchor.next != null) {
+    const nextIdx = lines.findIndex((l, i) => i >= start && l.trim() === anchor.next);
+    if (nextIdx === -1) return null;
+    end = nextIdx;
+    if (lines.slice(start, end).some((l) => l.trim() !== '')) return null;
+  }
+  const insert = text ? toBlockLines(text.endsWith('\n') ? text : `${text}\n`) : [];
+  lines.splice(start, end - start, ...insert);
+  return lines.join('\n');
+}
+
+export function composeSlot(slot, memberStates) {
+  const warnings = [];
+  const parts = [];
+  for (let i = 0; i < slot.members.length; i++) {
+    const state = memberStates[i] || {};
+    const member = slot.members[i];
+    if (state.warning) {
+      warnings.push({
+        resource: slot.resource.name,
+        slot: slot.id,
+        member: `${member.namespace}:${member.name}:${member.section}`,
+        reason: state.warning,
+      });
+    }
+    if (state.contribute && state.text) parts.push(state.text.endsWith('\n') ? state.text : `${state.text}\n`);
+  }
+  return {
+    text: parts.length ? parts.join('') : (slot.fallback || ''),
+    usedFallback: parts.length === 0,
+    warnings,
+  };
+}
+
+export function renderSlots(baseline, slots) {
+  let content = baseline;
+  const missed = [];
+  for (let i = slots.length - 1; i >= 0; i--) {
+    const slot = slots[i];
+    const next = renderSlotRegion(content, slot.anchor, slot.text || '');
+    if (next === null) {
+      missed.push(slot.id);
+      continue;
+    }
+    content = next;
+  }
+  return { content, missed };
+}
+
+export function captureBaselines(cwd) {
+  const sidecar = loadInjectionSidecar(cwd);
+  const slots = Array.isArray(sidecar?.slots) ? sidecar.slots : [];
+  if (sidecar?.version !== 2 || slots.length === 0) return { captured: [], pruned: [], warnings: [] };
+
+  const expected = new Set();
+  const captured = [];
+  const seen = new Set();
+  for (const slot of slots) {
+    const key = `${slot.resource.kind}:${slot.resource.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    for (const target of resolveResourceTargets(cwd, slot.resource)) {
+      const rel = baselineRel(target.provider.key, slot.resource);
+      expected.add(rel);
+      const dest = path.join(cwd, rel);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(target.file, dest);
+      captured.push(rel);
+    }
+  }
+
+  const pruned = [];
+  const root = path.join(cwd, BASELINE_ROOT);
+  if (fs.existsSync(root)) {
+    const walk = (dir) => {
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, ent.name);
+        if (ent.isDirectory()) walk(full);
+        else {
+          const rel = path.relative(cwd, full).split(path.sep).join('/');
+          if (!expected.has(rel)) {
+            fs.unlinkSync(full);
+            pruned.push(rel);
+          }
+        }
+      }
+    };
+    walk(root);
+  }
+
+  const manifest = readManifest(cwd);
+  if (manifest) {
+    manifest.baselineHashes = Object.fromEntries(captured.map((rel) => [rel, calculateHash(path.join(cwd, rel))]));
+    saveManifest(cwd, manifest);
+  }
+  return { captured, pruned, warnings: [] };
+}
+
+export function renderInstalledResource(cwd, resource, slots, providerKey) {
+  const rel = baselineRel(providerKey, resource);
+  const basePath = path.join(cwd, rel);
+  const target = resolveResourceTargets(cwd, resource).find((t) => t.provider.key === providerKey);
+  if (!target) return { written: false, warnings: [] };
+  if (!fs.existsSync(basePath)) {
+    return {
+      written: false,
+      warnings: [{ resource: resource.name, slot: slots[0]?.id || '-', member: '-', reason: 'missing baseline' }],
+    };
+  }
+  const baseline = fs.readFileSync(basePath, 'utf8');
+  const prepared = slots.map((slot) => {
+    const composed = composeSlot(slot, slot.memberStates || []);
+    return { ...slot, text: composed.text, warnings: composed.warnings };
+  });
+  const rendered = renderSlots(baseline, prepared);
+  if (rendered.missed.length) {
+    return {
+      written: false,
+      warnings: rendered.missed.map((id) => ({ resource: resource.name, slot: id, member: '-', reason: 'anchor missed' })),
+    };
+  }
+  const warnings = prepared.flatMap((s) => s.warnings || []);
+  if (rendered.content !== fs.readFileSync(target.file, 'utf8')) {
+    fs.writeFileSync(target.file, rendered.content, 'utf8');
+    return { written: true, warnings };
+  }
+  return { written: false, warnings };
+}

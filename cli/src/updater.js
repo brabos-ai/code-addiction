@@ -7,6 +7,7 @@ import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './githu
 import { fixLineEndings, writeManifest, resolveInstallSource, shouldPreserve, reportMcpRegistration } from './installer.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { applyEnabledFeatures } from './features.js';
+import { captureBaselines } from './injection-core.js';
 import { applyEnabledPlugins } from './plugins.js';
 import { runMigrations } from './migrations.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
@@ -210,6 +211,9 @@ export async function update(cwd, options = {}, scope = 'project') {
     installSource.releaseTag,
     { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope: installScope, features: previousFeatures, plugins: previousPlugins, migrations: nextMigrations }
   );
+
+  const baselines = captureBaselines(cwd);
+  for (const w of baselines.warnings) log.warn(`${w.resource} ${w.slot} ${w.member}: ${w.reason}`);
 
   // Re-apply enabled features on updated commands (files were overwritten by the new version)
   const featuresApplied = applyEnabledFeatures(cwd);
