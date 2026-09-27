@@ -127,8 +127,10 @@ The QA fix wave routes every `design-spec` finding to you — `spec-gap`, `ux`/`
 1. Read project context (design.md, about.md, existing components) to understand current state
 2. Analyze the request against UX best practices and project conventions
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Propose solutions with rationale — never just "it looks better"
 4. Write only what the human asked you to write, at the path they named. Absent an explicit target, propose the change and let them place it — never edit application code, `about.md`, test files, or `screens.json` on your own initiative, and never amend a `design.md` outside Fix Mode.

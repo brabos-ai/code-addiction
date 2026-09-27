@@ -340,7 +340,7 @@ describe('slot membership map v2', () => {
     const frozen = MAP.resources.map((r) => ({
       resource: r.resource,
       file: r.file,
-      slots: r.slots.map((s) => s.sourceOrder),
+      slots: r.slots.map((s) => s.expectedOrder),
     }));
     expect(derived).toEqual(frozen);
   });
@@ -412,7 +412,7 @@ describe('slot membership map v2', () => {
     expect(() => extractSlots(src, 'add-plan', 'command', () => '')).toThrow(/Mixed injection source/);
   });
 
-  it.skip('F5 dormant — add-plan step-list source order is tdd then qa', () => {
+  it('add-plan step-list source order is tdd then qa', () => {
     const slot = MAP.resources.find((r) => r.resource === 'command/add-plan').slots.find((s) => s.id === 'plan-specs');
     const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots[0];
     expect(derived).toEqual(slot.expectedOrder);

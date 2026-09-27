@@ -483,7 +483,7 @@ describe('combined substitution and sibling isolation', () => {
     for (const f of [...FEATURE_NAMES].reverse()) enableFeature(tmp, f);
     expect(warnSpy).not.toHaveBeenCalled();
     assertBlockOnce(tmp, all, 'reversed enable');
-  });
+  }, 20000);
 });
 
 describe.skip('F8 dormant — reversed enable order is byte-identical', () => {

@@ -68,14 +68,18 @@ delivery mode.
 STEP 1: Pre-Review Setup        → CHECK unstaged, ASK user
 STEP 2: Bootstrap Context       → status.sh, load docs, load AGENTS.md, read changed files
 STEP 3: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
+<!-- slot:tdd-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
+<!-- /slot:tdd-pipeline.step-list -->
 STEP 4: Dispatch Reviewers      → PARALLEL (Frontend + Backend), READ-ONLY
 STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
 STEP 6: Build Verification      → Run build; a failure is a routed finding, NOT a fix
 STEP 7: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from AGENTS.md (do NOT trust ticks)
+<!-- slot:qa-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:qa-pipeline:step-list -->
 <!-- /feature:qa-pipeline:step-list -->
+<!-- /slot:qa-pipeline.step-list -->
 STEP 11: Quality Gate Report    → Create review-NNN.md (incl. ## Fix Routing) + console output
 ```
 
@@ -419,8 +423,10 @@ Output the audit as a table with columns: Item, Type, Expected, Found at, Status
 
 **IF SPEC_AUDIT_STATUS ≠ COMPLIANT:** Report findings to user. Do NOT proceed to STEP 4 until resolved.
 
+<!-- slot:tdd-pipeline.spec-audit fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:spec-audit -->
 <!-- /feature:tdd-pipeline:spec-audit -->
+<!-- /slot:tdd-pipeline.spec-audit -->
 
 ---
 
@@ -722,6 +728,7 @@ category. With the review read-only the two fingerprints are equal by
 construction, so a mismatch means a dispatched agent broke its read-only
 contract.
 
+<!-- slot:qa-pipeline.preflight+qa-pipeline.evidence+qa-pipeline.judge-head+qa-pipeline.judge-tail fallback="fallbacks/empty.md" -->
 <!-- feature:qa-pipeline:preflight -->
 <!-- /feature:qa-pipeline:preflight -->
 <!-- feature:qa-pipeline:evidence -->
@@ -730,11 +737,14 @@ contract.
 <!-- /feature:qa-pipeline:judge-head -->
 <!-- feature:qa-pipeline:judge-tail -->
 <!-- /feature:qa-pipeline:judge-tail -->
+<!-- /slot:qa-pipeline.preflight+qa-pipeline.evidence+qa-pipeline.judge-head+qa-pipeline.judge-tail -->
 
 **Live driving is a `playwright` plugin enhancement of the QA judgement above, never a replacement for it.** With `qa-pipeline` disabled there is no judgement here for the plugin to enhance, and with the plugin absent the judges work from persisted evidence. Enabling one does not enable the other.
 
+<!-- slot:playwright.drive fallback="fallbacks/empty.md" -->
 <!-- plugin:playwright:drive -->
 <!-- /plugin:playwright:drive -->
+<!-- /slot:playwright.drive -->
 
 ---
 

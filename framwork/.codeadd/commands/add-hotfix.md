@@ -125,8 +125,10 @@ bash .codeadd/scripts/status.sh
 ### 1.1 Parse optional diagnose report
 
 If the invocation carries `@docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
+<!-- slot:board.ticket-resolve fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-resolve -->
 <!-- /feature:board:ticket-resolve -->
+<!-- /slot:board.ticket-resolve -->
 
 ---
 
@@ -197,8 +199,10 @@ docs/features/[NNNN]H-<slug>/
 DO NOT write doc contents yet — the schema is loaded and applied in STEP 12.
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
+<!-- slot:board.ticket-doing fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-doing -->
 <!-- /feature:board:ticket-doing -->
+<!-- /slot:board.ticket-doing -->
 
 ```
 IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
@@ -345,8 +349,10 @@ IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
 
 **WAIT for explicit confirmation before proceeding, unless a valid diagnose report already confirmed the root cause.**
 
+<!-- slot:tdd-pipeline.red-gate fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:red-gate -->
 <!-- /feature:tdd-pipeline:red-gate -->
+<!-- /slot:tdd-pipeline.red-gate -->
 
 ---
 
@@ -356,8 +362,10 @@ IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
 - [ ] Root cause confirmed by user
 - [ ] On branch `hotfix/*`
 
+<!-- slot:gitnexus.graph-impact fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-impact -->
 <!-- /plugin:gitnexus:graph-impact -->
+<!-- /slot:gitnexus.graph-impact -->
 
 ### 8.1 Consult Knowledge Base
 
@@ -496,8 +504,10 @@ EXECUTE schema `hotfix` from `{{skill:add--doc-schemas/SKILL.md}}` and `{{skill:
 **Path:** `docs/features/[NNNN]H-<slug>/about.md`
 
 **ID:** `[NNNN]H` from STEP 3. Write per `hotfix` schema. Extractive only.
+<!-- slot:board.ticket-frontmatter fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-frontmatter -->
 <!-- /feature:board:ticket-frontmatter -->
+<!-- /slot:board.ticket-frontmatter -->
 
 Write the complete `## Review` receipt with `reviewed-tree: sha256:<PENDING>`. Fill `reviewer:` from STEP 9. Fill Findings from STEPS 9-10. An empty review still writes the table header.
 
@@ -554,8 +564,10 @@ outside the reported symptom, because a hotfix is where that hurts most.
 
 Then, after the seven blocks, state: hotfix ID, branch, problem, root cause, solution, modified
 files, build status.
+<!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
+<!-- /slot:board.ticket-report -->
 
 **Next Phase:** Hotfix ownership ends; merging is handled by ecosystem flow. Reference skill `add--ecosystem` Main Flows section for context-aware routing.
 

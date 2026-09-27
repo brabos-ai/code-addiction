@@ -162,8 +162,10 @@ Also check for non-node stacks: `requirements.txt`, `go.mod`, `Cargo.toml`, `com
 
 No temp file — use findings inline for classification below.
 
+<!-- slot:gitnexus.graph-classify fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-classify -->
 <!-- /plugin:gitnexus:graph-classify -->
+<!-- /slot:gitnexus.graph-classify -->
 
 ### 2.1 Detect Apps
 
@@ -244,8 +246,10 @@ Each agent is independent. Dispatch ALL simultaneously — app specialists, the 
 
 ### 3.1 Common Dispatch Pattern
 
+<!-- slot:gitnexus.graph-dispatch-common fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-dispatch-common -->
 <!-- /plugin:gitnexus:graph-dispatch-common -->
+<!-- /slot:gitnexus.graph-dispatch-common -->
 
 **For ALL analyzers** (app specialists + spine + database + code quality):
 
@@ -315,8 +319,10 @@ reported rather than indexed.
 
 ### 3.2 App Specialists (with specialist: backend, frontend)
 
+<!-- slot:gitnexus.graph-specialist fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-specialist -->
 <!-- /plugin:gitnexus:graph-specialist -->
+<!-- /slot:gitnexus.graph-specialist -->
 
 **DISPATCH FOR EACH APP WITH SPECIALIST:**
 
@@ -367,8 +373,10 @@ Write {{addpath:wiki/domains/[TYPE].md}}
 
 ### 3.4 Database Analyzer (if detected)
 
+<!-- slot:gitnexus.graph-database fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-database -->
 <!-- /plugin:gitnexus:graph-database -->
+<!-- /slot:gitnexus.graph-database -->
 
 **DISPATCH IF DATABASE FOUND:**
 
@@ -395,8 +403,10 @@ Write {{addpath:wiki/domains/database.md}} (or NONE)
 
 ### 3.5 Code Quality Analyzer (always)
 
+<!-- slot:gitnexus.graph-quality fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-quality -->
 <!-- /plugin:gitnexus:graph-quality -->
+<!-- /slot:gitnexus.graph-quality -->
 
 **DISPATCH ALWAYS:**
 
@@ -562,8 +572,10 @@ IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP 6 unti
 
 ## STEP 6: Update AGENTS.md
 
+<!-- slot:gitnexus.graph-contract fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-contract -->
 <!-- /plugin:gitnexus:graph-contract -->
+<!-- /slot:gitnexus.graph-contract -->
 
 **AGENTS.md is the only context file this command writes.** Claude Code, Codex, Cursor, OpenCode and
 Antigravity all read it. No CLAUDE.md and no GEMINI.md is written, copied or updated.

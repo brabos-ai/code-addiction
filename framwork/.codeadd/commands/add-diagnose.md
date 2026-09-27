@@ -134,8 +134,10 @@ This STEP replaces the previous adaptive triage. All three sub-dispatches always
 
 This STEP implements Phase 1 (Root Cause Investigation) of the `add--investigation` skill in **agent-dispatched mode**. See `{{skill:add--investigation/SKILL.md}}` section "Execution Modes".
 
+<!-- slot:gitnexus.graph-trace fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-trace -->
 <!-- /plugin:gitnexus:graph-trace -->
+<!-- /slot:gitnexus.graph-trace -->
 
 ### 4.1 Build the dispatch payload
 

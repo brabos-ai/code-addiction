@@ -26,8 +26,10 @@ You are a frontend implementation specialist. Your role is to implement client-s
 1. Read project context (about.md, plan.md, design.md) to understand requirements
 2. Analyze existing components and the change surface — match conventions exactly
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Implement following the project's component hierarchy and file structure
 4. Ensure type safety throughout (TypeScript strict mode when applicable)

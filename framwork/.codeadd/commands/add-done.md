@@ -823,8 +823,10 @@ IF delivered.sh EXITS 1:
 
 ⛔ DO NOT USE: Bash for git add/commit/push in this substep. **`done.sh` owns every LOCAL git write on both routes**, exactly as it does for the changelog and the wiki.
 
+<!-- slot:docs-pruning.prune fallback="fallbacks/empty.md" -->
 <!-- feature:docs-pruning:prune -->
 <!-- /feature:docs-pruning:prune -->
+<!-- /slot:docs-pruning.prune -->
 
 ---
 
@@ -988,20 +990,26 @@ LOCAL git write on both routes** — the PR route calls its `--commit-push` and
 local git write: it asks the forge to merge, and touches no ref here. That is
 why it is the one call this command makes directly.
 
+<!-- slot:board.ticket-close fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-close -->
 <!-- /feature:board:ticket-close -->
+<!-- /slot:board.ticket-close -->
 
 **After merge, carry this into STEP 9 — do NOT print it here:**
 - Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
 - **Which evidence the gate accepted, and why** — the PR's checks on a named SHA, or the local route with the reason no PR was available.
+<!-- slot:board.ticket-carry fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-carry -->
 <!-- /feature:board:ticket-carry -->
+<!-- /slot:board.ticket-carry -->
 
 **Resolve the next command here, state it at STEP 9:**
 READ skill `add--ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP 9 owns it.
 
+<!-- slot:gitnexus.graph-reindex fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-reindex -->
 <!-- /plugin:gitnexus:graph-reindex -->
+<!-- /slot:gitnexus.graph-reindex -->
 
 ---
 
@@ -1029,8 +1037,10 @@ Then, after the seven blocks, state:
   accepts is worse than a slow one.
 - **Which route 2.1 and 2.2 chose**, and on a Resume run, the STEPs it skipped
   and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
+<!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
+<!-- /slot:board.ticket-report -->
 - The next command, from the `add--ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
 

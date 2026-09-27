@@ -110,8 +110,10 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 - **ARCHITECTURE:** Read AGENTS.md and product.md (if exists)
 - **Mental inventory:** Prior work from the index, architecture, business context, current work
+<!-- slot:board.ticket-resolve fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-resolve -->
 <!-- /feature:board:ticket-resolve -->
+<!-- /slot:board.ticket-resolve -->
 
 ```
 IF THE TOPIC RESEMBLES SOMETHING THE INDEX RETURNED:
@@ -160,8 +162,10 @@ resembles. Bounded requires you to name the existing flow being changed.
 
 **When in doubt between two paths, take the heavier one.** Reaching for the lighter label to skip work IS
 the doubt.
+<!-- slot:board.ticket-refining fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-refining -->
 <!-- /feature:board:ticket-refining -->
+<!-- /slot:board.ticket-refining -->
 
 ### The ratchet is one-way
 
@@ -381,8 +385,10 @@ IF ON THE architectural PATH AND 2.6 IS APPROVED:
 it owns the sections, the `Decision | Serves | Rationale` table and the `Used by` column. DO NOT include
 full classes/methods — a single one-shot snippet is the maximum allowed.
 
+<!-- slot:board.ticket-frontmatter fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-frontmatter -->
 <!-- /feature:board:ticket-frontmatter -->
+<!-- /slot:board.ticket-frontmatter -->
 
 ---
 
@@ -433,8 +439,10 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 
 After the report: the document path (architectural only — never print a path that resolves to
 nothing) and the 3-5 key decisions.
+<!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
+<!-- /slot:board.ticket-report -->
 
 ### 5.2 Ask for the one approval — `bounded` and `architectural`
 
@@ -481,8 +489,10 @@ classified at STEP 1.5, the approval's answer as `delivery:`, the objective from
 conversation closed with its rationale and what it serves, whatever it could not close, the prior art
 STEP 1 found, and the directions that were rejected.
 
+<!-- slot:board.ticket-intent fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-intent -->
 <!-- /feature:board:ticket-intent -->
+<!-- /slot:board.ticket-intent -->
 
 ```
 IF ABOUT TO WRITE `## Open`:
@@ -495,8 +505,10 @@ IF ABOUT TO WRITE `## Open`:
 **Then run the validation gate** from `{{skill:add--doc-schemas/SKILL.md}}` for schema
 `brainstorm-intent`. ⛔ DO NOT skip it and DO NOT hand off until it returns `PASS` — the next command
 extracts decisions from this file without asking.
+<!-- slot:board.ticket-shaped fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-shaped -->
 <!-- /feature:board:ticket-shaped -->
+<!-- /slot:board.ticket-shaped -->
 
 ### 5.4 Route
 

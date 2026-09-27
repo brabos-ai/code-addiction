@@ -148,8 +148,10 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
 4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory).
+<!-- slot:board.ticket-doing fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-doing -->
 <!-- /feature:board:ticket-doing -->
+<!-- /slot:board.ticket-doing -->
 5. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP 3.
 
 ---
@@ -288,8 +290,10 @@ Read all relevant feature docs based on status.sh flags:
 Fallback for anything not covered: plan.md > design.md + about.md > about.md + discovery.md.
 
 ---
+<!-- slot:qa-pipeline.qa-fix fallback="fallbacks/empty.md" -->
 <!-- feature:qa-pipeline:qa-fix -->
 <!-- /feature:qa-pipeline:qa-fix -->
+<!-- /slot:qa-pipeline.qa-fix -->
 
 ## STEP 7: Load Project Knowledge (IF wiki exists)
 
@@ -301,8 +305,10 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 **If WIKI:absent:** Run `/add-wiki` to generate, or continue with generic best practices.
 
 **If ITERATIONS output exists from script:** Previous /add-build sessions context - avoid repeating fixes.
+<!-- slot:tdd-pipeline.detect-framework fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:detect-framework -->
 <!-- /feature:tdd-pipeline:detect-framework -->
+<!-- /slot:tdd-pipeline.detect-framework -->
 
 **Test generation self-check:** IF no "Test Framework Detection" section appears above, the `tdd-pipeline` feature is disabled and **test generation is disabled** for this build — no unit or integration tests will be produced. State it once, here, with the remedy: `codeadd features enable tdd-pipeline`. Do NOT stop; implementation proceeds unchanged.
 
@@ -349,8 +355,10 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 ### 10.0 Pre-Flight Scan and the Handoff Contract (BEFORE the first dispatch)
 
+<!-- slot:gitnexus.graph-build fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-build -->
 <!-- /plugin:gitnexus:graph-build -->
+<!-- /slot:gitnexus.graph-build -->
 
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and none is satisfied by asserting it happened.
@@ -543,12 +551,14 @@ record the reconciliation as a ledger line.
 **One commit per task in this mode** — tasks are already service-scoped and capped at 3 files, so a task
 is the right commit. See the COMMIT CONTRACT invariant and STEP 11.3.
 
+<!-- slot:tdd-pipeline.tasks-flow+tdd-pipeline.gate+tdd-pipeline.verify-red fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:tasks-flow -->
 <!-- /feature:tdd-pipeline:tasks-flow -->
 <!-- feature:tdd-pipeline:gate -->
 <!-- /feature:tdd-pipeline:gate -->
 <!-- feature:tdd-pipeline:verify-red -->
 <!-- /feature:tdd-pipeline:verify-red -->
+<!-- /slot:tdd-pipeline.tasks-flow+tdd-pipeline.gate+tdd-pipeline.verify-red -->
 
 **Subagent prompt addition for TASKS MODE:**
 
@@ -561,8 +571,10 @@ area (10.0.2). The brief carries all six sub-bullets; a table copied into the pr
 - T04 → ${BRIEF path printed by task-brief.sh}
 
 Execute ALL tasks in order. After each task, confirm the verify command passes.
+<!-- slot:tdd-pipeline.awareness fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:awareness -->
 <!-- /feature:tdd-pipeline:awareness -->
+<!-- /slot:tdd-pipeline.awareness -->
 ```
 
 **DECISION LOGGING (MANDATORY for TASKS MODE subagents):**
@@ -659,8 +671,10 @@ decisions — never silently re-dispatched.
 
 **DISPATCH AGENT: @${AREA}-agent** (see Agent Roster)
 - **Prompt:** [use Universal Subagent Prompt below]
+<!-- slot:tdd-pipeline.test-dispatch fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:test-dispatch -->
 <!-- /feature:tdd-pipeline:test-dispatch -->
+<!-- /slot:tdd-pipeline.test-dispatch -->
 
 ---
 
@@ -1011,8 +1025,10 @@ After ALL area validators return AND build verification passes, run the **Valida
 **Migration nudge:** if AGENTS.md has no `validation_gates` block, emit the one-line nudge and skip this sub-step (no gates to enforce).
 
 **CRITICAL:** Pass FILES_CREATED and FILES_MODIFIED from each implementation subagent to its validator.
+<!-- slot:qa-pipeline.e2e-dispatch fallback="fallbacks/empty.md" -->
 <!-- feature:qa-pipeline:e2e-dispatch -->
 <!-- /feature:qa-pipeline:e2e-dispatch -->
+<!-- /slot:qa-pipeline.e2e-dispatch -->
 
 ---
 
@@ -1149,10 +1165,12 @@ DO NOT report completion without executing this step.
 
 1. **Contract Adherence:** Endpoints, events, commands match plan
 2. **Build Verification:** Run project build command (see AGENTS.md)
+<!-- slot:tdd-pipeline.verification+tdd-pipeline.coverage fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:verification -->
 <!-- /feature:tdd-pipeline:verification -->
 <!-- feature:tdd-pipeline:coverage -->
 <!-- /feature:tdd-pipeline:coverage -->
+<!-- /slot:tdd-pipeline.verification+tdd-pipeline.coverage -->
 
 **CRITICAL:** Code MUST compile 100%. Fix errors before proceeding.
 
@@ -1489,8 +1507,10 @@ already answered.
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
 come after it, never in front of it.
+<!-- slot:board.ticket-in-review fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-in-review -->
 <!-- /feature:board:ticket-in-review -->
+<!-- /slot:board.ticket-in-review -->
 
 Fill the blocks from this build:
 
@@ -1500,16 +1520,20 @@ Fill the blocks from this build:
 - **`Files touched`** — split by verb. The Deleted row is written even when it reads "none".
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
   and the one or two places the work is most likely to have gone wrong.
+<!-- slot:board.ticket-attention fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-attention -->
 <!-- /feature:board:ticket-attention -->
+<!-- /slot:board.ticket-attention -->
 
 Then, after the seven blocks and before any metadata, print 18.1 and 18.2 below — whole, in their
 own shape.
 
 **Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
 its commit brackets.
+<!-- slot:board.ticket-metadata fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-metadata -->
 <!-- /feature:board:ticket-metadata -->
+<!-- /slot:board.ticket-metadata -->
 
 ### 18.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 

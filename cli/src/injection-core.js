@@ -489,17 +489,37 @@ export function baselineRel(providerKey, resource) {
   return `${BASELINE_ROOT}/${providerKey}/${kind}/${resource.name}.md`;
 }
 
+function regionByNext(lines, anchor) {
+  if (anchor.next == null) return null;
+  const hits = [];
+  for (let i = 0; i < lines.length; i++) if (lines[i].trim() === anchor.next) hits.push(i);
+  if (hits.length !== 1) return null;
+  const end = hits[0];
+  let start = end;
+  while (start > 0 && lines[start - 1].trim() === '') start -= 1;
+  if (start === 0 || lines[start - 1].trim() !== anchor.text) return null;
+  return { start, end };
+}
+
 export function renderSlotRegion(content, anchor, text) {
   const lines = content.split('\n');
-  const idx = findAnchorLine(lines, anchor);
-  if (idx === -1) return null;
-  const start = anchor.position === 'before' ? idx : idx + 1;
-  let end = start;
-  if (anchor.next != null) {
-    const nextIdx = lines.findIndex((l, i) => i >= start && l.trim() === anchor.next);
-    if (nextIdx === -1) return null;
-    end = nextIdx;
-    if (lines.slice(start, end).some((l) => l.trim() !== '')) return null;
+  let start;
+  let end;
+  const byNext = regionByNext(lines, anchor);
+  if (byNext) {
+    start = byNext.start;
+    end = byNext.end;
+  } else {
+    const idx = findAnchorLine(lines, anchor);
+    if (idx === -1) return null;
+    start = anchor.position === 'before' ? idx : idx + 1;
+    end = start;
+    if (anchor.next != null) {
+      const nextIdx = lines.findIndex((l, i) => i >= start && l.trim() === anchor.next);
+      if (nextIdx === -1) return null;
+      end = nextIdx;
+      if (lines.slice(start, end).some((l) => l.trim() !== '')) return null;
+    }
   }
   const insert = text ? toBlockLines(text.endsWith('\n') ? text : `${text}\n`) : [];
   lines.splice(start, end - start, ...insert);

@@ -51,8 +51,10 @@ see **Re-Review Mode** at the end. `MODE: feature` and `MODE: owasp` keep the sa
 2. Read all changed files thoroughly
 3. Analyze each file against quality, security, and architecture criteria
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 4. Classify findings by severity: Critical, Important, Minor
 5. Report findings with file paths, line numbers, and specific remediation

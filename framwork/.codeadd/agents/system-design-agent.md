@@ -57,8 +57,10 @@ You are a system design specialist. Your role is to propose scalable solutions, 
 1. Understand the problem: scale requirements, constraints, SLAs
 2. Analyze existing system architecture and infrastructure
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Propose 2-3 alternatives with explicit trade-offs
 4. Recommend one approach with clear rationale
