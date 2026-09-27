@@ -3,14 +3,14 @@
 -->
 
 <!-- section:step-list -->
-STEP 8:  Test-Spec subagent       → AFTER area subagents, generates contract test cases
+STEP tdd-pipeline.test-spec: Generate contract test cases
 <!-- /section:step-list -->
 
 <!-- section:step9 -->
 
 ---
 
-## STEP 8: Test-Spec Subagent (AFTER area subagents)
+## STEP tdd-pipeline.test-spec: Test-Spec Subagent (AFTER area subagents)
 
 **When to create:** ALWAYS — runs after all area subagents complete.
 

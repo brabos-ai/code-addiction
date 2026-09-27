@@ -3,7 +3,7 @@
 -->
 
 <!-- section:step-list -->
-STEP 9.0: QA-Spec subagent        -> BEFORE assembly, generates plan-qa-spec.md — one row per screen 7.1's design.md declares, with capture states — and merges _tests/screens.json (qa-pipeline)
+STEP qa-pipeline.qa-spec: Generate the QA specification
 <!-- /section:step-list -->
 
 <!-- section:qa-spec -->

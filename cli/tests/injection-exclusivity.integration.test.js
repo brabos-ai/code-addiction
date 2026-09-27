@@ -486,7 +486,7 @@ describe('combined substitution and sibling isolation', () => {
   }, 20000);
 });
 
-describe.skip('F8 dormant — reversed enable order is byte-identical', () => {
+describe('reversed enable order is byte-identical', () => {
   useFixture();
 
   function installedPlan(order) {

@@ -587,7 +587,7 @@ ${RELATED_WORK}
 <!-- /feature:qa-pipeline:qa-spec -->
 <!-- /slot:qa-pipeline.qa-spec -->
 
-**QA axis self-check:** IF no `9.0 QA-Spec Subagent` section is present above (the `qa-pipeline` feature is disabled) → `plan-qa-spec.md` will NOT be generated. Add one line to the STEP 13 completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
+**QA axis self-check:** IF no `STEP qa-pipeline.qa-spec` section is present above, do NOT infer that qa-pipeline is disabled. A missing section also means the manifest still requests it and the runtime warned. In that case say the QA section was unavailable, keep the request, and do not show the optional-step fallback. Only when the manifest does not request qa-pipeline, add one line to the completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
