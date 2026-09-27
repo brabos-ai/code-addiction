@@ -70,7 +70,7 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 
 ## STEP add-diagnose.context: Load Context
 
-### 1.1 Run status.sh
+### STEP add-diagnose.run-status-sh Run status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -78,17 +78,17 @@ bash .codeadd/scripts/status.sh
 
 Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
 
-### 1.2 Load ecosystem map
+### STEP add-diagnose.load-ecosystem-map Load ecosystem map
 
 Read {{skill:add--ecosystem/SKILL.md}} — needed for Command Next-Steps Routing in STEP add-diagnose.synthesize.
 
-### 1.3 Conditional reads
+### STEP add-diagnose.conditional-reads Conditional reads
 
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
 
 ### STEP add-diagnose.context Consult Knowledge Base
 
-Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP add-diagnose.dispatch as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP add-diagnose.dispatch's dispatch payload, which carries it to both Fase A agents.
+Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from STEP add-diagnose.run-status-sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP add-diagnose.dispatch as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP add-diagnose.dispatch's dispatch payload, which carries it to both Fase A agents.
 
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
@@ -101,7 +101,7 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 ## STEP add-diagnose.capture: Capture & Reformulate Input (internal)
 
-### 2.1 Reformulate using the user's own words
+### STEP add-diagnose.reformulate-using-user Reformulate using the user's own words
 
 Restate the user input in ONE sentence using only the nouns/verbs they used. Do NOT inject technical interpretation yet.
 
@@ -111,7 +111,7 @@ Store this reformulation internally — it feeds Phase 0 (STEP add-diagnose.inve
 
 ## STEP add-diagnose.investigate: Load Investigation Skill & Apply Phase 0
 
-### 3.1 Load skill
+### STEP add-diagnose.load-skill Load skill
 
 Read {{skill:add--investigation/SKILL.md}} — primary methodology.
 
@@ -165,7 +165,7 @@ Prompt: "Correlate recent git history with this symptom. Predicate: <predicate>.
 
 **WAIT** for both reports before proceeding.
 
-### 4.3 Synthesize Fase A outputs
+### STEP add-diagnose.synthesize-fase-outputs Synthesize Fase A outputs
 
 Combine the two reports:
 - **Convergent signals** — files/modules/areas mentioned in BOTH (highest priority for Fase B)
@@ -189,7 +189,7 @@ Prompt: "Trace control-flow and data-flow to validate or refute the hypotheses b
 
 The three agent reports (A.1, A.2, B) collectively cover Phase 1 of the `add--investigation` skill. Now synthesize Phases 2 and 3 on top of that evidence.
 
-### 5.1 Phase 2: Pattern Analysis
+### STEP add-diagnose.phase-pattern-analysis Phase 2: Pattern Analysis
 
 Using the architecture agent's output as starting point:
 1. Identify a working analogue in the same codebase (from the architecture report or feature history)
@@ -197,7 +197,7 @@ Using the architecture agent's output as starting point:
 3. Check for doc-code drift — compare what about.md/plan.md (A.1) claim vs what the code (B) does
 4. Look for duplicated logic — the broken case may be a stale copy
 
-### 5.2 Phase 3: Differential Diagnosis
+### STEP add-diagnose.phase-differential-diagnosis Phase 3: Differential Diagnosis
 
 Read {{skill:add--investigation/references/differential-diagnosis.md}}.
 
@@ -214,7 +214,7 @@ Read {{skill:add--investigation/references/differential-diagnosis.md}}.
 
 ## STEP add-diagnose.synthesize: Phase 4 Synthesis — Diagnosis & Route
 
-### 6.1 Synthesize diagnosis
+### STEP add-diagnose.synthesize-diagnosis Synthesize diagnosis
 
 Build the structured output from skill Phase 4:
 1. Reformulated problem (from STEP add-diagnose.capture)
@@ -223,7 +223,7 @@ Build the structured output from skill Phase 4:
 4. Recommended route
 5. Risks of acting AND of not acting
 
-### 6.2 Consult ecosystem routing map
+### STEP add-diagnose.consult-ecosystem-routing Consult ecosystem routing map
 
 Use the Command Next-Steps Routing table from {{skill:add--ecosystem/SKILL.md}} to map diagnosis → route — `/add-hotfix`, `/add-new`, `/add-plan`, or no further command. The mapping itself is NOT hardcoded here — it lives in the ecosystem map so it stays consistent across the framework.
 
@@ -273,7 +273,7 @@ Present the full diagnosis in chat using this structure:
 **Risks of NOT acting:** [list]
 ```
 
-### 7.1 Ask for agreement
+### STEP add-diagnose.ask-agreement Ask for agreement
 
 User agreement is the persistence decision for every route, including no-action.
 
@@ -287,29 +287,29 @@ Ask only: do you agree with this diagnosis?
 
 ## STEP add-diagnose.persist: Persist on acceptance — schema-driven write
 
-### 8.1 Persistence decision tree
+### STEP add-diagnose.persistence-decision-tree Persistence decision tree
 
 | user_agrees | Action |
 |---|---|
 | no | Skip to STEP add-diagnose.complete. A rejected diagnosis is not written |
-| yes | Persist for hotfix/feature/extend/no-action. Execute 8.2 → 8.3 → 8.4 |
+| yes | Persist for hotfix/feature/extend/no-action. Execute STEP add-diagnose.determine-slug-schema → STEP add-diagnose.write-conditions-met → STEP add-diagnose.carry-these-step |
 
-### 8.2 Determine slug & schema
+### STEP add-diagnose.determine-slug-schema Determine slug & schema
 
 - slug: kebab-case from reformulated problem, max 6 words
 - Doc ID: `DIAG-<slug>` (fixed per schema)
 - EXECUTE schema `diagnose-report` from `{{skill:add--doc-schemas/SKILL.md}}`
 
-### 8.3 Write (if conditions met)
+### STEP add-diagnose.write-conditions-met Write (if conditions met)
 
 Load {{skill:add--doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
 When the accepted route is hotfix, append `## Hotfix Handoff` from `{{skill:add--doc-schemas/references/review.md}}`. Fill scalars from STEP add-diagnose.synthesize. Fill Findings from the accepted causal chain. Fill Confirmed Relations from the links shown at STEP add-diagnose.report. Paste the Working Tree Baseline fence from `diagnosis-baseline`, or `clean`. Omit `## Hotfix Handoff` on every other accepted route.
 
-### 8.4 Carry these into STEP add-diagnose.complete
+### STEP add-diagnose.carry-these-step Carry these into STEP add-diagnose.complete
 
 ⛔ **DO NOT print them here.** The report comes first, and STEP add-diagnose.complete owns it. Emitting the path and
-the next command at 8.4 puts metadata in front of the report and then repeats it.
+the next command at STEP add-diagnose.carry-these-step puts metadata in front of the report and then repeats it.
 
 STEP add-diagnose.complete states:
 - Report path (if persisted)

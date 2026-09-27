@@ -526,4 +526,39 @@ describe('slot render', () => {
     expect(JSON.parse(fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8')).features['qa-pipeline']).toBe(true);
     fs.rmSync(dir, { recursive: true, force: true });
   });
+
+  it('a disabled feature contributes nothing and warns nothing', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-off-'));
+    const file = path.join(dir, '.claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const pristine = 'Before\n\nAfter\n';
+    fs.writeFileSync(file, pristine);
+    fs.mkdirSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands', 'add-plan.md'), pristine);
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: '',
+      members: [{ namespace: 'feature', name: 'qa-pipeline', section: 'step-list' }],
+      anchor: { text: 'Before', ordinal: 1, position: 'after', next: 'After' },
+    };
+    fs.writeFileSync(path.join(dir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 2, slots: [slot] }));
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({
+      providers: ['claude'], scope: 'project', features: { 'qa-pipeline': false }, plugins: {}, hashes: {},
+    }));
+    const result = reconcileSlots(dir);
+    expect(fs.readFileSync(file, 'utf8')).toBe('Before\nAfter\n');
+    expect(result.warnings).toEqual([]);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('no sidecar is a different failure from a warned member', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-none-'));
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({
+      providers: ['claude'], features: { 'qa-pipeline': true },
+    }));
+    expect(reconcileSlots(dir)).toBeNull();
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
 });

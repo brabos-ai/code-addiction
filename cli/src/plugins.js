@@ -5,17 +5,9 @@ import { execSync } from 'node:child_process';
 import { intro, outro, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
 import {
-  parseFragmentSections,
-  loadInjectionPoints,
   resolveResourceTargets,
-  applyInjectionToContent,
-  removeInjectionFromContent,
   readManifest,
   saveManifest,
-  recalculateHashes,
-  injectAgentFragments,
-  removeAgentFragments,
-  loadInjectionSidecar,
   reconcileSlots,
 } from './injection-core.js';
 
@@ -24,15 +16,6 @@ import {
  */
 function logSlotWarnings(warnings) {
   for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
-}
-
-function warnMissed(pluginName, resourceName, missed) {
-  for (const m of missed) {
-    log.warn(
-      `Could not inject plugin:${pluginName} [${m.sections.join(', ')}] into ${resourceName}: ` +
-        `anchor not found ("${m.anchor.text}" #${m.anchor.ordinal}). The adjacent text may have been edited.`,
-    );
-  }
 }
 
 const CATALOG_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'plugins.json');

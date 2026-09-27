@@ -213,13 +213,13 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
     const text = read(P.done);
     expect(text).not.toContain('computes FOUR gates');
     expect(text).toMatch(/computes FIVE gates/);
-    expect(text).toMatch(/4\.0, 4\.1, 4\.2 and 4\.3/);
+    expect(text).toMatch(/validate-build-ledger/);
   });
 
   it('L3.3: a 4.3 sub-step exists and blocks on anything but ok', () => {
     const text = read(P.done);
-    expect(text).toMatch(/^### 4\.3:/m);
-    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP add-done.promote-qa'));
+    expect(text).toMatch(/^### STEP add-done\.validate-build-ledger/m);
+    const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     expect(s43).toContain('GATE_LEDGER');
     // The three non-ok statuses each block, named rather than implied.
     for (const status of ['missing', 'broken', 'not-probed']) {
@@ -229,7 +229,7 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
 
   it('L3.4: 4.3 never re-derives the verdict itself', () => {
     const text = read(P.done);
-    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP add-done.promote-qa'));
+    const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     // The gate is read from the preflight, not recomputed by opening the ledger
     // or tasks.md — that would restate the gate converge-gates.sh owns.
     expect(s43).toMatch(/DO NOT/);
@@ -248,7 +248,7 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
 
   it('L3.5: the blocked branch forbids the same two writes its siblings forbid', () => {
     const text = read(P.done);
-    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP add-done.promote-qa'));
+    const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     expect(s43).toContain('changelog.md');
     expect(s43).toContain('done.sh --merge');
   });
@@ -401,7 +401,7 @@ describe('L6 — the PR merge route (F9)', () => {
     // names `gh pr merge` before the PR route ever calls it — measuring across
     // the whole step would compare against that prohibition instead.
     const whole = read(P.done);
-    const s8 = whole.slice(whole.indexOf('### 8.1'), whole.indexOf('### 8.2'));
+    const s8 = whole.slice(whole.indexOf('### STEP add-done.pr-merge'), whole.indexOf('### STEP add-done.local-merge'));
     // A green check is evidence only for the commit it ran on. Reading the
     // verdict first and comparing after is the same bug with extra steps.
     expect(s8.indexOf('headRefOid')).toBeLessThan(s8.indexOf('gh pr merge'));
@@ -436,14 +436,14 @@ describe('L6 — the PR merge route (F9)', () => {
 describe('L7 — the resume and recovery routes (F10)', () => {
   const routes = () => {
     const t = read(P.done);
-    return t.slice(t.indexOf('### 2.3'), t.indexOf('## STEP add-done.resolve-dir'));
+    return t.slice(t.indexOf('### STEP add-done.resume-route'), t.indexOf('## STEP add-done.resolve-dir'));
   };
 
   it('L7.1: Resume names all four skipped steps', () => {
     const r = routes();
     // Internal's resume path skips three; the fourth here is product-specific
     // (STEP 5's QA promotion), so naming three would silently re-run it.
-    for (const skipped of ['STEP add-done.promote-qa', '6.3', '6.7', '6.8']) {
+    for (const skipped of ['STEP add-done.promote-qa', 'STEP add-done.complement-changelog', 'STEP add-done.wiki', 'STEP add-done.write-delivery-index']) {
       expect(r, `Resume must name ${skipped} as skipped`).toContain(skipped);
     }
   });
@@ -532,7 +532,7 @@ describe('L8 — the changelog owner (F11)', () => {
 describe('L9 — add-done complements the changelog (F12)', () => {
   const s63 = () => {
     const t = read(P.done);
-    return t.slice(t.indexOf('### 6.3'), t.indexOf('### 6.4'));
+    return t.slice(t.indexOf('### STEP add-done.complement-changelog'), t.indexOf('### STEP add-done.validation-gate'));
   };
 
   it('L9.1: 6.3 complements, and says so positively', () => {
@@ -629,7 +629,7 @@ describe('L11 — the build reads its plan cold (F14)', () => {
 
   it('L11.1: a 10.0.4 sub-step dispatches the readback agent', () => {
     const b = preflight();
-    expect(b).toContain('10.0.4');
+    expect(b).toContain('STEP add-build.read-plan-cold');
     expect(b).toContain('@readback-agent');
   });
 

@@ -509,39 +509,25 @@ function getInjectionPoints() {
  * @returns {number} number of points written
  */
 function writeInjectionPoints(outPath) {
-  if (INJECTION_MODE === 'v2') {
-    const slots = INJECTION_SLOTS
-      .map((s, i) => ({ s, i }))
-      .sort((a, b) => {
-        const ak = a.s.resource.kind, bk = b.s.resource.kind;
-        if (ak !== bk) return ak < bk ? -1 : 1;
-        const an = a.s.resource.name, bn = b.s.resource.name;
-        if (an !== bn) return an < bn ? -1 : 1;
-        return a.i - b.i;
-      })
-      .map(({ s }) => s);
-    const points = slots.flatMap((slot) => slot.members.map((m) => ({
-      namespace: m.namespace,
-      name: m.name,
-      section: m.section,
-      resource: slot.resource,
-      anchor: slot.anchor,
-    })));
-    writeFile(outPath, JSON.stringify({ version: 2, slots, points }, null, 2) + '\n');
-    return slots.length;
-  }
-  const points = INJECTION_POINTS
-    .map((p, i) => ({ p, i }))
+  const slots = INJECTION_SLOTS
+    .map((s, i) => ({ s, i }))
     .sort((a, b) => {
-      const ak = a.p.resource.kind, bk = b.p.resource.kind;
+      const ak = a.s.resource.kind, bk = b.s.resource.kind;
       if (ak !== bk) return ak < bk ? -1 : 1;
-      const an = a.p.resource.name, bn = b.p.resource.name;
+      const an = a.s.resource.name, bn = b.s.resource.name;
       if (an !== bn) return an < bn ? -1 : 1;
-      return a.i - b.i; // stable: keep source order within a resource
+      return a.i - b.i;
     })
-    .map(({ p }) => p);
-  writeFile(outPath, JSON.stringify({ version: 1, points }, null, 2) + '\n');
-  return points.length;
+    .map(({ s }) => s);
+  const points = slots.flatMap((slot) => slot.members.map((m) => ({
+    namespace: m.namespace,
+    name: m.name,
+    section: m.section,
+    resource: slot.resource,
+    anchor: slot.anchor,
+  })));
+  writeFile(outPath, JSON.stringify({ version: 2, slots, points }, null, 2) + '\n');
+  return slots.length;
 }
 
 // ---------------------------------------------------------------------------

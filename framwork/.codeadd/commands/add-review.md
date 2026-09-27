@@ -282,7 +282,7 @@ Proceed with review. Save `STAGED_CHANGES=false`.
 **If no unstaged changes:**
 Proceed directly. Save `STAGED_CHANGES=false`.
 
-### 1.2 Validate Implementation Complete (Gate 1)
+### STEP add-review.gate-complete Validate Implementation Complete (Gate 1)
 
 - Feature code exists (committed, staged, or unstaged)
 - `docs/features/${FEATURE_ID}/about.md` exists
@@ -294,7 +294,7 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 
 ## STEP add-review.bootstrap: Bootstrap Context
 
-### 2.1 Detect Current Feature
+### STEP add-review.detect-current-feature Detect Current Feature
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -337,7 +337,7 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
    - IF `WIKI:present` is false: note "knowledge base unavailable — /add-wiki generates it" and continue with code-derived patterns only.
    - These pages contain implementation patterns and conventions to validate against
 
-### 2.3 Load Project Architecture Reference
+### STEP add-review.load-project-architecture Load Project Architecture Reference
 
 Read AGENTS.md and **extract from specification:**
 - Configuration patterns (env vars, configs)
@@ -351,7 +351,7 @@ Read AGENTS.md and **extract from specification:**
 
 **AGENTS.md is the source of truth** for validating code.
 
-### 2.4 Read ALL Changed Files (Gate 2)
+### STEP add-review.read-all-changed Read ALL Changed Files (Gate 2)
 
 From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
 
@@ -363,7 +363,7 @@ From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
 
 **Deep audit of plan.md spec vs implemented code. Catches gaps the code review does not.**
 
-### 3.1 Load Contracts and Acceptance Checklist
+### STEP add-review.load-contracts-acceptance Load Contracts and Acceptance Checklist
 
 ```
 READ docs/features/${FEATURE_ID}/plan.md
@@ -384,7 +384,7 @@ READ docs/features/${FEATURE_ID}/tasks.md → section `## Requirements Coverage`
 
 **IF tasks.md OR `## Acceptance Checklist` ABSENT:** Stop and report "Feature missing tasks.md/##Acceptance Checklist — must replan via /add-plan".
 
-### 3.2 Execute Audit (ALL areas)
+### STEP add-review.execute-audit-all Execute Audit (ALL areas)
 
 For EACH item in `## Acceptance Checklist`:
 
@@ -405,7 +405,7 @@ d. STATUS per item (cross-check tick state vs reality):
    STALE TICK    — tick `[x]` but code missing — re-open tick, block delivery
 ```
 
-### 3.3 Cross-Reference
+### STEP add-review.cross-reference Cross-Reference
 
 ```
 Do ALL RF/RN from about.md appear in tasks.md → ## Requirements Coverage?
@@ -460,7 +460,7 @@ the evidence this command just captured.
   ⛔ DO NOT accept a "Files Modified" section in a reviewer report
   ✅ DO emit every finding as a routed row for `/add-build` to consume
 
-### 4.2 Dispatch Strategy
+### STEP add-review.dispatch-strategy Dispatch Strategy
 
 **If BOTH frontend and backend files exist:**
 - Dispatch BOTH reviewers in PARALLEL (single message, multiple Task calls)
@@ -618,7 +618,7 @@ prompt: |
 
 ## STEP add-review.consolidate: Consolidate Findings
 
-### 5.1 Process Reviewer Outputs
+### STEP add-review.process-reviewer-outputs Process Reviewer Outputs
 
 **GATE 4: ALL reviewers must return before proceeding.**
 
@@ -677,14 +677,14 @@ Run the project build command (see AGENTS.md). Capture the exit code and stderr.
 
 The reviewer's job is to verify, not to trust. Existing `[x]` ticks on `## Validation Gates` are evidence of past success — they are NOT evidence of current correctness. This step re-establishes the truth.
 
-### 7.1 Pre-condition
+### STEP add-review.pre-condition Pre-condition
 
 Read AGENTS.md `validation_gates` block.
 
 - **Block missing** → emit one-line nudge `Note: validation_gates not detected in AGENTS.md. Run /add-wiki to enable validation gates.` and skip the rest of STEP add-review.gates.
 - **Block present** → proceed.
 
-### 7.2 Re-Run Procedure
+### STEP add-review.re-run-procedure Re-Run Procedure
 
 Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tasks-checklist/SKILL.md}}`:
 
@@ -697,7 +697,7 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
       - `UNTOUCHED_FAILURES` only → keep `[x]` and refresh `### Known Issues` (cap 10 + `+N more`).
 3. Write the updated `tasks.md`.
 
-### 7.3 Hard Requirements
+### STEP add-review.hard-requirements Hard Requirements
 
 - Every gate command MUST be invoked via Bash in this session before STEP add-review.report produces `review-NNN.md`.
 - Capture each `(gate, exit_code)` pair for inclusion in the Quality Gate Report.
@@ -882,7 +882,7 @@ single-file backup rule; the sequence is what lets a loop compare rounds.
 
 **IF the write failed:** Do NOT output console report. Debug and retry.
 
-### 11.4 Console Output
+### STEP add-review.console-output Console Output
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the gate table and the routing come after it, whole.

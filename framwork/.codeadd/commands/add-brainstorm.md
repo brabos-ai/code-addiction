@@ -202,7 +202,7 @@ still presented, and this command still stops until the user says yes.
 | Path | What STEP add-brainstorm.explore does | Then |
 |------|-----------------|------|
 | **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which reports and routes as text. No intent file, no approval question. |
-| **bounded** | 2.1, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
+| **bounded** | STEP add-brainstorm.draft-objective-first, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
 | **architectural** | Everything written below. | STEPS 3 → 4 → 5. |
 
 The cadence, the challenge techniques and the 20-word `OUTPUT RULE` apply on all three paths. If the
@@ -210,7 +210,7 @@ conversation reveals hidden complexity, apply STEP add-brainstorm.classify's one
 
 For investigations, search the codebase before answering.
 
-### 2.1 Draft the objective FIRST, and have the user correct it
+### STEP add-brainstorm.draft-objective-first Draft the objective FIRST, and have the user correct it
 
 **Draft the objective from what the user has already said, and ask them to correct it.** One or two
 sentences, in their words, answering one question: **what will be true when this is done that is not
@@ -234,7 +234,7 @@ and the plan reviewer fails a plan whose work cannot be traced to it. Corrected 
 **Where a later answer contradicts the drafted objective, the objective is what changes.** It was a
 draft; the questions are how it stops being one.
 
-### 2.2 The sections to close
+### STEP add-brainstorm.sections-close The sections to close
 
 **Which sections run is decided by the path.**
 
@@ -277,7 +277,7 @@ this conversation does not need.
 | Validation | "I'm thinking of adding X" | Honest assessment based on codebase state |
 | Comparison | "Is A or B better?" | Explain trade-offs at appropriate level |
 
-### 2.3 Bring the outside in — by name
+### STEP add-brainstorm.bring-outside-in Bring the outside in — by name
 
 **Two sources feed every recommendation:**
 
@@ -302,14 +302,14 @@ worthless; "Stripe does X" can be looked at and contradicted.
 ⛔ **Where the two sources conflict, this project wins.** Its conventions were settled for reasons
 recorded in its own documents. Outside practice is an input to the decision, never an authority over it.
 
-### 2.4 Converge with directions, and recommend
+### STEP add-brainstorm.converge Converge with directions, and recommend
 
 **Converge with directions (MANDATORY before writing the design):** When understanding is sufficient,
 present **2–3 candidate directions** — each with a one-line summary, pros and cons — and force the user
 to choose. DO NOT converge silently on the user's first idea.
 
 **Every set of directions — and every question with options — carries a recommendation (MANDATORY):**
-say which one you would take and why, in concrete terms drawn from 2.3's two sources. Never a generic
+say which one you would take and why, in concrete terms drawn from STEP add-brainstorm.bring-outside-in's two sources. Never a generic
 "it depends".
 
 ```
@@ -354,7 +354,7 @@ answer that was never given.
 
 On `bounded` this binds the short design in chat. On `spike` there is no design to gate.
 
-### 2.6 Summary approval
+### STEP add-brainstorm.summary-approval Summary approval
 
 **Before STEP add-brainstorm.write-doc, present the summary and ask: does this match what you want?** All three paths —
 a spike's recommendation and a bounded design in chat are approved like a document.
@@ -372,7 +372,7 @@ trade-offs accepted, no open questions. DO NOT document with uncertainties.
 the design they can read, not one that exists only in this conversation.
 
 ```
-IF ON THE architectural PATH AND 2.6 IS APPROVED:
+IF ON THE architectural PATH AND STEP add-brainstorm.summary-approval IS APPROVED:
   ⛔ DO NOT: Skip the document, or wait for the user to ask for it
   ✅ DO: Write it now, then run STEP add-brainstorm.self-review
 ```
@@ -394,12 +394,12 @@ full classes/methods — a single one-shot snippet is the maximum allowed.
 
 ## STEP add-brainstorm.self-review: Self-Review, Then the Validation Gate
 
-### 4.1 Self-review
+### STEP add-brainstorm.validation-gate Self-review
 
 Read the document you just wrote against these, and fix what fails before the gate:
 
 ```
-[ ] `## Objective` states an outcome, in the user's words, and matches what 2.1 settled
+[ ] `## Objective` states an outcome, in the user's words, and matches what STEP add-brainstorm.draft-objective-first settled
 [ ] Every Key Decision's `Serves` names a PART of the objective — never the whole of it restated
 [ ] Every `Used by` cell holds an answer or NOT VERIFIED — none blank
 [ ] Open Threads reads `None`
@@ -411,7 +411,7 @@ Read the document you just wrote against these, and fix what fails before the ga
 dimension checks the work against this objective where it is about to be built. A second reviewer here
 would review the same objective twice before anything depends on it.
 
-### 4.2 Validation gate
+### STEP add-brainstorm.validation-gate Validation gate
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `brainstorm`.
 
@@ -421,7 +421,7 @@ DO NOT skip. DO NOT continue to STEP add-brainstorm.handoff until the gate retur
 
 ## STEP add-brainstorm.handoff: Report, Approve, Hand Off [HARD STOP]
 
-### 5.1 Report
+### STEP add-brainstorm.report Report
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST, then the approval.
@@ -475,9 +475,9 @@ IF THE ANSWER IS "Keep discussing":
 ```
 
 ⛔ **A spike is asked no three-option question.** Its output is a recommendation; keeping it is a new
-request with its own classification. It goes straight to 5.4 and routes as text.
+request with its own classification. It goes straight to STEP add-brainstorm.route and routes as text.
 
-### 5.3 Write the intent file — `bounded` and `architectural`
+### STEP add-brainstorm.write-intent-file Write the intent file — `bounded` and `architectural`
 
 Write `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` against the `brainstorm-intent` schema in
 `{{skill:add--doc-schemas/SKILL.md}}`. On `architectural` it reuses the brainstorm document's timestamp
@@ -485,7 +485,7 @@ verbatim, so the pair sorts adjacent; on `bounded` it takes its own and stands a
 id either way.
 
 **This file is why the next command does not re-ask what you just settled.** It carries the path you
-classified at STEP add-brainstorm.classify, the approval's answer as `delivery:`, the objective from 2.1, every decision the
+classified at STEP add-brainstorm.classify, the approval's answer as `delivery:`, the objective from STEP add-brainstorm.draft-objective-first, every decision the
 conversation closed with its rationale and what it serves, whatever it could not close, the prior art
 STEP add-brainstorm.load-context found, and the directions that were rejected.
 
@@ -510,7 +510,7 @@ extracts decisions from this file without asking.
 <!-- /feature:board:ticket-shaped -->
 <!-- /slot:board.ticket-shaped -->
 
-### 5.4 Route
+### STEP add-brainstorm.route Route
 
 | Signal | Suggest |
 |--------|---------|
@@ -527,7 +527,7 @@ On `delivery: confirm`, and on every route that is not `/add-new`, print and STO
 
 ```text
 Idea is ready to formalize. Run:  /add-new
-Intent: docs/brainstorm/<the file written at 5.3>
+Intent: docs/brainstorm/<the file written at STEP add-brainstorm.write-intent-file>
 (brainstorm stops here — it does not run the next command for you.)
 ```
 

@@ -123,13 +123,13 @@ moment `SF_DIR` is known and before STEP add-build.mode.
 ⛔ DO NOT skip this because the conversation "looks like" a fresh start. That is exactly what a compacted
 session looks like, and re-dispatching a finished task is the failure this read exists to prevent.
 
-### 1.0.1 Delivery Mode
+### STEP add-build.delivery-mode Delivery Mode
 
 **Read the delivery mode once, here.** Resolve `DELIVERY` per `{{skill:add--delivery-mode/SKILL.md}}`
 from the `> **Delivery:**` line of the `plan.md` in scope, and from `epic.md`'s `## Notes` `delivery:`
 line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No line → `confirm`.
 
-### 1.1 Cross-Feature Decisions Context (PRD0031)
+### STEP add-build.cross-feature-decisions Cross-Feature Decisions Context (PRD0031)
 
 **IF `.codeadd/project/decisions.jsonl` exists:**
 1. READ file
@@ -207,7 +207,7 @@ Extract from status.sh output:
 
 ## STEP add-build.mode: Determine Mode (MANDATORY OUTPUT)
 
-### 5.0 Apply the Resume Rule (BEFORE mode detection)
+### STEP add-build.apply-resume-rule Apply the Resume Rule (BEFORE mode detection)
 
 The ledger read in STEP add-build.context is consumed here, before anything is detected. Apply the resume rule exactly
 as `{{skill:add--subagent-driven-development/SKILL.md}}` states it:
@@ -227,7 +227,7 @@ decided*.** A commit in `git log` happened whatever the ledger says; a ruling le
 
 **Output one line before proceeding:** `LEDGER: <path> — <n> entries — resuming at <TASK_ID | Task 1 (fresh)>`.
 
-### 5.1 Context Detection (AUTOMATIC)
+### STEP add-build.context-detection-automatic Context Detection (AUTOMATIC)
 
 This command detects automatically:
 1. **TASKS** - `tasks.md` exists (PRD0032) → execute by structured tasks
@@ -235,7 +235,7 @@ This command detects automatically:
 3. **CORRECTION** - When feature already implemented + user describes a problem
 4. **FEATURE (Epic)** - When user passes flag `feature N` (legacy mode)
 
-### 5.2 Detection Flow (priority order)
+### STEP add-build.detection-flow-priority Detection Flow (priority order)
 
 **Loop-end pre-check (BEFORE everything else):** IF the invocation carries `--loop-end` → skip STEPS 6
 through 18 and run `## Loop End`. It implements nothing; a resume that stopped after `## Final Review` re-enters here.
@@ -256,12 +256,12 @@ separate `qa` argument mode — one correction contract, one path.
 
 **Legacy Epic edge case:** IF plan.md has `## Features` AND no flag passed → check FEATURES from status.sh → ask to execute next incomplete feature or inform all complete.
 
-### 5.3 Bug Detection
+### STEP add-build.bug-detection Bug Detection
 
 Keywords: bug, erro, error, broke, not working, problem, issue, failure, failed, fix, crash, broken
 Pattern: unexpected vs expected behavior
 
-### 5.4 Mode Output (MANDATORY)
+### STEP add-build.mode-output-mandatory Mode Output (MANDATORY)
 
 **Output this BEFORE proceeding:**
 
@@ -363,7 +363,7 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and none is satisfied by asserting it happened.
 
-#### 10.0.1 Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
+#### STEP add-build.pre-flight-scan Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
 
 Read `TASKS_FILE` **once** and write a table to the ledger. Tasks carry six sub-bullets — Service, Files,
 Deps, Consumes, Produces, Verify (`{{skill:add--tasks-checklist/SKILL.md}}`) — and `Consumes` / `Produces`
@@ -387,7 +387,7 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" "Preflight: T02 produces 
 ran — it is a claim that one did, and it is rejected.
 
 ✅ **Every conflict is ruled on BEFORE Task 1 is dispatched**, with the `Ruling:` recorded beside its row
-in the format 10.0.3 defines. A conflict carried into execution becomes two subagents building against two
+in the format STEP add-build.ruling-format defines. A conflict carried into execution becomes two subagents building against two
 different names, discovered at integration, when both are already committed.
 
 **On resume:** if the ledger already holds `Preflight:` rows for this build, the scan already ran — do not
@@ -397,7 +397,7 @@ re-run it and do not re-rule its conflicts.
 scan. Write one ledger line saying so — `Preflight: skipped — no tasks.md (DEVELOPMENT MODE)` — and
 proceed. Silence is not the same as a recorded skip.
 
-#### 10.0.2 Handoff by Path — what a dispatch carries
+#### STEP add-build.handoff-by-path Handoff by Path — what a dispatch carries
 
 The coordinator hands each agent **paths, not pasted content**. A pasted brief and an inline report stay
 resident in context and are re-read on every turn for the rest of the session.
@@ -447,7 +447,7 @@ in the dispatch (`GLOBAL CONSTRAINTS: none declared in plan.md`) rather than inv
 **What the agent returns inline:** `STATUS`, `COMMITS` (`BASE..HEAD`), a one-line `TESTS` summary, and
 `CONCERNS`. Nothing else — the full report is on disk at `REPORT_FILE` for whoever needs it.
 
-#### 10.0.3 The `Ruling:` format
+#### STEP add-build.ruling-format The `Ruling:` format
 
 Every ruling this command makes — a pre-flight conflict, a finding open at the cap — is one ledger line:
 
@@ -459,7 +459,7 @@ All three parts are required. The cost clause is what makes a ruling reviewable:
 caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong" can.
 STEP add-build.complete reprints every one of them.
 
-#### 10.0.4 Read the Plan Cold (NOT a gate)
+#### STEP add-build.read-plan-cold Read the Plan Cold (NOT a gate)
 
 The ledger is read on entry because a compacted session looks exactly like a
 fresh start. **The same argument applies to the plan**: what a compaction erases
@@ -543,7 +543,7 @@ record the reconciliation as a ledger line.
 2. GROUP filtered tasks by service (database, backend, frontend, test).
 3. VALIDATE deps: build execution graph (tasks with no deps first).
 4. EXECUTION ORDER: test → database → backend → frontend.
-5. PER TASK: record BASE → write brief (10.0.2) → dispatch → validator + build gate (STEP add-build.validate)
+5. PER TASK: record BASE → write brief (STEP add-build.handoff-by-path) → dispatch → validator + build gate (STEP add-build.validate)
    → COMMIT the task (STEP add-build.commit) → append the ledger line with its BASE..HEAD bracket.
 6. AFTER all task groups complete: proceed to STEP add-build.validate (validation gates tick).
 ```
@@ -563,7 +563,7 @@ is the right commit. See the COMMIT CONTRACT invariant and STEP add-build.commit
 **Subagent prompt addition for TASKS MODE:**
 
 Hand **brief paths**, never a pasted task table — one `task-brief.sh` call per task in this agent's service
-area (10.0.2). The brief carries all six sub-bullets; a table copied into the prompt loses `Consumes` and
+area (STEP add-build.handoff-by-path). The brief carries all six sub-bullets; a table copied into the prompt loses `Consumes` and
 `Produces`, which are the only thing making two tasks build against the same name.
 ```
 ## YOUR TASKS (briefs — read each one first)
@@ -650,7 +650,7 @@ the wave spanned:
 ⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`, stop dispatching — then split on what is still open:
 
 - **Open review findings → THE BREAKER: rule and continue. Do NOT stop the session.** Adjudicate each open
-  finding yourself and write one `Ruling:` line per finding to the ledger in the 10.0.3 format. Then move
+  finding yourself and write one `Ruling:` line per finding to the ledger in the STEP add-build.ruling-format format. Then move
   to the next task. A session parked on a question costs a day; a wrong ruling costs rework the human can
   see and undo, and STEP add-build.complete puts every ruling in front of them.
 - **A red build → the BUILD GATE stands.** A failing build is not a finding to adjudicate. Report the
@@ -680,7 +680,7 @@ decisions — never silently re-dispatched.
 
 ### DEVELOPMENT MODE
 
-#### 10.1 Dependency Order — ONE IMPLEMENTATION AGENT AT A TIME
+#### STEP add-build.dependency-order Dependency Order — ONE IMPLEMENTATION AGENT AT A TIME
 
 ```
 Contract Tests (if exist) -> Database -> Backend API -> Workers -> Frontend
@@ -706,10 +706,10 @@ Single area in scope: dispatch it directly, no subagents.
 ⛔ **This holds whether or not the `tdd-pipeline` feature is on.** The multi-writer tree is a property
 of this command's base body, not of the feature that adds test generation to it.
 
-#### 10.2 Universal Subagent Prompt Template
+#### STEP add-build.universal-subagent-prompt Universal Subagent Prompt Template
 
 Use this template for ALL area subagents (database, backend, frontend, workers). Every `${...}` below that
-names a file is a **path** the coordinator resolved in 10.0.2 — pasted briefs and pasted diffs are a defect
+names a file is a **path** the coordinator resolved in STEP add-build.handoff-by-path — pasted briefs and pasted diffs are a defect
 in this template, not a shortcut.
 
 ```
@@ -771,7 +771,7 @@ the validator is a separate dispatch, so an implementer that committed its own w
 *upstream* of the only thing that validates it. A subagent that reports having committed anyway has broken
 the contract — record it as a ledger line and reconcile `BASE..HEAD` against `git log` before continuing.
 
-#### 10.3 Area-Specific Notes
+#### STEP add-build.area-specific-notes Area-Specific Notes
 
 **Paths and build commands are project-specific. Consult AGENTS.md for exact locations and commands.**
 
@@ -787,22 +787,22 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 - Database: skill `add--database-development` (Entities, Migrations, Kysely, Repositories)
 - Frontend: skill `add--frontend-development` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
 
-#### 10.4 Subagent Dispatch
+#### STEP add-build.subagent-dispatch Subagent Dispatch
 
 ⛔ **One implementation dispatch per message, and the next one only after the previous returned.**
-Per 10.1: they share one working tree, so overlapping them is what makes a build failure
+Per STEP add-build.dependency-order: they share one working tree, so overlapping them is what makes a build failure
 unattributable.
 
 **DISPATCH AGENT: @${AREA}-agent** (see the Agent Roster in STEP add-build.implement)
-- **Prompt:** Use the Universal Subagent Prompt Template (10.2), filled from the paths 10.0.2 resolved
+- **Prompt:** Use the Universal Subagent Prompt Template (STEP add-build.universal-subagent-prompt), filled from the paths STEP add-build.handoff-by-path resolved
 
-#### 10.5 Coordination Flow
+#### STEP add-build.coordination-flow Coordination Flow
 
 **One commit per area dispatch in this mode**, plus one for the fix wave — there are no task ids to
 commit against.
 
 ```
-FOR EACH in-scope area, in the 10.1 order, ONE AT A TIME:
+FOR EACH in-scope area, in the STEP add-build.dependency-order order, ONE AT A TIME:
   Record BASE -> Dispatch the area agent -> Wait -> Validator (STEP add-build.validate) -> Verify build
     -> COMMIT the area batch (STEP add-build.commit) -> ledger line with BASE..HEAD
   (next area only after the line is written)
@@ -856,7 +856,7 @@ on (11.3), so at this point nothing is committed yet and `BASE..HEAD` is still e
 belongs to the **re-review** in 12.2, after a fix batch is committed. Dispatch this one with `MODE: task`
 and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exist yet.
 
-### 11.1 Validator Subagent Prompt Template
+### STEP add-build.validator-subagent-prompt Validator Subagent Prompt Template
 
 **DISPATCH AGENT: @reviewer-agent** [read-only]
 
@@ -979,7 +979,7 @@ Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 
 
 ```bash
 # BATCH_BASE is this batch's own anchor, taken immediately before ITS staging.
-# With one batch it equals the 10.0.2 pre-dispatch BASE; with several it does not.
+# With one batch it equals the STEP add-build.handoff-by-path pre-dispatch BASE; with several it does not.
 BATCH_BASE=$(git rev-parse HEAD)
 # Stage THIS batch's files BY PATH — from the IMPLEMENTATION subagent's FILES_CREATED +
 # FILES_MODIFIED. Not the validator's: it is read-only and modifies nothing.
@@ -1004,7 +1004,7 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
   were fixed together against one ordering, and `review-package.sh` packages `FIX_BASE..HEAD` for
   12.2 as one range.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
-  way, and only when more than one batch exists — the normal case, since 10.1 dispatches each in-scope
+  way, and only when more than one batch exists — the normal case, since STEP add-build.dependency-order dispatches each in-scope
   area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
   leaving the second commit empty and its `${BATCH_BASE}..${HEAD}` range empty too — and
   `review-package.sh` exits 2 on an empty range, so the fix loop would have nothing to review.
@@ -1042,7 +1042,7 @@ table on `review-NNN.md`. This command is the only thing that applies them.
 `## Fix Routing` from its ungated base body, so the correction contract cannot be
 feature-gated either.
 
-### 12.1 Consume
+### STEP add-build.consume Consume
 
 Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
 The rows are worked in the table's given order, respecting `Blocked by` — **by the agent, which is why
@@ -1525,7 +1525,7 @@ Fill the blocks from this build:
 <!-- /feature:board:ticket-attention -->
 <!-- /slot:board.ticket-attention -->
 
-Then, after the seven blocks and before any metadata, print 18.1 and 18.2 below — whole, in their
+Then, after the seven blocks and before any metadata, print STEP add-build.rulings-i-made and STEP add-build.next-command below — whole, in their
 own shape.
 
 **Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
@@ -1535,7 +1535,7 @@ its commit brackets.
 <!-- /feature:board:ticket-metadata -->
 <!-- /slot:board.ticket-metadata -->
 
-### 18.1 "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
+### STEP add-build.rulings-i-made "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 
 **Every ruling reaches the human.** Grep the ledger for every line containing `Ruling:` — pre-flight
 conflict rulings and cap rulings alike — and reprint **all of them**, in the order they were made:
@@ -1566,7 +1566,7 @@ Also surface, from the same ledger: deferred minors (count + one line each), par
 subagent failure line, and **the readback outcome** — matched, diverged, or skipped and why. These are
 not rulings and go in their own short list.
 
-### 18.2 Next command
+### STEP add-build.next-command Next command
 
 Print the next command as a complete line, feature ID and arguments included, ready to paste:
 
@@ -1618,9 +1618,9 @@ Dispatching subagents..."
 | Dependency not met (Epic) | Block and inform which feature must complete first |
 | Build fails after implementation | Dispatch `@fix-agent` with the error output as `ROUTED_ROWS` + `BUILD_ERRORS` |
 | Build fails after validation | Dispatch `@fix-agent` with validator output + build errors |
-| `@fix-agent` exhausted `MAX_ATTEMPTS`, findings still open | THE BREAKER: rule each open finding into the ledger (`Ruling:` format, 10.0.3) and continue. Do NOT stop the session — in every delivery mode |
+| `@fix-agent` exhausted `MAX_ATTEMPTS`, findings still open | THE BREAKER: rule each open finding into the ledger (`Ruling:` format, STEP add-build.ruling-format) and continue. Do NOT stop the session — in every delivery mode |
 | `@fix-agent` exhausted `MAX_ATTEMPTS`, build still red | Report unresolved rows and last errors; STOP (**deciding**, in every state). The BUILD GATE is not a finding to rule on. Never advance as if the build passed |
 | `review-package.sh` exits 2 (empty range) | The fix produced no commit — that is the finding. Do NOT dispatch the re-reviewer against nothing; re-open the round |
 | Ledger and `git log` disagree | git wins for what EXISTS, the ledger wins for what was DECIDED. Record the reconciliation as a ledger line |
-| >4 areas detected | Dispatch them one at a time in the 10.1 dependency order. There is no parallel group to split into |
+| >4 areas detected | Dispatch them one at a time in the STEP add-build.dependency-order dependency order. There is no parallel group to split into |
 | No plan.md or about.md | Inform user to run /feature or /plan first |

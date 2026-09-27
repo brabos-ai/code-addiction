@@ -199,7 +199,7 @@ describe('scenario 5 — UX agent design ownership', () => {
     // deleted add-plan's STEP 1 (Load Founder Profile) and shifted the rest down.
     const plan = builtCommand('add-plan');
     expect(plan).toContain('### STEP add-plan.ux-design UX Design Specialist');
-    expect(plan).toContain('- 7.4: Frontend Specialist');
+    expect(plan).toContain('- STEP add-plan.frontend: Frontend Specialist');
   });
 
   it('the qa-pipeline enable/disable round-trip is still byte-identical after the anchor rename', () => {

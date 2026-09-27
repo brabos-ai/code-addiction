@@ -186,15 +186,15 @@ bash .codeadd/scripts/status.sh
 ```
 Parse: PROJECT_DOCS, package manager hints, features under `docs/features/`.
 
-### 1.2 Load install methodology
+### STEP add-qa-setup.load-install-methodology Load install methodology
 Read {{skill:add--dev-environment-setup/SKILL.md}} — reuse its OS-detection + confirm-before-install discipline. This command installs (confirm-then-execute), it does NOT merely instruct.
 
-### 1.3 Parse flags
+### STEP add-qa-setup.parse-flags Parse flags
 - `--migrate` → `FORCE_MIGRATE = true`: STEP add-qa-setup.migration asks about migration even when the fingerprint is unchanged and a decision is already recorded.
 - `--upgrade` → `FORCE_UPGRADE = true`: STEP add-qa-setup.context re-materializes even when the recorded shape matches the shipped one, and performs the drift check unconditionally.
 - Neither flag is required for normal operation. Stale-detection and migration re-offer are automatic.
 
-### 1.4 Resolve target feature (optional)
+### STEP add-qa-setup.resolve-target-feature Resolve target feature (optional)
 - If a `feature-id` arg was given → `FEATURE_DIR = docs/features/<feature-id>-*`.
 - Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP add-qa-setup.catalog). Config (STEP add-qa-setup.config) is project-wide regardless.
 
@@ -230,8 +230,12 @@ On decline → record it for the STEP add-qa-setup.handoff hand-off and continue
 Record the outcome for STEP add-qa-setup.receipt as `qa-pipeline-feature`: `enabled` | `already-enabled` | `declined` | `enable-noop`.
 
 ### STEP add-qa-setup.verify-enable Verify the enable actually landed
-After a confirmed enable, probe the installed plan command ({{cmd:add-plan}}) for the injected `STEP qa-pipeline.qa-spec` section. On a pre-sidecar install (`injection-points.json` absent) the CLI reports success while injecting nothing.
-IF the section is absent → the enable was a silent no-op: route the user to `codeadd update` / re-install, record QA as NOT active for the hand-off, and continue.
+After a confirmed enable, probe the installed plan command ({{cmd:add-plan}}) for the injected `STEP qa-pipeline.qa-spec` section. Four outcomes, and they are not the same:
+
+- Section present → the enable landed. Record QA as active.
+- The feature resolves disabled, or the user declined the enable → the section is absent because qa-pipeline is off. That is not a failed injection. Continue setup and say so at the hand-off.
+- The feature is enabled, `injection-points.json` is v2, and the member warned (missing file, missing section, or bad payload) → the flag stays on. This is not a silent no-op and it is not "QA is off". Record the warning, keep the request, and do not tell the user to disable the feature. Same distinction as the QA axis self-check in {{cmd:add-plan}}.
+- `injection-points.json` is absent → a pre-sidecar install. The CLI can report success while injecting nothing. Route the user to `codeadd update` / re-install, record QA as NOT active for the hand-off, and continue.
 
 ---
 
@@ -270,10 +274,10 @@ Record each prerequisite's outcome for STEP add-qa-setup.receipt as `installed` 
 
 Scan on **every** run — the scan is a few globs and costs nothing. The friction this step must avoid is **re-asking**, not re-scanning.
 
-### 5.1 Scan
+### STEP add-qa-setup.scan Scan
 Detect existing QA/test tooling: Cypress (`cypress.config.*`), Jest (`jest.config.*`), Vitest (`vitest.config.*`), standalone Playwright, or a custom runner (test scripts in `package.json`, a `tests/`/`e2e/`/`cypress/` dir). Produce `DETECTED` — the sorted list of tooling ids found. `[]` when nothing is found.
 
-### 5.2 Compare against the receipt fingerprint
+### STEP add-qa-setup.compare-against-receipt Compare against the receipt fingerprint
 Read `migration.detected` + `migration.decision` from the receipt (empty when `SETUP_STATE` is `FIRST-RUN`).
 
 | Recorded `detected` | `DETECTED` now | Recorded decision | Behaviour |
@@ -285,7 +289,7 @@ Read `migration.detected` + `migration.decision` from the receipt (empty when `S
 | differs (new tooling appeared) | any | any | **ASK** — the situation changed |
 | any | any | any | **ASK** when `FORCE_MIGRATE` is true |
 
-### 5.3 Decide
+### STEP add-qa-setup.decide Decide
 - **ASK** → describe what was detected and ask whether to migrate it into the code-addiction QA pipeline. Set `MIGRATE = true` ONLY on explicit confirmation. Never enter migration mode silently.
 - Record for STEP add-qa-setup.receipt: `migration.detected = DETECTED`, `migration.decision` = `migrated` | `declined` | `none-found`, `migration.decided-at` = today (omit when `none-found`).
 
@@ -365,16 +369,16 @@ Dispatch each command in the chain as a subagent via the Agent tool — autonomo
 
 Otherwise, close the loop on every run:
 
-### 11.1 Smoke test
+### STEP add-qa-setup.smoke-test Smoke test
 
 ```
 IF `qa-pipeline` IS DISABLED — STEP add-qa-setup.feature-gate WAS DECLINED, OR IT WAS TURNED OFF SINCE:
   ⛔ DO NOT: Dispatch the smoke test
-  ⛔ DO NOT: Enter 11.2's correction loop
+  ⛔ DO NOT: Enter STEP add-qa-setup.correction-loop-max's correction loop
   ✅ DO: Record the deferral naming the decline, and continue to STEP add-qa-setup.receipt
 ```
 
-⛔ **11.2's guard is not this guard.** It catches a `/add-build` dispatch that
+⛔ **STEP add-qa-setup.correction-loop-max's guard is not this guard.** It catches a `/add-build` dispatch that
 reports the feature disabled — one wasted review and one wasted build later, and
 it names routed QA correction as the problem when the real one is that the
 review carried no QA steps to smoke-test. STEP add-qa-setup.feature-gate explicitly allows a decline
@@ -382,7 +386,7 @@ and continues setup, so this branch is reachable on any run.
 
 Autonomously dispatch `/add-review <feature-id>` (Agent tool) against the scaffolded feature — the QA sections `qa-pipeline` injects into it are what this setup enables. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
 
-### 11.2 Correction loop (max 3 attempts)
+### STEP add-qa-setup.correction-loop-max Correction loop (max 3 attempts)
 On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add-build` to work the routed rows, then re-run 11.1.
 
 - Guard: routed QA correction requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP add-qa-setup.feature-gate offers the enable).

@@ -62,7 +62,7 @@ IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
   ✅ DO: Report the qa-evidence.sh validation/promotion failure and stop
 
 ALWAYS:
-  ⛔ DO NOT USE: Bash for git add/commit/push — `done.sh` owns every LOCAL git write, through `--merge`, `--commit-push` or `--cleanup`. The ONE exception is the Recovery route (2.4), which runs on `main` where `done.sh` cannot run at all
+  ⛔ DO NOT USE: Bash for git add/commit/push — `done.sh` owns every LOCAL git write, through `--merge`, `--commit-push` or `--cleanup`. The ONE exception is the Recovery route (STEP add-done.recovery-route), which runs on `main` where `done.sh` cannot run at all
   ⛔ DO NOT USE: Bash for git branch -m (NEVER rename branches)
   ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT: Suggest renaming branches to fix unknown type errors -- the branch prefix is intentional
@@ -133,7 +133,7 @@ could not be read, and a route that deletes branches never runs on a guess.
 | MERGED | INDEX_ENTRY | Route | What runs |
 |---|---|---|---|
 | no | `absent` or `no-index` | **Normal** | Everything, as written below |
-| no | **`present`** | **Resume** | Every gate runs. STEP add-done.promote-qa's promotion, 6.3, 6.7 and 6.8 are SKIPPED. The merge is the only work left |
+| no | **`present`** | **Resume** | Every gate runs. STEP add-done.promote-qa's promotion, STEP add-done.complement-changelog, 6.7 and STEP add-done.write-delivery-index are SKIPPED. The merge is the only work left |
 | yes | `present` | **Closed out** | Report it and STOP. There is nothing to do |
 | yes | **`absent`** or `no-index` | **Recovery** | Runs on `main`. Writes the entry and the changelog. Never merges |
 
@@ -168,7 +168,7 @@ IF PR_STATE IS no-gh:
   ✅ DO: Take the local route and name the reason in the final report
 ```
 
-### 2.3 The Resume Route — written, pushed, merge refused
+### STEP add-done.resume-route The Resume Route — written, pushed, merge refused
 
 Reached from 2.1's second row. **Every gate below still applies in full** — a
 delivery is not exempt from grading because someone tried to merge it once. What
@@ -178,10 +178,10 @@ changes is that four STEPs already ran and must not run again:
 |---|---|---|
 | 4 | The gates | **Unchanged.** They all still run |
 | 5 | Validate and promote QA evidence | **Skipped.** The promotion already ran |
-| 6.3 | Generate the changelog | **Skipped.** Committed by STEP add-done.document's commit |
-| 6.7 | Update the wiki | **Skipped.** Same commit |
-| 6.7.1 | Rebuild the docs index | **Runs.** The index is a gitignored cache of the user's own markdown, not something a commit carries — a skipped rebuild leaves it describing the tree before this delivery |
-| 6.8 | Write the index entry | **Skipped.** The entry is on the branch |
+| STEP add-done.complement-changelog | Generate the changelog | **Skipped.** Committed by STEP add-done.document's commit |
+| STEP add-done.wiki | Update the wiki | **Skipped.** Same commit |
+| STEP add-done.rebuild-docs-knowledge | Rebuild the docs index | **Runs.** The index is a gitignored cache of the user's own markdown, not something a commit carries — a skipped rebuild leaves it describing the tree before this delivery |
+| STEP add-done.write-delivery-index | Write the index entry | **Skipped.** The entry is on the branch |
 | 8 | Merge | The only work left |
 
 ⛔ **STEP add-done.promote-qa is skipped rather than re-run, and that is not caution.** Promotion is
@@ -194,7 +194,7 @@ correct and nothing here repairs it. Report the reason from
 `gh pr view --json mergeStateStatus,mergeable` in STEP add-done.complete, alongside which STEPs
 this run skipped.
 
-### 2.4 The Recovery Route — merged, never indexed
+### STEP add-done.recovery-route The Recovery Route — merged, never indexed
 
 Reached from 2.1's bottom row. Work reached `main` and left no record. Stopping
 there would make the index quietly wrong about a delivery that shipped — the same
@@ -263,15 +263,15 @@ delivery it describes is fine; one that hides how it got there is not.
 
 ## STEP add-done.validate: Validate Delivery
 
-**Preflight (FEATURE BRANCHES ONLY) — run once, before 4.0–4.2:**
+**Preflight (FEATURE BRANCHES ONLY) — run once, before STEP add-done.quality-gate-verification–STEP add-done.validate-coverage:**
 
 ```bash
 bash .codeadd/scripts/converge-gates.sh "${DIR}"
 ```
 
-**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `REVIEW_SOURCE`, `QA_FEATURE_STATE`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether 4.0, 4.1, 4.2 and 4.3 pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
+**SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `REVIEW_SOURCE`, `QA_FEATURE_STATE`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether STEP add-done.quality-gate-verification, STEP add-done.validate-epic-md, STEP add-done.validate-coverage and STEP add-done.validate-build-ledger pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
 
-### 4.0: Quality Gate Verification (FEATURE BRANCHES ONLY)
+### STEP add-done.quality-gate-verification Quality Gate Verification (FEATURE BRANCHES ONLY)
 
 **SKIP this substep entirely if `BRANCH_TYPE` ≠ `feature`.** Hotfix/refactor/chore/docs branches are not gated here.
 
@@ -314,7 +314,7 @@ or `skipped`.**
 
 **NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict — the build's or the review's — and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
 
-### 4.0H: Hotfix Review Receipt (HOTFIX BRANCHES ONLY)
+### STEP add-done.hotfix-review-receipt Hotfix Review Receipt (HOTFIX BRANCHES ONLY)
 
 **SKIP this substep entirely if `BRANCH_TYPE` ≠ `hotfix`.** Feature gates stay on `converge-gates.sh`. Refactor/chore/docs stay ungated here.
 
@@ -352,7 +352,7 @@ Never send a hotfix to `/add-review`.
 
 ---
 
-### 4.1: Validate Epic.md (FEATURE BRANCHES ONLY)
+### STEP add-done.validate-epic-md Validate Epic.md (FEATURE BRANCHES ONLY)
 
 **SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
@@ -381,7 +381,7 @@ Run /add-build to implement the next subfeature.
 
 ---
 
-### 4.2: Validate Requirements Coverage (FEATURE BRANCHES ONLY)
+### STEP add-done.validate-coverage Validate Requirements Coverage (FEATURE BRANCHES ONLY)
 
 **SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
@@ -413,14 +413,14 @@ Options:
 
 ---
 
-### 4.3: Validate the Build Ledger (FEATURE BRANCHES ONLY)
+### STEP add-done.validate-build-ledger Validate the Build Ledger (FEATURE BRANCHES ONLY)
 
 **SKIP if `BRANCH_TYPE` ≠ `feature`.**
 
 **GATE CHECK (feature only): `GATE_LEDGER` must be `ok`.**
 
-This is the only gate that asks whether the build **happened**. 4.0 asks whether
-the delivery was graded, 4.2 reads a table written at plan time, and 4.1 returns
+This is the only gate that asks whether the build **happened**. STEP add-done.quality-gate-verification asks whether
+the delivery was graded, STEP add-done.validate-coverage reads a table written at plan time, and STEP add-done.validate-epic-md returns
 `ok` unconditionally on a feature with no `epic.md`. **Unwritten code breaks no
 test**, so a `/add-build` run that stopped halfway passes every check above and
 merges as fully delivered.
@@ -458,13 +458,13 @@ IF GATE_LEDGER IS NOT ok:
 **A feature with no `tasks.md` in scope reports `ok`**, with its reason in the
 detail. That is not a hole: outside TASKS MODE the ledger's lines are keyed by
 area name rather than task id, so there is nothing to cross-reference. It is the
-same rule 4.2 applies to an absent coverage table.
+same rule STEP add-done.validate-coverage applies to an absent coverage table.
 
 **IF `GATE_LEDGER=ok`:** Proceed normally.
 
 ---
 
-### 4.4: Validate the Knowledge Record (FEATURE AND HOTFIX BRANCHES)
+### STEP add-done.validate-knowledge-record Validate the Knowledge Record (FEATURE AND HOTFIX BRANCHES)
 
 **GATE CHECK: the delivery's `about.md` carries a non-empty `## TL;DR` AND at least one `## Relations` line.**
 
@@ -527,7 +527,7 @@ Do NOT stage, commit, push, move, or delete evidence here. **`done.sh` owns ever
 
 ## STEP add-done.document: Generate Changelog and Documentation
 
-### 6.1: Load Feature Context (BEFORE analyzing files)
+### STEP add-done.load-feature-context Load Feature Context (BEFORE analyzing files)
 
 **Read `${DIR}/about.md`.** Extract: Objective, Scope (Included/Excluded), Business Rules, Technical Decisions, Acceptance Criteria.
 
@@ -539,7 +539,7 @@ Do NOT stage, commit, push, move, or delete evidence here. **`done.sh` owns ever
 
 ---
 
-### 6.2: Intelligent File Analysis
+### STEP add-done.intelligent-file-analysis Intelligent File Analysis
 
 **Classify each file in CHANGED_FILES:**
 
@@ -559,7 +559,7 @@ Do NOT stage, commit, push, move, or delete evidence here. **`done.sh` owns ever
 
 ---
 
-### 6.3: Generate or Complement the Changelog (schema: changelog)
+### STEP add-done.complement-changelog Generate or Complement the Changelog (schema: changelog)
 
 ```
 IF 2.1 ROUTED THIS RUN TO **Resume**:
@@ -625,7 +625,7 @@ Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[
 
 ---
 
-### 6.4: Validation Gate
+### STEP add-done.validation-gate Validation Gate
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `changelog`.
 
@@ -633,7 +633,7 @@ Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schem
 
 ---
 
-### 6.5: Update about.md (IF out-of-scope detected)
+### STEP add-done.update-about-md Update about.md (IF out-of-scope detected)
 
 IF out-of-scope detected, append to about.md:
 
@@ -650,7 +650,7 @@ IF out-of-scope detected, append to about.md:
 
 ---
 
-### 6.6: Consolidate decisions.jsonl
+### STEP add-done.consolidate-decisions-jsonl Consolidate decisions.jsonl
 
 Append feature-level `decisions.jsonl` entries into the project-central `.codeadd/project/decisions.jsonl`, deduplicating by `ts`.
 
@@ -685,7 +685,7 @@ IF 2.1 ROUTED THIS RUN TO **Resume**:
 
 **IF `.codeadd/wiki/index.md` exists:**
 
-Load skill `{{skill:add--wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP add-done.collect) + the feature context already loaded in this session (about.md from 6.1, the changelog just generated in 6.3).
+Load skill `{{skill:add--wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP add-done.collect) + the feature context already loaded in this session (about.md from STEP add-done.load-feature-context, the changelog just generated in STEP add-done.complement-changelog).
 
 Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merge` (STEP add-done.merge) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
 
@@ -697,7 +697,7 @@ Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merg
 
 ---
 
-### 6.7.1 Rebuild the Docs Knowledge Index (best-effort, non-blocking)
+### STEP add-done.rebuild-docs-knowledge Rebuild the Docs Knowledge Index (best-effort, non-blocking)
 
 The changelog, the `about.md` edits and the wiki pages have all landed. Rebuild
 the index so the next command's discovery step sees this delivery:
@@ -739,7 +739,7 @@ a subprocess spawned for a single call.
 
 ---
 
-### 6.8 Write the Delivery Index Entry
+### STEP add-done.write-delivery-index Write the Delivery Index Entry
 
 ```
 IF 2.1 ROUTED THIS RUN TO **Resume**:
@@ -755,11 +755,11 @@ Load `{{skill:add--doc-schemas/references/delivery-index.md}}` for the record sh
 ```
 IF BRANCH_TYPE = docs:
   ⛔ DO NOT USE: Bash for delivered.sh write
-  ✅ DO: Skip 6.8 entirely, set INDEX_ENTRY=none, continue to STEP add-done.preview
+  ✅ DO: Skip STEP add-done.write-delivery-index entirely, set INDEX_ENTRY=none, continue to STEP add-done.preview
 
 IF THE ENTRY HAS NOT BEEN WRITTEN OR EXPLICITLY SKIPPED:
   ⛔ DO NOT: Proceed to STEP add-done.preview
-  ✅ DO: Complete 6.8, or record why it wrote nothing
+  ✅ DO: Complete STEP add-done.write-delivery-index, or record why it wrote nothing
 ```
 
 **6.8.1 — Resolve which entry this branch belongs to.**
@@ -780,7 +780,7 @@ Verify first because an item that has already moved carries a stale `at`; a bran
 
 Every entry with at least one matched item gets a new line carrying this branch's commit. **No match anywhere** means the branch created new surface rather than changing existing surface, so it gets its own entry under its own `[NNNN][L]` id.
 
-**6.8.2 — Select the items. This is a shape filter, not a judgement.** Two runs over one diff must produce one list. Derive from the HIGH-priority files already described in 6.2, plus `tasks.md` when it exists — its absence is routine on hotfix, refactor and chore branches, and items then come from the diff plus `about.md` and the commit messages.
+**6.8.2 — Select the items. This is a shape filter, not a judgement.** Two runs over one diff must produce one list. Derive from the HIGH-priority files already described in STEP add-done.intelligent-file-analysis, plus `tasks.md` when it exists — its absence is routine on hotfix, refactor and chore branches, and items then come from the diff plus `about.md` and the commit messages.
 
 | Include | Exclude |
 |---|---|
@@ -834,11 +834,11 @@ IF delivered.sh EXITS 1:
 
 Show a preview with: branch type, ID, summary, file count, top HIGH priority files, out-of-scope indicator (if any), and each permanent final snapshot emitted by STEP add-done.promote-qa with its scope, path, and severity counts (`run-NNN · Blocker N / Major N / Minor N / Polish N`) read from its `## Summary`. Extractive only: the QA judgement is an audit, so unresolved findings are DISPLAYED, never gated on and never re-judged here.
 
-**Render the delivery index entry from 6.8 (`INDEX_ENTRY`) IN FULL** — its `name`, its `words`, and **every** item with its `what`, its `at` and its `find` string. Not a count, not a summary: the user is seeing this list for the only time before it is committed, and a `find` they can read is a `find` they can notice is wrong. Add, when 6.8 emitted them: every `LOOSE` string, labelled as loosely anchored, and how many items the five-item cap dropped.
+**Render the delivery index entry from STEP add-done.write-delivery-index (`INDEX_ENTRY`) IN FULL** — its `name`, its `words`, and **every** item with its `what`, its `at` and its `find` string. Not a count, not a summary: the user is seeing this list for the only time before it is committed, and a `find` they can read is a `find` they can notice is wrong. Add, when STEP add-done.write-delivery-index emitted them: every `LOOSE` string, labelled as loosely anchored, and how many items the five-item cap dropped.
 
-`INDEX_ENTRY=none` (a `docs` branch) prints one line saying no entry was owed. A refused write never reaches here — 6.8 stops.
+`INDEX_ENTRY=none` (a `docs` branch) prints one line saying no entry was owed. A refused write never reaches here — STEP add-done.write-delivery-index stops.
 
-⛔ **On the Resume route 6.8 did not run, so there is nothing in hand to render.** Read the entry back from `docs/delivered.jsonl` on the branch — it is already committed there — and print THAT, labelled as the entry a previous run wrote. Never re-compose one: a second composition is how two lines for one delivery get written, which is the defect 2.1 exists to stop.
+⛔ **On the Resume route STEP add-done.write-delivery-index did not run, so there is nothing in hand to render.** Read the entry back from `docs/delivered.jsonl` on the branch — it is already committed there — and print THAT, labelled as the entry a previous run wrote. Never re-compose one: a second composition is how two lines for one delivery get written, which is the defect 2.1 exists to stop.
 
 ```
 IF RENDERING THE ENTRY:
@@ -857,7 +857,7 @@ IF RENDERING THE ENTRY:
 outcomes land here, including the one that asks.
 
 ⛔ **This command runs no per-file post-merge check, and that is deliberate.** `done.sh`'s
-`do_cleanup` — called by both routes below, directly at 8.1 and through `--merge` at 8.2 — proves the
+`do_cleanup` — called by both routes below, directly at STEP add-done.pr-merge and through `--merge` at STEP add-done.local-merge — proves the
 merge two ways: a fetch, then `git merge-base --is-ancestor` against the merge commit. Nothing here
 re-opens the merged files to prove they match what was pushed. This project's own internal development
 tooling runs a close-out with exactly the same two checks and no more, for the same reason: a
@@ -865,7 +865,7 @@ successful merge cannot exist without the delivered files existing, so a third, 
 only spend a git call re-proving what the merge already guarantees. This is a recorded parity gap, not
 an omission to close.
 
-### 8.0 The ASK Branch [STOP]
+### STEP add-done.ask-branch-stop The ASK Branch [STOP]
 
 Taken when 2.2's table said **ASK** — no PR exists and either no `Publish:` line
 was ever written, or one was written naming a PR that is now gone or closed
@@ -893,10 +893,10 @@ IF THE USER HAS NOT ANSWERED:
 
 | Answer | Go to |
 |---|---|
-| Merge locally | 8.2 |
-| Open a PR first | Say so and STOP — `{{cmd:add-pull-request}}` opens it, then re-run this command, which will route to 8.1 |
+| Merge locally | STEP add-done.local-merge |
+| Open a PR first | Say so and STOP — `{{cmd:add-pull-request}}` opens it, then re-run this command, which will route to STEP add-done.pr-merge |
 
-### 8.1 The PR Route
+### STEP add-done.pr-merge The PR Route
 
 Taken when `PR_STATE=open`. The forge owns the merge, so its rules — required
 reviews, required checks, protected branches — are the ones that apply.
@@ -966,7 +966,7 @@ The entry and the changelog then stay on the branch, absent from `main`, which i
 the honest state — and 2.1 routes the next run to **Resume**, which skips the
 three STEPs that already ran rather than writing their output twice.
 
-### 8.2 The Local Route
+### STEP add-done.local-merge The Local Route
 
 Taken when 2.2 chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
 `no-gh` record, or `gh` is unavailable.
@@ -1027,8 +1027,8 @@ Then, after the seven blocks, state:
 
 - The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
 - The delivery index entry that `delivered.sh` wrote, and the changelog path.
-- **The docs index rebuild from 6.7.1** — its node and edge counts, and the
-  unresolved list when 6.7.1 found one. An unresolved relation points at a
+- **The docs index rebuild from STEP add-done.rebuild-docs-knowledge** — its node and edge counts, and the
+  unresolved list when STEP add-done.rebuild-docs-knowledge found one. An unresolved relation points at a
   document that does not exist; it reaches the user here or nowhere.
 - **Which evidence the merge gate accepted, and why.** On the PR route: the
   checks that concluded and the SHA they ran on, or that the repository had no

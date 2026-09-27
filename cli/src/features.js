@@ -3,15 +3,9 @@ import path from 'node:path';
 import { intro, outro, log } from '@clack/prompts';
 import { promptFeatures } from './prompt.js';
 import {
-  parseFragmentSections,
-  loadInjectionPoints,
   resolveResourceTargets,
-  applyInjectionToContent,
-  removeInjectionFromContent,
   readManifest,
   saveManifest,
-  recalculateHashes,
-  loadInjectionSidecar,
   reconcileSlots,
 } from './injection-core.js';
 import { isPluginDetected } from './plugins.js';
@@ -35,15 +29,6 @@ function setFeatureFlag(cwd, featureName, enabled) {
   manifest.features[featureName] = enabled;
   manifest.features = normalizeFeatureStates(manifest.features).states;
   saveManifest(cwd, manifest);
-}
-
-function warnMissed(namespace, name, resourceName, missed) {
-  for (const m of missed) {
-    log.warn(
-      `Could not inject ${namespace}:${name} [${m.sections.join(', ')}] into ${resourceName}: ` +
-        `anchor not found ("${m.anchor.text}" #${m.anchor.ordinal}). The adjacent text may have been edited.`,
-    );
-  }
 }
 
 /**

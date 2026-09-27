@@ -59,8 +59,8 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-plan.context (schemas
 | `feature_identified` | STEP add-plan.parse | FEATURE_ID is empty | List all features, WAIT for user choice, NEVER proceed without selection | deciding |
 | `docs_loaded` | STEP add-plan.load-docs | about.md OR discovery.md missing | STOP, inform user, NEVER dispatch subagents | deciding |
 | `scope_determined` | STEP add-plan.analyze-scope | Epic/Feature type unclear OR subagents unidentified | NEVER dispatch subagents, ALWAYS complete scope analysis first | — (not a user stop) |
-| `design_gate` | STEP add-plan.ux-design | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip 7.1, continue at 7.2 | — (not a user stop) |
-| `design_validated` | STEP add-plan.ux-design | `feature-design` schema gate did not return PASS | NEVER delete the 7.1 temps, NEVER proceed to 7.2 — fix `design.md` and re-run the gate | — (not a user stop) |
+| `design_gate` | STEP add-plan.ux-design | Any of checks 1-3 (frontend / scope / provenance) returns a skip verdict AND check 4 (contract-schema) does not override it | NEVER dispatch a UX agent; STATE the verdict + reason, skip STEP add-plan.ux-design, continue at STEP add-plan.database | — (not a user stop) |
+| `design_validated` | STEP add-plan.ux-design | `feature-design` schema gate did not return PASS | NEVER delete the STEP add-plan.ux-design temps, NEVER proceed to STEP add-plan.database — fix `design.md` and re-run the gate | — (not a user stop) |
 | `coverage_validated` | STEP add-plan.coverage | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing | deciding |
 | `plan_reviewed` | STEP add-plan.review | `@plan-reviewer-agent` verdict is `blocked`, blockers remain after the re-dispatch `add--review-discipline` allows, or `@consistency-agent` leaves a conflict standing | STOP, present the blockers to the user; NEVER proceed to STEP add-plan.complete Completion | deciding |
 
@@ -91,11 +91,11 @@ STEP add-plan.load-docs:  Load feature docs        -> about.md, discovery.md, de
 STEP add-plan.clarify:  Clarification questions  -> IF NEEDED ONLY
 STEP add-plan.analyze-scope:  Analyze scope            -> Epic/Feature type + subagent selection (GATE: scope_determined)
 STEP add-plan.subagents:  Execute subagents        -> SEQUENTIAL by area
-  - 7.0: Cross-SF context (EPIC ONLY)
-  - 7.1: UX Design Specialist (gated -> design.md)
-  - 7.2: Database Specialist
-  - 7.3: Backend Specialist
-  - 7.4: Frontend Specialist
+  - STEP add-plan.cross-sf: Cross-SF context (EPIC ONLY)
+  - STEP add-plan.ux-design: UX Design Specialist (gated -> design.md)
+  - STEP add-plan.database: Database Specialist
+  - STEP add-plan.backend: Backend Specialist
+  - STEP add-plan.frontend: Frontend Specialist
 <!-- slot:plan-specs fallback="fallbacks/plan-specs.md" -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
@@ -213,7 +213,7 @@ into `plan.md` verbatim. An `about.md` with no `## Objective` is a legacy docume
 <!-- /feature:board:ticket-read -->
 <!-- /slot:board.ticket-read -->
 
-**Provenance source:** the `about.md` read in this step is the provenance source for STEP add-plan.ux-design. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — 7.1.0 and 7.1.4 hash those same bytes.
+**Provenance source:** the `about.md` read in this step is the provenance source for STEP add-plan.ux-design. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — STEP add-plan.gate-evaluate-any and STEP add-plan.ux-consolidate hash those same bytes.
 
 ---
 
@@ -301,80 +301,80 @@ BACKEND_SELECTED  = true|false
 
 ### STEP add-plan.ux-design UX Design Specialist (gated — produces `design.md`)
 
-`add-plan` OWNS the design contract. When the feature touches UI, this sub-step produces the consolidated `design.md` that 7.4 (Frontend), STEP add-plan.consolidate and the QA judgement in `/add-review` all read. Three dispatches + one coordinator consolidation.
+`add-plan` OWNS the design contract. When the feature touches UI, this sub-step produces the consolidated `design.md` that STEP add-plan.frontend (Frontend), STEP add-plan.consolidate and the QA judgement in `/add-review` all read. Three dispatches + one coordinator consolidation.
 
-⛔ NO human `[STOP]` anywhere in 7.1 — every accept/reject decision here belongs to the coordinator.
+⛔ NO human `[STOP]` anywhere in STEP add-plan.ux-design — every accept/reject decision here belongs to the coordinator.
 
 **SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `status.sh`'s `SF_DIR_GLOB` resolves).
 
-**Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add-review`'s QA scope resolution uses). All 7.1 temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
+**Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add-review`'s QA scope resolution uses). All STEP add-plan.ux-design temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
 **`design.md` resolution (for every consumer, including the skip path):** resolve it per the `feature-design` **Location** rule in `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).
 
-#### 7.1.0 Gate (evaluate BEFORE any dispatch)
+#### STEP add-plan.gate-evaluate-any Gate (evaluate BEFORE any dispatch)
 
-Evaluate all four checks IN ORDER and STATE the verdict + reason in your output. Checks 1-3 are skip gates — ANY skip verdict there means 7.1 does NOT run. Check 4 is a **schema override**: it can force 7.1 to run even when check 3 said skip.
+Evaluate all four checks IN ORDER and STATE the verdict + reason in your output. Checks 1-3 are skip gates — ANY skip verdict there means STEP add-plan.ux-design does NOT run. Check 4 is a **schema override**: it can force STEP add-plan.ux-design to run even when check 3 said skip.
 
-1. **Frontend gate:** `FRONTEND_SELECTED = true` (the value stated in STEP add-plan.analyze-scope). IF false → SKIP 7.1, note "no UI in scope".
-2. **Scope gate:** count the screens/pages declared in `about.md` + `discovery.md` and check for structural keywords (wizard, onboarding, multi-step, flow, dashboard, settings-panel). SKIP 7.1 when the feature introduces NO new or restructured screen AND declares NO new component — i.e. changes confined to existing components on existing screens. On skip → note it; `@frontend-agent` (7.4) then plans against the EXISTING `design.md` (resolution above).
+1. **Frontend gate:** `FRONTEND_SELECTED = true` (the value stated in STEP add-plan.analyze-scope). IF false → SKIP STEP add-plan.ux-design, note "no UI in scope".
+2. **Scope gate:** count the screens/pages declared in `about.md` + `discovery.md` and check for structural keywords (wizard, onboarding, multi-step, flow, dashboard, settings-panel). SKIP STEP add-plan.ux-design when the feature introduces NO new or restructured screen AND declares NO new component — i.e. changes confined to existing components on existing screens. On skip → note it; `@frontend-agent` (STEP add-plan.frontend) then plans against the EXISTING `design.md` (resolution above).
 3. **Idempotency by provenance (NEVER mtime):** compute the hash of the exact `about.md` bytes read in STEP add-plan.load-docs:
 
 ```bash
 sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PATH}" | cut -d' ' -f1
 ```
 
-   → `${ABOUT_SHA}`. IF `${SCOPE_DIR}/design.md` exists AND its frontmatter carries `provenance: sha256:${ABOUT_SHA}` → SKIP 7.1, note "design.md up to date (provenance match)". IF the file exists and the value differs or is absent → RUN 7.1 and record WHY in the output ("about.md changed since design.md was written" / "design.md predates provenance tracking").
+   → `${ABOUT_SHA}`. IF `${SCOPE_DIR}/design.md` exists AND its frontmatter carries `provenance: sha256:${ABOUT_SHA}` → SKIP STEP add-plan.ux-design, note "design.md up to date (provenance match)". IF the file exists and the value differs or is absent → RUN STEP add-plan.ux-design and record WHY in the output ("about.md changed since design.md was written" / "design.md predates provenance tracking").
 
-4. **Contract-schema override (runs even when check 3 said SKIP):** a `design.md` written before the layout-tree + `## Design Contract` schema carries a perfectly valid `provenance` hash, so check 3 alone would skip regeneration **forever** while the contract stays absent. Read the existing `${SCOPE_DIR}/design.md` and check for BOTH a `## Design Contract` section and a layout tree. IF either is missing → **OVERRIDE the check-3 skip and RUN 7.1**, recording the reason "design.md predates the Design Contract schema — regenerating". IF check 3 already decided RUN, this check changes nothing.
+4. **Contract-schema override (runs even when check 3 said SKIP):** a `design.md` written before the layout-tree + `## Design Contract` schema carries a perfectly valid `provenance` hash, so check 3 alone would skip regeneration **forever** while the contract stays absent. Read the existing `${SCOPE_DIR}/design.md` and check for BOTH a `## Design Contract` section and a layout tree. IF either is missing → **OVERRIDE the check-3 skip and RUN STEP add-plan.ux-design**, recording the reason "design.md predates the Design Contract schema — regenerating". IF check 3 already decided RUN, this check changes nothing.
 
 ⛔ NEVER decide freshness from file mtime, git status, or "it looks recent". The provenance hash is the only signal.
 
 ⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis and leaves `/add-review`'s contract check with nothing to verify. Never let a provenance match preserve one.
 
-#### 7.1.1 DISPATCH @ux-flow-agent (flow & interaction)
+#### STEP add-plan.dispatch-ux-flow DISPATCH @ux-flow-agent (flow & interaction)
 
 - **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
 - **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}` (exact — never invent a path), the two output paths above, the inputs `${ABOUT_PATH}` + `${FEATURE_DIR}/discovery.md`, and `HAS_FOUNDATIONS=${HAS_FOUNDATIONS}` (if true it reads `docs/design-system.md` and prefers its tokens). Instruct it to follow its own agent definition — do NOT restate the method here — and to report `frontend_false` and STOP without writing, if the project has no frontend at all.
-- **Early exit:** IF the agent reports `frontend_false` → SKIP the remainder of 7.1 (no `design.md` is written), note it in your output, and continue with 7.2-7.4 as selected in STEP add-plan.analyze-scope.
+- **Early exit:** IF the agent reports `frontend_false` → SKIP the remainder of STEP add-plan.ux-design (no `design.md` is written), note it in your output, and continue with STEP add-plan.database through STEP add-plan.frontend as selected in STEP add-plan.analyze-scope.
 - **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add--ux-design` skill.
 
-#### 7.1.2 DISPATCH @ux-layout-agent (layout & components)
+#### STEP add-plan.dispatch-ux-layout DISPATCH @ux-layout-agent (layout & components)
 
 - **Output (temp):** `${SCOPE_DIR}/design-layout.md`
 - **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}`, the MANDATORY inputs `${SCOPE_DIR}/design-flow.md` + `${SCOPE_DIR}/design-context.md` (read FIRST), the fallback context `${ABOUT_PATH}` / `${FEATURE_DIR}/discovery.md`, and the output path above. Instruct it to follow its own agent definition — the layout method lives there, not here.
 - **Soft-degrade:** if `@ux-layout-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add--ux-design` skill.
 
-#### 7.1.3 DISPATCH @ux-agent (critique mode — adversarial, ONE bounded pass)
+#### STEP add-plan.dispatch-ux-agent DISPATCH @ux-agent (critique mode — adversarial, ONE bounded pass)
 
 - **Output (temp):** `${SCOPE_DIR}/design-review.md`
 - **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}` and state **CRITIQUE MODE — read-only**, then pass ONLY: target directory `${SCOPE_DIR}`, the inputs `design-flow.md` / `design-layout.md` / `design-context.md` at that directory, and the output path above. The rubric, the per-defect shape, the severity scale and the empty-critique rule are its agent definition's — do NOT restate them. State that it NEVER edits `design-flow.md`, `design-layout.md`, or `design.md`: it reports, the coordinator decides.
 - **Soft-degrade:** if `@ux-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add--ux-design` skill (the rubric is `{{skill:add--ux-design/critique-rubric.md}}`).
 
-#### 7.1.4 Coordinator Consolidation → `design.md`
+#### STEP add-plan.ux-consolidate Coordinator Consolidation → `design.md`
 
-Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add--doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at 7.1.0) and write to `${SCOPE_DIR}/design.md`.
+Execute the **Consolidation contract** for schema `feature-design` in `{{skill:add--doc-schemas/references/new-feature.md}}` — the four temps, the accept/reject decision trail, the coherence validation, the section list, the exact frontmatter block, the `## Design Review` table shape and the provenance-truthfulness rule all live there. Set `provenance: sha256:${ABOUT_SHA}` (the hash computed at STEP add-plan.gate-evaluate-any) and write to `${SCOPE_DIR}/design.md`.
 
 ⛔ DO NOT re-dispatch `@ux-layout-agent` to apply the critique — consolidation is coordinator work.
-⛔ `${ABOUT_SHA}` is only truthful because 7.1.0 recomputed it — never stamp it over a reused temp.
+⛔ `${ABOUT_SHA}` is only truthful because STEP add-plan.gate-evaluate-any recomputed it — never stamp it over a reused temp.
 
 <!-- MAINTAINER: do not restate the frontmatter or section shape here. Cite the schema so this command cannot drift from it. Change it in the schema, never here. -->
 
-#### 7.1.5 Validation Gate (`feature-design`)
+#### STEP add-plan.validation-gate-feature Validation Gate (`feature-design`)
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `feature-design` against the `design.md` you just wrote. ⛔ DO NOT skip. Require `PASS` before 7.1.6.
 
-#### 7.1.6 Cleanup Temporary Files
+#### STEP add-plan.cleanup-temporary-files Cleanup Temporary Files
 
 ```bash
 cd "${SCOPE_DIR}"
 rm -f design-context.md design-flow.md design-layout.md design-review.md
 ```
 
-Delete only AFTER `design.md` is written and the 7.1.5 gate returned `PASS`.
+Delete only AFTER `design.md` is written and the STEP add-plan.validation-gate-feature gate returned `PASS`.
 
 ---
 
-### Subagent Bootstrap (shared across 7.2-7.4)
+### Subagent Bootstrap (shared across STEP add-plan.database through STEP add-plan.frontend)
 
 Every area subagent receives this bootstrap block before its specific task.
 
@@ -523,7 +523,7 @@ ${RELATED_WORK}
 
 **When to create:** Feature requires UI changes.
 
-**Reference, Never Repeat:** the frontend section REFERENCES `design.md` for layout, tokens, and states — it NEVER restates them. The layout contract lives in `design.md` only (written by 7.1, or the pre-existing one when 7.1 was skipped); `plan-frontend.md` carries the code-side structure (pages, components, hooks, types) and points at `design.md` for the visual contract.
+**Reference, Never Repeat:** the frontend section REFERENCES `design.md` for layout, tokens, and states — it NEVER restates them. The layout contract lives in `design.md` only (written by STEP add-plan.ux-design, or the pre-existing one when STEP add-plan.ux-design was skipped); `plan-frontend.md` carries the code-side structure (pages, components, hooks, types) and points at `design.md` for the visual contract.
 
 **DISPATCH AGENT: @frontend-agent**
 - **Output:** `docs/features/${FEATURE_ID}/plan-frontend.md`
@@ -572,7 +572,7 @@ ${RELATED_WORK}
   - Keep it under 40 lines
   ```
 
-**End of the area subagents.** 7.2-7.4 have run sequentially; every selected area now has its `plan-<area>.md` temp.
+**End of the area subagents.** STEP add-plan.database through STEP add-plan.frontend have run sequentially; every selected area now has its `plan-<area>.md` temp.
 
 <!-- slot:tdd-pipeline.step9 fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:step9 -->
@@ -593,7 +593,7 @@ ${RELATED_WORK}
 
 ### STEP add-plan.preview Plan Preview [STOP]
 
-**Before `plan.md` is written, show what it will say** — composed from what STEPS 4-7 already
+**Before `plan.md` is written, show what it will say** — composed from what STEP add-plan.load-docs through STEP add-plan.subagents already
 produced. It runs no new analysis and dispatches nothing.
 
 ```markdown
@@ -660,7 +660,7 @@ Separate each section with `---`. **NEVER rewrite or summarize subagent content.
 
 ### STEP add-plan.validate-plan Validate Completeness
 
-Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in 7.1: SF-level first, feature-level fallback). Verify:
+Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in STEP add-plan.ux-design: SF-level first, feature-level fallback). Verify:
 - All entities/tables from discovery → complete schema in plan-database
 - JSONB fields → detailed TypeScript structures
 - Endpoints → complete request/response DTOs
@@ -865,7 +865,7 @@ once built, for a reader who never opens `plan.md`.
 Then, after the seven blocks, state:
 - Feature ID and plan path
 - Areas planned (UX Design/Database/Backend/Frontend)
-- Design contract: the `design.md` path 7.1 wrote — or the reason 7.1 was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
+- Design contract: the `design.md` path STEP add-plan.ux-design wrote — or the reason STEP add-plan.ux-design was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
 - Plan review verdict from STEP add-plan.review, and a one-line summary of any applied fixes
 - Suggested next command: `/add-build`

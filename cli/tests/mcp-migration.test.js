@@ -329,10 +329,10 @@ describe('F19 — /add-done keeps the format from decaying', () => {
     'utf8',
   );
 
-  const gate = () => DONE.slice(DONE.indexOf('### 4.4'), DONE.indexOf('## STEP add-done.promote-qa'));
+  const gate = () => DONE.slice(DONE.indexOf('### STEP add-done.validate-knowledge-record'), DONE.indexOf('## STEP add-done.promote-qa'));
 
   it('L4.3 gate 4.4 exists and blocks on either half', () => {
-    expect(DONE).toMatch(/^### 4\.4/m);
+    expect(DONE).toMatch(/^### STEP add-done\.validate-knowledge-record/m);
     const body = gate();
     expect(body).toContain('TL;DR');
     expect(body).toContain('## Relations');
@@ -350,7 +350,7 @@ describe('F19 — /add-done keeps the format from decaying', () => {
   });
 
   it('the gate runs before the merge, not after it', () => {
-    expect(DONE.indexOf('### 4.4')).toBeLessThan(DONE.indexOf('## STEP add-done.merge'));
+    expect(DONE.indexOf('### STEP add-done.validate-knowledge-record')).toBeLessThan(DONE.indexOf('## STEP add-done.merge'));
   });
 
   it('rebuilds the docs index, through the shipped one-shot form', () => {
@@ -361,7 +361,7 @@ describe('F19 — /add-done keeps the format from decaying', () => {
   });
 
   it('the rebuild runs AFTER the changelog, so the new document is in it', () => {
-    expect(DONE.indexOf('--action=reindex')).toBeGreaterThan(DONE.indexOf('### 6.3'));
+    expect(DONE.indexOf('--action=reindex')).toBeGreaterThan(DONE.indexOf('### STEP add-done.complement-changelog'));
   });
 
   it('the rebuild is best-effort and never blocks a merge', () => {
@@ -372,7 +372,7 @@ describe('F19 — /add-done keeps the format from decaying', () => {
   it('leaves the delivery-index routing alone', () => {
     // The four-state routing product-close-out-parity established stands
     // unchanged: this plan extends the close-out, it does not revisit it.
-    expect(DONE).toContain('### 6.8 Write the Delivery Index Entry');
+    expect(DONE).toContain('### STEP add-done.write-delivery-index Write the Delivery Index Entry');
   });
 });
 
@@ -423,20 +423,20 @@ describe('F19 — 6.7.1 asks for what the action actually returns', () => {
     } finally {
       removeTree(tree);
     }
-    const step = DONE.slice(DONE.indexOf('### 6.7.1'), DONE.indexOf('### 6.8'));
+    const step = DONE.slice(DONE.indexOf('### STEP add-done.rebuild-docs-knowledge'), DONE.indexOf('### STEP add-done.write-delivery-index'));
     expect(step).toContain('--action=stats');
     expect(step).toMatch(/only `stats` returns the ids/);
   });
 
   it('the rebuild runs on the Resume route, where the changelog does not', () => {
     const table = DONE.slice(DONE.indexOf('| STEP | Normal | Resume |'), DONE.indexOf('| 8 | Merge'));
-    expect(table).toContain('| 6.7.1 |');
-    expect(table).toMatch(/6\.7\.1 \| Rebuild the docs index \| \*\*Runs\.\*\*/);
+    expect(table).toContain('| STEP add-done.rebuild-docs-knowledge |');
+    expect(table).toMatch(/rebuild-docs-knowledge \| Rebuild the docs index \| \*\*Runs\.\*\*/);
   });
 
   it('STEP 9 carries the rebuild outcome to the user', () => {
     const report = DONE.slice(DONE.indexOf('## STEP add-done.complete'));
-    expect(report).toContain('docs index rebuild from 6.7.1');
+    expect(report).toContain('docs index rebuild from STEP add-done.rebuild-docs-knowledge');
   });
 
   it('the top STEP list no longer scopes STEP 4 to feature branches alone', () => {

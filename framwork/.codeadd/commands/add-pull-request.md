@@ -86,7 +86,7 @@ ALWAYS:
 
 ## STEP add-pull-request.gh: Verify gh CLI
 
-### 1.1 Check installation
+### STEP add-pull-request.check-installation Check installation
 
 ```bash
 command -v gh >/dev/null 2>&1 && echo "INSTALLED" || echo "MISSING"
@@ -94,7 +94,7 @@ command -v gh >/dev/null 2>&1 && echo "INSTALLED" || echo "MISSING"
 
 If `MISSING` → show platform install guidance (`brew install gh`, `apt install gh`, or https://cli.github.com) and STOP.
 
-### 1.2 Check authentication
+### STEP add-pull-request.check-authentication Check authentication
 
 ```bash
 gh auth status
@@ -106,7 +106,7 @@ If not authenticated → instruct user to run `gh auth login` and STOP.
 
 ## STEP add-pull-request.detect: Detect Branch & PR State
 
-### 2.1 Capture branch metadata
+### STEP add-pull-request.capture-branch-metadata Capture branch metadata
 
 ```bash
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -114,7 +114,7 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 If `BRANCH` is `main` or `master` → STOP (see prohibitions).
 
-### 2.2 Detect branch type
+### STEP add-pull-request.detect-branch-type Detect branch type
 
 Use `{{skill:add--id-convention/SKILL.md}}` rules. Run:
 
@@ -143,13 +143,13 @@ If empty → no PR exists → flow `CREATE`. If state is `OPEN` → flow `UPDATE
 
 **⛔ Skip this STEP entirely if `BRANCH_TYPE` ≠ `feature`.**
 
-### 3.1 Generate or complement
+### STEP add-pull-request.generate-complement Generate or complement
 
 Check if `${FEATURE_DIR}/changelog.md` already exists.
 
-- **Absent** → generate it: 3.2, then 3.3.
+- **Absent** → generate it: STEP add-pull-request.allocate-changelog-id, then 3.3.
 - **Present** → **complement it in place**, per the `changelog` schema's table,
-  and skip 3.2 only. The id it already carries IS the id.
+  and skip STEP add-pull-request.allocate-changelog-id only. The id it already carries IS the id.
 
 ```
 IF THE CHANGELOG ALREADY EXISTS:
@@ -163,7 +163,7 @@ IF THE CHANGELOG ALREADY EXISTS:
 is still going. Everything delivered after the PR opens reaches the changelog
 through `{{cmd:add-done}}` 6.3, which complements the same file.
 
-### 3.2 Allocate changelog ID
+### STEP add-pull-request.allocate-changelog-id Allocate changelog ID
 
 ```bash
 bash .codeadd/scripts/status.sh next-id CHG
@@ -171,7 +171,7 @@ bash .codeadd/scripts/status.sh next-id CHG
 
 Captures `CHG[NNNN]`. Used in frontmatter `id:`. Frontmatter `related:` references the feature ID (`0012F` or equivalent).
 
-### 3.3 Execute schema
+### STEP add-pull-request.execute-schema Execute schema
 
 EXECUTE schema `changelog` from `{{skill:add--doc-schemas/SKILL.md}}`. **The schema owns the path**, the one-per-delivery rule and the complement table — read its Location rule rather than repeating a path here.
 
@@ -180,7 +180,7 @@ Source material:
 - `git diff main...HEAD --stat` — file-level summary.
 - `${FEATURE_DIR}/about.md` (if present) — scope reference for out-of-scope detection.
 
-### 3.4 Validation gate
+### STEP add-pull-request.validation-gate Validation gate
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `changelog`.
 
@@ -190,7 +190,7 @@ Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schem
 
 ## STEP add-pull-request.commit: Stage & Commit Pending Changes
 
-### 4.1 Security check
+### STEP add-pull-request.security-check Security check
 
 ```bash
 git status --short
@@ -198,7 +198,7 @@ git status --short
 
 If output contains `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12` → STOP (see prohibitions).
 
-### 4.2 Determine if commit needed
+### STEP add-pull-request.determine-commit-needed Determine if commit needed
 
 ```bash
 git diff --quiet HEAD && echo "CLEAN" || echo "DIRTY"
@@ -206,7 +206,7 @@ git diff --quiet HEAD && echo "CLEAN" || echo "DIRTY"
 
 If `CLEAN` AND no changelog was just generated → skip to STEP add-pull-request.push.
 
-### 4.3 Generate commit message
+### STEP add-pull-request.generate-commit-message Generate commit message
 
 Apply `{{skill:add--commit/SKILL.md}}` adaptive logic:
 
@@ -214,7 +214,7 @@ Apply `{{skill:add--commit/SKILL.md}}` adaptive logic:
 - Infer Conventional Commits type (feat | fix | refactor | chore | docs | test | style).
 - Count changed files. ≤3 → single-line `type(scope): summary`. >3 → list format with summary line + per-module bullets.
 
-### 4.4 Stage and commit
+### STEP add-pull-request.stage-commit Stage and commit
 
 **Feature-scoped staging** (stage all code changes + ONLY the current feature's docs; other features' untracked docs stay untracked — see `{{skill:add--commit/SKILL.md}}` Staging Rules):
 
@@ -224,13 +224,13 @@ git add -A -- . ':(exclude)docs/features/*'
 git commit -m "<generated message>"
 ```
 
-If staging anything sensitive (security check at 4.1 must already have STOPped) → never reach here.
+If staging anything sensitive (security check at STEP add-pull-request.security-check must already have STOPped) → never reach here.
 
 ---
 
 ## STEP add-pull-request.push: Push to Origin
 
-### 5.1 Check upstream
+### STEP add-pull-request.check-upstream Check upstream
 
 ```bash
 git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null
@@ -274,7 +274,7 @@ Compose the body with three sections:
 - [ ] [verifiable check, e.g. "no regressions in adjacent module"]
 ```
 
-### 6.2 Title
+### STEP add-pull-request.title Title
 
 Format: `type(scope): subject`. Source priority:
 
@@ -373,7 +373,7 @@ NEVER:
 - Rename branches
 - Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
 - Update `CHANGELOG.md` at the repo root (that belongs to the release workflow)
-- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — 3.1 complements it instead, and `{{cmd:add-done}}` 6.3 complements the same file later
+- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — STEP add-pull-request.generate-complement complements it instead, and `{{cmd:add-done}}` 6.3 complements the same file later
 
 ---
 

@@ -117,7 +117,7 @@ describe('F6 — add-review.md dispatches OWASP conditionally', () => {
     expect(s41).toMatch(/owasp/i);
     expect(s41).toMatch(/auth.*payment.*upload/is);
 
-    const s42 = section(text, '4\\.2 Dispatch Strategy');
+    const s42 = section(text, 'STEP add-review\\.dispatch-strategy Dispatch Strategy');
     expect(s42).not.toBeNull();
     expect(s42).toMatch(/owasp trigger fired/i);
     expect(s42).toMatch(/never\s+instead of them/i);

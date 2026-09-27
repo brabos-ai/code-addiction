@@ -98,7 +98,7 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     // Renumbered by plan 0057 (new 8.1 UX Design Specialist step pushed Frontend 8.3 -> 8.4),
     // then shifted down one by 2026-09-14T215223-PLAN--remove-owner-product-onboarding,
     // which deleted add-plan's STEP 1 (Load Founder Profile): 8.4 -> 7.4, STEP 10 -> STEP 9.
-    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 7.4: Frontend Specialist', position: 'after' });
+    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- STEP add-plan.frontend: Frontend Specialist', position: 'after' });
     expect(qa(pts, 'qa-spec').anchor).toMatchObject({
       text: '## STEP add-plan.consolidate: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
       position: 'after',
@@ -184,6 +184,16 @@ describe('setup contract (0061)', () => {
   it('declares the --migrate and --upgrade flags', () => {
     expect(src).toContain('--migrate');
     expect(src).toContain('--upgrade');
+  });
+
+  it('the enable probe splits landed, disabled, warned and no-sidecar', () => {
+    const start = src.indexOf('### STEP add-qa-setup.verify-enable');
+    const step = src.slice(start, src.indexOf('\n## ', start + 4));
+    expect(step).toContain('STEP qa-pipeline.qa-spec');
+    expect(step).toContain('the enable landed');
+    expect(step).toMatch(/resolves disabled/);
+    expect(step).toContain('not a silent no-op');
+    expect(step).toContain('injection-points.json` is absent');
   });
 
   it('gates migration on a fingerprint comparison, not on first-run', () => {

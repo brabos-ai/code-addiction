@@ -5,7 +5,7 @@
 
 <!-- section:ticket-close -->
 
-### 8.3 Close the Ticket
+### STEP board.close-ticket Close the Ticket
 
 **Only after the merge landed, on either route.** Before it, the ticket would read `done` for work that
 is not on the main branch, and a refused merge would leave it lying.
@@ -24,11 +24,11 @@ IF CLOSING THE TICKET FAILS OR IS REFUSED:
 <!-- /section:ticket-close -->
 
 <!-- section:ticket-carry -->
-- **The ticket result from 8.3** — closed, already closed, or what did not happen. Omit the line when `about.md` carries no `ticket:`.
+- **The ticket result from STEP board.close-ticket** — closed, already closed, or what did not happen. Omit the line when `about.md` carries no `ticket:`.
 <!-- /section:ticket-carry -->
 
 <!-- section:ticket-report -->
-- **The ticket result from 8.3** — closed, already closed, or what did not happen. Omit the line when
+- **The ticket result from STEP board.close-ticket** — closed, already closed, or what did not happen. Omit the line when
   `about.md` carries no `ticket:`. A ticket that silently stays open after its work merged is the
-  failure 8.3 exists to prevent, so a close that did not land reaches the user here or nowhere.
+  failure STEP board.close-ticket exists to prevent, so a close that did not land reaches the user here or nowhere.
 <!-- /section:ticket-report -->

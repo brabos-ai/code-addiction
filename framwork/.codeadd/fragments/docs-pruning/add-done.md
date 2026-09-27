@@ -8,7 +8,7 @@
 
 <!-- section:prune -->
 
-### 6.9 Prune Post-Merge Scaffolding (docs-pruning)
+### STEP docs-pruning.prune-post-merge Prune Post-Merge Scaffolding (docs-pruning)
 
 Delete the feature-directory files that **no command reads after the merge**. Their purpose expired when the branch did: `discovery.md` is an explicitly-cached pre-build analysis, `tasks.md` is a build checklist, `epic.md` is convergence state, and `review-NNN.md` is a gate record whose gate has passed.
 
@@ -34,7 +34,7 @@ Deletions stay in the working tree. `done.sh --merge` (STEP add-done.merge) comm
 ```
 IF NO DELIVERY INDEX ENTRY WAS WRITTEN THIS RUN:
   ⛔ DO NOT: Delete any file
-  ✅ DO: Skip 6.9 entirely and say why
+  ✅ DO: Skip STEP docs-pruning.prune-post-merge entirely and say why
 
 IF A FILE TO PRUNE IS NOT TRACKED BY GIT:
   ⛔ DO NOT: Delete that file

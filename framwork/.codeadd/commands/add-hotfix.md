@@ -134,7 +134,7 @@ If the invocation carries `@docs/diagnose/<file>.md`, store that relative path a
 
 ## STEP add-hotfix.branch-check: Branch Check (HARD STOP)
 
-### 2.0 Validate diagnose report before any branch change
+### STEP add-hotfix.validate-diagnose-report Validate diagnose report before any branch change
 
 If `DIAGNOSE_REPORT` is set:
 
@@ -170,7 +170,7 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 
 ⛔ **GATE:** Branch must be created BEFORE investigation.
 
-### 3.1 Allocate Next Hotfix ID
+### STEP add-hotfix.allocate-next-hotfix Allocate Next Hotfix ID
 
 ```bash
 bash .codeadd/scripts/status.sh next-id H
@@ -180,7 +180,7 @@ Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for t
 
 > **Skill:** Apply `{{skill:add--id-convention/SKILL.md}}` for ID/branch format.
 
-### 3.2 Create Branch
+### STEP add-hotfix.create-branch Create Branch
 
 ```bash
 git checkout -b hotfix/[NNNN]H-[hotfix-slug]
@@ -188,7 +188,7 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 
 **[hotfix-slug]:** kebab-case descriptive (ex: `screenshot-delete-error`, `login-timeout`)
 
-### 3.3 Create Doc Directory
+### STEP add-hotfix.create-doc-directory Create Doc Directory
 
 ```
 docs/features/[NNNN]H-<slug>/
@@ -252,7 +252,7 @@ IF THE INDEX READ OMITS --no-verify:
 
 **Index absent → note it once and continue.** Nothing here blocks on it.
 
-### 4.2 Build the symptom brief
+### STEP add-hotfix.build-symptom-brief Build the symptom brief
 
 From the user's bug report plus `RECENT_CHANGELOGS` from STEP add-hotfix.context, write a short brief:
 - One-sentence problem statement
@@ -260,7 +260,7 @@ From the user's bug report plus `RECENT_CHANGELOGS` from STEP add-hotfix.context
 - Optional window (default: 30 days)
 - **The ranked index results from 4.1**, each with its id, name and status
 
-### 4.3 Dispatch parallel
+### STEP add-hotfix.dispatch-parallel Dispatch parallel
 
 **Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
@@ -278,7 +278,7 @@ Prompt: "Correlate recent git history with this bug. Brief: <brief>. Window: 30 
 
 ## STEP add-hotfix.synthesize: Synthesize History & Confirm Related Features
 
-### 5.1 Combine the two reports
+### STEP add-hotfix.combine-two-reports Combine the two reports
 
 - **Convergent signals** — features/files mentioned by BOTH agents (highest confidence)
 - **Divergent signals** — surfaced by only one (still relevant)
@@ -299,7 +299,7 @@ Present the top related features (with FEAT_IDs) + the top suspicious commits an
 
 Retain them as identifiers with a one-line reason each — this set is confirmed context, and re-deriving it later loses the user's acknowledgement. **STEP add-hotfix.review's use is unchanged by the routing added here**: the set it reads is the same set, carrying the same fields.
 
-### 5.3 Escalate to add--investigation (if needed)
+### STEP add-hotfix.escalate-add-investigation Escalate to add--investigation (if needed)
 
 If the agents' reports do NOT converge on a clear area OR the bug is vague/multi-layer, LOAD {{skill:add--investigation/SKILL.md}} and apply Phases 2-3 over the agent outputs before STEP add-hotfix.investigate. The agents already covered Phase 1 in agent-dispatched mode.
 
@@ -319,7 +319,7 @@ Use Grep/Read to confirm what documentation indicated:
 2. Business logic (service, handler)
 3. Data layer (repository, database)
 
-### 6.1 Escalate to add--investigation skill (when root cause unclear)
+### STEP add-hotfix.escalate-root-cause Escalate to add--investigation skill (when root cause unclear)
 
 ⛔ **IF the bug symptom is vague, intermittent, crosses multiple layers, or the agent reports (STEP add-hotfix.history) + grep/read (STEP add-hotfix.investigate) do NOT converge on a clear cause:**
 
@@ -371,7 +371,7 @@ IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
 
 Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure. **If `WIKI:present` (from STEP add-hotfix.context script output):** SELECT `{{addpath:wiki/conventions.md}}` + the domain page for the affected area (`{{addpath:wiki/domains/<area>.md}}`), freshness-check both. Conventions govern HOW to fix — follow them in implementation. **If wiki absent:** note "knowledge base unavailable — /add-wiki generates it" and follow existing code patterns instead.
 
-### 8.2 Implement
+### STEP add-hotfix.apply-fix Implement
 
 **DO:**
 - Fix root cause (not symptom)
@@ -418,11 +418,11 @@ If the named agent is unavailable, dispatch a generic read-only subagent with th
 
 **WAIT** for the report.
 
-### 9.3 Conditional OWASP
+### STEP add-hotfix.conditional-owasp Conditional OWASP
 
 Dispatch `@reviewer-agent` again with `MODE: owasp` only when changed paths touch authentication, payment, upload, input handling, session, token, or another caller-identified sensitive area. Never by default. Use the same fallbacks as 9.2.
 
-### 9.4 Verify every citation
+### STEP add-hotfix.verify-every-citation Verify every citation
 
 For each finding marked blocking, READ the cited lines yourself.
 
@@ -449,7 +449,7 @@ Map reviewer severity: `Critical` → `blocker`, `Important` → `major`, `Minor
 
 ⛔ DO NOT widen the fix to resolve a `pre-existing` finding. Record it in `## Review` and in `## Observations` (STEP add-hotfix.receipt) when it deserves to be findable later.
 
-### 10.2 One whole-wave correction
+### STEP add-hotfix.one-whole-wave One whole-wave correction
 
 If any `blocker` or `major` introduced finding remains:
 
@@ -460,15 +460,15 @@ If any `blocker` or `major` introduced finding remains:
 
 ⛔ ONE pass. A finding that survives it stays open. Never send a hotfix to `{{cmd:add-review}}`.
 
-### 10.3 Snapshot re-review
+### STEP add-hotfix.snapshot-re-review Snapshot re-review
 
-If 10.2 changed files:
+If STEP add-hotfix.one-whole-wave changed files:
 
 1. Run `bash .codeadd/scripts/hotfix-gates.sh diff-wave <SNAPSHOT> <package>`.
 2. **DISPATCH AGENT: @reviewer-agent** `MODE: re-review` with the open findings and that correction-only snapshot package.
 3. Use the same named/generic/inline fallback as STEP add-hotfix.review.
 
-### 10.4 Re-verify (MANDATORY when 10.2 changed any file)
+### STEP add-hotfix.re-verify-mandatory Re-verify (MANDATORY when STEP add-hotfix.one-whole-wave changed any file)
 
 1. Re-run STEP add-hotfix.implement's build verification.
 2. IF `tdd-pipeline` is enabled AND a RED test was written: re-run it and confirm it is still GREEN.
@@ -511,7 +511,7 @@ EXECUTE schema `hotfix` from `{{skill:add--doc-schemas/SKILL.md}}` and `{{skill:
 
 Write the complete `## Review` receipt with `reviewed-tree: sha256:<PENDING>`. Fill `reviewer:` from STEP add-hotfix.review. Fill Findings from STEPS 9-10. An empty review still writes the table header.
 
-### 12.1 Write `## Relations`, `## Observations` and `tags:`
+### STEP add-hotfix.write-relations-observations Write `## Relations`, `## Observations` and `tags:`
 
 On the normal path the set was confirmed in STEP add-hotfix.synthesize. On the report-backed path it was confirmed in `/add-diagnose`. **This routes it; it confirms nothing again.**
 
@@ -523,7 +523,7 @@ On the normal path the set was confirmed in STEP add-hotfix.synthesize. On the r
 
 ⛔ **A `caused_by` the user never confirmed does not get written.** A hotfix whose cause resolves to no recorded work item writes `## Relations` carrying the single word `None`.
 
-### 12.2 Fingerprint
+### STEP add-hotfix.fingerprint Fingerprint
 
 1. Run `bash .codeadd/scripts/hotfix-gates.sh review-manifest docs/features/[NNNN]H-<slug>/`.
 2. Replace the Reviewed Paths fence with that manifest.

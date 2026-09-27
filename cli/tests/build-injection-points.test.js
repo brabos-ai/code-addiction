@@ -229,6 +229,17 @@ describe('injection-points collector + emit', () => {
     expect(getInjectionPoints()).toHaveLength(0);
   });
 
+  it('writeInjectionPoints emits v2 when no slot was collected', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slots-empty-'));
+    writeInjectionPoints(path.join(dir, 'injection-points.json'));
+    const data = JSON.parse(fs.readFileSync(path.join(dir, 'injection-points.json'), 'utf8'));
+    expect(data.version).toBe(2);
+    expect(data.slots).toEqual([]);
+    expect(data.points).toEqual([]);
+    expect(JSON.stringify(data)).not.toContain('"version":1');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
   it('writeInjectionPoints refuses a legacy marker source', () => {
     expect(() => collectInjectionPoints(
       'anchor\n<!-- feature:tdd:gate -->\n<!-- /feature:tdd:gate -->',
@@ -391,6 +402,51 @@ describe('slot membership map v2', () => {
     }
     for (const d of ['commands', 'fragments', 'agents', 'plugins']) walk(path.join(root, d));
     expect(hits).toEqual([]);
+  });
+
+  it('numeric substep headings are gone, and overview STEP ids resolve', () => {
+    const root = productSourceRoot();
+    const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+    const numeric = [];
+    function walk(dir) {
+      if (!fs.existsSync(dir)) return;
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, ent.name);
+        if (ent.isDirectory()) {
+          if (ent.name !== 'skills') walk(p);
+        } else if (ent.name.endsWith('.md')) {
+          fs.readFileSync(p, 'utf8').split(/\r?\n/).forEach((line, i) => {
+            if (/^#{2,4} \d/.test(line)) numeric.push(`${path.relative(root, p)}:${i + 1}`);
+          });
+        }
+      }
+    }
+    walk(path.join(root, 'commands'));
+    walk(path.join(root, 'fragments'));
+    expect(numeric).toEqual([]);
+
+    const commands = fs.readdirSync(path.join(root, 'commands')).filter((f) => f.endsWith('.md'));
+    for (const file of commands) {
+      const text = read(path.join('commands', file));
+      const start = text.indexOf('STEPS IN ORDER');
+      if (start < 0) continue;
+      const block = text.slice(start, start + 2500);
+      const listed = [...block.matchAll(/^STEP ([a-z0-9.-]+):/gm)].map((m) => m[1]);
+      const name = file.replace(/\.md$/, '');
+      const extra = fs.existsSync(path.join(root, 'fragments'))
+        ? fs.readdirSync(path.join(root, 'fragments'), { withFileTypes: true })
+          .filter((d) => d.isDirectory())
+          .map((d) => path.join(root, 'fragments', d.name, file))
+          .filter((p) => fs.existsSync(p))
+          .map((p) => fs.readFileSync(p, 'utf8'))
+          .join('\n')
+        : '';
+      const headings = new Set([...`${text}\n${extra}`.matchAll(/^#{2,4} STEP ([a-z0-9.-]+)/gm)].map((m) => m[1]));
+      for (const id of listed) {
+        expect(headings.has(id), `${name} overview ${id} has no heading`).toBe(true);
+      }
+      expect(new Set(listed).size, `${name} overview ids repeat`).toBe(listed.length);
+    }
   });
 
   it('extractSlots reads fallback bytes and keeps member order', () => {
