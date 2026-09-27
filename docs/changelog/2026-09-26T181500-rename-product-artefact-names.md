@@ -18,6 +18,7 @@ Product commands are now `add-<name>` and product skills are `add--<name>`. Ther
 - Product commands, skills, fragments and the GitNexus plugin skill moved to the new names. Active references in the CLI, README, web docs and internal examples moved with them.
 - **Upgrade** (`cli/src/updater.js`) deletes only the legacy `add-gitnexus/SKILL.md` before plugin apply. It does not delete other files in that folder.
 - **QA setup contract** lookups and the managed `.gitignore` marker use `add-qa-setup`. An old marker is rewritten to the new one so an existing install does not fail.
+- **The graph gate** on the rename skill declares `- mention: add-commit`, the internal id its prose names as the old skill form.
 
 ## Unchanged
 
