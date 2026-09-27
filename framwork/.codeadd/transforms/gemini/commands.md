@@ -17,7 +17,7 @@ Gemini CLI custom commands use `.toml` files in `~/.gemini/commands/` (global) o
 
 ### File Naming
 
-- File path determines command name: `add.plan.toml` → `/add.plan`
+- File path determines command name: `add-plan.toml` → `/add-plan`
 - Subdirectories create namespaced commands with colon separator: `git/commit.toml` → `/git:commit`
 
 ### Multiline Prompt

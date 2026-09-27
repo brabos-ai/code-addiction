@@ -19,7 +19,7 @@
 # THE BACKLOG IS READ BY GREP, NEVER PARSED. This script is pure bash and
 # stays that way: it already extracts ids from directory names with the same
 # `grep -oE`, and a JSON parse here would make node a dependency of every
-# /add.new. Grepping the raw text also means a line whose JSON is damaged
+# /add-new. Grepping the raw text also means a line whose JSON is damaged
 # still yields its id, so a hand-broken board can never block an allocation.
 #
 # `status.sh next-id` REIMPLEMENTS THIS SCAN rather than calling this script,

@@ -3,12 +3,12 @@ name: frontend-agent
 description: Frontend implementation specialist for components, pages, hooks, state management, and data fetching. Use when implementing UI features, creating pages, or working with React/Vue/Angular code.
 model: inherit
 skills:
-  - add-frontend-development
+  - add--frontend-development
 memory: project
 ---
 
 <!-- uses:
-- skill: add-frontend-development
+- skill: add--frontend-development
 -->
 
 You are a frontend implementation specialist. Your role is to implement client-side features following the project's component patterns and state management conventions.

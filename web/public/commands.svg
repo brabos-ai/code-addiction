@@ -15,11 +15,11 @@
   <line x1="40" y1="44" x2="310" y2="44" class="cat-line"/>
 
   <rect x="40" y="56" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="74" class="cmd-name">/add.brainstorm</text>
+  <text x="56" y="74" class="cmd-name">/add-brainstorm</text>
   <text x="56" y="86" class="cmd-desc">Explore ideas (read-only)</text>
 
   <rect x="40" y="100" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="118" class="cmd-name">/add.new</text>
+  <text x="56" y="118" class="cmd-name">/add-new</text>
   <text x="56" y="130" class="cmd-desc">AI-guided feature discovery → about.md</text>
 
   <rect x="40" y="144" width="270" height="36" class="cmd-box"/>
@@ -32,15 +32,15 @@
   <line x1="40" y1="254" x2="310" y2="254" class="cat-line"/>
 
   <rect x="40" y="266" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="284" class="cmd-name">/add.wiki</text>
+  <text x="56" y="284" class="cmd-name">/add-wiki</text>
   <text x="56" y="296" class="cmd-desc">Generate portable project wiki</text>
 
   <rect x="40" y="310" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="328" class="cmd-name">/add.audit</text>
+  <text x="56" y="328" class="cmd-name">/add-audit</text>
   <text x="56" y="340" class="cmd-desc">Complete technical analysis</text>
 
   <rect x="40" y="354" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="372" class="cmd-name">/add.diagnose</text>
+  <text x="56" y="372" class="cmd-name">/add-diagnose</text>
   <text x="56" y="384" class="cmd-desc">Investigative triage for ambiguous symptoms</text>
 
   <!-- PLANNING GROUP -->
@@ -53,7 +53,7 @@
   <text x="386" y="86" class="cmd-desc">UX spec pipeline (optional entry point)</text>
 
   <rect x="370" y="100" width="270" height="36" class="cmd-box"/>
-  <text x="386" y="118" class="cmd-name">/add.plan</text>
+  <text x="386" y="118" class="cmd-name">/add-plan</text>
   <text x="386" y="130" class="cmd-desc">Technical planning + UX design pipeline</text>
 
   <!-- IMPLEMENTATION GROUP -->
@@ -62,7 +62,7 @@
   <line x1="370" y1="208" x2="640" y2="208" class="cat-line"/>
 
   <rect x="370" y="220" width="270" height="36" class="cmd-box"/>
-  <text x="386" y="238" class="cmd-name">/add.build</text>
+  <text x="386" y="238" class="cmd-name">/add-build</text>
   <text x="386" y="250" class="cmd-desc">Development Execution Specialist</text>
 
   <rect x="370" y="264" width="270" height="36" class="cmd-box"/>
@@ -75,7 +75,7 @@
   <line x1="370" y1="372" x2="640" y2="372" class="cat-line"/>
 
   <rect x="370" y="384" width="270" height="36" class="cmd-box"/>
-  <text x="386" y="402" class="cmd-name">/add.hotfix</text>
+  <text x="386" y="402" class="cmd-name">/add-hotfix</text>
   <text x="386" y="414" class="cmd-desc">Emergency fix with global ID</text>
 
   <rect x="370" y="428" width="270" height="36" class="cmd-box"/>
@@ -88,11 +88,11 @@
   <line x1="700" y1="44" x2="960" y2="44" class="cat-line"/>
 
   <rect x="700" y="56" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="74" class="cmd-name">/add.review</text>
+  <text x="716" y="74" class="cmd-name">/add-review</text>
   <text x="716" y="86" class="cmd-desc">Code review + spec audit + optional QA</text>
 
   <rect x="700" y="100" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="118" class="cmd-name">/add.qa-setup</text>
+  <text x="716" y="118" class="cmd-name">/add-qa-setup</text>
   <text x="716" y="130" class="cmd-desc">Bootstrap QA + ignored working evidence</text>
 
   <!-- DELIVERY GROUP -->
@@ -101,11 +101,11 @@
   <line x1="700" y1="302" x2="960" y2="302" class="cat-line"/>
 
   <rect x="700" y="314" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="332" class="cmd-name">/add.done</text>
+  <text x="716" y="332" class="cmd-name">/add-done</text>
   <text x="716" y="344" class="cmd-desc">Validate + promote QA evidence, then finalize</text>
 
   <rect x="700" y="358" width="260" height="36" class="cmd-box"/>
-  <text x="716" y="376" class="cmd-name">/add.pull-request</text>
+  <text x="716" y="376" class="cmd-name">/add-pull-request</text>
   <text x="716" y="388" class="cmd-desc">Idempotent PR — create or append update</text>
 
   <!-- UTILITIES GROUP -->
@@ -118,6 +118,6 @@
   <text x="56" y="516" class="cmd-desc">Smart gateway — answers questions</text>
 
   <rect x="40" y="530" width="270" height="36" class="cmd-box"/>
-  <text x="56" y="548" class="cmd-name">/add.ux</text>
+  <text x="56" y="548" class="cmd-name">/add-ux</text>
   <text x="56" y="560" class="cmd-desc">Quick UX — apply ux-design patterns</text>
 </svg>

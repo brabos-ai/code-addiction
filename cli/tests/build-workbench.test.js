@@ -135,8 +135,8 @@ describe('L1 — the registry and the tree agree', () => {
     const product = JSON.parse(read('framwork', 'provider-map.json'));
     for (const n of COMMANDS) expect(product.commands, n).not.toHaveProperty(n);
     for (const n of AGENTS) expect(product.agents, n).not.toHaveProperty(n);
-    // Four skill names exist in BOTH layers on purpose — add-commit,
-    // add-final-report, add-review-discipline and the ruler's neighbours. The
+    // Four skill names exist in BOTH layers on purpose — add--commit,
+    // add--final-report, add--review-discipline and the ruler's neighbours. The
     // duplication is deliberate and documented, so this asserts the commands
     // and agents only.
   });

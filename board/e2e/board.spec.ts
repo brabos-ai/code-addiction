@@ -745,9 +745,9 @@ test('an empty lane keeps its status meanings on the header tooltip', async ({ p
   await expect(page.getByRole('link', { name: /Sweep the artefacts/ })).toBeVisible();
   // The definitions' own words sit on the header title, not as body text that
   // reads as a stub ticket in the lane.
-  await expect(page.locator('#col-building header')).toHaveAttribute('title', /add\.build running/);
+  await expect(page.locator('#col-building header')).toHaveAttribute('title', /add-build running/);
   await expect(page.locator('#col-shaping header')).toHaveAttribute('title', /Refining/);
-  await expect(page.locator('#col-building')).not.toContainText('add.build running');
+  await expect(page.locator('#col-building')).not.toContainText('add-build running');
 });
 
 for (const layers of [false, true]) {

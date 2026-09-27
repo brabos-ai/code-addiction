@@ -37,7 +37,7 @@
 #
 # THE FORMAT IS NOT DEFINED HERE. The two files, the ticket fields,
 # the status vocabulary, the seven hard bans and the REFUSED= names live in
-# add-doc-schemas/references/backlog.md. This script implements that
+# add--doc-schemas/references/backlog.md. This script implements that
 # reference; it does not extend it. Its bats suite pins both.
 #
 # THE STATUS VOCABULARY BELONGS TO THE USER. The definitions file is created
@@ -135,7 +135,7 @@ esac
 #
 # Allocated through status.sh, which is the allocator every command uses.
 # Asking it here rather than counting ids in node keeps ONE authority for the
-# global counter — see add-id-convention.
+# global counter — see add--id-convention.
 NEW_ID=""
 if [ "$MODE" = "add" ]; then
     NEW_ID=$(bash "$SCRIPT_DIR/status.sh" next-id B 2>/dev/null || true)
@@ -185,11 +185,11 @@ const DEFAULT_DEFS = {
   ],
   statuses: [
     { name: "open",      order: 1, column: "backlog",  label: "Open",       means: "decided, nobody picked it up" },
-    { name: "refining",  order: 2, column: "shaping",  label: "Refining",   means: "add.brainstorm or add.new running" },
+    { name: "refining",  order: 2, column: "shaping",  label: "Refining",   means: "add-brainstorm or add-new running" },
     { name: "shaped",    order: 3, column: "shaping",  label: "Shaped",     means: "about.md exists, waiting to plan" },
-    { name: "planning",  order: 4, column: "planning", label: "Planning",   means: "add.plan running" },
+    { name: "planning",  order: 4, column: "planning", label: "Planning",   means: "add-plan running" },
     { name: "planned",   order: 5, column: "planning", label: "Planned",    means: "plan approved, waiting to build" },
-    { name: "doing",     order: 6, column: "building", label: "Doing",      means: "add.build running" },
+    { name: "doing",     order: 6, column: "building", label: "Doing",      means: "add-build running" },
     { name: "in-review", order: 7, column: "review",   label: "In review",  means: "PR open" },
     { name: "done",      order: 8, column: "done",     label: "Done",       means: "delivered" },
     { name: "dropped",   order: 9, column: "dropped",  label: "Dropped",    means: "decided against" }

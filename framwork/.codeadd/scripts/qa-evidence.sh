@@ -351,16 +351,18 @@ promote_baseline() {
 ensure_ignore() {
     local project_root=$1
     local file="$project_root/.gitignore"
-    local start='# ADD QA evidence - managed by add.qa-setup'
+    local start='# ADD QA evidence - managed by add-qa-setup'
+    local legacy='# ADD QA evidence - managed by add.qa-setup'
     local end='# END ADD QA evidence'
     local starts ends temp
     [ ! -L "$file" ] || fail ".gitignore must not be a symlink: $file"
     [ -e "$file" ] || : > "$file"
-    starts=$(grep -Fxc "$start" "$file" || true)
+    starts=$(grep -Fxc -e "$start" -e "$legacy" "$file" || true)
     ends=$(grep -Fxc "$end" "$file" || true)
     [ "$starts" -eq "$ends" ] || fail "Malformed QA evidence block in .gitignore"
     temp=$(mktemp "$project_root/.gitignore.qa.XXXXXX")
-    awk -v start="$start" -v end="$end" '
+    sed 's/# ADD QA evidence - managed by add\.qa-setup/# ADD QA evidence - managed by add-qa-setup/' "$file" | awk -v start="$start" -v end="$end" '
+        { sub(/\r$/, "") }
         $0 == start {
             if (!inserted) {
                 print start
@@ -381,7 +383,7 @@ ensure_ignore() {
                 print end
             }
         }
-    ' "$file" > "$temp"
+    ' > "$temp"
     mv "$temp" "$file"
     echo "STATUS=OK"
     echo "GITIGNORE=$file"

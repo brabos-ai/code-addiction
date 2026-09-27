@@ -42,7 +42,7 @@ const P = {
   authoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
   agentsMd: path.join(ROOT, 'AGENTS.md'),
   productPlanReview: path.join(
-    ROOT, 'framwork', '.codeadd', 'skills', 'add-plan-review', 'SKILL.md',
+    ROOT, 'framwork', '.codeadd', 'skills', 'add--plan-review', 'SKILL.md',
   ),
 };
 
@@ -516,11 +516,11 @@ describe('L4 no re-entry', () => {
 // ---------------------------------------------------------------------------
 
 const PRODUCT_SKILL = {
-  id: 'product/skill/add-plan-review',
+  id: 'product/skill/add--plan-review',
   kind: 'skill',
   layer: 'product',
-  name: 'add-plan-review',
-  path: 'framwork/.codeadd/skills/add-plan-review/SKILL.md',
+  name: 'add--plan-review',
+  path: 'framwork/.codeadd/skills/add--plan-review/SKILL.md',
   registered: true,
   declares: true,
 };

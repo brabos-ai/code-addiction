@@ -1,16 +1,16 @@
 # ADD - Intelligent Ecosystem Gateway
 
 <!-- uses:
-- skill: add-dev-environment-setup
-- skill: add-ecosystem
-- command: /add.brainstorm
-- command: /add.build
-- command: /add.diagnose
-- command: /add.done
-- command: /add.hotfix
-- command: /add.new
-- command: /add.plan
-- command: /add.review
+- skill: add--dev-environment-setup
+- skill: add--ecosystem
+- command: /add-brainstorm
+- command: /add-build
+- command: /add-diagnose
+- command: /add-done
+- command: /add-hotfix
+- command: /add-new
+- command: /add-plan
+- command: /add-review
 - script: status.sh
 -->
 
@@ -43,7 +43,7 @@ IF ECOSYSTEM-MAP NOT LOADED:
 
 ## STEP 0: Load Ecosystem Map (ALWAYS)
 
-Read skill `add-ecosystem` before any response.
+Read skill `add--ecosystem` before any response.
 
 This file contains all add-pro commands with purpose/skills, available skills, main flows, and dependency index.
 
@@ -87,7 +87,7 @@ Read `AGENTS.md` for project architecture patterns. List `.codeadd/projects/` fo
 
 ### Type A: About ADD Commands
 
-Use ecosystem-map from STEP 0. If specific command details are needed, read `.claude/commands/add.[command].md`.
+Use ecosystem-map from STEP 0. If specific command details are needed, read `.claude/commands/add-[command].md`.
 
 Include: what the command does, when to use it, which skills it loads, and main flow steps.
 
@@ -135,7 +135,7 @@ Include: reformulated question, answer (Yes/No/Partially), explanation based on 
 
 ### Type F: Setup/Environment
 
-**LOAD skill before responding:** Read skill `add-dev-environment-setup`.
+**LOAD skill before responding:** Read skill `add--dev-environment-setup`.
 
 **EXECUTE skill flow:** Follow STEP 1-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
 
@@ -156,16 +156,16 @@ ALWAYS include at end of response (except if question was only about a specific 
 
 | Detected Context | Suggested Command | Rationale |
 |------------------|-------------------|-----------|
-| Branch main, no feature | `/add.new` | Start new functionality |
-| Feature without plan.md | `/add.plan` | Next phase of flow |
-| Feature with plan, no implementation | `/add.build`, or choose automatic delivery at `/add.brainstorm`'s approval to run the build, with its own final review, unattended | Time to implement |
-| Feature implemented | `/add.done` | The build already ran its final review. `/add.review` is optional — run it first for detail or the QA judgement |
-| Feature reviewed | `/add.done` | Finalize and generate changelog |
-| Epic with pending sub-features | `/add.build feature N` | Next sub-feature |
+| Branch main, no feature | `/add-new` | Start new functionality |
+| Feature without plan.md | `/add-plan` | Next phase of flow |
+| Feature with plan, no implementation | `/add-build`, or choose automatic delivery at `/add-brainstorm`'s approval to run the build, with its own final review, unattended | Time to implement |
+| Feature implemented | `/add-done` | The build already ran its final review. `/add-review` is optional — run it first for detail or the QA judgement |
+| Feature reviewed | `/add-done` | Finalize and generate changelog |
+| Epic with pending sub-features | `/add-build feature N` | Next sub-feature |
 | Architecture question | `/health-check` | Technical analysis |
-| Clear bug in production | `/add.hotfix` | Urgent fix |
-| Vague symptom / unsure if bug or feature | `/add.diagnose` | Structured investigative triage before deciding |
-| Does not know where to start | `/add.brainstorm` | Explore ideas |
+| Clear bug in production | `/add-hotfix` | Urgent fix |
+| Vague symptom / unsure if bug or feature | `/add-diagnose` | Structured investigative triage before deciding |
+| Does not know where to start | `/add-brainstorm` | Explore ideas |
 | bash/git/jq/gh missing or env errors | Load `dev-environment-setup` skill | Setup dev environment |
 | User asks about WSL or VS Code terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |
 

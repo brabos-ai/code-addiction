@@ -316,7 +316,7 @@ describe('L1 — the call shapes the four consumers need', () => {
 
     const root = f.root();
 
-    expect(fs.existsSync(path.join(root, '.codeadd', 'commands', 'add.plan.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.codeadd', 'commands', 'add-plan.md'))).toBe(true);
   });
 
   it('dispose removes the template as well as the roots', () => {

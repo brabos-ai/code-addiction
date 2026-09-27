@@ -118,7 +118,7 @@ Write `.tmp/sync/change-payload.json` (create `.tmp/sync/` dir if needed):
   "commands": {
     "added": [{"name": "add.X", "description": "..."}],
     "removed": [{"name": "add.Y"}],
-    "renamed": [{"from": "add.old", "to": "add.new", "description": "..."}],
+    "renamed": [{"from": "add.old", "to": "add-new", "description": "..."}],
     "description_changed": [{"name": "add.Z", "old_description": "...", "new_description": "..."}]
   },
   "skills": {
@@ -182,7 +182,7 @@ Three rules when transcribing:
   turns those rows back into `skill:`/`agent:`/`command:`/`script:`, it has
   silently destroyed the query the graph exists for.
 
-Regenerate `framwork/.codeadd/skills/add-ecosystem/SKILL.md` from STEP 1.3 scan data.
+Regenerate `framwork/.codeadd/skills/add--ecosystem/SKILL.md` from STEP 1.3 scan data.
 
 Use the EXACT same format as the existing map:
 
@@ -208,11 +208,11 @@ This file is the human-facing integration map. Contains 3 Mermaid graphs only �
 
 ```
 Graph 1 — Core Pipeline:
-  Commands in main feature flow (add.brainstorm, add.new, add.plan, add.build, add.review, add.done)
+  Commands in main feature flow (add-brainstorm, add-new, add-plan, add-build, add-review, add-done)
   → skills they load (loads relationship)
 
 Graph 2 — Support Commands:
-   Auxiliary commands (add, add.diagnose, add.hotfix, add.audit, add.wiki, add.brainstorm, add.ux)
+   Auxiliary commands (add, add-diagnose, add-hotfix, add-audit, add-wiki, add-brainstorm, add-ux)
   → skills they load (loads relationship)
 
 Graph 3 — Agent Dispatch:
@@ -225,9 +225,9 @@ Build edges from STEP 1.3 scan:
 - `command → agent` for every agent dispatched by a command (parse via @agent-name or "DISPATCH AGENT" blocks)
 - `agent → skill` from each agent's frontmatter
 
-Mermaid syntax: use `graph LR` per block, node shapes `(command)` rounded, `{{skill}}` hexagon, `>agent]` flag. Use short alias IDs (e.g. `NEW(add.new)`, `DS{{add-doc-schemas}}`, `BA>backend-agent]`) to keep edges readable.
+Mermaid syntax: use `graph LR` per block, node shapes `(command)` rounded, `{{skill}}` hexagon, `>agent]` flag. Use short alias IDs (e.g. `NEW(add-new)`, `DS{{add--doc-schemas}}`, `BA>backend-agent]`) to keep edges readable.
 
-**File header:** include the auto-generation marker at top + footer link to `framwork/.codeadd/skills/add-ecosystem/SKILL.md` as the AI-side source of truth.
+**File header:** include the auto-generation marker at top + footer link to `framwork/.codeadd/skills/add--ecosystem/SKILL.md` as the AI-side source of truth.
 
 ⛔ DO NOT USE: Edit on `ecosystem.md` — file is fully regenerated each run, always Write.
 

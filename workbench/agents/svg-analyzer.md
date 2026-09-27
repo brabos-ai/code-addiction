@@ -45,7 +45,7 @@ Write to `.tmp/sync/svg-report.json` as an **array** (one object per SVG file, i
     "manual_items": [
       {
         "reason": "New command box required — layout change",
-        "detail": "Add box for add.diagnose in commands.svg. Should appear after add.commit. Needs new <rect> + <text> elements with correct x/y coordinates matching the grid pattern."
+        "detail": "Add box for add-diagnose in commands.svg. Should appear after add.commit. Needs new <rect> + <text> elements with correct x/y coordinates matching the grid pattern."
       }
     ]
   },

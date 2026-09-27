@@ -119,7 +119,7 @@ const SHIPPED_DEFS = {
       "order": 2,
       "column": "shaping",
       "label": "Refining",
-      "means": "add.brainstorm or add.new running"
+      "means": "add-brainstorm or add-new running"
     },
     {
       "name": "shaped",
@@ -133,7 +133,7 @@ const SHIPPED_DEFS = {
       "order": 4,
       "column": "planning",
       "label": "Planning",
-      "means": "add.plan running"
+      "means": "add-plan running"
     },
     {
       "name": "planned",
@@ -147,7 +147,7 @@ const SHIPPED_DEFS = {
       "order": 6,
       "column": "building",
       "label": "Doing",
-      "means": "add.build running"
+      "means": "add-build running"
     },
     {
       "name": "in-review",

@@ -27,49 +27,49 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const P = {
-  pullRequest: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.pull-request.md'),
+  pullRequest: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-pull-request.md'),
   featurePrScript: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'feature-pr.sh'),
   featurePrBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'feature-pr.bats'),
-  ecosystem: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-ecosystem', 'SKILL.md'),
+  ecosystem: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--ecosystem', 'SKILL.md'),
   convergeGates: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'converge-gates.sh'),
   convergeBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'converge-gates.bats'),
-  done: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.done.md'),
+  done: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-done.md'),
   planToReady: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan-to-ready.md'),
-  commit: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-commit', 'SKILL.md'),
-  build: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.build.md'),
-  sdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-subagent-driven-development', 'SKILL.md'),
-  history: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-doc-schemas', 'references', 'history.md'),
-  discipline: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add-review-discipline', 'SKILL.md'),
+  commit: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--commit', 'SKILL.md'),
+  build: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-build.md'),
+  sdd: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--subagent-driven-development', 'SKILL.md'),
+  history: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--doc-schemas', 'references', 'history.md'),
+  discipline: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--review-discipline', 'SKILL.md'),
   disciplineInternal: path.join(ROOT, 'workbench', 'skills', 'add-review-discipline', 'SKILL.md'),
   providerMap: path.join(ROOT, 'framwork', 'provider-map.json'),
-  newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.new.md'),
-  brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.brainstorm.md'),
-  plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan.md'),
+  newCmd: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-new.md'),
+  brainstorm: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-brainstorm.md'),
+  plan: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-plan.md'),
   fwBrainstorm: path.join(ROOT, 'workbench', 'skills', 'add-framework--brainstorm', 'SKILL.md'),
   planAuthoring: path.join(ROOT, 'workbench', 'skills', 'add-plan-authoring', 'SKILL.md'),
 };
 
 /** The two commands that restate the discipline today. */
-// add.brainstorm was a caller until the intent file replaced its handoff
+// add-brainstorm was a caller until the intent file replaced its handoff
 // contract: it no longer dispatches plan-reviewer-agent or readback-agent, so
-// it no longer loads or declares add-review-discipline. See the
+// it no longer loads or declares add--review-discipline. See the
 // pipeline-ceremony-rebalance delivery.
 //
 // add.plan-to-ready was a caller until plan
 // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the command:
 // its unattended build<->review loop became the automatic delivery chain in
-// add-delivery-mode/SKILL.md, which is not a review-discipline caller in its
+// add--delivery-mode/SKILL.md, which is not a review-discipline caller in its
 // own right. Two callers remain.
 const CALLERS = ['newCmd', 'plan'];
 
 /** The artefacts F2 sweeps. Its two false positives are NOT in this list. */
 // add.plan-to-ready dropped out of the sweep when plan
 // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 deleted the file — its
-// gate-count prose moved into add.build.md's Checkpoint Sequence, which
+// gate-count prose moved into add-build.md's Checkpoint Sequence, which
 // already carries a false-positive "four gates below" phrase of its own
 // (see L2.7) and so cannot join this list without re-triggering that guard.
 const GATE_SWEEP = ['convergeGates', 'convergeBats', 'commit', 'ecosystem'];
-// add.done is swept by F3, not F2: its parse list and its gate-count sentence
+// add-done is swept by F3, not F2: its parse list and its gate-count sentence
 // are what STEP 4.3 reads, and a block that names a sub-step it does not create
 // leaves a pointer resolving to nothing.
 
@@ -123,15 +123,15 @@ describe('L1 — the deletion (F1)', () => {
     expect(offenders).toEqual([]);
   });
 
-  it("L1.2b: add.pull-request's uses block no longer declares the script", () => {
+  it("L1.2b: add-pull-request's uses block no longer declares the script", () => {
     expect(uses(read(P.pullRequest))).not.toContain('feature-pr.sh');
   });
 
   // guard — this assertion PASSES on the pre-F1 tree. The prohibition at line 83
   // forbids two scripts and only the `feature-pr.sh` half is false, so a fix that
   // deletes the whole line removes a rule that is still true and still needed:
-  // `/add.pull-request` genuinely must not call `done.sh`.
-  it('L1.3 (guard): add.pull-request still forbids calling done.sh', () => {
+  // `/add-pull-request` genuinely must not call `done.sh`.
+  it('L1.3 (guard): add-pull-request still forbids calling done.sh', () => {
     const text = read(P.pullRequest);
     const line = text
       .split('\n')
@@ -139,9 +139,9 @@ describe('L1 — the deletion (F1)', () => {
     expect(line, 'the done.sh prohibition must survive F1').toBeTruthy();
   });
 
-  // guard — add-ecosystem has no row for feature-pr.sh today, so F1's sweep there
+  // guard — add--ecosystem has no row for feature-pr.sh today, so F1's sweep there
   // is empty. This pins that the block did not invent one on the way past.
-  it('L1.4 (guard): add-ecosystem names no feature-pr.sh row', () => {
+  it('L1.4 (guard): add--ecosystem names no feature-pr.sh row', () => {
     expect(read(P.ecosystem)).not.toContain('feature-pr.sh');
   });
 });
@@ -167,7 +167,7 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
 
   // planToReady named this list until plan
   // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 moved its Checkpoint
-  // Sequence into add.build.md — the six-key list moved with it.
+  // Sequence into add-build.md — the six-key list moved with it.
   it('L2.6b: every gate-key list names six keys including GATE_LEDGER', () => {
     for (const key of ['build', 'commit']) {
       const text = read(P[key]);
@@ -195,14 +195,14 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
   });
 
   it('L2.8: both git log --grep=GATES_OK passages survive', () => {
-    // The planToReady passage moved into add.build.md's Checkpoint Sequence
+    // The planToReady passage moved into add-build.md's Checkpoint Sequence
     // with the rest of F11 (plan 2026-09-16T205633-PLAN--product-pipeline-parity).
     expect(read(P.build)).toContain('git log --grep=GATES_OK');
     expect(read(P.commit)).toContain('git log --grep=GATES_OK');
   });
 });
 
-describe('L3 — add.done reads the fifth gate (F3)', () => {
+describe('L3 — add-done reads the fifth gate (F3)', () => {
   it('L3.1: the STEP 4 preflight parses GATE_LEDGER and its detail', () => {
     const text = read(P.done);
     expect(text).toContain('GATE_LEDGER');
@@ -303,10 +303,10 @@ describe('L4 — the publish question (F7)', () => {
     expect(read(P.sdd)).toMatch(/^Publish: /m);
   });
 
-  // guard — measured before the renumber: nothing outside add.build.md cites
+  // guard — measured before the renumber: nothing outside add-build.md cites
   // either step number. A renumber that broke a cross-reference would be
   // invisible to every other level here.
-  it('L4.6 (guard): no other artefact cites add.build STEP 17 or STEP 18', () => {
+  it('L4.6 (guard): no other artefact cites add-build STEP 17 or STEP 18', () => {
     const offenders = sourceFiles()
       .filter((f) => f !== P.build)
       .filter((f) => {
@@ -314,7 +314,7 @@ describe('L4 — the publish question (F7)', () => {
         // on one line, and matching per line needs no newline escape.
         return read(f)
           .split(NL)
-          .some((l) => l.includes('add.build') && /STEP 1[78]/.test(l));
+          .some((l) => l.includes('add-build') && /STEP 1[78]/.test(l));
       })
       .map((f) => path.relative(ROOT, f));
     expect(offenders).toEqual([]);
@@ -367,7 +367,7 @@ describe('L5 — the close-out routes (F8)', () => {
     expect(s2).toMatch(/gh pr view|delivered\.jsonl/);
   });
 
-  it('L5.8: add.done carries no model pin', () => {
+  it('L5.8: add-done carries no model pin', () => {
     expect(read(P.done)).not.toMatch(/^> \*\*MODEL:\*\*/m);
   });
 });
@@ -529,7 +529,7 @@ describe('L8 — the changelog owner (F11)', () => {
   });
 });
 
-describe('L9 — add.done complements the changelog (F12)', () => {
+describe('L9 — add-done complements the changelog (F12)', () => {
   const s63 = () => {
     const t = read(P.done);
     return t.slice(t.indexOf('### 6.3'), t.indexOf('### 6.4'));
@@ -555,7 +555,7 @@ describe('L9 — add.done complements the changelog (F12)', () => {
   it('L9.2: it complements in place and cites the schema for the rule', () => {
     const b = s63();
     expect(b).toMatch(/complement/i);
-    expect(b).toContain('add-doc-schemas');
+    expect(b).toContain('add--doc-schemas');
   });
 
   it('L9.3: it does not declare the path literally any more', () => {
@@ -577,7 +577,7 @@ describe('L9 — add.done complements the changelog (F12)', () => {
   });
 });
 
-describe('L10 — add.pull-request complements too (F13)', () => {
+describe('L10 — add-pull-request complements too (F13)', () => {
   const step3 = () => {
     const t = read(P.pullRequest);
     return t.slice(t.indexOf('## STEP 3'), t.indexOf('## STEP 4'));
@@ -591,7 +591,7 @@ describe('L10 — add.pull-request complements too (F13)', () => {
 
   it('L10.2: 3.3 cites the schema instead of declaring the path', () => {
     const b = step3();
-    expect(b).toContain('add-doc-schemas');
+    expect(b).toContain('add--doc-schemas');
     expect(b).not.toContain('Write to `${FEATURE_DIR}/changelog.md`');
   });
 
@@ -614,8 +614,8 @@ describe('L10 — add.pull-request complements too (F13)', () => {
     expect(t).toMatch(/DO NOT: Overwrite existing PR body/);
   });
 
-  it('L10.6 (guard): add-commit still generates the messages', () => {
-    expect(read(P.pullRequest)).toContain('add-commit');
+  it('L10.6 (guard): add--commit still generates the messages', () => {
+    expect(read(P.pullRequest)).toContain('add--commit');
   });
 });
 
@@ -660,9 +660,9 @@ describe('L11 — the build reads its plan cold (F14)', () => {
     const b = preflight();
     expect(b).toMatch(/DO NOT: Halt the build/);
     expect(b).toMatch(/DO NOT: Apply the readback inline/);
-    // The no-re-dispatch rule is add-review-discipline's, and this step loads it
+    // The no-re-dispatch rule is add--review-discipline's, and this step loads it
     // rather than restating it. Assert the delegation, not a second copy.
-    expect(b).toContain('add-review-discipline');
+    expect(b).toContain('add--review-discipline');
   });
 
   it('L11.6: a Readback line already in the ledger means it ran', () => {
@@ -683,7 +683,7 @@ describe('L12 — the product review-discipline skill (F15)', () => {
   it('L12.1: the skill exists and is registered for the default providers', () => {
     expect(exists(P.discipline)).toBe(true);
     const map = JSON.parse(read(P.providerMap));
-    expect(map.skills, 'provider-map must register it').toHaveProperty('add-review-discipline');
+    expect(map.skills, 'provider-map must register it').toHaveProperty('add--review-discipline');
   });
 
   it('L12.2: it owns the three readers and the question each answers', () => {
@@ -705,8 +705,8 @@ describe('L12 — the product review-discipline skill (F15)', () => {
   // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the command.
   it('L12.4: the divergence table carries the two surviving sites, and add.plan-to-ready is absent', () => {
     const t = read(P.discipline);
-    expect(t).toContain('add.plan');
-    expect(t).toContain('add.build');
+    expect(t).toContain('add-plan');
+    expect(t).toContain('add-build');
     expect(t).not.toContain('add.plan-to-ready');
   });
 
@@ -722,13 +722,13 @@ describe('L12 — the product review-discipline skill (F15)', () => {
     expect(product).toMatch(/sibling/i);
     // A cross-layer uses: target resolves inside its own layer and dangles,
     // which fails the build. Assert the ABSENCE, not only the note.
-    expect(uses(product)).not.toContain('add-review-discipline');
+    expect(uses(product)).not.toContain('add--review-discipline');
   });
 
   it('L12.7: it delegates rather than restating what other skills own', () => {
     const t = read(P.discipline);
-    expect(t).toContain('add-plan-review');
-    expect(t).toContain('add-subagent-driven-development');
+    expect(t).toContain('add--plan-review');
+    expect(t).toContain('add--subagent-driven-development');
   });
 });
 
@@ -752,10 +752,10 @@ describe('L13 — the internal sibling note (F16)', () => {
     // fails the build. Both directions asserted, because only one is obvious.
     // Asserted as "declares no sibling of this name AT ALL", not as "contains no
     // the-other-layer's-word". The obvious mutation — adding
-    // `- skill: add-review-discipline` to the internal block — carries neither
+    // `- skill: add--review-discipline` to the internal block — carries neither
     // "product" nor ".claude", so the narrower form could never fail.
-    expect(uses(read(P.disciplineInternal))).not.toMatch(/add-review-discipline/);
-    expect(uses(read(P.discipline))).not.toMatch(/add-review-discipline/);
+    expect(uses(read(P.disciplineInternal))).not.toMatch(/add--review-discipline/);
+    expect(uses(read(P.discipline))).not.toMatch(/add--review-discipline/);
     expect(uses(read(P.disciplineInternal))).not.toContain('product');
     expect(uses(read(P.discipline))).not.toContain('.claude');
   });
@@ -768,15 +768,15 @@ describe('L13 — the internal sibling note (F16)', () => {
 });
 
 describe('L14 — the three callers cite the skill (F17)', () => {
-  it('L14.1: every caller loads add-review-discipline', () => {
+  it('L14.1: every caller loads add--review-discipline', () => {
     for (const key of CALLERS) {
-      expect(read(P[key]), `${key} must cite the skill`).toContain('add-review-discipline');
+      expect(read(P[key]), `${key} must cite the skill`).toContain('add--review-discipline');
     }
   });
 
   it('L14.2: every caller declares it in its uses block', () => {
     for (const key of CALLERS) {
-      expect(uses(read(P[key])), `${key} must declare it`).toContain('add-review-discipline');
+      expect(uses(read(P[key])), `${key} must declare it`).toContain('add--review-discipline');
     }
   });
 
@@ -794,12 +794,12 @@ describe('L14 — the three callers cite the skill (F17)', () => {
   it('L14.4 (guard): every dispatch keeps its own inputs', () => {
     // The `kind:` PREFIX is what makes these guards bite. A blind rename once
     // reduced the first one to the bare word `feature`, which appears
-    // throughout add.new.md regardless of the dispatch site — a guard that
+    // throughout add-new.md regardless of the dispatch site — a guard that
     // passes whatever the command does.
     expect(read(P.newCmd)).toContain('kind: feature');
     expect(read(P.plan)).toContain('kind: feature-plan');
-    // add.brainstorm dispatched `kind: brainstorm` until that kind was removed
-    // from add-plan-review along with its only dispatcher. Asserting its
+    // add-brainstorm dispatched `kind: brainstorm` until that kind was removed
+    // from add--plan-review along with its only dispatcher. Asserting its
     // absence is what keeps the removal from silently reverting.
     expect(read(P.brainstorm)).not.toContain('kind: brainstorm');
   });

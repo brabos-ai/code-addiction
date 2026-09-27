@@ -34,19 +34,19 @@ import { treeFixture } from './helpers/tree-fixture.js';
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SIDECAR = path.join(ROOT, 'framwork', '.codeadd', 'injection-points.json');
 const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir).map(([k]) => k);
-const BOARD_COMMANDS = ['add.brainstorm', 'add.new', 'add.plan', 'add.build', 'add.done', 'add.hotfix'];
+const BOARD_COMMANDS = ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'];
 
 // The END-STATE MAP. Twenty-four sections over six commands. Checkpoint 2 moved
-// fourteen -- add.new's two adjacent sites were merged into one, which is why
+// fourteen -- add-new's two adjacent sites were merged into one, which is why
 // the plan's fifteen became fourteen -- and checkpoint 3 added ten: the five new
-// writes' sections, add.new's board-write permission, and add.hotfix's four.
+// writes' sections, add-new's board-write permission, and add-hotfix's four.
 const MAP = {
-  'add.brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-refining', 'ticket-report', 'ticket-resolve', 'ticket-shaped'],
-  'add.new': ['ticket-board-write', 'ticket-intent-field', 'ticket-shaped', 'ticket-skeleton'],
-  'add.plan': ['ticket-done-when', 'ticket-planned', 'ticket-read'],
-  'add.build': ['ticket-attention', 'ticket-doing', 'ticket-in-review', 'ticket-metadata'],
-  'add.done': ['ticket-carry', 'ticket-close', 'ticket-report'],
-  'add.hotfix': ['ticket-doing', 'ticket-frontmatter', 'ticket-report', 'ticket-resolve'],
+  'add-brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-refining', 'ticket-report', 'ticket-resolve', 'ticket-shaped'],
+  'add-new': ['ticket-board-write', 'ticket-intent-field', 'ticket-shaped', 'ticket-skeleton'],
+  'add-plan': ['ticket-done-when', 'ticket-planned', 'ticket-read'],
+  'add-build': ['ticket-attention', 'ticket-doing', 'ticket-in-review', 'ticket-metadata'],
+  'add-done': ['ticket-carry', 'ticket-close', 'ticket-report'],
+  'add-hotfix': ['ticket-doing', 'ticket-frontmatter', 'ticket-report', 'ticket-resolve'],
 };
 
 const points = () => JSON.parse(fs.readFileSync(SIDECAR, 'utf8')).points;
@@ -85,14 +85,14 @@ describe('board — the registry and the map', () => {
 });
 
 describe('board — L7.3: off by default means no command mentions the backlog', () => {
-  it('no built product command names add-backlog, backlog-commit.sh or a ticket write', () => {
+  it('no built product command names add--backlog, backlog-commit.sh or a ticket write', () => {
     const offenders = [];
     for (const prov of CMD_PROVIDERS) {
       for (const name of BOARD_COMMANDS) {
         const file = builtCommand(prov, name);
         if (!fs.existsSync(file)) continue;
         const body = fs.readFileSync(file, 'utf8');
-        for (const needle of ['add-backlog', 'backlog-commit.sh', 'ticket:']) {
+        for (const needle of ['add--backlog', 'backlog-commit.sh', 'ticket:']) {
           if (body.includes(needle)) offenders.push(`${prov}/${name}: ${needle}`);
         }
       }
@@ -132,7 +132,7 @@ describe('board — L6.4: enable order changes no byte', () => {
 
   // The OTHER features keep one fixed order on both sides, on purpose. Their
   // own relative order is NOT byte-stable today: tdd-pipeline and qa-pipeline
-  // both anchor their step-list lines on the same line of add.plan, so the one
+  // both anchor their step-list lines on the same line of add-plan, so the one
   // enabled second lands first. That is pre-existing, it has nothing to do with
   // this feature, and reversing the whole list here would test it instead of
   // board. What board must prove is that where IT goes in the order moves nothing.

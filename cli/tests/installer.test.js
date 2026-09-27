@@ -393,7 +393,7 @@ describe('shouldPreserve (L1.1)', () => {
 
   it('does not preserve ordinary framework files', () => {
     expect(shouldPreserve('.codeadd/scripts/status.sh')).toBe(false);
-    expect(shouldPreserve('.claude/commands/add.plan.md')).toBe(false);
+    expect(shouldPreserve('.claude/commands/add-plan.md')).toBe(false);
     expect(shouldPreserve('.codeadd/manifest.json')).toBe(false);
   });
 

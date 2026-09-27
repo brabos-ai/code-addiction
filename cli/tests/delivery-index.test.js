@@ -30,7 +30,7 @@ import { FEATURES } from '../src/features.js';
  *     drifts.
  *
  * The baselines below are ABSOLUTE, measured on the tree before this plan:
- * 39 injection points, of which exactly 1 on `add.done` (`plugin:gitnexus:
+ * 39 injection points, of which exactly 1 on `add-done` (`plugin:gitnexus:
  * graph-reindex`), and 1 contract. "No NEW warnings" is not the bar — the
  * measured `ADD_GRAPH_WARNINGS=1` count is zero, so any warning is this plan's.
  */
@@ -46,10 +46,10 @@ const SIDECAR = () => JSON.parse(read(CODEADD, 'injection-points.json'));
 const GRAPH = () => JSON.parse(read(CODEADD, 'artefact-graph.json'));
 const CONTRACTS = () => JSON.parse(read(CODEADD, 'contracts.json'));
 
-const REFERENCE = path.join(CODEADD, 'skills', 'add-doc-schemas', 'references', 'delivery-index.md');
+const REFERENCE = path.join(CODEADD, 'skills', 'add--doc-schemas', 'references', 'delivery-index.md');
 const SCRIPT = path.join(CODEADD, 'scripts', 'delivered.sh');
 const BATS = path.join(CODEADD, 'scripts', 'tests', 'delivered.bats');
-const FRAGMENT = path.join(CODEADD, 'fragments', 'docs-pruning', 'add.done.md');
+const FRAGMENT = path.join(CODEADD, 'fragments', 'docs-pruning', 'add-done.md');
 
 const cmd = (name) => read(CODEADD, 'commands', `${name}.md`);
 const skill = (name) => read(CODEADD, 'skills', name, 'SKILL.md');
@@ -91,7 +91,7 @@ describe('L2 — build integrity', () => {
   it('L2.2: artefact-graph carries the new reference node', () => {
     const g = GRAPH();
     const node = g.nodes.find(
-      (n) => n.id === 'product/reference/add-doc-schemas/references/delivery-index.md',
+      (n) => n.id === 'product/reference/add--doc-schemas/references/delivery-index.md',
     );
     expect(node, 'delivery-index.md missing from the artefact graph').toBeTruthy();
     expect(node.kind).toBe('reference');
@@ -105,54 +105,54 @@ describe('L2 — build integrity', () => {
 
   it('L2.2: the four consumers each declare delivered.sh as a dependency', () => {
     const g = GRAPH();
-    for (const consumer of ['add.done', 'add.hotfix', 'add-knowledge-discovery']) {
+    for (const consumer of ['add-done', 'add-hotfix', 'add--knowledge-discovery']) {
       expect(
         dependencyTargets(g, consumer),
         `${consumer} does not depend on delivered.sh`,
       ).toContain('delivered.sh');
     }
-    // add.brainstorm reaches the index through the skill, not the script —
-    // F11 declares `- skill: add-knowledge-discovery`, which is the fourth edge.
+    // add-brainstorm reaches the index through the skill, not the script —
+    // F11 declares `- skill: add--knowledge-discovery`, which is the fourth edge.
     expect(
-      dependencyTargets(g, 'add.brainstorm'),
-      'add.brainstorm does not depend on add-knowledge-discovery',
-    ).toContain('add-knowledge-discovery');
+      dependencyTargets(g, 'add-brainstorm'),
+      'add-brainstorm does not depend on add--knowledge-discovery',
+    ).toContain('add--knowledge-discovery');
   });
 
-  it('L2.2: add-doc-schemas depends on the new reference', () => {
+  it('L2.2: add--doc-schemas depends on the new reference', () => {
     const g = GRAPH();
-    expect(dependencyTargets(g, 'add-doc-schemas')).toContain(
-      'add-doc-schemas/references/delivery-index.md',
+    expect(dependencyTargets(g, 'add--doc-schemas')).toContain(
+      'add--doc-schemas/references/delivery-index.md',
     );
   });
 
   // ─── L2.3 — injection surface: baseline + 1, and gitnexus still resolves ───
 
-  // 39 + 1 (docs-pruning) + 5 for feature:qa-pipeline on add.review, which
+  // 39 + 1 (docs-pruning) + 5 for feature:qa-pipeline on add-review, which
   // moved the QA judgement steps under the feature
   // (plan 2026-09-13T153219, F15/F16/F20b).
-  // + 1 for plugin:gitnexus:graph-build on add.build
+  // + 1 for plugin:gitnexus:graph-build on add-build
   // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F5).
-  // + 4 for feature:board on add.brainstorm (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
-  // + 2 for feature:board on add.new (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
-  // + 2 for feature:board on add.plan (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
-  // + 3 for feature:board on add.build (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
-  // + 3 for feature:board on add.done (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
-  // 60 -> 62: feature:board adds add.brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
-  // 62 -> 64: feature:board adds add.new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
-  // 64 -> 65: feature:board adds add.plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
-  // 65 -> 66: feature:board adds add.build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
-  // 66 -> 70: feature:board brings add.hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
+  // + 4 for feature:board on add-brainstorm (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
+  // + 2 for feature:board on add-new (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F8+F9).
+  // + 2 for feature:board on add-plan (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F10+F11).
+  // + 3 for feature:board on add-build (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
+  // + 3 for feature:board on add-done (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
+  // 60 -> 62: feature:board adds add-brainstorm's refining and shaped writes (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F21+F22).
+  // 62 -> 64: feature:board adds add-new's board-write permission and its shaped write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F23+F24).
+  // 64 -> 65: feature:board adds add-plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
+  // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
+  // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
   it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 70', () => {
     expect(SIDECAR().points).toHaveLength(70);
   });
 
-  // Two became five: feature:board moves add.done's three ticket sections into
+  // Two became five: feature:board moves add-done's three ticket sections into
   // fragments/board/ (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses,
   // F14+F15). The gitnexus and docs-pruning points must survive that intact.
-  it('L2.3: add.done carries exactly five injection points — gitnexus, docs-pruning and three board', () => {
+  it('L2.3: add-done carries exactly five injection points — gitnexus, docs-pruning and three board', () => {
     const onDone = SIDECAR().points.filter(
-      (p) => p.resource.kind === 'command' && p.resource.name === 'add.done',
+      (p) => p.resource.kind === 'command' && p.resource.name === 'add-done',
     );
     expect(onDone).toHaveLength(5);
 
@@ -160,27 +160,27 @@ describe('L2 — build integrity', () => {
     expect(board).toEqual(['ticket-carry', 'ticket-close', 'ticket-report']);
 
     const gitnexus = onDone.find((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
-    expect(gitnexus, 'the pre-existing gitnexus point on add.done was lost').toBeTruthy();
+    expect(gitnexus, 'the pre-existing gitnexus point on add-done was lost').toBeTruthy();
     expect(gitnexus.section).toBe('graph-reindex');
 
     const pruning = onDone.find((p) => p.namespace === 'feature' && p.name === 'docs-pruning');
-    expect(pruning, 'docs-pruning has no injection point on add.done').toBeTruthy();
+    expect(pruning, 'docs-pruning has no injection point on add-done').toBeTruthy();
   });
 
-  it('L2.3: every add.done anchor still resolves in the built command', () => {
+  it('L2.3: every add-done anchor still resolves in the built command', () => {
     // An anchor whose text no longer exists is the exact failure three edits to
     // one file invite. Resolve each against the BUILT Claude command, which is
     // what the installer injects into.
-    const built = read(ROOT, 'framwork', '.claude', 'commands', 'add.done.md');
+    const built = read(ROOT, 'framwork', '.claude', 'commands', 'add-done.md');
     const onDone = SIDECAR().points.filter(
-      (p) => p.resource.kind === 'command' && p.resource.name === 'add.done',
+      (p) => p.resource.kind === 'command' && p.resource.name === 'add-done',
     );
     for (const p of onDone) {
       const hits = built.split('\n').filter((l) => l.trim() === p.anchor.text.trim()).length;
-      expect(hits, `anchor "${p.anchor.text}" does not resolve in the built add.done`)
+      expect(hits, `anchor "${p.anchor.text}" does not resolve in the built add-done`)
         .toBeGreaterThanOrEqual(p.anchor.ordinal);
       if (p.anchor.next) {
-        expect(built, `drift hint "${p.anchor.next}" is gone from add.done`).toContain(
+        expect(built, `drift hint "${p.anchor.next}" is gone from add-done`).toContain(
           p.anchor.next,
         );
       }
@@ -190,14 +190,14 @@ describe('L2 — build integrity', () => {
   it('L2.3: docs-pruning injects AFTER the entry write, never before it', () => {
     // F13's second refusal — never prune when no entry was written this run —
     // is only structurally satisfiable if the block lands after STEP 6 wrote it.
-    const source = cmd('add.done');
+    const source = cmd('add-done');
     const pruning = SIDECAR().points.find(
       (p) => p.namespace === 'feature' && p.name === 'docs-pruning',
     );
     expect(pruning.anchor.position).toBe('after');
     const anchorAt = source.indexOf(pruning.anchor.text);
     const writeAt = source.indexOf('delivered.sh write');
-    expect(anchorAt, 'the docs-pruning anchor is not in add.done source').toBeGreaterThan(-1);
+    expect(anchorAt, 'the docs-pruning anchor is not in add-done source').toBeGreaterThan(-1);
     expect(writeAt, 'STEP 6 never calls `delivered.sh write`').toBeGreaterThan(-1);
     expect(anchorAt, 'the pruning anchor sits above the entry write').toBeGreaterThan(writeAt);
   });
@@ -214,14 +214,14 @@ describe('L2 — build integrity', () => {
 
   // ─── L2.4b — F2 and F12, which no other level covers ───────────────────────
 
-  it('L2.4b: F2 — add-doc-schemas registers the reference in its uses block', () => {
-    expect(usesBlock(skill('add-doc-schemas'))).toContain(
-      '- skill: add-doc-schemas/references/delivery-index.md',
+  it('L2.4b: F2 — add--doc-schemas registers the reference in its uses block', () => {
+    expect(usesBlock(skill('add--doc-schemas'))).toContain(
+      '- skill: add--doc-schemas/references/delivery-index.md',
     );
   });
 
   it('L2.4b: F2 — the skill lists the reference WITHOUT reclassifying it as a doc schema', () => {
-    const s = skill('add-doc-schemas');
+    const s = skill('add--doc-schemas');
     expect(s, 'no row names references/delivery-index.md').toMatch(
       /references\/delivery-index\.md/,
     );
@@ -246,7 +246,7 @@ describe('L2 — build integrity', () => {
   it('L2.4b: F12 — features.js registers docs-pruning, disabled by default', () => {
     expect(FEATURES['docs-pruning'], 'docs-pruning is not in the FEATURES registry').toBeTruthy();
     expect(FEATURES['docs-pruning'].default).toBe(false);
-    expect(FEATURES['docs-pruning'].commands).toEqual(['add.done']);
+    expect(FEATURES['docs-pruning'].commands).toEqual(['add-done']);
   });
 
   // ─── L2.5 — packaging, and the per-provider script directory that must not
@@ -276,8 +276,8 @@ describe('L2 — build integrity', () => {
 });
 
 describe('L3 — command integration', () => {
-  it('L3.1: add.done STEP 6 writes the entry and commits nothing itself', () => {
-    const c = cmd('add.done');
+  it('L3.1: add-done STEP 6 writes the entry and commits nothing itself', () => {
+    const c = cmd('add-done');
     expect(c).toContain('delivered.sh write');
     const step6 = c.slice(c.indexOf('## STEP 6'), c.indexOf('## STEP 7'));
     expect(step6, 'STEP 6 does not author the index entry').toContain('delivered.sh');
@@ -286,8 +286,8 @@ describe('L3 — command integration', () => {
     );
   });
 
-  it('L3.2: add.done STEP 7 renders the entry and stays informative', () => {
-    const c = cmd('add.done');
+  it('L3.2: add-done STEP 7 renders the entry and stays informative', () => {
+    const c = cmd('add-done');
     const step7 = c.slice(c.indexOf('## STEP 7'), c.indexOf('## STEP 8'));
     expect(step7, 'STEP 7 does not preview the entry').toMatch(/entry|delivered/i);
     expect(step7, 'STEP 7 must render every item with its find string').toContain('find');
@@ -302,16 +302,16 @@ describe('L3 — command integration', () => {
     expect(done).toContain('MERGE_COMMIT=SKIPPED');
   });
 
-  it('L3.4: add.pull-request names the owed entry', () => {
-    const c = cmd('add.pull-request');
+  it('L3.4: add-pull-request names the owed entry', () => {
+    const c = cmd('add-pull-request');
     const step8 = c.slice(c.indexOf('## STEP 8'));
     expect(step8, 'the post-merge guidance never mentions the owed index entry').toMatch(
       /delivery index|index entry/i,
     );
   });
 
-  it('L3.5: add.hotfix STEP 4 reads the index with --no-verify and loads no wiki', () => {
-    const c = cmd('add.hotfix');
+  it('L3.5: add-hotfix STEP 4 reads the index with --no-verify and loads no wiki', () => {
+    const c = cmd('add-hotfix');
     const step4 = c.slice(c.indexOf('## STEP 4'), c.indexOf('## STEP 5'));
     expect(step4, 'STEP 4 does not read the index').toContain('delivered.sh read');
     expect(step4, '--no-verify is the whole reason this is allowed at STEP 4').toContain(
@@ -321,8 +321,8 @@ describe('L3 — command integration', () => {
     expect(usesBlock(c)).toContain('- script: delivered.sh');
   });
 
-  it('L3.5: add-knowledge-discovery lands all THREE pieces, never two', () => {
-    const s = skill('add-knowledge-discovery');
+  it('L3.5: add--knowledge-discovery lands all THREE pieces, never two', () => {
+    const s = skill('add--knowledge-discovery');
     // 1. the INDEX procedure, standalone-loadable
     expect(s, 'no INDEX step').toMatch(/INDEX/);
     expect(s, 'the INDEX step is not marked standalone-loadable').toMatch(/standalone/i);
@@ -337,22 +337,22 @@ describe('L3 — command integration', () => {
     expect(usesBlock(s)).toContain('- script: delivered.sh');
   });
 
-  it('L3.6: add.brainstorm STEP 1 swaps the unranked sweep for the ranked lookup', () => {
-    const c = cmd('add.brainstorm');
+  it('L3.6: add-brainstorm STEP 1 swaps the unranked sweep for the ranked lookup', () => {
+    const c = cmd('add-brainstorm');
     const step1 = c.slice(c.indexOf('## STEP 1:'), c.indexOf('## STEP 1.5'));
-    expect(step1, 'the skill is not loaded at STEP 1').toContain('add-knowledge-discovery');
+    expect(step1, 'the skill is not loaded at STEP 1').toContain('add--knowledge-discovery');
     expect(step1, 'about.md is not deep-read for matched entries').toContain('about.md');
     expect(
       step1,
       'the unranked docs/features/ sweep is still there — the index REPLACES it',
     ).not.toMatch(/implemented features from `?docs\/features\//);
-    expect(usesBlock(c)).toContain('- skill: add-knowledge-discovery');
+    expect(usesBlock(c)).toContain('- skill: add--knowledge-discovery');
   });
 
   it('L3.7: an absent index is a no-op with a note, inside the INDEX step itself', () => {
     // Scoped to the INDEX sub-procedure. A repo-wide grep for "absent" passes
     // on the pre-existing `WIKI:absent` line and proves nothing about the index.
-    const s = skill('add-knowledge-discovery');
+    const s = skill('add--knowledge-discovery');
     const start = s.search(/^#+ .*INDEX/m);
     expect(start, 'there is no INDEX section to scope to').toBeGreaterThan(-1);
     // Slice past the heading LINE, not past its first character: `^` matches at
@@ -380,8 +380,8 @@ describe('L4 — docs-pruning, the parts the generic injection suites do not cov
       expect(f, `the fragment does not prune ${pruned}`).toContain(pruned);
     }
     // The kept list is the plan's correction of the umbrella's level-2 list.
-    // A fragment that deletes plan.md or iterations.* degrades /add.hotfix,
-    // /add.diagnose and /add.new — the commands this design exists to serve.
+    // A fragment that deletes plan.md or iterations.* degrades /add-hotfix,
+    // /add-diagnose and /add-new — the commands this design exists to serve.
     for (const kept of ['plan.md', 'about.md', 'design.md', 'changelog.md', 'decisions.jsonl', 'iterations']) {
       expect(f, `${kept} is not named in the kept list`).toContain(kept);
     }
@@ -411,22 +411,22 @@ describe('L4 — docs-pruning, the parts the generic injection suites do not cov
 describe('L5.7 — every F-block landed', () => {
   const LANDED = [
     ['F1  reference', () => exists(REFERENCE)],
-    ['F2  skill registration', () => usesBlock(skill('add-doc-schemas')).includes('delivery-index.md')],
+    ['F2  skill registration', () => usesBlock(skill('add--doc-schemas')).includes('delivery-index.md')],
     ['F3  delivered.sh', () => exists(SCRIPT)],
     ['F4  delivered.bats', () => exists(BATS)],
-    ['F5  add.done STEP 6 write', () => cmd('add.done').includes('delivered.sh write')],
+    ['F5  add-done STEP 6 write', () => cmd('add-done').includes('delivered.sh write')],
     // Scoped to the STEP 7 slice. An unscoped /STEP 7[\s\S]*find/ matches the
     // word "find" anywhere below STEP 7 and is green before F6 lands.
-    ['F6  add.done STEP 7 preview', () => {
-      const c = cmd('add.done');
+    ['F6  add-done STEP 7 preview', () => {
+      const c = cmd('add-done');
       const step7 = c.slice(c.indexOf('## STEP 7'), c.indexOf('## STEP 8'));
       return /delivered|index entry/i.test(step7) && step7.includes('find');
     }],
     ['F7  done.sh pre-check', () => read(CODEADD, 'scripts', 'done.sh').includes('MERGE_MODE')],
-    ['F8  add.pull-request notice', () => /index entry|delivery index/i.test(cmd('add.pull-request'))],
-    ['F9  knowledge-discovery INDEX', () => skill('add-knowledge-discovery').includes('delivered.sh')],
-    ['F10 hotfix STEP 4', () => cmd('add.hotfix').includes('--no-verify')],
-    ['F11 brainstorm STEP 1', () => cmd('add.brainstorm').includes('add-knowledge-discovery')],
+    ['F8  add-pull-request notice', () => /index entry|delivery index/i.test(cmd('add-pull-request'))],
+    ['F9  knowledge-discovery INDEX', () => skill('add--knowledge-discovery').includes('delivered.sh')],
+    ['F10 hotfix STEP 4', () => cmd('add-hotfix').includes('--no-verify')],
+    ['F11 brainstorm STEP 1', () => cmd('add-brainstorm').includes('add--knowledge-discovery')],
     ['F12 features registry', () => Boolean(FEATURES['docs-pruning'])],
     ['F13 fragment', () => exists(FRAGMENT)],
     ['F14 injection marker', () =>

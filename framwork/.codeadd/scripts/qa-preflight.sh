@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
 # QA-PREFLIGHT
-# Deterministic QA prerequisite probes shared by /add.review and /add.qa-setup
+# Deterministic QA prerequisite probes shared by /add-review and /add-qa-setup
 # ============================================
 # Usage: bash .codeadd/scripts/qa-preflight.sh a
 #        bash .codeadd/scripts/qa-preflight.sh b <FEATURE_DIR> [SPEC_GLOB]
@@ -142,7 +142,7 @@ phase_a() {
       if [ ! -f "$SIDECAR" ]; then
         echo "QA_CONTRACT_MATCH=missing"
       else
-        CURRENT=$(awk '/"add\.qa-setup"[[:space:]]*:/{f=1}
+        CURRENT=$(awk '/"add-qa-setup"[[:space:]]*:/{f=1}
                        f && /"shape"[[:space:]]*:[[:space:]]*"sha256:[0-9a-f]+"/{
                            if (match($0, /sha256:[0-9a-f]+/)) print substr($0, RSTART, RLENGTH);
                            exit

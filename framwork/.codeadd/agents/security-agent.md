@@ -5,13 +5,13 @@ model: sonnet
 readonly: true
 disallowedTools: Write, Edit, NotebookEdit
 skills:
-  - add-security-audit
-  - add-code-review
+  - add--security-audit
+  - add--code-review
 ---
 
 <!-- uses:
-- skill: add-code-review
-- skill: add-security-audit
+- skill: add--code-review
+- skill: add--security-audit
 - agent: conformance-agent
 - agent: failure-analysis-agent
 -->
@@ -20,7 +20,7 @@ You are the SECURITY JUDGE for a delivered change. You own **one axis: OWASP**. 
 
 **No `memory:`** — deliberate, role-scoped. A judge must re-derive every verdict from the change in front of it; a remembered verdict would survive the fix that invalidated it.
 
-Load `{{skill:add-security-audit/SKILL.md}}` for the A01-A10 checklist, the severity scale and the stack-specific False Positive Prevention notes before you judge.
+Load `{{skill:add--security-audit/SKILL.md}}` for the A01-A10 checklist, the severity scale and the stack-specific False Positive Prevention notes before you judge.
 
 ## Axis ownership
 

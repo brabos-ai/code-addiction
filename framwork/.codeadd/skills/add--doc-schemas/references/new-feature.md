@@ -1,0 +1,261 @@
+# New-Feature Category — Schemas & Voice
+
+Category file for the new-feature lifecycle: discovery, specification, planning, design, exploratory ideation. Universal rules (output-length doctrine, language, formatting, ID convention, validation gate) live in `{{skill:add--doc-schemas/SKILL.md}}`. This file owns only what is specific to new-feature docs — section-shape conventions, requirement notation, decision notation, scope notation, and voice rules shared across the five schemas below.
+
+**Schemas in this category:** `feature`, `feature-plan`, `feature-design`, `brainstorm`, `epic`.
+
+## Shared Notation
+
+These notation rules apply to every schema in this category. A schema may extend them but MUST NOT contradict them.
+
+### Requirement Notation
+
+Use stable IDs so specs can be referenced from plans, tests, and reviews.
+
+```
+- **[ID]:** [actor] [action] [object] [condition/context]
+```
+
+IDs are per-doc, monotonically increasing. Prefixes:
+
+| Prefix | Kind |
+|---|---|
+| `RF` | Functional requirement |
+| `RNF` | Non-functional requirement (performance, security, reliability) |
+| `RN` | Business rule |
+
+**Examples:**
+
+```
+- **RF01:** User can mark a notification as read with a single click.
+- **RF02:** System groups notifications of the same type within a 24h window.
+- **RNF01:** The list loads in under 200ms for up to 100 items.
+- **RN01:** An unread notification older than 30 days is archived automatically.
+- **RN02:** Free-plan users are capped at 50 stored notifications.
+- **RN03:** Security notifications are always sent by email in addition to in-app.
+```
+
+Keep each line self-contained. If a requirement needs more than one line, split it or promote it to a sub-heading — do not bury conditions in prose.
+
+### Decision Notation
+
+Every non-trivial decision carries the alternative that was rejected and why. A decision without an alternative is a preference, not a decision.
+
+**Table form (default):**
+
+```markdown
+| Decision | Rationale | Alternative rejected |
+|---|---|---|
+| WebSocket | Real-time without polling overhead | SSE — weaker mobile support |
+| PostgreSQL | Already in the stack | MongoDB — adds operational surface |
+```
+
+**Expanded form (when the decision is load-bearing):**
+
+```markdown
+### Decision: [title]
+
+**Context:** [what made this decision necessary]
+
+**Options considered:**
+1. **[Option A]** — [description] — pros / cons
+2. **[Option B]** — [description] — pros / cons
+
+**Choice:** [Option X], because [primary reason].
+
+**Consequences:** [downstream impacts, constraints it introduces].
+```
+
+Use the expanded form only when the table form would lose information — typically architectural choices with long-lived consequences.
+
+### Scope Notation
+
+Split into **Includes** and **Does NOT Include**. The exclusion list is the more valuable half: it prevents scope creep and documents why a seemingly-related feature was left out.
+
+```markdown
+### Includes
+- [item that IS in scope]
+- [item that IS in scope]
+
+### Does NOT Include
+- [item left out] — [one-line reason]
+- [item left out] — [one-line reason]
+```
+
+The reason on each exclusion is mandatory. "Out of scope" without a reason is a future argument waiting to happen.
+
+### Brainstorm Voice
+
+Brainstorm docs record the design the user approves before anything is written about how to build it. Voice rules:
+
+- **User-perspective language.** Describe the pain the user feels, not the system behaviour. Save the technical vocabulary for plan/design.
+- **Pros and cons for every candidate direction.** Directions without a cons list are proposals in disguise.
+- **A recommendation, with its source named.** The direction you would take, and why — drawn from this project or from a named product, framework or convention. "Widely adopted" names nothing and cannot be checked. Where the two sources conflict, this project wins.
+- **Decisions say what they serve.** Every decision names the part of the objective it advances. A decision that serves nothing in the objective is scope this brainstorm is not for.
+- **Nothing open at approval.** Open Threads reads `None` by the time the user approves. A question that could not be closed goes to the intent file's `Open`.
+
+## Schemas
+
+### feature
+
+For `/add-new` (creates `docs/features/<slug>/about.md`).
+
+- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`, and optionally `ticket: [NNNN]B`
+  - **`branch:`** (required for new docs) — the branch `/add-build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add-new` with full discovery context; immutable thereafter (`build-setup.sh` executes it verbatim).
+  - **`ticket:`** (optional) — the backlog ticket this feature came from, when it came from one. Written by `/add-new` from the intent file, on the line after `branch:`. **Absent is the normal case** — most work never comes from a ticket, which is why this field is not in the validation gate's required set. What each command does with it is owned by `{{skill:add--backlog/references/lifecycle.md}}`; nothing here restates it.
+  - **`tags:`** — bare lowercase topic words, per Universal Document Requirements in `{{skill:add--doc-schemas/SKILL.md}}`, which is where that rule is stated. Written from the discovery result, never from a question put to the user.
+- **Sections (ordered):** TL;DR · Objective · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References
+- **Depth floor:**
+  - **Objective** — copied verbatim from the intent file's `Objective`. With no intent file, drafted from the conversation, corrected by the user, and marked `[from conversation, no brainstorm]`. Every Scope item traces to it; the plan reviewer checks that.
+  - **Problem** — who is affected, what breaks or is missing, observable signal/evidence, current workaround if any.
+  - **Users** — for each role: role name, goal with this feature, current pain.
+  - **Scope** — explicit in/out lists per Scope Notation above. "Does NOT Include" must cover the three most likely scope-creep requests with reasoning (one line each).
+  - **Success Metrics** — per metric: definition, target, measurement source. No vanity metrics.
+  - **Relations** — one `- <type> [[<id>]]` line per work item this one depends on or belongs to, per the Relations & Observations section of `{{skill:add--doc-schemas/SKILL.md}}`. Sourced from the discovery result the producing command already holds: `depends_on` for a work item this cannot ship without, `part_of` for the epic it belongs to. A feature genuinely connected to nothing writes the section with the single word `None` — an absent section is a question, `None` is an assertion.
+  - **Observations** — `- [<category>] <text>` lines carrying the facts the discovery surfaced that no other section holds: a measurement, a constraint, an observed effect. Empty is valid.
+  - **References** — every external doc, issue, PRD, or prior feature that informed this spec.
+- **Compression:** Users = table `role | goal | pain`. Metrics = table `metric | target | source`. Problem = topic sentence + extractive bullets. Requirements (when present) use Requirement Notation above. Relations and Observations = one line each, no prose. References = `{{doc:}}` / URL list.
+- **Hard bans:** aspirational language, inline design/UI details, code snippets, a relation type outside the closed vocabulary, a relation pointing at an attachment rather than a work item.
+- **Avoid unless load-bearing:** roadmap prose; long historical narrative (link to prior doc instead).
+
+### feature-plan
+
+For `/add-plan` (feature mode, creates `docs/features/<slug>/plan.md`).
+
+- **Frontmatter:** `id: [NNNN]F` (same as about), `type: feature-plan`, `related: [[NNNN]F]`
+- **Header:** a `> **Delivery:** confirm|automatic` line under the title, copied from the intent file's `delivery:` — `confirm` when there is none
+- **Sections:** TL;DR · Objective · Context (link `{{doc:[NNNN]F}}`) · Global Constraints · Architecture Decisions · Tasks · Risks · Validation
+- **Depth floor:**
+  - **Objective** — `about.md`'s `Objective` copied verbatim, then one line saying what is true once this plan is built. Copied, never referenced, because the reviewer reads this plan alone. Every task traces to it.
+  - **Context** — one paragraph summarizing the about.md hook + what this plan adds on top. Not a restatement.
+  - **Global Constraints** — every requirement that binds the WHOLE plan rather than one task: RNFs from about.md, stack pins and validation gates from AGENTS.md, tokens from design-system.md. One line per constraint, carrying the **exact value copied verbatim from its source**, with that source cited in parentheses. Example: `- List renders in under 200ms for up to 100 items (about.md RNF01)`. Verbatim is load-bearing — this block is handed to a reviewer as its attention lens, and "fast enough" cannot be reviewed while "under 200ms" can. **Empty is explicit:** a plan with no project-wide constraints writes the section with the single word `None`. The section is NEVER absent — an absent section is a question ("did the author forget?"), `None` is an assertion.
+  - **Architecture Decisions** — per decision: the choice, the real rationale (not "because it's clean"), at least one alternative considered and why rejected, and the constraint that made it necessary. Use Decision Notation above.
+  - **Tasks** — each task has: area, action, acceptance signal (how you'll know it's done). Ordered by dependency. `tasks.md` itself is owned by `{{skill:add--tasks-checklist/SKILL.md}}` — this Plan section is a higher-level breakdown that feeds into it.
+  - **Risks** — per risk: probability estimate, impact if it fires, concrete mitigation or monitoring hook.
+  - **Validation** — the exact checks (tests, manual steps, metrics) that gate "done".
+- **Compression:**
+  - Decisions = table `decision | rationale | alternatives rejected | triggering constraint`.
+  - Tasks (inline) = `- [ ] area: action — signal` bullets.
+  - Tasks (when referenced by ID elsewhere) = minified JSON: `[{"id":1,"area":"backend","task":"create NotificationEntity","signal":"migration + unit test","estimate":"S"}]`. Estimates use S/M/L; never hour estimates.
+  - Risks = table `risk | prob | impact | mitigation`.
+  - Path / dep / config blocks = minified JSON, one line per logical object: `{"files":{"create":["path/a.ts"],"modify":["path/existing.ts"]}}`, `{"deps":{"npm":["package@version"],"internal":["@add/domain"]}}`, `{"config":{"env":["VAR_NAME"],"files":["path/config.ts"]}}`. Pin versions (no `^` or `~`). Never inline secret values — names only.
+  - Flow notation = arrow chains: `request → validate → enqueue → send → callback`. Branches as sub-lines. Keep flows compact per line; split by sub-heading when one line covers too many steps.
+- **Hard bans:** duplicating about.md problem statement verbatim; tasks without an acceptance signal; rules or rationale inside JSON objects (rules belong in tables/prose); pretty-printed JSON in the doc; **a Global Constraint paraphrased instead of copied verbatim**; **a Global Constraint stated as a vague range** ("fast", "secure", "responsive" — an unreviewable target); **a Global Constraint with no source cited**.
+- **Avoid unless load-bearing:** narrative rationale outside the decisions table.
+
+### feature-design
+
+For `/add-plan` STEP 7.1 — the sole writer of this doc, through the UX pipeline (`@ux-flow-agent` → `@ux-layout-agent` → `@ux-agent` critique → coordinator consolidation).
+
+**Location.** Subfeature-scoped by default: `<feature-dir>/subfeatures/SFxx-<slug>/design.md` when the feature is an epic, `<feature-dir>/design.md` otherwise. Consumers resolve the SF-level file first and fall back to the feature-level one (legacy path, and the shape produced before designs became SF-scoped).
+
+- **Frontmatter** — the exact block both callers write, verbatim:
+
+```yaml
+---
+id: [NNNN]F            # SF-qualified as [NNNN]F-SFxx when the design is scoped to a subfeature
+type: feature-design
+created: YYYY-MM-DD    # today on FIRST write; NEVER overwritten on a re-run
+updated: YYYY-MM-DD    # today, on EVERY write
+related: [[NNNN]F]
+provenance: sha256:<hash of the about.md bytes the design was derived from>
+---
+```
+
+  `id` follows `{{skill:add--id-convention/SKILL.md}}`. `provenance` is the ONLY freshness signal (never mtime, never git status, never "it looks recent") — `/add-plan`'s design gate skips regeneration on a provenance match. ⛔ **Provenance truthfulness:** the hash asserts that the temps just consolidated were derived from the CURRENT `about.md`. It is true only because the authoring dispatches always re-ran — never stamp it over a reused or partially stale temp, or the design gate skips regeneration forever after.
+
+- **Consolidation contract.** `design.md` is written by the COORDINATOR, never by re-dispatching an authoring agent to apply the critique: read the four temps (`design-context.md`, `design-flow.md`, `design-layout.md`, `design-review.md`); decide EVERY critique item `accepted`/`rejected` with a one-line rationale and apply the accepted ones while writing; validate coherence (every classified action has a UI element, every screen a layout, entry points match navigation) and fill the gaps found; write the doc; append `## Design Review`; run this schema's validation gate; only then delete the temps. Keep the prose extractive throughout — tables, bullets, `step → step` sequences, minified JSON for tokens (see Compression below). Change this shape HERE, never in the command.
+- **Sections:** TL;DR · TOC · Screens · Components · Flows · Tokens · Design Contract · References · Design Review. The section's exact heading is `## Design Contract` (pre-referenced by `add-build.md`'s domain-scoped priority rule — must match verbatim); it sits after `Tokens` (it inherits and restates the token/scale commitments declared there) and before `References`.
+- **TOC:** always present — the section list exceeds 3 H2s, so the universal TOC rule in `{{skill:add--doc-schemas/SKILL.md}}` applies unconditionally to this schema.
+- **Depth floor:**
+  - **Screens** — per screen: purpose, primary action, entry points, empty/loading/error states noted, plus the layout tree (see Compression below).
+  - **Components** — per component: name, source (shadcn path or `new`), props if new, states it owns, and what it is composed of (child components, named from the real inventory in `design-context.md`).
+  - **Flows** — the critical user journeys as `step → step → step` with decision branches annotated; a branching journey may instead use a Mermaid `flowchart` block (see Compression below).
+  - **Tokens** — any non-default tokens the feature introduces (colors, spacing, breakpoints).
+  - **`## Design Contract`** — per dimension this feature commits to: what it declares, how it is verified, by what method. Values are inherited from `design-context.md` — this section restates only this feature's commitments and justified deviations. A project dimension left undefined is written `unknown — <why>`, never invented.
+  - **References** — design-system doc, inspiration links, related feature designs.
+  - **Design Review** — the critic's decision trail: table `Item | Severity | Decision | Rationale`, one row per defect the critique raised, each `accepted`/`rejected` with a one-line rationale. An empty critique yields the row-free section carrying the critic's rubric-by-rubric justification in one line.
+- **Compression:**
+  - Screens = table `screen | purpose | primary action | entry` plus one minified JSON **layout tree** per screen: `{"screen":"<id>","regions":[{"role":"header","order":1,"span":{"mobile":"full","desktop":"full"},"component":"<real component name>","contains":["..."],"primaryCta":"<action id, on the region that holds it>"}]}`. Regions/roles/spans/order/component names ONLY — no CSS, no `px`, no per-element styling in the tree.
+  - Components = bullets `name — source — props/states — composed-of: [child component names]`.
+  - Flows = sequence lines (arrow notation as in `feature-plan` above) for linear flows; a Mermaid `flowchart` block is permitted for branching journeys (neither inline SVG nor ASCII — see Hard bans).
+  - Tokens = minified JSON.
+  - Design Contract = markdown table only, columns `Dimension | Declares | Verified by | Method`. Only dimensions with a named verification method belong — the verifiability rule; a claim with no verification method (e.g. "uses TanStack Query") is a plan concern, not a contract line.
+  - Design Review = table only.
+- **Hard bans:** inline SVG, ASCII wireframes (the layout tree above replaces wireframes), fabricated component libraries, per-element styling in the layout tree (no CSS, no `px` — regions/roles/spans/order/component names only), a `Design Review` section that omits the rationale column.
+- **Avoid unless load-bearing:** multiple canonical examples per component (one suffices).
+
+### brainstorm
+
+For `/add-brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). Date prefix is mandatory for chronological tree ordering — and the `THHMMSS` time component is what makes that sentence true: two brainstorms written on the same day sort arbitrarily without it. Local time, no separators inside the time part (Windows forbids `:` in filenames), so lexicographic sort equals chronological sort.
+
+- **Frontmatter:** `id: BRN-<slug>`, `type: brainstorm`, `related: []`
+- **Sections:** TL;DR · Objective · Discovery · Problem · Candidate Directions · Scope (Includes / Does NOT Include) · Key Decisions · Ecosystem Impact · Trade-offs & Risks · Open Threads
+- **Depth floor:**
+  - **Objective** — one or two sentences, in the user's words, answering: what will be true when this is done that is not true today? Drafted by `/add-brainstorm` and corrected by the user. It names an outcome, never the thing being built.
+  - **Discovery** — what already exists near this topic: prior deliveries from the index and related work from the graph, each with its status.
+  - **Problem** — what is bad or missing today, and who feels it.
+  - **Candidate Directions** — per direction: one-line summary, pros, cons. Then the recommended direction with its reason and its named source.
+  - **Scope** — explicit in/out lists per Scope Notation above.
+  - **Key Decisions** — every decision the conversation closed, with the part of the objective it serves.
+  - **Ecosystem Impact** — each area of the project the design changes, and who uses it today. Filled from the graph; `NOT VERIFIED` where no graph answered, never a blank cell.
+  - **Trade-offs & Risks** — what is gained, what is given up, and each risk with its mitigation.
+  - **Open Threads** — the literal `None` at approval.
+- **Compression:** bullets, except the three tables. Directions = `name — summary — pros/cons`. Key Decisions = table `Decision | Serves | Rationale`. Ecosystem Impact = table `Area | Used by | Impact`. Risks = table `risk | prob | mitigation`. Voice follows Brainstorm Voice rules above.
+- **Hard bans:** implementation steps, technical jargon that obscures the user-perspective framing, full class/method implementations or multi-line code blocks (a single illustrative one-shot snippet is allowed to anchor a direction), a `Serves` cell restating the whole objective, a blank `Used by` cell, a question left in Open Threads at approval.
+
+### brainstorm-intent
+
+For `/add-brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its handoff, on the `bounded` and `architectural` paths — never on `spike`). It reuses the brainstorm document's timestamp verbatim when one was written, so the pair sorts adjacent; on `bounded`, where no document is written, it takes its own timestamp and stands alone.
+
+**This is the handoff contract, not a document anyone reads for pleasure.** `/add-new` extracts its decisions without asking a single question, so its whole value is being short enough to be read in one pass and complete enough to be trusted. If it reads like a document, it is too long.
+
+**Narrowing of Universal Document Requirements — declared, not assumed.** This schema keeps `id`, `type` and `created`, adds `path`, `topic`, `doc` and `delivery`, and **relaxes `related`, `tags`, `## TL;DR` and the TOC rule**. The one-screen cap is the artifact's entire purpose, and every relaxed field costs lines without being read by the one consumer this file has.
+
+- **Frontmatter:** `id: BRN-<slug>` (the same id the paired brainstorm carries — no new prefix, and never `status.sh next-id`), `type: brainstorm-intent`, `created: YYYY-MM-DD`, `path: spike|bounded|architectural`, `topic: <slug>`, `doc: <brainstorm document path, or none>`, `delivery: confirm|automatic` (the user's answer to the approval; `{{skill:add--delivery-mode/SKILL.md}}` owns what each value does, and an absent key reads as `confirm`)
+- **Sections:** Objective · Decided · Open · Prior art · Rejected
+- **Depth floor:**
+  - **Objective** — the brainstorm's objective, copied verbatim. On `bounded`, where no brainstorm document exists, this section is the only place it survives the handoff.
+  - **Decided** — one bullet per closed decision, each carrying its one-line rationale and the part of the objective it serves. This is what `/add-new` extracts.
+  - **Open** — the literal word `None` when the conversation closed everything, which is the normal case. Otherwise one bullet per question the conversation could not close. ⛔ **A section that is present but empty is read as absent**, and the reader falls back to the full ceremony — a missing signal means "not closed", never "closed".
+  - **Prior art** — `<id> <status> — <what it was>` per hit, filled from the INDEX and GRAPH steps `/add-brainstorm` STEP 1 already ran, so the reader does not run them again for anything named here.
+  - **Rejected** — one bullet per direction the conversation discarded, with why. It stops the next session re-proposing it.
+- **Compression:** bullets only, no narrative. Every section may read `None`.
+- **Hard bans:** writing a question into **Open** that one more turn of conversation would have settled — it lands in `/add-new` as exactly the redundant questionnaire this artifact exists to remove; restating the brainstorm document; any implementation detail; a `path` value outside the three; writing this file at all on the `spike` path.
+
+### epic
+
+For `/add-new` STEP 5 (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add-build` STEP 16 (block 16.4) and by its Checkpoint Sequence; the `checkpoint` cell is written **only by that sequence, which creates the checkpoint commit and its tag**. Read by `/add-plan` STEP 7.0, `/add-done` STEP 4.1, `status.sh`, and `converge-gates.sh`.
+
+**Compatibility.** `/add-new` STEP 5 has always written this doc freeform ("subfeature table + order + notes" — no fixed frontmatter, TL;DR, or section headings). This schema is additive: every existing `epic.md` is valid as written, nothing gets rewritten. Universal Document Requirements (frontmatter, TL;DR, TOC) bind schema-aware writes going forward; a pre-schema doc missing any of them is read as-is — warn, never fail. The one contract that already binds every `epic.md`, old or new, is the Subfeatures row shape below.
+
+**Reading a legacy table.** `/add-new` STEP 5 never specified a header, so pre-schema docs carry whatever header that run invented. Consumers resolve columns **by header name**, and apply exactly one rule for the legacy case: *a data row with more cells than the header declares has its trailing extra cell read as `checkpoint`* — that is the one cell older `/add-build` runs appended to a row at STEP 16 (block 16.4 turned a 4-cell `pending` row into a 5-cell `done` row); today only `/add-build`'s Checkpoint Sequence writes it, under a header that declares it. One deterministic rule, no inspection of cell contents. A schema-conforming doc never hits it, because its header declares every column it uses.
+
+- **Frontmatter:** `id: [NNNN]F` (same as about), `type: epic`, `related: [[NNNN]F]`
+- **Sections:** TL;DR · Subfeatures · Order (optional) · Notes (optional)
+- **Depth floor:**
+  - **Subfeatures** — one markdown table with a **required header row naming every column it uses**, then one row per subfeature. The header is what makes this table machine-readable and is the single thing this schema adds that `/add-new` never had. Columns: `id` (`SFxx`, zero-padded, unique, ascending), `name`, `objective`, `status` (required — exactly one of `pending`, `in_progress`, `done`, the only three legal values. `status.sh` still matches them as text; every schema-aware consumer resolves the `status` COLUMN by header name and reads its cell — never by string-matching the row), `dependencies` (**optional** — comma-separated `SFxx` ids this row depends on; absent cell = no dependencies), `checkpoint` (**optional** — the checkpoint tag name minus its `checkpoint/` prefix, shape `<FEATURE_ID>-<SFxx>-done`, written only by `/add-build`'s Checkpoint Sequence, which creates the checkpoint commit the tag points at — the per-task commits never write it; absent cell = no checkpoint recorded yet). Both optional columns are resolved **by header name**, never by guessing at cell contents — see the Compatibility rule above for the one legacy case where a header is absent or short.
+  - **Order** (when present) — legacy narrative dependency order (`1. SF01 (no deps)`, `2. SF02 (depends on SF01)`); superseded by the `dependencies` column but still valid on existing docs. Resolve order from `dependencies` when populated, from this section otherwise.
+  - **Notes** — anything not captured by the table (cross-SF constraints, shared resources). Extractive bullets only. May carry one `delivery: automatic|semi-automatic` line, written by `/add-new` at the split and read per `{{skill:add--delivery-mode/SKILL.md}}`.
+- **Compression:** Subfeatures = markdown table `id | name | objective | status | dependencies | checkpoint`. Order = numbered list, one SF per line. Notes = bullets.
+- **Hard bans:** a `status` value outside `pending`/`in_progress`/`done`; a `dependencies` cell naming an id absent from the table; a dependency cycle (an epic whose order cannot be resolved is invalid at the document, not at the loop); a duplicate subfeature `id`; hand-editing `checkpoint` (machine-written only, and only by the command that made the commit it names — a checkpoint cell naming a tag that resolves to no commit is the defect this column exists to make visible).
+
+## Anti-Patterns
+
+| Wrong | Right |
+|---|---|
+| Long paragraphs explaining requirements | Bulleted `**[ID]:**` lines per Requirement Notation |
+| "The system should be fast" | `**RNF01:** response under 200ms` |
+| Decisions without alternatives | Table row with rejected alternative |
+| Edge cases described but not handled | `**[case]:** [defined handling]` |
+| Vague acceptance criteria | Verifiable, testable criteria |
+| Technical jargon in brainstorm | User-perspective language |
+| Scope list with no exclusions | Explicit "Does NOT Include" with reasons |
+| Dropping requirement conditions to shorten the line | Keep the condition; split the line if needed |
+| "Several files will be created" | `{"create":["path/a.ts","path/b.ts"]}` |
+| Paragraphs describing structure | JSON with explicit paths |
+| Tasks without estimates or signals | `task — signal — estimate` |
+| Pretty-printed JSON spanning many lines | Minified, one line per object |
+| Rules or rationale inside a JSON object | Markdown table or prose |
+| Version ranges (`^1.2.0`) in plans | Pinned versions (`1.2.0`) |
+| Hour estimates | S/M/L |

@@ -1,14 +1,14 @@
 #!/bin/bash
 # ============================================
 # CONVERGE-GATES
-# Deterministic, read-only probe for the five /add.done convergence gates
+# Deterministic, read-only probe for the five /add-done convergence gates
 # ============================================
 # Usage: bash .codeadd/scripts/converge-gates.sh <FEATURE_DIR> [SFxx]
 # Dependencies: bash, node >= 18 (manifest read only; guaranteed by the CLI)
 # Output: KEY=VALUE lines. Gate statuses: ok | missing | broken | not-probed,
 #         plus `skipped` on gate 2 only — a pass, counted in GATES_OK.
 #         REVIEW_SOURCE=build|review|none says which verdict gate 1 read:
-#         the `Final review:` line /add.build writes to the scoped
+#         the `Final review:` line /add-build writes to the scoped
 #         build-ledger.md, or the highest review-NNN.md. Most recent wins —
 #         a review numbered ABOVE the one the line names decides; otherwise
 #         the line does. The line's grammar is exactly
@@ -20,9 +20,9 @@
 #         lives in the CLI (cli/src/features.js) and is not duplicated here.
 # Exit: always 0 — this is a diagnosis, never a gate. Exit 2 only on CLI misuse.
 #
-# WHY THIS SCRIPT EXISTS: /add.build's Checkpoint Sequence and /add.done STEP 4
+# WHY THIS SCRIPT EXISTS: /add-build's Checkpoint Sequence and /add-done STEP 4
 # used to evaluate the same five gates as prose, each in its own words. A
-# coordinator graded its own work, reported CONVERGED, and /add.done rejected
+# coordinator graded its own work, reported CONVERGED, and /add-done rejected
 # the tree a second later. One script now backs both verdicts so they cannot
 # drift apart.
 #
@@ -88,7 +88,7 @@ LEDGER_FILE="$LEDGER_SCOPE_DIR/build-ledger.md"
 # Two sources, and the most recent one decides.
 #   - The build's own final review: the LAST `Final review:` line of the scoped
 #     ledger, naming the highest review-NNN.md that existed when it ran.
-#   - /add.review: the highest-numbered review-NNN.md, whose `| **Overall** |`
+#   - /add-review: the highest-numbered review-NNN.md, whose `| **Overall** |`
 #     row must read PASSED.
 # A review numbered ABOVE the one the line names was written after the build's
 # review, so it decides. Otherwise the line decides — including over a review
@@ -186,7 +186,7 @@ emit "REVIEW_SOURCE=$REVIEW_SOURCE"
 # exactly the cases this gate exists to catch.
 
 # When the build's verdict decides there is no review document, so there is no
-# baseline to validate: `skipped`, counted as a pass, BASELINE=none. /add.done
+# baseline to validate: `skipped`, counted as a pass, BASELINE=none. /add-done
 # owns whether QA going unjudged needs the user's word.
 
 BASELINE=""
@@ -231,7 +231,7 @@ emit "BASELINE=$BASELINE"
 # A feature with no epic.md is `ok`, NOT `not-probed`: the gate does not apply,
 # and a simple feature must never be blocked for a gate it was never subject to.
 #
-# T1 reads epic.md as text, exactly as status.sh and /add.done do today. T2's
+# T1 reads epic.md as text, exactly as status.sh and /add-done do today. T2's
 # F19 replaces this block with a schema read; the three outcomes do not change.
 
 EPIC_MD="$FEATURE_DIR/epic.md"
@@ -334,11 +334,11 @@ fi
 emit "EPIC_PENDING=$EPIC_PENDING"
 
 # ─── Gate 4: requirements coverage ───────────────────────────────────────────
-# plan.md's coverage table. This is DELIBERATELY broader than /add.done STEP
+# plan.md's coverage table. This is DELIBERATELY broader than /add-done STEP
 # 4.2's rule, which only ever knew the `| ... | X |` form — that form is written
 # by nothing in the framework, so keying on it alone made the gate unpassable.
 
-# On an epic, plan.md lives at SF level (`add.plan` STEP 4's table, and
+# On an epic, plan.md lives at SF level (`add-plan` STEP 4's table, and
 # SCOPE_DIR). Reading the feature-level path on a scoped run reported `missing`
 # for every subfeature — the gate could never pass on the exact scope the epic
 # loop runs.
@@ -350,7 +350,7 @@ if [ -n "$SF_ARG" ]; then
     PLAN_MD="$sfdir/plan.md"
   done
 elif [ ! -f "$PLAN_MD" ] && [ -d "$FEATURE_DIR/subfeatures" ]; then
-  # Epic-wide run: an epic normally has NO feature-level plan.md — /add.plan
+  # Epic-wide run: an epic normally has NO feature-level plan.md — /add-plan
   # STEP 4 puts the plan at SF level. Reading only the feature root reported
   # `missing` on every healthy epic, which is the same shape as the defect
   # that made this gate unpassable before: a real document in a place the
@@ -363,14 +363,14 @@ elif [ ! -f "$PLAN_MD" ] && [ -d "$FEATURE_DIR/subfeatures" ]; then
 fi
 COVERAGE_UNCOVERED=""
 
-# Two shapes are recognised, because two exist. /add.plan STEP 10 writes an
+# Two shapes are recognised, because two exist. /add-plan STEP 10 writes an
 # UNNAMED table headed `| ID | Requirement | Covered? | ... |` with values
 # YES / EXCLUDED — that is what real plans carry. `## Cobertura de Requisitos`
-# with an `X` marker is the older shape /add.done STEP 4.2 looked for.
+# with an `X` marker is the older shape /add-done STEP 4.2 looked for.
 #
-# When NEITHER exists the gate is `ok`, not `missing`. /add.done's rule was
+# When NEITHER exists the gate is `ok`, not `missing`. /add-done's rule was
 # conditional ("IF plan.md has ## Cobertura de Requisitos"), so an absent table
-# was always a pass-through, and /add.plan STEP 10 is itself a coverage gate at
+# was always a pass-through, and /add-plan STEP 10 is itself a coverage gate at
 # plan time. Making absence blocking would mean no schema-conforming feature
 # could ever converge.
 
@@ -419,7 +419,7 @@ else
 
   if [ "$COV_MODE" = "none" ]; then
     emit "GATE_COVERAGE=ok"
-    emit "GATE_COVERAGE_DETAIL=No coverage table in plan.md; /add.plan STEP 10 owns this gate at plan time"
+    emit "GATE_COVERAGE_DETAIL=No coverage table in plan.md; /add-plan STEP 10 owns this gate at plan time"
     COVERAGE_UNCOVERED=0
     pass
   elif [ "${COVERAGE_UNCOVERED:-1}" -eq 0 ]; then
@@ -455,7 +455,7 @@ fi
 # Asks whether the build HAPPENED. No other gate here does. Gate 1 asks whether
 # the delivery was graded, gate 4 reads a coverage table written at plan time,
 # and gate 3 returns ok unconditionally on a feature with no epic.md — so on a
-# simple feature nothing asked whether /add.build reached its last task.
+# simple feature nothing asked whether /add-build reached its last task.
 # Unwritten code breaks no test: a build that stopped halfway passes every gate
 # above and merges as fully delivered.
 #

@@ -40,7 +40,7 @@ export function TicketMeta({ ticket, layerFilter, showTheme = true, showId = tru
         </span>
       )}
       {/* The feature id, never its path: the path carries a slug that can be
-          renamed, the id cannot. add.new writes it before any build starts. */}
+          renamed, the id cannot. add-new writes it before any build starts. */}
       {ticket.feature && (
         <span translate="no" className="tabular inline-flex items-center gap-1 text-xs text-faint compact:hidden" title={`Feature ${ticket.feature}`}>
           <Package {...ICON} className="size-3.5 shrink-0" />

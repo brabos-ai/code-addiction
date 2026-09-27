@@ -1,6 +1,6 @@
 #!/bin/bash
 # HOTFIX-GATES
-# Deterministic repository-state contracts for /add.diagnose, /add.hotfix and /add.done.
+# Deterministic repository-state contracts for /add-diagnose, /add-hotfix and /add-done.
 #
 # Usage:
 #   bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline

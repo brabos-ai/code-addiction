@@ -77,10 +77,10 @@ describe('L1 — build-side unit', () => {
   // four marker pairs around STEP 10, and the one mistake that ships a broken
   // build is a pair that swallows the playwright anchor.
   it('L1.3 (guard) the plugin:playwright:drive pair is enclosed by no feature pair', () => {
-    const src = read('commands/add.review.md');
+    const src = read('commands/add-review.md');
     const openAt = src.indexOf('<!-- plugin:playwright:drive -->');
     const closeAt = src.indexOf('<!-- /plugin:playwright:drive -->');
-    expect(openAt, 'playwright drive pair is missing from add.review.md').toBeGreaterThan(-1);
+    expect(openAt, 'playwright drive pair is missing from add-review.md').toBeGreaterThan(-1);
     expect(closeAt).toBeGreaterThan(openAt);
 
     // Walk every feature pair and assert none of them spans the anchor.
@@ -94,8 +94,8 @@ describe('L1 — build-side unit', () => {
     }
   });
 
-  it('L1.5 FEATURES[qa-pipeline].commands is add.plan, add.build, add.review', () => {
-    expect(FEATURES['qa-pipeline'].commands).toEqual(['add.plan', 'add.build', 'add.review']);
+  it('L1.5 FEATURES[qa-pipeline].commands is add-plan, add-build, add-review', () => {
+    expect(FEATURES['qa-pipeline'].commands).toEqual(['add-plan', 'add-build', 'add-review']);
   });
 });
 
@@ -112,9 +112,9 @@ const QA_STEP_HEADINGS = [
 const QA_STEP_ORDER_LINES = ['STEP 8: QA Preflight', 'STEP 9: QA Evidence', 'STEP 10: QA Judgement'];
 
 describe('L2 — integration', () => {
-  it('L2.1 with qa-pipeline disabled, add.review carries no STEP 8, 9 or 10', () => {
+  it('L2.1 with qa-pipeline disabled, add-review carries no STEP 8, 9 or 10', () => {
     const cwd = fixture.root();
-    const installed = lf(fs.readFileSync(claudeCommand(cwd, 'add.review'), 'utf8'));
+    const installed = lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'));
 
     for (const heading of QA_STEP_HEADINGS) {
       expect(installed, `${heading} survived with the feature off`).not.toContain(heading);
@@ -126,8 +126,8 @@ describe('L2 — integration', () => {
 
   it('L2.2 with qa-pipeline enabled, all five sections land exactly once and the anchor resolves', () => {
     const cwd = fixture.root();
-    const fragment = path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.review.md');
-    expect(fs.existsSync(fragment), 'fragments/qa-pipeline/add.review.md does not exist').toBe(true);
+    const fragment = path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-review.md');
+    expect(fs.existsSync(fragment), 'fragments/qa-pipeline/add-review.md does not exist').toBe(true);
 
     const sections = parseFragmentSections(fs.readFileSync(fragment, 'utf8'));
     expect([...sections.keys()].sort()).toEqual(
@@ -137,7 +137,7 @@ describe('L2 — integration', () => {
     enableFeature(cwd, 'qa-pipeline');
     expect(warnSpy, 'enable logged a warning — an anchor missed or drifted').not.toHaveBeenCalled();
 
-    const installed = lf(fs.readFileSync(claudeCommand(cwd, 'add.review'), 'utf8'));
+    const installed = lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'));
     for (const [section, body] of sections) {
       const lines = lf(body).split('\n');
       if (lines.length && lines[lines.length - 1] === '') lines.pop();
@@ -152,7 +152,7 @@ describe('L2 — integration', () => {
     // The MARKER never survives — build.js strips every HTML comment. What has
     // to survive is the ANCHOR the plugin injects at, which the sidecar records.
     const drive = sidecarPoints().find(
-      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.resource.name === 'add.review',
+      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.resource.name === 'add-review',
     );
     expect(drive, 'the playwright drive point left the sidecar').toBeTruthy();
     expect(installed, `the playwright anchor "${drive.anchor.text}" did not survive the injection`)
@@ -181,12 +181,12 @@ describe('L2 — integration', () => {
     const qaFirst = fixture.root();
     enableFeature(qaFirst, 'qa-pipeline');
     enablePlugin(qaFirst, 'playwright');
-    const a = lf(fs.readFileSync(claudeCommand(qaFirst, 'add.review'), 'utf8'));
+    const a = lf(fs.readFileSync(claudeCommand(qaFirst, 'add-review'), 'utf8'));
 
     const pwFirst = fixture.root();
     enablePlugin(pwFirst, 'playwright');
     enableFeature(pwFirst, 'qa-pipeline');
-    const b = lf(fs.readFileSync(claudeCommand(pwFirst, 'add.review'), 'utf8'));
+    const b = lf(fs.readFileSync(claudeCommand(pwFirst, 'add-review'), 'utf8'));
 
     for (const [label, s] of [['qa-then-playwright', a], ['playwright-then-qa', b]]) {
       expect(drive(s), `${label}: the drive block is missing`).toBeGreaterThan(-1);
@@ -202,7 +202,7 @@ describe('L2 — integration', () => {
   // The seam only works while it is the last thing before the plugin pair. A
   // feature pair inserted between them would take the anchor back.
   it('L2.10 the plugin pair is anchored by the seam line, not by a shared one', () => {
-    const src = read('commands/add.review.md');
+    const src = read('commands/add-review.md');
     const seam = src.indexOf('**Live driving is a `playwright` plugin enhancement');
     const pair = src.indexOf('<!-- plugin:playwright:drive -->');
     expect(seam, 'the seam line is gone').toBeGreaterThan(-1);
@@ -214,7 +214,7 @@ describe('L2 — integration', () => {
       .not.toContain('<!-- feature:');
 
     const drivePoint = sidecarPoints().find(
-      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.resource.name === 'add.review',
+      (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.resource.name === 'add-review',
     );
     expect(drivePoint.anchor.text, 'the plugin anchor is not the seam line')
       .toContain('Live driving is a `playwright` plugin enhancement');
@@ -225,7 +225,7 @@ describe('L2 — integration', () => {
   // rewrote, nor about the command description. Both are what a reader meets
   // first on the feature-off branch.
   it('L2.11 the ungated text that describes the boundary names both states', () => {
-    const src = read('commands/add.review.md');
+    const src = read('commands/add-review.md');
 
     // The one-line description: it used to promise the judgement outright.
     const desc = src.slice(src.indexOf('Coordinator for feature review.'), src.indexOf('Coordinator for feature review.') + 420);
@@ -242,20 +242,20 @@ describe('L2 — integration', () => {
   // F13 had no assertion anywhere: deleting every MODEL line broke no test.
   it('L2.12 the final attempt escalates the model, at both surviving dispatch sites', () => {
     const agent = read('agents/test-agent.md');
-    const fragment = read('fragments/tdd-pipeline/add.build.md');
+    const fragment = read('fragments/tdd-pipeline/add-build.md');
 
     expect(agent, 'test-agent no longer declares MODEL as an input')
       .toMatch(/`MODEL` — present on the FINAL attempt only/);
     expect(fragment, 'the build fragment no longer passes MODEL on the final attempt')
       .toMatch(/On the FINAL attempt only/);
-    for (const [label, body] of [['test-agent', agent], ['tdd-pipeline/add.build', fragment]]) {
+    for (const [label, body] of [['test-agent', agent], ['tdd-pipeline/add-build', fragment]]) {
       expect(body, `${label}: the escalation no longer names a tier`).toContain('one tier above');
     }
 
     // The hotfix dispatch is the third site the plan named and it is deliberately
     // NOT here: that flow dispatches once, so it has no earlier attempt to
     // escalate from. F38 removed the line and its cap is 1.
-    const hotfix = read('fragments/tdd-pipeline/add.hotfix.md');
+    const hotfix = read('fragments/tdd-pipeline/add-hotfix.md');
     expect(hotfix, 'the hotfix dispatch grew a MODEL escalation it cannot reach')
       .not.toContain('one tier above');
     expect(hotfix, 'the hotfix cap is not 1').toContain('MAX_ATTEMPTS = 1');
@@ -263,15 +263,15 @@ describe('L2 — integration', () => {
 
   // GUARD, not RED→GREEN. STEP 11 is ungated and must stay ungated: F17 edits
   // one of its rows, and the failure mode is moving the whole step by accident.
-  it('L2.3 (guard) add.review keeps STEP 11 in both feature states', () => {
+  it('L2.3 (guard) add-review keeps STEP 11 in both feature states', () => {
     const cwd = fixture.root();
     const heading = '## STEP 11: Quality Gate Report';
 
-    expect(lf(fs.readFileSync(claudeCommand(cwd, 'add.review'), 'utf8'))).toContain(heading);
+    expect(lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'))).toContain(heading);
     enableFeature(cwd, 'qa-pipeline');
-    expect(lf(fs.readFileSync(claudeCommand(cwd, 'add.review'), 'utf8'))).toContain(heading);
+    expect(lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'))).toContain(heading);
     disableFeature(cwd, 'qa-pipeline');
-    expect(lf(fs.readFileSync(claudeCommand(cwd, 'add.review'), 'utf8'))).toContain(heading);
+    expect(lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'))).toContain(heading);
   });
 
   it('L2.4 no source under framwork/.codeadd/ still describes the old agent contracts', () => {
@@ -299,7 +299,7 @@ describe('L2 — integration', () => {
         // A singular `AREA` is LEGITIMATE as @test-agent's input — the plan kept
         // that agent per-area on purpose ("Merge @test-agent the same way? No"),
         // so the scan has to ask WHO a line is talking about. Testing the file
-        // as a whole cannot: add.build.md and the tdd-pipeline fragment each
+        // as a whole cannot: add-build.md and the tdd-pipeline fragment each
         // name both agents, so `AREA` anywhere plus `fix-agent` anywhere reports
         // @test-agent's own input contract as a fix-agent regression.
         //
@@ -338,19 +338,19 @@ describe('L2 — integration', () => {
       .toContain('KNOWN_FAILURES');
   });
 
-  it('L2.6 add.qa-setup.md names add.review in its feature-off sentence', () => {
-    const body = read('commands/add.qa-setup.md');
+  it('L2.6 add-qa-setup.md names add-review in its feature-off sentence', () => {
+    const body = read('commands/add-qa-setup.md');
     const sentence = body
       .split('\n')
       .find((l) => l.includes('inert while the `qa-pipeline` feature is off'));
     expect(sentence, 'the feature-off sentence is gone or was reworded').toBeTruthy();
-    expect(sentence).toContain('add.plan');
-    expect(sentence).toContain('add.build');
-    expect(sentence, 'the feature-off sentence still omits add.review').toContain('add.review');
+    expect(sentence).toContain('add-plan');
+    expect(sentence).toContain('add-build');
+    expect(sentence, 'the feature-off sentence still omits add-review').toContain('add-review');
   });
 
-  it('L2.7 add-qa/SKILL.md says the feature gates judgement', () => {
-    const body = read('skills/add-qa/SKILL.md');
+  it('L2.7 add--qa/SKILL.md says the feature gates judgement', () => {
+    const body = read('skills/add--qa/SKILL.md');
     const statement = body
       .split('\n')
       .find((l) => l.includes('Feature vs plugin (canonical statement)'));
@@ -381,7 +381,7 @@ describe('L2 — integration', () => {
   // reader on the feature-off branch is told the step is not there. That is the
   // shape F26 wrote by hand and this level now enforces for every line.
   it('L2.8 every STEP 8/9/10 pointer left in the base command names the feature that supplies it', () => {
-    const src = read('commands/add.review.md');
+    const src = read('commands/add-review.md');
     const offenders = [];
     for (const [line] of src.matchAll(/^.*STEP (?:8|9|10).*$/gm)) {
       if (/qa-pipeline/.test(line)) continue;
@@ -393,8 +393,8 @@ describe('L2 — integration', () => {
   // REVIEW_SCOPE is the one that breaks a document rather than confusing a reader,
   // so it gets its own assertion rather than riding on L2.8's line scan.
   it('L2.9 the review scope is resolved in the ungated body, not in a QA step', () => {
-    const src = read('commands/add.review.md');
-    const frag = read('fragments/qa-pipeline/add.review.md');
+    const src = read('commands/add-review.md');
+    const frag = read('fragments/qa-pipeline/add-review.md');
 
     expect(src, 'REVIEW_SCOPE is still written into the review frontmatter')
       .toContain('scope: ${REVIEW_SCOPE}');
@@ -418,10 +418,10 @@ describe('L3 — combination matrix', () => {
     // Both bodies come from the FRAGMENTS, so this asserts the injected text
     // landed — not that the base body happens to carry the same words.
     const stepListBody = (feature) => {
-      const file = path.join(CODEADD, 'fragments', feature, 'add.review.md');
-      expect(fs.existsSync(file), `fragments/${feature}/add.review.md does not exist`).toBe(true);
+      const file = path.join(CODEADD, 'fragments', feature, 'add-review.md');
+      expect(fs.existsSync(file), `fragments/${feature}/add-review.md does not exist`).toBe(true);
       const body = parseFragmentSections(fs.readFileSync(file, 'utf8')).get('step-list');
-      expect(body, `${feature}/add.review.md declares no step-list section`).toBeTruthy();
+      expect(body, `${feature}/add-review.md declares no step-list section`).toBeTruthy();
       const lines = lf(body).split('\n');
       if (lines.length && lines[lines.length - 1] === '') lines.pop();
       return lines.join('\n');
@@ -432,7 +432,7 @@ describe('L3 — combination matrix', () => {
     const cwd = fixture.root();
     enableFeature(cwd, 'qa-pipeline');
     enableFeature(cwd, 'tdd-pipeline');
-    const qaThenTdd = lf(fs.readFileSync(claudeCommand(cwd, 'add.review'), 'utf8'));
+    const qaThenTdd = lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'));
 
     const fenceStart = qaThenTdd.indexOf('**STEPS IN ORDER:**');
     expect(fenceStart, 'the STEP-order block is gone').toBeGreaterThan(-1);
@@ -446,7 +446,7 @@ describe('L3 — combination matrix', () => {
     const other = fixture.root();
     enableFeature(other, 'tdd-pipeline');
     enableFeature(other, 'qa-pipeline');
-    const tddThenQa = lf(fs.readFileSync(claudeCommand(other, 'add.review'), 'utf8'));
+    const tddThenQa = lf(fs.readFileSync(claudeCommand(other, 'add-review'), 'utf8'));
     expect(tddThenQa, 'enable order changes the bytes').toBe(qaThenTdd);
   });
 });
@@ -512,8 +512,8 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     }
   });
 
-  it('L4.3 add.review has no ungated QA dispatch left in its base body', () => {
-    const body = read('commands/add.review.md');
+  it('L4.3 add-review has no ungated QA dispatch left in its base body', () => {
+    const body = read('commands/add-review.md');
     expect(body, '@ux-agent is still dispatched from the ungated base body')
       .not.toMatch(/DISPATCH AGENTS?: `@ux-agent`/);
     expect(body, 'the coverage blocker is still authored in the ungated base body')
@@ -522,7 +522,7 @@ describe('L4 — behavioural acceptance (contract text)', () => {
 
   it('L4.4 the tdd-pipeline build fragment interleaves one agent at a time', () => {
     const body = lf(
-      fs.readFileSync(path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add.build.md'), 'utf8'),
+      fs.readFileSync(path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add-build.md'), 'utf8'),
     );
 
     expect(body, 'the interleaved order is not written down')
@@ -539,7 +539,7 @@ describe('L4 — behavioural acceptance (contract text)', () => {
 
   it('L4.4 the hotfix fragment carries the cap on its CORRECTION dispatch', () => {
     const body = lf(
-      fs.readFileSync(path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add.hotfix.md'), 'utf8'),
+      fs.readFileSync(path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add-hotfix.md'), 'utf8'),
     );
     expect(body, 'ATTEMPT is not carried').toContain('ATTEMPT');
     expect(body, 'MAX_ATTEMPTS is not carried').toContain('MAX_ATTEMPTS');
@@ -568,7 +568,7 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     expect(opening, 'the exclusion does not forbid declaring the red an expected failure')
       .toContain('no xfail, no test.fails(), no test.failing()');
 
-    const hotfix = read('fragments/tdd-pipeline/add.hotfix.md');
+    const hotfix = read('fragments/tdd-pipeline/add-hotfix.md');
     const reportAt = hotfix.indexOf('- **Report:**');
     expect(reportAt, 'the hotfix dispatch has no Report line').toBeGreaterThan(-1);
     expect(
@@ -577,11 +577,11 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     ).not.toContain('`BLOCKED`,');
   });
 
-  it('L4.2 add.build dispatches against the new contracts', () => {
-    const build = read('commands/add.build.md');
+  it('L4.2 add-build dispatches against the new contracts', () => {
+    const build = read('commands/add-build.md');
     expect(build, 'the fix dispatch is still one per area').not.toMatch(/one per affected area, parallel across areas/);
     expect(build, 'the fix dispatch does not pass AREAS').toMatch(/`AREAS`/);
-    // NOT `toMatch(/BLOCKED/)`. add.build says BLOCKED six times, one of them in
+    // NOT `toMatch(/BLOCKED/)`. add-build says BLOCKED six times, one of them in
     // the Agent Roster row, so the bare match stayed green with the whole
     // in-flight routing section deleted. What F11 delivers is the synthesis
     // path: a BLOCKED report becomes a routed row in the SAME run, through the
@@ -591,9 +591,9 @@ describe('L4 — behavioural acceptance (contract text)', () => {
     expect(build, 'the routing no longer says it needs no review document')
       .toMatch(/No review document is involved/i);
 
-    // F8's own subject: implementers run one at a time, in add.build's UNGATED
+    // F8's own subject: implementers run one at a time, in add-build's UNGATED
     // body. The plan called serialising them its highest-probability risk and no
-    // level reached it — L4.4's add.build half checked AREAS and the word
+    // level reached it — L4.4's add-build half checked AREAS and the word
     // BLOCKED, both of which are F7 and F11.
     expect(build, 'STEP 10.1 no longer says one implementation agent at a time')
       .toMatch(/ONE IMPLEMENTATION AGENT AT A TIME/);
@@ -604,18 +604,18 @@ describe('L4 — behavioural acceptance (contract text)', () => {
   // add.plan-to-ready's own correction leg (AREAS/MAX_ATTEMPTS/KNOWN_FAILURES on
   // its test dispatch) is gone with the command — plan
   // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed it. It was a
-  // duplicate of the tdd-pipeline fragment's dispatch on add.build, already
+  // duplicate of the tdd-pipeline fragment's dispatch on add-build, already
   // asserted above in "L4.4 the tdd-pipeline build fragment interleaves one
   // agent at a time" — nothing new to re-point at.
 
-  it('L2.4/L4 add-ecosystem describes the end state of both halves', () => {
-    const body = read('skills/add-ecosystem/SKILL.md');
+  it('L2.4/L4 add--ecosystem describes the end state of both halves', () => {
+    const body = read('skills/add--ecosystem/SKILL.md');
     expect(body, 'the test-agent row still says it runs them until green')
       .not.toMatch(/runs? them until green/i);
-    expect(body, 'the add.review row still claims it self-gates on the receipt')
+    expect(body, 'the add-review row still claims it self-gates on the receipt')
       .not.toMatch(/self-gating on the `\/add\.qa-setup` receipt/);
     const qaRow = body.split('\n').find((l) => /^\| qa-pipeline \|/.test(l));
     expect(qaRow, 'the Features table has no qa-pipeline row').toBeTruthy();
-    expect(qaRow, 'the Features table row still omits add.review').toContain('add.review');
+    expect(qaRow, 'the Features table row still omits add-review').toContain('add-review');
   });
 });

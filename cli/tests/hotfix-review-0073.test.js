@@ -25,14 +25,14 @@ import { treeFixture } from './helpers/tree-fixture.js';
  * Red-Green Validation Matrix, levels L1 through L4.
  *
  * Every level here was written RED against the pre-0073 tree: the three judge
- * agents did not exist, add.hotfix was not a tdd-pipeline target, and neither
+ * agents did not exist, add-hotfix was not a tdd-pipeline target, and neither
  * STEP 9 nor STEP 10 existed. A level that passes before its F-block lands is a
  * level that does not bite.
  *
  * L3 (combination matrix) and the enable/disable round-trip are NOT duplicated
  * here: injection-exclusivity.integration.test.js and
  * injection-roundtrip.integration.test.js are data-driven off FEATURES and the
- * sidecar, so they pick up add.hotfix automatically once F7 registers it. Their
+ * sidecar, so they pick up add-hotfix automatically once F7 registers it. Their
  * hardcoded point total is the one thing that must move, asserted there.
  */
 
@@ -49,7 +49,7 @@ const MAP = readMap();
 const read = (p) => fs.readFileSync(p, 'utf8');
 const sidecarPoints = () => JSON.parse(read(SIDECAR)).points;
 
-const HOTFIX_SRC = () => read(path.join(COMMANDS, 'add.hotfix.md'));
+const HOTFIX_SRC = () => read(path.join(COMMANDS, 'add-hotfix.md'));
 const JUDGES = ['security-agent', 'conformance-agent', 'failure-analysis-agent'];
 
 /** Providers that receive agent files, per the build registry. */
@@ -79,16 +79,16 @@ function stepNumbers(src) {
 // ---------------------------------------------------------------------------
 
 describe('0073 L1 — build side', () => {
-  it('L1.2 add.hotfix carries exactly one tdd-pipeline injection point', () => {
+  it('L1.2 add-hotfix carries exactly one tdd-pipeline injection point', () => {
     const pts = sidecarPoints().filter(
-      (p) => p.namespace === 'feature' && p.name === 'tdd-pipeline' && p.resource.name === 'add.hotfix',
+      (p) => p.namespace === 'feature' && p.name === 'tdd-pipeline' && p.resource.name === 'add-hotfix',
     );
     expect(pts).toHaveLength(1);
     expect(pts[0].anchor.text).not.toMatch(/\{\{(?:cmd|skill|addpath):/);
     expect(pts[0].anchor.text.length).toBeGreaterThan(0);
   });
 
-  it('L1.2 the tdd-pipeline marker pair in add.hotfix is empty and balanced', () => {
+  it('L1.2 the tdd-pipeline marker pair in add-hotfix is empty and balanced', () => {
     const src = HOTFIX_SRC();
     const opens = src.match(/<!-- feature:tdd-pipeline:[a-z0-9-]+ -->/g) || [];
     const pairs =
@@ -97,18 +97,18 @@ describe('0073 L1 — build side', () => {
     expect(pairs.length).toBe(opens.length);
   });
 
-  it('L1.3 every built provider copy of add.hotfix is marker-free', () => {
+  it('L1.3 every built provider copy of add-hotfix is marker-free', () => {
     for (const [key, p] of Object.entries(MAP.providers)) {
       if (!p.commands) continue;
-      const file = path.join(ROOT, p.dir, p.commands.replace('{name}', 'add.hotfix'));
+      const file = path.join(ROOT, p.dir, p.commands.replace('{name}', 'add-hotfix'));
       if (!fs.existsSync(file)) continue;
-      expect(read(file), `${key} add.hotfix`).not.toMatch(/<!--\s*\/?(?:feature|plugin):/);
+      expect(read(file), `${key} add-hotfix`).not.toMatch(/<!--\s*\/?(?:feature|plugin):/);
     }
   });
 
-  it('L1.4 the gitnexus anchor on add.hotfix is preserved byte-for-byte', () => {
+  it('L1.4 the gitnexus anchor on add-hotfix is preserved byte-for-byte', () => {
     const gitnexus = sidecarPoints().filter(
-      (p) => p.namespace === 'plugin' && p.name === 'gitnexus' && p.resource.name === 'add.hotfix',
+      (p) => p.namespace === 'plugin' && p.name === 'gitnexus' && p.resource.name === 'add-hotfix',
     );
     expect(gitnexus).toHaveLength(1);
     // These two strings are the contract F5 must not disturb. The anchor line
@@ -170,7 +170,7 @@ describe('0073 L1 — build side', () => {
 // L2 — CLI feature toggle
 // ---------------------------------------------------------------------------
 
-describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
+describe('0073 L2 — tdd-pipeline reaches add-hotfix', () => {
   let tmp;
 
   // Already scoped to this describe before the shared helper existed, and it
@@ -195,17 +195,17 @@ describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
   afterEach(() => fixture.cleanup());
   afterAll(() => fixture.dispose());
 
-  const installed = () => path.join(tmp, '.claude', 'commands', 'add.hotfix.md');
+  const installed = () => path.join(tmp, '.claude', 'commands', 'add-hotfix.md');
 
   // Two of the four tests below read the registry and the fragment tree and
   // never open a project root. They used to get one anyway, which is what made
   // this file the one that got SLOWER when it moved onto the shared helper.
-  it('L2.1 the registry lists add.hotfix as a tdd-pipeline target', () => {
-    expect(FEATURES['tdd-pipeline'].commands).toContain('add.hotfix');
+  it('L2.1 the registry lists add-hotfix as a tdd-pipeline target', () => {
+    expect(FEATURES['tdd-pipeline'].commands).toContain('add-hotfix');
   });
 
-  it('L2.1 a fragment exists for add.hotfix', () => {
-    expect(fs.existsSync(path.join(FRAGMENTS, 'tdd-pipeline', 'add.hotfix.md'))).toBe(true);
+  it('L2.1 a fragment exists for add-hotfix', () => {
+    expect(fs.existsSync(path.join(FRAGMENTS, 'tdd-pipeline', 'add-hotfix.md'))).toBe(true);
   });
 
   it('L2.2 disabled: the installed command carries no RED block', () => {
@@ -229,7 +229,7 @@ describe('0073 L2 — tdd-pipeline reaches add.hotfix', () => {
     expect(after).toMatch(/@test-agent/);
     expect(after).toMatch(/RED_TEST/);
 
-    const fragment = read(path.join(FRAGMENTS, 'tdd-pipeline', 'add.hotfix.md'));
+    const fragment = read(path.join(FRAGMENTS, 'tdd-pipeline', 'add-hotfix.md'));
     const sections = [...fragment.matchAll(/<!-- section:([a-z0-9-]+) -->/g)].map((m) => m[1]);
     expect(sections.length).toBeGreaterThan(0);
 
@@ -281,7 +281,7 @@ describe('0073 L4 — behavioural acceptance', () => {
   });
 
   it('L4.4 RED is coordinator-verified and the escape is recorded', () => {
-    const frag = read(path.join(FRAGMENTS, 'tdd-pipeline', 'add.hotfix.md'));
+    const frag = read(path.join(FRAGMENTS, 'tdd-pipeline', 'add-hotfix.md'));
     expect(frag).toMatch(/RED_TEST: none/);
     expect(frag).toMatch(/REASON/);
     // The agent's own report field is never the proof.
@@ -295,7 +295,7 @@ describe('0073 L4 — behavioural acceptance', () => {
     expect(src).toMatch(/git diff --name-only/);
     expect(src).toMatch(/unverifiable/i);
     expect(src).toMatch(/wiki-drift/);
-    expect(src).toMatch(/add\.wiki/);
+    expect(src).toMatch(/add-wiki/);
   });
 
   it('L4.6 the corrective pass re-verifies the build and the RED test', () => {
@@ -347,7 +347,7 @@ describe('0073 L4 — behavioural acceptance', () => {
   });
 
   it('L4.10 hotfix declares a Review section', () => {
-    const fix = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
+    const fix = read(path.join(SKILLS, 'add--doc-schemas', 'references', 'fix.md'));
     const about = fix.slice(fix.indexOf('### hotfix'));
     expect(about).toMatch(/\bReview\b/);
     expect(about).toMatch(/disposition/i);

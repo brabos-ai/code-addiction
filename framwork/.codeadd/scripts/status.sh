@@ -187,7 +187,7 @@ if [ -n "$FEATURE_ID" ]; then
         [ -n "$DOCS_LIST" ] && echo "DOCS:$DOCS_LIST" || true
         echo "HAS_DESIGN:$HAS_DESIGN"
 
-        # Iterations context (previous /add.build sessions) — JSONL format
+        # Iterations context (previous /add-build sessions) — JSONL format
         ITERATIONS_FILE="$FEATURE_DIR/iterations.jsonl"
         if [ -f "$ITERATIONS_FILE" ]; then
             # Count iterations (each line is a JSON entry)
@@ -439,7 +439,7 @@ fi
 # =============================================================================
 # A feature is PENDING when its docs dir has about.md, lacks changelog.md, and
 # no local branch */<dirname> exists. These are invisible to branch detection —
-# this backlog keeps pre-created feature docs visible before /add.build runs.
+# this backlog keeps pre-created feature docs visible before /add-build runs.
 
 PENDING_FIRST_ID=""
 for _fdir in docs/features/[0-9][0-9][0-9][0-9][A-Z]-*; do
@@ -616,11 +616,11 @@ if [ -f "$WIKI_INDEX" ]; then
         echo "WIKI_STALE_COUNT:$STALE_COUNT"
 
         if [ "$STALE_COUNT" -gt 0 ]; then
-            echo "WIKI_HINT:Wiki may be stale ($STALE_COUNT source changes) — /add.wiki update"
+            echo "WIKI_HINT:Wiki may be stale ($STALE_COUNT source changes) — /add-wiki update"
         fi
     else
         echo "WIKI_STALE_COUNT:unknown"
-        echo "WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"
+        echo "WIKI_HINT:Wiki stamp unreachable — consider /add-wiki update"
     fi
 elif [ -d ".codeadd/project" ]; then
     # Legacy: fall back to old .codeadd/project/*.md format
@@ -634,15 +634,15 @@ elif [ -d ".codeadd/project" ]; then
         PROJECT_COUNT=$(echo "$PROJECT_FILES" | tr ',' '\n' | wc -l | tr -d ' \r\n')
         echo "PROJECT_PATTERNS:$PROJECT_COUNT"
         echo "PROJECT_DOCS:.codeadd/project/{$PROJECT_FILES}.md"
-        echo "PROJECT_HINT:Run /add.wiki to upgrade to the wiki knowledge base"
+        echo "PROJECT_HINT:Run /add-wiki to upgrade to the wiki knowledge base"
     fi
 else
     echo "WIKI:absent"
-    echo "WIKI_HINT:Run /add.wiki to generate the knowledge base"
+    echo "WIKI_HINT:Run /add-wiki to generate the knowledge base"
 fi
 
 # =============================================================================
-# OUTPUT: SETUP SHAPE (materialized-state staleness — add.qa-setup)
+# OUTPUT: SETUP SHAPE (materialized-state staleness — add-qa-setup)
 # =============================================================================
 # Identity is the shape hash. Pure grep/sed/awk (no jq). Every capture is
 # guarded: this script runs under `set -euo pipefail` as STEP 1 of every
@@ -670,7 +670,7 @@ if [ -f "$SETUP_RECEIPT" ]; then
 
     CURRENT=""
     if [ -f "$CONTRACTS_SIDECAR" ]; then
-        CURRENT=$(awk '/"add\.qa-setup"[[:space:]]*:/{f=1}
+        CURRENT=$(awk '/"add-qa-setup"[[:space:]]*:/{f=1}
                        f && /"shape"[[:space:]]*:[[:space:]]*"sha256:[0-9a-f]+"/{
                            if (match($0, /sha256:[0-9a-f]+/)) print substr($0, RSTART, RLENGTH);
                            exit
@@ -681,18 +681,18 @@ if [ -f "$SETUP_RECEIPT" ]; then
     if [ -n "$RECORDED" ] && [ -n "$CURRENT" ]; then
         if [ "$RECORDED" != "$CURRENT" ]; then
             echo "SETUP_QA_STALE:yes"
-            echo "SETUP_QA_HINT:QA setup does not match the shipped shape — /add.qa-setup"
+            echo "SETUP_QA_HINT:QA setup does not match the shipped shape — /add-qa-setup"
         fi
     elif [ -z "$CURRENT" ]; then
         : # Pre-contracts install — stay silent, never guess.
     else
         echo "SETUP_QA_STALE:yes"
-        echo "SETUP_QA_HINT:QA receipt carries no readable setup-shape — /add.qa-setup"
+        echo "SETUP_QA_HINT:QA receipt carries no readable setup-shape — /add-qa-setup"
     fi
 elif setup_materialized; then
     echo "SETUP_QA:stale"
     echo "SETUP_QA_STALE:yes"
-    echo "SETUP_QA_HINT:QA state exists without a current receipt — /add.qa-setup"
+    echo "SETUP_QA_HINT:QA state exists without a current receipt — /add-qa-setup"
 else
     echo "SETUP_QA:absent"
 fi
@@ -706,23 +706,23 @@ RECS=""
 # Based on state
 if [ "$BRANCH_TYPE" = "main" ]; then
     if [ -n "$PENDING_FIRST_ID" ]; then
-        RECS="/add.build $PENDING_FIRST_ID or /add.new to start"
+        RECS="/add-build $PENDING_FIRST_ID or /add-new to start"
     else
-        RECS="/add.new to start"
+        RECS="/add-new to start"
     fi
 elif [ "$BRANCH_TYPE" = "hotfix" ]; then
-    RECS="/add.done"
+    RECS="/add-done"
 elif [ -n "$FEATURE_ID" ]; then
     if [ ! -d "$FEATURE_DIR" ]; then
-        RECS="/add.new to setup"
+        RECS="/add-new to setup"
     elif [ "$PHASE" = "created" ] || [ "$PHASE" = "documented" ]; then
-        RECS="/add.new to complete discovery"
+        RECS="/add-new to complete discovery"
     elif [ "$PHASE" = "discovered" ] || [ "$PHASE" = "designed" ]; then
-        RECS="/add.plan to create plan"
+        RECS="/add-plan to create plan"
     elif [ "$PHASE" = "planned" ]; then
-        RECS="/add.build to implement"
+        RECS="/add-build to implement"
     elif [ "$PHASE" = "done" ]; then
-        RECS="/add.review or /add.done"
+        RECS="/add-review or /add-done"
     fi
 fi
 

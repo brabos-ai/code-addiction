@@ -6,7 +6,7 @@
 -->
 
 <!--
-`backlog.sh`, `backlog-commit.sh` and `add-doc-schemas/references/backlog.md`
+`backlog.sh`, `backlog-commit.sh` and `add--doc-schemas/references/backlog.md`
 are PRODUCT nodes, named in prose below on purpose and deliberately NOT
 declared: `uses:` targets resolve inside the declaring artefact's own layer
 (scripts/build.js), so `- script: backlog.sh` from here would resolve to
@@ -83,7 +83,7 @@ bash framwork/.codeadd/scripts/backlog.sh list --all
 ```
 
 Its output is `KEY=VALUE` lines, then one ticket per line starting with `{`. Line order is the
-priority: the first ticket is the highest. `add-doc-schemas/references/backlog.md` owns the fields
+priority: the first ticket is the highest. `add--doc-schemas/references/backlog.md` owns the fields
 and the keys.
 
 - `BACKLOG_PRESENT=no` → the board does not exist yet. That is a result, not an error: the first add
@@ -206,7 +206,7 @@ applies.
 ```
 IF THE OUTPUT CARRIES REFUSED=<name>:
   ⛔ DO NOT: Retry with the field removed or the value changed on your own
-  ✅ DO: Report the refusal by name — add-doc-schemas/references/backlog.md says what each means —
+  ✅ DO: Report the refusal by name — add--doc-schemas/references/backlog.md says what each means —
          and STOP
 
 IF THE OUTPUT CARRIES DEGRADED=<reason>:

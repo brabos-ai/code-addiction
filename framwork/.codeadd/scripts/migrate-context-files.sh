@@ -12,7 +12,7 @@
 #
 # Candidates, in this order: CLAUDE.md, .claude/CLAUDE.md, GEMINI.md
 #   AGENTS.md absent     → the candidate becomes AGENTS.md verbatim
-#   already contained    → nothing is carried (the old add.wiki copies:
+#   already contained    → nothing is carried (the old add-wiki copies:
 #                          AGENTS.md = CLAUDE.md + shell policy, GEMINI.md = copy)
 #   otherwise            → appended whole under "## Migrated from <file>"
 # The candidate is deleted only after AGENTS.md was written. "Contained" compares

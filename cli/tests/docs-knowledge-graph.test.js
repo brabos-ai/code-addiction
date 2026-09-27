@@ -5,7 +5,7 @@ import path from 'node:path';
 /**
  * Plan 2026-09-12T104012 — Docs Knowledge Graph MCP.
  * The Validation Matrix's document-format half: L1.2, L1.3, and the schema-text
- * levels of L2 and L4 that assert what `add-doc-schemas` and the two authoring
+ * levels of L2 and L4 that assert what `add--doc-schemas` and the two authoring
  * commands must say.
  *
  * Every level here was written RED against the pre-plan tree and confirmed
@@ -21,21 +21,21 @@ const SKILLS = path.join(CODEADD, 'skills');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
-const DOC_SCHEMAS = read(path.join(SKILLS, 'add-doc-schemas', 'SKILL.md'));
-const NEW_FEATURE = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'new-feature.md'));
-const HISTORY = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'history.md'));
-const FIX = read(path.join(SKILLS, 'add-doc-schemas', 'references', 'fix.md'));
+const DOC_SCHEMAS = read(path.join(SKILLS, 'add--doc-schemas', 'SKILL.md'));
+const NEW_FEATURE = read(path.join(SKILLS, 'add--doc-schemas', 'references', 'new-feature.md'));
+const HISTORY = read(path.join(SKILLS, 'add--doc-schemas', 'references', 'history.md'));
+const FIX = read(path.join(SKILLS, 'add--doc-schemas', 'references', 'fix.md'));
 
 const COMMANDS = path.join(CODEADD, 'commands');
-const ADD_NEW = read(path.join(COMMANDS, 'add.new.md'));
-// add.new carried the Relations/tags authoring rules inline until
-// add-feature-specification became the single writer of about.md, reached from
-// both /add.new and /add.brainstorm's offer to continue. A rule left in the
+const ADD_NEW = read(path.join(COMMANDS, 'add-new.md'));
+// add-new carried the Relations/tags authoring rules inline until
+// add--feature-specification became the single writer of about.md, reached from
+// both /add-new and /add-brainstorm's offer to continue. A rule left in the
 // command would have applied on one entry point and not the other.
 const FEATURE_SPEC = read(
-  path.join(COMMANDS, '..', 'skills', 'add-feature-specification', 'SKILL.md'),
+  path.join(COMMANDS, '..', 'skills', 'add--feature-specification', 'SKILL.md'),
 );
-const ADD_HOTFIX = read(path.join(COMMANDS, 'add.hotfix.md'));
+const ADD_HOTFIX = read(path.join(COMMANDS, 'add-hotfix.md'));
 
 /**
  * The closed vocabulary, per design decision 10. `links_to` is the honest label
@@ -44,7 +44,7 @@ const ADD_HOTFIX = read(path.join(COMMANDS, 'add.hotfix.md'));
  */
 const RELATION_TYPES = ['caused_by', 'depends_on', 'part_of', 'links_to'];
 
-describe('F1 — the document format lands in add-doc-schemas', () => {
+describe('F1 — the document format lands in add--doc-schemas', () => {
   it('defines the ## Relations line grammar', () => {
     expect(DOC_SCHEMAS).toMatch(/^## Relations & Observations/m);
     expect(DOC_SCHEMAS).toContain('- <type> [[<id>]]');
@@ -139,9 +139,9 @@ describe('F2 — the hotfix-related schema retires into the about.md', () => {
     //
     // It is asserted where it is load-bearing — in the command that would
     // otherwise write the file — rather than in a schema reference nothing
-    // reads at write time. Verified before the section was deleted: add.hotfix
+    // reads at write time. Verified before the section was deleted: add-hotfix
     // already carried both halves.
-    const hotfix = fs.readFileSync(path.join(COMMANDS, 'add.hotfix.md'), 'utf8');
+    const hotfix = fs.readFileSync(path.join(COMMANDS, 'add-hotfix.md'), 'utf8');
     expect(hotfix).toMatch(/DO NOT[\s\S]{0,200}?related\.md/);
     expect(hotfix).toMatch(/never deleted|left on disk|not deleted/i);
   });
@@ -173,14 +173,14 @@ describe('F3 — the single writer writes relations from what discovery handed o
     expect(FEATURE_SPEC).toMatch(/part_of \[\[/);
   });
 
-  it('(guard) add.new no longer restates those rules', () => {
+  it('(guard) add-new no longer restates those rules', () => {
     // Two copies would drift, and the drift shows up as two different documents
     // produced from one schema depending on which entry point ran.
     expect(ADD_NEW).not.toMatch(/depends_on \[\[/);
   });
 });
 
-describe('F4 — /add.hotfix routes its confirmed set into the about.md', () => {
+describe('F4 — /add-hotfix routes its confirmed set into the about.md', () => {
   it('L4.2 the confirmed set reaches BOTH destinations, and neither loses it', () => {
     const synth = ADD_HOTFIX.slice(
       ADD_HOTFIX.indexOf('### 5.2 Present to user'),
@@ -268,8 +268,8 @@ describe('F5 — templates/related.md is gone', () => {
 // F20 — the discovery step gains a graph step, with a destination in all six
 // ---------------------------------------------------------------------------
 
-describe('F20 — add-knowledge-discovery gains the GRAPH step', () => {
-  const SKILL = read(path.join(SKILLS, 'add-knowledge-discovery', 'SKILL.md'));
+describe('F20 — add--knowledge-discovery gains the GRAPH step', () => {
+  const SKILL = read(path.join(SKILLS, 'add--knowledge-discovery', 'SKILL.md'));
 
   it('the procedure carries a GRAPH step, right after INDEX', () => {
     expect(SKILL).toMatch(/^### 2\. GRAPH$/m);
@@ -305,17 +305,17 @@ describe('F20 — add-knowledge-discovery gains the GRAPH step', () => {
   });
 
   it('the uses block declares what the step now names', () => {
-    expect(SKILL).toMatch(/- mention: \/add\.done/);
+    expect(SKILL).toMatch(/- mention: \/add-done/);
   });
 });
 
 describe('F20 — all six commands name a destination for the result', () => {
-  const SIX = ['add.new', 'add.plan', 'add.hotfix', 'add.brainstorm', 'add.diagnose', 'add.review'];
+  const SIX = ['add-new', 'add-plan', 'add-hotfix', 'add-brainstorm', 'add-diagnose', 'add-review'];
 
   it('each loads the skill and names RELATED_WORK', () => {
     for (const name of SIX) {
       const src = read(path.join(COMMANDS, `${name}.md`));
-      expect(src, name).toContain('add-knowledge-discovery/SKILL.md');
+      expect(src, name).toContain('add--knowledge-discovery/SKILL.md');
       expect(src, name).toContain('RELATED_WORK');
     }
   });
@@ -323,38 +323,38 @@ describe('F20 — all six commands name a destination for the result', () => {
   it('the destination each one names is a REAL SLOT in that same file', () => {
     // THE LEVEL THIS REPLACES TESTED THE SENTENCE, NOT THE WIRING.
     // It asked whether a command's prose names a destination. Five of the six
-    // named one whose slot did not exist: add.review's dispatch payload,
-    // add.plan's bootstrap template, add.diagnose's payload list, add.hotfix's
-    // touched_by over files that had not changed yet, and add.new, which never
+    // named one whose slot did not exist: add-review's dispatch payload,
+    // add-plan's bootstrap template, add-diagnose's payload list, add-hotfix's
+    // touched_by over files that had not changed yet, and add-new, which never
     // ran the step that produces the value at all. A prose-only level cannot
     // see any of that, so this one reads the destination instead.
     // Plain substrings, deliberately: a regex literal built through a
     // generator is one escaping mistake away from matching nothing at all.
     const SLOTS = {
       // The value must be PRODUCED before it can be routed, which is the one
-      // add.new was missing entirely.
-      'add.new': ['run its **INDEX step, its GRAPH step', '`RELATED_WORK` destination'],
-      // add.plan is checked separately below: its slot must sit INSIDE the
+      // add-new was missing entirely.
+      'add-new': ['run its **INDEX step, its GRAPH step', '`RELATED_WORK` destination'],
+      // add-plan is checked separately below: its slot must sit INSIDE the
       // bootstrap template, and a file-wide search finds the paragraph that
       // merely explains the slot. That is the same prose-not-wiring mistake
       // this whole level exists to stop making.
-      'add.plan': ['travels the same two routes'],
+      'add-plan': ['travels the same two routes'],
       // The 9.1 anchor named `touched_by`. Plan 2026-09-14T102848 removed every
       // action name from a command, so the anchor now quotes the SLOT — the
       // paths the step runs over — which is what this level is checking anyway.
-      'add.hotfix': ['`RELATED_WORK` destination', "over this branch's changed paths"],
-      'add.brainstorm': ['## Discovery'],
-      'add.diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
-      'add.review': ['**`RELATED_WORK` from STEP 2.2**'],
+      'add-hotfix': ['`RELATED_WORK` destination', "over this branch's changed paths"],
+      'add-brainstorm': ['## Discovery'],
+      'add-diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
+      'add-review': ['**`RELATED_WORK` from STEP 2.2**'],
     };
-    // add.review's wiring SPANS TWO FILES since the QA judgement moved under
+    // add-review's wiring SPANS TWO FILES since the QA judgement moved under
     // the qa-pipeline feature. STEP 2.2 produces RELATED_WORK in the base
     // command; STEP 10.1, the slot that consumes it, is in the fragment. The
     // destination is real and reachable with the feature on, which is what the
     // base command's STEP 2.2 now states. Reading the command alone would
     // report this wiring broken — the opposite of what this level is for.
     const EXTRA_SOURCES = {
-      'add.review': [path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.review.md')],
+      'add-review': [path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-review.md')],
     };
     for (const [name, slots] of Object.entries(SLOTS)) {
       const src = [path.join(COMMANDS, `${name}.md`), ...(EXTRA_SOURCES[name] || [])]
@@ -366,12 +366,12 @@ describe('F20 — all six commands name a destination for the result', () => {
     }
   });
 
-  it('add.plan carries the slot INSIDE the bootstrap template, not merely near it', () => {
+  it('add-plan carries the slot INSIDE the bootstrap template, not merely near it', () => {
     // Checked against the fenced block a subagent actually receives. Asserting
     // on the whole file passes on the paragraph that describes the slot, which
     // is how the first draft of this level let the slot be deleted and stayed
     // green.
-    const src = read(path.join(COMMANDS, 'add.plan.md'));
+    const src = read(path.join(COMMANDS, 'add-plan.md'));
     const section = src.slice(src.indexOf('### Subagent Bootstrap'));
     const FENCE = String.fromCharCode(96, 96, 96);
     const open = section.indexOf(FENCE);
@@ -381,29 +381,29 @@ describe('F20 — all six commands name a destination for the result', () => {
     expect(template).toContain('${RELATED_WORK}');
   });
 
-  it('add.plan fills its two carry-forwards independently of each other', () => {
+  it('add-plan fills its two carry-forwards independently of each other', () => {
     // The GRAPH step is standalone and reads no wiki page, so a WIKI:absent run
     // must still carry RELATED_WORK. Gating one on the other loses it.
-    const src = read(path.join(COMMANDS, 'add.plan.md'));
+    const src = read(path.join(COMMANDS, 'add-plan.md'));
     expect(src).toContain('travels whether or not a wiki exists');
     expect(src).toContain('Filled independently of `${WIKI_PAGES}`');
   });
 
-  it('add.new runs INDEX and GRAPH even when the wiki is absent', () => {
-    const src = read(path.join(COMMANDS, 'add.new.md'));
+  it('add-new runs INDEX and GRAPH even when the wiki is absent', () => {
+    const src = read(path.join(COMMANDS, 'add-new.md'));
     const gate = src.slice(src.indexOf('IF THE WIKI IS ABSENT:'), src.indexOf('IF THE WIKI IS ABSENT:') + 400);
     expect(gate).toContain('⛔ DO NOT: Skip the INDEX and GRAPH steps');
   });
 
-  it('add.hotfix asks the path-shaped question only where a file list exists', () => {
-    const src = read(path.join(COMMANDS, 'add.hotfix.md'));
+  it('add-hotfix asks the path-shaped question only where a file list exists', () => {
+    const src = read(path.join(COMMANDS, 'add-hotfix.md'));
     const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
     const step9 = src.slice(src.indexOf('## STEP 9:'), src.indexOf('## STEP 10:'));
     // THE CONSTRAINT IS REAL; THE ACTION NAME WAS NEVER THE POINT.
     // This asserted "`search` ONLY at this step" and "STEP 9 contains
     // touched_by", which pinned two calls to prove a fact about TIMING. Plan
     // 2026-09-14T102848 removed the pins: a command states its question and
-    // add-knowledge-discovery resolves it. The fact under test is unchanged and
+    // add--knowledge-discovery resolves it. The fact under test is unchanged and
     // is now asserted where it lives — in how each step PHRASES its question.
     // STEP 4 runs before the investigation and before the fix, so there is no
     // file list for a path-shaped question to take.
@@ -412,15 +412,15 @@ describe('F20 — all six commands name a destination for the result', () => {
     expect(step9).toMatch(/phrased over PATHS/);
   });
 
-  it('add.hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {
-    const src = read(path.join(COMMANDS, 'add.hotfix.md'));
+  it('add-hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {
+    const src = read(path.join(COMMANDS, 'add-hotfix.md'));
     const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
     expect(step4).toContain('RELATED_WORK');
     expect(step4).toMatch(/INDEX/);
   });
 
   it('the skill records why the hotfix exemption covers GRAPH too', () => {
-    const skill = read(path.join(SKILLS, 'add-knowledge-discovery', 'SKILL.md'));
+    const skill = read(path.join(SKILLS, 'add--knowledge-discovery', 'SKILL.md'));
     const whenNot = skill.slice(skill.indexOf('## When NOT to Use'), skill.indexOf('## The 9-Step'));
     expect(whenNot).toContain('GRAPH');
   });
@@ -435,8 +435,8 @@ describe('review fixes — the schema says one thing about tags: and part_of', (
 
   it('part_of names both of the changelog writers, not one', () => {
     const row = DOC_SCHEMAS.split('\n').find((l) => l.startsWith('| `part_of` |'));
-    expect(row).toContain('/add.pull-request');
-    expect(row).toContain('/add.done');
+    expect(row).toContain('/add-pull-request');
+    expect(row).toContain('/add-done');
   });
 
   it('the Schema Index offers no category file that does not exist', () => {
@@ -447,7 +447,7 @@ describe('review fixes — the schema says one thing about tags: and part_of', (
     for (const row of index.split('\n')) {
       const match = row.match(/`(references\/[a-z-]+\.md)`/);
       if (!match) continue;
-      const target = path.join(SKILLS, 'add-doc-schemas', match[1]);
+      const target = path.join(SKILLS, 'add--doc-schemas', match[1]);
       expect(fs.existsSync(target), `Schema Index row points at a missing ${match[1]}`).toBe(true);
     }
   });

@@ -258,6 +258,7 @@ EOF
   printf '\n# ADD QA evidence - managed by add.qa-setup\nwrong/\n# END ADD QA evidence\n' >> "$TEST_REPO/.gitignore"
   run bash "$SCRIPTS_DIR/qa-evidence.sh" ensure-ignore "$TEST_REPO"
   [ "$status" -eq 0 ]
-  [ "$(grep -c '^# ADD QA evidence - managed by add.qa-setup$' "$TEST_REPO/.gitignore")" -eq 1 ]
+  [ "$(grep -c '^# ADD QA evidence - managed by add-qa-setup$' "$TEST_REPO/.gitignore")" -eq 1 ]
+  [ "$(grep -Fxc '# ADD QA evidence - managed by add.qa-setup' "$TEST_REPO/.gitignore" || true)" -eq 0 ]
   [[ "$(cat "$TEST_REPO/.gitignore")" != *"wrong/"* ]]
 }

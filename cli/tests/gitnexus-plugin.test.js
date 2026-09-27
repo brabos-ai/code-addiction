@@ -44,12 +44,12 @@ describe('gitnexus catalog entry', () => {
   });
 
   it('injects exactly the seven target commands', () => {
-    // add.build joined when its main session was seen calling gitnexus with no guidance at all.
-    expect(catalogEntry().injects.sort()).toEqual(['add.build', 'add.diagnose', 'add.done', 'add.hotfix', 'add.new', 'add.plan', 'add.wiki']);
+    // add-build joined when its main session was seen calling gitnexus with no guidance at all.
+    expect(catalogEntry().injects.sort()).toEqual(['add-build', 'add-diagnose', 'add-done', 'add-hotfix', 'add-new', 'add-plan', 'add-wiki']);
   });
 
-  it('ships the add-gitnexus skill', () => {
-    expect(catalogEntry().skills).toContain('add-gitnexus');
+  it('ships the add--gitnexus skill', () => {
+    expect(catalogEntry().skills).toContain('add--gitnexus');
   });
 });
 
@@ -77,7 +77,7 @@ describe('gitnexus fragments ⟷ command markers', () => {
 
 describe('gitnexus fragments carry the repo rule themselves', () => {
   // With more than one repo indexed, every gitnexus call without `repo` fails. The protocol lives in
-  // add-gitnexus, but a session that never loads that skill never sees it — so each fragment states
+  // add--gitnexus, but a session that never loads that skill never sees it — so each fragment states
   // the rule inside an injected section, where it actually reaches the command or agent.
   const fragments = [
     ...fs.readdirSync(path.join(PLUGIN_DIR, 'fragments')).filter((f) => f.endsWith('.md')),
@@ -194,10 +194,10 @@ describe('gitnexus skills', () => {
     });
   }
 
-  it('add-gitnexus dispatches to the native gitnexus-* skills', () => {
-    const content = fs.readFileSync(path.join(PLUGIN_DIR, 'skills', 'add-gitnexus', 'SKILL.md'), 'utf8');
+  it('add--gitnexus dispatches to the native gitnexus-* skills', () => {
+    const content = fs.readFileSync(path.join(PLUGIN_DIR, 'skills', 'add--gitnexus', 'SKILL.md'), 'utf8');
     for (const native of ['gitnexus-exploring', 'gitnexus-impact-analysis', 'gitnexus-debugging']) {
-      expect(content, `add-gitnexus should reference ${native}`).toContain(native);
+      expect(content, `add--gitnexus should reference ${native}`).toContain(native);
     }
   });
 });

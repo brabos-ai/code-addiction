@@ -26,9 +26,9 @@ const read = (...p) => fs.readFileSync(path.join(CODEADD, ...p), 'utf8');
 const readRepo = (...p) => fs.readFileSync(path.join(REPO, ...p), 'utf8');
 
 const SCRIPT = ['scripts', 'delivered.sh'];
-const CONTRACT = ['skills', 'add-doc-schemas', 'references', 'delivery-index.md'];
-const FIX = ['skills', 'add-doc-schemas', 'references', 'fix.md'];
-const SKILL = ['skills', 'add-knowledge-discovery', 'SKILL.md'];
+const CONTRACT = ['skills', 'add--doc-schemas', 'references', 'delivery-index.md'];
+const FIX = ['skills', 'add--doc-schemas', 'references', 'fix.md'];
+const SKILL = ['skills', 'add--knowledge-discovery', 'SKILL.md'];
 
 // ─── L2 — the written contracts describe what the code does ──────────────────
 
@@ -122,7 +122,7 @@ describe('L3.2 — the migration knows nothing of the retired schema', () => {
     // lists were found and not carried, which was still a live read of a dead
     // schema's section name.
     //
-    // It is gone because those files were never hand-written: `/add.hotfix`
+    // It is gone because those files were never hand-written: `/add-hotfix`
     // STEP 12 wrote them, so there is no author to inform and no content to
     // preserve. "Nothing of the dead format survives" is one grep; "everything
     // except a report line" is an exception the next author widens.
@@ -207,7 +207,7 @@ describe('L3.6 — the rejected design did not come back', () => {
   // detached merge ref, so `main` resolves to nothing — and it also went red on
   // any future legitimate edit to those files, which is a trap and not a guard.
   // A shape-matching regex then false-positived on `PR_MERGE_COMMIT`, a variable
-  // add.done already parses, and again across lines.
+  // add-done already parses, and again across lines.
   //
   // What is left is the one signal that cannot mean anything else: a flag or a
   // record field that carries a merge sha into the index. A guard that cries
@@ -216,10 +216,10 @@ describe('L3.6 — the rejected design did not come back', () => {
   const REJECTED = /--record-merge|--merge-sha|"merge"\s*:/;
 
   it.each([
-    'framwork/.codeadd/commands/add.done.md',
+    'framwork/.codeadd/commands/add-done.md',
     'framwork/.codeadd/scripts/done.sh',
     'workbench/skills/add-framework--done/SKILL.md',
-    'framwork/.codeadd/skills/add-doc-schemas/references/delivery-index.md',
+    'framwork/.codeadd/skills/add--doc-schemas/references/delivery-index.md',
   ])('%s carries no stored merge sha', (rel) => {
     const body = fs.readFileSync(path.join(REPO, rel), 'utf8');
     expect(REJECTED.test(body), `${rel} looks like it stores the delivery's commit — see this block's comment`).toBe(false);

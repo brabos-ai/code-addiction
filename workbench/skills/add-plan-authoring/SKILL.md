@@ -462,7 +462,7 @@ later one reads.
 ```
 - **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds a sixth delivery gate.
   - **Produces:** `converge-gates.sh` emits `GATE6=pass|fail|skip`
-- **F7** [product] — `framwork/.codeadd/commands/add.done.md`: STEP 4 reads the new gate.
+- **F7** [product] — `framwork/.codeadd/commands/add-done.md`: STEP 4 reads the new gate.
   - **Consumes:** `GATE6` (F3)
 ```
 
