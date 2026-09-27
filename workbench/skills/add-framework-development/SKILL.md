@@ -10,6 +10,7 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 - skill: building-commands
 - skill: add-artefact-graph
 - skill: add-product-artefact-renaming
+- skill: add-framework-injection (conditional)
 - mention: add-framework--plan
 - mention: add-framework--build
 -->
@@ -18,6 +19,7 @@ Operational knowledge for creating and modifying ADD framework artefacts. Built 
 
 ## When to Use
 - `add-framework--plan` analyzing if a proposal is technically viable (STEP 0 and STEP 2)
+- An injection change also loads `add-framework-injection`. This skill does not restate slot, fallback, or STEP ID rules.
 - `add-framework--build` implementing a new command, skill, agent, or script
 - Modifying existing framework artefacts (commands, skills, agents)
 - Deciding WHAT TYPE of artefact to create for a given need
