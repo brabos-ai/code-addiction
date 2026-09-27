@@ -482,7 +482,10 @@ function readProductFallback(rel) {
  * @param {'command'|'agent'} resourceKind
  */
 function collectInjectionPoints(rawContent, resourceName, resourceKind) {
+  const comments = standaloneComments(rawContent);
+  const hasMember = comments.some((c) => OPEN_MARKER_RE.test(c.body));
   const mode = injectionMode(rawContent);
+  if (!hasMember && mode === 'v1') return;
   if (INJECTION_MODE && INJECTION_MODE !== mode) {
     throw new Error(`Mixed injection source: ${resourceName} is ${mode} but this build already saw ${INJECTION_MODE}`);
   }
@@ -518,7 +521,14 @@ function writeInjectionPoints(outPath) {
         return a.i - b.i;
       })
       .map(({ s }) => s);
-    writeFile(outPath, JSON.stringify({ version: 2, slots }, null, 2) + '\n');
+    const points = slots.flatMap((slot) => slot.members.map((m) => ({
+      namespace: m.namespace,
+      name: m.name,
+      section: m.section,
+      resource: slot.resource,
+      anchor: slot.anchor,
+    })));
+    writeFile(outPath, JSON.stringify({ version: 2, slots, points }, null, 2) + '\n');
     return slots.length;
   }
   const points = INJECTION_POINTS
@@ -2398,7 +2408,10 @@ function main() {
   // Built AFTER the resource passes so INJECTION_POINTS is fully populated —
   // the INJECTS_INTO edges are derived from it, never re-extracted.
   const graphPath = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
-  const artefactGraph = buildArtefactGraph(map);
+  const injectionPoints = INJECTION_MODE === 'v2'
+    ? INJECTION_SLOTS.flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource })))
+    : INJECTION_POINTS;
+  const artefactGraph = buildArtefactGraph(map, CODEADD_DIR, ROOT, injectionPoints);
   // Gate BEFORE writing, so a failed build never leaves a sidecar describing a
   // tree the gate rejected — the same reason contracts.json is cleared upfront.
   assertArtefactGraph(artefactGraph);
