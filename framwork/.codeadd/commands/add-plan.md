@@ -102,7 +102,7 @@ STEP add-plan.subagents:  Execute subagents        -> SEQUENTIAL by area
 <!-- feature:qa-pipeline:step-list -->
 <!-- /feature:qa-pipeline:step-list -->
 <!-- /slot:plan-specs -->
-STEP add-plan.consolidate:  Consolidate plan         -> preview (9.0.1), then APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
+STEP add-plan.consolidate:  Consolidate plan         -> preview (STEP add-plan.preview), then APPEND + VALIDATE + FILL GAPS + tasks.md + cross-SF review (EPIC ONLY)
 STEP add-plan.coverage: Validate requirements    -> Coverage check (GATE: coverage_validated)
 STEP add-plan.schema-gate: Validation Gate          -> feature-plan schema gate
 STEP add-plan.review: Plan Review              -> @plan-reviewer-agent verdict + fix loop, @consistency-agent FULL (EPIC), readback (GATE: plan_reviewed)
@@ -257,7 +257,7 @@ DATABASE_SELECTED = true|false
 BACKEND_SELECTED  = true|false
 ```
 
-`FRONTEND_SELECTED` is read by STEP add-plan.ux-design's gate (no UX design work happens when it is `false`) and by 7.4. NEVER re-derive it later from prose — read the value stated here.
+`FRONTEND_SELECTED` is read by STEP add-plan.ux-design's gate (no UX design work happens when it is `false`) and by STEP add-plan.frontend. NEVER re-derive it later from prose — read the value stated here.
 
 **Inform user:** Type (FEATURE/EPIC), scope summary, subagent list. Ref: GATES table for scope_determined requirements.
 
@@ -694,7 +694,7 @@ IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 ```
 IF THE REPORT CARRIES NO DOCUMENT:
   ⛔ DO NOT USE: Write on tasks.md
-  ⛔ DO NOT: Proceed to 9.5 or STEP add-plan.coverage against a file you just created empty
+  ⛔ DO NOT: Proceed to STEP add-plan.cross-sf-review or STEP add-plan.coverage against a file you just created empty
   ✅ DO: Report that the dispatch returned no content and STOP — STEP add-plan.coverage coverage and
          STEP add-plan.interface-check's interface check both read this file
 ```
@@ -709,16 +709,16 @@ IF THE REPORT CARRIES NO DOCUMENT:
 ### STEP add-plan.cross-sf-review Cross-SF Integration Review (EPIC ONLY)
 
 **IF HAS_EPIC=true:** After tasks.md generated, dispatch @architecture-agent [read-only] for integration review.
-**IF normal feature:** Skip to 9.6.
+**IF normal feature:** Skip to STEP add-plan.navigation.
 
 ⛔ **The agent reviews and reports. THIS STEP applies every edit to `plan.md`.** The agent declares
 `readonly: true` and writes nothing — a finding it returns is a `plan.md` edit you make here.
 
-**Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. 9.5 is the **in-place fixer**.
+**Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. STEP add-plan.cross-sf-review is the **in-place fixer**.
 
-**What 9.5 does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add--cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by this command at STEP add-plan.review (`mode: FULL`) and by `/add-build` before an epic's last checkpoint (`mode: DELTA`). Two checks 9.5 used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). 9.5 **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
+**What STEP add-plan.cross-sf-review does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add--cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by this command at STEP add-plan.review (`mode: FULL`) and by `/add-build` before an epic's last checkpoint (`mode: DELTA`). Two checks STEP add-plan.cross-sf-review used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). STEP add-plan.cross-sf-review **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
 
-**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. `@consistency-agent` judges and never edits; 9.5 edits.
+**Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. `@consistency-agent` judges and never edits; STEP add-plan.cross-sf-review edits.
 
 **Checks to fix in-place — these three, and only these three:**
 1. Shared Resource Centralization (enums/config added ONCE in earliest SF)
@@ -824,7 +824,7 @@ Schema gate PASSED. Do not present `plan.md` or the next command as delivered ye
 
 1. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
 
-   Run it ONLY after the reviewer's verdict (step 2 above) resolved to proceed, 12.3 finished, and every applied fix is on disk.
+   Run it ONLY after the reviewer's verdict (step 2 above) resolved to proceed, STEP add-plan.consistency finished, and every applied fix is on disk.
 
 ```
 IF THE PROVIDER HAS NO SUBAGENT DISPATCH:

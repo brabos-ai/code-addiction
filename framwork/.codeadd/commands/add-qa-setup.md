@@ -387,7 +387,7 @@ and continues setup, so this branch is reachable on any run.
 Autonomously dispatch `/add-review <feature-id>` (Agent tool) against the scaffolded feature — the QA sections `qa-pipeline` injects into it are what this setup enables. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
 
 ### STEP add-qa-setup.correction-loop-max Correction loop (max 3 attempts)
-On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add-build` to work the routed rows, then re-run 11.1.
+On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add-build` to work the routed rows, then re-run STEP add-qa-setup.smoke-test.
 
 - Guard: routed QA correction requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP add-qa-setup.feature-gate offers the enable).
 - ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP add-qa-setup.handoff with the accumulated findings from all attempts.

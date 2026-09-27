@@ -20,7 +20,7 @@ block, and that split is now VESTIGIAL — read this before assuming it guards
 something.
 
 It was created because the `plugin:playwright:drive` pair sat inside STEP qa-pipeline.judge, at
-the `**WAIT-ALL before 10.2.**` line, and a feature pair may not enclose it:
+the `**WAIT-ALL before STEP qa-pipeline.merge-write-per.**` line, and a feature pair may not enclose it:
 assertEmptyMarkerPairs refuses a pair with content between its comments, and a
 nested pair would put the plugin's markers inside this feature's block. Splitting
 STEP qa-pipeline.judge around the plugin pair avoided both.
@@ -280,7 +280,7 @@ verification method did not run — computed styles not captured, axe absent, a
 state never reached — is recorded `unverifiable` WITH THE REASON. Never passing.
 Never silently omitted.
 
-**WAIT-ALL before 10.2.**
+**WAIT-ALL before STEP qa-pipeline.merge-write-per.**
 <!-- /section:judge-head -->
 
 <!-- section:judge-tail -->
@@ -312,7 +312,7 @@ reference's **Fix Routing** table (there is no confidence score). Then:
 - ⛔ Run the reference's **capability validation** before writing. An invalid route is a schema violation — do NOT write the report with it; fix the derivation.
 
 Write `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md` per the `qa-validation`
-schema, using the `run-NNN` and `PREVIOUS_REPORT` resolved in 9.2. Set:
+schema, using the `run-NNN` and `PREVIOUS_REPORT` resolved in STEP qa-pipeline.capture. Set:
 
 - `judged-contract` — the `provenance` hash of the `DESIGN_FILE` it judged. If it differs from the previous report's, note *"contract amended since run-NNN"* plus the amended dimensions. A criterion that flipped green ONLY because the contract was amended is not a fix.
 - `judged-tree` — `REVIEW_TREE_BEFORE`, the fingerprint of the tree that produced this evidence. STEP qa-pipeline.skip-predicate reads it on the next invocation; without it the skip predicate cannot work.

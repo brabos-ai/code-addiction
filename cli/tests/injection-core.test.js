@@ -4,7 +4,6 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   parseFragmentSections,
-  loadInjectionPoints,
   findAnchorLine,
   insertBlockAfterAnchor,
   removeBlockAfterAnchor,
@@ -13,9 +12,6 @@ import {
   saveManifest,
   calculateHash,
   recalculateHashes,
-  getAgentFragments,
-  injectAgentFragments,
-  removeAgentFragments,
   composeSlot,
   renderSlotRegion,
   renderSlots,
@@ -46,34 +42,6 @@ describe('parseFragmentSections', () => {
   it('parses sections when the fragment uses CRLF line endings', () => {
     const frag = '<!-- section:a -->\r\nbody\r\n<!-- /section:a -->';
     expect(parseFragmentSections(frag).get('a')).toBe('body\r\n');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// loadInjectionPoints (sidecar)
-// ---------------------------------------------------------------------------
-
-describe('loadInjectionPoints', () => {
-  let cwd;
-  beforeEach(() => {
-    cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-side-'));
-    fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
-  });
-  afterEach(() => fs.rmSync(cwd, { recursive: true, force: true }));
-
-  it('returns [] when the sidecar is absent (graceful fallback for old installs)', () => {
-    expect(loadInjectionPoints(cwd)).toEqual([]);
-  });
-
-  it('returns [] on invalid JSON', () => {
-    fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), '{ not json');
-    expect(loadInjectionPoints(cwd)).toEqual([]);
-  });
-
-  it('returns the points array', () => {
-    const points = [{ namespace: 'feature', name: 'tdd', section: 'gate', resource: { name: 'add-build', kind: 'command' }, anchor: { text: 'x', ordinal: 1, position: 'after', next: null } }];
-    fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }));
-    expect(loadInjectionPoints(cwd)).toEqual(points);
   });
 });
 
@@ -294,127 +262,6 @@ describe('manifest + hash IO', () => {
     const manifest = {};
     recalculateHashes(cwd, manifest, [f]);
     expect(manifest.hashes['.claude/commands/add-new.md']).toMatch(/^[a-f0-9]{64}$/);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// agent injection (sidecar-driven, marker-free)
-// ---------------------------------------------------------------------------
-
-describe('agent injection (sidecar-driven)', () => {
-  let cwd;
-
-  /**
-   * Scaffold installed agent files (marker-free) + a sidecar describing the
-   * injection points + per-agent fragments. Mirrors the real install shape.
-   */
-  function scaffold({ providers = ['claude'], pluginName = 'gx', agents = {} } = {}) {
-    fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
-    fs.writeFileSync(
-      path.join(cwd, '.codeadd', 'manifest.json'),
-      JSON.stringify({ version: '1.0.0', providers, plugins: {}, hashes: {} }, null, 2),
-    );
-
-    const points = [];
-    for (const prov of providers) {
-      if (prov !== 'claude') continue; // only claude exposes agents
-      const dir = path.join(cwd, `.${prov}`, 'agents');
-      fs.mkdirSync(dir, { recursive: true });
-      for (const [agent] of Object.entries(agents)) {
-        // marker-free body with a stable anchor line
-        fs.writeFileSync(path.join(dir, `${agent}.md`), `---\nname: ${agent}\n---\n\n${agent} body anchor.\n`);
-      }
-    }
-
-    const fragDir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'fragments', 'agents');
-    fs.mkdirSync(fragDir, { recursive: true });
-    for (const [agent, sections] of Object.entries(agents)) {
-      const body = sections
-        .map((s) => `<!-- section:${s} -->\n${s.toUpperCase()}-AGENT-CONTENT\n<!-- /section:${s} -->`)
-        .join('\n');
-      fs.writeFileSync(path.join(fragDir, `${agent}.md`), body + '\n');
-      for (const s of sections) {
-        points.push({
-          namespace: 'plugin', name: pluginName, section: s,
-          resource: { name: agent, kind: 'agent' },
-          anchor: { text: `${agent} body anchor.`, ordinal: 1, position: 'after', next: null },
-        });
-      }
-    }
-    fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }, null, 2));
-  }
-
-  beforeEach(() => {
-    cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-agent-'));
-  });
-  afterEach(() => fs.rmSync(cwd, { recursive: true, force: true }));
-
-  it('getAgentFragments reads fragments/agents/{agent}.md', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const frags = getAgentFragments(cwd, 'gx');
-    expect(frags).toHaveLength(1);
-    expect(frags[0].agentName).toBe('discovery-agent');
-    expect(frags[0].content).toContain('GRAPH-AGENT-CONTENT');
-  });
-
-  it('injects fragment content at the sidecar anchor (marker-free)', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'], 'backend-agent': ['graph'] } });
-    const modified = injectAgentFragments(cwd, 'gx');
-    expect(modified).toHaveLength(2);
-    for (const agent of ['discovery-agent', 'backend-agent']) {
-      const content = fs.readFileSync(path.join(cwd, '.claude', 'agents', `${agent}.md`), 'utf8');
-      expect(content).toContain('GRAPH-AGENT-CONTENT');
-      expect(content).not.toContain('<!--'); // no markers written
-    }
-  });
-
-  it('skips a fragment whose agent has no sidecar point / no installed file', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const fragDir = path.join(cwd, '.codeadd', 'plugins', 'gx', 'fragments', 'agents');
-    fs.writeFileSync(path.join(fragDir, 'ghost-agent.md'), '<!-- section:graph -->\nX\n<!-- /section:graph -->\n');
-    const modified = injectAgentFragments(cwd, 'gx');
-    expect(modified).toHaveLength(1);
-    expect(fs.existsSync(path.join(cwd, '.claude', 'agents', 'ghost-agent.md'))).toBe(false);
-  });
-
-  it('does not write agent files for providers without an agentsSubdir', () => {
-    scaffold({ providers: ['claude', 'codex'], agents: { 'discovery-agent': ['graph'] } });
-    const stray = path.join(cwd, '.agents', 'agents');
-    fs.mkdirSync(stray, { recursive: true });
-    fs.writeFileSync(path.join(stray, 'discovery-agent.md'), 'discovery-agent body anchor.\n');
-    injectAgentFragments(cwd, 'gx');
-    expect(fs.readFileSync(path.join(stray, 'discovery-agent.md'), 'utf8')).not.toContain('GRAPH-AGENT-CONTENT');
-  });
-
-  it('enable → disable round-trip is byte-identical', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const file = path.join(cwd, '.claude', 'agents', 'discovery-agent.md');
-    const before = fs.readFileSync(file, 'utf8');
-
-    injectAgentFragments(cwd, 'gx');
-    expect(fs.readFileSync(file, 'utf8')).toContain('GRAPH-AGENT-CONTENT');
-
-    const removed = removeAgentFragments(cwd, 'gx');
-    expect(removed).toContain(file);
-    expect(fs.readFileSync(file, 'utf8')).toBe(before);
-  });
-
-  it('re-injecting is idempotent (no drift)', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const file = path.join(cwd, '.claude', 'agents', 'discovery-agent.md');
-    injectAgentFragments(cwd, 'gx');
-    const once = fs.readFileSync(file, 'utf8');
-    injectAgentFragments(cwd, 'gx');
-    expect(fs.readFileSync(file, 'utf8')).toBe(once);
-  });
-
-  it('injectAgentFragments is a no-op when there are no agent fragments', () => {
-    fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
-    fs.writeFileSync(
-      path.join(cwd, '.codeadd', 'manifest.json'),
-      JSON.stringify({ version: '1.0.0', providers: ['claude'], plugins: {}, hashes: {} }, null, 2),
-    );
-    expect(injectAgentFragments(cwd, 'gx')).toEqual([]);
   });
 });
 

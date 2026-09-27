@@ -26,7 +26,7 @@ only place the ticket survives — a spike writes no file to carry it — so it 
 
 **It also carries `ticket: <id>` in its frontmatter when STEP add-brainstorm.load-context resolved one** — this file is what
 `/add-new` reads, so it is the carrier the ticket travels on. **A spike writes no intent file and
-therefore carries no ticket**; name the ticket in 5.1's report instead.
+therefore carries no ticket**; name the ticket in STEP add-brainstorm.report's report instead.
 <!-- /section:ticket-intent -->
 
 <!-- section:ticket-refining -->
@@ -42,5 +42,5 @@ permission to build, and a ticket moved by one that ends in "no" would stay ther
 **Ticket — the exit write.** Once the gate passed and the intent file exists, write `shaped`, per the
 `add-brainstorm` row of `{{skill:add--backlog/references/lifecycle.md}}`. It follows the intent file and not
 the report, because the report came before the approval. A write that did not land is one line printed
-with 5.4's handoff.
+with STEP add-brainstorm.route's handoff.
 <!-- /section:ticket-shaped -->

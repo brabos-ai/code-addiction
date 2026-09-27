@@ -45,7 +45,7 @@ ELSE:
 by its own rule. Without these lines the managed blocks land only on a first generation,
 so every project that has already run this command once — which is every project with a wiki —
 would never receive them, and never receive a refresh when their text changes. It is also the
-route that migrates an existing project off CLAUDE.md: 6.1 runs in update mode too.
+route that migrates an existing project off CLAUDE.md: STEP add-wiki.agents-md runs in update mode too.
 
 ```
 IF invoked as `/add-wiki update`:

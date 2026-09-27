@@ -852,8 +852,8 @@ counter tracked here. The cap is `MAX_ATTEMPTS = 3` per wave.
 **MANDATORY:** Validator MUST load `{{skill:add--tasks-checklist/SKILL.md}}` to apply tick rules, "non-trivial change" definition, and `[!]` failure-marker semantics.
 
 **This validator runs on the WORKING TREE, not on a diff — deliberately.** It is the gate the commit waits
-on (11.3), so at this point nothing is committed yet and `BASE..HEAD` is still empty. `review-package.sh`
-belongs to the **re-review** in 12.2, after a fix batch is committed. Dispatch this one with `MODE: task`
+on (STEP add-build.commit), so at this point nothing is committed yet and `BASE..HEAD` is still empty. `review-package.sh`
+belongs to the **re-review** in STEP add-build.re-review, after a fix batch is committed. Dispatch this one with `MODE: task`
 and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exist yet.
 
 ### STEP add-build.validator-subagent-prompt Validator Subagent Prompt Template
@@ -862,7 +862,7 @@ and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exis
 
 ⛔ **The validator writes nothing — not `tasks.md`, not code.** `@reviewer-agent` declares
 `readonly: true`, so `Write` and `Edit` are denied to it. It returns ticks as a report and routes
-every violation; **11.2 merges and writes `tasks.md`, and `@fix-agent` applies every correction.**
+every violation; **STEP add-build.merge-ticks merges and writes `tasks.md`, and `@fix-agent` applies every correction.**
 
 ```
 You are the ${AREA} VALIDATOR for feature ${FEATURE_ID}.
@@ -957,7 +957,7 @@ IF A VALIDATOR REPORT HAS NOT RETURNED FOR EVERY DISPATCHED AREA:
 
 ⛔ **Do NOT let a validator write `tasks.md`.** `@reviewer-agent` is read-only and is denied `Write`;
 a run that expects it to tick leaves every item untouched, `SPEC_STATUS` permanently `INCOMPLETE`, and
-11.3 gate 2 blocking the commit forever.
+STEP add-build.commit gate 2 blocking the commit forever.
 
 `SPEC_STATUS` for gate 2 below is the merged result: `INCOMPLETE` when ANY area reported it.
 
@@ -969,7 +969,7 @@ is a commit of unvalidated code, and it is worse than no commit because it looks
 Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 all held:
 
 1. **The area validator has RETURNED.** Not "was dispatched", not "is running" — returned, with its
-   report in hand. ⛔ IF no validator report exists for this batch: DO NOT commit. Go back to 11.2.
+   report in hand. ⛔ IF no validator report exists for this batch: DO NOT commit. Go back to STEP add-build.merge-ticks.
 2. **`SPEC_STATUS` is not `INCOMPLETE`.** ⛔ IF it is: DO NOT commit. Implement the missing spec items or
    escalate, then re-validate.
 3. **The build PASSED.** Run the project build command (AGENTS.md) and read its exit status in this
@@ -1002,7 +1002,7 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
   area its rows touch (Correction Dispatch), so its output is one batch: stage the union of its
   `FILES_MODIFIED` and commit once. ⛔ DO NOT split a wave's diff into per-area commits — the areas
   were fixed together against one ordering, and `review-package.sh` packages `FIX_BASE..HEAD` for
-  12.2 as one range.
+  STEP add-build.re-review as one range.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
   way, and only when more than one batch exists — the normal case, since STEP add-build.dependency-order dispatches each in-scope
   area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
@@ -1047,13 +1047,13 @@ feature-gated either.
 Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
 The rows are worked in the table's given order, respecting `Blocked by` — **by the agent, which is why
 it receives them whole.** Collect `AREAS` from the rows themselves. **Record
-`FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — 12.3 cannot run without it. Dispatch
+`FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — STEP add-build.resolution cannot run without it. Dispatch
 **ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
 **Every row in the table is fixed — no pre-fix confidence check.** `/add-review`'s `Confidence` field,
 where a reviewer reported one, is not consumed here. This dispatch stays "one wave, one fix", the same
-rule `add--review-discipline` states for the review side; 12.2's re-review is what verifies the fix
+rule `add--review-discipline` states for the review side; STEP add-build.re-review's re-review is what verifies the fix
 afterward, not a gate before it.
 
 ### STEP add-build.re-review Scoped Re-Review (after EVERY fix round) [HARD GATE]

@@ -468,7 +468,7 @@ the evidence this command just captured.
 **If only ONE area exists:**
 - Dispatch single reviewer
 
-**If the owasp trigger fired (4.1):**
+**If the owasp trigger fired (STEP add-review.scope):**
 - Dispatch `@reviewer-agent` (owasp) in the SAME parallel batch as the area reviewer(s) — never
   instead of them, never as a later round.
 
@@ -582,7 +582,7 @@ prompt: |
 
 ---
 
-### DISPATCH AGENT: @reviewer-agent — OWASP Focus (conditional — only when 4.1's owasp trigger fired)
+### DISPATCH AGENT: @reviewer-agent — OWASP Focus (conditional — only when STEP add-review.scope's owasp trigger fired)
 
 **Intent:** A systematic OWASP Top 10 pass over the diff's sensitive-area files, alongside the
 frontend/backend review — not instead of it.
@@ -596,7 +596,7 @@ prompt: |
   You are the OWASP REVIEWER for feature ${FEATURE_ID}.
 
   ## BOOTSTRAP
-  1. Read the sensitive-area changed files: [the files that fired 4.1's owasp trigger]
+  1. Read the sensitive-area changed files: [the files that fired STEP add-review.scope's owasp trigger]
   2. Read skill: add--security-audit
 
   ## TASK
@@ -889,7 +889,7 @@ the self-check. Emit the report FIRST — the gate table and the routing come af
 
 This command reviews and routes; it changes no application code. So `What was delivered` is the
 verdict and the findings, `How it works` is what the gates actually measured, `Files touched` names
-the `review-NNN.md` that 11.3 wrote and nothing else, and `⚠️ Needs your attention` carries the
+the `review-NNN.md` that STEP add-review.report wrote and nothing else, and `⚠️ Needs your attention` carries the
 blockers and the manual routes nobody else will pick up.
 
 Then, after the seven blocks, output the quality gate summary: reviewers dispatched (files reviewed

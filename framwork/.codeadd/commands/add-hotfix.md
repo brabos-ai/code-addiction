@@ -258,7 +258,7 @@ From the user's bug report plus `RECENT_CHANGELOGS` from STEP add-hotfix.context
 - One-sentence problem statement
 - Affected area / keywords (component, route, entity)
 - Optional window (default: 30 days)
-- **The ranked index results from 4.1**, each with its id, name and status
+- **The ranked index results from STEP add-hotfix.history**, each with its id, name and status
 
 ### STEP add-hotfix.dispatch-parallel Dispatch parallel
 
@@ -420,7 +420,7 @@ If the named agent is unavailable, dispatch a generic read-only subagent with th
 
 ### STEP add-hotfix.conditional-owasp Conditional OWASP
 
-Dispatch `@reviewer-agent` again with `MODE: owasp` only when changed paths touch authentication, payment, upload, input handling, session, token, or another caller-identified sensitive area. Never by default. Use the same fallbacks as 9.2.
+Dispatch `@reviewer-agent` again with `MODE: owasp` only when changed paths touch authentication, payment, upload, input handling, session, token, or another caller-identified sensitive area. Never by default. Use the same fallbacks as STEP add-hotfix.review.
 
 ### STEP add-hotfix.verify-every-citation Verify every citation
 

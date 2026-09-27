@@ -177,7 +177,7 @@ writes is the one `converge-gates.sh` reads when no newer review exists.
 2. **DISPATCH AGENT: `@reviewer-agent`** [read-only] with `MODE: feature`, the package path and the
    unit's `about.md` / `plan.md` paths. **In the same parallel batch**, and only when the package
    touches a sensitive area — authentication, payment, file upload, input handling or validation,
-   session or token paths, the trigger `/add-review` STEP 4.1 names — dispatch a second
+   session or token paths, the trigger `/add-review` STEP add-review.scope names — dispatch a second
    `@reviewer-agent` with `MODE: owasp` and those files. On the epic's last subfeature, the DELTA
    pass's findings join this list.
 3. **Number the findings** `FR-1`, `FR-2`, … in report order — the reviewer returns none — then

@@ -35,8 +35,8 @@ Breaking changes are **never** omitted to make the release look smoother. If uns
 directory, on an epic as well as on a simple feature. `docs/changelog/` is the
 framework repository's own directory and does not exist in a user's project.
 
-**Written first by `{{cmd:add-pull-request}}` STEP 3** when a PR is opened
-mid-build, **otherwise by `{{cmd:add-done}}` 6.3.** Two writers, one document.
+**Written first by `{{cmd:add-pull-request}}` STEP add-pull-request.changelog** when a PR is opened
+mid-build, **otherwise by `{{cmd:add-done}}` STEP add-done.complement-changelog.** Two writers, one document.
 
 ```
 ⛔ ONE CHANGELOG PER DELIVERY:

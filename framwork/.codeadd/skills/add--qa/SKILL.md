@@ -47,7 +47,7 @@ The persisted spec (or, with the plugin, live driving) **captures and exercises*
 
 ### Axis ownership — two judges, no axis judged twice
 
-`/add-review` STEP 10.1 dispatches `@ux-agent` (review mode) ∥ `@qa-agent`, one pair per SF. Each axis has exactly one owner so the STEP 10.2 dedupe is well-defined:
+`/add-review` STEP qa-pipeline.judge dispatches `@ux-agent` (review mode) ∥ `@qa-agent`, one pair per SF. Each axis has exactly one owner so the STEP qa-pipeline.merge-write-per dedupe is well-defined:
 
 | Axis | Judge | Source of truth |
 |---|---|---|

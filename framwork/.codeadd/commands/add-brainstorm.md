@@ -394,7 +394,7 @@ full classes/methods — a single one-shot snippet is the maximum allowed.
 
 ## STEP add-brainstorm.self-review: Self-Review, Then the Validation Gate
 
-### STEP add-brainstorm.validation-gate Self-review
+### STEP add-brainstorm.run-self-review Self-review
 
 Read the document you just wrote against these, and fix what fails before the gate:
 

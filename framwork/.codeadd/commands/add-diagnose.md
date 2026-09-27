@@ -76,7 +76,7 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 bash .codeadd/scripts/status.sh
 ```
 
-Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS.
+Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in STEP add-diagnose.context), RECENT_CHANGELOGS.
 
 ### STEP add-diagnose.load-ecosystem-map Load ecosystem map
 

@@ -27,7 +27,7 @@ in the completion report, and the hotfix continues.
 <!-- section:ticket-frontmatter -->
 
 **Ticket:** when STEP add-hotfix.parse-diagnose stored a `TICKET`, write `ticket: <id>` into this `about.md`'s frontmatter now —
-before 12.2 fingerprints the file, after which nothing may change. `/add-done` reads it from here to close
+before STEP add-hotfix.fingerprint fingerprints the file, after which nothing may change. `/add-done` reads it from here to close
 the ticket, per the `add-hotfix` row of `{{skill:add--backlog/references/lifecycle.md}}`.
 <!-- /section:ticket-frontmatter -->
 

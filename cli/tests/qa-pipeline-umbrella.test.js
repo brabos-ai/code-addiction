@@ -9,7 +9,7 @@ import { FEATURES } from '../src/features.js';
 const require = createRequire(import.meta.url);
 const {
   readMap,
-  extractInjectionPoints,
+  extractSlots,
   sliceContractBlock,
   CONTRACT_VARIABLE_RE,
 } = require('../../scripts/build.js');
@@ -18,7 +18,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
 
 const readSource = (rel) => fs.readFileSync(path.join(CODEADD, rel), 'utf8');
-const points = (rel, name, kind) => extractInjectionPoints(readSource(rel), name, kind);
+const points = (rel, name, kind) => extractSlots(readSource(rel), name, kind, () => '').flatMap((slot) =>
+  slot.members.map((m) => ({ ...m, resource: slot.resource, anchor: slot.anchor })));
 const qa = (pts, section) =>
   pts.find((p) => p.namespace === 'feature' && p.name === 'qa-pipeline' && p.section === section);
 const drive = (pts) => pts.find((p) => p.namespace === 'plugin' && p.name === 'playwright' && p.section === 'drive');

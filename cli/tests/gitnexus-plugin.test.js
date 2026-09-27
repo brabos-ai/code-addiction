@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseFragmentSections } from '../src/injection-core.js';
 
 const require = createRequire(import.meta.url);
-const { extractInjectionPoints } = require('../../scripts/build.js');
+const { extractSlots } = require('../../scripts/build.js');
 
 /**
  * Structural consistency of the gitnexus plugin (Phase 2 + 3 of plan 0032).
@@ -160,7 +160,7 @@ describe('gitnexus marker-free build (sidecar carries the anchors)', () => {
   for (const t of entry?.agents ?? []) {
     it(`agent ${t.agent} source resolves to plugin:gitnexus injection points with variable-free anchors`, () => {
       const src = fs.readFileSync(path.join(AGENTS_DIR, `${t.agent}.md`), 'utf8');
-      const pts = extractInjectionPoints(src, t.agent, 'agent').filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
+      const pts = extractSlots(src, t.agent, 'agent', () => '').flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource, anchor: slot.anchor }))).filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
       expect(pts.map((p) => p.section).sort()).toEqual([...t.sections].sort());
       for (const p of pts) {
         expect(p.resource).toEqual({ name: t.agent, kind: 'agent' });
@@ -173,7 +173,7 @@ describe('gitnexus marker-free build (sidecar carries the anchors)', () => {
   for (const cmd of entry?.injects ?? []) {
     it(`command ${cmd} source resolves to plugin:gitnexus injection points`, () => {
       const src = fs.readFileSync(path.join(COMMANDS_DIR, `${cmd}.md`), 'utf8');
-      const pts = extractInjectionPoints(src, cmd, 'command').filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
+      const pts = extractSlots(src, cmd, 'command', () => '').flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource, anchor: slot.anchor }))).filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
       expect(pts.length).toBeGreaterThan(0);
       for (const p of pts) expect(p.resource).toEqual({ name: cmd, kind: 'command' });
     });

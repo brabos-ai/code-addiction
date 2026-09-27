@@ -110,7 +110,7 @@ bash .codeadd/scripts/done.sh
 | `docs` | Branch: docs/[NNNN]D-* |
 | no ID found | STOP — branch has no `[NNNN][L]` ID, show error, NEVER rename |
 
-All recognized types proceed to 2.1, which routes, and then to STEP add-done.validate — except the `Closed out` route, which stops there. Feature quality gates apply to `feature` only. Hotfix receipt validation applies to `hotfix` only. Other types skip STEP add-done.promote-qa and continue to STEP add-done.document.
+All recognized types proceed to STEP add-done.pr-route, which routes, and then to STEP add-done.validate — except the `Closed out` route, which stops there. Feature quality gates apply to `feature` only. Hotfix receipt validation applies to `hotfix` only. Other types skip STEP add-done.promote-qa and continue to STEP add-done.document.
 
 
 ### STEP add-done.pr-route Cross the Two Facts, Then Route
@@ -133,7 +133,7 @@ could not be read, and a route that deletes branches never runs on a guess.
 | MERGED | INDEX_ENTRY | Route | What runs |
 |---|---|---|---|
 | no | `absent` or `no-index` | **Normal** | Everything, as written below |
-| no | **`present`** | **Resume** | Every gate runs. STEP add-done.promote-qa's promotion, STEP add-done.complement-changelog, 6.7 and STEP add-done.write-delivery-index are SKIPPED. The merge is the only work left |
+| no | **`present`** | **Resume** | Every gate runs. STEP add-done.promote-qa's promotion, STEP add-done.complement-changelog, STEP add-done.wiki and STEP add-done.write-delivery-index are SKIPPED. The merge is the only work left |
 | yes | `present` | **Closed out** | Report it and STOP. There is nothing to do |
 | yes | **`absent`** or `no-index` | **Recovery** | Runs on `main`. Writes the entry and the changelog. Never merges |
 
@@ -170,7 +170,7 @@ IF PR_STATE IS no-gh:
 
 ### STEP add-done.resume-route The Resume Route — written, pushed, merge refused
 
-Reached from 2.1's second row. **Every gate below still applies in full** — a
+Reached from STEP add-done.pr-route's second row. **Every gate below still applies in full** — a
 delivery is not exempt from grading because someone tried to merge it once. What
 changes is that four STEPs already ran and must not run again:
 
@@ -196,7 +196,7 @@ this run skipped.
 
 ### STEP add-done.recovery-route The Recovery Route — merged, never indexed
 
-Reached from 2.1's bottom row. Work reached `main` and left no record. Stopping
+Reached from STEP add-done.pr-route's bottom row. Work reached `main` and left no record. Stopping
 there would make the index quietly wrong about a delivery that shipped — the same
 lie as indexing work that never landed, in the other direction.
 
@@ -853,7 +853,7 @@ IF RENDERING THE ENTRY:
 
 ## STEP add-done.merge: Execute Merge (AUTOMATIC)
 
-**Execute immediately after STEP add-done.preview, on the route 2.2 chose.** All three of 2.2's
+**Execute immediately after STEP add-done.preview, on the route STEP add-done.local-route chose.** All three of STEP add-done.local-route's
 outcomes land here, including the one that asks.
 
 ⛔ **This command runs no per-file post-merge check, and that is deliberate.** `done.sh`'s
@@ -867,7 +867,7 @@ an omission to close.
 
 ### STEP add-done.ask-branch-stop The ASK Branch [STOP]
 
-Taken when 2.2's table said **ASK** — no PR exists and either no `Publish:` line
+Taken when STEP add-done.local-route's table said **ASK** — no PR exists and either no `Publish:` line
 was ever written, or one was written naming a PR that is now gone or closed
 unmerged. **These are not the same as a decline, and that distinction is the
 whole reason the record exists.**
@@ -963,12 +963,12 @@ IF THE MERGE IS REFUSED:
 ```
 
 The entry and the changelog then stay on the branch, absent from `main`, which is
-the honest state — and 2.1 routes the next run to **Resume**, which skips the
+the honest state — and STEP add-done.pr-route routes the next run to **Resume**, which skips the
 three STEPs that already ran rather than writing their output twice.
 
 ### STEP add-done.local-merge The Local Route
 
-Taken when 2.2 chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
+Taken when STEP add-done.local-route chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
 `no-gh` record, or `gh` is unavailable.
 
 ```bash
@@ -996,7 +996,7 @@ why it is the one call this command makes directly.
 <!-- /slot:board.ticket-close -->
 
 **After merge, carry this into STEP add-done.complete — do NOT print it here:**
-- Wiki result from 6.7 — pages touched, explicit no-op, or the "wiki not found" suggestion.
+- Wiki result from STEP add-done.wiki — pages touched, explicit no-op, or the "wiki not found" suggestion.
 - **Which evidence the gate accepted, and why** — the PR's checks on a named SHA, or the local route with the reason no PR was available.
 <!-- slot:board.ticket-carry fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-carry -->
@@ -1025,7 +1025,7 @@ Deleted row is written even when it reads "none".
 
 Then, after the seven blocks, state:
 
-- The wiki result from 6.7 — pages touched, an explicit no-op, or the "wiki not found" suggestion.
+- The wiki result from STEP add-done.wiki — pages touched, an explicit no-op, or the "wiki not found" suggestion.
 - The delivery index entry that `delivered.sh` wrote, and the changelog path.
 - **The docs index rebuild from STEP add-done.rebuild-docs-knowledge** — its node and edge counts, and the
   unresolved list when STEP add-done.rebuild-docs-knowledge found one. An unresolved relation points at a
@@ -1035,7 +1035,7 @@ Then, after the seven blocks, state:
   required check configured. On the local route: that no PR existed, and which
   `PUBLISH_RECORD` value said so. A gate that quietly changes which evidence it
   accepts is worse than a slow one.
-- **Which route 2.1 and 2.2 chose**, and on a Resume run, the STEPs it skipped
+- **Which route STEP add-done.pr-route and STEP add-done.local-route chose**, and on a Resume run, the STEPs it skipped
   and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
 <!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-report -->

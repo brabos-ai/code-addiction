@@ -157,18 +157,6 @@ export function removeBlockAfterAnchor(content, anchor, blockText) {
  * @param {Array} points
  * @returns {Array<{anchor: object, sections: string[]}>}
  */
-function groupPointsByAnchor(points) {
-  const byKey = new Map();
-  const groups = [];
-  for (const p of points) {
-    const key = `${p.anchor.position}|${p.anchor.ordinal}|${p.anchor.text}`;
-    let g = byKey.get(key);
-    if (!g) { g = { anchor: p.anchor, sections: [] }; byKey.set(key, g); groups.push(g); }
-    g.sections.push(p.section);
-  }
-  return groups;
-}
-
 /**
  * Resolve the resource-path placeholders a fragment section carries, for ONE
  * provider -- the same rule scripts/build.js resolveResourcePaths() applies when
@@ -194,85 +182,6 @@ export function resolvePlaceholders(text, provider) {
     .replace(/\{\{skill:([^/}]+)\/([^}]+)\}\}/g, (m, name, file) =>
       provider.skillsSubdir ? `${base}/${provider.skillsSubdir}/${name}/${file}` : m)
     .replace(/\{\{addpath:([^}]+)\}\}/g, (_, sub) => `.codeadd/${sub}`);
-}
-
-/** A copy of `sections` with every body resolved for `provider`. */
-function resolveSections(sections, provider) {
-  const out = new Map();
-  for (const [name, body] of sections) out.set(name, resolvePlaceholders(body, provider));
-  return out;
-}
-
-/**
- * Apply all of one resource's injection points to its file content.
- * Inserts bottom-up so higher anchors' ordinals stay valid across inserts.
- * @param {string} content
- * @param {Array} points  points for ONE resource (already filtered by name/kind)
- * @param {Map<string,string>} sections  fragment sections
- * @returns {{content: string, missed: Array<{sections:string[], anchor:object}>}}
- */
-export function applyInjectionToContent(content, points, sections, provider = null) {
-  if (provider) sections = resolveSections(sections, provider);
-  const groups = groupPointsByAnchor(points.filter((p) => sections.has(p.section)));
-  let result = content;
-  const missed = [];
-  for (const g of [...groups].reverse()) {
-    const blockText = g.sections.map((s) => sections.get(s)).join('');
-    if (!blockText) continue;
-    const next = insertBlockAfterAnchor(result, g.anchor, blockText);
-    if (next === null) { missed.push({ sections: g.sections, anchor: g.anchor }); continue; }
-    result = next;
-  }
-  return { content: result, missed };
-}
-
-/**
- * Remove all of one resource's injected blocks (re-derived from the fragment).
- * @param {string} content
- * @param {Array} points
- * @param {Map<string,string>} sections
- * @returns {string}
- */
-export function removeInjectionFromContent(content, points, sections, provider = null) {
-  // With a provider, remove the RESOLVED block this CLI injects -- and then the
-  // raw one, which a CLI from before placeholder resolution injected. Each pass
-  // is a no-op where its block is absent, so an install from either era comes
-  // out clean.
-  if (provider) {
-    const resolved = removeInjectionFromContent(content, points, resolveSections(sections, provider));
-    return removeInjectionFromContent(resolved, points, sections);
-  }
-  const groups = groupPointsByAnchor(points.filter((p) => sections.has(p.section)));
-  let result = content;
-  // Forward order is safe (unlike applyInjectionToContent's reversed inserts):
-  // removal re-resolves the anchor each iteration and removed blocks never
-  // contain anchor lines, so earlier removals can't shift later anchors.
-  for (const g of groups) {
-    const blockText = g.sections.map((s) => sections.get(s)).join('');
-    if (blockText) result = removeBlockAfterAnchor(result, g.anchor, blockText);
-  }
-  return result;
-}
-
-// ---------------------------------------------------------------------------
-// Sidecar map + resource resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Load the build-emitted injection-point map from the installed project.
- * Returns [] when absent (graceful fallback for installs predating the sidecar).
- * @param {string} cwd
- * @returns {Array}
- */
-export function loadInjectionPoints(cwd) {
-  const p = path.join(cwd, '.codeadd', 'injection-points.json');
-  if (!fs.existsSync(p)) return [];
-  try {
-    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-    return Array.isArray(data?.points) ? data.points : [];
-  } catch {
-    return [];
-  }
 }
 
 /**
@@ -387,89 +296,6 @@ export function recalculateHashes(cwd, manifest, modifiedPaths) {
 // anchor mechanism as command injection — only the source location (the
 // plugins/.../agents/ subtree) and the target files (provider agent dirs) differ.
 // ---------------------------------------------------------------------------
-
-/**
- * Read per-agent fragments from .codeadd/plugins/{name}/fragments/agents/{agent}.md
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {Array<{agentName: string, content: string}>}
- */
-export function getAgentFragments(cwd, pluginName) {
-  const dir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'fragments', 'agents');
-  if (!fs.existsSync(dir)) return [];
-
-  const fragments = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
-    const agentName = entry.name.replace(/\.md$/, '');
-    const content = fs.readFileSync(path.join(dir, entry.name), 'utf8');
-    fragments.push({ agentName, content });
-  }
-  return fragments;
-}
-
-/**
- * Inject plugin sections into each target agent file across installed providers,
- * driven by the sidecar map (anchors) + per-agent fragments (content). A fragment
- * with no matching sidecar point or no installed agent file is skipped.
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {string[]} absolute paths of modified agent files
- */
-export function injectAgentFragments(cwd, pluginName) {
-  const fragments = getAgentFragments(cwd, pluginName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'agent',
-  );
-  const modified = [];
-
-  for (const { agentName, content } of fragments) {
-    const sections = parseFragmentSections(content);
-    const agentPoints = points.filter((p) => p.resource.name === agentName);
-    if (agentPoints.length === 0) continue;
-
-    for (const { file, provider } of resolveResourceTargets(cwd, { name: agentName, kind: 'agent' })) {
-      const original = fs.readFileSync(file, 'utf8');
-      const { content: updated } = applyInjectionToContent(original, agentPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(file, updated, 'utf8');
-        modified.push(file);
-      }
-    }
-  }
-  return modified;
-}
-
-/**
- * Remove plugin sections from each target agent file (re-derived from fragments).
- * Symmetric with injectAgentFragments.
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {string[]} absolute paths of modified agent files
- */
-export function removeAgentFragments(cwd, pluginName) {
-  const fragments = getAgentFragments(cwd, pluginName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'agent',
-  );
-  const modified = [];
-
-  for (const { agentName, content } of fragments) {
-    const sections = parseFragmentSections(content);
-    const agentPoints = points.filter((p) => p.resource.name === agentName);
-    if (agentPoints.length === 0) continue;
-
-    for (const { file, provider } of resolveResourceTargets(cwd, { name: agentName, kind: 'agent' })) {
-      const original = fs.readFileSync(file, 'utf8');
-      const updated = removeInjectionFromContent(original, agentPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(file, updated, 'utf8');
-        modified.push(file);
-      }
-    }
-  }
-  return modified;
-}
 
 const BASELINE_ROOT = '.codeadd/baselines';
 

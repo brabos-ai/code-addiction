@@ -86,7 +86,7 @@ function copyDirRecursive(src, dest, provider = null) {
  * Remove HTML comments and collapse excess blank lines (saves tokens).
  *
  * ALL comments strip uniformly — including `feature:`/`plugin:` injection
- * markers. The markers are consumed at build time by extractInjectionPoints()
+ * markers. The markers are consumed at build time by extractSlots()
  * into the content-anchored sidecar (injection-points.json); the built provider
  * files ship marker-free and post-install injection locates anchors by text.
  */
@@ -382,85 +382,6 @@ function anchorAt(surviving, survivingPos, label) {
     throw new Error(`No variable-free anchor for ${label} — every adjacent line resolves a resource-path variable.`);
   }
   return { text, ordinal, position, next };
-}
-
-function extractInjectionPoints(rawContent, resourceName, resourceKind) {
-  assertEmptyMarkerPairs(rawContent, resourceName);
-
-  const commentRe = /<!--([\s\S]*?)-->/g;
-  let surviving = '';
-  let lastIndex = 0;
-  let m;
-  const pending = []; // { namespace, name, section, survivingPos }
-
-  while ((m = commentRe.exec(rawContent)) !== null) {
-    surviving += rawContent.slice(lastIndex, m.index);
-    lastIndex = m.index + m[0].length;
-    const open = m[1].match(OPEN_MARKER_RE);
-    if (open && isStandaloneMarker(rawContent, m.index, lastIndex)) {
-      pending.push({
-        namespace: open[1],
-        name: open[2],
-        section: open[3],
-        survivingPos: surviving.length, // marker location in the stripped body
-      });
-    }
-  }
-  surviving += rawContent.slice(lastIndex);
-
-  const points = [];
-  for (const p of pending) {
-    const above = nonBlankLines(surviving.slice(0, p.survivingPos));
-    const below = nonBlankLines(surviving.slice(p.survivingPos));
-
-    let text = null;
-    let position;
-    let ordinal;
-    let next = null;
-
-    // Prefer the nearest variable-free non-blank line ABOVE (walk past lines
-    // carrying a {{cmd:}}/{{skill:}}/{{addpath:}} variable — they resolve
-    // differently per provider and cannot serve as a single shared anchor).
-    let aboveIdx = -1;
-    for (let k = above.length - 1; k >= 0; k--) {
-      if (!ANCHOR_VARIABLE_RE.test(above[k])) { aboveIdx = k; break; }
-    }
-
-    if (aboveIdx !== -1) {
-      text = above[aboveIdx];
-      position = 'after';
-      ordinal = above.slice(0, aboveIdx + 1).filter((l) => l === text).length;
-      // Drift hint only when the anchor is the line immediately above the marker
-      // and the following line is itself variable-free (else it resolves per provider).
-      const walked = aboveIdx !== above.length - 1;
-      next = !walked && below.length > 0 && !ANCHOR_VARIABLE_RE.test(below[0]) ? below[0] : null;
-    } else {
-      // No variable-free line above → anchor before the nearest variable-free line below.
-      const belowIdx = below.findIndex((l) => !ANCHOR_VARIABLE_RE.test(l));
-      if (belowIdx !== -1) {
-        text = below[belowIdx];
-        position = 'before';
-        ordinal = above.filter((l) => l === text).length
-          + below.slice(0, belowIdx + 1).filter((l) => l === text).length;
-      }
-    }
-
-    if (text == null) {
-      throw new Error(
-        `No variable-free anchor for ${p.namespace}:${p.name}:${p.section} in ${resourceName} — ` +
-          `every adjacent line resolves a resource-path variable. Add a stable plain line next to the marker.`,
-      );
-    }
-
-    points.push({
-      namespace: p.namespace,
-      name: p.name,
-      section: p.section,
-      resource: { name: resourceName, kind: resourceKind },
-      anchor: { text, ordinal, position, next },
-    });
-  }
-  return points;
 }
 
 // Build-run accumulator (reset per build).
@@ -2421,7 +2342,6 @@ function main() {
 module.exports = {
   assertProductNames,
   stripHtmlComments,
-  extractInjectionPoints,
   collectInjectionPoints,
   getInjectionPoints,
   writeInjectionPoints,

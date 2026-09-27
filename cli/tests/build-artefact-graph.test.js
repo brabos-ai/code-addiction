@@ -12,7 +12,7 @@ import path from 'node:path';
  * `framwork/.codeadd/artefact-graph.json`, holding every artefact node and the
  * typed edges between them. Declared edges come from a source-only
  * `<!-- uses: -->` HTML comment read from RAW content before stripHtmlComments()
- * runs — the same mechanism extractInjectionPoints() uses, so the block never
+ * runs — the same mechanism extractSlots() uses, so the block never
  * reaches a provider file.
  *
  * Two cases here are load-bearing and must never be relaxed:

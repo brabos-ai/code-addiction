@@ -1,6 +1,6 @@
 # add--qa — Coordinator Reference
 
-Loaded by `/add-review` at its QA merge step (STEP 10.2), and by nothing else. `@ux-agent` and `@qa-agent` must NOT load this file: both emit `type` + root cause only, and routing needs the merged, deduped set plus a global order that no single judge can see.
+Loaded by `/add-review` at its QA merge step (STEP qa-pipeline.merge-write-per), and by nothing else. `@ux-agent` and `@qa-agent` must NOT load this file: both emit `type` + root cause only, and routing needs the merged, deduped set plus a global order that no single judge can see.
 
 ## Merge Rules (coordinator, at the merge step)
 

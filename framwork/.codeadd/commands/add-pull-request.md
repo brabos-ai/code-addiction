@@ -161,7 +161,7 @@ IF THE CHANGELOG ALREADY EXISTS:
 
 ⛔ **This command is usually the FIRST writer**, because it runs while the build
 is still going. Everything delivered after the PR opens reaches the changelog
-through `{{cmd:add-done}}` 6.3, which complements the same file.
+through `{{cmd:add-done}}` STEP add-done.complement-changelog, which complements the same file.
 
 ### STEP add-pull-request.allocate-changelog-id Allocate changelog ID
 
@@ -373,7 +373,7 @@ NEVER:
 - Rename branches
 - Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
 - Update `CHANGELOG.md` at the repo root (that belongs to the release workflow)
-- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — STEP add-pull-request.generate-complement complements it instead, and `{{cmd:add-done}}` 6.3 complements the same file later
+- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — STEP add-pull-request.generate-complement complements it instead, and `{{cmd:add-done}}` STEP add-done.complement-changelog complements the same file later
 
 ---
 
