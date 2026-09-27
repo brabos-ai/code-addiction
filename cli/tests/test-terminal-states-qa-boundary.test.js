@@ -174,8 +174,8 @@ describe('L2 — integration', () => {
   // both ways round.
   it('L2.2 the playwright block lands after the QA judgement, whatever the enable order', () => {
     const lineOf = (s, pred) => lf(s).split(String.fromCharCode(10)).findIndex(pred);
-    const step8 = (s) => lineOf(s, (l) => l.startsWith('## STEP 8:'));
-    const step11 = (s) => lineOf(s, (l) => l.startsWith('## STEP 11:'));
+    const step8 = (s) => lineOf(s, (l) => l.startsWith('## STEP qa-pipeline.preflight:'));
+    const step11 = (s) => lineOf(s, (l) => l.startsWith('## STEP add-review.report:'));
     const drive = (s) => lineOf(s, (l) => l.includes('Driving is via Playwright MCP'));
 
     const qaFirst = fixture.root();
@@ -265,7 +265,7 @@ describe('L2 — integration', () => {
   // one of its rows, and the failure mode is moving the whole step by accident.
   it('L2.3 (guard) add-review keeps STEP 11 in both feature states', () => {
     const cwd = fixture.root();
-    const heading = '## STEP 11: Quality Gate Report';
+    const heading = '## STEP add-review.report: Quality Gate Report';
 
     expect(lf(fs.readFileSync(claudeCommand(cwd, 'add-review'), 'utf8'))).toContain(heading);
     enableFeature(cwd, 'qa-pipeline');

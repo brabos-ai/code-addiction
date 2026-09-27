@@ -22,10 +22,6 @@ import {
 /**
  * Loud, actionable warning when a plugin anchor can't be located (drift / edit).
  */
-function isV2(cwd) {
-  return loadInjectionSidecar(cwd)?.version === 2;
-}
-
 function logSlotWarnings(warnings) {
   for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
 }
@@ -175,57 +171,17 @@ export function enablePlugin(cwd, pluginName) {
     return { ok: false, modified: 0, agents: 0, skills: 0, reason: 'not-detected' };
   }
 
-  if (isV2(cwd)) {
-    const skills = activateSkills(cwd, pluginName, entry.skills);
-    const manifest = readManifest(cwd);
-    if (manifest) {
-      if (!manifest.plugins) manifest.plugins = {};
-      manifest.plugins[pluginName] = { enabled: true };
-      saveManifest(cwd, manifest);
-    }
-    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-    logSlotWarnings(result.warnings);
-    const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
-    return { ok: true, modified: result.modified.length - agents, agents, skills };
-  }
-
-  // Inject command fragments
-  const fragments = getFragments(cwd, pluginName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections, provider);
-      if (missed.length) warnMissed(pluginName, commandName, missed);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  // Inject agent fragments (carry the capability across the dispatch boundary)
-  const agentPaths = injectAgentFragments(cwd, pluginName);
-
-  // Activate skills
   const skills = activateSkills(cwd, pluginName, entry.skills);
-
   const manifest = readManifest(cwd);
   if (manifest) {
     if (!manifest.plugins) manifest.plugins = {};
     manifest.plugins[pluginName] = { enabled: true };
-    recalculateHashes(cwd, manifest, [...modifiedPaths, ...agentPaths]);
     saveManifest(cwd, manifest);
   }
-
-  return { ok: true, modified: modifiedPaths.length, agents: agentPaths.length, skills };
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+  logSlotWarnings(result.warnings);
+  const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
+  return { ok: true, modified: result.modified.length - agents, agents, skills };
 }
 
 /**
@@ -238,54 +194,17 @@ export function disablePlugin(cwd, pluginName) {
   const catalog = loadCatalog();
   const entry = catalog[pluginName] ?? {};
 
-  if (isV2(cwd)) {
-    const skills = deactivateSkills(cwd, entry.skills);
-    const manifest = readManifest(cwd);
-    if (manifest) {
-      if (!manifest.plugins) manifest.plugins = {};
-      manifest.plugins[pluginName] = { enabled: false };
-      saveManifest(cwd, manifest);
-    }
-    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-    logSlotWarnings(result.warnings);
-    const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
-    return { modified: result.modified.length - agents, agents, skills };
-  }
-
-  const fragments = getFragments(cwd, pluginName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = removeInjectionFromContent(original, cmdPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  // Remove agent injections (symmetric with enable)
-  const agentPaths = removeAgentFragments(cwd, pluginName);
-
   const skills = deactivateSkills(cwd, entry.skills);
-
   const manifest = readManifest(cwd);
   if (manifest) {
     if (!manifest.plugins) manifest.plugins = {};
     manifest.plugins[pluginName] = { enabled: false };
-    recalculateHashes(cwd, manifest, [...modifiedPaths, ...agentPaths]);
     saveManifest(cwd, manifest);
   }
-
-  return { modified: modifiedPaths.length, agents: agentPaths.length, skills };
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+  logSlotWarnings(result.warnings);
+  const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
+  return { modified: result.modified.length - agents, agents, skills };
 }
 
 /**
@@ -297,28 +216,14 @@ export function disablePlugin(cwd, pluginName) {
 export function applyEnabledPlugins(cwd) {
   const manifest = readManifest(cwd);
   if (!manifest) return 0;
-  if (isV2(cwd)) {
-    let total = 0;
-    for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
-      if (state?.enabled) {
-        const result = enablePlugin(cwd, name);
-        if (result.ok) total += result.modified;
-      }
-    }
-    return total;
-  }
-
-  const pluginStates = manifest.plugins ?? {};
-  let totalModified = 0;
-
-  for (const [name, state] of Object.entries(pluginStates)) {
+  let total = 0;
+  for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
     if (state?.enabled) {
-      const { modified } = enablePlugin(cwd, name);
-      totalModified += modified;
+      const result = enablePlugin(cwd, name);
+      if (result.ok) total += result.modified;
     }
   }
-
-  return totalModified;
+  return total;
 }
 
 /**

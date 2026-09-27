@@ -228,4 +228,23 @@ describe('uninstall', () => {
 
     expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
   });
+
+  it('removes generated baselines and leaves a user file', async () => {
+    const addDir = path.join(tmpDir, '.codeadd');
+    const baseline = path.join(addDir, 'baselines', 'claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(baseline), { recursive: true });
+    fs.writeFileSync(baseline, 'pristine\n');
+    fs.writeFileSync(path.join(addDir, 'notes.md'), 'user\n');
+    fs.writeFileSync(path.join(addDir, 'manifest.json'), JSON.stringify({
+      version: '2.0.1',
+      providers: ['claude'],
+      files: [],
+      scope: 'project',
+    }));
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+    expect(fs.existsSync(baseline)).toBe(false);
+    expect(fs.existsSync(path.join(addDir, 'baselines'))).toBe(false);
+    expect(fs.readFileSync(path.join(addDir, 'notes.md'), 'utf8')).toBe('user\n');
+  });
 });

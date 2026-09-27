@@ -20,25 +20,25 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 
 ## Required Skills
 
-Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-wiki.bootstrap (schemas, IDs, universal doc rules).
 
 ---
 
 ## Invocation Modes
 
-`/add-wiki` → full generation. Run STEP 1 through STEP 9 below.
+`/add-wiki` → full generation. Run STEP add-wiki.bootstrap through STEP add-wiki.report below.
 
-`/add-wiki update` → skip the generation flow (STEP 2 through STEP 5):
+`/add-wiki update` → skip the generation flow (STEP add-wiki.classify through STEP add-wiki.hub):
 
 ```
 IF {{addpath:wiki/index.md}} exists:
   Load skill {{skill:add--wiki-maintenance/SKILL.md}} and execute its full update
   discipline (evidence chain, computed candidates, impact plan, surgical edits,
   per-page stamp bumps, hub sync, .meta.json advance, report).
-  THEN run STEP 6.1 and 6.2, the managed-block tasks of STEP 6 — items 1, 4, 5 and 6
-  of its prompt — followed by all of STEP 7.
+  THEN run STEP add-wiki.agents-md and 6.2, the managed-block tasks of STEP add-wiki.agents-md — items 1, 4, 5 and 6
+  of its prompt — followed by all of STEP add-wiki.verify.
 ELSE:
-  No wiki exists yet — fall back to full generation (STEP 1 onward).
+  No wiki exists yet — fall back to full generation (STEP add-wiki.bootstrap onward).
 ```
 
 **Why update mode reaches AGENTS.md at all.** `add--wiki-maintenance` never writes that file,
@@ -52,8 +52,8 @@ IF invoked as `/add-wiki update`:
   ⛔ DO NOT: Regenerate the Architecture Contract section
   ⛔ DO NOT: Regenerate the Technical Spec section
   ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
-  ⛔ DO NOT: Dispatch the STEP 6 agent for anything beyond items 1, 4, 5 and 6
-  ✅ DO: Migrate (6.1), replace-or-append the managed blocks, then verify per STEP 7
+  ⛔ DO NOT: Dispatch the STEP add-wiki.agents-md agent for anything beyond items 1, 4, 5 and 6
+  ✅ DO: Migrate (6.1), replace-or-append the managed blocks, then verify per STEP add-wiki.verify
 ```
 
 Update mode is surgical everywhere else, and it stays surgical here.
@@ -64,16 +64,16 @@ Update mode is surgical everywhere else, and it stays surgical here.
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Self-Bootstrap             → READ skill FIRST
-STEP 2: Detect & Classify Apps     → EXPLORE + BUILD dispatch plan
-STEP 2.5: Read User Brief          → INSTRUCTIONS.md scope/priorities (if present)
-STEP 3: Dispatch Analyzers         → ALL IN PARALLEL (specialists + spine + quality)
-STEP 4: Consolidate Pages          → WAIT-ALL before proceeding
-STEP 5: Generate Hub + Gate        → DERIVE index.md + bijection/budget gate
-STEP 6: Update AGENTS.md           → MIGRATE legacy files, DISPATCH agent (managed blocks)
-STEP 7: Verify AGENTS.md           → the only context file, every managed block once
-STEP 8: Write .meta.json           → CORPUS STAMP + gitignore check
-STEP 9: Report & Cleanup           → SUMMARY + backlog + next steps
+STEP add-wiki.bootstrap: Self-Bootstrap             → READ skill FIRST
+STEP add-wiki.classify: Detect & Classify Apps     → EXPLORE + BUILD dispatch plan
+STEP add-wiki.brief: Read User Brief          → INSTRUCTIONS.md scope/priorities (if present)
+STEP add-wiki.dispatch: Dispatch Analyzers         → ALL IN PARALLEL (specialists + spine + quality)
+STEP add-wiki.consolidate: Consolidate Pages          → WAIT-ALL before proceeding
+STEP add-wiki.hub: Generate Hub + Gate        → DERIVE index.md + bijection/budget gate
+STEP add-wiki.agents-md: Update AGENTS.md           → MIGRATE legacy files, DISPATCH agent (managed blocks)
+STEP add-wiki.verify: Verify AGENTS.md           → the only context file, every managed block once
+STEP add-wiki.meta: Write .meta.json           → CORPUS STAMP + gitignore check
+STEP add-wiki.report: Report & Cleanup           → SUMMARY + backlog + next steps
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -82,9 +82,9 @@ IF `{{addpath:wiki/INSTRUCTIONS.md}}` exists:
   ⛔ DO NOT USE: Write or Edit on INSTRUCTIONS.md
   ✅ DO: Read it once for scope/priority steering, nothing else
 
-IF the STEP 5 bijection/budget gate has NOT passed:
+IF the STEP add-wiki.hub bijection/budget gate has NOT passed:
   ⛔ DO NOT USE: Bash to delete `{{addpath:skills/project-patterns/}}` or `pattern-search.sh`
-  ⛔ DO NOT: Proceed to STEP 6
+  ⛔ DO NOT: Proceed to STEP add-wiki.agents-md
   ✅ DO: Fix `index.md` or the pages until the gate holds, then retry
 
 ---
@@ -104,11 +104,11 @@ NEVER:
 - Analyze code yourself (coordinator only)
 - Write wiki pages directly (specialists/spine analyzer do this)
 - Execute specialists sequentially (run parallel)
-- Skip the STEP 5 bijection/budget gate
+- Skip the STEP add-wiki.hub bijection/budget gate
 - Skip the code quality analyzer (always run)
 - Bake structural facts (call graphs, import inventories, blast radius) into wiki pages
 - Edit or overwrite `INSTRUCTIONS.md`
-- Delete legacy `project-patterns`/`pattern-search.sh` before the STEP 5 gate passes
+- Delete legacy `project-patterns`/`pattern-search.sh` before the STEP add-wiki.hub gate passes
 
 ---
 
@@ -127,7 +127,7 @@ You are the coordinator. You know your engine's capabilities. Map the intent to 
 
 ---
 
-## STEP 1: Self-Bootstrap (READ FIRST)
+## STEP add-wiki.bootstrap: Self-Bootstrap (READ FIRST)
 
 Read skill `add--architecture-discovery`.
 
@@ -141,7 +141,7 @@ Read skill `add--architecture-discovery`.
 
 ---
 
-## STEP 2: Detect & Classify Apps
+## STEP add-wiki.classify: Detect & Classify Apps
 
 ### 2.0 Explore Project
 
@@ -171,7 +171,7 @@ No temp file — use findings inline for classification below.
 
 List all directories under `apps/`, `packages/`, `libs/`.
 
-### 2.2 Classify Each App
+### STEP add-wiki.classify Classify Each App
 
 **For each detected app:**
 
@@ -189,7 +189,7 @@ List all directories under `apps/`, `packages/`, `libs/`.
 
 3. ASSIGN specialist or generic template
 
-4. NOTE recent churn per app (git evidence) — used by STEP 5.2 domain-selection priority if the domain count exceeds budget
+4. NOTE recent churn per app (git evidence) — used by STEP add-wiki.hub domain-selection priority if the domain count exceeds budget
 
 ### 2.3 Build Dispatch Plan
 
@@ -226,12 +226,12 @@ mkdir -p .codeadd/wiki/domains
 
 ---
 
-## STEP 2.5: Read User Brief
+## STEP add-wiki.brief: Read User Brief
 
 ```
 IF {{addpath:wiki/INSTRUCTIONS.md}} exists:
   Read it. Treat its content as scope/priority steering for the dispatch plan (2.3)
-  and for domain selection when over budget (STEP 5.2).
+  and for domain selection when over budget (STEP add-wiki.hub).
   ⛔ NEVER edit, rewrite, or overwrite this file — it is user-owned.
 ELSE:
   Continue with no additional steering.
@@ -239,7 +239,7 @@ ELSE:
 
 ---
 
-## STEP 3: Dispatch Analyzers (PARALLEL)
+## STEP add-wiki.dispatch: Dispatch Analyzers (PARALLEL)
 
 **DISPATCH ALL AGENTS IN PARALLEL:**
 Each agent is independent. Dispatch ALL simultaneously — app specialists, the spine analyzer, and the code quality analyzer together.
@@ -256,7 +256,7 @@ Each agent is independent. Dispatch ALL simultaneously — app specialists, the 
 **DISPATCH AGENT:**
 - **Capability:** read-write (must write output file)
 - **Complexity:** standard
-- **Context:** Dispatch plan from STEP 2 (classified apps, paths, detected stack), INSTRUCTIONS.md brief from STEP 2.5 (if present)
+- **Context:** Dispatch plan from STEP add-wiki.classify (classified apps, paths, detected stack), INSTRUCTIONS.md brief from STEP add-wiki.brief (if present)
 - **Output format:** every wiki-writing analyzer follows the mandatory frontmatter + body format below; the code quality analyzer keeps its existing report format (unchanged, stays outside the wiki)
 
 **Mandatory Wiki Page Frontmatter (every wiki-writing analyzer):**
@@ -444,7 +444,7 @@ Read: skill add--architecture-discovery file spine-analyzer.md
 Follow ALL instructions.
 
 ## INPUTS
-- Dispatch plan from STEP 2 (classified apps, paths, detected stack)
+- Dispatch plan from STEP add-wiki.classify (classified apps, paths, detected stack)
 - Root configs (package.json, turbo.json, tsconfig, etc.)
 - Existing docs (README, docs/) as primary source material
 - Validation Gates detection
@@ -463,7 +463,7 @@ Follow ALL instructions.
 Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpath:wiki/workflows.md}}
 ```
 
-**FOLD MODE (MODE=tiny from 2.3.1):** append to the spine analyzer's prompt: "TINY REPO — do NOT write files. Return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules, path:line refs) in your report. The coordinator folds them into index.md at STEP 5."
+**FOLD MODE (MODE=tiny from 2.3.1):** append to the spine analyzer's prompt: "TINY REPO — do NOT write files. Return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules, path:line refs) in your report. The coordinator folds them into index.md at STEP add-wiki.hub."
 
 **DISPATCH RULES:**
 - RUN ALL analyzers IN PARALLEL
@@ -472,7 +472,7 @@ Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpa
 
 ---
 
-## STEP 4: Consolidate Pages (WAIT-ALL Before Consolidation)
+## STEP add-wiki.consolidate: Consolidate Pages (WAIT-ALL Before Consolidation)
 
 **WAIT-ALL:** Verify ALL agent outputs exist before proceeding.
 
@@ -493,11 +493,11 @@ Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpa
 
 **Decision Point:**
 - If ANY file missing, incomplete, or missing frontmatter → Wait/retry. Do NOT proceed.
-- If ALL outputs verified → Proceed to STEP 5.
+- If ALL outputs verified → Proceed to STEP add-wiki.hub.
 
 ---
 
-## STEP 5: Generate Hub + Gate
+## STEP add-wiki.hub: Generate Hub + Gate
 
 Derive `{{addpath:wiki/index.md}}` entirely from page frontmatter — never hand-write a link description.
 
@@ -543,11 +543,11 @@ as of their own frontmatter `commit`. Staleness check for any page:
 - Hub: **150-line hard cap**
 - First pass is anti-perfectionist: produce a strong, accurate, navigable first-pass wiki, then stop — refinement belongs to `/add-wiki update`
 
-### 5.2 Domain Selection When Over Budget
+### STEP add-wiki.hub Domain Selection When Over Budget
 
 When the domain count exceeds budget (monorepos with 10+ domains), priority order:
 1. Areas named in `INSTRUCTIONS.md`
-2. Domains with recent churn (git evidence from STEP 2.2)
+2. Domains with recent churn (git evidence from STEP add-wiki.classify)
 3. Larger/central domains
 
 Everything cut goes to the Backlog with its source anchor — never silently dropped.
@@ -560,17 +560,17 @@ Everything cut goes to the Backlog with its source anchor — never silently dro
 - [ ] Budgets respected (§5.1)
 - [ ] Terminology has ≤ 15 entries
 
-IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP 6 until the bijection holds.
+IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP add-wiki.agents-md until the bijection holds.
 
-### 5.4 Migration Cleanup (full runs only, AFTER the gate passes)
+### STEP add-wiki.hub Migration Cleanup (full runs only, AFTER the gate passes)
 
 - IF `{{addpath:skills/project-patterns/}}` exists → DELETE it, report the removal
 - IF `.codeadd/scripts/pattern-search.sh` exists → DELETE it, report the removal
-- NEVER perform this cleanup before the STEP 5 gate passes
+- NEVER perform this cleanup before the STEP add-wiki.hub gate passes
 
 ---
 
-## STEP 6: Update AGENTS.md
+## STEP add-wiki.agents-md: Update AGENTS.md
 
 <!-- slot:gitnexus.graph-contract fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-contract -->
@@ -582,10 +582,10 @@ Antigravity all read it. No CLAUDE.md and no GEMINI.md is written, copied or upd
 
 Read skill `{{skill:add--agents-md-style/SKILL.md}}` BEFORE anything else in this STEP.
 
-### 6.1 Run the Migration (coordinator)
+### STEP add-wiki.agents-md Run the Migration (coordinator)
 
 Run the skill's **Migration** — `bash .codeadd/scripts/migrate-context-files.sh` at the project root.
-Keep every `MIGRATED:`, `LEGACY_LOCAL:` and `CONTEXT_MIGRATION:` line for the STEP 9 report.
+Keep every `MIGRATED:`, `LEGACY_LOCAL:` and `CONTEXT_MIGRATION:` line for the STEP add-wiki.report report.
 
 ```
 IF THE MIGRATION HAS NOT RUN OR EXITED NON-ZERO:
@@ -767,7 +767,7 @@ WAIT: Do NOT proceed until AGENTS.md has been updated.
 
 ---
 
-## STEP 7: Verify AGENTS.md
+## STEP add-wiki.verify: Verify AGENTS.md
 
 **Coordinator action (no subagent needed).** Nothing is copied: AGENTS.md is the one file every
 provider reads. This STEP checks it is the only context file left and that every managed block
@@ -776,8 +776,8 @@ landed once.
 ```
 IF A CHECK BELOW FAILS:
   ⛔ DO NOT: Write a CLAUDE.md or a GEMINI.md to make up for it
-  ⛔ DO NOT: Proceed to STEP 8
-  ✅ DO: Re-run the failing part of STEP 6 (6.1 for a leftover file, 6.3 for a block), then check again
+  ⛔ DO NOT: Proceed to STEP add-wiki.meta
+  ✅ DO: Re-run the failing part of STEP add-wiki.agents-md (6.1 for a leftover file, 6.3 for a block), then check again
 ```
 
 - [ ] AGENTS.md exists at the project root
@@ -790,7 +790,7 @@ IF A CHECK BELOW FAILS:
 
 ---
 
-## STEP 8: Write .meta.json
+## STEP add-wiki.meta: Write .meta.json
 
 **WRITE** `{{addpath:wiki/.meta.json}}`:
 
@@ -813,20 +813,20 @@ shared with the team. Do NOT silently continue as if unaffected.
 
 ---
 
-## STEP 9: Report & Cleanup
+## STEP add-wiki.report: Report & Cleanup
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the detail list and the navigation guidance come after it.
 
 Fill `How it works` with how the wiki is meant to be read: the hub is the only entrypoint, and the
 frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries, the gitignore
-warning and every legacy context file STEP 6.1 deleted or left, because all three are the user's to
+warning and every legacy context file STEP add-wiki.agents-md deleted or left, because all three are the user's to
 act on — the Deleted row of `Files touched` names each deleted CLAUDE.md or GEMINI.md.
 
 **Then report to user:**
-Include: AGENTS.md updated, every `MIGRATED:` / `LEGACY_LOCAL:` line from STEP 6.1, apps analyzed with types, code quality scores, wiki areas/pages
+Include: AGENTS.md updated, every `MIGRATED:` / `LEGACY_LOCAL:` line from STEP add-wiki.agents-md, apps analyzed with types, code quality scores, wiki areas/pages
 generated, Backlog entries (if any), gitignore warning (if triggered), migration cleanup performed
-(if any — STEP 5.4).
+(if any — STEP add-wiki.hub).
 
 **Include hub navigation guidance (replaces pattern-search usage):**
 ```bash

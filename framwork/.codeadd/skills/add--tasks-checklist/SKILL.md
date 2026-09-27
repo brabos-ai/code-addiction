@@ -200,7 +200,7 @@ The coordinator merges all area reports, recomputes derived `## Requirements Cov
 
 ## Architect Subagent Prompt Template
 
-When `add-plan` STEP 9.4 dispatches the architect subagent, use this prompt template:
+When `add-plan` STEP add-plan.tasks dispatches the architect subagent, use this prompt template:
 
 ```
 You are the ARCHITECT for feature ${FEATURE_ID} (subfeature ${EPIC_CURRENT_SF} if epic).
@@ -244,7 +244,7 @@ return. Return the document alone, with no commentary wrapped around it.
 ```
 
 ⛔ **The architect is `@architecture-agent`, which declares `readonly: true`.** A template telling it
-to write is a template it can only refuse. `add-plan` STEP 9.4 is the writer.
+to write is a template it can only refuse. `add-plan` STEP add-plan.tasks is the writer.
 
 ## Resume vs Rerun Procedure
 

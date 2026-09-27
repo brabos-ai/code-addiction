@@ -329,7 +329,7 @@ describe('F19 — /add-done keeps the format from decaying', () => {
     'utf8',
   );
 
-  const gate = () => DONE.slice(DONE.indexOf('### 4.4'), DONE.indexOf('## STEP 5'));
+  const gate = () => DONE.slice(DONE.indexOf('### 4.4'), DONE.indexOf('## STEP add-done.promote-qa'));
 
   it('L4.3 gate 4.4 exists and blocks on either half', () => {
     expect(DONE).toMatch(/^### 4\.4/m);
@@ -350,7 +350,7 @@ describe('F19 — /add-done keeps the format from decaying', () => {
   });
 
   it('the gate runs before the merge, not after it', () => {
-    expect(DONE.indexOf('### 4.4')).toBeLessThan(DONE.indexOf('## STEP 8'));
+    expect(DONE.indexOf('### 4.4')).toBeLessThan(DONE.indexOf('## STEP add-done.merge'));
   });
 
   it('rebuilds the docs index, through the shipped one-shot form', () => {
@@ -435,12 +435,12 @@ describe('F19 — 6.7.1 asks for what the action actually returns', () => {
   });
 
   it('STEP 9 carries the rebuild outcome to the user', () => {
-    const report = DONE.slice(DONE.indexOf('## STEP 9'));
+    const report = DONE.slice(DONE.indexOf('## STEP add-done.complete'));
     expect(report).toContain('docs index rebuild from 6.7.1');
   });
 
   it('the top STEP list no longer scopes STEP 4 to feature branches alone', () => {
-    const line = DONE.split('\n').find((l) => l.startsWith('STEP 4: Validate delivery'));
+    const line = DONE.split('\n').find((l) => l.startsWith('STEP add-done.validate: Validate delivery'));
     expect(line).toMatch(/feature AND hotfix/);
   });
 });

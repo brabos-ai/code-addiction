@@ -491,8 +491,7 @@ function collectInjectionPoints(rawContent, resourceName, resourceKind) {
   }
   INJECTION_MODE = mode;
   if (mode === 'v1') {
-    INJECTION_POINTS.push(...extractInjectionPoints(rawContent, resourceName, resourceKind));
-    return;
+    throw new Error(`Legacy injection markers in ${resourceName} are not accepted. Wrap them in a slot.`);
   }
   INJECTION_SLOTS.push(...extractSlots(rawContent, resourceName, resourceKind, readProductFallback));
 }

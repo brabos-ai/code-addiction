@@ -10,12 +10,12 @@
 <!-- /section:ticket-doing -->
 
 <!-- section:ticket-attention -->
-  It also names STEP 2's ticket write, when that write did not land.
+  It also names STEP add-build.branch's ticket write, when that write did not land.
 <!-- /section:ticket-attention -->
 
 <!-- section:ticket-metadata -->
 
-**With a ticket:** the metadata also says what STEP 2's ticket write did — set to `doing`, already
+**With a ticket:** the metadata also says what STEP add-build.branch's ticket write did — set to `doing`, already
 `doing`, or what did not happen.
 <!-- /section:ticket-metadata -->
 

@@ -12,7 +12,7 @@
 
 Delete the feature-directory files that **no command reads after the merge**. Their purpose expired when the branch did: `discovery.md` is an explicitly-cached pre-build analysis, `tasks.md` is a build checklist, `epic.md` is convergence state, and `review-NNN.md` is a gate record whose gate has passed.
 
-Deletions stay in the working tree. `done.sh --merge` (STEP 8) commits them with everything else STEP 6 produced.
+Deletions stay in the working tree. `done.sh --merge` (STEP add-done.merge) commits them with everything else STEP add-done.document produced.
 
 **Delete exactly these, and nothing else:**
 
@@ -51,7 +51,7 @@ Check tracking before deleting, per file:
 git ls-files --error-unmatch "${FILE}" >/dev/null 2>&1
 ```
 
-#### Interrupted between STEP 6 and STEP 8
+#### Interrupted between STEP add-done.document and STEP add-done.merge
 
 Recoverable, and worth saying because pruning borrows its commit path from artefacts that lose nothing when interrupted. A changelog or wiki edit left uncommitted costs nothing; deleted files left uncommitted look like data loss and are not:
 

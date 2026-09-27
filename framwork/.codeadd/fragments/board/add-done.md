@@ -19,7 +19,7 @@ writing twice. No `ticket:`, nothing to do.
 IF CLOSING THE TICKET FAILS OR IS REFUSED:
   ⛔ DO NOT: Treat it as a failed delivery — the merge already landed
   ⛔ DO NOT: Retry the push or resolve a rebase on the user's behalf
-  ✅ DO: Carry the one line saying what did not happen into STEP 9, and continue
+  ✅ DO: Carry the one line saying what did not happen into STEP add-done.complete, and continue
 ```
 <!-- /section:ticket-close -->
 

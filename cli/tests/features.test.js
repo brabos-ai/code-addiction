@@ -76,18 +76,28 @@ function setupFragment(dir, featureName, commandName, sections) {
  */
 function addSidecar(dir, featureName, commandName, sections) {
   const p = path.join(dir, '.codeadd', 'injection-points.json');
-  const existing = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : { version: 1, points: [] };
+  const existing = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : { version: 2, slots: [] };
+  existing.version = 2;
+  if (!Array.isArray(existing.slots)) existing.slots = [];
   for (const section of sections) {
-    existing.points.push({
-      namespace: 'feature',
-      name: featureName,
-      section,
+    existing.slots.push({
+      id: `${featureName}.${section}`,
+      fallback: '',
+      members: [{ namespace: 'feature', name: featureName, section }],
       resource: { name: commandName, kind: 'command' },
       anchor: { text: anchorText(commandName, section), ordinal: 1, position: 'after', next: null },
     });
   }
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, JSON.stringify(existing, null, 2), 'utf8');
+  for (const dest of ['.claude', '.cursor', '.opencode']) {
+    const src = path.join(dir, dest, 'commands', `${commandName}.md`);
+    if (!fs.existsSync(src)) continue;
+    const base = path.join(dir, '.codeadd', 'baselines', dest.slice(1), 'commands', `${commandName}.md`);
+    if (fs.existsSync(base)) continue;
+    fs.mkdirSync(path.dirname(base), { recursive: true });
+    fs.copyFileSync(src, base);
+  }
 }
 
 beforeEach(() => {

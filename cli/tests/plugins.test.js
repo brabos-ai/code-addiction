@@ -10,6 +10,7 @@ import {
   applyEnabledPlugins,
   getPluginStates,
 } from '../src/plugins.js';
+import { captureBaselines } from '../src/injection-core.js';
 
 /**
  * Point CODEADD_PLUGINS_CATALOG at a temp catalog file so the plugin module
@@ -100,7 +101,31 @@ function scaffoldProject(cwd, { providers, pluginName, sectionsByCommand, skills
     }
   }
 
-  fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }, null, 2));
+  const slots = points.map((p) => ({
+    id: `${p.name}.${p.section}`,
+    fallback: '',
+    members: [{ namespace: p.namespace, name: p.name, section: p.section }],
+    resource: p.resource,
+    anchor: p.anchor,
+  }));
+  fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 2, slots, points }, null, 2));
+  captureBaselines(cwd);
+  for (const dest of ['.claude', '.cursor', '.opencode']) {
+    const cmdDir = path.join(cwd, dest, 'commands');
+    if (!fs.existsSync(cmdDir)) continue;
+    for (const name of fs.readdirSync(cmdDir)) {
+      const base = path.join(cwd, '.codeadd', 'baselines', dest.slice(1), 'commands', name);
+      fs.mkdirSync(path.dirname(base), { recursive: true });
+      fs.copyFileSync(path.join(cmdDir, name), base);
+    }
+    const agentDir = path.join(cwd, dest, 'agents');
+    if (!fs.existsSync(agentDir)) continue;
+    for (const name of fs.readdirSync(agentDir)) {
+      const base = path.join(cwd, '.codeadd', 'baselines', dest.slice(1), 'agents', name);
+      fs.mkdirSync(path.dirname(base), { recursive: true });
+      fs.copyFileSync(path.join(agentDir, name), base);
+    }
+  }
 }
 
 describe('plugins', () => {

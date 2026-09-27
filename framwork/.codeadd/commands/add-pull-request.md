@@ -28,14 +28,14 @@ Idempotent PR command for the current branch. Detects whether a PR already exist
 **STEPS IN ORDER:**
 
 ```
-STEP 1: Verify gh CLI                     -> RUN FIRST
-STEP 2: Detect branch + PR state          -> Determine create vs edit, capture feature ID
-STEP 3: Generate feature changelog        -> FEATURE BRANCH ONLY, idempotent
-STEP 4: Stage + commit pending changes    -> Use add--commit skill, security gate
-STEP 5: Push to origin                    -> with -u if no upstream
-STEP 6: Build PR body                     -> Summary / Changes / Test Plan
-STEP 7: Create or update PR               -> 7A new, 7B append-only edit
-STEP 8: Completion summary                -> Report URL + post-merge guidance
+STEP add-pull-request.gh: Verify gh CLI                     -> RUN FIRST
+STEP add-pull-request.detect: Detect branch + PR state          -> Determine create vs edit, capture feature ID
+STEP add-pull-request.changelog: Generate feature changelog        -> FEATURE BRANCH ONLY, idempotent
+STEP add-pull-request.commit: Stage + commit pending changes    -> Use add--commit skill, security gate
+STEP add-pull-request.push: Push to origin                    -> with -u if no upstream
+STEP add-pull-request.body: Build PR body                     -> Summary / Changes / Test Plan
+STEP add-pull-request.publish: Create or update PR               -> 7A new, 7B append-only edit
+STEP add-pull-request.complete: Completion summary                -> Report URL + post-merge guidance
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS:**
@@ -66,13 +66,13 @@ IF BRANCH_TYPE = feature AND CHANGELOG NOT WRITTEN AND NOT ALREADY PRESENT:
   ⛔ DO NOT USE: Bash for git push
   ⛔ DO NOT USE: Bash for gh pr create
   ⛔ DO NOT USE: Bash for gh pr edit
-  ✅ DO: Generate changelog FIRST (STEP 3)
+  ✅ DO: Generate changelog FIRST (STEP add-pull-request.changelog)
 
 IF PR ALREADY EXISTS for current branch:
   ⛔ DO NOT USE: Bash for gh pr create (would fail or duplicate)
   ⛔ DO NOT: Overwrite existing PR body — append-only update
   ⛔ DO NOT: Modify existing PR title
-  ✅ DO: Use STEP 7B (gh pr edit with appended Update section)
+  ✅ DO: Use STEP add-pull-request.publishB (gh pr edit with appended Update section)
 
 ALWAYS:
   ⛔ DO NOT: Amend previous commits
@@ -84,7 +84,7 @@ ALWAYS:
 
 ---
 
-## STEP 1: Verify gh CLI
+## STEP add-pull-request.gh: Verify gh CLI
 
 ### 1.1 Check installation
 
@@ -104,7 +104,7 @@ If not authenticated → instruct user to run `gh auth login` and STOP.
 
 ---
 
-## STEP 2: Detect Branch & PR State
+## STEP add-pull-request.detect: Detect Branch & PR State
 
 ### 2.1 Capture branch metadata
 
@@ -129,7 +129,7 @@ If branch metadata script is unavailable, fall back to regex:
 - `^(hotfix|fix)/[0-9]{4}H-` → hotfix
 - otherwise → other
 
-### 2.3 Detect existing PR
+### STEP add-pull-request.detect Detect existing PR
 
 ```bash
 PR_DATA=$(gh pr view --json number,url,title,body,state 2>/dev/null || echo "")
@@ -139,7 +139,7 @@ If empty → no PR exists → flow `CREATE`. If state is `OPEN` → flow `UPDATE
 
 ---
 
-## STEP 3: Generate Feature Changelog (FEATURE BRANCH ONLY)
+## STEP add-pull-request.changelog: Generate Feature Changelog (FEATURE BRANCH ONLY)
 
 **⛔ Skip this STEP entirely if `BRANCH_TYPE` ≠ `feature`.**
 
@@ -184,11 +184,11 @@ Source material:
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `changelog`.
 
-⛔ If gate returns anything other than `PASS` → fix and re-run. DO NOT proceed to STEP 4 with an invalid changelog.
+⛔ If gate returns anything other than `PASS` → fix and re-run. DO NOT proceed to STEP add-pull-request.commit with an invalid changelog.
 
 ---
 
-## STEP 4: Stage & Commit Pending Changes
+## STEP add-pull-request.commit: Stage & Commit Pending Changes
 
 ### 4.1 Security check
 
@@ -204,7 +204,7 @@ If output contains `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12` → STOP (see 
 git diff --quiet HEAD && echo "CLEAN" || echo "DIRTY"
 ```
 
-If `CLEAN` AND no changelog was just generated → skip to STEP 5.
+If `CLEAN` AND no changelog was just generated → skip to STEP add-pull-request.push.
 
 ### 4.3 Generate commit message
 
@@ -228,7 +228,7 @@ If staging anything sensitive (security check at 4.1 must already have STOPped) 
 
 ---
 
-## STEP 5: Push to Origin
+## STEP add-pull-request.push: Push to Origin
 
 ### 5.1 Check upstream
 
@@ -250,9 +250,9 @@ git push
 
 ---
 
-## STEP 6: Build PR Body
+## STEP add-pull-request.body: Build PR Body
 
-### 6.1 Sections
+### STEP add-pull-request.body Sections
 
 Compose the body with three sections:
 
@@ -284,24 +284,24 @@ Format: `type(scope): subject`. Source priority:
 
 ---
 
-## STEP 7: Create or Update PR
+## STEP add-pull-request.publish: Create or Update PR
 
-### 7A: Create new PR (if no PR exists)
+### STEP add-pull-request.publishA: Create new PR (if no PR exists)
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'
-<body from STEP 6.1>
+<body from STEP add-pull-request.body>
 EOF
 )"
 ```
 
 Capture returned URL.
 
-### 7B: Update existing PR (if PR exists, state OPEN)
+### STEP add-pull-request.publishB: Update existing PR (if PR exists, state OPEN)
 
 ⛔ Title is **never** modified. Body is **append-only**.
 
-1. Fetch existing body from `PR_DATA` (already captured in STEP 2.3).
+1. Fetch existing body from `PR_DATA` (already captured in STEP add-pull-request.detect).
 2. Build update section:
 
 ```markdown
@@ -331,7 +331,7 @@ EOF
 
 ---
 
-## STEP 8: Completion Summary
+## STEP add-pull-request.complete: Completion Summary
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the field table below comes after it, whole.
@@ -345,7 +345,7 @@ Then, after the seven blocks, report:
 | Field | Value |
 |-------|-------|
 | Branch | `$BRANCH` |
-| PR | URL (mark `(updated)` if STEP 7B was used) |
+| PR | URL (mark `(updated)` if STEP add-pull-request.publishB was used) |
 | Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
 | Commits pushed | count from `git log @{push}..HEAD` before push, or 0 if clean |
 

@@ -206,10 +206,22 @@ describe('injection-points collector + emit', () => {
   beforeEach(() => _resetInjectionPoints());
   afterEach(() => _resetInjectionPoints());
 
-  it('accumulates across multiple collect calls', () => {
-    collectInjectionPoints('anchor\n<!-- feature:tdd:gate -->\n<!-- /feature:tdd:gate -->', 'add-build', 'command');
-    collectInjectionPoints('anchor\n<!-- plugin:gitnexus:graph -->\n<!-- /plugin:gitnexus:graph -->', 'backend-agent', 'agent');
-    expect(getInjectionPoints()).toHaveLength(2);
+  it('accumulates slotted resources and refuses a legacy marker', () => {
+    const slot = (ns, name, section) => [
+      'anchor',
+      `<!-- slot:${name}-${section} fallback="fallbacks/empty.md" -->`,
+      `<!-- ${ns}:${name}:${section} -->`,
+      `<!-- /${ns}:${name}:${section} -->`,
+      `<!-- /slot:${name}-${section} -->`,
+    ].join('\n');
+    collectInjectionPoints(slot('feature', 'tdd', 'gate'), 'add-build', 'command');
+    collectInjectionPoints(slot('plugin', 'gitnexus', 'graph'), 'backend-agent', 'agent');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slots-'));
+    writeInjectionPoints(path.join(dir, 'injection-points.json'));
+    const data = JSON.parse(fs.readFileSync(path.join(dir, 'injection-points.json'), 'utf8'));
+    expect(data.version).toBe(2);
+    expect(data.slots).toHaveLength(2);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 
   it('collecting content without markers adds nothing', () => {
@@ -217,20 +229,12 @@ describe('injection-points collector + emit', () => {
     expect(getInjectionPoints()).toHaveLength(0);
   });
 
-  it('writeInjectionPoints emits a versioned, deterministic sidecar sorted by (kind, name)', () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sidecar-'));
-    try {
-      collectInjectionPoints('anchor\n<!-- plugin:gitnexus:graph -->\n<!-- /plugin:gitnexus:graph -->', 'reviewer-agent', 'agent');
-      collectInjectionPoints('anchor\n<!-- feature:tdd:gate -->\n<!-- /feature:tdd:gate -->', 'add-build', 'command');
-      const out = path.join(dir, 'injection-points.json');
-      writeInjectionPoints(out);
-      const data = JSON.parse(fs.readFileSync(out, 'utf8'));
-      expect(data.version).toBe(1);
-      // kind ascending: "agent" < "command", so reviewer-agent precedes add-build
-      expect(data.points.map((p) => p.resource.name)).toEqual(['reviewer-agent', 'add-build']);
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
+  it('writeInjectionPoints refuses a legacy marker source', () => {
+    expect(() => collectInjectionPoints(
+      'anchor\n<!-- feature:tdd:gate -->\n<!-- /feature:tdd:gate -->',
+      'add-build',
+      'command',
+    )).toThrow(/Legacy injection markers/);
   });
 });
 
@@ -370,8 +374,23 @@ describe('slot membership map v2', () => {
     for (const f of MAP.fragments) expect(Array.isArray(f.dependencies)).toBe(true);
   });
 
-  it('active numeric STEP reference files match the frozen inventory', () => {
-    expect(stepRefFiles()).toEqual(MAP.activeStepRefFiles.map((e) => e.file).sort());
+  it('commands, fragments, agents and plugins have no numeric STEP references', () => {
+    const root = productSourceRoot();
+    const hits = [];
+    function walk(dir) {
+      if (!fs.existsSync(dir)) return;
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, ent.name);
+        if (ent.isDirectory()) walk(p);
+        else if (ent.name.endsWith('.md')) {
+          fs.readFileSync(p, 'utf8').split(/\r?\n/).forEach((line, i) => {
+            if (/\bSTEP \d/.test(line)) hits.push(`${path.relative(path.resolve(import.meta.dirname, '..', '..'), p)}:${i + 1}`);
+          });
+        }
+      }
+    }
+    for (const d of ['commands', 'fragments', 'agents', 'plugins']) walk(path.join(root, d));
+    expect(hits).toEqual([]);
   });
 
   it('extractSlots reads fallback bytes and keeps member order', () => {

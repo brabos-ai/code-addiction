@@ -120,7 +120,7 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     const pts = points('commands/add-build.md', 'add-build', 'command');
     const anchor = qa(pts, 'qa-fix').anchor;
     expect(anchor).toMatchObject({ text: '---', position: 'after' });
-    expect(anchor.next).toMatch(/^## STEP 7/);
+    expect(anchor.next).toMatch(/^## STEP add-build\.wiki/);
   });
 });
 
@@ -190,7 +190,7 @@ describe('setup contract (0061)', () => {
     // Slice STEP 5 and assert against IT. A file-wide /fingerprint/i match would
     // pass on the prohibitions table alone, staying green even if STEP 5 were
     // reverted to the first-run proxy wholesale.
-    const start = src.indexOf('## STEP 5: Detect Migration');
+    const start = src.indexOf('## STEP add-qa-setup.migration:');
     expect(start).toBeGreaterThan(-1);
     const step5 = src.slice(start, src.indexOf('\n## ', start + 4));
 
@@ -204,18 +204,18 @@ describe('setup contract (0061)', () => {
   });
 
   it('writes the receipt and runs the schema gate before hand-off', () => {
-    const receipt = src.indexOf('## STEP 12: Write the Receipt');
-    const gate = src.indexOf('## STEP 13: Validation Gate');
-    const handoff = src.indexOf('## STEP 14: Hand-off');
+    const receipt = src.indexOf('## STEP add-qa-setup.receipt:');
+    const gate = src.indexOf('## STEP add-qa-setup.validate:');
+    const handoff = src.indexOf('## STEP add-qa-setup.handoff:');
     expect(receipt).toBeGreaterThan(-1);
     expect(gate).toBeGreaterThan(receipt);
     expect(handoff).toBeGreaterThan(gate);
   });
 
   it('materializes a dedicated QA ignore block before migration and smoke testing', () => {
-    const ignore = src.indexOf('## STEP 9: Ignore Working QA Evidence');
-    const migration = src.indexOf('## STEP 10: Autonomous Migration');
-    const smoke = src.indexOf('## STEP 11: Universal Smoke Test');
+    const ignore = src.indexOf('## STEP add-qa-setup.ignore:');
+    const migration = src.indexOf('## STEP add-qa-setup.migrate:');
+    const smoke = src.indexOf('## STEP add-qa-setup.smoke:');
     expect(ignore).toBeGreaterThan(-1);
     expect(migration).toBeGreaterThan(ignore);
     expect(smoke).toBeGreaterThan(migration);
@@ -226,11 +226,11 @@ describe('setup contract (0061)', () => {
 
   it('no-screens deferral still writes and validates the receipt', () => {
     const smoke = src.slice(
-      src.indexOf('## STEP 11: Universal Smoke Test'),
-      src.indexOf('## STEP 12: Write the Receipt'),
+      src.indexOf('## STEP add-qa-setup.smoke:'),
+      src.indexOf('## STEP add-qa-setup.receipt:'),
     );
     expect(smoke).toMatch(/DEFER only the smoke dispatch and correction loop/i);
-    expect(smoke).toMatch(/continue to STEP 12/i);
+    expect(smoke).toMatch(/continue to STEP add-qa-setup\.receipt/i);
     expect(smoke).not.toMatch(/skip to hand-off/i);
   });
 

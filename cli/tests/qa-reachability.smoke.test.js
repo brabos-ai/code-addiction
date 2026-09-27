@@ -198,7 +198,7 @@ describe('scenario 5 — UX agent design ownership', () => {
     // Was 8.1/8.4 until 2026-09-14T215223-PLAN--remove-owner-product-onboarding
     // deleted add-plan's STEP 1 (Load Founder Profile) and shifted the rest down.
     const plan = builtCommand('add-plan');
-    expect(plan).toContain('### 7.1 UX Design Specialist');
+    expect(plan).toContain('### STEP add-plan.ux-design UX Design Specialist');
     expect(plan).toContain('- 7.4: Frontend Specialist');
   });
 
@@ -509,9 +509,9 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
     const review = qaEnabledReview();
     const done = builtCommand('add-done');
     expect(review).toContain('.codeadd/scripts/qa-evidence.sh working-baseline');
-    const promote = done.indexOf('## STEP 5: Validate and Promote Reviewed QA Evidence');
-    const changelog = done.indexOf('## STEP 6: Generate Changelog and Documentation');
-    const merge = done.indexOf('## STEP 8: Execute Merge');
+    const promote = done.indexOf('## STEP add-done.promote-qa:');
+    const changelog = done.indexOf('## STEP add-done.document:');
+    const merge = done.indexOf('## STEP add-done.merge:');
     expect(promote).toBeGreaterThan(-1);
     expect(changelog).toBeGreaterThan(promote);
     expect(merge).toBeGreaterThan(changelog);

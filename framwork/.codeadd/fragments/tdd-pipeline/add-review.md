@@ -1,10 +1,10 @@
 <!-- section:step-list -->
-STEP 3.5: Test Spec Coverage    → Validate plan-test-spec.md vs implementation (TDD)
+STEP add-review.spec-audit: Test Spec Coverage    → Validate plan-test-spec.md vs implementation (TDD)
 <!-- /section:step-list -->
 
 <!-- section:spec-audit -->
 
-### 3.5 Test Specification Coverage (TDD)
+### STEP add-review.spec-audit Test Specification Coverage (TDD)
 
 IF `plan-test-spec.md` exists in feature directory:
 1. READ `docs/features/${FEATURE_ID}/plan-test-spec.md`

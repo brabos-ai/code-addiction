@@ -24,10 +24,6 @@ import { isPluginDetected } from './plugins.js';
  * @param {string} resourceName
  * @param {Array<{sections:string[], anchor:object}>} missed
  */
-function isV2(cwd) {
-  return loadInjectionSidecar(cwd)?.version === 2;
-}
-
 function logSlotWarnings(warnings) {
   for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
 }
@@ -190,44 +186,10 @@ function getFragments(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function enableFeature(cwd, featureName) {
-  if (isV2(cwd)) {
-    setFeatureFlag(cwd, featureName, true);
-    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-    logSlotWarnings(result.warnings);
-    return { modified: result.modified.length };
-  }
-  const fragments = getFragments(cwd, featureName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections, provider);
-      if (missed.length) warnMissed('feature', featureName, commandName, missed);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  const manifest = readManifest(cwd);
-  if (manifest) {
-    if (!manifest.features) manifest.features = {};
-    manifest.features[featureName] = true;
-    manifest.features = normalizeFeatureStates(manifest.features).states;
-    recalculateHashes(cwd, manifest, modifiedPaths);
-    saveManifest(cwd, manifest);
-  }
-
-  return { modified: modifiedPaths.length };
+  setFeatureFlag(cwd, featureName, true);
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+  logSlotWarnings(result.warnings);
+  return { modified: result.modified.length };
 }
 
 /**
@@ -237,43 +199,10 @@ export function enableFeature(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function disableFeature(cwd, featureName) {
-  if (isV2(cwd)) {
-    setFeatureFlag(cwd, featureName, false);
-    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-    logSlotWarnings(result.warnings);
-    return { modified: result.modified.length };
-  }
-  const fragments = getFragments(cwd, featureName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = removeInjectionFromContent(original, cmdPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  const manifest = readManifest(cwd);
-  if (manifest) {
-    if (!manifest.features) manifest.features = {};
-    manifest.features[featureName] = false;
-    manifest.features = normalizeFeatureStates(manifest.features).states;
-    recalculateHashes(cwd, manifest, modifiedPaths);
-    saveManifest(cwd, manifest);
-  }
-
-  return { modified: modifiedPaths.length };
+  setFeatureFlag(cwd, featureName, false);
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+  logSlotWarnings(result.warnings);
+  return { modified: result.modified.length };
 }
 
 /**
@@ -283,42 +212,16 @@ export function disableFeature(cwd, featureName) {
 export function applyEnabledFeatures(cwd) {
   const manifest = readManifest(cwd);
   if (!manifest) return;
-  if (isV2(cwd)) {
-    const { states, changed } = normalizeFeatureStates(manifest.features ?? {});
-    if (changed) {
-      manifest.features = states;
-      saveManifest(cwd, manifest);
-    }
-    const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-    logSlotWarnings(result.warnings);
-    return result.modified.length;
-  }
-
-  const featureStates = manifest.features ?? {};
-  let totalModified = 0;
-
+  const featureStates = { ...(manifest.features ?? {}) };
   for (const [name, meta] of Object.entries(FEATURES)) {
     const { enabled } = resolveFeatureState(featureStates, name, meta);
-    if (enabled) {
-      const { modified } = enableFeature(cwd, name);
-      totalModified += modified;
-    }
+    featureStates[name] = enabled;
   }
-
-  // Unconditional normalisation. enableFeature reaches saveManifest only for a
-  // feature that resolves ENABLED, so a manifest holding a disabled legacy key
-  // — the exact motivating case — would otherwise never be rewritten and the
-  // orphaned key would linger as dead data forever.
-  const current = readManifest(cwd);
-  if (current) {
-    const { states, changed } = normalizeFeatureStates(current.features ?? {});
-    if (changed) {
-      current.features = states;
-      saveManifest(cwd, current);
-    }
-  }
-
-  return totalModified;
+  manifest.features = normalizeFeatureStates(featureStates).states;
+  saveManifest(cwd, manifest);
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
+  logSlotWarnings(result.warnings);
+  return result.modified.length;
 }
 
 /**

@@ -25,7 +25,7 @@
 <!--
 Four entries left this block with the QA steps themselves — the QA skill, its
 coordinator reference, and the two judges. The setup command STAYS declared:
-the base body still names it in STEP 11.1's remedy for both gate states, so
+the base body still names it in STEP add-review.report's remedy for both gate states, so
 removing it would dangle. STEPs 8, 9 and 10 now arrive from
 fragments/qa-pipeline/, which declares them, and the phantom-edge gate is what
 caught them still being declared here.
@@ -44,16 +44,16 @@ Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backe
 
 ## Yolo Mode
 
-If argument contains `--yolo`: Skip STEP 1, auto-stage all, execute to completion, log all auto-decisions. It does **not** re-enable auto-correction — this command has none.
+If argument contains `--yolo`: Skip STEP add-review.setup, auto-stage all, execute to completion, log all auto-decisions. It does **not** re-enable auto-correction — this command has none.
 
 ## Delivery Mode
 
-Resolve `DELIVERY` once, before STEP 1, from the `> **Delivery:**` line of the `plan.md` in scope, per
+Resolve `DELIVERY` once, before STEP add-review.setup, from the `> **Delivery:**` line of the `plan.md` in scope, per
 `{{skill:add--delivery-mode/SKILL.md}}` — no line reads `confirm`. On an epic, also read `epic.md`'s
 `## Notes` `delivery:` line: `automatic` or `semi-automatic` there means `DELIVERY=automatic` for this
 review.
 
-**What `automatic` changes here, and nothing else:** STEP 1.1's staging question passes (below). This
+**What `automatic` changes here, and nothing else:** STEP add-review.setup's staging question passes (below). This
 command never hands a delivery on — `/add-build` no longer runs it, so every run ends at its own report.
 Every other STOP in this command is **deciding** —
 an incomplete implementation, a non-compliant spec audit, a tree the review changed — and waits in every
@@ -65,22 +65,22 @@ delivery mode.
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Pre-Review Setup        → CHECK unstaged, ASK user
-STEP 2: Bootstrap Context       → status.sh, load docs, load AGENTS.md, read changed files
-STEP 3: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
+STEP add-review.setup: Pre-Review Setup        → CHECK unstaged, ASK user
+STEP add-review.bootstrap: Bootstrap Context       → status.sh, load docs, load AGENTS.md, read changed files
+STEP add-review.spec-audit: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
 <!-- slot:tdd-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
 <!-- /slot:tdd-pipeline.step-list -->
-STEP 4: Dispatch Reviewers      → PARALLEL (Frontend + Backend), READ-ONLY
-STEP 5: Consolidate Findings    → Merge, deduplicate, aggregate, score
-STEP 6: Build Verification      → Run build; a failure is a routed finding, NOT a fix
-STEP 7: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from AGENTS.md (do NOT trust ticks)
+STEP add-review.dispatch: Dispatch Reviewers      → PARALLEL (Frontend + Backend), READ-ONLY
+STEP add-review.consolidate: Consolidate Findings    → Merge, deduplicate, aggregate, score
+STEP add-review.build: Build Verification      → Run build; a failure is a routed finding, NOT a fix
+STEP add-review.gates: Validation Gates Re-Run → INDEPENDENTLY re-run every gate from AGENTS.md (do NOT trust ticks)
 <!-- slot:qa-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:qa-pipeline:step-list -->
 <!-- /feature:qa-pipeline:step-list -->
 <!-- /slot:qa-pipeline.step-list -->
-STEP 11: Quality Gate Report    → Create review-NNN.md (incl. ## Fix Routing) + console output
+STEP add-review.report: Quality Gate Report    → Create review-NNN.md (incl. ## Fix Routing) + console output
 ```
 
 ---
@@ -89,7 +89,7 @@ STEP 11: Quality Gate Report    → Create review-NNN.md (incl. ## Fix Routing) 
 
 All gates must be checked sequentially before proceeding to the next step. Gate failures block progress. Prohibitions below replace all conditional blocks throughout the document.
 
-### Gate 1: Implementation Complete (STEP 1)
+### Gate 1: Implementation Complete (STEP add-review.setup)
 
 **Validation:** Feature code exists with minimum required documentation.
 
@@ -102,7 +102,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Success Criteria:** about.md exists.
 **Failure:** STOP. Inform user to complete implementation first.
 
-### Gate 2: Context Fully Loaded (STEP 2)
+### Gate 2: Context Fully Loaded (STEP add-review.bootstrap)
 
 **Validation:** All project context available before dispatching reviewers.
 
@@ -114,10 +114,10 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Architecture reference | `AGENTS.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
 
-**Success Criteria:** ALL context loaded. Proceed to STEP 3.
+**Success Criteria:** ALL context loaded. Proceed to STEP add-review.spec-audit.
 **Failure:** Rerun context loading. Do NOT dispatch reviewers.
 
-### Gate 3: Spec Compliance Audit Complete (STEP 3)
+### Gate 3: Spec Compliance Audit Complete (STEP add-review.spec-audit)
 
 **Validation:** plan.md contracts match implementation before technical review.
 
@@ -143,7 +143,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 - `tasks.md` OR `## Acceptance Checklist` missing → STOP. Report "Feature missing tasks.md/##Acceptance Checklist — must replan via /add-plan".
 - All RF/RN covered but some items divergent → Proceed (marked ⚠️ in report).
 
-### Gate 4: Reviewers Dispatched and Complete (STEP 4-5)
+### Gate 4: Reviewers Dispatched and Complete (STEP add-review.dispatch-5)
 
 **Validation:** Backend and Frontend reviewers must complete before consolidation.
 
@@ -152,12 +152,12 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Preconditions | Gates 1-3 PASSED. Context fully loaded. Spec audit complete. |
 | Dispatch rule | Detect scope: frontend files → dispatch frontend; backend/libs files → dispatch backend; both → dispatch both in parallel |
 | Blocking condition | ANY finding with unclear root cause → Load `add--investigation` skill, apply Phase 3 differential diagnosis before classifying severity |
-| Completion requirement | ALL reviewers must return with findings before STEP 5 consolidation |
+| Completion requirement | ALL reviewers must return with findings before STEP add-review.consolidate consolidation |
 
 **Success Criteria:** All dispatched reviewers complete with findings consolidated.
 **Failure:** Rerun missing reviewers. Do NOT proceed to build verification.
 
-### Gate 5: Build Status Recorded (STEP 6)
+### Gate 5: Build Status Recorded (STEP add-review.build)
 
 **Validation:** The build is run and its result recorded. This command does NOT fix it.
 
@@ -170,19 +170,19 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 ⛔ IF the build fails:
   ⛔ DO NOT USE Edit or Write on any source file
   ⛔ DO NOT re-run the build hoping for a different result
-  ✅ DO route the errors and continue to STEP 7 — the report is the deliverable
+  ✅ DO route the errors and continue to STEP add-review.gates — the report is the deliverable
 
 **Success Criteria:** The build was run and its status recorded, pass or fail.
 **Failure:** The build could not be run at all (no command). Report it and continue.
 
-### Gate 6: Validation Gates Re-Run Independently (STEP 7)
+### Gate 6: Validation Gates Re-Run Independently (STEP add-review.gates)
 
 **Validation:** Every gate from AGENTS.md `validation_gates` block re-executed in current session.
 
 | Condition | Rule |
 |-----------|------|
-| Precondition | Build passes (Gate 5). STEP 7.5 (iteration logging) completed if files modified. |
-| Load gates | Read AGENTS.md `validation_gates` block. If missing → emit one-line nudge and skip rest of STEP 7. |
+| Precondition | Build passes (Gate 5). STEP add-review.gates (iteration logging) completed if files modified. |
+| Load gates | Read AGENTS.md `validation_gates` block. If missing → emit one-line nudge and skip rest of STEP add-review.gates. |
 | Re-run procedure | For each `(intent, command)` in block: invoke via Bash, capture stdout/stderr/exit code in this session |
 | Exit 0 | Confirm `[x]` (or upgrade `[!]`/`[ ]` to `[x]`) |
 | Exit ≠ 0 | Partition failures into `TOUCHED_FAILURES` (git diff --name-only) vs `UNTOUCHED_FAILURES` |
@@ -195,19 +195,19 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Failure:** Any `[!]` on touched file. Mark review BLOCKED. Report reason to user.
 
 **Special Cases:**
-- AGENTS.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in AGENTS.md. Run /add-wiki to enable validation gates." Skip rest of STEP 7.
+- AGENTS.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in AGENTS.md. Run /add-wiki to enable validation gates." Skip rest of STEP add-review.gates.
 
-### Gate 7: Review Document Writable (STEP 11)
+### Gate 7: Review Document Writable (STEP add-review.report)
 
 **Validation:** `review-NNN.md` must write successfully before console output.
 
 | Step | Action | Condition |
 |------|--------|-----------|
-| Collect data | Build: STEP 6. Spec: STEP 3. Scores: STEP 5. Gates: STEP 7. QA: the `qa-pipeline` judgement step, when that feature is enabled. |
-| Build table | Quality Gate Report (see STEP 11.1) |
+| Collect data | Build: STEP add-review.build. Spec: STEP add-review.spec-audit. Scores: STEP add-review.consolidate. Gates: STEP add-review.gates. QA: the `qa-pipeline` judgement step, when that feature is enabled. |
+| Build table | Quality Gate Report (see STEP add-review.report) |
 | Resolve NNN | Highest existing `docs/features/${FEATURE_ID}/review-NNN.md` + 1; `001` when none. **One sequence per feature**, flat at the feature-directory root |
 | Write report | `docs/features/${FEATURE_ID}/review-NNN.md` per the `review` schema, with all consolidated findings and the `## Fix Routing` union |
-| QA baseline | The `> **QA baseline:**` line is MANDATORY — `${QA_BASELINE}` from STEP 2.2 item 4b, resolved from the filesystem this run. Emit `none` when no run exists; NEVER omit the line. `/add-done` BLOCKS a review without it |
+| QA baseline | The `> **QA baseline:**` line is MANDATORY — `${QA_BASELINE}` from STEP add-review.baseline item 4b, resolved from the filesystem this run. Emit `none` when no run exists; NEVER omit the line. `/add-done` BLOCKS a review without it |
 | Idempotency | Numbering replaces backup. Never overwrite an existing `review-NNN.md`; allocate the next number |
 
 **Success Criteria:** `review-NNN.md` written with all gates populated and every finding routed.
@@ -216,7 +216,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 **Why there is no baseline-invalidation row:** this command is read-only on code,
 so `REVIEW_TREE_AFTER == REVIEW_TREE_BEFORE` holds by construction. The whole
 "corrections invalidated the QA evidence" category is structurally unreachable —
-removed, not handled. STEP 7.5 is the self-check that keeps it that way.
+removed, not handled. STEP add-review.gates is the self-check that keeps it that way.
 
 ---
 
@@ -229,12 +229,12 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT dispatch reviewers (Task) | Implementation NOT complete (Gate 1) | Stop and inform user to complete first |
 | Do NOT write spec audit output | Context NOT loaded (Gate 2) | Load all docs and AGENTS.md first |
 | Do NOT dispatch reviewers (Task) | Spec audit NOT complete (Gate 3) | Execute Spec Compliance Audit first |
-| Do NOT proceed to STEP 7/8 | Build failing after fixes | Fix build errors until 100% passing (Gate 5) |
+| Do NOT proceed to STEP add-review.gates/8 | Build failing after fixes | Fix build errors until 100% passing (Gate 5) |
 | Do NOT trust ticks on Validation Gates | Existing `[x]` marks in tasks.md | Re-run every gate command independently (Gate 6) |
 | Do NOT mark review READY | Any gate red on touched file after re-run | Report gate failure; block review (Gate 6) |
 | Do NOT skip review silently | AGENTS.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
 | Do NOT use Bash git commit | Any point in workflow | Use /add--commit skill instead |
-| Do NOT stage files silently | Pre-Review Setup (STEP 1) | Ask user permission first via AskUserQuestion |
+| Do NOT stage files silently | Pre-Review Setup (STEP add-review.setup) | Ask user permission first via AskUserQuestion |
 | Do NOT USE Edit or Write on application code | Any point in workflow | Emit a `## Fix Routing` row; `/add-build` applies it |
 | Do NOT instruct a dispatched agent to fix anything | Reviewer or judge dispatch | Dispatch read-only; collect findings |
 | Do NOT dispatch the QA judges | the `qa-pipeline` preflight has a failed `block` row (that row exists only when the feature is enabled) | Report the consolidated diagnosis and its remedy |
@@ -242,9 +242,9 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 
 ---
 
-## STEP 1: Pre-Review Setup
+## STEP add-review.setup: Pre-Review Setup
 
-### 1.1 Check for Unstaged Changes
+### STEP add-review.setup Check for Unstaged Changes
 
 Check working directory for unstaged/untracked changes.
 
@@ -292,7 +292,7 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 
 ---
 
-## STEP 2: Bootstrap Context
+## STEP add-review.bootstrap: Bootstrap Context
 
 ### 2.1 Detect Current Feature
 
@@ -308,7 +308,7 @@ bash .codeadd/scripts/status.sh
 **Feature identified:** Display and proceed automatically.
 **No feature:** If ONE exists, use it; if MULTIPLE, ask user.
 
-### 2.2 Load Feature Documentation
+### STEP add-review.baseline Load Feature Documentation
 
 List the feature docs directory, then **load ALL documents IN ORDER:**
 1. `about.md` - Feature specification (EXTRACT: RF, RN, Acceptance Criteria)
@@ -317,7 +317,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
 4b. **QA baseline (`QA_BASELINE`) — resolve now; the `qa-pipeline` evidence step emits it when the feature is enabled.** Run `bash .codeadd/scripts/qa-evidence.sh working-baseline "${FEATURE_DIR}"` and parse `BASELINE`. The script returns the highest WORKING run independently per scope (`feature`, `SFxx`), or `none`; final snapshots never enter a new review baseline. Preserve the returned scope/run pairs as the promotion manifest `/add-done` consumes. Resolve it from the filesystem at review time — never copy it from a previous review document, author it by hand, reformat it, or convert it to a filesystem path. `QA_BASELINE` IS the script's stdout, verbatim, and nothing else. ⛔ DO NOT write a path like `_tests/run-001` in place of the script's `feature:run-001` — that exact substitution once passed review and `/add-done` rejected the whole epic at merge time.
 4c. **Reviewed-tree fingerprint (`REVIEW_TREE_BEFORE`).** Compute a deterministic digest over every tracked or nonignored untracked file in the working tree, including each relative path and current content. Represent deleted tracked files explicitly. Exclude only this review's bookkeeping paths: `${FEATURE_DIR}/review-*.md`, `${FEATURE_DIR}/tasks.md`, and `${FEATURE_DIR}/iterations.jsonl`. Store the digest before dispatching reviewers.
-4d. **Review scope (`SCOPE_DIR`, `REVIEW_SCOPE`) — resolve now, unconditionally.** An epic with subfeatures gives one `SCOPE_DIR` per in-scope `SFxx` under `FEATURE_DIR/subfeatures/`; a simple feature gives `SCOPE_DIR = FEATURE_DIR`. `REVIEW_SCOPE` is the YAML list of those scopes — `[SF01, SF02]`, or `[feature]` for a simple feature. ⛔ **This runs whether or not `qa-pipeline` is enabled.** STEP 11.2's `Scope` column and STEP 11.3's mandatory `scope:` frontmatter field both read it, and both are ungated; the QA steps consume the same value when the feature supplies them, and own none of it.
+4d. **Review scope (`SCOPE_DIR`, `REVIEW_SCOPE`) — resolve now, unconditionally.** An epic with subfeatures gives one `SCOPE_DIR` per in-scope `SFxx` under `FEATURE_DIR/subfeatures/`; a simple feature gives `SCOPE_DIR = FEATURE_DIR`. `REVIEW_SCOPE` is the YAML list of those scopes — `[SF01, SF02]`, or `[feature]` for a simple feature. ⛔ **This runs whether or not `qa-pipeline` is enabled.** STEP add-review.report's `Scope` column and STEP add-review.report's mandatory `scope:` frontmatter field both read it, and both are ungated; the QA steps consume the same value when the feature supplies them, and own none of it.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
    - Each line: `{"ts":"...","agent":"...","type":"...","slug":"...","what":"...","files":["..."]}`
    - Use to understand: implementation sequence, which areas were modified, any pivots/corrections
@@ -325,7 +325,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 6. `decisions.jsonl` - Pivot decisions (if exists, check for areas with multiple pivots = extra review attention)
 7. Consult knowledge base for validation:
    - IF `WIKI:present` (from script output): Load `{{skill:add--knowledge-discovery/SKILL.md}}`, read the hub (`{{addpath:wiki/index.md}}`), then SELECT + read the `{{addpath:wiki/domains/<area>.md}}` page(s) matching the changed code's areas, plus `{{addpath:wiki/conventions.md}}`. Freshness-check each selected page.
-   - Run the skill's GRAPH step over the changed file list. **GRAPH question:** which deliveries last changed the files in this diff? The question is phrased over PATHS, not keywords, because a diff is what this step holds — resolve it in the skill's action table rather than reducing the paths to words first. **`RELATED_WORK` destination:** STEP 10.1's dispatch payload, which carries it to both judges as the deliveries that last changed these files. **STEP 10 arrives with `qa-pipeline`** — with the feature disabled there are no judges to carry it to, and `RELATED_WORK` stays coordinator context for STEPs 3 and 5. ⛔ DO NOT skip the GRAPH step on that branch: the history it returns is what tells STEP 3 a file was rewritten two deliveries ago and is not the new work it looks like.
+   - Run the skill's GRAPH step over the changed file list. **GRAPH question:** which deliveries last changed the files in this diff? The question is phrased over PATHS, not keywords, because a diff is what this step holds — resolve it in the skill's action table rather than reducing the paths to words first. **`RELATED_WORK` destination:** STEP qa-pipeline.judge's dispatch payload, which carries it to both judges as the deliveries that last changed these files. **STEP qa-pipeline.judge arrives with `qa-pipeline`** — with the feature disabled there are no judges to carry it to, and `RELATED_WORK` stays coordinator context for STEPs 3 and 5. ⛔ DO NOT skip the GRAPH step on that branch: the history it returns is what tells STEP add-review.spec-audit a file was rewritten two deliveries ago and is not the new work it looks like.
 
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
@@ -359,7 +359,7 @@ From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
 
 ---
 
-## STEP 3: Spec Compliance Audit (BEFORE technical review)
+## STEP add-review.spec-audit: Spec Compliance Audit (BEFORE technical review)
 
 **Deep audit of plan.md spec vs implemented code. Catches gaps the code review does not.**
 
@@ -414,14 +414,14 @@ Do ALL RF/RN have at least one ## Acceptance Checklist item referencing them via
   → UNCOVERED: RF/RN has no checklist item — architect failed at /add-plan; requires replan
 ```
 
-### 3.4 Spec Audit Output (Gate 3)
+### STEP add-review.spec-audit Spec Audit Output (Gate 3)
 
 Output the audit as a table with columns: Item, Type, Expected, Found at, Status. Include summary counts (COMPLIANT/DIVERGENT/MISSING), RF/RN coverage, and compute SPEC_AUDIT_STATUS:
 - `COMPLIANT`: >80% items compliant, no STALE_TICK, no UNCOVERED RF/RN
 - `DIVERGENT`: Some items divergent but no show-stoppers
 - `INCOMPLETE`: Show-stoppers present (STALE_TICK, UNCOVERED RF/RN)
 
-**IF SPEC_AUDIT_STATUS ≠ COMPLIANT:** Report findings to user. Do NOT proceed to STEP 4 until resolved.
+**IF SPEC_AUDIT_STATUS ≠ COMPLIANT:** Report findings to user. Do NOT proceed to STEP add-review.dispatch until resolved.
 
 <!-- slot:tdd-pipeline.spec-audit fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:spec-audit -->
@@ -430,9 +430,9 @@ Output the audit as a table with columns: Item, Type, Expected, Found at, Status
 
 ---
 
-## STEP 4: Dispatch Specialized Reviewers (PARALLEL)
+## STEP add-review.dispatch: Dispatch Specialized Reviewers (PARALLEL)
 
-### 4.1 Detect Scope
+### STEP add-review.scope Detect Scope
 
 Based on changed files, determine which reviewers to dispatch:
 - **frontend**: `apps/frontend/**` detected
@@ -616,7 +616,7 @@ prompt: |
 
 ---
 
-## STEP 5: Consolidate Findings
+## STEP add-review.consolidate: Consolidate Findings
 
 ### 5.1 Process Reviewer Outputs
 
@@ -645,17 +645,17 @@ prompt: |
    Product Status: PASSED/BLOCKED
    ```
 
-4. **Emit findings as routed rows.** Every consolidated finding becomes a `## Fix Routing` row in STEP 11.2 — area, route, file, symptom. Nothing is applied here.
+4. **Emit findings as routed rows.** Every consolidated finding becomes a `## Fix Routing` row in STEP add-review.report — area, route, file, symptom. Nothing is applied here.
 
 **One review, one fix wave, by design.** A reviewer's `Confidence` field (when present) is not carried
-into `## Fix Routing` and does not gate this pipeline — every row reaches `/add-build` STEP 12's single
+into `## Fix Routing` and does not gate this pipeline — every row reaches `/add-build` STEP add-build.correct's single
 correction dispatch. `Confidence` gates the in-build task loop
 (`add--subagent-driven-development` §7); it stays informational here, on purpose, so this pipeline keeps
 one simple rule: review once, fix the whole wave once, done.
 
 ---
 
-## STEP 6: Build Verification
+## STEP add-review.build: Build Verification
 
 Run the project build command (see AGENTS.md). Capture the exit code and stderr.
 
@@ -664,7 +664,7 @@ Run the project build command (see AGENTS.md). Capture the exit code and stderr.
 **If the build fails:**
 - Record the status as BLOCKED in the Quality Gate Report
 - Emit each error as a `## Fix Routing` row: area-scoped, severity `blocker`, with the file and the compiler message as the symptom
-- Continue to STEP 7 — a failing build does not stop the review, it becomes its most important finding
+- Continue to STEP add-review.gates — a failing build does not stop the review, it becomes its most important finding
 
 ⛔ GATE 5 — the build is evidence, not a task:
   ⛔ DO NOT USE Edit or Write to fix a build error
@@ -673,7 +673,7 @@ Run the project build command (see AGENTS.md). Capture the exit code and stderr.
 
 ---
 
-## STEP 7: Validation Gates Re-Run (INDEPENDENT)
+## STEP add-review.gates: Validation Gates Re-Run (INDEPENDENT)
 
 The reviewer's job is to verify, not to trust. Existing `[x]` ticks on `## Validation Gates` are evidence of past success — they are NOT evidence of current correctness. This step re-establishes the truth.
 
@@ -681,7 +681,7 @@ The reviewer's job is to verify, not to trust. Existing `[x]` ticks on `## Valid
 
 Read AGENTS.md `validation_gates` block.
 
-- **Block missing** → emit one-line nudge `Note: validation_gates not detected in AGENTS.md. Run /add-wiki to enable validation gates.` and skip the rest of STEP 7.
+- **Block missing** → emit one-line nudge `Note: validation_gates not detected in AGENTS.md. Run /add-wiki to enable validation gates.` and skip the rest of STEP add-review.gates.
 - **Block present** → proceed.
 
 ### 7.2 Re-Run Procedure
@@ -699,12 +699,12 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
 
 ### 7.3 Hard Requirements
 
-- Every gate command MUST be invoked via Bash in this session before STEP 11 produces `review-NNN.md`.
+- Every gate command MUST be invoked via Bash in this session before STEP add-review.report produces `review-NNN.md`.
 - Capture each `(gate, exit_code)` pair for inclusion in the Quality Gate Report.
 - Review status MUST be BLOCKED if any gate is red on a touched file after re-run.
 - Each red gate on a touched file becomes a `## Fix Routing` row, area-scoped, severity `blocker`.
 
-### 7.4 Log Iteration
+### STEP add-review.gates Log Iteration
 
 ```bash
 bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "review" "/add-review" '"slug":"code-review","what":"Reviewed and routed findings","files":[]'
@@ -712,9 +712,9 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 
 `files` is always empty: this command modifies no code.
 
-### 7.5 Read-Only Self-Check (MANDATORY)
+### STEP add-review.gates Read-Only Self-Check (MANDATORY)
 
-Recompute `REVIEW_TREE_AFTER` with the exact STEP 2.2 fingerprint procedure and
+Recompute `REVIEW_TREE_AFTER` with the exact STEP add-review.baseline fingerprint procedure and
 exclusions.
 
 ⛔ IF `REVIEW_TREE_AFTER != REVIEW_TREE_BEFORE`:
@@ -748,11 +748,11 @@ contract.
 
 ---
 
-## STEP 11: Quality Gate Report (PRD0034)
+## STEP add-review.report: Quality Gate Report (PRD0034)
 
 **Consolidate every gate into `review-NNN.md`. The highest-numbered one is the merge prerequisite for `/add-done`.**
 
-### 11.1 Build Quality Gate Report
+### STEP add-review.report Build Quality Gate Report
 
 Collect results from all previous steps:
 
@@ -765,7 +765,7 @@ Collect results from all previous steps:
 | Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED | X/Y items compliant |
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
-| Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP 7 with `<command> → exit <code>` (omit row if AGENTS.md has no validation_gates) |
+| Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP add-review.gates with `<command> → exit <code>` (omit row if AGENTS.md has no validation_gates) |
 | QA Judgement | ✅ PASSED / ⚠️ DEGRADED / ❌ BLOCKED / ⊘ NOT SET UP / ⊘ FEATURE OFF | Per-scope roll-up from the `qa-pipeline` judgement step, when that feature supplied one. The two ⊘ values are distinguished below |
 | **Overall** | **✅ PASSED / ❌ BLOCKED** | **Ready for merge / Issues found** |
 
@@ -782,7 +782,7 @@ all — remedy: `codeadd features enable qa-pipeline`, then `/add-qa-setup`. `�
 the steps ran and stopped at the receipt gate — remedy: `/add-qa-setup` alone. Reporting the first
 as the second sends the user to a command that will not fix it.
 
-### 11.2 Build the unified `## Fix Routing` table
+### STEP add-review.report Build the unified `## Fix Routing` table
 
 One table carries every finding class this command produced. It is the single
 correction contract `/add-build` consumes — there is no second path.
@@ -790,9 +790,9 @@ correction contract `/add-build` consumes — there is no second path.
 It is the **union** of:
 
 1. every in-scope `SCOPE_DIR`'s `qa-validation-NNN.md` `## Fix Routing` rows, where `qa-pipeline` produced one — none exist with the feature off, and the union is then items 2 to 4 (that per-scope schema section is unchanged and stays where it is);
-2. code-review findings from STEP 5;
-3. build failures from STEP 6 (Gate 5);
-4. red validation gates on touched files from STEP 7 (Gate 6).
+2. code-review findings from STEP add-review.consolidate;
+3. build failures from STEP add-review.build (Gate 5);
+4. red validation gates on touched files from STEP add-review.gates (Gate 6).
 
 | Column | Content |
 |--------|---------|
@@ -817,7 +817,7 @@ state: a `@ux-agent` design-spec row missing its contract-line citation stays
 flagged **presented, never dispatched**. No such row exists with `qa-pipeline`
 off, because no judge ran to author one.
 
-### 11.3 Write `review-NNN.md` (Gate 7)
+### STEP add-review.report Write `review-NNN.md` (Gate 7)
 
 Resolve `NNN` as the highest existing `docs/features/${FEATURE_ID}/review-NNN.md`
 plus one (`001` when none). One sequence per feature, flat at the feature
@@ -845,16 +845,16 @@ status: open
 [table from 11.1]
 
 ## Spec Compliance Audit
-[output from STEP 3.4]
+[output from STEP add-review.spec-audit]
 
 ## Code Review Summary
-[aggregated findings from STEP 5]
+[aggregated findings from STEP add-review.consolidate]
 
 ## Product Validation
 [RF/RN status from the backend reviewer]
 
 ## QA Judgement
-[per-scope roll-up from the qa-pipeline judgement + links to each qa-validation-NNN.md; with the feature off, the gate value from STEP 11.1 and nothing else]
+[per-scope roll-up from the qa-pipeline judgement + links to each qa-validation-NNN.md; with the feature off, the gate value from STEP add-review.report and nothing else]
 
 ## Fix Routing
 [the union table from 11.2]
@@ -871,7 +871,7 @@ reorder them. `NNN` in `id` is the number resolved at the top of this substep.
 `status` is written `open` here and ONLY `{{cmd:add-build}}` ever sets it to
 `finalized`, exactly once, when it appends the Resolution Annex.
 
-`${REVIEW_SCOPE}` is resolved in **STEP 2.2 item 4d** and is always available —
+`${REVIEW_SCOPE}` is resolved in **STEP add-review.baseline item 4d** and is always available —
 the YAML list of every `SCOPE_DIR` this round covers, e.g. `[SF01, SF02]`, or
 `[feature]` on a simple feature. This mirrors `qa-validation`'s `scope` field.
 ⛔ DO NOT look for it in a QA step: this field is mandatory in every review
@@ -925,7 +925,7 @@ line becomes the verdict.
 **NEVER:**
 - Modify application code — this command routes findings, it does not apply them
 - Trust existing validation gate ticks
-- Stage files without explicit user permission — on an automatic delivery the approval gave it, and STEP 1.1 still prints what it stages
+- Stage files without explicit user permission — on an automatic delivery the approval gave it, and STEP add-review.setup still prints what it stages
 - Skip product validation for RF, RN, or prerequisites
 - Accept "it works" as justification for a violation
 - Skip a reviewer if files exist in that area

@@ -30,7 +30,7 @@ Investigative triage for ambiguous user reports. Receives a vague symptom or unc
 
 ## Required Skills
 
-Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-diagnose.context (schemas, IDs, universal doc rules).
 
 ---
 
@@ -38,16 +38,16 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universa
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Load context          → status.sh + add--ecosystem
-STEP 2: Capture & reformulate → internal only, no stop
-STEP 3: Load investigation    → add--investigation skill, apply Phase 0
-STEP 4: Two-phase agent dispatch → A.1 ∥ A.2 (parallel) → B (sequential)
-STEP 5: Phases 2-3            → pattern analysis, differential diagnosis
-STEP 6: Phase 4 synthesis     → diagnosis + route + diagnosis-baseline
-STEP 7: Present report        → STOP for user agreement
-STEP 8: Persist on acceptance → schema-driven write
-STEP 9: Validation Gate       → diagnose-report schema gate
-STEP 10: Completion           → report the diagnosis in the shared shape
+STEP add-diagnose.context: Load context          → status.sh + add--ecosystem
+STEP add-diagnose.capture: Capture & reformulate → internal only, no stop
+STEP add-diagnose.investigate: Load investigation    → add--investigation skill, apply Phase 0
+STEP add-diagnose.dispatch: Two-phase agent dispatch → A.1 ∥ A.2 (parallel) → B (sequential)
+STEP add-diagnose.analyze: Phases 2-3            → pattern analysis, differential diagnosis
+STEP add-diagnose.synthesize: Phase 4 synthesis     → diagnosis + route + diagnosis-baseline
+STEP add-diagnose.report: Present report        → STOP for user agreement
+STEP add-diagnose.persist: Persist on acceptance → schema-driven write
+STEP add-diagnose.validate: Validation Gate       → diagnose-report schema gate
+STEP add-diagnose.complete: Completion           → report the diagnosis in the shared shape
 ```
 
 ---
@@ -56,19 +56,19 @@ STEP 10: Completion           → report the diagnosis in the shared shape
 
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
-| **STEP 1** | Context not loaded | Grep, Read code files, dispatch agents | Run status.sh + load add--ecosystem |
-| **STEP 3** | Skill not loaded | Begin investigation, suggest route | Read add--investigation skill |
-| **STEP 4** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
-| **STEP 4** | A outputs incomplete | Proceed to STEP 5, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
-| **STEP 5** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
+| **STEP add-diagnose.context** | Context not loaded | Grep, Read code files, dispatch agents | Run status.sh + load add--ecosystem |
+| **STEP add-diagnose.investigate** | Skill not loaded | Begin investigation, suggest route | Read add--investigation skill |
+| **STEP add-diagnose.dispatch** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
+| **STEP add-diagnose.dispatch** | A outputs incomplete | Proceed to STEP add-diagnose.analyze, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
+| **STEP add-diagnose.analyze** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
 | **READ-ONLY** | Always | Edit files, Bash (except status.sh and hotfix-gates.sh), Write outside docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
-| **STEP 8** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
-| **STEP 9** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
-| **STEP 10** | Always | Report before STEP 10, or skip it on a no-action route | Emit the report in the shape, on every route |
+| **STEP add-diagnose.persist** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
+| **STEP add-diagnose.validate** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
+| **STEP add-diagnose.complete** | Always | Report before STEP add-diagnose.complete, or skip it on a no-action route | Emit the report in the shape, on every route |
 
 ---
 
-## STEP 1: Load Context
+## STEP add-diagnose.context: Load Context
 
 ### 1.1 Run status.sh
 
@@ -80,15 +80,15 @@ Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in 1.4), RECENT_CHANGELOGS
 
 ### 1.2 Load ecosystem map
 
-Read {{skill:add--ecosystem/SKILL.md}} — needed for Command Next-Steps Routing in STEP 6.
+Read {{skill:add--ecosystem/SKILL.md}} — needed for Command Next-Steps Routing in STEP add-diagnose.synthesize.
 
 ### 1.3 Conditional reads
 
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
 
-### 1.4 Consult Knowledge Base
+### STEP add-diagnose.context Consult Knowledge Base
 
-Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP 4 as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP 4.1's dispatch payload, which carries it to both Fase A agents.
+Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from 1.1 (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP add-diagnose.dispatch as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP add-diagnose.dispatch's dispatch payload, which carries it to both Fase A agents.
 
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
@@ -99,17 +99,17 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 ---
 
-## STEP 2: Capture & Reformulate Input (internal)
+## STEP add-diagnose.capture: Capture & Reformulate Input (internal)
 
 ### 2.1 Reformulate using the user's own words
 
 Restate the user input in ONE sentence using only the nouns/verbs they used. Do NOT inject technical interpretation yet.
 
-Store this reformulation internally — it feeds Phase 0 (STEP 3) and the diagnosis presented at STEP 7. Do NOT present it to the user now. Do NOT ask questions. Proceed immediately to STEP 3.
+Store this reformulation internally — it feeds Phase 0 (STEP add-diagnose.investigate) and the diagnosis presented at STEP add-diagnose.report. Do NOT present it to the user now. Do NOT ask questions. Proceed immediately to STEP add-diagnose.investigate.
 
 ---
 
-## STEP 3: Load Investigation Skill & Apply Phase 0
+## STEP add-diagnose.investigate: Load Investigation Skill & Apply Phase 0
 
 ### 3.1 Load skill
 
@@ -117,7 +117,7 @@ Read {{skill:add--investigation/SKILL.md}} — primary methodology.
 
 Read {{skill:add--investigation/references/symptom-disambiguation.md}} — Phase 0 playbook.
 
-### 3.2 Execute Phase 0: Symptom Disambiguation
+### STEP add-diagnose.investigate Execute Phase 0: Symptom Disambiguation
 
 Following the skill:
 1. Classify symptom into ONE class (missing feature / wrong behavior / inconsistent state / doc-code drift / UX confusion / race / stale / unknown)
@@ -128,7 +128,7 @@ Present Phase 0 output to user if any classification is non-obvious or contested
 
 ---
 
-## STEP 4: Two-Phase Agent Investigation (MANDATORY)
+## STEP add-diagnose.dispatch: Two-Phase Agent Investigation (MANDATORY)
 
 This STEP replaces the previous adaptive triage. All three sub-dispatches always run — Fase A directs Fase B; code-level tracing remains required to confirm the diagnosis.
 
@@ -139,19 +139,19 @@ This STEP implements Phase 1 (Root Cause Investigation) of the `add--investigati
 <!-- /plugin:gitnexus:graph-trace -->
 <!-- /slot:gitnexus.graph-trace -->
 
-### 4.1 Build the dispatch payload
+### STEP add-diagnose.dispatch Build the dispatch payload
 
 Assemble from prior STEPs:
-- Observable predicate from Phase 0 (STEP 3.2)
+- Observable predicate from Phase 0 (STEP add-diagnose.investigate)
 - Symptom class from Phase 0
 - Affected area keywords (nouns/verbs from reformulation)
 - Optional window (default: 30 days for git)
-- Knowledge base page paths + one-line reasons + freshness verdicts (STEP 1.4), if any were selected
-- **`RELATED_WORK` (STEP 1.4)** — the graph's hits, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
+- Knowledge base page paths + one-line reasons + freshness verdicts (STEP add-diagnose.context), if any were selected
+- **`RELATED_WORK` (STEP add-diagnose.context)** — the graph's hits, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A `caused_by` edge on a past hotfix in the symptom's area is a starting point, never a conclusion
 
 This payload is passed to BOTH Fase A agents.
 
-### 4.2 Fase A — PARALLEL dispatch (A.1 ∥ A.2)
+### STEP add-diagnose.dispatch Fase A — PARALLEL dispatch (A.1 ∥ A.2)
 
 **Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
@@ -174,18 +174,18 @@ Combine the two reports:
 
 If BOTH reports return "no strong matches", Fase B receives a broad-scan brief (no narrow focus).
 
-### 4.4 Fase B — SEQUENTIAL dispatch (@architecture-agent)
+### STEP add-diagnose.dispatch Fase B — SEQUENTIAL dispatch (@architecture-agent)
 
 **DISPATCH AGENT: @architecture-agent**
 Prompt: "Trace control-flow and data-flow to validate or refute the hypotheses below. Predicate: <predicate>. Feature History findings: <A.1 summary with files/decisions>. Git History findings: <A.2 summary with suspicious commits + files>. Priority targets (convergent signals): <list>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Read-only — confirm or refute each hypothesis with file:line evidence."
 
 **WAIT** for the architecture report before proceeding.
 
-⛔ DO NOT proceed to STEP 5 until @architecture-agent returns. Agents are READ-ONLY — they MUST NOT use Write or Edit. If any agent attempted Write/Edit, treat the run as invalid and reject the output.
+⛔ DO NOT proceed to STEP add-diagnose.analyze until @architecture-agent returns. Agents are READ-ONLY — they MUST NOT use Write or Edit. If any agent attempted Write/Edit, treat the run as invalid and reject the output.
 
 ---
 
-## STEP 5: Phase 2 + Phase 3 — Pattern Analysis & Differential Diagnosis
+## STEP add-diagnose.analyze: Phase 2 + Phase 3 — Pattern Analysis & Differential Diagnosis
 
 The three agent reports (A.1, A.2, B) collectively cover Phase 1 of the `add--investigation` skill. Now synthesize Phases 2 and 3 on top of that evidence.
 
@@ -205,19 +205,19 @@ Read {{skill:add--investigation/references/differential-diagnosis.md}}.
 2. Rank by likelihood × cost-to-test
 3. Test cheapest-high first using the agent reports as primary evidence; only re-grep if a hypothesis lacks coverage
 4. Log each test with result
-5. If 3 hypotheses fail → surface framing gaps in STEP 7 report and ask user to clarify there
+5. If 3 hypotheses fail → surface framing gaps in STEP add-diagnose.report report and ask user to clarify there
 
 ⛔ DO NOT commit to a single cause without comparing alternatives.
 ⛔ DO NOT redo Phase 1 work (recent-changes scan, doc reads, backward tracing) — that's what the three agents just produced. Cite their outputs.
 
 ---
 
-## STEP 6: Phase 4 Synthesis — Diagnosis & Route
+## STEP add-diagnose.synthesize: Phase 4 Synthesis — Diagnosis & Route
 
 ### 6.1 Synthesize diagnosis
 
 Build the structured output from skill Phase 4:
-1. Reformulated problem (from STEP 2)
+1. Reformulated problem (from STEP add-diagnose.capture)
 2. Evidence found (from Phases 1-2)
 3. Diagnosis with selected hypothesis + rejected alternatives + why
 4. Recommended route
@@ -229,7 +229,7 @@ Use the Command Next-Steps Routing table from {{skill:add--ecosystem/SKILL.md}} 
 
 ⛔ DO NOT invent a route. Consult the ecosystem map.
 
-### 6.3 Capture repository baseline
+### STEP add-diagnose.synthesize Capture repository baseline
 
 Run:
 
@@ -241,7 +241,7 @@ Store `DIAGNOSED_BRANCH`, `DIAGNOSED_COMMIT`, and the `BASELINE_BEGIN` / `BASELI
 
 ---
 
-## STEP 7: Present Report [STOP]
+## STEP add-diagnose.report: Present Report [STOP]
 
 Present the full diagnosis in chat using this structure:
 
@@ -285,13 +285,13 @@ Ask only: do you agree with this diagnosis?
 
 ---
 
-## STEP 8: Persist on acceptance — schema-driven write
+## STEP add-diagnose.persist: Persist on acceptance — schema-driven write
 
 ### 8.1 Persistence decision tree
 
 | user_agrees | Action |
 |---|---|
-| no | Skip to STEP 10. A rejected diagnosis is not written |
+| no | Skip to STEP add-diagnose.complete. A rejected diagnosis is not written |
 | yes | Persist for hotfix/feature/extend/no-action. Execute 8.2 → 8.3 → 8.4 |
 
 ### 8.2 Determine slug & schema
@@ -304,14 +304,14 @@ Ask only: do you agree with this diagnosis?
 
 Load {{skill:add--doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
-When the accepted route is hotfix, append `## Hotfix Handoff` from `{{skill:add--doc-schemas/references/review.md}}`. Fill scalars from STEP 6.3. Fill Findings from the accepted causal chain. Fill Confirmed Relations from the links shown at STEP 7. Paste the Working Tree Baseline fence from `diagnosis-baseline`, or `clean`. Omit `## Hotfix Handoff` on every other accepted route.
+When the accepted route is hotfix, append `## Hotfix Handoff` from `{{skill:add--doc-schemas/references/review.md}}`. Fill scalars from STEP add-diagnose.synthesize. Fill Findings from the accepted causal chain. Fill Confirmed Relations from the links shown at STEP add-diagnose.report. Paste the Working Tree Baseline fence from `diagnosis-baseline`, or `clean`. Omit `## Hotfix Handoff` on every other accepted route.
 
-### 8.4 Carry these into STEP 10
+### 8.4 Carry these into STEP add-diagnose.complete
 
-⛔ **DO NOT print them here.** The report comes first, and STEP 10 owns it. Emitting the path and
+⛔ **DO NOT print them here.** The report comes first, and STEP add-diagnose.complete owns it. Emitting the path and
 the next command at 8.4 puts metadata in front of the report and then repeats it.
 
-STEP 10 states:
+STEP add-diagnose.complete states:
 - Report path (if persisted)
 - Recommended next command (from ecosystem map routing)
 - When the accepted route is hotfix: the copy-ready command `/add-hotfix @docs/diagnose/<file>.md`. Print it only for an accepted hotfix route. Never invoke `/add-hotfix`
@@ -319,9 +319,9 @@ STEP 10 states:
 
 ---
 
-## STEP 9: Validation Gate
+## STEP add-diagnose.validate: Validation Gate
 
-Only run this gate when STEP 8 actually wrote a doc. If the diagnosis was rejected, skip directly to STEP 10.
+Only run this gate when STEP add-diagnose.persist actually wrote a doc. If the diagnosis was rejected, skip directly to STEP add-diagnose.complete.
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `diagnose-report`.
 
@@ -329,7 +329,7 @@ Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schem
 
 ---
 
-## STEP 10: Completion
+## STEP add-diagnose.complete: Completion
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the report path and the recommended command come after it.
@@ -338,7 +338,7 @@ the self-check. Emit the report FIRST — the report path and the recommended co
 conditional; the report is not. A run that wrote no document still owes the user its diagnosis.
 
 This command is advisory and changes no code, so `Files touched` reads "none" on every row unless
-STEP 8 persisted a document. Fill `What was delivered` with the diagnosis and the route, and
+STEP add-diagnose.persist persisted a document. Fill `What was delivered` with the diagnosis and the route, and
 `How it works` with the causal chain — what fails, where, and why the evidence points there rather
 than at the runner-up hypothesis.
 
@@ -349,21 +349,21 @@ Then, after the seven blocks, state the recommended command and that this comman
 ## Rules
 
 ALWAYS:
-- Confirm the reformulation with the user before investigating (STEP 2) — wrong framing wastes downstream investigation
-- Apply Phase 0 before reading code (STEP 3) — symptom classification guides triage depth
-- Dispatch A.1 and A.2 in a single message (STEP 4.2) — parallel execution; sequential dispatch wastes latency
-- Wait for both A reports before Fase B (STEP 4.4) — architecture-agent needs combined direction
-- Enumerate 3+ hypotheses (STEP 5) — prevents single-cause bias
-- Consult the ecosystem map for the route (STEP 6) — the route must stay framework-consistent
-- Capture diagnosis-baseline after synthesis and before the user answers (STEP 6)
-- Persist every accepted diagnosis, including no-action (STEP 8)
-- Credit the add--investigation skill (STEP 7) — methodology transparency
+- Confirm the reformulation with the user before investigating (STEP add-diagnose.capture) — wrong framing wastes downstream investigation
+- Apply Phase 0 before reading code (STEP add-diagnose.investigate) — symptom classification guides triage depth
+- Dispatch A.1 and A.2 in a single message (STEP add-diagnose.dispatch) — parallel execution; sequential dispatch wastes latency
+- Wait for both A reports before Fase B (STEP add-diagnose.dispatch) — architecture-agent needs combined direction
+- Enumerate 3+ hypotheses (STEP add-diagnose.analyze) — prevents single-cause bias
+- Consult the ecosystem map for the route (STEP add-diagnose.synthesize) — the route must stay framework-consistent
+- Capture diagnosis-baseline after synthesis and before the user answers (STEP add-diagnose.synthesize)
+- Persist every accepted diagnosis, including no-action (STEP add-diagnose.persist)
+- Credit the add--investigation skill (STEP add-diagnose.report) — methodology transparency
 
 NEVER:
-- Recommend a route without a differential diagnosis (STEP 5→6) — route validity depends on evidence
-- Execute the recommended command (STEP 7) — add-diagnose is advisory only
+- Recommend a route without a differential diagnosis (STEP add-diagnose.analyze→6) — route validity depends on evidence
+- Execute the recommended command (STEP add-diagnose.report) — add-diagnose is advisory only
 - Modify code — READ-ONLY boundary, applies throughout
-- Accept "something is weird" as a symptom (STEP 2) — push for an observable predicate (WHEN/THEN/BUT)
-- Persist a rejected diagnosis (STEP 8)
+- Accept "something is weird" as a symptom (STEP add-diagnose.capture) — push for an observable predicate (WHEN/THEN/BUT)
+- Persist a rejected diagnosis (STEP add-diagnose.persist)
 - Invoke `/add-hotfix` from this command — print the copy-ready path only
-- Guess past the 3-failure stop rule (STEP 5) — return to framing instead
+- Guess past the 3-failure stop rule (STEP add-diagnose.analyze) — return to framing instead

@@ -42,11 +42,11 @@ This produces no new persisted artefact of its own. A `FULL`-pass finding is app
 - Judging one subfeature in isolation against its own `about.md`/`design.md` — that is `@qa-agent` / `@ux-agent` (dual-judge QA, `add--qa`) or `@plan-reviewer-agent` (pre-delivery executability, `add--plan-review`). This rubric only fires when there are **two or more** subfeatures to compare.
 - Code-level review (naming, security, architecture, whether the code matches the plan) — `@reviewer-agent` / `add--code-review`.
 - A non-epic feature. With one subfeature there is nothing to compare against, so neither `/add-plan` nor `/add-build` ever dispatches this agent.
-- **Single-plan completeness** — whether a shared enum/config was declared ONCE in the earliest subfeature instead of duplicated, whether a subfeature depending on an unbuilt sibling declares fallback behavior, whether new services are registered in DI/as workers. That is `/add-plan` STEP 9.5's job. See Boundary below.
+- **Single-plan completeness** — whether a shared enum/config was declared ONCE in the earliest subfeature instead of duplicated, whether a subfeature depending on an unbuilt sibling declares fallback behavior, whether new services are registered in DI/as workers. That is `/add-plan` STEP add-plan.cross-sf-review's job. See Boundary below.
 
 ## Boundary — this rubric vs `/add-plan` 9.5
 
-Two artefacts look across an epic's subfeature plans, and they split on one line: **`consistency-agent` DETECTS divergence between plans; `/add-plan` STEP 9.5 (Cross-SF Integration Review) fixes COMPLETENESS of a single plan, in place.** Every dimension below asks *do two declarations disagree?* — 9.5's checks ask *is one plan complete?*
+Two artefacts look across an epic's subfeature plans, and they split on one line: **`consistency-agent` DETECTS divergence between plans; `/add-plan` STEP add-plan.cross-sf-review (Cross-SF Integration Review) fixes COMPLETENESS of a single plan, in place.** Every dimension below asks *do two declarations disagree?* — 9.5's checks ask *is one plan complete?*
 
 | Question | Owner | Mode |
 |---|---|---|
