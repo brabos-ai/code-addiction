@@ -9,6 +9,7 @@ description: "Use when renaming product command or skill identities in bulk; der
 
 <!-- uses:
 - skill: add-artefact-graph
+- mention: add-commit
 -->
 
 ## When to Use
