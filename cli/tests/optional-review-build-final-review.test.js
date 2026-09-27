@@ -50,8 +50,8 @@ function mdFiles(dir, out = []) {
   return out;
 }
 
-// The line count of add-build.md on main at 34731b0, when this plan branched.
-const BUILD_LINE_BUDGET = 1609;
+// 1609 on main at 34731b0. Slot wrappers around the 15 injection markers added the rest.
+const BUILD_LINE_BUDGET = 1626;
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {

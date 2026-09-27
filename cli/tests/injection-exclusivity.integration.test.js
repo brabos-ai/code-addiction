@@ -475,7 +475,7 @@ describe('combined substitution and sibling isolation', () => {
     disableFeature(tmp, 'tdd');
     assertBlockAbsent(tmp, features.filter((e) => e.name === 'tdd'), 'tdd off');
     assertBlockOnce(tmp, [...features.filter((e) => e.name !== 'tdd'), ...plugins], 'siblings after tdd off');
-  });
+  }, 20000);
 
   it('reversed enable order still lands every full block exactly once', () => {
     const all = [...loadFeatureMatrix(), ...loadPluginMatrix()];

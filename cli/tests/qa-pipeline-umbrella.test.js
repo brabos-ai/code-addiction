@@ -100,7 +100,7 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     // which deleted add-plan's STEP 1 (Load Founder Profile): 8.4 -> 7.4, STEP 10 -> STEP 9.
     expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 7.4: Frontend Specialist', position: 'after' });
     expect(qa(pts, 'qa-spec').anchor).toMatchObject({
-      text: '## STEP 9: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
+      text: '## STEP add-plan.consolidate: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
       position: 'after',
     });
   });

@@ -114,7 +114,7 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
     expect(warnSpy).not.toHaveBeenCalled();
     expect(modified).toBeGreaterThan(0);
 
-    expect(snapshot(targets[0])).toContain('STEP 9.0'); // QA-Spec step landed in add-plan
+    expect(snapshot(targets[0])).toContain('STEP qa-pipeline.qa-spec'); // QA-Spec step landed in add-plan
     expect(snapshot(targets[1])).toContain('E2E Spec Authoring'); // e2e-dispatch landed in add-build
     expect(snapshot(targets[1])).toContain('QA-Routed Correction'); // qa-fix landed in add-build
     for (const f of targets) if (snapshot(f) !== before[f]) expect(snapshot(f)).not.toContain('<!--');
