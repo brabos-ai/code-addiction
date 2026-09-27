@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { PROVIDERS } from '../src/providers.js';
 
 const require = createRequire(import.meta.url);
 const {
@@ -229,5 +230,152 @@ describe('injection-points collector + emit', () => {
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+const MAP = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'slot-membership-map-v2.json'), 'utf8'));
+const OPEN_RE = /^<!-- (feature|plugin):([^:]+):([^\s]+) -->\s*$/;
+const CLOSE_RE = /^<!-- \/(feature|plugin):([^:]+):([^\s]+) -->\s*$/;
+const STEP_RE = /\bSTEP\s+\d+(?:\.\d+)?\b|^\s*[-*]\s+\d+(?:\.\d+)?:/;
+
+function productSourceRoot() {
+  return path.resolve(import.meta.dirname, '..', '..', 'framwork', '.codeadd');
+}
+
+function deriveSlots() {
+  const root = productSourceRoot();
+  const files = [];
+  function walk(dir) {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) walk(p);
+      else if (ent.name.endsWith('.md') && (p.includes(`${path.sep}commands${path.sep}`) || p.includes(`${path.sep}agents${path.sep}`))) files.push(p);
+    }
+  }
+  walk(root);
+  const resources = [];
+  for (const file of files.sort()) {
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    const markers = [];
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(OPEN_RE);
+      if (!m) continue;
+      let close = -1;
+      for (let j = i + 1; j < lines.length; j++) {
+        const c = lines[j].match(CLOSE_RE);
+        if (c && c[1] === m[1] && c[2] === m[2] && c[3] === m[3]) { close = j; break; }
+        if (OPEN_RE.test(lines[j])) break;
+      }
+      markers.push({ line: i + 1, close, namespace: m[1], name: m[2], section: m[3] });
+    }
+    if (!markers.length) continue;
+    const rel = path.relative(path.resolve(import.meta.dirname, '..', '..'), file).split(path.sep).join('/');
+    const kind = rel.includes('/agents/') ? 'agent' : 'command';
+    const name = path.basename(file, '.md').replace(/-agent$/, '');
+    const slots = [];
+    let cur = null;
+    for (const mk of markers) {
+      const gap = cur ? lines.slice(cur.lastClose + 1, mk.line - 1).join('\n') : '';
+      if (!(cur && gap.trim() === '')) {
+        cur = { members: [], lastClose: mk.close };
+        slots.push(cur);
+      }
+      cur.members.push({ namespace: mk.namespace, name: mk.name, section: mk.section });
+      cur.lastClose = mk.close;
+    }
+    resources.push({
+      resource: `${kind}/${name}`,
+      file: rel,
+      slots: slots.map((s) => s.members),
+    });
+  }
+  return resources;
+}
+
+function stepRefFiles() {
+  const root = productSourceRoot();
+  const found = [];
+  function walk(dir) {
+    if (!fs.existsSync(dir)) return;
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, ent.name);
+      if (ent.isDirectory()) walk(p);
+      else if (ent.name.endsWith('.md')) {
+        const hit = fs.readFileSync(p, 'utf8').split(/\r?\n/).some((line) => STEP_RE.test(line));
+        if (hit) {
+          found.push(path.relative(path.resolve(import.meta.dirname, '..', '..'), p).split(path.sep).join('/'));
+        }
+      }
+    }
+  }
+  for (const d of ['commands', 'agents', 'skills', 'fragments', 'plugins']) walk(path.join(root, d));
+  return found.sort();
+}
+
+describe('slot membership map v2', () => {
+  it('freezes 70 memberships in 63 slots, one nonempty fallback', () => {
+    expect(MAP.membershipCount).toBe(70);
+    expect(MAP.slotCount).toBe(63);
+    const members = MAP.resources.flatMap((r) => r.slots.flatMap((s) => s.sourceOrder));
+    expect(members).toHaveLength(70);
+    const nonempty = MAP.resources.flatMap((r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md'));
+    expect(nonempty).toEqual([
+      expect.objectContaining({
+        id: 'plan-specs',
+        fallback: 'fallbacks/plan-specs.md',
+        expectedOrder: [
+          { namespace: 'feature', name: 'tdd-pipeline', section: 'step-list' },
+          { namespace: 'feature', name: 'qa-pipeline', section: 'step-list' },
+        ],
+      }),
+    ]);
+    expect(MAP.fallbacks.nonempty.bytes).toBe(
+      'No optional test-spec or QA-spec step is available. Continue with STEP add-plan.consolidate.',
+    );
+  });
+
+  it('current source grouping matches the frozen source order', () => {
+    const derived = deriveSlots();
+    const frozen = MAP.resources.map((r) => ({
+      resource: r.resource,
+      file: r.file,
+      slots: r.slots.map((s) => s.sourceOrder),
+    }));
+    expect(derived).toEqual(frozen);
+  });
+
+  it('provider targets match the installer flags, not every provider key', () => {
+    const command = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir).map(([k]) => k);
+    const agentInjection = Object.entries(PROVIDERS).filter(([, p]) => p.agentInjection && p.agentsSubdir).map(([k]) => k);
+    expect(MAP.providers.command).toEqual(command);
+    expect(MAP.providers.agentInjection).toEqual(agentInjection);
+  });
+
+  it('every incoming fragment file has a frozen depth-1 dependency list', () => {
+    const root = productSourceRoot();
+    const paths = [];
+    function walk(dir) {
+      if (!fs.existsSync(dir)) return;
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, ent.name);
+        if (ent.isDirectory()) walk(p);
+        else if (ent.name.endsWith('.md') && !p.includes(`${path.sep}skills${path.sep}`)) paths.push(path.relative(path.resolve(import.meta.dirname, '..', '..'), p).split(path.sep).join('/'));
+      }
+    }
+    walk(path.join(root, 'fragments'));
+    walk(path.join(root, 'plugins'));
+    const frozen = MAP.fragments.map((f) => f.id.replace(/^product\/fragment\//, 'framwork/.codeadd/')).sort();
+    expect(frozen).toEqual(paths.filter((p) => p.includes('/fragments/')).sort());
+    for (const f of MAP.fragments) expect(Array.isArray(f.dependencies)).toBe(true);
+  });
+
+  it('active numeric STEP reference files match the frozen inventory', () => {
+    expect(stepRefFiles()).toEqual(MAP.activeStepRefFiles.map((e) => e.file).sort());
+  });
+
+  it.skip('F5 dormant — add-plan step-list source order is tdd then qa', () => {
+    const slot = MAP.resources.find((r) => r.resource === 'command/add-plan').slots.find((s) => s.id === 'plan-specs');
+    const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots[0];
+    expect(derived).toEqual(slot.expectedOrder);
   });
 });

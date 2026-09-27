@@ -1,0 +1,2135 @@
+{
+  "version": 2,
+  "membershipCount": 70,
+  "slotCount": 63,
+  "grouping": "maximal run of standalone marker pairs separated only by whitespace",
+  "providers": {
+    "command": [
+      "claude",
+      "cursor",
+      "opencode"
+    ],
+    "agentInjection": [
+      "claude"
+    ]
+  },
+  "fallbacks": {
+    "nonempty": {
+      "resource": "command/add-plan",
+      "slot": "plan-specs",
+      "file": "fallbacks/plan-specs.md",
+      "bytes": "No optional test-spec or QA-spec step is available. Continue with STEP add-plan.consolidate."
+    },
+    "emptyFile": "fallbacks/empty.md"
+  },
+  "resources": [
+    {
+      "resource": "agent/architecture",
+      "file": "framwork/.codeadd/agents/architecture-agent.md",
+      "kind": "agent",
+      "name": "architecture",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/backend",
+      "file": "framwork/.codeadd/agents/backend-agent.md",
+      "kind": "agent",
+      "name": "backend",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/database",
+      "file": "framwork/.codeadd/agents/database-agent.md",
+      "kind": "agent",
+      "name": "database",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/discovery",
+      "file": "framwork/.codeadd/agents/discovery-agent.md",
+      "kind": "agent",
+      "name": "discovery",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/frontend",
+      "file": "framwork/.codeadd/agents/frontend-agent.md",
+      "kind": "agent",
+      "name": "frontend",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/qa",
+      "file": "framwork/.codeadd/agents/qa-agent.md",
+      "kind": "agent",
+      "name": "qa",
+      "slots": [
+        {
+          "id": "playwright.drive",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "playwright",
+              "section": "drive"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "playwright",
+              "section": "drive"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/reviewer",
+      "file": "framwork/.codeadd/agents/reviewer-agent.md",
+      "kind": "agent",
+      "name": "reviewer",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/system-design",
+      "file": "framwork/.codeadd/agents/system-design-agent.md",
+      "kind": "agent",
+      "name": "system-design",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/ux",
+      "file": "framwork/.codeadd/agents/ux-agent.md",
+      "kind": "agent",
+      "name": "ux",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/ux-flow",
+      "file": "framwork/.codeadd/agents/ux-flow-agent.md",
+      "kind": "agent",
+      "name": "ux-flow",
+      "slots": [
+        {
+          "id": "gitnexus.graph",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-brainstorm",
+      "file": "framwork/.codeadd/commands/add-brainstorm.md",
+      "kind": "command",
+      "name": "add-brainstorm",
+      "slots": [
+        {
+          "id": "board.ticket-resolve",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-resolve"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-resolve"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-refining",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-refining"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-refining"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-frontmatter",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-frontmatter"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-frontmatter"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-report",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-report"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-report"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-intent",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-intent"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-intent"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-shaped",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-shaped"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-shaped"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-build",
+      "file": "framwork/.codeadd/commands/add-build.md",
+      "kind": "command",
+      "name": "add-build",
+      "slots": [
+        {
+          "id": "board.ticket-doing",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-doing"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-doing"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.qa-fix",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-fix"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-fix"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.detect-framework",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "detect-framework"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "detect-framework"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-build",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-build"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-build"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.tasks-flow+tdd-pipeline.gate+tdd-pipeline.verify-red",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "tasks-flow"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "gate"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "verify-red"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "tasks-flow"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "gate"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "verify-red"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.awareness",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "awareness"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "awareness"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.test-dispatch",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "test-dispatch"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "test-dispatch"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.e2e-dispatch",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "e2e-dispatch"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "e2e-dispatch"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.verification+tdd-pipeline.coverage",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "verification"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "coverage"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "verification"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "coverage"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-in-review",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-in-review"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-in-review"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-attention",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-attention"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-attention"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-metadata",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-metadata"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-metadata"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-diagnose",
+      "file": "framwork/.codeadd/commands/add-diagnose.md",
+      "kind": "command",
+      "name": "add-diagnose",
+      "slots": [
+        {
+          "id": "gitnexus.graph-trace",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-trace"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-trace"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-done",
+      "file": "framwork/.codeadd/commands/add-done.md",
+      "kind": "command",
+      "name": "add-done",
+      "slots": [
+        {
+          "id": "docs-pruning.prune",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "docs-pruning",
+              "section": "prune"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "docs-pruning",
+              "section": "prune"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-close",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-close"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-close"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-carry",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-carry"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-carry"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-reindex",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-reindex"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-reindex"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-report",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-report"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-report"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-hotfix",
+      "file": "framwork/.codeadd/commands/add-hotfix.md",
+      "kind": "command",
+      "name": "add-hotfix",
+      "slots": [
+        {
+          "id": "board.ticket-resolve",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-resolve"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-resolve"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-doing",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-doing"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-doing"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.red-gate",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "red-gate"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "red-gate"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-impact",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-impact"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-impact"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-frontmatter",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-frontmatter"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-frontmatter"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-report",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-report"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-report"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-new",
+      "file": "framwork/.codeadd/commands/add-new.md",
+      "kind": "command",
+      "name": "add-new",
+      "slots": [
+        {
+          "id": "board.ticket-intent-field",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-intent-field"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-intent-field"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-board-write",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-board-write"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-board-write"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-skeleton",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-skeleton"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-skeleton"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-map",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-map"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-map"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-shaped",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-shaped"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-shaped"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-plan",
+      "file": "framwork/.codeadd/commands/add-plan.md",
+      "kind": "command",
+      "name": "add-plan",
+      "slots": [
+        {
+          "id": "plan-specs",
+          "fallback": "fallbacks/plan-specs.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "step-list"
+            },
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "step-list"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "step-list"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "step-list"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-read",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-read"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-read"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-plan",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-plan"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-plan"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.step9",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "step9"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "step9"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.qa-spec",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-spec"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-spec"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-done-when",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-done-when"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-done-when"
+            }
+          ]
+        },
+        {
+          "id": "board.ticket-planned",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-planned"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "ticket-planned"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-review",
+      "file": "framwork/.codeadd/commands/add-review.md",
+      "kind": "command",
+      "name": "add-review",
+      "slots": [
+        {
+          "id": "tdd-pipeline.step-list",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "step-list"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "step-list"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.step-list",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "step-list"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "step-list"
+            }
+          ]
+        },
+        {
+          "id": "tdd-pipeline.spec-audit",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "spec-audit"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "tdd-pipeline",
+              "section": "spec-audit"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.preflight+qa-pipeline.evidence+qa-pipeline.judge-head+qa-pipeline.judge-tail",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "preflight"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "evidence"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "judge-head"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "judge-tail"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "preflight"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "evidence"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "judge-head"
+            },
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "judge-tail"
+            }
+          ]
+        },
+        {
+          "id": "playwright.drive",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "playwright",
+              "section": "drive"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "playwright",
+              "section": "drive"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-wiki",
+      "file": "framwork/.codeadd/commands/add-wiki.md",
+      "kind": "command",
+      "name": "add-wiki",
+      "slots": [
+        {
+          "id": "gitnexus.graph-classify",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-classify"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-classify"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-dispatch-common",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-dispatch-common"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-dispatch-common"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-specialist",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-specialist"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-specialist"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-database",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-database"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-database"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-quality",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-quality"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-quality"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-contract",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-contract"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-contract"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fragments": [
+    {
+      "id": "product/fragment/fragments/board/add-brainstorm.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-brainstorm",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/reference/add--backlog/references/lifecycle.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--backlog",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/board/add-build.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/reference/add--backlog/references/lifecycle.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--backlog",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/board/add-done.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-done",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/reference/add--backlog/references/lifecycle.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--backlog",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/board/add-hotfix.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-hotfix",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/reference/add--backlog/references/lifecycle.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--backlog",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/board/add-new.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-new",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/script/backlog-commit.sh",
+          "via": "RUNS_SCRIPT"
+        },
+        {
+          "id": "product/reference/add--backlog/references/lifecycle.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--backlog",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/board/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/reference/add--backlog/references/lifecycle.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--backlog",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/docs-pruning/add-done.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-done",
+          "via": "INJECTS_INTO"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/qa-pipeline/add-build.md",
+      "dependencies": [
+        {
+          "id": "product/agent/backend-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/database-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/e2e-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/fix-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/frontend-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/ux-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/command/add-build",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--ux-design",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/qa-pipeline/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--qa-spec",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/qa-pipeline/add-review.md",
+      "dependencies": [
+        {
+          "id": "product/agent/e2e-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/qa-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/ux-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/command/add-build",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-done",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-qa-setup",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-review",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/script/qa-evidence.sh",
+          "via": "RUNS_SCRIPT"
+        },
+        {
+          "id": "product/script/qa-preflight.sh",
+          "via": "RUNS_SCRIPT"
+        },
+        {
+          "id": "product/reference/add--doc-schemas/references/new-feature.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/reference/add--qa/references/coordinator.md",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--doc-schemas",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--qa",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/tdd-pipeline/add-build.md",
+      "dependencies": [
+        {
+          "id": "product/agent/test-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/command/add-build",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--tdd",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/tdd-pipeline/add-hotfix.md",
+      "dependencies": [
+        {
+          "id": "product/agent/test-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/command/add-hotfix",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--tdd",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/tdd-pipeline/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--test-specification",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/tdd-pipeline/add-review.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-review",
+          "via": "INJECTS_INTO"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-build.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-diagnose.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-diagnose",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-done.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-done",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-hotfix.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-hotfix",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-new.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-new",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-wiki.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-wiki",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/architecture-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/architecture-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/backend-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/backend-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/database-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/database-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/discovery-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/discovery-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/frontend-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/frontend-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/reviewer-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/reviewer-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/system-design-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/system-design-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/ux-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/ux-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/agents/ux-flow-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/ux-flow-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/playwright/fragments/add-review.md",
+      "dependencies": [
+        {
+          "id": "product/agent/qa-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/command/add-review",
+          "via": "INJECTS_INTO"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/playwright/fragments/agents/qa-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/qa-agent",
+          "via": "INJECTS_INTO"
+        }
+      ]
+    }
+  ],
+  "activeStepRefFiles": [
+    {
+      "file": "framwork/.codeadd/agents/consistency-agent.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-audit.md",
+      "hits": 31
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-brainstorm.md",
+      "hits": 36
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-build.md",
+      "hits": 83
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-diagnose.md",
+      "hits": 59
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-done.md",
+      "hits": 55
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-hotfix.md",
+      "hits": 77
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-new.md",
+      "hits": 33
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-plan.md",
+      "hits": 70
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-pull-request.md",
+      "hits": 21
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-qa-setup.md",
+      "hits": 80
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-review.md",
+      "hits": 57
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-ux.md",
+      "hits": 13
+    },
+    {
+      "file": "framwork/.codeadd/commands/add-wiki.md",
+      "hits": 47
+    },
+    {
+      "file": "framwork/.codeadd/commands/add.md",
+      "hits": 16
+    },
+    {
+      "file": "framwork/.codeadd/fragments/board/add-brainstorm.md",
+      "hits": 4
+    },
+    {
+      "file": "framwork/.codeadd/fragments/board/add-build.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/fragments/board/add-done.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/fragments/board/add-hotfix.md",
+      "hits": 3
+    },
+    {
+      "file": "framwork/.codeadd/fragments/board/add-new.md",
+      "hits": 3
+    },
+    {
+      "file": "framwork/.codeadd/fragments/board/add-plan.md",
+      "hits": 4
+    },
+    {
+      "file": "framwork/.codeadd/fragments/docs-pruning/add-done.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/fragments/qa-pipeline/add-build.md",
+      "hits": 3
+    },
+    {
+      "file": "framwork/.codeadd/fragments/qa-pipeline/add-plan.md",
+      "hits": 3
+    },
+    {
+      "file": "framwork/.codeadd/fragments/qa-pipeline/add-review.md",
+      "hits": 24
+    },
+    {
+      "file": "framwork/.codeadd/fragments/tdd-pipeline/add-build.md",
+      "hits": 4
+    },
+    {
+      "file": "framwork/.codeadd/fragments/tdd-pipeline/add-hotfix.md",
+      "hits": 6
+    },
+    {
+      "file": "framwork/.codeadd/fragments/tdd-pipeline/add-plan.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/fragments/tdd-pipeline/add-review.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/plugins/playwright/fragments/add-review.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--agents-md-style/SKILL.md",
+      "hits": 5
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--architecture-discovery/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--backlog/SKILL.md",
+      "hits": 4
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--backlog/references/lifecycle.md",
+      "hits": 4
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--cross-sf-consistency/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--dev-environment-setup/SKILL.md",
+      "hits": 10
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--doc-schemas/references/history.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--doc-schemas/references/new-feature.md",
+      "hits": 5
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--doc-schemas/references/receipt.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--doc-schemas/references/review.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--ecosystem/SKILL.md",
+      "hits": 30
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--feature-readback/SKILL.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--feature-specification/SKILL.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--final-report/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--id-convention/SKILL.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--knowledge-discovery/SKILL.md",
+      "hits": 4
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--plan-review/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--qa-spec/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--qa/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--qa/references/coordinator.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--resource-path-convention/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--review-discipline/SKILL.md",
+      "hits": 2
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--setup-contract/SKILL.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--subagent-driven-development/references/persistent-logging-and-tasks.md",
+      "hits": 1
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--tasks-checklist/SKILL.md",
+      "hits": 3
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--ux-design/design-direction.md",
+      "hits": 25
+    },
+    {
+      "file": "framwork/.codeadd/skills/add--wiki-maintenance/SKILL.md",
+      "hits": 18
+    }
+  ]
+}
