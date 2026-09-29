@@ -252,11 +252,22 @@ function extractSlots(rawContent, resourceName, resourceKind, readFallback) {
   let open = null;
   const seenIds = new Set();
 
+  // A slot's region holds member markers and whitespace, nothing else. Both halves
+  // are checked here rather than by filtering the region: `assertNoGap` catches
+  // plain prose between two comments, and the final branch catches a comment that
+  // is not a member marker. Filtering the region with a regex replacement is what
+  // CodeQL flagged as incomplete sanitization.
+  const assertNoGap = (o, nextStart, line) => {
+    if (rawContent.slice(o.gapEnd, nextStart).trim()) {
+      throw new Error(`Invalid slot ${o.id} in ${resourceName}:${line} — only member markers and whitespace are allowed`);
+    }
+  };
   for (const c of comments) {
     const slotOpen = c.body.match(SLOT_OPEN_RE);
     const slotClose = c.body.match(SLOT_CLOSE_RE);
     const memberOpen = c.body.match(OPEN_MARKER_RE);
     const memberClose = c.body.match(CLOSE_MARKER_RE);
+    if (open) assertNoGap(open, c.start, c.line);
     if (slotOpen) {
       if (open) {
         throw new Error(`Nested slot ${slotOpen[1]} in ${resourceName}:${c.line} — inside ${open.id}`);
@@ -266,7 +277,7 @@ function extractSlots(rawContent, resourceName, resourceKind, readFallback) {
       }
       assertSafeFallbackPath(slotOpen[2], resourceName, c.line);
       seenIds.add(slotOpen[1]);
-      open = { id: slotOpen[1], fallbackPath: slotOpen[2], line: c.line, start: c.start, end: c.end, members: [] };
+      open = { id: slotOpen[1], fallbackPath: slotOpen[2], line: c.line, start: c.start, end: c.end, gapEnd: c.end, members: [] };
       continue;
     }
     if (slotClose) {
@@ -275,14 +286,6 @@ function extractSlots(rawContent, resourceName, resourceKind, readFallback) {
       }
       if (open.members.length === 0) {
         throw new Error(`Orphan slot ${open.id} in ${resourceName}:${open.line} — no members`);
-      }
-      const region = rawContent.slice(open.end, c.start).replace(/<!--([\s\S]*?)-->/g, (comment, body, offset) => {
-        const start = open.end + offset;
-        return isStandaloneMarker(rawContent, start, start + comment.length) &&
-          (OPEN_MARKER_RE.test(body) || CLOSE_MARKER_RE.test(body)) ? '' : comment;
-      });
-      if (region.trim()) {
-        throw new Error(`Invalid slot ${open.id} in ${resourceName}:${open.line} — only member markers and whitespace are allowed`);
       }
       slots.push(open);
       open = null;
@@ -304,10 +307,18 @@ function extractSlots(rawContent, resourceName, resourceKind, readFallback) {
         line: c.line,
         start: c.start,
       });
+      open.gapEnd = c.end;
       continue;
     }
-    if (memberClose && !open) {
-      throw new Error(`Mixed injection source in ${resourceName}:${c.line} — close marker outside a slot`);
+    if (memberClose) {
+      if (!open) {
+        throw new Error(`Mixed injection source in ${resourceName}:${c.line} — close marker outside a slot`);
+      }
+      open.gapEnd = c.end;
+      continue;
+    }
+    if (open) {
+      throw new Error(`Invalid slot ${open.id} in ${resourceName}:${open.line} — only member markers and whitespace are allowed`);
     }
   }
   if (open) {
