@@ -276,6 +276,14 @@ function extractSlots(rawContent, resourceName, resourceKind, readFallback) {
       if (open.members.length === 0) {
         throw new Error(`Orphan slot ${open.id} in ${resourceName}:${open.line} — no members`);
       }
+      const region = rawContent.slice(open.end, c.start).replace(/<!--([\s\S]*?)-->/g, (comment, body, offset) => {
+        const start = open.end + offset;
+        return isStandaloneMarker(rawContent, start, start + comment.length) &&
+          (OPEN_MARKER_RE.test(body) || CLOSE_MARKER_RE.test(body)) ? '' : comment;
+      });
+      if (region.trim()) {
+        throw new Error(`Invalid slot ${open.id} in ${resourceName}:${open.line} — only member markers and whitespace are allowed`);
+      }
       slots.push(open);
       open = null;
       continue;
