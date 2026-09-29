@@ -25,11 +25,27 @@ import { resolveSelected, agentDest } from './providers.js';
  */
 export function parseFragmentSections(fragmentContent) {
   const sections = new Map();
+  const markers = [...fragmentContent.matchAll(/<!--\s*(\/?)section:([^\s>]+)\s*-->/g)];
+  let open = null;
+  const names = new Set();
+  for (const marker of markers) {
+    const [, close, name] = marker;
+    if (close) {
+      if (open !== name) throw new Error(`Malformed fragment section: unexpected close ${name}`);
+      open = null;
+    } else {
+      if (open !== null || names.has(name)) throw new Error(`Malformed fragment section: duplicate or nested ${name}`);
+      names.add(name);
+      open = name;
+    }
+  }
+  if (open !== null) throw new Error(`Malformed fragment section: unclosed ${open}`);
   const regex = /<!-- section:(\S+) -->\r?\n([\s\S]*?)<!-- \/section:\1 -->/g;
   let match;
   while ((match = regex.exec(fragmentContent)) !== null) {
     sections.set(match[1], match[2]);
   }
+  if (sections.size !== names.size) throw new Error('Malformed fragment section markers');
   return sections;
 }
 
@@ -157,18 +173,6 @@ export function removeBlockAfterAnchor(content, anchor, blockText) {
  * @param {Array} points
  * @returns {Array<{anchor: object, sections: string[]}>}
  */
-function groupPointsByAnchor(points) {
-  const byKey = new Map();
-  const groups = [];
-  for (const p of points) {
-    const key = `${p.anchor.position}|${p.anchor.ordinal}|${p.anchor.text}`;
-    let g = byKey.get(key);
-    if (!g) { g = { anchor: p.anchor, sections: [] }; byKey.set(key, g); groups.push(g); }
-    g.sections.push(p.section);
-  }
-  return groups;
-}
-
 /**
  * Resolve the resource-path placeholders a fragment section carries, for ONE
  * provider -- the same rule scripts/build.js resolveResourcePaths() applies when
@@ -194,85 +198,6 @@ export function resolvePlaceholders(text, provider) {
     .replace(/\{\{skill:([^/}]+)\/([^}]+)\}\}/g, (m, name, file) =>
       provider.skillsSubdir ? `${base}/${provider.skillsSubdir}/${name}/${file}` : m)
     .replace(/\{\{addpath:([^}]+)\}\}/g, (_, sub) => `.codeadd/${sub}`);
-}
-
-/** A copy of `sections` with every body resolved for `provider`. */
-function resolveSections(sections, provider) {
-  const out = new Map();
-  for (const [name, body] of sections) out.set(name, resolvePlaceholders(body, provider));
-  return out;
-}
-
-/**
- * Apply all of one resource's injection points to its file content.
- * Inserts bottom-up so higher anchors' ordinals stay valid across inserts.
- * @param {string} content
- * @param {Array} points  points for ONE resource (already filtered by name/kind)
- * @param {Map<string,string>} sections  fragment sections
- * @returns {{content: string, missed: Array<{sections:string[], anchor:object}>}}
- */
-export function applyInjectionToContent(content, points, sections, provider = null) {
-  if (provider) sections = resolveSections(sections, provider);
-  const groups = groupPointsByAnchor(points.filter((p) => sections.has(p.section)));
-  let result = content;
-  const missed = [];
-  for (const g of [...groups].reverse()) {
-    const blockText = g.sections.map((s) => sections.get(s)).join('');
-    if (!blockText) continue;
-    const next = insertBlockAfterAnchor(result, g.anchor, blockText);
-    if (next === null) { missed.push({ sections: g.sections, anchor: g.anchor }); continue; }
-    result = next;
-  }
-  return { content: result, missed };
-}
-
-/**
- * Remove all of one resource's injected blocks (re-derived from the fragment).
- * @param {string} content
- * @param {Array} points
- * @param {Map<string,string>} sections
- * @returns {string}
- */
-export function removeInjectionFromContent(content, points, sections, provider = null) {
-  // With a provider, remove the RESOLVED block this CLI injects -- and then the
-  // raw one, which a CLI from before placeholder resolution injected. Each pass
-  // is a no-op where its block is absent, so an install from either era comes
-  // out clean.
-  if (provider) {
-    const resolved = removeInjectionFromContent(content, points, resolveSections(sections, provider));
-    return removeInjectionFromContent(resolved, points, sections);
-  }
-  const groups = groupPointsByAnchor(points.filter((p) => sections.has(p.section)));
-  let result = content;
-  // Forward order is safe (unlike applyInjectionToContent's reversed inserts):
-  // removal re-resolves the anchor each iteration and removed blocks never
-  // contain anchor lines, so earlier removals can't shift later anchors.
-  for (const g of groups) {
-    const blockText = g.sections.map((s) => sections.get(s)).join('');
-    if (blockText) result = removeBlockAfterAnchor(result, g.anchor, blockText);
-  }
-  return result;
-}
-
-// ---------------------------------------------------------------------------
-// Sidecar map + resource resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Load the build-emitted injection-point map from the installed project.
- * Returns [] when absent (graceful fallback for installs predating the sidecar).
- * @param {string} cwd
- * @returns {Array}
- */
-export function loadInjectionPoints(cwd) {
-  const p = path.join(cwd, '.codeadd', 'injection-points.json');
-  if (!fs.existsSync(p)) return [];
-  try {
-    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-    return Array.isArray(data?.points) ? data.points : [];
-  } catch {
-    return [];
-  }
 }
 
 /**
@@ -388,85 +313,259 @@ export function recalculateHashes(cwd, manifest, modifiedPaths) {
 // plugins/.../agents/ subtree) and the target files (provider agent dirs) differ.
 // ---------------------------------------------------------------------------
 
-/**
- * Read per-agent fragments from .codeadd/plugins/{name}/fragments/agents/{agent}.md
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {Array<{agentName: string, content: string}>}
- */
-export function getAgentFragments(cwd, pluginName) {
-  const dir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'fragments', 'agents');
-  if (!fs.existsSync(dir)) return [];
+const BASELINE_ROOT = '.codeadd/baselines';
 
-  const fragments = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
-    const agentName = entry.name.replace(/\.md$/, '');
-    const content = fs.readFileSync(path.join(dir, entry.name), 'utf8');
-    fragments.push({ agentName, content });
+export function loadInjectionSidecar(cwd) {
+  const p = path.join(cwd, '.codeadd', 'injection-points.json');
+  if (!fs.existsSync(p)) return null;
+  try {
+    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return data && typeof data === 'object' ? data : null;
+  } catch {
+    return null;
   }
-  return fragments;
 }
 
-/**
- * Inject plugin sections into each target agent file across installed providers,
- * driven by the sidecar map (anchors) + per-agent fragments (content). A fragment
- * with no matching sidecar point or no installed agent file is skipped.
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {string[]} absolute paths of modified agent files
- */
-export function injectAgentFragments(cwd, pluginName) {
-  const fragments = getAgentFragments(cwd, pluginName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'agent',
-  );
+export function baselineRel(providerKey, resource) {
+  const kind = resource.kind === 'agent' ? 'agents' : 'commands';
+  return `${BASELINE_ROOT}/${providerKey}/${kind}/${resource.name}.md`;
+}
+
+function regionByNext(lines, anchor) {
+  if (anchor.next == null) return null;
+  const hits = [];
+  for (let i = 0; i < lines.length; i++) if (lines[i].trim() === anchor.next) hits.push(i);
+  if (hits.length !== 1) return null;
+  const end = hits[0];
+  let start = end;
+  while (start > 0 && lines[start - 1].trim() === '') start -= 1;
+  if (start === 0 || lines[start - 1].trim() !== anchor.text) return null;
+  return { start, end };
+}
+
+export function renderSlotRegion(content, anchor, text) {
+  const lines = content.split('\n');
+  let start;
+  let end;
+  const byNext = regionByNext(lines, anchor);
+  if (byNext) {
+    start = byNext.start;
+    end = byNext.end;
+  } else {
+    const idx = findAnchorLine(lines, anchor);
+    if (idx === -1) return null;
+    start = anchor.position === 'before' ? idx : idx + 1;
+    end = start;
+    if (anchor.next != null) {
+      const nextIdx = lines.findIndex((l, i) => i >= start && l.trim() === anchor.next);
+      if (nextIdx === -1) return null;
+      end = nextIdx;
+      if (lines.slice(start, end).some((l) => l.trim() !== '')) return null;
+    }
+  }
+  const insert = text ? toBlockLines(text.endsWith('\n') ? text : `${text}\n`) : [];
+  lines.splice(start, end - start, ...insert);
+  return lines.join('\n');
+}
+
+export function composeSlot(slot, memberStates) {
+  const warnings = [];
+  const parts = [];
+  for (let i = 0; i < slot.members.length; i++) {
+    const state = memberStates[i] || {};
+    const member = slot.members[i];
+    if (state.warning) {
+      warnings.push({
+        resource: slot.resource.name,
+        slot: slot.id,
+        member: `${member.namespace}:${member.name}:${member.section}`,
+        reason: state.warning,
+      });
+    }
+    if (state.contribute && state.text) parts.push(state.text.endsWith('\n') ? state.text : `${state.text}\n`);
+  }
+  return {
+    text: parts.length ? parts.join('') : (slot.fallback || ''),
+    usedFallback: parts.length === 0,
+    warnings,
+  };
+}
+
+export function renderSlots(baseline, slots) {
+  let content = baseline;
+  const missed = [];
+  for (let i = slots.length - 1; i >= 0; i--) {
+    const slot = slots[i];
+    const next = renderSlotRegion(content, slot.anchor, slot.text || '');
+    if (next === null) {
+      missed.push(slot.id);
+      continue;
+    }
+    content = next;
+  }
+  return { content, missed };
+}
+
+export function captureBaselines(cwd) {
+  const sidecar = loadInjectionSidecar(cwd);
+  const slots = Array.isArray(sidecar?.slots) ? sidecar.slots : [];
+  if (sidecar?.version !== 2 || slots.length === 0) return { captured: [], pruned: [], warnings: [] };
+
+  const expected = new Set();
+  const captured = [];
+  const seen = new Set();
+  for (const slot of slots) {
+    const key = `${slot.resource.kind}:${slot.resource.name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    for (const target of resolveResourceTargets(cwd, slot.resource)) {
+      const rel = baselineRel(target.provider.key, slot.resource);
+      expected.add(rel);
+      const dest = path.join(cwd, rel);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(target.file, dest);
+      captured.push(rel);
+    }
+  }
+
+  const pruned = [];
+  const root = path.join(cwd, BASELINE_ROOT);
+  if (fs.existsSync(root)) {
+    const walk = (dir) => {
+      for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, ent.name);
+        if (ent.isDirectory()) walk(full);
+        else {
+          const rel = path.relative(cwd, full).split(path.sep).join('/');
+          if (!expected.has(rel)) {
+            fs.unlinkSync(full);
+            pruned.push(rel);
+          }
+        }
+      }
+    };
+    walk(root);
+  }
+
+  const manifest = readManifest(cwd);
+  if (manifest) {
+    manifest.baselineHashes = Object.fromEntries(captured.map((rel) => [rel, calculateHash(path.join(cwd, rel))]));
+    saveManifest(cwd, manifest);
+  }
+  return { captured, pruned, warnings: [] };
+}
+
+export function renderInstalledResource(cwd, resource, slots, providerKey) {
+  const rel = baselineRel(providerKey, resource);
+  const basePath = path.join(cwd, rel);
+  const target = resolveResourceTargets(cwd, resource).find((t) => t.provider.key === providerKey);
+  if (!target) return { written: false, warnings: [] };
+  if (!fs.existsSync(basePath)) {
+    return {
+      written: false,
+      warnings: [{ resource: resource.name, slot: slots[0]?.id || '-', member: '-', reason: 'missing baseline' }],
+    };
+  }
+  const baseline = fs.readFileSync(basePath, 'utf8');
+  const prepared = slots.map((slot) => {
+    const composed = composeSlot(slot, slot.memberStates || []);
+    return { ...slot, text: composed.text, warnings: composed.warnings };
+  });
+  const rendered = renderSlots(baseline, prepared);
+  if (rendered.missed.length) {
+    return {
+      written: false,
+      warnings: rendered.missed.map((id) => ({ resource: resource.name, slot: id, member: '-', reason: 'anchor missed' })),
+    };
+  }
+  const warnings = prepared.flatMap((s) => s.warnings || []);
+  if (rendered.content !== fs.readFileSync(target.file, 'utf8')) {
+    fs.writeFileSync(target.file, rendered.content, 'utf8');
+    return { written: true, warnings };
+  }
+  return { written: false, warnings };
+}
+
+function fragmentFile(cwd, member, resource) {
+  if (member.namespace === 'feature') {
+    return path.join(cwd, '.codeadd', 'fragments', member.name, `${resource.name}.md`);
+  }
+  if (resource.kind === 'agent') {
+    return path.join(cwd, '.codeadd', 'plugins', member.name, 'fragments', 'agents', `${resource.name}.md`);
+  }
+  return path.join(cwd, '.codeadd', 'plugins', member.name, 'fragments', `${resource.name}.md`);
+}
+
+function memberState(cwd, member, resource, manifest, provider, pluginActive) {
+  const enabled = member.namespace === 'feature'
+    ? manifest.features?.[member.name] === true
+    : manifest.plugins?.[member.name]?.enabled === true && (!pluginActive || pluginActive(member.name));
+  if (!enabled) return { contribute: false };
+  const file = fragmentFile(cwd, member, resource);
+  if (!fs.existsSync(file)) return { contribute: false, warning: 'file missing' };
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch {
+    return { contribute: false, warning: 'bad payload' };
+  }
+  let sections;
+  try {
+    sections = parseFragmentSections(raw);
+  } catch {
+    return { contribute: false, warning: 'bad payload' };
+  }
+  if (!sections.has(member.section)) return { contribute: false, warning: 'section missing' };
+  const body = sections.get(member.section);
+  if (typeof body !== 'string' || body.length === 0) return { contribute: false, warning: 'bad payload' };
+  return { contribute: true, text: provider ? resolvePlaceholders(body, provider) : body };
+}
+
+export function reconcileSlots(cwd, options = {}) {
+  const sidecar = loadInjectionSidecar(cwd);
+  if (!sidecar || sidecar.version !== 2) return null;
+  const manifest = readManifest(cwd);
+  if (!manifest) return { modified: [], warnings: [] };
+
+  const groups = new Map();
+  for (const slot of sidecar.slots || []) {
+    const key = `${slot.resource.kind}:${slot.resource.name}`;
+    if (!groups.has(key)) groups.set(key, { resource: slot.resource, slots: [] });
+    groups.get(key).slots.push(slot);
+  }
+
   const modified = [];
-
-  for (const { agentName, content } of fragments) {
-    const sections = parseFragmentSections(content);
-    const agentPoints = points.filter((p) => p.resource.name === agentName);
-    if (agentPoints.length === 0) continue;
-
-    for (const { file, provider } of resolveResourceTargets(cwd, { name: agentName, kind: 'agent' })) {
-      const original = fs.readFileSync(file, 'utf8');
-      const { content: updated } = applyInjectionToContent(original, agentPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(file, updated, 'utf8');
-        modified.push(file);
+  const warnings = [];
+  for (const group of groups.values()) {
+    for (const target of resolveResourceTargets(cwd, group.resource)) {
+      const prepared = group.slots.map((slot) => {
+        const states = slot.members.map((m) => memberState(cwd, m, group.resource, manifest, target.provider, options.pluginActive));
+        const composed = composeSlot(slot, states);
+        warnings.push(...composed.warnings);
+        return { ...slot, text: composed.text };
+      });
+      const basePath = path.join(cwd, baselineRel(target.provider.key, group.resource));
+      if (!fs.existsSync(basePath)) {
+        warnings.push({ resource: group.resource.name, slot: group.slots[0].id, member: '-', reason: 'missing baseline' });
+        continue;
+      }
+      const rendered = renderSlots(fs.readFileSync(basePath, 'utf8'), prepared);
+      if (rendered.missed.length) {
+        for (const id of rendered.missed) {
+          warnings.push({ resource: group.resource.name, slot: id, member: '-', reason: 'anchor missed' });
+        }
+        continue;
+      }
+      if (rendered.content !== fs.readFileSync(target.file, 'utf8')) {
+        fs.writeFileSync(target.file, rendered.content, 'utf8');
+        modified.push(target.file);
       }
     }
   }
-  return modified;
-}
-
-/**
- * Remove plugin sections from each target agent file (re-derived from fragments).
- * Symmetric with injectAgentFragments.
- * @param {string} cwd
- * @param {string} pluginName
- * @returns {string[]} absolute paths of modified agent files
- */
-export function removeAgentFragments(cwd, pluginName) {
-  const fragments = getAgentFragments(cwd, pluginName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'plugin' && p.name === pluginName && p.resource.kind === 'agent',
-  );
-  const modified = [];
-
-  for (const { agentName, content } of fragments) {
-    const sections = parseFragmentSections(content);
-    const agentPoints = points.filter((p) => p.resource.name === agentName);
-    if (agentPoints.length === 0) continue;
-
-    for (const { file, provider } of resolveResourceTargets(cwd, { name: agentName, kind: 'agent' })) {
-      const original = fs.readFileSync(file, 'utf8');
-      const updated = removeInjectionFromContent(original, agentPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(file, updated, 'utf8');
-        modified.push(file);
-      }
-    }
+  if (modified.length) {
+    const current = readManifest(cwd);
+    recalculateHashes(cwd, current, modified);
+    saveManifest(cwd, current);
   }
-  return modified;
+  return { modified, warnings };
 }

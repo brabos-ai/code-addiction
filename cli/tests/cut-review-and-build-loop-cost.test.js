@@ -112,12 +112,12 @@ describe('F5 — reviewer-agent.md gains MODE: owasp', () => {
 describe('F6 — add-review.md dispatches OWASP conditionally', () => {
   it('L1.6 STEP 4.1 names the trigger, STEP 4.2 names the conditional third dispatch', () => {
     const text = read(P.addReview);
-    const s41 = section(text, '4\\.1 Detect Scope');
+    const s41 = section(text, 'STEP add-review\\.scope Detect Scope');
     expect(s41).not.toBeNull();
     expect(s41).toMatch(/owasp/i);
     expect(s41).toMatch(/auth.*payment.*upload/is);
 
-    const s42 = section(text, '4\\.2 Dispatch Strategy');
+    const s42 = section(text, 'STEP add-review\\.dispatch-strategy Dispatch Strategy');
     expect(s42).not.toBeNull();
     expect(s42).toMatch(/owasp trigger fired/i);
     expect(s42).toMatch(/never\s+instead of them/i);

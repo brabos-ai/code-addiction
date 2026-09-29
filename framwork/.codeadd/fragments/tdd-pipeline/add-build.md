@@ -61,7 +61,7 @@ IF test files exist for your area (service=test tasks already implemented):
 IF test files detected (*.spec.ts, *.test.ts from test service tasks):
   1. RUN test suite — TEST_COMMAND from project, for local-tier tests. For a task whose Verify: line
      is scoped to a single CI-tier file, run only that line here, never TEST_COMMAND.
-  2. IF tests pass: proceed to STEP 15
+  2. IF tests pass: proceed to STEP add-build.mutate-docs
   3. IF tests fail:
      a. Analyze failures (which contract tests fail)
      b. Fix IMPLEMENTATION to satisfy tests (not the tests themselves)
@@ -110,7 +110,7 @@ scenarios.
 ### Test Generation Dispatch (tdd-pipeline)
 
 Dispatch `@test-agent` for an area **AFTER that area's implementation agent has
-returned**, interleaved into the sequential order STEP 10.1 already runs:
+returned**, interleaved into the sequential order STEP add-build.order already runs:
 
 ```
 DB → test:DB → Backend → test:Backend → Frontend → test:Frontend
@@ -132,7 +132,7 @@ order fixes.** The agent is told to read the source completely and identify ever
 testable export; run alongside the implementer, it reads a moving target and
 writes coverage for a shape that no longer exists by the time the area lands.
 
-**One agent in flight at a time**, implementer or test agent — STEP 10.1 owns that
+**One agent in flight at a time**, implementer or test agent — STEP add-build.order owns that
 rule and this ordering sits inside it.
 
 **DISPATCH AGENT: `@test-agent`** [full-access, standard] — one per area, sequential, after that area's implementer.
@@ -143,7 +143,7 @@ rule and this ordering sits inside it.
 
 **`BLOCKED` is a successful completion, and it does NOT consume an attempt.** It
 means the agent's own correct test caught a source bug. Route each entry as a
-row per STEP 11.2's `BLOCKED` synthesis — never re-dispatch the agent for it.
+row per STEP add-build.merge-ticks's `BLOCKED` synthesis — never re-dispatch the agent for it.
 
 **`KNOWN_FAILURES` carries only what you have ALREADY observed in this build.** Several agents share
 one working tree here, so an agent that cannot tell its own failure from a pre-existing one goes

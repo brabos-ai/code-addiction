@@ -17,6 +17,7 @@ description: "Use when a plan in docs/plans/ is ready to execute, or for a direc
 - skill: add-framework-internal-layer
 - skill: building-commands
 - skill: add-framework-development
+- skill: add-framework-injection (conditional)
 - skill: add-framework--plan
 - command: /add-framework--sync
 - handoff: add-framework--done
@@ -228,6 +229,7 @@ the user to see it before execution starts.
 | `{{skill:add-framework-product-layer/SKILL.md}}` | The first `[product]` F-block |
 | `{{skill:add-framework-internal-layer/SKILL.md}}` | The first `[internal]` F-block |
 | `{{skill:add-framework-development/SKILL.md}}` | Artefact-type decisions, agent anatomy, `uses:` syntax |
+| `{{skill:add-framework-injection/SKILL.md}}` | An F-block that adds, moves, or removes an injection slot, a fallback, or a product STEP ID |
 
 **Load a layer skill when the first F-block of that layer arrives, not before.** A single-layer plan
 never loads the other one.

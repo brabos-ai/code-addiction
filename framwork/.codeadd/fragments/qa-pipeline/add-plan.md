@@ -3,21 +3,21 @@
 -->
 
 <!-- section:step-list -->
-STEP 9.0: QA-Spec subagent        -> BEFORE assembly, generates plan-qa-spec.md — one row per screen 7.1's design.md declares, with capture states — and merges _tests/screens.json (qa-pipeline)
+STEP qa-pipeline.qa-spec: Generate the QA specification
 <!-- /section:step-list -->
 
 <!-- section:qa-spec -->
 
-### 9.0 QA-Spec Subagent (qa-pipeline — runs BEFORE assembly)
+### STEP qa-pipeline.qa-spec QA-Spec Subagent (qa-pipeline — runs BEFORE assembly)
 
-**When to run:** ALWAYS when qa-pipeline is enabled. Independent of tdd/STEP 8 — runs whether tdd is on or off.
+**When to run:** ALWAYS when qa-pipeline is enabled. Independent of tdd/STEP tdd-pipeline.test-spec — runs whether tdd is on or off.
 
 **MANDATORY:** Load skill BEFORE dispatch: {{skill:add--qa-spec/SKILL.md}}
 
 **Dispatch prompt:**
 You are the QA/E2E SPECIFICATION SPECIALIST for feature ${FEATURE_ID}.
 Load {{skill:add--qa-spec/SKILL.md}} and follow ALL rules.
-Read: about.md (RF/RN + acceptance criteria), the consolidated design.md STEP 7.1 wrote
+Read: about.md (RF/RN + acceptance criteria), the consolidated design.md STEP add-plan.ux-design wrote
       (UX contract — resolved per the `feature-design` Location rule in the doc schemas:
       SF-level first, feature-level fallback),
       plan-database.md/plan-backend.md/plan-frontend.md (if exist),

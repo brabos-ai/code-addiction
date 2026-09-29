@@ -14,21 +14,21 @@ Lightweight UX loader. Loads ux-design skill, discovers project design patterns,
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 ```
-STEP 1 → Run feature-status script (context)
-STEP 2 → Load ux-design skill (required)
-STEP 3 → Discover project design patterns
-STEP 4 → Load complementary skill docs
-STEP 5 → Apply UX to user instruction
+STEP add-ux.status → Run feature-status script (context)
+STEP add-ux.load-skill → Load ux-design skill (required)
+STEP add-ux.discover → Discover project design patterns
+STEP add-ux.docs → Load complementary skill docs
+STEP add-ux.apply → Apply UX to user instruction
 ```
 
 **CONSTRAINTS — BLOCKING GATES:**
-- Do not edit/write files until skill `add--ux-design` is loaded (STEP 2)
-- Do not propose patterns/layouts/components until design patterns are discovered (STEP 3)
+- Do not edit/write files until skill `add--ux-design` is loaded (STEP add-ux.load-skill)
+- Do not propose patterns/layouts/components until design patterns are discovered (STEP add-ux.discover)
 - Do not skip project pattern discovery — reuse existing components always
 
 ---
 
-## STEP 1: Run status.sh
+## STEP add-ux.status: Run status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -38,13 +38,13 @@ Parse output to understand project context (branch, feature, recent changes).
 
 ---
 
-## STEP 2: Load UX Design Skill
+## STEP add-ux.load-skill: Load UX Design Skill
 
 READ skill `add--ux-design` — single source of truth for UX knowledge.
 
 ---
 
-## STEP 3: Discover Project Design Patterns
+## STEP add-ux.discover: Discover Project Design Patterns
 
 **DISCOVER autonomously:**
 - Tailwind config (`tailwind.config.*`)
@@ -57,7 +57,7 @@ READ skill `add--ux-design` — single source of truth for UX knowledge.
 
 ---
 
-## STEP 4: Load Complementary Skill Docs
+## STEP add-ux.docs: Load Complementary Skill Docs
 
 **ANALYZE** user's `$ARGUMENTS` and load relevant docs from skill `add--ux-design`:
 
@@ -78,11 +78,11 @@ If nothing specific matches, SKILL.md alone is sufficient.
 
 ---
 
-## STEP 5: Apply UX to User Instruction
+## STEP add-ux.apply: Apply UX to User Instruction
 
 EXECUTE the user's free-form instruction applying:
 - UX principles from loaded skill + docs
-- Project design patterns discovered in STEP 3
+- Project design patterns discovered in STEP add-ux.discover
 - Reuse existing components — NEVER recreate what exists
 - Mobile-first approach
 

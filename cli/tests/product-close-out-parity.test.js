@@ -213,13 +213,13 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
     const text = read(P.done);
     expect(text).not.toContain('computes FOUR gates');
     expect(text).toMatch(/computes FIVE gates/);
-    expect(text).toMatch(/4\.0, 4\.1, 4\.2 and 4\.3/);
+    expect(text).toMatch(/validate-build-ledger/);
   });
 
   it('L3.3: a 4.3 sub-step exists and blocks on anything but ok', () => {
     const text = read(P.done);
-    expect(text).toMatch(/^### 4\.3:/m);
-    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
+    expect(text).toMatch(/^### STEP add-done\.validate-build-ledger/m);
+    const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     expect(s43).toContain('GATE_LEDGER');
     // The three non-ok statuses each block, named rather than implied.
     for (const status of ['missing', 'broken', 'not-probed']) {
@@ -229,7 +229,7 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
 
   it('L3.4: 4.3 never re-derives the verdict itself', () => {
     const text = read(P.done);
-    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
+    const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     // The gate is read from the preflight, not recomputed by opening the ledger
     // or tasks.md — that would restate the gate converge-gates.sh owns.
     expect(s43).toMatch(/DO NOT/);
@@ -238,7 +238,7 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
 
   it('L3.6: the step summary and the re-derive prohibition both name the ledger', () => {
     const text = read(P.done);
-    const summary = text.split('\n').find((l) => l.startsWith('STEP 4: Validate delivery'));
+    const summary = text.split('\n').find((l) => l.startsWith('STEP add-done.validate: Validate delivery'));
     expect(summary, 'the STEP 4 summary line must exist').toBeTruthy();
     expect(summary).toMatch(/ledger/i);
     // The prohibition lists the files a coordinator must not parse for itself.
@@ -248,7 +248,7 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
 
   it('L3.5: the blocked branch forbids the same two writes its siblings forbid', () => {
     const text = read(P.done);
-    const s43 = text.slice(text.indexOf('### 4.3:'), text.indexOf('## STEP 5'));
+    const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     expect(s43).toContain('changelog.md');
     expect(s43).toContain('done.sh --merge');
   });
@@ -256,30 +256,30 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
 
 describe('L4 — the publish question (F7)', () => {
   const stepHeads = (text) =>
-    text.split(NL).filter((l) => /^## STEP \d+/.test(l));
+    text.split(NL).filter((l) => /^## STEP add-build\./.test(l));
 
   it('L4.1: STEP 17 is Publish, STEP 18 is Completion, and no number repeats', () => {
     const heads = stepHeads(read(P.build));
-    const s17 = heads.find((l) => l.startsWith('## STEP 17'));
-    const s18 = heads.find((l) => l.startsWith('## STEP 18'));
-    expect(s17, 'a STEP 17 must exist').toBeTruthy();
+    const s17 = heads.find((l) => l.startsWith('## STEP add-build.publish'));
+    const s18 = heads.find((l) => l.startsWith('## STEP add-build.complete'));
+    expect(s17, 'STEP add-build.publish must exist').toBeTruthy();
     expect(s17).toMatch(/Publish/i);
-    expect(s18, 'a STEP 18 must exist').toBeTruthy();
+    expect(s18, 'STEP add-build.complete must exist').toBeTruthy();
     expect(s18).toMatch(/Completion/i);
-    const nums = heads.map((l) => l.match(/^## STEP (\d+)/)[1]);
-    expect(new Set(nums).size, 'every STEP number is unique').toBe(nums.length);
+    const ids = heads.map((l) => l.match(/^## STEP ([a-z0-9.-]+)/)[1]);
+    expect(new Set(ids).size, 'every STEP id is unique').toBe(ids.length);
   });
 
   it('L4.2: the STEPS IN ORDER block lists both steps', () => {
     const text = read(P.build);
     const block = text.slice(text.indexOf('STEPS IN ORDER'), text.indexOf('**ABSOLUTE INVARIANTS'));
-    expect(block).toMatch(/STEP 17:.*Publish/i);
-    expect(block).toMatch(/STEP 18:.*Completion/i);
+    expect(block).toMatch(/STEP add-build\.publish:.*Publish/i);
+    expect(block).toMatch(/STEP add-build\.complete:.*Completion/i);
   });
 
   it('L4.3: the behaviour table names every Publish string it can write', () => {
     const text = read(P.build);
-    const step = text.slice(text.indexOf('## STEP 17'), text.indexOf('## STEP 18'));
+    const step = text.slice(text.indexOf('## STEP add-build.publish'), text.indexOf('## STEP add-build.complete'));
     for (const record of [
       'Publish: on-main',
       'Publish: no-gh',
@@ -293,7 +293,7 @@ describe('L4 — the publish question (F7)', () => {
 
   it('L4.4: the step forbids offering on main, pushing unasked, and merging', () => {
     const text = read(P.build);
-    const step = text.slice(text.indexOf('## STEP 17'), text.indexOf('## STEP 18'));
+    const step = text.slice(text.indexOf('## STEP add-build.publish'), text.indexOf('## STEP add-build.complete'));
     expect(step).toMatch(/main.*master|master.*main/is);
     expect(step).toMatch(/DO NOT USE: Bash for git push/);
     expect(step).toMatch(/never merges|DO NOT.*merge/i);
@@ -324,7 +324,7 @@ describe('L4 — the publish question (F7)', () => {
 describe('L5 — the close-out routes (F8)', () => {
   const step2 = () => {
     const t = read(P.done);
-    return t.slice(t.indexOf('## STEP 2'), t.indexOf('## STEP 3'));
+    return t.slice(t.indexOf('## STEP add-done.detect-branch'), t.indexOf('## STEP add-done.resolve-dir'));
   };
 
   it('L5.1: the four states are crossed, each naming its route', () => {
@@ -375,7 +375,7 @@ describe('L5 — the close-out routes (F8)', () => {
 describe('L6 — the PR merge route (F9)', () => {
   const step8 = () => {
     const t = read(P.done);
-    return t.slice(t.indexOf('## STEP 8'), t.indexOf('## STEP 9'));
+    return t.slice(t.indexOf('## STEP add-done.merge'), t.indexOf('## STEP add-done.complete'));
   };
 
   it('L6.1: the PR route runs its seven calls in order', () => {
@@ -401,7 +401,7 @@ describe('L6 — the PR merge route (F9)', () => {
     // names `gh pr merge` before the PR route ever calls it — measuring across
     // the whole step would compare against that prohibition instead.
     const whole = read(P.done);
-    const s8 = whole.slice(whole.indexOf('### 8.1'), whole.indexOf('### 8.2'));
+    const s8 = whole.slice(whole.indexOf('### STEP add-done.pr-merge'), whole.indexOf('### STEP add-done.local-merge'));
     // A green check is evidence only for the commit it ran on. Reading the
     // verdict first and comparing after is the same bug with extra steps.
     expect(s8.indexOf('headRefOid')).toBeLessThan(s8.indexOf('gh pr merge'));
@@ -428,7 +428,7 @@ describe('L6 — the PR merge route (F9)', () => {
 
   it('L6.6: the report names which evidence the gate accepted', () => {
     const t = read(P.done);
-    const s9 = t.slice(t.indexOf('## STEP 9'));
+    const s9 = t.slice(t.indexOf('## STEP add-done.complete'));
     expect(s9).toMatch(/evidence/i);
   });
 });
@@ -436,14 +436,14 @@ describe('L6 — the PR merge route (F9)', () => {
 describe('L7 — the resume and recovery routes (F10)', () => {
   const routes = () => {
     const t = read(P.done);
-    return t.slice(t.indexOf('### 2.3'), t.indexOf('## STEP 3'));
+    return t.slice(t.indexOf('### STEP add-done.resume-route'), t.indexOf('## STEP add-done.resolve-dir'));
   };
 
   it('L7.1: Resume names all four skipped steps', () => {
     const r = routes();
     // Internal's resume path skips three; the fourth here is product-specific
     // (STEP 5's QA promotion), so naming three would silently re-run it.
-    for (const skipped of ['STEP 5', '6.3', '6.7', '6.8']) {
+    for (const skipped of ['STEP add-done.promote-qa', 'STEP add-done.complement-changelog', 'STEP add-done.wiki', 'STEP add-done.write-delivery-index']) {
       expect(r, `Resume must name ${skipped} as skipped`).toContain(skipped);
     }
   });
@@ -532,7 +532,7 @@ describe('L8 — the changelog owner (F11)', () => {
 describe('L9 — add-done complements the changelog (F12)', () => {
   const s63 = () => {
     const t = read(P.done);
-    return t.slice(t.indexOf('### 6.3'), t.indexOf('### 6.4'));
+    return t.slice(t.indexOf('### STEP add-done.complement-changelog'), t.indexOf('### STEP add-done.validation-gate'));
   };
 
   it('L9.1: 6.3 complements, and says so positively', () => {
@@ -580,7 +580,7 @@ describe('L9 — add-done complements the changelog (F12)', () => {
 describe('L10 — add-pull-request complements too (F13)', () => {
   const step3 = () => {
     const t = read(P.pullRequest);
-    return t.slice(t.indexOf('## STEP 3'), t.indexOf('## STEP 4'));
+    return t.slice(t.indexOf('## STEP add-pull-request.changelog'), t.indexOf('## STEP add-pull-request.commit'));
   };
 
   it('L10.1: 3.1 complements rather than skipping', () => {
@@ -622,14 +622,14 @@ describe('L10 — add-pull-request complements too (F13)', () => {
 describe('L11 — the build reads its plan cold (F14)', () => {
   const preflight = () => {
     const t = read(P.build);
-    return t.slice(t.indexOf('### 10.0'), t.indexOf('### TASKS MODE') > -1
+    return t.slice(t.indexOf('### STEP add-build.preflight'), t.indexOf('### TASKS MODE') > -1
       ? t.indexOf('### TASKS MODE')
-      : t.indexOf('## STEP 11'));
+      : t.indexOf('## STEP add-build.validate'));
   };
 
   it('L11.1: a 10.0.4 sub-step dispatches the readback agent', () => {
     const b = preflight();
-    expect(b).toContain('10.0.4');
+    expect(b).toContain('STEP add-build.read-plan-cold');
     expect(b).toContain('@readback-agent');
   });
 
@@ -675,7 +675,7 @@ describe('L11 — the build reads its plan cold (F14)', () => {
 
   it('L11.8: Completion reports the outcome', () => {
     const t = read(P.build);
-    expect(t.slice(t.indexOf('## STEP 18'))).toMatch(/readback/i);
+    expect(t.slice(t.indexOf('## STEP add-build.complete'))).toMatch(/readback/i);
   });
 });
 

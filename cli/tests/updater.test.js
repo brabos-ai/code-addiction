@@ -388,7 +388,7 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
 
     const m = readManifest(tmpDir);
     expect(m.migrations).toEqual(allMigrationIds());
-    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false });
+    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false });
     expect(m.plugins).toEqual({ gitnexus: true });
   });
 

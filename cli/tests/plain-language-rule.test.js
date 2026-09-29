@@ -205,7 +205,7 @@ describe('L2 — no drift between the skill template and the command prompt', ()
 
 describe('L3 — add-wiki wiring', () => {
   it('L3.1 — STEP 6 tasks the agent with the block, verbatim and replace-or-append', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    const step6 = section(ADD_WIKI, '## STEP add-wiki.agents-md: Update AGENTS.md');
     expect(step6).not.toBeNull();
     expect(step6).toMatch(/\d+\.\s+\*\*Writing Style managed block\*\*/);
     expect(step6).toContain(STYLE_START);
@@ -215,12 +215,12 @@ describe('L3 — add-wiki wiring', () => {
   });
 
   it('L3.2 — STEP 6 reports what happened to the block', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    const step6 = section(ADD_WIKI, '## STEP add-wiki.agents-md: Update AGENTS.md');
     expect(step6).toContain('WRITING_STYLE_BLOCK');
   });
 
   it('L3.3 — STEP 7 verifies AGENTS.md alone: every marker pair, and no legacy file left', () => {
-    const step7 = section(ADD_WIKI, '## STEP 7: Verify AGENTS.md');
+    const step7 = section(ADD_WIKI, '## STEP add-wiki.verify: Verify AGENTS.md');
     expect(step7).not.toBeNull();
     expect(step7).toContain('codeadd-style:start');
     expect(step7).toContain('codeadd-wiki:start');
@@ -232,10 +232,10 @@ describe('L3 — add-wiki wiring', () => {
   });
 
   it('L3.6 — add-wiki copies to no other context file and migrates before it writes', () => {
-    expect(ADD_WIKI).not.toMatch(/## STEP 7: Copy Context Files/);
+    expect(ADD_WIKI).not.toMatch(/## STEP add-wiki.verify: Copy Context Files/);
     expect(ADD_WIKI).not.toMatch(/GEMINI\.md\s*←/);
     expect(ADD_WIKI).not.toMatch(/AGENTS\.md\s*←\s*copy/);
-    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    const step6 = section(ADD_WIKI, '## STEP add-wiki.agents-md: Update AGENTS.md');
     expect(step6, 'STEP 6 must run the migration before any write').toMatch(/Migration/);
   });
 
@@ -256,8 +256,8 @@ describe('L3 — add-wiki wiring', () => {
   it('L3.4 — update mode reaches the managed blocks and is forbidden the derived sections', () => {
     const modes = section(ADD_WIKI, '## Invocation Modes');
     expect(modes).not.toBeNull();
-    expect(modes, 'update mode must run the managed-block part of STEP 6').toMatch(/STEP 6/);
-    expect(modes, 'update mode must run STEP 7').toMatch(/STEP 7/);
+    expect(modes, 'update mode must run the managed-block part of STEP add-wiki.agents-md').toMatch(/STEP add-wiki\.agents-md/);
+    expect(modes, 'update mode must run STEP add-wiki.verify').toMatch(/STEP add-wiki\.verify/);
     expect(modes, 'regenerating the Architecture Contract must be forbidden outright').toMatch(
       /⛔ DO NOT:[^\n]*Architecture Contract/,
     );

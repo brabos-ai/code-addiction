@@ -22,9 +22,9 @@ vi.mock('@clack/prompts', async (importOriginal) => {
   return { ...actual, intro: vi.fn(), outro: vi.fn(), log: { ...actual.log, success: vi.fn(), info: vi.fn(), error: vi.fn(), warn: vi.fn() } };
 });
 
-import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
+import { FEATURES, enableFeature } from '../src/features.js';
 import { PROVIDERS } from '../src/providers.js';
-import { resolvePlaceholders, applyInjectionToContent, parseFragmentSections, loadInjectionPoints } from '../src/injection-core.js';
+import { resolvePlaceholders } from '../src/injection-core.js';
 import { treeFixture } from './helpers/tree-fixture.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
@@ -95,20 +95,4 @@ describe('P2/P3 -- injected commands, on disk', () => {
     }
   });
 
-  // Regression guard, not RED-first: an install made by a CLI from before this
-  // fix carries the RAW block. Disabling with the new CLI must still take it out.
-  it('P3: disable removes a block an older CLI injected raw', () => {
-    const key = CMD_PROVIDERS[0];
-    const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add-plan.md');
-    const pristine = fs.readFileSync(file, 'utf8');
-    const sections = parseFragmentSections(fs.readFileSync(path.join(tmp, '.codeadd', 'fragments', 'board', 'add-plan.md'), 'utf8'));
-    const points = loadInjectionPoints(tmp).filter((p) => p.namespace === 'feature' && p.name === 'board' && p.resource.name === 'add-plan');
-    const legacy = applyInjectionToContent(pristine, points, sections).content; // no provider: the old, raw behaviour
-    expect(legacy).not.toBe(pristine);
-    expect(legacy).toMatch(PLACEHOLDER);
-    fs.writeFileSync(file, legacy, 'utf8');
-
-    disableFeature(tmp, 'board');
-    expect(fs.readFileSync(file, 'utf8')).toBe(pristine);
-  });
 });

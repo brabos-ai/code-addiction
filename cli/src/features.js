@@ -3,15 +3,12 @@ import path from 'node:path';
 import { intro, outro, log } from '@clack/prompts';
 import { promptFeatures } from './prompt.js';
 import {
-  parseFragmentSections,
-  loadInjectionPoints,
   resolveResourceTargets,
-  applyInjectionToContent,
-  removeInjectionFromContent,
   readManifest,
   saveManifest,
-  recalculateHashes,
+  reconcileSlots,
 } from './injection-core.js';
+import { isPluginDetected } from './plugins.js';
 
 /**
  * Emit an actionable, loud warning when an anchor cannot be located (the user
@@ -21,13 +18,27 @@ import {
  * @param {string} resourceName
  * @param {Array<{sections:string[], anchor:object}>} missed
  */
-function warnMissed(namespace, name, resourceName, missed) {
-  for (const m of missed) {
-    log.warn(
-      `Could not inject ${namespace}:${name} [${m.sections.join(', ')}] into ${resourceName}: ` +
-        `anchor not found ("${m.anchor.text}" #${m.anchor.ordinal}). The adjacent text may have been edited.`,
-    );
+function logSlotWarnings(warnings) {
+  for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
+}
+
+function reconcileFeatureSlots(cwd) {
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected });
+  if (!result) {
+    log.warn('Feature prompts were not updated: this installation has no v2 injection sidecar. Run `codeadd update`.');
+    return { modified: [], warnings: [] };
   }
+  logSlotWarnings(result.warnings);
+  return result;
+}
+
+function setFeatureFlag(cwd, featureName, enabled) {
+  const manifest = readManifest(cwd);
+  if (!manifest) return;
+  if (!manifest.features) manifest.features = {};
+  manifest.features[featureName] = enabled;
+  manifest.features = normalizeFeatureStates(manifest.features).states;
+  saveManifest(cwd, manifest);
 }
 
 /**
@@ -170,38 +181,9 @@ function getFragments(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function enableFeature(cwd, featureName) {
-  const fragments = getFragments(cwd, featureName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections, provider);
-      if (missed.length) warnMissed('feature', featureName, commandName, missed);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  const manifest = readManifest(cwd);
-  if (manifest) {
-    if (!manifest.features) manifest.features = {};
-    manifest.features[featureName] = true;
-    manifest.features = normalizeFeatureStates(manifest.features).states;
-    recalculateHashes(cwd, manifest, modifiedPaths);
-    saveManifest(cwd, manifest);
-  }
-
-  return { modified: modifiedPaths.length };
+  setFeatureFlag(cwd, featureName, true);
+  const result = reconcileFeatureSlots(cwd);
+  return { modified: result.modified.length };
 }
 
 /**
@@ -211,37 +193,9 @@ export function enableFeature(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function disableFeature(cwd, featureName) {
-  const fragments = getFragments(cwd, featureName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const { file: cmdPath, provider } of resolveResourceTargets(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = removeInjectionFromContent(original, cmdPoints, sections, provider);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  const manifest = readManifest(cwd);
-  if (manifest) {
-    if (!manifest.features) manifest.features = {};
-    manifest.features[featureName] = false;
-    manifest.features = normalizeFeatureStates(manifest.features).states;
-    recalculateHashes(cwd, manifest, modifiedPaths);
-    saveManifest(cwd, manifest);
-  }
-
-  return { modified: modifiedPaths.length };
+  setFeatureFlag(cwd, featureName, false);
+  const result = reconcileFeatureSlots(cwd);
+  return { modified: result.modified.length };
 }
 
 /**
@@ -251,32 +205,15 @@ export function disableFeature(cwd, featureName) {
 export function applyEnabledFeatures(cwd) {
   const manifest = readManifest(cwd);
   if (!manifest) return;
-
-  const featureStates = manifest.features ?? {};
-  let totalModified = 0;
-
+  const featureStates = { ...(manifest.features ?? {}) };
   for (const [name, meta] of Object.entries(FEATURES)) {
     const { enabled } = resolveFeatureState(featureStates, name, meta);
-    if (enabled) {
-      const { modified } = enableFeature(cwd, name);
-      totalModified += modified;
-    }
+    featureStates[name] = enabled;
   }
-
-  // Unconditional normalisation. enableFeature reaches saveManifest only for a
-  // feature that resolves ENABLED, so a manifest holding a disabled legacy key
-  // — the exact motivating case — would otherwise never be rewritten and the
-  // orphaned key would linger as dead data forever.
-  const current = readManifest(cwd);
-  if (current) {
-    const { states, changed } = normalizeFeatureStates(current.features ?? {});
-    if (changed) {
-      current.features = states;
-      saveManifest(cwd, current);
-    }
-  }
-
-  return totalModified;
+  manifest.features = normalizeFeatureStates(featureStates).states;
+  saveManifest(cwd, manifest);
+  const result = reconcileFeatureSlots(cwd);
+  return result.modified.length;
 }
 
 /**

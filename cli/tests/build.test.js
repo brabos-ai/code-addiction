@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const {
   stripHtmlComments,
-  extractInjectionPoints,
+  extractSlots,
   resolveResourcePaths,
   lintResourcePaths,
   collectLintableSources,
@@ -50,8 +50,8 @@ describe('stripHtmlComments', () => {
 
   it('does not let between-marker feature content survive the build', () => {
     const src = ['# Title', '<!-- feature:tdd:step -->', 'injected content', '<!-- /feature:tdd:step -->'].join('\n');
-    expect(() => extractInjectionPoints(src, 'fixture.md', 'command')).toThrow(/fixture\.md:\d+/);
-    expect(() => extractInjectionPoints(src, 'fixture.md', 'command')).toThrow(/feature:tdd:step/);
+    expect(() => extractSlots(src, 'fixture.md', 'command', () => '')).toThrow(/fixture\.md:\d+/);
+    expect(() => extractSlots(src, 'fixture.md', 'command', () => '')).toThrow(/feature:tdd:step/);
     expect(stripHtmlComments('<!-- feature:tdd:step --><!-- /feature:tdd:step -->')).toBe('');
   });
 

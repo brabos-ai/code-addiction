@@ -16,7 +16,7 @@ import { treeFixture } from './helpers/tree-fixture.js';
  * Smoke evidence for plan 0056 (QA pipeline reachability) — pins the end-to-end
  * scenarios the topic touches, on the REAL build outputs:
  *   1. qa-pipeline enable/disable round-trip (byte-identical restore)
- *   2. pre-sidecar enable no-op (silent success the setup step must detect)
+ *   2. pre-sidecar enable warns and leaves the requested flag for update
  *   3. fragment self-detection notices in always-present built body text
  *   4. the two-phase QA preflight contract (absorbed into add-review) + shared probe script
  *
@@ -114,7 +114,7 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
     expect(warnSpy).not.toHaveBeenCalled();
     expect(modified).toBeGreaterThan(0);
 
-    expect(snapshot(targets[0])).toContain('STEP 9.0'); // QA-Spec step landed in add-plan
+    expect(snapshot(targets[0])).toContain('STEP qa-pipeline.qa-spec'); // QA-Spec step landed in add-plan
     expect(snapshot(targets[1])).toContain('E2E Spec Authoring'); // e2e-dispatch landed in add-build
     expect(snapshot(targets[1])).toContain('QA-Routed Correction'); // qa-fix landed in add-build
     for (const f of targets) if (snapshot(f) !== before[f]) expect(snapshot(f)).not.toContain('<!--');
@@ -124,16 +124,14 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
   });
 });
 
-describe('scenario 2 — pre-sidecar enable no-op (features.js:85)', () => {
-  it('with injection-points.json absent, enable injects nothing yet marks the feature on', () => {
+describe('scenario 2 — pre-sidecar enable warns and leaves requested state', () => {
+  it('with injection-points.json absent, enable warns, injects nothing and marks the feature on', () => {
     const cwd = fixture.root();
     fs.rmSync(path.join(cwd, '.codeadd', 'injection-points.json'));
 
     const { modified } = enableFeature(cwd, 'qa-pipeline');
 
-    // Pins the exact silent-success defect the add-qa-setup gate step must
-    // detect (post-enable verification). If the CLI ever starts failing loud
-    // here, the command guidance must be revisited — this test will flag it.
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('codeadd update'));
     expect(modified).toBe(0);
     const manifest = JSON.parse(snapshot(path.join(cwd, '.codeadd', 'manifest.json')));
     expect(manifest.features['qa-pipeline']).toBe(true);
@@ -198,8 +196,8 @@ describe('scenario 5 — UX agent design ownership', () => {
     // Was 8.1/8.4 until 2026-09-14T215223-PLAN--remove-owner-product-onboarding
     // deleted add-plan's STEP 1 (Load Founder Profile) and shifted the rest down.
     const plan = builtCommand('add-plan');
-    expect(plan).toContain('### 7.1 UX Design Specialist');
-    expect(plan).toContain('- 7.4: Frontend Specialist');
+    expect(plan).toContain('### STEP add-plan.ux-design UX Design Specialist');
+    expect(plan).toContain('- STEP add-plan.frontend: Frontend Specialist');
   });
 
   it('the qa-pipeline enable/disable round-trip is still byte-identical after the anchor rename', () => {
@@ -509,9 +507,9 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
     const review = qaEnabledReview();
     const done = builtCommand('add-done');
     expect(review).toContain('.codeadd/scripts/qa-evidence.sh working-baseline');
-    const promote = done.indexOf('## STEP 5: Validate and Promote Reviewed QA Evidence');
-    const changelog = done.indexOf('## STEP 6: Generate Changelog and Documentation');
-    const merge = done.indexOf('## STEP 8: Execute Merge');
+    const promote = done.indexOf('## STEP add-done.promote-qa:');
+    const changelog = done.indexOf('## STEP add-done.document:');
+    const merge = done.indexOf('## STEP add-done.merge:');
     expect(promote).toBeGreaterThan(-1);
     expect(changelog).toBeGreaterThan(promote);
     expect(merge).toBeGreaterThan(changelog);

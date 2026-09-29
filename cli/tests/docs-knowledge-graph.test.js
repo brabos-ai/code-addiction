@@ -182,22 +182,23 @@ describe('F3 — the single writer writes relations from what discovery handed o
 
 describe('F4 — /add-hotfix routes its confirmed set into the about.md', () => {
   it('L4.2 the confirmed set reaches BOTH destinations, and neither loses it', () => {
-    const synth = ADD_HOTFIX.slice(
-      ADD_HOTFIX.indexOf('### 5.2 Present to user'),
-      ADD_HOTFIX.indexOf('### 5.3'),
-    );
+    const start = ADD_HOTFIX.indexOf('### STEP add-hotfix.confirm-history Present to user');
+    const end = ADD_HOTFIX.indexOf('### STEP add-hotfix.escalate-add-investigation');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const synth = ADD_HOTFIX.slice(start, end);
     // Destination one: the about.md's Relations, typed caused_by.
     expect(synth).toContain('## Relations');
     expect(synth).toContain('caused_by');
     // Destination two: the blast radius STEP 9's failure judge reads. Unchanged.
     expect(synth).toMatch(/blast radius/);
-    expect(synth).toMatch(/STEP 9/);
+    expect(synth).toMatch(/STEP add-hotfix.review/);
   });
 
   it('the about.md step writes the section from that set', () => {
     const step = ADD_HOTFIX.slice(
-      ADD_HOTFIX.indexOf('## STEP 12: Write Hotfix about.md'),
-      ADD_HOTFIX.indexOf('## STEP 13:'),
+      ADD_HOTFIX.indexOf('## STEP add-hotfix.receipt: Write Hotfix about.md'),
+      ADD_HOTFIX.indexOf('## STEP add-hotfix.validate:'),
     );
     expect(step).toContain('## Relations');
     expect(step).toContain('caused_by');
@@ -218,14 +219,12 @@ describe('F4 — /add-hotfix routes its confirmed set into the about.md', () => 
       ADD_HOTFIX.indexOf('**STEPS IN ORDER:**'),
       ADD_HOTFIX.indexOf('**⛔ ABSOLUTE PROHIBITIONS'),
     );
-    const listed = [...listBlock.matchAll(/^STEP ([0-9]+)(?:-([0-9]+))?:/gm)].flatMap((m) =>
-      m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1])],
-    );
-    const bodies = [...ADD_HOTFIX.matchAll(/^## STEP ([0-9]+)(?:-([0-9]+))?:/gm)].flatMap((m) =>
-      m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1])],
-    );
+    const listed = [...listBlock.matchAll(/^STEP ([a-z0-9.-]+):/gm)].map((m) => m[1]);
+    const bodies = [...ADD_HOTFIX.matchAll(/^## STEP ([a-z0-9.-]+):/gm)].map((m) => m[1]);
     expect(listed).toEqual(bodies);
-    expect(bodies).toEqual(Array.from({ length: 14 }, (_, i) => i + 1));
+    expect(new Set(bodies).size).toBe(bodies.length);
+    expect(bodies[0]).toBe('add-hotfix.context');
+    expect(bodies.at(-1)).toBe('add-hotfix.complete');
   });
 });
 
@@ -344,8 +343,8 @@ describe('F20 — all six commands name a destination for the result', () => {
       // paths the step runs over — which is what this level is checking anyway.
       'add-hotfix': ['`RELATED_WORK` destination', "over this branch's changed paths"],
       'add-brainstorm': ['## Discovery'],
-      'add-diagnose': ['**`RELATED_WORK` (STEP 1.4)**'],
-      'add-review': ['**`RELATED_WORK` from STEP 2.2**'],
+      'add-diagnose': ['**`RELATED_WORK` (STEP add-diagnose.context)**'],
+      'add-review': ['**`RELATED_WORK` from STEP add-review.baseline**'],
     };
     // add-review's wiring SPANS TWO FILES since the QA judgement moved under
     // the qa-pipeline feature. STEP 2.2 produces RELATED_WORK in the base
@@ -397,8 +396,8 @@ describe('F20 — all six commands name a destination for the result', () => {
 
   it('add-hotfix asks the path-shaped question only where a file list exists', () => {
     const src = read(path.join(COMMANDS, 'add-hotfix.md'));
-    const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
-    const step9 = src.slice(src.indexOf('## STEP 9:'), src.indexOf('## STEP 10:'));
+    const step4 = src.slice(src.indexOf('## STEP add-hotfix.history:'), src.indexOf('## STEP add-hotfix.synthesize:'));
+    const step9 = src.slice(src.indexOf('## STEP add-hotfix.review:'), src.indexOf('## STEP add-hotfix.correct:'));
     // THE CONSTRAINT IS REAL; THE ACTION NAME WAS NEVER THE POINT.
     // This asserted "`search` ONLY at this step" and "STEP 9 contains
     // touched_by", which pinned two calls to prove a fact about TIMING. Plan
@@ -414,7 +413,7 @@ describe('F20 — all six commands name a destination for the result', () => {
 
   it('add-hotfix runs GRAPH at its index step, where the wiki is out of bounds', () => {
     const src = read(path.join(COMMANDS, 'add-hotfix.md'));
-    const step4 = src.slice(src.indexOf('## STEP 4:'), src.indexOf('## STEP 5:'));
+    const step4 = src.slice(src.indexOf('## STEP add-hotfix.history:'), src.indexOf('## STEP add-hotfix.synthesize:'));
     expect(step4).toContain('RELATED_WORK');
     expect(step4).toMatch(/INDEX/);
   });

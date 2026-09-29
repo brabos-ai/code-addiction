@@ -41,8 +41,10 @@ Read `design.md`'s `## Design Contract` table and extract the rows whose "Verifi
 
 By default you judge from the persisted evidence (read-PNG mode). If the Playwright plugin is enabled, the live-driving playbook below is injected and you may additionally drive the app.
 
+<!-- slot:playwright.drive fallback="fallbacks/empty.md" -->
 <!-- plugin:playwright:drive -->
 <!-- /plugin:playwright:drive -->
+<!-- /slot:playwright.drive -->
 
 ### Axis 1 — Functional delivery (from assertion + diagnostic results)
 1. Fold in the run's **functional-assertion roll-up** (pass/fail per scenario from the persisted `<surface>.qa.spec`) and confirm each `about.md` acceptance criterion is *met* / *not met* / *partial*, citing the assertion result + the state screenshot as evidence.

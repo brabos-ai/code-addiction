@@ -31,7 +31,7 @@ correction contract, one path.
 3. **DISPATCH by ROUTE, not by severity.** Work the table in its given `Order`,
    respecting `Blocked by`: sequential across layers
    (`@database-agent → @backend-agent → @frontend-agent → @e2e-agent`), and
-   **one agent in flight at a time** — STEP 10.1 owns that rule and this
+   **one agent in flight at a time** — STEP add-build.order owns that rule and this
    dispatch sits inside it. ⛔ DO NOT overlap two rows because they look
    independent: independence of two rows is not a licence to put two writers on
    one tree. Each named agent maps per the **Agent Roster**; correction rows go to
@@ -61,7 +61,7 @@ correction contract, one path.
 `## Final Review` then writes this run's verdict. Re-running `{{cmd:add-review}}` is optional — it
 writes the next `review-NNN.md` when a side-by-side QA comparison is wanted.
 The QA-specific nuance above sits on top of the base **Routed Correction Contract**
-in STEP 12 — the resolution annex and the finalized marker are written there,
+in STEP add-build.correct — the resolution annex and the finalized marker are written there,
 whether or not this section was injected.
 
 <!-- /section:qa-fix -->
@@ -74,6 +74,6 @@ DISPATCH AGENT: @e2e-agent [read-write on test files, standard] — one per surf
 Each receives: the surface/subfeature id, the plan ## QA/E2E Specification rows (incl. capture states), FEATURE_DIR/_tests/screens.json (each entry's design field points at the screen's design.md ## Design Contract), the just-built component file paths, docs/qa/config.json.
 Directive: author ONE <surface>.qa.spec — layer i assertions + layer ii capture at each capture state (written as <screen>.<state>.<viewport>.png) + layer iii computed-style capture + axe a11y — finalize the screens.json reachability recipe (append an entry if the surface is absent), then green-confirm via the qa-project managed app lifecycle. Layer iii: for each ## Design Contract dimension verified by "computed style" (spacing scale, token allowlist, typographic scale, grid/container), capture the resolved values the contract names (gap/margin/padding, resolved custom-property names, font-size/font-weight, container width + column count) per screen × viewport into _tests/run-NNN/computed-styles/<screen>.<viewport>.json (minified, beside the screenshots). HARD requirement of the conformance rubric: a contract dimension whose capture is missing must be reported unverifiable — never passing. NEVER soften an assertion to make it pass; NEVER drop a capture state silently; NEVER drop a computed-style dimension silently.
 If @e2e-agent is not available in this engine, dispatch a generic subagent with this same directive AND instruct it to load the qa-project skill (conventions + managed app lifecycle) first (soft-degrade — the inline prompt then carries the full self-sufficient task).
-WAIT-ALL before STEP 12.
+WAIT-ALL before STEP add-build.correct.
 
 <!-- /section:e2e-dispatch -->

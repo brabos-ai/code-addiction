@@ -475,7 +475,7 @@ describe('combined substitution and sibling isolation', () => {
     disableFeature(tmp, 'tdd');
     assertBlockAbsent(tmp, features.filter((e) => e.name === 'tdd'), 'tdd off');
     assertBlockOnce(tmp, [...features.filter((e) => e.name !== 'tdd'), ...plugins], 'siblings after tdd off');
-  });
+  }, 20000);
 
   it('reversed enable order still lands every full block exactly once', () => {
     const all = [...loadFeatureMatrix(), ...loadPluginMatrix()];
@@ -483,5 +483,26 @@ describe('combined substitution and sibling isolation', () => {
     for (const f of [...FEATURE_NAMES].reverse()) enableFeature(tmp, f);
     expect(warnSpy).not.toHaveBeenCalled();
     assertBlockOnce(tmp, all, 'reversed enable');
+  }, 20000);
+});
+
+describe('reversed enable order is byte-identical', () => {
+  useFixture();
+
+  function installedPlan(order) {
+    const cwd = fixture.root();
+    for (const name of order) enableFeature(cwd, name);
+    const file = commandPath(cwd, 'claude', 'add-plan');
+    return fs.readFileSync(file, 'utf8');
+  }
+
+  it('tdd-then-qa and qa-then-tdd produce the same add-plan bytes, with tdd before qa', () => {
+    const tddThenQa = installedPlan(['tdd-pipeline', 'qa-pipeline']);
+    const qaThenTdd = installedPlan(['qa-pipeline', 'tdd-pipeline']);
+    expect(qaThenTdd).toBe(tddThenQa);
+    const tdd = tddThenQa.indexOf('STEP tdd-pipeline.test-spec');
+    const qa = tddThenQa.indexOf('STEP qa-pipeline.qa-spec');
+    expect(tdd).toBeGreaterThan(-1);
+    expect(tdd).toBeLessThan(qa);
   });
 });

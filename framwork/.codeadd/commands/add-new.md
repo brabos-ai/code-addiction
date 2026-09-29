@@ -33,7 +33,7 @@ Full feature discovery command BEFORE implementation.
 
 ---
 
-## STEP 1: Load Skills + Validate Context
+## STEP add-new.load: Load Skills + Validate Context
 
 **Load schemas and conventions (ONE-TIME):**
 - `{{skill:add--doc-schemas/SKILL.md}}` (feature schema, validation gate)
@@ -42,7 +42,7 @@ Full feature discovery command BEFORE implementation.
 
 All subsequent steps reference these loaded skills; DO NOT reload.
 
-### 1.1 Resolve the Intent File — BEFORE anything else
+### STEP add-new.intent Resolve the Intent File — BEFORE anything else
 
 `/add-brainstorm` writes `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` carrying the path it
 classified and every decision it closed. **Finding it is what stops this command re-asking them.**
@@ -56,7 +56,7 @@ normal argument.
 | Exactly one match | That is the file. Read it |
 | More than one | ⛔ STOP. Print every candidate basename and ask which |
 | No argument | Match the description's keywords against the basenames |
-| Nothing credible | Continue with no intent file — STEP 3 runs the three-fact test instead |
+| Nothing credible | Continue with no intent file — STEP add-new.discover runs the three-fact test instead |
 
 ```
 IF TWO OR MORE INTENT FILES MATCH:
@@ -71,21 +71,23 @@ IF TWO OR MORE INTENT FILES MATCH:
 | Field | Carries | Absent |
 |---|---|---|
 | `delivery:` | `confirm` or `automatic` — how every stop below behaves, per `{{skill:add--delivery-mode/SKILL.md}}` | `confirm` |
-| `## Objective` | The outcome this feature is for. `add--feature-specification` copies it into `about.md`, and STEP 5 checks every subfeature against it | The skill drafts one with the user |
+| `## Objective` | The outcome this feature is for. `add--feature-specification` copies it into `about.md`, and STEP add-new.decompose checks every subfeature against it | The skill drafts one with the user |
+<!-- slot:board.ticket-intent-field fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-intent-field -->
 <!-- /feature:board:ticket-intent-field -->
+<!-- /slot:board.ticket-intent-field -->
 
 **Stop kind — the two-match STOP above is deciding, in every state.** Nothing approved which exploration
 an ambiguous argument meant.
 
-**An intent file is consumed once.** Record its path in `about.md` when STEP 6 writes the document.
+**An intent file is consumed once.** Record its path in `about.md` when STEP add-new.document writes the document.
 Continue Mode reads `about.md` from then on, which is the source of truth from that point — the intent
 file is never read a second time.
 
 **Validate Execution Context:**
 
-- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP 2 and STEP 3, proceed to STEP 4.
-- [NEW FEATURE] If no existing feature docs match, proceed to STEP 2.
+- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate and STEP add-new.discover, proceed to STEP add-new.confirm.
+- [NEW FEATURE] If no existing feature docs match, proceed to STEP add-new.allocate.
 
 ---
 
@@ -95,12 +97,14 @@ file is never read a second time.
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
 - ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh (NO git writes — branch is created later by /add-build)
+<!-- slot:board.ticket-board-write fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-board-write -->
 <!-- /feature:board:ticket-board-write -->
+<!-- /slot:board.ticket-board-write -->
 
 **Operation Modes:**
 - `/add-new [description]` — Create new feature
-- `/add-new [slug-fragment]` — Create from a named intent file (see STEP 1.1)
+- `/add-new [slug-fragment]` — Create from a named intent file (see STEP add-new.intent)
 - `/add-new F0018` — Continue existing feature (F-ID)
 - `/add-new continue` — Continue feature from current branch **or most recent pending feature**
 
@@ -120,7 +124,7 @@ often as it is a one-line change, and the word list cannot tell those apart.
 
 ---
 
-## STEP 2: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
+## STEP add-new.allocate: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
 
 **Execute init + allocate ID (`status.sh next-id F`):**
 
@@ -135,22 +139,24 @@ AGENTS.md. This is a notice: continue the STEP whatever the answer.
 
 Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it exists. Match user request keywords against changelog; if match found, read full `changelog.md` for patterns/files/implementations.
 
-**Allocate ID** (e.g., `0042F`). Using ID/branch conventions from STEP 1 skills, infer branch type (`feature`|`fix`|`refactor`|`docs`) and name (kebab-case, 2-4 words).
+**Allocate ID** (e.g., `0042F`). Using ID/branch conventions from STEP add-new.load skills, infer branch type (`feature`|`fix`|`refactor`|`docs`) and name (kebab-case, 2-4 words).
 
 **Create structure:**
 1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO git writes — /add-build creates the branch)
 2. `mkdir docs/features/[NNNN]F-[name]/`
-3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP 4)
+3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP add-new.confirm)
+<!-- slot:board.ticket-skeleton fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-skeleton -->
 <!-- /feature:board:ticket-skeleton -->
+<!-- /slot:board.ticket-skeleton -->
 
 **Output:** Feature ID, branch (recorded — created by /add-build), directory.
 
 ---
 
-## STEP 3: Deep Discovery (FULL PATH ONLY)
+## STEP add-new.discover: Deep Discovery (FULL PATH ONLY)
 
-**Determine the path first.** Read `path:` from the intent file resolved at STEP 1.1. With no intent
+**Determine the path first.** Read `path:` from the intent file resolved at STEP add-new.intent. With no intent
 file, load `{{skill:add--feature-specification/SKILL.md}}` and run its three-fact test.
 
 | Classification | This STEP |
@@ -182,10 +188,10 @@ check that costs nothing and catches the expensive mistake.
 IF THE WIKI IS ABSENT:
   ⛔ DO NOT: Skip the INDEX and GRAPH steps along with it
   ✅ DO: Run both anyway — neither reads the wiki, and RELATED_WORK is what
-         STEP 6.1 writes its relations from
+         STEP add-new.document writes its relations from
 ```
 
-   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go to **`add--feature-specification`, which shows what already exists on the STEP 4 confirmation screen**; and into the document's `## Relations`, where a prerequisite becomes `depends_on`. The intent file's `## Prior art` covers the same ground for anything it already names — do not query twice for one answer.
+   - **`RELATED_WORK` destination:** it has two, and one result serves both, never re-derived. Its ids and relations go to **`add--feature-specification`, which shows what already exists on the STEP add-new.confirm confirmation screen**; and into the document's `## Relations`, where a prerequisite becomes `depends_on`. The intent file's `## Prior art` covers the same ground for anything it already names — do not query twice for one answer.
 
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
@@ -196,10 +202,12 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
    - Read past-features.md FIRST. Prioritize files touched by related features. Perform deep analysis: reusable functionality, existing patterns, integration points, prerequisites. Include "Related Features" section with table + refs. Write discovery.md using the section list above.
 
+<!-- slot:gitnexus.graph-map fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-map -->
 <!-- /plugin:gitnexus:graph-map -->
+<!-- /slot:gitnexus.graph-map -->
 
-**Coordinator: Deep Thinking (before STEP 4)**
+**Coordinator: Deep Thinking (before STEP add-new.confirm)**
 
 Evaluate using agent outputs:
 - Impact on existing features (from past-features.md)?
@@ -216,7 +224,7 @@ already settled is context for the confirmation screen, never a new question.
 
 ---
 
-## STEP 4: Confirm What Will Be Written [STOP]
+## STEP add-new.confirm: Confirm What Will Be Written [STOP]
 
 **LOAD `{{skill:add--feature-specification/SKILL.md}}`.** It owns what goes into `about.md`: reading the
 intent file, extracting its closed decisions, asking only what is still open, the three-fact test, and
@@ -245,7 +253,7 @@ interrogation does.**
 
 | State | Kind | On `delivery: automatic` |
 |---|---|---|
-| `## Open` reads `None` | **confirming** | Print the confirmation screen in full and continue to STEP 5 — the brainstorm's approval already covered it |
+| `## Open` reads `None` | **confirming** | Print the confirmation screen in full and continue to STEP add-new.decompose — the brainstorm's approval already covered it |
 | `## Open` lists items | **deciding** | Ask them and wait — no approval answered them |
 | Absent, empty, or no intent file | **deciding** | Wait — there is no approval to have covered anything |
 
@@ -256,7 +264,7 @@ restates what is about to be written and invites a correction. It does not re-op
 
 ---
 
-## STEP 5: Decomposition Gate
+## STEP add-new.decompose: Decomposition Gate
 
 **Skipped entirely on the light path.** A `bounded` change is one flow by definition, and the three-fact
 test already put anything larger on the full path.
@@ -265,7 +273,7 @@ test already put anything larger on the full path.
 
 **Independent flow** = testable in isolation, distinct objective, could be own PR. Keywords: "will also", "and then", "another flow".
 
-**IF N = 1:** Skip decomposition, continue to STEP 6.
+**IF N = 1:** Skip decomposition, continue to STEP add-new.document.
 **IF N >= 2 [STOP]:** Propose decomposition. **Each subfeature states, in one line, how it serves the
 feature's `## Objective`** — naming a PART of it, never the whole objective restated:
 
@@ -305,7 +313,7 @@ Whether to split the feature, and whether a subfeature belongs, were never part 
 approval.
 
 **IF epic confirmed:**
-1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add--doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP 1): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
+1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add--doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP add-new.load): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
 2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
 3. Create a compact `about.md` per subfeature through `{{skill:add--feature-specification/SKILL.md}}` — hand it the feature's `## Objective` and that subfeature's "serves the feature objective by" line; the skill writes the objective, `## Relations` (`part_of` the epic) and the rest
 4. **On `delivery: automatic` only — ask once how the epic runs** (deciding, in every state), with the recommendation marked:
@@ -320,13 +328,13 @@ approval.
    `/add-plan` and `/add-build` read that line rather than asking again.
 
    On `delivery: confirm`, ask nothing and write no line — the epic runs one command at a time.
-5. Continue to STEP 6
+5. Continue to STEP add-new.document
 
-**IF single feature:** Continue to STEP 6.
+**IF single feature:** Continue to STEP add-new.document.
 
 ---
 
-## STEP 6: Document (Feature + Codebase Analysis)
+## STEP add-new.document: Document (Feature + Codebase Analysis)
 
 **Completeness Check:**
 Verify every item the confirmation screen showed was accepted or corrected, and that no `## Open` item
@@ -338,19 +346,19 @@ is still unanswered. IF MISSING → ask that item alone.
 - User needs UI → Frontend MANDATORY
 - NEVER exclude layers needed to deliver validated scope
 
-**`add--feature-specification`, loaded at STEP 4, writes the document.** It owns the schema load, the
+**`add--feature-specification`, loaded at STEP add-new.confirm, writes the document.** It owns the schema load, the
 sections and the extraction. This STEP owns the path and the provenance:
 
 - **Path:** `docs/features/[NNNN]F-[name]/about.md`
-- **Provenance:** record the intent file path consumed at STEP 1.1 in the frontmatter. Continue Mode
+- **Provenance:** record the intent file path consumed at STEP add-new.intent in the frontmatter. Continue Mode
   reads `about.md` from then on and never re-reads the intent file.
 
 ⛔ **DO NOT restate the skill’s authoring rules here.** Two copies drift, and the drift is invisible
 until a document written by one entry point fails a gate the other passes.
 
-### 6.1 Hand the relationship material to the skill
+### STEP add-new.relations Hand the relationship material to the skill
 
-The relationships are already in hand from STEP 3: `past-features.md` carries a **Related Features**
+The relationships are already in hand from STEP add-new.discover: `past-features.md` carries a **Related Features**
 table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, `discovery.md` names the
 prerequisites, and the intent file’s `## Prior art` carries whatever the brainstorm already found.
 
@@ -367,17 +375,17 @@ this command drifts from the schema the skill writes against, and produces two r
 
 ---
 
-## STEP 7: Validation Gate
+## STEP add-new.validate: Validation Gate
 
-Execute validation gate for `feature` schema (from STEP 1 skills).
+Execute validation gate for `feature` schema (from STEP add-new.load skills).
 
 **MANDATORY.** DO NOT skip. DO NOT mark complete until gate returns `PASS`.
 
 ---
 
-## STEP 8: Plan Review — FULL PATH ONLY
+## STEP add-new.review: Plan Review — FULL PATH ONLY
 
-Schema gate PASSED (STEP 7). Do not present `about.md` or the next command as delivered yet.
+Schema gate PASSED (STEP add-new.validate). Do not present `about.md` or the next command as delivered yet.
 
 | Classification | This STEP |
 |---|---|
@@ -410,9 +418,9 @@ it was not removed.
 **Detect:** Feature ID from argument, from current branch (if feature branch), else list pending features and ask.
 
 **Skip Logic:**
-- If `about.md` exists AND carries its validated decisions → Skip STEP 4, proceed to STEP 5
-- If `discovery.md` exists AND contains "Related Features" → Skip STEP 3 discovery agents, proceed to STEP 5
-- If validation gate passed (logged state) → Skip STEP 7, proceed to STEP 8 (full path) or Completion (light path)
+- If `about.md` exists AND carries its validated decisions → Skip STEP add-new.confirm, proceed to STEP add-new.decompose
+- If `discovery.md` exists AND contains "Related Features" → Skip STEP add-new.discover discovery agents, proceed to STEP add-new.decompose
+- If validation gate passed (logged state) → Skip STEP add-new.validate, proceed to STEP add-new.review (full path) or Completion (light path)
 
 **Load iterations.jsonl** (if exists) to understand prior implementations/pivots. Avoid re-work.
 
@@ -428,8 +436,10 @@ the self-check. Emit the report FIRST — the artefact paths and the next comman
 This command documents a feature rather than building it, so block 2 is titled `What will be done`
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
+<!-- slot:board.ticket-shaped fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-shaped -->
 <!-- /feature:board:ticket-shaped -->
+<!-- /slot:board.ticket-shaped -->
 
 Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`’s own UX step when the feature touches UI), `/add-build` for implementation.
 

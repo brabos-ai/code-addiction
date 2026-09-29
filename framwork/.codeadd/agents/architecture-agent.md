@@ -31,8 +31,10 @@ You are an architecture consultant. Your role is to analyze project structure, e
 1. Read project structure and key files to understand current architecture
 2. Map layers, dependencies, and module boundaries
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Analyze against established architectural patterns
 4. Identify violations, risks, and improvement opportunities

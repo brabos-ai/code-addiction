@@ -1,0 +1,1 @@
+No optional test-spec or QA-spec step is available. Continue with STEP add-plan.consolidate.

@@ -50,8 +50,8 @@ function mdFiles(dir, out = []) {
   return out;
 }
 
-// The line count of add-build.md on main at 34731b0, when this plan branched.
-const BUILD_LINE_BUDGET = 1609;
+// 1609 on main at 34731b0. Slot wrappers around the 15 injection markers added the rest.
+const BUILD_LINE_BUDGET = 1626; // slot wrappers; STEP id rename did not add lines
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {
@@ -129,15 +129,17 @@ describe('L3 — the build prompt', () => {
   });
 
   it('L3.4b STEP 17 prints the build verdict and its blocker suggestions before asking', () => {
-    const s = section(read(P.build), 'STEP 17: Publish');
+    const s = section(read(P.build), 'STEP add-build.publish: Publish');
     expect(s).toContain('Final review:');
     expect(s).toContain('Blocker suggestion:');
   });
 
-  it('L3.4c the final-review heading is unnumbered and STEPs 13-18 keep their numbers', () => {
+  it('L3.4c the final-review heading is unnumbered and later steps keep stable IDs', () => {
     const t = read(P.build);
     expect(t).toMatch(/\n## Final Review/);
-    for (const n of [13, 14, 15, 16, 17, 18]) expect(t).toMatch(new RegExp(`\\n## STEP ${n}:`));
+    for (const id of ['comply', 'integrate', 'mutate-docs', 'log', 'publish', 'complete']) {
+      expect(t).toMatch(new RegExp(`\\n## STEP add-build\\.${id}:`));
+    }
   });
 });
 

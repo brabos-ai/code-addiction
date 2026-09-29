@@ -68,10 +68,8 @@ function agentOutFile(providerKey, name) {
  * Top-level `## STEP <n>:` headings in source order. Sub-numbering (`### 8.1`)
  * is deliberately excluded — the integer rule governs steps, not subtopics.
  */
-function stepNumbers(src) {
-  return [...src.matchAll(/^## STEP ([0-9]+)(?:-([0-9]+))?:/gm)].flatMap((m) =>
-    m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1])],
-  );
+function stepIds(src) {
+  return [...src.matchAll(/^## STEP ([a-z0-9.-]+):/gm)].map((m) => m[1]);
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +113,7 @@ describe('0073 L1 — build side', () => {
     // must stay present and variable-free, and nothing may be inserted between
     // it and the marker (which would change `next`).
     expect(gitnexus[0].anchor.text).toBe('- [ ] On branch `hotfix/*`');
-    expect(gitnexus[0].anchor.next).toBe('### 8.1 Consult Knowledge Base');
+    expect(gitnexus[0].anchor.next).toBe('### STEP add-hotfix.knowledge-base Consult Knowledge Base');
     expect(gitnexus[0].anchor.position).toBe('after');
   });
 
@@ -300,50 +298,43 @@ describe('0073 L4 — behavioural acceptance', () => {
 
   it('L4.6 the corrective pass re-verifies the build and the RED test', () => {
     const src = HOTFIX_SRC();
-    const step10 = src.slice(src.indexOf('## STEP 10:'), src.indexOf('## STEP 11:'));
+    const step10 = src.slice(src.indexOf('## STEP add-hotfix.correct:'), src.indexOf('## STEP add-hotfix.log:'));
     expect(step10.length).toBeGreaterThan(0);
     expect(step10).toMatch(/re-?run/i);
-    expect(step10).toMatch(/8\.3/); // the build verification sub-step
+    expect(step10).toMatch(/build verification/);
     expect(step10).toMatch(/GREEN/);
   });
 
   it('L4.7 the blast radius is retained at STEP 5 and consumed at STEP 9', () => {
     const src = HOTFIX_SRC();
-    const step5 = src.slice(src.indexOf('## STEP 5:'), src.indexOf('## STEP 6:'));
-    expect(step5).toMatch(/STEP 9/); // retention clause names its consumer
+    const step5 = src.slice(src.indexOf('## STEP add-hotfix.synthesize:'), src.indexOf('## STEP add-hotfix.investigate:'));
+    expect(step5).toMatch(/STEP add-hotfix.review/);
     // ...and the consumer names the set.
     expect(judgeSrc('failure-analysis-agent')).toMatch(/blast radius/i);
   });
 
   it('L4.8 STEP 10 partitions findings by disposition before presenting', () => {
     const src = HOTFIX_SRC();
-    const step10 = src.slice(src.indexOf('## STEP 10:'), src.indexOf('## STEP 11:'));
+    const step10 = src.slice(src.indexOf('## STEP add-hotfix.correct:'), src.indexOf('## STEP add-hotfix.log:'));
     for (const d of ['introduced', 'pre-existing', 'unverifiable']) {
       expect(step10, `disposition ${d}`).toMatch(new RegExp(d, 'i'));
     }
   });
 
-  it('L4.9 step numbering is integer and contiguous, with no orphan', () => {
-    const nums = stepNumbers(HOTFIX_SRC());
-    expect(nums.length).toBeGreaterThan(0);
-    expect(nums).toEqual([...nums].sort((a, b) => a - b));
-    expect(nums[0]).toBe(1);
-    // 14 since plan 2026-09-12T104012 retired STEP 12 (related.md) and folded
-    // the two validation gates into one — the command writes a single doc now.
-    expect(nums[nums.length - 1]).toBe(14);
-    // contiguous: every integer from 1..14 appears exactly once
-    expect(nums).toEqual(Array.from({ length: 14 }, (_, i) => i + 1));
-    // and no fractional STEP heading survives anywhere
-    expect(HOTFIX_SRC()).not.toMatch(/^## STEP \d+\.\d+:/m);
+  it('L4.9 step ids are stable and unique, with no numeric heading', () => {
+    const ids = stepIds(HOTFIX_SRC());
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids[0]).toBe('add-hotfix.context');
+    expect(ids.at(-1)).toBe('add-hotfix.complete');
+    expect(HOTFIX_SRC()).not.toMatch(/^## STEP \d/m);
   });
 
   it('L4.9 the step list and the bodies name the same steps', () => {
     const src = HOTFIX_SRC();
     const listBlock = src.slice(src.indexOf('**STEPS IN ORDER:**'), src.indexOf('**⛔ ABSOLUTE PROHIBITIONS'));
-    const listed = [...listBlock.matchAll(/^STEP ([0-9]+)(?:-([0-9]+))?:/gm)].flatMap((m) =>
-      m[2] ? [Number(m[1]), Number(m[2])] : [Number(m[1])],
-    );
-    expect(listed).toEqual(stepNumbers(src));
+    const listed = [...listBlock.matchAll(/^STEP ([a-z0-9.-]+):/gm)].map((m) => m[1]);
+    expect(listed).toEqual(stepIds(src));
   });
 
   it('L4.10 hotfix declares a Review section', () => {

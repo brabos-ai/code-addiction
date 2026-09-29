@@ -9,7 +9,7 @@ import { FEATURES } from '../src/features.js';
 const require = createRequire(import.meta.url);
 const {
   readMap,
-  extractInjectionPoints,
+  extractSlots,
   sliceContractBlock,
   CONTRACT_VARIABLE_RE,
 } = require('../../scripts/build.js');
@@ -18,7 +18,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
 
 const readSource = (rel) => fs.readFileSync(path.join(CODEADD, rel), 'utf8');
-const points = (rel, name, kind) => extractInjectionPoints(readSource(rel), name, kind);
+const points = (rel, name, kind) => extractSlots(readSource(rel), name, kind, () => '').flatMap((slot) =>
+  slot.members.map((m) => ({ ...m, resource: slot.resource, anchor: slot.anchor })));
 const qa = (pts, section) =>
   pts.find((p) => p.namespace === 'feature' && p.name === 'qa-pipeline' && p.section === section);
 const drive = (pts) => pts.find((p) => p.namespace === 'plugin' && p.name === 'playwright' && p.section === 'drive');
@@ -98,9 +99,9 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     // Renumbered by plan 0057 (new 8.1 UX Design Specialist step pushed Frontend 8.3 -> 8.4),
     // then shifted down one by 2026-09-14T215223-PLAN--remove-owner-product-onboarding,
     // which deleted add-plan's STEP 1 (Load Founder Profile): 8.4 -> 7.4, STEP 10 -> STEP 9.
-    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- 7.4: Frontend Specialist', position: 'after' });
+    expect(qa(pts, 'step-list').anchor).toMatchObject({ text: '- STEP add-plan.frontend: Frontend Specialist', position: 'after' });
     expect(qa(pts, 'qa-spec').anchor).toMatchObject({
-      text: '## STEP 9: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
+      text: '## STEP add-plan.consolidate: Consolidate Plan (APPEND + VALIDATE + FILL GAPS)',
       position: 'after',
     });
   });
@@ -120,7 +121,7 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     const pts = points('commands/add-build.md', 'add-build', 'command');
     const anchor = qa(pts, 'qa-fix').anchor;
     expect(anchor).toMatchObject({ text: '---', position: 'after' });
-    expect(anchor.next).toMatch(/^## STEP 7/);
+    expect(anchor.next).toMatch(/^## STEP add-build\.wiki/);
   });
 });
 
@@ -186,11 +187,21 @@ describe('setup contract (0061)', () => {
     expect(src).toContain('--upgrade');
   });
 
+  it('the enable probe splits landed, disabled, warned and no-sidecar', () => {
+    const start = src.indexOf('### STEP add-qa-setup.verify-enable');
+    const step = src.slice(start, src.indexOf('\n## ', start + 4));
+    expect(step).toContain('STEP qa-pipeline.qa-spec');
+    expect(step).toContain('the enable landed');
+    expect(step).toMatch(/resolves disabled/);
+    expect(step).toContain('not a silent no-op');
+    expect(step).toContain('injection-points.json` is absent or is not v2');
+  });
+
   it('gates migration on a fingerprint comparison, not on first-run', () => {
     // Slice STEP 5 and assert against IT. A file-wide /fingerprint/i match would
     // pass on the prohibitions table alone, staying green even if STEP 5 were
     // reverted to the first-run proxy wholesale.
-    const start = src.indexOf('## STEP 5: Detect Migration');
+    const start = src.indexOf('## STEP add-qa-setup.migration:');
     expect(start).toBeGreaterThan(-1);
     const step5 = src.slice(start, src.indexOf('\n## ', start + 4));
 
@@ -204,18 +215,18 @@ describe('setup contract (0061)', () => {
   });
 
   it('writes the receipt and runs the schema gate before hand-off', () => {
-    const receipt = src.indexOf('## STEP 12: Write the Receipt');
-    const gate = src.indexOf('## STEP 13: Validation Gate');
-    const handoff = src.indexOf('## STEP 14: Hand-off');
+    const receipt = src.indexOf('## STEP add-qa-setup.receipt:');
+    const gate = src.indexOf('## STEP add-qa-setup.validate:');
+    const handoff = src.indexOf('## STEP add-qa-setup.handoff:');
     expect(receipt).toBeGreaterThan(-1);
     expect(gate).toBeGreaterThan(receipt);
     expect(handoff).toBeGreaterThan(gate);
   });
 
   it('materializes a dedicated QA ignore block before migration and smoke testing', () => {
-    const ignore = src.indexOf('## STEP 9: Ignore Working QA Evidence');
-    const migration = src.indexOf('## STEP 10: Autonomous Migration');
-    const smoke = src.indexOf('## STEP 11: Universal Smoke Test');
+    const ignore = src.indexOf('## STEP add-qa-setup.ignore:');
+    const migration = src.indexOf('## STEP add-qa-setup.migrate:');
+    const smoke = src.indexOf('## STEP add-qa-setup.smoke:');
     expect(ignore).toBeGreaterThan(-1);
     expect(migration).toBeGreaterThan(ignore);
     expect(smoke).toBeGreaterThan(migration);
@@ -226,11 +237,11 @@ describe('setup contract (0061)', () => {
 
   it('no-screens deferral still writes and validates the receipt', () => {
     const smoke = src.slice(
-      src.indexOf('## STEP 11: Universal Smoke Test'),
-      src.indexOf('## STEP 12: Write the Receipt'),
+      src.indexOf('## STEP add-qa-setup.smoke:'),
+      src.indexOf('## STEP add-qa-setup.receipt:'),
     );
     expect(smoke).toMatch(/DEFER only the smoke dispatch and correction loop/i);
-    expect(smoke).toMatch(/continue to STEP 12/i);
+    expect(smoke).toMatch(/continue to STEP add-qa-setup\.receipt/i);
     expect(smoke).not.toMatch(/skip to hand-off/i);
   });
 

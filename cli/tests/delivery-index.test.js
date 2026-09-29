@@ -279,7 +279,7 @@ describe('L3 — command integration', () => {
   it('L3.1: add-done STEP 6 writes the entry and commits nothing itself', () => {
     const c = cmd('add-done');
     expect(c).toContain('delivered.sh write');
-    const step6 = c.slice(c.indexOf('## STEP 6'), c.indexOf('## STEP 7'));
+    const step6 = c.slice(c.indexOf('## STEP add-done.document'), c.indexOf('## STEP add-done.preview'));
     expect(step6, 'STEP 6 does not author the index entry').toContain('delivered.sh');
     expect(step6, 'STEP 6 must leave the entry in the working tree').toMatch(
       /DO NOT USE: Bash for git|working tree/,
@@ -288,7 +288,7 @@ describe('L3 — command integration', () => {
 
   it('L3.2: add-done STEP 7 renders the entry and stays informative', () => {
     const c = cmd('add-done');
-    const step7 = c.slice(c.indexOf('## STEP 7'), c.indexOf('## STEP 8'));
+    const step7 = c.slice(c.indexOf('## STEP add-done.preview'), c.indexOf('## STEP add-done.merge'));
     expect(step7, 'STEP 7 does not preview the entry').toMatch(/entry|delivered/i);
     expect(step7, 'STEP 7 must render every item with its find string').toContain('find');
     expect(step7).toContain('DO NOT ask for confirmation');
@@ -304,7 +304,7 @@ describe('L3 — command integration', () => {
 
   it('L3.4: add-pull-request names the owed entry', () => {
     const c = cmd('add-pull-request');
-    const step8 = c.slice(c.indexOf('## STEP 8'));
+    const step8 = c.slice(c.indexOf('## STEP add-pull-request.complete'));
     expect(step8, 'the post-merge guidance never mentions the owed index entry').toMatch(
       /delivery index|index entry/i,
     );
@@ -312,7 +312,7 @@ describe('L3 — command integration', () => {
 
   it('L3.5: add-hotfix STEP 4 reads the index with --no-verify and loads no wiki', () => {
     const c = cmd('add-hotfix');
-    const step4 = c.slice(c.indexOf('## STEP 4'), c.indexOf('## STEP 5'));
+    const step4 = c.slice(c.indexOf('## STEP add-hotfix.history'), c.indexOf('## STEP add-hotfix.synthesize'));
     expect(step4, 'STEP 4 does not read the index').toContain('delivered.sh read');
     expect(step4, '--no-verify is the whole reason this is allowed at STEP 4').toContain(
       '--no-verify',
@@ -339,7 +339,7 @@ describe('L3 — command integration', () => {
 
   it('L3.6: add-brainstorm STEP 1 swaps the unranked sweep for the ranked lookup', () => {
     const c = cmd('add-brainstorm');
-    const step1 = c.slice(c.indexOf('## STEP 1:'), c.indexOf('## STEP 1.5'));
+    const step1 = c.slice(c.indexOf('## STEP add-brainstorm.load-context'), c.indexOf('## STEP add-brainstorm.classify'));
     expect(step1, 'the skill is not loaded at STEP 1').toContain('add--knowledge-discovery');
     expect(step1, 'about.md is not deep-read for matched entries').toContain('about.md');
     expect(
@@ -419,7 +419,7 @@ describe('L5.7 — every F-block landed', () => {
     // word "find" anywhere below STEP 7 and is green before F6 lands.
     ['F6  add-done STEP 7 preview', () => {
       const c = cmd('add-done');
-      const step7 = c.slice(c.indexOf('## STEP 7'), c.indexOf('## STEP 8'));
+      const step7 = c.slice(c.indexOf('## STEP add-done.preview'), c.indexOf('## STEP add-done.merge'));
       return /delivered|index entry/i.test(step7) && step7.includes('find');
     }],
     ['F7  done.sh pre-check', () => read(CODEADD, 'scripts', 'done.sh').includes('MERGE_MODE')],

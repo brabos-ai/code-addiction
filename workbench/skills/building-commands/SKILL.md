@@ -9,6 +9,7 @@ description: Use when designing command workflows or refactoring existing comman
 - skill: add-final-report
 - skill: add-artefact-graph
 - skill: add-framework--build
+- skill: add-framework-injection
 - skill: building-commands/references/agent-dispatch.md
 - mention: add-framework-development
 - mention: add-review-discipline
@@ -142,7 +143,7 @@ Commands are ORDERS, not documentation. Agents treat informative text as optiona
 ✅ "MANDATORY ORDER: 1) READ docs 2) INVESTIGATE code 3) IMPLEMENT"
 ```
 
-Use `STEP N:` for sequential mandatory actions, `N.1`/`N.2` for sub-actions. Add imperative context: `(FIRST COMMAND)`, `(MANDATORY if main)`, `(BEFORE code)`.
+Use `STEP N:` for internal commands and `STEP <owner>.<subject>:` for distributed product commands. Keep their execution order explicit in the top-of-file list; optional steps must not use positional numbers. Load `add-framework-injection` when authoring product injection. Add imperative context: `(FIRST COMMAND)`, `(MANDATORY if main)`, `(BEFORE code)`.
 
 ---
 
@@ -488,7 +489,7 @@ Every pointer lands on something that exists: a STEP or sub-step number, a skill
 ### 3. Mandatory form
 
 The skeleton this skill defines, in full: a LANG header; English throughout; a top-of-file blocking
-section before any instruction; STEP rather than Phase; sequential integer numbering; imperative
+section before any instruction; STEP rather than Phase; sequential integer numbering for internal commands or stable `STEP <owner>.<subject>` IDs for product commands; imperative
 verbs; gates carrying tool-specific prohibitions in the `IF [condition]: ⛔ DO NOT USE [tool]` shape,
 wherever a wrong action is temptingly available; a `## Rules` section as ALWAYS/NEVER markdown with
 each rule starting on an infinitive and none numbered; `{{cmd:NAME}}` and `{{skill:NAME/FILE}}` for

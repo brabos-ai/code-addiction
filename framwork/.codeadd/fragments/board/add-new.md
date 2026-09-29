@@ -5,18 +5,18 @@
 -->
 
 <!-- section:ticket-intent-field -->
-| `ticket:` | The backlog ticket this work came from. STEP 2 copies it into `about.md`, per the `add-new` row of `{{skill:add--backlog/references/lifecycle.md}}` | No ticket — the normal case |
+| `ticket:` | The backlog ticket this work came from. STEP add-new.allocate copies it into `about.md`, per the `add-new` row of `{{skill:add--backlog/references/lifecycle.md}}` | No ticket — the normal case |
 <!-- /section:ticket-intent-field -->
 
 <!-- section:ticket-skeleton -->
 
-When STEP 1.1 read a `ticket:`, the skeleton's frontmatter carries it too, on the line after `branch:`.
+When STEP add-new.intent read a `ticket:`, the skeleton's frontmatter carries it too, on the line after `branch:`.
 Then make ONE board write, carrying `feature` — the id just allocated — and `refining`, per the `add-new`
 row of `{{skill:add--backlog/references/lifecycle.md}}`. When that row says `refining` is skipped, the write
 still carries `feature`: the pointer is never skipped, only the status.
 
 ```
-IF STEP 1.1 READ A ticket:
+IF STEP add-new.intent READ A ticket:
   ⛔ DO NOT: Set the ticket's work_id here, though the feature id is now in hand —
              /add-build owns that write, and the lifecycle row says why
   ✅ DO: Copy the id into about.md, then make the one board write the row describes

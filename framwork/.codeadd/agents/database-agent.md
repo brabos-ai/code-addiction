@@ -27,8 +27,10 @@ You are a database specialist. Your role is to design schemas, create migrations
 1. Read project context (about.md, plan.md) to understand data requirements
 2. Analyze existing schema and migration patterns
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Design schema changes following the project's normalization level
 4. Create migrations using the project's migration tool (Prisma, Drizzle, Knex, etc.)

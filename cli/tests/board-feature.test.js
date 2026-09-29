@@ -130,20 +130,14 @@ describe('board — L6.4: enable order changes no byte', () => {
     return out;
   };
 
-  // The OTHER features keep one fixed order on both sides, on purpose. Their
-  // own relative order is NOT byte-stable today: tdd-pipeline and qa-pipeline
-  // both anchor their step-list lines on the same line of add-plan, so the one
-  // enabled second lands first. That is pre-existing, it has nothing to do with
-  // this feature, and reversing the whole list here would test it instead of
-  // board. What board must prove is that where IT goes in the order moves nothing.
-  it('board-first and board-last produce identical files on every command it shares', () => {
-    const others = ['tdd-pipeline', 'qa-pipeline', 'docs-pruning'];
-    for (const f of ['board', ...others]) enableFeature(tmp, f);
+  it('reversed enable order, board included, produces identical files', () => {
+    const order = ['board', 'tdd-pipeline', 'qa-pipeline', 'docs-pruning'];
+    for (const f of order) enableFeature(tmp, f);
     const first = snapshotAll(tmp);
     expect(Object.keys(first).length).toBeGreaterThan(0);
 
-    for (const f of ['board', ...others]) disableFeature(tmp, f);
-    for (const f of [...others, 'board']) enableFeature(tmp, f);
+    for (const f of order) disableFeature(tmp, f);
+    for (const f of [...order].reverse()) enableFeature(tmp, f);
     expect(snapshotAll(tmp)).toEqual(first);
   });
 });

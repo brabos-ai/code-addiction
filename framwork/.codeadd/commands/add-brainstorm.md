@@ -14,7 +14,7 @@
 -->
 
 > **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
-> **The closing report at STEP 5 is exempt** — it reports in the shape `add--final-report` owns, and a
+> **The closing report at STEP add-brainstorm.handoff is exempt** — it reports in the shape `add--final-report` owns, and a
 > 20-word stub is not that shape.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARCHITECTURE REFERENCE:** Use `AGENTS.md` as source of patterns.
@@ -29,12 +29,12 @@ end on one approval that decides how the delivery continues.
 
 **STEPS IN ORDER:**
 ```
-STEP 1:   Load context (status.sh)   → SILENT, FIRST
-STEP 1.5: Classify the request       → spike | bounded | architectural — STATED, NO STOP
-STEP 2:   Interactive Exploration    → objective drafted first, then one question at a time
-STEP 3:   Write the brainstorm doc   → ARCHITECTURAL PATH ONLY — always, before the approval
-STEP 4:   Self-review + gate         → ARCHITECTURAL PATH ONLY, must return PASS
-STEP 5:   Report, approve, hand off  → ALL THREE paths report; bounded + architectural ask the
+STEP add-brainstorm.load-context:   Load context (status.sh)   → SILENT, FIRST
+STEP add-brainstorm.classify: Classify the request       → spike | bounded | architectural — STATED, NO STOP
+STEP add-brainstorm.explore:   Interactive Exploration    → objective drafted first, then one question at a time
+STEP add-brainstorm.write-doc:   Write the brainstorm doc   → ARCHITECTURAL PATH ONLY — always, before the approval
+STEP add-brainstorm.self-review:   Self-review + gate         → ARCHITECTURAL PATH ONLY, must return PASS
+STEP add-brainstorm.handoff:   Report, approve, hand off  → ALL THREE paths report; bounded + architectural ask the
                                        three-option approval [HARD STOP]
 ```
 
@@ -47,25 +47,25 @@ command on its own initiative.
 IF a feature/bug/plan handoff is warranted:
   ⛔ DO NOT: Run /add-new, /add-diagnose, /add-hotfix or /add-plan because you judged it useful
   ⛔ DO NOT: Type a slash-command as if executing it
-  ✅ DO: Print the suggested command as TEXT at STEP 5, then STOP
+  ✅ DO: Print the suggested command as TEXT at STEP add-brainstorm.handoff, then STOP
 
 IF the user asks to implement OR you spot a solution:
   ⛔ DO NOT USE: Edit on application code files
   ⛔ DO NOT USE: Bash for implementation
-  ✅ DO: Keep exploring; route as a suggestion at STEP 5
+  ✅ DO: Keep exploring; route as a suggestion at STEP add-brainstorm.handoff
 
-IF writing the brainstorm document (STEP 3):
+IF writing the brainstorm document (STEP add-brainstorm.write-doc):
   ⛔ DO NOT: Write full classes/methods or multi-line code blocks
   ⛔ DO NOT: List implementation steps
   ✅ DO: Stay user-perspective; one illustrative one-shot snippet is the maximum
 ```
 
 **A chain the user chose is not initiative.** The gate bans this command deciding, on its own, to run
-the next one. When the user picks `Approve, deliver automatically` at STEP 5.2, following `/add-new` is
+the next one. When the user picks `Approve, deliver automatically` at STEP add-brainstorm.handoff, following `/add-new` is
 the user's decision carried out — and it is the one handoff this command makes:
 
 ```
-IF THE USER CHOSE "Approve, deliver automatically" AT STEP 5.2:
+IF THE USER CHOSE "Approve, deliver automatically" AT STEP add-brainstorm.handoff:
   ✅ DO: Follow {{cmd:add-new}} with the intent file, after writing it — and nothing else
   ⛔ DO NOT: Follow /add-diagnose, /add-hotfix or /add-plan — those routes stay text on every answer
 ```
@@ -74,8 +74,8 @@ IF THE USER CHOSE "Approve, deliver automatically" AT STEP 5.2:
 
 | File | When |
 |---|---|
-| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` | The brainstorm document — architectural path, always, at STEP 3 |
-| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` | The intent file — bounded and architectural, after the approval at STEP 5.2 |
+| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` | The brainstorm document — architectural path, always, at STEP add-brainstorm.write-doc |
+| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` | The intent file — bounded and architectural, after the approval at STEP add-brainstorm.handoff |
 
 ⛔ **Nothing is written on the `spike` path.** A spike's output is a recommendation, and keeping it is
 a new request with its own classification.
@@ -84,11 +84,11 @@ a new request with its own classification.
 
 ## Required Skills
 
-Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-brainstorm.load-context (schemas, IDs, universal doc rules).
 
 ---
 
-## STEP 1: Load Context & Recent Activity (AUTOMATIC - SILENT)
+## STEP add-brainstorm.load-context: Load Context & Recent Activity (AUTOMATIC - SILENT)
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -99,7 +99,7 @@ Parse output: BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGELOGS.
 Then load:
 - **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `docs/features/{FEAT_ID}/changelog.md` for context
 - **PRIOR WORK — ranked, not swept:** Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its INDEX step against the brainstorm topic. It returns entries ordered `live` → `changed` → `superseded` → `gone`. Then **deep-read `about.md` for the matched entries only** — the index says *whether* something shipped and never *how* it works, so the business rules and integration points still have to be read. Ranked-then-deep-read, on a handful of features instead of the whole directory.
-- **RELATED WORK — what those entries connect to:** run the skill's GRAPH step over the same topic. **GRAPH question:** what has already been delivered near this topic, and what did it connect to? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** the document's `## Discovery` section, where a direction that repeats delivered work is named as such, and STEP 2.5's `Used by` answers.
+- **RELATED WORK — what those entries connect to:** run the skill's GRAPH step over the same topic. **GRAPH question:** what has already been delivered near this topic, and what did it connect to? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** the document's `## Discovery` section, where a direction that repeats delivered work is named as such, and STEP add-brainstorm.explore's `Used by` answers.
 
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
@@ -110,8 +110,10 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 - **ARCHITECTURE:** Read AGENTS.md and product.md (if exists)
 - **Mental inventory:** Prior work from the index, architecture, business context, current work
+<!-- slot:board.ticket-resolve fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-resolve -->
 <!-- /feature:board:ticket-resolve -->
+<!-- /slot:board.ticket-resolve -->
 
 ```
 IF THE TOPIC RESEMBLES SOMETHING THE INDEX RETURNED:
@@ -127,7 +129,7 @@ IF AN ENTRY CAME BACK gone OR superseded:
 
 ---
 
-## STEP 1.5: Classify the Request — State the Path [NO STOP]
+## STEP add-brainstorm.classify: Classify the Request — State the Path [NO STOP]
 
 Sort the request into **exactly one** of three paths, **state it in one line, and keep going in the
 same turn.**
@@ -160,8 +162,10 @@ resembles. Bounded requires you to name the existing flow being changed.
 
 **When in doubt between two paths, take the heavier one.** Reaching for the lighter label to skip work IS
 the doubt.
+<!-- slot:board.ticket-refining fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-refining -->
 <!-- /feature:board:ticket-refining -->
+<!-- /slot:board.ticket-refining -->
 
 ### The ratchet is one-way
 
@@ -191,29 +195,29 @@ still presented, and this command still stops until the user says yes.
 
 ---
 
-## STEP 2: Interactive Exploration (One Question at a Time)
+## STEP add-brainstorm.explore: Interactive Exploration (One Question at a Time)
 
-**Path routing (from STEP 1.5):**
+**Path routing (from STEP add-brainstorm.classify):**
 
-| Path | What STEP 2 does | Then |
+| Path | What STEP add-brainstorm.explore does | Then |
 |------|-----------------|------|
-| **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 → STEP 5, which reports and routes as text. No intent file, no approval question. |
-| **bounded** | 2.1, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP 5, which asks the approval and writes the intent file. |
+| **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which reports and routes as text. No intent file, no approval question. |
+| **bounded** | STEP add-brainstorm.draft-objective-first, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
 | **architectural** | Everything written below. | STEPS 3 → 4 → 5. |
 
 The cadence, the challenge techniques and the 20-word `OUTPUT RULE` apply on all three paths. If the
-conversation reveals hidden complexity, apply STEP 1.5's one-way ratchet before continuing.
+conversation reveals hidden complexity, apply STEP add-brainstorm.classify's one-way ratchet before continuing.
 
 For investigations, search the codebase before answering.
 
-### 2.1 Draft the objective FIRST, and have the user correct it
+### STEP add-brainstorm.draft-objective-first Draft the objective FIRST, and have the user correct it
 
 **Draft the objective from what the user has already said, and ask them to correct it.** One or two
 sentences, in their words, answering one question: **what will be true when this is done that is not
 true today?**
 
 ```
-IF STARTING STEP 2 ON bounded OR architectural:
+IF STARTING STEP add-brainstorm.explore ON bounded OR architectural:
   ⛔ DO NOT: Ask "what is your objective?" and wait — someone who could state it cold would have
   ⛔ DO NOT: Hand back the request as the objective — "you want X" names the thing, not what it achieves
   ⛔ DO NOT: Ask any other question while the objective is still unstated
@@ -230,7 +234,7 @@ and the plan reviewer fails a plan whose work cannot be traced to it. Corrected 
 **Where a later answer contradicts the drafted objective, the objective is what changes.** It was a
 draft; the questions are how it stops being one.
 
-### 2.2 The sections to close
+### STEP add-brainstorm.sections-close The sections to close
 
 **Which sections run is decided by the path.**
 
@@ -273,7 +277,7 @@ this conversation does not need.
 | Validation | "I'm thinking of adding X" | Honest assessment based on codebase state |
 | Comparison | "Is A or B better?" | Explain trade-offs at appropriate level |
 
-### 2.3 Bring the outside in — by name
+### STEP add-brainstorm.bring-outside-in Bring the outside in — by name
 
 **Two sources feed every recommendation:**
 
@@ -298,14 +302,14 @@ worthless; "Stripe does X" can be looked at and contradicted.
 ⛔ **Where the two sources conflict, this project wins.** Its conventions were settled for reasons
 recorded in its own documents. Outside practice is an input to the decision, never an authority over it.
 
-### 2.4 Converge with directions, and recommend
+### STEP add-brainstorm.converge Converge with directions, and recommend
 
 **Converge with directions (MANDATORY before writing the design):** When understanding is sufficient,
 present **2–3 candidate directions** — each with a one-line summary, pros and cons — and force the user
 to choose. DO NOT converge silently on the user's first idea.
 
 **Every set of directions — and every question with options — carries a recommendation (MANDATORY):**
-say which one you would take and why, in concrete terms drawn from 2.3's two sources. Never a generic
+say which one you would take and why, in concrete terms drawn from STEP add-brainstorm.bring-outside-in's two sources. Never a generic
 "it depends".
 
 ```
@@ -326,7 +330,7 @@ option table with the recommendation stated below it.
 settled — it lands in the intent file's `## Open` and becomes a question `/add-new` has to ask
 instead, which is the redundancy this whole flow removes.
 
-### 2.5 Ask who uses what this design changes [GATE]
+### STEP add-brainstorm.callers Ask who uses what this design changes [GATE]
 
 **For every area the design changes, ask: who uses it today?** Run the GRAPH step of
 `{{skill:add--knowledge-discovery/SKILL.md}}` over that area — the step resolves the question to its
@@ -350,9 +354,9 @@ answer that was never given.
 
 On `bounded` this binds the short design in chat. On `spike` there is no design to gate.
 
-### 2.6 Summary approval
+### STEP add-brainstorm.summary-approval Summary approval
 
-**Before STEP 3, present the summary and ask: does this match what you want?** All three paths —
+**Before STEP add-brainstorm.write-doc, present the summary and ask: does this match what you want?** All three paths —
 a spike's recommendation and a bounded design in chat are approved like a document.
 
 **Stop kind — deciding.** No delivery mode exists yet.
@@ -362,15 +366,15 @@ trade-offs accepted, no open questions. DO NOT document with uncertainties.
 
 ---
 
-## STEP 3: Write the Brainstorm Document (ARCHITECTURAL — ALWAYS)
+## STEP add-brainstorm.write-doc: Write the Brainstorm Document (ARCHITECTURAL — ALWAYS)
 
 **The document is written on every architectural brainstorm, before the approval.** The user approves
 the design they can read, not one that exists only in this conversation.
 
 ```
-IF ON THE architectural PATH AND 2.6 IS APPROVED:
+IF ON THE architectural PATH AND STEP add-brainstorm.summary-approval IS APPROVED:
   ⛔ DO NOT: Skip the document, or wait for the user to ask for it
-  ✅ DO: Write it now, then run STEP 4
+  ✅ DO: Write it now, then run STEP add-brainstorm.self-review
 ```
 
 **Path:** `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` (timestamp prefix for chronological ordering — local time, no separators inside `HHMMSS` because Windows forbids `:` in filenames, so lexicographic sort equals chronological sort even for two brainstorms written the same day)
@@ -381,19 +385,21 @@ IF ON THE architectural PATH AND 2.6 IS APPROVED:
 it owns the sections, the `Decision | Serves | Rationale` table and the `Used by` column. DO NOT include
 full classes/methods — a single one-shot snippet is the maximum allowed.
 
+<!-- slot:board.ticket-frontmatter fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-frontmatter -->
 <!-- /feature:board:ticket-frontmatter -->
+<!-- /slot:board.ticket-frontmatter -->
 
 ---
 
-## STEP 4: Self-Review, Then the Validation Gate
+## STEP add-brainstorm.self-review: Self-Review, Then the Validation Gate
 
-### 4.1 Self-review
+### STEP add-brainstorm.run-self-review Self-review
 
 Read the document you just wrote against these, and fix what fails before the gate:
 
 ```
-[ ] `## Objective` states an outcome, in the user's words, and matches what 2.1 settled
+[ ] `## Objective` states an outcome, in the user's words, and matches what STEP add-brainstorm.draft-objective-first settled
 [ ] Every Key Decision's `Serves` names a PART of the objective — never the whole of it restated
 [ ] Every `Used by` cell holds an answer or NOT VERIFIED — none blank
 [ ] Open Threads reads `None`
@@ -405,17 +411,17 @@ Read the document you just wrote against these, and fix what fails before the ga
 dimension checks the work against this objective where it is about to be built. A second reviewer here
 would review the same objective twice before anything depends on it.
 
-### 4.2 Validation gate
+### STEP add-brainstorm.validation-gate Validation gate
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `brainstorm`.
 
-DO NOT skip. DO NOT continue to STEP 5 until the gate returns `PASS`.
+DO NOT skip. DO NOT continue to STEP add-brainstorm.handoff until the gate returns `PASS`.
 
 ---
 
-## STEP 5: Report, Approve, Hand Off [HARD STOP]
+## STEP add-brainstorm.handoff: Report, Approve, Hand Off [HARD STOP]
 
-### 5.1 Report
+### STEP add-brainstorm.report Report
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST, then the approval.
@@ -433,10 +439,12 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 
 After the report: the document path (architectural only — never print a path that resolves to
 nothing) and the 3-5 key decisions.
+<!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
+<!-- /slot:board.ticket-report -->
 
-### 5.2 Ask for the one approval — `bounded` and `architectural`
+### STEP add-brainstorm.approval Ask for the one approval — `bounded` and `architectural`
 
 **This is the only approval the pipeline asks for by default.** Ask it through the provider's
 structured-question tool where the `structuredQuestions` capability declares one — otherwise as an
@@ -446,7 +454,7 @@ option table — with these three options and nothing else:
 |---|---|
 | **Approve, I confirm each stage** | The intent file records `delivery: confirm`. The next command is printed as text and this command stops |
 | **Approve, deliver automatically** | The intent file records `delivery: automatic`, and this command follows `/add-new`. Every stage then hands off without waiting until the build asks whether to open the PR |
-| **Keep discussing** | No intent file, no handoff. Return to STEP 2 with what the user wants to reopen |
+| **Keep discussing** | No intent file, no handoff. Return to STEP add-brainstorm.explore with what the user wants to reopen |
 
 **Stop kind — deciding, in every state.** The delivery mode is what this question creates. What each
 mode does afterwards — which stops wait, how stages hand off, where the automatic path ends — is owned by
@@ -463,13 +471,13 @@ IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
 
 IF THE ANSWER IS "Keep discussing":
   ⛔ DO NOT: Write the intent file or print a handoff
-  ✅ DO: Return to STEP 2
+  ✅ DO: Return to STEP add-brainstorm.explore
 ```
 
 ⛔ **A spike is asked no three-option question.** Its output is a recommendation; keeping it is a new
-request with its own classification. It goes straight to 5.4 and routes as text.
+request with its own classification. It goes straight to STEP add-brainstorm.route and routes as text.
 
-### 5.3 Write the intent file — `bounded` and `architectural`
+### STEP add-brainstorm.write-intent-file Write the intent file — `bounded` and `architectural`
 
 Write `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` against the `brainstorm-intent` schema in
 `{{skill:add--doc-schemas/SKILL.md}}`. On `architectural` it reuses the brainstorm document's timestamp
@@ -477,12 +485,14 @@ verbatim, so the pair sorts adjacent; on `bounded` it takes its own and stands a
 id either way.
 
 **This file is why the next command does not re-ask what you just settled.** It carries the path you
-classified at STEP 1.5, the approval's answer as `delivery:`, the objective from 2.1, every decision the
+classified at STEP add-brainstorm.classify, the approval's answer as `delivery:`, the objective from STEP add-brainstorm.draft-objective-first, every decision the
 conversation closed with its rationale and what it serves, whatever it could not close, the prior art
-STEP 1 found, and the directions that were rejected.
+STEP add-brainstorm.load-context found, and the directions that were rejected.
 
+<!-- slot:board.ticket-intent fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-intent -->
 <!-- /feature:board:ticket-intent -->
+<!-- /slot:board.ticket-intent -->
 
 ```
 IF ABOUT TO WRITE `## Open`:
@@ -495,10 +505,12 @@ IF ABOUT TO WRITE `## Open`:
 **Then run the validation gate** from `{{skill:add--doc-schemas/SKILL.md}}` for schema
 `brainstorm-intent`. ⛔ DO NOT skip it and DO NOT hand off until it returns `PASS` — the next command
 extracts decisions from this file without asking.
+<!-- slot:board.ticket-shaped fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-shaped -->
 <!-- /feature:board:ticket-shaped -->
+<!-- /slot:board.ticket-shaped -->
 
-### 5.4 Route
+### STEP add-brainstorm.route Route
 
 | Signal | Suggest |
 |--------|---------|
@@ -508,14 +520,14 @@ extracts decisions from this file without asking.
 | Needs more exploration | continue brainstorm — nothing to hand off yet |
 
 **The `Intent:` line appears only where the file exists AND the next command reads it.** That is
-`/add-new` alone — it resolves the intent file at its STEP 1.1. `/add-diagnose` and `/add-hotfix` have
+`/add-new` alone — it resolves the intent file at its STEP add-new.intent. `/add-diagnose` and `/add-hotfix` have
 no such step, so naming the file to them would promise a handoff neither receives.
 
 On `delivery: confirm`, and on every route that is not `/add-new`, print and STOP:
 
 ```text
 Idea is ready to formalize. Run:  /add-new
-Intent: docs/brainstorm/<the file written at 5.3>
+Intent: docs/brainstorm/<the file written at STEP add-brainstorm.write-intent-file>
 (brainstorm stops here — it does not run the next command for you.)
 ```
 

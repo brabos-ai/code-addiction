@@ -17,6 +17,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 - mention: add-framework--brainstorm
 - skill: building-commands/references/agent-dispatch.md
 - mention: building-commands
+- skill: add-framework-injection (conditional)
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -24,6 +25,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.
 **Plans BOTH layers in one document** — the distributed product layer (`framwork/.codeadd/`, `cli/`)
 and the internal development layer (`workbench/`, `scripts/`, `AGENTS.md`). Every F-block declares which.
+When the change touches an injection slot, a fallback, or a product STEP ID, load `add-framework-injection` before writing that F-block.
 
 This is an **open-source project for the community**. Every decision weighs technical soundness,
 clarity for external contributors, and real value for framework consumers.

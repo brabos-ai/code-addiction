@@ -43,7 +43,7 @@ Located at: `docs/features/${FEATURE_ID}/tasks.md` (or subfeature dir)
 
 ### When to Dispatch Architect Subagent
 
-After plan.md is created and validated (STEP 9.4 of /add-plan).
+After plan.md is created and validated (STEP add-plan.tasks of /add-plan).
 
 ### Architect Subagent Dispatch
 

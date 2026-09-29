@@ -11,7 +11,7 @@ import { applyEnabledPlugins } from './plugins.js';
 import { resolveSelected, agentDest } from './providers.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
-import { readManifest } from './injection-core.js';
+import { readManifest, captureBaselines } from './injection-core.js';
 import { allMigrationIds } from './migrations.js';
 
 /**
@@ -20,7 +20,7 @@ import { allMigrationIds } from './migrations.js';
  * keeping a copy, because two definitions will diverge and the one that
  * diverges deletes someone's session history.
  */
-export const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/];
+export const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/, /(^|\/)\.codeadd\/baselines\//];
 
 /**
  * @param {string} relPath  path relative to the install root
@@ -336,6 +336,11 @@ export async function install(cwd, options = {}) {
     installSource.releaseTag,
     { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope, features: defaultFeatures, plugins: {}, gitignore: addToGitignore, migrations }
   );
+
+  // Snapshot pristine provider files before composition. A v1 sidecar has no
+  // slots, so this is a no-op until the source emits v2.
+  const baselines = captureBaselines(targetDir);
+  for (const w of baselines.warnings) log.warn(`${w.resource} ${w.slot} ${w.member}: ${w.reason}`);
 
   // Apply enabled features (inject fragment content into commands)
   const featuresApplied = applyEnabledFeatures(targetDir);

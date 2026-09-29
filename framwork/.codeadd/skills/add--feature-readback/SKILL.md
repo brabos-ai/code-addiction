@@ -35,7 +35,7 @@ Your blindness is the whole mechanism. Reading the source code, the referenced f
 
 | Command | Step | `scope` |
 |---|---|---|
-| `add-plan` | STEP 12, after the verdict, before STEP 13 | `subfeature` |
+| `add-plan` | STEP add-plan.review, after the verdict, before STEP add-plan.complete | `subfeature` |
 
 - Manual: the user asks "read this and tell me what you understood" or wants a comprehension check before building.
 

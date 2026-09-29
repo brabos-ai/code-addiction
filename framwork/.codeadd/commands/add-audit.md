@@ -23,7 +23,7 @@ Execute complete technical analysis of the project, identifying security, archit
 
 ## Required Skills
 
-Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universal doc rules).
+Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-audit.create-folder (schemas, IDs, universal doc rules).
 
 ---
 
@@ -31,15 +31,15 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP 1 (schemas, IDs, universa
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Create folder structure    → RUN FIRST
-STEP 2: Validate prerequisites     → BEFORE discovery
-STEP 3: Discovery Phase (parallel) → dispatch 3 agents, WAIT-ALL
-STEP 4: Analysis Phase (parallel)  → dispatch 3 agents, WAIT-ALL
-STEP 5: Consolidation              → READ all reports, apply differential diagnosis
-STEP 6: Calculate scores           → BEFORE final report
-STEP 7: Write audit-report doc     → schema-driven
-STEP 8: Validation Gate            → audit-report schema gate
-STEP 9: Inform user                → COMPLETE
+STEP add-audit.create-folder: Create folder structure    → RUN FIRST
+STEP add-audit.prerequisites: Validate prerequisites     → BEFORE discovery
+STEP add-audit.discovery: Discovery Phase (parallel) → dispatch 3 agents, WAIT-ALL
+STEP add-audit.analysis: Analysis Phase (parallel)  → dispatch 3 agents, WAIT-ALL
+STEP add-audit.consolidate: Consolidation              → READ all reports, apply differential diagnosis
+STEP add-audit.score: Calculate scores           → BEFORE final report
+STEP add-audit.write-report: Write audit-report doc     → schema-driven
+STEP add-audit.validate: Validation Gate            → audit-report schema gate
+STEP add-audit.complete: Inform user                → COMPLETE
 ```
 
 **⛔ ABSOLUTE PROHIBITIONS (invariant):**
@@ -60,17 +60,17 @@ ALWAYS:
 ```
 /audit
     │
-    ├── STEP 3 - DISCOVERY (parallel)
+    ├── STEP add-audit.discovery - DISCOVERY (parallel)
     │   ├── context-discovery      → Architecture, multi-tenancy, features
     │   ├── documentation-analyzer → AGENTS.md, patterns
     │   └── infrastructure-check   → MCP Supabase, env vars
     │
-    ├── STEP 5 - ANALYSIS (parallel, depends on STEP 3)
+    ├── STEP add-audit.consolidate - ANALYSIS (parallel, depends on STEP add-audit.discovery)
     │   ├── security-analyzer      → RLS, secrets, frontend/backend boundary
     │   ├── architecture-analyzer  → Clean arch, imports, coupling
     │   └── data-analyzer          → Migrations, indexes, queries
     │
-    └── STEP 9 - CONSOLIDATION (schema-driven)
+    └── STEP add-audit.complete - CONSOLIDATION (schema-driven)
         └── Coordinator            → docs/audit/<date>.md via audit-report schema
 ```
 
@@ -97,7 +97,7 @@ ALWAYS:
 
 ---
 
-## STEP 1: Create Folder Structure (RUN FIRST)
+## STEP add-audit.create-folder: Create Folder Structure (RUN FIRST)
 
 ```bash
 AUDIT_DATE=$(date +%Y-%m-%d)
@@ -107,21 +107,21 @@ mkdir -p "docs/audit"
 
 **⛔ GATE CHECK: Folders created?**
 - If NO → Stop and abort.
-- If YES → Proceed to STEP 2.
+- If YES → Proceed to STEP add-audit.prerequisites.
 
 ---
 
-## STEP 2: Validate Prerequisites (BEFORE discovery)
+## STEP add-audit.prerequisites: Validate Prerequisites (BEFORE discovery)
 
 Check whether `AGENTS.md` exists at project root. Detect project layout (look for `apps/`, `libs/`, `src/` or equivalent).
 
 **⛔ GATE CHECK: Project structure valid?**
 - If no recognisable source directories → Warn user about non-standard structure.
-- If YES → Proceed to STEP 3.
+- If YES → Proceed to STEP add-audit.discovery.
 
 ---
 
-## STEP 3: Discovery Phase (Parallel Dispatch + Wait)
+## STEP add-audit.discovery: Discovery Phase (Parallel Dispatch + Wait)
 
 **⛔ GATE CHECK: Idempotency — Skip if discovery outputs exist and are recent (< 1 hour)?**
 - If all outputs exist: skip to WAIT sub-step.
@@ -140,16 +140,16 @@ Use the Agent Registry above (rows: Context, Documentation, Infrastructure). For
 
 **⛔ GATE CHECK: All discovery outputs exist?**
 - If NO → Do NOT proceed; wait or re-dispatch
-- If YES → Proceed to STEP 4.
+- If YES → Proceed to STEP add-audit.analysis.
 
 **⛔ GATE PROHIBITION:** DO NOT dispatch analysis agents until ALL discovery outputs verified.
 **⛔ GATE PROHIBITION:** DO NOT proceed without `context-discovery.md` — it provides project context for analysis phase.
 
 ---
 
-## STEP 4: Analysis Phase (Parallel Dispatch + Wait)
+## STEP add-audit.analysis: Analysis Phase (Parallel Dispatch + Wait)
 
-**Prerequisites:** STEP 3 completed and `context-discovery.md` exists.
+**Prerequisites:** STEP add-audit.discovery completed and `context-discovery.md` exists.
 
 **⛔ GATE CHECK: Idempotency — Skip if analysis outputs exist and are recent (< 1 hour)?**
 - If all outputs exist: skip to WAIT sub-step.
@@ -169,13 +169,13 @@ Use the Agent Registry above (rows: Security, Architecture, Data). For each agen
 
 **⛔ GATE CHECK: All analysis outputs exist?**
 - If NO → Do NOT proceed; wait or re-dispatch
-- If YES → Proceed to STEP 5.
+- If YES → Proceed to STEP add-audit.consolidate.
 
 **⛔ GATE PROHIBITION:** DO NOT proceed to consolidation without all analysis outputs — they feed the final scoring and report.
 
 ---
 
-## STEP 5: Consolidation & Differential Diagnosis
+## STEP add-audit.consolidate: Consolidation & Differential Diagnosis
 
 Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 
@@ -189,7 +189,7 @@ Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 
 ---
 
-## STEP 6: Calculate Scores
+## STEP add-audit.score: Calculate Scores
 
 **Per-pillar scoring:**
 - Count issues by severity (Critical=3, High=2, Medium=1, Low=0.5)
@@ -200,7 +200,7 @@ Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 
 ---
 
-## STEP 7: Write audit-report Doc (Schema-Driven)
+## STEP add-audit.write-report: Write audit-report Doc (Schema-Driven)
 
 **EXECUTE schema `audit-report` from {{skill:add--doc-schemas/SKILL.md}} (MANDATORY).**
 
@@ -211,22 +211,22 @@ Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 
 ---
 
-## STEP 8: Validation Gate
+## STEP add-audit.validate: Validation Gate
 
 Execute the validation gate from {{skill:add--doc-schemas/SKILL.md}} for schema `audit-report`.
 
 **⛔ GATE CHECK: Gate returns PASS?**
 - If NO → Fix and re-run gate.
-- If YES → Proceed to STEP 9.
+- If YES → Proceed to STEP add-audit.complete.
 
 ---
 
-## STEP 9: Completion - Inform User
+## STEP add-audit.complete: Completion - Inform User
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the scorecard and the report path come after it, whole.
 
-This command changes no application code, so `Files touched` names the audit documents STEP 7 wrote
+This command changes no application code, so `Files touched` names the audit documents STEP add-audit.write-report wrote
 and nothing else — never "none", because those files are real. `What was delivered` is the finding
 set. Fill `How it works` with what the audit actually measured
 and how a score was reached. `⚠️ Needs your attention` carries the critical findings, because
@@ -245,7 +245,7 @@ ALWAYS:
 - Prioritize issues by real business impact
 - Include specific paths and lines in Findings evidence
 - Calculate scores using defined formula
-- Check idempotency before each phase (STEP 3 and STEP 4) to skip redundant re-dispatch
+- Check idempotency before each phase (STEP add-audit.discovery and STEP add-audit.analysis) to skip redundant re-dispatch
 - Execute differential diagnosis for ambiguous findings before finalizing severity
 
 NEVER:
@@ -255,7 +255,7 @@ NEVER:
 - Execute analysis without project context
 - Inline a doc template — the schema is the single source of truth
 - Omit file paths or line numbers in Findings evidence
-- Skip validation gate (STEP 8)
+- Skip validation gate (STEP add-audit.validate)
 
 ---
 

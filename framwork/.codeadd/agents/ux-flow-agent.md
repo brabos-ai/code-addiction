@@ -32,8 +32,10 @@ Inspect the project's design system by searching and reading relevant files. Eac
 2. **Layout Shell.** Find and read layout-related components (layout, shell, sidebar, header, topbar, navbar, footer, app-shell, dashboard-layout, page-layout). Extract: shell (name, path, structure), sidebar (width, collapsible, position), topbar (height, position, contents), content area (max-width, padding, responsive).
 3. **Component Library Audit.** Audit available UI components and check for a component index/exports. Extract: full list of existing UI components with paths, shadcn status (yes/no, which installed).
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 4. **Visual Patterns Reference.** Find and read 3-5 representative pages (dashboard, settings, list, detail, form). Extract: page headers, cards, lists, forms, buttons usage patterns.
 5. **Frontend Readiness Check (early exit).** If the project has no frontend at all, report `frontend_false` to the dispatching command and STOP — do not write any temp file, do not proceed to Step 1. Otherwise classify: new project (fewer than 5 components — use `add--ux-design` skill defaults) or established (5+ components — MUST follow the patterns found in this inspection).

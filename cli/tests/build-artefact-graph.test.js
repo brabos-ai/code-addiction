@@ -12,7 +12,7 @@ import path from 'node:path';
  * `framwork/.codeadd/artefact-graph.json`, holding every artefact node and the
  * typed edges between them. Declared edges come from a source-only
  * `<!-- uses: -->` HTML comment read from RAW content before stripHtmlComments()
- * runs — the same mechanism extractInjectionPoints() uses, so the block never
+ * runs — the same mechanism extractSlots() uses, so the block never
  * reaches a provider file.
  *
  * Two cases here are load-bearing and must never be relaxed:
@@ -930,7 +930,9 @@ describe('node inventory snapshot', () => {
       // skill 58 -> 59: add--backlog, the capture skill — the first caller of
       // backlog.sh, which shipped with none.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F3.)
-      skill: 60,
+      // skill 60 -> 61: add-framework-injection, the internal authoring skill for
+      // slots, fallbacks and STEP IDs.
+      skill: 61,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -1080,8 +1082,10 @@ describe('node inventory snapshot', () => {
     // (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30.)
     // 242 -> 243, declares 138 -> 139: +1 internal skill, the reusable
     // product artefact rename procedure. Renaming product identities moves no count.
-    expect(nodes).toHaveLength(243);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(139);
+    // 243 -> 244, declares 139 -> 140: +1 internal skill, add-framework-injection.
+    // A skill is a declaring kind, so both counts move.
+    expect(nodes).toHaveLength(244);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(140);
   });
 });
 
