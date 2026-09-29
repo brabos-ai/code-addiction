@@ -297,9 +297,8 @@ memory: project
 
 Plugins (see AGENTS.md → Plugin System) can inject capability into agent definitions, not just commands — carrying an external-tool capability across the command→subagent dispatch boundary (agents never see a command's injected fragment). To make an agent a plugin injection target:
 
-- Add a `<!-- plugin:PLUGIN:SECTION -->` / `<!-- /plugin:PLUGIN:SECTION -->` marker pair to the agent source body. Markers are **stripped at build** — `extractInjectionPoints()` records each as a content anchor in `framwork/.codeadd/injection-points.json`; the built agent files ship marker-free and injection is anchored to adjacent prose post-install.
-- Place the marker **on its own line** (an inline marker shown inside prose/code as documentation is ignored — only standalone-line markers are injection points), and ensure the line directly above it is plain text, not a `{{cmd:}}`/`{{skill:}}`/`{{addpath:}}` variable (the build walks past variable lines and fails loud if no variable-free adjacent line exists).
-- Author a per-agent fragment at `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` whose `<!-- section:SECTION -->` matches the marker.
+- **LOAD `add-framework-injection` before authoring the slot, the marker pair, or its fallback.** It owns the source grammar and STEP IDs. Bare marker pairs fail the build.
+- Author the per-agent fragment at `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` with a section matching the slot member.
 - Declare the target in the catalog entry's `agents` array (`{ agent, sections }`).
 - **Exclusion is by omission:** an agent with a tool allowlist that blocks MCP (e.g. `tools: Glob, Read`), or whose purpose is not the code graph, simply carries no marker — so the build emits no sidecar entry for it and it is never injected. Never add an injection marker to an MCP-blocked agent.
 - After adding/moving a marker, **rebuild** (`node scripts/build.js`) to regenerate the sidecar.

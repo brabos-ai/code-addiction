@@ -5,6 +5,8 @@ description: Use when planning or building a change to product injection — slo
 
 # Injection authoring
 
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
+
 Owns how a product command or agent declares an injection slot, which fallback it uses, and how a STEP ID is named. The build extracts the slot. The CLI renders from a saved baseline. This skill does not restate that code.
 
 ## When to Use
@@ -33,7 +35,7 @@ Member order inside the slot is the installed order. It does not follow the orde
 
 The fallback path is relative to `framwork/.codeadd/`, starts with `fallbacks/`, and has no `..`. `fallbacks/empty.md` is zero bytes. Only the shared `add-plan` step-list slot uses `fallbacks/plan-specs.md`.
 
-A member pair is empty. The body lives in the fragment file. A marker outside a slot fails the build once any slot exists in that resource.
+A member pair is empty. The body lives in the fragment file. Only member marker pairs and whitespace may occur between the slot markers. A marker outside a slot fails the build.
 
 ## Render
 
