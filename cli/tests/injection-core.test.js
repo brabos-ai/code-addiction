@@ -43,6 +43,12 @@ describe('parseFragmentSections', () => {
     const frag = '<!-- section:a -->\r\nbody\r\n<!-- /section:a -->';
     expect(parseFragmentSections(frag).get('a')).toBe('body\r\n');
   });
+
+  it('rejects malformed section markers even when another section could be parsed', () => {
+    const valid = '<!-- section:step-list -->\nSTEP tdd-pipeline.test-spec: Test\n<!-- /section:step-list -->';
+    expect(() => parseFragmentSections(`${valid}\n<!-- /section:extra -->`)).toThrow(/malformed/i);
+    expect(() => parseFragmentSections(`${valid}\n<!-- section:unclosed -->`)).toThrow(/malformed/i);
+  });
 });
 
 // ---------------------------------------------------------------------------

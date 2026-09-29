@@ -180,7 +180,7 @@ Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this pro
 
 ## STEP add-qa-setup.context: Load Context
 
-### STEP add-qa-setup.context Run status.sh
+### STEP add-qa-setup.run-status Run status.sh
 ```bash
 bash .codeadd/scripts/status.sh
 ```
@@ -198,7 +198,7 @@ Read {{skill:add--dev-environment-setup/SKILL.md}} — reuse its OS-detection + 
 - If a `feature-id` arg was given → `FEATURE_DIR = docs/features/<feature-id>-*`.
 - Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP add-qa-setup.catalog). Config (STEP add-qa-setup.config) is project-wide regardless.
 
-### STEP add-qa-setup.context Classify + compare (add--setup-contract)
+### STEP add-qa-setup.classify-receipt Classify + compare (add--setup-contract)
 Read `SETUP_QA:` / `SETUP_QA_STALE:` from the STEP add-qa-setup.context output, then run the {{skill:add--setup-contract/SKILL.md}} procedure against `docs/qa/qa-setup.md`.
 
 Outcome sets `SETUP_STATE` for the rest of the run:
@@ -218,13 +218,13 @@ Running this command is unambiguous QA intent, and everything it installs is ine
 
 ⛔ **The receipt this command writes does not restore judgement on its own.** Two gates, and the canonical statement in `{{skill:add--qa/SKILL.md}}` says which one decides what. The consequence here: a project with the receipt and the feature off gets a code review and nothing else.
 
-### STEP add-qa-setup.feature-gate Probe the feature state
+### STEP add-qa-setup.probe-feature Probe the feature state
 ```bash
 bash .codeadd/scripts/qa-preflight.sh a
 ```
 Read `QA_FEATURE_STATE` — the RAW manifest value. Resolve `unset` / `no-manifest` by the feature's default: `qa-pipeline` defaults to **disabled**. (The manifest lives at `{{addpath:manifest.json}}`; never probe the raw `features` field alone — a project that never toggled a feature has no `features` key at all.)
 
-### STEP add-qa-setup.feature-gate Offer the enable (confirm-then-execute)
+### STEP add-qa-setup.offer-enable Offer the enable (confirm-then-execute)
 IF the feature resolves to disabled → explain what stays broken while it is off, show the exact command `codeadd features enable qa-pipeline`, and run it ONLY after explicit confirmation — the same discipline as the STEP add-qa-setup.install installs.
 On decline → record it for the STEP add-qa-setup.handoff hand-off and continue setup.
 Record the outcome for STEP add-qa-setup.receipt as `qa-pipeline-feature`: `enabled` | `already-enabled` | `declined` | `enable-noop`.
@@ -235,7 +235,7 @@ After a confirmed enable, probe the installed plan command ({{cmd:add-plan}}) fo
 - Section present → the enable landed. Record QA as active.
 - The feature resolves disabled, or the user declined the enable → the section is absent because qa-pipeline is off. That is not a failed injection. Continue setup and say so at the hand-off.
 - The feature is enabled, `injection-points.json` is v2, and the member warned (missing file, missing section, or bad payload) → the flag stays on. This is not a silent no-op and it is not "QA is off". Record the warning, keep the request, and do not tell the user to disable the feature. Same distinction as the QA axis self-check in {{cmd:add-plan}}.
-- `injection-points.json` is absent → a pre-sidecar install. The CLI can report success while injecting nothing. Route the user to `codeadd update` / re-install, record QA as NOT active for the hand-off, and continue.
+- `injection-points.json` is absent or is not v2 → an unsupported install. The CLI warns and injects nothing. Route the user to `codeadd update` / re-install, record QA as NOT active for the hand-off, and continue.
 
 ---
 

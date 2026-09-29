@@ -18,6 +18,16 @@ function logSlotWarnings(warnings) {
   for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
 }
 
+function reconcilePluginSlots(cwd) {
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected });
+  if (!result) {
+    log.warn('Plugin prompts were not updated: this installation has no v2 injection sidecar. Run `codeadd update`.');
+    return { modified: [], warnings: [] };
+  }
+  logSlotWarnings(result.warnings);
+  return result;
+}
+
 const CATALOG_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'plugins.json');
 
 /**
@@ -161,8 +171,7 @@ export function enablePlugin(cwd, pluginName) {
     manifest.plugins[pluginName] = { enabled: true };
     saveManifest(cwd, manifest);
   }
-  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-  logSlotWarnings(result.warnings);
+  const result = reconcilePluginSlots(cwd);
   const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
   return { ok: true, modified: result.modified.length - agents, agents, skills };
 }
@@ -184,8 +193,7 @@ export function disablePlugin(cwd, pluginName) {
     manifest.plugins[pluginName] = { enabled: false };
     saveManifest(cwd, manifest);
   }
-  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-  logSlotWarnings(result.warnings);
+  const result = reconcilePluginSlots(cwd);
   const agents = result.modified.filter((f) => f.includes(`${path.sep}agents${path.sep}`)).length;
   return { modified: result.modified.length - agents, agents, skills };
 }

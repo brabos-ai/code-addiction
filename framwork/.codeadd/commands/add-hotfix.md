@@ -217,7 +217,7 @@ IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
 
 ⛔ **CRITICAL:** Dispatch BOTH agents in a SINGLE message with TWO Agent tool calls (parallel execution).
 
-### STEP add-hotfix.history Consult the delivery index (NO code access)
+### STEP add-hotfix.delivery-index Consult the delivery index (NO code access)
 
 Load the **INDEX and GRAPH steps of `{{skill:add--knowledge-discovery/SKILL.md}}` ALONE** — steps 1 and 2 of its procedure, nothing below them. That skill's own *When NOT to Use* records this exemption: the wiki stays out of STEPs 4-6, the two document-record steps do not.
 
@@ -284,7 +284,7 @@ Prompt: "Correlate recent git history with this bug. Brief: <brief>. Window: 30 
 - **Divergent signals** — surfaced by only one (still relevant)
 - **Suspicious commits** — flagged by @git-history-agent in or adjacent to those features
 
-### STEP add-hotfix.synthesize Present to user
+### STEP add-hotfix.confirm-history Present to user
 
 Present the top related features (with FEAT_IDs) + the top suspicious commits and ask:
 - Confirm related features (yes / no / different one)
@@ -367,7 +367,7 @@ IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
 <!-- /plugin:gitnexus:graph-impact -->
 <!-- /slot:gitnexus.graph-impact -->
 
-### STEP add-hotfix.implement Consult Knowledge Base
+### STEP add-hotfix.knowledge-base Consult Knowledge Base
 
 Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure. **If `WIKI:present` (from STEP add-hotfix.context script output):** SELECT `{{addpath:wiki/conventions.md}}` + the domain page for the affected area (`{{addpath:wiki/domains/<area>.md}}`), freshness-check both. Conventions govern HOW to fix — follow them in implementation. **If wiki absent:** note "knowledge base unavailable — /add-wiki generates it" and follow existing code patterns instead.
 
@@ -389,7 +389,7 @@ If bug in frontend:
 - Add features
 - Over-engineer
 
-### STEP add-hotfix.implement Verify Build
+### STEP add-hotfix.verify-build Verify Build
 
 Verify build passes for affected apps (backend, frontend, or both).
 
@@ -399,7 +399,7 @@ Verify build passes for affected apps (backend, frontend, or both).
 
 ⛔ **GATE:** Fix implemented and build verified (STEP add-hotfix.implement). The reviewer is READ-ONLY — it reports, this command applies.
 
-### STEP add-hotfix.review Assemble the shared input
+### STEP add-hotfix.review-input Assemble the shared input
 
 - the change under review — this branch's diff against its base, and the paths it touches
 - the confirmed root cause from STEP add-hotfix.root-cause or the diagnose handoff
@@ -408,7 +408,7 @@ Verify build passes for affected apps (backend, frontend, or both).
 - the `WIKI:` fields from STEP add-hotfix.context
 - `reviewer:` starts as `named`
 
-### STEP add-hotfix.review Dispatch @reviewer-agent
+### STEP add-hotfix.dispatch-reviewer Dispatch @reviewer-agent
 
 **DISPATCH AGENT: @reviewer-agent** [read-only, standard]
 - **MODE:** `task`
@@ -438,7 +438,7 @@ Map reviewer severity: `Critical` → `blocker`, `Important` → `major`, `Minor
 
 ## STEP add-hotfix.correct: Correction Wave
 
-### STEP add-hotfix.correct Partition by disposition
+### STEP add-hotfix.partition-fixes Partition by disposition
 
 | Disposition | Meaning | May block? |
 |---|---|---|

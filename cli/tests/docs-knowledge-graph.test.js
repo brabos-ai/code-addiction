@@ -182,10 +182,11 @@ describe('F3 — the single writer writes relations from what discovery handed o
 
 describe('F4 — /add-hotfix routes its confirmed set into the about.md', () => {
   it('L4.2 the confirmed set reaches BOTH destinations, and neither loses it', () => {
-    const synth = ADD_HOTFIX.slice(
-      ADD_HOTFIX.indexOf('### STEP add-hotfix.synthesize Present to user'),
-      ADD_HOTFIX.indexOf('### 5.3'),
-    );
+    const start = ADD_HOTFIX.indexOf('### STEP add-hotfix.confirm-history Present to user');
+    const end = ADD_HOTFIX.indexOf('### STEP add-hotfix.escalate-add-investigation');
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const synth = ADD_HOTFIX.slice(start, end);
     // Destination one: the about.md's Relations, typed caused_by.
     expect(synth).toContain('## Relations');
     expect(synth).toContain('caused_by');

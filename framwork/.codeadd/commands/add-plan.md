@@ -587,7 +587,7 @@ ${RELATED_WORK}
 <!-- /feature:qa-pipeline:qa-spec -->
 <!-- /slot:qa-pipeline.qa-spec -->
 
-**QA axis self-check:** IF no `STEP qa-pipeline.qa-spec` section is present above, do NOT infer that qa-pipeline is disabled. A missing section also means the manifest still requests it and the runtime warned. In that case say the QA section was unavailable, keep the request, and do not show the optional-step fallback. Only when the manifest does not request qa-pipeline, add one line to the completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
+**QA axis self-check:** IF no `STEP qa-pipeline.qa-spec` section is present above, do NOT infer that qa-pipeline is disabled. A missing section also means the manifest still requests it and the runtime warned. In that case say the QA section was unavailable and keep the request. The shared optional-step fallback remains in the installed prompt when neither QA nor TDD contributes; do not suppress it. Only when the manifest does not request qa-pipeline, add one line to the completion output: the QA axis is off and `codeadd features enable qa-pipeline` turns it on. Do NOT stop — the plan is valid without QA.
 
 **Philosophy:** Preserve subagent outputs (APPEND), ensure discovery/design completeness (VALIDATE), complete identified gaps (FILL GAPS).
 
@@ -716,7 +716,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 
 **Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. STEP add-plan.cross-sf-review is the **in-place fixer**.
 
-**What STEP add-plan.cross-sf-review does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add--cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched by this command at STEP add-plan.review (`mode: FULL`) and by `/add-build` before an epic's last checkpoint (`mode: DELTA`). Two checks STEP add-plan.cross-sf-review used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). STEP add-plan.cross-sf-review **consumes** its findings for both and MUST NOT re-derive them — one detector, one rubric, never a second verdict.
+**What STEP add-plan.cross-sf-review does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add--cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched later at STEP add-plan.consistency (`mode: FULL`) and by `/add-build` before an epic's last checkpoint (`mode: DELTA`). Two checks STEP add-plan.cross-sf-review used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). STEP add-plan.consistency consumes those findings after the judge reports and applies them in place; STEP add-plan.cross-sf-review MUST NOT derive them — one detector, one rubric, never a second verdict.
 
 **Where the line falls:** every agent dimension asks *do two declarations disagree?*; every check that stays here asks *is one plan complete?* Check 1 below asks whether a declaration is **duplicated** — a different question whose answer is a plan edit, not a verdict. `@consistency-agent` judges and never edits; STEP add-plan.cross-sf-review edits.
 
@@ -725,9 +725,9 @@ IF THE REPORT CARRIES NO DOCUMENT:
 2. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
 3. Worker/DI Registration (new services have DI tasks)
 
-**Consumed, never derived:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives at STEP add-plan.consistency as a concrete `plan.md` edit — apply it in place there. Do NOT open your own schema-alignment or handoff-contract comparison.
+**Deferred to STEP add-plan.consistency:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives there as a concrete `plan.md` edit. Apply it after the pass, not during this earlier cross-SF review. Do NOT open your own schema-alignment or handoff-contract comparison.
 
-**Output:** Summary of changes (file + what changed) to stdout, marking which edits came from a `@consistency-agent` finding. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
+**Output:** Summary of the three completeness fixes (file + what changed) to stdout. The later STEP add-plan.consistency reports its own edits from `@consistency-agent` findings. NEVER create separate report file. ONLY fix integration issues. Preserve existing content. Keep each plan.md under 150 lines.
 
 ### STEP add-plan.navigation Add Navigation Sections
 
@@ -811,9 +811,8 @@ Schema gate PASSED. Do not present `plan.md` or the next command as delivered ye
 
 **WAIT** for the report. Then act on its findings:
 
-1. Apply each finding as a concrete edit to THIS subfeature's `plan.md` only — ⛔ never to a sibling's
-   `plan.md`, which is frozen once its row reads `done`. Mark in STEP add-plan.cross-sf-review's output which edits came from
-   this pass.
+1. Apply each actionable finding as a concrete edit to THIS subfeature's `plan.md` only — ⛔ never to a sibling's
+   `plan.md`, which is frozen once its row reads `done`. List informational findings in STEP add-plan.complete without editing for them. Mark in THIS step's output which edits came from this pass.
 2. Re-run STEP add-plan.schema-gate's `feature-plan` validation gate on the fixed `plan.md`.
 3. Re-dispatch `@consistency-agent` **once** to confirm the conflict is resolved.
 4. Still unresolved after that one re-dispatch, or the conflict needs a product decision no edit can

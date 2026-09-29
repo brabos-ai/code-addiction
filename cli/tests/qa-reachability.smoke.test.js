@@ -16,7 +16,7 @@ import { treeFixture } from './helpers/tree-fixture.js';
  * Smoke evidence for plan 0056 (QA pipeline reachability) — pins the end-to-end
  * scenarios the topic touches, on the REAL build outputs:
  *   1. qa-pipeline enable/disable round-trip (byte-identical restore)
- *   2. pre-sidecar enable no-op (silent success the setup step must detect)
+ *   2. pre-sidecar enable warns and leaves the requested flag for update
  *   3. fragment self-detection notices in always-present built body text
  *   4. the two-phase QA preflight contract (absorbed into add-review) + shared probe script
  *
@@ -124,16 +124,14 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
   });
 });
 
-describe('scenario 2 — pre-sidecar enable no-op (features.js:85)', () => {
-  it('with injection-points.json absent, enable injects nothing yet marks the feature on', () => {
+describe('scenario 2 — pre-sidecar enable warns and leaves requested state', () => {
+  it('with injection-points.json absent, enable warns, injects nothing and marks the feature on', () => {
     const cwd = fixture.root();
     fs.rmSync(path.join(cwd, '.codeadd', 'injection-points.json'));
 
     const { modified } = enableFeature(cwd, 'qa-pipeline');
 
-    // Pins the exact silent-success defect the add-qa-setup gate step must
-    // detect (post-enable verification). If the CLI ever starts failing loud
-    // here, the command guidance must be revisited — this test will flag it.
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('codeadd update'));
     expect(modified).toBe(0);
     const manifest = JSON.parse(snapshot(path.join(cwd, '.codeadd', 'manifest.json')));
     expect(manifest.features['qa-pipeline']).toBe(true);

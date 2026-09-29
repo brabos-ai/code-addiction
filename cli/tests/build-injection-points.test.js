@@ -330,6 +330,45 @@ describe('slot membership map v2', () => {
     expect(() => extractSlots(src, 'add-plan', 'command', () => '')).toThrow(/Mixed injection source/);
   });
 
+  it('rejects text and unrelated comments inside a slot instead of shipping them in the baseline', () => {
+    const slot = (extra) => [
+      'Before',
+      '<!-- slot:spec fallback="fallbacks/empty.md" -->',
+      '<!-- feature:tdd-pipeline:step-list -->',
+      '<!-- /feature:tdd-pipeline:step-list -->',
+      extra,
+      '<!-- /slot:spec -->',
+      'After',
+    ].join('\n');
+    for (const extra of ['BAD', '<!-- source note -->']) {
+      expect(() => extractSlots(slot(extra), 'add-plan', 'command', () => '')).toThrow(/slot spec.*only member markers/i);
+    }
+  });
+
+  it('each assembled command has distinct step heading IDs, including substeps', () => {
+    const root = productSourceRoot();
+    const duplicates = [];
+    for (const file of fs.readdirSync(path.join(root, 'commands')).filter((name) => name.endsWith('.md'))) {
+      const bodies = [fs.readFileSync(path.join(root, 'commands', file), 'utf8')];
+      for (const dir of ['fragments', 'plugins']) {
+        const parent = path.join(root, dir);
+        const walk = (p) => {
+          for (const entry of fs.readdirSync(p, { withFileTypes: true })) {
+            const full = path.join(p, entry.name);
+            if (entry.isDirectory()) walk(full);
+            else if (entry.name === file) bodies.push(fs.readFileSync(full, 'utf8'));
+          }
+        };
+        walk(parent);
+      }
+      const headings = [...bodies.join('\n').matchAll(/^#{2,4} STEP ([a-z0-9.-]+)\b/gm)].map((match) => match[1]);
+      if (new Set(headings).size !== headings.length) {
+        duplicates.push(`${file}: ${headings.filter((id, i) => headings.indexOf(id) !== i).join(', ')}`);
+      }
+    }
+    expect(duplicates).toEqual([]);
+  });
+
   it('add-plan step-list source order is tdd then qa', () => {
     const slot = MAP.resources.find((r) => r.resource === 'command/add-plan').slots.find((s) => s.id === 'plan-specs');
     const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots[0];

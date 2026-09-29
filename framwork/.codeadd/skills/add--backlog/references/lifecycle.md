@@ -131,9 +131,9 @@ move a ticket backwards, so only the entry write needs the phase check.
 |---|---|---|---|
 | `add-brainstorm` | `refining` | once the effort path is stated — never on `spike` | `status` |
 | `add-brainstorm` | `shaped` | once the intent file is written and passed its gate — never on `spike` | `status` |
-| `add-new` | `refining` and `feature` | STEP 2, once the skeleton `about.md` exists | `status`, `feature` |
+| `add-new` | `refining` and `feature` | STEP add-new.allocate, once the skeleton `about.md` exists | `status`, `feature` |
 | `add-new` | `shaped` | its completion, before the report — once the validation gate passed | `status` |
-| `add-plan` | `planning` | STEP 4, where it reads the ticket | `status` |
+| `add-plan` | `planning` | STEP add-plan.load-docs, where it reads the ticket | `status` |
 | `add-plan` | `planned` | its completion, before the report — the plan is written and reviewed | `status` |
 | `add-build` | `doing` and `work_id` | right after `build-setup.sh` returns | `status`, `work_id` |
 | `add-build` | `in-review` | its completion report, reading the `Publish:` outcome it recorded — **only** `pr-opened` or `pr-updated` | `status` |
@@ -174,9 +174,9 @@ exist yet. A write that did not land is one line in the handoff that follows.
 
 ### `add-new` — carry it forward, and point at the feature
 
-**STEP 1.1:** read `ticket:` from the intent file, alongside `delivery:` and `## Objective`.
+**STEP add-new.intent:** read `ticket:` from the intent file, alongside `delivery:` and `## Objective`.
 
-**STEP 2:** write `ticket: <id>` into the skeleton `about.md` frontmatter, on the line after `branch:`. Then
+**STEP add-new.allocate:** write `ticket: <id>` into the skeleton `about.md` frontmatter, on the line after `branch:`. Then
 ONE board write, carrying `feature` — the feature id just allocated — and `refining`:
 
 ```bash

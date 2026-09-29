@@ -244,7 +244,7 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 
 ## STEP add-review.setup: Pre-Review Setup
 
-### STEP add-review.setup Check for Unstaged Changes
+### STEP add-review.check-unstaged Check for Unstaged Changes
 
 Check working directory for unstaged/untracked changes.
 
@@ -414,7 +414,7 @@ Do ALL RF/RN have at least one ## Acceptance Checklist item referencing them via
   → UNCOVERED: RF/RN has no checklist item — architect failed at /add-plan; requires replan
 ```
 
-### STEP add-review.spec-audit Spec Audit Output (Gate 3)
+### STEP add-review.spec-output Spec Audit Output (Gate 3)
 
 Output the audit as a table with columns: Item, Type, Expected, Found at, Status. Include summary counts (COMPLIANT/DIVERGENT/MISSING), RF/RN coverage, and compute SPEC_AUDIT_STATUS:
 - `COMPLIANT`: >80% items compliant, no STALE_TICK, no UNCOVERED RF/RN
@@ -704,7 +704,7 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
 - Review status MUST be BLOCKED if any gate is red on a touched file after re-run.
 - Each red gate on a touched file becomes a `## Fix Routing` row, area-scoped, severity `blocker`.
 
-### STEP add-review.gates Log Iteration
+### STEP add-review.log-iteration Log Iteration
 
 ```bash
 bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "review" "/add-review" '"slug":"code-review","what":"Reviewed and routed findings","files":[]'
@@ -712,7 +712,7 @@ bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl
 
 `files` is always empty: this command modifies no code.
 
-### STEP add-review.gates Read-Only Self-Check (MANDATORY)
+### STEP add-review.read-only-check Read-Only Self-Check (MANDATORY)
 
 Recompute `REVIEW_TREE_AFTER` with the exact STEP add-review.baseline fingerprint procedure and
 exclusions.
@@ -752,7 +752,7 @@ contract.
 
 **Consolidate every gate into `review-NNN.md`. The highest-numbered one is the merge prerequisite for `/add-done`.**
 
-### STEP add-review.report Build Quality Gate Report
+### STEP add-review.quality-report Build Quality Gate Report
 
 Collect results from all previous steps:
 
@@ -782,7 +782,7 @@ all — remedy: `codeadd features enable qa-pipeline`, then `/add-qa-setup`. `�
 the steps ran and stopped at the receipt gate — remedy: `/add-qa-setup` alone. Reporting the first
 as the second sends the user to a command that will not fix it.
 
-### STEP add-review.report Build the unified `## Fix Routing` table
+### STEP add-review.fix-routing Build the unified `## Fix Routing` table
 
 One table carries every finding class this command produced. It is the single
 correction contract `/add-build` consumes — there is no second path.
@@ -817,7 +817,7 @@ state: a `@ux-agent` design-spec row missing its contract-line citation stays
 flagged **presented, never dispatched**. No such row exists with `qa-pipeline`
 off, because no judge ran to author one.
 
-### STEP add-review.report Write `review-NNN.md` (Gate 7)
+### STEP add-review.write-report Write `review-NNN.md` (Gate 7)
 
 Resolve `NNN` as the highest existing `docs/features/${FEATURE_ID}/review-NNN.md`
 plus one (`001` when none). One sequence per feature, flat at the feature

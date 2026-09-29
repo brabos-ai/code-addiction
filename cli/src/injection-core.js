@@ -25,11 +25,27 @@ import { resolveSelected, agentDest } from './providers.js';
  */
 export function parseFragmentSections(fragmentContent) {
   const sections = new Map();
+  const markers = [...fragmentContent.matchAll(/<!--\s*(\/?)section:([^\s>]+)\s*-->/g)];
+  let open = null;
+  const names = new Set();
+  for (const marker of markers) {
+    const [, close, name] = marker;
+    if (close) {
+      if (open !== name) throw new Error(`Malformed fragment section: unexpected close ${name}`);
+      open = null;
+    } else {
+      if (open !== null || names.has(name)) throw new Error(`Malformed fragment section: duplicate or nested ${name}`);
+      names.add(name);
+      open = name;
+    }
+  }
+  if (open !== null) throw new Error(`Malformed fragment section: unclosed ${open}`);
   const regex = /<!-- section:(\S+) -->\r?\n([\s\S]*?)<!-- \/section:\1 -->/g;
   let match;
   while ((match = regex.exec(fragmentContent)) !== null) {
     sections.set(match[1], match[2]);
   }
+  if (sections.size !== names.size) throw new Error('Malformed fragment section markers');
   return sections;
 }
 
@@ -493,7 +509,12 @@ function memberState(cwd, member, resource, manifest, provider, pluginActive) {
   } catch {
     return { contribute: false, warning: 'bad payload' };
   }
-  const sections = parseFragmentSections(raw);
+  let sections;
+  try {
+    sections = parseFragmentSections(raw);
+  } catch {
+    return { contribute: false, warning: 'bad payload' };
+  }
   if (!sections.has(member.section)) return { contribute: false, warning: 'section missing' };
   const body = sections.get(member.section);
   if (typeof body !== 'string' || body.length === 0) return { contribute: false, warning: 'bad payload' };

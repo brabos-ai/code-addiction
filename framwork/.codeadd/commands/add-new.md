@@ -356,7 +356,7 @@ sections and the extraction. This STEP owns the path and the provenance:
 ⛔ **DO NOT restate the skill’s authoring rules here.** Two copies drift, and the drift is invisible
 until a document written by one entry point fails a gate the other passes.
 
-### STEP add-new.document Hand the relationship material to the skill
+### STEP add-new.relations Hand the relationship material to the skill
 
 The relationships are already in hand from STEP add-new.discover: `past-features.md` carries a **Related Features**
 table with ids, `RELATED_WORK` from the Knowledge Base Check carries more, `discovery.md` names the

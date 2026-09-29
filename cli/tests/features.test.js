@@ -294,12 +294,23 @@ describe('enableFeature', () => {
     expect(fs.readFileSync(path.join(tmpDir, '.cursor', 'commands', 'add-build.md'), 'utf8')).toContain('TDD GATE injected');
   });
 
-  it('returns 0 modified when no sidecar points match', () => {
+  it('warns and keeps intent when an installed sidecar is absent', () => {
     writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
     setupFragment(tmpDir, 'tdd-pipeline', 'add-plan', { step9: 'content' });
     // no sidecar entries → nothing to inject
     const result = enableFeature(tmpDir, 'tdd-pipeline');
     expect(result.modified).toBe(0);
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('codeadd update'));
+    expect(readManifest(tmpDir).features['tdd-pipeline']).toBe(true);
+  });
+
+  it('warns rather than pretending an old v1 sidecar can inject a feature', () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude'] });
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points: [] }));
+    const result = enableFeature(tmpDir, 'qa-pipeline');
+    expect(result.modified).toBe(0);
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('no v2 injection sidecar'));
+    expect(readManifest(tmpDir).features['qa-pipeline']).toBe(true);
   });
 
   it('is idempotent — enabling twice produces the same file', () => {

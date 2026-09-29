@@ -110,7 +110,7 @@ bash .codeadd/scripts/status.sh
 
 This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_PLAN, HAS_DESIGN, HAS_IMPLEMENTATION), DESIGN_SYSTEM, FRONTEND (path, components), PROJECT_CONTEXT (ARCHITECTURE_REF), ALL_FEATURES (count, list), FEATURES (X/Y if Legacy Epic), HAS_EPIC, EPIC_CURRENT_SF, HAS_TASKS, TASKS_FILE, LAST_CHECKPOINT.
 
-### STEP add-build.context Read the Build Ledger (the resume map)
+### STEP add-build.ledger Read the Build Ledger (the resume map)
 
 **Read the ledger before you decide anything.** `${FEATURE_DIR}/build-ledger.md` on a simple feature,
 `${SF_DIR}/build-ledger.md` on an epic — the epic path resolves in STEP add-build.detect, so on an epic read it the
@@ -310,9 +310,9 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 <!-- /feature:tdd-pipeline:detect-framework -->
 <!-- /slot:tdd-pipeline.detect-framework -->
 
-**Test generation self-check:** IF no "Test Framework Detection" section appears above, the `tdd-pipeline` feature is disabled and **test generation is disabled** for this build — no unit or integration tests will be produced. State it once, here, with the remedy: `codeadd features enable tdd-pipeline`. Do NOT stop; implementation proceeds unchanged.
+**Test generation self-check:** IF no "Test Framework Detection" section appears above, read the `tdd-pipeline` state in `{{addpath:manifest.json}}` (default: enabled). IF requested but the CLI warned about its fragment → say test generation is unavailable and retain the request. Otherwise say **test generation is disabled**, no unit or integration tests will be produced, and `codeadd features enable tdd-pipeline` turns it on. Do NOT stop; implementation proceeds unchanged.
 
-**E2E self-check:** IF no "E2E Spec Authoring" section appears in STEP add-build.validate, the `qa-pipeline` feature is disabled and **E2E spec authoring is disabled** — no `<surface>.qa.spec` will be authored. State it once with the remedy: `codeadd features enable qa-pipeline` (plus `/add-qa-setup` if QA was never bootstrapped). Do NOT stop.
+**E2E self-check:** IF no "E2E Spec Authoring" section appears in STEP add-build.validate, read the `qa-pipeline` state in `{{addpath:manifest.json}}` (default: disabled). IF requested but the CLI warned about its fragment → say E2E spec authoring is unavailable and retain the request. Otherwise say **E2E spec authoring is disabled**, no `<surface>.qa.spec` will be authored, and `codeadd features enable qa-pipeline` (plus `/add-qa-setup` when needed) turns it on. Do NOT stop.
 
 ---
 
@@ -1016,7 +1016,7 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
 ⛔ DO NOT commit from any other step, and DO NOT let a subagent commit. Every git write in this command
 lives here, so there is exactly one place to check that validation came first.
 
-### STEP add-build.validate Validation Gates Tick (END OF BUILD)
+### STEP add-build.validation-gates Validation Gates Tick (END OF BUILD)
 
 After ALL area validators return AND build verification passes, run the **Validation Gates Procedure** from `{{skill:add--tasks-checklist/SKILL.md}}`. This performs the final write to `tasks.md` (§5 ticks + final §1 recompute).
 

@@ -22,6 +22,16 @@ function logSlotWarnings(warnings) {
   for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
 }
 
+function reconcileFeatureSlots(cwd) {
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected });
+  if (!result) {
+    log.warn('Feature prompts were not updated: this installation has no v2 injection sidecar. Run `codeadd update`.');
+    return { modified: [], warnings: [] };
+  }
+  logSlotWarnings(result.warnings);
+  return result;
+}
+
 function setFeatureFlag(cwd, featureName, enabled) {
   const manifest = readManifest(cwd);
   if (!manifest) return;
@@ -172,8 +182,7 @@ function getFragments(cwd, featureName) {
  */
 export function enableFeature(cwd, featureName) {
   setFeatureFlag(cwd, featureName, true);
-  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-  logSlotWarnings(result.warnings);
+  const result = reconcileFeatureSlots(cwd);
   return { modified: result.modified.length };
 }
 
@@ -185,8 +194,7 @@ export function enableFeature(cwd, featureName) {
  */
 export function disableFeature(cwd, featureName) {
   setFeatureFlag(cwd, featureName, false);
-  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-  logSlotWarnings(result.warnings);
+  const result = reconcileFeatureSlots(cwd);
   return { modified: result.modified.length };
 }
 
@@ -204,8 +212,7 @@ export function applyEnabledFeatures(cwd) {
   }
   manifest.features = normalizeFeatureStates(featureStates).states;
   saveManifest(cwd, manifest);
-  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected }) || { modified: [], warnings: [] };
-  logSlotWarnings(result.warnings);
+  const result = reconcileFeatureSlots(cwd);
   return result.modified.length;
 }
 

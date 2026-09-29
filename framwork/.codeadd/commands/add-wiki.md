@@ -171,7 +171,7 @@ No temp file — use findings inline for classification below.
 
 List all directories under `apps/`, `packages/`, `libs/`.
 
-### STEP add-wiki.classify Classify Each App
+### STEP add-wiki.classify-app Classify Each App
 
 **For each detected app:**
 
@@ -543,7 +543,7 @@ as of their own frontmatter `commit`. Staleness check for any page:
 - Hub: **150-line hard cap**
 - First pass is anti-perfectionist: produce a strong, accurate, navigable first-pass wiki, then stop — refinement belongs to `/add-wiki update`
 
-### STEP add-wiki.hub Domain Selection When Over Budget
+### STEP add-wiki.select-domains Domain Selection When Over Budget
 
 When the domain count exceeds budget (monorepos with 10+ domains), priority order:
 1. Areas named in `INSTRUCTIONS.md`
@@ -562,7 +562,7 @@ Everything cut goes to the Backlog with its source anchor — never silently dro
 
 IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP add-wiki.agents-md until the bijection holds.
 
-### STEP add-wiki.hub Migration Cleanup (full runs only, AFTER the gate passes)
+### STEP add-wiki.migration-cleanup Migration Cleanup (full runs only, AFTER the gate passes)
 
 - IF `{{addpath:skills/project-patterns/}}` exists → DELETE it, report the removal
 - IF `.codeadd/scripts/pattern-search.sh` exists → DELETE it, report the removal
@@ -582,7 +582,7 @@ Antigravity all read it. No CLAUDE.md and no GEMINI.md is written, copied or upd
 
 Read skill `{{skill:add--agents-md-style/SKILL.md}}` BEFORE anything else in this STEP.
 
-### STEP add-wiki.agents-md Run the Migration (coordinator)
+### STEP add-wiki.run-migration Run the Migration (coordinator)
 
 Run the skill's **Migration** — `bash .codeadd/scripts/migrate-context-files.sh` at the project root.
 Keep every `MIGRATED:`, `LEGACY_LOCAL:` and `CONTEXT_MIGRATION:` line for the STEP add-wiki.report report.

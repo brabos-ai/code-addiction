@@ -256,7 +256,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--id-convention | add-plan, add-build, add-hotfix, add-done, add-new, add-pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add--doc-schemas' `references/new-feature.md`; add-build's build-setup.sh enforces the format at branch creation) |
 | add--tasks-checklist | add-plan, add-build, add-review (tasks.md schema and tick rules) |
 | add--tdd | add-plan, add-build, add-review, add-hotfix (tdd-pipeline RED gate) |
-| add--test-specification | add-plan (STEP 8) |
+| add--test-specification | add-plan (STEP tdd-pipeline.test-spec) |
 | feature-history-agent | add-diagnose (STEP 4 Fase A.1), add-hotfix (STEP 4) |
 | git-history-agent | add-diagnose (STEP 4 Fase A.2), add-hotfix (STEP 4) |
 | qa-agent | add-review (dispatched per SF, parallel with ux-agent review), add-plan, add-qa-setup |

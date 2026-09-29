@@ -194,7 +194,7 @@ describe('setup contract (0061)', () => {
     expect(step).toContain('the enable landed');
     expect(step).toMatch(/resolves disabled/);
     expect(step).toContain('not a silent no-op');
-    expect(step).toContain('injection-points.json` is absent');
+    expect(step).toContain('injection-points.json` is absent or is not v2');
   });
 
   it('gates migration on a fingerprint comparison, not on first-run', () => {

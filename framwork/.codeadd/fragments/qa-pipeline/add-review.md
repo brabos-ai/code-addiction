@@ -245,7 +245,7 @@ judge re-derives coverage; both consume the table as given.
 
 ## STEP qa-pipeline.judge: QA Judgement (per SCOPE_DIR)
 
-### STEP qa-pipeline.judge Dispatch the judge pair
+### STEP qa-pipeline.dispatch-judges Dispatch the judge pair
 
 **DISPATCH AGENTS: `@ux-agent` (review mode) ∥ `@qa-agent`** — one pair per SF, PARALLEL, WAIT-ALL.
 

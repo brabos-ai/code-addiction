@@ -72,7 +72,7 @@ IF PR ALREADY EXISTS for current branch:
   ⛔ DO NOT USE: Bash for gh pr create (would fail or duplicate)
   ⛔ DO NOT: Overwrite existing PR body — append-only update
   ⛔ DO NOT: Modify existing PR title
-  ✅ DO: Use STEP add-pull-request.publishB (gh pr edit with appended Update section)
+  ✅ DO: Use STEP add-pull-request.publish-update (gh pr edit with appended Update section)
 
 ALWAYS:
   ⛔ DO NOT: Amend previous commits
@@ -129,7 +129,7 @@ If branch metadata script is unavailable, fall back to regex:
 - `^(hotfix|fix)/[0-9]{4}H-` → hotfix
 - otherwise → other
 
-### STEP add-pull-request.detect Detect existing PR
+### STEP add-pull-request.detect-pr Detect existing PR
 
 ```bash
 PR_DATA=$(gh pr view --json number,url,title,body,state 2>/dev/null || echo "")
@@ -252,7 +252,7 @@ git push
 
 ## STEP add-pull-request.body: Build PR Body
 
-### STEP add-pull-request.body Sections
+### STEP add-pull-request.body-sections Sections
 
 Compose the body with three sections:
 
@@ -286,7 +286,7 @@ Format: `type(scope): subject`. Source priority:
 
 ## STEP add-pull-request.publish: Create or Update PR
 
-### STEP add-pull-request.publishA: Create new PR (if no PR exists)
+### STEP add-pull-request.publish-create: Create new PR (if no PR exists)
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'
@@ -297,7 +297,7 @@ EOF
 
 Capture returned URL.
 
-### STEP add-pull-request.publishB: Update existing PR (if PR exists, state OPEN)
+### STEP add-pull-request.publish-update: Update existing PR (if PR exists, state OPEN)
 
 ⛔ Title is **never** modified. Body is **append-only**.
 
@@ -345,7 +345,7 @@ Then, after the seven blocks, report:
 | Field | Value |
 |-------|-------|
 | Branch | `$BRANCH` |
-| PR | URL (mark `(updated)` if STEP add-pull-request.publishB was used) |
+| PR | URL (mark `(updated)` if STEP add-pull-request.publish-update was used) |
 | Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
 | Commits pushed | count from `git log @{push}..HEAD` before push, or 0 if clean |
 

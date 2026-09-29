@@ -113,7 +113,7 @@ describe('0073 L1 — build side', () => {
     // must stay present and variable-free, and nothing may be inserted between
     // it and the marker (which would change `next`).
     expect(gitnexus[0].anchor.text).toBe('- [ ] On branch `hotfix/*`');
-    expect(gitnexus[0].anchor.next).toBe('### STEP add-hotfix.implement Consult Knowledge Base');
+    expect(gitnexus[0].anchor.next).toBe('### STEP add-hotfix.knowledge-base Consult Knowledge Base');
     expect(gitnexus[0].anchor.position).toBe('after');
   });
 

@@ -86,7 +86,7 @@ Read {{skill:add--ecosystem/SKILL.md}} — needed for Command Next-Steps Routing
 
 - If feature mentioned in user input matches RECENT_CHANGELOGS → note it for Phase 1
 
-### STEP add-diagnose.context Consult Knowledge Base
+### STEP add-diagnose.knowledge-base Consult Knowledge Base
 
 Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields from STEP add-diagnose.run-status-sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set by symptom area (from the user's report / RECENT_CHANGELOGS match). Freshness-check each selected page. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed without it. Carry the selected page paths + one-line reasons + freshness verdicts forward — they feed the Phase 1/2 investigation agents in STEP add-diagnose.dispatch as MAP material (paths in dispatch prompts, agents read them). Investigation evidence still wins over documentation. **GRAPH question:** which delivered work items touch the area this symptom appears in? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** STEP add-diagnose.dispatch's dispatch payload, which carries it to both Fase A agents.
 
@@ -117,7 +117,7 @@ Read {{skill:add--investigation/SKILL.md}} — primary methodology.
 
 Read {{skill:add--investigation/references/symptom-disambiguation.md}} — Phase 0 playbook.
 
-### STEP add-diagnose.investigate Execute Phase 0: Symptom Disambiguation
+### STEP add-diagnose.disambiguate Execute Phase 0: Symptom Disambiguation
 
 Following the skill:
 1. Classify symptom into ONE class (missing feature / wrong behavior / inconsistent state / doc-code drift / UX confusion / race / stale / unknown)
@@ -139,7 +139,7 @@ This STEP implements Phase 1 (Root Cause Investigation) of the `add--investigati
 <!-- /plugin:gitnexus:graph-trace -->
 <!-- /slot:gitnexus.graph-trace -->
 
-### STEP add-diagnose.dispatch Build the dispatch payload
+### STEP add-diagnose.dispatch-payload Build the dispatch payload
 
 Assemble from prior STEPs:
 - Observable predicate from Phase 0 (STEP add-diagnose.investigate)
@@ -151,7 +151,7 @@ Assemble from prior STEPs:
 
 This payload is passed to BOTH Fase A agents.
 
-### STEP add-diagnose.dispatch Fase A — PARALLEL dispatch (A.1 ∥ A.2)
+### STEP add-diagnose.dispatch-history Fase A — PARALLEL dispatch (A.1 ∥ A.2)
 
 **Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
@@ -174,7 +174,7 @@ Combine the two reports:
 
 If BOTH reports return "no strong matches", Fase B receives a broad-scan brief (no narrow focus).
 
-### STEP add-diagnose.dispatch Fase B — SEQUENTIAL dispatch (@architecture-agent)
+### STEP add-diagnose.dispatch-architecture Fase B — SEQUENTIAL dispatch (@architecture-agent)
 
 **DISPATCH AGENT: @architecture-agent**
 Prompt: "Trace control-flow and data-flow to validate or refute the hypotheses below. Predicate: <predicate>. Feature History findings: <A.1 summary with files/decisions>. Git History findings: <A.2 summary with suspicious commits + files>. Priority targets (convergent signals): <list>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Read-only — confirm or refute each hypothesis with file:line evidence."
@@ -229,7 +229,7 @@ Use the Command Next-Steps Routing table from {{skill:add--ecosystem/SKILL.md}} 
 
 ⛔ DO NOT invent a route. Consult the ecosystem map.
 
-### STEP add-diagnose.synthesize Capture repository baseline
+### STEP add-diagnose.capture-baseline Capture repository baseline
 
 Run:
 

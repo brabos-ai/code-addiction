@@ -7,7 +7,7 @@
 
 <!-- section:ticket-resolve -->
 
-### STEP add-hotfix.parse-diagnose Resolve a backlog ticket
+### STEP add-hotfix.resolve-ticket Resolve a backlog ticket
 
 If the invocation carries a backlog ticket id — the literal pattern `[0-9]{4}B` — store it as `TICKET` and
 follow the `add-hotfix` row of `{{skill:add--backlog/references/lifecycle.md}}`: read that ticket and use

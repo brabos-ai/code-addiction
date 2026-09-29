@@ -330,7 +330,7 @@ option table with the recommendation stated below it.
 settled — it lands in the intent file's `## Open` and becomes a question `/add-new` has to ask
 instead, which is the redundancy this whole flow removes.
 
-### STEP add-brainstorm.explore Ask who uses what this design changes [GATE]
+### STEP add-brainstorm.callers Ask who uses what this design changes [GATE]
 
 **For every area the design changes, ask: who uses it today?** Run the GRAPH step of
 `{{skill:add--knowledge-discovery/SKILL.md}}` over that area — the step resolves the question to its
@@ -444,7 +444,7 @@ nothing) and the 3-5 key decisions.
 <!-- /feature:board:ticket-report -->
 <!-- /slot:board.ticket-report -->
 
-### STEP add-brainstorm.handoff Ask for the one approval — `bounded` and `architectural`
+### STEP add-brainstorm.approval Ask for the one approval — `bounded` and `architectural`
 
 **This is the only approval the pipeline asks for by default.** Ask it through the provider's
 structured-question tool where the `structuredQuestions` capability declares one — otherwise as an
