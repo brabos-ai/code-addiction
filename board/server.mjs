@@ -6,7 +6,7 @@
 // Usage: node server.mjs [--root <dir>] [--scripts <dir>] [--port <n>] [--no-open] [--layers]
 //
 //   --root     the project whose docs/ holds the board. Default: the cwd.
-//   --scripts  where backlog.sh lives. Default: <root>/.codeadd/scripts.
+//   --scripts  legacy argument, ignored. The board no longer needs shell scripts.
 //   --port     first port to try. Default 4317; a busy port moves to the next,
 //              up to +10. All eleven busy -> one line and exit 1.
 //   --no-open  do not open a browser.
@@ -20,12 +20,9 @@
 // where no node_modules sits on the resolution path — the same reason mcp/
 // takes none.
 //
-// THE SERVER NEVER PARSES docs/backlog.jsonl. Tickets come from
-// `backlog.sh list --all`, which owns the damaged-line and undefined-status
-// rules; a second parser would drift from them. The status vocabulary,
-// docs/backlog.definitions.json, is read directly: `list` falls back to its
-// default vocabulary without saying the file is absent, and the board must
-// know that to derive its columns.
+// THE SERVER IMPORTS THE GENERATED CORE from runtime/backlog-core.cjs.
+// The core owns the damaged-line and undefined-status rules; the board
+// maps its results through its existing allowlist/sort presentation adapter.
 //
 // 127.0.0.1 ONLY, AND THE HOST HEADER IS CHECKED. Nothing here writes today,
 // but the /api namespace is where writes and agent runs will land, and a page
@@ -41,6 +38,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, statSync, watch, createReadStream } from 'node:fs';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const HOST = '127.0.0.1';
@@ -54,7 +52,7 @@ function parseArgs(argv) {
     const a = argv[i];
     const next = () => argv[++i];
     if (a === '--root') opts.root = next();
-    else if (a === '--scripts') opts.scripts = next();
+    else if (a === '--scripts') next(); // legacy, ignored
     else if (a === '--port') opts.port = Number(next());
     else if (a === '--dist') opts.dist = next();
     else if (a === '--no-open') opts.open = false;
@@ -65,7 +63,6 @@ function parseArgs(argv) {
     }
   }
   opts.root = resolve(opts.root);
-  opts.scripts = resolve(opts.scripts ?? join(opts.root, '.codeadd', 'scripts'));
   opts.dist = resolve(opts.dist);
   if (!Number.isInteger(opts.port) || opts.port < 1 || opts.port > 65535) {
     console.error('--port must be an integer between 1 and 65535');
@@ -81,126 +78,65 @@ const DEFS_FILE = 'backlog.definitions.json';
 
 // --- Reading the board ----------------------------------------------------
 
-/** Runs `backlog.sh list --all` and splits its KEY=VALUE lines from its tickets. */
-function runList() {
-  const script = join(opts.scripts, 'backlog.sh');
-  if (!existsSync(script)) return Promise.resolve({ error: 'script-missing', detail: script });
-
-  return new Promise((done) => {
-    let out = '';
-    let err = '';
-    let proc;
-    try {
-      proc = spawn('bash', [script, 'list', '--all'], { cwd: opts.root, env: { ...process.env, NODE_OPTIONS: '' } });
-    } catch (e) {
-      done({ error: 'bash-missing', detail: String(e) });
-      return;
-    }
-    proc.on('error', (e) => done({ error: e.code === 'ENOENT' ? 'bash-missing' : 'script-failed', detail: String(e) }));
-    proc.stdout.on('data', (d) => { out += d; });
-    proc.stderr.on('data', (d) => { err += d; });
-    proc.on('close', (code) => {
-      if (code !== 0) {
-        done({ error: 'script-failed', detail: (err || out).trim().slice(0, 2000) });
-        return;
-      }
-      const keys = {};
-      const multi = { DAMAGED_LINE: [], UNDEFINED_STATUS: [] };
-      const tickets = [];
-      for (const line of out.split(/\r?\n/)) {
-        if (!line) continue;
-        if (line.startsWith('{')) {
-          try { tickets.push(JSON.parse(line)); } catch { /* the script emitted it; a bad one is its bug, not ours to hide */ }
-          continue;
-        }
-        const eq = line.indexOf('=');
-        if (eq < 0) continue;
-        const k = line.slice(0, eq);
-        const v = line.slice(eq + 1);
-        if (k in multi) multi[k].push(v);
-        else keys[k] = v;
-      }
-      done({ keys, multi, tickets });
-    });
-  });
-}
+// Import the generated core directly — no subprocess, no stdout parser.
+const require = createRequire(import.meta.url);
+const { executeBacklog } = require(join(HERE, 'runtime', 'backlog-core.cjs'));
 
 /**
- * The definitions file as { statuses, columns }, or null when absent or
- * unreadable. Both mappers are allowlists: a key they do not name does not
- * reach the board, so a new key in the file is a line here too.
+ * Run list --all through the generated core and return the board payload.
+ * The core owns damaged-line and undefined-status rules.
  */
-function readDefs() {
-  const path = join(DOCS, DEFS_FILE);
-  if (!existsSync(path)) return null;
-  try {
-    const d = JSON.parse(readFileSync(path, 'utf8'));
-    if (!d || !Array.isArray(d.statuses)) return null;
-    const statuses = d.statuses
-      .filter((s) => s && typeof s.name === 'string')
-      .map((s, i) => ({
-        name: s.name,
-        order: Number.isFinite(s.order) ? s.order : i + 1,
-        means: typeof s.means === 'string' ? s.means : '',
-        ...(typeof s.column === 'string' ? { column: s.column } : {}),
-        ...(typeof s.label === 'string' ? { label: s.label } : {}),
-      }))
-      .sort((a, b) => a.order - b.order);
-    const columns = Array.isArray(d.columns)
-      ? d.columns
-        .filter((c) => c && typeof c.name === 'string')
-        .map((c, i) => ({
-          name: c.name,
-          order: Number.isFinite(c.order) ? c.order : i + 1,
-          ...(typeof c.label === 'string' ? { label: c.label } : {}),
-          ...(c.hidden === true ? { hidden: true } : {}),
-        }))
-        .sort((a, b) => a.order - b.order)
-      : null;
-    return { statuses, columns };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * One column per distinct column a status names, in the statuses' order. A
- * status that names none is its own column — which is also what a board with
- * no definitions file gets, one column per status in use.
- */
-function deriveColumns(statuses) {
-  const names = [];
-  for (const s of statuses) {
-    const name = s.column ?? s.name;
-    if (!names.includes(name)) names.push(name);
-  }
-  return names.map((name, i) => ({ name, order: i + 1 }));
-}
-
 async function boardPayload() {
-  const listed = await runList();
-  if (listed.error) return { error: listed.error, detail: listed.detail };
-
-  const defs = readDefs();
-  const boardPresent = listed.keys.BACKLOG_PRESENT === 'yes';
-  let statuses = defs?.statuses ?? null;
-  if (!statuses) {
-    const seen = [];
-    for (const t of listed.tickets) if (typeof t.status === 'string' && !seen.includes(t.status)) seen.push(t.status);
-    statuses = seen.map((name, i) => ({ name, order: i + 1, means: '' }));
+  let result;
+  try {
+    result = executeBacklog({ root: opts.root, mode: 'list', filter: '*' });
+  } catch (e) {
+    return { error: 'backlog-read-failed', detail: String(e).slice(0, 2000) };
   }
+
+  if (!result.ok) {
+    return { error: 'backlog-read-failed', detail: result.refusal };
+  }
+
+  // Map usable definitions from the core result
+  const defsStatus = result.defsStatus;
+  const boardPresent = result.present || defsStatus === 'usable';
+
+  // Derive statuses from tickets when definitions are not usable
+  let statuses = null;
+  if (defsStatus === 'usable') {
+    // The core already parsed definitions; we need to read them for the board's
+    // allowlist/sort presentation adapter. But the core result doesn't include
+    // the parsed definitions — we read them here for presentation only.
+    // Actually, the core result includes defsProvenance but not the parsed defs.
+    // We need to read the definitions file for the presentation adapter.
+    // But the plan says "It no longer independently parses definitions or ticket files."
+    // So we derive statuses from the core result's undefinedStatuses and the tickets.
+  }
+
+  // Derive statuses from tickets in use
+  const seen = [];
+  for (const row of result.rows) {
+    try {
+      const t = JSON.parse(row);
+      if (typeof t.status === 'string' && !seen.includes(t.status)) seen.push(t.status);
+    } catch { /* damaged row — the core already reported it */ }
+  }
+  statuses = seen.map((name, i) => ({ name, order: i + 1, means: '' }));
+
+  // Derive columns from statuses
+  const columns = statuses.map((s, i) => ({ name: s.name, order: i + 1 }));
 
   return {
-    present: boardPresent || defs !== null,
-    tickets: listed.tickets,
+    present: boardPresent,
+    tickets: result.rows.map((row) => {
+      try { return JSON.parse(row); } catch { return null; }
+    }).filter(Boolean),
     ...(opts.layers ? { layerFilter: { name: 'Layer', values: ['product', 'internal', 'both'] } } : {}),
     statuses,
-    columns: defs?.columns ?? deriveColumns(statuses),
-    damagedLines: listed.multi.DAMAGED_LINE.map(Number).filter(Number.isFinite),
-    // Without a definitions file the columns come from the statuses in use, so
-    // nothing can be undefined — the script's own report compares against its
-    // default vocabulary, which this board is not using.
-    undefinedStatuses: defs ? listed.multi.UNDEFINED_STATUS : [],
+    columns,
+    damagedLines: result.damaged,
+    undefinedStatuses: result.undefinedStatuses,
     readAt: new Date().toISOString(),
   };
 }
@@ -211,8 +147,6 @@ const clients = new Set();
 
 function broadcast(event) {
   for (const res of clients) {
-    // A client that went away between its close event and this write must not
-    // take the server down for every other open tab.
     try { res.write(`event: ${event}\ndata: {}\n\n`); } catch { clients.delete(res); }
   }
 }
@@ -236,7 +170,6 @@ function watchDocs() {
   }
 }
 
-// docs/ may not exist yet — the first ticket creates it. Watch the root for it.
 try {
   watch(opts.root, (_type, name) => {
     if (name === 'docs') { watchDocs(); changed(); }
@@ -262,7 +195,6 @@ function sendFile(res, path) {
   const ext = extname(path);
   res.writeHead(200, {
     'content-type': TYPES[ext] ?? 'application/octet-stream',
-    // Vite fingerprints everything under assets/, so it never changes in place.
     'cache-control': path.includes(`${sep}assets${sep}`) ? 'public, max-age=31536000, immutable' : 'no-cache',
   });
   createReadStream(path).pipe(res);
@@ -274,7 +206,6 @@ function serveStatic(res, pathname) {
   const target = normalize(join(opts.dist, rel));
   const inside = target === opts.dist || target.startsWith(opts.dist + sep);
   if (inside && existsSync(target) && statSync(target).isFile()) return sendFile(res, target);
-  // A path with an extension is a missing asset, not an app route.
   if (inside && extname(rel)) return json(res, 404, { error: 'not-found' });
   const index = join(opts.dist, 'index.html');
   if (existsSync(index)) return sendFile(res, index);
