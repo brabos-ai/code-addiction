@@ -49,13 +49,14 @@ describe('backlog-cli', () => {
 
   it('exits 0 on successful add with BACKLOG_NEW_ID', () => {
     // CLI resolves root from SCRIPT_DIR, so we use the current project
-    // Use a unique ID to avoid collision with existing tickets
+    // Use a unique ID based on timestamp to avoid collision
+    const id = String(Date.now()).slice(-4) + 'B';
     const result = execFileSync('node', [CLI_PATH, 'add'], {
       input: JSON.stringify({ title: 'Test', tldr: 'TLDR', done_when: 'Done' }),
       encoding: 'utf8',
-      env: { ...process.env, BACKLOG_NEW_ID: '9999B' }
+      env: { ...process.env, BACKLOG_NEW_ID: id }
     });
-    expect(result).toContain('TICKET_ID=9999B');
+    expect(result).toContain(`TICKET_ID=${id}`);
   });
 
   it('exits 0 on list and returns KEY=VALUE format', () => {

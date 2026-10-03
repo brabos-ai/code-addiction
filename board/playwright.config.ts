@@ -21,13 +21,13 @@ export default defineConfig({
   metadata: { layersURL: `http://127.0.0.1:${LAYERS_PORT}` },
   use: { baseURL: `http://127.0.0.1:${PORT}`, trace: 'retain-on-failure' },
   webServer: [{
-    command: `node server.mjs --root ${FIXTURE} --scripts ../framwork/.codeadd/scripts --port ${PORT} --no-open`,
+    command: `node server.mjs --root ${FIXTURE} --port ${PORT} --no-open`,
     url: `http://127.0.0.1:${PORT}/api/board`,
     reuseExistingServer: false,
     timeout: 30000,
     env: { NODE_OPTIONS: '' },
   }, {
-    command: `node server.mjs --root ${FIXTURE} --scripts ../framwork/.codeadd/scripts --port ${LAYERS_PORT} --no-open --layers`,
+    command: `node server.mjs --root ${FIXTURE} --port ${LAYERS_PORT} --no-open --layers`,
     url: `http://127.0.0.1:${LAYERS_PORT}/api/board`,
     reuseExistingServer: false,
     timeout: 30000,

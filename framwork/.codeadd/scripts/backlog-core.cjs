@@ -257,7 +257,8 @@ function executeBacklog(params) {
     rows: hits.map(r => r.text),
     diagnostics,
     defsProvenance,
-    defsStatus: defsResult.status
+    defsStatus: defsResult.status,
+    defs: defsResult.status === 'usable' ? defsResult.defs : null
   };
 }
 

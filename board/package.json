@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "preboard": "node -e \"const fs=require('fs'),path=require('path');const src=path.join('..','framwork','.codeadd','scripts');const dest=path.join('runtime');fs.mkdirSync(dest,{recursive:true});for(const f of ['backlog-core.cjs','backlog-storage.cjs']){fs.copyFileSync(path.join(src,f),path.join(dest,f));}\"",
     "build": "tsc -b && vite build",
     "test": "tsc -b --noEmit && vitest run",
     "test:e2e": "playwright test"

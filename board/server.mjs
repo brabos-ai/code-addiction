@@ -102,30 +102,57 @@ async function boardPayload() {
   const defsStatus = result.defsStatus;
   const boardPresent = result.present || defsStatus === 'usable';
 
-  // Derive statuses from tickets when definitions are not usable
+  // Use definitions from the core result for presentation
   let statuses = null;
-  if (defsStatus === 'usable') {
-    // The core already parsed definitions; we need to read them for the board's
-    // allowlist/sort presentation adapter. But the core result doesn't include
-    // the parsed definitions — we read them here for presentation only.
-    // Actually, the core result includes defsProvenance but not the parsed defs.
-    // We need to read the definitions file for the presentation adapter.
-    // But the plan says "It no longer independently parses definitions or ticket files."
-    // So we derive statuses from the core result's undefinedStatuses and the tickets.
+  let columns = null;
+  if (result.defs) {
+    const defs = result.defs;
+    statuses = Array.isArray(defs.statuses)
+      ? defs.statuses
+          .filter((s) => s && typeof s.name === 'string')
+          .map((s, i) => ({
+            name: s.name,
+            order: Number.isFinite(s.order) ? s.order : i + 1,
+            means: typeof s.means === 'string' ? s.means : '',
+            ...(typeof s.column === 'string' ? { column: s.column } : {}),
+            ...(typeof s.label === 'string' ? { label: s.label } : {}),
+          }))
+          .sort((a, b) => a.order - b.order)
+      : null;
+    columns = Array.isArray(defs.columns)
+      ? defs.columns
+          .filter((c) => c && typeof c.name === 'string')
+          .map((c, i) => ({
+            name: c.name,
+            order: Number.isFinite(c.order) ? c.order : i + 1,
+            ...(typeof c.label === 'string' ? { label: c.label } : {}),
+            ...(c.hidden === true ? { hidden: true } : {}),
+          }))
+          .sort((a, b) => a.order - b.order)
+      : null;
   }
 
-  // Derive statuses from tickets in use
-  const seen = [];
-  for (const row of result.rows) {
-    try {
-      const t = JSON.parse(row);
-      if (typeof t.status === 'string' && !seen.includes(t.status)) seen.push(t.status);
-    } catch { /* damaged row — the core already reported it */ }
+  // Derive statuses from tickets when definitions are not usable
+  if (!statuses) {
+    const seen = [];
+    for (const row of result.rows) {
+      try {
+        const t = JSON.parse(row);
+        if (typeof t.status === 'string' && !seen.includes(t.status)) seen.push(t.status);
+      } catch { /* damaged row — the core already reported it */ }
+    }
+    statuses = seen.map((name, i) => ({ name, order: i + 1, means: '' }));
   }
-  statuses = seen.map((name, i) => ({ name, order: i + 1, means: '' }));
 
-  // Derive columns from statuses
-  const columns = statuses.map((s, i) => ({ name: s.name, order: i + 1 }));
+  // Derive columns from statuses when definitions are not usable
+  if (!columns) {
+    const names = [];
+    for (const s of statuses) {
+      const name = s.column ?? s.name;
+      if (!names.includes(name)) names.push(name);
+    }
+    columns = names.map((name, i) => ({ name, order: i + 1 }));
+  }
 
   return {
     present: boardPresent,
