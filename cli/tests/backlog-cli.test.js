@@ -5,7 +5,7 @@
  * rendering, and exit codes.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +14,9 @@ import os from 'node:os';
 const CLI_PATH = path.resolve(__dirname, '../../framwork/.codeadd/scripts/backlog-cli.cjs');
 
 describe('backlog-cli', () => {
+  let root;
+  beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-cli-')); });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
   it('exits 2 on bad mode', () => {
     try {
       execFileSync('node', [CLI_PATH, 'bogus'], { encoding: 'utf8' });
@@ -50,11 +53,12 @@ describe('backlog-cli', () => {
   it('exits 0 on successful add with BACKLOG_NEW_ID', () => {
     // CLI resolves root from SCRIPT_DIR, so we use the current project
     // Use a unique ID based on timestamp to avoid collision
-    const id = String(Date.now()).slice(-4) + 'B';
+    const id = '0001B';
     const result = execFileSync('node', [CLI_PATH, 'add'], {
       input: JSON.stringify({ title: 'Test', tldr: 'TLDR', done_when: 'Done' }),
       encoding: 'utf8',
-      env: { ...process.env, BACKLOG_NEW_ID: id }
+      env: { ...process.env, BACKLOG_NEW_ID: id },
+      cwd: root
     });
     expect(result).toContain(`TICKET_ID=${id}`);
   });
@@ -72,7 +76,7 @@ describe('backlog-cli', () => {
     try {
       execFileSync('node', [CLI_PATH, 'update', '0000B'], {
         input: JSON.stringify({ title: 'Nope' }),
-        encoding: 'utf8'
+        encoding: 'utf8', cwd: root
       });
       expect.unreachable();
     } catch (e) {

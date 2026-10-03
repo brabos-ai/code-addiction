@@ -67,5 +67,4 @@ if [ "$MODE" = "add" ]; then
 fi
 
 # --- Invoke the Node CLI -------------------------------------------------
-shift
 BACKLOG_NEW_ID="$NEW_ID" node "$SCRIPT_DIR/backlog-cli.cjs" "$@"

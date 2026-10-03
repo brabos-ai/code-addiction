@@ -163,7 +163,7 @@ async function boardPayload() {
     statuses,
     columns,
     damagedLines: result.damaged,
-    undefinedStatuses: result.undefinedStatuses,
+    undefinedStatuses: result.defs ? result.undefinedStatuses : [],
     readAt: new Date().toISOString(),
   };
 }

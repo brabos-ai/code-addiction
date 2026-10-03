@@ -103,6 +103,12 @@ function main() {
     }
   }
 
+  // Validate allocation metadata before consuming stdin.
+  if (mode === 'add' && !/^[0-9]{4}B$/.test(process.env.BACKLOG_NEW_ID || '')) {
+    process.stdout.write('ERROR=id-allocation-failed\n');
+    process.exit(1);
+  }
+
   // Read stdin for record modes
   let rawRecord = '';
   if (['add', 'update', 'comment'].includes(mode)) {
@@ -127,7 +133,7 @@ function main() {
   // SCRIPT_DIR = framwork/.codeadd/scripts/
   // root = framwork/.codeadd/scripts/../../../ = repo root
   const SCRIPT_DIR = path.resolve(__dirname);
-  const root = path.resolve(SCRIPT_DIR, '..', '..', '..');
+  const root = process.cwd();
 
   // Execute
   const result = core.executeBacklog({
@@ -147,10 +153,16 @@ function main() {
   const key = (k, v) => out.push(k + '=' + v);
 
   if (!result.ok) {
+    if (result.writeFailure) {
+      process.stdout.write('ERROR=write-failed:' + result.writeFailure + '\n');
+      process.exit(1);
+    }
     // Refusal or write failure — discard buffered diagnostics
     process.stdout.write('REFUSED=' + result.refusal + '\n');
     process.exit(2);
   }
+
+  for (const d of result.diagnostics) key(d.key, d.value);
 
   if (result.read) {
     // Read result
@@ -166,9 +178,6 @@ function main() {
   }
 
   // Diagnostics
-  for (const d of result.diagnostics) {
-    key(d.key, d.value);
-  }
 
   if (out.length) process.stdout.write(out.join('\n') + '\n');
 

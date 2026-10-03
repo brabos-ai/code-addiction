@@ -75,7 +75,8 @@ function executeBacklog(params) {
   } else if (defsResult.status === 'absent') {
     if (isWrite) {
       // Seed absent definitions for writes
-      storage.writeDefs(root, DEFAULT_DEFS);
+      try { storage.writeDefs(root, DEFAULT_DEFS); }
+      catch { return { ok: false, writeFailure: 'definitions' }; }
       defs = DEFAULT_DEFS;
       defsProvenance = 'seeded';
     } else {
@@ -89,12 +90,15 @@ function executeBacklog(params) {
   }
 
   const diagnostics = [];
-  if (defsResult.status === 'invalid') {
+  if (defsResult.status === 'invalid' && defsResult.diagnostic === 'json-error') {
     diagnostics.push({ key: 'DEFS_UNREADABLE', value: 'yes' });
   }
 
   // Parse record for write modes that need it
   let record = null;
+  if (['update', 'comment'].includes(mode) && !findRow(board.rows, params.targetId)) {
+    return { ok: false, refusal: 'unknown-id', diagnostics };
+  }
   if (['add', 'update', 'comment'].includes(mode)) {
     try {
       record = JSON.parse(params.rawRecord || '');
@@ -148,7 +152,8 @@ function executeBacklog(params) {
     };
 
     board.rows.push({ n: board.rows.length + 1, text: JSON.stringify(ticket), ticket });
-    storage.writeBoard(root, board.rows);
+    try { storage.writeBoard(root, board.rows); }
+    catch { return { ok: false, writeFailure: 'backlog' }; }
     return { ok: true, ticketId: ticket.id, diagnostics, defsProvenance };
   }
 
@@ -189,14 +194,16 @@ function executeBacklog(params) {
 
     t.updated_at = now();
     row.text = JSON.stringify(t);
-    storage.writeBoard(root, board.rows);
+    try { storage.writeBoard(root, board.rows); }
+    catch { return { ok: false, writeFailure: 'backlog' }; }
     return { ok: true, ticketId: t.id, diagnostics };
   }
 
   if (mode === 'remove') {
     const row = findRow(board.rows, params.targetId);
     if (!row) return { ok: false, refusal: 'unknown-id', diagnostics };
-    storage.writeBoard(root, board.rows.filter(r => r !== row));
+    try { storage.writeBoard(root, board.rows.filter(r => r !== row)); }
+    catch { return { ok: false, writeFailure: 'backlog' }; }
     return { ok: true, ticketId: params.targetId, diagnostics };
   }
 
@@ -215,7 +222,8 @@ function executeBacklog(params) {
       const at = rest.indexOf(anchor);
       next = rest.slice(0, at + 1).concat([row], rest.slice(at + 1));
     }
-    storage.writeBoard(root, next);
+    try { storage.writeBoard(root, next); }
+    catch { return { ok: false, writeFailure: 'backlog' }; }
     return { ok: true, ticketId: params.targetId, diagnostics };
   }
 
@@ -255,6 +263,7 @@ function executeBacklog(params) {
     damaged: damaged.map(d => d.n),
     undefinedStatuses: undef,
     rows: hits.map(r => r.text),
+    tickets: hits.map(r => r.ticket),
     diagnostics,
     defsProvenance,
     defsStatus: defsResult.status,

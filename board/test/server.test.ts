@@ -114,9 +114,11 @@ describe('L1 — /api/board', () => {
   });
 
   it('layer opt-in preserves error responses', async () => {
-    const r = await start(project(null), ['--layers', '--scripts', join(tmpdir(), 'no-such-scripts-dir')]);
+    const root = project(null);
+    mkdirSync(join(root, 'docs', 'backlog.jsonl'), { recursive: true });
+    const r = await start(root, ['--layers']);
     const { body } = await board(r);
-    expect(body.error).toBe('script-missing');
+    expect(body.error).toBe('backlog-read-failed');
     expect(body).not.toHaveProperty('layerFilter');
   });
 
@@ -164,11 +166,12 @@ describe('L1 — /api/board', () => {
     expect(body.undefinedStatuses).toEqual(['ghost']);
   });
 
-  it('L1.4 answers { error: "script-missing" } as JSON when the scripts directory is wrong', async () => {
+  it('L1.4 ignores a missing legacy scripts directory', async () => {
     const r = await start(project([ticket('0001B', 'one')]), ['--scripts', join(tmpdir(), 'no-such-scripts-dir')]);
     const { status, body } = await board(r);
     expect(status).toBe(200);
-    expect(body.error).toBe('script-missing');
+    expect(body.error).toBeUndefined();
+    expect((body.tickets as unknown[]).length).toBe(1);
   });
 });
 
