@@ -41,7 +41,13 @@ export type BoardData = {
   readAt: string;
 };
 
-export type BoardError = { error: 'bash-missing' | 'script-missing' | 'script-failed' | string; detail?: string };
+/**
+ * The names board/server.mjs answers with. The board reads through the Node core,
+ * so the shell-era failures (bash-missing, script-missing, script-failed) are
+ * gone: a read that fails is `backlog-read-failed`. `| string` stays so a name
+ * added server-side reaches the UI instead of failing the type check.
+ */
+export type BoardError = { error: 'backlog-read-failed' | 'not-found' | 'host-not-allowed' | 'method-not-allowed' | string; detail?: string };
 
 export type BoardResponse = BoardData | BoardError;
 
