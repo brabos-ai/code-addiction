@@ -7,17 +7,9 @@ import { Button } from './ui';
 const ICON = { strokeWidth: 1.5 } as const;
 
 const ERRORS: Record<string, { title: string; body: string }> = {
-  'bash-missing': {
-    title: 'bash is not on this machine’s PATH',
-    body: 'The board reads tickets through backlog.sh, which needs bash. Install Git Bash on Windows, or start the board from a shell that has bash.',
-  },
-  'script-missing': {
-    title: 'backlog.sh was not found',
-    body: 'The board looks for it in .codeadd/scripts of the project it was started in. Start the board from the project root, or pass --scripts.',
-  },
-  'script-failed': {
-    title: 'backlog.sh stopped with an error',
-    body: 'The board could not be read. The script’s own message is below.',
+  'backlog-read-failed': {
+    title: 'The backlog could not be read',
+    body: 'Check that docs/backlog.jsonl is a readable file in the project selected with --root. The server’s message is below.',
   },
 };
 

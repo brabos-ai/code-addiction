@@ -84,10 +84,12 @@ jobs:
           CODEADD_TESTS_JOBS: 4
         run: npm run test:scripts
 
-  # The board app (board/). Its server shells out to the real
-  # framwork/.codeadd/scripts/backlog.sh, so the job checks out the whole tree
-  # and runs from board/. The e2e suite serves the BUILT app through server.mjs
-  # at three viewports, so it runs after the build.
+  # The board app (board/). Its server imports the generated Node core at
+  # board/runtime/, which the package's pretest/prebuild/pretest:e2e hooks
+  # produce from framwork/.codeadd/scripts/ before anything runs — so this job
+  # checks out the whole tree rather than a standalone closure. The e2e suite
+  # serves the BUILT app through server.mjs at three viewports, so it runs
+  # after the build.
   board:
     runs-on: ubuntu-latest
     defaults:

@@ -1750,6 +1750,15 @@ const LINTABLE_EXTENSIONS = new Set([
 // never a lint rule.
 const SHIPPED_SUBDIRS = ['scripts', 'fragments', 'templates', 'plugins'];
 
+// Exact allowlist for the three canonical backlog CJS modules. These ship
+// verbatim and are consumed by the board runtime and the agent CLI wrapper.
+// No broad directory or extension exceptions — only these three full paths.
+const SHIPPED_SOURCE_ALLOWLIST = new Set([
+  'framwork/.codeadd/scripts/backlog-storage.cjs',
+  'framwork/.codeadd/scripts/backlog-core.cjs',
+  'framwork/.codeadd/scripts/backlog-cli.cjs',
+]);
+
 function collectLintableSources(dir, offenders = []) {
   if (!fs.existsSync(dir)) return offenders;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -1757,7 +1766,10 @@ function collectLintableSources(dir, offenders = []) {
     if (entry.isDirectory()) {
       collectLintableSources(entryPath, offenders);
     } else if (LINTABLE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
-      offenders.push(path.relative(ROOT, entryPath).split(path.sep).join('/'));
+      const relPath = path.relative(ROOT, entryPath).split(path.sep).join('/');
+      if (!SHIPPED_SOURCE_ALLOWLIST.has(relPath)) {
+        offenders.push(relPath);
+      }
     }
   }
   return offenders;

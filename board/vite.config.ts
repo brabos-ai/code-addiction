@@ -15,7 +15,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup.ts'],
     include: ['test/**/*.test.{ts,tsx}'],
-    // server.test.ts spawns the real server and bash; give it room on a busy machine.
+    // server.test.ts spawns the real server, which reads through the generated
+    // Node core; give it room on a busy machine.
     testTimeout: 20000,
   },
 });

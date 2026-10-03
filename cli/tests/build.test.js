@@ -954,4 +954,52 @@ describe('assertNoLintableSources', () => {
       assertNoLintableSources(readMap(), path.join(root, 'framwork', '.codeadd')),
     ).not.toThrow();
   });
+
+  // L1.4 — the three canonical backlog modules are allowed by EXACT relative
+  // path. These pin the negatives that keep the exception from widening into a
+  // directory or extension hole, which is the risk the plan's mitigations name.
+  describe('backlog CJS allowlist is path-exact (L1.4)', () => {
+    const writeScript = (relPath, body = '// x') => {
+      const full = path.join(tmp, 'scripts', relPath);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, body);
+    };
+
+    it('rejects an unrelated .cjs in the scripts tree', () => {
+      writeScript('helper.cjs');
+      expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a nested same-basename lookalike', () => {
+      // The allowlist matches a full relative path, not a basename. A copy one
+      // directory down has the same name and must still be an offender.
+      writeScript(path.join('nested', 'backlog-core.cjs'));
+      expect(() => assertNoLintableSources({ skills: {} }, tmp))
+        .toThrow(/nested[/\\]backlog-core\.cjs/);
+    });
+
+    it('rejects a .cjs outside the scripts tree entirely', () => {
+      const dir = path.join(tmp, 'templates');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'backlog-core.cjs'), '// x');
+      expect(() => assertNoLintableSources({ skills: {} }, tmp))
+        .toThrow(/templates[/\\]backlog-core\.cjs/);
+    });
+
+    it('rejects .js in the scripts tree — the exception is per file, not per extension', () => {
+      writeScript('helper.js');
+      expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.js/);
+    });
+
+    it('the allowlist covers exactly the three canonical modules in the real tree', () => {
+      const root = path.resolve(import.meta.dirname, '..', '..');
+      const scriptsDir = path.join(root, 'framwork', '.codeadd', 'scripts');
+      const CANONICAL = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs'];
+      for (const name of CANONICAL) {
+        expect(fs.existsSync(path.join(scriptsDir, name)), `${name} is missing`).toBe(true);
+      }
+      // And the real tree carries no OTHER lintable source under scripts/.
+      expect(collectLintableSources(scriptsDir)).toEqual([]);
+    });
+  });
 });

@@ -969,7 +969,7 @@ describe('node inventory snapshot', () => {
       // script 20 -> 21: migrate-context-files.sh, which folds legacy context
       // files into AGENTS.md before any write. add--agents-md-style runs it.
       // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1.)
-      script: 21,
+      script: 24,
       // fragment 24 -> 25: fragments/qa-pipeline/add-review.md, which carries
       // add-review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1084,7 +1084,7 @@ describe('node inventory snapshot', () => {
     // product artefact rename procedure. Renaming product identities moves no count.
     // 243 -> 244, declares 139 -> 140: +1 internal skill, add-framework-injection.
     // A skill is a declaring kind, so both counts move.
-    expect(nodes).toHaveLength(244);
+    expect(nodes).toHaveLength(247);
     expect(nodes.filter((n) => n.declares)).toHaveLength(140);
   });
 });

@@ -9,7 +9,11 @@
   },
   "scripts": {
     "dev": "vite",
+    "preboard": "node ../scripts/build-board-runtime.js",
+    "prebuild": "node ../scripts/build-board-runtime.js",
+    "pretest:e2e": "node ../scripts/build-board-runtime.js",
     "build": "tsc -b && vite build",
+    "pretest": "node ../scripts/build-board-runtime.js",
     "test": "tsc -b --noEmit && vitest run",
     "test:e2e": "playwright test"
   },

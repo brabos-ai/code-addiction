@@ -183,7 +183,7 @@ tickets() {
   [ -f "$ref" ]
 
   local names
-  names=$(grep -oE 'refuse\("[a-z-]+"\)' "$SCRIPTS_DIR/backlog.sh" |           grep -oE '"[a-z-]+"' | tr -d '"' | sort -u)
+  names=$(grep -oE "refusal: '[a-z-]+'" "$SCRIPTS_DIR/backlog-core.cjs" | cut -d "'" -f2 | sort -u)
   [ -n "$names" ]
 
   local missing=""
@@ -200,7 +200,7 @@ tickets() {
   local ref="$SCRIPTS_DIR/../skills/add--doc-schemas/references/backlog.md"
   for n in invalid-json missing-field reserved-field unknown-status duplicate-id unknown-id; do
     grep -qE "^\| \`$n\` \|" "$ref"
-    grep -qF "refuse(\"$n\")" "$SCRIPTS_DIR/backlog.sh"
+    grep -qF "refusal: '$n'" "$SCRIPTS_DIR/backlog-core.cjs"
   done
 }
 
@@ -211,11 +211,11 @@ tickets() {
 @test "L1.4c: the nine reserved statuses and seven columns are the same set in the script and the reference" {
   local ref="$SCRIPTS_DIR/../skills/add--doc-schemas/references/backlog.md"
   for n in open refining shaped planning planned doing in-review done dropped; do
-    grep -qF "{ name: \"$n\"," "$SCRIPTS_DIR/backlog.sh"
+    node -e 'const d=require(process.argv[1]).DEFAULT_DEFS; if(!d.statuses.some(s=>s.name===process.argv[2])) process.exit(1)' "$SCRIPTS_DIR/backlog-core.cjs" "$n"
     grep -qF "{ \"name\": \"$n\"," "$ref"
   done
   for c in backlog shaping planning building review done dropped; do
-    grep -qF "{ name: \"$c\"," "$SCRIPTS_DIR/backlog.sh"
+    node -e 'const d=require(process.argv[1]).DEFAULT_DEFS; if(!d.columns.some(s=>s.name===process.argv[2])) process.exit(1)' "$SCRIPTS_DIR/backlog-core.cjs" "$c"
     grep -qF "{ \"name\": \"$c\"," "$ref"
   done
 }
@@ -247,7 +247,7 @@ tickets() {
   # The node guard comes before the first read of either owned file.
   local guard first_io
   guard=$(grep -nE 'command -v node' "$SCRIPTS_DIR/backlog.sh" | head -1 | cut -d: -f1)
-  first_io=$(grep -nE 'backlog\.jsonl|backlog\.definitions\.json' "$SCRIPTS_DIR/backlog.sh" | head -1 | cut -d: -f1)
+  first_io=$(grep -nE 'node "\$SCRIPT_DIR/backlog-cli.cjs"' "$SCRIPTS_DIR/backlog.sh" | head -1 | cut -d: -f1)
   [ -n "$guard" ]
   [ -n "$first_io" ]
   [ "$guard" -lt "$first_io" ]
