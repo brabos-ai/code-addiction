@@ -40,10 +40,11 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   remove  <id>
   list    [--all | --status <name>]
   search  <query>
+  get     <id>
 Records also accept stdin when --record-file is absent.
 `;
 
-const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search'];
+const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search', 'get'];
 const RECORD_MODES = ['add', 'update', 'comment'];
 const RECORD_FILE_FLAG = '--record-file';
 
@@ -133,6 +134,12 @@ function parseInvocation(argv) {
     } else {
       return { ok: false, error: 'bad-argument', usage: true };
     }
+  } else if (mode === 'get') {
+    // The exact detail read: the first argument is the literal target, even
+    // when it is spelled like an option, and there is nothing else.
+    targetId = rest[0] || '';
+    if (!targetId) return { ok: false, error: 'missing-id', usage: true };
+    if (rest.length > 1) return { ok: false, error: 'bad-argument', usage: true };
   } else if (mode === 'search') {
     query = rest[0] || '';
     if (!query) return { ok: false, error: 'missing-query', usage: true };

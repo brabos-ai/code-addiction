@@ -249,9 +249,6 @@ tickets() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
-# L4 — the native cutover (plan 2026-10-04T004044-PLAN--native-node-backlog,F4)
-# ═══════════════════════════════════════════════════════════════════════════
-
 @test "L4.2: the native entry accepts record-file with native allocation" {
   local record="$TEST_TEMP_DIR/native.json"
   printf '{"title":"native lands","theme":"t","labels":[],"tldr":"t","notes":[],"done_when":"it works","paths":[],"grounded":false,"status":"open"}\n' > "$record"
@@ -259,6 +256,47 @@ tickets() {
   run env -u BACKLOG_NEW_ID node "$SCRIPTS_DIR/backlog-cli.cjs" add --record-file "$record"
   [ "$status" -eq 0 ]
   printf '%s\n' "$output" | grep -q 'TICKET_ID='
+}
+
+# F1 (docs/plans/2026-10-04T190016-PLAN--compact-backlog-reads.md) — the exact
+# detail read. get is a READ: exit 0 on an unknown id, a raw row on a hit,
+# and a missing id caller error at exit 2.
+
+@test "F1.L1: get returns the full raw row of the id, detail fields included" {
+  backlog_line "0001B" "first" "open"
+  printf '%s\n' '{"id":"0002B","title":"other","theme":"general","tldr":"t","notes":["mentions 0001B in notes"],"done_when":"t","paths":[],"grounded":false,"status":"done","created_at":"2026-09-20T00:00:00Z","updated_at":"2026-09-20T00:00:00Z","comments":[],"work_id":null}' >> "$BACKLOG"
+
+  run backlog get 0001B
+  [ "$status" -eq 0 ]
+  [ "$(key TICKETS_RETURNED)" = "1" ]
+  [ "$(tickets | wc -l)" -eq 1 ]
+  tickets | grep -q '"done_when":"it works"'
+  tickets | grep -q '"id":"0001B"'
+  run grep -c '"0002B"' <<EOF
+$(tickets)
+EOF
+  [ "$status" -ne 0 ]
+}
+
+@test "F1.L1b: get of an unknown id is a result, not a failure" {
+  backlog_line "0001B" "first"
+  run backlog get 0404B
+  [ "$status" -eq 0 ]
+  [ "$(key TICKETS_RETURNED)" = "0" ]
+  [ "$(tickets | wc -l)" -eq 0 ]
+}
+
+@test "F1.L1c: search matches an exact ticket id" {
+  backlog_line "0001B" "first"
+  run backlog search 0001B
+  [ "$status" -eq 0 ]
+  [ "$(key TICKETS_RETURNED)" = "1" ]
+}
+
+@test "F1.L1d: get with a missing id is a caller error at exit 2" {
+  run backlog get
+  [ "$status" -eq 2 ]
+  printf '%s\n' "$output" | grep -q 'ERROR=missing-id'
 }
 
 

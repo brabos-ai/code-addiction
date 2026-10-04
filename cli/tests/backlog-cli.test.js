@@ -356,6 +356,77 @@ describe('backlog-cli — an open stdin pipe is never read by the paths that mus
   });
 });
 
+describe('backlog-cli — the get mode (F1)', () => {
+  let root;
+  beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-cli-get-')); });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
+
+  it('get prints the full raw row: notes, paths and done_when included', () => {
+    seeded(root, '0001B');
+    const result = run(['get', '0001B'], { cwd: root });
+    expect(result).toContain('TICKETS_RETURNED=1');
+    expect(result).toContain('"notes":[]');
+    expect(result).toContain('"done_when":"t"');
+    expect(result).toContain('"paths":[]');
+  });
+
+  it('get with a missing id is ERROR=missing-id, exit 2', () => {
+    const r = fail(['get'], { cwd: root });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('ERROR=missing-id');
+  });
+
+  it('get of an unknown id is a successful read with zero results, exit 0', () => {
+    seeded(root, '0001B');
+    const before = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+    const result = run(['get', '0404B'], { cwd: root });
+    expect(result).toContain('TICKETS_RETURNED=0');
+    expect(result).not.toContain('REFUSED=');
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+  });
+
+  it('get on an absent board is a successful read and creates nothing', () => {
+    const result = run(['get', '0001B'], { cwd: root });
+    expect(result).toContain('BACKLOG_PRESENT=no');
+    expect(result).toContain('TICKETS_RETURNED=0');
+    expect(fs.existsSync(path.join(root, 'docs'))).toBe(false);
+  });
+
+  it('get rejects surplus arguments with ERROR=bad-argument, exit 2', () => {
+    seeded(root, '0001B');
+    const r = fail(['get', '0001B', 'extra'], { cwd: root });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('ERROR=bad-argument');
+  });
+
+  it('an option-looking get target keeps its literal meaning', () => {
+    seeded(root, '0001B');
+    const result = run(['get', '--record-file'], { cwd: root });
+    expect(result).toContain('TICKETS_RETURNED=0');
+    expect(result).not.toContain('ERROR=');
+  });
+
+  it('get never reads stdin, though stdin stays open forever', async () => {
+    seeded(root, '0001B');
+    let out = '';
+    let settled = false;
+    await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [CLI_PATH, 'get', '0001B'], { cwd: root, stdio: ['pipe', 'pipe', 'pipe'] });
+      child.stdout.on('data', (d) => { out += d.toString(); });
+      const guard = setTimeout(() => { child.kill(); reject(new Error('still alive — it consumed stdin')); }, 3000);
+      child.on('exit', (code) => { clearTimeout(guard); settled = true; resolve({ code, out }); });
+    });
+    expect(settled).toBe(true);
+    expect(out).toContain('TICKETS_RETURNED=1');
+  });
+
+  it('get allocates nothing: the definitions file is never seeded by a read', () => {
+    seeded(root, '0001B');
+    run(['get', '0001B'], { cwd: root });
+    expect(fs.existsSync(path.join(root, 'docs', 'backlog.definitions.json'))).toBe(false);
+  });
+});
+
 describe('backlog-cli — no shell, no Bash, anywhere in the path', () => {
   let root;
   beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-cli-')); });
