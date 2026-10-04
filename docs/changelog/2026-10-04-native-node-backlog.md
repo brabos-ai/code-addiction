@@ -7,7 +7,7 @@ RED-first assertions recorded in the build ledger.
 ## What arrives
 
 The agent backlog flow uses **native Node and Git**, targeting Windows,
-Linux and macOS; acceptance remains pending macOS evidence. Every shell pipe that used to stand between the agent and a
+Linux and macOS; delivery is partially validated and accepted by the user, with macOS not executed. Every shell pipe that used to stand between the agent and a
 ticket write (`bash`, `printf`, `grep`, `status.sh`, redirection) is gone from
 the native recipes; bash remains only as compatibility wrappers whose stdin
 channel the bats suites still pin.
@@ -42,7 +42,7 @@ Clean detached leftovers now require durable reachability before removal. Public
 
 The parser reserves literal targets and requires a trailing record-file pair. Native usage and recovery-location guidance are updated. Each browser viewport owns a mutable fixture/server.
 
-Follow-up validation: full CLI **1785 passed** on Linux/Docker; Bash compatibility **72 passed**; board unit/integration **113 passed** on Windows; browser **163 passed, 20 skipped** on Windows; native Windows publication **38 passed** (161.75 s, exit 0). Product and board builds passed. Initial parallel runs had timeout failures; subsequent full runs passed. macOS acceptance remains pending in the review/ledger.
+Follow-up validation: full CLI **1785 passed** on Linux/Docker; Bash compatibility **72 passed**; board unit/integration **113 passed** on Windows; browser **163 passed, 20 skipped** on Windows; native Windows publication **38 passed** (161.75 s, exit 0). Product and board builds passed. Initial parallel runs had timeout failures; subsequent full runs passed. The user waived macOS evidence because no Mac is available: delivery is accepted as **partially validated**, with macOS not executed.
 
 ## Commit history
 
