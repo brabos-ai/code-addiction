@@ -3,16 +3,26 @@
  *
  * Tests that build-board-runtime.js copies core/storage correctly,
  * prunes obsolete files, and fails clearly on missing source.
+ *
+ * F7 of the native-node-backlog plan adds the closure question in its
+ * WORST-SHAPE form: the shipped scripts dir now carries SIX canonical
+ * backlog modules, and the runtime must stay exactly the two the server
+ * imports — the other four are entry-surface and never leak.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 
 const COPIER_PATH = path.resolve(__dirname, '../../scripts/build-board-runtime.js');
 const SOURCE_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+const SHIPPED_CANONICAL = [
+  'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
+  'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
+];
+const RUNTIME_FILES = ['backlog-core.cjs', 'backlog-storage.cjs'];
 
 describe('build-board-runtime', () => {
   let tmpDir;
@@ -87,5 +97,45 @@ describe('build-board-runtime', () => {
     expect(fs.existsSync(path.join(runtimeDir, 'backlog-id.cjs'))).toBe(false);
     expect(fs.existsSync(path.join(runtimeDir, 'backlog-git.cjs'))).toBe(false);
     expect(fs.existsSync(path.join(runtimeDir, 'backlog-commit.cjs'))).toBe(false);
+  });
+
+  it('the copier preboard stays closed when the shipped scripts dir carries all six modules', () => {
+    // The REAL tree now carries all six canonical backlog modules; board
+    // package.json's preboard/pretest hooks run this copier before every
+    // build and test. This proves the run keeps the runtime exactly the
+    // two files the served board imports — no native entry-surface copy
+    // appears just because it sits beside the source.
+    const runtimeDir = path.resolve(__dirname, '../../board/runtime');
+    if (!fs.existsSync(path.join(SOURCE_DIR, 'backlog-id.cjs')) ||
+        !fs.existsSync(path.join(SOURCE_DIR, 'backlog-git.cjs')) ||
+        !fs.existsSync(path.join(SOURCE_DIR, 'backlog-commit.cjs'))) {
+      // A canonical module missing cannot happen in this tree, and missing
+      // fixtures would reduce this to a placeholder that proves nothing —
+      // so reject instead of pass silently.
+      throw new Error('the shipped scripts dir is missing a canonical module — the closed-closure test has no subject');
+    }
+    for (const name of SHIPPED_CANONICAL) {
+      expect(fs.existsSync(path.join(SOURCE_DIR, name)), `${name} missing at source`).toBe(true);
+    }
+    const result = execFileSync('node', [COPIER_PATH], { encoding: 'utf8' });
+    expect(result).toContain('Board runtime ready');
+    // Exactly the canonical runtime names — nothing from the extra modules.
+    const shippedNames = fs.readdirSync(runtimeDir).sort();
+    expect(shippedNames).toEqual(RUNTIME_FILES.sort());
+  });
+
+  it('no board test, fixture or server case names an OLD bash sentinel route', () => {
+    // The e2e reads the server.spawning the open helper; the native tests
+    // assert the runtime. This keeps the board's test SOURCE itself free of
+    // sentinel /legacy route references that must not creep back.
+    for (const name of ['server.test.ts', 'native-backlog.test.ts']) {
+      const testFile = path.resolve(__dirname, '../../board/test', name);
+      const e2eFile = path.resolve(__dirname, '../../board/e2e', 'native-backlog.spec.ts');
+      for (const src of [testFile, e2eFile]) {
+        const text = fs.readFileSync(src, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+        expect(text, src).not.toContain('spawnSync(\'bash\'');
+        expect(text, src).not.toContain('bash ' + '.codeadd/scripts/backlog.sh');
+      }
+    }
   });
 });

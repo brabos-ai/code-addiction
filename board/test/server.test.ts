@@ -2,9 +2,11 @@
 // (plan docs/plans/2026-09-21T145331-PLAN--backlog-board-002-board-app.md, F2, L1.)
 // RED-FIRST: written before server.mjs exists.
 //
-// Every test runs the REAL server against a temporary project and the REAL
-// framwork/.codeadd/scripts/backlog.sh — the point of the design is that the
-// server never parses the JSONL itself, and only the real script proves that.
+// Every test runs the REAL server against a temporary project. Since the
+// node-only-board delivery the server imports the canonical core directly
+// and reads no script at all; the native-backlog suite (native-backlog.test.ts)
+// proves in the same depth that a shipped CLI mutation surfaces through the
+// SSE stream and the API. The --scripts flag is accepted and ignored.
 import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from 'node:fs';
 import { createServer } from 'node:net';
@@ -72,8 +74,8 @@ async function board(r: Running) {
 }
 
 // Wait for each server to EXIT before removing its project. On Windows a
-// process still in docs/ -- the server's watcher, or the bash it spawned --
-// holds the directory, and an rmSync right after kill() fails with EPERM,
+// process still in docs/ — the server's own watcher — holds the directory,
+// and an rmSync right after kill() fails with EPERM,
 // intermittently, on whichever test ran last. Removal retries, and a directory
 // still held after that is left in the OS temp dir: a failed cleanup says
 // nothing about the server, so it must not fail the test.
