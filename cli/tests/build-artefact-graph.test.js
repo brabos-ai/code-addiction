@@ -971,7 +971,10 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1.)
       // script 24 -> 25: backlog-id.cjs, the native global allocator
       // (plan 2026-10-04T004044-PLAN--native-node-backlog, F2).
-      script: 25,
+      // script 25 -> 27: backlog-git.cjs and backlog-commit.cjs, the native
+      // publication pair — routing/recovery and the orchestration entry.
+      // (plan 2026-10-04T004044-PLAN--native-node-backlog, F3.)
+      script: 27,
       // fragment 24 -> 25: fragments/qa-pipeline/add-review.md, which carries
       // add-review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).

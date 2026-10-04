@@ -26,11 +26,13 @@ const SCRIPTS = path.join(ROOT, 'framwork', '.codeadd', 'scripts');
 const CLI_PATH = path.join(SCRIPTS, 'backlog-cli.cjs');
 const WRAPPER_PATH = path.join(SCRIPTS, 'backlog.sh');
 
-// The shipped backlog modules — every one present at run time carries no
-// subprocess call anywhere in its bytes.
+// The shipped backlog modules that are LOCAL-ONLY: allocation, core and
+// storage runs with Node built-ins alone and must carry no process start in
+// their bytes. The publication pair (backlog-git.cjs, backlog-commit.cjs) is
+// the deliberate exception — native git through argument arrays IS its
+// contract, asserted in backlog-publication.test.js.
 const SHIPPED_MODULES = [
-  'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-  'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
+  'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', 'backlog-id.cjs',
 ];
 
 const run = (args, opts = {}) =>
