@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -163,61 +164,126 @@ describe('install command e2e', () => {
     expect(manifest.source).toBe('tag');
   });
 
-  // The three canonical backlog modules are what let an installed project's
-  // agents reach the shared core (plan F2, L4.2). They are packaged as ordinary
-  // scripts siblings, so this proves the entry point actually carries them —
-  // a helper-only test would pass even if the release never shipped them.
+  // The six canonical backlog modules are what let an installed project's
+  // agents reach the shared core, run the local needs natively, and publish
+  // (plan 2026-10-04T004044-PLAN--native-node-backlog, F4). They are packaged
+  // as ordinary scripts siblings, so this proves the entry point actually
+  // carries them — a helper-only test would pass even if the release never
+  // shipped them.
   describe('backlog canonical modules (L4.2)', () => {
-    const CANONICAL = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs'];
+    const CANONICAL = [
+      'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
+      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
+    ];
+    const WRAPPERS = ['backlog.sh', 'backlog-commit.sh'];
     const SCRIPTS_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
 
-    function canonicalBytes(name) {
+    function realBytes(name) {
       return fs.readFileSync(path.join(SCRIPTS_DIR, name));
     }
 
-    /** A release asset carrying the real canonical modules plus the allocator siblings `add` needs. */
+    /** A release asset carrying the real canonical modules plus the wrapper
+     *  siblings the shell callers reach. */
     function buildBacklogZip({ core } = {}) {
       const zip = new AdmZip();
       zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
       zip.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
-      // backlog.sh delegates the id to status.sh, so add cannot work without it.
-      zip.addFile('framwork/.codeadd/scripts/status.sh', Buffer.from('echo ok\n'));
-      zip.addFile('framwork/.codeadd/scripts/next-id.sh', Buffer.from('echo ok\n'));
-      zip.addFile('framwork/.codeadd/scripts/backlog.sh', Buffer.from('#!/bin/sh\nexit 0\n'));
-      zip.addFile('framwork/.codeadd/scripts/backlog-commit.sh', Buffer.from('#!/bin/sh\nexit 0\n'));
-      for (const name of CANONICAL) {
-        zip.addFile(`framwork/.codeadd/scripts/${name}`, core ?? canonicalBytes(name));
+      for (const name of [...WRAPPERS, ...CANONICAL]) {
+        zip.addFile(`framwork/.codeadd/scripts/${name}`, realBytes(name));
       }
       return zip.toBuffer();
     }
 
-    it('lands all three modules in .codeadd/scripts with their bytes intact', async () => {
+    it('lands all six modules and both wrappers in .codeadd/scripts with their bytes intact', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
 
       await install(tmpDir);
 
-      for (const name of CANONICAL) {
+      for (const name of [...CANONICAL, ...WRAPPERS]) {
         const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
         expect(fs.existsSync(installed), `${name} was not installed`).toBe(true);
-        // Byte-for-byte: fixLineEndings normalizes CRLF for .sh only, and these
-        // modules are CommonJS read by Node. A rewrite here would be a bug.
-        expect(fs.readFileSync(installed)).toEqual(canonicalBytes(name));
+        // Byte-for-byte for the CJS modules: fixLineEndings normalizes CRLF for
+        // .sh only, and these are read by Node directly. A rewrite is a bug.
+        expect(fs.readFileSync(installed)).toEqual(realBytes(name));
       }
     });
 
-    it('installs the allocator siblings backlog.sh needs for add', async () => {
+    it('an installed project runs the native LOCAL entry with no source checkout', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
-
       await install(tmpDir);
 
-      for (const sibling of ['backlog.sh', 'backlog-commit.sh', 'status.sh', 'next-id.sh']) {
-        expect(
-          fs.existsSync(path.join(tmpDir, '.codeadd', 'scripts', sibling)),
-          `${sibling} was not installed`
-        ).toBe(true);
-      }
+      const { spawnSync } = await import('node:child_process');
+      const result = spawnSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', 'list', '--all'], {
+        cwd: tmpDir, encoding: 'utf8',
+      });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('BACKLOG_PRESENT=no');
+      expect(result.stdout).toContain('TICKETS_TOTAL=0');
+    });
+
+    it('an installed project runs the native PUBLICATION entry — reads refused by name', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      const { spawnSync } = await import('node:child_process');
+      const result = spawnSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'list'], {
+        cwd: tmpDir, encoding: 'utf8',
+      });
+      expect(result.status).toBe(2);
+      expect(result.stdout).toContain('ERROR=read-mode');
+    });
+
+    it('an installed project runs the native PUBLICATION entry — a local write lands', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      // The installed project runs git + the installed publication entry,
+      // with no source checkout anywhere on the import path. No remote: the
+      // write lands locally and the report says it did.
+      execFileSync('git', ['init', '-b', 'main', '.'], { cwd: tmpDir });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmpDir });
+      execFileSync('git', ['config', 'user.name', 'test'], { cwd: tmpDir });
+      execFileSync('git', ['commit', '--allow-empty', '-m', 'seed'], { cwd: tmpDir });
+
+      const record = path.join(tmpDir, 'installed-publish.json');
+      fs.writeFileSync(record, JSON.stringify({ title: 'installed write', tldr: 't', done_when: 't' }));
+
+      const { spawnSync } = await import('node:child_process');
+      const result = spawnSync(process.execPath, [
+        '.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', path.join('installed-publish.json'),
+      ], { cwd: tmpDir, encoding: 'utf8' });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('ROUTE=direct');
+      expect(result.stdout).toContain('COMMITTED=yes');
+      expect(result.stdout).toContain('DEGRADED=no-remote');
+      expect(result.stdout).toContain('TICKET_ID=0001B');
+      const board = fs.readFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'), 'utf8');
+      expect(board).toContain('"title":"installed write"');
+    });
+
+    it('a solved-native write in the installed project lands through its own files', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      const record = path.join(tmpDir, 'fixture-ticket.json');
+      fs.writeFileSync(record, JSON.stringify({ title: 'installed native write', tldr: 't', done_when: 't' }));
+
+      const { spawnSync } = await import('node:child_process');
+      const result = spawnSync(process.execPath, [
+        '.codeadd/scripts/backlog-cli.cjs', 'add',
+        '--record-file', path.join('fixture-ticket.json'),
+      ], {
+        cwd: tmpDir, encoding: 'utf8',
+      });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('TICKET_ID=0001B');
+      const board = fs.readFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'), 'utf8');
+      expect(board).toContain('"title":"installed native write"');
     });
 
     it('refreshes every module together on update, never one at a time', async () => {
@@ -225,17 +291,25 @@ describe('install command e2e', () => {
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
       await install(tmpDir);
 
-      // A newer release changes all three. An update that refreshed only the
-      // core would leave storage and CLI on the old contract — the exact
-      // half-refreshed runtime the plan's risks table calls out.
-      const next = Buffer.from('// v2\n');
+      // A newer release changes the module bodies — but only the CJS runtime
+      // tips, not the wrappers (their bytes are pinned by the fixture). An
+      // update that refreshed only part of the runtime would leave the rest
+      // on the old contract — the exact half-refreshed runtime the plan's
+      // risks table calls out.
+      const marker = (name) => `// refreshed ${name} v2\n`;
+      const zip2 = new AdmZip();
+      zip2.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
+      zip2.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
+      for (const name of [...WRAPPERS, ...CANONICAL]) {
+        zip2.addFile(`framwork/.codeadd/scripts/${name}`, Buffer.from(marker(name)));
+      }
       mocks.getLatestTag.mockResolvedValue('v2.0.0');
-      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip({ core: next }));
+      mocks.downloadReleaseAsset.mockResolvedValue(zip2.toBuffer());
       await (await import('../src/updater.js')).update(tmpDir);
 
-      for (const name of CANONICAL) {
+      for (const name of [...CANONICAL, ...WRAPPERS]) {
         const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
-        expect(fs.readFileSync(installed, 'utf8'), `${name} was not refreshed`).toBe('// v2\n');
+        expect(fs.readFileSync(installed, 'utf8'), `${name} was not refreshed`).toBe(marker(name));
       }
     });
   });
