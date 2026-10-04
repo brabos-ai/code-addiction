@@ -313,8 +313,18 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 
 Conditions evaluated top-to-bottom — use FIRST match.
 
-| After | Condition | Suggest | Why |
-|-------|-----------|---------|-----|
+**This table resolves a NEXT ACTIVITY. It does not decide how that activity is delivered to the
+user.** On a manual run the finishing command offers optional fresh-context instructions rather than
+printing an invocation — `chat-continuation-eligibility-v1` in `add--delivery-mode` owns when that
+offer is made, and `chat-continuation-output-v1` in `add--final-report` owns what an accepted answer
+contains. This skill names the rows and stays out of both.
+
+**Read the `Suggest` column as the next activity, not as text to paste.** A row whose suggest is
+`done`, `wait for review` or `continue brainstorm` names the absence of a next activity, and a
+command resolving one of those rows offers nothing at all.
+
+| After | Condition | Next activity | Why |
+|-------|-----------|---------------|-----|
 | add-brainstorm | idea ready to formalize | `/add-new` | Capture as feature |
 | add-brainstorm | needs more exploration | continue brainstorm | Not ready to commit |
 | add-brainstorm | bug suspected, needs investigation | `/add-diagnose` | Structured triage needed |
@@ -322,14 +332,14 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add-diagnose | route=hotfix | `/add-hotfix @docs/diagnose/<file>.md` | Confirmed bug requiring urgent fix |
 | add-diagnose | route=feature | `/add-new` | Confirmed functional gap |
 | add-diagnose | route=extend | `/add-new` or `/add-plan` | Extend existing feature — load prior context |
-| add-diagnose | route=no-action | done | No real problem — stop here |
+| add-diagnose | route=no-action | none | No real problem — stop here |
 | add-new | feature needs technical planning | `/add-plan` | Architect before building. STEP 7.1 produces the UX contract when the feature touches UI |
 | add-new | feature is simple (1-2 files) | `/add-build` | Skip planning, build directly |
 | add-new | delivery mode is `automatic` (chosen at `/add-brainstorm`'s approval) | (hands off itself) | `/add-new` follows `{{cmd:add-plan}}` from its first step — see `add--delivery-mode` |
 | add-plan | default | `/add-build` | Most common path |
 | add-plan | delivery mode is `automatic` | (hands off itself) | `/add-plan` follows `{{cmd:add-build}}` from its first step — see `add--delivery-mode` |
 | add-build | final review passed or ruled | `/add-done` | The build reviewed the whole unit; `/add-review` is optional, for detail and the QA judgement |
-| add-build | final review blocked | each `Blocker suggestion:` command | Printed ready to paste; `/add-done` blocks until one clears it |
+| add-build | final review blocked | each `Blocker suggestion:` command | The build names them; `/add-done` blocks until one clears it |
 | add-build | mode=CORRECTION | `/add-done` | The correction wrote a newer `Final review:` verdict — no second review needed |
 | add-build | epic, more subfeatures pending | `/add-plan` for the next subfeature (automatic delivery does this itself) | Next subfeature in epic |
 | add-review | status=BLOCKED with routed rows | `/add-build` | It consumes `## Fix Routing`, applies the fixes and appends the resolution annex |
@@ -337,17 +347,27 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add-review | status=BLOCKED | fix + `/add-build` | The build's verdict after the fix supersedes this review |
 | add-hotfix | always | `/add-done` | Hotfix ready, finalize branch |
 | add-review | needs team review before merge | `/add-pull-request` | PR for human review |
-| add-pull-request | PR open, awaiting review | wait for review | Human review pending |
+| add-pull-request | PR open, awaiting review | none — wait for review | Human review pending; there is no agent activity to continue into |
 | add-pull-request | PR merged on GitHub | `/add-done` | Cleanup local branch + tags |
 | add-pull-request | scope grew, need to update PR | `/add-pull-request` | Idempotent — appends update section |
 | add-done | was feature, back on main | `/add-new` | Start next feature |
 | add-done | was epic, more subfeatures | `/add-build feature N` | Next subfeature |
 | add-done | was hotfix | `/add-new` | Return to feature work |
+| add-done | no stated next goal | none | The delivery is closed — see the prohibition below |
 | add-ux | within active feature | return to current flow | UX applied, resume workflow |
-| add-ux | standalone | done | One-off UX task |
+| add-ux | standalone | none | One-off UX task |
 | add-wiki | issues found | `/add-audit` | Deep health check |
 | add-wiki | context mapped, ready to build | `/add-new` | Start building with context |
-| add-wiki | standalone analysis | done | Analysis delivered |
+| add-wiki | standalone analysis | none | Analysis delivered |
 | add-audit | critical issues found | `/add-new` per issue | Create features to fix findings |
 | add-qa-setup | prereqs + config ready | `/add-review` | Its QA sections validate the rendered result (UX + functional) — optionally `codeadd plugins enable playwright` first for live driving |
-| add-audit | project healthy | done | No action needed |
+| add-audit | project healthy | none | No action needed |
+
+⛔ **Never propose a feature nobody asked for at `add-done`.** The `was feature / was epic / was
+hotfix` rows fire on the branch's own history, which is a fact. A branch merged with no stated next
+goal is a completed delivery, and inventing an epic to fill the column is how a close-out starts work
+its user never requested.
+
+**Two rows are exempt from the offer by role, not by state.** `add` routes and transforms; `add-ux`
+rewrites an instruction. Neither finishes work, so neither reports, and neither offers — a
+continuation question from a router leaves the user two threads and no delivery to attach either to.
