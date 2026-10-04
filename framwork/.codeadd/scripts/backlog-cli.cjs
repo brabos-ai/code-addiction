@@ -38,10 +38,11 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   comment <id>              --record-file comment.json
   move    <id> --top | --after <id> | --bottom
   remove  <id>
-  list    [--all | --status <name>]
-  search  <query>
+  list    [--all | --status <name>] [--full | --ids]
+  search  <query> [--full]
   get     <id>
 Records also accept stdin when --record-file is absent.
+Reads print a seven-field summary by default; --full restores the raw rows.
 `;
 
 const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search', 'get'];
@@ -103,6 +104,7 @@ function parseInvocation(argv) {
   let moveAnchor = '';
   let filter = 'open';
   let query = '';
+  let view = 'summary';
 
   if (['update', 'comment', 'remove'].includes(mode)) {
     targetId = rest[0] || '';
@@ -123,29 +125,58 @@ function parseInvocation(argv) {
       return { ok: false, error: 'missing-direction', usage: true };
     }
   } else if (mode === 'list') {
-    const opt = rest[0] || '';
-    if (opt === '') {
-      filter = 'open';
-    } else if (opt === '--all') {
-      filter = '*';
-    } else if (opt === '--status') {
-      filter = rest[1] || '';
-      if (!filter) return { ok: false, error: 'missing-status', usage: true };
-    } else {
+    // Reads grammar: at most one filter (--all | --status <name>) and at most
+    // one projection (--full | --ids), in any order. Anything else — a
+    // repeat, a conflict, an unknown option, a surplus literal or a
+    // record-file spelling — is a caller error; reads never capture records.
+    let sawFilter = false;
+    let sawProjection = false;
+    filter = 'open';
+    view = 'summary';
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i];
+      if (a === '--all') {
+        if (sawFilter) return { ok: false, error: 'bad-argument', usage: true };
+        sawFilter = true;
+        filter = '*';
+      } else if (a === '--status') {
+        if (sawFilter) return { ok: false, error: 'bad-argument', usage: true };
+        sawFilter = true;
+        const value = rest[i + 1];
+        if (value === undefined || value === '') {
+          return { ok: false, error: 'missing-status', usage: true };
+        }
+        filter = value;
+        i++;
+      } else if (a === '--full' || a === '--ids') {
+        if (sawProjection) return { ok: false, error: 'bad-argument', usage: true };
+        sawProjection = true;
+        view = a === '--full' ? 'full' : 'ids';
+      } else {
+        return { ok: false, error: 'bad-argument', usage: true };
+      }
+    }
+    return { ok: true, mode, filter, view, recordSource };
+  } else if (mode === 'search') {
+    // The first argument is reserved as the literal query — option-looking
+    // spellings included — and only --full may follow it.
+    if (rest.length > 2) return { ok: false, error: 'bad-argument', usage: true };
+    query = rest[0] || '';
+    if (!query) return { ok: false, error: 'missing-query', usage: true };
+    if (rest.length === 2 && rest[1] !== '--full') {
       return { ok: false, error: 'bad-argument', usage: true };
     }
+    view = rest.length === 2 ? 'full' : 'summary';
   } else if (mode === 'get') {
     // The exact detail read: the first argument is the literal target, even
     // when it is spelled like an option, and there is nothing else.
     targetId = rest[0] || '';
     if (!targetId) return { ok: false, error: 'missing-id', usage: true };
     if (rest.length > 1) return { ok: false, error: 'bad-argument', usage: true };
-  } else if (mode === 'search') {
-    query = rest[0] || '';
-    if (!query) return { ok: false, error: 'missing-query', usage: true };
+    view = 'full';
   }
 
-  return { ok: true, mode, targetId, moveDir, moveAnchor, filter, query, recordSource };
+  return { ok: true, mode, targetId, moveDir, moveAnchor, filter, query, view, recordSource };
 }
 
 /**
@@ -198,15 +229,59 @@ function resolveNewId(root) {
   return { ok: true, id: native.id };
 }
 
+/** The summary projection: exactly seven keys, in the confirmed order. A body
+ *  field a consumer needs is fetched through `get`, never inferred here. */
+const TLDR_PREVIEW_CODEPOINTS = 120;
+
+function codePoints(s) {
+  return [...s];
+}
+
+function truncateTldr(s) {
+  const cps = codePoints(s);
+  if (cps.length <= TLDR_PREVIEW_CODEPOINTS) return s;
+  return cps.slice(0, TLDR_PREVIEW_CODEPOINTS - 1).join('') + '…';
+}
+
+function updatedAtDate(value) {
+  if (typeof value !== 'string') return null;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(value)) return null;
+  if (Number.isNaN(Date.parse(value))) return null;
+  return value.slice(0, 10);
+}
+
+function summarizeTicket(t) {
+  if (!t || typeof t !== 'object') t = {};
+  const str = (v) => (typeof v === 'string' ? v : '');
+  return {
+    id: str(t.id),
+    status: str(t.status),
+    title: str(t.title),
+    tldr: truncateTldr(str(t.tldr)),
+    theme: str(t.theme),
+    labels: Array.isArray(t.labels) ? t.labels : [],
+    updated_at: updatedAtDate(t.updated_at),
+  };
+}
+
+/** Serialize the global status counts back into one JSON object, in the
+ *  entries' first-occurrence order. An object would reorder numeric names,
+ *  so the text is built explicitly and escaped through JSON.stringify. */
+function statusCountsJson(entries) {
+  if (!Array.isArray(entries) || !entries.length) return '{}';
+  return '{' + entries.map(([k, v]) => JSON.stringify(k) + ':' + JSON.stringify(v)).join(',') + '}';
+}
+
 /**
- * Turn a core result into the local output: KEY=VALUE lines, then raw JSONL
- * rows for reads. Failed results are handled by the caller the way today's
- * caller handles them — refusals on stdout, write failures distinguished.
+ * Turn a core result into the local output: KEY=VALUE lines, then payload
+ * rows for reads. Reads project by view: `summary` (the seven-field
+ * default), `full` (the raw bytes) or `ids`. Writes are unchanged.
  *
  * @param {object} result - a core executeBacklog result with ok: true
+ * @param {string} [view] - summary (default), full or ids
  * @returns {string} the output text, trailing newline included
  */
-function renderOperation(result) {
+function renderOperation(result, view = 'summary') {
   const out = [];
   const key = (k, v) => out.push(k + '=' + v);
 
@@ -219,7 +294,15 @@ function renderOperation(result) {
     key('DAMAGED_LINES', String(result.damaged.length));
     for (const n of result.damaged) key('DAMAGED_LINE', String(n));
     for (const u of result.undefinedStatuses) key('UNDEFINED_STATUS', u);
-    for (const row of result.rows) out.push(row);
+    key('READ_VIEW', view);
+    key('STATUS_COUNTS', statusCountsJson(result.statusCounts));
+    if (view === 'ids') {
+      for (const t of result.tickets) out.push(String(t.id));
+    } else if (view === 'full') {
+      for (const row of result.rows) out.push(row);
+    } else {
+      for (const t of result.tickets) out.push(JSON.stringify(summarizeTicket(t)));
+    }
   } else {
     key('TICKET_ID', result.ticketId);
   }
@@ -297,7 +380,7 @@ function main(argv) {
     process.exit(2);
   }
 
-  process.stdout.write(renderOperation(result));
+  process.stdout.write(renderOperation(result, invocation.view));
   process.exit(0);
 }
 

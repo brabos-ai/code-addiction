@@ -63,18 +63,20 @@ every later command reads `ticket:` from `about.md` and never from the intent fi
 
 ## Reading One Ticket
 
-The list output is JSONL plus `KEY=VALUE` metadata, and the match is by exact ticket id using
-agent parsing: run the read, scan the raw lines for `"id":"<the ticket id>"`, keep the one line
-and nothing else.
+A declared ticket id is answered by `get`: an exact, case-sensitive read of the raw row, with no
+status filter and one argument.
 
 ```bash
-node .codeadd/scripts/backlog-cli.cjs list --all
+node .codeadd/scripts/backlog-cli.cjs get <ticket id>
 ```
 
-**This is stable, not a workaround.** The record format writes `id` first on every line and never omits it,
-precisely so a ticket stays recoverable from its raw text — the agent's own line scan is the exact
-match, and no shell pipeline of grep or cut belongs in a native recipe. No matching line means the
-id is not on the board.
+Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board; the exit code is never a parse of
+the id. No matching row means the id is not on the board.
+
+**A subject, not an id**, is resolved by `search`, which runs on every status and now also answers an
+exact id — never by scanning a `list --all` for the matching line. `list` (and `search`) print a
+seven-field summary by default and `--full` restores the raw rows; the summary is for choosing a
+candidate, and the detail is `get`.
 
 ---
 

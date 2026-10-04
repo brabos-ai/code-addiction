@@ -44,7 +44,7 @@ and without bash or WSL.
 
 | Intent | Entry | Why |
 |---|---|---|
-| **read** — list, search | `node .codeadd/scripts/backlog-cli.cjs <mode>` | A read commits nothing. It also works in a directory that is not a git repository, which the write path cannot |
+| **read** — list, search, get | `node .codeadd/scripts/backlog-cli.cjs <mode>` | A read commits nothing. It also works in a directory that is not a git repository, which the write path cannot |
 | **write** — add, update, comment, move, remove | `node .codeadd/scripts/backlog-commit.cjs <mode>` | The ticket has to reach the **base branch**, or it dies with the branch it was written on |
 
 ```
@@ -56,7 +56,7 @@ IF THE INTENT IS add, update, comment, move OR remove:
   ✅ DO: Run the publication entry with the record on a file, which owns the whole
          git route and cleans up after itself
 
-IF THE INTENT IS list OR search:
+IF THE INTENT IS list, search OR get:
   ⛔ DO NOT USE: the shell tool to run the publication entry — it refuses a read with ERROR=read-mode
   ✅ DO: Run the local CLI directly
 ```
@@ -99,10 +99,15 @@ subcommand** — a user mid-build does not stop to look one up.
 | delete that ticket | `remove` |
 
 **`list` defaults to open tickets.** `--all` returns every one, `--status <name>` filters to one.
+**To resolve a target, search every status** — `search` runs on all statuses by default, so a match
+already started under another phase is never hidden behind the open filter; ambiguity is still a stop,
+never resolved by the filter. Search also answers a known ticket id exactly.
 
 ### 1.1 Resolve the target, for every mode but `add` and `list`
 
-Match what the user said against the board — an id if they gave one, otherwise `search`.
+Match what the user said against the board: a declared ticket id goes straight to `get`; an id from
+an old plan or a subject goes to `search`; a number cited by its old `Formerly item` note is searched
+by that note's text and then confirmed by `get` before selecting.
 
 ```
 IF MORE THAN ONE TICKET MATCHES:
@@ -191,16 +196,24 @@ would cost the turn the mid-flow capture was supposed to save, so this skill wri
 ### 3.2 Read
 
 ```bash
-node .codeadd/scripts/backlog-cli.cjs list [--all | --status <name>]
-node .codeadd/scripts/backlog-cli.cjs search "<terms>"
+node .codeadd/scripts/backlog-cli.cjs list [--all | --status <name>] [--full | --ids]
+node .codeadd/scripts/backlog-cli.cjs search "<terms>" [--full]
+node .codeadd/scripts/backlog-cli.cjs get <id>
 ```
 
-Output is `KEY=VALUE` lines, then raw JSONL. **Board order is priority order and it survives every
-filter** — present the tickets in the order they came back, never re-sorted. The agent reads the
-raw lines itself: a line whose `"id"` matches the ticket id is that ticket, and exactly one line
-carries a given id.
+Output is `KEY=VALUE` metadata, then payload lines. **Board order is priority order and it survives
+every filter** — present the tickets in the order they came back, never re-sorted.
 
-`BACKLOG_PRESENT=no` means no ticket has ever been written. Say that; it is not an error.
+**`list` and `search` print a seven-field summary: `id, status, title, tldr, theme, labels,
+updated_at`.** The `tldr` is a preview cut at 120 code points (`…` when cut), and search runs on the
+complete text — a match beyond the preview still returns the ticket. **The summary is for choosing;
+it is never evidence.** Before using `notes`, `paths`, `done_when` or `work_id`, read the whole ticket
+with `get <id>` — an exact, case-sensitive read that returns the raw row and accepts no filter. `--full`
+restores the raw rows on any read; `--ids` emits just the identities. `get` takes exactly one argument.
+
+Metadata on every read: `READ_VIEW=summary|full|ids` names the projection, `STATUS_COUNTS` counts the
+whole board before any filter, and `BACKLOG_PRESENT=no` means no ticket has ever been written — say
+that; it is not an error.
 
 ---
 
@@ -257,6 +270,7 @@ the commit is retained or published. `COMMITTED=no` means the persisted bytes ar
 ```
 [ ] The intent resolved to exactly one mode, with no subcommand asked of the user
 [ ] A write went through the publication entry; a read went through the local CLI
+[ ] A declared id was read with `get`; body fields came from `get`, never from a summary
 [ ] A record travelled on a file; stdin was never used for a native call
 [ ] The project check read only what the request named, plus one git grep
 [ ] No subagent, no graph query, no plan read

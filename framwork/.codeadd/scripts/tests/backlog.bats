@@ -299,6 +299,54 @@ EOF
   printf '%s\n' "$output" | grep -q 'ERROR=missing-id'
 }
 
+# F2 (docs/plans/2026-10-04T190016-PLAN--compact-backlog-reads.md) — the
+# summary-by-default projection: seven fields, full/ids opt-in, READ_VIEW and
+# STATUS_COUNTS metadata on every read.
+
+@test "F2.L1: list emits the seven-field summary and --full restores raw rows" {
+  backlog_line "0001B" "first"
+
+  run backlog list --all
+  [ "$status" -eq 0 ]
+  [ "$(key READ_VIEW)" = "summary" ]
+  local summary_row
+  summary_row=$(tickets | head -1)
+  run node -e 'const t=JSON.parse(process.argv[1]); process.exit(Object.keys(t).length===7 && !("notes" in t) && !("done_when" in t) ? 0 : 1)' "$summary_row"
+  [ "$status" -eq 0 ]
+
+  run backlog list --all --full
+  [ "$status" -eq 0 ]
+  [ "$(key READ_VIEW)" = "full" ]
+  tickets | grep -q '"done_when":"it works"'
+  [ "$(key TICKETS_RETURNED)" = "1" ]
+}
+
+@test "F2.L1b: --ids emits identities only, preserving filter and order" {
+  backlog_line "0001B" "first" "done"
+  backlog_line "0002B" "second" "open"
+  backlog_line "0003B" "third" "open"
+
+  run backlog list --ids
+  [ "$status" -eq 0 ]
+  [ "$(key READ_VIEW)" = "ids" ]
+  [ "$(key TICKETS_RETURNED)" = "2" ]
+  local ids
+  ids=$(printf '%s\n' "$output" | grep -E '^[0-9]{4}B$' | tr '\n' ',')
+  [ "$ids" = "0002B,0003B," ]
+}
+
+@test "F2.L1c: STATUS_COUNTS counts the whole board, before the filter" {
+  backlog_line "0001B" "first" "open"
+  backlog_line "0002B" "second" "done"
+
+  run backlog list
+  [ "$(key TICKETS_RETURNED)" = "1" ]
+ printf '%s\n' "$output" | grep -qE '^STATUS_COUNTS=.\"open\":1,\"done\":1.'
+
+  run backlog list --all --full
+  printf '%s\n' "$output" | grep -qE '^STATUS_COUNTS=.\"open\":1,\"done\":1.'
+}
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # L2 — NEXT_ID_AGREE: the two allocators return the same string
