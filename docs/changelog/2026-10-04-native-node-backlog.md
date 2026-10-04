@@ -6,8 +6,8 @@ RED-first assertions recorded in the build ledger.
 
 ## What arrives
 
-The complete agent backlog flow runs on **native Node and Git** on Windows,
-Linux and macOS. Every shell pipe that used to stand between the agent and a
+The agent backlog flow uses **native Node and Git**, targeting Windows,
+Linux and macOS; acceptance remains pending macOS evidence. Every shell pipe that used to stand between the agent and a
 ticket write (`bash`, `printf`, `grep`, `status.sh`, redirection) is gone from
 the native recipes; bash remains only as compatibility wrappers whose stdin
 channel the bats suites still pin.
@@ -35,7 +35,16 @@ channel the bats suites still pin.
 - Board ready closes `0019B`; the model-switch hold the plan records is
   satisfied by this build's explicit invocation on the chosen model.
 
-## Commits
+## Follow-up review corrections — 2026-10-04
+
+Review: `docs/plans/2026-10-04T004044-PLAN--native-node-backlog--review.md`.
+Clean detached leftovers now require durable reachability before removal. Publication uses an isolated index and three-way merges to preserve caller staged/unstaged intent; overlapping edits retain bytes and report degradation. Staging failures emit the recovery report. Linked-worktree rebase detection resolves Git metadata paths. Successful push no longer hides divergent local-base advancement. Initial recovery-ref failure blocks reconciliation and push. Normal retained-tree exits release capture locks.
+
+The parser reserves literal targets and requires a trailing record-file pair. Native usage and recovery-location guidance are updated. Each browser viewport owns a mutable fixture/server.
+
+Follow-up validation: full CLI **1785 passed** on Linux/Docker; Bash compatibility **72 passed**; board unit/integration **113 passed** on Windows; browser **163 passed, 20 skipped** on Windows. Product and board builds passed. Initial parallel runs had timeout failures; subsequent full runs passed. Windows publication-suite execution and macOS acceptance are recorded separately in the review/ledger.
+
+## Commit history
 
 | F-block | Range |
 |---|---|
