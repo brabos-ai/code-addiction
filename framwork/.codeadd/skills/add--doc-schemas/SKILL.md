@@ -25,6 +25,8 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - skill: add--doc-schemas/references/backlog.md
 - skill: add--doc-schemas/references/delivery-index.md
 - mention: backlog.sh
+- mention: backlog-cli.cjs
+- mention: backlog-commit.cjs
 - skill: add--doc-schemas/references/fix.md
 - skill: add--doc-schemas/references/history.md
 - skill: add--doc-schemas/references/new-feature.md
@@ -300,7 +302,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | File | Describes | Read it when |
 |------|-----------|--------------|
 | `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.sh` |
-| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` — the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing `.codeadd/scripts/backlog.sh` |
+| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries (`.codeadd/scripts/backlog*.cjs` and their `backlog*.sh` wrappers) |
 
 ## Validation Gate Block
 

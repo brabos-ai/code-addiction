@@ -98,7 +98,11 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: status.sh
 - mention: hotfix-gates.sh
 - mention: backlog.sh
+- mention: backlog-cli.cjs
+- mention: backlog-id.cjs
+- mention: backlog-git.cjs
 - mention: backlog-commit.sh
+- mention: backlog-commit.cjs
 - mention: migrate-context-files.sh
 - mention: init.sh
 - mention: qa-preflight.sh
@@ -283,8 +287,12 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | converge-gates.sh | add-build (Checkpoint Sequence and epic-wide gate), add-done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
 | build-ledger.sh | add-build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add--subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
 | task-brief.sh | add-build (STEP 10 dispatch), add--subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
-| backlog.sh | add--backlog — the project backlog: seven modes over `docs/backlog.jsonl`, where line order is the priority and only `move` reorders. Owns the status vocabulary in `docs/backlog.definitions.json`, which it seeds when absent and never rewrites. **Runs no git command at all**. It shells out to a Node entry point, which carries the IO and calls the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app |
-| backlog-commit.sh | add--backlog — the git route for a backlog write: wraps `backlog.sh` so the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise |
+| backlog.sh | add--backlog — a bash compatibility wrapper: node guard plus delegation to `backlog-cli.cjs`, the seven local modes over `docs/backlog.jsonl`, where line order is the priority and only `move` reorders. The status vocabulary in `docs/backlog.definitions.json` is seeded when absent and never rewritten. **Runs no git command at all**
+| backlog-cli.cjs | add--backlog — the native local entry: the positional grammar, `--record-file` records and native allocation (through `backlog-id.cjs` at the operation root), calling the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app |
+| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs plus the raw backlog text, anchored exactly the way the bash calculators grep; 9999 overflows refuse rather than wrap |
+| backlog-commit.sh | add--backlog — a bash compatibility wrapper: node guard plus delegation to `backlog-commit.cjs`, the publication entry |
+| backlog-commit.cjs | add--backlog — the git route for a backlog write: the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise, with durable recovery refs on every failed publication |
+| backlog-git.cjs | add--backlog — the git primitives the publication entry composes: base discovery, the path-scoped commit, fetch/rebase/push with verified aborts, and the recovery refs |
 | migrate-context-files.sh | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.sh | add-build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 

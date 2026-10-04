@@ -3,7 +3,11 @@
 **This is a format reference, not a doc schema.** Every other file under `references/` describes a Markdown
 document an agent authors, with frontmatter, depth floors and a Decision Log. This one describes **two
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
-its status vocabulary. Both are written by `.codeadd/scripts/backlog.sh`. Neither has a frontmatter
+its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
+(`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
+and write both files; `backlog.sh` and `backlog-commit.sh` are the bash compatibility wrappers that guard
+node and delegate to them. Backlog operations need Node >= 18 and Git — no bash, no WSL.
+Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
 of those apply to files a script owns.
 
@@ -14,8 +18,8 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 
 | File | Holds | Written by | Hand-edited? |
 |---|---|---|---|
-| `docs/backlog.jsonl` | the tickets, in priority order | `backlog.sh` only | never in normal operation |
-| `docs/backlog.definitions.json` | the status vocabulary | `backlog.sh`, once | **yes — it is the user's** |
+| `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through `backlog.sh`/`backlog-cli.cjs` | never in normal operation |
+| `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
 
 Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The location is settled the same way
 `docs/delivered.jsonl`'s is: the installer always gitignores `.codeadd/`, and these must survive a fresh

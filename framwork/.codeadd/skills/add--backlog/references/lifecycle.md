@@ -63,27 +63,38 @@ every later command reads `ticket:` from `about.md` and never from the intent fi
 
 ## Reading One Ticket
 
-`backlog.sh` has no mode that returns a single ticket by id — `search` matches title, tldr and notes, never
-the id. Read the whole board and keep the one line:
+The list output is JSONL plus `KEY=VALUE` metadata, and the match is by exact ticket id using
+agent parsing: run the read, scan the raw lines for `"id":"<the ticket id>"`, keep the one line
+and nothing else.
 
 ```bash
-bash .codeadd/scripts/backlog.sh list --all | grep '"id":"<the ticket id>"'
+node .codeadd/scripts/backlog-cli.cjs list --all
 ```
 
 **This is stable, not a workaround.** The record format writes `id` first on every line and never omits it,
-precisely so a ticket stays recoverable from its raw text. No output line means the id is not on the board.
+precisely so a ticket stays recoverable from its raw text — the agent's own line scan is the exact
+match, and no shell pipeline of grep or cut belongs in a native recipe. No matching line means the
+id is not on the board.
 
 ---
 
 ## Where a Board Write Goes
 
-Every write in this file is one call:
+Every write in this file is one call. The record travels on a FILE: compose the fields that change
+as one JSON object into a scratch file (anything in the working tree the caller cleans up after,
+`--record-file <path>` accepts any path relative to the caller's cwd, absolute too), then:
 
 ```bash
-printf '%s' '<the fields that change>' | bash .codeadd/scripts/backlog-commit.sh update <ticket id>
+node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <record.json>
 ```
 
-**The script writes to the BASE branch, never to the caller's.** On the base branch it commits directly;
+**The file is read in the caller's cwd BEFORE any git routing, allocation or persistence**, so the
+record's bytes are captured before the entry chooses a worktree — and a failed read exits 1 with
+`ERROR=record-read-failed` while nothing at all has happened on disk. stdin remains a
+compatibility path (`bash .codeadd/scripts/backlog-commit.sh update <id> < record.json`); the
+native recipe is the file.
+
+**The entry writes to the BASE branch, never to the caller's.** On the base branch it commits directly;
 anywhere else it writes through a detached, locked worktree of its own, so the ticket reaches the base
 branch without touching the tree or the branch the command is working in.
 
@@ -159,7 +170,7 @@ exploration — the user already wrote them down once.
 
 ```
 IF THE PATH IS spike:
-  ⛔ DO NOT USE: Bash to run backlog-commit.sh
+  ⛔ DO NOT USE: Bash to run the publication entry
   ⛔ DO NOT USE: Write on docs/brainstorm/ to carry the ticket forward
   ✅ DO: Name the ticket in the final report, and write nothing anywhere
 ```
@@ -180,7 +191,9 @@ exist yet. A write that did not land is one line in the handoff that follows.
 ONE board write, carrying `feature` — the feature id just allocated — and `refining`:
 
 ```bash
-printf '%s' '{"status":"refining","feature":"<FEATURE_ID>"}' | bash .codeadd/scripts/backlog-commit.sh update <ticket id>
+node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <scratch.json>
+# scratch.json is a file this run creates next to the work and cleans up:
+# {"status":"refining","feature":"<FEATURE_ID>"}
 ```
 
 **When the phase check skips `refining`, the write still carries `feature`.** The pointer is never skipped —
@@ -220,7 +233,8 @@ a dirty tree or a bad `branch:`, and a ticket marked `doing` for a build that ne
 board cannot correct by itself.
 
 ```bash
-printf '%s' '{"status":"doing","work_id":"<FEATURE_ID>"}' | bash .codeadd/scripts/backlog-commit.sh update <ticket id>
+node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <scratch.json>
+# scratch.json: {"status":"doing","work_id":"<FEATURE_ID>"}
 ```
 
 **One write, not two**, so the two fields can never disagree about whether the work started. Skipped when
@@ -245,7 +259,8 @@ and a failed merge would leave it lying. Skipped when the ticket already reads `
 reaches this step again.
 
 ```bash
-printf '%s' '{"status":"done"}' | bash .codeadd/scripts/backlog-commit.sh update <ticket id>
+node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <scratch.json>
+# scratch.json: {"status":"done"}
 ```
 
 ### `add-hotfix` — the jump
@@ -326,7 +341,7 @@ relationship between the work and the note about the work.
 | `docs/backlog.jsonl` absent (`BACKLOG_PRESENT=no`) | Nothing, silently |
 | The id is not on the board | Report it, and continue with no ticket |
 | A write is refused (`REFUSED=unknown-status`) | Report which status, and continue |
-| `backlog-commit.sh` reports a `DEGRADED=` write | Report what did not happen, and continue |
+| The publication entry reports a `DEGRADED=` write | Report what did not happen, and continue |
 
 ```
 IF ANY WRITE IN THIS FILE FAILS:

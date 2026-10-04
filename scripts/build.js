@@ -827,7 +827,7 @@ function usesTargetId(kind, target) {
     //   anything else   -> skill (much the commonest case)
     if (target.startsWith('@')) return `agent/${target.slice(1)}`;
     if (target.startsWith('/')) return `command/${target.slice(1)}`;
-    if (/\.(sh|js|mjs)$/.test(target)) return `script/${target}`;
+    if (/\.(?:sh|js|mjs|cjs)$/.test(target)) return `script/${target}`;
     return usesTargetId('skill', target);
   }
   if (kind === 'skill') {

@@ -1,7 +1,7 @@
 <!-- uses:
 - skill: add--backlog
 - skill: add--backlog/references/lifecycle.md
-- script: backlog-commit.sh
+- script: backlog-commit.cjs
 -->
 
 <!-- section:ticket-intent-field -->
@@ -24,7 +24,7 @@ IF STEP add-new.intent READ A ticket:
 <!-- /section:ticket-skeleton -->
 
 <!-- section:ticket-board-write -->
-- ✅ MAY: Make the board writes the `add-new` row of `{{skill:add--backlog/references/lifecycle.md}}` describes — `backlog-commit.sh` commits them to the base branch through its own worktree, so this tree and this branch stay untouched
+- ✅ MAY: Make the board writes the `add-new` row of `{{skill:add--backlog/references/lifecycle.md}}` describes — the native publication entry commits them to the base branch through its own worktree, so this tree and this branch stay untouched
 <!-- /section:ticket-board-write -->
 
 <!-- section:ticket-shaped -->

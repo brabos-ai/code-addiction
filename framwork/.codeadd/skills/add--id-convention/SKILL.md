@@ -15,6 +15,8 @@ description: Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs 
 - script: done.sh
 - script: get-branch-metadata.sh
 - script: next-id.sh
+- script: backlog-cli.cjs
+- script: backlog-id.cjs
 - mention: init.sh
 - script: qa-evidence.sh
 - script: status.sh
@@ -117,9 +119,16 @@ The number is global across every letter. It is the max over **both** the
 `docs/features/[NNNN][L]-*/` directories **and** the ids already on the backlog board,
 `docs/backlog.jsonl` — counting only the first would hand out a number a ticket already holds.
 
-⛔ **`status.sh next-id` DOES NOT CALL `next-id.sh`. It reimplements the scan.** Every command
-allocates through `status.sh`; only `init.sh` calls `next-id.sh` directly. Nothing in the code holds
-the two equal, and they have diverged before: `status.sh` matched four digits anywhere in the find
+**For a BACKLOG TICKET, allocation is native.** `backlog-id.cjs` computes the same max+1 from the
+same two sources, anchored on the raw text, and the local CLI does it for you when `add` runs —
+`node .codeadd/scripts/backlog-cli.cjs add --record-file <ticket.json>` needs no allocator call,
+and `10000` overflows are refused (`ERROR=id-allocation-failed`) rather than emitted. The bash
+calculators below stay authoritative for EVERY OTHER letter.
+
+⛔ **The two bash allocators still cross-check each other.** `status.sh next-id` DOES NOT CALL
+`next-id.sh`. It reimplements the scan. Every non-B command allocates through `status.sh`; only
+`init.sh` calls `next-id.sh` directly. Nothing in the code holds the two equal, and they have
+diverged before: `status.sh` matched four digits anywhere in the find
 path, so a slug like `0001F-auth-2024` returned `2025F` where `next-id.sh` returned `0002F` — two
 thousand ids burnt, silently, on the path every command uses.
 
