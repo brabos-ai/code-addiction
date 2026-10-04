@@ -42,7 +42,7 @@ Clean detached leftovers now require durable reachability before removal. Public
 
 The parser reserves literal targets and requires a trailing record-file pair. Native usage and recovery-location guidance are updated. Each browser viewport owns a mutable fixture/server.
 
-Follow-up validation: full CLI **1785 passed** on Linux/Docker; Bash compatibility **72 passed**; board unit/integration **113 passed** on Windows; browser **163 passed, 20 skipped** on Windows. Product and board builds passed. Initial parallel runs had timeout failures; subsequent full runs passed. Windows publication-suite execution and macOS acceptance are recorded separately in the review/ledger.
+Follow-up validation: full CLI **1785 passed** on Linux/Docker; Bash compatibility **72 passed**; board unit/integration **113 passed** on Windows; browser **163 passed, 20 skipped** on Windows; native Windows publication **38 passed** (161.75 s, exit 0). Product and board builds passed. Initial parallel runs had timeout failures; subsequent full runs passed. macOS acceptance remains pending in the review/ledger.
 
 ## Commit history
 
