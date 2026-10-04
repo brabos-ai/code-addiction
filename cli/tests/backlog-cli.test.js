@@ -24,7 +24,6 @@ const require = createRequire(import.meta.url);
 const ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPTS = path.join(ROOT, 'framwork', '.codeadd', 'scripts');
 const CLI_PATH = path.join(SCRIPTS, 'backlog-cli.cjs');
-const WRAPPER_PATH = path.join(SCRIPTS, 'backlog.sh');
 
 // The shipped backlog modules that are LOCAL-ONLY: allocation, core and
 // storage runs with Node built-ins alone and must carry no process start in
@@ -146,22 +145,11 @@ describe('backlog-cli — allocation: legacy metadata, native, exhaustion', () =
     expect(run(['list', '--all'], { cwd: root })).not.toMatch(/"id":"[0-9]{5}/);
   });
 
-  it('the old wrapper+CLI chain refuses at 9999 the same way the native entry does', () => {
-    // Characterization of the effective old behavior before the F4 cutover:
-    // the wrapper's allocator would emit 10000B, its own `^[0-9]{4}B$` filter
-    // refuses it, and the chain exits 1 with the allocation error.
+  it('allocation exhaustion has the same result through stdin and record-file', () => {
     seeded(root, '9999B');
     const rec = path.join(root, 'rec.json');
     fs.writeFileSync(rec, RECORD);
-    let status = 0; let stdout = '';
-    try {
-      execFileSync('bash', [WRAPPER_PATH, 'add'], {
-        encoding: 'utf8', cwd: root, input: RECORD,
-      });
-      status = 0;
-    } catch (e) {
-      status = e.status; stdout = e.stdout;
-    }
+    const { status, stdout } = fail(['add'], { cwd: root, input: RECORD });
     const native = fail(['add', '--record-file', 'rec.json'], { cwd: root });
     expect(native.status).toBe(status);
     expect(status).toBe(1);

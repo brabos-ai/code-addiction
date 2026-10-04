@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# backlog.sh — the project backlog: a prioritised ticket board a script owns
+# backlog-cli.cjs — the project backlog, invoked directly through Node
 # (plan docs/plans/2026-09-20T111051-PLAN--project-backlog-001-format-and-script.md,
 # F1). RED-FIRST: the script under test does not exist yet, and neither
 # allocator reads the backlog — every test below except the two regression
@@ -7,13 +7,13 @@
 # this file is committed BEFORE them.
 #
 # Contract under test (add-doc-schemas/references/backlog.md, F5):
-#   Usage: backlog.sh add                < ticket.json
-#          backlog.sh update  <id>       < patch.json
-#          backlog.sh comment <id>       < comment.json
-#          backlog.sh move    <id> --top | --after <id> | --bottom
-#          backlog.sh remove  <id>
-#          backlog.sh list   [--status <name>|--all]
-#          backlog.sh search  <query>
+#   Usage: node backlog-cli.cjs add                < ticket.json
+#          node backlog-cli.cjs update  <id>       < patch.json
+#          node backlog-cli.cjs comment <id>       < comment.json
+#          node backlog-cli.cjs move    <id> --top | --after <id> | --bottom
+#          node backlog-cli.cjs remove  <id>
+#          node backlog-cli.cjs list   [--status <name>|--all]
+#          node backlog-cli.cjs search  <query>
 #
 #   - TWO FILES, one script. docs/backlog.jsonl is the board; one minified JSON
 #     object per line, UTF-8, LF, and THE ORDER OF THE LINES IS THE PRIORITY.
@@ -22,14 +22,11 @@
 #     build-ledger.sh and task-brief.sh each restate their own version of that
 #     rule locally because no shared convention document exists.
 #
-#   - `set -u` only, NEVER -e: -e would turn a probe result into an exit code,
-#     which is the reason delivered.sh and qa-preflight.sh both state.
-#   - node is a HARD dependency, checked before any file I/O, because bash has
-#     no safe JSON primitive. Missing node prints ERROR=node-missing, exit 2.
+#   - Node >= 18 runs the entry directly; no Bash runtime guard is involved.
 #   - exit 0 for every probe result INCLUDING an absent backlog — an absent
 #     board is a result, not a failure. exit 1 ONLY when the filesystem refuses
 #     a write. exit 2 for caller error: a bad mode, bad arguments, a hard ban
-#     (REFUSED=<name>), or ERROR=node-missing.
+#     (REFUSED=<name>).
 #   - Output is KEY=VALUE lines, then raw JSONL entries. A line starting with
 #     `{` is a ticket; anything else is a key.
 #
@@ -40,7 +37,7 @@
 #     it is the testable form of the one-line-diff argument the design makes.
 #
 #   - THE ID COMES FROM THE SHARED GLOBAL COUNTER, as [NNNN][L] with letter B.
-#     Since the native cutover the wrapper no longer runs an allocator: the
+#     Since the native cutover the CLI performs native allocation: the
 #     id is calculated by backlog-id.cjs at the operation root (with the
 #     legacy BACKLOG_NEW_ID path preserved), and the two pure-bash
 #     allocators keep their cross-check in L2 — status.sh next-id versus
@@ -65,7 +62,7 @@
 #       6 stdin must be exactly one JSON object      REFUSED=invalid-json
 #       7 an id named by update/comment/move/remove must exist  REFUSED=unknown-id
 #
-#   - backlog.sh WRITES FILES AND NEVER COMMITS. The git route to the base
+#   - backlog-cli.cjs WRITES FILES AND NEVER COMMITS. The git route to the base
 #     branch belongs to the skill in subtopic 002, not here.
 
 setup() {
@@ -115,7 +112,7 @@ JSON
 # fresh clone. That is exactly how it passed locally and failed in CI with 127.
 nextid()  { bash "$SCRIPTS_DIR/next-id.sh" "$@"; }
 statusid() { bash "$SCRIPTS_DIR/status.sh" next-id "$@"; }
-backlog() { bash "$SCRIPTS_DIR/backlog.sh" "$@"; }
+backlog() { node "$SCRIPTS_DIR/backlog-cli.cjs" "$@"; }
 
 # key <NAME> — the value of a KEY=VALUE line in $output, or empty.
 key() {
@@ -179,7 +176,7 @@ tickets() {
 # The script builds its refusals as refuse("<name>") and the reference lists
 # them as rows of a table whose first column is the name. Neither carries the
 # literal string "REFUSED=<name>", so each side is read in its own shape.
-@test "L1.4: every REFUSED= name backlog.sh can emit appears in references/backlog.md" {
+@test "L1.4: every REFUSED= name the core can emit appears in references/backlog.md" {
   local ref="$SCRIPTS_DIR/../skills/add--doc-schemas/references/backlog.md"
   [ -f "$ref" ]
 
@@ -234,31 +231,8 @@ tickets() {
   done
 }
 
-# L1.5 — the two structural rules delivered.sh states, restated here as tests.
-@test "L1.5: backlog.sh sets -u, never -e, and checks node before any file I/O" {
-  [ -f "$SCRIPTS_DIR/backlog.sh" ]
-
-  # No `set -e` in any form.
-  run grep -nE '^[[:space:]]*set[[:space:]]+-[a-z]*e' "$SCRIPTS_DIR/backlog.sh"
-  [ "$status" -ne 0 ]
-
-  # `set -u` is present.
-  grep -qE '^[[:space:]]*set[[:space:]]+-u' "$SCRIPTS_DIR/backlog.sh"
-
-  # The node guard comes before the first read of either owned file.
-  local guard first_io
-  guard=$(grep -nE 'command -v node' "$SCRIPTS_DIR/backlog.sh" | head -1 | cut -d: -f1)
-  first_io=$(grep -nE 'node "\$SCRIPT_DIR/backlog-cli.cjs"' "$SCRIPTS_DIR/backlog.sh" | head -1 | cut -d: -f1)
-  [ -n "$guard" ]
-  [ -n "$first_io" ]
-  [ "$guard" -lt "$first_io" ]
-}
-
-@test "L1.5b: backlog.sh never invokes git — the git route belongs to the publication entry" {
-  [ -f "$SCRIPTS_DIR/backlog.sh" ]
-  run grep -nE '(^|[^a-z])git[[:space:]]+(add|commit|push|worktree|checkout)' "$SCRIPTS_DIR/backlog.sh"
-  [ "$status" -ne 0 ]
-}
+# Native no-process/no-Git coverage lives in cli/tests/backlog-cli.test.js.
+# Shell set flags and the Node guard retired with the compatibility entry.
 
 # ═══════════════════════════════════════════════════════════════════════════
 # L4 — the native cutover (plan 2026-10-04T004044-PLAN--native-node-backlog,F4)
@@ -278,18 +252,7 @@ tickets() {
 # L4 — the native cutover (plan 2026-10-04T004044-PLAN--native-node-backlog,F4)
 # ═══════════════════════════════════════════════════════════════════════════
 
-# L4.1 — the wrapper no longer needs an allocator of its own.
-@test "L4.1: backlog.sh names neither allocator — allocation belongs to the entry" {
-  [ -f "$SCRIPTS_DIR/backlog.sh" ]
-  run grep -nE 'status\.sh|next-id\.sh' "$SCRIPTS_DIR/backlog.sh"
-  # The header may NAME the allocators in prose; what must not exist is a
-  # call: any line INVOKING them (direct or through $SCRIPTS_DIR).
-  printf '%s\n' "$output" | grep -qE '\$SCRIPTS_DIR/(status|next-id)\.sh|bash "\$SCRIPT_DIR/(status|next-id)\.sh"' && {
-    echo "backlog.sh still runs an allocator"; return 1; }
-  return 0
-}
-
-@test "L4.2: the wrapper's native form works from bash — node directly, no shell deps" {
+@test "L4.2: the native entry accepts record-file with native allocation" {
   local record="$TEST_TEMP_DIR/native.json"
   printf '{"title":"native lands","theme":"t","labels":[],"tldr":"t","notes":[],"done_when":"it works","paths":[],"grounded":false,"status":"open"}\n' > "$record"
   [ -f "$record" ]
@@ -405,7 +368,7 @@ tickets() {
   [ ! -f "$DEFS" ]
 
   valid_ticket > /tmp/t.$$
-  run bash -c "bash '$SCRIPTS_DIR/backlog.sh' add < /tmp/t.$$"
+  run bash -c "node '$SCRIPTS_DIR/backlog-cli.cjs' add < /tmp/t.$$"
   rm -f /tmp/t.$$
   [ "$status" -eq 0 ]
 
@@ -441,7 +404,7 @@ tickets() {
 #
 # EVERY STATUS CARRIES ITS column AND label EXPLICITLY. The fallbacks those keys
 # have when absent are real and are asserted where their consumer lives, in
-# board/test/server.test.ts — backlog.sh reads a status in two places and both
+# board/test/server.test.ts — the core reads a status in two places and both
 # read s.name alone, so it resolves no fallback and a test here would be
 # asserting against nothing.
 
@@ -517,7 +480,7 @@ JSON
   local id
   id=$(grep -oE '"id":"[0-9]{4}B"' "$BACKLOG" | head -1 | cut -d'"' -f4)
 
-  run bash -c "printf '{\"status\":\"blocked\"}' | bash '$SCRIPTS_DIR/backlog.sh' update $id"
+  run bash -c "printf '{\"status\":\"blocked\"}' | node '$SCRIPTS_DIR/backlog-cli.cjs' update $id"
   [ "$status" -eq 0 ]
   grep -q '"status":"blocked"' "$BACKLOG"
 }
@@ -651,7 +614,7 @@ JSON
   local before
   before=$(cat "$BACKLOG")
 
-  run bash -c "printf '%s' '$(valid_ticket | sed 's/"status":"open"/"status":"invented"/')' | bash '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf '%s' '$(valid_ticket | sed 's/"status":"open"/"status":"invented"/')' | node '$SCRIPTS_DIR/backlog-cli.cjs' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=unknown-status'
   [ "$(cat "$BACKLOG")" = "$before" ]
@@ -725,29 +688,13 @@ JSON
   [ "$output" = "1" ]
 }
 
-# The node guard's guidance names the native entry: a shell-less recovery
-# path, so a user who cannot fix PATH still has the one command to run.
-@test "L4.3: the node guard's guidance names the native CLI entry" {
-  local fakebin="$TEST_TEMP_DIR/nonode"
-  mkdir -p "$fakebin"
-  for t in bash grep sed awk cat printf sort find head tail wc cut mkdir rm cp mv; do
-    command -v "$t" >/dev/null 2>&1 && ln -sf "$(command -v "$t")" "$fakebin/$t"
-  done
-
-  run env PATH="$fakebin" bash "$SCRIPTS_DIR/backlog.sh" list
-  [ "$status" -eq 2 ]
-  printf '%s\n' "$output" | grep -q 'ERROR=node-missing'
-  printf '%s\n' "$output" | grep -q 'backlog-cli.cjs'
-  printf '%s\n' "$output" | grep -qv 'REFUSED='
-}
-
 # ═══════════════════════════════════════════════════════════════════════════
 # The remaining hard bans
 # ═══════════════════════════════════════════════════════════════════════════
 
 @test "ban 1+2: a caller-supplied id, created_at or updated_at is refused" {
   for field in '"id":"0005B"' '"created_at":"2020-01-01T00:00:00Z"' '"updated_at":"2020-01-01T00:00:00Z"'; do
-    run bash -c "printf '{%s,\"title\":\"t\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' '$field' | bash '$SCRIPTS_DIR/backlog.sh' add"
+    run bash -c "printf '{%s,\"title\":\"t\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' '$field' | node '$SCRIPTS_DIR/backlog-cli.cjs' add"
     [ "$status" -eq 2 ]
     printf '%s\n' "$output" | grep -q 'REFUSED=reserved-field'
   done
@@ -755,24 +702,24 @@ JSON
 
 @test "ban 4: an id already on the board is never re-added" {
   backlog_line "0001B" "first"
-  run bash -c "printf '{\"title\":\"dup\"}' | bash '$SCRIPTS_DIR/backlog.sh' update 0001B"
+  run bash -c "printf '{\"title\":\"dup\"}' | node '$SCRIPTS_DIR/backlog-cli.cjs' update 0001B"
   [ "$status" -eq 0 ]
   # The board cannot end up with two lines carrying one id, by any route.
   [ "$(grep -c '"id":"0001B"' "$BACKLOG")" -eq 1 ]
 }
 
 @test "ban 5: title, tldr and done_when are required and non-empty" {
-  run bash -c "printf '{\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | bash '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf '{\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | node '$SCRIPTS_DIR/backlog-cli.cjs' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=missing-field'
 
-  run bash -c "printf '{\"title\":\"\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | bash '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf '{\"title\":\"\",\"tldr\":\"t\",\"done_when\":\"t\",\"status\":\"open\"}' | node '$SCRIPTS_DIR/backlog-cli.cjs' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=missing-field'
 }
 
 @test "ban 6: stdin that is not one JSON object is refused" {
-  run bash -c "printf 'not json at all' | bash '$SCRIPTS_DIR/backlog.sh' add"
+  run bash -c "printf 'not json at all' | node '$SCRIPTS_DIR/backlog-cli.cjs' add"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=invalid-json'
 }
@@ -780,7 +727,7 @@ JSON
 @test "ban 7: update, comment, move and remove refuse an id that is not on the board" {
   backlog_line "0001B" "first"
 
-  run bash -c "printf '{\"title\":\"x\"}' | bash '$SCRIPTS_DIR/backlog.sh' update 0404B"
+  run bash -c "printf '{\"title\":\"x\"}' | node '$SCRIPTS_DIR/backlog-cli.cjs' update 0404B"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=unknown-id'
 
@@ -817,24 +764,10 @@ JSON
   [ "$status" -eq 2 ]
 }
 
-@test "ERROR=node-missing exits 2 and is distinguishable from a REFUSED=" {
-  # Hide node from PATH, leaving the rest of the toolchain intact.
-  local fakebin="$TEST_TEMP_DIR/nonode"
-  mkdir -p "$fakebin"
-  for t in bash grep sed awk cat printf sort find head tail wc cut mkdir rm cp mv; do
-    command -v "$t" >/dev/null 2>&1 && ln -sf "$(command -v "$t")" "$fakebin/$t"
-  done
-
-  run env PATH="$fakebin" bash "$SCRIPTS_DIR/backlog.sh" list
-  [ "$status" -eq 2 ]
-  printf '%s\n' "$output" | grep -q 'ERROR=node-missing'
-  printf '%s\n' "$output" | grep -qv 'REFUSED='
-}
-
 # ═══════════════════════════════════════════════════════════════════════════
 # L4 — `labels`, the optional grouping field
 # (plan docs/plans/2026-09-21T134430-PLAN--backlog-board-001-internal-backlog-migration.md,
-# F1). RED-FIRST: L4.1–L4.3 fail until backlog.sh `add` keeps the field;
+# F1). RED-FIRST: L4.1–L4.3 failed until the entry kept the field;
 # L4.4 and L4.5 are regression guards that pass today and must keep passing.
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -842,7 +775,7 @@ JSON
 # record never passes through the shell's quoting.
 add_with() {
   printf '%s' "$1" > "$TEST_TEMP_DIR/rec.json"
-  run bash -c "bash '$SCRIPTS_DIR/backlog.sh' add < '$TEST_TEMP_DIR/rec.json'"
+  run backlog add --record-file "$TEST_TEMP_DIR/rec.json"
 }
 
 # field <name> — the JSON value of <name> on the board's last line, or

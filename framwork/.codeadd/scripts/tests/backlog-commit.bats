@@ -1,23 +1,12 @@
 #!/usr/bin/env bats
-# backlog-commit.sh — the git route for a backlog write, SINCE THE NATIVE
-# CUTOVER a thin wrapper that guards node and delegates everything to the
-# adjacent native publication entry, backlog-commit.cjs
-# (plan docs/plans/2026-10-04T004044-PLAN--native-node-backlog, F4).
+# backlog-commit.cjs — native publication entry, called directly by Node.
 #
 # The FULL contract — routing, the worktree and its lock, the path-scoped
 # commit, the rebase and the durable recovery refs — is exercised once and
 # exactly in cli/tests/backlog-publication.test.js, against disposable
 # repositories and remotes, because the entry is itself the contract now.
-# What stays here is what the WRAPPER owns:
-#
-#   - the node guard: without `node` the wrapper prints ERROR=node-missing,
-#     exit 2, and the guidance names the native entry, so the user can run
-#     the one command that needs no shell at all;
-#   - delegation: every argument passes through untouched, so the entry's
-#     grammar, its record-file channel and its stdin compatibility are the
-#     same shape bash callers have always piped;
-#   - pass-through of entry results — TICKET_ID, ROUTE, DEGRADED and the
-#     additive recovery keys on stdout, REFUSED= and its exit code verbatim.
+# This suite retains grammar, record-file/stdin and result-contract cases:
+# TICKET_ID, ROUTE, DEGRADED, recovery keys, refusals and exit codes.
 #
 # Dependencies: bash 3.2+, node >= 18.
 #
@@ -37,8 +26,8 @@ BACKLOG="docs/backlog.jsonl"
 
 # ─── Fixture helpers ─────────────────────────────────────────────────────────
 
-commit() { bash "$SCRIPTS_DIR/backlog-commit.sh" "$@"; }
-backlog() { bash "$SCRIPTS_DIR/backlog.sh" "$@"; }
+commit() { node "$SCRIPTS_DIR/backlog-commit.cjs" "$@"; }
+backlog() { node "$SCRIPTS_DIR/backlog-cli.cjs" "$@"; }
 
 # key <NAME> — the value of a KEY=VALUE line in $output, or empty.
 key() {
@@ -53,7 +42,7 @@ valid_ticket() {
 JSON
 }
 
-# seed_board — put one ticket on the CURRENT branch from the wrapper itself
+# seed_board — initialize the CURRENT branch for native publication
 # (a repo without a remote: the commit stays local, degrading without a lie).
 seed_board() {
   git init -q .
@@ -64,29 +53,15 @@ seed_board() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════
-# L1 — the wrapper's own contract
+# L1 — the native entry's contract
 # ═══════════════════════════════════════════════════════════════════════════
-
-@test "L1.1: without node the wrapper exits 2 and names the native entry" {
-  local fakebin="$TEST_TEMP_DIR/nonode"
-  mkdir -p "$fakebin"
-  for t in bash grep sed awk cat printf sort find head tail wc cut mkdir rm cp mv; do
-    command -v "$t" >/dev/null 2>&1 && ln -sf "$(command -v "$t")" "$fakebin/$t"
-  done
-
-  run env PATH="$fakebin" bash "$SCRIPTS_DIR/backlog-commit.sh" list
-  [ "$status" -eq 2 ]
-  printf '%s\n' "$output" | grep -q 'ERROR=node-missing'
-  printf '%s\n' "$output" | grep -q 'backlog-commit.cjs'
-  printf '%s\n' "$output" | grep -qv 'REFUSED='
-}
 
 @test "L1.2: a bad mode is a caller error, usage on stderr" {
   run commit frobnicate
   [ "$status" -eq 2 ]
 }
 
-@test "L1.3: list and search are refused by name — reads go to backlog.sh" {
+@test "L1.3: list and search are refused by name — reads go to the local CLI" {
   run commit list
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'ERROR=read-mode'
@@ -96,10 +71,10 @@ seed_board() {
   printf '%s\n' "$output" | grep -q 'ERROR=read-mode'
 }
 
-@test "L1.4: an add through the wrapper lands, persists and commits locally" {
+@test "L1.4: a native add lands, persists and commits locally" {
   valid_ticket > "$TEST_TEMP_DIR/t.json"
   seed_board
-  run bash -c "bash '$SCRIPTS_DIR/backlog-commit.sh' add --record-file '$TEST_TEMP_DIR/t.json'"
+  run commit add --record-file "$TEST_TEMP_DIR/t.json"
   [ "$status" -eq 0 ]
   [ "$(key ROUTE)" = "direct" ]
   [ "$(key PUSHED)" = "no" ]
@@ -120,7 +95,7 @@ seed_board() {
   # bash -c quoting.
   valid_ticket > "$TEST_TEMP_DIR/stdin-record.json"
 
-  run bash -c "bash '$SCRIPTS_DIR/backlog-commit.sh' add < '$TEST_TEMP_DIR/stdin-record.json'"
+  run bash -c 'node "$1" add < "$2"' -- "$SCRIPTS_DIR/backlog-commit.cjs" "$TEST_TEMP_DIR/stdin-record.json"
   [ "$status" -eq 0 ]
   [ "$(key PERSISTED)" = "yes" ]
   [ "$(key TICKET_ID)" != "" ]
@@ -128,8 +103,8 @@ seed_board() {
 
 @test "L1.6: a refusal passes through with the CLI's own exit code" {
   seed_board
-  printf '{}' > "$TEST_TEMP_DIR/p.json"
-  run bash -c "printf '%s' '{\"title\":\"gone\",\"tldr\":\"t\",\"done_when\":\"t\"}' | bash '$SCRIPTS_DIR/backlog-commit.sh' update 0404B"
+  printf '%s' '{"title":"gone","tldr":"t","done_when":"t"}' > "$TEST_TEMP_DIR/p.json"
+  run commit update 0404B --record-file "$TEST_TEMP_DIR/p.json"
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'REFUSED=unknown-id'
 }
@@ -143,7 +118,7 @@ seed_board() {
   cd "$TEST_TEMP_DIR/plain"
   valid_ticket > "$TEST_TEMP_DIR/plain/t.json"
 
-  run bash -c "bash '$SCRIPTS_DIR/backlog-commit.sh' add --record-file '$TEST_TEMP_DIR/plain/t.json'"
+  run commit add --record-file "$TEST_TEMP_DIR/plain/t.json"
   [ "$status" -eq 0 ]
   [ "$(key ROUTE)" = "none" ]
   [ "$(key DEGRADED)" = "not-a-git-repo" ]
