@@ -25,8 +25,8 @@
  * discard. An unchecked-out base advances only through a verified
  * fast-forward (compare-and-swap update-ref); a checked-out base is never
  * advanced out-of-band. The caller tree's unrelated staged and unstaged
- * changes survive every commit — the commit is the two board paths by name,
- * never the caller's index — and a dirty caller tree degrades the rebase
+ * changes survive every commit — an isolated index carries only the board
+ * operation's delta, never the caller's index — and a dirty caller tree degrades the rebase
  * instead of stashing anything away.
  *
  * THE OLD CONTRACT IS PRESERVED: ROUTE / BASE_BRANCH / TICKET_ID / SHA /
@@ -50,6 +50,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 
 const BACKLOG_FILE = 'docs/backlog.jsonl';
 const DEFS_FILE = 'docs/backlog.definitions.json';
@@ -75,7 +76,7 @@ class GitError extends Error {
  * { status, stdout, stderr } result instead, for the probes that treat a
  * failure as an answer.
  */
-function run(args, cwd, { allowFailure = false, input } = {}) {
+function run(args, cwd, { allowFailure = false, input, env } = {}) {
   let proc;
   try {
     proc = execFileSync('git', args, {
@@ -83,6 +84,7 @@ function run(args, cwd, { allowFailure = false, input } = {}) {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
       input,
+      env: env ? { ...process.env, ...env } : process.env,
     });
   } catch (e) {
     const outcome = {
@@ -187,10 +189,11 @@ function worktreesCheckedOutAt(root, baseBranch) {
  * policy, so it is never skipped.
  */
 function conditionsAt(root) {
-  const rebasing = fs.existsSync(path.join(root, '.git', 'REBASE_HEAD')) ||
-    fs.existsSync(path.join(root, 'REBASE_HEAD'));
+  const gitDir = run(['rev-parse', '--absolute-git-dir'], root, { allowFailure: true });
+  const rebasing = gitDir.status === 0 && ['REBASE_HEAD', 'rebase-merge', 'rebase-apply']
+    .some((marker) => fs.existsSync(path.join(gitDir.stdout.trim(), marker)));
   const out = run(['status', '--porcelain'], root, { allowFailure: true });
-  if (out.status !== 0) {
+  if (out.status !== 0 || gitDir.status !== 0) {
     return { readable: false, dirty: false, staged: false, unmerged: false, rebasing, entries: [] };
   }
   const entries = [];
@@ -300,7 +303,7 @@ function rebaseOntoFetchHead(root) {
   const cond = conditionsAt(root);
   const abort = run(['rebase', '--abort'], root, { allowFailure: true });
   const scan = conditionsAt(root);
-  if (abort.status !== 0) {
+  if (abort.status !== 0 || !scan.readable || scan.rebasing || scan.unmerged) {
     return { ok: false, reason: 'abort-failed', conflicted: true, cond: scan, preCond: cond };
   }
   return { ok: false, reason: 'rebase-conflict', conflicted: true };
@@ -323,36 +326,122 @@ function pushToBase(root, baseBranch) {
 // Commit: the two board paths by name, never the caller's index
 // ---------------------------------------------------------------------------
 
-/** Whether anything under the named paths differs, against HEAD or index. */
-function pathsDirty(root, paths) {
-  const st = run(['status', '--porcelain', '--', ...paths], root, { allowFailure: true });
-  if (st.status !== 0) return false;
-  return Boolean((st.stdout || '').trim());
+/** Normalize working bytes through Git's path-specific clean filters. */
+function workingContent(root, rel) {
+  const file = path.join(root, rel);
+  if (!fs.existsSync(file)) return null;
+  const blob = run(['hash-object', '-w', '--path', rel, '--stdin'], root, {
+    input: fs.readFileSync(file),
+  }).stdout.trim();
+  return run(['cat-file', 'blob', blob], root).stdout;
+}
+
+/** Capture BEFORE the domain mutation, without modifying the caller index. */
+function snapshotBoard(root) {
+  try {
+    const cond = conditionsAt(root);
+    if (!cond.readable || cond.rebasing || cond.unmerged) return { ok: false };
+    const files = {};
+    for (const rel of [BACKLOG_FILE, DEFS_FILE]) {
+      const head = run(['show', `HEAD:${rel}`], root, { allowFailure: true });
+      const index = run(['show', `:${rel}`], root, { allowFailure: true });
+      const entry = run(['ls-files', '--stage', '--', rel], root);
+      files[rel] = {
+        head: head.status === 0 ? head.stdout : null,
+        index: index.status === 0 ? index.stdout : null,
+        working: workingContent(root, rel),
+        mode: entry.stdout.match(/^(\d+) /)?.[1] || '100644',
+      };
+    }
+    return { ok: true, sha: headSha(root), files };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Three-way merge; conflicts produce no file/index edits in the caller. */
+function mergeContent(root, temp, current, base, incoming) {
+  if (current === base) return { ok: true, content: incoming };
+  if (incoming === base || current === incoming) return { ok: true, content: current };
+  // Creation/deletion overlap cannot be safely inferred from an empty file.
+  if ([current, base, incoming].some((value) => value === null)) return { ok: false };
+  const names = ['current', 'base', 'incoming'].map((name) => path.join(temp, name));
+  [current, base, incoming].forEach((value, i) => fs.writeFileSync(names[i], value));
+  const merge = run(['merge-file', '-p', ...names], root, { allowFailure: true });
+  return merge.status === 0 ? { ok: true, content: merge.stdout } : { ok: false };
+}
+
+function setIndexContent(root, indexFile, rel, content, mode) {
+  const env = { GIT_INDEX_FILE: indexFile };
+  if (content === null) {
+    run(['update-index', '--force-remove', '--', rel], root, { env });
+  } else {
+    const blob = run(['hash-object', '-w', '--stdin'], root, { input: content }).stdout.trim();
+    run(['update-index', '--add', '--cacheinfo', `${mode},${blob},${rel}`], root, { env });
+  }
 }
 
 /**
- * Commit ONLY the board paths. Preserves unrelated staged and unstaged
- * caller work: explicit paths, per-path, never `-A` and never `.`, never
- * the caller's whole index. Returns the new HEAD, or the existing one when
- * the bytes did not move — a no-op mutation is distinguished by COMMITTED.
- *
- * A board path that is still UNTRACKED (the first write on a fresh
- * repository) must be staged before the commit can carry it — `--only`
- * commits the named paths' content, but an untracked path skips the
- * stage step and a bare `--only` alone leaves it out.
+ * Publish only the operation delta onto HEAD through a temporary index.
+ * A second index keeps all caller entries, with staged board changes merged
+ * onto the new board HEAD. Both merges are verified BEFORE committing.
+ * The real index lock is held throughout, then replaced atomically on success.
+ * Neither the caller working bytes nor its unrelated index entries are edited.
  */
-function commitBoard(root, paths, message) {
-  if (!pathsDirty(root, paths)) {
-    return { committed: false, sha: headSha(root) };
+function commitBoard(root, paths, message, snapshot) {
+  if (!snapshot?.ok || headSha(root) !== snapshot.sha) {
+    return { committed: false, degraded: 'caller-worktree-dirty', sha: headSha(root) };
   }
-  // Stage exactly these paths — this is the only staging this module ever
-  // does, and it can never reach a caller path it was not handed.
-  run(['add', '--', ...paths], root);
-  const commit = run(['commit', '--only', ...paths, '-m', message], root, { allowFailure: true });
-  if (commit.status !== 0) {
-    return { committed: false, sha: headSha(root), failed: true };
+  let temp; let lock; let lockFd; let committed = false;
+  try {
+    const cond = conditionsAt(root);
+    if (!cond.readable || cond.rebasing || cond.unmerged) {
+      return { committed: false, degraded: 'caller-worktree-dirty', sha: headSha(root) };
+    }
+    temp = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-backlog-index-'));
+    const updates = [];
+    for (const rel of paths) {
+      const before = snapshot.files[rel];
+      const after = workingContent(root, rel);
+      if (before.working === after) continue;
+      const publication = mergeContent(root, temp, before.head, before.working, after);
+      if (!publication.ok) return { committed: false, degraded: 'caller-worktree-dirty' };
+      if (publication.content === before.head) continue;
+      const staged = mergeContent(root, temp, before.index, before.head, publication.content);
+      if (!staged.ok) return { committed: false, degraded: 'caller-worktree-dirty' };
+      updates.push({ rel, content: publication.content, staged: staged.content, mode: before.mode });
+    }
+    if (!updates.length) return { committed: false, sha: headSha(root) };
+
+    const indexPath = path.resolve(root, run(['rev-parse', '--git-path', 'index'], root).stdout.trim());
+    const lockPath = indexPath + '.lock';
+    lockFd = fs.openSync(lockPath, 'wx');
+    lock = lockPath; // Only a lock created by this invocation is ever removed.
+    const publishIndex = path.join(temp, 'publication-index');
+    const callerIndex = path.join(temp, 'caller-index');
+    if (fs.existsSync(indexPath)) fs.copyFileSync(indexPath, callerIndex);
+    else run(['read-tree', 'HEAD'], root, { env: { GIT_INDEX_FILE: callerIndex } });
+    run(['read-tree', 'HEAD'], root, { env: { GIT_INDEX_FILE: publishIndex } });
+    for (const update of updates) {
+      setIndexContent(root, publishIndex, update.rel, update.content, update.mode);
+      setIndexContent(root, callerIndex, update.rel, update.staged, update.mode);
+    }
+    const commit = run(['commit', '-m', message], root, {
+      allowFailure: true, env: { GIT_INDEX_FILE: publishIndex },
+    });
+    if (commit.status !== 0) return { committed: false, sha: headSha(root), failed: true };
+    committed = true;
+    fs.writeFileSync(lockFd, fs.readFileSync(callerIndex));
+    fs.closeSync(lockFd); lockFd = undefined;
+    fs.renameSync(lock, indexPath); lock = undefined;
+    return { committed: true, sha: headSha(root) };
+  } catch {
+    return { committed, sha: headSha(root), failed: true };
+  } finally {
+    if (lockFd !== undefined) fs.closeSync(lockFd);
+    if (lock) fs.rmSync(lock, { force: true });
+    if (temp) fs.rmSync(temp, { recursive: true, force: true });
   }
-  return { committed: true, sha: headSha(root) };
 }
 
 // ---------------------------------------------------------------------------
@@ -377,7 +466,8 @@ function leftOverSha(abs) {
  *   lock — nothing here removes it;
  * - an unlocked registration carrying unsafe conditions refuses with its
  *   path/sha so the data is recoverable the way the run says;
- * - an unlocked clean registration is swept, then the tree is created
+ * - an unlocked clean registration with durably reachable HEAD is swept,
+ *   then the tree is created
  *   DETACHED at the base and LOCKED for the whole capture;
  * - `.worktrees/` lands in .gitignore only when absent, matching
  *   build-setup.sh's convention.
@@ -390,7 +480,11 @@ function setupWorktree(root, baseBranch) {
       return { ok: false, refusal: 'worktree-locked', path: abs };
     }
     const cond = conditionsAt(abs);
-    const unsafe = cond.rebasing || cond.unmerged || cond.dirty || cond.staged;
+    const sha = leftOverSha(abs);
+    const refs = sha ? run(['for-each-ref', '--contains', sha, '--format=%(refname)',
+      'refs/heads', 'refs/remotes', RECOVERY_NS], root, { allowFailure: true }) : null;
+    const protectedHead = refs?.status === 0 && Boolean(refs.stdout.trim());
+    const unsafe = !cond.readable || cond.rebasing || cond.unmerged || cond.dirty || cond.staged || !protectedHead;
     if (unsafe) {
       return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond, sha: leftOverSha(abs) };
     }
@@ -420,17 +514,17 @@ function setupWorktree(root, baseBranch) {
 }
 
 /**
- * Tear the capture down. A retained tree keeps its lock — the next run
- * refuses reuse with the recovery path, and the data stays put. Removal is
+ * Tear the capture down. Normal exit releases the active capture lock;
+ * unsafe retained data is refused by the next sweep. Removal is
  * never forced: a tree that carries anything is retained and reported.
  * `canRemove` is the caller's verified answer, not an assumption.
  */
 function teardownWorktree(root, canRemove) {
   const abs = ourWorktreePath(root);
+  const unlock = run(['worktree', 'unlock', abs], root, { allowFailure: true });
   if (!canRemove) {
-    return { removed: false, path: abs };
+    return { removed: false, path: abs, unlocked: unlock.status === 0 };
   }
-  run(['worktree', 'unlock', abs], root, { allowFailure: true });
   const removed = run(['worktree', 'remove', abs], root, { allowFailure: true }).status === 0;
   return { removed, path: abs };
 }
@@ -453,7 +547,7 @@ module.exports = {
   rebaseOntoFetchHead,
   headSha,
   pushToBase,
-  pathsDirty,
+  snapshotBoard,
   commitBoard,
   ourWorktreePath,
   setupWorktree,

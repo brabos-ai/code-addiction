@@ -228,14 +228,14 @@ Then state, from the publication entry's own output:
 | `no-base-branch` | same, and no `main` or `master` was found to commit to |
 | `worktree-failed` / `worktree-lock-failed` | the ticket is in the working tree, uncommitted — the temporary worktree could not be created, or its capture lock could not be taken |
 | `worktree-recovery-required` | an earlier capture left recoverable work in the worktree — refuse reuse and give the path the entry printed |
-| `no-remote` | the commit is on the local base branch; there is no remote to push to |
-| `push-refused` | the commit is on the local base branch; the push was refused — a protected branch, a ruleset, or auth |
-| `fetch-failed` | the commit is on the local base branch; the remote could not be fetched, so no rebase or push happened from stale state |
-| `rebase-conflict` | the commit is on the local base branch; the remote moved and the rebase was aborted rather than resolved |
-| `caller-worktree-dirty` | the commit is on the local base branch; the caller's own staged or unstaged work made the rebase unsafe, so it was skipped — nothing was stashed or reset |
+| `no-remote` | there is no remote to push to; locate the commit using SHA, ROUTE and RECOVERY_* |
+| `push-refused` | the push was refused — a protected branch, a ruleset, or auth; locate the commit using SHA, ROUTE and RECOVERY_* |
+| `fetch-failed` | the remote could not be fetched, so no rebase or push used stale state; locate the commit using SHA, ROUTE and RECOVERY_* |
+| `rebase-conflict` | the remote moved and the rebase conflicted; RECOVERY_PATH identifies retained state if abort could not complete |
+| `caller-worktree-dirty` | caller changes or unreadable Git state prevented safe commit or rebase; use COMMITTED and RECOVERY_PATH to distinguish the outcomes — nothing was stashed or reset |
 | `base-advance-failed` | the commit is ref-protected; the local base branch could not fast-forward itself |
-| `base-checked-out-elsewhere` | the commit exists by sha only — the push failed and the base branch is checked out in another worktree |
-| `recovery-ref-failed` / `recovery-ref-moved` / `recovery-ref-delete-failed` | the durable recovery ref could not be created, was moved by someone else, or could not be released — the entry prints the ref it kept |
+| `base-checked-out-elsewhere` | the local base could not advance because it is checked out elsewhere; use PUSHED and RECOVERY_* to locate the result |
+| `recovery-ref-failed` / `recovery-ref-moved` / `recovery-ref-delete-failed` | protection could not be created, was moved, or could not be released; report only the RECOVERY_REF/RECOVERY_PATH actually printed |
 | `cleanup-failed` | the commit is ref-protected and the temporary worktree could not be removed — the entry prints the retained path |
 
 - Whether the ticket is **grounded**, or was recorded as stated.
@@ -249,6 +249,10 @@ IF THE SCRIPT REPORTED A DEGRADED WRITE:
 
 **A degraded write is still a write.** The ticket exists in every one of those rows, which is the
 promise the script is built around — say what happened, and do not dress it up either way.
+
+For `ROUTE=direct`, a committed SHA is on the caller's base branch. For `ROUTE=worktree`,
+do not infer that the local base advanced: the recovery ref/path and PUSHED describe where
+the commit is retained or published. `COMMITTED=no` means the persisted bytes are at RECOVERY_PATH.
 
 ---
 

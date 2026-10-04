@@ -9,9 +9,11 @@ import { join } from 'node:path';
 // the default 4317 so a board already open on this machine does not answer.
 const PORT = 4399;
 const LAYERS_PORT = 4419;
-const NATIVE_PORT = 4429;
 const FIXTURE = "./test-results/fixture";
-const NATIVE_FIXTURE = "./test-results/fixture-native";
+const NATIVE_PROJECTS = ['mobile-360', 'tablet-768', 'desktop-1080'].map((name, i) => ({
+  name, port: 4429 + i,
+  fixture: `./test-results/fixture-native-${name}`,
+}));
 // Workers load this config too; only the main process may write the fixture,
 // or a worker deletes it while the server is reading it.
 if (process.env.TEST_WORKER_INDEX === undefined) writeFixture(FIXTURE);
@@ -29,7 +31,9 @@ function writeNativeFixture(root: string): void {
     comments: [], feature: null, work_id: null,
   })}\n`);
 }
-if (process.env.TEST_WORKER_INDEX === undefined) writeNativeFixture(NATIVE_FIXTURE);
+if (process.env.TEST_WORKER_INDEX === undefined) {
+  for (const project of NATIVE_PROJECTS) writeNativeFixture(project.fixture);
+}
 
 export default defineConfig({
   testDir: './e2e',
@@ -39,8 +43,6 @@ export default defineConfig({
   reporter: [['list']],
   metadata: {
     layersURL: `http://127.0.0.1:${LAYERS_PORT}`,
-    nativeURL: `http://127.0.0.1:${NATIVE_PORT}`,
-    nativeFixture: NATIVE_FIXTURE,
   },
   use: { baseURL: `http://127.0.0.1:${PORT}`, trace: 'retain-on-failure' },
   webServer: [{
@@ -55,18 +57,24 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 30000,
     env: { NODE_OPTIONS: '' },
-  }, {
-    // The native-spec server. Its fixture is the ONLY mutable one; the
-    // spec drives it with the shipped backlog entries and never reloads.
-    command: `node server.mjs --root ${NATIVE_FIXTURE} --port ${NATIVE_PORT} --no-open`,
-    url: `http://127.0.0.1:${NATIVE_PORT}/api/board`,
+  }, ...NATIVE_PROJECTS.map((project) => ({
+    // Every viewport owns its mutable fixture/server: native add is not a
+    // concurrent reservation protocol, so tests must not share its files.
+    command: `node server.mjs --root ${project.fixture} --port ${project.port} --no-open`,
+    url: `http://127.0.0.1:${project.port}/api/board`,
     reuseExistingServer: false,
     timeout: 30000,
     env: { NODE_OPTIONS: '' },
-  }],
+  }))],
   projects: [
     { name: 'mobile-360', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 800 }, hasTouch: true } },
     { name: 'tablet-768', use: { ...devices['Desktop Chrome'], viewport: { width: 768, height: 1024 } } },
     { name: 'desktop-1080', use: { ...devices['Desktop Chrome'], viewport: { width: 1080, height: 900 } } },
-  ],
+  ].map((project) => {
+    const native = NATIVE_PROJECTS.find((p) => p.name === project.name)!;
+    return { ...project, metadata: {
+      nativeURL: `http://127.0.0.1:${native.port}`,
+      nativeFixture: native.fixture,
+    } };
+  }),
 });

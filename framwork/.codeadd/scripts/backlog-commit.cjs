@@ -50,18 +50,15 @@ const core = require('./backlog-core.cjs');
 const cli = require('./backlog-cli.cjs');
 const git = require('./backlog-git.cjs');
 
-const USAGE = `USAGE: bash .codeadd/scripts/backlog-commit.sh <write-mode> [args]
-  add                       < ticket.json
-  update  <id>              < patch.json
-  comment <id>              < comment.json
-  move    <id> --top | --after <id> | --bottom
-  remove  <id>
-
-\`list\` and \`search\` are reads. Call backlog.sh directly for those.
-Native form: node .codeadd/scripts/backlog-commit.cjs <mode> [args]
+const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [args]
   add                       --record-file ticket.json
   update  <id>              --record-file patch.json
   comment <id>              --record-file comment.json
+  move    <id> --top | --after <id> | --bottom
+  remove  <id>
+
+\`list\` and \`search\` are reads. Call backlog-cli.cjs directly for those.
+Compatibility: bash .codeadd/scripts/backlog-commit.sh <mode> [args] < record.json
 `;
 
 function usage() {
@@ -266,6 +263,8 @@ function main(argv) {
     rawRecord = captured.raw || '';
   }
 
+  const snapshot = (isDirect || isCapture) ? git.snapshotBoard(opRoot) : null;
+
   // ── 5. The domain operation — the same one the local CLI calls ───────────
   const result = core.executeBacklog({
     root: opRoot,
@@ -305,13 +304,23 @@ function main(argv) {
 
   // ── 6. Commit: the two board paths by name, never the caller's index ────
   const paths = boardPaths(opRoot);
-  const commit = git.commitBoard(opRoot, paths, `chore(backlog): ${mode} ${result.ticketId}`);
+  const commit = git.commitBoard(opRoot, paths, `chore(backlog): ${mode} ${result.ticketId}`, snapshot);
+
+  if (commit.degraded) {
+    report.set('RECOVERY_PATH', path.resolve(opRoot));
+    report.set('PUSHED', 'no');
+    if (isCapture) git.teardownWorktree(callerRoot, false);
+    finish(report, mergeDegraded(degraded, commit.degraded), 0);
+  }
 
   if (commit.failed) {
-    // The bytes PERSISTED; the commit is what failed. A retained worktree
-    // stays LOCKED — the next run refuses reuse until a human recovers it —
-    // and the direct route keeps the bytes in the caller tree.
+    // The bytes survived. A normal exit releases the capture lock but retains
+    // the data; the next sweep refuses unsafe recovery state.
+    report.set('COMMITTED', commit.committed ? 'yes' : 'no');
+    if (commit.committed) report.set('SHA', commit.sha);
     report.set('RECOVERY_PATH', path.resolve(opRoot));
+    report.set('PUSHED', 'no');
+    if (isCapture) git.teardownWorktree(callerRoot, false);
     process.stdout.write('ERROR=commit-failed\n');
     finish(report, degraded, 1);
   }
@@ -321,8 +330,10 @@ function main(argv) {
   if (sha) report.set('SHA', sha);
 
   // ── 7. Protect OUR commit BEFORE any rebase or cleanup ───────────────────
+  let protectionReady = true;
   if (isCapture && commit.committed && sha) {
     const held = protectOrDegrade(callerRoot, sha, report, recoveryState);
+    protectionReady = held;
     if (!held) degraded = mergeDegraded(degraded, 'recovery-ref-failed');
   }
 
@@ -330,7 +341,11 @@ function main(argv) {
   let rebaseBlocked = false;
 
   const remote = git.run(['remote', 'get-url', 'origin'], opRoot, { allowFailure: true });
-  if (remote.status !== 0) {
+  if (!protectionReady) {
+    // Do not rewrite or publish an unprotected detached commit. Keep its
+    // worktree as the recovery location instead of entering reconciliation.
+    rebaseBlocked = true;
+  } else if (remote.status !== 0) {
     degraded = mergeDegraded(degraded, 'no-remote');
   } else {
     const fetch = git.fetchBase(opRoot, routing.baseBranch);
@@ -344,7 +359,7 @@ function main(argv) {
       if (needsRebase) {
         // Caller bytes and staged intent are preserved, whatever happens.
         const cond = git.conditionsAt(opRoot);
-        if (cond.dirty || cond.staged || cond.unmerged || cond.rebasing) {
+        if (!cond.readable || cond.dirty || cond.staged || cond.unmerged || cond.rebasing) {
           degraded = mergeDegraded(degraded, 'caller-worktree-dirty');
           rebaseBlocked = true;
         } else {
@@ -388,17 +403,19 @@ function main(argv) {
   const protectedRef = sha ? git.RECOVERY_NS + '/' + sha : null;
   const protectedHeld = protectedRef ? git.readRef(callerRoot, protectedRef) === sha : false;
 
-  if (isCapture && commit.committed && sha && routing.baseSha) {
+  let baseDiverged = false;
+  if (isCapture && commit.committed && sha && routing.baseSha && protectionReady) {
     // Advance the local base only once, only through this run's commit:
     // unchecked-out, verified fast-forward, CAS. Normal commits in the
     // direct route advance their checked-out branch by construction.
     const advance = git.advanceBaseIfUnlocked(callerRoot, routing.baseBranch, sha, routing.baseSha);
-    if (!advance.advanced && !pushed && !degraded) {
+    baseDiverged = !advance.advanced && advance.reason === 'base-advance-failed';
+    if (!advance.advanced && ((pushed && baseDiverged) || (!pushed && !degraded))) {
       degraded = mergeDegraded(degraded, advance.reason);
     }
   }
 
-  if (isCapture && pushed && protectedHeld) {
+  if (isCapture && pushed && protectedHeld && !baseDiverged) {
     // After verified push, delete only refs this invocation created, and
     // only whose value still matches; a moved ref stays and is reported.
     let releasedAll = true;
@@ -415,7 +432,7 @@ function main(argv) {
 
   if (isCapture) {
     const cond = git.conditionsAt(opRoot);
-    const safe = !(cond.dirty || cond.staged || cond.unmerged || cond.rebasing);
+    const safe = cond.readable && !(cond.dirty || cond.staged || cond.unmerged || cond.rebasing);
     // A no-op write carries no new data; any too-large cleanup false
     // positive is worse than a retained empty tree, so no data means
     // removable without the protection question.

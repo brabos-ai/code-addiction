@@ -256,6 +256,22 @@ describe('backlog-cli — the record-file channel', () => {
     expect(result).not.toContain('ERROR=missing-query');
   });
 
+  it('the record-file spelling in the target position stays a literal ID', () => {
+    seeded(root, '0001B');
+    const a = readFileRecord(fileRecord(), 'literal.json');
+    const r = fail(['update', '--record-file', '--record-file', a], { cwd: root });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('REFUSED=unknown-id');
+  });
+
+  it('a record-file pair must be trailing after the target', () => {
+    seeded(root, '0001B');
+    const a = readFileRecord(fileRecord(), 'nontrailing.json');
+    const r = fail(['update', '0001B', '--record-file', a, '--surplus'], { cwd: root });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('ERROR=bad-argument');
+  });
+
   it('a repeated --record-file is a caller error', () => {
     seeded(root, '0001B');
     const a = readFileRecord(fileRecord(), 'a.json');

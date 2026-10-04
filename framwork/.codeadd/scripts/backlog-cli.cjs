@@ -32,14 +32,15 @@ const path = require('node:path');
 const core = require('./backlog-core.cjs');
 const idc = require('./backlog-id.cjs');
 
-const USAGE = `USAGE: bash .codeadd/scripts/backlog.sh <mode> [args]
-  add                       < ticket.json
-  update  <id>              < patch.json
-  comment <id>              < comment.json
+const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
+  add                       --record-file ticket.json
+  update  <id>              --record-file patch.json
+  comment <id>              --record-file comment.json
   move    <id> --top | --after <id> | --bottom
   remove  <id>
   list    [--all | --status <name>]
   search  <query>
+Compatibility: bash .codeadd/scripts/backlog.sh <mode> [args] < record.json
 `;
 
 const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search'];
@@ -52,9 +53,9 @@ function usage() {
 
 /**
  * Parse the positional grammar. Surplus arguments are ignored exactly as
- * today; the record-file pair, when present for a record mode, is removed
- * before positional parsing so an option-looking ID or search text keeps its
- * literal meaning. `--record-file` is the only flag this parser knows.
+ * today; the target position is reserved before a trailing record-file pair
+ * is removed, so an option-looking ID or search text keeps its literal
+ * meaning. `--record-file` is the only flag this parser knows.
  *
  * @param {string[]} argv - arguments after the mode... INCLUDING the mode
  * @returns {object} invocation — { mode, targetId, moveDir, moveAnchor,
@@ -72,21 +73,23 @@ function parseInvocation(argv) {
   const rest = args;
   const isRecordMode = RECORD_MODES.includes(mode);
 
-  // The record-file pair is rejected by COUNT (missing/repeated) before any
-  // positional is read, so a caller mistake is a caller error, not a
-  // mis-parsed ticket id.
+  // Only the surplus portion of a record invocation may carry the trailing
+  // file pair. Missing/repeated/nontrailing options are caller errors.
   let recordSource = null;
   if (isRecordMode) {
-    const occurrences = rest.filter((a) => a === RECORD_FILE_FLAG).length;
+    // The first update/comment argument is always a literal target, even if
+    // it is spelled --record-file. Only surplus arguments can carry the pair.
+    const optionStart = mode === 'add' ? 0 : 1;
+    const occurrences = rest.slice(optionStart).filter((a) => a === RECORD_FILE_FLAG).length;
     if (occurrences > 1) {
       return { ok: false, error: 'bad-argument', usage: true };
     }
-    const idx = rest.indexOf(RECORD_FILE_FLAG);
+    const idx = rest.indexOf(RECORD_FILE_FLAG, optionStart);
     if (idx === -1) {
       recordSource = { kind: 'stdin' };
     } else {
       const value = rest[idx + 1];
-      if (value === undefined || value === '') {
+      if (value === undefined || value === '' || idx !== rest.length - 2) {
         return { ok: false, error: 'bad-argument', usage: true };
       }
       recordSource = { kind: 'file', path: value };

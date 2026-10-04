@@ -3,20 +3,20 @@
 // mutable project shows up and refreshes the board without a reload, and
 // the whole route needs neither bash nor any shell.
 // (plan docs/plans/2026-10-04T004044-PLAN--native-node-backlog, F7, L6/L7.)
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const BOARD_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REMOTE_ROOT = path.resolve(BOARD_DIR, '..');
 const CLI = path.join(REMOTE_ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-cli.cjs');
-// The fixture lives under test-results/fixture-native, created when the
-// config loaded; the native server at 4429 serves exactly it.
-const NATIVE_PORT = 4429;
-const NATIVE_BASE = `http://127.0.0.1:${NATIVE_PORT}`;
-const NATIVE_FIXTURE = path.resolve(BOARD_DIR, 'test-results', 'fixture-native');
+// Each viewport has its own mutable fixture/server. Tests within a viewport
+// are serial so the HTTP refusal can assert byte-for-byte preservation.
+test.describe.configure({ mode: 'serial' });
+const nativeBase = () => String(test.info().project.metadata.nativeURL);
+const nativeFixture = () => path.resolve(BOARD_DIR, String(test.info().project.metadata.nativeFixture));
 
 const errors = new WeakMap<Page, string[]>();
 
@@ -39,16 +39,14 @@ async function waitForCard(page: Page, title: string) {
 }
 
 test('L6/R7 a ticket added by the native CLI reaches the board without a reload', async ({ page }) => {
-  // Three viewport projects share one mutable fixture and one server: every
-  // project's run appends its OWN ticket (the ids keep counting), and each
-  // asserts what IT wrote appearing without a reload.
+  // Each project appends only to its own fixture.
   const project = test.info().project.name;
   const title = `native through the board [${project}]`;
 
-  await page.goto(`${NATIVE_BASE}/board`);
+  await page.goto(`${nativeBase()}/board`);
   await expect(page.getByRole('link', { name: /seed before the native write/ })).toBeVisible();
 
-  const record = path.join(NATIVE_FIXTURE, `native-ticket-record-${project}.json`);
+  const record = path.join(nativeFixture(), `native-ticket-record-${project}.json`);
   fs.writeFileSync(record, JSON.stringify({
     title, theme: 'Tooling', labels: ['both'],
     tldr: 'The browser shows it with no reload.', done_when: 'The card appears unprompted.',
@@ -58,12 +56,12 @@ test('L6/R7 a ticket added by the native CLI reaches the board without a reload'
   // PATH: '' — no bash, no shell, nothing reachable. Node is spawned through
   // process.execPath directly; every process on this route is node + git.
   const run = spawnSync(process.execPath, [CLI, 'add', '--record-file', record], {
-    cwd: NATIVE_FIXTURE, encoding: 'utf8',
+    cwd: nativeFixture(), encoding: 'utf8',
     env: { ...process.env, PATH: '', NODE_OPTIONS: '' },
   });
   expect(run.status, run.stdout + run.stderr).toBe(0);
   expect(run.stdout).toMatch(/TICKET_ID=[0-9]{4}B/);
-  expect(fs.readFileSync(path.join(NATIVE_FIXTURE, 'docs', 'backlog.jsonl'), 'utf8'))
+  expect(fs.readFileSync(path.join(nativeFixture(), 'docs', 'backlog.jsonl'), 'utf8'))
     .toContain(`"title":"${title}"`);
 
   await waitForCard(page, title);
@@ -79,23 +77,19 @@ test('L6/R7 a ticket added by the native CLI reaches the board without a reload'
 });
 
 test('L6 the native server rejects a write through HTTP and creates no project file', async () => {
-  const before = fs.readFileSync(path.join(NATIVE_FIXTURE, 'docs', 'backlog.jsonl'), 'utf8');
+  const before = fs.readFileSync(path.join(nativeFixture(), 'docs', 'backlog.jsonl'), 'utf8');
 
-  const res = await fetch(`${NATIVE_BASE}/api/board`, {
+  const res = await fetch(`${nativeBase()}/api/board`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ id: '9999B', title: 'http write attempt' }),
   });
   expect([404, 405]).toContain(res.status);
   await res.text().catch(() => {});
 
-  // The three viewport projects share this fixture and append concurrently:
-  // the refused HTTP write may race a legitimate append, so the assertion is
-  // on the RESULT of this write — the id this call named never appeared —
-  // rather than on frozen line-for-line bytes.
-  const after = fs.readFileSync(path.join(NATIVE_FIXTURE, 'docs', 'backlog.jsonl'), 'utf8');
+  const after = fs.readFileSync(path.join(nativeFixture(), 'docs', 'backlog.jsonl'), 'utf8');
+  expect(after).toBe(before);
   expect(after).not.toContain('http write attempt');
   expect(after).not.toContain('"id":"9999B"');
-  void before;
 });
 
 test('L6 the server spawns the platform opener and never a shell', () => {

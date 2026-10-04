@@ -394,7 +394,7 @@ describe('L3 — the sweep refuses what it must not discard', () => {
     expect(read(path.join(wtPath, 'docs', 'backlog.jsonl'))).toBe(before);
   });
 
-  it('an unlocked CLEAN leftover is swept and the capture proceeds', () => {
+  it('an unlocked CLEAN but unprotected detached commit refuses reuse', () => {
     const { main, origin } = repo('clean-sweep-', { seed });
     gitR(['checkout', '-q', '-b', 'feat/x'], main);
     gitR(['worktree', 'add', '--detach', '.worktrees/backlog', 'main'], main);
@@ -404,18 +404,17 @@ describe('L3 — the sweep refuses what it must not discard', () => {
 
     const record = recordOutside(main, 'sweep then write');
     const result = pub(main, ['add', '--record-file', record]);
-    const r = parseReport(result.stdout);
-    expect(result.status).toBe(0);
-    expect(r.keys.ROUTE).toBe('worktree');
-    expect(r.keys.PUSHED).toBe('yes');
-    expect(gitOut(['rev-parse', 'HEAD'], origin)).toBe(r.keys.SHA);
+    expect(result.status).toBe(2);
+    expect(result.stdout).toContain('REFUSED=worktree-recovery-required');
+    expect(read(path.join(main, '.worktrees', 'backlog', 'docs', 'note.txt'))).toBe('tracked-clean note\n');
+    void origin;
   });
 });
 
 // ─── Commit failure: retained with its bytes ─────────────────────────────
 
 describe('L3 — a failed commit keeps the data and reports where', () => {
-  it('pre-commit-hook failure: exit 1, tree retained AND locked, data readable', () => {
+  it('pre-commit-hook failure: exit 1, tree retained and unlocked, data readable', () => {
     const { main } = repo('commit-fail-', { seed });
     gitR(['checkout', '-q', '-b', 'feat/failing'], main);
     const hook = path.join(main, '.git', 'hooks', 'pre-commit');
@@ -440,11 +439,161 @@ describe('L3 — a failed commit keeps the data and reports where', () => {
     const listed = spawnSync(process.execPath, [LOCAL, 'list', '--all'], { cwd: r.keys.RECOVERY_PATH, encoding: 'utf8' });
     expect(listed.stdout).toContain('TICKETS_TOTAL=2');
 
-    // A retained tree keeps its lock — the next run cannot reuse it.
+    // A normal exit releases the active lock, but dirty recovery still refuses reuse.
     const again = pub(main, ['add', '--record-file', 'ticket.json']);
     writeRecord(main, 'second attempt');
     expect(again.status).toBe(2);
-    expect(again.stdout).toContain('REFUSED=worktree-locked');
+    expect(again.stdout).toContain('REFUSED=worktree-recovery-required');
+  });
+});
+
+describe('review regressions — durable recovery and caller intent', () => {
+  it('failed recovery-ref creation blocks rebase and push and retains the tree', () => {
+    const { main, origin, space } = repo('review-ref-fail-', { seed });
+    gitOut(['checkout', '-b', 'feat/review'], main);
+    const oldRemote = gitOut(['rev-parse', 'main'], origin);
+    // Block the namespace itself; no knowledge of the future commit SHA is needed.
+    fs.writeFileSync(path.join(main, '.git/refs/codeadd'), 'not a directory');
+    const result = pub(main, ['add', '--record-file', recordOutside(space, 'protection failed')]);
+    const r = parseReport(result.stdout);
+    expect(result.status).toBe(0);
+    expect(r.keys.DEGRADED).toBe('recovery-ref-failed');
+    expect(r.keys.PUSHED).toBe('no');
+    expect(r.keys.RECOVERY_PATH).toBe(path.join(main, '.worktrees/backlog'));
+    expect(gitOut(['rev-parse', 'main'], origin)).toBe(oldRemote);
+    expect(read(path.join(r.keys.RECOVERY_PATH, 'docs/backlog.jsonl'))).toContain('protection failed');
+  });
+
+  it('overlapping caller edits degrade without overwriting staged intent', () => {
+    const { main, space } = repo('review-overlap-', { seed });
+    const file = path.join(main, 'docs/backlog.jsonl');
+    fs.writeFileSync(file, read(file).replaceAll('first', 'caller staged'));
+    gitOut(['add', 'docs/backlog.jsonl'], main);
+    const stagedBefore = gitOut(['diff', '--cached'], main);
+    const oldHead = gitOut(['rev-parse', 'HEAD'], main);
+    const patch = path.join(space, 'patch.json');
+    fs.writeFileSync(patch, JSON.stringify({ title: 'operation overlapping title' }));
+    const result = pub(main, ['update', '0001B', '--record-file', patch]);
+    const r = parseReport(result.stdout);
+    expect(result.status).toBe(0);
+    expect(r.keys.DEGRADED).toBe('caller-worktree-dirty');
+    expect(r.keys.COMMITTED).toBe('no');
+    expect(r.keys.PUSHED).toBe('no');
+    expect(r.keys.RECOVERY_PATH).toBe(main);
+    expect(gitOut(['rev-parse', 'HEAD'], main)).toBe(oldHead);
+    expect(gitOut(['diff', '--cached'], main)).toBe(stagedBefore);
+    expect(read(file)).toContain('operation overlapping title');
+  });
+
+  it('reports a staging failure after persistence without an uncaught exception', () => {
+    const { main, space } = repo('review-stage-', { seed });
+    fs.writeFileSync(path.join(main, '.git', 'index.lock'), 'held by another Git process');
+    const result = pub(main, ['add', '--record-file', recordOutside(space, 'stage failure')]);
+    const r = parseReport(result.stdout);
+    expect(result.status).toBe(1);
+    expect(r.errors).toContain('ERROR=commit-failed');
+    expect(r.keys.PERSISTED).toBe('yes');
+    expect(r.keys.COMMITTED).toBe('no');
+    expect(r.keys.PUSHED).toBe('no');
+    expect(r.keys.RECOVERY_PATH).toBe(main);
+    expect(read(path.join(main, '.git', 'index.lock'))).toBe('held by another Git process');
+    expect(read(path.join(main, 'docs/backlog.jsonl'))).toContain('stage failure');
+    expect(result.stderr).not.toContain('GitError');
+  });
+
+  it('publishes only the operation, preserving staged and unstaged definitions', () => {
+    const { main, space } = repo('review-index-', { seed });
+    const defs = path.join(main, 'docs/backlog.definitions.json');
+    const headDefs = gitOut(['show', 'HEAD:docs/backlog.definitions.json'], main);
+    fs.writeFileSync(defs, headDefs.replace('decided, nobody picked it up', 'caller staged') + '\n');
+    gitOut(['add', 'docs/backlog.definitions.json'], main);
+    const stagedBefore = gitOut(['diff', '--cached'], main);
+    fs.writeFileSync(defs, headDefs.replace('decided, nobody picked it up', 'caller unstaged') + '\n');
+    const workingBefore = read(defs);
+    const result = pub(main, ['add', '--record-file', recordOutside(space, 'isolated delta')]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('COMMITTED=yes');
+    expect(gitOut(['show', 'HEAD:docs/backlog.definitions.json'], main)).toBe(headDefs);
+    expect(gitOut(['diff', '--cached'], main)).toBe(stagedBefore);
+    expect(read(defs)).toBe(workingBefore);
+    expect(gitOut(['show', '--pretty=format:', '--name-only', 'HEAD'], main)).toBe('docs/backlog.jsonl');
+  });
+
+  it('preserves staged backlog edits while committing a disjoint add', () => {
+    const { main, space } = repo('review-backlog-index-', { seed: (root) => {
+      seed(root);
+      fs.writeFileSync(path.join(root, 'docs/backlog.jsonl'), Array.from({ length: 8 }, (_, i) => row(`000${i + 1}B`, `ticket ${i + 1}`)).join('\n') + '\n');
+    } });
+    const file = path.join(main, 'docs/backlog.jsonl');
+    fs.writeFileSync(file, read(file).replaceAll('ticket 1', 'caller staged'));
+    gitOut(['add', 'docs/backlog.jsonl'], main);
+    fs.writeFileSync(file, read(file).replaceAll('ticket 4', 'caller unstaged'));
+    const result = pub(main, ['add', '--record-file', recordOutside(space, 'disjoint addition')]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('COMMITTED=yes');
+    const committed = gitOut(['show', 'HEAD:docs/backlog.jsonl'], main);
+    expect(committed).toContain('disjoint addition');
+    expect(committed).not.toContain('caller');
+    const staged = gitOut(['show', ':docs/backlog.jsonl'], main);
+    expect(staged).toContain('caller staged');
+    expect(staged).not.toContain('caller unstaged');
+    expect(staged).toContain('disjoint addition');
+    expect(read(file)).toContain('caller unstaged');
+    expect(gitOut(['diff', '--cached'], main)).not.toContain('disjoint addition');
+  });
+
+  it('a paused clean linked-worktree rebase is unsafe to sweep', () => {
+    const { main } = repo('review-rebase-', { seed });
+    fs.writeFileSync(path.join(main, 'note.txt'), 'local commit\n');
+    gitOut(['add', 'note.txt'], main);
+    gitOut(['commit', '-m', 'local'], main);
+    gitOut(['checkout', '-b', 'feat/review'], main);
+    gitOut(['worktree', 'add', '--detach', '.worktrees/backlog', 'main'], main);
+    const wt = path.join(main, '.worktrees/backlog');
+    expect(gitR(['rebase', '--exec', 'exit 1', 'HEAD~1'], wt).status).not.toBe(0);
+    expect(Git.conditionsAt(wt).rebasing).toBe(true);
+    expect(Git.setupWorktree(main, 'main').refusal).toBe('worktree-recovery-required');
+    expect(fs.existsSync(wt)).toBe(true);
+  });
+
+  it('a clean leftover protected by a recovery ref can be swept', () => {
+    const { main, space } = repo('review-protected-', { seed });
+    gitOut(['checkout', '-b', 'feat/review'], main);
+    gitOut(['worktree', 'add', '--detach', '.worktrees/backlog', 'main'], main);
+    const wt = path.join(main, '.worktrees/backlog');
+    fs.writeFileSync(path.join(wt, 'note.txt'), 'protected\n');
+    gitOut(['add', 'note.txt'], wt);
+    gitOut(['commit', '-m', 'protected'], wt);
+    const sha = gitOut(['rev-parse', 'HEAD'], wt);
+    expect(Git.protectCommit(main, sha).ok).toBe(true);
+    expect(pub(main, ['add', '--record-file', recordOutside(space, 'safe sweep')]).status).toBe(0);
+    gitOut(['gc', '--prune=now'], main);
+    expect(gitOut(['cat-file', '-t', sha], main)).toBe('commit');
+  });
+
+  it('reports a divergent local base even after successful rebase and push', () => {
+    const { main, origin, space } = repo('review-base-', { seed });
+    const other = path.join(space, 'other');
+    gitOut(['clone', origin, other], main);
+    gitOut(['config', 'user.name', 'Review'], other);
+    gitOut(['config', 'user.email', 'review@example.com'], other);
+    fs.writeFileSync(path.join(other, 'remote.txt'), 'remote\n');
+    gitOut(['add', 'remote.txt'], other);
+    gitOut(['commit', '-m', 'remote'], other);
+    gitOut(['push', 'origin', 'main'], other);
+    fs.writeFileSync(path.join(main, 'local.txt'), 'local\n');
+    gitOut(['add', 'local.txt'], main);
+    gitOut(['commit', '-m', 'local'], main);
+    const old = gitOut(['rev-parse', 'main'], main);
+    gitOut(['checkout', '-b', 'feat/review'], main);
+    const result = pub(main, ['add', '--record-file', recordOutside(space, 'rebased publication')]);
+    const r = parseReport(result.stdout);
+    expect(result.status).toBe(0);
+    expect(r.keys.PUSHED).toBe('yes');
+    expect(r.keys.DEGRADED).toBe('base-advance-failed');
+    expect(gitOut(['rev-parse', 'main'], main)).toBe(old);
+    expect(gitOut(['rev-parse', 'main'], origin)).toBe(r.keys.SHA);
+    expect(gitOut(['rev-parse', r.keys.RECOVERY_REF], main)).toBe(r.keys.SHA);
   });
 });
 
