@@ -40,7 +40,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   remove  <id>
   list    [--all | --status <name>]
   search  <query>
-Compatibility: bash .codeadd/scripts/backlog.sh <mode> [args] < record.json
+Records also accept stdin when --record-file is absent.
 `;
 
 const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search'];

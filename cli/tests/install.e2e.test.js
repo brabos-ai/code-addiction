@@ -182,31 +182,39 @@ describe('install command e2e', () => {
       return fs.readFileSync(path.join(SCRIPTS_DIR, name));
     }
 
-    /** A release asset carrying the real canonical modules plus the wrapper
-     *  siblings the shell callers reach. */
+    /** Package the real backlog family from disk, so a retirement assertion
+     *  fails if a removed entry is accidentally shipped again. */
     function buildBacklogZip({ core } = {}) {
       const zip = new AdmZip();
       zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
       zip.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
-      for (const name of [...WRAPPERS, ...CANONICAL]) {
+      for (const name of fs.readdirSync(SCRIPTS_DIR).filter((n) => /^backlog(?:-.*)?\.(?:cjs|sh)$/.test(n))) {
         zip.addFile(`framwork/.codeadd/scripts/${name}`, realBytes(name));
       }
       return zip.toBuffer();
     }
 
-    it('lands all six modules and both wrappers in .codeadd/scripts with their bytes intact', async () => {
+    it('ships only the six Node modules, preserving their bytes and retiring shell entries', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
 
       await install(tmpDir);
 
-      for (const name of [...CANONICAL, ...WRAPPERS]) {
+      for (const name of CANONICAL) {
         const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
         expect(fs.existsSync(installed), `${name} was not installed`).toBe(true);
         // Byte-for-byte for the CJS modules: fixLineEndings normalizes CRLF for
         // .sh only, and these are read by Node directly. A rewrite is a bug.
         expect(fs.readFileSync(installed)).toEqual(realBytes(name));
       }
+      const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+      for (const name of WRAPPERS) {
+        expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'scripts', name)), name).toBe(false);
+        expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
+      }
+      const zip = new AdmZip(buildBacklogZip());
+      expect(zip.getEntries().map((e) => e.entryName).filter((n) => /\/backlog[^/]*\.(cjs|sh)$/.test(n)).sort())
+        .toEqual(CANONICAL.map((n) => `framwork/.codeadd/scripts/${n}`).sort());
     });
 
     it('an installed project runs the native LOCAL entry with no source checkout', async () => {
@@ -291,8 +299,7 @@ describe('install command e2e', () => {
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
       await install(tmpDir);
 
-      // A newer release changes the module bodies — but only the CJS runtime
-      // tips, not the wrappers (their bytes are pinned by the fixture). An
+      // A newer release changes the module bodies. An
       // update that refreshed only part of the runtime would leave the rest
       // on the old contract — the exact half-refreshed runtime the plan's
       // risks table calls out.
@@ -300,14 +307,14 @@ describe('install command e2e', () => {
       const zip2 = new AdmZip();
       zip2.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
       zip2.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
-      for (const name of [...WRAPPERS, ...CANONICAL]) {
+      for (const name of CANONICAL) {
         zip2.addFile(`framwork/.codeadd/scripts/${name}`, Buffer.from(marker(name)));
       }
       mocks.getLatestTag.mockResolvedValue('v2.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(zip2.toBuffer());
       await (await import('../src/updater.js')).update(tmpDir);
 
-      for (const name of [...CANONICAL, ...WRAPPERS]) {
+      for (const name of CANONICAL) {
         const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
         expect(fs.readFileSync(installed, 'utf8'), `${name} was not refreshed`).toBe(marker(name));
       }

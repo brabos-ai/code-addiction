@@ -58,7 +58,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [arg
   remove  <id>
 
 \`list\` and \`search\` are reads. Call backlog-cli.cjs directly for those.
-Compatibility: bash .codeadd/scripts/backlog-commit.sh <mode> [args] < record.json
+Records also accept stdin when --record-file is absent.
 `;
 
 function usage() {

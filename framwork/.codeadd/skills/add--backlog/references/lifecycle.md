@@ -90,9 +90,8 @@ node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <recor
 
 **The file is read in the caller's cwd BEFORE any git routing, allocation or persistence**, so the
 record's bytes are captured before the entry chooses a worktree — and a failed read exits 1 with
-`ERROR=record-read-failed` while nothing at all has happened on disk. stdin remains a
-compatibility path (`bash .codeadd/scripts/backlog-commit.sh update <id> < record.json`); the
-native recipe is the file.
+`ERROR=record-read-failed` while nothing at all has happened on disk. The Node entry also
+accepts stdin when `--record-file` is absent; agents use the file recipe above.
 
 **The entry writes to the BASE branch, never to the caller's.** On the base branch it commits directly;
 anywhere else it writes through a detached, locked worktree of its own, so the ticket reaches the base

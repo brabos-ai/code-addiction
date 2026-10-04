@@ -8,8 +8,6 @@ description: "Use when something should be done later but not now — record it 
 <!-- uses:
 - script: backlog-cli.cjs
 - script: backlog-commit.cjs
-- script: backlog.sh
-- script: backlog-commit.sh
 - skill: add--final-report
 - skill: add--doc-schemas
 - skill: add--doc-schemas/references/backlog.md
@@ -51,25 +49,23 @@ and without bash or WSL.
 
 ```
 IF THE INTENT IS add, update, comment, move OR remove:
-  ⛔ DO NOT USE: Bash to run backlog.sh or backlog-cli.cjs directly — the ticket would land on
-                 whatever branch the user happens to be standing on
-  ⛔ DO NOT USE: Bash to run git add, git commit, git push or git worktree yourself
+  ⛔ DO NOT USE: the shell tool to run backlog-cli.cjs for a write that must be published —
+                 it only changes the local board and performs no Git publication
+  ⛔ DO NOT USE: the shell tool to run git add, git commit, git push or git worktree yourself
   ⛔ DO NOT: Write docs/backlog.jsonl or docs/backlog.definitions.json with Write or Edit
   ✅ DO: Run the publication entry with the record on a file, which owns the whole
          git route and cleans up after itself
 
 IF THE INTENT IS list OR search:
-  ⛔ DO NOT USE: Bash to run the publication entry — it refuses a read with ERROR=read-mode
+  ⛔ DO NOT USE: the shell tool to run the publication entry — it refuses a read with ERROR=read-mode
   ✅ DO: Run the local CLI directly
 ```
 
 **Records travel on files, not on pipes.** For a record mode, write the record to a scratch file
 in the project (one JSON object, nothing else) and pass `--record-file <path>`. The publication
 entry reads the file in the caller's cwd BEFORE any routing, allocation or persistence: a failed
-read exits 1 with `ERROR=record-read-failed`, and nothing else happens. **stdin remains a
-compatibility path** — `bash .codeadd/scripts/backlog.sh <mode> < record.json` and
-`bash .codeadd/scripts/backlog-commit.sh <mode> < record.json` both still work and their behaviour
-is pinned by the bats suites — but the native recipe is the file.
+read exits 1 with `ERROR=record-read-failed`, and nothing else happens. The Node entries also
+accept stdin when `--record-file` is absent; agents use the file recipe above.
 
 **The format is not defined here.** The two files, the ticket fields, the status vocabulary
 and the `REFUSED=` names live in `{{skill:add--doc-schemas/references/backlog.md}}`. Read it before

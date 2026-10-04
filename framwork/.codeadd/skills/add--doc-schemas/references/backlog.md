@@ -5,8 +5,8 @@ document an agent authors, with frontmatter, depth floors and a Decision Log. Th
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
 its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
 (`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
-and write both files; `backlog.sh` and `backlog-commit.sh` are the bash compatibility wrappers that guard
-node and delegate to them. Backlog operations need Node >= 18 and Git — no bash, no WSL.
+and write both files. Local operations need Node >= 18; publication also needs Git.
+Invoke the entries directly with Node — no Bash or WSL bridge.
 Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
 of those apply to files a script owns.
@@ -18,7 +18,7 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 
 | File | Holds | Written by | Hand-edited? |
 |---|---|---|---|
-| `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through `backlog.sh`/`backlog-cli.cjs` | never in normal operation |
+| `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through the canonical core | never in normal operation |
 | `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
 
 Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The location is settled the same way
@@ -224,14 +224,15 @@ Each is testable, and each has a `REFUSED=` name below.
 4. **An id already on the board is never added twice.** One line per ticket, always.
 5. **`title`, `tldr` and `done_when` are required and non-empty.** A ticket without a runnable check is the
    entry that is worthless in three weeks, which is the failure this whole file exists to prevent.
-6. **stdin must be exactly one JSON object** for `add`, `update` and `comment`.
+6. **The record must be exactly one JSON object** for `add`, `update` and `comment`.
+   Agents pass `--record-file <path>`; the Node entries also accept stdin when that option is absent.
 7. **An id named by `update`, `comment`, `move` or `remove` must be on the board.** Including the anchor of
    `move --after`.
 
-Two further promises are structural rather than submittable, so they carry no `REFUSED=` name: **the script
-never commits**, and **`docs/backlog.definitions.json` is never rewritten once it exists**. Neither is
-something a caller can ask for, so neither can be refused — they are properties of the script, asserted by
-`backlog.bats`.
+Two further promises are structural rather than submittable, so they carry no `REFUSED=` name:
+**the local CLI never commits**, and **`docs/backlog.definitions.json` is never rewritten once it exists**.
+The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
+`backlog.bats` proves definitions preservation.
 
 ## `REFUSED=` vocabulary
 
@@ -244,7 +245,7 @@ two cannot drift.
 
 | `REFUSED=` | Ban | The caller did this |
 |---|---|---|
-| `invalid-json` | 6 | stdin was not one parseable JSON object |
+| `invalid-json` | 6 | the record was not one parseable JSON object |
 | `missing-field` | 5 | `title`, `tldr` or `done_when` is absent or empty |
 | `reserved-field` | 1, 2 | the record carried `id`, `created_at` or `updated_at` |
 | `unknown-status` | 3 | `status` is not a name in the definitions file |
@@ -259,13 +260,13 @@ consumer branch once.
 
 The backlog follows the script family's three-code doctrine, with the same single departure
 `delivered.sh` makes — and it is the backlog Node core that owns it, through every entry: the local
-`backlog-cli.cjs`, the publication `backlog-commit.cjs`, and the bash wrapper that delegates to either.
+`backlog-cli.cjs` and the publication `backlog-commit.cjs`.
 
 | Exit | Means |
 |---|---|
 | `0` | A probe result, whatever it says. `list` and `search` always exit 0, **including on an absent board** |
 | `1` | **The filesystem refused a write.** The departure: the always-0 rule governs probe *results*, and a ticket that silently fails to land is the one case where exit 0 would be a lie |
-| `2` | Caller error — a bad mode, bad arguments, a hard ban (`REFUSED=<name>`), or an unmet hard dependency (`ERROR=node-missing`) |
+| `2` | Caller error — a bad mode, bad arguments or a hard ban (`REFUSED=<name>`) |
 
-**The two exit-2 causes are distinguishable by output, never by code.** A fourth exit code would be one the
-rest of the script family does not have; the reason belongs in the output.
+**Exit-2 causes are distinguished by output, not by code.** If Node itself is unavailable, the host
+reports the launch failure; the Node entries cannot emit a runtime-missing diagnostic before startup.

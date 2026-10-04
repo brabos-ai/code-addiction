@@ -974,7 +974,8 @@ describe('node inventory snapshot', () => {
       // script 25 -> 27: backlog-git.cjs and backlog-commit.cjs, the native
       // publication pair — routing/recovery and the orchestration entry.
       // (plan 2026-10-04T004044-PLAN--native-node-backlog, F3.)
-      script: 27,
+      // Two shell compatibility entries retired; six native modules remain.
+      script: 25,
       // fragment 24 -> 25: fragments/qa-pipeline/add-review.md, which carries
       // add-review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1096,7 +1097,7 @@ describe('node inventory snapshot', () => {
     // The exists() formula below covers all six exactly-path-allowlisted
     // modules, so each F-block asserts its own increment and nothing else.
     // (plan 2026-10-04T004044-PLAN--native-node-backlog, F1's three-node L1.)
-    expect(nodes).toHaveLength(244 + ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', 'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs']
+    expect(nodes).toHaveLength(242 + ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', 'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs']
       .map((n) => Number(fs.existsSync(path.join(CODEADD, 'scripts', n))))
       .reduce((a, b) => a + b, 0));
     expect(nodes.filter((n) => n.declares)).toHaveLength(140);
@@ -1105,6 +1106,8 @@ describe('node inventory snapshot', () => {
   it('the shipped backlog CJS modules carry their graph node as they land', () => {
     const nodes = collectNodes(readMap(), CODEADD);
     const ids = new Set(nodes.map((n) => n.id));
+    expect(ids).not.toContain('product/script/backlog.sh');
+    expect(ids).not.toContain('product/script/backlog-commit.sh');
     for (const name of [
       'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
       'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',

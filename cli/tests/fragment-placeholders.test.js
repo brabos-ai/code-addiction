@@ -38,7 +38,7 @@ const PLACEHOLDER = /\{\{(skill|cmd|addpath):[^}]+\}\}/;
 
 const SAMPLE = [
   'see {{skill:add--backlog/references/lifecycle.md}} for the row,',
-  'run {{cmd:add-plan}} next, and read {{addpath:scripts/backlog.sh}}.',
+  'run {{cmd:add-plan}} next, and read {{addpath:scripts/backlog-cli.cjs}}.',
   'two on one line: {{skill:add--tdd/SKILL.md}} and {{skill:add--qa/SKILL.md}}',
 ].join('\n');
 
