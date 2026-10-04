@@ -192,8 +192,8 @@ documents cite plans by number. **Only `-PLAN--` with a timestamp is written for
 
 <!--
 Modelled on the product procedure, add--backlog/references/lifecycle.md, and
-kept to the same rules. `backlog.sh`, `backlog-commit.sh`, the native
-`.cjs` entries and `add-doc-schemas/references/backlog.md` are PRODUCT
+kept to the same rules. The native backlog `.cjs` entries and
+`add-doc-schemas/references/backlog.md` are PRODUCT
 nodes, named in prose on purpose and deliberately NOT declared under
 `uses:`: targets resolve inside the declaring artefact's own layer
 (scripts/build.js), so a `- script:` entry here would resolve to a
@@ -297,8 +297,7 @@ writes first (`docs/.tmp-ticket.json` is the usual scratch name, cleaned up in t
 | any status | record `{"status":"<status>"}` |
 | `doing` (build) | record `{"status":"doing","work_id":"<plan basename>"}` |
 
-`bash framwork/.codeadd/scripts/backlog-commit.sh update <id> < record.json` remains a marked
-compatibility path for shell sessions; the native recipe is the file.
+The Node entry also supports stdin when `--record-file` is absent; agents use the file recipe.
 
 **`work_id` is the plan basename** — the internal work's identity in the ledger, the delivery index and
 `docs/deliveries/`. A ticket already `doing` under a **different** `work_id` is written over, exactly as the

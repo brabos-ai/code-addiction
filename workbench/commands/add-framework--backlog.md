@@ -6,12 +6,12 @@
 -->
 
 <!--
-`backlog.sh`, `backlog-commit.sh`, the native `.cjs` entries and
+The native backlog `.cjs` entries and
 `add--doc-schemas/references/backlog.md` are PRODUCT nodes, named in prose
 below on purpose and deliberately NOT declared: `uses:` targets resolve
 inside the declaring artefact's own layer (scripts/build.js), so a
-`- script: backlog.sh` from here would resolve to
-`internal/script/backlog.sh`, which does not exist. This repository is those
+`- script: backlog-cli.cjs` from here would resolve to
+`internal/script/backlog-cli.cjs`, which does not exist. This repository is those
 scripts' source, so it calls them by their repository path — the same way
 add-framework--done calls delivered.sh.
 -->
@@ -199,9 +199,8 @@ node framwork/.codeadd/scripts/backlog-commit.cjs <mode> [<id>] [<position>] --r
 | close | `{"status":"done"}` or `{"status":"dropped"}` |
 | move, remove | no record file |
 
-`bash framwork/.codeadd/scripts/backlog-commit.sh <mode> [<id>] < record.json` remains a marked
-compatibility path — stdin is still a supported record channel through the bash wrapper — but the
-native recipe is the file, read in the caller's cwd BEFORE any routing, allocation or persistence,
+The Node entry also supports stdin when `--record-file` is absent. Agents use the file,
+read in the caller's cwd BEFORE any routing, allocation or persistence,
 so a read failure (`ERROR=record-read-failed`, exit 1) happens while nothing else has.
 
 **The entry picks the route itself.** On `main` it commits directly; on any other branch it writes
