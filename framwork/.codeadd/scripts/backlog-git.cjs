@@ -364,6 +364,13 @@ function ourWorktreePath(root) {
   return path.resolve(path.join(root, WORKTREE));
 }
 
+/** The leftover tree's own HEAD, when it carries one — the SHA the recovery
+ *  refusal names, so the data can be reached by sha after the tree is gone. */
+function leftOverSha(abs) {
+  const head = run(['rev-parse', 'HEAD'], abs, { allowFailure: true });
+  return head.status === 0 ? head.stdout.trim().toLowerCase() : null;
+}
+
 /**
  * Everything the sweep-and-create step needs, BEFORE any write happens:
  * - a LOCKED registration refuses: a live capture or a crash holding the
@@ -385,12 +392,12 @@ function setupWorktree(root, baseBranch) {
     const cond = conditionsAt(abs);
     const unsafe = cond.rebasing || cond.unmerged || cond.dirty || cond.staged;
     if (unsafe) {
-      return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond };
+      return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond, sha: leftOverSha(abs) };
     }
     run(['worktree', 'remove', abs], root, { allowFailure: true });
     if (findOurWorktree(root)) run(['worktree', 'prune'], root, { allowFailure: true });
     if (findOurWorktree(root)) {
-      return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond };
+      return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond, sha: leftOverSha(abs) };
     }
   }
 

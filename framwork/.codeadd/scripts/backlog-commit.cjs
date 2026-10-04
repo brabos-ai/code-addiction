@@ -141,7 +141,7 @@ function chooseOperationRoot(callerRoot) {
 
   const setup = git.setupWorktree(callerRoot, base.branch);
   if (setup.refusal) {
-    return { kind: 'refused', refusal: setup.refusal, path: setup.path };
+    return { kind: 'refused', refusal: setup.refusal, path: setup.path, sha: setup.sha || null };
   }
   if (setup.degraded) {
     return { kind: 'none', opRoot: callerRoot, baseBranch: base.branch, degraded: setup.degraded };
@@ -154,13 +154,14 @@ function chooseOperationRoot(callerRoot) {
 }
 
 /** Refusal shapes the wrapper printed, on stdout, exit 2. */
-function refuse(refusal, absPath) {
+function refuse(refusal, absPath, sha) {
   process.stdout.write('REFUSED=' + refusal + '\n');
   if (refusal === 'worktree-locked') {
     process.stdout.write('A capture is holding ' + absPath + ', or one crashed while holding it.\n');
     process.stdout.write('Clear it with: git worktree unlock ' + absPath + '\n');
   } else if (refusal === 'worktree-recovery-required') {
     process.stdout.write('An earlier capture left recoverable work in ' + absPath + ' — it is not safe to discard or reuse.\n');
+    if (sha) process.stdout.write('SHA=' + sha + '\n');
     process.stdout.write('Recover it, then remove it: git worktree remove ' + absPath + '\n');
   }
   process.exit(2);
@@ -223,7 +224,7 @@ function main(argv) {
 
   // ── 2. Routing ───────────────────────────────────────────────────────────
   const routing = chooseOperationRoot(callerRoot);
-  if (routing.kind === 'refused') refuse(routing.refusal, routing.path);
+  if (routing.kind === 'refused') refuse(routing.refusal, routing.path, routing.sha);
 
   let opRoot = routing.opRoot;
   let isWorktree = routing.kind === 'worktree';
@@ -358,10 +359,12 @@ function main(argv) {
             }
           } else if (rebase.reason === 'abort-failed') {
             // The repository is mid-rebase and could not be aborted: the
-            // tree stays, the old DEGRADED name stays, and recovery keys
-            // carry where the bytes live.
+            // tree stays, the old DEGRADED name stays, and on the DIRECT
+            // route the tree the run is standing in IS the recovery
+            // location — the rebase state and the caller's tree are one.
             degraded = mergeDegraded(degraded, 'rebase-conflict');
             rebaseBlocked = true;
+            report.set('RECOVERY_PATH', path.resolve(opRoot));
           } else {
             degraded = mergeDegraded(degraded, rebase.reason);
             rebaseBlocked = true;

@@ -142,6 +142,19 @@ describe('L2 — calculate: the exact raw-text anchor, and its neighbors', () =>
     expectAllThree(root, 'B', '0015B');
   });
 
+  it('a row whose truncated id LOST ITS QUOTE yields nothing native and nothing shell — parity on the worst edge', () => {
+    // The plan's "exact raw-text expression" wording is the contract: the
+    // shells' grep requires the trailing quote. The probe settled the loose
+    // form would hand out base+1. So a row truncated before its closing
+    // quote falls out of every allocator the same way, and the next id is
+    // exactly what no-damage would give above it.
+    const root = fixture('id-truncated-');
+    backlogRow(root, ticketRow({ id: '0003B' }));
+    backlogRow(root, '{"id":"0042B');  // no closing quote on the value
+    backlogRow(root, '{"id":"0009B","title":"after"}');
+    expectAllThree(root, 'B', '0010B');
+  });
+
   it('raw field whitespace parity: `"id": "0042B"` with a space counts NOTHING', () => {
     const root = fixture('id-space-');
     backlogRow(root, ticketRow({ id: '0042B' }).replace('"id":"0042B"', '"id": "0042B"'));

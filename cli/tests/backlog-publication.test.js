@@ -164,6 +164,37 @@ describe('L3 — base discovery mirrors get-main-branch.sh', () => {
 // ─── Direct route ────────────────────────────────────────────────────────
 
 describe('L3 — the direct route: path-scoped commit, preserved caller work', () => {
+  it('the FIRST write on a fresh repository commits its untracked board file', () => {
+    // The plan's L3 fixture list includes "Base checked out, direct base":
+    // the deck stops being a seeded斯 fixture the moment the board is
+    // untracked — which is also the shape F4's wrapper suite exercises, so
+    // the vitest side pins the same path.
+    const { main, origin } = repo('first-write-', {
+      // No board file — the docs/ dir is born with THIS write. The root
+      // fixture still carries a tracked placeholder so the seed commit and
+      // its origin/main exist: an unborn branch is invisible to every
+      // show-ref probe, and the untracked-board route is what is under test.
+      seed: (main) => fs.writeFileSync(path.join(main, 'placeholder.txt'), 'tracked seed\n'),
+    });
+    // Board only in the write's path: no seed commit carried docs/.
+    fs.writeFileSync(path.join(main, 'untracked-caller.txt'), 'caller untracked\n');
+
+    const record = recordOutside(main, 'first ever');
+    const result = pub(main, ['add', '--record-file', record]);
+    const r = parseReport(result.stdout);
+
+    expect(result.status).toBe(0);
+    expect(r.keys.ROUTE).toBe('direct');
+    expect(r.keys.PERSISTED).toBe('yes');
+    expect(r.keys.COMMITTED).toBe('yes');
+    expect(r.keys.TICKET_ID).toBe('0001B');
+    expect(r.keys.PUSHED).toBe('yes');
+    const files = gitOut(['show', '--pretty=format:', '--name-only', r.keys.SHA], main);
+    expect(files).toContain('docs/backlog.jsonl');
+    expect(files).not.toContain('untracked-caller.txt');
+    expect(callerResidue(main)).toEqual(['?? records/', '?? untracked-caller.txt']);
+    void origin;
+  });
   it('commits ONLY the two board paths, pushes, and preserves the caller', () => {
     const { main, origin, space } = repo('direct-', { seed });
     fs.writeFileSync(path.join(main, 'unrelated-staged.txt'), 'staged by caller\n');

@@ -26,7 +26,7 @@ Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The locatio
 clone. `cli/src/installer.js` never touches `docs/` at all, which is what protects a user's edited
 definitions from a reinstall — a structural guarantee rather than a rule someone must remember.
 
-Neither is scaffolded empty. They appear on the first `backlog.sh add`, and their absence means "no ticket
+Neither is scaffolded empty. They appear on the first backlog `add`, and their absence means "no ticket
 has ever been written", which is information an empty file would destroy.
 
 ## Line order is the priority
@@ -121,7 +121,7 @@ and it is the reason a later reader must not merge them.
 }
 ```
 
-Written once, on the first `backlog.sh` WRITE that finds it absent — a read never brings a file into existence. **Never rewritten after that**,
+Written once, on the first WRITE that finds it absent — a read never brings a file into existence. **Never rewritten after that**,
 and `backlog.bats` asserts it with `DEFS_PRESERVED`: a hand-edited file survives further writes
 byte-for-byte.
 
@@ -143,7 +143,7 @@ was.
 
 **The seeded shape above carries all of them explicitly**, so a fresh project never exercises a fallback.
 The fallbacks exist for a file someone hand-edits and leaves a key out of — and they are resolved by
-**whoever reads the file for display**, not by `backlog.sh`, which reads a status name and nothing else.
+**whoever reads the file for display**, not by the backlog Node core, which reads a status name and nothing else.
 
 ### The nine names are a contract, not a mechanism
 
@@ -257,8 +257,9 @@ consumer branch once.
 
 ## Exit codes
 
-`backlog.sh` follows the script family's three-code doctrine, with the same single departure
-`delivered.sh` makes.
+The backlog follows the script family's three-code doctrine, with the same single departure
+`delivered.sh` makes — and it is the backlog Node core that owns it, through every entry: the local
+`backlog-cli.cjs`, the publication `backlog-commit.cjs`, and the bash wrapper that delegates to either.
 
 | Exit | Means |
 |---|---|

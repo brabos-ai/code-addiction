@@ -1,8 +1,10 @@
 #!/bin/bash
 # ============================================
 # BACKLOG COMMIT
-# The git route for a backlog write: wraps backlog.sh so the ticket reaches
-# the BASE branch whatever branch the caller was standing on.
+# The git route for a backlog write: a thin wrapper that guards node and
+# delegates everything to the adjacent native publication entry,
+# backlog-commit.cjs, so the ticket reaches the BASE branch whatever
+# branch the caller was standing on.
 # ============================================
 # Usage: bash .codeadd/scripts/backlog-commit.sh add            < ticket.json
 #        bash .codeadd/scripts/backlog-commit.sh update  <id>   < patch.json

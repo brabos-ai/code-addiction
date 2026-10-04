@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -233,6 +234,35 @@ describe('install command e2e', () => {
       });
       expect(result.status).toBe(2);
       expect(result.stdout).toContain('ERROR=read-mode');
+    });
+
+    it('an installed project runs the native PUBLICATION entry — a local write lands', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      // The installed project runs git + the installed publication entry,
+      // with no source checkout anywhere on the import path. No remote: the
+      // write lands locally and the report says it did.
+      execFileSync('git', ['init', '-b', 'main', '.'], { cwd: tmpDir });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmpDir });
+      execFileSync('git', ['config', 'user.name', 'test'], { cwd: tmpDir });
+      execFileSync('git', ['commit', '--allow-empty', '-m', 'seed'], { cwd: tmpDir });
+
+      const record = path.join(tmpDir, 'installed-publish.json');
+      fs.writeFileSync(record, JSON.stringify({ title: 'installed write', tldr: 't', done_when: 't' }));
+
+      const { spawnSync } = await import('node:child_process');
+      const result = spawnSync(process.execPath, [
+        '.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', path.join('installed-publish.json'),
+      ], { cwd: tmpDir, encoding: 'utf8' });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain('ROUTE=direct');
+      expect(result.stdout).toContain('COMMITTED=yes');
+      expect(result.stdout).toContain('DEGRADED=no-remote');
+      expect(result.stdout).toContain('TICKET_ID=0001B');
+      const board = fs.readFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'), 'utf8');
+      expect(board).toContain('"title":"installed write"');
     });
 
     it('a solved-native write in the installed project lands through its own files', async () => {

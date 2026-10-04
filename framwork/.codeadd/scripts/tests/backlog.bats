@@ -254,7 +254,7 @@ tickets() {
   [ "$guard" -lt "$first_io" ]
 }
 
-@test "L1.5b: backlog.sh never invokes git — the git route belongs to subtopic 002" {
+@test "L1.5b: backlog.sh never invokes git — the git route belongs to the publication entry" {
   [ -f "$SCRIPTS_DIR/backlog.sh" ]
   run grep -nE '(^|[^a-z])git[[:space:]]+(add|commit|push|worktree|checkout)' "$SCRIPTS_DIR/backlog.sh"
   [ "$status" -ne 0 ]

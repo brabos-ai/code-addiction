@@ -108,8 +108,13 @@ Always via:
 bash .codeadd/scripts/status.sh next-id <LETTER>
 ```
 
-Examples: `status.sh next-id F` → `0001F`, `status.sh next-id H` → `0001H`,
-`status.sh next-id B` → `0001B`.
+Examples: `status.sh next-id F` → `0001F`, `status.sh next-id H` → `0001H`.
+
+**A BACKLOG TICKET is the exception: allocation is native.** `backlog-id.cjs`, invoked through
+`node .codeadd/scripts/backlog-cli.cjs add --record-file <ticket.json>`, computes the same global
+counter at the operation root — the bash call above stays valid for B (the wrapper keeps answering),
+but the route the agent runs for a ticket is the CLI add, and `10000B` refuses like the wrapper's
+filter always did.
 
 Never hand-roll IDs. Never reuse an ID from another namespace.
 

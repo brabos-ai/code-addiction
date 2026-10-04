@@ -235,7 +235,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | If you modify... | It impacts... |
 |------------------|---------------|
 | add--backend-development | add-build, add-plan |
-| add--backlog | add-brainstorm, add-build, add-done, add-new, add-plan |
+| add--backlog | add-brainstorm, add-build, add-done, add-hotfix, add-new, add-plan |
 | add--frontend-development | add-build, add-plan |
 | add--database-development | add-build, add-plan |
 | add--ux-design | add-ux, add-build, add-review, add-hotfix, add-plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |

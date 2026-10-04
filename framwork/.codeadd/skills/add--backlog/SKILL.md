@@ -67,8 +67,9 @@ IF THE INTENT IS list OR search:
 in the project (one JSON object, nothing else) and pass `--record-file <path>`. The publication
 entry reads the file in the caller's cwd BEFORE any routing, allocation or persistence: a failed
 read exits 1 with `ERROR=record-read-failed`, and nothing else happens. **stdin remains a
-compatibility path** — `bash .codeadd/scripts/backlog.sh <mode> < record.json` still works and its
-behaviour is pinned by the bats suites — but the native recipe is the file.
+compatibility path** — `bash .codeadd/scripts/backlog.sh <mode> < record.json` and
+`bash .codeadd/scripts/backlog-commit.sh <mode> < record.json` both still work and their behaviour
+is pinned by the bats suites — but the native recipe is the file.
 
 **The format is not defined here.** The two files, the ticket fields, the status vocabulary
 and the `REFUSED=` names live in `{{skill:add--doc-schemas/references/backlog.md}}`. Read it before
@@ -110,7 +111,7 @@ Match what the user said against the board — an id if they gave one, otherwise
 ```
 IF MORE THAN ONE TICKET MATCHES:
   ⛔ DO NOT: Pick the closest, or the newest
-  ⛔ DO NOT USE: Bash to run backlog-commit.sh
+  ⛔ DO NOT USE: Bash to run the publication entry
   ✅ DO: List the candidates by id and title, and ASK which
 
 IF NOTHING MATCHES:
@@ -171,10 +172,11 @@ and the field is required precisely so a reader can tell the two apart.
 ### 3.1 Write
 
 Compose the record per `{{skill:add--doc-schemas/references/backlog.md}}` and run the publication
-entry with it on a file:
+entry with it on a scratch file this run creates and deletes in the same step:
 
 ```bash
-?? scratch-ticket.json           # by Write/Edit — one JSON object
+# scratch-ticket.json — written by Write/Edit in this step, one JSON object,
+# removed right after the call below lands.
 node .codeadd/scripts/backlog-commit.cjs add --record-file scratch-ticket.json
 ```
 
@@ -238,8 +240,6 @@ Then state, from the publication entry's own output:
 
 - Whether the ticket is **grounded**, or was recorded as stated.
 
-- Whether the ticket is **grounded**, or was recorded as stated.
-
 ```
 IF THE SCRIPT REPORTED A DEGRADED WRITE:
   ⛔ DO NOT: Report the capture as clean
@@ -270,18 +270,9 @@ promise the script is built around — say what happened, and do not dress it up
 ## Rules
 
 ALWAYS:
-- Route a write through the publication entry and a read through the local CLI
-- Resolve the mode from what the user said, never from a flag they must know
-- Cap the project check at what the request names plus one `git grep`
 - Report `TICKET_ID` — on an `add` nothing else tells the user what they created
 - Report the sha, because it is the only undo this skill offers
 - Say `grounded: false` out loud when the check found nothing
 
 NEVER:
-- Run `git add`, `git commit`, `git push` or `git worktree` yourself
-- Write `docs/backlog.jsonl` or `docs/backlog.definitions.json` with Write or Edit
-- Send `id`, `created_at` or `updated_at` in a record
-- Invent a path to make a ticket look concrete
-- Guess between two matching tickets
 - Ask for confirmation before a write — the sha is the undo
-- Re-sort the tickets a read returned — board order is priority order
