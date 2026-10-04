@@ -64,6 +64,12 @@ describe('build-board-runtime', () => {
     const runtimeDir = path.resolve(__dirname, '../../board/runtime');
     const sourceDir = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
 
+    // The closure is exactly core and storage — the two modules the server
+    // imports directly. Everything else (CLI, allocator, publication) is
+    // entry-surface and must never cross into the read-only runtime.
+    for (const name of fs.readdirSync(runtimeDir)) {
+      expect(['backlog-core.cjs', 'backlog-storage.cjs'], name).toContain(name);
+    }
     if (fs.existsSync(path.join(runtimeDir, 'backlog-core.cjs'))) {
       const sourceCore = fs.readFileSync(path.join(sourceDir, 'backlog-core.cjs'), 'utf8');
       const runtimeCore = fs.readFileSync(path.join(runtimeDir, 'backlog-core.cjs'), 'utf8');
@@ -75,5 +81,11 @@ describe('build-board-runtime', () => {
       const runtimeStorage = fs.readFileSync(path.join(runtimeDir, 'backlog-storage.cjs'), 'utf8');
       expect(runtimeStorage).toBe(sourceStorage);
     }
+
+    // Explicit negatives: a native module that leaks into board/runtime would
+    // create a second shipped copy of entry-surface code.
+    expect(fs.existsSync(path.join(runtimeDir, 'backlog-id.cjs'))).toBe(false);
+    expect(fs.existsSync(path.join(runtimeDir, 'backlog-git.cjs'))).toBe(false);
+    expect(fs.existsSync(path.join(runtimeDir, 'backlog-commit.cjs'))).toBe(false);
   });
 });

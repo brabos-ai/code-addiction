@@ -40,14 +40,15 @@
 #     it is the testable form of the one-line-diff argument the design makes.
 #
 #   - THE ID COMES FROM THE SHARED GLOBAL COUNTER, as [NNNN][L] with letter B.
-#     Both next-id.sh and status.sh next-id must return the SAME string for the
-#     same tree — status.sh reimplements the scan rather than calling next-id.sh
-#     and ALREADY DIVERGES today (allowlist F|H|PRD|CHG, exit 2 on anything
-#     else). NEXT_ID_AGREE is the only thing that will hold them equal.
-#   - THE ALLOCATORS NEVER PARSE JSON. They grep the raw file for [0-9]{4}[A-Z],
-#     exactly as next-id.sh already greps directory names. Neither gains a node
-#     dependency, and a line whose JSON is damaged still yields its id — so a
-#     damaged board can never block /add.new.
+#     Since the native cutover the wrapper no longer runs an allocator: the
+#     id is calculated by backlog-id.cjs at the operation root (with the
+#     legacy BACKLOG_NEW_ID path preserved), and the two pure-bash
+#     allocators keep their cross-check in L2 — status.sh next-id versus
+#     next-id.sh, NEXT_ID_AGREE — without one of them running here.
+#   - THE ALLOCATORS NEVER PARSE JSON in bash. The native calculation reads
+#     the raw text with the same anchor the two shell calculators grep, and
+#     the entry-level tests (cli/tests/backlog-cli.test.js) hold native and
+#     shell calculators to the same strings on every readable fixture.
 #
 #   - A damaged line is REPORTED BY NUMBER and skipped by list/search; every
 #     other ticket still answers. A status present on a ticket that the
@@ -259,6 +260,10 @@ tickets() {
   [ "$status" -ne 0 ]
 }
 
+# ═══════════════════════════════════════════════════════════════════════════
+# L4 — the native cutover (plan 2026-10-04T004044-PLAN--native-node-backlog,F4)
+# ═══════════════════════════════════════════════════════════════════════════
+
 @test "L1.5c: neither allocator gained a node dependency — both stay pure bash" {
   # Comment lines are stripped first. Both scripts EXPLAIN in their headers
   # why they do not call node, and an assertion that reads prose would fail
@@ -268,6 +273,31 @@ tickets() {
     [ "$status" -ne 0 ]
   done
 }
+
+# ═══════════════════════════════════════════════════════════════════════════
+# L4 — the native cutover (plan 2026-10-04T004044-PLAN--native-node-backlog,F4)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# L4.1 — the wrapper no longer needs an allocator of its own.
+@test "L4.1: backlog.sh names neither allocator — allocation belongs to the entry" {
+  [ -f "$SCRIPTS_DIR/backlog.sh" ]
+  run grep -nE 'status\.sh|next-id\.sh' "$SCRIPTS_DIR/backlog.sh"
+  # The header may NAME the allocators in prose; what must not exist is a
+  # call: any line INVOKING them (direct or through $SCRIPTS_DIR).
+  printf '%s\n' "$output" | grep -qE '\$SCRIPTS_DIR/(status|next-id)\.sh|bash "\$SCRIPT_DIR/(status|next-id)\.sh"' && {
+    echo "backlog.sh still runs an allocator"; return 1; }
+  return 0
+}
+
+@test "L4.2: the wrapper's native form works from bash — node directly, no shell deps" {
+  local record="$TEST_TEMP_DIR/native.json"
+  printf '{"title":"native lands","theme":"t","labels":[],"tldr":"t","notes":[],"done_when":"it works","paths":[],"grounded":false,"status":"open"}\n' > "$record"
+  [ -f "$record" ]
+  run env -u BACKLOG_NEW_ID node "$SCRIPTS_DIR/backlog-cli.cjs" add --record-file "$record"
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -q 'TICKET_ID='
+}
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # L2 — NEXT_ID_AGREE: the two allocators return the same string
@@ -693,6 +723,22 @@ JSON
   run node -e 'const l=require("fs").readFileSync("docs/backlog.jsonl","utf8").trim().split("\n"); l.forEach(x=>JSON.parse(x)); console.log(l.length)'
   [ "$status" -eq 0 ]
   [ "$output" = "1" ]
+}
+
+# The node guard's guidance names the native entry: a shell-less recovery
+# path, so a user who cannot fix PATH still has the one command to run.
+@test "L4.3: the node guard's guidance names the native CLI entry" {
+  local fakebin="$TEST_TEMP_DIR/nonode"
+  mkdir -p "$fakebin"
+  for t in bash grep sed awk cat printf sort find head tail wc cut mkdir rm cp mv; do
+    command -v "$t" >/dev/null 2>&1 && ln -sf "$(command -v "$t")" "$fakebin/$t"
+  done
+
+  run env PATH="$fakebin" bash "$SCRIPTS_DIR/backlog.sh" list
+  [ "$status" -eq 2 ]
+  printf '%s\n' "$output" | grep -q 'ERROR=node-missing'
+  printf '%s\n' "$output" | grep -q 'backlog-cli.cjs'
+  printf '%s\n' "$output" | grep -qv 'REFUSED='
 }
 
 # ═══════════════════════════════════════════════════════════════════════════

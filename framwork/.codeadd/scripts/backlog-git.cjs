@@ -335,11 +335,19 @@ function pathsDirty(root, paths) {
  * caller work: explicit paths, per-path, never `-A` and never `.`, never
  * the caller's whole index. Returns the new HEAD, or the existing one when
  * the bytes did not move — a no-op mutation is distinguished by COMMITTED.
+ *
+ * A board path that is still UNTRACKED (the first write on a fresh
+ * repository) must be staged before the commit can carry it — `--only`
+ * commits the named paths' content, but an untracked path skips the
+ * stage step and a bare `--only` alone leaves it out.
  */
 function commitBoard(root, paths, message) {
   if (!pathsDirty(root, paths)) {
     return { committed: false, sha: headSha(root) };
   }
+  // Stage exactly these paths — this is the only staging this module ever
+  // does, and it can never reach a caller path it was not handed.
+  run(['add', '--', ...paths], root);
   const commit = run(['commit', '--only', ...paths, '-m', message], root, { allowFailure: true });
   if (commit.status !== 0) {
     return { committed: false, sha: headSha(root), failed: true };
