@@ -12,6 +12,7 @@ const {
   lintResourcePaths,
   collectLintableSources,
   assertNoLintableSources,
+  SHIPPED_SOURCE_ALLOWLIST,
   LINTABLE_EXTENSIONS,
   copyDirRecursive,
   _resetLintCache,
@@ -989,6 +990,65 @@ describe('assertNoLintableSources', () => {
     it('rejects .js in the scripts tree — the exception is per file, not per extension', () => {
       writeScript('helper.js');
       expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.js/);
+    });
+
+    // NB — the native-backlog modules join the SAME exact-path exception, one
+    // full relative path each. collectLintableSources computes its relative
+    // path against the build module's ROOT, so a tmp fixture can only carry
+    // the negatives; the positive exemption legs are the exported set (exact
+    // membership) and the real tree, data-driven, as each module appears.
+    describe('the native-backlog allowlist additions are path-exact (L1.4nb)', () => {
+      const NEW_CANONICAL = ['backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs'];
+      const FULL = (name) => `framwork/.codeadd/scripts/${name}`;
+
+      it('the allowlist names exactly the six canonical modules', () => {
+        const expected = [
+          'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
+          ...NEW_CANONICAL,
+        ].map(FULL).sort();
+        expect([...SHIPPED_SOURCE_ALLOWLIST].sort()).toEqual(expected);
+      });
+
+      it('every shipped canonical module that exists is exempt from the guard', () => {
+        const root = path.resolve(import.meta.dirname, '..', '..');
+        const realCodeadd = path.join(root, 'framwork', '.codeadd');
+        const names = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', ...NEW_CANONICAL];
+        const present = names.filter((n) => fs.existsSync(path.join(realCodeadd, 'scripts', n)));
+        expect(present.length, 'the fixtures this run test the shipped tree').toBeGreaterThan(0);
+        for (const n of present) {
+          expect(
+            collectLintableSources(path.join(realCodeadd, 'scripts')).filter((p) => p === FULL(n)),
+            `${n} must not be an offender`,
+          ).toEqual([]);
+        }
+        expect(() => assertNoLintableSources(readMap(), realCodeadd)).not.toThrow();
+      });
+
+      it('rejects a nested same-basename lookalike of each new module', () => {
+        for (const name of NEW_CANONICAL) writeScript(path.join('nested', name));
+        try {
+          assertNoLintableSources({ skills: {} }, tmp);
+          expect.unreachable();
+        } catch (e) {
+          for (const name of NEW_CANONICAL) {
+            expect(e.message).toMatch(new RegExp(`nested[/\\\\]${name}`));
+          }
+        }
+      });
+
+      it('rejects a new module name outside the scripts tree', () => {
+        writeScript(path.join('..', 'templates', NEW_CANONICAL[0]));
+
+        expect(() => assertNoLintableSources({ skills: {} }, tmp))
+          .toThrow(new RegExp(`templates[/\\\\]${NEW_CANONICAL[0]}`));
+      });
+
+      it('rejects a wrong-extension shipmate of a new module', () => {
+        writeScript(NEW_CANONICAL[1].replace(/\.cjs$/, '.js'));
+
+        expect(() => assertNoLintableSources({ skills: {} }, tmp))
+          .toThrow(/backlog-git\.js/);
+      });
     });
 
     it('the allowlist covers exactly the three canonical modules in the real tree', () => {

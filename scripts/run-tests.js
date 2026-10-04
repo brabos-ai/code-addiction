@@ -277,6 +277,9 @@ function buildCommands({
     `{ echo "The image has no cli dependencies at ${CONTAINER_MODULES}; rebuild it." >&2; exit 2; }`;
   const vitest = `(cd cli && ./node_modules/.bin/vitest run${vitestArgs(extra)})`;
   // The container always has GNU parallel, so the host's answer does not apply.
+  // The .bin and libexec entries now carry their exec bits again (see the
+  // restore step in the unpack line), so the shim's own execution path —
+  // the one its shebang and PATH bootstrap select — is what runs.
   const bats = `./node_modules/.bin/bats ${batsArgs({ jobs, parallelAvailable: true, extra })}`;
 
   const run = {
@@ -284,7 +287,14 @@ function buildCommands({
     bats,
     all: `${check}; ${vitest}; v=$?; ${bats}; b=$?; if [ $v -ne 0 ]; then exit $v; fi; exit $b`,
   }[suite];
-  const inner = `${unpack} || exit 2; ${run}`;
+  // The packed tree comes from a Windows checkout, where exec bits do not
+  // survive tar: bats' bootstrap needs its own libexec helpers executable,
+  // and a bash-run shim re-execs them anyway. Restore the exec bits for
+  // bats' own tree inside the throwaway container copy — the host tree is
+  // never touched, and a chmod restricted to bats' directories cannot reach
+  // the checkout's files.
+  const restore = 'chmod -R u+x node_modules/bats node_modules/.bin 2>/dev/null || true;';
+  const inner = `${unpack} || exit 2; ${restore} ${run}`;
 
   const args = [
     'run', '--rm',

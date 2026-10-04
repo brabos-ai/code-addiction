@@ -7,6 +7,14 @@ description: Use when writing commands or skills that reference other commands, 
 
 <!-- uses:
 - command: /add-wiki
+- script: backlog.sh
+- script: backlog-cli.cjs
+- script: backlog-commit.cjs
+- script: backlog-id.cjs
+- script: backlog-git.cjs
+- script: backlog-commit.sh
+- script: backlog-core.cjs
+- script: backlog-storage.cjs
 -->
 
 Commands and skills in `framwork/.codeadd/` are the source of truth. After build, they are placed in provider-specific directories (`.claude/commands/`, `.agents/skills/`, `.gemini/commands/`, etc.). Hardcoded `.codeadd/` paths to commands or skills break because these directories do not exist in the installed project. Use build-time variables to reference resources.
@@ -20,7 +28,7 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 
 ## When NOT to Use
 
-- Referencing scripts (`.codeadd/scripts/*.sh` is always correct — fixed path)
+- Referencing scripts (`.codeadd/scripts/*.sh` and `.codeadd/scripts/*.cjs` are always correct — fixed path)
 - Referencing project files outside the framework (`docs/`, `src/`, etc.)
 - Writing code in `build.js` or `cli/` (these operate on the build/install pipeline, not agent runtime)
 
@@ -57,14 +65,27 @@ Resolves to the full path of a skill file. Use `SKILL.md` for the main file, or 
 # Gemini → .gemini/skills/add--backend-development/SKILL.md
 ```
 
+## .codeadd/scripts/ — literal, no variable
+
+Everything the directory ships is reached by the literal path: `.codeadd/scripts/`.
+
 ### Scripts (no variable needed)
 
-Scripts are always at `.codeadd/scripts/`. Use the literal path.
+Shell and Node entries are both reached by the literal path — the binaries stay the same for every provider and for every install:
 
 ```
 bash .codeadd/scripts/status.sh
 bash .codeadd/scripts/done.sh
+node .codeadd/scripts/backlog-cli.cjs
+node .codeadd/scripts/backlog-commit.cjs
 ```
+
+The shipped backlog entries are Node CommonJS modules: `backlog-cli.cjs` (the seven local modes),
+`backlog-id.cjs` (global id allocation), `backlog-git.cjs` and `backlog-commit.cjs` (publication and
+recovery), plus `backlog-core.cjs` and `backlog-storage.cjs` (the canonical core the board server
+imports directly). `backlog.sh` and `backlog-commit.sh` remain the bash compatibility wrappers —
+thin guards that delegate. Use `node .codeadd/scripts/<entry>.cjs` in a native recipe and keep the
+bash form only as a compatibility reference, marked as such.
 
 ### `{{addpath:X}}`
 

@@ -47,16 +47,22 @@ describe('fixLineEndings', () => {
     expect(fs.readFileSync(file, 'utf8')).toBe(original);
   });
 
-  it('does not touch non-.sh files', () => {
+  it('does not touch non-.sh files — a CommonJS module ships byte-exact', () => {
     const dir = path.join(tmpDir, 'scripts');
     fs.mkdirSync(dir);
     const mdFile = path.join(dir, 'README.md');
+    const cjsFile = path.join(dir, 'backlog-cli.cjs');
     const original = 'hello\r\nworld\r\n';
     fs.writeFileSync(mdFile, original, 'utf8');
+    fs.writeFileSync(cjsFile, original, 'utf8');
 
     fixLineEndings(dir);
 
     expect(fs.readFileSync(mdFile, 'utf8')).toBe(original);
+    // The canonical backlog modules are read by Node directly; a line-ending
+    // normalization of a .cjs would corrupt the release asset the board
+    // runtime and the installed entries load.
+    expect(fs.readFileSync(cjsFile, 'utf8')).toBe(original);
   });
 
   it('processes .sh files recursively in subdirectories', () => {

@@ -969,7 +969,12 @@ describe('node inventory snapshot', () => {
       // script 20 -> 21: migrate-context-files.sh, which folds legacy context
       // files into AGENTS.md before any write. add--agents-md-style runs it.
       // (plan 2026-09-21T002449-PLAN--agents-md-only-context-file, F1.)
-      script: 24,
+      // script 24 -> 25: backlog-id.cjs, the native global allocator
+      // (plan 2026-10-04T004044-PLAN--native-node-backlog, F2).
+      // script 25 -> 27: backlog-git.cjs and backlog-commit.cjs, the native
+      // publication pair — routing/recovery and the orchestration entry.
+      // (plan 2026-10-04T004044-PLAN--native-node-backlog, F3.)
+      script: 27,
       // fragment 24 -> 25: fragments/qa-pipeline/add-review.md, which carries
       // add-review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1084,8 +1089,31 @@ describe('node inventory snapshot', () => {
     // product artefact rename procedure. Renaming product identities moves no count.
     // 243 -> 244, declares 139 -> 140: +1 internal skill, add-framework-injection.
     // A skill is a declaring kind, so both counts move.
-    expect(nodes).toHaveLength(247);
+    // 244 -> 247: +3 scripts, backlog-core.cjs / backlog-storage.cjs /
+    // backlog-cli.cjs, the canonical shipped modules of node-only-board.
+    // 247 onwards, +1 per native module the moment it is on disk:
+    // backlog-id.cjs with F2, backlog-git.cjs and backlog-commit.cjs with F3.
+    // The exists() formula below covers all six exactly-path-allowlisted
+    // modules, so each F-block asserts its own increment and nothing else.
+    // (plan 2026-10-04T004044-PLAN--native-node-backlog, F1's three-node L1.)
+    expect(nodes).toHaveLength(244 + ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', 'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs']
+      .map((n) => Number(fs.existsSync(path.join(CODEADD, 'scripts', n))))
+      .reduce((a, b) => a + b, 0));
     expect(nodes.filter((n) => n.declares)).toHaveLength(140);
+  });
+
+  it('the shipped backlog CJS modules carry their graph node as they land', () => {
+    const nodes = collectNodes(readMap(), CODEADD);
+    const ids = new Set(nodes.map((n) => n.id));
+    for (const name of [
+      'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
+      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
+    ]) {
+      // Data-driven: a module asserts its node the moment it is on disk, so
+      // F2 proves one and F3 proves the other two without a further edit.
+      if (!fs.existsSync(path.join(CODEADD, 'scripts', name))) continue;
+      expect(ids, name).toContain(`product/script/${name}`);
+    }
   });
 });
 

@@ -179,7 +179,7 @@ export function writeFixture(root: string): void {
   writeFileSync(join(root, 'docs/backlog.jsonl'), FIXTURE_TICKETS.map((t) => `${JSON.stringify(t)}\n`).join(''));
   writeFileSync(
     join(root, 'docs/backlog.definitions.json'),
-    // The definitions the product ships -- DEFAULT_DEFS in backlog.sh, which
+    // The definitions the product ships -- DEFAULT_DEFS in backlog-core.cjs, which
     // docs/backlog.definitions.json at the repository root is seeded from.
     JSON.stringify(SHIPPED_DEFS, null, 2),
   );

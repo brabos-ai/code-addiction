@@ -85,14 +85,17 @@ describe('board — the registry and the map', () => {
 });
 
 describe('board — L7.3: off by default means no command mentions the backlog', () => {
-  it('no built product command names add--backlog, backlog-commit.sh or a ticket write', () => {
+  it('no built product command names add--backlog or a backlog entry or a ticket write', () => {
     const offenders = [];
     for (const prov of CMD_PROVIDERS) {
       for (const name of BOARD_COMMANDS) {
         const file = builtCommand(prov, name);
         if (!fs.existsSync(file)) continue;
         const body = fs.readFileSync(file, 'utf8');
-        for (const needle of ['add--backlog', 'backlog-commit.sh', 'ticket:']) {
+        for (const needle of [
+          'add--backlog', 'backlog-commit.sh', 'backlog-commit.cjs',
+          'backlog-cli.cjs', 'backlog.sh', 'ticket:',
+        ]) {
           if (body.includes(needle)) offenders.push(`${prov}/${name}: ${needle}`);
         }
       }

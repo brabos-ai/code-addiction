@@ -12,7 +12,7 @@ Two layers with distinct purposes.
 
 Source of truth for distributed artefacts. Users consume these via CLI install. Commands live at
 `commands/*.md`, skills at `skills/<name>/SKILL.md`, agents at `agents/*-agent.md`, scripts at
-`scripts/*.sh`.
+`scripts/*.sh` plus the shipped CommonJS backlog entries at `scripts/*.cjs`.
 
 The inventory below is **generated** — `node scripts/inventory.js` writes it from disk and
 `/add-framework--done` keeps it current. Do not hand-edit it, and do not add a count anywhere: an
@@ -111,7 +111,7 @@ as `/<name>` and declares the next with `handoff:`.
 |---------|---------|-------------|
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--backlog` | Records what to do next — add, update, comment, reprioritise or close a ticket, committed and pushed to `main` through `backlog-commit.sh` | `docs/backlog.jsonl` |
+| `add-framework--backlog` | Records what to do next — add, update, comment, reprioritise or close a ticket, committed and pushed to `main` through the native publication entry (`backlog-commit.cjs`, wrapped by `backlog-commit.sh`) | `docs/backlog.jsonl` |
 
 ## Pipeline
 
@@ -180,7 +180,7 @@ Key files:
 | `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — runs the suites natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
-| `framwork/.codeadd/scripts/*.sh` | Shipped verbatim. Each documents its own usage and exit codes in its header |
+| `framwork/.codeadd/scripts/*` | Shipped verbatim (.sh shells and the shipped CommonJS backlog `.cjs` entries). Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
 

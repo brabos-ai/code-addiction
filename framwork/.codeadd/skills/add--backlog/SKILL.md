@@ -6,6 +6,8 @@ description: "Use when something should be done later but not now — record it 
 # Add Backlog — Capture Work That Is Decided But Not Started
 
 <!-- uses:
+- script: backlog-cli.cjs
+- script: backlog-commit.cjs
 - script: backlog.sh
 - script: backlog-commit.sh
 - skill: add--final-report
@@ -38,24 +40,36 @@ The project has a pipeline for work that is **about to start** and an index for 
 
 ## ⛔ The Two Entry Points
 
-**Which script runs is decided by whether anything is committed, and by nothing else.**
+**Which entry runs is decided by whether anything is committed, and by nothing else.**
+Both are Native Node — Node and Git are the only runtimes the backlog needs, on any platform
+and without bash or WSL.
 
-| Intent | Script | Why |
+| Intent | Entry | Why |
 |---|---|---|
-| **read** — list, search | `bash .codeadd/scripts/backlog.sh <mode>` | A read commits nothing. It also works in a directory that is not a git repository, which the write path cannot |
-| **write** — add, update, comment, move, remove | `bash .codeadd/scripts/backlog-commit.sh <mode>` | The ticket has to reach the **base branch**, or it dies with the branch it was written on |
+| **read** — list, search | `node .codeadd/scripts/backlog-cli.cjs <mode>` | A read commits nothing. It also works in a directory that is not a git repository, which the write path cannot |
+| **write** — add, update, comment, move, remove | `node .codeadd/scripts/backlog-commit.cjs <mode>` | The ticket has to reach the **base branch**, or it dies with the branch it was written on |
 
 ```
 IF THE INTENT IS add, update, comment, move OR remove:
-  ⛔ DO NOT USE: Bash to run backlog.sh directly — the ticket would land on whatever
-                 branch the user happens to be standing on
+  ⛔ DO NOT USE: Bash to run backlog.sh or backlog-cli.cjs directly — the ticket would land on
+                 whatever branch the user happens to be standing on
   ⛔ DO NOT USE: Bash to run git add, git commit, git push or git worktree yourself
-  ✅ DO: Run backlog-commit.sh, which owns the whole git route and cleans up after itself
+  ⛔ DO NOT: Write docs/backlog.jsonl or docs/backlog.definitions.json with Write or Edit
+  ✅ DO: Run the publication entry with the record on a file, which owns the whole
+         git route and cleans up after itself
 
 IF THE INTENT IS list OR search:
-  ⛔ DO NOT USE: Bash to run backlog-commit.sh — it refuses a read with ERROR=read-mode
-  ✅ DO: Run backlog.sh directly
+  ⛔ DO NOT USE: Bash to run the publication entry — it refuses a read with ERROR=read-mode
+  ✅ DO: Run the local CLI directly
 ```
+
+**Records travel on files, not on pipes.** For a record mode, write the record to a scratch file
+in the project (one JSON object, nothing else) and pass `--record-file <path>`. The publication
+entry reads the file in the caller's cwd BEFORE any routing, allocation or persistence: a failed
+read exits 1 with `ERROR=record-read-failed`, and nothing else happens. **stdin remains a
+compatibility path** — `bash .codeadd/scripts/backlog.sh <mode> < record.json` and
+`bash .codeadd/scripts/backlog-commit.sh <mode> < record.json` both still work and their behaviour
+is pinned by the bats suites — but the native recipe is the file.
 
 **The format is not defined here.** The two files, the ticket fields, the status vocabulary
 and the `REFUSED=` names live in `{{skill:add--doc-schemas/references/backlog.md}}`. Read it before
@@ -97,7 +111,7 @@ Match what the user said against the board — an id if they gave one, otherwise
 ```
 IF MORE THAN ONE TICKET MATCHES:
   ⛔ DO NOT: Pick the closest, or the newest
-  ⛔ DO NOT USE: Bash to run backlog-commit.sh
+  ⛔ DO NOT USE: Bash to run the publication entry
   ✅ DO: List the candidates by id and title, and ASK which
 
 IF NOTHING MATCHES:
@@ -157,10 +171,13 @@ and the field is required precisely so a reader can tell the two apart.
 
 ### 3.1 Write
 
-Compose the record per `{{skill:add--doc-schemas/references/backlog.md}}` and pipe it in:
+Compose the record per `{{skill:add--doc-schemas/references/backlog.md}}` and run the publication
+entry with it on a scratch file this run creates and deletes in the same step:
 
 ```bash
-echo '<the record as one JSON object>' | bash .codeadd/scripts/backlog-commit.sh add
+# scratch-ticket.json — written by Write/Edit in this step, one JSON object,
+# removed right after the call below lands.
+node .codeadd/scripts/backlog-commit.cjs add --record-file scratch-ticket.json
 ```
 
 ```
@@ -178,12 +195,14 @@ would cost the turn the mid-flow capture was supposed to save, so this skill wri
 ### 3.2 Read
 
 ```bash
-bash .codeadd/scripts/backlog.sh list
-bash .codeadd/scripts/backlog.sh search "<terms>"
+node .codeadd/scripts/backlog-cli.cjs list [--all | --status <name>]
+node .codeadd/scripts/backlog-cli.cjs search "<terms>"
 ```
 
 Output is `KEY=VALUE` lines, then raw JSONL. **Board order is priority order and it survives every
-filter** — present the tickets in the order they came back, never re-sorted.
+filter** — present the tickets in the order they came back, never re-sorted. The agent reads the
+raw lines itself: a line whose `"id"` matches the ticket id is that ticket, and exactly one line
+carries a given id.
 
 `BACKLOG_PRESENT=no` means no ticket has ever been written. Say that; it is not an error.
 
@@ -194,23 +213,30 @@ filter** — present the tickets in the order they came back, never re-sorted.
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks and the banned phrasings.
 Emit the report FIRST — the facts below come after it.
 
-Then state, from `backlog-commit.sh`'s own output:
+Then state, from the publication entry's own output:
 
 - **`TICKET_ID`** — on an `add` the id did not exist before the write, so this is the only way the
   user learns what to call their ticket. **Never omit it.**
 - **`SHA`** — the commit. This is the whole undo, which is why there was no gate.
 - **`ROUTE`** and **`BASE_BRANCH`** — whether it went direct or through a worktree, and where it landed.
-- **`PUSHED`**, and **`DEGRADED`** when there is one. Say plainly what did not happen:
+- **`PUSHED`** and **`PERSISTED`**/**`COMMITTED`**, plus **`RECOVERY_PATH`**/**`RECOVERY_REF`** when the
+  entry reports one, and **`DEGRADED`** when there is one. Say plainly what did not happen:
 
 | `DEGRADED=` | Say |
 |---|---|
 | `not-a-git-repo` | the ticket is in the working tree and nothing was committed — this is not a git repository |
 | `no-base-branch` | same, and no `main` or `master` was found to commit to |
-| `no-remote` | the commit is on the local base branch; there is no remote to push to |
-| `push-refused` | the commit is on the local base branch; the push was refused — a protected branch, a ruleset, or auth |
-| `rebase-conflict` | the commit is on the local base branch; the remote moved and the rebase was aborted rather than resolved |
-| `base-checked-out-elsewhere` | the commit exists by sha only — the push failed and the base branch is checked out in another worktree |
-| `worktree-failed` | the ticket is in the working tree, uncommitted — the temporary worktree could not be created |
+| `worktree-failed` / `worktree-lock-failed` | the ticket is in the working tree, uncommitted — the temporary worktree could not be created, or its capture lock could not be taken |
+| `worktree-recovery-required` | an earlier capture left recoverable work in the worktree — refuse reuse and give the path the entry printed |
+| `no-remote` | there is no remote to push to; locate the commit using SHA, ROUTE and RECOVERY_* |
+| `push-refused` | the push was refused — a protected branch, a ruleset, or auth; locate the commit using SHA, ROUTE and RECOVERY_* |
+| `fetch-failed` | the remote could not be fetched, so no rebase or push used stale state; locate the commit using SHA, ROUTE and RECOVERY_* |
+| `rebase-conflict` | the remote moved and the rebase conflicted; RECOVERY_PATH identifies retained state if abort could not complete |
+| `caller-worktree-dirty` | caller changes or unreadable Git state prevented safe commit or rebase; use COMMITTED and RECOVERY_PATH to distinguish the outcomes — nothing was stashed or reset |
+| `base-advance-failed` | the commit is ref-protected; the local base branch could not fast-forward itself |
+| `base-checked-out-elsewhere` | the local base could not advance because it is checked out elsewhere; use PUSHED and RECOVERY_* to locate the result |
+| `recovery-ref-failed` / `recovery-ref-moved` / `recovery-ref-delete-failed` | protection could not be created, was moved, or could not be released; report only the RECOVERY_REF/RECOVERY_PATH actually printed |
+| `cleanup-failed` | the commit is ref-protected and the temporary worktree could not be removed — the entry prints the retained path |
 
 - Whether the ticket is **grounded**, or was recorded as stated.
 
@@ -224,37 +250,33 @@ IF THE SCRIPT REPORTED A DEGRADED WRITE:
 **A degraded write is still a write.** The ticket exists in every one of those rows, which is the
 promise the script is built around — say what happened, and do not dress it up either way.
 
+For `ROUTE=direct`, a committed SHA is on the caller's base branch. For `ROUTE=worktree`,
+do not infer that the local base advanced: the recovery ref/path and PUSHED describe where
+the commit is retained or published. `COMMITTED=no` means the persisted bytes are at RECOVERY_PATH.
+
 ---
 
 ## Validation Checklist
 
 ```
 [ ] The intent resolved to exactly one mode, with no subcommand asked of the user
-[ ] A write went through backlog-commit.sh; a read went through backlog.sh
+[ ] A write went through the publication entry; a read went through the local CLI
+[ ] A record travelled on a file; stdin was never used for a native call
 [ ] The project check read only what the request named, plus one git grep
 [ ] No subagent, no graph query, no plan read
 [ ] title, tldr and done_when are all present and non-empty
 [ ] grounded says what actually happened
 [ ] An ambiguous target was asked about, never guessed
 [ ] TICKET_ID and SHA are both in the report
-[ ] A DEGRADED= write was reported as degraded
+[ ] A DEGRADED= write was reported as degraded, with its RECOVERY_* keys when present
 ```
 
 ## Rules
 
 ALWAYS:
-- Route a write through `backlog-commit.sh` and a read through `backlog.sh`
-- Resolve the mode from what the user said, never from a flag they must know
-- Cap the project check at what the request names plus one `git grep`
 - Report `TICKET_ID` — on an `add` nothing else tells the user what they created
 - Report the sha, because it is the only undo this skill offers
 - Say `grounded: false` out loud when the check found nothing
 
 NEVER:
-- Run `git add`, `git commit`, `git push` or `git worktree` yourself
-- Write `docs/backlog.jsonl` or `docs/backlog.definitions.json` with Write or Edit
-- Send `id`, `created_at` or `updated_at` in a record
-- Invent a path to make a ticket look concrete
-- Guess between two matching tickets
 - Ask for confirmation before a write — the sha is the undo
-- Re-sort the tickets a read returned — board order is priority order

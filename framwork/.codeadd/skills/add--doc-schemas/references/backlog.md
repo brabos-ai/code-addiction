@@ -3,7 +3,11 @@
 **This is a format reference, not a doc schema.** Every other file under `references/` describes a Markdown
 document an agent authors, with frontmatter, depth floors and a Decision Log. This one describes **two
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
-its status vocabulary. Both are written by `.codeadd/scripts/backlog.sh`. Neither has a frontmatter
+its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
+(`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
+and write both files; `backlog.sh` and `backlog-commit.sh` are the bash compatibility wrappers that guard
+node and delegate to them. Backlog operations need Node >= 18 and Git — no bash, no WSL.
+Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
 of those apply to files a script owns.
 
@@ -14,15 +18,15 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 
 | File | Holds | Written by | Hand-edited? |
 |---|---|---|---|
-| `docs/backlog.jsonl` | the tickets, in priority order | `backlog.sh` only | never in normal operation |
-| `docs/backlog.definitions.json` | the status vocabulary | `backlog.sh`, once | **yes — it is the user's** |
+| `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through `backlog.sh`/`backlog-cli.cjs` | never in normal operation |
+| `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
 
 Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The location is settled the same way
 `docs/delivered.jsonl`'s is: the installer always gitignores `.codeadd/`, and these must survive a fresh
 clone. `cli/src/installer.js` never touches `docs/` at all, which is what protects a user's edited
 definitions from a reinstall — a structural guarantee rather than a rule someone must remember.
 
-Neither is scaffolded empty. They appear on the first `backlog.sh add`, and their absence means "no ticket
+Neither is scaffolded empty. They appear on the first backlog `add`, and their absence means "no ticket
 has ever been written", which is information an empty file would destroy.
 
 ## Line order is the priority
@@ -117,7 +121,7 @@ and it is the reason a later reader must not merge them.
 }
 ```
 
-Written once, on the first `backlog.sh` WRITE that finds it absent — a read never brings a file into existence. **Never rewritten after that**,
+Written once, on the first WRITE that finds it absent — a read never brings a file into existence. **Never rewritten after that**,
 and `backlog.bats` asserts it with `DEFS_PRESERVED`: a hand-edited file survives further writes
 byte-for-byte.
 
@@ -139,7 +143,7 @@ was.
 
 **The seeded shape above carries all of them explicitly**, so a fresh project never exercises a fallback.
 The fallbacks exist for a file someone hand-edits and leaves a key out of — and they are resolved by
-**whoever reads the file for display**, not by `backlog.sh`, which reads a status name and nothing else.
+**whoever reads the file for display**, not by the backlog Node core, which reads a status name and nothing else.
 
 ### The nine names are a contract, not a mechanism
 
@@ -253,8 +257,9 @@ consumer branch once.
 
 ## Exit codes
 
-`backlog.sh` follows the script family's three-code doctrine, with the same single departure
-`delivered.sh` makes.
+The backlog follows the script family's three-code doctrine, with the same single departure
+`delivered.sh` makes — and it is the backlog Node core that owns it, through every entry: the local
+`backlog-cli.cjs`, the publication `backlog-commit.cjs`, and the bash wrapper that delegates to either.
 
 | Exit | Means |
 |---|---|

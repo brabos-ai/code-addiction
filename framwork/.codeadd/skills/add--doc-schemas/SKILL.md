@@ -22,9 +22,12 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - command: /add-plan
 - command: /add-pull-request
 - script: build-setup.sh
+- script: status.sh
 - skill: add--doc-schemas/references/backlog.md
 - skill: add--doc-schemas/references/delivery-index.md
 - mention: backlog.sh
+- mention: backlog-cli.cjs
+- mention: backlog-commit.cjs
 - skill: add--doc-schemas/references/fix.md
 - skill: add--doc-schemas/references/history.md
 - skill: add--doc-schemas/references/new-feature.md
@@ -146,7 +149,11 @@ Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `B
 
 ### ID Allocation
 
-IDs are allocated **manually** per prefix, monotonically increasing. Before creating a new doc, grep the counter: `grep -rhE "^id: F[0-9]{4}$" docs/ | sort -u | tail -1`. Use next integer, zero-padded. Never reuse an ID even if the doc is deleted.
+**`{{skill:add--id-convention/SKILL.md}}` is the owner of the `[NNNN][L]` shape, the counter, and the
+allocation command.** Load it before allocating, allocate through `status.sh next-id <LETTER>` (or, for
+a backlog ticket, through the native `backlog-cli.cjs add` itself), and never hand-roll an id — one
+manual grep here and the manual copy could hand out a number second, under an old allocator that stays
+open instead of the shipped one. Never reuse an ID even if the doc is deleted.
 
 ### Reference Syntax
 
@@ -300,7 +307,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | File | Describes | Read it when |
 |------|-----------|--------------|
 | `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.sh` |
-| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` — the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing `.codeadd/scripts/backlog.sh` |
+| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog.sh`, `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the six-module family |
 
 ## Validation Gate Block
 

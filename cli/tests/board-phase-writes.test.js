@@ -159,3 +159,67 @@ describe('the hotfix schema declares the field its command now writes', () => {
     expect(read('framwork', '.codeadd', 'skills', 'add--doc-schemas', 'references', 'fix.md')).toContain('optionally `ticket: [NNNN]B`');
   });
 });
+
+describe('L5 sweeps — the native recipes carry no shell pipeline', () => {
+  /** The instruction files and the fragments that name native recipes must
+   *  run the BACKLOG ENTRIES by `node`, with no bash/grep/printf/status.sh
+   *  or redirection feeding a record. Compatibility references are marked:
+   *  only prose that SAYS it is a compatibility path may name the shell form. */
+  const FILES = [
+    'framwork/.codeadd/skills/add--backlog/SKILL.md',
+    'framwork/.codeadd/skills/add--backlog/references/lifecycle.md',
+  ];
+  const FRAGMENTS = ['brainstorm', 'build', 'done', 'hotfix', 'new', 'plan'];
+  const NATIVE_FORBIDDEN = [
+    [/printf[^\n]*backlog/i, 'a printf pipe feeding the backlog'],
+    [/grep[^\n]*backlog\.(?:sh|-commit\.sh)/i, 'a grep of the board output'],
+    [/status\.sh[^\n]*backlog|backlog[^\n]*status\.sh/i, 'an allocator running from the instruction'],
+  ];
+
+  it('the two instruction files feed records only through --record-file or a marked compat line', () => {
+    for (const rel of FILES) {
+      const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      // Non-native sequences are refused wherever they appear UNLESS the
+      // sentence marks itself as a compatibility path — that is the one
+      // legal form. The check walks every shell-shaped record line.
+      for (const [re, why] of NATIVE_FORBIDDEN) {
+        for (const m of src.matchAll(new RegExp(re.source, 'gi'))) {
+          const lineStart = src.lastIndexOf('\n', m.index) + 1;
+          const block = src.slice(Math.max(0, lineStart - 260), m.index + 200);
+          const marked = /compatibility/i.test(block);
+          if (!marked) expect(`${rel}: ${why}`, m[0]).toBe(undefined || 'marked compat');
+          expect(marked, `${rel}: an UNMARKED ${why}: ${m[0]}`).toBe(true);
+        }
+      }
+      expect(src, rel).toContain('--record-file');
+      expect(src, rel).toContain('backlog-cli.cjs');
+    }
+  });
+
+  it.each(FRAGMENTS.map((f) => [`fragments/board/add-${f}`, f]))('%s carries no record-feeding pipeline', (label, f) => {
+    const src = fs.readFileSync(path.join(ROOT, 'framwork', '.codeadd', 'fragments', 'board', `add-${f}.md`), 'utf8');
+    expect(src, label).not.toMatch(/printf[^\n]*backlog/);
+    expect(src, label).not.toMatch(/grep[^\n]*backlog/);
+  });
+
+  it('lifecycle.md names the native publication entry for its writes', () => {
+    const s = fs.readFileSync(path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--backlog', 'references', 'lifecycle.md'), 'utf8');
+    expect(s).toContain('node .codeadd/scripts/backlog-commit.cjs');
+    expect(s).not.toContain('printf');
+  });
+
+  it('the product and internal Ticket procedure keep the same two rules and the writes', () => {
+    const l = lifecycle();
+    for (const st of WRITTEN) {
+      const a = l.indexOf('## Per Command');
+      expect(l.slice(a, l.indexOf('\n## ', a + 5))).toContain(tick(st));
+    }
+    expect(l).toContain('`work_id` stop');
+  });
+
+  it('the read recipe relies on agent parsing of the exact id — no grep pipe survived', () => {
+    const s = lifecycle();
+    expect(s).not.toMatch(/\| grep/);
+    expect(s).toContain('"id":"<the ticket id>"');
+  });
+});

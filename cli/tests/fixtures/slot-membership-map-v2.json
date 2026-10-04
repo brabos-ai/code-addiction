@@ -1457,7 +1457,7 @@
           "via": "INJECTS_INTO"
         },
         {
-          "id": "product/script/backlog-commit.sh",
+          "id": "product/script/backlog-commit.cjs",
           "via": "RUNS_SCRIPT"
         },
         {
