@@ -894,22 +894,51 @@ blockers and the manual routes nobody else will pick up.
 
 Then, after the seven blocks, output the quality gate summary: reviewers dispatched (files reviewed
 per reviewer), findings by severity, spec compliance status, product validation
-(RF/RN/prerequisites), scores, the gate table, the QA per-scope roll-up, the
-path to this `review-NNN.md`, and next steps.
+(RF/RN/prerequisites), scores, the gate table, the QA per-scope roll-up, and the
+path to this `review-NNN.md`.
 
 ⛔ State explicitly that findings were **routed, not applied** — this command
 modified no code — and name `{{cmd:add-build}}` as the step that applies them.
 
-**Next steps (evaluate top-to-bottom, use FIRST match)** — print each command complete, ready to paste:
-- Agent-routed rows in `## Fix Routing` → `/add-build ${FEATURE_ID}` ({{cmd:add-build}}) — it consumes `## Fix Routing`, applies the fixes, appends the resolution annex here and writes its own `Final review:` verdict. No second review is required.
-- `BLOCKED` with only manual routes (`data-seed`, `env-boot`, citation-missing) → resolve them by hand; they are user decisions, not agent work.
-- `PASSED` → `/add-done` ({{cmd:add-done}}).
+**Next activity (evaluate top-to-bottom, use FIRST match):**
+
+| State | Next activity |
+|---|---|
+| Agent-routed rows in `## Fix Routing` | `/add-build ${FEATURE_ID}` ({{cmd:add-build}}) — it consumes `## Fix Routing`, applies the fixes, appends the resolution annex here and writes its own `Final review:` verdict. No second review is required. |
+| `BLOCKED` with only manual routes (`data-seed`, `env-boot`, citation-missing) | none — they are user decisions, not agent work |
+| `PASSED` | `/add-done` ({{cmd:add-done}}) |
 
 **This review is optional, and the most recent verdict wins.** `/add-done` reads it only while no
 `Final review:` line written after it exists — a build that runs after this review answers it, and its
 line becomes the verdict.
 
-**Stop kind — confirming.** Print the report and the next command, and STOP, on every delivery mode.
+**Stop kind — confirming.** The report describes a review the user asked for.
+
+### STEP add-review.handoff Offer the continuation
+
+**This review is never on the automatic path, so it is always `manual`.** Finish the report, then its
+metadata, and ask ONCE whether the user wants instructions for continuing in a fresh context. Then
+stop and wait.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. The
+`BLOCKED`-with-only-manual-routes row is the no-activity case: it offers nothing, because the
+remaining work is the user's to do by hand.
+
+**On a correction, the block carries the CURRENT review and never a superseded one.** Name this
+`review-NNN.md` and its `## Fix Routing`, keep each finding's identity and the decision that
+superseded it, leave other sessions' work and evidence alone, and tell the recipient to check current
+state before reapplying anything — a fix already applied is applied twice when the block does not say
+so.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/reviews/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
+| `docs/features/${FEATURE_ID}/plan.md` | The requirements the findings are judged against |
+| {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 
 ---
 

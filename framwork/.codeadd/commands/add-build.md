@@ -1271,8 +1271,12 @@ nothing and dispatches no implementer.
    | `EPIC_DELIVERY` | Do |
    |---|---|
    | `automatic` | Print what `SFxx` delivered, then follow {{cmd:add-plan}} for this feature — it plans the next pending subfeature — as `add--delivery-mode` describes |
-   | `semi-automatic` | **STOP — deciding.** Show what `SFxx` delivered and what the next subfeature will do, and WAIT. On the user's go, follow {{cmd:add-plan}} |
-   | absent (`confirm`) | Print the report and the complete line `/add-plan ${FEATURE_ID}` for the next subfeature, then STOP |
+   | `semi-automatic` | **STOP — deciding.** Show what `SFxx` delivered and what the next subfeature will do, and WAIT. On the user's go, follow {{cmd:add-plan}}. This question IS the stop — do not also offer continuation instructions |
+   | absent (`confirm`) | Keep the full checkpoint report for `SFxx`, then offer the continuation under `chat-continuation-eligibility-v1` and STOP |
+
+**The `confirm` checkpoint keeps its whole report.** The offer is a question after that report, never a
+replacement for it, and never a compression of it. The next activity is `/add-plan ${FEATURE_ID}` for
+the next pending subfeature; on acceptance, `STEP add-build.handoff` answers it in one block.
 
 6. **If no row is pending any more** → go to STEP add-build.publish.
 
@@ -1568,15 +1572,42 @@ not rulings and go in their own short list.
 
 ### STEP add-build.next-command Next command
 
-Print the next command as a complete line, feature ID and arguments included, ready to paste:
+**The next activity, not the next command's text.** Name it here — the command, the feature id and the
+arguments — so the report's metadata says what follows. On `automatic` this line is the handoff and
+the build follows it; on `confirm` it is a statement of fact, and the copyable instruction block is
+the user's to ask for.
 
 - After `## Loop End` → the step it reached: `/add-plan ${FEATURE_ID}` for the next subfeature, or,
   past the publish question, `/add-done` — with `/add-review ${FEATURE_ID}` named as optional, for
   detail and QA
 - `Final review: blocked N` → each `Blocker suggestion:` command
 
-**Stop kind — confirming.** The report describes work the approval already covered. On every
-`DELIVERY`, print the report and the line, and STOP — the build never runs `/add-review` for you.
+**Stop kind — confirming.** The report describes work the approval already covered. On `automatic`,
+print the report and the line, then follow the next command from its first step, as
+`add--delivery-mode` describes. The build never runs `/add-review` for you.
+
+### STEP add-build.handoff Offer the continuation — `confirm`
+
+**On `confirm`, finish the report, the rulings table and the metadata, and only then ask ONCE whether
+the user wants instructions for continuing in a fresh context.** Then stop and wait.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
+activity and its documents; `automatic` never reaches it.
+
+⛔ **The publish question is deciding in every state and outranks this step.** On a branch with no PR,
+the build asks that question and waits; it does not offer continuation in its place, and the two are
+never merged into one prompt.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/features/${FEATURE_ID}/plan.md` | The tasks this build implemented against, and the ones still open |
+| `docs/plans/` ledger path, from the metadata | Which rulings were made and what each cost if wrong |
+| The `Final review:` verdict this build wrote | What the build's own review left open, and what `/add-done` reads |
+| {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 
 ---
 
