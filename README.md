@@ -14,7 +14,7 @@ Most AI coding setups are fragmented across custom prompts, scripts, and editor-
 
 Code Addiction standardizes this with:
 - A shared core in `.codeadd/` (commands, scripts, skills, templates)
-- Provider-specific integrations (Claude, Codex, Antigravity, Cursor, OpenCode)
+- Provider-specific integrations (Claude, Codex, Antigravity, Cursor, OpenCode, ZCode)
 - A versioned installer (`codeadd`) with `install`, `update`, `uninstall`, `doctor`, and `validate`
 
 ## Quickstart
@@ -100,7 +100,7 @@ Pick the shortest path that fits. Less ceremony, same quality.
 ```
 COMPLETE  (complex features with UI)
   brainstorm --> new --> plan --> build --> review --> done
-                         (design is produced inside /add-plan STEP 8.1)
+                         (design is produced inside /add-plan STEP add-plan.ux-design)
 
 STANDARD  (features without complex UI)
   new --> plan --> build --> review --> done
@@ -145,19 +145,22 @@ ANALYSIS  (understand existing codebase)
   - Google Antigravity -> `.agent/`
   - Cursor -> `.cursor/`
   - OpenCode -> `.opencode/`
+  - ZCode (Z.ai) -> `.agents/` (skills, shared with Codex; agents go to `.zcode/`)
 
-Commands and skills install to every provider you select. Subagents install to Claude Code, Cursor, OpenCode and Codex (Antigravity is not yet supported for agents).
+Commands and skills install to every provider you select. Subagents install to Claude Code, Cursor, OpenCode, Codex and ZCode (Antigravity is not yet supported for agents).
 
 ## Repository structure
 
 - `AGENTS.md`: project instructions read by AI coding assistants (replaces `CLAUDE.md` at the repo root)
 - `cli/`: installer CLI published as `codeadd`
 - `mcp/`: the knowledge-graph MCP server (two corpora, selected by `--corpus`), shipped in the npm package
-- `framework/`: framework payload copied into target projects by the installer
+- `board/`: the read-only backlog board over `docs/backlog.jsonl` — a React/TypeScript app plus a zero-dependency Node server; built by `npm run build:board`, run by `npm run board`. Not carried by the npm package or the main release ZIP
+- `framwork/`: framework payload copied into target projects by the installer
   - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
-- `workbench/`: internal-layer source for the framework's own commands, skills and agents, with its own build pipeline (compiles to `.claude/` and `.opencode/` at the repo root, gitignored)
+- `workbench/`: internal-layer source for the framework's own commands, skills and agents, with its own build pipeline (compiles to `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repo root, gitignored)
 - `docs/deliveries/`: durable delivery history — closed-out plan archives
 - `docs/delivered.jsonl`: the delivery index every close-out appends to
+- `docs/backlog.jsonl`: the backlog ticket ledger the board reads — one JSON line per ticket
 
 ## Compatibility
 

@@ -97,7 +97,7 @@ import "../styles/global.css";
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">Provider adapters</div>
-            <p class="text-muted-light text-sm">Claude, Codex, Antigravity, Cursor, OpenCode</p>
+            <p class="text-muted-light text-sm">Claude, Codex, Antigravity, Cursor, OpenCode, ZCode</p>
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">codeadd CLI</div>
@@ -125,7 +125,7 @@ import "../styles/global.css";
           <span class="text-muted">your-project/</span><br/>
           <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← core (always)</span><br/>
           <span class="text-foreground">├── .claude/</span><span class="text-muted ml-8">← Claude Code</span><br/>
-          <span class="text-foreground">├── .agents/</span><span class="text-muted ml-7">← Codex (OpenAI)</span><br/>
+          <span class="text-foreground">├── .agents/</span><span class="text-muted ml-7">← Codex (OpenAI) + ZCode</span><br/>
           <span class="text-foreground">├── .agent/</span><span class="text-muted ml-8">← Antigravity</span><br/>
           <span class="text-foreground">├── .cursor/</span><span class="text-muted ml-6">← Cursor</span><br/>
           <span class="text-foreground">└── .opencode/</span><span class="text-muted ml-4">← OpenCode</span>
@@ -164,7 +164,7 @@ import "../styles/global.css";
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd features</code>
-            <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline)</span>
+            <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline, docs-pruning, board)</span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
@@ -304,7 +304,7 @@ import "../styles/global.css";
           the graph disagree.
         </p>
         <p class="text-muted-light mb-8">
-          Commands only, one hop. The full graph carries 225 artefacts and 857 relationships;
+          Commands only, one hop. The full graph carries 247 artefacts and 972 relationships;
           drawn at once it is a hairball that tells you nothing. Skills, agents and scripts are
           reachable from the query surface below.
         </p>
@@ -610,6 +610,22 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-1">QA pipeline (E2E spec authoring + routed QA correction + the agent QA judgement in add-review)</p>
             <p class="text-muted text-xs">Injected into: <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-review</code></p>
           </div>
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">docs-pruning</code>
+              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-done</code></p>
+          </div>
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">board</code>
+              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Backlog board (pipeline commands read a ticket and move it through the phase statuses)</p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-brainstorm</code>, <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-hotfix</code></p>
+          </div>
         </div>
       </section>
 
@@ -794,11 +810,12 @@ import "../styles/global.css";
               <tr><td class="py-3 pr-4 text-muted-light">Google Antigravity</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agent/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
               <tr><td class="py-3 pr-4 text-muted-light">Cursor</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.cursor/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
               <tr><td class="py-3 pr-4 text-muted-light">OpenCode</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.opencode/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
+              <tr><td class="py-3 pr-4 text-muted-light">ZCode (Z.ai)</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agents/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
             </tbody>
           </table>
         </div>
         <p class="text-muted text-xs mt-4">
-          Commands and skills build to all five providers. Agent definitions ship to Claude Code, Cursor, OpenCode and Codex — Antigravity is deferred because its native <code class="font-mono">.agents/agents/</code> path collides with the Codex skills root.
+          Commands and skills build to all six providers. Agent definitions ship to Claude Code, Cursor, OpenCode, Codex and ZCode — Antigravity is deferred because its native <code class="font-mono">.agents/agents/</code> path collides with the Codex skills root. ZCode reads commands and skills from the same <code class="font-mono">.agents/</code> tree as Codex and keeps its agents in <code class="font-mono">.zcode/</code>, so the two never duplicate a file on disk.
         </p>
       </section>
 
@@ -814,6 +831,7 @@ import "../styles/global.css";
           <span class="text-foreground">├── cli/</span><span class="text-muted ml-12">← installer CLI (npm: codeadd)</span><br/>
           <span class="text-foreground">├── framwork/</span><span class="text-muted ml-6">← framework payload</span><br/>
           <span class="text-foreground">│   └── .codeadd/</span><span class="text-muted ml-2">← core: commands, skills, scripts</span><br/>
+          <span class="text-foreground">├── board/</span><span class="text-muted ml-12">← read-only backlog board app (separate release asset)</span><br/>
           <span class="text-foreground">├── web/</span><span class="text-muted ml-14">← this website</span><br/>
           <span class="text-foreground">├── scripts/</span><span class="text-muted ml-8">← build and release scripts</span><br/>
           <span class="text-foreground">└── docs/</span><span class="text-muted ml-12">← project documentation</span>
