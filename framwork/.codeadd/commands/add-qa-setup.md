@@ -8,6 +8,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 <!-- uses:
 - skill: add--dev-environment-setup
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--final-report
 - skill: add--qa
 - skill: add--qa-migration
@@ -461,9 +462,37 @@ Then, after the seven blocks, tell the user, in order:
 5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
 6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
-8. Run the audit: `/add-review <feature-id> [SFxx]` — its QA sections judge the rendered result.
+8. Run the audit: `/add-review <feature-id> [SFxx]` - its QA sections judge the rendered result.
 
 `/add-qa-setup` does NOT modify application code, and does NOT merge the migration branch.
+
+### STEP add-qa-setup.handoff-cont Offer the continuation
+
+**Item 8 above is a real next activity whenever the audit can run.** Where it cannot — no feature
+yet, no `screens.json`, an unavailable MCP server — the remaining steps are the user's own manual
+work and there is nothing to continue into.
+
+| State | Next activity |
+|---|---|
+| Feature exists and the audit can run | `/add-review <feature-id> [SFxx]` — its QA sections judge the rendered result |
+| No feature or no `screens.json` yet | none — build the feature first |
+| Migration branch awaiting review | none — that is a human review of an open PR |
+
+Finish the ordered hand-off list, then its metadata, then ask ONCE for instructions only on the first
+row.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/qa/qa-setup.md` | The receipt whose shape hash decides whether setup is current |
+| `${FEATURE_DIR}/about.md` | The feature the audit judges |
+| `docs/decisions/` or the migration Decision Log | What the migration branch still awaits review on |
+| {{skill:add--qa/SKILL.md}} | What the audit's QA sections measure |
 
 ---
 

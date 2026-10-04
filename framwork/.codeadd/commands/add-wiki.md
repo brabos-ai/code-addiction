@@ -4,9 +4,12 @@
 - skill: add--architecture-discovery
 - skill: add--agents-md-style
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--ecosystem
 - skill: add--final-report
 - skill: add--wiki-maintenance
+- mention: /add-audit
+- mention: /add-new
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
 - script: migrate-context-files.sh
@@ -840,7 +843,32 @@ grep -ril "<term>" .codeadd/wiki/
 grep -ri "<term>" .codeadd/wiki/**/*.md
 ```
 
-**Next Steps:** Reference skill `add--ecosystem` Main Flows section for context-aware next command suggestion.
+### STEP add-wiki.handoff Offer the continuation
+
+**A standalone wiki run is the no-activity case.** Nothing about generating a knowledge base creates
+work for an agent, so it ends normally with no offer. The offer appears only when the run found
+something to act on.
+
+| Run | Next activity |
+|---|---|
+| Standalone generation, no issues found | none — the wiki is the deliverable |
+| Issues found in the tree | `/add-audit` — a deep health check on what the run surfaced |
+| Context mapped and the user asked to build | `/add-new` — start building with that context |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the second and third rows.
+⛔ **Never propose a feature on a standalone run.** The user asked for a wiki, not for a backlog.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `.codeadd/wiki/index.md` | What the run mapped, and what an audit or a new feature reads first |
+| `docs/audits/<date>-audit-report.md` | Where a deep health check records what it finds |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the run's outcome takes |
 
 ---
 

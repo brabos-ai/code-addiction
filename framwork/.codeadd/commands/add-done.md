@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--doc-schemas/references/delivery-index.md
 - skill: add--ecosystem
 - skill: add--final-report
@@ -1041,8 +1042,39 @@ Then, after the seven blocks, state:
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
 <!-- /slot:board.ticket-report -->
-- The next command, from the `add--ecosystem` Main Flows section, chosen for the current branch type
+- The next activity, from the `add--ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
+
+### STEP add-done.handoff Offer the continuation
+
+**Every stop in this command is deciding, and none of them is this one.** The merge already happened
+by the time this runs, so the offer is a question about what comes next — never a substitute for a
+gate, and never a merge consent.
+
+| State after the merge | Next activity |
+|---|---|
+| Feature branch, back on main | `/add-new` — start the next feature |
+| Epic, subfeatures still pending | `/add-build feature N` — the next subfeature |
+| Hotfix | `/add-new` — return to feature work |
+| Nothing pending and no goal stated | none — this delivery is closed |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the first three rows.
+
+⛔ **Never propose a new feature the user did not ask for.** A merged branch with no stated next goal
+is a completed delivery, and inventing an epic to have somewhere to point is the failure this table's
+last row exists to prevent.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
+| `docs/features/<id>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the branch type takes next |
 
 ---
 

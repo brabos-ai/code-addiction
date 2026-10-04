@@ -3,8 +3,10 @@
 <!-- uses:
 - skill: add--commit
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--final-report
 - skill: add--id-convention
+- mention: add--ecosystem
 - command: /add-done
 -->
 
@@ -351,7 +353,33 @@ Then, after the seven blocks, report:
 
 Post-merge guidance: "After PR is merged on GitHub, run `/add-done` for branch cleanup."
 
-State that a delivery index entry is still owed and that `{{cmd:add-done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
+State that a delivery index entry is still owed and that `{{cmd:add-done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` - without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
+
+### STEP add-pull-request.handoff Offer the continuation
+
+**This command opens a PR and stops. It never merges, and the merge is always the user's.**
+
+| State | Next activity |
+|---|---|
+| PR open, awaiting review | none — a human reviews it; there is no agent activity to continue into |
+| PR merged on GitHub | `/add-done` — cleanup local branch and tags |
+| Scope grew, PR needs updating | `/add-pull-request` — idempotent, appends an update section |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the second and third rows.
+A PR waiting on a human reviewer is the no-activity case and ends normally with no offer — offering
+"/add-done" before the merge would send the user into a command whose gates cannot pass yet.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `${FEATURE_DIR}/changelog.md` | What the PR carries, and what the close-out indexes |
+| `docs/delivered.jsonl` | The entry `/add-done` still owes after the merge |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the finalize routing after a merge |
 
 ---
 

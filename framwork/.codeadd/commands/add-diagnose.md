@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--doc-schemas/references/review.md
 - skill: add--ecosystem
 - skill: add--final-report
@@ -342,7 +343,35 @@ STEP add-diagnose.persist persisted a document. Fill `What was delivered` with t
 `How it works` with the causal chain — what fails, where, and why the evidence points there rather
 than at the runner-up hypothesis.
 
-Then, after the seven blocks, state the recommended command and that this command never runs it. Print `/add-hotfix @docs/diagnose/<file>.md` only when the accepted route is hotfix. Never invoke it.
+Then, after the seven blocks, state the accepted route and that this command never runs the command it names.
+
+### STEP add-diagnose.handoff Offer the continuation
+
+**This command is READ-ONLY and advisory.** The next activity exists only when the accepted route is
+one an agent can pick up.
+
+| Accepted route | Next activity |
+|---|---|
+| `hotfix` | `/add-hotfix @docs/diagnose/<file>.md` — it consumes the `## Hotfix Handoff` this report appended |
+| `feature` | `/add-new` — a functional gap becomes a feature |
+| `extend` | `/add-new` or `/add-plan`, per the route's own scope |
+| `no-action` | none — the diagnosis was the deliverable |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the first three rows. A
+`no-action` diagnosis ends normally with no offer.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
+activity and its documents.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` | The causal chain and the `## Hotfix Handoff` the next command reads |
+| `docs/features/<id>/about.md` | What the feature created for this gap is for, on the `feature` and `extend` routes |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the accepted route takes next |
 
 ---
 
