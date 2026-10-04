@@ -89,40 +89,40 @@ teardown() {
 
 # ─── Recommendations ────────────────────────────────────────────────
 
-@test "recommends /add.new when on main" {
+@test "recommends /add-new when on main" {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"REC:/add.new to start"* ]]
+  [[ "$output" == *"REC:/add-new to start"* ]]
 }
 
-@test "recommends /add.review or /add.done on a completed feature" {
+@test "recommends /add-review or /add-done on a completed feature" {
   mkdir -p docs/features/0001F-test
   echo "# Changelog" > docs/features/0001F-test/changelog.md
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:feature"* ]]
-  [[ "$output" == *"REC:/add.review or /add.done"* ]]
+  [[ "$output" == *"REC:/add-review or /add-done"* ]]
 }
 
-@test "recommends /add.done on a hotfix branch" {
+@test "recommends /add-done on a hotfix branch" {
   mkdir -p docs/features/0001H-urgent
   echo "# Hotfix" > docs/features/0001H-urgent/about.md
   git checkout -b hotfix/0001H-urgent -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TYPE:hotfix"* ]]
-  [[ "$output" == *"REC:/add.done"* ]]
-  [[ "$output" != *"/add.review"* ]]
+  [[ "$output" == *"REC:/add-done"* ]]
+  [[ "$output" != *"/add-review"* ]]
 }
 
-@test "recommends /add.build when phase=planned" {
+@test "recommends /add-build when phase=planned" {
   mkdir -p docs/features/0001F-test
   echo "# Plan" > docs/features/0001F-test/plan.md
   git checkout -b feature/0001F-test -q
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"REC:/add.build to implement"* ]]
+  [[ "$output" == *"REC:/add-build to implement"* ]]
 }
 
 # ─── Git status ──────────────────────────────────────────────────────
@@ -489,12 +489,12 @@ write_epic_blindspot() {
   [[ "$output" != *"PENDING:0006F-done"* ]]
 }
 
-@test "PENDING: REC recommends /add.build for the first pending feature on main" {
+@test "PENDING: REC recommends /add-build for the first pending feature on main" {
   mkdir -p docs/features/0005F-pending
   echo "# About" > docs/features/0005F-pending/about.md
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/add.build 0005F"* ]]
+  [[ "$output" == *"/add-build 0005F"* ]]
 }
 
 # ─── WIKI block ──────────────────────────────────────────────────────
@@ -503,14 +503,14 @@ write_epic_blindspot() {
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"WIKI:absent"* ]]
-  [[ "$output" == *"WIKI_HINT:Run /add.wiki to generate the knowledge base"* ]]
+  [[ "$output" == *"WIKI_HINT:Run /add-wiki to generate the knowledge base"* ]]
 }
 
 @test "WIKI: present with 0 stale changes when sha == HEAD" {
   mkdir -p .codeadd/wiki
   echo "# Wiki" > .codeadd/wiki/index.md
   HEAD_SHA=$(git rev-parse HEAD)
-  printf '{"updatedAt":"2026-07-15","command":"/add.wiki","gitHead":"%s"}\n' "$HEAD_SHA" > .codeadd/wiki/.meta.json
+  printf '{"updatedAt":"2026-07-15","command":"/add-wiki","gitHead":"%s"}\n' "$HEAD_SHA" > .codeadd/wiki/.meta.json
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"WIKI:present"* ]]
@@ -523,7 +523,7 @@ write_epic_blindspot() {
   mkdir -p .codeadd/wiki
   echo "# Wiki" > .codeadd/wiki/index.md
   OLD_SHA=$(git rev-parse HEAD)
-  printf '{"updatedAt":"2026-07-15","command":"/add.wiki","gitHead":"%s"}\n' "$OLD_SHA" > .codeadd/wiki/.meta.json
+  printf '{"updatedAt":"2026-07-15","command":"/add-wiki","gitHead":"%s"}\n' "$OLD_SHA" > .codeadd/wiki/.meta.json
   git add .codeadd/wiki/index.md .codeadd/wiki/.meta.json
   git commit -m "add wiki" -q
   echo "change1" > file1.txt
@@ -534,7 +534,7 @@ write_epic_blindspot() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"WIKI:present"* ]]
   [[ "$output" =~ WIKI_STALE_COUNT:[1-9] ]]
-  [[ "$output" == *"WIKI_HINT:Wiki may be stale ("*") — /add.wiki update"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki may be stale ("*") — /add-wiki update"* ]]
 }
 
 @test "WIKI: unresolvable sha (garbage .meta.json) yields unknown + unreachable hint" {
@@ -545,7 +545,7 @@ write_epic_blindspot() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"WIKI:present"* ]]
   [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
-  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add-wiki update"* ]]
 }
 
 @test "WIKI: missing .meta.json yields unknown + unreachable hint" {
@@ -555,18 +555,18 @@ write_epic_blindspot() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"WIKI:present"* ]]
   [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
-  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add-wiki update"* ]]
 }
 
 @test "WIKI: unreachable sha (well-formed but nonexistent commit) yields unknown + unreachable hint" {
   mkdir -p .codeadd/wiki
   echo "# Wiki" > .codeadd/wiki/index.md
-  printf '{"updatedAt":"2026-07-15","command":"/add.wiki","gitHead":"0000000000000000000000000000000000dead"}\n' > .codeadd/wiki/.meta.json
+  printf '{"updatedAt":"2026-07-15","command":"/add-wiki","gitHead":"0000000000000000000000000000000000dead"}\n' > .codeadd/wiki/.meta.json
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"WIKI:present"* ]]
   [[ "$output" == *"WIKI_STALE_COUNT:unknown"* ]]
-  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add.wiki update"* ]]
+  [[ "$output" == *"WIKI_HINT:Wiki stamp unreachable — consider /add-wiki update"* ]]
 }
 
 # ─── SETUP CONTRACT (materialized-state staleness) ───────────────────
@@ -582,7 +582,7 @@ mk_receipt() { # $1 = setup-shape value, $2 = optional line ending
 
 mk_sidecar() { # $1 = shape
   mkdir -p .codeadd
-  printf '{\n  "version": 1,\n  "contracts": {\n    "add.qa-setup": {\n      "shape": "%s",\n      "paths": [\n        { "path": "a", "owner": "setup" }\n      ]\n    }\n  }\n}\n' "$1" > .codeadd/contracts.json
+  printf '{\n  "version": 1,\n  "contracts": {\n    "add-qa-setup": {\n      "shape": "%s",\n      "paths": [\n        { "path": "a", "owner": "setup" }\n      ]\n    }\n  }\n}\n' "$1" > .codeadd/contracts.json
 }
 
 @test "SETUP_QA: absent when no QA state exists" {
@@ -598,7 +598,7 @@ mk_sidecar() { # $1 = shape
   [ "$status" -eq 0 ]
   [[ "$output" == *"SETUP_QA:stale"* ]]
   [[ "$output" == *"SETUP_QA_STALE:yes"* ]]
-  [[ "$output" == *"SETUP_QA_HINT:"*"/add.qa-setup"* ]]
+  [[ "$output" == *"SETUP_QA_HINT:"*"/add-qa-setup"* ]]
   [[ "$output" != *"SETUP_QA:unreceipted"* ]]
 }
 
@@ -633,7 +633,7 @@ mk_sidecar() { # $1 = shape
   run "$SCRIPTS_DIR/status.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"SETUP_QA_STALE:yes"* ]]
-  [[ "$output" == *"SETUP_QA_HINT:"*"/add.qa-setup"* ]]
+  [[ "$output" == *"SETUP_QA_HINT:"*"/add-qa-setup"* ]]
   [[ "$output" != *"SETUP_QA_BEHIND"* ]]
 }
 

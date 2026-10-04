@@ -16,9 +16,9 @@ import { treeFixture } from './helpers/tree-fixture.js';
  * Smoke evidence for plan 0056 (QA pipeline reachability) — pins the end-to-end
  * scenarios the topic touches, on the REAL build outputs:
  *   1. qa-pipeline enable/disable round-trip (byte-identical restore)
- *   2. pre-sidecar enable no-op (silent success the setup step must detect)
+ *   2. pre-sidecar enable warns and leaves the requested flag for update
  *   3. fragment self-detection notices in always-present built body text
- *   4. the two-phase QA preflight contract (absorbed into add.review) + shared probe script
+ *   4. the two-phase QA preflight contract (absorbed into add-review) + shared probe script
  *
  * Requires `node scripts/build.js` to have produced framwork/.claude +
  * framwork/.codeadd/injection-points.json (CI builds before testing).
@@ -65,10 +65,10 @@ const fixture = treeFixture({
 });
 
 /**
- * add.review WITH qa-pipeline ON, read where the QA steps actually exist.
+ * add-review WITH qa-pipeline ON, read where the QA steps actually exist.
  *
- * STEPs 8-10 left the base command for fragments/qa-pipeline/add.review.md when
- * the feature boundary moved, so `builtCommand('add.review')` — which reads the
+ * STEPs 8-10 left the base command for fragments/qa-pipeline/add-review.md when
+ * the feature boundary moved, so `builtCommand('add-review')` — which reads the
  * marker-free but UN-INJECTED output under framwork/.claude — no longer carries
  * them. Reading it for QA content asserts the old boundary, not the reachability
  * this file is named for.
@@ -83,7 +83,7 @@ const qaEnabledReview = () => {
     const cwd = fixture.root();
     enableFeature(cwd, 'qa-pipeline');
     qaReviewCache = fs.readFileSync(
-      path.join(cwd, '.claude', 'commands', 'add.review.md'),
+      path.join(cwd, '.claude', 'commands', 'add-review.md'),
       'utf8',
     );
   }
@@ -103,9 +103,9 @@ afterAll(() => fixture.dispose());
 describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
   it('enable injects both gated commands, disable restores byte-identically', () => {
     // Plan 0070: add.test was absorbed, so e2e-dispatch and qa-fix now share
-    // add.build as their host.
+    // add-build as their host.
     const cwd = fixture.root();
-    const targets = ['add.plan', 'add.build'].map((n) =>
+    const targets = ['add-plan', 'add-build'].map((n) =>
       path.join(cwd, '.claude', 'commands', `${n}.md`),
     );
     const before = Object.fromEntries(targets.map((f) => [f, snapshot(f)]));
@@ -114,9 +114,9 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
     expect(warnSpy).not.toHaveBeenCalled();
     expect(modified).toBeGreaterThan(0);
 
-    expect(snapshot(targets[0])).toContain('STEP 9.0'); // QA-Spec step landed in add.plan
-    expect(snapshot(targets[1])).toContain('E2E Spec Authoring'); // e2e-dispatch landed in add.build
-    expect(snapshot(targets[1])).toContain('QA-Routed Correction'); // qa-fix landed in add.build
+    expect(snapshot(targets[0])).toContain('STEP qa-pipeline.qa-spec'); // QA-Spec step landed in add-plan
+    expect(snapshot(targets[1])).toContain('E2E Spec Authoring'); // e2e-dispatch landed in add-build
+    expect(snapshot(targets[1])).toContain('QA-Routed Correction'); // qa-fix landed in add-build
     for (const f of targets) if (snapshot(f) !== before[f]) expect(snapshot(f)).not.toContain('<!--');
 
     disableFeature(cwd, 'qa-pipeline');
@@ -124,16 +124,14 @@ describe('scenario 1 — qa-pipeline enable/disable round-trip', () => {
   });
 });
 
-describe('scenario 2 — pre-sidecar enable no-op (features.js:85)', () => {
-  it('with injection-points.json absent, enable injects nothing yet marks the feature on', () => {
+describe('scenario 2 — pre-sidecar enable warns and leaves requested state', () => {
+  it('with injection-points.json absent, enable warns, injects nothing and marks the feature on', () => {
     const cwd = fixture.root();
     fs.rmSync(path.join(cwd, '.codeadd', 'injection-points.json'));
 
     const { modified } = enableFeature(cwd, 'qa-pipeline');
 
-    // Pins the exact silent-success defect the add.qa-setup gate step must
-    // detect (post-enable verification). If the CLI ever starts failing loud
-    // here, the command guidance must be revisited — this test will flag it.
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('codeadd update'));
     expect(modified).toBe(0);
     const manifest = JSON.parse(snapshot(path.join(cwd, '.codeadd', 'manifest.json')));
     expect(manifest.features['qa-pipeline']).toBe(true);
@@ -141,21 +139,21 @@ describe('scenario 2 — pre-sidecar enable no-op (features.js:85)', () => {
 });
 
 describe('scenario 3 — fragment self-detection notices (always-present body text)', () => {
-  it('built add.plan carries the OFF-state notice with the exact remedy', () => {
-    expect(builtCommand('add.plan')).toContain(REMEDY);
+  it('built add-plan carries the OFF-state notice with the exact remedy', () => {
+    expect(builtCommand('add-plan')).toContain(REMEDY);
   });
 
-  it('built add.build carries the E2E OFF-state notice with the exact remedy', () => {
+  it('built add-build carries the E2E OFF-state notice with the exact remedy', () => {
     // Migrated from add.test with the section it describes. It must sit in the
     // UNGATED base body: a notice nested in the block it reports on cannot
     // render when that block was not injected.
-    const build = builtCommand('add.build');
+    const build = builtCommand('add-build');
     expect(build).toContain(REMEDY);
     expect(build).toMatch(/E2E spec authoring is disabled/i);
   });
 
-  it('built add.build carries the test-generation OFF-state notice', () => {
-    const build = builtCommand('add.build');
+  it('built add-build carries the test-generation OFF-state notice', () => {
+    const build = builtCommand('add-build');
     expect(build).toContain('codeadd features enable tdd-pipeline');
     expect(build).toMatch(/test generation is disabled/i);
   });
@@ -166,9 +164,9 @@ describe('scenario 4 — QA preflight contract + shared probe script', () => {
     expect(fs.existsSync(path.join(CODEADD, 'scripts', 'qa-preflight.sh'))).toBe(true);
   });
 
-  // Plan 0070: the preflight contract was absorbed into add.review's base body,
-  // self-gating on the add.qa-setup receipt rather than on a feature flag.
-  it('built add.review invokes the shared probe script and declares block/degrade phases', () => {
+  // Plan 0070: the preflight contract was absorbed into add-review's base body,
+  // self-gating on the add-qa-setup receipt rather than on a feature flag.
+  it('built add-review invokes the shared probe script and declares block/degrade phases', () => {
     const review = qaEnabledReview();
     expect(review).toContain('.codeadd/scripts/qa-preflight.sh');
     expect(review).toContain('Phase A');
@@ -176,8 +174,8 @@ describe('scenario 4 — QA preflight contract + shared probe script', () => {
     expect(review).toContain('degrade');
   });
 
-  it('built add.qa-setup carries the feature-gate opt-in with the exact remedy', () => {
-    const setup = builtCommand('add.qa-setup');
+  it('built add-qa-setup carries the feature-gate opt-in with the exact remedy', () => {
+    const setup = builtCommand('add-qa-setup');
     expect(setup).toContain(REMEDY);
     expect(setup).toContain('.codeadd/scripts/qa-preflight.sh');
   });
@@ -194,19 +192,19 @@ describe('scenario 5 — UX agent design ownership', () => {
   const agentFile = (name) =>
     path.join(ROOT, 'framwork', '.claude', 'agents', `${name}.md`);
 
-  it('built add.plan contains the 7.1 UX step and the 7.4 Frontend Specialist line', () => {
+  it('built add-plan contains the 7.1 UX step and the 7.4 Frontend Specialist line', () => {
     // Was 8.1/8.4 until 2026-09-14T215223-PLAN--remove-owner-product-onboarding
-    // deleted add.plan's STEP 1 (Load Founder Profile) and shifted the rest down.
-    const plan = builtCommand('add.plan');
-    expect(plan).toContain('### 7.1 UX Design Specialist');
-    expect(plan).toContain('- 7.4: Frontend Specialist');
+    // deleted add-plan's STEP 1 (Load Founder Profile) and shifted the rest down.
+    const plan = builtCommand('add-plan');
+    expect(plan).toContain('### STEP add-plan.ux-design UX Design Specialist');
+    expect(plan).toContain('- STEP add-plan.frontend: Frontend Specialist');
   });
 
   it('the qa-pipeline enable/disable round-trip is still byte-identical after the anchor rename', () => {
     // Re-asserts scenario 1's invariant explicitly under this topic: the STEP
     // 8.1 renumber (plan 0057) must not have broken the anchor-based injection.
     const cwd = fixture.root();
-    const targets = ['add.plan', 'add.build'].map((n) =>
+    const targets = ['add-plan', 'add-build'].map((n) =>
       path.join(cwd, '.claude', 'commands', `${n}.md`),
     );
     const before = Object.fromEntries(targets.map((f) => [f, snapshot(f)]));
@@ -258,14 +256,14 @@ describe('scenario 6 — layout notation & Design Contract', () => {
   });
 
   it('built new-feature.md reference file ships the exact "## Design Contract" string', () => {
-    const newFeature = builtSkill('add-doc-schemas', path.join('references', 'new-feature.md'));
+    const newFeature = builtSkill('add--doc-schemas', path.join('references', 'new-feature.md'));
     expect(newFeature).toContain('## Design Contract');
   });
 
   it('e2e-dispatch fragment content mentions computed-styles', () => {
-    // Plan 0070: the section moved host from add.test to add.build.
+    // Plan 0070: the section moved host from add.test to add-build.
     const fragment = fs.readFileSync(
-      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
+      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
       'utf8',
     );
     expect(fragment).toContain('computed-styles');
@@ -275,30 +273,30 @@ describe('scenario 6 — layout notation & Design Contract', () => {
     const cwd = fixture.root();
     const { modified } = enableFeature(cwd, 'qa-pipeline');
     expect(modified).toBeGreaterThan(0);
-    const injected = snapshot(path.join(cwd, '.claude', 'commands', 'add.build.md'));
+    const injected = snapshot(path.join(cwd, '.claude', 'commands', 'add-build.md'));
     expect(injected).toContain('computed-styles');
     disableFeature(cwd, 'qa-pipeline');
   });
 
-  it('Design Contract dimensions table ships in add-ux-design/design-contract.md, indexed from SKILL.md', () => {
-    const contract = builtSkill('add-ux-design', 'design-contract.md');
+  it('Design Contract dimensions table ships in add--ux-design/design-contract.md, indexed from SKILL.md', () => {
+    const contract = builtSkill('add--ux-design', 'design-contract.md');
     expect(contract).toContain('Verified by');
     expect(contract).toContain('## Design Contract Dimensions');
     expect(contract).toContain('## Layout Tree Notation');
     // Progressive disclosure: the dispatcher indexes, it does not restate.
-    const uxDesignSkill = builtSkill('add-ux-design');
+    const uxDesignSkill = builtSkill('add--ux-design');
     expect(uxDesignSkill).toContain('design-contract.md');
     expect(uxDesignSkill).not.toContain('## Design Contract Dimensions');
   });
 
   it('critique rubric ships as its own reference file, indexed from SKILL.md', () => {
-    const rubric = builtSkill('add-ux-design', 'critique-rubric.md');
+    const rubric = builtSkill('add--ux-design', 'critique-rubric.md');
     expect(rubric).toMatch(/Binds the CRITIC only/i);
     expect(rubric).toMatch(/empty critique/i);
     // Structural invariant, not a reworded-prose pin (L6): the rubric's numbered
     // item list lives in the reference file and nowhere else. SKILL.md keeps only
     // a one-line index pointing at it.
-    const skill = builtSkill('add-ux-design');
+    const skill = builtSkill('add--ux-design');
     expect(skill).toMatch(/critique-rubric\.md/);
     expect(rubric).toMatch(/^\s*\|?\s*1[.|]/m);
     expect(skill).not.toMatch(/adversarial pass/i);
@@ -313,8 +311,8 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
   const sidecar = () =>
     JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
 
-  it('built add.review dispatches @ux-agent ∥ @qa-agent and resolves run-NNN before capture', () => {
-    // Plan 0070: absorbed into add.review as STEP 9 (evidence) + STEP 10 (judgement).
+  it('built add-review dispatches @ux-agent ∥ @qa-agent and resolves run-NNN before capture', () => {
+    // Plan 0070: absorbed into add-review as STEP 9 (evidence) + STEP 10 (judgement).
     const review = qaEnabledReview();
     expect(review).toContain('@ux-agent');
     expect(review).toContain('@qa-agent');
@@ -329,7 +327,7 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
     expect(qaAgent.toLowerCase()).toContain('root cause');
     // Canonical taxonomy lives in the skill; the agent must not restate it.
     expect(qaAgent).not.toContain('missing-implementation');
-    expect(builtSkill('add-qa')).toContain('missing-implementation');
+    expect(builtSkill('add--qa')).toContain('missing-implementation');
   });
 
   it('built ux-agent carries the review-mode rubric (context, not immunity) and spec-gap', () => {
@@ -339,34 +337,34 @@ describe('scenario 7 — dual-judge QA validation (plan 0059)', () => {
   });
 
   it('built qa-validation schema reference declares spec-gap + unverifiable', () => {
-    const review = builtSkill('add-doc-schemas', path.join('references', 'review.md'));
+    const review = builtSkill('add--doc-schemas', path.join('references', 'review.md'));
     expect(review).toContain('spec-gap');
     expect(review).toContain('unverifiable');
   });
 
-  it('built add-qa skill documents the axis split + taxonomy, no stale N-axis wording', () => {
-    const skill = builtSkill('add-qa');
+  it('built add--qa skill documents the axis split + taxonomy, no stale N-axis wording', () => {
+    const skill = builtSkill('add--qa');
     expect(skill).toMatch(/Axis ownership/i);
     expect(skill).toContain('Root-cause Taxonomy');
     expect(skill).not.toMatch(/\d-axis|dual-axis/i);
   });
 
   // Coordinator-only content lives in a reference file the judges never load.
-  it('merge rules live in add-qa/references/coordinator.md, not in the judge-loaded SKILL.md', () => {
-    const coordinator = builtSkill('add-qa', path.join('references', 'coordinator.md'));
+  it('merge rules live in add--qa/references/coordinator.md, not in the judge-loaded SKILL.md', () => {
+    const coordinator = builtSkill('add--qa', path.join('references', 'coordinator.md'));
     expect(coordinator).toContain('## Merge Rules');
-    expect(builtSkill('add-qa')).not.toContain('## Merge Rules');
+    expect(builtSkill('add--qa')).not.toContain('## Merge Rules');
   });
 
   // Pins the plugin:playwright:drive anchor text on both resources so the STEP 4
   // restructure (or any future edit to the adjacent prose) can never silently
   // move the injection point — an anchor rename would fail this immediately.
-  it('the playwright:drive anchor text stays pinned on add.review and qa-agent', () => {
+  it('the playwright:drive anchor text stays pinned on add-review and qa-agent', () => {
     const pts = sidecar().points.filter(
       (p) => p.namespace === 'plugin' && p.name === 'playwright' && p.section === 'drive',
     );
     const qaAgentPt = pts.find((p) => p.resource.name === 'qa-agent');
-    const addQaPt = pts.find((p) => p.resource.name === 'add.review');
+    const addQaPt = pts.find((p) => p.resource.name === 'add-review');
     expect(qaAgentPt.anchor.text).toBe(
       'By default you judge from the persisted evidence (read-PNG mode). If the Playwright plugin is enabled, the live-driving playbook below is injected and you may additionally drive the app.',
     );
@@ -386,14 +384,14 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     fs.readFileSync(path.join(BUILT_CLAUDE, 'skills', name, file), 'utf8');
 
   it('built qa-validation schema declares Fix Routing + judged-contract + required route', () => {
-    const review = builtSkill('add-doc-schemas', path.join('references', 'review.md'));
+    const review = builtSkill('add--doc-schemas', path.join('references', 'review.md'));
     expect(review).toContain('Fix Routing');
     expect(review).toContain('judged-contract');
     expect(review).toContain('REQUIRED `route`');
   });
 
-  it('built add-qa coordinator reference carries the routing rules + capability validation, no confidence field', () => {
-    const coordinator = builtSkill('add-qa', path.join('references', 'coordinator.md'));
+  it('built add--qa coordinator reference carries the routing rules + capability validation, no confidence field', () => {
+    const coordinator = builtSkill('add--qa', path.join('references', 'coordinator.md'));
     expect(coordinator).toContain('## Fix Routing');
     expect(coordinator).toMatch(/Routing rules/i);
     expect(coordinator).toContain('Capability validation');
@@ -402,7 +400,7 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     // The judges are told not to emit routes — the routing RULES must not ride
     // along in the skill they preload. (The report template legitimately keeps
     // the `## Fix Routing` heading: it names a section of the output document.)
-    const skill = builtSkill('add-qa');
+    const skill = builtSkill('add--qa');
     expect(skill).not.toMatch(/Routing rules/i);
     // Assert the RULE CONTENT is absent, not the words (M7). The old guard was
     // case-SENSITIVE on a phrase that had leaked back in lowercase, so it stayed
@@ -414,7 +412,7 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     expect(skill).toMatch(/references\/coordinator\.md/);
   });
 
-  it('add.review cites the canonical axis table and merge rules instead of restating them', () => {
+  it('add-review cites the canonical axis table and merge rules instead of restating them', () => {
     const review = qaEnabledReview();
     // Structural, not formatting-pinned: no axis-ownership row may be restated here,
     // whatever the cell spacing. (L5 — the old guard matched one exact rendering.)
@@ -423,7 +421,7 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     expect(review).toMatch(/references\/coordinator\.md|coordinator\.md/);
   });
 
-  it('built add.review derives routes and unions them into one Fix Routing table', () => {
+  it('built add-review derives routes and unions them into one Fix Routing table', () => {
     const review = qaEnabledReview();
     expect(review).toMatch(/Derive routes/i);
     expect(review).toContain('judged-contract');
@@ -432,9 +430,9 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     expect(review).toMatch(/union/i);
   });
 
-  it('qa-fix fragment dispatches by route, stops with a remedy when unrouted, and injects into add.build', () => {
+  it('qa-fix fragment dispatches by route, stops with a remedy when unrouted, and injects into add-build', () => {
     const fragment = fs.readFileSync(
-      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
+      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
       'utf8',
     );
     expect(fragment).toMatch(/DISPATCH by ROUTE/);
@@ -448,13 +446,13 @@ describe('scenario 8 — QA fix routing (plan 0060)', () => {
     const cwd = fixture.root();
     const { modified } = enableFeature(cwd, 'qa-pipeline');
     expect(modified).toBeGreaterThan(0);
-    const injected = snapshot(path.join(cwd, '.claude', 'commands', 'add.build.md'));
+    const injected = snapshot(path.join(cwd, '.claude', 'commands', 'add-build.md'));
     expect(injected).toMatch(/DISPATCH by ROUTE/);
     disableFeature(cwd, 'qa-pipeline');
   });
 
-  it('built add.build Agent Roster lists every dispatchable agent', () => {
-    const build = builtCommand('add.build');
+  it('built add-build Agent Roster lists every dispatchable agent', () => {
+    const build = builtCommand('add-build');
     const roster = build.slice(build.indexOf('Agent Roster'));
     for (const agent of ['@e2e-agent', '@ux-agent', '@test-agent', '@fix-agent']) {
       expect(roster, agent).toContain(agent);
@@ -487,8 +485,8 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
   });
 
   it('the QA skill and schema distinguish working evidence from immutable final evidence', () => {
-    const qa = builtSkill('add-qa');
-    const schema = builtSkill('add-doc-schemas', path.join('references', 'review.md'));
+    const qa = builtSkill('add--qa');
+    const schema = builtSkill('add--doc-schemas', path.join('references', 'review.md'));
     expect(qa).toContain('_tests/final/run-NNN/');
     expect(qa).toMatch(/not a pass certificate/i);
     expect(schema).toContain('_tests/final/run-NNN/');
@@ -496,7 +494,7 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
 
   it('QA-fix refuses final-only evidence as a live fix queue', () => {
     const fragment = fs.readFileSync(
-      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
+      path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
       'utf8',
     );
     // Plan 0070: the fix queue is now the review's `## Fix Routing` table, and
@@ -507,15 +505,15 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
 
   it('review captures the working baseline and done promotes it before changelog and merge', () => {
     const review = qaEnabledReview();
-    const done = builtCommand('add.done');
+    const done = builtCommand('add-done');
     expect(review).toContain('.codeadd/scripts/qa-evidence.sh working-baseline');
-    const promote = done.indexOf('## STEP 5: Validate and Promote Reviewed QA Evidence');
-    const changelog = done.indexOf('## STEP 6: Generate Changelog and Documentation');
-    const merge = done.indexOf('## STEP 8: Execute Merge');
+    const promote = done.indexOf('## STEP add-done.promote-qa:');
+    const changelog = done.indexOf('## STEP add-done.document:');
+    const merge = done.indexOf('## STEP add-done.merge:');
     expect(promote).toBeGreaterThan(-1);
     expect(changelog).toBeGreaterThan(promote);
     expect(merge).toBeGreaterThan(changelog);
-    // Promotion is add.done's alone. The review may NAME it in a prohibition;
+    // Promotion is add-done's alone. The review may NAME it in a prohibition;
     // what it must never do is invoke it, so match the invocation form.
     expect(review).not.toMatch(/bash .*qa-evidence\.sh promote/);
     expect(review).toMatch(/NEVER invoke\s+`qa-evidence\.sh promote`/);
@@ -564,14 +562,14 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
     expect(reviewSection).toMatch(/Refuse/i);
   });
 
-  it('add.review and add.build resolve design.md at subfeature scope', () => {
+  it('add-review and add-build resolve design.md at subfeature scope', () => {
     // Assert the CITATION, not the prose (L7): the authority is the schema's
     // Location rule. Pinning the parenthetical here would test-lock the exact
     // wording Q18 asked to single-source.
     //
     // add.plan-to-ready was the third site until plan
     // 2026-09-16T205633-PLAN--product-pipeline-parity, F11 removed the command.
-    for (const name of ['add.review', 'add.build']) {
+    for (const name of ['add-review', 'add-build']) {
       expect(builtCommand(name)).toMatch(/new-feature\.md/);
       expect(builtCommand(name)).toMatch(/feature-design/);
     }
@@ -580,15 +578,15 @@ describe('scenario 9 — umbrella review v01 fixes', () => {
   // add.plan-to-ready is gone by design (plan
   // 2026-09-16T205633-PLAN--product-pipeline-parity, F11): its unattended
   // build<->review loop became the automatic delivery chain in
-  // add-delivery-mode/SKILL.md. This absence test replaces the routing test
+  // add--delivery-mode/SKILL.md. This absence test replaces the routing test
   // that used to read its file.
   it('add.plan-to-ready is gone from the built provider output', () => {
     const builtPath = path.join(BUILT_CLAUDE, 'commands', 'add.plan-to-ready.md');
     expect(fs.existsSync(builtPath)).toBe(false);
   });
 
-  it('add.plan GATES table declares the design gates it enforces at 7.1', () => {
-    const plan = builtCommand('add.plan');
+  it('add-plan GATES table declares the design gates it enforces at 7.1', () => {
+    const plan = builtCommand('add-plan');
     const gates = plan.slice(plan.indexOf('## GATES'), plan.indexOf('## INVARIANT'));
     expect(gates).toContain('design_gate');
     expect(gates).toContain('design_validated');

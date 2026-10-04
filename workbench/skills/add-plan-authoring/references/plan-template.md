@@ -15,6 +15,7 @@ multi-topic plan may not. Every other section is mandatory, `None` included.
 > **Type:** command | skill | agent | script | workflow | product | architecture | cross-cutting
 > **Created:** YYYY-MM-DD
 > **Delivery:** confirm | automatic   ← copied from the intent file's `delivery:`; `confirm` when there is none
+> **Ticket:** 0007B   ← only when the intent file carries `ticket:`; omit the line otherwise (add-plan-authoring, The Ticket)
 
 ---
 
@@ -31,6 +32,10 @@ nobody can trace to a document is the one most likely to have been reconstructed
 
 **When this build is done:** [what the executor will have produced, as an outcome rather than a file
 list. The Impact table names the files; this names what they add up to.]
+
+[IF the header carries `> **Ticket:**`:]
+**Ticket done when:** [the ticket's `done_when`, copied verbatim — the check the user already wrote as the
+definition of finished]
 
 ## Context
 

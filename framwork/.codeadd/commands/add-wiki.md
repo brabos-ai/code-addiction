@@ -1,0 +1,902 @@
+# Wiki Knowledge Base Generator
+
+<!-- uses:
+- skill: add--architecture-discovery
+- skill: add--agents-md-style
+- skill: add--doc-schemas
+- skill: add--ecosystem
+- skill: add--final-report
+- skill: add--wiki-maintenance
+- skill: add--subagent-driven-development
+- skill: add--subagent-driven-development/references/dispatch-rules.md
+- script: migrate-context-files.sh
+-->
+
+Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
+
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
+
+---
+
+## Required Skills
+
+Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-wiki.bootstrap (schemas, IDs, universal doc rules).
+
+---
+
+## Invocation Modes
+
+`/add-wiki` → full generation. Run STEP add-wiki.bootstrap through STEP add-wiki.report below.
+
+`/add-wiki update` → skip the generation flow (STEP add-wiki.classify through STEP add-wiki.hub):
+
+```
+IF {{addpath:wiki/index.md}} exists:
+  Load skill {{skill:add--wiki-maintenance/SKILL.md}} and execute its full update
+  discipline (evidence chain, computed candidates, impact plan, surgical edits,
+  per-page stamp bumps, hub sync, .meta.json advance, report).
+  THEN run STEP add-wiki.agents-md and STEP add-wiki.resolve-shell-policy, the managed-block tasks of STEP add-wiki.agents-md — items 1, 4, 5 and 6
+  of its prompt — followed by all of STEP add-wiki.verify.
+ELSE:
+  No wiki exists yet — fall back to full generation (STEP add-wiki.bootstrap onward).
+```
+
+**Why update mode reaches AGENTS.md at all.** `add--wiki-maintenance` never writes that file,
+by its own rule. Without these lines the managed blocks land only on a first generation,
+so every project that has already run this command once — which is every project with a wiki —
+would never receive them, and never receive a refresh when their text changes. It is also the
+route that migrates an existing project off CLAUDE.md: STEP add-wiki.agents-md runs in update mode too.
+
+```
+IF invoked as `/add-wiki update`:
+  ⛔ DO NOT: Regenerate the Architecture Contract section
+  ⛔ DO NOT: Regenerate the Technical Spec section
+  ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
+  ⛔ DO NOT: Dispatch the STEP add-wiki.agents-md agent for anything beyond items 1, 4, 5 and 6
+  ✅ DO: Migrate (6.1), replace-or-append the managed blocks, then verify per STEP add-wiki.verify
+```
+
+Update mode is surgical everywhere else, and it stays surgical here.
+
+---
+
+## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
+
+**STEPS IN ORDER:**
+```
+STEP add-wiki.bootstrap: Self-Bootstrap             → READ skill FIRST
+STEP add-wiki.classify: Detect & Classify Apps     → EXPLORE + BUILD dispatch plan
+STEP add-wiki.brief: Read User Brief          → INSTRUCTIONS.md scope/priorities (if present)
+STEP add-wiki.dispatch: Dispatch Analyzers         → ALL IN PARALLEL (specialists + spine + quality)
+STEP add-wiki.consolidate: Consolidate Pages          → WAIT-ALL before proceeding
+STEP add-wiki.hub: Generate Hub + Gate        → DERIVE index.md + bijection/budget gate
+STEP add-wiki.agents-md: Update AGENTS.md           → MIGRATE legacy files, DISPATCH agent (managed blocks)
+STEP add-wiki.verify: Verify AGENTS.md           → the only context file, every managed block once
+STEP add-wiki.meta: Write .meta.json           → CORPUS STAMP + gitignore check
+STEP add-wiki.report: Report & Cleanup           → SUMMARY + backlog + next steps
+```
+
+**⛔ ABSOLUTE PROHIBITIONS:**
+
+IF `{{addpath:wiki/INSTRUCTIONS.md}}` exists:
+  ⛔ DO NOT USE: Write or Edit on INSTRUCTIONS.md
+  ✅ DO: Read it once for scope/priority steering, nothing else
+
+IF the STEP add-wiki.hub bijection/budget gate has NOT passed:
+  ⛔ DO NOT USE: Bash to delete `{{addpath:skills/project-patterns/}}` or `pattern-search.sh`
+  ⛔ DO NOT: Proceed to STEP add-wiki.agents-md
+  ✅ DO: Fix `index.md` or the pages until the gate holds, then retry
+
+---
+
+## Rules
+
+ALWAYS:
+- Classify apps using SKILL.md signals
+- Dispatch all specialists, the spine analyzer, and the quality analyzer in parallel
+- Derive every index.md link description from page frontmatter, never hand-write it
+- Require frontmatter + TL;DR + TOC (if >100 lines) + Related footer on every wiki page
+- Preserve coordinator/dispatcher pattern
+- Verify the bijection/budget gate before touching AGENTS.md
+- Treat INSTRUCTIONS.md as read-only scope/priority steering when present
+
+NEVER:
+- Analyze code yourself (coordinator only)
+- Write wiki pages directly (specialists/spine analyzer do this)
+- Execute specialists sequentially (run parallel)
+- Skip the STEP add-wiki.hub bijection/budget gate
+- Skip the code quality analyzer (always run)
+- Bake structural facts (call graphs, import inventories, blast radius) into wiki pages
+- Edit or overwrite `INSTRUCTIONS.md`
+- Delete legacy `project-patterns`/`pattern-search.sh` before the STEP add-wiki.hub gate passes
+
+---
+
+## Agent Dispatch Rules
+
+When this command instructs you to DISPATCH AGENT:
+1. Read the **Capability** required (read-only, read-write, full-access)
+2. Read the **Complexity** hint (light, standard, heavy)
+3. Choose the best available agent/task mechanism in your engine that satisfies the capability
+4. If your engine supports parallel dispatch and mode is `parallel`, dispatch all simultaneously
+5. Verify output exists before proceeding past any WAIT or GATE CHECK
+
+You are the coordinator. You know your engine's capabilities. Map the intent to the best available mechanism.
+
+**Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
+
+---
+
+## STEP add-wiki.bootstrap: Self-Bootstrap (READ FIRST)
+
+Read skill `add--architecture-discovery`.
+
+**Focus on:**
+- `AppClassification` section → signals to identify app type (backend, frontend, cli, etc)
+- `SpecialistRegistry` section → which analyzer to dispatch for each type, and the wiki page it now writes
+- `GenericAppTemplate` section → template for apps without specialist
+- The wiki page frontmatter and body format sections → the mandatory schema every dispatched analyzer (specialists, spine, generic template) must follow
+
+**These sections contain the intelligence that drives classification, dispatch, and page format.**
+
+---
+
+## STEP add-wiki.classify: Detect & Classify Apps
+
+### STEP add-wiki.explore-project Explore Project
+
+Using native tools, gather the signals needed for classification:
+
+```bash
+# Detect monorepo tooling
+ls turbo.json pnpm-workspace.yaml nx.json lerna.json 2>/dev/null
+
+# List candidate app dirs
+ls apps/ packages/ libs/ 2>/dev/null
+
+# Read root config
+cat package.json
+```
+
+Also check for non-node stacks: `requirements.txt`, `go.mod`, `Cargo.toml`, `composer.json`.
+
+No temp file — use findings inline for classification below.
+
+<!-- slot:gitnexus.graph-classify fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-classify -->
+<!-- /plugin:gitnexus:graph-classify -->
+<!-- /slot:gitnexus.graph-classify -->
+
+### STEP add-wiki.detect-apps Detect Apps
+
+List all directories under `apps/`, `packages/`, `libs/`.
+
+### STEP add-wiki.classify-app Classify Each App
+
+**For each detected app:**
+
+1. Read its `package.json`
+
+2. MATCH dependencies against SKILL.md signals:
+   ```
+   AppClassification.signals:
+   - backend: express, fastify, nestjs, hono, koa, @grpc/*, socket.io, @trpc/*
+   - frontend: react, vue, svelte, solid-js, next, nuxt, @tanstack/react-*
+   - database: prisma, drizzle-orm, kysely, typeorm, sequelize, knex
+   - cli: commander, yargs, clack, inquirer, meow, oclif
+   - worker: bullmq, bull, agenda, node-cron, bee-queue
+   ```
+
+3. ASSIGN specialist or generic template
+
+4. NOTE recent churn per app (git evidence) — used by STEP add-wiki.hub domain-selection priority if the domain count exceeds budget
+
+### STEP add-wiki.build-dispatch-plan Build Dispatch Plan
+
+**Format:**
+```
+APPS_CLASSIFIED:
+- apps/server    → backend   → backend-analyzer.md  → domains/backend.md
+- apps/admin     → frontend  → frontend-analyzer.md → domains/frontend.md
+- apps/cli       → cli       → generic template     → domains/cli.md
+
+CROSS-APP:
+- libs/database detected → database-analyzer.md → domains/database.md
+```
+
+### STEP add-wiki.determine-mode-recorded Determine Mode (recorded in the dispatch plan)
+
+```
+MODE: standard | tiny
+
+tiny = ~10 or fewer primary source items across all apps.
+IF tiny:
+  - Keep only the 1-2 most relevant domain analyzers in the dispatch plan
+    (primary classification first); every other area → Backlog entry
+  - The spine analyzer runs in FOLD mode (returns sections instead of
+    writing files — see STEP add-wiki.spine-analyzer-new); no spine files are written
+ELSE: standard — full plan as built in 2.3.
+```
+
+### STEP add-wiki.create-output-directory Create Output Directory
+
+```bash
+mkdir -p .codeadd/wiki/domains
+```
+
+---
+
+## STEP add-wiki.brief: Read User Brief
+
+```
+IF {{addpath:wiki/INSTRUCTIONS.md}} exists:
+  Read it. Treat its content as scope/priority steering for the dispatch plan (STEP add-wiki.build-dispatch-plan)
+  and for domain selection when over budget (STEP add-wiki.hub).
+  ⛔ NEVER edit, rewrite, or overwrite this file — it is user-owned.
+ELSE:
+  Continue with no additional steering.
+```
+
+---
+
+## STEP add-wiki.dispatch: Dispatch Analyzers (PARALLEL)
+
+**DISPATCH ALL AGENTS IN PARALLEL:**
+Each agent is independent. Dispatch ALL simultaneously — app specialists, the spine analyzer, and the code quality analyzer together.
+
+### STEP add-wiki.common-dispatch-pattern Common Dispatch Pattern
+
+<!-- slot:gitnexus.graph-dispatch-common fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-dispatch-common -->
+<!-- /plugin:gitnexus:graph-dispatch-common -->
+<!-- /slot:gitnexus.graph-dispatch-common -->
+
+**For ALL analyzers** (app specialists + spine + database + code quality):
+
+**DISPATCH AGENT:**
+- **Capability:** read-write (must write output file)
+- **Complexity:** standard
+- **Context:** Dispatch plan from STEP add-wiki.classify (classified apps, paths, detected stack), INSTRUCTIONS.md brief from STEP add-wiki.brief (if present)
+- **Output format:** every wiki-writing analyzer follows the mandatory frontmatter + body format below; the code quality analyzer keeps its existing report format (unchanged, stays outside the wiki)
+
+**Mandatory Wiki Page Frontmatter (every wiki-writing analyzer):**
+```yaml
+---
+id: wiki/<path under .codeadd/wiki/, without .md>
+type: tutorial | how-to | reference | explanation
+area: backend | frontend | database | architecture | conventions | workflows | <domain>
+description: <1-2 sentences, keyword-rich — what this page covers and when to read it>
+sources: [<code paths this page derives from>]   # max 8 globs
+commit: <short-sha at generation>
+generated: <YYYY-MM-DD>
+tags: [<grep targets: di, repository-pattern, error-handling>]   # max 6
+---
+```
+
+```
+IF WRITING A PAGE WITHOUT AN `id:`:
+  ⛔ DO NOT: Rely on the indexer deriving one from the file path
+  ✅ DO: Write `id: wiki/<path>` — the page is skipped and reported without it
+```
+
+**`id:` is declared, never derived.** The indexer used to name a page after where
+its file sat, so moving the file renamed the node and every relation pointing at
+it broke with nothing to show for it. The value is the same string the path would
+have produced, which is what makes writing it cost nothing.
+
+**The four `type:` values are Diátaxis**, the documentation framework this page
+set already followed in three of its four types. `tutorial` is available even
+though no analyzer writes one today: the model reads the four from
+`mcp/types.mjs`, and a page carrying a type that registry does not declare is
+reported rather than indexed.
+
+**Mandatory Wiki Page Body Format:**
+```markdown
+# <Title>
+
+## TL;DR
+<2-4 lines: what this page is, why it exists, headline facts>
+
+## TOC            ← required when page > 100 lines
+- [Topic A](#topic-a) ...
+
+## <Topic — topic sentence first>
+<Extractive content. Every non-trivial claim carries a path:line ref. One code example per topic.>
+
+## Related
+- [domains/other.md](other.md): <why related>   ← 2-4 links max, relative paths
+```
+
+**Common Rules (ALL wiki-writing analyzers):**
+- No questions — use best judgment
+- Document ONLY what EXISTS in code
+- Include real code examples with path:line references
+- No structural facts baked in — call graphs, blast radius, and import inventories belong to the live code graph or fresh code reading; name entry points/boundaries only, point elsewhere for anything that rots
+- Explain WHY the code exists, not only what it contains — write for the next editor agent
+- Skip empty sections; no tutorial/narrative filler; current-state phrasing only
+- Real file paths only — never wikilinks `[[page]]`
+- Token-efficient format (context engineering compliant)
+
+### STEP add-wiki.app-specialists-specialist App Specialists (with specialist: backend, frontend)
+
+<!-- slot:gitnexus.graph-specialist fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-specialist -->
+<!-- /plugin:gitnexus:graph-specialist -->
+<!-- /slot:gitnexus.graph-specialist -->
+
+**DISPATCH FOR EACH APP WITH SPECIALIST:**
+
+**Prompt:**
+```
+## ROLE
+Analyze [APP_NAME] at [APP_PATH] (classified as [TYPE])
+
+## SELF-BOOTSTRAP
+Read: skill add--architecture-discovery file [TYPE]-analyzer.md
+Follow ALL instructions.
+
+## TASK
+1. Analyze ONLY [APP_PATH] using [TYPE]-specific patterns
+2. WRITE to .codeadd/wiki/domains/[TYPE].md
+   - Frontmatter: id (wiki/<path>), type (reference), area ([TYPE]), description, sources, commit, generated, tags
+   - Body: ## TL;DR, ## TOC (if >100 lines), topic-first ## chunks with path:line refs, ## Related footer (2-4 links)
+   - No structural facts — name entry points/boundaries only, point to the code graph/code for anything that rots
+3. Return: FILE_WRITTEN, TYPE, FRAMEWORKS, PATTERNS_FOUND, TOPICS count
+
+## OUTPUT
+Write {{addpath:wiki/domains/[TYPE].md}}
+```
+
+### STEP add-wiki.app-generic-template App Generic Template (without specialist: cli, worker)
+
+**DISPATCH FOR EACH APP WITHOUT SPECIALIST:**
+
+**Prompt:**
+```
+## ROLE
+Analyze [APP_NAME] at [APP_PATH] (classified as [TYPE], no specialist)
+
+## SELF-BOOTSTRAP
+Read: skill add--architecture-discovery
+Focus: GenericAppTemplate section
+
+## TASK
+1. Discover what this app does (via CODE, not folder name)
+2. WRITE to .codeadd/wiki/domains/[TYPE].md
+   - Frontmatter: id (wiki/<path>), type (reference), area ([TYPE]), description, sources, commit, generated, tags
+   - Body: ## TL;DR, ## TOC (if >100 lines), App Nature, Structure, Entry Points, Dependencies, Configuration, Commands/Jobs, ## Related footer
+3. Return: FILE_WRITTEN, APP_PURPOSE, ENTRY_POINT, KEY_DEPENDENCIES, TOPICS count
+
+## OUTPUT
+Write {{addpath:wiki/domains/[TYPE].md}}
+```
+
+### STEP add-wiki.database-analyzer-detected Database Analyzer (if detected)
+
+<!-- slot:gitnexus.graph-database fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-database -->
+<!-- /plugin:gitnexus:graph-database -->
+<!-- /slot:gitnexus.graph-database -->
+
+**DISPATCH IF DATABASE FOUND:**
+
+**Prompt:**
+```
+## ROLE
+Analyze database patterns across the project
+
+## SELF-BOOTSTRAP
+Read: skill add--architecture-discovery file database-analyzer.md
+Follow ALL instructions.
+
+## TASK
+1. Analyze database patterns
+2. If database found: WRITE to .codeadd/wiki/domains/database.md
+   - Frontmatter: id (wiki/<path>), type (reference), area (database), description, sources, commit, generated, tags
+   - Body: ## TL;DR, ## TOC (if >100 lines), topic-first ## chunks with path:line refs, ## Related footer
+3. If NO database: skip (do NOT write)
+4. Return: FILE_WRITTEN, STACK, PATTERNS_FOUND, TOPICS count
+
+## OUTPUT
+Write {{addpath:wiki/domains/database.md}} (or NONE)
+```
+
+### STEP add-wiki.code-quality-analyzer Code Quality Analyzer (always)
+
+<!-- slot:gitnexus.graph-quality fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-quality -->
+<!-- /plugin:gitnexus:graph-quality -->
+<!-- /slot:gitnexus.graph-quality -->
+
+**DISPATCH ALWAYS:**
+
+**Prompt:**
+```
+## ROLE
+Analyze code quality across the project
+
+## SELF-BOOTSTRAP
+Read: skill add--architecture-discovery file code-quality-analyzer.md
+Follow ALL instructions.
+
+## TASK
+1. Analyze code quality (actual code, not just config)
+2. WRITE to docs/code-quality-review.md
+3. Return: FILE_WRITTEN, SOLID_SCORE, CLEAN_CODE_SCORE, TECH_DEBT, TOP_ISSUES (top 3)
+
+## OUTPUT
+Write docs/code-quality-review.md
+```
+
+`docs/code-quality-review.md` stays outside `.codeadd/wiki/` — it is a point-in-time report (scores, top issues), not durable knowledge; mixing report artifacts into the wiki would make staleness semantics incoherent.
+
+### STEP add-wiki.spine-analyzer-new Spine Analyzer (NEW — cross-cutting knowledge)
+
+**DISPATCH ALWAYS, IN PARALLEL WITH THE OTHERS:**
+
+**Prompt:**
+```
+## ROLE
+Produce the project-wide spine pages: architecture, conventions, workflows.
+
+## SELF-BOOTSTRAP
+Read: skill add--architecture-discovery file spine-analyzer.md
+Follow ALL instructions.
+
+## INPUTS
+- Dispatch plan from STEP add-wiki.classify (classified apps, paths, detected stack)
+- Root configs (package.json, turbo.json, tsconfig, etc.)
+- Existing docs (README, docs/) as primary source material
+- Validation Gates detection
+
+## TASK
+1. WRITE .codeadd/wiki/architecture.md — system shape, boundaries, layer rules (type: explanation)
+2. WRITE .codeadd/wiki/conventions.md — project-wide naming/error-handling/style/ID rules (type: reference);
+   canonical home for cross-cutting conventions — domain-local conventions stay in domains/<area>.md and link
+   here instead of restating
+3. WRITE .codeadd/wiki/workflows.md — dev workflows, validation gates, release, testing entry points (type: how-to)
+   Every page: mandatory frontmatter (id/type/area/description/sources/commit/generated/tags) + TL;DR + TOC
+   (if >100 lines) + topic-first ## chunks with path:line refs + ## Related footer. No structural facts baked in.
+4. Return: FILES_WRITTEN, TOPICS count per page
+
+## OUTPUT
+Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpath:wiki/workflows.md}}
+```
+
+**FOLD MODE (MODE=tiny from STEP add-wiki.determine-mode-recorded):** append to the spine analyzer's prompt: "TINY REPO — do NOT write files. Return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules, path:line refs) in your report. The coordinator folds them into index.md at STEP add-wiki.hub."
+
+**DISPATCH RULES:**
+- RUN ALL analyzers IN PARALLEL
+- Do NOT wait between dispatches
+- Expect outputs: all app domain pages + database.md (if detected) + the 3 spine pages + code-quality-review.md
+
+---
+
+## STEP add-wiki.consolidate: Consolidate Pages (WAIT-ALL Before Consolidation)
+
+**WAIT-ALL:** Verify ALL agent outputs exist before proceeding.
+
+**Gate Check Checklist:**
+- [ ] All `{{addpath:wiki/domains/*.md}}` files from the dispatch plan exist
+- [ ] Spine — standard mode: `{{addpath:wiki/architecture.md}}`, `{{addpath:wiki/conventions.md}}`, `{{addpath:wiki/workflows.md}}` exist. Tiny mode (STEP add-wiki.determine-mode-recorded): NO spine files expected; instead the spine analyzer's report contains the three folded sections
+- [ ] `docs/code-quality-review.md` exists
+- [ ] Every wiki page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
+- [ ] All wiki pages contain the mandatory body sections (TL;DR, TOC if >100 lines, topic chunks, Related footer)
+- [ ] Topic counts confirmed per page
+
+**COLLECT reports:**
+- Files written (list each wiki page)
+- App classifications confirmed (type → framework)
+- Frameworks/patterns discovered
+- Code quality metrics
+- Topic count per page
+
+**Decision Point:**
+- If ANY file missing, incomplete, or missing frontmatter → Wait/retry. Do NOT proceed.
+- If ALL outputs verified → Proceed to STEP add-wiki.hub.
+
+---
+
+## STEP add-wiki.hub: Generate Hub + Gate
+
+Derive `{{addpath:wiki/index.md}}` entirely from page frontmatter — never hand-write a link description.
+
+**WRITE** `{{addpath:wiki/index.md}}`:
+
+```markdown
+# <Project Name> — Knowledge Base
+
+> One-paragraph summary: what this project is, its stack, its shape.
+
+Generated by /add-wiki at commit `<short-sha>` on <date>. Pages describe the repo
+as of their own frontmatter `commit`. Staleness check for any page:
+`git diff --name-only <page.commit>..HEAD -- <page.sources>` (non-empty ⇒ verify against code).
+
+## Architecture & Rules
+- [architecture.md](architecture.md): <description from architecture.md frontmatter>
+- [conventions.md](conventions.md): <description from conventions.md frontmatter>
+- [workflows.md](workflows.md): <description from workflows.md frontmatter>
+
+## Domains
+- [domains/[TYPE].md](domains/[TYPE].md): <description from that page's frontmatter>
+[one line per domain page]
+
+## Terminology
+<canonical term per concept, ≤15 entries: "job (not task/worker-item)", ...>
+
+## How to Search
+- By topic: grep -i "<term>" .codeadd/wiki/ -r -l
+- By metadata: grep -i "<term>" .codeadd/wiki/**/*.md — frontmatter descriptions/tags are the index
+
+## Optional
+- <links an agent may skip under context pressure: edge domains, low-traffic pages>
+
+## Backlog
+- <area> — <source anchor> — <one-line reason deferred>
+```
+
+### STEP add-wiki.budgets Budgets
+
+- Initial generation: **≤ 12 pages** (spine 3 + hub + up to ~8 domain pages)
+- **Tiny-repo variant (MODE=tiny, decided in STEP add-wiki.determine-mode-recorded):** hub + at most 1-2 domain pages. The hub's "## Architecture & Rules" link list is REPLACED by the three folded sections (`## Architecture`, `## Conventions`, `## Workflows`) taken verbatim from the spine analyzer's FOLD-mode report. Everything cut → Backlog
+- Page size: **300-line target, 500-line hard cap.** Over cap → split into a `domains/<area>/` directory (max depth 2), update the hub
+- Hub: **150-line hard cap**
+- First pass is anti-perfectionist: produce a strong, accurate, navigable first-pass wiki, then stop — refinement belongs to `/add-wiki update`
+
+### STEP add-wiki.select-domains Domain Selection When Over Budget
+
+When the domain count exceeds budget (monorepos with 10+ domains), priority order:
+1. Areas named in `INSTRUCTIONS.md`
+2. Domains with recent churn (git evidence from STEP add-wiki.classify)
+3. Larger/central domains
+
+Everything cut goes to the Backlog with its source anchor — never silently dropped.
+
+### STEP add-wiki.gate GATE — Bijection & Budget Checklist
+
+- [ ] Every link in `index.md` (excluding `INSTRUCTIONS.md` and non-`.md` files like `.meta.json`) resolves to an existing wiki page
+- [ ] Every wiki `*.md` page (excluding `index.md` and `INSTRUCTIONS.md`) is linked from `index.md`
+- [ ] Every page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
+- [ ] Budgets respected (§STEP add-wiki.budgets)
+- [ ] Terminology has ≤ 15 entries
+
+IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP add-wiki.agents-md until the bijection holds.
+
+### STEP add-wiki.migration-cleanup Migration Cleanup (full runs only, AFTER the gate passes)
+
+- IF `{{addpath:skills/project-patterns/}}` exists → DELETE it, report the removal
+- IF `.codeadd/scripts/pattern-search.sh` exists → DELETE it, report the removal
+- NEVER perform this cleanup before the STEP add-wiki.hub gate passes
+
+---
+
+## STEP add-wiki.agents-md: Update AGENTS.md
+
+<!-- slot:gitnexus.graph-contract fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-contract -->
+<!-- /plugin:gitnexus:graph-contract -->
+<!-- /slot:gitnexus.graph-contract -->
+
+**AGENTS.md is the only context file this command writes.** Claude Code, Codex, Cursor, OpenCode and
+Antigravity all read it. No CLAUDE.md and no GEMINI.md is written, copied or updated.
+
+Read skill `{{skill:add--agents-md-style/SKILL.md}}` BEFORE anything else in this STEP.
+
+### STEP add-wiki.run-migration Run the Migration (coordinator)
+
+Run the skill's **Migration** — `bash .codeadd/scripts/migrate-context-files.sh` at the project root.
+Keep every `MIGRATED:`, `LEGACY_LOCAL:` and `CONTEXT_MIGRATION:` line for the STEP add-wiki.report report.
+
+```
+IF THE MIGRATION HAS NOT RUN OR EXITED NON-ZERO:
+  ⛔ DO NOT: Dispatch the agent in STEP add-wiki.dispatch-updater
+  ⛔ DO NOT USE: Write or Edit on AGENTS.md
+  ✅ DO: Report the script's error and STOP — a leftover CLAUDE.md hides AGENTS.md from Claude Code
+```
+
+### STEP add-wiki.resolve-shell-policy Resolve the Shell Policy Block (coordinator)
+
+**Detect OS and Git Bash path:**
+
+```bash
+uname -s
+```
+
+- If output is `Linux` or `Darwin` → no shell block. Tell STEP add-wiki.dispatch-updater `SHELL_BLOCK: none`
+- If output contains `MINGW`, `CYGWIN`, or `MSYS` (Git Bash on Windows) OR env `OS=Windows_NT` is set → detect Git Bash path:
+
+```bash
+where bash 2>/dev/null || which bash 2>/dev/null
+```
+
+Common fallback paths to check if detection fails (in order):
+1. `C:/Program Files/Git/bin/bash.exe`
+2. `C:/Program Files (x86)/Git/bin/bash.exe`
+3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
+
+**The policy names BOTH shell forms, because the reader's shell is not known here.** `&` is
+PowerShell's call operator. An engine whose shell tool is already bash (OpenCode, Git Bash, MSYS)
+reads `& "..." -lc "..."` as a syntax error, and every script call fails. PowerShell hosts still need
+the `&` form to reach Git Bash instead of WSL.
+
+```
+IF WRITING THE SHELL POLICY:
+  ⛔ DO NOT: Write only the `& "<bash.exe>" -lc` form
+  ✅ DO: Write the bash-direct form and the PowerShell form, each labelled with its shell
+```
+
+**If Windows + path detected**, the block handed to STEP add-wiki.dispatch-updater is:
+
+```
+[//]: # (codeadd-shell:start)
+
+## Shell policy (Windows)
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: `& "[DETECTED_PATH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
+
+[//]: # (codeadd-shell:end)
+```
+
+**If Windows + path NOT detected**, the block handed to STEP add-wiki.dispatch-updater is the generic one:
+
+```
+[//]: # (codeadd-shell:start)
+
+## Shell policy (Windows)
+Always execute commands via Git Bash. Pick the form for the shell your tool runs:
+- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
+- Shell is PowerShell: locate bash.exe first with `where bash`, then `& "[PATH_TO_BASH]" -lc "<command>"`
+Do not use WSL bash (`bash ...` from PowerShell) directly.
+
+[//]: # (codeadd-shell:end)
+```
+
+**It is a managed block because AGENTS.md is written in place.** Appending it on every run would
+stack one copy per run; replace-or-append on its markers keeps exactly one.
+
+### STEP add-wiki.dispatch-updater Dispatch the Updater
+
+**DISPATCH AGENT:**
+- **Capability:** read-write (must update AGENTS.md)
+- **Complexity:** standard
+- **Prompt:** (append the resolved shell block from STEP add-wiki.resolve-shell-policy, or `SHELL_BLOCK: none`)
+
+```
+## ROLE
+You are the CONTEXT FILES UPDATER.
+
+## SELF-BOOTSTRAP
+Read: skill add--architecture-discovery
+Follow OUTPUT FORMAT and TEMPLATE sections.
+Read: skill add--agents-md-style
+Apply ALL content rules from that skill.
+
+## INPUTS TO READ
+1. .codeadd/wiki/index.md and every page it links (frontmatter descriptions)
+
+## TASK
+Update AGENTS.md — the only context file — with these sections, in order. Write no
+CLAUDE.md and no GEMINI.md:
+
+1. **DELETE FIRST** any existing section referencing `project-patterns` or `pattern-search.sh`
+   (legacy Implementation Patterns pointer) — migration cleanup, before writing anything else
+2. **## Architecture Contract** — Apps table (`app | kind | path | entry`) + layer hierarchy rule
+   + import rules (compact JSON)
+3. **## Technical Spec** — compact JSON only, one object per line, max 10 words per value
+4. **Project Knowledge Base managed block** — find markers `[//]: # (codeadd-wiki:start)` /
+   `[//]: # (codeadd-wiki:end)`. If present, REPLACE the block between them. If absent, APPEND
+   the block below with a blank-line separator. NEVER use HTML-comment syntax for these
+   markers — only the exact bracket form shown. Write EXACTLY:
+
+[//]: # (codeadd-wiki:start)
+
+## Project Knowledge Base
+
+`.codeadd/wiki/` holds this project's patterns, conventions, workflows, and architecture
+rationale. Entrypoint: `.codeadd/wiki/index.md`.
+
+- CONSULT BEFORE exploring source for: project conventions, established patterns,
+  workflow/how-to questions, architecture rationale ("why is it built this way").
+- Do NOT consult for live structural facts (callers, impact, dependencies) — derive those
+  from the code graph or the code itself.
+- Pages carry `commit` + `sources` frontmatter. If sources changed since (see index.md
+  staleness check), verify against code before relying on the page.
+- Do not hand-edit generated pages; run /add-wiki update instead. INSTRUCTIONS.md is
+  user-owned and steers regeneration.
+
+[//]: # (codeadd-wiki:end)
+
+5. **Writing Style managed block** — find markers `[//]: # (codeadd-style:start)` /
+   `[//]: # (codeadd-style:end)`. If present, REPLACE the block between them. If absent, APPEND
+   the block below with a blank-line separator, after the Project Knowledge Base block. NEVER
+   use HTML-comment syntax for these markers — only the exact bracket form shown. Write EXACTLY:
+
+[//]: # (codeadd-style:start)
+
+## Writing Style
+
+Describe the action, the mechanism or the state directly. Never put a figure of speech in its place.
+
+- Applies to chat, docs, commit messages, PR descriptions, code comments and identifiers.
+- Applies to the writing, not to the language of this rule — it holds in every output language.
+- Established technical terms of figurative origin (branch, tree, cache, pipeline, parent, orphan) are the literal names of their concepts. Keep them.
+- Test each sentence: does it name the action, or name something the action resembles? Replace a resemblance with the action.
+- Not a list of banned words. One example of the device: "confirm the tests bite" → "run the tests and check they fail against the broken code".
+
+[//]: # (codeadd-style:end)
+
+6. **Shell policy managed block** — only when the coordinator appended a block below. Find
+   markers `[//]: # (codeadd-shell:start)` / `[//]: # (codeadd-shell:end)`. If present, REPLACE
+   the block between them. If absent, APPEND it with a blank-line separator, after the Writing
+   Style block. Copy it exactly as appended. On `SHELL_BLOCK: none`, leave any existing
+   codeadd-shell block untouched — another developer on Windows may rely on it.
+
+## CONSTRAINTS (from add--agents-md-style skill)
+Target: 80-150 lines total.
+
+DO NOT include:
+- Frontend/backend/database patterns (already in the wiki)
+- API route lists
+- Component/directory trees
+- Inline code examples
+- Feature documentation or business flows
+- Security implementation details
+- Worker/job queue details
+- Any section explaining a single concept in >5 lines
+
+## OUTPUT FORMAT
+- JSON minified one-line per object
+- Max 10 words per description value
+- Every managed block copied verbatim from this prompt — do not paraphrase them
+
+## REPORT FORMAT
+Return summary:
+- AGENTS_MD_UPDATED: YES
+- LEGACY_SECTION_REMOVED: [YES/NO]
+- TOTAL_LINES: [count]
+- SECTIONS_UPDATED: [list]
+- WRITING_STYLE_BLOCK: [WRITTEN/REPLACED]
+- SHELL_POLICY_BLOCK: [WRITTEN/REPLACED/SKIPPED]
+```
+
+- **Output:** Update `AGENTS.md`
+
+WAIT: Do NOT proceed until AGENTS.md has been updated.
+
+---
+
+## STEP add-wiki.verify: Verify AGENTS.md
+
+**Coordinator action (no subagent needed).** Nothing is copied: AGENTS.md is the one file every
+provider reads. This STEP checks it is the only context file left and that every managed block
+landed once.
+
+```
+IF A CHECK BELOW FAILS:
+  ⛔ DO NOT: Write a CLAUDE.md or a GEMINI.md to make up for it
+  ⛔ DO NOT: Proceed to STEP add-wiki.meta
+  ✅ DO: Re-run the failing part of STEP add-wiki.agents-md (6.1 for a leftover file, STEP add-wiki.dispatch-updater for a block), then check again
+```
+
+- [ ] AGENTS.md exists at the project root
+- [ ] No CLAUDE.md, `.claude/CLAUDE.md` or GEMINI.md is left at the project root — a leftover CLAUDE.md
+      makes Claude Code ignore AGENTS.md, and a leftover GEMINI.md overrides it in Antigravity
+- [ ] `[//]: # (codeadd-wiki:start)` and `[//]: # (codeadd-wiki:end)` present in AGENTS.md
+- [ ] `[//]: # (codeadd-style:start)` and `[//]: # (codeadd-style:end)` present in AGENTS.md
+- [ ] On Windows only: `[//]: # (codeadd-shell:start)` and `[//]: # (codeadd-shell:end)` present in AGENTS.md
+- [ ] each pair appears exactly once
+
+---
+
+## STEP add-wiki.meta: Write .meta.json
+
+**WRITE** `{{addpath:wiki/.meta.json}}`:
+
+```json
+{"updatedAt":"<ISO-8601 timestamp>","command":"init","gitHead":"<short-sha>"}
+```
+
+This command always performs a full generation, so `command` is `"init"`. `/add-wiki update`
+(via `{{skill:add--wiki-maintenance/SKILL.md}}`) advances this same file with `"update"`.
+
+**Verify the wiki path is tracked, not gitignored:**
+
+```bash
+git check-ignore .codeadd/wiki/index.md
+```
+
+If this returns a match (exit 0) → the wiki path IS gitignored. Warn loudly in the final
+report — the per-page freshness/staleness model requires the corpus to be committed and
+shared with the team. Do NOT silently continue as if unaffected.
+
+---
+
+## STEP add-wiki.report: Report & Cleanup
+
+**LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the detail list and the navigation guidance come after it.
+
+Fill `How it works` with how the wiki is meant to be read: the hub is the only entrypoint, and the
+frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries, the gitignore
+warning and every legacy context file STEP add-wiki.agents-md deleted or left, because all three are the user's to
+act on — the Deleted row of `Files touched` names each deleted CLAUDE.md or GEMINI.md.
+
+**Then report to user:**
+Include: AGENTS.md updated, every `MIGRATED:` / `LEGACY_LOCAL:` line from STEP add-wiki.agents-md, apps analyzed with types, code quality scores, wiki areas/pages
+generated, Backlog entries (if any), gitignore warning (if triggered), migration cleanup performed
+(if any — STEP add-wiki.hub).
+
+**Include hub navigation guidance (replaces pattern-search usage):**
+```bash
+# Start at the hub — the only entrypoint
+cat .codeadd/wiki/index.md
+
+# Search by topic across the wiki
+grep -ril "<term>" .codeadd/wiki/
+
+# Search by metadata (frontmatter descriptions/tags are the index)
+grep -ri "<term>" .codeadd/wiki/**/*.md
+```
+
+**Next Steps:** Reference skill `add--ecosystem` Main Flows section for context-aware next command suggestion.
+
+---
+
+## OUTPUT NAMING CONVENTION (CRITICAL)
+
+> **Domain pages use lowercase area type as filename, under `wiki/domains/`. Spine pages are fixed filenames at the wiki root.**
+
+### Formula
+
+```
+.codeadd/wiki/domains/{area-type}.md                     # per-domain pages
+.codeadd/wiki/{architecture,conventions,workflows}.md    # spine pages (fixed names)
+.codeadd/wiki/index.md                                   # hub (fixed name)
+
+Where:
+- area-type = lowercase classification (backend, frontend, database, cli, worker)
+```
+
+### Examples
+
+| Classification | Output File |
+|----------------|-------------|
+| backend | `{{addpath:wiki/domains/backend.md}}` |
+| frontend | `{{addpath:wiki/domains/frontend.md}}` |
+| database | `{{addpath:wiki/domains/database.md}}` |
+| cli | `{{addpath:wiki/domains/cli.md}}` |
+| worker | `{{addpath:wiki/domains/worker.md}}` |
+| architecture (spine) | `{{addpath:wiki/architecture.md}}` |
+| conventions (spine) | `{{addpath:wiki/conventions.md}}` |
+| workflows (spine) | `{{addpath:wiki/workflows.md}}` |
+
+**Special:** Code Quality → `docs/code-quality-review.md` (stays outside the wiki — a point-in-time report, not durable knowledge).
+
+---
+
+## Example: Monorepo with Mixed Apps
+
+**Classification:**
+```
+apps/server  → backend (nestjs)    → backend-analyzer.md
+apps/admin   → frontend (react)    → frontend-analyzer.md
+apps/portal  → frontend (react)    → frontend-analyzer.md (same output: domains/frontend.md)
+apps/cli     → cli (commander)     → generic template
+libs/database → prisma             → database-analyzer.md
+```
+
+**Dispatch (6 parallel):**
+```
+backend-analyzer  → apps/server     → domains/backend.md
+frontend-analyzer → apps/admin      → domains/frontend.md (includes admin + portal patterns)
+generic template  → apps/cli        → domains/cli.md
+database-analyzer → libs/database   → domains/database.md
+spine-analyzer    → project-wide    → architecture.md, conventions.md, workflows.md
+quality-analyzer  → project-wide    → docs/code-quality-review.md
+```
+
+**Note:** When multiple apps share the same type (e.g., apps/admin + apps/portal both frontend), the analyzer covers both in a single `domains/frontend.md` file. Its frontmatter `sources` lists all paths.
+
+**Result:** `index.md` hub + 3 spine pages + 4 domain pages in `{{addpath:wiki/}}`, each with frontmatter (id/type/area/description/sources/commit/generated/tags) + TL;DR + TOC + topic-first ## chunks + Related footer. `.meta.json` written last, only on success.

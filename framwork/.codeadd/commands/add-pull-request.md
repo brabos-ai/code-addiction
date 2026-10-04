@@ -1,0 +1,391 @@
+# Pull Request — Create or Update
+
+<!-- uses:
+- skill: add--commit
+- skill: add--doc-schemas
+- skill: add--final-report
+- skill: add--id-convention
+- command: /add-done
+-->
+
+> **MODEL:** Use `haiku` model
+> **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
+
+Idempotent PR command for the current branch. Detects whether a PR already exists: creates a new one or appends an update section to the existing body. On feature branches, generates the permanent feature changelog before opening the PR so it ships as part of the diff.
+
+---
+
+## Required Skills
+
+- Load `{{skill:add--commit/SKILL.md}}` — message generation logic for any commit this command makes (adaptive: ≤3 files single-line, >3 files list).
+- Load `{{skill:add--doc-schemas/SKILL.md}}` — `changelog` schema for the feature changelog generated on feature branches.
+- Load `{{skill:add--id-convention/SKILL.md}}` — branch type detection and `CHG[NNNN]` allocation.
+
+---
+
+## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
+
+**STEPS IN ORDER:**
+
+```
+STEP add-pull-request.gh: Verify gh CLI                     -> RUN FIRST
+STEP add-pull-request.detect: Detect branch + PR state          -> Determine create vs edit, capture feature ID
+STEP add-pull-request.changelog: Generate feature changelog        -> FEATURE BRANCH ONLY, idempotent
+STEP add-pull-request.commit: Stage + commit pending changes    -> Use add--commit skill, security gate
+STEP add-pull-request.push: Push to origin                    -> with -u if no upstream
+STEP add-pull-request.body: Build PR body                     -> Summary / Changes / Test Plan
+STEP add-pull-request.publish: Create or update PR               -> 7A new, 7B append-only edit
+STEP add-pull-request.complete: Completion summary                -> Report URL + post-merge guidance
+```
+
+**⛔ ABSOLUTE PROHIBITIONS:**
+
+```
+IF gh CLI NOT INSTALLED:
+  ⛔ DO NOT USE: Bash for any git or gh operations
+  ⛔ DO NOT USE: Write to create any files
+  ✅ DO: Show platform-appropriate install guidance and STOP
+
+IF gh NOT AUTHENTICATED:
+  ⛔ DO NOT USE: Bash for any git or gh operations
+  ⛔ DO NOT USE: Write to create any files
+  ✅ DO: Instruct user to run `gh auth login` and STOP
+
+IF CURRENT BRANCH = main OR master:
+  ⛔ DO NOT USE: Bash for git push or gh pr
+  ⛔ DO NOT USE: Write to create any files
+  ✅ DO: Inform user to switch to a feature branch and STOP
+
+IF .env, *.key, secrets.*, *.pem, *.p12 APPEAR IN `git status --short`:
+  ⛔ DO NOT USE: Bash for git add
+  ⛔ DO NOT USE: Bash for git commit
+  ⛔ DO NOT USE: Bash for git push
+  ✅ DO: List sensitive files, warn user, STOP
+
+IF BRANCH_TYPE = feature AND CHANGELOG NOT WRITTEN AND NOT ALREADY PRESENT:
+  ⛔ DO NOT USE: Bash for git push
+  ⛔ DO NOT USE: Bash for gh pr create
+  ⛔ DO NOT USE: Bash for gh pr edit
+  ✅ DO: Generate changelog FIRST (STEP add-pull-request.changelog)
+
+IF PR ALREADY EXISTS for current branch:
+  ⛔ DO NOT USE: Bash for gh pr create (would fail or duplicate)
+  ⛔ DO NOT: Overwrite existing PR body — append-only update
+  ⛔ DO NOT: Modify existing PR title
+  ✅ DO: Use STEP add-pull-request.publish-update (gh pr edit with appended Update section)
+
+ALWAYS:
+  ⛔ DO NOT: Amend previous commits
+  ⛔ DO NOT: Force push
+  ⛔ DO NOT: Rebase
+  ⛔ DO NOT: Rename branches
+  ⛔ DO NOT USE: Bash for done.sh — `/add-done` owns every git write it makes, and this command never calls it
+```
+
+---
+
+## STEP add-pull-request.gh: Verify gh CLI
+
+### STEP add-pull-request.check-installation Check installation
+
+```bash
+command -v gh >/dev/null 2>&1 && echo "INSTALLED" || echo "MISSING"
+```
+
+If `MISSING` → show platform install guidance (`brew install gh`, `apt install gh`, or https://cli.github.com) and STOP.
+
+### STEP add-pull-request.check-authentication Check authentication
+
+```bash
+gh auth status
+```
+
+If not authenticated → instruct user to run `gh auth login` and STOP.
+
+---
+
+## STEP add-pull-request.detect: Detect Branch & PR State
+
+### STEP add-pull-request.capture-branch-metadata Capture branch metadata
+
+```bash
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+```
+
+If `BRANCH` is `main` or `master` → STOP (see prohibitions).
+
+### STEP add-pull-request.detect-branch-type Detect branch type
+
+Use `{{skill:add--id-convention/SKILL.md}}` rules. Run:
+
+```bash
+bash .codeadd/scripts/get-branch-metadata.sh
+```
+
+Output captures: `BRANCH_TYPE` (feature | hotfix | other), `FEATURE_ID` (e.g. `0012F`), `FEATURE_DIR` (e.g. `docs/features/0012F-*`).
+
+If branch metadata script is unavailable, fall back to regex:
+- `^(feature|feat)/[0-9]{4}F-` → feature
+- `^(hotfix|fix)/[0-9]{4}H-` → hotfix
+- otherwise → other
+
+### STEP add-pull-request.detect-pr Detect existing PR
+
+```bash
+PR_DATA=$(gh pr view --json number,url,title,body,state 2>/dev/null || echo "")
+```
+
+If empty → no PR exists → flow `CREATE`. If state is `OPEN` → flow `UPDATE`. If state is `CLOSED` or `MERGED` → STOP and inform user (do not reopen).
+
+---
+
+## STEP add-pull-request.changelog: Generate Feature Changelog (FEATURE BRANCH ONLY)
+
+**⛔ Skip this STEP entirely if `BRANCH_TYPE` ≠ `feature`.**
+
+### STEP add-pull-request.generate-complement Generate or complement
+
+Check if `${FEATURE_DIR}/changelog.md` already exists.
+
+- **Absent** → generate it: STEP add-pull-request.allocate-changelog-id, then 3.3.
+- **Present** → **complement it in place**, per the `changelog` schema's table,
+  and skip STEP add-pull-request.allocate-changelog-id only. The id it already carries IS the id.
+
+```
+IF THE CHANGELOG ALREADY EXISTS:
+  ⛔ DO NOT: Skip the narrative — a skip leaves the state the first writer produced
+  ⛔ DO NOT USE: Bash for status.sh next-id CHG
+  ⛔ DO NOT: Rewrite id:, created:, type: or related:
+  ✅ DO: Apply the schema's complement table and bump updated:
+```
+
+⛔ **This command is usually the FIRST writer**, because it runs while the build
+is still going. Everything delivered after the PR opens reaches the changelog
+through `{{cmd:add-done}}` STEP add-done.complement-changelog, which complements the same file.
+
+### STEP add-pull-request.allocate-changelog-id Allocate changelog ID
+
+```bash
+bash .codeadd/scripts/status.sh next-id CHG
+```
+
+Captures `CHG[NNNN]`. Used in frontmatter `id:`. Frontmatter `related:` references the feature ID (`0012F` or equivalent).
+
+### STEP add-pull-request.execute-schema Execute schema
+
+EXECUTE schema `changelog` from `{{skill:add--doc-schemas/SKILL.md}}`. **The schema owns the path**, the one-per-delivery rule and the complement table — read its Location rule rather than repeating a path here.
+
+Source material:
+- `git log main..HEAD --oneline` — commits on this branch.
+- `git diff main...HEAD --stat` — file-level summary.
+- `${FEATURE_DIR}/about.md` (if present) — scope reference for out-of-scope detection.
+
+### STEP add-pull-request.validation-gate Validation gate
+
+Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schema `changelog`.
+
+⛔ If gate returns anything other than `PASS` → fix and re-run. DO NOT proceed to STEP add-pull-request.commit with an invalid changelog.
+
+---
+
+## STEP add-pull-request.commit: Stage & Commit Pending Changes
+
+### STEP add-pull-request.security-check Security check
+
+```bash
+git status --short
+```
+
+If output contains `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12` → STOP (see prohibitions).
+
+### STEP add-pull-request.determine-commit-needed Determine if commit needed
+
+```bash
+git diff --quiet HEAD && echo "CLEAN" || echo "DIRTY"
+```
+
+If `CLEAN` AND no changelog was just generated → skip to STEP add-pull-request.push.
+
+### STEP add-pull-request.generate-commit-message Generate commit message
+
+Apply `{{skill:add--commit/SKILL.md}}` adaptive logic:
+
+- Read `git diff HEAD` and `git diff --cached HEAD`.
+- Infer Conventional Commits type (feat | fix | refactor | chore | docs | test | style).
+- Count changed files. ≤3 → single-line `type(scope): summary`. >3 → list format with summary line + per-module bullets.
+
+### STEP add-pull-request.stage-commit Stage and commit
+
+**Feature-scoped staging** (stage all code changes + ONLY the current feature's docs; other features' untracked docs stay untracked — see `{{skill:add--commit/SKILL.md}}` Staging Rules):
+
+```bash
+git add -A -- . ':(exclude)docs/features/*'
+[ -d "${FEATURE_DIR}" ] && git add -A -- "${FEATURE_DIR}"
+git commit -m "<generated message>"
+```
+
+If staging anything sensitive (security check at STEP add-pull-request.security-check must already have STOPped) → never reach here.
+
+---
+
+## STEP add-pull-request.push: Push to Origin
+
+### STEP add-pull-request.check-upstream Check upstream
+
+```bash
+git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null
+```
+
+If no upstream:
+
+```bash
+git push -u origin "$BRANCH"
+```
+
+Otherwise:
+
+```bash
+git push
+```
+
+---
+
+## STEP add-pull-request.body: Build PR Body
+
+### STEP add-pull-request.body-sections Sections
+
+Compose the body with three sections:
+
+```markdown
+## Summary
+
+[1-3 sentences synthesising what this branch delivers. Read latest commit messages and changelog (if generated) for source material.]
+
+## Changes
+
+- type(scope): bullet describing change
+- type(scope): bullet describing change
+- type(scope): bullet describing change
+
+## Test Plan
+
+- [ ] [verifiable check, e.g. "lint passes"]
+- [ ] [verifiable check, e.g. "feature flow on local dev"]
+- [ ] [verifiable check, e.g. "no regressions in adjacent module"]
+```
+
+### STEP add-pull-request.title Title
+
+Format: `type(scope): subject`. Source priority:
+
+1. If feature changelog was generated → use its TL;DR or first Changes bullet.
+2. Else → first commit message subject on this branch (`git log main..HEAD --format=%s | tail -1`).
+3. Else → branch name humanised.
+
+---
+
+## STEP add-pull-request.publish: Create or Update PR
+
+### STEP add-pull-request.publish-create: Create new PR (if no PR exists)
+
+```bash
+gh pr create --title "<title>" --body "$(cat <<'EOF'
+<body from STEP add-pull-request.body>
+EOF
+)"
+```
+
+Capture returned URL.
+
+### STEP add-pull-request.publish-update: Update existing PR (if PR exists, state OPEN)
+
+⛔ Title is **never** modified. Body is **append-only**.
+
+1. Fetch existing body from `PR_DATA` (already captured in STEP add-pull-request.detect).
+2. Build update section:
+
+```markdown
+
+---
+
+## Update YYYY-MM-DD
+
+### Changes
+- [bullets for new commits since last update]
+
+### Test Plan
+- [ ] [verifiable check for the new changes]
+```
+
+Date is today's date (`date +%Y-%m-%d`).
+
+3. Concatenate: `<existing body>\n\n<update section>`.
+4. Apply:
+
+```bash
+gh pr edit <number> --body "$(cat <<'EOF'
+<concatenated body>
+EOF
+)"
+```
+
+---
+
+## STEP add-pull-request.complete: Completion Summary
+
+**LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
+the self-check. Emit the report FIRST — the field table below comes after it, whole.
+
+This command opens or updates a PR; it writes no feature code. So `What was delivered` is the PR and
+the changelog, `How it works` is what a reviewer on GitHub will now see, and `⚠️ Needs your
+attention` carries the delivery index entry that is still owed.
+
+Then, after the seven blocks, report:
+
+| Field | Value |
+|-------|-------|
+| Branch | `$BRANCH` |
+| PR | URL (mark `(updated)` if STEP add-pull-request.publish-update was used) |
+| Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
+| Commits pushed | count from `git log @{push}..HEAD` before push, or 0 if clean |
+
+Post-merge guidance: "After PR is merged on GitHub, run `/add-done` for branch cleanup."
+
+State that a delivery index entry is still owed and that `{{cmd:add-done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
+
+---
+
+## Rules
+
+ALWAYS:
+- Verify gh CLI installed AND authenticated before any other action
+- Generate the feature changelog on feature branches before opening the PR
+- Apply the `changelog` schema's one-per-delivery rule: complement an existing changelog, never skip it and never mint a second `CHG[NNNN]`; update existing PR rather than failing
+- Use `{{skill:add--commit/SKILL.md}}` for any commit message this command writes
+- Append updates to existing PR bodies as dated sections — preserve prior content
+- Run `git status --short` before staging — abort if sensitive files appear
+- Push with `-u` when no upstream is set
+
+NEVER:
+- Modify the title of an existing PR
+- Overwrite an existing PR body
+- Amend, force-push, or rebase
+- Rename branches
+- Auto-stage `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12`
+- Update `CHANGELOG.md` at the repo root (that belongs to the release workflow)
+- Allocate a second `CHG[NNNN]` for a delivery that already has a changelog — STEP add-pull-request.generate-complement complements it instead, and `{{cmd:add-done}}` STEP add-done.complement-changelog complements the same file later
+
+---
+
+## Error Handling
+
+| Error | Action |
+|-------|--------|
+| gh CLI not found | Show install guidance + STOP |
+| gh not authenticated | Show `gh auth login` guidance + STOP |
+| On main/master branch | Inform + STOP |
+| Sensitive files staged | List + STOP, do not commit |
+| PR state CLOSED or MERGED | Inform user + STOP, do not reopen |
+| Schema validation failed | Show validation errors + STOP, do not push |
+| `git push` fails | Show stderr + STOP, do not attempt PR creation |
+| `gh pr edit` fails | Show stderr + STOP, do not retry with create |

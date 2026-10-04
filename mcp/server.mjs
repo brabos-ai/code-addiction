@@ -265,7 +265,7 @@ export function parseArgv(argv) {
  * One-shot mode — the same verbs, without a client.
  *
  * Every provider can shell out; only some have MCP configured. A command that
- * needs one answer (`/add.done` rebuilding the index at close-out) should not
+ * needs one answer (`/add-done` rebuilding the index at close-out) should not
  * have to speak JSON-RPC to a subprocess it spawned for one call.
  */
 export function runOnce(context) {

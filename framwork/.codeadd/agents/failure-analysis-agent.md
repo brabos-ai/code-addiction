@@ -5,13 +5,13 @@ model: sonnet
 readonly: true
 disallowedTools: Write, Edit, NotebookEdit
 skills:
-  - add-investigation
-  - add-code-review
+  - add--investigation
+  - add--code-review
 ---
 
 <!-- uses:
-- skill: add-code-review
-- skill: add-investigation
+- skill: add--code-review
+- skill: add--investigation
 - agent: conformance-agent
 - agent: security-agent
 -->

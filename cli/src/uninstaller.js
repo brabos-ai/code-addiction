@@ -4,8 +4,8 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptConfirm } from './prompt.js';
 import { removeGitignoreBlock } from './gitignore.js';
 
-const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.codex', '.cursor', '.kilocode', '.opencode'];
-const GLOBAL_ADD_DIRS = ['.codeadd', '.claude', '.agents', '.codex', '.config/opencode'];
+const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.codex', '.cursor', '.kilocode', '.opencode', '.zcode'];
+const GLOBAL_ADD_DIRS = ['.codeadd', '.claude', '.agents', '.codex', '.config/opencode', '.zcode'];
 
 /**
  * Read and parse .codeadd/manifest.json.
@@ -144,7 +144,9 @@ export async function uninstall(cwd, force = false, scope = 'project') {
     allPresent.push(...walkDir(path.join(cwd, dir), cwd));
   }
 
-  const userFiles = allPresent.filter((f) => !manifestFiles.has(f));
+  const isBaseline = (rel) => rel.replace(/\\/g, '/').startsWith('.codeadd/baselines/');
+  const baselineFiles = allPresent.filter(isBaseline);
+  const userFiles = allPresent.filter((f) => !manifestFiles.has(f) && !isBaseline(f));
 
   log.info(`Files installed by ADD: ${manifestFiles.size}`);
   if (userFiles.length > 0) {
@@ -160,7 +162,7 @@ export async function uninstall(cwd, force = false, scope = 'project') {
   s.start('Removing...');
 
   let removed = 0;
-  for (const rel of manifest.files ?? []) {
+  for (const rel of [...(manifest.files ?? []), ...baselineFiles]) {
     const full = path.join(cwd, rel);
     try {
       if (fs.existsSync(full)) {

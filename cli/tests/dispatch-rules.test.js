@@ -12,7 +12,7 @@ import path from 'node:path';
  */
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const COMMANDS_DIR = path.join(ROOT, 'framwork', '.codeadd', 'commands');
-const REF_REL = 'add-subagent-driven-development/references/dispatch-rules.md';
+const REF_REL = 'add--subagent-driven-development/references/dispatch-rules.md';
 const REF_PATH = path.join(ROOT, 'framwork', '.codeadd', 'skills', ...REF_REL.split('/'));
 
 function dispatchingCommands() {
@@ -50,14 +50,14 @@ describe('every dispatching command reaches the rule', () => {
 
   it('finds the dispatching commands', () => {
     expect(commands.sort()).toEqual([
-      'add.audit.md',
-      'add.build.md',
-      'add.diagnose.md',
-      'add.hotfix.md',
-      'add.new.md',
-      'add.plan.md',
-      'add.review.md',
-      'add.wiki.md',
+      'add-audit.md',
+      'add-build.md',
+      'add-diagnose.md',
+      'add-hotfix.md',
+      'add-new.md',
+      'add-plan.md',
+      'add-review.md',
+      'add-wiki.md',
     ]);
   });
 

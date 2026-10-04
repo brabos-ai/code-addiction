@@ -9,6 +9,8 @@ description: "Internal skill for developing ADD framework artefacts (commands, s
 - skill: add-commit
 - skill: building-commands
 - skill: add-artefact-graph
+- skill: add-product-artefact-renaming
+- skill: add-framework-injection (conditional)
 - mention: add-framework--plan
 - mention: add-framework--build
 -->
@@ -17,6 +19,7 @@ Operational knowledge for creating and modifying ADD framework artefacts. Built 
 
 ## When to Use
 - `add-framework--plan` analyzing if a proposal is technically viable (STEP 0 and STEP 2)
+- An injection change also loads `add-framework-injection`. This skill does not restate slot, fallback, or STEP ID rules.
 - `add-framework--build` implementing a new command, skill, agent, or script
 - Modifying existing framework artefacts (commands, skills, agents)
 - Deciding WHAT TYPE of artefact to create for a given need
@@ -24,7 +27,7 @@ Operational knowledge for creating and modifying ADD framework artefacts. Built 
 
 ## When NOT to Use
 - **Implementing user-facing features** (backend/frontend code) → use development skills directly
-- **Understanding what artefacts exist** → use `add-ecosystem` skill (ecosystem map)
+- **Understanding what artefacts exist** → use `add--ecosystem` skill (ecosystem map)
 - **Writing prompts for commands** → use `building-commands` skill (prompt engineering patterns)
 - **Running the project** → use `AGENTS.md` (project standards and conventions)
 
@@ -162,7 +165,7 @@ Prompt: [full prompt with ${FEATURE_ID}, output path, format template]
 - `docs/features/${FEATURE_ID}/design.md`
 - Temp files: `plan-database.md`, `plan-backend.md`, etc.
 
-**Completion** — Always reference `add-ecosystem` skill for next steps.
+**Completion** — Always reference `add--ecosystem` skill for next steps.
 
 ---
 
@@ -213,7 +216,7 @@ add-qa/
   references/coordinator.md   ← reference doc
 ```
 
-⛔ **One convention only: `references/`.** It is what `add-skill-creator` prescribes (anti-pattern table + pre-deploy checklist) and what the majority of skills use — `add-doc-schemas`, `add-investigation`, `add-skill-creator`, `add-backend-architecture`, `add-frontend-architecture`, `add-subagent-driven-development`, `add-qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
+⛔ **One convention only: `references/`.** It is what `add--skill-creator` prescribes (anti-pattern table + pre-deploy checklist) and what the majority of skills use — `add--doc-schemas`, `add--investigation`, `add--skill-creator`, `add--backend-architecture`, `add--frontend-architecture`, `add--subagent-driven-development`, `add--qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
 
 **Flat siblings are legacy**, not an alternative: `add-ux-design` (14 files), `add-architecture-discovery`, `add-health-check`, `add-stripe`. Adding a subdoc to one of those may follow its existing flat layout — mixing both inside one skill is worse than either. Do NOT introduce a flat subdoc in a skill that has none.
 
@@ -226,7 +229,7 @@ add-qa/
 - **Enforcement:** `⚠️ REGRA OBRIGATÓRIA`, `NEVER/MUST`, `**OBRIGATÓRIO**`
 - **Cross-references:** `{{skill:add-[name]/[file]}}` for files, `/add.[name]` for commands
 - **Token efficiency:** JSON minified, no decorative formatting
-- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add.review`, where it skips the staging question. Unattended delivery is not this flag: it is the `delivery: automatic` mode `add-delivery-mode` owns, chosen once at `add.brainstorm`'s approval. With a read-only `add.review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add.plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
+- **`--yolo` (scoped, NOT a general convention):** an autonomy flag supported ONLY by `add-review`, where it skips the staging question. Unattended delivery is not this flag: it is the `delivery: automatic` mode `add-delivery-mode` owns, chosen once at `add-brainstorm`'s approval. With a read-only `add-review` the flag's auto-correct half no longer exists. Plan 0057 removed it from `add-plan` because a design pipeline with a skip-all-confirmations flag can silently ship an unreviewed contract. Do NOT add it to new commands, and do NOT assume a command accepts it — grep the target command first.
 
 ---
 
@@ -294,9 +297,8 @@ memory: project
 
 Plugins (see AGENTS.md → Plugin System) can inject capability into agent definitions, not just commands — carrying an external-tool capability across the command→subagent dispatch boundary (agents never see a command's injected fragment). To make an agent a plugin injection target:
 
-- Add a `<!-- plugin:PLUGIN:SECTION -->` / `<!-- /plugin:PLUGIN:SECTION -->` marker pair to the agent source body. Markers are **stripped at build** — `extractInjectionPoints()` records each as a content anchor in `framwork/.codeadd/injection-points.json`; the built agent files ship marker-free and injection is anchored to adjacent prose post-install.
-- Place the marker **on its own line** (an inline marker shown inside prose/code as documentation is ignored — only standalone-line markers are injection points), and ensure the line directly above it is plain text, not a `{{cmd:}}`/`{{skill:}}`/`{{addpath:}}` variable (the build walks past variable lines and fails loud if no variable-free adjacent line exists).
-- Author a per-agent fragment at `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` whose `<!-- section:SECTION -->` matches the marker.
+- **LOAD `add-framework-injection` before authoring the slot, the marker pair, or its fallback.** It owns the source grammar and STEP IDs. Bare marker pairs fail the build.
+- Author the per-agent fragment at `framwork/.codeadd/plugins/{plugin}/fragments/agents/{agent}.md` with a section matching the slot member.
 - Declare the target in the catalog entry's `agents` array (`{ agent, sections }`).
 - **Exclusion is by omission:** an agent with a tool allowlist that blocks MCP (e.g. `tools: Glob, Read`), or whose purpose is not the code graph, simply carries no marker — so the build emits no sidecar entry for it and it is never injected. Never add an injection marker to an MCP-blocked agent.
 - After adding/moving a marker, **rebuild** (`node scripts/build.js`) to regenerate the sidecar.
@@ -356,8 +358,8 @@ framwork/.github/           ← GitHub Copilot output
       }
     }
   },
-  "commands": { "add.build": { "description": "..." } },  // registry
-  "skills":   { "add-backend-development": {} },           // registry
+  "commands": { "add-build": { "description": "..." } },  // registry
+  "skills":   { "add--backend-development": {} },           // registry
   "agents":   { "backend-agent": { "description": "..." }} // registry
 }
 ```
@@ -394,14 +396,14 @@ description: [from provider-map.json]
 If the output path contains `SKILL.md` (e.g., Codex commands → `skills/{name}/SKILL.md`), adds `name:` field:
 ```yaml
 ---
-name: add.build
+name: add-build
 description: Development execution specialist...
 ---
 ```
 
 **`toml` transformer** (Gemini only): Wraps content in TOML format:
 ```toml
-# AUTO-GENERATED - source: framwork/.codeadd/commands/add.build.md
+# AUTO-GENERATED - source: framwork/.codeadd/commands/add-build.md
 description = "Development execution specialist..."
 prompt = """
 [original content]
@@ -412,37 +414,37 @@ prompt = """
 
 ### Resource Path Variables — When and How to Use
 
-**The problem:** You write a command that references another command or skill. If you hardcode `.claude/commands/add.plan.md`, it breaks for Codex (which puts commands in `.agents/skills/add.plan/SKILL.md`).
+**The problem:** You write a command that references another command or skill. If you hardcode `.claude/commands/add-plan.md`, it breaks for Codex (which puts commands in `.agents/skills/add-plan/SKILL.md`).
 
 **The solution:** Build-time variables that resolve per provider.
 
 #### `{{cmd:NAME}}` — Reference a command
 
 ```markdown
-<!-- IN YOUR SOURCE FILE (.codeadd/commands/add.build.md): -->
-Read {{cmd:add.plan}} for the technical plan.
+<!-- IN YOUR SOURCE FILE (.codeadd/commands/add-build.md): -->
+Read {{cmd:add-plan}} for the technical plan.
 
 <!-- AFTER BUILD for Claude: -->
-Read .claude/commands/add.plan.md for the technical plan.
+Read .claude/commands/add-plan.md for the technical plan.
 
 <!-- AFTER BUILD for Codex: -->
-Read .agents/skills/add.plan/SKILL.md for the technical plan.
+Read .agents/skills/add-plan/SKILL.md for the technical plan.
 
 <!-- AFTER BUILD for Gemini: -->
-Read .gemini/commands/add.plan.toml for the technical plan.
+Read .gemini/commands/add-plan.toml for the technical plan.
 ```
 
 #### `{{skill:NAME/FILE}}` — Reference a skill file
 
 ```markdown
 <!-- IN YOUR SOURCE FILE: -->
-Load {{skill:add-backend-development/SKILL.md}} before implementation.
+Load {{skill:add--backend-development/SKILL.md}} before implementation.
 
 <!-- AFTER BUILD for Claude: -->
-Load .claude/skills/add-backend-development/SKILL.md before implementation.
+Load .claude/skills/add--backend-development/SKILL.md before implementation.
 
 <!-- AFTER BUILD for Copilot: -->
-Load .github/skills/add-backend-development/SKILL.md before implementation.
+Load .github/skills/add--backend-development/SKILL.md before implementation.
 ```
 
 #### Scripts — NO variable needed
@@ -533,7 +535,7 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 1. Create `framwork/.codeadd/commands/{name}.md` following command anatomy
 2. Register in `framwork/provider-map.json` → `commands` section
 3. Run `node scripts/build.js` to distribute
-4. Update `add-ecosystem` skill with new command entry
+4. Update `add--ecosystem` skill with new command entry
 
 ### New Skill
 
@@ -541,14 +543,14 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 2. For Tier 3: add reference subdocs in same directory
 3. Register in `framwork/provider-map.json` → `skills` section
 4. Run `node scripts/build.js` to distribute
-5. Update `add-ecosystem` skill with new skill entry
+5. Update `add--ecosystem` skill with new skill entry
 
 ### New Agent
 
 1. Create `framwork/.codeadd/agents/{name}-agent.md` following agent anatomy
 2. Register in `framwork/provider-map.json` → `agents` section
 3. Run `node scripts/build.js` to distribute
-4. Update `add-ecosystem` skill with new agent entry
+4. Update `add--ecosystem` skill with new agent entry
 5. Update commands that should dispatch this agent (add `@{name}-agent` to dispatch table)
 
 ### Internal-Only Artefact
@@ -556,7 +558,7 @@ By default, artefacts go to ALL providers. To restrict to specific providers, ad
 1. Create directly in `workbench/skills/{name}/SKILL.md` or `workbench/commands/{name}.md`
 2. Register it in `workbench/provider-map.json` — NEVER in `framwork/provider-map.json`
 3. Do NOT add to framwork/.codeadd/
-4. `scripts/build.js` never distributes it. `scripts/build-workbench.js` builds it to `.claude/` and `.opencode/` at the repository root, and neither is packaged by `release.yml` nor written by the installer
+4. `scripts/build.js` never distributes it. `scripts/build-workbench.js` builds it to `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repository root, and none of those is packaged by `release.yml` nor written by the installer
 
 ---
 
@@ -569,10 +571,10 @@ Commands instruct the LLM to read skill files. This is NOT automatic — it's a 
 ```markdown
 <!-- In a command source file: -->
 ## STEP 1: Load Context
-Read {{skill:add-backend-development/SKILL.md}} before implementation.
+Read {{skill:add--backend-development/SKILL.md}} before implementation.
 ```
 
-At runtime, the LLM sees the resolved path (e.g., `.claude/skills/add-backend-development/SKILL.md`) and uses the `Read` tool to load the file into its context. The skill content then informs subsequent decisions.
+At runtime, the LLM sees the resolved path (e.g., `.claude/skills/add--backend-development/SKILL.md`) and uses the `Read` tool to load the file into its context. The skill content then informs subsequent decisions.
 
 **Key distinction:**
 - **Command `Read` instruction** = LLM reads file at runtime (on-demand, costs tokens)
@@ -628,7 +630,7 @@ bash .codeadd/scripts/status.sh
 | Error | Symptom | Prevention |
 |-------|---------|------------|
 | Forgot to register in provider-map.json | File exists in `.codeadd/` but never appears in provider dirs | ALWAYS register BEFORE running build |
-| Used raw path `.codeadd/commands/add.plan.md` | Works on Claude, breaks on Codex/Gemini/etc. | Use `{{cmd:add.plan}}` variable |
+| Used raw path `.codeadd/commands/add-plan.md` | Works on Claude, breaks on Codex/Gemini/etc. | Use `{{cmd:add-plan}}` variable |
 | Used raw path `.codeadd/skills/add-x/SKILL.md` | Works on Claude, breaks on other providers | Use `{{skill:add-x/SKILL.md}}` variable |
 | Agent file not named `{name}-agent.md` | build.js can't find the source file | Follow naming convention exactly |
 | Skill dir name doesn't match `name:` in frontmatter | Confusion between directory and metadata | Keep them identical |
@@ -642,7 +644,7 @@ bash .codeadd/scripts/status.sh
 | No fallback for agent dispatch | Command fails on providers without agentDispatch | Always include fallback table with generic subagent option |
 | Dispatching agents without loading docs first | Agent gets no context, produces generic output | Add `**WAIT:**` after doc loading, before dispatch |
 | Missing `MANDATORY SEQUENTIAL EXECUTION` block | Agent skips steps or reorders them | Always include the numbered step summary at top |
-| No completion/next-steps section | User doesn't know what to do after command finishes | Reference `add-ecosystem` skill for flow guidance |
+| No completion/next-steps section | User doesn't know what to do after command finishes | Reference `add--ecosystem` skill for flow guidance |
 
 ### Skill Authoring Errors
 
@@ -735,7 +737,7 @@ target resolves by the sigils `mention:` uses: `/name` is a command, `@name` an 
 skill. At runtime it changes nothing; it is the edge label that tells the graph which dependency is
 the hand-off.
 
-**A catalogue is not a consumer.** `add-ecosystem` maps the ecosystem and consumes none of it, so
+**A catalogue is not a consumer.** `add--ecosystem` maps the ecosystem and consumes none of it, so
 every row in its block is `mention:`. Declaring them as dependencies is not cosmetic: eight
 commands load that skill, so everything it lists would inherit ~82 transitive dependants and
 `impact` would degrade into a constant.
@@ -772,9 +774,11 @@ answers "what does this relate to". A partial list in a second place is how the 
 
 ### Cross-Artefact Impact (MANDATORY for any change)
 
+When renaming a product command or skill, load `add-product-artefact-renaming` before touching its source. It owns the checked preview/apply procedure and the separation of product and internal names.
+
 When creating or modifying any artefact, check:
 1. `provider-map.json` — is it registered? description accurate?
-2. `add-ecosystem` skill — does the ecosystem map reflect the change?
+2. `add--ecosystem` skill — does the ecosystem map reflect the change?
 3. Commands that reference it — do dispatch tables, skill loads, or script calls need updating?
 4. Agents that preload it — does the `skills:` array need updating?
 5. Run `node scripts/build.js` — any LINT warnings?

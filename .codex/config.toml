@@ -1,0 +1,26 @@
+# Codex project-level config — the artefact-graph MCP for this repository's own
+# development pipeline (the internal workbench layer).
+#
+# ⛔ CODEX LOADS PROJECT CONFIG ONLY FOR TRUSTED PROJECTS.
+# If this repository is not trusted, Codex skips the project `.codex/` layer
+# entirely and this file does nothing. Trust it once, in your user config
+# (~/.codex/config.toml):
+#
+#   [projects."<absolute path to this repository>"]
+#   trust_level = "trusted"
+#
+# If you cannot or will not trust the project, register the same server at the
+# user level instead — the equivalent entry, from which it always loads:
+#
+#   [mcp_servers.artefact-graph]
+#   command = "node"
+#   args = ["<absolute path to this repository>/mcp/server.mjs", "--corpus=artefacts"]
+#
+# Relative paths inside a project config resolve against the `.codex/` folder
+# that contains this file — hence `../mcp/server.mjs`. This is the third of the
+# repository's own internal registrations, beside `.mcp.json` (Claude Code) and
+# `opencode.json` (OpenCode), which both point at the same server from the root.
+
+[mcp_servers.artefact-graph]
+command = "node"
+args = ["../mcp/server.mjs", "--corpus=artefacts"]

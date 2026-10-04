@@ -169,6 +169,35 @@ describe('update command', () => {
     expect(manifest.plugins).toEqual({ gitnexus: { enabled: true } }); // plugin state NOT dropped
   });
 
+  it('removes only a legacy plugin skill copy absent from the manifest before reactivation', async () => {
+    const catalog = path.join(tmpDir, 'catalog.json');
+    fs.writeFileSync(catalog, JSON.stringify({ gitnexus: { detect: 'node --version', skills: ['add--gitnexus'], injects: [] } }));
+    process.env.CODEADD_PLUGINS_CATALOG = catalog;
+    try {
+      const oldDir = path.join(tmpDir, '.claude', 'skills', 'add-gitnexus');
+      const newFile = path.join(tmpDir, '.claude', 'skills', 'add--gitnexus', 'SKILL.md');
+      fs.mkdirSync(oldDir, { recursive: true });
+      fs.writeFileSync(path.join(oldDir, 'SKILL.md'), 'legacy plugin skill');
+      fs.writeFileSync(path.join(oldDir, 'personal.md'), 'user content');
+      writeManifestFile(tmpDir, {
+        version: '1.0.0', source: 'release', providers: ['claude'],
+        plugins: { gitnexus: { enabled: true } }, files: [],
+      });
+      const zip = new AdmZip(buildZip());
+      zip.addFile('framwork/.codeadd/plugins/gitnexus/skills/add--gitnexus/SKILL.md', Buffer.from('new plugin skill'));
+      mocks.getLatestTag.mockResolvedValue('v2.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(zip.toBuffer());
+
+      await update(tmpDir);
+
+      expect(fs.existsSync(path.join(oldDir, 'SKILL.md'))).toBe(false);
+      expect(fs.readFileSync(path.join(oldDir, 'personal.md'), 'utf8')).toBe('user content');
+      expect(fs.readFileSync(newFile, 'utf8')).toBe('new plugin skill');
+    } finally {
+      delete process.env.CODEADD_PLUGINS_CATALOG;
+    }
+  });
+
   it('syncs .gitignore block when manifest.gitignore is true', async () => {
     writeManifestFile(tmpDir, {
       version: '1.0.0',
@@ -359,7 +388,7 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
 
     const m = readManifest(tmpDir);
     expect(m.migrations).toEqual(allMigrationIds());
-    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false });
+    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false });
     expect(m.plugins).toEqual({ gitnexus: true });
   });
 
@@ -374,7 +403,7 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
     });
 
     // On disk but already recorded as migrated: must NOT be touched again.
-    const planted = path.join(tmpDir, '.codeadd', 'skills', 'add-skill-creator', 'render-graphs.js');
+    const planted = path.join(tmpDir, '.codeadd', 'skills', 'add--skill-creator', 'render-graphs.js');
     fs.mkdirSync(path.dirname(planted), { recursive: true });
     fs.writeFileSync(planted, '// x');
 

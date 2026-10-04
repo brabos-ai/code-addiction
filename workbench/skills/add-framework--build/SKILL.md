@@ -17,6 +17,7 @@ description: "Use when a plan in docs/plans/ is ready to execute, or for a direc
 - skill: add-framework-internal-layer
 - skill: building-commands
 - skill: add-framework-development
+- skill: add-framework-injection (conditional)
 - skill: add-framework--plan
 - command: /add-framework--sync
 - handoff: add-framework--done
@@ -228,6 +229,7 @@ the user to see it before execution starts.
 | `{{skill:add-framework-product-layer/SKILL.md}}` | The first `[product]` F-block |
 | `{{skill:add-framework-internal-layer/SKILL.md}}` | The first `[internal]` F-block |
 | `{{skill:add-framework-development/SKILL.md}}` | Artefact-type decisions, agent anatomy, `uses:` syntax |
+| `{{skill:add-framework-injection/SKILL.md}}` | An F-block that adds, moves, or removes an injection slot, a fallback, or a product STEP ID |
 
 **Load a layer skill when the first F-block of that layer arrives, not before.** A single-layer plan
 never loads the other one.
@@ -291,6 +293,11 @@ that is the fourth hard stop and `add-build-ledger` owns it. Nothing else here s
 
 Planned mode only. Path, format, identity line and the resume rule are owned by `add-build-ledger`.
 Read the ledger BEFORE deciding anything, every entry, not only after a crash.
+
+**Then, before the first F-block, the ticket.** When the plan header carries `> **Ticket:**`, make the
+`doing` write. `add-plan-authoring` owns when it is skipped, how it is made and every degradation, under
+**The Ticket** — load it rather than acting from memory. Not before this point:
+a ticket marked `doing` for a build that stopped at STEP 2 is a claim the board cannot take back.
 
 ### 5.2 One F-Block at a Time
 
@@ -617,6 +624,11 @@ The close-out runs only when the operator invokes it.
 
 ## STEP 10: Completion
 
+**Ticket — before the report, the review write.** When the plan header carries `> **Ticket:**`, read
+STEP 9's answer. A PR opened, or one that already existed and was pushed to, writes `in-review`. **"No"
+writes nothing:** the close-out then opens the PR and merges it in one run, and the ticket goes `doing` →
+`done`. **The Ticket** in `add-plan-authoring` owns the rules.
+
 **LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
 the report FIRST — the ledger path, the commit ranges and the rulings come after it, never in front
 of it and never instead of it.
@@ -641,6 +653,9 @@ Then, after the seven blocks and before the metadata, report always:
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
+- **The ticket, when the plan carried one** — the id, and for EACH of its two writes (`doing` at 5.1,
+  `in-review` here) the `SHA`, that it was already there, that STEP 9's answer skipped it, or what did not
+  happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block.
 

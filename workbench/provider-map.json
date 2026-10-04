@@ -38,6 +38,27 @@
         "https://opencode.ai/docs/agents/",
         "https://opencode.ai/docs/commands/"
       ]
+    },
+    "codex": {
+      "dir": ".agents",
+      "agentsDir": ".codex",
+      "commands": "skills/{name}/SKILL.md",
+      "skills": "skills/{name}/SKILL.md",
+      "agents": "agents/{name}.toml",
+      "capabilities": {
+        "hooks": true,
+        "agentDispatch": true,
+        "mcp": true,
+        "nativeFormat": "md",
+        "slashCommands": false,
+        "structuredQuestions": false
+      },
+      "docs": [
+        "https://developers.openai.com/codex/config-advanced",
+        "https://developers.openai.com/codex/mcp",
+        "https://developers.openai.com/codex/subagents",
+        "https://developers.openai.com/codex/skills"
+      ]
     }
   },
   "commands": {
@@ -48,7 +69,7 @@
       "description": "Release manager — tags, GitHub releases and the CLI publish, merging main into production."
     },
     "add-framework--backlog": {
-      "description": "Records what to do next — adds, updates or removes a backlog item, then commits and pushes straight to main."
+      "description": "Records what to do next — adds, updates, reprioritises or closes a backlog ticket, then commits and pushes it to main through backlog-commit.sh."
     }
   },
   "skills": {
@@ -61,9 +82,11 @@
     "add-framework--done": {},
     "add-framework--plan": {},
     "add-framework-development": {},
+    "add-framework-injection": {},
     "add-framework-internal-layer": {},
     "add-framework-product-layer": {},
     "add-plan-authoring": {},
+    "add-product-artefact-renaming": {},
     "add-review-discipline": {},
     "building-commands": {}
   },

@@ -7,6 +7,7 @@ import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './githu
 import { fixLineEndings, writeManifest, resolveInstallSource, shouldPreserve, reportMcpRegistration } from './installer.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { applyEnabledFeatures } from './features.js';
+import { captureBaselines } from './injection-core.js';
 import { applyEnabledPlugins } from './plugins.js';
 import { runMigrations } from './migrations.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
@@ -22,6 +23,22 @@ import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
  * @param {string} cwd
  * @returns {string[]}
  */
+const LEGACY_PLUGIN_SKILLS = {
+  gitnexus: ['add-gitnexus'],
+};
+
+function removeLegacyPluginSkills(cwd, providers, previousPlugins) {
+  for (const [plugin, state] of Object.entries(previousPlugins)) {
+    if (!state?.enabled) continue;
+    for (const skill of LEGACY_PLUGIN_SKILLS[plugin] ?? []) {
+      for (const provider of providers.filter((p) => p.skillsSubdir)) {
+        const skillFile = path.join(cwd, provider.dest, provider.skillsSubdir, skill, 'SKILL.md');
+        if (fs.existsSync(skillFile)) fs.unlinkSync(skillFile);
+      }
+    }
+  }
+}
+
 function copyFromZip(zip, srcPrefix, destDir, cwd) {
   const copied = [];
   const prefix = `${srcPrefix}/`;
@@ -195,11 +212,18 @@ export async function update(cwd, options = {}, scope = 'project') {
     { source: installSource.source, ref: installSource.ref, channel: installSource.channel, scope: installScope, features: previousFeatures, plugins: previousPlugins, migrations: nextMigrations }
   );
 
+  const baselines = captureBaselines(cwd);
+  for (const w of baselines.warnings) log.warn(`${w.resource} ${w.slot} ${w.member}: ${w.reason}`);
+
   // Re-apply enabled features on updated commands (files were overwritten by the new version)
   const featuresApplied = applyEnabledFeatures(cwd);
   if (featuresApplied > 0) {
     log.success(`Re-applied ${featuresApplied} feature injection(s).`);
   }
+
+  // Plugin activation copies skills outside the install manifest. A renamed plugin
+  // skill is therefore not covered by the obsolete-file sweep above.
+  removeLegacyPluginSkills(cwd, providers, previousPlugins);
 
   // Re-apply enabled plugins (mirrors installer; marker-free files need re-injection post-update)
   const pluginsApplied = applyEnabledPlugins(cwd);

@@ -1,16 +1,16 @@
 # ADD - Intelligent Ecosystem Gateway
 
 <!-- uses:
-- skill: add-dev-environment-setup
-- skill: add-ecosystem
-- command: /add.brainstorm
-- command: /add.build
-- command: /add.diagnose
-- command: /add.done
-- command: /add.hotfix
-- command: /add.new
-- command: /add.plan
-- command: /add.review
+- skill: add--dev-environment-setup
+- skill: add--ecosystem
+- command: /add-brainstorm
+- command: /add-build
+- command: /add-diagnose
+- command: /add-done
+- command: /add-hotfix
+- command: /add-new
+- command: /add-plan
+- command: /add-review
 - script: status.sh
 -->
 
@@ -36,14 +36,14 @@ ALLOWED - CREATE DOCUMENTATION:
 IF ECOSYSTEM-MAP NOT LOADED:
   ⛔ DO NOT RESPOND: About commands or skills
   ⛔ DO NOT LIST: Available commands
-  ✅ DO: Execute STEP 0 first
+  ✅ DO: Execute STEP add.ecosystem first
 ```
 
 ---
 
-## STEP 0: Load Ecosystem Map (ALWAYS)
+## STEP add.ecosystem: Load Ecosystem Map (ALWAYS)
 
-Read skill `add-ecosystem` before any response.
+Read skill `add--ecosystem` before any response.
 
 This file contains all add-pro commands with purpose/skills, available skills, main flows, and dependency index.
 
@@ -51,25 +51,25 @@ This file contains all add-pro commands with purpose/skills, available skills, m
 
 ---
 
-## STEP 1: Classify Question
+## STEP add.classify: Classify Question
 
 | Type | Examples | Action |
 |------|----------|--------|
-| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP 3A |
-| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP 2 + STEP 3B |
-| **Status/Context** | "where am I?", "which feature is active?" | -> STEP 2 + STEP 3C |
-| **Compliance** | "does implementation follow the plan?" | -> STEP 2 + STEP 3D |
-| **Project** | "does the project have multi-tenancy?" | -> STEP 2 + STEP 3E |
-| **Next step** | "what to do now?", "next command?" | -> STEP 2 + STEP 4 |
-| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", env errors | -> STEP 3F |
+| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP add.respondA |
+| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP add.detect + STEP add.respondB |
+| **Status/Context** | "where am I?", "which feature is active?" | -> STEP add.detect + STEP add.respondC |
+| **Compliance** | "does implementation follow the plan?" | -> STEP add.detect + STEP add.respondD |
+| **Project** | "does the project have multi-tenancy?" | -> STEP add.detect + STEP add.respondE |
+| **Next step** | "what to do now?", "next command?" | -> STEP add.detect + STEP add.suggest |
+| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", env errors | -> STEP add.respondF |
 
 ---
 
-## STEP 2: Detect Context (CONDITIONAL)
+## STEP add.detect: Detect Context (CONDITIONAL)
 
 Execute when question involves a specific feature, current status, "where am I?", next step, or project/architecture.
 
-### 2.1 Execute status.sh
+### STEP add.status Execute status.sh
 
 ```bash
 bash .codeadd/scripts/status.sh
@@ -77,17 +77,17 @@ bash .codeadd/scripts/status.sh
 
 **Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
 
-### 2.2 Read additional context (if exists)
+### STEP add.read-context Read additional context (if exists)
 
 Read `AGENTS.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
 
 ---
 
-## STEP 3: Respond by Type
+## STEP add.respond: Respond by Type
 
 ### Type A: About ADD Commands
 
-Use ecosystem-map from STEP 0. If specific command details are needed, read `.claude/commands/add.[command].md`.
+Use ecosystem-map from STEP add.ecosystem. If specific command details are needed, read `.claude/commands/add-[command].md`.
 
 Include: what the command does, when to use it, which skills it loads, and main flow steps.
 
@@ -108,7 +108,7 @@ Include: feature ID, name, summary from changelog, explanation, main files (if a
 
 ### Type C: Status/Context
 
-Use output from STEP 2 (status.sh).
+Use output from STEP add.detect (status.sh).
 
 Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, the highest review-NNN.md).
 
@@ -135,11 +135,11 @@ Include: reformulated question, answer (Yes/No/Partially), explanation based on 
 
 ### Type F: Setup/Environment
 
-**LOAD skill before responding:** Read skill `add-dev-environment-setup`.
+**LOAD skill before responding:** Read skill `add--dev-environment-setup`.
 
-**EXECUTE skill flow:** Follow STEP 1-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
+**EXECUTE skill flow:** Follow STEP add.classify-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
 
-**IF user has not granted permission to install:** Show diagnostic report only (STEP 2-3 of skill). Ask for confirmation before installing.
+**IF user has not granted permission to install:** Show diagnostic report only (STEP add.detect-3 of skill). Ask for confirmation before installing.
 
 NEVER:
 - Suggest Git Bash as bash alternative
@@ -148,7 +148,7 @@ NEVER:
 
 ---
 
-## STEP 4: Smart Suggestion
+## STEP add.suggest: Smart Suggestion
 
 ALWAYS include at end of response (except if question was only about a specific command).
 
@@ -156,16 +156,16 @@ ALWAYS include at end of response (except if question was only about a specific 
 
 | Detected Context | Suggested Command | Rationale |
 |------------------|-------------------|-----------|
-| Branch main, no feature | `/add.new` | Start new functionality |
-| Feature without plan.md | `/add.plan` | Next phase of flow |
-| Feature with plan, no implementation | `/add.build`, or choose automatic delivery at `/add.brainstorm`'s approval to run the build, with its own final review, unattended | Time to implement |
-| Feature implemented | `/add.done` | The build already ran its final review. `/add.review` is optional — run it first for detail or the QA judgement |
-| Feature reviewed | `/add.done` | Finalize and generate changelog |
-| Epic with pending sub-features | `/add.build feature N` | Next sub-feature |
+| Branch main, no feature | `/add-new` | Start new functionality |
+| Feature without plan.md | `/add-plan` | Next phase of flow |
+| Feature with plan, no implementation | `/add-build`, or choose automatic delivery at `/add-brainstorm`'s approval to run the build, with its own final review, unattended | Time to implement |
+| Feature implemented | `/add-done` | The build already ran its final review. `/add-review` is optional — run it first for detail or the QA judgement |
+| Feature reviewed | `/add-done` | Finalize and generate changelog |
+| Epic with pending sub-features | `/add-build feature N` | Next sub-feature |
 | Architecture question | `/health-check` | Technical analysis |
-| Clear bug in production | `/add.hotfix` | Urgent fix |
-| Vague symptom / unsure if bug or feature | `/add.diagnose` | Structured investigative triage before deciding |
-| Does not know where to start | `/add.brainstorm` | Explore ideas |
+| Clear bug in production | `/add-hotfix` | Urgent fix |
+| Vague symptom / unsure if bug or feature | `/add-diagnose` | Structured investigative triage before deciding |
+| Does not know where to start | `/add-brainstorm` | Explore ideas |
 | bash/git/jq/gh missing or env errors | Load `dev-environment-setup` skill | Setup dev environment |
 | User asks about WSL or VS Code terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |
 
@@ -189,7 +189,7 @@ Only go down the hierarchy if the previous level does not answer the question.
 ## Rules
 
 ALWAYS:
-- Load ecosystem-map in STEP 0
+- Load ecosystem-map in STEP add.ecosystem
 - Use ecosystem-map to answer about commands/skills
 - Execute status.sh when question involves context
 - Read changelog before going to code

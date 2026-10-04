@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { captureBaselines, reconcileSlots } from '../../src/injection-core.js';
 
 /**
  * A shared, on-demand copy of the real built tree, for the suites that need a
@@ -108,6 +109,8 @@ export function treeFixture({ prefix, copy, manifest = null, normalize = false }
       fs.mkdirSync(path.dirname(at), { recursive: true });
       fs.writeFileSync(at, JSON.stringify(manifest.data, null, 2));
     }
+    captureBaselines(dir);
+    reconcileSlots(dir);
     // Assigned last, and only here: a half-built directory must never become
     // the thing root() copies. A caller that retries after a failure builds a
     // fresh one, and `scratch` still reclaims the abandoned attempt.

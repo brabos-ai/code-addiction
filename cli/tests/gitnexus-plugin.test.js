@@ -5,7 +5,7 @@ import path from 'node:path';
 import { parseFragmentSections } from '../src/injection-core.js';
 
 const require = createRequire(import.meta.url);
-const { extractInjectionPoints } = require('../../scripts/build.js');
+const { extractSlots } = require('../../scripts/build.js');
 
 /**
  * Structural consistency of the gitnexus plugin (Phase 2 + 3 of plan 0032).
@@ -44,12 +44,12 @@ describe('gitnexus catalog entry', () => {
   });
 
   it('injects exactly the seven target commands', () => {
-    // add.build joined when its main session was seen calling gitnexus with no guidance at all.
-    expect(catalogEntry().injects.sort()).toEqual(['add.build', 'add.diagnose', 'add.done', 'add.hotfix', 'add.new', 'add.plan', 'add.wiki']);
+    // add-build joined when its main session was seen calling gitnexus with no guidance at all.
+    expect(catalogEntry().injects.sort()).toEqual(['add-build', 'add-diagnose', 'add-done', 'add-hotfix', 'add-new', 'add-plan', 'add-wiki']);
   });
 
-  it('ships the add-gitnexus skill', () => {
-    expect(catalogEntry().skills).toContain('add-gitnexus');
+  it('ships the add--gitnexus skill', () => {
+    expect(catalogEntry().skills).toContain('add--gitnexus');
   });
 });
 
@@ -77,7 +77,7 @@ describe('gitnexus fragments ⟷ command markers', () => {
 
 describe('gitnexus fragments carry the repo rule themselves', () => {
   // With more than one repo indexed, every gitnexus call without `repo` fails. The protocol lives in
-  // add-gitnexus, but a session that never loads that skill never sees it — so each fragment states
+  // add--gitnexus, but a session that never loads that skill never sees it — so each fragment states
   // the rule inside an injected section, where it actually reaches the command or agent.
   const fragments = [
     ...fs.readdirSync(path.join(PLUGIN_DIR, 'fragments')).filter((f) => f.endsWith('.md')),
@@ -160,7 +160,7 @@ describe('gitnexus marker-free build (sidecar carries the anchors)', () => {
   for (const t of entry?.agents ?? []) {
     it(`agent ${t.agent} source resolves to plugin:gitnexus injection points with variable-free anchors`, () => {
       const src = fs.readFileSync(path.join(AGENTS_DIR, `${t.agent}.md`), 'utf8');
-      const pts = extractInjectionPoints(src, t.agent, 'agent').filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
+      const pts = extractSlots(src, t.agent, 'agent', () => '').flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource, anchor: slot.anchor }))).filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
       expect(pts.map((p) => p.section).sort()).toEqual([...t.sections].sort());
       for (const p of pts) {
         expect(p.resource).toEqual({ name: t.agent, kind: 'agent' });
@@ -173,7 +173,7 @@ describe('gitnexus marker-free build (sidecar carries the anchors)', () => {
   for (const cmd of entry?.injects ?? []) {
     it(`command ${cmd} source resolves to plugin:gitnexus injection points`, () => {
       const src = fs.readFileSync(path.join(COMMANDS_DIR, `${cmd}.md`), 'utf8');
-      const pts = extractInjectionPoints(src, cmd, 'command').filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
+      const pts = extractSlots(src, cmd, 'command', () => '').flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource, anchor: slot.anchor }))).filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
       expect(pts.length).toBeGreaterThan(0);
       for (const p of pts) expect(p.resource).toEqual({ name: cmd, kind: 'command' });
     });
@@ -194,10 +194,10 @@ describe('gitnexus skills', () => {
     });
   }
 
-  it('add-gitnexus dispatches to the native gitnexus-* skills', () => {
-    const content = fs.readFileSync(path.join(PLUGIN_DIR, 'skills', 'add-gitnexus', 'SKILL.md'), 'utf8');
+  it('add--gitnexus dispatches to the native gitnexus-* skills', () => {
+    const content = fs.readFileSync(path.join(PLUGIN_DIR, 'skills', 'add--gitnexus', 'SKILL.md'), 'utf8');
     for (const native of ['gitnexus-exploring', 'gitnexus-impact-analysis', 'gitnexus-debugging']) {
-      expect(content, `add-gitnexus should reference ${native}`).toContain(native);
+      expect(content, `add--gitnexus should reference ${native}`).toContain(native);
     }
   });
 });

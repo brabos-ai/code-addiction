@@ -17,6 +17,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 - mention: add-framework--brainstorm
 - skill: building-commands/references/agent-dispatch.md
 - mention: building-commands
+- skill: add-framework-injection (conditional)
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -24,6 +25,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 Strategic consultant for product, architecture and evolution decisions of the ADD ecosystem.
 **Plans BOTH layers in one document** — the distributed product layer (`framwork/.codeadd/`, `cli/`)
 and the internal development layer (`workbench/`, `scripts/`, `AGENTS.md`). Every F-block declares which.
+When the change touches an injection slot, a fallback, or a product STEP ID, load `add-framework-injection` before writing that F-block.
 
 This is an **open-source project for the community**. Every decision weighs technical soundness,
 clarity for external contributors, and real value for framework consumers.
@@ -177,6 +179,10 @@ off nothing open that one more turn would have closed; `## Open` is what it coul
 **Read `delivery:` from the same file.** It is `confirm` or `automatic`, and it decides which of this
 skill's stops wait. `add-plan-authoring` owns the field, the stopping rule, and the rule that an absent
 field means `confirm` — read **The Delivery Mode** there.
+
+**Read `ticket:` from the same file, when present**, then read that ticket. Its `done_when` goes into the
+plan at STEP 5. **Then write `planning`** — and at STEP 7, before the report, `planned`. **The Ticket** in
+`add-plan-authoring` owns how, and when either is skipped.
 
 ### 1.3 Dispatch Discovery (SILENT)
 
@@ -438,6 +444,10 @@ IF AN AUDIT ITEM CAME BACK ❌:
 **Write `> **Delivery:**` in the plan header, copied from the intent file's `delivery:`** — `confirm` when
 there is none. The build reads that line and nothing else to learn the mode.
 
+**When STEP 1.2 read a `ticket:`, write `> **Ticket:**` in the plan header and the ticket's `done_when` as
+`**Ticket done when:**`**, where the template places them. Which document carries the ticket after this
+point is owned by **The Ticket** in `add-plan-authoring`.
+
 Write the draft. **DO NOT present the path or next steps** — go straight to STEP 6.
 
 ---
@@ -466,6 +476,10 @@ apply them to every `DISPATCH AGENT` block in this skill. The block names the ca
 ## STEP 7: Completion [HARD STOP]
 
 **The user did NOT read the plan.** They decide from this summary.
+
+**Ticket — before the report.** When STEP 1.2 read a `ticket:`, write `planned`: the plan is written and
+STEP 6 reviewed it. On a later plan over a ticket whose build already started, **The Ticket** in
+`add-plan-authoring` skips it, and that is correct.
 
 **LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
 the report FIRST, metadata after.

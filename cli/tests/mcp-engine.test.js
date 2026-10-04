@@ -87,7 +87,7 @@ describe('F7 — the action surface', () => {
 
 describe('L2.4 — both corpora answer identically to scripts/graph.js', () => {
   const graph = () => G.loadGraph();
-  const PROBES = ['product/skill/add-doc-schemas', 'product/command/add.done', 'add-knowledge-discovery'];
+  const PROBES = ['product/skill/add--doc-schemas', 'product/command/add-done', 'add--knowledge-discovery'];
 
   it('impact matches, for every probe and at every depth', () => {
     for (const probe of PROBES) {
@@ -121,8 +121,8 @@ describe('L2.4 — both corpora answer identically to scripts/graph.js', () => {
 
   it('path matches, both when one exists and when none does', () => {
     const pairs = [
-      ['product/command/add.done', 'product/skill/add-doc-schemas'],
-      ['product/skill/add-doc-schemas', 'product/command/add.done'],
+      ['product/command/add-done', 'product/skill/add--doc-schemas'],
+      ['product/skill/add--doc-schemas', 'product/command/add-done'],
     ];
     for (const [from, to] of pairs) {
       const mine = actions.path(artefacts, { from, to }).path;
@@ -149,7 +149,7 @@ describe('L2.4 — both corpora answer identically to scripts/graph.js', () => {
   });
 
   it('resolves a bare name the same way, and refuses an ambiguous one the same way', () => {
-    expect(resolve(artefacts, 'add-doc-schemas')).toBe(G.resolve(G.loadGraph(), 'add-doc-schemas'));
+    expect(resolve(artefacts, 'add--doc-schemas')).toBe(G.resolve(G.loadGraph(), 'add--doc-schemas'));
     expect(() => resolve(artefacts, 'no-such-artefact')).toThrow(/No node matches/);
     expect(() => G.resolve(G.loadGraph(), 'no-such-artefact')).toThrow(/No node matches/);
   });

@@ -15,7 +15,7 @@ import path from 'node:path';
  *
  * The allowlist holds only the files whose job is the legacy files themselves —
  * the migration, its detection, the writers that run it, the check that flags a
- * leftover, and the test that asserts add.wiki names them. Each entry says why.
+ * leftover, and the test that asserts add-wiki names them. Each entry says why.
  * A new entry that merely READS the context file under its old name is the defect
  * this test exists to catch; fix the file instead of listing it.
  */
@@ -47,10 +47,10 @@ const ALLOWED = {
   'framwork/.codeadd/scripts/tests/migrate-context-files.bats': 'the migration suite — its fixtures are legacy files',
   'framwork/.codeadd/scripts/init.sh': 'emits LEGACY_CONTEXT, so it tests for each legacy file',
   'framwork/.codeadd/scripts/tests/init.bats': 'the LEGACY_CONTEXT fixtures',
-  'framwork/.codeadd/skills/add-agents-md-style/SKILL.md': 'owns the Migration section and explains why a legacy file hides AGENTS.md',
-  'framwork/.codeadd/commands/add.wiki.md': 'STEP 6.1 runs the migration and STEP 7 checks no legacy file is left',
-  'framwork/.codeadd/skills/add-health-check/documentation-analyzer.md': 'finding DOC-008 flags a leftover legacy file',
-  'cli/tests/plain-language-rule.test.js': 'asserts add.wiki names the legacy files only to check they are gone',
+  'framwork/.codeadd/skills/add--agents-md-style/SKILL.md': 'owns the Migration section and explains why a legacy file hides AGENTS.md',
+  'framwork/.codeadd/commands/add-wiki.md': 'STEP 6.1 runs the migration and STEP 7 checks no legacy file is left',
+  'framwork/.codeadd/skills/add--health-check/documentation-analyzer.md': 'finding DOC-008 flags a leftover legacy file',
+  'cli/tests/plain-language-rule.test.js': 'asserts add-wiki names the legacy files only to check they are gone',
 };
 
 function walk(rel, out) {

@@ -6,7 +6,7 @@
  * path. A third corpus later is a row here, not a redesign.
  *
  * THE TWO CORPORA NEVER SHARE AN INDEX OR A NODE NAMESPACE.
- * `product/command/add.done` and `0053H` do not belong in one graph: the
+ * `product/command/add-done` and `0053H` do not belong in one graph: the
  * questions differ and so do the ids. Merging them is the one change this file
  * exists to prevent.
  *

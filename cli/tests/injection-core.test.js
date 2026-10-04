@@ -4,7 +4,6 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   parseFragmentSections,
-  loadInjectionPoints,
   findAnchorLine,
   insertBlockAfterAnchor,
   removeBlockAfterAnchor,
@@ -13,9 +12,12 @@ import {
   saveManifest,
   calculateHash,
   recalculateHashes,
-  getAgentFragments,
-  injectAgentFragments,
-  removeAgentFragments,
+  composeSlot,
+  renderSlotRegion,
+  renderSlots,
+  captureBaselines,
+  renderInstalledResource,
+  reconcileSlots,
 } from '../src/injection-core.js';
 
 // ---------------------------------------------------------------------------
@@ -41,33 +43,11 @@ describe('parseFragmentSections', () => {
     const frag = '<!-- section:a -->\r\nbody\r\n<!-- /section:a -->';
     expect(parseFragmentSections(frag).get('a')).toBe('body\r\n');
   });
-});
 
-// ---------------------------------------------------------------------------
-// loadInjectionPoints (sidecar)
-// ---------------------------------------------------------------------------
-
-describe('loadInjectionPoints', () => {
-  let cwd;
-  beforeEach(() => {
-    cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-side-'));
-    fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
-  });
-  afterEach(() => fs.rmSync(cwd, { recursive: true, force: true }));
-
-  it('returns [] when the sidecar is absent (graceful fallback for old installs)', () => {
-    expect(loadInjectionPoints(cwd)).toEqual([]);
-  });
-
-  it('returns [] on invalid JSON', () => {
-    fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), '{ not json');
-    expect(loadInjectionPoints(cwd)).toEqual([]);
-  });
-
-  it('returns the points array', () => {
-    const points = [{ namespace: 'feature', name: 'tdd', section: 'gate', resource: { name: 'add.build', kind: 'command' }, anchor: { text: 'x', ordinal: 1, position: 'after', next: null } }];
-    fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }));
-    expect(loadInjectionPoints(cwd)).toEqual(points);
+  it('rejects malformed section markers even when another section could be parsed', () => {
+    const valid = '<!-- section:step-list -->\nSTEP tdd-pipeline.test-spec: Test\n<!-- /section:step-list -->';
+    expect(() => parseFragmentSections(`${valid}\n<!-- /section:extra -->`)).toThrow(/malformed/i);
+    expect(() => parseFragmentSections(`${valid}\n<!-- section:unclosed -->`)).toThrow(/malformed/i);
   });
 });
 
@@ -212,12 +192,12 @@ describe('resolveResourceFiles', () => {
 
   it('resolves a command to every installed provider that has a commandsSubdir', () => {
     manifest(['claude', 'cursor', 'codex']); // codex has no commandsSubdir
-    touch('.claude/commands/add.new.md');
-    touch('.cursor/commands/add.new.md');
-    const files = resolveResourceFiles(cwd, { name: 'add.new', kind: 'command' });
+    touch('.claude/commands/add-new.md');
+    touch('.cursor/commands/add-new.md');
+    const files = resolveResourceFiles(cwd, { name: 'add-new', kind: 'command' });
     expect(files.sort()).toEqual([
-      path.join(cwd, '.claude', 'commands', 'add.new.md'),
-      path.join(cwd, '.cursor', 'commands', 'add.new.md'),
+      path.join(cwd, '.claude', 'commands', 'add-new.md'),
+      path.join(cwd, '.cursor', 'commands', 'add-new.md'),
     ].sort());
   });
 
@@ -239,9 +219,9 @@ describe('resolveResourceFiles', () => {
       path.join(cwd, '.codeadd', 'manifest.json'),
       JSON.stringify({ version: '1', providers: ['opencode'], scope: 'global' }),
     );
-    touch('.config/opencode/commands/add.new.md');
-    const files = resolveResourceFiles(cwd, { name: 'add.new', kind: 'command' });
-    expect(files).toEqual([path.join(cwd, '.config', 'opencode', 'commands', 'add.new.md')]);
+    touch('.config/opencode/commands/add-new.md');
+    const files = resolveResourceFiles(cwd, { name: 'add-new', kind: 'command' });
+    expect(files).toEqual([path.join(cwd, '.config', 'opencode', 'commands', 'add-new.md')]);
   });
 });
 
@@ -282,132 +262,156 @@ describe('manifest + hash IO', () => {
   });
 
   it('recalculateHashes records relative paths', () => {
-    const f = path.join(cwd, '.claude', 'commands', 'add.new.md');
+    const f = path.join(cwd, '.claude', 'commands', 'add-new.md');
     fs.mkdirSync(path.dirname(f), { recursive: true });
     fs.writeFileSync(f, 'x');
     const manifest = {};
     recalculateHashes(cwd, manifest, [f]);
-    expect(manifest.hashes['.claude/commands/add.new.md']).toMatch(/^[a-f0-9]{64}$/);
+    expect(manifest.hashes['.claude/commands/add-new.md']).toMatch(/^[a-f0-9]{64}$/);
   });
 });
 
-// ---------------------------------------------------------------------------
-// agent injection (sidecar-driven, marker-free)
-// ---------------------------------------------------------------------------
+const FALLBACK = 'No optional test-spec or QA-spec step is available. Continue with STEP add-plan.consolidate.';
 
-describe('agent injection (sidecar-driven)', () => {
-  let cwd;
+describe('slot render', () => {
+  const anchor = { text: 'Before', ordinal: 1, position: 'after', next: 'After' };
+  const baseline = 'Before\n\nAfter\n';
 
-  /**
-   * Scaffold installed agent files (marker-free) + a sidecar describing the
-   * injection points + per-agent fragments. Mirrors the real install shape.
-   */
-  function scaffold({ providers = ['claude'], pluginName = 'gx', agents = {} } = {}) {
-    fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
-    fs.writeFileSync(
-      path.join(cwd, '.codeadd', 'manifest.json'),
-      JSON.stringify({ version: '1.0.0', providers, plugins: {}, hashes: {} }, null, 2),
+  it('empty fallback removes the pristine gap and adds no blank line', () => {
+    expect(renderSlotRegion(baseline, anchor, '')).toBe('Before\nAfter\n');
+  });
+
+  it('nonempty fallback replaces the gap with the approved line', () => {
+    expect(renderSlotRegion(baseline, anchor, FALLBACK)).toBe(`Before\n${FALLBACK}\nAfter\n`);
+  });
+
+  it('a contributing member suppresses the fallback', () => {
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: FALLBACK,
+      members: [{ namespace: 'feature', name: 'tdd-pipeline', section: 'step-list' }],
+      anchor,
+    };
+    const composed = composeSlot(slot, [{ contribute: true, text: 'STEP tdd-pipeline.test-spec: Generate contract test cases\n' }]);
+    expect(composed.usedFallback).toBe(false);
+    const rendered = renderSlots(baseline, [{ ...slot, text: composed.text }]);
+    expect(rendered.content).toBe('Before\nSTEP tdd-pipeline.test-spec: Generate contract test cases\nAfter\n');
+    expect(rendered.content).not.toContain(FALLBACK);
+  });
+
+  it('a warned member with no sibling uses the fallback and keeps the warning', () => {
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: FALLBACK,
+      members: [{ namespace: 'feature', name: 'qa-pipeline', section: 'step-list' }],
+    };
+    const composed = composeSlot(slot, [{ contribute: false, warning: 'section missing' }]);
+    expect(composed.usedFallback).toBe(true);
+    expect(composed.warnings).toEqual([
+      { resource: 'add-plan', slot: 'plan-specs', member: 'feature:qa-pipeline:step-list', reason: 'section missing' },
+    ]);
+  });
+
+  it('a missing baseline leaves the installed file intact', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-base-'));
+    const file = path.join(dir, '.claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, 'installed\n');
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({ providers: ['claude'], scope: 'project' }));
+    const result = renderInstalledResource(
+      dir,
+      { name: 'add-plan', kind: 'command' },
+      [{ id: 'plan-specs', resource: { name: 'add-plan', kind: 'command' }, fallback: FALLBACK, members: [], anchor, memberStates: [] }],
+      'claude',
     );
-
-    const points = [];
-    for (const prov of providers) {
-      if (prov !== 'claude') continue; // only claude exposes agents
-      const dir = path.join(cwd, `.${prov}`, 'agents');
-      fs.mkdirSync(dir, { recursive: true });
-      for (const [agent] of Object.entries(agents)) {
-        // marker-free body with a stable anchor line
-        fs.writeFileSync(path.join(dir, `${agent}.md`), `---\nname: ${agent}\n---\n\n${agent} body anchor.\n`);
-      }
-    }
-
-    const fragDir = path.join(cwd, '.codeadd', 'plugins', pluginName, 'fragments', 'agents');
-    fs.mkdirSync(fragDir, { recursive: true });
-    for (const [agent, sections] of Object.entries(agents)) {
-      const body = sections
-        .map((s) => `<!-- section:${s} -->\n${s.toUpperCase()}-AGENT-CONTENT\n<!-- /section:${s} -->`)
-        .join('\n');
-      fs.writeFileSync(path.join(fragDir, `${agent}.md`), body + '\n');
-      for (const s of sections) {
-        points.push({
-          namespace: 'plugin', name: pluginName, section: s,
-          resource: { name: agent, kind: 'agent' },
-          anchor: { text: `${agent} body anchor.`, ordinal: 1, position: 'after', next: null },
-        });
-      }
-    }
-    fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }, null, 2));
-  }
-
-  beforeEach(() => {
-    cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'inj-agent-'));
-  });
-  afterEach(() => fs.rmSync(cwd, { recursive: true, force: true }));
-
-  it('getAgentFragments reads fragments/agents/{agent}.md', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const frags = getAgentFragments(cwd, 'gx');
-    expect(frags).toHaveLength(1);
-    expect(frags[0].agentName).toBe('discovery-agent');
-    expect(frags[0].content).toContain('GRAPH-AGENT-CONTENT');
+    expect(result.written).toBe(false);
+    expect(result.warnings[0].reason).toBe('missing baseline');
+    expect(fs.readFileSync(file, 'utf8')).toBe('installed\n');
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it('injects fragment content at the sidecar anchor (marker-free)', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'], 'backend-agent': ['graph'] } });
-    const modified = injectAgentFragments(cwd, 'gx');
-    expect(modified).toHaveLength(2);
-    for (const agent of ['discovery-agent', 'backend-agent']) {
-      const content = fs.readFileSync(path.join(cwd, '.claude', 'agents', `${agent}.md`), 'utf8');
-      expect(content).toContain('GRAPH-AGENT-CONTENT');
-      expect(content).not.toContain('<!--'); // no markers written
-    }
+  it('v1 sidecar capture is a no-op', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-v1-'));
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points: [] }));
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({ providers: ['claude'] }));
+    expect(captureBaselines(dir)).toEqual({ captured: [], pruned: [], warnings: [] });
+    expect(fs.existsSync(path.join(dir, '.codeadd', 'baselines'))).toBe(false);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it('skips a fragment whose agent has no sidecar point / no installed file', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const fragDir = path.join(cwd, '.codeadd', 'plugins', 'gx', 'fragments', 'agents');
-    fs.writeFileSync(path.join(fragDir, 'ghost-agent.md'), '<!-- section:graph -->\nX\n<!-- /section:graph -->\n');
-    const modified = injectAgentFragments(cwd, 'gx');
-    expect(modified).toHaveLength(1);
-    expect(fs.existsSync(path.join(cwd, '.claude', 'agents', 'ghost-agent.md'))).toBe(false);
-  });
-
-  it('does not write agent files for providers without an agentsSubdir', () => {
-    scaffold({ providers: ['claude', 'codex'], agents: { 'discovery-agent': ['graph'] } });
-    const stray = path.join(cwd, '.agents', 'agents');
-    fs.mkdirSync(stray, { recursive: true });
-    fs.writeFileSync(path.join(stray, 'discovery-agent.md'), 'discovery-agent body anchor.\n');
-    injectAgentFragments(cwd, 'gx');
-    expect(fs.readFileSync(path.join(stray, 'discovery-agent.md'), 'utf8')).not.toContain('GRAPH-AGENT-CONTENT');
-  });
-
-  it('enable → disable round-trip is byte-identical', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const file = path.join(cwd, '.claude', 'agents', 'discovery-agent.md');
-    const before = fs.readFileSync(file, 'utf8');
-
-    injectAgentFragments(cwd, 'gx');
-    expect(fs.readFileSync(file, 'utf8')).toContain('GRAPH-AGENT-CONTENT');
-
-    const removed = removeAgentFragments(cwd, 'gx');
-    expect(removed).toContain(file);
-    expect(fs.readFileSync(file, 'utf8')).toBe(before);
-  });
-
-  it('re-injecting is idempotent (no drift)', () => {
-    scaffold({ agents: { 'discovery-agent': ['graph'] } });
-    const file = path.join(cwd, '.claude', 'agents', 'discovery-agent.md');
-    injectAgentFragments(cwd, 'gx');
-    const once = fs.readFileSync(file, 'utf8');
-    injectAgentFragments(cwd, 'gx');
-    expect(fs.readFileSync(file, 'utf8')).toBe(once);
-  });
-
-  it('injectAgentFragments is a no-op when there are no agent fragments', () => {
-    fs.mkdirSync(path.join(cwd, '.codeadd'), { recursive: true });
+  it('reconcile renders tdd before qa from the baseline, and a missing section warns without clearing the flag', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-rec-'));
+    const file = path.join(dir, '.claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const pristine = 'Before\n\nAfter\n';
+    fs.writeFileSync(file, pristine);
+    fs.mkdirSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands', 'add-plan.md'), pristine);
+    fs.mkdirSync(path.join(dir, '.codeadd', 'fragments', 'tdd-pipeline'), { recursive: true });
     fs.writeFileSync(
-      path.join(cwd, '.codeadd', 'manifest.json'),
-      JSON.stringify({ version: '1.0.0', providers: ['claude'], plugins: {}, hashes: {} }, null, 2),
+      path.join(dir, '.codeadd', 'fragments', 'tdd-pipeline', 'add-plan.md'),
+      '<!-- section:step-list -->\nSTEP tdd-pipeline.test-spec: Generate contract test cases\n<!-- /section:step-list -->\n',
     );
-    expect(injectAgentFragments(cwd, 'gx')).toEqual([]);
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: FALLBACK,
+      members: [
+        { namespace: 'feature', name: 'tdd-pipeline', section: 'step-list' },
+        { namespace: 'feature', name: 'qa-pipeline', section: 'step-list' },
+      ],
+      anchor: { text: 'Before', ordinal: 1, position: 'after', next: 'After' },
+    };
+    fs.writeFileSync(path.join(dir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 2, slots: [slot] }));
+    fs.writeFileSync(
+      path.join(dir, '.codeadd', 'manifest.json'),
+      JSON.stringify({ providers: ['claude'], scope: 'project', features: { 'tdd-pipeline': true, 'qa-pipeline': true }, plugins: {}, hashes: {} }),
+    );
+    const result = reconcileSlots(dir);
+    expect(fs.readFileSync(file, 'utf8')).toBe('Before\nSTEP tdd-pipeline.test-spec: Generate contract test cases\nAfter\n');
+    expect(result.warnings).toEqual([
+      { resource: 'add-plan', slot: 'plan-specs', member: 'feature:qa-pipeline:step-list', reason: 'file missing' },
+    ]);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8')).features['qa-pipeline']).toBe(true);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('a disabled feature contributes nothing and warns nothing', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-off-'));
+    const file = path.join(dir, '.claude', 'commands', 'add-plan.md');
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const pristine = 'Before\n\nAfter\n';
+    fs.writeFileSync(file, pristine);
+    fs.mkdirSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'baselines', 'claude', 'commands', 'add-plan.md'), pristine);
+    const slot = {
+      id: 'plan-specs',
+      resource: { name: 'add-plan', kind: 'command' },
+      fallback: '',
+      members: [{ namespace: 'feature', name: 'qa-pipeline', section: 'step-list' }],
+      anchor: { text: 'Before', ordinal: 1, position: 'after', next: 'After' },
+    };
+    fs.writeFileSync(path.join(dir, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 2, slots: [slot] }));
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({
+      providers: ['claude'], scope: 'project', features: { 'qa-pipeline': false }, plugins: {}, hashes: {},
+    }));
+    const result = reconcileSlots(dir);
+    expect(fs.readFileSync(file, 'utf8')).toBe('Before\nAfter\n');
+    expect(result.warnings).toEqual([]);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('no sidecar is a different failure from a warned member', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'slot-none-'));
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({
+      providers: ['claude'], features: { 'qa-pipeline': true },
+    }));
+    expect(reconcileSlots(dir)).toBeNull();
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });

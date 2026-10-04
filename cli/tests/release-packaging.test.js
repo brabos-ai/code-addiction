@@ -35,6 +35,21 @@ function packagedSubdirs() {
 }
 
 describe('release packaging', () => {
+  it('ships every provider dir declared in provider-map.json (dir and agentsDir)', () => {
+    // Regression: zcode's agentsDir (framwork/.zcode) shipped a provider entry
+    // and a real build output directory with no packaging-list entry, so the
+    // release ZIP would silently never carry ZCode's agent files.
+    const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+    const subdirs = packagedSubdirs();
+    for (const [key, p] of Object.entries(map.providers)) {
+      for (const dirField of [p.dir, p.agentsDir]) {
+        if (!dirField) continue;
+        const subdir = `.${dirField.replace(/^framwork\/\./, '')}`;
+        expect(subdirs, `provider ${key}'s ${subdir} missing from release.yml packaging list`).toContain(subdir);
+      }
+    }
+  });
+
   it('ships every post-install runtime .codeadd/* dir', () => {
     const subdirs = packagedSubdirs();
     // These hold assets consumed AFTER install (not build-source compiled into

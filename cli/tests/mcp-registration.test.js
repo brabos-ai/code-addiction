@@ -77,6 +77,13 @@ describe('F14 — what gets written, per provider shape', () => {
     expect(config.mcpServers).toBeUndefined();
   });
 
+  it("writes zcode's nested mcp.servers shape, not the document-root one", () => {
+    expect(registerProvider(cwd, 'zcode', '1.2.3').status).toBe('written');
+    const config = readJson('.zcode/config.json');
+    expect(config.mcp.servers[SERVER_NAME]).toEqual(registrationFor('1.2.3'));
+    expect(config.mcpServers).toBeUndefined();
+  });
+
   it('prints rather than writes TOML, and touches no file', () => {
     const result = registerProvider(cwd, 'codex', '1.2.3');
     expect(result.status).toBe('print');
@@ -178,6 +185,14 @@ describe('F14 — L4.4 exactly one entry, and the pin matches the version', () =
     expect(config.mcp[SERVER_NAME].command).toContain('codeadd@1.1.0');
   });
 
+  it('the same holds for zcode, nested one level deeper', () => {
+    registerProvider(cwd, 'zcode', '1.0.0');
+    registerProvider(cwd, 'zcode', '1.1.0');
+    const config = readJson('.zcode/config.json');
+    expect(Object.keys(config.mcp.servers)).toEqual([SERVER_NAME]);
+    expect(config.mcp.servers[SERVER_NAME].args).toContain('codeadd@1.1.0');
+  });
+
   it('L4.4 every writable provider ends with one entry after install and update', () => {
     const providers = resolveSelected(Object.keys(PROVIDERS), 'project');
     writeMcpRegistration(cwd, providers, '1.0.0'); // install
@@ -186,7 +201,10 @@ describe('F14 — L4.4 exactly one entry, and the pin matches the version', () =
     for (const [key, config] of Object.entries(MCP_CONFIG)) {
       if (config.format === 'toml') continue;
       const written = readJson(config.file);
-      const servers = config.format === 'opencode' ? written.mcp : written.mcpServers;
+      const servers =
+        config.format === 'opencode' ? written.mcp
+        : config.format === 'mcp.servers' ? written.mcp.servers
+        : written.mcpServers;
       expect(Object.keys(servers), key).toEqual([SERVER_NAME]);
       expect(JSON.stringify(servers[SERVER_NAME]), key).toContain('codeadd@1.1.0');
     }

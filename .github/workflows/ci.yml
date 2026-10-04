@@ -5,6 +5,11 @@ on:
   push:
     branches: [main, master]
 
+# Least privilege: every job here reads the checkout and runs tests, none pushes
+# or opens anything, so the default token needs read access and nothing more.
+permissions:
+  contents: read
+
 jobs:
   test-cli:
     runs-on: ubuntu-latest
@@ -34,11 +39,10 @@ jobs:
         run: node scripts/build.js
 
       # The workbench layer — the framework's own pipeline — has its own source
-      # root and its own entry point, and it is deliberately ABSENT from
-      # release.yml: nothing under workbench/ ships, so a failure here can never
-      # block a product release. This is the only place its correctness is
-      # enforced, because its output is gitignored and therefore invisible both
-      # locally and in review.
+      # root and its own entry point, and release.yml never runs it: nothing
+      # under workbench/ ships. The test suite builds it into a temp copy on its
+      # own; this step is what runs it against the real tree, stale-output prune
+      # included.
       - name: Build workbench provider files
         working-directory: .
         run: node scripts/build-workbench.js
@@ -79,3 +83,40 @@ jobs:
         env:
           CODEADD_TESTS_JOBS: 4
         run: npm run test:scripts
+
+  # The board app (board/). Its server imports the generated Node core at
+  # board/runtime/, which the package's pretest/prebuild/pretest:e2e hooks
+  # produce from framwork/.codeadd/scripts/ before anything runs — so this job
+  # checks out the whole tree rather than a standalone closure. The e2e suite
+  # serves the BUILT app through server.mjs at three viewports, so it runs
+  # after the build.
+  board:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: board
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: board/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests (360, 768, 1080)
+        run: npm run test:e2e

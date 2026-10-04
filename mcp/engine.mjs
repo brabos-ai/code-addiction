@@ -216,7 +216,7 @@ function walk(data, startId, { reverse, depth = Infinity }) {
 /**
  * A `sources` glob to a regex: `**` crosses directory separators, `*` does not.
  *
- * Deliberately small. These globs come from `/add.wiki`'s own `sources` lists,
+ * Deliberately small. These globs come from `/add-wiki`'s own `sources` lists,
  * which use the two wildcards and nothing else, and a full glob implementation
  * would be a dependency this server does not take.
  */

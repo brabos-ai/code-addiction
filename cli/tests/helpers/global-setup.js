@@ -11,6 +11,12 @@
  * workers happen to run — that is what once gave 6, 13, 47 and 28 failures on
  * one unchanged commit. No test may touch them; this is the net that catches
  * the next one that does.
+ *
+ * The build itself writes framwork/ output, the sidecars and cli/src/mcp, so it
+ * must never run on a developer's checkout. Root `npm test` runs the suite on a
+ * copy (scripts/run-tests.js — a container on Windows, a temp directory
+ * elsewhere) and marks it; CI's machine is thrown away after the job. Anywhere
+ * else, setup refuses before writing anything.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -46,7 +52,24 @@ export function sidecarDrift(before, after) {
   return drift;
 }
 
+/** Set by scripts/run-tests.js on every run that works on a copy. Its twin is COPY_MARKER there. */
+export const COPY_MARKER = 'CODEADD_TESTS_COPY';
+
+/** Why setup must not run here, or null when it may. */
+export function refusal(env) {
+  if (env.CI || env[COPY_MARKER]) return null;
+  return [
+    'Refusing to run: this is the real checkout, and the suite rebuilds framwork/ output, its sidecars and cli/src/mcp.',
+    '',
+    '  Run `npm test` at the repository root — it runs on a copy and removes it afterwards.',
+    '  One file: `npm test -- tests/<name>.test.js`.',
+  ].join('\n');
+}
+
 export default function setup() {
+  const why = refusal(process.env);
+  if (why) throw new Error(why);
+
   // A debugger bootloader in NODE_OPTIONS prints onto stdout; the build does
   // not need it, and a banner here reads like a build failure.
   const built = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'build.js')], {

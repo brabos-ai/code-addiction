@@ -139,6 +139,8 @@ describe('install command e2e', () => {
       'tdd-pipeline': true,
       'qa-pipeline': false,
       'docs-pruning': false,
+      // board is opt-in: no project uses the board yet (2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
+      board: false,
     });
     // Removing the feature prompt must not disturb the plugin path:
     // plugins stay disabled (empty) by default on a fresh install.
@@ -159,6 +161,83 @@ describe('install command e2e', () => {
     expect(manifest.version).toBe('2.0.0');
     expect(manifest.releaseTag).toBe('v2.0.0');
     expect(manifest.source).toBe('tag');
+  });
+
+  // The three canonical backlog modules are what let an installed project's
+  // agents reach the shared core (plan F2, L4.2). They are packaged as ordinary
+  // scripts siblings, so this proves the entry point actually carries them —
+  // a helper-only test would pass even if the release never shipped them.
+  describe('backlog canonical modules (L4.2)', () => {
+    const CANONICAL = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs'];
+    const SCRIPTS_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+
+    function canonicalBytes(name) {
+      return fs.readFileSync(path.join(SCRIPTS_DIR, name));
+    }
+
+    /** A release asset carrying the real canonical modules plus the allocator siblings `add` needs. */
+    function buildBacklogZip({ core } = {}) {
+      const zip = new AdmZip();
+      zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
+      zip.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
+      // backlog.sh delegates the id to status.sh, so add cannot work without it.
+      zip.addFile('framwork/.codeadd/scripts/status.sh', Buffer.from('echo ok\n'));
+      zip.addFile('framwork/.codeadd/scripts/next-id.sh', Buffer.from('echo ok\n'));
+      zip.addFile('framwork/.codeadd/scripts/backlog.sh', Buffer.from('#!/bin/sh\nexit 0\n'));
+      zip.addFile('framwork/.codeadd/scripts/backlog-commit.sh', Buffer.from('#!/bin/sh\nexit 0\n'));
+      for (const name of CANONICAL) {
+        zip.addFile(`framwork/.codeadd/scripts/${name}`, core ?? canonicalBytes(name));
+      }
+      return zip.toBuffer();
+    }
+
+    it('lands all three modules in .codeadd/scripts with their bytes intact', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+
+      await install(tmpDir);
+
+      for (const name of CANONICAL) {
+        const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
+        expect(fs.existsSync(installed), `${name} was not installed`).toBe(true);
+        // Byte-for-byte: fixLineEndings normalizes CRLF for .sh only, and these
+        // modules are CommonJS read by Node. A rewrite here would be a bug.
+        expect(fs.readFileSync(installed)).toEqual(canonicalBytes(name));
+      }
+    });
+
+    it('installs the allocator siblings backlog.sh needs for add', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+
+      await install(tmpDir);
+
+      for (const sibling of ['backlog.sh', 'backlog-commit.sh', 'status.sh', 'next-id.sh']) {
+        expect(
+          fs.existsSync(path.join(tmpDir, '.codeadd', 'scripts', sibling)),
+          `${sibling} was not installed`
+        ).toBe(true);
+      }
+    });
+
+    it('refreshes every module together on update, never one at a time', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      // A newer release changes all three. An update that refreshed only the
+      // core would leave storage and CLI on the old contract — the exact
+      // half-refreshed runtime the plan's risks table calls out.
+      const next = Buffer.from('// v2\n');
+      mocks.getLatestTag.mockResolvedValue('v2.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip({ core: next }));
+      await (await import('../src/updater.js')).update(tmpDir);
+
+      for (const name of CANONICAL) {
+        const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
+        expect(fs.readFileSync(installed, 'utf8'), `${name} was not refreshed`).toBe('// v2\n');
+      }
+    });
   });
 
   it('writes gitignore: true to manifest and creates .gitignore block when user opts in', async () => {
@@ -205,6 +284,53 @@ describe('install command e2e', () => {
       fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')
     );
     expect(manifest.scope).toBe('project');
+  });
+});
+
+/**
+ * Release zip carrying content for both codex (framwork/.agents) and zcode's
+ * own agents dir (framwork/.zcode) — proves the shared-tree reuse at install
+ * time, not just at build time.
+ */
+function buildZcodeZip() {
+  const zip = new AdmZip();
+  zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\n'));
+  zip.addFile(`framwork/.codeadd/injection-points.json`, Buffer.from('{"version":1,"points":[]}\n'));
+  zip.addFile(`framwork/.agents/skills/add-plan/SKILL.md`, Buffer.from('---\nname: add-plan\n---\n'));
+  zip.addFile(`framwork/.agents/skills/backend-development/SKILL.md`, Buffer.from('---\nname: backend-development\n---\n'));
+  zip.addFile(`framwork/.zcode/agents/reviewer-agent.md`, Buffer.from('---\nname: reviewer-agent\n---\n'));
+  return zip.toBuffer();
+}
+
+describe('install command e2e — zcode reuses the codex tree (L3.1, L3.2)', () => {
+  it('installing zcode alone writes .agents (shared) and .zcode (its own agents)', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZcodeZip());
+    mocks.promptProviders.mockResolvedValue(['zcode']);
+
+    await install(tmpDir);
+
+    expect(fs.existsSync(path.join(tmpDir, '.agents', 'skills', 'add-plan', 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md'))).toBe(true);
+    // No independent .zcode/skills or .zcode/commands tree — those are absent
+    // on purpose, the reused .agents tree is where ZCode reads them from.
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'skills'))).toBe(false);
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'commands'))).toBe(false);
+  });
+
+  it('installing codex and zcode together writes exactly one .agents tree, never twice', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZcodeZip());
+    mocks.promptProviders.mockResolvedValue(['codex', 'zcode']);
+
+    await install(tmpDir);
+
+    const skillFile = path.join(tmpDir, '.agents', 'skills', 'add-plan', 'SKILL.md');
+    expect(fs.readFileSync(skillFile, 'utf8')).toBe('---\nname: add-plan\n---\n');
+    expect(fs.existsSync(path.join(tmpDir, '.zcode', 'agents', 'reviewer-agent.md'))).toBe(true);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.providers.sort()).toEqual(['codex', 'zcode']);
   });
 });
 
@@ -352,7 +478,7 @@ describe('install-path migration ledger (L2.7, L2.8)', () => {
   it('L2.7 — a fresh install records every known id and executes no migration', async () => {
     // The legacy orphan is present but must NOT be touched: a pristine project
     // has nothing to migrate, so the back-catalogue is stamped, not executed.
-    const planted = seedFile(tmpDir, '.agents/skills/add-skill-creator/render-graphs.js', '// x');
+    const planted = seedFile(tmpDir, '.agents/skills/add--skill-creator/render-graphs.js', '// x');
 
     mocks.getLatestTag.mockResolvedValue('v1.2.3');
     mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());

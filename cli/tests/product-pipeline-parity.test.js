@@ -22,20 +22,20 @@ const cmd = (name) => path.join(CODEADD, 'commands', `${name}.md`);
 const skill = (name) => path.join(CODEADD, 'skills', name, 'SKILL.md');
 
 const P = {
-  mode: skill('add-delivery-mode'),
+  mode: skill('add--delivery-mode'),
   map: path.join(ROOT, 'framwork', 'provider-map.json'),
-  schemas: path.join(CODEADD, 'skills', 'add-doc-schemas', 'references', 'new-feature.md'),
-  planReview: skill('add-plan-review'),
+  schemas: path.join(CODEADD, 'skills', 'add--doc-schemas', 'references', 'new-feature.md'),
+  planReview: skill('add--plan-review'),
   reviewerAgent: path.join(CODEADD, 'agents', 'plan-reviewer-agent.md'),
-  spec: skill('add-feature-specification'),
-  brainstorm: cmd('add.brainstorm'),
-  newCmd: cmd('add.new'),
-  plan: cmd('add.plan'),
-  build: cmd('add.build'),
-  review: cmd('add.review'),
+  spec: skill('add--feature-specification'),
+  brainstorm: cmd('add-brainstorm'),
+  newCmd: cmd('add-new'),
+  plan: cmd('add-plan'),
+  build: cmd('add-build'),
+  review: cmd('add-review'),
   planToReady: cmd('add.plan-to-ready'),
-  qaBuild: path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
-  tddBuild: path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add.build.md'),
+  qaBuild: path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
+  tddBuild: path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add-build.md'),
 };
 
 /** Every file under dir, recursively, skipping the gitignored sidecars. */
@@ -70,10 +70,10 @@ function usesBlock(file) {
 }
 
 describe('L1 — product pipeline parity, static contract', () => {
-  it('L1.1 add-delivery-mode exists and is registered', () => {
+  it('L1.1 add--delivery-mode exists and is registered', () => {
     expect(fs.existsSync(P.mode)).toBe(true);
     const map = JSON.parse(read(P.map));
-    expect(map.skills['add-delivery-mode']).toBeDefined();
+    expect(map.skills['add--delivery-mode']).toBeDefined();
   });
 
   it('L1.2 add.plan-to-ready is gone from the product layer', () => {
@@ -103,23 +103,23 @@ describe('L1 — product pipeline parity, static contract', () => {
     expect(schema('brainstorm')).not.toMatch(/final decisions \(those belong in plan\)/);
   });
 
-  it('L1.5 add.brainstorm drafts the objective, asks three options, offers no inline about.md', () => {
+  it('L1.5 add-brainstorm drafts the objective, asks three options, offers no inline about.md', () => {
     const text = read(P.brainstorm);
     expect(text).toMatch(/Approve, I confirm each stage/);
     expect(text).toMatch(/Approve, deliver automatically/);
     expect(text).toMatch(/Keep discussing/);
     expect(text).toMatch(/[Dd]raft the objective/);
     expect(text).not.toMatch(/Want me to write the feature documentation now/);
-    expect(usesBlock(P.brainstorm)).toMatch(/- skill: add-delivery-mode/);
+    expect(usesBlock(P.brainstorm)).toMatch(/- skill: add--delivery-mode/);
   });
 
-  it('L1.6 every stage and both build fragments declare add-delivery-mode', () => {
+  it('L1.6 every stage and both build fragments declare add--delivery-mode', () => {
     for (const f of [P.newCmd, P.plan, P.build, P.review, P.qaBuild, P.tddBuild]) {
-      expect(usesBlock(f), path.basename(f)).toMatch(/- skill: add-delivery-mode/);
+      expect(usesBlock(f), path.basename(f)).toMatch(/- skill: add--delivery-mode/);
     }
   });
 
-  it('L1.7 add.build owns the checkpoint sequence', () => {
+  it('L1.7 add-build owns the checkpoint sequence', () => {
     const text = read(P.build);
     expect(text).toMatch(/## The Checkpoint Sequence/);
     expect(text).toMatch(/git tag -a[^\n]*checkpoint\/\$\{FEATURE_ID\}-\$\{EPIC_CURRENT_SF\}-done/);
@@ -128,13 +128,13 @@ describe('L1 — product pipeline parity, static contract', () => {
     expect(text).toMatch(/Fix Routing[^\n]*blocker|blocker[^\n]*Fix Routing/);
   });
 
-  it('L1.8 consistency-agent is dispatched FULL by add.plan and DELTA by add.build', () => {
+  it('L1.8 consistency-agent is dispatched FULL by add-plan and DELTA by add-build', () => {
     expect(read(P.plan)).toMatch(/DISPATCH[^\n]*@consistency-agent[\s\S]{0,400}mode: FULL/);
     expect(usesBlock(P.build)).toMatch(/- agent: consistency-agent/);
     expect(read(P.build)).toMatch(/DISPATCH[^\n]*@consistency-agent[\s\S]{0,400}mode: DELTA/);
   });
 
-  it('L1.9 add.new asks automatic vs semi-automatic and requires a serves-line per subfeature', () => {
+  it('L1.9 add-new asks automatic vs semi-automatic and requires a serves-line per subfeature', () => {
     const text = read(P.newCmd);
     expect(text).toMatch(/semi-automatic/);
     expect(text).toMatch(/[Ss]erves the (feature )?objective/);
@@ -142,14 +142,14 @@ describe('L1 — product pipeline parity, static contract', () => {
 
   it('L1.10 the stages chain through {{cmd:}} and name no Skill tool', () => {
     const chain = [
-      [P.brainstorm, 'add.new'],
-      [P.newCmd, 'add.plan'],
-      [P.plan, 'add.build'],
+      [P.brainstorm, 'add-new'],
+      [P.newCmd, 'add-plan'],
+      [P.plan, 'add-build'],
       // Plan 2026-09-19T122048 (optional review): the build no longer hands
-      // off to /add.review. Its automatic chain continues to the next
-      // subfeature's /add.plan from ## Loop End.
-      [P.build, 'add.plan'],
-      // /add.review no longer hands a delivery back to /add.build (same plan):
+      // off to /add-review. Its automatic chain continues to the next
+      // subfeature's /add-plan from ## Loop End.
+      [P.build, 'add-plan'],
+      // /add-review no longer hands a delivery back to /add-build (same plan):
       // it prints the next command and stops.
     ];
     for (const [file, next] of chain) {
@@ -158,7 +158,7 @@ describe('L1 — product pipeline parity, static contract', () => {
     }
   });
 
-  it('L1.11 add-feature-specification extracts the objective and names no brainstorm offer', () => {
+  it('L1.11 add--feature-specification extracts the objective and names no brainstorm offer', () => {
     const text = read(P.spec);
     expect(text).toMatch(/## Objective/);
     expect(text).not.toMatch(/accepts its new offer|brainstorm when it continues into authoring|\/add\.brainstorm['’]s offer/);
@@ -174,7 +174,7 @@ describe('L1 — product pipeline parity, static contract', () => {
   // Plan 2026-09-19T122048 (optional review) removed the build <-> review loop
   // and its two-round cap; the automatic path now ends at the publish question
   // after the build's own final review. Inverted from "names the baseline".
-  it('L1.13 add-delivery-mode ends the automatic path at the build, with no review loop', () => {
+  it('L1.13 add--delivery-mode ends the automatic path at the build, with no review loop', () => {
     const text = read(P.mode);
     expect(text).not.toMatch(/two review/i);
     expect(text).toMatch(/## Where the Automatic Path Ends/);

@@ -3,15 +3,12 @@ import path from 'node:path';
 import { intro, outro, log } from '@clack/prompts';
 import { promptFeatures } from './prompt.js';
 import {
-  parseFragmentSections,
-  loadInjectionPoints,
-  resolveResourceFiles,
-  applyInjectionToContent,
-  removeInjectionFromContent,
+  resolveResourceTargets,
   readManifest,
   saveManifest,
-  recalculateHashes,
+  reconcileSlots,
 } from './injection-core.js';
+import { isPluginDetected } from './plugins.js';
 
 /**
  * Emit an actionable, loud warning when an anchor cannot be located (the user
@@ -21,13 +18,27 @@ import {
  * @param {string} resourceName
  * @param {Array<{sections:string[], anchor:object}>} missed
  */
-function warnMissed(namespace, name, resourceName, missed) {
-  for (const m of missed) {
-    log.warn(
-      `Could not inject ${namespace}:${name} [${m.sections.join(', ')}] into ${resourceName}: ` +
-        `anchor not found ("${m.anchor.text}" #${m.anchor.ordinal}). The adjacent text may have been edited.`,
-    );
+function logSlotWarnings(warnings) {
+  for (const w of warnings || []) log.warn(`${w.resource} slot ${w.slot} member ${w.member}: ${w.reason}`);
+}
+
+function reconcileFeatureSlots(cwd) {
+  const result = reconcileSlots(cwd, { pluginActive: isPluginDetected });
+  if (!result) {
+    log.warn('Feature prompts were not updated: this installation has no v2 injection sidecar. Run `codeadd update`.');
+    return { modified: [], warnings: [] };
   }
+  logSlotWarnings(result.warnings);
+  return result;
+}
+
+function setFeatureFlag(cwd, featureName, enabled) {
+  const manifest = readManifest(cwd);
+  if (!manifest) return;
+  if (!manifest.features) manifest.features = {};
+  manifest.features[featureName] = enabled;
+  manifest.features = normalizeFeatureStates(manifest.features).states;
+  saveManifest(cwd, manifest);
 }
 
 /**
@@ -43,29 +54,39 @@ export const FEATURES = {
     description: 'TDD pipeline (test-first ordering + unit/integration generation)',
     default: true,
     aliases: ['tdd'],
-    commands: ['add.plan', 'add.build', 'add.review', 'add.hotfix'],
+    commands: ['add-plan', 'add-build', 'add-review', 'add-hotfix'],
   },
   'qa-pipeline': {
     description: 'QA pipeline (E2E authoring + agent QA validation)',
     default: false,
-    // add.review joined in 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary.
-    // The judgement steps used to sit in add.review's ungated base body and
-    // self-gate on the /add.qa-setup receipt alone. Their INPUT is authored by
+    // add-review joined in 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary.
+    // The judgement steps used to sit in add-review's ungated base body and
+    // self-gate on the /add-qa-setup receipt alone. Their INPUT is authored by
     // @e2e-agent, which this feature already gates — so with the feature off
     // the judges read an empty directory and every in-contract screen became a
     // coverage blocker. Gating them here is what makes the flag mean one thing
     // for the whole QA flow.
-    commands: ['add.plan', 'add.build', 'add.review'],
+    commands: ['add-plan', 'add-build', 'add-review'],
   },
   // OFF by default, and that is the decision, not an oversight: this one
   // DELETES the user's documentation, which is their call to make. It also
-  // refuses to run at all unless /add.done wrote a delivery index entry in the
+  // refuses to run at all unless /add-done wrote a delivery index entry in the
   // same run — pruning the scaffolding before the record exists inverts the
   // whole design.
   'docs-pruning': {
     description: 'Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written',
     default: false,
-    commands: ['add.done'],
+    commands: ['add-done'],
+  },
+  // OFF by default because there is nothing to preserve: no project uses the
+  // board yet, and the board app ships as a separate release asset, so a fresh
+  // install has no board and no docs/backlog.jsonl. EVERY ticket instruction the
+  // pipeline commands carry lives in fragments/board/ -- with this off, none of
+  // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
+  board: {
+    description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
+    default: false,
+    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'],
   },
 };
 
@@ -160,38 +181,9 @@ function getFragments(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function enableFeature(cwd, featureName) {
-  const fragments = getFragments(cwd, featureName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const { content: updated, missed } = applyInjectionToContent(original, cmdPoints, sections);
-      if (missed.length) warnMissed('feature', featureName, commandName, missed);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  const manifest = readManifest(cwd);
-  if (manifest) {
-    if (!manifest.features) manifest.features = {};
-    manifest.features[featureName] = true;
-    manifest.features = normalizeFeatureStates(manifest.features).states;
-    recalculateHashes(cwd, manifest, modifiedPaths);
-    saveManifest(cwd, manifest);
-  }
-
-  return { modified: modifiedPaths.length };
+  setFeatureFlag(cwd, featureName, true);
+  const result = reconcileFeatureSlots(cwd);
+  return { modified: result.modified.length };
 }
 
 /**
@@ -201,37 +193,9 @@ export function enableFeature(cwd, featureName) {
  * @returns {{modified: number}}
  */
 export function disableFeature(cwd, featureName) {
-  const fragments = getFragments(cwd, featureName);
-  const points = loadInjectionPoints(cwd).filter(
-    (p) => p.namespace === 'feature' && p.name === featureName && p.resource.kind === 'command',
-  );
-  const modifiedPaths = [];
-
-  for (const { commandName, content: fragmentContent } of fragments) {
-    const sections = parseFragmentSections(fragmentContent);
-    const cmdPoints = points.filter((p) => p.resource.name === commandName);
-    if (cmdPoints.length === 0) continue;
-
-    for (const cmdPath of resolveResourceFiles(cwd, { name: commandName, kind: 'command' })) {
-      const original = fs.readFileSync(cmdPath, 'utf8');
-      const updated = removeInjectionFromContent(original, cmdPoints, sections);
-      if (updated !== original) {
-        fs.writeFileSync(cmdPath, updated, 'utf8');
-        modifiedPaths.push(cmdPath);
-      }
-    }
-  }
-
-  const manifest = readManifest(cwd);
-  if (manifest) {
-    if (!manifest.features) manifest.features = {};
-    manifest.features[featureName] = false;
-    manifest.features = normalizeFeatureStates(manifest.features).states;
-    recalculateHashes(cwd, manifest, modifiedPaths);
-    saveManifest(cwd, manifest);
-  }
-
-  return { modified: modifiedPaths.length };
+  setFeatureFlag(cwd, featureName, false);
+  const result = reconcileFeatureSlots(cwd);
+  return { modified: result.modified.length };
 }
 
 /**
@@ -241,32 +205,15 @@ export function disableFeature(cwd, featureName) {
 export function applyEnabledFeatures(cwd) {
   const manifest = readManifest(cwd);
   if (!manifest) return;
-
-  const featureStates = manifest.features ?? {};
-  let totalModified = 0;
-
+  const featureStates = { ...(manifest.features ?? {}) };
   for (const [name, meta] of Object.entries(FEATURES)) {
     const { enabled } = resolveFeatureState(featureStates, name, meta);
-    if (enabled) {
-      const { modified } = enableFeature(cwd, name);
-      totalModified += modified;
-    }
+    featureStates[name] = enabled;
   }
-
-  // Unconditional normalisation. enableFeature reaches saveManifest only for a
-  // feature that resolves ENABLED, so a manifest holding a disabled legacy key
-  // — the exact motivating case — would otherwise never be rewritten and the
-  // orphaned key would linger as dead data forever.
-  const current = readManifest(cwd);
-  if (current) {
-    const { states, changed } = normalizeFeatureStates(current.features ?? {});
-    if (changed) {
-      current.features = states;
-      saveManifest(cwd, current);
-    }
-  }
-
-  return totalModified;
+  manifest.features = normalizeFeatureStates(featureStates).states;
+  saveManifest(cwd, manifest);
+  const result = reconcileFeatureSlots(cwd);
+  return result.modified.length;
 }
 
 /**
@@ -286,7 +233,7 @@ export function getFeatureStates(cwd) {
 
 /**
  * CLI entry point for `codeadd features` subcommand.
- * Scope flows through manifest.scope (read by resolveResourceFiles); the param
+ * Scope flows through manifest.scope (read by resolveResourceTargets); the param
  * exists so bin can pass it positionally and is the fallback when absent.
  * @param {string} cwd
  * @param {string[]} args

@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const {
   stripHtmlComments,
-  extractInjectionPoints,
+  extractSlots,
   resolveResourcePaths,
   lintResourcePaths,
   collectLintableSources,
@@ -50,8 +50,8 @@ describe('stripHtmlComments', () => {
 
   it('does not let between-marker feature content survive the build', () => {
     const src = ['# Title', '<!-- feature:tdd:step -->', 'injected content', '<!-- /feature:tdd:step -->'].join('\n');
-    expect(() => extractInjectionPoints(src, 'fixture.md', 'command')).toThrow(/fixture\.md:\d+/);
-    expect(() => extractInjectionPoints(src, 'fixture.md', 'command')).toThrow(/feature:tdd:step/);
+    expect(() => extractSlots(src, 'fixture.md', 'command', () => '')).toThrow(/fixture\.md:\d+/);
+    expect(() => extractSlots(src, 'fixture.md', 'command', () => '')).toThrow(/feature:tdd:step/);
     expect(stripHtmlComments('<!-- feature:tdd:step --><!-- /feature:tdd:step -->')).toBe('');
   });
 
@@ -153,7 +153,7 @@ describe('full pipeline', () => {
     expect(cleaned).toContain('# Add Plan');
     expect(cleaned).toContain('Plan your features.');
 
-    const md = TRANSFORMERS.md(cleaned, { name: 'add.plan', description: 'Planning', skillFormat: false });
+    const md = TRANSFORMERS.md(cleaned, { name: 'add-plan', description: 'Planning', skillFormat: false });
     expect(md).toContain('---\ndescription: Planning\n---');
     expect(md).toContain('# Add Plan');
     expect(md).not.toContain('<!--');
@@ -209,8 +209,8 @@ describe('provider-map.json capabilities', () => {
     }
   });
 
-  it('reduced to the 5 MCP-capable providers', () => {
-    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode']);
+  it('reduced to the 6 MCP-capable providers', () => {
+    expect(Object.keys(map.providers).sort()).toEqual(['antigrav', 'claude', 'codex', 'cursor', 'opencode', 'zcode']);
   });
 
   it('claude has all capabilities enabled', () => {
@@ -270,7 +270,7 @@ describe('provider-map.json agents section', () => {
     'conformance-agent',
     'failure-analysis-agent',
     // 0074: the product-layer plan reviewer (plan 0069, shipped by T3) and the
-    // cross-subfeature consistency judge dispatched by /add.plan and /add.build.
+    // cross-subfeature consistency judge dispatched by /add-plan and /add-build.
     'plan-reviewer-agent',
     'consistency-agent',
   ];
@@ -472,13 +472,13 @@ describe('agent source files', () => {
 
   it('implementation agents have skills preloaded', () => {
     const agentsWithSkills = {
-      'ux-agent': ['add-ux-design'],
-      'backend-agent': ['add-backend-development', 'add-database-development'],
-      'frontend-agent': ['add-frontend-development'],
-      'reviewer-agent': ['add-code-review', 'add-security-audit'],
-      'discovery-agent': ['add-feature-discovery', 'add-feature-specification'],
-      'architecture-agent': ['add-architecture-discovery', 'add-backend-architecture', 'add-frontend-architecture'],
-      'database-agent': ['add-database-development'],
+      'ux-agent': ['add--ux-design'],
+      'backend-agent': ['add--backend-development', 'add--database-development'],
+      'frontend-agent': ['add--frontend-development'],
+      'reviewer-agent': ['add--code-review', 'add--security-audit'],
+      'discovery-agent': ['add--feature-discovery', 'add--feature-specification'],
+      'architecture-agent': ['add--architecture-discovery', 'add--backend-architecture', 'add--frontend-architecture'],
+      'database-agent': ['add--database-development'],
     };
 
     for (const [name, skills] of Object.entries(agentsWithSkills)) {
@@ -528,9 +528,9 @@ describe('buildAgents', () => {
   }
 
   it('builds agent files for every agent-capable provider', () => {
-    // 22 agents × 4 providers (claude, cursor, opencode, codex).
+    // 22 agents × 5 providers (claude, cursor, opencode, codex, zcode).
     const count = buildAgents(redirected());
-    expect(count).toBe(88);
+    expect(count).toBe(110);
   });
 
   it('fails loud when a registered agent has no source file', () => {
@@ -564,7 +564,7 @@ describe('buildAgents', () => {
     const render = (provider) => AGENT_DIALECTS[provider]({ fields, blocks }, body, meta);
 
     expect(render('claude')).toMatch(/^model: sonnet$/m);
-    for (const provider of ['opencode', 'cursor', 'codex']) {
+    for (const provider of ['opencode', 'cursor', 'codex', 'zcode']) {
       expect(render(provider), provider).not.toMatch(/^model\s*[:=]/m);
     }
     // The fields that stay must survive the removal.
@@ -574,9 +574,37 @@ describe('buildAgents', () => {
     expect(render('codex')).toMatch(/^developer_instructions = /m);
   });
 
+  // ZCode's documented agent keys match Claude's dialect (name, description,
+  // tools, disallowedTools, skills) — the one difference is `model`, covered
+  // above. This pins the shape itself rather than just the model's absence.
+  it('the zcode dialect matches the claude dialect minus model', () => {
+    const { fields, blocks, body } = splitFrontmatter(
+      '---\nname: probe-agent\ndescription: probe\nmodel: sonnet\ntools: Read, Grep\n---\n\nBody.\n',
+    );
+    const meta = { name: 'probe-agent', description: 'probe', readonly: true };
+    const zcodeHeader = AGENT_DIALECTS.zcode({ fields, blocks }, body, meta);
+    const claudeHeader = AGENT_DIALECTS.claude({ fields, blocks }, body, meta);
+
+    expect(zcodeHeader).toBe(claudeHeader.replace('model: sonnet\n', ''));
+    expect(zcodeHeader).toMatch(/^disallowedTools: Write, Edit, NotebookEdit$/m);
+    expect(zcodeHeader).toMatch(/^tools: Read, Grep$/m);
+  });
+
   it('does not build agents for antigrav (no agents pattern)', () => {
     const antigravAgentsDir = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.agent', 'agents');
     expect(fs.existsSync(antigravAgentsDir)).toBe(false);
+  });
+
+  it('zcode reuses codex\'s dir, commands and skills patterns byte for byte', () => {
+    // zcode never gets its own commands/skills tree — it reads the exact same
+    // files codex already writes to framwork/.agents. Only its agent pattern
+    // and agentsDir are its own.
+    const { zcode, codex } = map.providers;
+    expect(zcode.dir).toBe(codex.dir);
+    expect(zcode.commands).toBe(codex.commands);
+    expect(zcode.skills).toBe(codex.skills);
+    expect(zcode.agentsDir).not.toBe(codex.agentsDir);
+    expect(zcode.agents).not.toBe(codex.agents);
   });
 
   it('handles missing agents section gracefully', () => {
@@ -604,10 +632,10 @@ describe('resolveResourcePaths', () => {
   };
 
   it('resolves {{cmd:NAME}} to provider-specific command path', () => {
-    expect(resolveResourcePaths('See {{cmd:add.plan}}', claudeProvider))
-      .toBe('See .claude/commands/add.plan.md');
-    expect(resolveResourcePaths('See {{cmd:add.plan}}', cursorProvider))
-      .toBe('See .cursor/commands/add.plan.md');
+    expect(resolveResourcePaths('See {{cmd:add-plan}}', claudeProvider))
+      .toBe('See .claude/commands/add-plan.md');
+    expect(resolveResourcePaths('See {{cmd:add-plan}}', cursorProvider))
+      .toBe('See .cursor/commands/add-plan.md');
   });
 
   it('resolves {{skill:NAME/FILE}} to provider-specific skill path', () => {
@@ -616,8 +644,8 @@ describe('resolveResourcePaths', () => {
   });
 
   it('resolves {{skill:NAME/SUBFILE}} for non-SKILL.md files', () => {
-    expect(resolveResourcePaths('Grep {{skill:add-ux-design/shadcn-docs.md}}', claudeProvider))
-      .toBe('Grep .claude/skills/add-ux-design/shadcn-docs.md');
+    expect(resolveResourcePaths('Grep {{skill:add--ux-design/shadcn-docs.md}}', claudeProvider))
+      .toBe('Grep .claude/skills/add--ux-design/shadcn-docs.md');
   });
 
   it('resolves {{addpath:X}} to literal .codeadd/X regardless of provider', () => {
@@ -630,9 +658,9 @@ describe('resolveResourcePaths', () => {
   });
 
   it('resolves multiple variables in one string', () => {
-    const input = '{{cmd:add.plan}} loads {{skill:add-foo/SKILL.md}} writes {{addpath:scripts/x.sh}}';
+    const input = '{{cmd:add-plan}} loads {{skill:add-foo/SKILL.md}} writes {{addpath:scripts/x.sh}}';
     expect(resolveResourcePaths(input, claudeProvider))
-      .toBe('.claude/commands/add.plan.md loads .claude/skills/add-foo/SKILL.md writes .codeadd/scripts/x.sh');
+      .toBe('.claude/commands/add-plan.md loads .claude/skills/add-foo/SKILL.md writes .codeadd/scripts/x.sh');
   });
 
   it('leaves unknown variables intact', () => {
@@ -663,7 +691,7 @@ describe('lintResourcePaths', () => {
   });
 
   it('warns on raw .codeadd/commands/ reference', () => {
-    lintResourcePaths('see .codeadd/commands/add.plan.md', '/fake/file.md');
+    lintResourcePaths('see .codeadd/commands/add-plan.md', '/fake/file.md');
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy.mock.calls[0][0]).toMatch(/raw \.codeadd\/commands\//);
   });
@@ -689,7 +717,7 @@ describe('lintResourcePaths', () => {
   it('does not lint the resource-path-convention skill itself', () => {
     lintResourcePaths(
       '.codeadd/commands/x.md and .codeadd/skills/y/z.md',
-      '/path/add-resource-path-convention/SKILL.md',
+      '/path/add--resource-path-convention/SKILL.md',
     );
     expect(warnSpy).not.toHaveBeenCalled();
   });
@@ -772,10 +800,10 @@ describe('copyDirRecursive', () => {
   it('recurses into subdirectories propagating provider', () => {
     const sub = path.join(src, 'sub');
     fs.mkdirSync(sub);
-    fs.writeFileSync(path.join(sub, 'nested.md'), '{{cmd:add.plan}}');
+    fs.writeFileSync(path.join(sub, 'nested.md'), '{{cmd:add-plan}}');
     copyDirRecursive(src, dest, provider);
     const out = fs.readFileSync(path.join(dest, 'sub', 'nested.md'), 'utf8');
-    expect(out).toBe('.claude/commands/add.plan.md');
+    expect(out).toBe('.claude/commands/add-plan.md');
   });
 
   it('returns the count of files copied', () => {
@@ -798,9 +826,9 @@ describe('copyDirRecursive', () => {
 // ---------------------------------------------------------------------------
 
 describe('skill sibling files integration', () => {
-  it('add-architecture-discovery analyzer siblings have {{addpath:}} resolved literally', () => {
-    const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
-    const cursorPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'skills', 'add-architecture-discovery', 'backend-analyzer.md');
+  it('add--architecture-discovery analyzer siblings have {{addpath:}} resolved literally', () => {
+    const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add--architecture-discovery', 'backend-analyzer.md');
+    const cursorPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'skills', 'add--architecture-discovery', 'backend-analyzer.md');
 
     const claudeOut = fs.readFileSync(claudePath, 'utf8');
     const cursorOut = fs.readFileSync(cursorPath, 'utf8');
@@ -814,25 +842,25 @@ describe('skill sibling files integration', () => {
     expect(cursorOut).not.toContain('{{addpath:');
   });
 
-  it('add-health-check documentation-analyzer has {{skill:}} resolved per provider', () => {
-    const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add-health-check', 'documentation-analyzer.md');
-    const cursorPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'skills', 'add-health-check', 'documentation-analyzer.md');
+  it('add--health-check documentation-analyzer has {{skill:}} resolved per provider', () => {
+    const claudePath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.claude', 'skills', 'add--health-check', 'documentation-analyzer.md');
+    const cursorPath = path.resolve(import.meta.dirname, '..', '..', 'framwork', '.cursor', 'skills', 'add--health-check', 'documentation-analyzer.md');
 
     const claudeOut = fs.readFileSync(claudePath, 'utf8');
     const cursorOut = fs.readFileSync(cursorPath, 'utf8');
 
-    expect(claudeOut).toContain('.claude/skills/add-agents-md-style/SKILL.md');
-    expect(cursorOut).toContain('.cursor/skills/add-agents-md-style/SKILL.md');
+    expect(claudeOut).toContain('.claude/skills/add--agents-md-style/SKILL.md');
+    expect(cursorOut).toContain('.cursor/skills/add--agents-md-style/SKILL.md');
 
     expect(claudeOut).not.toContain('{{skill:');
     expect(cursorOut).not.toContain('{{skill:');
   });
 });
 
-describe('built add.plan baseline is marker-pair-empty', () => {
+describe('built add-plan baseline is marker-pair-empty', () => {
   for (const provider of ['claude', 'cursor', 'opencode']) {
-    it(`${provider} add.plan has zero baked STEP 9 headings`, () => {
-      const file = path.resolve(import.meta.dirname, '..', '..', 'framwork', `.${provider}`, 'commands', 'add.plan.md');
+    it(`${provider} add-plan has zero baked STEP 9 headings`, () => {
+      const file = path.resolve(import.meta.dirname, '..', '..', 'framwork', `.${provider}`, 'commands', 'add-plan.md');
       const text = fs.readFileSync(file, 'utf8');
       const hits = text.match(/## STEP 9: Test-Spec Subagent/g) ?? [];
       expect(hits).toHaveLength(0);
@@ -925,5 +953,53 @@ describe('assertNoLintableSources', () => {
     expect(() =>
       assertNoLintableSources(readMap(), path.join(root, 'framwork', '.codeadd')),
     ).not.toThrow();
+  });
+
+  // L1.4 — the three canonical backlog modules are allowed by EXACT relative
+  // path. These pin the negatives that keep the exception from widening into a
+  // directory or extension hole, which is the risk the plan's mitigations name.
+  describe('backlog CJS allowlist is path-exact (L1.4)', () => {
+    const writeScript = (relPath, body = '// x') => {
+      const full = path.join(tmp, 'scripts', relPath);
+      fs.mkdirSync(path.dirname(full), { recursive: true });
+      fs.writeFileSync(full, body);
+    };
+
+    it('rejects an unrelated .cjs in the scripts tree', () => {
+      writeScript('helper.cjs');
+      expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a nested same-basename lookalike', () => {
+      // The allowlist matches a full relative path, not a basename. A copy one
+      // directory down has the same name and must still be an offender.
+      writeScript(path.join('nested', 'backlog-core.cjs'));
+      expect(() => assertNoLintableSources({ skills: {} }, tmp))
+        .toThrow(/nested[/\\]backlog-core\.cjs/);
+    });
+
+    it('rejects a .cjs outside the scripts tree entirely', () => {
+      const dir = path.join(tmp, 'templates');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'backlog-core.cjs'), '// x');
+      expect(() => assertNoLintableSources({ skills: {} }, tmp))
+        .toThrow(/templates[/\\]backlog-core\.cjs/);
+    });
+
+    it('rejects .js in the scripts tree — the exception is per file, not per extension', () => {
+      writeScript('helper.js');
+      expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.js/);
+    });
+
+    it('the allowlist covers exactly the three canonical modules in the real tree', () => {
+      const root = path.resolve(import.meta.dirname, '..', '..');
+      const scriptsDir = path.join(root, 'framwork', '.codeadd', 'scripts');
+      const CANONICAL = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs'];
+      for (const name of CANONICAL) {
+        expect(fs.existsSync(path.join(scriptsDir, name)), `${name} is missing`).toBe(true);
+      }
+      // And the real tree carries no OTHER lintable source under scripts/.
+      expect(collectLintableSources(scriptsDir)).toEqual([]);
+    });
   });
 });

@@ -25,7 +25,22 @@ const ROOT = path.resolve(__dirname, '..');
 // ---------------------------------------------------------------------------
 
 function readMap() {
-  return JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+  const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+  assertProductNames(map);
+  return map;
+}
+
+function assertProductNames(map) {
+  for (const name of Object.keys(map.commands || {})) {
+    if (name !== 'add' && !/^add-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+      throw new Error(`Invalid product command name: ${name}`);
+    }
+  }
+  for (const name of Object.keys(map.skills || {})) {
+    if (!/^add--[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+      throw new Error(`Invalid product skill name: ${name}`);
+    }
+  }
 }
 
 function readFile(filePath) {
@@ -71,7 +86,7 @@ function copyDirRecursive(src, dest, provider = null) {
  * Remove HTML comments and collapse excess blank lines (saves tokens).
  *
  * ALL comments strip uniformly — including `feature:`/`plugin:` injection
- * markers. The markers are consumed at build time by extractInjectionPoints()
+ * markers. The markers are consumed at build time by extractSlots()
  * into the content-anchored sidecar (injection-points.json); the built provider
  * files ship marker-free and post-install injection locates anchors by text.
  */
@@ -97,6 +112,10 @@ function stripHtmlComments(content) {
 // Matches an OPEN injection marker (closers start with `/`).
 const OPEN_MARKER_RE = /^\s*(feature|plugin):([^:\s]+):(\S+?)\s*$/;
 const CLOSE_MARKER_RE = /^\s*\/(feature|plugin):([^:\s]+):(\S+?)\s*$/;
+const SLOT_OPEN_RE = /^\s*slot:([A-Za-z0-9][A-Za-z0-9.+_-]*)\s+fallback="([^"]+)"\s*$/;
+const SLOT_CLOSE_RE = /^\s*\/slot:([A-Za-z0-9][A-Za-z0-9.+_-]*)\s*$/;
+const SECTION_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SAFE_FALLBACK_RE = /^fallbacks\/[A-Za-z0-9][A-Za-z0-9._-]*\.md$/;
 // Resource-path variables that resolve differently per provider — illegal in an anchor.
 const ANCHOR_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):/;
 
@@ -181,87 +200,219 @@ function assertEmptyMarkerPairs(rawContent, resourceName) {
   }
 }
 
-function extractInjectionPoints(rawContent, resourceName, resourceKind) {
-  assertEmptyMarkerPairs(rawContent, resourceName);
-
+function standaloneComments(rawContent) {
   const commentRe = /<!--([\s\S]*?)-->/g;
+  const found = [];
+  let m;
+  while ((m = commentRe.exec(rawContent)) !== null) {
+    const start = m.index;
+    const end = m.index + m[0].length;
+    if (!isStandaloneMarker(rawContent, start, end)) continue;
+    found.push({
+      body: m[1],
+      start,
+      end,
+      line: rawContent.slice(0, start).split('\n').length,
+    });
+  }
+  return found;
+}
+
+function assertSafeFallbackPath(rel, resourceName, line) {
+  if (typeof rel !== 'string' || rel !== rel.trim() || !SAFE_FALLBACK_RE.test(rel) || rel.includes('..') || path.isAbsolute(rel)) {
+    throw new Error(`Unsafe fallback path ${JSON.stringify(rel)} in ${resourceName}:${line}`);
+  }
+}
+
+/**
+ * v1 when the resource has no standalone slot marker. v2 when it has any.
+ * A member outside a slot, or a slot in a resource that also has bare members,
+ * is a mixed source and throws from extractSlots.
+ * @param {string} rawContent
+ * @returns {'v1'|'v2'}
+ */
+function injectionMode(rawContent) {
+  return standaloneComments(rawContent).some((c) => SLOT_OPEN_RE.test(c.body) || SLOT_CLOSE_RE.test(c.body))
+    ? 'v2'
+    : 'v1';
+}
+
+/**
+ * Parse a fully slotted resource. Fallback bytes come from readFallback, so a
+ * synthetic caller never touches product files.
+ * @param {string} rawContent
+ * @param {string} resourceName
+ * @param {'command'|'agent'} resourceKind
+ * @param {(rel: string) => string} readFallback
+ */
+function extractSlots(rawContent, resourceName, resourceKind, readFallback) {
+  assertEmptyMarkerPairs(rawContent, resourceName);
+  const comments = standaloneComments(rawContent);
+  const slots = [];
+  let open = null;
+  const seenIds = new Set();
+
+  // A slot's region holds member markers and whitespace, nothing else. Both halves
+  // are checked here rather than by filtering the region: `assertNoGap` catches
+  // plain prose between two comments, and the final branch catches a comment that
+  // is not a member marker. Filtering the region with a regex replacement is what
+  // CodeQL flagged as incomplete sanitization.
+  const assertNoGap = (o, nextStart, line) => {
+    if (rawContent.slice(o.gapEnd, nextStart).trim()) {
+      throw new Error(`Invalid slot ${o.id} in ${resourceName}:${line} — only member markers and whitespace are allowed`);
+    }
+  };
+  for (const c of comments) {
+    const slotOpen = c.body.match(SLOT_OPEN_RE);
+    const slotClose = c.body.match(SLOT_CLOSE_RE);
+    const memberOpen = c.body.match(OPEN_MARKER_RE);
+    const memberClose = c.body.match(CLOSE_MARKER_RE);
+    if (open) assertNoGap(open, c.start, c.line);
+    if (slotOpen) {
+      if (open) {
+        throw new Error(`Nested slot ${slotOpen[1]} in ${resourceName}:${c.line} — inside ${open.id}`);
+      }
+      if (seenIds.has(slotOpen[1])) {
+        throw new Error(`Duplicate slot ${slotOpen[1]} in ${resourceName}:${c.line}`);
+      }
+      assertSafeFallbackPath(slotOpen[2], resourceName, c.line);
+      seenIds.add(slotOpen[1]);
+      open = { id: slotOpen[1], fallbackPath: slotOpen[2], line: c.line, start: c.start, end: c.end, gapEnd: c.end, members: [] };
+      continue;
+    }
+    if (slotClose) {
+      if (!open || open.id !== slotClose[1]) {
+        throw new Error(`Orphan slot close ${slotClose[1]} in ${resourceName}:${c.line}`);
+      }
+      if (open.members.length === 0) {
+        throw new Error(`Orphan slot ${open.id} in ${resourceName}:${open.line} — no members`);
+      }
+      slots.push(open);
+      open = null;
+      continue;
+    }
+    if (memberOpen) {
+      if (!SECTION_RE.test(memberOpen[3])) {
+        throw new Error(`Unknown section ${memberOpen[3]} in ${resourceName}:${c.line}`);
+      }
+      if (!open) {
+        throw new Error(
+          `Mixed injection source in ${resourceName}:${c.line} — ${memberOpen[1]}:${memberOpen[2]}:${memberOpen[3]} is outside a slot`,
+        );
+      }
+      open.members.push({
+        namespace: memberOpen[1],
+        name: memberOpen[2],
+        section: memberOpen[3],
+        line: c.line,
+        start: c.start,
+      });
+      open.gapEnd = c.end;
+      continue;
+    }
+    if (memberClose) {
+      if (!open) {
+        throw new Error(`Mixed injection source in ${resourceName}:${c.line} — close marker outside a slot`);
+      }
+      open.gapEnd = c.end;
+      continue;
+    }
+    if (open) {
+      throw new Error(`Invalid slot ${open.id} in ${resourceName}:${open.line} — only member markers and whitespace are allowed`);
+    }
+  }
+  if (open) {
+    throw new Error(`Unclosed slot ${open.id} in ${resourceName}:${open.line}`);
+  }
+
   let surviving = '';
   let lastIndex = 0;
+  const commentRe = /<!--([\s\S]*?)-->/g;
   let m;
-  const pending = []; // { namespace, name, section, survivingPos }
-
+  const opens = [];
   while ((m = commentRe.exec(rawContent)) !== null) {
     surviving += rawContent.slice(lastIndex, m.index);
     lastIndex = m.index + m[0].length;
-    const open = m[1].match(OPEN_MARKER_RE);
-    if (open && isStandaloneMarker(rawContent, m.index, lastIndex)) {
-      pending.push({
-        namespace: open[1],
-        name: open[2],
-        section: open[3],
-        survivingPos: surviving.length, // marker location in the stripped body
-      });
+    if (isStandaloneMarker(rawContent, m.index, lastIndex) && SLOT_OPEN_RE.test(m[1])) {
+      opens.push(surviving.length);
     }
   }
   surviving += rawContent.slice(lastIndex);
 
-  const points = [];
-  for (const p of pending) {
-    const above = nonBlankLines(surviving.slice(0, p.survivingPos));
-    const below = nonBlankLines(surviving.slice(p.survivingPos));
-
-    let text = null;
-    let position;
-    let ordinal;
-    let next = null;
-
-    // Prefer the nearest variable-free non-blank line ABOVE (walk past lines
-    // carrying a {{cmd:}}/{{skill:}}/{{addpath:}} variable — they resolve
-    // differently per provider and cannot serve as a single shared anchor).
-    let aboveIdx = -1;
-    for (let k = above.length - 1; k >= 0; k--) {
-      if (!ANCHOR_VARIABLE_RE.test(above[k])) { aboveIdx = k; break; }
+  const anchored = slots.map((slot, i) => {
+    let fallback;
+    try {
+      fallback = readFallback(slot.fallbackPath);
+    } catch (err) {
+      throw new Error(`Missing fallback ${slot.fallbackPath} for slot ${slot.id} in ${resourceName}:${slot.line} — ${err.message}`);
     }
-
-    if (aboveIdx !== -1) {
-      text = above[aboveIdx];
-      position = 'after';
-      ordinal = above.slice(0, aboveIdx + 1).filter((l) => l === text).length;
-      // Drift hint only when the anchor is the line immediately above the marker
-      // and the following line is itself variable-free (else it resolves per provider).
-      const walked = aboveIdx !== above.length - 1;
-      next = !walked && below.length > 0 && !ANCHOR_VARIABLE_RE.test(below[0]) ? below[0] : null;
-    } else {
-      // No variable-free line above → anchor before the nearest variable-free line below.
-      const belowIdx = below.findIndex((l) => !ANCHOR_VARIABLE_RE.test(l));
-      if (belowIdx !== -1) {
-        text = below[belowIdx];
-        position = 'before';
-        ordinal = above.filter((l) => l === text).length
-          + below.slice(0, belowIdx + 1).filter((l) => l === text).length;
-      }
+    if (typeof fallback !== 'string') {
+      throw new Error(`Missing fallback ${slot.fallbackPath} for slot ${slot.id} in ${resourceName}:${slot.line}`);
     }
-
-    if (text == null) {
-      throw new Error(
-        `No variable-free anchor for ${p.namespace}:${p.name}:${p.section} in ${resourceName} — ` +
-          `every adjacent line resolves a resource-path variable. Add a stable plain line next to the marker.`,
-      );
-    }
-
-    points.push({
-      namespace: p.namespace,
-      name: p.name,
-      section: p.section,
+    const anchor = anchorAt(surviving, opens[i], `${resourceName}:${slot.id}`);
+    return {
+      id: slot.id,
       resource: { name: resourceName, kind: resourceKind },
-      anchor: { text, ordinal, position, next },
-    });
+      fallbackPath: slot.fallbackPath,
+      fallback,
+      members: slot.members.map(({ namespace, name, section }) => ({ namespace, name, section })),
+      anchor,
+    };
+  });
+
+  const seenAnchor = new Set();
+  for (const slot of anchored) {
+    const key = `${slot.anchor.position}\0${slot.anchor.ordinal}\0${slot.anchor.text}`;
+    if (seenAnchor.has(key)) {
+      throw new Error(`Ambiguous anchor for slot ${slot.id} in ${resourceName} — ${slot.anchor.text}`);
+    }
+    seenAnchor.add(key);
   }
-  return points;
+  return anchored;
+}
+
+function anchorAt(surviving, survivingPos, label) {
+  const above = nonBlankLines(surviving.slice(0, survivingPos));
+  const below = nonBlankLines(surviving.slice(survivingPos));
+  let text = null;
+  let position;
+  let ordinal;
+  let next = null;
+  let aboveIdx = -1;
+  for (let k = above.length - 1; k >= 0; k--) {
+    if (!ANCHOR_VARIABLE_RE.test(above[k])) { aboveIdx = k; break; }
+  }
+  if (aboveIdx !== -1) {
+    text = above[aboveIdx];
+    position = 'after';
+    ordinal = above.slice(0, aboveIdx + 1).filter((l) => l === text).length;
+    const walked = aboveIdx !== above.length - 1;
+    next = !walked && below.length > 0 && !ANCHOR_VARIABLE_RE.test(below[0]) ? below[0] : null;
+  } else {
+    const belowIdx = below.findIndex((l) => !ANCHOR_VARIABLE_RE.test(l));
+    if (belowIdx !== -1) {
+      text = below[belowIdx];
+      position = 'before';
+      ordinal = above.filter((l) => l === text).length
+        + below.slice(0, belowIdx + 1).filter((l) => l === text).length;
+    }
+  }
+  if (text == null) {
+    throw new Error(`No variable-free anchor for ${label} — every adjacent line resolves a resource-path variable.`);
+  }
+  return { text, ordinal, position, next };
 }
 
 // Build-run accumulator (reset per build).
-let INJECTION_POINTS = [];
+let INJECTION_SLOTS = [];
+let INJECTION_MODE = null;
+
+function readProductFallback(rel) {
+  assertSafeFallbackPath(rel, 'fallback', 0);
+  const full = path.join(CODEADD_DIR, rel);
+  if (!fs.existsSync(full)) throw new Error(`file not found: ${rel}`);
+  return fs.readFileSync(full, 'utf8').replace(/\r\n/g, '\n').replace(/\n$/, '');
+}
 
 /**
  * Extract + accumulate injection points for one resource body.
@@ -270,12 +421,18 @@ let INJECTION_POINTS = [];
  * @param {'command'|'agent'} resourceKind
  */
 function collectInjectionPoints(rawContent, resourceName, resourceKind) {
-  INJECTION_POINTS.push(...extractInjectionPoints(rawContent, resourceName, resourceKind));
-}
-
-/** @returns {Array} the points accumulated so far this build */
-function getInjectionPoints() {
-  return INJECTION_POINTS;
+  const comments = standaloneComments(rawContent);
+  const hasMember = comments.some((c) => OPEN_MARKER_RE.test(c.body));
+  const mode = injectionMode(rawContent);
+  if (!hasMember && mode === 'v1') return;
+  if (INJECTION_MODE && INJECTION_MODE !== mode) {
+    throw new Error(`Mixed injection source: ${resourceName} is ${mode} but this build already saw ${INJECTION_MODE}`);
+  }
+  INJECTION_MODE = mode;
+  if (mode === 'v1') {
+    throw new Error(`Legacy injection markers in ${resourceName} are not accepted. Wrap them in a slot.`);
+  }
+  INJECTION_SLOTS.push(...extractSlots(rawContent, resourceName, resourceKind, readProductFallback));
 }
 
 /**
@@ -286,18 +443,25 @@ function getInjectionPoints() {
  * @returns {number} number of points written
  */
 function writeInjectionPoints(outPath) {
-  const points = INJECTION_POINTS
-    .map((p, i) => ({ p, i }))
+  const slots = INJECTION_SLOTS
+    .map((s, i) => ({ s, i }))
     .sort((a, b) => {
-      const ak = a.p.resource.kind, bk = b.p.resource.kind;
+      const ak = a.s.resource.kind, bk = b.s.resource.kind;
       if (ak !== bk) return ak < bk ? -1 : 1;
-      const an = a.p.resource.name, bn = b.p.resource.name;
+      const an = a.s.resource.name, bn = b.s.resource.name;
       if (an !== bn) return an < bn ? -1 : 1;
-      return a.i - b.i; // stable: keep source order within a resource
+      return a.i - b.i;
     })
-    .map(({ p }) => p);
-  writeFile(outPath, JSON.stringify({ version: 1, points }, null, 2) + '\n');
-  return points.length;
+    .map(({ s }) => s);
+  const points = slots.flatMap((slot) => slot.members.map((m) => ({
+    namespace: m.namespace,
+    name: m.name,
+    section: m.section,
+    resource: slot.resource,
+    anchor: slot.anchor,
+  })));
+  writeFile(outPath, JSON.stringify({ version: 2, slots, points }, null, 2) + '\n');
+  return slots.length;
 }
 
 // ---------------------------------------------------------------------------
@@ -481,7 +645,7 @@ function extractContract(rawContent, resourceName, _codeaddDir = CODEADD_DIR) {
     throw new Error(
       `Contract shape changed in ${resourceName}.\n` +
         `  declared: ${decl.shape}\n  computed: ${computed}\n` +
-        `Set shape: ${computed}. Every installed project will need /add.qa-setup.`,
+        `Set shape: ${computed}. Every installed project will need /add-qa-setup.`,
     );
   }
 
@@ -1059,7 +1223,7 @@ function fragmentNodeName(point) {
  * @param {Array} points  injection points; defaults to this build's accumulator
  * @returns {{nodes: Array, edges: Array}}
  */
-function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, points = INJECTION_POINTS) {
+function buildArtefactGraph(map, codeaddDir = CODEADD_DIR, internalDir = ROOT, points = []) {
   const nodes = collectNodes(map, codeaddDir, internalDir);
   const edges = [];
 
@@ -1240,8 +1404,9 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
   // --- FAIL: a distributed artefact naming a workbench command ---------------
   //
   // THE WORKBENCH NOW HAS PROVIDER OUTPUT, AND THIS GATE IS UNCHANGED BY IT.
-  // `scripts/build-workbench.js` compiles `workbench/` into `.claude/` and
-  // `.opencode/` at the REPOSITORY root. That is a provider mirror, and it used
+  // `scripts/build-workbench.js` compiles `workbench/` into `.claude/`,
+  // `.opencode/`, `.agents/` and `.codex/` at the REPOSITORY root. That is a
+  // provider mirror, and it used
   // to be this layer's defining absence -- so a reader meeting the gate after
   // that change can reasonably wonder whether it still holds.
   //
@@ -1249,8 +1414,8 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
   // Its reason is that an artefact reaching a USER'S project must not point them
   // at something their install does not contain, and nothing under `workbench/`
   // is in `framwork/provider-map.json`, packaged by `release.yml`, or written by
-  // `cli/src/installer.js`. Building it for two providers inside this repository
-  // changes none of those three.
+  // `cli/src/installer.js`. Building it for three providers inside this
+  // repository changes none of those three.
   //
   // DO NOT weaken or remove this gate on the grounds that the workbench 'is
   // distributed now'. It is built; it is not distributed.
@@ -1476,7 +1641,7 @@ const TRANSFORMERS = {
  *
  * {{addpath:X}} resolves to literal `.codeadd/X` regardless of provider — used for
  * runtime paths that exist in the user's installed project (e.g. the wiki generated
- * by /add.wiki, manifest.json, runtime-only artefacts).
+ * by /add-wiki, manifest.json, runtime-only artefacts).
  *
  * @param {string} content   raw content with variables
  * @param {object} provider  provider config from provider-map.json
@@ -1517,7 +1682,7 @@ function lintResourcePaths(content, srcPath) {
   const relPath = path.relative(ROOT, srcPath);
 
   // Skip the resource-path-convention skill itself (it documents the patterns)
-  if (relPath.includes('add-resource-path-convention')) return;
+  if (relPath.includes('add--resource-path-convention') || relPath.includes('add-resource-path-convention')) return;
 
   // Skip the workbench layer, for the same reason and a second one.
   //
@@ -1585,6 +1750,15 @@ const LINTABLE_EXTENSIONS = new Set([
 // never a lint rule.
 const SHIPPED_SUBDIRS = ['scripts', 'fragments', 'templates', 'plugins'];
 
+// Exact allowlist for the three canonical backlog CJS modules. These ship
+// verbatim and are consumed by the board runtime and the agent CLI wrapper.
+// No broad directory or extension exceptions — only these three full paths.
+const SHIPPED_SOURCE_ALLOWLIST = new Set([
+  'framwork/.codeadd/scripts/backlog-storage.cjs',
+  'framwork/.codeadd/scripts/backlog-core.cjs',
+  'framwork/.codeadd/scripts/backlog-cli.cjs',
+]);
+
 function collectLintableSources(dir, offenders = []) {
   if (!fs.existsSync(dir)) return offenders;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -1592,7 +1766,10 @@ function collectLintableSources(dir, offenders = []) {
     if (entry.isDirectory()) {
       collectLintableSources(entryPath, offenders);
     } else if (LINTABLE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
-      offenders.push(path.relative(ROOT, entryPath).split(path.sep).join('/'));
+      const relPath = path.relative(ROOT, entryPath).split(path.sep).join('/');
+      if (!SHIPPED_SOURCE_ALLOWLIST.has(relPath)) {
+        offenders.push(relPath);
+      }
     }
   }
   return offenders;
@@ -1778,9 +1955,10 @@ const skillStrategy = {
 //   opencode  .opencode/agents/<name>.md    description, mode: subagent, permission
 //   cursor    .cursor/agents/<name>.md      name, description, readonly
 //   codex     .codex/agents/<name>.toml     name, description, developer_instructions
+//   zcode     .zcode/agents/<name>.md       name, description, tools, disallowedTools
 //
 // `model` reaches claude only. The sources pin Claude names (sonnet, haiku,
-// inherit), which name nothing on the other three — a subagent pinned to one
+// inherit), which name nothing on the other four — a subagent pinned to one
 // fails to dispatch on a non-Claude session. Without the key, each of those
 // providers runs the subagent on the session model.
 //
@@ -1897,6 +2075,22 @@ const AGENT_DIALECTS = {
     const out = [`name = ${tomlString(meta.name)}`, `description = ${tomlString(meta.description)}`];
     out.push(`developer_instructions = ${tomlMultiline(body)}`);
     return `${out.join('\n')}\n`;
+  },
+
+  zcode({ blocks }, body, meta) {
+    // Same shape as claude — ZCode's documented agent keys (name, description,
+    // tools, disallowedTools, skills) match Claude's dialect. `model` is
+    // dropped: ZCode model ids are not `sonnet`/`opus`/`inherit`, so passing
+    // Claude's value through would pin the agent to a name that means nothing
+    // there, rather than running it on the session model.
+    const out = [`name: ${meta.name}`, `description: ${yamlScalar(meta.description)}`];
+    for (const key of ['tools', 'disallowedTools', 'skills', 'memory']) {
+      if (blocks[key]) out.push(blocks[key]);
+    }
+    if (meta.readonly && !blocks.disallowedTools) {
+      out.push('disallowedTools: Write, Edit, NotebookEdit');
+    }
+    return `---\n${out.join('\n')}\n---\n\n${body}\n`;
   },
 };
 
@@ -2117,7 +2311,8 @@ function copyMcpIntoCli(root = ROOT) {
 function main() {
   console.log('Building provider files...\n');
 
-  INJECTION_POINTS = [];
+  INJECTION_SLOTS = [];
+  INJECTION_MODE = null;
   CONTRACTS = {};
 
   // Clear the sidecar BEFORE building. A gate firing mid-build aborts before
@@ -2142,10 +2337,11 @@ function main() {
 
   const contractCount = writeContracts(contractsPath);
 
-  // Built AFTER the resource passes so INJECTION_POINTS is fully populated —
-  // the INJECTS_INTO edges are derived from it, never re-extracted.
+  // Built AFTER the resource passes so every slot member is in hand.
+  // INJECTS_INTO edges come from those members, never from a second extractor.
   const graphPath = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
-  const artefactGraph = buildArtefactGraph(map);
+  const injectionPoints = INJECTION_SLOTS.flatMap((slot) => slot.members.map((m) => ({ ...m, resource: slot.resource })));
+  const artefactGraph = buildArtefactGraph(map, CODEADD_DIR, ROOT, injectionPoints);
   // Gate BEFORE writing, so a failed build never leaves a sidecar describing a
   // tree the gate rejected — the same reason contracts.json is cleared upfront.
   assertArtefactGraph(artefactGraph);
@@ -2168,12 +2364,13 @@ function main() {
 
 // Export for testing
 module.exports = {
+  assertProductNames,
   stripHtmlComments,
-  extractInjectionPoints,
   collectInjectionPoints,
-  getInjectionPoints,
   writeInjectionPoints,
-  _resetInjectionPoints: () => { INJECTION_POINTS = []; },
+  _resetInjectionPoints: () => { INJECTION_SLOTS = []; INJECTION_MODE = null; },
+  injectionMode,
+  extractSlots,
   extractUses,
   collectNodes,
   buildArtefactGraph,

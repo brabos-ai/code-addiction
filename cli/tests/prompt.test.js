@@ -47,12 +47,12 @@ describe('promptScope', () => {
 });
 
 describe('promptProviders (scope-filtered)', () => {
-  it('project scope offers all five providers', async () => {
+  it('project scope offers all six providers', async () => {
     mocks.multiselect.mockResolvedValue(['claude']);
     await promptProviders();
     const options = mocks.multiselect.mock.calls[0][0].options;
     expect(options.map((o) => o.value).sort()).toEqual(
-      ['antigrav', 'claude', 'codex', 'cursor', 'opencode']
+      ['antigrav', 'claude', 'codex', 'cursor', 'opencode', 'zcode']
     );
   });
 
@@ -63,7 +63,7 @@ describe('promptProviders (scope-filtered)', () => {
     const values = options.map((o) => o.value);
     expect(values).not.toContain('cursor');
     expect(values).not.toContain('antigrav');
-    expect(values.sort()).toEqual(['claude', 'codex', 'opencode']);
+    expect(values.sort()).toEqual(['claude', 'codex', 'opencode', 'zcode']);
   });
 
   it('global scope hints show the home-rooted path', async () => {

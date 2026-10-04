@@ -193,7 +193,7 @@ describe('L4 — the second review pass is gone (F5)', () => {
   // Green pre-plan by design: F5 removes the second pass, not the contract.
   //
   // Amended by plan 2026-09-09T090201: the contract did not disappear, it moved.
-  // add-review-discipline is now its single owner, and these two callers defer
+  // add--review-discipline is now its single owner, and these two callers defer
   // to it instead of each carrying a copy — which is what let the second pass
   // survive in one of them and die in the other. A caller therefore satisfies
   // this by DECLARING the owner; the owner itself must still carry the fields.

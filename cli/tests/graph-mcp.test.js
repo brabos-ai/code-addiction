@@ -113,13 +113,13 @@ describe('artefact-graph MCP server', () => {
   it('answers impact with the same numbers the CLI module gives', async () => {
     const { frames } = await rpc([init, {
       jsonrpc: '2.0', id: 3, method: 'tools/call',
-      params: { name: 'impact', arguments: { node: 'add-doc-schemas' } },
+      params: { name: 'impact', arguments: { node: 'add--doc-schemas' } },
     }]);
 
     const payload = JSON.parse(frames.find((f) => f.id === 3).result.content[0].text);
     const { impact, loadGraph } = await graphModule();
 
-    expect(payload.dependents.length).toBe(impact(loadGraph(), 'add-doc-schemas').length);
+    expect(payload.dependents.length).toBe(impact(loadGraph(), 'add--doc-schemas').length);
     expect(payload.dependents.length).toBeGreaterThan(10);
   });
 
@@ -128,10 +128,10 @@ describe('artefact-graph MCP server', () => {
     // old server must keep working, so both names resolve.
     const { frames } = await rpc([init, {
       jsonrpc: '2.0', id: 11, method: 'tools/call',
-      params: { name: 'impact', arguments: { id: 'add-doc-schemas' } },
+      params: { name: 'impact', arguments: { id: 'add--doc-schemas' } },
     }, {
       jsonrpc: '2.0', id: 12, method: 'tools/call',
-      params: { name: 'impact', arguments: { node: 'add-doc-schemas' } },
+      params: { name: 'impact', arguments: { node: 'add--doc-schemas' } },
     }]);
 
     const byId = JSON.parse(frames.find((f) => f.id === 11).result.content[0].text);
@@ -178,14 +178,14 @@ describe('artefact-graph MCP server', () => {
     // its own logic.
     const { frames } = await rpc([init, {
       jsonrpc: '2.0', id: 8, method: 'tools/call',
-      params: { name: 'history', arguments: { node: 'add-doc-schemas' } },
+      params: { name: 'history', arguments: { node: 'add--doc-schemas' } },
     }]);
 
     const payload = JSON.parse(frames.find((f) => f.id === 8).result.content[0].text);
     const { history, loadGraph } = await graphModule();
-    const theirs = JSON.parse(JSON.stringify(history(loadGraph(), 'add-doc-schemas')));
+    const theirs = JSON.parse(JSON.stringify(history(loadGraph(), 'add--doc-schemas')));
 
-    expect(payload.node).toBe('product/skill/add-doc-schemas');
+    expect(payload.node).toBe('product/skill/add--doc-schemas');
     expect(payload.name).toBe(theirs.name);
     expect(payload.matched).toBe(theirs.matched);
     expect(payload.entries).toEqual(theirs.entries);
@@ -199,7 +199,7 @@ describe('artefact-graph MCP server', () => {
     // query with it — which is why the function reports and never throws.
     const { frames } = await rpc([init, {
       jsonrpc: '2.0', id: 9, method: 'tools/call',
-      params: { name: 'history', arguments: { node: 'add-doc-schemas' } },
+      params: { name: 'history', arguments: { node: 'add--doc-schemas' } },
     }, { jsonrpc: '2.0', id: 10, method: 'tools/list' }]);
 
     expect(frames.find((f) => f.id === 9).result.isError).toBeUndefined();

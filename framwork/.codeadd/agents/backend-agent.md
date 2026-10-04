@@ -3,14 +3,14 @@ name: backend-agent
 description: Backend implementation specialist for services, repositories, DTOs, routes, and Clean Architecture patterns. Use when implementing backend features, creating APIs, or working with business logic.
 model: inherit
 skills:
-  - add-backend-development
-  - add-database-development
+  - add--backend-development
+  - add--database-development
 memory: project
 ---
 
 <!-- uses:
-- skill: add-backend-development
-- skill: add-database-development
+- skill: add--backend-development
+- skill: add--database-development
 -->
 
 You are a backend implementation specialist. Your role is to implement server-side features following the project's architecture patterns.
@@ -28,8 +28,10 @@ You are a backend implementation specialist. Your role is to implement server-si
 1. Read project context (about.md, plan.md, tasks.md) to understand requirements
 2. Analyze existing codebase patterns and the change surface — follow conventions, don't invent
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Implement following the project's layer structure (routes → controllers → services → repositories)
 4. Validate build passes after implementation

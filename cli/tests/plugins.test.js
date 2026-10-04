@@ -10,6 +10,7 @@ import {
   applyEnabledPlugins,
   getPluginStates,
 } from '../src/plugins.js';
+import { captureBaselines } from '../src/injection-core.js';
 
 /**
  * Point CODEADD_PLUGINS_CATALOG at a temp catalog file so the plugin module
@@ -100,7 +101,31 @@ function scaffoldProject(cwd, { providers, pluginName, sectionsByCommand, skills
     }
   }
 
-  fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 1, points }, null, 2));
+  const slots = points.map((p) => ({
+    id: `${p.name}.${p.section}`,
+    fallback: '',
+    members: [{ namespace: p.namespace, name: p.name, section: p.section }],
+    resource: p.resource,
+    anchor: p.anchor,
+  }));
+  fs.writeFileSync(path.join(cwd, '.codeadd', 'injection-points.json'), JSON.stringify({ version: 2, slots, points }, null, 2));
+  captureBaselines(cwd);
+  for (const dest of ['.claude', '.cursor', '.opencode']) {
+    const cmdDir = path.join(cwd, dest, 'commands');
+    if (!fs.existsSync(cmdDir)) continue;
+    for (const name of fs.readdirSync(cmdDir)) {
+      const base = path.join(cwd, '.codeadd', 'baselines', dest.slice(1), 'commands', name);
+      fs.mkdirSync(path.dirname(base), { recursive: true });
+      fs.copyFileSync(path.join(cmdDir, name), base);
+    }
+    const agentDir = path.join(cwd, dest, 'agents');
+    if (!fs.existsSync(agentDir)) continue;
+    for (const name of fs.readdirSync(agentDir)) {
+      const base = path.join(cwd, '.codeadd', 'baselines', dest.slice(1), 'agents', name);
+      fs.mkdirSync(path.dirname(base), { recursive: true });
+      fs.copyFileSync(path.join(agentDir, name), base);
+    }
+  }
 }
 
 describe('plugins', () => {
@@ -156,12 +181,12 @@ describe('plugins', () => {
   describe('enablePlugin', () => {
     it('hard-gates on a failing detect — no injection, not enabled', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'false', injects: ['add.new'], skills: ['gx-skill'] },
+        gx: { type: 'mcp', description: 'g', detect: 'false', injects: ['add-new'], skills: ['gx-skill'] },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: ['gx-skill'],
       });
 
@@ -169,7 +194,7 @@ describe('plugins', () => {
       expect(result.ok).toBe(false);
       expect(result.reason).toBe('not-detected');
 
-      const cmd = fs.readFileSync(path.join(cwd, '.claude', 'commands', 'add.new.md'), 'utf8');
+      const cmd = fs.readFileSync(path.join(cwd, '.claude', 'commands', 'add-new.md'), 'utf8');
       expect(cmd).not.toContain('EXPLORE-CONTENT');
       expect(fs.existsSync(path.join(cwd, '.claude', 'skills', 'gx-skill'))).toBe(false);
     });
@@ -182,12 +207,12 @@ describe('plugins', () => {
 
     it('injects fragments across providers (marker-free) and activates skills', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: ['gx-skill'] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: ['gx-skill'] },
       });
       scaffoldProject(cwd, {
         providers: ['claude', 'cursor'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: ['gx-skill'],
       });
 
@@ -197,7 +222,7 @@ describe('plugins', () => {
       expect(result.skills).toBe(2); // gx-skill × 2 providers
 
       for (const prov of ['claude', 'cursor']) {
-        const cmd = fs.readFileSync(path.join(cwd, `.${prov}`, 'commands', 'add.new.md'), 'utf8');
+        const cmd = fs.readFileSync(path.join(cwd, `.${prov}`, 'commands', 'add-new.md'), 'utf8');
         expect(cmd).toContain('EXPLORE-CONTENT');
         expect(cmd).not.toContain('<!--'); // no markers written
         expect(fs.existsSync(path.join(cwd, `.${prov}`, 'skills', 'gx-skill', 'SKILL.md'))).toBe(true);
@@ -209,34 +234,34 @@ describe('plugins', () => {
 
     it('records hashes for modified command files', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: [] },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: [],
       });
       enablePlugin(cwd, 'gx');
       const manifest = JSON.parse(fs.readFileSync(path.join(cwd, '.codeadd', 'manifest.json'), 'utf8'));
-      expect(manifest.hashes['.claude/commands/add.new.md']).toMatch(/^[a-f0-9]{64}$/);
+      expect(manifest.hashes['.claude/commands/add-new.md']).toMatch(/^[a-f0-9]{64}$/);
     });
   });
 
   describe('disablePlugin', () => {
     it('removes injections and skills, restores the file, flips manifest', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: ['gx-skill'] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: ['gx-skill'] },
       });
       scaffoldProject(cwd, {
         providers: ['claude', 'cursor'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: ['gx-skill'],
       });
       const before = {
-        claude: fs.readFileSync(path.join(cwd, '.claude', 'commands', 'add.new.md'), 'utf8'),
-        cursor: fs.readFileSync(path.join(cwd, '.cursor', 'commands', 'add.new.md'), 'utf8'),
+        claude: fs.readFileSync(path.join(cwd, '.claude', 'commands', 'add-new.md'), 'utf8'),
+        cursor: fs.readFileSync(path.join(cwd, '.cursor', 'commands', 'add-new.md'), 'utf8'),
       };
       enablePlugin(cwd, 'gx');
 
@@ -245,7 +270,7 @@ describe('plugins', () => {
       expect(result.skills).toBe(2);
 
       for (const prov of ['claude', 'cursor']) {
-        const cmd = fs.readFileSync(path.join(cwd, `.${prov}`, 'commands', 'add.new.md'), 'utf8');
+        const cmd = fs.readFileSync(path.join(cwd, `.${prov}`, 'commands', 'add-new.md'), 'utf8');
         expect(cmd).not.toContain('EXPLORE-CONTENT');
         expect(cmd).toBe(before[prov]); // byte-identical restore
         expect(fs.existsSync(path.join(cwd, `.${prov}`, 'skills', 'gx-skill'))).toBe(false);
@@ -260,14 +285,14 @@ describe('plugins', () => {
     it('enablePlugin injects agents alongside commands and reports a count', () => {
       writeCatalog(catDir, {
         gx: {
-          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [],
+          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: [],
           agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
         },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: [],
         agentsByName: { 'discovery-agent': ['graph'] },
       });
@@ -287,14 +312,14 @@ describe('plugins', () => {
     it('disablePlugin removes agent injection — byte-identical round-trip', () => {
       writeCatalog(catDir, {
         gx: {
-          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [],
+          type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: [],
           agents: [{ agent: 'discovery-agent', sections: ['graph'] }],
         },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: [],
         agentsByName: { 'discovery-agent': ['graph'] },
       });
@@ -356,12 +381,12 @@ describe('plugins', () => {
   describe('applyEnabledPlugins', () => {
     it('re-applies only enabled plugins from the manifest', () => {
       writeCatalog(catDir, {
-        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add.new'], skills: [] },
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: [] },
       });
       scaffoldProject(cwd, {
         providers: ['claude'],
         pluginName: 'gx',
-        sectionsByCommand: { 'add.new': ['explore'] },
+        sectionsByCommand: { 'add-new': ['explore'] },
         skills: [],
       });
       const mp = path.join(cwd, '.codeadd', 'manifest.json');
@@ -371,7 +396,7 @@ describe('plugins', () => {
 
       const total = applyEnabledPlugins(cwd);
       expect(total).toBe(1);
-      const cmd = fs.readFileSync(path.join(cwd, '.claude', 'commands', 'add.new.md'), 'utf8');
+      const cmd = fs.readFileSync(path.join(cwd, '.claude', 'commands', 'add-new.md'), 'utf8');
       expect(cmd).toContain('EXPLORE-CONTENT');
     });
 

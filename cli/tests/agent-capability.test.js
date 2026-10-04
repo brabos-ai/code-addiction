@@ -13,7 +13,7 @@ import path from 'node:path';
  * and nothing enforced it: the agent DECLINED a write instead of being denied
  * one. A decline is not an error, so the dispatching command carried on and the
  * file it expected was simply absent — which is exactly how three dispatch sites
- * in `/add.plan` went unnoticed.
+ * in `/add-plan` went unnoticed.
  *
  * Two gates, one per half of that failure:
  *
@@ -73,7 +73,7 @@ const DISPATCH_WINDOW = 8;
  * An `Output:` whose value OPENS with a backticked path ending in `.md`.
  *
  * The tightness is load-bearing. A looser `Output:.*\.md` also matches prose
- * that merely mentions a filename — `/add.plan` STEP 10.5 declares
+ * that merely mentions a filename — `/add-plan` STEP 10.5 declares
  * `**Output:** Summary of changes … Keep each plan.md under 150 lines`, which is
  * a stdout summary and not a file the agent writes. That form scored a false
  * positive against the tree; this one scores none.
@@ -224,7 +224,7 @@ describe('agent capability — no read-only agent is dispatched to write', () =>
   });
 
   it('ignores an Output: that summarises to stdout but mentions a .md name', () => {
-    // The exact shape /add.plan STEP 10.5 carries. A looser pattern flags it.
+    // The exact shape /add-plan STEP 10.5 carries. A looser pattern flags it.
     const { graph, read } = fixture({
       'stdout.md': [
         '**Dispatch:** @ro-agent for integration review',

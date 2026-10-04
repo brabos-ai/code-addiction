@@ -278,10 +278,10 @@ describe('L1 — the runner\'s decisions', () => {
   it('L1.14: the native Windows override keeps vitest serial; everywhere else it runs the projects as configured', () => {
     const r = loadRunner();
     const [win] = r.buildCommands({ suite: 'vitest', runner: 'native', repoRoot: 'C:/repo', jobs: 4, platform: 'win32' });
-    expect(win.file).toBe('npm --prefix cli test -- --no-file-parallelism');
+    expect(win.file).toBe('npm --prefix cli test -- --no-file-parallelism --testTimeout=30000');
 
     const [winFiltered] = r.buildCommands({ suite: 'vitest', runner: 'native', repoRoot: 'C:/repo', jobs: 4, platform: 'win32', extra: ['mcp'] });
-    expect(winFiltered.file).toBe('npm --prefix cli test -- --no-file-parallelism mcp');
+    expect(winFiltered.file).toBe('npm --prefix cli test -- --no-file-parallelism --testTimeout=30000 mcp');
 
     // CI's path: Linux, native, parallel projects untouched.
     const [linux] = r.buildCommands({ suite: 'vitest', runner: 'native', repoRoot: '/repo', jobs: 4, platform: 'linux' });
@@ -296,6 +296,53 @@ describe('L1 — the runner\'s decisions', () => {
     const source = fs.readFileSync(RUNNER_PATH, 'utf8');
     const literals = source.match(/framwork\/\.codeadd\/scripts\/tests\/\*\.bats/g) || [];
     expect(literals).toHaveLength(1);
+  });
+
+  it('L1.15: the native copy keeps .git and cli/node_modules, and drops worktrees', () => {
+    const r = loadRunner();
+    const root = path.join(os.tmpdir(), 'repo');
+    const keep = r.nativeCopyFilter(root);
+    for (const p of ['.git', '.git/HEAD', 'cli/node_modules/.bin', 'framwork/.codeadd', '.claudeish', 'web/src']) {
+      expect(keep(path.join(root, ...p.split('/'))), p).toBe(true);
+    }
+    for (const p of ['.worktrees', '.worktrees/x/y', '.claude/worktrees/z', 'web/node_modules/a']) {
+      expect(keep(path.join(root, ...p.split('/'))), p).toBe(false);
+    }
+  });
+
+  it('L1.16: the native copy lands in the destination and leaves the source untouched', () => {
+    const r = loadRunner();
+    const src = fs.mkdtempSync(path.join(os.tmpdir(), 'run-tests-src-'));
+    const dest = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'run-tests-dest-')), 'tree');
+    try {
+      fs.mkdirSync(path.join(src, '.git'));
+      fs.writeFileSync(path.join(src, '.git', 'HEAD'), 'ref: refs/heads/main\n');
+      fs.mkdirSync(path.join(src, '.worktrees', 'w'), { recursive: true });
+      fs.writeFileSync(path.join(src, 'a.md'), 'a');
+      r.copyCheckout(src, dest);
+      fs.writeFileSync(path.join(dest, 'a.md'), 'changed in the copy');
+
+      expect(fs.readFileSync(path.join(dest, '.git', 'HEAD'), 'utf8')).toContain('refs/heads/main');
+      expect(fs.existsSync(path.join(dest, '.worktrees'))).toBe(false);
+      expect(fs.readFileSync(path.join(src, 'a.md'), 'utf8')).toBe('a');
+    } finally {
+      fs.rmSync(src, { recursive: true, force: true });
+      fs.rmSync(path.dirname(dest), { recursive: true, force: true });
+    }
+  });
+
+  it('L1.17: both runners mark the run as a copy, with the marker global-setup reads', async () => {
+    const r = loadRunner();
+    const { COPY_MARKER } = await import('./helpers/global-setup.js');
+    expect(r.COPY_MARKER).toBe(COPY_MARKER);
+
+    const [docker] = r.buildCommands({ suite: 'vitest', runner: 'docker', repoRoot: 'C:/repo', tag: 'x', jobs: 4, platform: 'win32' });
+    expect(docker.args).toContain(`${COPY_MARKER}=1`);
+
+    // The native specs carry no env of their own; main() sets it on the spawn.
+    const source = fs.readFileSync(RUNNER_PATH, 'utf8');
+    expect(source).toMatch(/\[COPY_MARKER\]: '1'/);
+    expect(source).toMatch(/cwd, env: childEnv/);
   });
 });
 

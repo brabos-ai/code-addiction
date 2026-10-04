@@ -209,15 +209,16 @@ validate_report() {
     [ ! -L "$report" ] || fail "QA report must not be a symlink: $report"
     [ "$(sed -n '1p' "$report")" = "---" ] || fail "Schema-invalid report missing frontmatter: $report"
     frontmatter=$(awk 'NR == 1 { next } /^---[[:space:]]*$/ { found=1; exit } { print } END { if (!found) exit 1 }' "$report") || fail "Schema-invalid report has unclosed frontmatter: $report"
-    printf '%s\n' "$frontmatter" | grep -Eq "^id:[[:space:]]*$feature_id-qa-validation-$nnn[[:space:]]*$" || fail "Source/report number mismatch: $report"
-    printf '%s\n' "$frontmatter" | grep -Eq '^type:[[:space:]]*qa-validation[[:space:]]*$' || fail "Invalid qa-validation type: $report"
-    printf '%s\n' "$frontmatter" | grep -Eq '^created:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]*$' || fail "Schema-invalid report field created: $report"
-    printf '%s\n' "$frontmatter" | grep -Eq "^feature:[[:space:]]*$feature_id[[:space:]]*$" || fail "Schema-invalid report field feature: $report"
+    # grep -q may exit early; a printf pipe can then fail with SIGPIPE under pipefail.
+    grep -Eq "^id:[[:space:]]*$feature_id-qa-validation-$nnn[[:space:]]*$" <<< "$frontmatter" || fail "Source/report number mismatch: $report"
+    grep -Eq '^type:[[:space:]]*qa-validation[[:space:]]*$' <<< "$frontmatter" || fail "Invalid qa-validation type: $report"
+    grep -Eq '^created:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]]*$' <<< "$frontmatter" || fail "Schema-invalid report field created: $report"
+    grep -Eq "^feature:[[:space:]]*$feature_id[[:space:]]*$" <<< "$frontmatter" || fail "Schema-invalid report field feature: $report"
     for field in scope method viewports; do
-        printf '%s\n' "$frontmatter" | grep -Eq "^$field:[[:space:]]*[^[:space:]].*$" || fail "Schema-invalid report field $field: $report"
+        grep -Eq "^$field:[[:space:]]*[^[:space:]].*$" <<< "$frontmatter" || fail "Schema-invalid report field $field: $report"
     done
-    printf '%s\n' "$frontmatter" | grep -Eq '^specs:[[:space:]]*\{.*about:.*design:.*\}[[:space:]]*$' || fail "Schema-invalid report field specs: $report"
-    printf '%s\n' "$frontmatter" | grep -Eq '^judged-contract:[[:space:]]*sha256:[0-9a-f]+[[:space:]]*$' || fail "Schema-invalid report field judged-contract: $report"
+    grep -Eq '^specs:[[:space:]]*\{.*about:.*design:.*\}[[:space:]]*$' <<< "$frontmatter" || fail "Schema-invalid report field specs: $report"
+    grep -Eq '^judged-contract:[[:space:]]*sha256:[0-9a-f]+[[:space:]]*$' <<< "$frontmatter" || fail "Schema-invalid report field judged-contract: $report"
     for section in 'TOC' 'TL;DR' 'Summary' 'Coverage' 'Functional delivery' 'Findings' 'Responsiveness' 'Accessibility' 'Fix Routing' 'Clean screens' 'Not covered / caveats'; do
         grep -Eiq "^## $section([[:space:](]|$)" "$report" || fail "Schema-invalid report missing $section: $report"
     done
@@ -350,16 +351,18 @@ promote_baseline() {
 ensure_ignore() {
     local project_root=$1
     local file="$project_root/.gitignore"
-    local start='# ADD QA evidence - managed by add.qa-setup'
+    local start='# ADD QA evidence - managed by add-qa-setup'
+    local legacy='# ADD QA evidence - managed by add.qa-setup'
     local end='# END ADD QA evidence'
     local starts ends temp
     [ ! -L "$file" ] || fail ".gitignore must not be a symlink: $file"
     [ -e "$file" ] || : > "$file"
-    starts=$(grep -Fxc "$start" "$file" || true)
+    starts=$(grep -Fxc -e "$start" -e "$legacy" "$file" || true)
     ends=$(grep -Fxc "$end" "$file" || true)
     [ "$starts" -eq "$ends" ] || fail "Malformed QA evidence block in .gitignore"
     temp=$(mktemp "$project_root/.gitignore.qa.XXXXXX")
-    awk -v start="$start" -v end="$end" '
+    sed 's/# ADD QA evidence - managed by add\.qa-setup/# ADD QA evidence - managed by add-qa-setup/' "$file" | awk -v start="$start" -v end="$end" '
+        { sub(/\r$/, "") }
         $0 == start {
             if (!inserted) {
                 print start
@@ -380,7 +383,7 @@ ensure_ignore() {
                 print end
             }
         }
-    ' "$file" > "$temp"
+    ' > "$temp"
     mv "$temp" "$file"
     echo "STATUS=OK"
     echo "GITIGNORE=$file"

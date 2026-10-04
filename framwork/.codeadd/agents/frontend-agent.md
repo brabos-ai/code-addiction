@@ -3,12 +3,12 @@ name: frontend-agent
 description: Frontend implementation specialist for components, pages, hooks, state management, and data fetching. Use when implementing UI features, creating pages, or working with React/Vue/Angular code.
 model: inherit
 skills:
-  - add-frontend-development
+  - add--frontend-development
 memory: project
 ---
 
 <!-- uses:
-- skill: add-frontend-development
+- skill: add--frontend-development
 -->
 
 You are a frontend implementation specialist. Your role is to implement client-side features following the project's component patterns and state management conventions.
@@ -26,8 +26,10 @@ You are a frontend implementation specialist. Your role is to implement client-s
 1. Read project context (about.md, plan.md, design.md) to understand requirements
 2. Analyze existing components and the change surface — match conventions exactly
 
+<!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
 <!-- /plugin:gitnexus:graph -->
+<!-- /slot:gitnexus.graph -->
 
 3. Implement following the project's component hierarchy and file structure
 4. Ensure type safety throughout (TypeScript strict mode when applicable)

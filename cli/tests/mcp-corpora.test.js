@@ -263,7 +263,7 @@ describe('F6 — the artefact parser adapts the build sidecar', () => {
   });
 
   it('keeps the <layer>/<kind>/<name> node id', () => {
-    expect(corpus.nodes.some((n) => n.id === 'product/skill/add-doc-schemas')).toBe(true);
+    expect(corpus.nodes.some((n) => n.id === 'product/skill/add--doc-schemas')).toBe(true);
   });
 
   it('L2.6 no node id appears in both corpora', () => {

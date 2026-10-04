@@ -48,7 +48,7 @@
 #
 # THE FORMAT IS NOT DEFINED HERE. The record, the {what, at, find} anchor, the
 # four statuses, the corpus rule, the nine hard bans and the REFUSED= vocabulary
-# live in add-doc-schemas/references/delivery-index.md. This script implements
+# live in add--doc-schemas/references/delivery-index.md. This script implements
 # that reference; it does not extend it.
 #
 # THE CORPUS IS THE WHOLE DESIGN. It is every file git does not ignore
@@ -345,6 +345,13 @@ function doWrite() {
   if (STATUSES.indexOf(rec.status) === -1) refuse('bad-status');
   if (rec.status === 'superseded' && !rec.superseded_by) refuse('superseded-without-by');
 
+  // A superseded line is declared AFTER its replacement deleted its files, so
+  // the anchor search below cannot apply to it — it would refuse the entry at
+  // the one moment the declaration is needed. Its pointer is what it carries
+  // instead, and a pointer to no indexed id points at nothing.
+  const superseded = rec.status === 'superseded';
+  if (superseded && !loadIndex().byId.has(rec.superseded_by)) refuse('superseded-by-unknown');
+
   if (!Array.isArray(rec.items)) refuse('missing-field');
   if (rec.items.length === 0) refuse('no-items');
 
@@ -361,6 +368,10 @@ function doWrite() {
     // "Exists but excluded" is what `ignored` means. A path that simply is not
     // there yet is not a ban — ban 3 only demands the FIND string resolve, and
     // such an item is born `changed`, which is honest.
+    // A superseded line stops here: item-ignored and the anchor search both read
+    // the repository as it is NOW, and a path can become ignored after the line
+    // it anchors was written (build output that used to be tracked).
+    if (superseded) continue;
     if (fs.existsSync(path.join(ROOT, at)) && !inCorpus(at)) refuse('item-ignored');
 
     const hits = filesMatching(it.find, 21);
@@ -448,7 +459,7 @@ function doRead() {
   // them. Per-term matching widened the matched set, so a verifying read now
   // greps source for more entries than it used to — which is what `--no-verify`
   // is for on a triage path that only needs the ranking.
-  // --no-verify returns the stored status and opens no source file: /add.hotfix
+  // --no-verify returns the stored status and opens no source file: /add-hotfix
   // STEP 4 forbids grepping code before its history agents are dispatched, and
   // a verifying read greps source.
   if (!NO_VERIFY) {
@@ -486,7 +497,7 @@ function doRead() {
   //
   // THE NUMBERS ARE A DECLARED TUNABLE, not a discovery. Changing either needs
   // evidence and an updated line in
-  // add-doc-schemas/references/delivery-index.md.
+  // add--doc-schemas/references/delivery-index.md.
   const LIVE_CAP = parseInt(LIMIT, 10);
   const DEAD_CAP = 2;
 

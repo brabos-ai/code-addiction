@@ -1,6 +1,6 @@
 # Code-Addiction (ADD Framework)
 
-Open-source framework that distributes AI-assisted development commands, skills, and agents to 5 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity, OpenCode).
+Open-source framework that distributes AI-assisted development commands, skills, and agents to 6 MCP-capable providers (Claude Code, Codex, Cursor, Antigravity, OpenCode, ZCode).
 
 **This file is an overview.** It says what exists and where. The mechanics of each thing live in the command or skill that owns it — see **Where the details live** at the bottom.
 
@@ -19,17 +19,18 @@ The inventory below is **generated** — `node scripts/inventory.js` writes it f
 array has a length.
 
 [//]: # (codeadd-inventory:start)
-{"commands":["add","add.audit","add.brainstorm","add.build","add.diagnose","add.done","add.hotfix","add.new","add.plan","add.pull-request","add.qa-setup","add.review","add.ux","add.wiki"]}
-{"skills":["add-agents-md-style","add-architecture-discovery","add-backend-architecture","add-backend-development","add-backlog","add-code-review","add-commit","add-cross-sf-consistency","add-database-development","add-delivery-mode","add-delivery-validation","add-dev-environment-setup","add-doc-schemas","add-ecosystem","add-feature-discovery","add-feature-readback","add-feature-specification","add-final-report","add-frontend-architecture","add-frontend-development","add-health-check","add-id-convention","add-investigation","add-knowledge-discovery","add-optimizing-git-workflow","add-plan-based-features","add-plan-review","add-project-scaffolding","add-qa","add-qa-migration","add-qa-spec","add-resource-path-convention","add-review-discipline","add-security-audit","add-setup-contract","add-skill-creator","add-stripe","add-subagent-driven-development","add-tasks-checklist","add-tdd","add-test-specification","add-token-efficiency","add-ux-design","add-wiki-maintenance"]}
+{"commands":["add","add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-ux","add-wiki"]}
+{"skills":["add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--id-convention","add--investigation","add--knowledge-discovery","add--optimizing-git-workflow","add--plan-based-features","add--plan-review","add--project-scaffolding","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--skill-creator","add--stripe","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["backlog-commit.sh","backlog.sh","build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","get-branch-metadata.sh","get-main-branch.sh","hotfix-gates.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-context-files.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
-{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
 
 ### Product Layer — `mcp/`
 
-**A product-layer directory at the repository ROOT, and the only one.** It holds the knowledge-graph
-MCP server: the corpus registry, the two parsers, the query engine and the stdio transport.
+**A product-layer directory at the repository ROOT.** It holds the knowledge-graph MCP server: the
+corpus registry, the two parsers, the query engine and the stdio transport. `board/` is the second —
+see below.
 
 ```
 ⛔ THE ROOT-MEANS-INTERNAL RULE DOES NOT REACH IT:
@@ -44,20 +45,47 @@ because `--corpus=artefacts` runs from the repository root where the CLI's `node
 resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
 and one source has to read the same way in both.
 
+### Product Layer — `board/`
+
+**The second root product directory: a read-only board over `docs/backlog.jsonl`** — kanban, priority
+list and ticket detail, shaped to grow into activity management. It is `[product]` for the reason
+`mcp/` is: it is built to ship to users, as a separate release asset installed under
+`.codeadd/board/` — the distribution half lands with subtopic 004 of the backlog-board set.
+
+```
+⛔ ONLY `board/server.mjs` IS ZERO-DEPENDENCY — THE REST OF `board/` IS NOT:
+  ⛔ DO NOT: Add an import to `server.mjs` beyond the generated core, or read `docs/backlog.jsonl`
+             in it — tickets come from the generated core at `runtime/backlog-core.cjs`, the one
+             reader of that format
+  ⛔ DO NOT: Treat `board/src/` like `mcp/` — it is a TypeScript/React/Vite app with its own
+             `package.json`, and building it needs `npm ci`
+  ✅ DO: Keep `server.mjs` on Node built-ins, bound to 127.0.0.1; ship `server.mjs` + `dist/` +
+         `runtime/` (generated by `scripts/build-board-runtime.js`)
+```
+
+Unlike `mcp/`, nothing copies it into `cli/src/`: the npm package and the main release ZIP do not
+carry it.
+
+`npm run board` in this repository passes `--layers` to enable the Layer filter and
+`product` / `internal` / `both` chips in board cards and mobile list rows. The distributed server
+starts without that flag, so these controls and chips are absent. Labels remain in the API and
+ticket detail in both modes.
+
 ### Internal Layer — `workbench/`
 
-Development tools that build and maintain the framework itself. **It has a provider mirror and it reaches no user, and both halves matter.** `workbench/` is the source; `node scripts/build-workbench.js` compiles it into `.claude/` and `.opencode/` at the repository root, which are gitignored output. Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and the installer never writes it — which is what keeps the cross-layer gate in `scripts/build.js` correct.
+Development tools that build and maintain the framework itself. **It has a provider mirror and it reaches no user, and both halves matter.** `workbench/` is the source; `node scripts/build-workbench.js` compiles it into `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repository root, which are gitignored output. Nothing here is in `framwork/provider-map.json`, nothing is packaged by `release.yml`, and the installer never writes it — which is what keeps the cross-layer gate in `scripts/build.js` correct.
 
 ```
 ⛔ EDIT THE SOURCE, NEVER THE BUILT COPY:
-  ⛔ DO NOT: Edit `.claude/commands/`, `.claude/skills/`, `.claude/agents/` or the `.opencode/`
-             equivalents — they are gitignored and the next build erases the change
+  ⛔ DO NOT: Edit `.claude/commands/`, `.claude/skills/`, `.claude/agents/`, the `.opencode/`
+             equivalents or the `.agents/`/`.codex/` output trees — they are gitignored and the
+             next build erases the change
   ✅ DO: Edit `workbench/`, register in `workbench/provider-map.json`, run the workbench build
 ```
 
 | Type | Path |
 |------|------|
-| Registry | `workbench/provider-map.json` — its own, targeting claude and opencode. NEVER `framwork/provider-map.json` |
+| Registry | `workbench/provider-map.json` — its own, targeting claude, codex and opencode. NEVER `framwork/provider-map.json` |
 | Commands | `workbench/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
 | Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
@@ -83,7 +111,7 @@ as `/<name>` and declares the next with `handoff:`.
 |---------|---------|-------------|
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--backlog` | Records what to do next — add, update or remove an item, then commits and pushes straight to `main` | `docs/backlog/index.md` |
+| `add-framework--backlog` | Records what to do next — add, update, comment, reprioritise or close a ticket, committed and pushed to `main` through `backlog-commit.sh` | `docs/backlog.jsonl` |
 
 ## Pipeline
 
@@ -107,16 +135,21 @@ workbench/  (source of truth for the framework's OWN pipeline)
   ↓
 node scripts/build-workbench.js  (reads workbench/provider-map.json; imports scripts/build.js as a module)
   ↓  the SAME buildResources, resolveResourcePaths and AGENT_DIALECTS — imported, never copied
-.claude/, .opencode/  at the repository root  (gitignored; 2 providers)
+.claude/, .opencode/, .agents/, .codex/  at the repository root  (gitignored; 3 providers)
   ↓
 nothing. It ships to no user, and `release.yml` does not run it.
 ```
 
-**`npm run setup` is the install.** A fresh clone carries `workbench/` and `.claude/settings.json`
-and nothing else under the provider directories — every command, skill and agent the pipeline runs
-on is build output, so until it is run there is no pipeline to run. It is an alias for
-`build:workbench` and nothing more: it takes no dependency, needs no `npm install` first, and does
-NOT run the product build, which compiles 728 files this repository's own pipeline never reads.
+**`npm run setup` is the install.** A fresh clone carries `workbench/`, `.claude/settings.json` and
+`.codex/config.toml` (the two authored provider configs) and nothing else under the provider
+directories — every command, skill and agent the pipeline runs
+on is build output, so until it is run there is no pipeline to run. It runs `build:workbench`, then
+`build:board`. The workbench half takes no dependency and needs no `npm install` first; the board half
+runs `npm ci` and a Vite build inside `board/`, so the board is there by default — `npm run board`
+opens it on this repository's backlog. The workbench builds FIRST, so a board failure (offline, an npm
+error) still leaves the pipeline installed; `npm run build:board` retries the second half alone.
+`setup` does NOT run the product build, which compiles 728 files this repository's own pipeline
+never reads.
 
 ```
 ⛔ THE SCRIPT IS NOT NAMED `install`:
@@ -146,6 +179,7 @@ Key files:
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — runs the suites natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
+| `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
 | `framwork/.codeadd/scripts/*.sh` | Shipped verbatim. Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
@@ -160,7 +194,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 
 ### Providers
 
-The 5 supported providers (claude, codex, cursor, antigrav, opencode) are all MCP-capable and markdown-native. Commands and skills build to all 5 by default; agents only to providers declaring an `agents` pattern. Antigravity agents are deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. Per-provider capabilities and distribution overrides live in `provider-map.json` → `providers.{name}`.
+The 6 supported providers (claude, codex, cursor, antigrav, opencode, zcode) are all MCP-capable and markdown-native. Commands and skills build to all 6 by default; agents only to providers declaring an `agents` pattern. Antigravity agents are deliberately deferred — its native `.agents/agents/` collides with the Codex skills root. ZCode reuses codex's `dir`/`commands`/`skills` values verbatim rather than building its own tree, and has its own `agentsDir`. Per-provider capabilities and distribution overrides live in `provider-map.json` → `providers.{name}`.
 
 ## Feature Injection System
 
@@ -175,9 +209,9 @@ Optional features inject content into commands **post-install**, so they can be 
 
 | Feature | Default | Affected commands |
 |---------|---------|-------------------|
-| `tdd-pipeline` | enabled | add.plan, add.build, add.review, add.hotfix |
-| `qa-pipeline` | disabled | add.plan, add.build, add.review |
-| `docs-pruning` | disabled | add.done |
+| `tdd-pipeline` | enabled | add-plan, add-build, add-review, add-hotfix |
+| `qa-pipeline` | disabled | add-plan, add-build, add-review |
+| `docs-pruning` | disabled | add-done |
 
 ## Plugin System
 
@@ -201,12 +235,12 @@ A command that materializes state into a user's project declares a `## Materiali
 | Component | Path |
 |---|---|
 | Contract declaration | `## Materializes` H2 in the command source |
-| Receipt schema | `add-doc-schemas/references/receipt.md` |
+| Receipt schema | `add--doc-schemas/references/receipt.md` |
 | Receipt in user project | `docs/qa/qa-setup.md` |
-| Comparison procedure | `add-setup-contract` skill |
+| Comparison procedure | `add--setup-contract` skill |
 | Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
 
-Current consumer: `add.qa-setup` only. `add.wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
+Current consumer: `add-qa-setup` only. `add-wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
 
 ## Web / Documentation
 
@@ -243,10 +277,10 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Internal-layer build mechanics | `add-framework-internal-layer` |
 | `<!-- uses: -->` syntax, graph gates, node identity | `add-framework-development` § 9 |
 | Querying the graph — the eleven verbs, both interfaces, and what it cannot see | `add-artefact-graph` |
-| `{{cmd:}}` / `{{skill:}}` resolution | `add-resource-path-convention` |
-| What belongs in a project's `AGENTS.md` | `add-agents-md-style` |
-| Doc schemas, voice, output length | `add-doc-schemas` |
-| How a command closes its final report | `add-final-report` — one per layer, deliberately not shared |
-| Setup-contract comparison | `add-setup-contract` |
+| `{{cmd:}}` / `{{skill:}}` resolution | `add--resource-path-convention` |
+| What belongs in a project's `AGENTS.md` | `add--agents-md-style` |
+| Doc schemas, voice, output length | `add--doc-schemas` |
+| How a command closes its final report | product `add--final-report`, internal `add-final-report` — one per layer, deliberately not shared |
+| Setup-contract comparison | `add--setup-contract` |
 | A script's contract and exit codes | that script's own header, plus its `.bats` suite |
 | Injection anchor internals | `cli/src/injection-core.js` |

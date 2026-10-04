@@ -60,7 +60,7 @@ GIT_DIR=$(cd "$(git rev-parse --git-dir 2>/dev/null)" 2>/dev/null && pwd || echo
 GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir 2>/dev/null)" 2>/dev/null && pwd || echo "")
 if [ -n "$GIT_DIR" ] && [ "$GIT_DIR" != "$GIT_COMMON_DIR" ]; then
     echo "STATUS=ERROR"
-    echo "ERROR=Running inside a linked worktree. Run /add.done from the primary checkout."
+    echo "ERROR=Running inside a linked worktree. Run /add-done from the primary checkout."
     exit 1
 fi
 
@@ -231,7 +231,7 @@ if [ "$MODE" = "context" ]; then
 
 
     # --- Route probes -------------------------------------------------------
-    # /add.done crosses four facts to choose between its Normal, Resume, Closed
+    # /add-done crosses four facts to choose between its Normal, Resume, Closed
     # out and Recovery routes. Deriving them in prose is how two commands end up
     # disagreeing about the same tree, which is the reason converge-gates.sh
     # exists; these are the same idea for routing rather than gating.
@@ -284,7 +284,7 @@ if [ "$MODE" = "context" ]; then
     echo "PR_MERGE_COMMIT=$PR_MERGE_COMMIT"
 
     # The FILE, committed or not. The duplicate entry this probe exists to catch
-    # is born in the working tree: /add.done 6.8 writes the line and leaves it
+    # is born in the working tree: /add-done 6.8 writes the line and leaves it
     # there for done.sh --merge to commit, so a check reading only commits is
     # blind to exactly the state it is for.
     INDEX_FILE="docs/delivered.jsonl"
@@ -511,13 +511,13 @@ if [ "$MODE" = "merge" ]; then
     # remote's pre-receive hook, which is where GitHub enforces it — a protected
     # main reports PUSHABLE here and fails the real push. done.bats pins that.
     # It is not a gap to close: when main is protected the right answer is the
-    # PR route, and /add.done takes it whenever a PR exists.
+    # PR route, and /add-done takes it whenever a PR exists.
     echo "STEP=Checking $MAIN_BRANCH is pushable..."
     if ! git push --dry-run origin "$MAIN_BRANCH" >/dev/null 2>&1; then
         echo "PUSH_MAIN=REFUSED"
         echo "STATUS=ERROR"
         echo "ERROR=origin/$MAIN_BRANCH refuses a push. Branch protection, or no permission."
-        echo "HINT=Open a PR instead — /add.done takes the PR route when one exists."
+        echo "HINT=Open a PR instead — /add-done takes the PR route when one exists."
         exit 1
     fi
     echo "PUSH_MAIN=PUSHABLE"
@@ -535,7 +535,7 @@ if [ "$MODE" = "merge" ]; then
     # Step 4: Choose the merge mode — DETERMINISTICALLY, never by catching a
     # conflict.
     #
-    # WHY THIS EXISTS: on the /add.pull-request route the branch is still
+    # WHY THIS EXISTS: on the /add-pull-request route the branch is still
     # un-merged locally, but `main` already carries equivalent content, applied
     # by GitHub's squash button as a NEW commit with a different SHA. The
     # branch's commits are therefore not ancestors of `main`, and STEP 6 then

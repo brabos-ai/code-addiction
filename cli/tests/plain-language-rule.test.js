@@ -23,11 +23,11 @@ const COMMANDS = path.join(CODEADD, 'commands');
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
-const AGENTS_MD_STYLE = read(path.join(SKILLS, 'add-agents-md-style', 'SKILL.md'));
-const DOC_SCHEMAS = read(path.join(SKILLS, 'add-doc-schemas', 'SKILL.md'));
-const TOKEN_EFFICIENCY = read(path.join(SKILLS, 'add-token-efficiency', 'SKILL.md'));
-const WIKI_MAINTENANCE = read(path.join(SKILLS, 'add-wiki-maintenance', 'SKILL.md'));
-const ADD_WIKI = read(path.join(COMMANDS, 'add.wiki.md'));
+const AGENTS_MD_STYLE = read(path.join(SKILLS, 'add--agents-md-style', 'SKILL.md'));
+const DOC_SCHEMAS = read(path.join(SKILLS, 'add--doc-schemas', 'SKILL.md'));
+const TOKEN_EFFICIENCY = read(path.join(SKILLS, 'add--token-efficiency', 'SKILL.md'));
+const WIKI_MAINTENANCE = read(path.join(SKILLS, 'add--wiki-maintenance', 'SKILL.md'));
+const ADD_WIKI = read(path.join(COMMANDS, 'add-wiki.md'));
 
 const STYLE_START = '[//]: # (codeadd-style:start)';
 const STYLE_END = '[//]: # (codeadd-style:end)';
@@ -53,7 +53,7 @@ function extractBlock(source, startMarker, endMarker) {
  *
  * FENCE-AWARE, and that is load-bearing rather than tidy. Both files embed fenced
  * templates that carry their own H2s — `## Project Knowledge Base` inside the block
- * template, `## ROLE` inside add.wiki's agent prompt. A naive `^## ` scan stops at the
+ * template, `## ROLE` inside add-wiki's agent prompt. A naive `^## ` scan stops at the
  * first of those and silently returns a fragment, so every assertion below it would
  * pass by measuring nothing. This is the same trap the framework already documents for
  * the `## Materializes` contract block.
@@ -87,7 +87,7 @@ function artefactNames() {
   return names.filter((n) => /[.\-]/.test(n) && n.length >= 5);
 }
 
-describe('L1 — Writing Style block content contract (add-agents-md-style)', () => {
+describe('L1 — Writing Style block content contract (add--agents-md-style)', () => {
   it('L1.1 — the managed-block subsection exists under Section Templates', () => {
     const templates = section(AGENTS_MD_STYLE, '## Section Templates');
     expect(templates).not.toBeNull();
@@ -96,7 +96,7 @@ describe('L1 — Writing Style block content contract (add-agents-md-style)', ()
 
   it('L1.2 — the block exists and fits the 14-line cap, markers included', () => {
     const block = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
-    expect(block, 'codeadd-style markers not found in add-agents-md-style').not.toBeNull();
+    expect(block, 'codeadd-style markers not found in add--agents-md-style').not.toBeNull();
     expect(block.length).toBeLessThanOrEqual(14);
   });
 
@@ -182,13 +182,13 @@ describe('L2 — no drift between the skill template and the command prompt', ()
   it('L2.2 — the Writing Style block is identical in both files', () => {
     const inSkill = extractBlock(AGENTS_MD_STYLE, STYLE_START, STYLE_END);
     const inCommand = extractBlock(ADD_WIKI, STYLE_START, STYLE_END);
-    expect(inSkill, 'block missing from add-agents-md-style').not.toBeNull();
-    expect(inCommand, 'block missing from add.wiki').not.toBeNull();
+    expect(inSkill, 'block missing from add--agents-md-style').not.toBeNull();
+    expect(inCommand, 'block missing from add-wiki').not.toBeNull();
     expect(inSkill).toEqual(inCommand);
   });
 
   /**
-   * Asserted on a STANDALONE LINE, not on any occurrence. add-agents-md-style
+   * Asserted on a STANDALONE LINE, not on any occurrence. add--agents-md-style
    * quotes `<!-- codeadd-wiki:start -->` mid-sentence to explain why that form is
    * banned; forbidding the string outright would forbid documenting the rule.
    * What must never exist is a line that IS an HTML-comment marker, because that
@@ -196,16 +196,16 @@ describe('L2 — no drift between the skill template and the command prompt', ()
    */
   it('L2.3 — REGRESSION GUARD: neither marker is ever used as an HTML comment', () => {
     const markerLine = /^<!--\s*codeadd-(style|wiki):(start|end)\s*-->$/;
-    for (const [name, source] of [['add-agents-md-style', AGENTS_MD_STYLE], ['add.wiki', ADD_WIKI]]) {
+    for (const [name, source] of [['add--agents-md-style', AGENTS_MD_STYLE], ['add-wiki', ADD_WIKI]]) {
       const offenders = source.split('\n').map((l) => l.trim()).filter((l) => markerLine.test(l));
       expect(offenders, `${name} uses an HTML-comment marker: ${offenders.join(', ')}`).toHaveLength(0);
     }
   });
 });
 
-describe('L3 — add.wiki wiring', () => {
+describe('L3 — add-wiki wiring', () => {
   it('L3.1 — STEP 6 tasks the agent with the block, verbatim and replace-or-append', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    const step6 = section(ADD_WIKI, '## STEP add-wiki.agents-md: Update AGENTS.md');
     expect(step6).not.toBeNull();
     expect(step6).toMatch(/\d+\.\s+\*\*Writing Style managed block\*\*/);
     expect(step6).toContain(STYLE_START);
@@ -215,12 +215,12 @@ describe('L3 — add.wiki wiring', () => {
   });
 
   it('L3.2 — STEP 6 reports what happened to the block', () => {
-    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    const step6 = section(ADD_WIKI, '## STEP add-wiki.agents-md: Update AGENTS.md');
     expect(step6).toContain('WRITING_STYLE_BLOCK');
   });
 
   it('L3.3 — STEP 7 verifies AGENTS.md alone: every marker pair, and no legacy file left', () => {
-    const step7 = section(ADD_WIKI, '## STEP 7: Verify AGENTS.md');
+    const step7 = section(ADD_WIKI, '## STEP add-wiki.verify: Verify AGENTS.md');
     expect(step7).not.toBeNull();
     expect(step7).toContain('codeadd-style:start');
     expect(step7).toContain('codeadd-wiki:start');
@@ -231,11 +231,11 @@ describe('L3 — add.wiki wiring', () => {
     }
   });
 
-  it('L3.6 — add.wiki copies to no other context file and migrates before it writes', () => {
-    expect(ADD_WIKI).not.toMatch(/## STEP 7: Copy Context Files/);
+  it('L3.6 — add-wiki copies to no other context file and migrates before it writes', () => {
+    expect(ADD_WIKI).not.toMatch(/## STEP add-wiki.verify: Copy Context Files/);
     expect(ADD_WIKI).not.toMatch(/GEMINI\.md\s*←/);
     expect(ADD_WIKI).not.toMatch(/AGENTS\.md\s*←\s*copy/);
-    const step6 = section(ADD_WIKI, '## STEP 6: Update AGENTS.md');
+    const step6 = section(ADD_WIKI, '## STEP add-wiki.agents-md: Update AGENTS.md');
     expect(step6, 'STEP 6 must run the migration before any write').toMatch(/Migration/);
   });
 
@@ -256,8 +256,8 @@ describe('L3 — add.wiki wiring', () => {
   it('L3.4 — update mode reaches the managed blocks and is forbidden the derived sections', () => {
     const modes = section(ADD_WIKI, '## Invocation Modes');
     expect(modes).not.toBeNull();
-    expect(modes, 'update mode must run the managed-block part of STEP 6').toMatch(/STEP 6/);
-    expect(modes, 'update mode must run STEP 7').toMatch(/STEP 7/);
+    expect(modes, 'update mode must run the managed-block part of STEP add-wiki.agents-md').toMatch(/STEP add-wiki\.agents-md/);
+    expect(modes, 'update mode must run STEP add-wiki.verify').toMatch(/STEP add-wiki\.verify/);
     expect(modes, 'regenerating the Architecture Contract must be forbidden outright').toMatch(
       /⛔ DO NOT:[^\n]*Architecture Contract/,
     );
@@ -266,13 +266,13 @@ describe('L3 — add.wiki wiring', () => {
     );
   });
 
-  it('L3.5 — REGRESSION GUARD: add-wiki-maintenance still refuses AGENTS.md, the context file', () => {
+  it('L3.5 — REGRESSION GUARD: add--wiki-maintenance still refuses AGENTS.md, the context file', () => {
     expect(WIKI_MAINTENANCE).toMatch(/never touches AGENTS\.md/i);
   });
 });
 
 describe('L4 — the canonical rule', () => {
-  it('L4.1 — add-doc-schemas Voice carries the rule, its reach, the language clause and the carve-out', () => {
+  it('L4.1 — add--doc-schemas Voice carries the rule, its reach, the language clause and the carve-out', () => {
     const voice = section(DOC_SCHEMAS, '### Voice');
     expect(voice).not.toBeNull();
     expect(voice).toMatch(/figurative language/i);
@@ -304,14 +304,14 @@ describe('L4 — the canonical rule', () => {
     expect(universal).not.toMatch(/[<≤]\s*\d+\s*(words|chars|characters|lines)\b/i);
   });
 
-  it('L4.4 — add-token-efficiency routes voice questions away and keeps no copy of the rule', () => {
+  it('L4.4 — add--token-efficiency routes voice questions away and keeps no copy of the rule', () => {
     const whenNot = section(TOKEN_EFFICIENCY, '## When NOT to use');
     expect(whenNot).not.toBeNull();
     expect(whenNot).toMatch(/figurative|voice/i);
-    expect(whenNot).toContain('add-doc-schemas');
+    expect(whenNot).toContain('add--doc-schemas');
     expect(
       TOKEN_EFFICIENCY,
-      'add-token-efficiency must not carry a second copy of the rule — it routes only',
+      'add--token-efficiency must not carry a second copy of the rule — it routes only',
     ).not.toMatch(/literal names of their concepts/i);
   });
 });

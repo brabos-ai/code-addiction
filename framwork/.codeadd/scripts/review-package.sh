@@ -20,7 +20,7 @@
 # empty still packages: `git log` is content, and the reviewer should see that
 # a task produced a marker commit and nothing else.
 #
-# BASE..HEAD exists at all only because /add.build now commits per task. The
+# BASE..HEAD exists at all only because /add-build now commits per task. The
 # coordinator records BASE before dispatching and HEAD after the agent's
 # commits land; both go in the ledger line, and this script turns that bracket
 # into something a reviewer can read.

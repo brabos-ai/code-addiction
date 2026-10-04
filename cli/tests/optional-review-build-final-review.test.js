@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
  * Validation Matrix, levels L2 (text contract), L3 (build prompt) and L4
  * (wording sweep). L1 lives in framwork/.codeadd/scripts/tests/converge-gates.bats.
  *
- * Written RED against the pre-plan tree: /add.done blocks on a missing review,
- * /add.build hands every automatic delivery to /add.review, and nothing in the
+ * Written RED against the pre-plan tree: /add-done blocks on a missing review,
+ * /add-build hands every automatic delivery to /add-review, and nothing in the
  * build reviews the whole diff at once.
  */
 
@@ -21,15 +21,15 @@ const skill = (name) => path.join(CODEADD, 'skills', name, 'SKILL.md');
 
 const P = {
   reviewer: path.join(CODEADD, 'agents', 'reviewer-agent.md'),
-  discipline: skill('add-review-discipline'),
-  mode: skill('add-delivery-mode'),
-  ecosystem: skill('add-ecosystem'),
-  build: cmd('add.build'),
-  done: cmd('add.done'),
-  review: cmd('add.review'),
+  discipline: skill('add--review-discipline'),
+  mode: skill('add--delivery-mode'),
+  ecosystem: skill('add--ecosystem'),
+  build: cmd('add-build'),
+  done: cmd('add-done'),
+  review: cmd('add-review'),
   router: cmd('add'),
-  qaSetup: cmd('add.qa-setup'),
-  qaBuild: path.join(CODEADD, 'fragments', 'qa-pipeline', 'add.build.md'),
+  qaSetup: cmd('add-qa-setup'),
+  qaBuild: path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
 };
 
 /** The body of the `## <heading>` section, up to the next H2. */
@@ -50,8 +50,8 @@ function mdFiles(dir, out = []) {
   return out;
 }
 
-// The line count of add.build.md on main at 34731b0, when this plan branched.
-const BUILD_LINE_BUDGET = 1609;
+// 1609 on main at 34731b0. Slot wrappers around the 15 injection markers added the rest.
+const BUILD_LINE_BUDGET = 1626; // slot wrappers; STEP id rename did not add lines
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {
@@ -61,7 +61,7 @@ describe('L2 — text contract', () => {
     expect(t).toMatch(/`task` is the default whenever the caller omits/);
   });
 
-  it("L2.2 add-review-discipline owns the build's final review, verbatim grammar included", () => {
+  it("L2.2 add--review-discipline owns the build's final review, verbatim grammar included", () => {
     const s = section(read(P.discipline), "The Build's Final Review");
     expect(s).toContain('Final review: passed (after review-NNN)');
     expect(s).toContain('Final review: ruled N (after review-NNN)');
@@ -73,7 +73,7 @@ describe('L2 — text contract', () => {
     expect(s).toMatch(/never[^\n]*`Ruling:`|`Ruling:`[^\n]*never/i);
   });
 
-  it('L2.3 add.done parses REVIEW_SOURCE, accepts skipped and asks before closing out without QA', () => {
+  it('L2.3 add-done parses REVIEW_SOURCE, accepts skipped and asks before closing out without QA', () => {
     const t = read(P.done);
     expect(t).toContain('REVIEW_SOURCE');
     expect(t).toMatch(/GATE_QA_BASELINE[^\n]*skipped|skipped[^\n]*GATE_QA_BASELINE/);
@@ -81,20 +81,20 @@ describe('L2 — text contract', () => {
     expect(t).toMatch(/deciding/);
   });
 
-  it('L2.4 add.done prints GATE_REVIEW_DETAIL for the build verdict and never reads the ledger itself', () => {
+  it('L2.4 add-done prints GATE_REVIEW_DETAIL for the build verdict and never reads the ledger itself', () => {
     const t = read(P.done);
     expect(t).toMatch(/REVIEW_SOURCE=build[\s\S]{0,400}GATE_REVIEW_DETAIL/);
-    expect(t).not.toContain('Review not executed. Run /add.review before /add.done.');
+    expect(t).not.toContain('Review not executed. Run /add-review before /add-done.');
   });
 
-  it('L2.5 add.review has no automatic hand-back and no "LAST gate"', () => {
+  it('L2.5 add-review has no automatic hand-back and no "LAST gate"', () => {
     const t = read(P.review);
     expect(t).not.toMatch(/### 11\.5/);
     expect(t).not.toMatch(/LAST gate/);
     expect(t).not.toMatch(/third review round/i);
   });
 
-  it('L2.6 add-delivery-mode no longer carries the two-round review loop', () => {
+  it('L2.6 add--delivery-mode no longer carries the two-round review loop', () => {
     const t = read(P.mode);
     expect(t).not.toMatch(/Two Rounds/);
     expect(t).not.toMatch(/third review round/i);
@@ -103,20 +103,20 @@ describe('L2 — text contract', () => {
 });
 
 describe('L3 — the build prompt', () => {
-  it('L3.1 add.build.md is no longer than it was at branch start', () => {
+  it('L3.1 add-build.md is no longer than it was at branch start', () => {
     const lines = read(P.build).split('\n').length - 1;
     expect(lines).toBeLessThanOrEqual(BUILD_LINE_BUDGET);
   });
 
-  it('L3.2 the final review points at add-review-discipline; the loop is gone', () => {
+  it('L3.2 the final review points at add--review-discipline; the loop is gone', () => {
     const t = read(P.build);
     const s = section(t, 'Final Review');
-    expect(s).toMatch(/add-review-discipline/);
+    expect(s).toMatch(/add--review-discipline/);
     expect(t).not.toMatch(/review baseline <NNN>/);
     expect(t).not.toMatch(/continuing to \/add\.review/);
   });
 
-  it('L3.3 Loop End is entered after the final review or a correction run, not from /add.review', () => {
+  it('L3.3 Loop End is entered after the final review or a correction run, not from /add-review', () => {
     const s = section(read(P.build), 'Loop End');
     expect(s).not.toMatch(/from `\/add\.review` on an automatic delivery/);
     expect(s).toMatch(/final review/i);
@@ -129,20 +129,22 @@ describe('L3 — the build prompt', () => {
   });
 
   it('L3.4b STEP 17 prints the build verdict and its blocker suggestions before asking', () => {
-    const s = section(read(P.build), 'STEP 17: Publish');
+    const s = section(read(P.build), 'STEP add-build.publish: Publish');
     expect(s).toContain('Final review:');
     expect(s).toContain('Blocker suggestion:');
   });
 
-  it('L3.4c the final-review heading is unnumbered and STEPs 13-18 keep their numbers', () => {
+  it('L3.4c the final-review heading is unnumbered and later steps keep stable IDs', () => {
     const t = read(P.build);
     expect(t).toMatch(/\n## Final Review/);
-    for (const n of [13, 14, 15, 16, 17, 18]) expect(t).toMatch(new RegExp(`\\n## STEP ${n}:`));
+    for (const id of ['comply', 'integrate', 'mutate-docs', 'log', 'publish', 'complete']) {
+      expect(t).toMatch(new RegExp(`\\n## STEP add-build\\.${id}:`));
+    }
   });
 });
 
 describe('L4 — wording sweep', () => {
-  it('L4.1 no product artefact still makes /add.review mandatory or runs review rounds', () => {
+  it('L4.1 no product artefact still makes /add-review mandatory or runs review rounds', () => {
     const offenders = [];
     for (const f of mdFiles(CODEADD)) {
       const t = read(f);
@@ -153,15 +155,15 @@ describe('L4 — wording sweep', () => {
     expect(offenders).toEqual([]);
   });
 
-  it("L4.2 add-ecosystem's reviewer-agent row names MODE: feature", () => {
+  it("L4.2 add--ecosystem's reviewer-agent row names MODE: feature", () => {
     const row = read(P.ecosystem).split('\n').find((l) => l.startsWith('| reviewer-agent'));
     expect(row).toBeDefined();
     expect(row).toMatch(/MODE: feature/);
   });
 
-  it('L4.3 the router sends a built feature to /add.done and calls /add.review optional', () => {
+  it('L4.3 the router sends a built feature to /add-done and calls /add-review optional', () => {
     const t = read(P.router);
-    expect(t).not.toMatch(/Feature implemented, no review[^\n]*\/add\.review/);
-    expect(t).toMatch(/\/add\.review[^\n]*optional|optional[^\n]*\/add\.review/i);
+    expect(t).not.toMatch(/Feature implemented, no review[^\n]*\/add-review/);
+    expect(t).toMatch(/\/add-review[^\n]*optional|optional[^\n]*\/add-review/i);
   });
 });
