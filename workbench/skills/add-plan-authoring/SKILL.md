@@ -192,12 +192,13 @@ documents cite plans by number. **Only `-PLAN--` with a timestamp is written for
 
 <!--
 Modelled on the product procedure, add-backlog/references/lifecycle.md, and
-kept to the same rules. `backlog.sh`, `backlog-commit.sh` and
-`add-doc-schemas/references/backlog.md` are PRODUCT nodes, named in prose on
-purpose and deliberately NOT declared under `uses:`: targets resolve inside the
-declaring artefact's own layer (scripts/build.js), so a `- script:` entry here
-would resolve to a nonexistent internal/script/ node and fail the graph gate.
-This repository is those scripts' source and calls them by repository path, as
+kept to the same rules. `backlog.sh`, `backlog-commit.sh`, the native
+`.cjs` entries and `add-doc-schemas/references/backlog.md` are PRODUCT
+nodes, named in prose on purpose and deliberately NOT declared under
+`uses:`: targets resolve inside the declaring artefact's own layer
+(scripts/build.js), so a `- script:` entry here would resolve to a
+nonexistent internal/script/ node and fail the graph gate. This
+repository is those scripts' source and calls them by repository path, as
 add-framework--done calls delivered.sh.
 
 The seven statuses and the two rules below are held equal to the product's by
@@ -255,11 +256,12 @@ a product hotfix makes.
 
 ### Reading one ticket
 
-`backlog.sh` has no mode that returns one ticket by id. Read the whole board and keep the one line — the
-format writes `id` first on every line, so the line is recoverable from its raw text:
+The list output is JSONL plus `KEY=VALUE` metadata, and the match is by exact ticket id using
+agent parsing: run the read, scan the raw lines for `"id":"<id>"`, keep the one line and nothing
+else. No matching line means the id is not on the board: report it and continue with no ticket.
 
 ```bash
-bash framwork/.codeadd/scripts/backlog.sh list --all | grep '"id":"<id>"'
+node framwork/.codeadd/scripts/backlog-cli.cjs list --all
 ```
 
 No output line means the id is not on the board: report it and continue with no ticket.
@@ -288,19 +290,24 @@ writes was built, for exactly this reason.
 
 ### How a write is made
 
-One call per write, carrying only the fields that change:
+One call per write, carrying only the fields that change. The record travels on a FILE this stage
+writes first (`docs/.tmp-ticket.json` is the usual scratch name, cleaned up in the same step) —
+`node framwork/.codeadd/scripts/backlog-commit.cjs update <id> --record-file <scratch.json>`:
 
-| Write | One call |
+| Write | One call, per its record file |
 |---|---|
-| any status | `printf '%s' '{"status":"<status>"}' \| bash framwork/.codeadd/scripts/backlog-commit.sh update <id>` |
-| `doing` (build) | `printf '%s' '{"status":"doing","work_id":"<plan basename>"}' \| bash framwork/.codeadd/scripts/backlog-commit.sh update <id>` |
+| any status | record `{"status":"<status>"}` |
+| `doing` (build) | record `{"status":"doing","work_id":"<plan basename>"}` |
+
+`bash framwork/.codeadd/scripts/backlog-commit.sh update <id> < record.json` remains a marked
+compatibility path for shell sessions; the native recipe is the file.
 
 **`work_id` is the plan basename** — the internal work's identity in the ledger, the delivery index and
 `docs/deliveries/`. A ticket already `doing` under a **different** `work_id` is written over, exactly as the
 product procedure does, and the stage reports the `work_id` it replaced. **`doing` and `work_id` travel in ONE
 write**, so the two can never disagree about whether the work started.
 
-The script picks its own route: on `main` it commits directly, on a feature branch it writes through a
+The entry picks its own route: on `main` it commits directly, on a feature branch it writes through a
 locked worktree, so the ticket reaches `main` without touching the branch being built. **That is why the
 brainstorm and the plan can write the board**: they write no file on the branch, and the board write never
 touches it either.

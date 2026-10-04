@@ -6,10 +6,11 @@
 -->
 
 <!--
-`backlog.sh`, `backlog-commit.sh` and `add--doc-schemas/references/backlog.md`
-are PRODUCT nodes, named in prose below on purpose and deliberately NOT
-declared: `uses:` targets resolve inside the declaring artefact's own layer
-(scripts/build.js), so `- script: backlog.sh` from here would resolve to
+`backlog.sh`, `backlog-commit.sh`, the native `.cjs` entries and
+`add--doc-schemas/references/backlog.md` are PRODUCT nodes, named in prose
+below on purpose and deliberately NOT declared: `uses:` targets resolve
+inside the declaring artefact's own layer (scripts/build.js), so a
+`- script: backlog.sh` from here would resolve to
 `internal/script/backlog.sh`, which does not exist. This repository is those
 scripts' source, so it calls them by their repository path — the same way
 add-framework--done calls delivered.sh.
@@ -27,10 +28,10 @@ Grounds every new ticket in a bounded read of the project so it still means some
 
 **STEPS IN ORDER:**
 ```
-STEP 1: Read the board          → through backlog.sh, never by opening the file
+STEP 1: Read the board          → through the local CLI, never by opening the file
 STEP 2: Resolve the operation   → add | update | comment | move | close | remove, and its target
 STEP 3: Check the project       → add and update only; BOUNDED to what the request names
-STEP 4: Write                   → ONE backlog-commit.sh call: write, commit, rebase, push
+STEP 4: Write                   → ONE publication-entry call: write, commit, rebase, push
 STEP 5: Report                  → operation, ticket, route, sha
 ```
 
@@ -40,12 +41,13 @@ STEP 5: Report                  → operation, ticket, route, sha
 ALWAYS — THE SCRIPTS OWN THE BOARD:
   ⛔ DO NOT USE: Write or Edit on docs/backlog.jsonl or docs/backlog.definitions.json
   ⛔ DO NOT USE: Bash to run git add, git commit, git rebase or git push for a board write —
-                 backlog-commit.sh does all four and aborts a conflicting rebase itself
-  ⛔ DO NOT: Supply an id, created_at or updated_at in a record — the script generates them
-  ✅ DO: Read with backlog.sh, write with backlog-commit.sh
+                 the native publication entry does all four and aborts a conflicting rebase itself
+  ⛔ DO NOT: Supply an id, created_at or updated_at in a record — the entry generates them
+  ✅ DO: Read with the native local CLI (`node .codeadd/scripts/backlog-cli.cjs`),
+         write with the native publication entry (`node .codeadd/scripts/backlog-commit.cjs`)
 
 IF THE OPERATION OR ITS TARGET IS NOT RESOLVED (STEP 2 incomplete):
-  ⛔ DO NOT USE: Bash to run backlog-commit.sh
+  ⛔ DO NOT USE: Bash to run the publication entry
   ⛔ DO NOT: Guess which ticket the user meant
   ⛔ DO NOT: Fall back to adding a new ticket when an update, a close or a move was asked for
   ✅ DO: Name the candidates, or say the ticket was not found, and STOP
@@ -79,7 +81,7 @@ so, the position.
 Run, from the repository root:
 
 ```bash
-bash framwork/.codeadd/scripts/backlog.sh list --all
+node framwork/.codeadd/scripts/backlog-cli.cjs list --all
 ```
 
 Its output is `KEY=VALUE` lines, then one ticket per line starting with `{`. Line order is the
@@ -116,7 +118,7 @@ existed.
 - By an old number — `o 1.2`. Tickets migrated from the markdown board carry
   `Formerly item N.M of docs/backlog/index.md.` as their first note; match that note exactly.
 - By subject — `aquele item do review adversarial`. The match must be unambiguous against the titles,
-  tldrs and notes. `bash framwork/.codeadd/scripts/backlog.sh search <terms>` narrows it.
+  tldrs and notes. `node framwork/.codeadd/scripts/backlog-cli.cjs search <terms>` narrows it.
 
 ```
 IF THE TEXT NAMES A TICKET THAT DOES NOT EXIST:
@@ -181,26 +183,33 @@ the artefact graph or reads a plan here has stopped recording intent and started
 
 **GATE CHECK:** Is the operation resolved, and its target unique? IF NO → return to STEP 2.
 
-Run the write STEP 2's table names, once, from the repository root. A record goes on stdin as one
-JSON object:
+Run the write STEP 2's table names, once, from the repository root. The record travels on a FILE —
+write it to a scratch file in the project first (`docs/.tmp-<slug>.json`, cleaned up in the same
+step), one JSON object:
 
 ```bash
-printf '%s' '<record>' | bash framwork/.codeadd/scripts/backlog-commit.sh <mode> [<id>] [<position>]
+node framwork/.codeadd/scripts/backlog-commit.cjs <mode> [<id>] [<position>] --record-file docs/.tmp-<slug>.json
 ```
 
-| Operation | stdin |
+| Operation | the record file |
 |---|---|
 | add | the full record from STEP 3 |
 | update | only the fields that change |
 | comment | `{"content":"<what was learnt>"}` |
 | close | `{"status":"done"}` or `{"status":"dropped"}` |
-| move, remove | none |
+| move, remove | no record file |
 
-**The script picks the route itself.** On `main` it commits directly; on any other branch it writes
+`bash framwork/.codeadd/scripts/backlog-commit.sh <mode> [<id>] < record.json` remains a marked
+compatibility path — stdin is still a supported record channel through the bash wrapper — but the
+native recipe is the file, read in the caller's cwd BEFORE any routing, allocation or persistence,
+so a read failure (`ERROR=record-read-failed`, exit 1) happens while nothing else has.
+
+**The entry picks the route itself.** On `main` it commits directly; on any other branch it writes
 through a locked worktree, so the ticket reaches `main` without touching the current branch. Either
 way it rebases onto `origin` and pushes, and a conflicting rebase is aborted, never resolved.
 
-Read its output keys: `ROUTE`, `BASE_BRANCH`, `TICKET_ID`, `SHA`, `PUSHED`, and `DEGRADED` when one
+Read its output keys: `ROUTE`, `BASE_BRANCH`, `TICKET_ID`, `SHA`, `PUSHED`, the recovery keys
+`PERSISTED`, `COMMITTED`, `RECOVERY_PATH` and `RECOVERY_REF` when one applies, and `DEGRADED` when one
 applies.
 
 ```
