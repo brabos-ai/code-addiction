@@ -1,8 +1,8 @@
 # Native Node backlog — local operations and recoverable Git publication
 
-Plan: `docs/plans/2026-10-04T004044-PLAN--native-node-backlog.md` (ticket 0019B).
+Plan: `docs/deliveries/2026-10-04T004044-PLAN--native-node-backlog/plan.md` (ticket 0019B).
 One branch (`feat/native-node-backlog`), one commit per F-block, the plan's
-RED-first assertions recorded in the build ledger.
+RED-first assertions recorded in the archived build ledger.
 
 ## What arrives
 
@@ -37,7 +37,7 @@ channel the bats suites still pin.
 
 ## Follow-up review corrections — 2026-10-04
 
-Review: `docs/plans/2026-10-04T004044-PLAN--native-node-backlog--review.md`.
+Review: `docs/deliveries/2026-10-04T004044-PLAN--native-node-backlog/review.md`.
 Clean detached leftovers now require durable reachability before removal. Publication uses an isolated index and three-way merges to preserve caller staged/unstaged intent; overlapping edits retain bytes and report degradation. Staging failures emit the recovery report. Linked-worktree rebase detection resolves Git metadata paths. Successful push no longer hides divergent local-base advancement. Initial recovery-ref failure blocks reconciliation and push. Normal retained-tree exits release capture locks.
 
 The parser reserves literal targets and requires a trailing record-file pair. Native usage and recovery-location guidance are updated. Each browser viewport owns a mutable fixture/server.
@@ -56,3 +56,9 @@ Follow-up validation: full CLI **1785 passed** on Linux/Docker; Bash compatibili
 | F6 | 7568343..3c5e0e6 |
 | F7 | 3c5e0e6..b9c8041 |
 | review fixes | b9c8041..dcf805c |
+| F8 review corrections | 5485b6c..34d1e46 |
+| F9 evidence and acceptance | 34d1e46..33b325d |
+
+Archived at `docs/deliveries/2026-10-04T004044-PLAN--native-node-backlog/`
+(`plan.md`, `ledger.md`, `design.md`, `intent.md`, `review.md`) and indexed in
+`docs/delivered.jsonl` under `id` `2026-10-04T004044-PLAN--native-node-backlog`.
