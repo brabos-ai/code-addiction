@@ -191,7 +191,7 @@ documents cite plans by number. **Only `-PLAN--` with a timestamp is written for
 ## The Ticket
 
 <!--
-Modelled on the product procedure, add-backlog/references/lifecycle.md, and
+Modelled on the product procedure, add--backlog/references/lifecycle.md, and
 kept to the same rules. `backlog.sh`, `backlog-commit.sh`, the native
 `.cjs` entries and `add-doc-schemas/references/backlog.md` are PRODUCT
 nodes, named in prose on purpose and deliberately NOT declared under
@@ -208,7 +208,7 @@ cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
 **A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
 does.** Each stage carries one line pointing here; **this section is the only place the rules live.**
 What each status MEANS — the nine names, the seven columns, the pairs of a running and a parked status —
-is the product's phase model, `add-backlog/references/phases.md`; this section is the internal procedure.
+is the product's phase model, `add--backlog/references/phases.md`; this section is the internal procedure.
 
 ⛔ **The internal pipeline has no feature system.** The product gates its ticket instructions behind the
 `board` feature; the four stages here carry theirs unconditionally, because `workbench/` ships to no user and
@@ -263,8 +263,6 @@ else. No matching line means the id is not on the board: report it and continue 
 ```bash
 node framwork/.codeadd/scripts/backlog-cli.cjs list --all
 ```
-
-No output line means the id is not on the board: report it and continue with no ticket.
 
 ### The two rules that decide whether a write happens
 

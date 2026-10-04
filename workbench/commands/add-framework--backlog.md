@@ -183,9 +183,9 @@ the artefact graph or reads a plan here has stopped recording intent and started
 
 **GATE CHECK:** Is the operation resolved, and its target unique? IF NO → return to STEP 2.
 
-Run the write STEP 2's table names, once, from the repository root. The record travels on a FILE —
-write it to a scratch file in the project first (`docs/.tmp-<slug>.json`, cleaned up in the same
-step), one JSON object:
+Run the write STEP 2's table names, once, from the repository root. The record travels on a FILE this
+step writes and deletes — the rows that carry a record (add, update, comment, close) use
+`--record-file`; move and remove carry no record file at all:
 
 ```bash
 node framwork/.codeadd/scripts/backlog-commit.cjs <mode> [<id>] [<position>] --record-file docs/.tmp-<slug>.json
@@ -247,11 +247,8 @@ Then, after the seven blocks, state:
 ---
 
 ## Rules
-
 ALWAYS:
 - Address a ticket by the id and title the user will recognise
-- Resolve the layer from what STEP 3 actually read, or from what the user stated outright
 
 NEVER:
 - Remove a ticket that was delivered or dropped — close it
-- Reorder tickets as a side effect of an update, a comment or a close
