@@ -1,12 +1,13 @@
 ---
 name: add--final-report
-description: "Use at a command's closing step — the seven blocks every finishing command reports in, the banned phrasings, and the self-check. Load at the last step, not at the first."
+description: "Use at a command's closing step — the seven blocks every finishing command reports in, the optional fresh-context continuation handoff and its two-response contract, the banned phrasings, and the self-check. Load at the last step, not at the first."
 ---
 
 # Final Report — The Closing Shape
 
 <!-- uses:
 - mention: /add-build
+- mention: add--delivery-mode
 - mention: add--doc-schemas
 -->
 
@@ -94,6 +95,92 @@ Plain facts are different: they belong inside block 2 or block 4, wherever they 
 
 Metadata is last: feature ID, document paths, verdicts, next-step commands.
 
+## The Second Response — `chat-continuation-output-v1`
+
+A manual run is usually where the session ends. The user opens a new one to keep going, and that new
+session knows nothing about the decisions this run settled. This section owns what the command offers
+them and what it hands over when they accept.
+
+**It owns the SHAPE. Whether the offer is made at all belongs to `add--delivery-mode` — load it there
+for that.** Two owners would drift, and the drift would be invisible until one closing printed an
+invocation the other had ruled out.
+
+### Two responses, never one
+
+| Response | When | What it carries |
+|---|---|---|
+| The report | The completion itself | All seven blocks, the command's own mandatory artefact, then its metadata |
+| The instructions | Only after the user accepts the pending offer | Exactly one fenced plain-text block, and nothing else |
+
+**They are two turns.** Folding them into one message is the failure this contract exists to prevent:
+a reader who pastes the block carries the report's findings along with it, and a fresh session spends
+its first act re-reading a verdict it was about to be handed.
+
+The first response ends with one localized yes/no question — whether to receive instructions for a
+fresh context — and then stops. It may name the next activity in ordinary prose; the full invocation
+waits for the answer.
+
+```
+IF THE USER ACCEPTS THE PENDING OFFER:
+  ✅ DO: Respond with exactly one fenced plain-text block and nothing around it
+  ⛔ DO NOT USE: Write on any file — the handoff is chat text, never a generated document
+  ⛔ DO NOT: Run the next command, follow its file, or treat acceptance as consent to anything
+
+IF THE USER DECLINES, OR THE REPLY IS AMBIGUOUS:
+  ⛔ DO NOT: Produce the block, run anything, or ask again
+  ✅ DO: End the handoff there
+```
+
+⛔ **Acceptance authorizes text, nothing else.** It is not approval to execute, to stage, to publish
+or to merge, and an earlier approval of any of those is never an acceptance of this offer. Scope the
+answer to the last explicit pending offer.
+
+⛔ **The accepted response is exempt from the seven blocks, the mandatory-artefact rule and the
+metadata.** It is one block of instructions. Every rule above this section governs the OTHER response.
+
+### What the block contains
+
+**Complete for its activity, not a transcript.** It is what the next session needs to start, not what
+this session said.
+
+| Include | Never |
+|---|---|
+| The complete next-command invocation, with its arguments, feature id or subfeature scope | An invented file, target feature, patch or approval |
+| The objective or action, in a line | A summary of the run that produced it |
+| The actual official document paths that govern the activity, each with its role | A path you have not seen resolve |
+| Only the confirmed decisions and restrictions needed to act | Settled questions the reader would otherwise re-ask |
+| The provider-correct spelling of the invocation | A canonical command name rewritten to fit one provider |
+
+**References stay authoritative.** Point at the official document and describe the activity; never
+restate a specification into the block, because a second copy of a rule is a second thing to drift.
+
+**On a review correction**, name the current review and its `## Fix Routing`, and carry the finding
+identities and the supersession decisions with it. Keep other sessions' work and evidence intact, and
+tell the recipient to check current state before reapplying anything — a fix already applied is
+re-applied twice when the block does not say so.
+
+**Use the project's real relative paths**, and keep whatever path semantics the command already had.
+There is no universal `@file` handoff syntax, and the diagnosis-to-hotfix `@report` interface is
+untouched by this.
+
+**Spell the invocation the way the provider invokes it** — command-as-skill where slash commands are
+unavailable — without changing which command it is.
+
+### Who never offers
+
+⛔ **This contract is for a top-level finishing command only.**
+
+```
+IF THIS RUN IS A WORKER, A SUBAGENT, OR A STEP NESTED INSIDE ANOTHER COMMAND:
+  ⛔ DO NOT: Offer continuation, ask a question, or open a competing conversation
+  ✅ DO: Report as the owning command's step told you to, and return
+```
+
+A worker that loads this skill to close out its own area is not the user's next stop, and a question
+from one leaves the user two threads to choose between. A backlog operation nested inside another
+command is the same case. A top-level backlog operation offers only when its host selected an actual
+next development activity; otherwise it ends normally.
+
 ## How It Reads
 
 The seven blocks decide what the report says. This decides how it reads — and a report nobody can
@@ -160,6 +247,9 @@ second and third has to skip past it to get there.
 [ ] The command's own mandatory facts are all present, none traded for the shape
 [ ] Every sentence carries one idea, and reads correctly the first time
 [ ] No sentence narrates a mistake of yours or a correction a reviewer asked for
+[ ] If a handoff was offered, it came after the metadata and asked once
+[ ] If instructions were accepted, they are one block, carry no report, and executed nothing
+[ ] If this run is a worker or a nested step, no offer was made
 ```
 
 ## Common Rationalizations (BLOCKED)
@@ -171,6 +261,10 @@ second and third has to skip past it to get there.
 | "Nothing was deleted, I'll drop the row" | Write "none". An absent row is a question |
 | "This command's report is too small for seven blocks" | Then some are genuinely empty. Skip those, do not flatten the rest |
 | "The coverage table is long, I'll summarise it" | It prints whole, after the blocks. Exhaustive, not representative |
+| "I'll paste the block into this same message to save a turn" | Then the reader carries the findings too. Two turns is the contract |
+| "I'll write the handoff to a file so it survives" | The user chose chat-only. A file is a second authority to keep in step |
+| "They said yes, so I'll go ahead and run it" | Acceptance authorized text. Running anything is a separate decision |
+| "This subagent finished its area, I'll offer to continue" | A worker is not the user's next stop. Return to the command that dispatched you |
 
 ## Rules
 
@@ -179,7 +273,12 @@ ALWAYS:
 - Write the Deleted row even when it reads "none"
 - Name the host and the step for every integration point
 - Print a command's own mandatory artefact whole, after the seven blocks
+- Offer the continuation handoff once, after the metadata, at a top-level finishing command
+- Answer an accepted offer with one block carrying the invocation, the activity and its official documents
 
 NEVER:
 - Load this skill at the start of a command — it is needed at the end
 - Trade a mandatory fact for the shape
+- Write a handoff file, or name a directory as where the continuation is kept
+- Execute, stage, publish or merge on an accepted offer
+- Offer from a worker, a subagent or a step nested inside another command
