@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -120,6 +121,41 @@ describe('update command', () => {
     expect(fs.existsSync(orphanPath)).toBe(false);
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
     expect(manifest.files).not.toContain('.codeadd/scripts/old-script.sh');
+  });
+
+  it.each([true, false])('native backlog update retires only tracked wrappers (tracked=%s)', async (tracked) => {
+    const wrappers = ['backlog.sh', 'backlog-commit.sh'];
+    const canonical = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
+      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs'];
+    const scripts = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+    const installed = path.join(tmpDir, '.codeadd', 'scripts');
+    fs.mkdirSync(installed, { recursive: true });
+    for (const name of wrappers) fs.writeFileSync(path.join(installed, name), '# old or manual entry\n');
+    writeManifestFile(tmpDir, {
+      version: '1.0.0', source: 'release', providers: [],
+      files: tracked ? wrappers.map((n) => `.codeadd/scripts/${n}`) : [],
+    });
+    const zip = new AdmZip(buildZip());
+    for (const name of canonical) zip.addFile(`framwork/.codeadd/scripts/${name}`, fs.readFileSync(path.join(scripts, name)));
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(zip.toBuffer());
+
+    await update(tmpDir);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    for (const name of wrappers) {
+      expect(fs.existsSync(path.join(installed, name)), name).toBe(!tracked);
+      expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
+      if (!tracked) expect(fs.readFileSync(path.join(installed, name), 'utf8')).toBe('# old or manual entry\n');
+    }
+    for (const name of canonical) expect(fs.readFileSync(path.join(installed, name))).toEqual(fs.readFileSync(path.join(scripts, name)));
+    const result = execFileSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', 'list', '--all'],
+      { cwd: tmpDir, encoding: 'utf8' });
+    expect(result).toContain('BACKLOG_PRESENT=no');
+    fs.writeFileSync(path.join(tmpDir, 'ticket.json'), JSON.stringify({ title: 'after update', tldr: 't', done_when: 't' }));
+    const publication = execFileSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', 'ticket.json'],
+      { cwd: tmpDir, encoding: 'utf8', input: '' });
+    expect(publication).toContain('PERSISTED=yes');
   });
 
   it('preserves history and .local.json files even if listed in old manifest', async () => {

@@ -184,7 +184,7 @@ describe('install command e2e', () => {
 
     /** Package the real backlog family from disk, so a retirement assertion
      *  fails if a removed entry is accidentally shipped again. */
-    function buildBacklogZip({ core } = {}) {
+    function buildBacklogZip() {
       const zip = new AdmZip();
       zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
       zip.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
@@ -193,6 +193,37 @@ describe('install command e2e', () => {
       }
       return zip.toBuffer();
     }
+
+    it.each([true, false])('reinstall retires only manifest-owned wrappers (tracked=%s)', async (tracked) => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      // Old installation fixture, independent of retired source files.
+      const manifestPath = path.join(tmpDir, '.codeadd', 'manifest.json');
+      const old = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      for (const name of WRAPPERS) {
+        fs.writeFileSync(path.join(tmpDir, '.codeadd', 'scripts', name), '# user or old installed entry\n');
+        if (tracked) old.files.push(`.codeadd/scripts/${name}`);
+      }
+      fs.writeFileSync(manifestPath, JSON.stringify(old));
+      mocks.getLatestTag.mockResolvedValue('v2.0.0');
+      await install(tmpDir);
+
+      const current = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      for (const name of WRAPPERS) {
+        const file = path.join(tmpDir, '.codeadd', 'scripts', name);
+        expect(fs.existsSync(file), name).toBe(!tracked);
+        expect(current.files).not.toContain(`.codeadd/scripts/${name}`);
+        if (!tracked) expect(fs.readFileSync(file, 'utf8')).toBe('# user or old installed entry\n');
+      }
+      for (const name of CANONICAL) {
+        expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'scripts', name))).toEqual(realBytes(name));
+      }
+      const result = execFileSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', 'list', '--all'],
+        { cwd: tmpDir, encoding: 'utf8' });
+      expect(result).toContain('BACKLOG_PRESENT=no');
+    });
 
     it('ships only the six Node modules, preserving their bytes and retiring shell entries', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
