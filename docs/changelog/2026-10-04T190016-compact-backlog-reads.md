@@ -32,6 +32,8 @@ by name with `ERROR=read-mode` like `list` and `search`.
   computed before any filter. Raw rows and stored records are unchanged, so the board API keeps
   serving complete tickets.
 - The CLI owns the projection: summaries are presentation only and nothing is persisted.
+- Summary dates reject impossible calendar days, including February 29 in non-leap years;
+  valid leap dates and the original date of timezone-offset timestamps are preserved.
 - Five product owners and the two internal ones document the read contract; product and internal
   lifecycles resolve a declared id with `get` and a subject or old number with an all-status
   `search` followed by `get`.

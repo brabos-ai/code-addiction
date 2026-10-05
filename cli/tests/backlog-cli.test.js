@@ -541,6 +541,15 @@ describe('backlog-cli — summary projection and the read flag grammar (F2)', ()
     expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
   });
 
+  it('invalid calendar dates become null while leap dates and offset dates keep their original date', () => {
+    const dates = ['2026-02-30T12:34:56Z', '2026-02-29T12:34:56Z', '2026-04-31T12:34:56Z', '2024-02-29T12:34:56Z', '2026-10-01T00:30:00+02:00'];
+    writeBoard(dates.map((updated_at, i) => fullRow(`000${i + 1}B`, { updated_at })));
+    const before = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+    const rows = payloadRows(run(['list', '--all'], { cwd: root })).map(JSON.parse);
+    expect(rows.map((row) => row.updated_at)).toEqual([null, null, null, '2024-02-29', '2026-10-01']);
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+  });
+
   it('metadata: READ_VIEW accompanies all reads and STATUS_COUNTS is the whole board, in first-occurrence text order', () => {
     writeBoard([
       fullRow('0001B', { status: 'open' }),
